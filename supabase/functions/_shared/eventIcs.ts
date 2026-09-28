@@ -65,6 +65,11 @@ export function eventDescription(event: AgreedEvent, lang: IcsLang): string {
   return who ? `Agreed in Casy with ${who}.` : "Agreed in Casy.";
 }
 
+/** The UID Casy gives an event's calendar entry. */
+export function eventUid(eventId: string): string {
+  return `${eventId}@casy.app`;
+}
+
 /** The file name a calendar entry lives under: stable, so a retry finds it. */
 export function eventResourceName(eventId: string): string {
   return `casy-${eventId}.ics`;
@@ -133,7 +138,7 @@ export function buildEventIcs(event: AgreedEvent, lang: IcsLang, now = new Date(
     "PRODID:-//Casy//Casy//EN",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${event.id}@casy.app`,
+    `UID:${eventUid(event.id)}`,
     `DTSTAMP:${utcStamp(now.toISOString())}`,
     allDay ? `DTSTART;VALUE=DATE:${localDate(event.start)}` : `DTSTART:${utcStamp(event.start)}`,
     allDay ? `DTEND;VALUE=DATE:${localDate(event.end)}` : `DTEND:${utcStamp(event.end)}`,

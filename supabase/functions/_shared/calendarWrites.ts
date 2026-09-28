@@ -16,9 +16,14 @@
  * Only iCloud calendars can be written to so far. Every write is keyed by the
  * event (eventResourceName), and iCloud is told never to overwrite, so a retry
  * never makes a second copy.
+ *
+ * An entry deleted by hand is noticed by the next sync of that account
+ * (markGoneEntries): the row is closed and marked `gone_at`, the page offers
+ * "Add it again", and "Add automatically" leaves it alone rather than fight
+ * its owner.
  */
 import { CalDavError, type CalDavCredentials, deleteEvent, discoverCalendars, putEvent } from "./caldav.ts";
-import { type AgreedEvent, buildEventIcs, eventResourceName, type IcsLang } from "./eventIcs.ts";
+import { type AgreedEvent, buildEventIcs, eventResourceName, eventUid, type IcsLang } from "./eventIcs.ts";
 import { decryptSecret } from "./secretBox.ts";
 import type { supabaseAdmin } from "./supabaseAdmin.ts";
 
@@ -112,12 +117,119 @@ export async function wantInCalendar(
       wanted: true,
       attempts: 0,
       last_error: null,
+      gone_at: null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "proposal_id,profile_id" },
   );
   if (error) throw error;
   return "queued";
+}
+
+/** An added entry, as markGoneEntries checks it. */
+export interface AddedEntry {
+  proposal_id: string;
+  /** When the row last changed: an entry added after the check began is skipped. */
+  updated_at: string;
+  status: string;
+  /** The event's current date; null if it has none. */
+  start: string | null;
+  end: string | null;
+}
+
+/**
+ * The events whose entry is missing from an account that was just read in
+ * full: scheduled, inside the window that was read, added before the read
+ * began, and with no event carrying its UID anywhere in the account.
+ */
+export function missingEntries(
+  entries: AddedEntry[],
+  seenUids: ReadonlySet<string>,
+  readStartedAt: Date,
+  windowStart: Date,
+  windowEnd: Date,
+): string[] {
+  return entries
+    .filter(
+      (e) =>
+        e.status === "scheduled" &&
+        !!e.start &&
+        !!e.end &&
+        Date.parse(e.updated_at) < readStartedAt.getTime() &&
+        // Only what the read could have seen: it overlaps the window.
+        Date.parse(e.start) < windowEnd.getTime() &&
+        Date.parse(e.end) > windowStart.getTime() &&
+        !seenUids.has(eventUid(e.proposal_id)),
+    )
+    .map((e) => e.proposal_id);
+}
+
+/**
+ * After an iCloud account was read in full (every calendar, so nothing is
+ * missing just because a calendar failed to load): close the rows whose
+ * entry is no longer there, which is what its owner deleting it by hand
+ * looks like. Returns how many were closed.
+ */
+export async function markGoneEntries(
+  db: Db,
+  connectionId: string,
+  seenUids: ReadonlySet<string>,
+  readStartedAt: Date,
+  windowStart: Date,
+  windowEnd: Date,
+): Promise<number> {
+  const { data, error } = await db
+    .from("calendar_event_writes")
+    .select(
+      "proposal_id, profile_id, updated_at, calendar_sources!inner(connection_id), " +
+        "event_proposals!inner(status, event_proposal_dates(starts_at, ends_at, declined_at, created_at))",
+    )
+    .eq("added", true)
+    .eq("wanted", true)
+    .eq("calendar_sources.connection_id", connectionId);
+  if (error) throw error;
+
+  type Row = {
+    proposal_id: string;
+    profile_id: string;
+    updated_at: string;
+    event_proposals: {
+      status: string;
+      event_proposal_dates: { starts_at: string; ends_at: string; declined_at: string | null; created_at: string }[];
+    };
+  };
+  const rows = (data ?? []) as unknown as Row[];
+  const entries = rows.map((r) => {
+    const current = r.event_proposals.event_proposal_dates
+      .filter((d) => d.declined_at === null)
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+    return {
+      proposal_id: r.proposal_id,
+      updated_at: r.updated_at,
+      status: r.event_proposals.status,
+      start: current?.starts_at ?? null,
+      end: current?.ends_at ?? null,
+    };
+  });
+  const missing = new Set(missingEntries(entries, seenUids, readStartedAt, windowStart, windowEnd));
+
+  let closed = 0;
+  for (const r of rows.filter((r) => missing.has(r.proposal_id))) {
+    const now = new Date().toISOString();
+    const { data: updated, error: updErr } = await db
+      .from("calendar_event_writes")
+      .update({ wanted: false, added: false, gone_at: now, attempts: 0, last_error: null, updated_at: now })
+      .eq("proposal_id", r.proposal_id)
+      .eq("profile_id", r.profile_id)
+      // Unless it changed while the account was being read.
+      .eq("added", true)
+      .eq("wanted", true)
+      .lt("updated_at", readStartedAt.toISOString())
+      .select("proposal_id");
+    if (updErr) throw updErr;
+    closed += (updated ?? []).length;
+  }
+  return closed;
 }
 
 /** A cancelled event: take it out of every calendar Casy put it in. */

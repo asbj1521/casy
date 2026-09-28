@@ -172,7 +172,7 @@ async function listEvents(db: Db, profileId: string, callerName: string) {
     // Whether Casy has put each event into the caller's own calendar.
     db
       .from("calendar_event_writes")
-      .select("proposal_id, wanted, added, last_error")
+      .select("proposal_id, wanted, added, last_error, gone_at")
       .eq("profile_id", profileId)
       .in("proposal_id", proposalIds),
   ]);
@@ -180,8 +180,15 @@ async function listEvents(db: Db, profileId: string, callerName: string) {
   if (answers.error) throw answers.error;
   if (writes.error) throw writes.error;
   const writeOf = new Map(
-    ((writes.data ?? []) as { proposal_id: string; wanted: boolean; added: boolean; last_error: string | null }[])
-      .map((w) => [w.proposal_id, w]),
+    (
+      (writes.data ?? []) as {
+        proposal_id: string;
+        wanted: boolean;
+        added: boolean;
+        last_error: string | null;
+        gone_at: string | null;
+      }[]
+    ).map((w) => [w.proposal_id, w]),
   );
 
   const inviteesOf = new Map<string, string[]>();
@@ -239,10 +246,12 @@ async function listEvents(db: Db, profileId: string, callerName: string) {
         .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
         .map((d) => ({ start: d.starts_at, end: d.ends_at, declinedBy: nameOf(d.declined_by) })),
       // Your own calendar only: "added", "adding" (wanted, not there yet,
-      // with the last failure if any), or null when Casy hasn't been asked.
+      // with the last failure if any), "gone" (added, then deleted by hand),
+      // or null when Casy hasn't been asked.
       myCalendar: (() => {
         const w = writeOf.get(p.id);
-        if (!w || !w.wanted) return null;
+        if (!w) return null;
+        if (!w.wanted) return w.gone_at && !w.added ? { state: "gone" } : null;
         return w.added ? { state: "added" } : { state: "adding", error: w.last_error };
       })(),
     };

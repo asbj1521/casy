@@ -1,6 +1,7 @@
 // Run with: deno test --node-modules-dir=none supabase/functions/_shared/
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 
+import { eventUids } from "./appleBusy.ts";
 import { parseBusyIntervals } from "./ics.ts";
 import {
   type AgreedEvent,
@@ -87,4 +88,12 @@ Deno.test("Casy's own reader understands what it writes", () => {
 
 Deno.test("the calendar entry's file name is stable per event", () => {
   assertEquals(eventResourceName(dinner.id), "casy-11111111-2222-3333-4444-555555555555.ics");
+});
+
+Deno.test("the UIDs in a document are found, folded or not, whatever else is in it", () => {
+  assertEquals(eventUids(buildEventIcs(dinner, "en", NOW)), [`${dinner.id}@casy.app`]);
+  const folded = "BEGIN:VEVENT\r\nUID:a-very-long-uid-that-an-\r\n other-server-folded@example.com\r\nEND:VEVENT\r\n";
+  assertEquals(eventUids(folded), ["a-very-long-uid-that-an-other-server-folded@example.com"]);
+  assertEquals(eventUids("BEGIN:VEVENT\nUID;X-PARAM=1:with-param\nEND:VEVENT"), ["with-param"]);
+  assertEquals(eventUids("no events here"), []);
 });

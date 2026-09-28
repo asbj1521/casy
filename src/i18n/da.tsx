@@ -493,6 +493,8 @@ export const da = {
     adding: "Casy lægger den i din kalender.",
     notYet: "Casy kunne ikke lægge den i din kalender endnu og prøver igen inden for en time.",
     tryAgain: "Prøv igen nu",
+    gone: "Den er ikke i din kalender længere.",
+    addAgain: "Tilføj igen",
     chooseTitle: "Hvilken kalender skal Casy lægge aftaler i?",
     chooseHelp: "Den bliver din primære kalender. Du kan skifte den på din profil.",
     useAndAdd: "Brug den og tilføj",

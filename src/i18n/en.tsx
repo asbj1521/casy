@@ -472,6 +472,8 @@ export const en: Messages = {
     adding: "Casy is adding it to your calendar.",
     notYet: "Casy couldn't add it to your calendar yet and will try again within the hour.",
     tryAgain: "Try again now",
+    gone: "It's no longer in your calendar.",
+    addAgain: "Add it again",
     chooseTitle: "Which calendar should Casy add events to?",
     chooseHelp: "It becomes your primary calendar. You can change it on your profile.",
     useAndAdd: "Use it and add",

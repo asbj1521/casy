@@ -344,6 +344,8 @@ export default function Profile() {
       );
       await refetchStatus();
       void queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
+      // A sync also notices entries deleted from the calendar by hand (My events).
+      void queryClient.invalidateQueries({ queryKey: ["events"] });
     } catch (err) {
       setSyncResult({ ok: false, text: err instanceof Error ? err.message : t.profile.couldntSync });
     } finally {

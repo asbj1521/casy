@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarPlus, Check, Download, Loader2, XCircle } from "lucide-react";
+import { AlertTriangle, CalendarPlus, Check, Download, Loader2, XCircle } from "lucide-react";
 
 import { calendarStatusQuery } from "@/api/calendarStatus";
 import {
@@ -34,6 +34,8 @@ function saveFile(filename: string, text: string, type: string) {
  * but with a calendar Casy may write to, the button first asks which one
  * (that choice becomes the primary calendar). With none at all, it downloads
  * the event as a calendar file instead, which any calendar app can open.
+ * If the last sync found the entry deleted from the calendar by hand, the
+ * card says so and the button adds it again.
  */
 export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
   const t = useT();
@@ -153,8 +155,15 @@ export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
   } else {
     const writesDirectly = !!primary;
     const canChoose = !primary && writableIds.length > 0;
+    const gone = event.myCalendar?.state === "gone";
     body = (
       <div>
+        {gone && (
+          <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-amber-800">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {words.gone}
+          </p>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -174,7 +183,7 @@ export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
           ) : (
             <CalendarPlus className="h-4 w-4" />
           )}
-          {words.button}
+          {gone ? words.addAgain : words.button}
         </button>
         <p className="mt-1 text-xs text-emerald-900/80">
           {writesDirectly

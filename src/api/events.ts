@@ -42,11 +42,16 @@ export interface SuggestedEvent {
   /** Dates offered earlier and turned down, oldest first. */
   declinedDates: { start: string; end: string; declinedBy: string }[];
   /**
-   * Whether Casy has put it into your own primary calendar: "added", or
+   * Whether Casy has put it into your own primary calendar: "added",
    * "adding" (asked for, not there yet; `error` says why the last try
-   * failed). Null or missing: Casy hasn't been asked to.
+   * failed), or "gone" (added, then deleted from the calendar by hand, as
+   * the last sync found). Null or missing: Casy hasn't been asked to.
    */
-  myCalendar?: { state: "added" } | { state: "adding"; error: string | null } | null;
+  myCalendar?:
+    | { state: "added" }
+    | { state: "adding"; error: string | null }
+    | { state: "gone" }
+    | null;
 }
 
 export function eventsQueryKey(userId: string) {

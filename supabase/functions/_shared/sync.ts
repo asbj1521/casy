@@ -15,6 +15,7 @@
  */
 import { fetchAppleBusy } from "./appleBusy.ts";
 import { CalDavLoginError } from "./caldav.ts";
+import { markGoneEntries } from "./calendarWrites.ts";
 import * as google from "./google.ts";
 import { assertSafeFeedUrl, fetchFeedText, parseBusyIntervals } from "./ics.ts";
 import type { RawBusyInterval } from "./intervals.ts";
@@ -116,6 +117,8 @@ async function refreshBusy(
   const windowEnd = new Date(now.getTime() + SYNC_MONTHS_AHEAD * 30 * 86_400_000);
   const externalIds = (sources ?? []).map((s: { external_calendar_id: string }) => s.external_calendar_id);
 
+  // Entries Casy adds from here on can't be in this read, so they aren't judged by it.
+  const readStartedAt = new Date();
   const fresh = await fetchFresh(db, target, secrets as SecretsRow, key, externalIds, windowStart, windowEnd);
 
   const blocks = (sources ?? []).flatMap((s: { id: string; external_calendar_id: string }) =>
@@ -143,6 +146,17 @@ async function refreshBusy(
       if (error) throw error;
     }
   }
+
+  // Events Casy added to this account that are no longer anywhere in it were
+  // deleted by hand: say so on My events. Only after a complete read (a
+  // failed calendar throws above), and never at the cost of the sync itself.
+  if (fresh.seenUids) {
+    try {
+      await markGoneEntries(db, target.id, fresh.seenUids, readStartedAt, windowStart, windowEnd);
+    } catch (err) {
+      console.error(`checking Casy's entries in connection ${target.id} failed`, err);
+    }
+  }
   return stored as number;
 }
 
@@ -152,6 +166,8 @@ interface Fresh {
   busy: Record<string, RawBusyInterval[]>;
   /** Per calendar id; only iCloud reports it so far. */
   writable?: Record<string, boolean>;
+  /** Every event UID in the whole account (iCloud only), for markGoneEntries. */
+  seenUids?: Set<string>;
 }
 
 async function fetchFresh(
@@ -184,7 +200,7 @@ async function fetchFresh(
         throw new ReauthRequired("No stored iCloud login.");
       }
       const password = await decryptSecret(secrets.caldav_password, key);
-      const { calendars } = await fetchAppleBusy(
+      const { calendars, uids } = await fetchAppleBusy(
         { username: secrets.caldav_username, password },
         windowStart,
         windowEnd,
@@ -192,6 +208,7 @@ async function fetchFresh(
       return {
         busy: Object.fromEntries(calendars.map((c) => [c.id, c.intervals])),
         writable: Object.fromEntries(calendars.map((c) => [c.id, c.writable])),
+        seenUids: uids,
       };
     }
     case "ics": {
