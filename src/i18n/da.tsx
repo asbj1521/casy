@@ -84,7 +84,7 @@ export const da = {
   scheduler: {
     schedulingFor: "Planlægger for",
     whatKind: "Hvilken slags aftale",
-    suggest: "Foreslå aftale",
+    suggest: "Foreslå denne dato",
     suggested: "Foreslået",
     sent: (link: ReactNode) => <>Sendt til gruppen. {link}.</>,
     sentLink: "Følg svarene under Mine aftaler",
@@ -92,6 +92,7 @@ export const da = {
     hintExample: "Lav en gruppe for at foreslå aftaler til rigtige mennesker.",
     hintNoDate: "Ingen dato at foreslå med disse indstillinger. Prøv at ændre dem.",
     hintEveryone: "Alle i gruppen får den og kan sige ja eller nej.",
+    hintAccept: "Godkend først, at du skal have fri, i feltet under kalenderen.",
     copyLink: "Kopiér link",
     copiedLink: "Kopieret!",
     findBest: "Find bedste tid",
@@ -364,7 +365,7 @@ export const da = {
     loadFailed: "Kunne ikke hente dine aftaler.",
     emptyTitle: "Ingen aftaler endnu",
     emptyBody:
-      "Find en dato på planlægningssiden, og tryk på Foreslå aftale. Den dukker op her for alle i gruppen.",
+      "Find en dato på planlægningssiden, og tryk på Foreslå denne dato. Den dukker op her for alle i gruppen.",
     findDate: "Find en dato",
     needsAnswer: "Venter på dit svar",
     cantMake: "Kan du ikke? Casy finder den næste dato, der passer gruppen, og spørger alle igen.",

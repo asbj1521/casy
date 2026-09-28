@@ -159,38 +159,31 @@ const SEARCH_BASE =
     : SEARCH_WINDOW.start;
 
 /**
- * Step back and forward through the recommended times found this session.
- * Back only replays what's already been seen (never searches); forward
- * searches for the next occurrence once it runs past what's cached.
+ * One of the two arrows either side of the main button, stepping back and
+ * forward through the recommended times found this session. Back only
+ * replays what's already been seen (never searches); forward searches for the
+ * next occurrence once it runs past what's cached.
  */
-function FindStepper({
-  canGoBack,
-  onPrev,
-  onNext,
+function StepArrow({
+  direction,
+  disabled,
+  onClick,
 }: {
-  canGoBack: boolean;
-  onPrev: () => void;
-  onNext: () => void;
+  direction: "prev" | "next";
+  disabled: boolean;
+  onClick: () => void;
 }) {
   const t = useT();
+  const Icon = direction === "prev" ? ChevronLeft : ChevronRight;
   return (
-    <div className="inline-flex items-center divide-x overflow-hidden rounded-lg border bg-card">
-      <button
-        onClick={onPrev}
-        disabled={!canGoBack}
-        aria-label={t.scheduler.previousTime}
-        className="flex h-9 w-9 items-center justify-center text-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </button>
-      <button
-        onClick={onNext}
-        aria-label={t.scheduler.nextTime}
-        className="flex h-9 w-9 items-center justify-center text-foreground transition hover:bg-secondary"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </button>
-    </div>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={direction === "prev" ? t.scheduler.previousTime : t.scheduler.nextTime}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30"
+    >
+      <Icon className="h-5 w-5" />
+    </button>
   );
 }
 
@@ -223,7 +216,7 @@ export default function FindDate() {
   // Which month the calendar shows (first-of-month ms), and which way it slides.
   const [viewMonth, setViewMonth] = useState(DEFAULT_MONTH);
   const [slideDir, setSlideDir] = useState(1);
-  // Bumped by the Find buttons to ask the calendar to page to the new result.
+  // Bumped by the Find button and the arrows to ask the calendar to page to the new result.
   const [revealRequest, setRevealRequest] = useState(0);
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -555,7 +548,7 @@ export default function FindDate() {
   }
 
   /**
-   * Page the calendar to whatever the Find buttons just turned up. They only
+   * Page the calendar to whatever the Find button or an arrow just turned up. They only
    * bump `revealRequest`; by the time this runs, the memos above have already
    * recomputed, so `activeSlot` here is the new result. Running the search a
    * second time inside the click handler was both wasted work and a chance for
@@ -643,8 +636,28 @@ export default function FindDate() {
         : formatSlot(activeSlot.start, activeSlot.end, lang)
     : null;
 
-  // Suggesting needs a signed-in person, a real group, and a date to suggest.
-  const canSuggest = !!user && !!activeGroup && !activeGroup.isExample && !!activeSlot && !!settings;
+  // Conflict review state for multi-day spans. Your own work/school conflicts
+  // need your explicit approval; other people's put the dates under review.
+  const selfConflict =
+    multiResult?.conflicts.find((c) => c.profileId === youProfileId) ?? null;
+  const otherConflicts =
+    multiResult?.conflicts.filter((c) => c.profileId !== youProfileId) ?? [];
+  const selfAccepted =
+    multiResult?.slot != null && acceptedSlot === multiResult.slot.start;
+  const needsSelfApproval = selfConflict !== null && !selfAccepted;
+  // Dates that clash with your own work/school wait for your "Accept" in the
+  // result box before they can go to the group.
+  const awaitingYourApproval = isMultiDay && !!activeSlot && needsSelfApproval;
+
+  // Suggesting needs a signed-in person, a real group, a date to suggest, and
+  // your sign-off on any time off it would cost you.
+  const canSuggest =
+    !!user &&
+    !!activeGroup &&
+    !activeGroup.isExample &&
+    !!activeSlot &&
+    !!settings &&
+    !awaitingYourApproval;
   // Success and errors belong to the exact date they were for: switch group,
   // step to another date or change a setting, and they stop showing.
   const suggestedFor = suggestMutation.variables;
@@ -655,16 +668,6 @@ export default function FindDate() {
   const suggestedThis = suggestIsForThis && suggestMutation.isSuccess;
   const suggestError =
     suggestIsForThis && suggestMutation.isError ? suggestMutation.error.message : null;
-
-  // Conflict review state for multi-day spans. Your own work/school conflicts
-  // need your explicit approval; other people's put the dates under review.
-  const selfConflict =
-    multiResult?.conflicts.find((c) => c.profileId === youProfileId) ?? null;
-  const otherConflicts =
-    multiResult?.conflicts.filter((c) => c.profileId !== youProfileId) ?? [];
-  const selfAccepted =
-    multiResult?.slot != null && acceptedSlot === multiResult.slot.start;
-  const needsSelfApproval = selfConflict !== null && !selfAccepted;
   // Unique titles of your own conflicting commitments: a generated title like
   // "Arbejde", or with real data the name of the calendar, e.g. "Work".
   const selfConflictTitles = selfConflict
@@ -690,7 +693,7 @@ export default function FindDate() {
           <aside
             onPointerDownCapture={stopCarousel}
             onFocusCapture={stopCarousel}
-            className="w-full lg:sticky lg:top-4 lg:w-[21rem] lg:shrink-0 xl:w-[23rem]"
+            className="w-full lg:sticky lg:top-4 lg:w-[22rem] lg:shrink-0 xl:w-[23rem]"
           >
             {groups && activeGroupId && (
               <div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
@@ -755,23 +758,53 @@ export default function FindDate() {
                   )}
                 </div>
 
-                {/* Suggest the date that was found: it goes to everyone in
-                    the group, who accept or decline it on My events. Only
-                    once there is a date, and only for a real group. */}
-                <button
-                  onClick={handleSuggest}
-                  disabled={!canSuggest || suggestMutation.isPending || suggestedThis}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-3 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-60"
-                >
-                  {suggestMutation.isPending ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : suggestedThis ? (
-                    <Check className="h-5 w-5" />
+                {/* One button, two steps: before a search it finds the best
+                    time, after it suggests the date on screen to the group
+                    (who accept or decline it on My events). Changing any
+                    setting clears the search, which turns it back into Find.
+                    The arrows either side step through the dates found. On the
+                    narrowest phones the icon gives its room to the label. */}
+                <div className="mt-4 flex items-center gap-1">
+                  <StepArrow
+                    direction="prev"
+                    disabled={historyIndex <= 0}
+                    onClick={handleFindPrev}
+                  />
+                  {hasSearched ? (
+                    <button
+                      onClick={handleSuggest}
+                      disabled={!canSuggest || suggestMutation.isPending || suggestedThis}
+                      className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 py-3 text-[15px] font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-60"
+                    >
+                      {suggestMutation.isPending ? (
+                        <Loader2 className="hidden h-5 w-5 shrink-0 animate-spin min-[380px]:block" />
+                      ) : suggestedThis ? (
+                        <Check className="hidden h-5 w-5 shrink-0 min-[380px]:block" />
+                      ) : (
+                        <Send className="hidden h-5 w-5 shrink-0 min-[380px]:block" />
+                      )}
+                      <span className="truncate">
+                        {suggestedThis ? t.scheduler.suggested : t.scheduler.suggest}
+                      </span>
+                    </button>
                   ) : (
-                    <Send className="h-5 w-5" />
+                    <button
+                      onClick={handleFindBest}
+                      className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 py-3 text-[15px] font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90"
+                    >
+                      <Sparkles className="hidden h-5 w-5 shrink-0 min-[380px]:block" />
+                      <span className="truncate">{t.scheduler.findBest}</span>
+                    </button>
                   )}
-                  {suggestedThis ? t.scheduler.suggested : t.scheduler.suggest}
-                </button>
+                  <StepArrow direction="next" disabled={!activeSlot} onClick={handleFindNext} />
+                </div>
+                {/* Which date the button would send. The full result sits
+                    under the calendar, which on a phone is far below here. */}
+                {slotLabel && (
+                  <p className="mt-2 text-center text-sm font-semibold text-foreground">
+                    {slotLabel}
+                  </p>
+                )}
                 {/* Nothing shows before a first search on a real group: the
                     "press Find best time" nudge was redundant with the button
                     right above it. */}
@@ -799,6 +832,8 @@ export default function FindDate() {
                       t.scheduler.hintExample
                     ) : !activeSlot ? (
                       t.scheduler.hintNoDate
+                    ) : awaitingYourApproval ? (
+                      t.scheduler.hintAccept
                     ) : (
                       t.scheduler.hintEveryone
                     )}
@@ -845,26 +880,17 @@ export default function FindDate() {
                   <h2 className="text-2xl font-bold text-foreground">{t.common.loading}</h2>
                 )}
               </div>
-              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
-                <button
-                  onClick={handleCopy}
-                  className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-lg border bg-card px-2 py-2 text-[13px] font-medium text-foreground transition hover:bg-secondary sm:gap-1.5 sm:px-3 sm:text-sm"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-primary" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                  {copied ? t.scheduler.copiedLink : t.scheduler.copyLink}
-                </button>
-                <button
-                  onClick={handleFindBest}
-                  className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-primary px-2 py-2 text-[13px] font-semibold text-primary-foreground transition hover:opacity-90 sm:gap-1.5 sm:px-3 sm:text-sm"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {t.scheduler.findBest}
-                </button>
-              </div>
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-primary" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+                {copied ? t.scheduler.copiedLink : t.scheduler.copyLink}
+              </button>
             </div>
 
             {/* Which month the grid below is showing. Sits right above it
@@ -1027,20 +1053,13 @@ export default function FindDate() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setAcceptedSlot(activeSlot.start)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-                        >
-                          <Check className="h-4 w-4" />
-                          {t.scheduler.accept}
-                        </button>
-                        <FindStepper
-                          canGoBack={historyIndex > 0}
-                          onPrev={handleFindPrev}
-                          onNext={handleFindNext}
-                        />
-                      </div>
+                      <button
+                        onClick={() => setAcceptedSlot(activeSlot.start)}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                      >
+                        <Check className="h-4 w-4" />
+                        {t.scheduler.accept}
+                      </button>
                     </div>
                   ) : isMultiDay && otherConflicts.length > 0 ? (
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4">
@@ -1064,11 +1083,6 @@ export default function FindDate() {
                           </p>
                         </div>
                       </div>
-                      <FindStepper
-                        canGoBack={historyIndex > 0}
-                        onPrev={handleFindPrev}
-                        onNext={handleFindNext}
-                      />
                     </div>
                   ) : (
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
@@ -1090,11 +1104,6 @@ export default function FindDate() {
                           )}
                         </div>
                       </div>
-                      <FindStepper
-                        canGoBack={historyIndex > 0}
-                        onPrev={handleFindPrev}
-                        onNext={handleFindNext}
-                      />
                     </div>
                   )}
 

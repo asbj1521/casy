@@ -76,7 +76,7 @@ export const en: Messages = {
   scheduler: {
     schedulingFor: "Scheduling for",
     whatKind: "What kind of event",
-    suggest: "Suggest event",
+    suggest: "Suggest this date",
     suggested: "Suggested",
     sent: (link: ReactNode) => <>Sent to the group. {link}.</>,
     sentLink: "Follow the answers in My events",
@@ -84,6 +84,7 @@ export const en: Messages = {
     hintExample: "Make a group to suggest events to real people.",
     hintNoDate: "No date to suggest with these settings. Try changing them.",
     hintEveryone: "Everyone in the group gets it to accept or decline.",
+    hintAccept: "First accept the time off in the box under the calendar.",
     copyLink: "Copy link",
     copiedLink: "Copied!",
     findBest: "Find best time",
@@ -344,7 +345,7 @@ export const en: Messages = {
     loadFailed: "Couldn't load your events.",
     emptyTitle: "No events yet",
     emptyBody:
-      "Find a date on the scheduling page and press Suggest event. It shows up here for everyone in the group.",
+      "Find a date on the scheduling page and press Suggest this date. It shows up here for everyone in the group.",
     findDate: "Find a date",
     needsAnswer: "Needs your answer",
     cantMake: "Can't make it? Casy finds the next date that works for the group and asks everyone again.",
