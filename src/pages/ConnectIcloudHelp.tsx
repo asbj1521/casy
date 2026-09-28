@@ -12,13 +12,18 @@ import {
   ExternalLink,
   Fingerprint,
   Loader2,
+  ScanFace,
   ShieldCheck,
   XCircle,
 } from "lucide-react";
 
 import { connectApple } from "@/api/apple";
 import AppleCredentialFields from "@/components/AppleCredentialFields";
-import AppleWalkthrough, { AppleWalkthroughChecklist } from "@/components/AppleWalkthrough";
+import AppleWalkthrough, {
+  AppleWalkthroughChecklist,
+  DevicePicker,
+} from "@/components/appleWalkthrough/AppleWalkthrough";
+import type { Device } from "@/components/appleWalkthrough/layout";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
 import { useLang, useT } from "@/i18n/lang";
@@ -56,6 +61,20 @@ function stepFrom(value: string | null): Step {
   return value === "watch" || value === "apple" || value === "enter" ? value : "intro";
 }
 
+/**
+ * Which device's drawing to show first: the one this page is open on, since
+ * that is usually where Apple's page will be opened too. Phones get the
+ * iPhone version (an iPad gets the Mac one, which is closer to its layout).
+ */
+function detectDevice(): Device {
+  try {
+    if (/iPhone|iPod/.test(navigator.userAgent)) return "iphone";
+    return window.matchMedia("(max-width: 639px)").matches ? "iphone" : "mac";
+  } catch {
+    return "mac";
+  }
+}
+
 const link = (
   <a
     href={ACCOUNT_URL}
@@ -76,32 +95,49 @@ const da = {
     title: "Først: en adgangskode kun til Casy",
     body: "Apple lader ikke andre apps komme ind i din kalender med din almindelige Apple-adgangskode. I stedet laver du en ekstra adgangskode hos Apple og giver den til Casy. Tænk på den som en ekstranøgle: Casy bruger den kun til at se, hvornår du er optaget, og du kan smide den væk når som helst uden at røre din almindelige adgangskode.",
     needTitle: "Det skal du bruge",
-    need: [
-      "Din e-mail og adgangskode til Apple. Touch ID er ikke nok her.",
-      "Din iPhone i nærheden, til den kode Apple sender",
-      "En Mac eller en anden computer",
-      "Cirka 5 minutter",
-    ],
+    need: {
+      mac: [
+        "Din e-mail og adgangskode til Apple. Touch ID er ikke nok her.",
+        "Din iPhone i nærheden, til den kode Apple sender",
+        "En Mac eller en anden computer",
+        "Cirka 5 minutter",
+      ],
+      iphone: [
+        "Din e-mail og adgangskode til Apple. Face ID er ikke nok her.",
+        "En af dine Apple-enheder i nærheden, til den kode Apple sender",
+        "Cirka 5 minutter",
+      ],
+    } as Record<Device, string[]>,
     safe: "Casy ser aldrig din almindelige Apple-adgangskode. Casy spørger kun Apple om, hvornår du er optaget, aldrig hvad dine aftaler hedder, og gemmer den ekstra adgangskode krypteret.",
     start: "Kom i gang",
     haveOne: "Jeg har allerede en",
   },
   watch: {
     title: "Sådan gør du hos Apple",
-    body: "Se det hele igennem her først, så du ved, hvad du skal klikke på. Linket til Apple kommer på næste trin.",
+    body: {
+      mac: "Se det hele igennem her først, så du ved, hvad du skal klikke på. Linket til Apple kommer på næste trin.",
+      iphone: "Se det hele igennem her først, så du ved, hvad du skal trykke på. Linket til Apple kommer på næste trin.",
+    } as Record<Device, string>,
     next: "Jeg er klar",
   },
   apple: {
     title: "Nu er det din tur",
     body: "Åbn Apples side i en ny fane, og gør det, du lige har set. Kom tilbage til denne fane, når du har adgangskoden.",
-    touchId:
-      "Log ind med din e-mail og adgangskode, ikke med Touch ID. Ellers kan Apple ikke lave adgangskoden.",
+    touchId: {
+      mac: "Log ind med din e-mail og adgangskode, ikke med Touch ID. Ellers kan Apple ikke lave adgangskoden.",
+      iphone:
+        "Log ind med din e-mail og adgangskode, ikke med Face ID eller en loginnøgle. Ellers kan Apple ikke lave adgangskoden.",
+    } as Record<Device, string>,
     open: "Åbn Apples kontoside",
     stepsTitle: "Trinene igen",
     watchAgain: "Se animationen igen",
     failedTitle: "Siger Apple, at der ikke kunne genereres en adgangskode?",
-    failedBody:
-      "Så er du logget ind med Touch ID. Klik på den hvide knap, Log ind med adgangskode, ikke den blå Annuller. Log ind med e-mail og adgangskode, og start igen fra App-specifikke adgang…",
+    failedBody: {
+      mac: "Så er du logget ind med Touch ID. Klik på den hvide knap, Log ind med adgangskode, ikke den blå Annuller. Log ind med e-mail og adgangskode, og start igen fra App-specifikke adgang…",
+      // On an iPhone both of that box's buttons are blue, so it is named by its words.
+      iphone:
+        "Så er du logget ind med Face ID eller en loginnøgle. Tryk på Log ind med adgangskode, ikke på Annuller. Log ind med e-mail og adgangskode, og start igen fra App-specifikke adgang…",
+    } as Record<Device, string>,
     missingTitle: "Kan du ikke finde App-specifikke adgangskoder?",
     missingBody:
       "Apple tilbyder dem kun, når tofaktorgodkendelse er slået til for din Apple-konto. De fleste har det allerede. Hvis du ikke har, så slå det til under Login og sikkerhed først, så dukker muligheden op.",
@@ -148,32 +184,47 @@ const en: typeof da = {
     title: "First, a password just for Casy",
     body: "Apple doesn't let other apps into your calendar with your normal Apple password. Instead, you make an extra password at Apple and give it to Casy. Think of it as a spare key: Casy only uses it to see when you're busy, and you can throw it away at any time without touching your normal password.",
     needTitle: "What you need",
-    need: [
-      "Your Apple email and password. Touch ID isn't enough here.",
-      "Your iPhone nearby, for the code Apple sends",
-      "A Mac or another computer",
-      "About 5 minutes",
-    ],
+    need: {
+      mac: [
+        "Your Apple email and password. Touch ID isn't enough here.",
+        "Your iPhone nearby, for the code Apple sends",
+        "A Mac or another computer",
+        "About 5 minutes",
+      ],
+      iphone: [
+        "Your Apple email and password. Face ID isn't enough here.",
+        "One of your Apple devices nearby, for the code Apple sends",
+        "About 5 minutes",
+      ],
+    },
     safe: "Casy never sees your normal Apple password. It only asks Apple when you're busy, never what your events are called, and keeps the extra password encrypted.",
     start: "Let's start",
     haveOne: "I already have one",
   },
   watch: {
     title: "Here's how it goes at Apple",
-    body: "Watch it all here first, so you know what to click. The link to Apple comes on the next step.",
+    body: {
+      mac: "Watch it all here first, so you know what to click. The link to Apple comes on the next step.",
+      iphone: "Watch it all here first, so you know what to tap. The link to Apple comes on the next step.",
+    },
     next: "I'm ready",
   },
   apple: {
     title: "Now it's your turn",
     body: "Open Apple's page in a new tab and do what you just watched. Come back to this tab when you have the password.",
-    touchId:
-      "Sign in with your email and password, not Touch ID. Otherwise Apple can't make the password.",
+    touchId: {
+      mac: "Sign in with your email and password, not Touch ID. Otherwise Apple can't make the password.",
+      iphone: "Sign in with your email and password, not Face ID or a passkey. Otherwise Apple can't make the password.",
+    },
     open: "Open Apple's account page",
     stepsTitle: "The steps again",
     watchAgain: "Watch the animation again",
     failedTitle: "Does Apple say it couldn't generate a password?",
-    failedBody:
-      "Then you signed in with Touch ID. Click the white button, Sign in with password, not the blue Cancel. Sign in with your email and password, and start again from App-Specific Passwo…",
+    failedBody: {
+      mac: "Then you signed in with Touch ID. Click the white button, Sign in with password, not the blue Cancel. Sign in with your email and password, and start again from App-Specific Passwo…",
+      iphone:
+        "Then you signed in with Face ID or a passkey. Tap Sign in with password, not Cancel. Sign in with your email and password, and start again from App-Specific Passwo…",
+    },
     missingTitle: "Can't find App-Specific Passwords?",
     missingBody:
       "Apple only offers them when two-factor authentication is on for your Apple Account. Most accounts have it already. If yours doesn't, turn it on under Sign-In and Security first, and the option will appear.",
@@ -211,6 +262,8 @@ const en: typeof da = {
 
 const primaryButton =
   "inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60 sm:w-auto";
+const watchAgainLink =
+  "text-sm font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground";
 const secondaryButton =
   "inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground sm:mr-auto sm:pl-0";
 
@@ -250,6 +303,13 @@ export default function ConnectIcloudHelp() {
   const reduceMotion = useReducedMotion();
   const [searchParams, setSearchParams] = useSearchParams();
   const step = stepFrom(searchParams.get("step"));
+
+  // Mac or iPhone, for the drawing, the checklist and the wording around
+  // them; kept while stepping back and forth, and picked again on a reload.
+  // Only a phone gets the switch between them: on a computer the page stays
+  // exactly the Mac guide.
+  const [onPhone] = useState(() => detectDevice() === "iphone");
+  const [device, setDevice] = useState<Device>(onPhone ? "iphone" : "mac");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -340,7 +400,7 @@ export default function ConnectIcloudHelp() {
         </p>
         <p className="mt-5 text-sm font-semibold text-foreground">{c.intro.needTitle}</p>
         <ul className="mt-2 space-y-2">
-          {c.intro.need.map((item) => (
+          {c.intro.need[device].map((item) => (
             <li key={item} className="flex items-start gap-2 text-sm text-foreground">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               {item}
@@ -372,10 +432,15 @@ export default function ConnectIcloudHelp() {
           {c.watch.title}
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-          {c.watch.body}
+          {c.watch.body[device]}
         </p>
-        <div className="mt-5">
-          <AppleWalkthrough />
+        {onPhone && (
+          <div className="mt-4">
+            <DevicePicker device={device} onChange={setDevice} />
+          </div>
+        )}
+        <div className={onPhone ? "mt-4" : "mt-5"}>
+          <AppleWalkthrough key={device} device={device} />
         </div>
         <StepFooter
           secondary={
@@ -403,8 +468,12 @@ export default function ConnectIcloudHelp() {
         </p>
         {/* The one thing that trips people up at Apple, said before they go. */}
         <p className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          <Fingerprint className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{c.apple.touchId}</span>
+          {device === "iphone" ? (
+            <ScanFace className="mt-0.5 h-4 w-4 shrink-0" />
+          ) : (
+            <Fingerprint className="mt-0.5 h-4 w-4 shrink-0" />
+          )}
+          <span>{c.apple.touchId[device]}</span>
         </p>
         <a
           href={ACCOUNT_URL}
@@ -417,22 +486,35 @@ export default function ConnectIcloudHelp() {
           <ExternalLink className="h-4 w-4" />
         </a>
         <div className="mt-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <p className="text-sm font-semibold text-foreground">{c.apple.stepsTitle}</p>
-            <button
-              type="button"
-              onClick={() => goTo("watch")}
-              className="text-sm font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
-            >
-              {c.apple.watchAgain}
-            </button>
-          </div>
-          <div className="mt-3">
-            <AppleWalkthroughChecklist />
-          </div>
+          {onPhone ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <p className="text-sm font-semibold text-foreground">{c.apple.stepsTitle}</p>
+                <DevicePicker device={device} onChange={setDevice} />
+              </div>
+              <div className="mt-3">
+                <AppleWalkthroughChecklist device={device} />
+              </div>
+              <button type="button" onClick={() => goTo("watch")} className={cn(watchAgainLink, "mt-3")}>
+                {c.apple.watchAgain}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <p className="text-sm font-semibold text-foreground">{c.apple.stepsTitle}</p>
+                <button type="button" onClick={() => goTo("watch")} className={watchAgainLink}>
+                  {c.apple.watchAgain}
+                </button>
+              </div>
+              <div className="mt-3">
+                <AppleWalkthroughChecklist device={device} />
+              </div>
+            </>
+          )}
         </div>
         <div className="mt-5">
-          <FoldOut title={c.apple.failedTitle}>{c.apple.failedBody}</FoldOut>
+          <FoldOut title={c.apple.failedTitle}>{c.apple.failedBody[device]}</FoldOut>
           <FoldOut title={c.apple.missingTitle}>{c.apple.missingBody}</FoldOut>
         </div>
         <StepFooter
