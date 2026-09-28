@@ -284,17 +284,10 @@ export default function CalendarOverview() {
     <div className="min-h-screen bg-background">
       <TopNav />
 
+      {/* No "back" link: the header is how every page is reached. */}
       <main className="px-4 pb-20 pt-4 sm:px-6 lg:px-8">
-        <Link
-          to="/profile"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          {t.calendarView.back}
-        </Link>
-
         {error && (
-          <div className="mt-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
             <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span className="flex-1">
               {error instanceof Error ? error.message : t.calendarView.somethingWrong}
@@ -309,14 +302,14 @@ export default function CalendarOverview() {
         )}
 
         {data?.truncated && (
-          <div className="mt-6 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{t.calendarView.truncated}</span>
           </div>
         )}
 
         {noConnectedCalendars && (
-          <div className="mt-6 flex items-start gap-2 rounded-lg border bg-secondary/40 p-3 text-sm text-muted-foreground">
+          <div className="mb-4 flex items-start gap-2 rounded-lg border bg-secondary/40 p-3 text-sm text-muted-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               {t.calendarView.noCalendars(
@@ -333,7 +326,7 @@ export default function CalendarOverview() {
 
         {/* One grid, so the calendar list's top lines up with the month grid's:
             the month header is row 1, the grid box and the list start on row 2. */}
-        <div className="mt-4 grid items-start gap-x-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid items-start gap-x-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="mb-3 flex min-w-0 items-center justify-between lg:col-start-1 lg:row-start-1">
             <h2 className="flex items-center gap-2 text-lg font-semibold capitalize text-foreground">
               {layout.label}
