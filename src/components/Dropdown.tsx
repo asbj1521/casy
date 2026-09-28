@@ -18,8 +18,10 @@ export default function Dropdown({
   onChange,
   menuWidth = "w-32",
   className,
+  triggerClassName,
+  suffix,
 }: {
-  icon: ReactNode;
+  icon?: ReactNode;
   value: number;
   options: { label: string; value: number }[];
   onChange: (value: number) => void;
@@ -27,18 +29,26 @@ export default function Dropdown({
   menuWidth?: string;
   /** Classes for the outer box, e.g. whether it may shrink in its row. */
   className?: string;
+  /** Replaces the small default button look, e.g. for the scheduler's chips. */
+  triggerClassName?: string;
+  /** Shown after the label, e.g. a chevron. */
+  suffix?: ReactNode;
 }) {
   const current = options.find((o) => o.value === value);
 
   return (
     <Popover
       className={cn("inline-block min-w-0", className)}
-      triggerClassName="inline-flex max-w-full items-center gap-1 rounded-lg border bg-card px-2 py-1.5 text-sm font-medium text-foreground transition hover:bg-secondary"
+      triggerClassName={
+        triggerClassName ??
+        "inline-flex max-w-full items-center gap-1 rounded-lg border bg-card px-2 py-1.5 text-sm font-medium text-foreground transition hover:bg-secondary"
+      }
       panelClassName={menuWidth}
       trigger={() => (
         <>
           {icon}
           <span className="truncate">{current?.label}</span>
+          {suffix}
         </>
       )}
     >

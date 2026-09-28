@@ -14,10 +14,13 @@ import { cn } from "@/lib/utils";
 export default function DaySlider({
   selected,
   onChange,
+  size = "md",
 }: {
   /** Currently active days, as local day-of-week values. */
   selected: number[];
   onChange: (dows: number[]) => void;
+  /** "lg" matches the 48px fields of the scheduler's settings bar. */
+  size?: "md" | "lg";
 }) {
   const t = useT();
 
@@ -41,7 +44,8 @@ export default function DaySlider({
             onClick={() => toggle(d)}
             aria-pressed={on}
             className={cn(
-              "min-w-0 flex-1 rounded-md py-1.5 text-xs transition-colors",
+              "min-w-0 flex-1 rounded-md transition-colors",
+              size === "lg" ? "py-2.5 text-xs" : "py-1.5 text-xs",
               on
                 ? "bg-primary font-semibold text-primary-foreground"
                 : "bg-secondary font-medium text-muted-foreground hover:text-foreground",

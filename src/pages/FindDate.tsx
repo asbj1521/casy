@@ -1,21 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
-  CalendarDays,
   Check,
   ChevronLeft,
-  ChevronRight,
-  Clock,
   Copy,
   Hourglass,
   Lightbulb,
   Loader2,
   Send,
-  Sparkles,
-  Tag,
 } from "lucide-react";
 
 import { eventsQueryKey, suggestEvent } from "@/api/events";
@@ -26,39 +20,38 @@ import {
   leaveGroup,
   type Group,
 } from "@/api/groups";
-import {
-  buildEventForGroup,
-  DAY_END,
-  DAY_START,
-  SEARCH_WINDOW,
-} from "@/api/mockData";
+import { SEARCH_WINDOW } from "@/api/mockData";
 import {
   findVacationSuggestions,
   type MultiDayResult,
   type VacationSuggestion,
-  type WeeklySpanShape,
 } from "@/lib/availability";
-import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
+import { findEventSlot } from "@/lib/eventSearch";
 import { buildMonthGrid } from "@/lib/heatmap";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { useAuth } from "@/context/auth";
-import type { Messages } from "@/i18n/da";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { formatDaySpan, formatSlot, formatTime, formatTripSpan } from "@/lib/format";
+import { formatDaySpan, formatLongDate, formatLongSpan, formatTime } from "@/lib/format";
 import { nameList } from "@/lib/myEvents";
 import { avatarColor } from "@/lib/avatar";
-import { ACCENT_RGB, AMBER_RGB } from "@/lib/colors";
 import { dayOf, monthStartMs } from "@/lib/day";
+import {
+  daysUntil,
+  fallbackTitleId,
+  laterSlots,
+  MAX_TRIP_DAYS,
+  settingsToSearch,
+  type SchedulerSettings,
+} from "@/lib/scheduler";
 import { ALL_DOWS } from "@/lib/weekdays";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfMonth } from "@/lib/zone";
-import CalendarPanel from "@/components/CalendarPanel";
-import DaySlider from "@/components/DaySlider";
-import Dropdown from "@/components/Dropdown";
+import DayChart from "@/components/DayChart";
 import GroupPanel from "@/components/GroupPanel";
 import GroupSwitcher from "@/components/GroupSwitcher";
 import NewGroupDialog from "@/components/NewGroupDialog";
+import { SettingsBar, SettingsSentence } from "@/components/SchedulerSettings";
 import TopNav from "@/components/TopNav";
 
 /**
@@ -90,10 +83,10 @@ function writeLastGroup(userId: string, groupId: string) {
   }
 }
 
-/** Today as a local-midnight ISO (computed once), so the calendar can circle it. */
+/** Today as a local-midnight ISO (computed once), for "om 11 dage" and the chart. */
 const TODAY_DAY = dayOf(new Date().toISOString(), TZ);
 
-/** First-of-month (ms) for the month containing today — the default view. */
+/** First-of-month (ms) for the month containing today. */
 const DEFAULT_MONTH = monthStartMs(Date.parse(TODAY_DAY), TZ);
 /** Navigable month range: from this month up to the last month with data. */
 const MIN_MONTH = Math.max(
@@ -103,112 +96,26 @@ const MIN_MONTH = Math.max(
 const MAX_MONTH = monthStartMs(Date.parse(SEARCH_WINDOW.end) - 1, TZ);
 
 /**
- * Horizontal slide + motion-blur used when the calendar pages to a new date
- * range. Moving forward in time, the new range sweeps in from the right while
- * the old one blurs off to the left; `dir` flips it for going back.
- */
-const calendarSlide = {
-  enter: (dir: number) => ({
-    x: dir >= 0 ? "55%" : "-55%",
-    opacity: 0,
-    filter: "blur(14px)",
-  }),
-  center: { x: "0%", opacity: 1, filter: "blur(0px)" },
-  exit: (dir: number) => ({
-    x: dir >= 0 ? "-55%" : "55%",
-    opacity: 0,
-    filter: "blur(14px)",
-  }),
-};
-
-/** How long the event should last: 30 min … 12 hours, in 30-min steps. */
-const DURATION_VALUES = Array.from({ length: 24 }, (_, i) => (i + 1) * 30);
-
-/** What time of day the event should start: every hour of the day. */
-const START_OPTIONS = Array.from({ length: 24 }, (_, h) => h)
-  .filter((h) => h >= DAY_START && h < DAY_END)
-  .map((h) => ({ label: `${String(h).padStart(2, "0")}:00`, value: h }));
-
-/**
- * The kinds of event you can schedule.
- * - "single" types preset duration + start time (both still adjustable) and
- *   support picking which days of the week are searched.
- * - "trip" is anchored to a weekly window (default Friday after work to
- *   Sunday evening); the day slider defines which days the trip covers.
- * - "vacation" is N whole days anywhere; only the days wheel applies.
- */
-interface EventTypeDef {
-  /** Also the key of its name in the dictionary (t.eventTypes). */
-  id: keyof Messages["eventTypes"];
-  kind: "single" | "trip" | "vacation";
-  /** Presets for single-day types. */
-  durationMinutes?: number;
-  startHour?: number;
-  /** Default length for vacations. */
-  defaultDays?: number;
-  /** Default searched/covered days of week (local values); omitted = all. */
-  defaultDows?: number[];
-}
-
-const EVENT_TYPES: EventTypeDef[] = [
-  { id: "evening", kind: "single", durationMinutes: 180, startHour: 18 },
-  { id: "lunch", kind: "single", durationMinutes: 90, startHour: 12 },
-  { id: "dinner", kind: "single", durationMinutes: 120, startHour: 18 },
-  { id: "gaming", kind: "single", durationMinutes: 300, startHour: 19, defaultDows: [5, 6, 0] },
-  { id: "nightout", kind: "single", durationMinutes: 360, startHour: 20, defaultDows: [5, 6] },
-  { id: "weekend", kind: "trip", defaultDows: [5, 6, 0] },
-  { id: "vacation", kind: "vacation", defaultDays: 7 },
-];
-
-/**
- * When a weekend trip starts and ends. 17:00 is "after work" in the demo data
- * (workdays run 09:00 to 17:00), so a normal Friday at the office doesn't show
- * up as a conflict on every single weekend; 21:00 is "Sunday evening, home in
- * time for the week".
- */
-const TRIP_START_HOUR = 17;
-const TRIP_END_HOUR = 21;
-
-/** How many days a multi-day event needs: 1 to 30. */
-const DAYS_VALUES = Array.from({ length: 30 }, (_, i) => i + 1);
-
-/**
  * Where every search starts from: today, or the window start if that's later.
- * The past is never searched, and all four event kinds share this anchor.
+ * The past is never searched.
  */
 const SEARCH_BASE =
   Date.parse(TODAY_DAY) > Date.parse(SEARCH_WINDOW.start)
     ? TODAY_DAY
     : SEARCH_WINDOW.start;
 
-/**
- * One of the two arrows either side of the main button, stepping back and
- * forward through the recommended times found this session. Back only
- * replays what's already been seen (never searches); forward searches for the
- * next occurrence once it runs past what's cached.
- */
-function StepArrow({
-  direction,
-  disabled,
-  onClick,
-}: {
-  direction: "prev" | "next";
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  const t = useT();
-  const Icon = direction === "prev" ? ChevronLeft : ChevronRight;
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={direction === "prev" ? t.scheduler.previousTime : t.scheduler.nextTime}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30"
-    >
-      <Icon className="h-5 w-5" />
-    </button>
-  );
-}
+/** What the page opens on: an evening, every day; a weekend trip if switched. */
+const DEFAULT_SETTINGS: SchedulerSettings = {
+  multiDay: false,
+  startHour: 18,
+  durationMinutes: 180,
+  dows: ALL_DOWS,
+  days: 3,
+  startDow: 5,
+};
+
+/** How many later dates the "Også muligt" row offers. */
+const LATER_COUNT = 3;
 
 export default function FindDate() {
   const t = useT();
@@ -216,31 +123,24 @@ export default function FindDate() {
   const [copied, setCopied] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
-  const [eventTypeIdx, setEventTypeIdx] = useState(0);
-  const [durationMinutes, setDurationMinutes] = useState(180);
-  const [startHour, setStartHour] = useState(18);
-  const [days, setDays] = useState(7);
-  // Which days of the week are active in the day slider (searched days for
-  // single events, covered days for a trip).
-  const [selectedDows, setSelectedDows] = useState<number[]>(ALL_DOWS);
+  // What the event is called: only for the group to read, never searched on.
+  const [name, setName] = useState("");
+  const [sched, setSched] = useState<SchedulerSettings>(DEFAULT_SETTINGS);
   // Multi-day spans with work/school conflicts need the user's sign-off; this
   // holds the slot start they accepted (null = nothing accepted yet).
   const [acceptedSlot, setAcceptedSlot] = useState<string | null>(null);
-  // The search anchors visited this "session": history[0] is the first result
-  // (from today), and each later entry is the next occurrence past the one
-  // before it. historyIndex is which one is on screen; the back/forward
-  // arrows just move it, only searching for a new entry when stepping past
-  // the end. Empty (-1) means nothing has been searched yet — changing any
-  // setting resets to this, so the engine only ever runs when asked to.
-  const [history, setHistory] = useState<(string | null)[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const hasSearched = historyIndex >= 0;
-  const searchFrom = hasSearched ? history[historyIndex] : null;
-  // Which month the calendar shows (first-of-month ms), and which way it slides.
-  const [viewMonth, setViewMonth] = useState(DEFAULT_MONTH);
-  const [slideDir, setSlideDir] = useState(1);
-  // Bumped by the Find button and the arrows to ask the calendar to page to the new result.
-  const [revealRequest, setRevealRequest] = useState(0);
+  // The answer follows the settings: history[0] is the first date from today
+  // (null), and each later entry is where a step forward (or a picked day)
+  // searched from. historyIndex is which one is on screen; back only replays.
+  // Changing a setting starts over from today.
+  const [history, setHistory] = useState<(string | null)[]>([null]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const searchFrom = history[historyIndex] ?? null;
+  // A month paged to by hand, remembered for the answer it was paged from:
+  // once the answer moves, the chart follows it again.
+  const [monthPick, setMonthPick] = useState<{ month: number; anchor: string | null } | null>(
+    null,
+  );
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Don't leave the "Copied!" timer running after the page goes away.
@@ -275,13 +175,10 @@ export default function FindDate() {
   }, [userId, rememberableGroupId]);
 
   /**
-   * Any touch of either card stops the example carousel, for good.
-   *
-   * One capture handler per card rather than a call inside every button: the
-   * rule is "if you are using the page, it is not a demo any more", and that
-   * is easier to keep true in one place than across a dozen handlers that
-   * will grow over time. Pinning the current example as the selection too,
-   * so it can't move on between the click and the next render.
+   * Any touch of the settings or the answer stops the example carousel, for
+   * good: if you are using the page, it is not a demo any more. Pinning the
+   * current example as the selection too, so it can't move on between the
+   * click and the next render.
    */
   function stopCarousel() {
     if (!carousel.running) return;
@@ -329,189 +226,133 @@ export default function FindDate() {
       ? inviteMutation.data
       : null;
 
-  const eventType = EVENT_TYPES[eventTypeIdx];
-  const isMultiDay = eventType.kind !== "single";
-
-  // Picker options, in the page's language.
-  const typeOptions = useMemo(
-    () => EVENT_TYPES.map((def, i) => ({ label: t.eventTypes[def.id], value: i })),
-    [t],
-  );
-  const durationOptions = useMemo(
-    () => DURATION_VALUES.map((v) => ({ label: t.common.duration(v), value: v })),
-    [t],
-  );
-  const daysOptions = useMemo(
-    () => DAYS_VALUES.map((d) => ({ label: t.common.days(d), value: d })),
-    [t],
-  );
-
-  // The trip's weekly window, derived from the day slider: it runs from the
-  // first selected day (Monday-first order) through the last, starting after
-  // work on the first day and ending in the evening of the last.
-  const tripShape = useMemo<WeeklySpanShape | null>(() => {
-    if (eventType.kind !== "trip") return null;
-    const idxs = selectedDows
-      .map((d) => ALL_DOWS.indexOf(d))
-      .sort((a, b) => a - b);
-    return {
-      anchorDow: ALL_DOWS[idxs[0]],
-      spanDays: idxs[idxs.length - 1] - idxs[0] + 1,
-      startHour: TRIP_START_HOUR,
-      endHour: TRIP_END_HOUR,
-    };
-  }, [eventType, selectedDows]);
-
-  // The event reflects the chosen duration + start time + searched days.
-  const event = useMemo(
-    () =>
-      activeGroup
-        ? buildEventForGroup(activeGroup, {
-            durationMinutes,
-            startHour,
-            allowedDays:
-              eventType.kind === "single" && selectedDows.length < 7
-                ? selectedDows
-                : undefined,
-          })
-        : null,
-    [activeGroup, durationMinutes, startHour, eventType, selectedDows],
-  );
-
-  // The month calendar, tinted by availability for the current event shape.
-  const monthGrid = useMemo(() => {
-    if (!activeGroup) return null;
-    const vm = localDate(viewMonth, TZ);
-    return buildMonthGrid(
-      activeGroup.participants,
-      vm.year,
-      vm.month,
-      {
-        timeZone: TZ,
-        startHour,
-        durationMinutes,
-        todayMs: Date.parse(TODAY_DAY),
-        allowedDays:
-          eventType.kind === "single" && selectedDows.length < 7
-            ? selectedDows
-            : undefined,
-        multiDay:
-          eventType.kind === "vacation"
-            ? { windowEndMs: Date.parse(SEARCH_WINDOW.end) }
-            : undefined,
-        weeklySpan:
-          eventType.kind === "trip" && tripShape
-            ? { ...tripShape, windowEndMs: Date.parse(SEARCH_WINDOW.end) }
-            : undefined,
-        locale: LOCALE[lang],
-      },
-    );
-  }, [
-    lang,
-    activeGroup,
-    viewMonth,
-    startHour,
-    durationMinutes,
-    eventType,
-    selectedDows,
-    tripShape,
-  ]);
-
   // What is being searched for, as data. The same settings travel with a
   // suggested event, so a decline re-runs exactly this search (eventSearch.ts).
-  const settings = useMemo<EventSettings | null>(() => {
-    if (eventType.kind === "vacation") return { kind: "vacation", days };
-    if (eventType.kind === "trip") return tripShape ? { kind: "trip", shape: tripShape } : null;
-    return {
-      kind: "single",
-      durationMinutes,
-      startHour,
-      allowedDays: selectedDows.length < 7 ? selectedDows : undefined,
-    };
-  }, [eventType, days, tripShape, durationMinutes, startHour, selectedDows]);
+  const search = useMemo(() => settingsToSearch(sched), [sched]);
+  const isMultiDay = search.kind !== "single";
 
-  // The search itself: single meetings need the whole group free at that
-  // hour; multi-day spans let work/school through as conflicts to review.
-  // Cheap and pure, so it simply follows the settings; what's shown is gated
-  // on hasSearched below.
+  // The search itself, cheap and pure, so it simply follows the settings:
+  // single meetings need the whole group free at that hour; multi-day spans
+  // let work/school through as conflicts to review.
   const found = useMemo<MultiDayResult | null>(() => {
-    if (!activeGroup || !settings) return null;
+    if (!activeGroup) return null;
     return findEventSlot(
       activeGroup.participants,
-      settings,
+      search,
       searchFrom ?? SEARCH_BASE,
       SEARCH_WINDOW.end,
       TZ,
     );
-  }, [activeGroup, settings, searchFrom]);
+  }, [activeGroup, search, searchFrom]);
+  const activeSlot = found?.slot ?? null;
   const result = isMultiDay ? null : found;
   const multiResult = isMultiDay ? found : null;
 
   // Workarounds for vacations that don't work cleanly: "6 days works for
   // everyone if you leave after work Friday" and the like.
   const suggestions = useMemo<VacationSuggestion[]>(() => {
-    if (eventType.kind !== "vacation" || !activeGroup || !multiResult) return [];
+    if (search.kind !== "vacation" || !activeGroup || !multiResult) return [];
     if (multiResult.slot && multiResult.conflicts.length === 0) return [];
     return findVacationSuggestions(
       activeGroup.participants,
-      days,
+      search.days,
       searchFrom ?? SEARCH_BASE,
       SEARCH_WINDOW.end,
       TZ,
     );
-  }, [eventType, activeGroup, multiResult, days, searchFrom]);
+  }, [search, activeGroup, multiResult, searchFrom]);
 
-  // Whichever search is active (single meeting vs multi-day span), the slot it
-  // found drives the calendar highlight and the banner — but only once asked
-  // for. Before that, result/multiResult are still computed underneath (a
-  // cheap, pure function of whatever the settings currently are), just not
-  // surfaced: nothing highlights or appears until "Find best time" is pressed.
-  const activeSlot = hasSearched
-    ? ((isMultiDay ? multiResult?.slot : result?.slot) ?? null)
-    : null;
+  // The next few dates after the one on screen, found by the same search.
+  const later = useMemo(() => {
+    if (!activeGroup || !activeSlot || suggestions.length > 0) return [];
+    return laterSlots(
+      activeGroup.participants,
+      search,
+      activeSlot.start,
+      LATER_COUNT,
+      SEARCH_WINDOW.end,
+      TZ,
+    );
+  }, [activeGroup, activeSlot, search, suggestions]);
 
-  // The day (local-midnight ISO) containing the best slot, for highlighting.
+  // The day (local-midnight ISO) the answer starts on, and every day it covers.
   const bestDay = activeSlot ? dayOf(activeSlot.start, TZ) : null;
+  const spanDays =
+    search.kind === "vacation" ? search.days : search.kind === "trip" ? search.shape.spanDays : 1;
+  const bestDays = useMemo(() => {
+    const set = new Set<string>();
+    if (!bestDay) return set;
+    for (let i = 0; i < spanDays; i++) {
+      set.add(new Date(addDays(Date.parse(bestDay), i, TZ)).toISOString());
+    }
+    return set;
+  }, [bestDay, spanDays]);
 
-  // "11:00"-style label for the best slot's start time; meaningless for
-  // whole-day spans, so omitted there.
-  const bestTimeLabel =
-    activeSlot && !isMultiDay ? formatTime(activeSlot.start) : null;
+  // The chart shows the answer's month unless a month was paged to by hand
+  // for this same answer.
+  const answerMonth = bestDay ? monthStartMs(Date.parse(bestDay), TZ) : DEFAULT_MONTH;
+  const viewMonth =
+    monthPick && monthPick.anchor === bestDay
+      ? monthPick.month
+      : Math.min(Math.max(answerMonth, MIN_MONTH), MAX_MONTH);
 
-  /**
-   * Changing any setting clears the search entirely: nothing is shown again
-   * until "Find best time" is pressed, rather than a new result silently
-   * appearing for whatever was just changed.
-   */
-  function clearSearch() {
-    setHistory([]);
-    setHistoryIndex(-1);
+  // The month, day by day, for the chart under the answer.
+  const monthGrid = useMemo(() => {
+    if (!activeGroup) return null;
+    const vm = localDate(viewMonth, TZ);
+    return buildMonthGrid(activeGroup.participants, vm.year, vm.month, {
+      timeZone: TZ,
+      startHour: sched.startHour,
+      durationMinutes: sched.durationMinutes,
+      todayMs: Date.parse(TODAY_DAY),
+      allowedDays: search.kind === "single" ? search.allowedDays : undefined,
+      multiDay:
+        search.kind === "vacation" ? { windowEndMs: Date.parse(SEARCH_WINDOW.end) } : undefined,
+      weeklySpan:
+        search.kind === "trip"
+          ? { ...search.shape, windowEndMs: Date.parse(SEARCH_WINDOW.end) }
+          : undefined,
+      locale: LOCALE[lang],
+    });
+  }, [lang, activeGroup, viewMonth, sched, search]);
+
+  /** Back to the first date from today: any setting or group change does this. */
+  function resetSearch() {
+    setHistory([null]);
+    setHistoryIndex(0);
     setAcceptedSlot(null);
   }
 
-  /** Start a fresh search from `from` (null = today) and reveal its result. */
-  function runSearch(from: string | null) {
-    setHistory([from]);
-    setHistoryIndex(0);
+  function updateSettings(patch: Partial<SchedulerSettings>) {
+    setSched((prev) => {
+      const next = { ...prev, ...patch };
+      // A trip that starts on a set weekday covers a week at most.
+      if (next.multiDay && next.startDow !== null && next.days > MAX_TRIP_DAYS) {
+        next.days = MAX_TRIP_DAYS;
+      }
+      return next;
+    });
+    resetSearch();
+  }
+
+  /** Show the first date on or after `dayIso`, keeping the way back. */
+  function jumpTo(dayIso: string) {
+    setHistory((h) => [...h.slice(0, historyIndex + 1), dayIso]);
+    setHistoryIndex(historyIndex + 1);
     setAcceptedSlot(null);
-    setRevealRequest((n) => n + 1);
   }
 
   /** Adopt a suggested workaround: shorter stay, anchored on its dates. */
   function applySuggestion(s: VacationSuggestion) {
-    setDays(s.days);
-    const anchor = dayOf(s.slot.start, TZ);
-    setHistory([anchor]);
+    setSched((prev) => ({ ...prev, days: s.days }));
+    setHistory([dayOf(s.slot.start, TZ)]);
     setHistoryIndex(0);
     setAcceptedSlot(null);
-    revealDay(anchor);
   }
 
   function handleSelectGroup(id: string) {
     setSelectedGroupId(id);
-    clearSearch(); // a new group's best time is unknown until searched for
-    setSlideDir(-1);
-    setViewMonth(DEFAULT_MONTH); // show the new group from the current month
+    resetSearch(); // a new group's first date starts from today
     inviteMutation.reset(); // a link belongs to the group it was made for
   }
 
@@ -529,120 +370,43 @@ export default function FindDate() {
     setNewGroupOpen(true);
   }
 
-  function handleEventType(idx: number) {
-    const def = EVENT_TYPES[idx];
-    setEventTypeIdx(idx);
-    // Apply the type's presets so the pickers land somewhere sensible.
-    if (def.kind === "vacation") {
-      setDays(def.defaultDays ?? 7);
-    } else if (def.kind === "single") {
-      setDurationMinutes(def.durationMinutes ?? 60);
-      setStartHour(def.startHour ?? 18);
-    }
-    setSelectedDows(def.defaultDows ?? ALL_DOWS);
-    clearSearch();
-  }
-
-  function handleDows(dows: number[]) {
-    let next = dows;
-    // A trip is one continuous stay: selecting Thu alongside Fri-Sun extends
-    // the run, and any gap in between is filled in automatically.
-    if (eventType.kind === "trip") {
-      const idxs = dows.map((d) => ALL_DOWS.indexOf(d)).sort((a, b) => a - b);
-      next = ALL_DOWS.slice(idxs[0], idxs[idxs.length - 1] + 1);
-    }
-    setSelectedDows(next);
-    clearSearch();
-  }
-
-  function handleDuration(value: number) {
-    setDurationMinutes(value);
-    clearSearch();
-  }
-
-  function handleStartHour(value: number) {
-    setStartHour(value);
-    clearSearch();
-  }
-
-  function handleDays(value: number) {
-    setDays(value);
-    clearSearch();
-  }
-
-  /**
-   * Page the calendar to the month containing `dayIso`. If that month is already
-   * shown we leave the view alone (no animation); otherwise we slide there —
-   * forward in time sweeps the new month in from the right, back reverses it.
-   */
-  function revealDay(dayIso: string) {
-    const month = monthStartMs(Date.parse(dayIso), TZ);
-    if (month === viewMonth) return;
-    setSlideDir(month > viewMonth ? 1 : -1);
-    setViewMonth(month);
-  }
-
-  /**
-   * Page the calendar to whatever the Find button or an arrow just turned up. They only
-   * bump `revealRequest`; by the time this runs, the memos above have already
-   * recomputed, so `activeSlot` here is the new result. Running the search a
-   * second time inside the click handler was both wasted work and a chance for
-   * the two answers to disagree.
-   */
-  useEffect(() => {
-    if (revealRequest === 0 || !activeSlot) return;
-    revealDay(dayOf(activeSlot.start, TZ));
-    // Deliberately keyed on the request alone: changing a setting recomputes
-    // activeSlot too, and that must not move the calendar on its own.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [revealRequest]);
-
-  /** Step the calendar a month back (-1) or forward (+1), within the data range. */
+  /** Step the chart a month back (-1) or forward (+1), within the data range. */
   function pageMonth(delta: number) {
     const month = startOfMonth(viewMonth, TZ, delta);
     if (month < MIN_MONTH || month > MAX_MONTH) return;
-    setSlideDir(delta);
-    setViewMonth(month);
-  }
-
-  /** Find the earliest slot from today and page the calendar to it. */
-  function handleFindBest() {
-    runSearch(null);
+    setMonthPick({ month, anchor: bestDay });
   }
 
   /**
-   * Step forward: if the next occurrence was already searched for earlier
-   * this session (the user stepped back), just reveal it again; otherwise
-   * search past the current slot's day for it.
+   * Step forward: if the next date was already found earlier (the user
+   * stepped back), show it again; otherwise search past the current one.
    */
   function handleFindNext() {
     if (!activeSlot) return;
     if (historyIndex + 1 < history.length) {
       setHistoryIndex(historyIndex + 1);
+      setAcceptedSlot(null);
     } else {
-      const nextDay = addDays(Date.parse(activeSlot.start), 1, TZ);
-      setHistory((h) => [...h, new Date(nextDay).toISOString()]);
-      setHistoryIndex(historyIndex + 1);
+      jumpTo(new Date(addDays(Date.parse(activeSlot.start), 1, TZ)).toISOString());
     }
-    setAcceptedSlot(null);
-    setRevealRequest((n) => n + 1);
   }
 
-  /** Step back to the occurrence shown just before this one. Never searches. */
+  /** Step back to the date shown just before this one. Never searches. */
   function handleFindPrev() {
     if (historyIndex <= 0) return;
     setHistoryIndex(historyIndex - 1);
     setAcceptedSlot(null);
-    setRevealRequest((n) => n + 1);
   }
 
   /** Suggest the date on screen to everyone in the group. */
   function handleSuggest() {
-    if (!activeGroup || !activeSlot || !settings) return;
+    if (!activeGroup || !activeSlot) return;
     suggestMutation.mutate({
       groupId: activeGroup.id,
-      title: storedEventTitle(eventType.id),
-      settings,
+      // A name left empty is stored as the matching type's name, which each
+      // reader sees in their own language (eventTitle.ts).
+      title: name.trim() || storedEventTitle(fallbackTitleId(search)),
+      settings: search,
       date: { start: activeSlot.start, end: activeSlot.end },
     });
   }
@@ -654,21 +418,21 @@ export default function FindDate() {
     copiedTimer.current = setTimeout(() => setCopied(false), 1800);
   }
 
-  // How many calendar days the best slot's highlight covers.
-  const bestSpanDays =
-    eventType.kind === "vacation"
-      ? days
-      : eventType.kind === "trip"
-        ? (tripShape?.spanDays ?? 1)
-        : 1;
-
-  // The banner's headline text for the found slot, per event kind.
-  const slotLabel = activeSlot
-    ? eventType.kind === "vacation"
-      ? formatDaySpan(activeSlot.start, activeSlot.end, lang)
-      : eventType.kind === "trip"
-        ? formatTripSpan(activeSlot.start, activeSlot.end, lang)
-        : formatSlot(activeSlot.start, activeSlot.end, lang)
+  // The big answer: the date (or span), and the times plus how far away it is.
+  const headline = activeSlot
+    ? search.kind === "single"
+      ? formatLongDate(activeSlot.start, lang)
+      : formatLongSpan(activeSlot.start, activeSlot.end, lang)
+    : null;
+  const subline = activeSlot
+    ? [
+        search.kind === "single"
+          ? t.scheduler.timeRange(formatTime(activeSlot.start), formatTime(activeSlot.end))
+          : search.kind === "trip"
+            ? t.scheduler.tripTimes(formatTime(activeSlot.start), formatTime(activeSlot.end))
+            : t.common.days(search.days),
+        t.scheduler.inDays(daysUntil(dayOf(activeSlot.start, TZ), TODAY_DAY)),
+      ].join(" · ")
     : null;
 
   // Conflict review state for multi-day spans. Your own work/school conflicts
@@ -680,8 +444,8 @@ export default function FindDate() {
   const selfAccepted =
     multiResult?.slot != null && acceptedSlot === multiResult.slot.start;
   const needsSelfApproval = selfConflict !== null && !selfAccepted;
-  // Dates that clash with your own work/school wait for your "Accept" in the
-  // result box before they can go to the group.
+  // Dates that clash with your own work/school wait for your "Accept" before
+  // they can go to the group.
   const awaitingYourApproval = isMultiDay && !!activeSlot && needsSelfApproval;
 
   // Suggesting needs a signed-in person, a real group, a date to suggest, and
@@ -691,7 +455,6 @@ export default function FindDate() {
     !!activeGroup &&
     !activeGroup.isExample &&
     !!activeSlot &&
-    !!settings &&
     !awaitingYourApproval;
   // Success and errors belong to the exact date they were for: switch group,
   // step to another date or change a setting, and they stop showing.
@@ -708,8 +471,6 @@ export default function FindDate() {
   const skipConflicts = !isMultiDay && activeSlot ? (result?.conflicts ?? []) : [];
   const yourSkip = skipConflicts.find((c) => c.profileId === youProfileId) ?? null;
   const othersSkipping = skipConflicts.filter((c) => c.profileId !== youProfileId);
-  const monthHasSkipping =
-    !isMultiDay && !!monthGrid?.weeks.some((w) => w.some((c) => c.conditionalCount > 0));
 
   // Unique titles of your own conflicting commitments: a generated title like
   // "Arbejde", or with real data the name of the calendar, e.g. "Work".
@@ -724,153 +485,217 @@ export default function FindDate() {
         .join(", ")
     : "";
 
+  // The answer's tone: the plain "everyone can" in orange, or one of the
+  // review states the old banner had, in their own colours.
+  const conflicts = found?.conflicts ?? [];
+  const tone = !activeSlot
+    ? "none"
+    : isMultiDay && needsSelfApproval
+      ? "approve"
+      : isMultiDay && otherConflicts.length > 0
+        ? "review"
+        : skipConflicts.length > 0
+          ? "skip"
+          : "clean";
+  const kicker =
+    tone === "approve"
+      ? t.scheduler.needsApproval
+      : tone === "review"
+        ? t.scheduler.underReview
+        : tone === "skip"
+          ? t.scheduler.worksIfSkipping
+          : t.scheduler.kickerAll(name.trim());
+  const participants = activeGroup?.participants ?? [];
+  const conflictIds = new Set(conflicts.map((c) => c.profileId));
+
+  const groupSwitcher =
+    groups && activeGroupId ? (
+      <GroupSwitcher
+        groups={groups}
+        selectedId={activeGroupId}
+        onChange={handleSelectGroup}
+        onCreate={handleNewGroup}
+        variant="hero"
+      />
+    ) : (
+      <div className="h-[42px] rounded-lg border bg-background" />
+    );
+
+  const settingsProps = {
+    groupSwitcher,
+    name,
+    onName: setName,
+    settings: sched,
+    onChange: updateSettings,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
 
       {/*
-        A working page, not a poster: the calendar is what people came for, so
-        it starts at the very top of the screen and takes the full width.
-        Everything you set before searching lives in the column beside it
-        rather than stacked on top, which is what used to push the calendar
-        below the fold.
+        The answer first: what the group is planning on top, then the date
+        that works for everyone, big, then the month day by day so you can
+        see why. Everything about the group itself sits at the bottom.
       */}
-      <div className="px-4 pb-16 pt-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          {/* ───────── Controls: who, and what kind of event ───────── */}
-          <aside
-            onPointerDownCapture={stopCarousel}
-            onFocusCapture={stopCarousel}
-            className="w-full lg:sticky lg:top-4 lg:w-[22rem] lg:shrink-0 xl:w-[23rem]"
+      <div className="mx-auto flex max-w-[90rem] flex-col gap-5 px-4 pb-16 pt-4 sm:px-6 lg:px-10">
+        <div
+          onPointerDownCapture={stopCarousel}
+          onFocusCapture={stopCarousel}
+          className="flex flex-col gap-5"
+        >
+          <SettingsBar {...settingsProps} />
+          <SettingsSentence {...settingsProps} />
+
+          {/* ───────── The answer ───────── */}
+          <section
+            className={cn(
+              "rounded-3xl border p-5 shadow-xl shadow-black/5 sm:p-8",
+              tone === "none" && "border-rose-200 bg-rose-50",
+              (tone === "approve" || tone === "skip") && "border-amber-300 bg-amber-50",
+              tone === "review" && "border-sky-200 bg-sky-50",
+              tone === "clean" && "bg-card",
+            )}
           >
-            {groups && activeGroupId && (
-              <div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {t.scheduler.schedulingFor}
-                </span>
-                <div className="mt-2">
-                  <GroupSwitcher
-                    groups={groups}
-                    selectedId={activeGroupId}
-                    onChange={handleSelectGroup}
-                    onCreate={handleNewGroup}
-                    variant="hero"
-                  />
+            {tone === "none" ? (
+              <p className="text-base text-rose-800">
+                {!activeGroup
+                  ? t.common.loading
+                  : search.kind === "vacation"
+                    ? t.scheduler.noVacation(search.days)
+                    : search.kind === "trip"
+                      ? t.scheduler.noTrip
+                      : t.scheduler.noSingle(`${String(sched.startHour).padStart(2, "0")}:00`)}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <p
+                    className={cn(
+                      "flex items-center gap-2 text-xs font-bold uppercase tracking-wider sm:text-sm",
+                      tone === "clean" && "text-orange-700",
+                      (tone === "approve" || tone === "skip") && "text-amber-800",
+                      tone === "review" && "text-sky-800",
+                    )}
+                  >
+                    {tone === "approve" ? (
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                    ) : tone === "review" ? (
+                      <Hourglass className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <Check className="h-4 w-4 shrink-0" />
+                    )}
+                    <span className="truncate">{kicker}</span>
+                  </p>
+                  <h1 className="mt-2 text-[2rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                    {headline}
+                  </h1>
+                  <p className="mt-2 text-base text-muted-foreground sm:text-xl">{subline}</p>
+
+                  {/* What the date costs, in the review states. */}
+                  {tone === "approve" && (
+                    <p className="mt-3 text-sm text-amber-900">
+                      {t.scheduler.selfConflict(selfConflictTitles)}
+                      {otherConflicts.length > 0 &&
+                        t.scheduler.othersNeedTimeOff(
+                          nameList(otherConflicts.map((c) => c.name), lang),
+                        )}
+                    </p>
+                  )}
+                  {tone === "review" && (
+                    <p className="mt-3 text-sm text-sky-900">
+                      {t.scheduler.othersMustApprove(
+                        nameList(otherConflicts.map((c) => c.name), lang),
+                        otherConflicts.length,
+                      )}
+                      {selfAccepted && t.scheduler.youApprovedTimeOff}
+                    </p>
+                  )}
+                  {tone === "skip" && (
+                    <p className="mt-3 text-sm text-amber-900">
+                      {yourSkip && t.scheduler.youSkip(yourSkipTitles)}
+                      {othersSkipping.length > 0 &&
+                        t.scheduler.othersSkip(nameList(othersSkipping.map((c) => c.name), lang))}
+                      {t.scheduler.skipWhy}
+                    </p>
+                  )}
+                  {tone === "clean" && isMultiDay && selfAccepted && (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {t.scheduler.youApprovedDates}
+                    </p>
+                  )}
                 </div>
 
-                {/* Event settings: what kind of event, then either how many
-                    days (multi-day) or how long + what time it starts. */}
-                <div className="mt-4 border-t pt-4">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {t.scheduler.whatKind}
-                  </span>
-                  {/* One line, always. The narrowest phones drop the type's icon
-                      (its name says what it is) and a little spacing; if that is
-                      still not enough, the type shortens, never the time. */}
-                  <div className="mt-2 flex items-center gap-1 min-[360px]:gap-1.5">
-                    <Dropdown
-                      icon={
-                        <Tag className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground min-[360px]:block" />
-                      }
-                      value={eventTypeIdx}
-                      options={typeOptions}
-                      onChange={handleEventType}
-                      menuWidth="w-44"
-                    />
-                    {eventType.kind === "vacation" && (
-                      <Dropdown
-                        icon={<CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                        value={days}
-                        options={daysOptions}
-                        onChange={handleDays}
-                        className="shrink-0"
-                      />
-                    )}
-                    {eventType.kind === "single" && (
-                      <>
-                        <Dropdown
-                          icon={<Hourglass className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                          value={durationMinutes}
-                          options={durationOptions}
-                          onChange={handleDuration}
-                          className="shrink-0"
-                        />
-                        <Dropdown
-                          icon={<Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                          value={startHour}
-                          options={START_OPTIONS}
-                          onChange={handleStartHour}
-                          className="shrink-0"
-                        />
-                      </>
+                <div className="flex shrink-0 flex-col gap-4 lg:items-end">
+                  {/* Everyone in the search; someone who'd skip or take time
+                      off is shown faded. */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex">
+                      {participants.map((p, i) => (
+                        <span
+                          key={p.profileId}
+                          title={p.name}
+                          className={cn(
+                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-card text-xs font-bold sm:h-9 sm:w-9 sm:border-[3px] sm:text-sm",
+                            avatarColor(i),
+                            i > 0 && "-ml-2 sm:-ml-2.5",
+                            conflictIds.has(p.profileId) && "opacity-40",
+                          )}
+                        >
+                          {p.name.trim().charAt(0).toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="whitespace-nowrap text-sm font-bold text-foreground">
+                      {t.scheduler.countCan(participants.length - conflictIds.size, participants.length)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleFindPrev}
+                      disabled={historyIndex <= 0}
+                      aria-label={t.scheduler.previousTime}
+                      className="flex h-12 w-12 items-center justify-center rounded-xl border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleFindNext}
+                      className="h-12 flex-1 rounded-xl border bg-card px-4 text-[15px] font-semibold text-foreground transition hover:bg-secondary sm:flex-none"
+                    >
+                      {t.scheduler.nextOption}
+                    </button>
+                    {tone === "approve" ? (
+                      <button
+                        type="button"
+                        onClick={() => setAcceptedSlot(activeSlot!.start)}
+                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-5 sm:w-auto text-[15px] font-bold text-white transition hover:bg-amber-700"
+                      >
+                        <Check className="h-5 w-5" />
+                        {t.scheduler.accept}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSuggest}
+                        disabled={!canSuggest || suggestMutation.isPending || suggestedThis}
+                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-700 px-5 sm:w-auto text-[15px] font-bold text-white transition hover:bg-orange-800 disabled:opacity-50"
+                      >
+                        {suggestMutation.isPending ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : suggestedThis ? (
+                          <Check className="h-5 w-5" />
+                        ) : (
+                          <Send className="h-5 w-5" />
+                        )}
+                        {suggestedThis ? t.scheduler.suggested : t.scheduler.suggest}
+                      </button>
                     )}
                   </div>
-                  {/* Day slider: which weekdays are searched (single events) or
-                      covered by the trip. Vacations span any days, so none there. */}
-                  {eventType.kind !== "vacation" && (
-                    <div className="mt-3">
-                      <DaySlider selected={selectedDows} onChange={handleDows} />
-                    </div>
-                  )}
-                </div>
-
-                {/* One button, two steps: before a search it finds the best
-                    time, after it suggests the date on screen to the group
-                    (who accept or decline it on My events). Changing any
-                    setting clears the search, which turns it back into Find.
-                    The arrows either side step through the dates found. On the
-                    narrowest phones the icon gives its room to the label. */}
-                <div className="mt-4 flex items-center gap-1">
-                  <StepArrow
-                    direction="prev"
-                    disabled={historyIndex <= 0}
-                    onClick={handleFindPrev}
-                  />
-                  {hasSearched ? (
-                    <button
-                      onClick={handleSuggest}
-                      disabled={!canSuggest || suggestMutation.isPending || suggestedThis}
-                      className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 py-3 text-[15px] font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-60"
-                    >
-                      {suggestMutation.isPending ? (
-                        <Loader2 className="hidden h-5 w-5 shrink-0 animate-spin min-[380px]:block" />
-                      ) : suggestedThis ? (
-                        <Check className="hidden h-5 w-5 shrink-0 min-[380px]:block" />
-                      ) : (
-                        <Send className="hidden h-5 w-5 shrink-0 min-[380px]:block" />
-                      )}
-                      <span className="truncate">
-                        {suggestedThis ? t.scheduler.suggested : t.scheduler.suggest}
-                      </span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleFindBest}
-                      className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-2.5 py-3 text-[15px] font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90"
-                    >
-                      <Sparkles className="hidden h-5 w-5 shrink-0 min-[380px]:block" />
-                      <span className="truncate">{t.scheduler.findBest}</span>
-                    </button>
-                  )}
-                  <StepArrow direction="next" disabled={!activeSlot} onClick={handleFindNext} />
-                </div>
-                {/* Which date the button would send. The full result sits
-                    under the calendar, which on a phone is far below here. */}
-                {slotLabel && (
-                  <p className="mt-2 text-center text-sm font-semibold text-foreground">
-                    {slotLabel}
-                  </p>
-                )}
-                {/* Nothing shows before a first search on a real group: the
-                    "press Find best time" nudge was redundant with the button
-                    right above it. */}
-                {(suggestedThis ||
-                  suggestError ||
-                  !user ||
-                  activeGroup?.isExample ||
-                  activeSlot ||
-                  hasSearched) && (
-                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground lg:max-w-xs lg:text-right">
                     {suggestedThis ? (
                       t.scheduler.sent(
                         <Link
@@ -886,407 +711,177 @@ export default function FindDate() {
                       t.scheduler.hintSignIn
                     ) : activeGroup?.isExample ? (
                       t.scheduler.hintExample
-                    ) : !activeSlot ? (
-                      t.scheduler.hintNoDate
                     ) : awaitingYourApproval ? (
                       t.scheduler.hintAccept
                     ) : (
                       t.scheduler.hintEveryone
                     )}
                   </p>
-                )}
+                </div>
               </div>
             )}
+          </section>
 
-            {activeGroup && (
-              <div className="mt-4">
-                <GroupPanel
-                  group={activeGroup}
-                  busyLoading={busyLoading}
-                  inviteUrl={invite?.url ?? null}
-                  inviteExpiresAt={invite?.expiresAt ?? null}
-                  invitePending={inviteMutation.isPending}
-                  inviteError={
-                    inviteMutation.error ? (inviteMutation.error as Error).message : null
-                  }
-                  onInvite={() => inviteMutation.mutate(activeGroup.id)}
-                  leavePending={leaveMutation.isPending}
-                  onLeave={() => leaveMutation.mutate(activeGroup.id)}
-                />
+          {/* Workarounds for a holiday that doesn't fit cleanly, or else the
+              next few dates found by the same search. */}
+          {suggestions.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {suggestions.map((s) => (
+                <div
+                  key={`${s.days}-${s.slot.start}`}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4"
+                >
+                  <div className="flex items-center gap-2.5 text-sm text-foreground">
+                    <Lightbulb className="h-4 w-4 shrink-0 text-primary" />
+                    <span>
+                      {s.conflicts.length === 0
+                        ? t.scheduler.suggestionFits(
+                            sched.days,
+                            !!multiResult?.slot,
+                            s.days,
+                            formatDaySpan(s.slot.start, s.slot.end, lang),
+                            (s.leaveAfterWork ? t.scheduler.leaveAfterWork : "") +
+                              (s.homeBeforeWork ? t.scheduler.homeBeforeWork : ""),
+                          )
+                        : t.scheduler.closestWorkaround(
+                            s.days,
+                            formatDaySpan(s.slot.start, s.slot.end, lang),
+                            nameList(s.conflicts.map((c) => c.name), lang),
+                            s.conflicts.length,
+                          )}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => applySuggestion(s)}
+                    className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                  >
+                    {t.scheduler.useTheseDates}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            later.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {later.map((r) => (
+                  <button
+                    key={r.slot!.start}
+                    type="button"
+                    onClick={() => jumpTo(dayOf(r.slot!.start, TZ))}
+                    className="rounded-2xl border bg-card px-5 py-4 text-left transition hover:border-primary/40 hover:bg-secondary/40"
+                  >
+                    <span className="block text-xs text-muted-foreground">
+                      {t.scheduler.alsoPossible}
+                    </span>
+                    <span className="mt-0.5 block text-lg font-bold text-foreground">
+                      {search.kind === "single"
+                        ? formatLongDate(r.slot!.start, lang)
+                        : formatLongSpan(r.slot!.start, r.slot!.end, lang)}
+                    </span>
+                    <span className="mt-0.5 block text-sm text-muted-foreground">
+                      {t.scheduler.countCan(
+                        participants.length - r.conflicts.length,
+                        participants.length,
+                      )}
+                    </span>
+                  </button>
+                ))}
               </div>
-            )}
-          </aside>
+            )
+          )}
 
-          {/* ───────── The calendar itself ───────── */}
-          <main
-            onPointerDownCapture={stopCarousel}
-            onFocusCapture={stopCarousel}
-            className="min-w-0 flex-1 scroll-mt-4 rounded-2xl border bg-card p-4 shadow-xl shadow-black/5 sm:p-6"
-          >
-            {/* Card header: which group this is, and the two actions. Only a
-                label here — switching groups happens in the box to the
-                left, not in the calendar view. */}
+          {monthGrid && (
+            <DayChart
+              grid={monthGrid}
+              bestDays={bestDays}
+              timeZone={TZ}
+              canPrev={viewMonth > MIN_MONTH}
+              canNext={viewMonth < MAX_MONTH}
+              onPrev={() => pageMonth(-1)}
+              onNext={() => pageMonth(1)}
+              onPickDay={jumpTo}
+              conditionalKind={isMultiDay ? "timeOff" : "skip"}
+            />
+          )}
+        </div>
+
+        {/* ───────── The group ───────── */}
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <section className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                {activeGroup ? (
-                  <h2 className="truncate text-xl font-bold text-foreground sm:text-2xl">
-                    {activeGroup.name}
-                  </h2>
-                ) : (
-                  <h2 className="text-2xl font-bold text-foreground">{t.common.loading}</h2>
-                )}
-              </div>
+              <h2 className="text-sm font-semibold text-foreground">{t.scheduler.groupMembers}</h2>
               <button
+                type="button"
                 onClick={handleCopy}
-                className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
               >
-                {copied ? (
-                  <Check className="h-4 w-4 text-primary" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
+                {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                 {copied ? t.scheduler.copiedLink : t.scheduler.copyLink}
               </button>
             </div>
-
-            {/* Which month the grid below is showing. Sits right above it
-                (nothing between the two), so there's never a question which
-                month is on screen. */}
-            {monthGrid && (
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <p className="text-base font-semibold text-foreground">{monthGrid.label}</p>
-                {/* On a phone the arrows sit here: the floating ones on the
-                    grid's edges would hang off the screen. */}
-                <div className="flex items-center gap-1.5 sm:hidden">
-                  <button
-                    onClick={() => pageMonth(-1)}
-                    disabled={viewMonth <= MIN_MONTH}
-                    aria-label={t.common.previousMonth}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => pageMonth(1)}
-                    disabled={viewMonth >= MAX_MONTH}
-                    aria-label={t.common.nextMonth}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Apple-style month calendar */}
-            <div className="mt-2">
-              <div className="relative">
-                <div className="overflow-hidden rounded-xl">
-                  <AnimatePresence mode="popLayout" custom={slideDir} initial={false}>
-                    <motion.div
-                      key={viewMonth}
-                      custom={slideDir}
-                      variants={calendarSlide}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      {/* Cross-fade when the group changes: both calendars sit
-                          in one grid cell, so the old one fades out under the
-                          new one instead of the page collapsing to nothing. */}
-                      <div className="grid [&>*]:col-start-1 [&>*]:row-start-1">
-                        <AnimatePresence initial={false}>
-                          <motion.div
-                            key={activeGroupId ?? "none"}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0, pointerEvents: "none" }}
-                            transition={{ duration: 0.5, ease: "easeInOut" }}
-                          >
-                            {monthGrid && (
-                              <CalendarPanel
-                                grid={monthGrid}
-                                bestDay={bestDay}
-                                bestSpanDays={bestSpanDays}
-                                bestTimeLabel={bestTimeLabel}
-                                todayDay={TODAY_DAY}
-                                timeZone={TZ}
-                                conditional={isMultiDay ? "timeOff" : "skip"}
-                              />
-                            )}
-                          </motion.div>
-                        </AnimatePresence>
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-
-                {/* Month nav arrows, pinned to a fixed height on the calendar's
-                    left/right edges. Anchored to a constant offset rather than
-                    top-1/2: months render 5 or 6 week rows, so centering on
-                    the grid's own (variable) height made the arrows hop up
-                    and down every time that row count changed between months. */}
-                <button
-                  onClick={() => pageMonth(-1)}
-                  disabled={viewMonth <= MIN_MONTH}
-                  aria-label={t.common.previousMonth}
-                  className="absolute left-0 top-8 z-20 hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-foreground shadow-md transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30 sm:flex"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => pageMonth(1)}
-                  disabled={viewMonth >= MAX_MONTH}
-                  aria-label={t.common.nextMonth}
-                  className="absolute right-0 top-8 z-20 hidden h-9 w-9 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-foreground shadow-md transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-30 sm:flex"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Legend */}
-              <div className="mt-3 flex flex-wrap items-center justify-end gap-2 text-xs text-muted-foreground">
-                <span>{t.scheduler.fewerFree}</span>
-                {[0.2, 0.45, 0.7, 1].map((a) => (
-                  <span
-                    key={a}
-                    className="h-3 w-5 rounded-sm"
-                    style={{ backgroundColor: `rgba(${ACCENT_RGB}, ${a})` }}
-                  />
-                ))}
-                <span>{t.scheduler.moreFree}</span>
-                {/* Trips can always need time off; a meeting only shows the
-                    amber key when someone in the group marked a calendar
-                    skippable and it shows up this month. */}
-                {(isMultiDay || monthHasSkipping) && (
-                  <>
-                    <span
-                      className="ml-3 h-3 w-5 rounded-sm"
-                      style={{ backgroundColor: `rgba(${AMBER_RGB}, 0.5)` }}
-                    />
-                    <span>
-                      {isMultiDay ? t.scheduler.freeWithTimeOff : t.scheduler.freeIfSkipping}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Best-time banner, under the calendar. Single meetings: found /
-                not found. Multi-day spans add two review states — your own
-                work/school needs your approval, other people's puts the
-                dates under review. */}
-            <AnimatePresence>
-              {hasSearched && (isMultiDay ? multiResult : result) && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  {!activeSlot ? (
-                    <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-                      {eventType.kind === "vacation"
-                        ? t.scheduler.noVacation(days)
-                        : eventType.kind === "trip"
-                          ? t.scheduler.noTrip
-                          : t.scheduler.noSingle(`${String(startHour).padStart(2, "0")}:00`)}
-                    </div>
-                  ) : isMultiDay && needsSelfApproval ? (
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
-                          <AlertTriangle className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
-                            {t.scheduler.needsApproval}
-                          </p>
-                          <p className="text-lg font-bold text-foreground">
-                            {slotLabel}
-                          </p>
-                          <p className="mt-0.5 text-sm text-amber-800">
-                            {t.scheduler.selfConflict(selfConflictTitles)}
-                            {otherConflicts.length > 0 &&
-                              t.scheduler.othersNeedTimeOff(
-                                nameList(otherConflicts.map((c) => c.name), lang),
-                              )}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setAcceptedSlot(activeSlot.start)}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-                      >
-                        <Check className="h-4 w-4" />
-                        {t.scheduler.accept}
-                      </button>
-                    </div>
-                  ) : isMultiDay && otherConflicts.length > 0 ? (
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white">
-                          <Hourglass className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-sky-700">
-                            {t.scheduler.underReview}
-                          </p>
-                          <p className="text-lg font-bold text-foreground">
-                            {slotLabel}
-                          </p>
-                          <p className="mt-0.5 text-sm text-sky-800">
-                            {t.scheduler.othersMustApprove(
-                              nameList(otherConflicts.map((c) => c.name), lang),
-                              otherConflicts.length,
-                            )}
-                            {selfAccepted && t.scheduler.youApprovedTimeOff}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : skipConflicts.length > 0 ? (
-                    // A meeting that works once someone skips what they
-                    // marked skippable: no approval needed (they chose it),
-                    // but it says who, and why it's worth it.
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
-                          <Check className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
-                            {t.scheduler.worksIfSkipping}
-                          </p>
-                          <p className="text-lg font-bold text-foreground">
-                            {slotLabel}
-                          </p>
-                          <p className="mt-0.5 text-sm text-amber-800">
-                            {yourSkip && t.scheduler.youSkip(yourSkipTitles)}
-                            {othersSkipping.length > 0 &&
-                              t.scheduler.othersSkip(
-                                nameList(othersSkipping.map((c) => c.name), lang),
-                              )}
-                            {t.scheduler.skipWhy}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                          <Check className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-primary">
-                            {t.scheduler.worksForEveryone}
-                          </p>
-                          <p className="text-lg font-bold text-foreground">
-                            {slotLabel}
-                          </p>
-                          {isMultiDay && selfAccepted && (
-                            <p className="mt-0.5 text-sm text-muted-foreground">
-                              {t.scheduler.youApprovedDates}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Workaround suggestions: concrete counter-proposals when the
-                      requested vacation length doesn't work cleanly. */}
-                  {suggestions.map((s) => (
-                    <div
-                      key={`${s.days}-${s.slot.start}`}
-                      className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-card p-3"
-                    >
-                      <div className="flex items-center gap-2.5 text-sm text-foreground">
-                        <Lightbulb className="h-4 w-4 shrink-0 text-primary" />
-                        <span>
-                          {s.conflicts.length === 0
-                            ? t.scheduler.suggestionFits(
-                                days,
-                                !!multiResult?.slot,
-                                s.days,
-                                formatDaySpan(s.slot.start, s.slot.end, lang),
-                                (s.leaveAfterWork ? t.scheduler.leaveAfterWork : "") +
-                                  (s.homeBeforeWork ? t.scheduler.homeBeforeWork : ""),
-                              )
-                            : t.scheduler.closestWorkaround(
-                                s.days,
-                                formatDaySpan(s.slot.start, s.slot.end, lang),
-                                nameList(s.conflicts.map((c) => c.name), lang),
-                                s.conflicts.length,
-                              )}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => applySuggestion(s)}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-                      >
-                        {t.scheduler.useTheseDates}
-                      </button>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Group members */}
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold text-foreground">
-                {t.scheduler.groupMembers}
-              </h3>
-              {/* Whose times are real. The example group is the only place
-                  generated calendars are still used, and it says so. */}
-              <p className="mt-1 text-xs text-muted-foreground">
-                {activeGroup?.isExample ? (
-                  !user ? (
-                    t.scheduler.exampleSignedOut(
-                      <Link to="/sign-in?next=/" className="font-medium text-foreground underline underline-offset-2">
-                        {t.scheduler.exampleSignedOutLink}
-                      </Link>,
-                    )
-                  ) : myCalendarsFailed ? (
-                    t.scheduler.exampleCalendarsFailed
-                  ) : (
-                    t.scheduler.exampleSignedIn(
-                      <Link to="/profile" className="font-medium text-foreground underline underline-offset-2">
-                        {t.scheduler.exampleSignedInLink}
-                      </Link>,
-                    )
+            {/* Whose times are real. The example group is the only place
+                generated calendars are still used, and it says so. */}
+            <p className="mt-1 text-xs text-muted-foreground">
+              {activeGroup?.isExample ? (
+                !user ? (
+                  t.scheduler.exampleSignedOut(
+                    <Link to="/sign-in?next=/" className="font-medium text-foreground underline underline-offset-2">
+                      {t.scheduler.exampleSignedOutLink}
+                    </Link>,
                   )
-                ) : busyFailed ? (
-                  t.scheduler.busyFailed
-                ) : busyLoading ? (
-                  t.scheduler.busyLoading
+                ) : myCalendarsFailed ? (
+                  t.scheduler.exampleCalendarsFailed
                 ) : (
-                  t.scheduler.realTimes
-                )}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {event?.participants.map((p, i) => (
+                  t.scheduler.exampleSignedIn(
+                    <Link to="/profile" className="font-medium text-foreground underline underline-offset-2">
+                      {t.scheduler.exampleSignedInLink}
+                    </Link>,
+                  )
+                )
+              ) : busyFailed ? (
+                t.scheduler.busyFailed
+              ) : busyLoading ? (
+                t.scheduler.busyLoading
+              ) : (
+                t.scheduler.realTimes
+              )}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {participants.map((p, i) => (
+                <span
+                  key={p.profileId}
+                  className="flex items-center gap-2 rounded-full border bg-card py-1 pl-1 pr-3"
+                >
                   <span
-                    key={p.profileId}
-                    className="flex items-center gap-2 rounded-full border bg-card py-1 pl-1 pr-3"
+                    className={cn(
+                      "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
+                      avatarColor(i),
+                    )}
                   >
-                    <span
-                      className={cn(
-                        "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
-                        avatarColor(i),
-                      )}
-                    >
-                      {p.name.charAt(0)}
-                    </span>
-                    <span className="text-sm text-foreground">{p.name}</span>
+                    {p.name.charAt(0)}
                   </span>
-                ))}
-              </div>
+                  <span className="text-sm text-foreground">{p.name}</span>
+                </span>
+              ))}
             </div>
-          </main>
+          </section>
+
+          {activeGroup && (
+            <GroupPanel
+              group={activeGroup}
+              busyLoading={busyLoading}
+              inviteUrl={invite?.url ?? null}
+              inviteExpiresAt={invite?.expiresAt ?? null}
+              invitePending={inviteMutation.isPending}
+              inviteError={
+                inviteMutation.error ? (inviteMutation.error as Error).message : null
+              }
+              onInvite={() => inviteMutation.mutate(activeGroup.id)}
+              leavePending={leaveMutation.isPending}
+              onLeave={() => leaveMutation.mutate(activeGroup.id)}
+            />
+          )}
         </div>
       </div>
 
@@ -1294,7 +889,7 @@ export default function FindDate() {
         open={newGroupOpen}
         submitting={createMutation.isPending}
         error={createMutation.error ? (createMutation.error as Error).message : null}
-        onSubmit={(name) => createMutation.mutate(name)}
+        onSubmit={(groupName) => createMutation.mutate(groupName)}
         onCancel={() => setNewGroupOpen(false)}
       />
     </div>

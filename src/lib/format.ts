@@ -56,6 +56,34 @@ export function formatTripSpan(start: string, end: string, lang: Lang): string {
   return `${formatDate(start, lang)} ${formatTime(start)} ${TO[lang]} ${formatDate(end, lang)} ${formatTime(end)}`;
 }
 
+/** "Fredag 9. oktober" / "Friday 9 October": the scheduling page's big answer. */
+export function formatLongDate(iso: string, lang: Lang): string {
+  const text = new Date(iso).toLocaleDateString(LOCALE[lang], {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: APP_TIME_ZONE,
+  });
+  // Danish writes weekdays in lower case; this one starts a headline. English
+  // Intl puts a comma after the weekday, which a headline does without.
+  return (text.charAt(0).toUpperCase() + text.slice(1)).replace(",", "");
+}
+
+/**
+ * "Fredag 9. oktober til søndag 11. oktober" for a whole-day span, `end`
+ * being the exclusive midnight after it (see formatDaySpan). A span that
+ * starts and ends on the same day reads as that one day.
+ */
+export function formatLongSpan(start: string, end: string, lang: Lang): string {
+  const last = new Date(Date.parse(end) - 1).toISOString();
+  const first = formatLongDate(start, lang);
+  const second = formatLongDate(last, lang);
+  if (first === second) return first;
+  // Mid-sentence, a Danish weekday goes back to lower case; English keeps its capital.
+  const tail = lang === "da" ? second.charAt(0).toLowerCase() + second.slice(1) : second;
+  return `${first} ${TO[lang]} ${tail}`;
+}
+
 /** "Sep 2026": how long someone has had a Casy account, or a group has existed. */
 export function formatMonthYear(iso: string, lang: Lang): string {
   return new Date(iso).toLocaleDateString(LOCALE[lang], {
