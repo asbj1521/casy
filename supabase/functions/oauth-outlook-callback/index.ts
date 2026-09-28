@@ -15,9 +15,7 @@ import { encryptionKeyFromEnv, encryptSecret } from "../_shared/secretBox.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
 import { verifyState } from "../_shared/state.ts";
-
-// How far ahead to sync on first connect. Same window as the Google callback.
-const SYNC_MONTHS_AHEAD = 12;
+import { syncWindow } from "../_shared/syncWindow.ts";
 
 function redirectToProfile(frontendUrl: string, query: Record<string, string>): Response {
   const url = new URL("/profile", frontendUrl);
@@ -132,10 +130,9 @@ Deno.serve(async (req) => {
     // Initial sync: pull busy intervals for every discovered calendar right
     // now, so the profile page has real data the moment the redirect lands
     // instead of showing "connected" with nothing behind it yet.
-    const timeMin = new Date().toISOString();
-    const timeMax = new Date(
-      Date.now() + SYNC_MONTHS_AHEAD * 30 * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    const range = syncWindow();
+    const timeMin = range.start.toISOString();
+    const timeMax = range.end.toISOString();
     const busyByCalendar = await queryFreeBusy(
       tokens.access_token,
       calendars.map((c) => c.id),

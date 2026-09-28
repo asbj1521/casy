@@ -168,3 +168,28 @@ Deno.test("a still-valid Google access token is used without refreshing", async 
   const blocks = rpcs[0].args.p_blocks as { source_id: string }[];
   assert(blocks.length > 0 && blocks.every((b) => b.source_id === "source-1"));
 });
+
+Deno.test("an event under way during a sync is stored whole, not cut to the sync time", async () => {
+  // A lecture from 11:00 to 13:00, synced at 12:00 (NOW). It used to be
+  // stored as 12:00-13:00, replacing the whole one for good.
+  const lecture = FEED.replace("DTSTART:20261001T100000Z", "DTSTART:20260920T110000Z").replace(
+    "DTEND:20261001T110000Z",
+    "DTEND:20260920T130000Z",
+  );
+  const { db, rpcs } = fakeDb(
+    { ics_url: await encryptSecret("https://calendar.example.com/feed.ics", KEY) },
+    [{ id: "source-1", external_calendar_id: "ics" }],
+  );
+  const net = stubFetch(() => new Response(lecture, { status: 200 }));
+  try {
+    await syncConnection(db, { id: "conn-1", provider: "ics" }, KEY, NOW);
+  } finally {
+    net.restore();
+  }
+  const replace = rpcs.find((r) => r.fn === "replace_busy_blocks")!;
+  assertEquals(replace.args.p_blocks, [
+    { source_id: "source-1", start_at: "2026-09-20T11:00:00.000Z", end_at: "2026-09-20T13:00:00.000Z" },
+  ]);
+  // Everything from a week back is replaced, so last week is refreshed too.
+  assertEquals(replace.args.p_from, "2026-09-13T12:00:00.000Z");
+});

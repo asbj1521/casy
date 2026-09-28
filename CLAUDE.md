@@ -118,6 +118,7 @@ supabase/
 
 ### Sync
 - `calendar-sync` refreshes accounts: Google/Outlook via refresh token (rotated tokens are stored again), iCloud via app password, ICS by re-fetching. Busy times are swapped in one transaction (`replace_busy_blocks`); a failed sync keeps the old data.
+- Every fetch (connecting and syncing) covers a week back to 12 months ahead (`_shared/syncWindow.ts`). Starting "now" cut events under way at the sync (stored as starting at xx:17); a week back, recent events are fetched whole again each time. Token expiry is still checked against the real time.
 - Results are stored per connection: `last_synced_at`, `sync_error`, `needs_reconnect` (credential refused).
 - pg_cron runs it at 17 past every hour, authenticated by `x-sync-secret`; the URL and secret are read from Vault (`calendar_sync_url`, `calendar_sync_secret`). The profile page's "Sync now" syncs the signed-in user's accounts.
 - **Google OAuth is In production but unverified** (since 2026-09-19): connecting Google Calendar shows "Google hasn't verified this app" (Advanced > Go to Casy), and at most 100 users can connect until the app is verified. Refresh tokens no longer expire after 7 days.

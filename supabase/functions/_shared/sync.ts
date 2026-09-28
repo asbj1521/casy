@@ -22,12 +22,11 @@ import type { RawBusyInterval } from "./intervals.ts";
 import * as outlook from "./outlook.ts";
 import { ReauthRequired } from "./reauth.ts";
 import { decryptSecret, encryptSecret } from "./secretBox.ts";
+import { syncWindow } from "./syncWindow.ts";
 import type { supabaseAdmin } from "./supabaseAdmin.ts";
 
 type Db = ReturnType<typeof supabaseAdmin>;
 
-/** How far ahead to keep busy times. Same window as connecting uses. */
-const SYNC_MONTHS_AHEAD = 12;
 /** An access token this close to expiry is refreshed rather than used. */
 const TOKEN_MARGIN_MS = 2 * 60_000;
 
@@ -113,13 +112,13 @@ async function refreshBusy(
   // reconnect can provide new ones.
   if (!secrets) throw new ReauthRequired("No stored credentials.");
 
-  const windowStart = now;
-  const windowEnd = new Date(now.getTime() + SYNC_MONTHS_AHEAD * 30 * 86_400_000);
+  // From a week back (syncWindow.ts): events under way are fetched whole.
+  const { start: windowStart, end: windowEnd } = syncWindow(now);
   const externalIds = (sources ?? []).map((s: { external_calendar_id: string }) => s.external_calendar_id);
 
   // Entries Casy adds from here on can't be in this read, so they aren't judged by it.
   const readStartedAt = new Date();
-  const fresh = await fetchFresh(db, target, secrets as SecretsRow, key, externalIds, windowStart, windowEnd);
+  const fresh = await fetchFresh(db, target, secrets as SecretsRow, key, externalIds, windowStart, windowEnd, now);
 
   const blocks = (sources ?? []).flatMap((s: { id: string; external_calendar_id: string }) =>
     (fresh.busy[s.external_calendar_id] ?? []).map((iv) => ({
@@ -152,7 +151,8 @@ async function refreshBusy(
   // failed calendar throws above), and never at the cost of the sync itself.
   if (fresh.seenUids) {
     try {
-      await markGoneEntries(db, target.id, fresh.seenUids, readStartedAt, windowStart, windowEnd);
+      // Judged from now on: an event that is over matters no longer.
+      await markGoneEntries(db, target.id, fresh.seenUids, readStartedAt, now, windowEnd);
     } catch (err) {
       console.error(`checking Casy's entries in connection ${target.id} failed`, err);
     }
@@ -178,19 +178,21 @@ async function fetchFresh(
   externalIds: string[],
   windowStart: Date,
   windowEnd: Date,
+  // The real time, for token expiry: the window starts a week back.
+  now: Date,
 ): Promise<Fresh> {
   const from = windowStart.toISOString();
   const to = windowEnd.toISOString();
 
   switch (target.provider) {
     case "google": {
-      const accessToken = await oauthAccess(db, target.id, secrets, key, windowStart, (refreshToken) =>
+      const accessToken = await oauthAccess(db, target.id, secrets, key, now, (refreshToken) =>
         google.refreshAccessToken({ refreshToken, ...oauthClient("GOOGLE") }),
       );
       return { busy: await google.queryFreeBusy(accessToken, externalIds, from, to) };
     }
     case "outlook": {
-      const accessToken = await oauthAccess(db, target.id, secrets, key, windowStart, (refreshToken) =>
+      const accessToken = await oauthAccess(db, target.id, secrets, key, now, (refreshToken) =>
         outlook.refreshAccessToken({ refreshToken, ...oauthClient("MICROSOFT") }),
       );
       return { busy: await outlook.queryFreeBusy(accessToken, externalIds, from, to) };

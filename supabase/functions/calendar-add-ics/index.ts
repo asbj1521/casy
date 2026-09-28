@@ -24,9 +24,7 @@ import { encryptionKeyFromEnv, encryptSecret, lookupHash } from "../_shared/secr
 import { storeCalendars } from "../_shared/storeCalendars.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { withLanguage } from "../_shared/i18n.ts";
-
-// How far ahead to sync. Same window as the Google and Outlook callbacks.
-const SYNC_MONTHS_AHEAD = 12;
+import { syncWindow } from "../_shared/syncWindow.ts";
 const MAX_NAME_LENGTH = 80;
 
 /** Drop ASCII control characters (newlines, tabs, NUL, DEL, ...) from user text. */
@@ -88,8 +86,7 @@ Deno.serve(withLanguage(async (req) => {
   try {
     feedUrl = assertSafeFeedUrl(rawUrl);
     const text = await fetchFeedText(feedUrl.toString());
-    const windowStart = new Date();
-    const windowEnd = new Date(Date.now() + SYNC_MONTHS_AHEAD * 30 * 24 * 60 * 60 * 1000);
+    const { start: windowStart, end: windowEnd } = syncWindow();
     parsed = parseBusyIntervals(text, windowStart, windowEnd);
   } catch (err) {
     if (err instanceof IcsError) return json({ error: err.message }, 400);

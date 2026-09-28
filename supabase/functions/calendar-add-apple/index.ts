@@ -23,9 +23,7 @@ import { encryptionKeyFromEnv, encryptSecret } from "../_shared/secretBox.ts";
 import { storeCalendars } from "../_shared/storeCalendars.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { withLanguage } from "../_shared/i18n.ts";
-
-// How far ahead to sync. Same window as the other providers.
-const SYNC_MONTHS_AHEAD = 12;
+import { syncWindow } from "../_shared/syncWindow.ts";
 const MAX_FIELD_LENGTH = 254;
 
 function json(body: unknown, status = 200): Response {
@@ -85,8 +83,7 @@ Deno.serve(withLanguage(async (req) => {
 
   // Everything that can fail because of the account happens before any write.
   const creds = { username, password };
-  const windowStart = new Date();
-  const windowEnd = new Date(Date.now() + SYNC_MONTHS_AHEAD * 30 * 24 * 60 * 60 * 1000);
+  const { start: windowStart, end: windowEnd } = syncWindow();
   let fetched: AppleCalendarBusy[];
   let skippedEvents: number;
   try {
