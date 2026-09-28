@@ -178,10 +178,13 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+# Casy: 8, with letters and digits. Must match src/lib/passwordRules.ts, which
+# also refuses names and known leaked passwords in the browser. Set the same in
+# the dashboard (Authentication > Sign In / Providers > Email).
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+password_requirements = "letters_digits"
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -210,10 +213,14 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
-# [auth.captcha]
-# enabled = true
-# provider = "hcaptcha"
-# secret = ""
+# Casy: Cloudflare Turnstile on the sign-in page (src/hooks/useCaptcha.ts,
+# site key VITE_TURNSTILE_SITE_KEY). Switch it on in the dashboard
+# (Authentication > Attack Protection) only once the site sends tokens, or
+# email and password sign-in stops working. The secret key lives only there.
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -222,9 +229,13 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# Casy: on, so nobody can create a password account with someone else's
+# address (which a later Google sign-in with that address would land in).
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
-secure_password_change = false
+# Casy: on. Signed in within the last day, a password changes as before;
+# otherwise the profile asks for a code sent by email (reauthentication).
+secure_password_change = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1m"
 # Number of characters used in the email OTP.
@@ -246,8 +257,9 @@ pass = "env(RESEND_API_KEY)"
 admin_email = "noreply@casy.app"
 sender_name = "Casy"
 
-# The sign-in email itself. `enable_confirmations` is off and the app calls
-# signInWithOtp, so magic_link is the only template sent for that flow.
+# The sign-in email itself, sent by signInWithOtp. With confirmations on, an
+# email link for an address that has no account yet sends `confirmation`
+# instead.
 [auth.email.template.magic_link]
 subject = "Your Casy sign-in link"
 content_path = "./supabase/templates/magic_link.html"
@@ -258,16 +270,29 @@ content_path = "./supabase/templates/magic_link.html"
 subject = "Reset your Casy password"
 content_path = "./supabase/templates/recovery.html"
 
+# Sent when someone creates an account with an email and password; the
+# account can't be used until the link is clicked.
+[auth.email.template.confirmation]
+subject = "Confirm your email for Casy"
+content_path = "./supabase/templates/confirmation.html"
+
+# The code asked for before changing the password, when the last sign-in was
+# more than a day ago (secure_password_change above).
+[auth.email.template.reauthentication]
+subject = "Your Casy security code"
+content_path = "./supabase/templates/reauthentication.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./supabase/templates/password_changed_notification.html"
+# Tells someone their password was changed, so a change they didn't make
+# doesn't go unnoticed.
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Your Casy password was changed"
+content_path = "./supabase/templates/password_changed_notification.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
@@ -456,6 +481,11 @@ verify_jwt = false
 [functions.events]
 # Checks the caller's login in code (_shared/auth.ts) and only ever acts on
 # events in groups they are a member of and were invited to.
+verify_jwt = false
+
+[functions.account]
+# Checks the caller's login in code (_shared/auth.ts); only ever acts on the
+# caller's own account (deleting it, after a typed confirmation).
 verify_jwt = false
 
 [functions.admin]

@@ -40,8 +40,12 @@ export default function TopNav() {
   const pendingCount = events?.filter(needsYourAnswer).length ?? 0;
 
   async function handleSignOut() {
-    await signOut();
-    navigate("/");
+    try {
+      await signOut();
+      navigate("/");
+    } catch {
+      // Still signed in (offline, say): stay where they are.
+    }
   }
 
   /**

@@ -119,6 +119,12 @@ const da: Copy = {
             iCloud-kalendere.
           </p>
           <p>
+            Når du vælger en adgangskode, eller logger ind med en, tjekker din browser den mod Have I
+            Been Pwned, en offentlig liste over adgangskoder fra kendte datalæk, så en adgangskode, der
+            er let at gætte, bliver opdaget. Kun de første 5 tegn af en hashværdi af adgangskoden
+            bliver sendt, og selve adgangskoden forlader aldrig din browser.
+          </p>
+          <p>
             Casys brug og overførsel af oplysninger fra Googles API&apos;er følger{" "}
             {googlePolicyLink("Google API Services User Data Policy")}, herunder kravene om begrænset
             brug (Limited Use).
@@ -187,7 +193,9 @@ const da: Copy = {
         <p>
           Data gemmes hos Casys databaseudbyder, Supabase, og hjemmesiden leveres af Vercel.
           Login-e-mails sendes af Resend, som får din e-mailadresse for at kunne sende dem. Alle tre
-          fører almindelige tekniske logfiler for at drive deres tjenester. Casy bruger ingen analyse-
+          fører almindelige tekniske logfiler for at drive deres tjenester. Login-siden bruger
+          Cloudflare Turnstile til at tjekke, at du ikke er en robot, og Cloudflare ser tekniske
+          oplysninger som din IP-adresse og browser for at gøre det. Casy bruger ingen analyse-
           eller reklamesporing. Din browser gemmer din login-session, så du forbliver logget ind, det
           sprog, du har valgt, og en kopi af din egen gruppeliste, dine kalenderforbindelser og om du
           har admin-adgang, så siderne åbner med det samme. Kopien slettes, når du logger ud, og gemmes
@@ -210,8 +218,9 @@ const da: Copy = {
             at se noget om dig. Var du det sidste medlem, bliver gruppen slettet sammen med dig.
           </p>
           <p>
-            Vil du slette din Casy-konto helt, så skriv til {mail}, og alt, der hører til den, bliver
-            slettet: dine kalendere, optagede tidsrum, adgangsoplysninger og gruppemedlemskaber.
+            Vil du slette din Casy-konto helt, så gør det under Slet konto på din profil, eller skriv
+            til {mail}. Alt, der hører til den, bliver slettet med det samme: dine kalendere,
+            optagede tidsrum, adgangsoplysninger og gruppemedlemskaber.
             Grupper, hvor du var det eneste medlem, bliver også slettet. Grupper med andre medlemmer
             fortsætter uden dig.
           </p>
@@ -304,6 +313,12 @@ const en: Copy = {
             iCloud calendars only.
           </p>
           <p>
+            When you choose a password, or sign in with one, your browser checks it against Have I
+            Been Pwned, a public list of passwords from known data leaks, so a password that is easy
+            to guess gets caught. Only the first 5 characters of a hash of the password are sent,
+            and the password itself never leaves your browser.
+          </p>
+          <p>
             Casy&apos;s use and transfer of information received from Google APIs adheres to the{" "}
             {googlePolicyLink("Google API Services User Data Policy")}, including the Limited Use
             requirements.
@@ -372,7 +387,9 @@ const en: Copy = {
         <p>
           Data is stored with Casy&apos;s database provider, Supabase, and the website is served by
           Vercel. Sign-in emails are delivered by Resend, which receives your email address in order
-          to send them. All three keep standard technical logs to run their services. Casy uses no
+          to send them. All three keep standard technical logs to run their services. The sign-in
+          page uses Cloudflare Turnstile to check that you are not a robot, and Cloudflare sees
+          technical details such as your IP address and browser to do so. Casy uses no
           analytics or advertising trackers. Your browser keeps your login session so you stay
           signed in, the language you picked, and a copy of your own group list, your calendar
           connections and whether you have admin access, so pages open instantly. That copy is
@@ -396,8 +413,9 @@ const en: Copy = {
             anything about you. If you were the last member, the group is deleted with you.
           </p>
           <p>
-            To delete your Casy account entirely, email {mail} and everything connected to it will
-            be deleted: your calendars, busy times, credentials and group memberships. Groups where
+            To delete your Casy account entirely, use Delete account on your profile, or email
+            {mail}. Everything connected to it is deleted straight away: your calendars, busy times,
+            credentials and group memberships. Groups where
             you were the only member are deleted too; groups with other members carry on without
             you.
           </p>

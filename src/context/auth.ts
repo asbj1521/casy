@@ -26,7 +26,12 @@ export interface AuthState {
   passwordRecovery: boolean;
   /** Called once the new password has been saved, so the flag doesn't linger. */
   clearPasswordRecovery: () => void;
-  signOut: () => Promise<void>;
+  /**
+   * Sign out here ("local", the default) or on every device at once
+   * ("global"), which ends every session this account has. Throws if it
+   * didn't work (offline): the person is then still signed in.
+   */
+  signOut: (scope?: "local" | "global") => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthState | null>(null);

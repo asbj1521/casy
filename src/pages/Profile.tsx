@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +20,8 @@ import GroupsSection, { type GroupConfirm } from "@/components/GroupsSection";
 import IcsLinkForm from "@/components/IcsLinkForm";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import NewGroupDialog from "@/components/NewGroupDialog";
+import DeleteAccountSection from "@/components/DeleteAccountSection";
+import PasswordCodeStep from "@/components/PasswordCodeStep";
 import PasswordForm from "@/components/PasswordForm";
 import PrimaryCalendarCard from "@/components/PrimaryCalendarCard";
 import ProviderCard, { type ProviderMeta } from "@/components/ProviderCard";
@@ -51,6 +53,7 @@ import {
 } from "@/api/groups";
 import { callFunction } from "@/lib/supabaseFunctions";
 import { cn } from "@/lib/utils";
+import { clearWeakPassword } from "@/lib/weakPassword";
 import type { CalendarProvider } from "@/types";
 
 /**
@@ -118,6 +121,11 @@ export default function Profile() {
   const t = useT();
   const navigate = useNavigate();
   const [passwordFormOpen, setPasswordFormOpen] = useState(false);
+  // A new password waiting for the emailed code (see PasswordCodeStep).
+  const [codeFor, setCodeFor] = useState<string | null>(null);
+  const [codeResent, setCodeResent] = useState(false);
+  const [signingOutEverywhere, setSigningOutEverywhere] = useState(false);
+  const [signOutEverywhereFailed, setSignOutEverywhereFailed] = useState(false);
   const [passwordSubmitting, setPasswordSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSaved, setPasswordSaved] = useState(false);
@@ -278,6 +286,33 @@ export default function Profile() {
     setGroupConfirm({ groupId, action: "delete" });
   }
 
+  // ?password=new (from the weak-password note) opens the password form and
+  // brings it into view, then leaves the address as it was.
+  const passwordParam = searchParams.get("password");
+  const passwordSectionRef = useRef<HTMLElement>(null);
+  // Opened while rendering, as the parameter arrives (React's pattern for
+  // adjusting state when an input changes), so there is no extra render.
+  const [seenPasswordParam, setSeenPasswordParam] = useState<string | null>(null);
+  if (passwordParam !== seenPasswordParam) {
+    setSeenPasswordParam(passwordParam);
+    if (passwordParam === "new") {
+      setPasswordSaved(false);
+      setPasswordError(null);
+      setPasswordFormOpen(true);
+    }
+  }
+  useEffect(() => {
+    if (passwordParam !== "new") return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("password");
+    setSearchParams(next, { replace: true });
+    requestAnimationFrame(() =>
+      passwordSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+    // Only when the parameter arrives, not on every searchParams identity change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passwordParam]);
+
   // The OAuth callbacks redirect back here with ?connected=<provider> or
   // ?error=<provider>:<reason>. Read it once, show a banner, then strip the
   // params so a page refresh doesn't repeat the message.
@@ -353,17 +388,45 @@ export default function Profile() {
     }
   };
 
-  const handlePasswordSubmit = async (password: string) => {
+  /**
+   * Save a new password. Signed in more than a day ago, Supabase first wants
+   * a code it emails (secure_password_change): the password waits in
+   * `codeFor` until it is typed in, then goes with it as the nonce.
+   */
+  const handlePasswordSubmit = async (password: string, nonce?: string) => {
     setPasswordSubmitting(true);
     setPasswordError(null);
-    const { error: err } = await supabase.auth.updateUser({ password });
-    setPasswordSubmitting(false);
-    if (err) {
-      setPasswordError(authErrorMessage(err, t));
-    } else {
-      setPasswordFormOpen(false);
-      setPasswordSaved(true);
+    const { error: err } = await supabase.auth.updateUser(nonce ? { password, nonce } : { password });
+    if (err?.code === "reauthentication_needed") {
+      const { error: sendErr } = await supabase.auth.reauthenticate();
+      setPasswordSubmitting(false);
+      if (sendErr) setPasswordError(authErrorMessage(sendErr, t));
+      else {
+        setCodeResent(false);
+        setCodeFor(password);
+      }
+      return;
     }
+    if (err) {
+      setPasswordSubmitting(false);
+      setPasswordError(authErrorMessage(err, t));
+      return;
+    }
+    // Whoever else might be signed in as you (the reason to change a
+    // password, often) is signed out; this device stays signed in.
+    await supabase.auth.signOut({ scope: "others" });
+    setPasswordSubmitting(false);
+    setCodeFor(null);
+    setPasswordFormOpen(false);
+    setPasswordSaved(true);
+    clearWeakPassword();
+  };
+
+  const resendPasswordCode = async () => {
+    setPasswordError(null);
+    const { error: err } = await supabase.auth.reauthenticate();
+    if (err) setPasswordError(authErrorMessage(err, t));
+    else setCodeResent(true);
   };
 
   const hasConnected = connections?.some((c) => c.status === "connected") ?? false;
@@ -763,7 +826,7 @@ export default function Profile() {
                 replacing them. One form handles both setting a first
                 password and changing an existing one, since there is no
                 reliable way to tell from the client which case this is. */}
-            <section className="mt-8">
+            <section ref={passwordSectionRef} className="mt-8 scroll-mt-4">
               <h2 className="text-lg font-semibold text-foreground">{t.profile.password}</h2>
               <div className="mt-4 rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
                 {passwordSaved && !passwordFormOpen && (
@@ -772,12 +835,27 @@ export default function Profile() {
                     {t.profile.passwordSaved}
                   </p>
                 )}
-                {passwordFormOpen ? (
+                {passwordFormOpen && codeFor ? (
+                  <PasswordCodeStep
+                    email={user?.email ?? ""}
+                    submitting={passwordSubmitting}
+                    error={passwordError}
+                    resent={codeResent}
+                    onSubmit={(code) => void handlePasswordSubmit(codeFor, code)}
+                    onResend={() => void resendPasswordCode()}
+                    onCancel={() => {
+                      setCodeFor(null);
+                      setPasswordFormOpen(false);
+                      setPasswordError(null);
+                    }}
+                  />
+                ) : passwordFormOpen ? (
                   <PasswordForm
                     submitting={passwordSubmitting}
                     error={passwordError}
                     submitLabel={t.profile.savePassword}
                     submittingLabel={t.profile.saving}
+                    personal={[user?.email, name]}
                     onSubmit={(password) => void handlePasswordSubmit(password)}
                     onCancel={() => {
                       setPasswordFormOpen(false);
@@ -797,8 +875,40 @@ export default function Profile() {
                     {t.profile.setPassword}
                   </button>
                 )}
+
+                {/* Every session this account has, this one included. */}
+                <div className="mt-5 border-t pt-4">
+                  <button
+                    type="button"
+                    disabled={signingOutEverywhere}
+                    onClick={() => {
+                      setSigningOutEverywhere(true);
+                      setSignOutEverywhereFailed(false);
+                      signOut("global")
+                        .then(() => navigate("/"))
+                        .catch(() => {
+                          setSigningOutEverywhere(false);
+                          setSignOutEverywhereFailed(true);
+                        });
+                    }}
+                    className="flex items-center gap-2 rounded-full border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-secondary disabled:opacity-60"
+                  >
+                    {signingOutEverywhere ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <LogOut className="h-4 w-4" />
+                    )}
+                    {signingOutEverywhere ? t.profile.signingOutEverywhere : t.profile.signOutEverywhere}
+                  </button>
+                  <p className="mt-2 text-xs text-muted-foreground">{t.profile.signOutEverywhereHelp}</p>
+                  {signOutEverywhereFailed && (
+                    <p className="mt-2 text-sm text-red-700">{t.profile.couldntSignOutEverywhere}</p>
+                  )}
+                </div>
               </div>
             </section>
+
+            <DeleteAccountSection />
           </>
         )}
 
@@ -806,7 +916,9 @@ export default function Profile() {
         <button
           type="button"
           onClick={() => {
-            void signOut().then(() => navigate("/"));
+            signOut()
+              .then(() => navigate("/"))
+              .catch(() => undefined); // still signed in (offline): stay here
           }}
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-full border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary sm:hidden"
         >

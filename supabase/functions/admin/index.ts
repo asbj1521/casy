@@ -19,6 +19,7 @@
  */
 import { isAdminId } from "../_shared/admin.ts";
 import { callerUser } from "../_shared/auth.ts";
+import { deleteAccount } from "../_shared/accounts.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { displayNameFor } from "../_shared/groups.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
@@ -241,46 +242,12 @@ Deno.serve(withLanguage(async (req) => {
         const { data: found, error: findErr } = await db.auth.admin.getUserById(profileId);
         if (findErr || !found?.user) return json({ error: "That account no longer exists." }, 404);
 
-        // Which groups they are in, read before the account (and with it their
-        // memberships) is gone.
-        const { data: memberships, error: memberErr } = await db
-          .from("group_members")
-          .select("group_id")
-          .eq("profile_id", profileId);
-        if (memberErr) throw memberErr;
-        const groupIds = (memberships ?? []).map((m: { group_id: string }) => m.group_id);
-
-        // The account first: if this fails, nothing has changed at all. The
-        // foreign keys then cascade everything else they own: calendar
-        // accounts, stored credentials, busy times, memberships, their name.
-        const { error: deleteErr } = await db.auth.admin.deleteUser(profileId);
-        if (deleteErr) throw deleteErr;
-
-        // A group they were alone in is now empty, which nobody can reach
-        // (the same reason leave_friend_group deletes one). Clean those up.
-        // Should this step fail, the account is still gone; the worst left
-        // behind is an empty group, so it is logged rather than reported.
-        let deletedGroups = 0;
-        if (groupIds.length > 0) {
-          const { data: remaining, error: remainingErr } = await db
-            .from("group_members")
-            .select("group_id")
-            .in("group_id", groupIds);
-          const stillUsed = new Set((remaining ?? []).map((m: { group_id: string }) => m.group_id));
-          const empty = groupIds.filter((id) => !stillUsed.has(id));
-          if (remainingErr) {
-            console.error("admin deleteUser: couldn't check for empty groups", remainingErr);
-          } else if (empty.length > 0) {
-            const { error: emptyErr } = await db.from("friend_groups").delete().in("id", empty);
-            if (emptyErr) console.error("admin deleteUser: couldn't delete empty groups", emptyErr);
-            else deletedGroups = empty.length;
-          }
-        }
-
+        // The same as someone deleting their own account (_shared/accounts.ts).
+        const { leftGroups, deletedGroups } = await deleteAccount(db, profileId);
         console.log(
-          `admin ${caller.id} deleted user ${profileId}; left ${groupIds.length} groups, ${deletedGroups} deleted as empty`,
+          `admin ${caller.id} deleted user ${profileId}; left ${leftGroups} groups, ${deletedGroups} deleted as empty`,
         );
-        return json({ outcome: "deleted", leftGroups: groupIds.length, deletedGroups });
+        return json({ outcome: "deleted", leftGroups, deletedGroups });
       }
 
       case "syncConnection": {

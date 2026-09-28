@@ -1,11 +1,16 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, useMemo, useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Lock, XCircle } from "lucide-react";
+import { Check, Circle, Loader2, Lock, XCircle } from "lucide-react";
 
-import { useT } from "@/i18n/lang";
-
-/** Supabase's own floor (`minimum_password_length` in supabase/config.toml). */
-const MIN_PASSWORD_LENGTH = 6;
+import { useLang, useT, LOCALE } from "@/i18n/lang";
+import {
+  checkPassword,
+  MIN_PASSWORD_LENGTH,
+  passesChecks,
+  personalWords,
+  timesLeaked,
+} from "@/lib/passwordRules";
+import { cn } from "@/lib/utils";
 
 /**
  * A new-password + confirm-password pair, used both for setting/changing a
@@ -18,6 +23,11 @@ const MIN_PASSWORD_LENGTH = 6;
  * comes from the caller, since it belongs to the request rather than the
  * form; the match check is purely local, so it is cleared on every keystroke
  * rather than surviving until the next submit.
+ *
+ * The rules (src/lib/passwordRules.ts) are listed under the field and tick
+ * off as they are met. On submit, after they pass, the password is checked
+ * against known data leaks; a leaked one is refused with the reason. If that
+ * check can't be reached, the password goes through on the rules alone.
  */
 export default function PasswordForm({
   open = true,
@@ -26,6 +36,7 @@ export default function PasswordForm({
   submitLabel,
   submittingLabel,
   passwordLabel,
+  personal = [],
   onSubmit,
   onCancel,
 }: {
@@ -36,24 +47,52 @@ export default function PasswordForm({
   submittingLabel: string;
   /** "New password" fits changing one; a fresh sign-up reads better as "Password". */
   passwordLabel?: string;
+  /** The person's email and name, which the password mustn't be built from. */
+  personal?: (string | null | undefined)[];
   onSubmit: (password: string) => void;
   onCancel?: () => void;
 }) {
   const t = useT();
+  const { lang } = useLang();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [mismatch, setMismatch] = useState(false);
+  // A problem found here, before anything is sent: shown until the next keystroke.
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
   const passwordId = useId();
   const confirmId = useId();
+  // Joined so the list only changes when the values do, not every render.
+  const personalKey = personal.filter(Boolean).join("\n");
+  const words = useMemo(() => personalWords(personalKey.split("\n")), [personalKey]);
+  const checks = checkPassword(password, words);
+  const rules = [
+    { met: checks.length, label: t.passwordForm.ruleLength(MIN_PASSWORD_LENGTH) },
+    { met: checks.lettersAndDigits, label: t.passwordForm.ruleLettersDigits },
+    { met: checks.notPersonal, label: t.passwordForm.ruleNotPersonal },
+  ];
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (password !== confirm) {
-      setMismatch(true);
+      setLocalError(t.passwordForm.mismatch);
+      return;
+    }
+    if (!passesChecks(checks)) {
+      setLocalError(t.passwordForm.rulesNotMet);
+      return;
+    }
+    setChecking(true);
+    const leaked = await timesLeaked(password);
+    setChecking(false);
+    if (leaked) {
+      setLocalError(t.passwordForm.leaked(leaked.toLocaleString(LOCALE[lang])));
       return;
     }
     onSubmit(password);
   }
+
+  const busy = submitting || checking;
+  const clearLocalError = () => setLocalError(null);
 
   return (
     <AnimatePresence initial={false}>
@@ -62,7 +101,7 @@ export default function PasswordForm({
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          onSubmit={handleSubmit}
+          onSubmit={(e) => void handleSubmit(e)}
           className="overflow-hidden"
         >
           <div className="flex flex-col gap-3">
@@ -80,13 +119,29 @@ export default function PasswordForm({
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setMismatch(false);
+                  clearLocalError();
                 }}
                 className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <span className="mt-1 block text-xs text-muted-foreground">
-                {t.passwordForm.atLeast(MIN_PASSWORD_LENGTH)}
-              </span>
+              {/* The rules, ticked off as they are met. */}
+              <ul className="mt-2 flex flex-col gap-1 text-xs">
+                {rules.map((rule) => (
+                  <li
+                    key={rule.label}
+                    className={cn(
+                      "flex items-center gap-1.5",
+                      rule.met && password ? "text-emerald-700" : "text-muted-foreground",
+                    )}
+                  >
+                    {rule.met && password ? (
+                      <Check className="h-3.5 w-3.5 shrink-0" />
+                    ) : (
+                      <Circle className="h-3 w-3 shrink-0" />
+                    )}
+                    {rule.label}
+                  </li>
+                ))}
+              </ul>
             </div>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-foreground">{t.passwordForm.confirm}</span>
@@ -99,30 +154,30 @@ export default function PasswordForm({
                 value={confirm}
                 onChange={(e) => {
                   setConfirm(e.target.value);
-                  setMismatch(false);
+                  clearLocalError();
                 }}
                 className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
               />
             </label>
-            {(mismatch || error) && (
+            {(localError || error) && (
               <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
                 <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{mismatch ? t.passwordForm.mismatch : error}</span>
+                <span>{localError ?? error}</span>
               </div>
             )}
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={busy}
                 className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
               >
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {submitting ? submittingLabel : submitLabel}
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {checking ? t.passwordForm.checking : submitting ? submittingLabel : submitLabel}
               </button>
               {onCancel && (
                 <button
                   type="button"
-                  disabled={submitting}
+                  disabled={busy}
                   onClick={onCancel}
                   className="text-sm text-muted-foreground transition hover:text-foreground"
                 >

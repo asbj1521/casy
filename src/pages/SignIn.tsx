@@ -5,9 +5,12 @@ import { CheckCircle2, KeyRound, Loader2, Mail, XCircle } from "lucide-react";
 import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
+import { useCaptcha } from "@/hooks/useCaptcha";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
+import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/passwordRules";
 import { supabase } from "@/lib/supabase";
+import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
 
 /**
  * Where to go after signing in. Only a path on this site is accepted: taking
@@ -70,22 +73,53 @@ export default function SignIn() {
 
   const [signupSubmitting, setSignupSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
+  // A new account waits for its email to be confirmed: where the link went,
+  // and whether it was sent again. Also set when signing in before confirming.
+  const [confirmSentTo, setConfirmSentTo] = useState<string | null>(null);
+  const [unconfirmed, setUnconfirmed] = useState<string | null>(null);
+  const [resend, setResend] = useState<"idle" | "sending" | "sent">("idle");
+  const [resendError, setResendError] = useState<string | null>(null);
 
   const [recoverySubmitting, setRecoverySubmitting] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
+
+  // Bot protection for every email and password call below (useCaptcha).
+  // Taken apart so the widget's ref callback stays separate from the token.
+  const {
+    enabled: captchaEnabled,
+    token: captchaValue,
+    failed: captchaFailed,
+    attach: attachCaptcha,
+    reset: resetCaptcha,
+  } = useCaptcha(lang);
 
   if (loading) return <div className="min-h-screen bg-background" />;
 
   // Come back to this page, still carrying where to go afterwards.
   const returnTo = `${window.location.origin}/sign-in?next=${encodeURIComponent(next)}`;
 
+  /** Why a call can't go yet (no bot-check token), or null when it can. */
+  function captchaProblem(): string | null {
+    if (!captchaEnabled || captchaValue) return null;
+    return captchaFailed ? t.signIn.captchaFailed : t.signIn.captchaWait;
+  }
+  // Sent with every call; undefined while bot protection isn't set up.
+  const captchaToken = captchaValue ?? undefined;
+
   async function handleNewPassword(newPassword: string) {
     setRecoverySubmitting(true);
     setRecoveryError(null);
     const { error: err } = await supabase.auth.updateUser({ password: newPassword });
+    if (err) {
+      setRecoverySubmitting(false);
+      setRecoveryError(authErrorMessage(err, t));
+      return;
+    }
+    // A reset is often because someone else got in: sign out every other device.
+    await supabase.auth.signOut({ scope: "others" });
     setRecoverySubmitting(false);
-    if (err) setRecoveryError(authErrorMessage(err, t));
-    else clearPasswordRecovery();
+    clearWeakPassword();
+    clearPasswordRecovery();
   }
 
   if (passwordRecovery) {
@@ -103,6 +137,7 @@ export default function SignIn() {
               error={recoveryError}
               submitLabel={t.profile.savePassword}
               submittingLabel={t.profile.saving}
+              personal={[user?.email]}
               onSubmit={(pw) => void handleNewPassword(pw)}
             />
           </div>
@@ -126,13 +161,19 @@ export default function SignIn() {
 
   async function handleEmail(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const problem = captchaProblem();
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setSending(true);
     setError(null);
     const address = email.trim();
     const { error: err } = await supabase.auth.signInWithOtp({
       email: address,
-      options: { emailRedirectTo: returnTo },
+      options: { emailRedirectTo: returnTo, captchaToken },
     });
+    resetCaptcha();
     setSending(false);
     if (err) setError(authErrorMessage(err, t));
     else setSentTo(address);
@@ -140,33 +181,108 @@ export default function SignIn() {
 
   async function handlePassword(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const problem = captchaProblem();
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setSending(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
+    setUnconfirmed(null);
+    const address = email.trim();
+    const typed = password;
+    const { data, error: err } = await supabase.auth.signInWithPassword({
+      email: address,
+      password: typed,
+      options: { captchaToken },
     });
+    resetCaptcha();
     setSending(false);
     // On success the auth state change above redirects via `user`.
-    if (err) setError(authErrorMessage(err, t));
+    if (err) {
+      setError(authErrorMessage(err, t));
+      // Signed up but never clicked the link: offer to send it again.
+      if (err.code === "email_not_confirmed") {
+        setUnconfirmed(address);
+        setResend("idle");
+        setResendError(null);
+      }
+      return;
+    }
+    // A password chosen before today's rules gets a note asking for a new
+    // one (WeakPasswordNotice). Supabase flags the ones its own rules catch;
+    // the rest (a name in it, a known leak) are checked here, after the
+    // redirect, so signing in never waits on them.
+    const userId = data.user?.id;
+    if (!userId) return;
+    if (data.weakPassword?.reasons?.length) {
+      flagWeakPassword(userId);
+      return;
+    }
+    void (async () => {
+      if (!passesChecks(checkPassword(typed, personalWords([address]))) || (await timesLeaked(typed))) {
+        flagWeakPassword(userId);
+      }
+    })();
   }
 
   async function handleSignUp(newPassword: string) {
+    const problem = captchaProblem();
+    if (problem) {
+      setSignupError(problem);
+      return;
+    }
     setSignupSubmitting(true);
     setSignupError(null);
-    const { error: err } = await supabase.auth.signUp({
-      email: email.trim(),
+    const address = email.trim();
+    const { data, error: err } = await supabase.auth.signUp({
+      email: address,
       password: newPassword,
-      options: { emailRedirectTo: returnTo },
+      options: { emailRedirectTo: returnTo, captchaToken },
     });
+    resetCaptcha();
     setSignupSubmitting(false);
-    // On success the auth state change above redirects via `user`: email
-    // confirmations are off, so a new account signs itself in right away.
-    // An email that already has a Google or email-link account fails here
-    // instead, since manual account linking is off — the message says to
-    // sign in the way they already do and add a password from their
-    // profile, rather than silently creating a second, disconnected account.
-    if (err) setSignupError(authErrorMessage(err, t));
+    if (err) {
+      setSignupError(authErrorMessage(err, t));
+      return;
+    }
+    // An address that already has an account: with confirmations on,
+    // Supabase answers with a stand-in user with no identities rather than an
+    // error (so the answer alone doesn't reveal who has an account). The
+    // message is the same as before: sign in the way they already do and add
+    // a password from the profile, rather than a second, disconnected account.
+    if (data.user && data.user.identities?.length === 0) {
+      setSignupError(t.authErrors.userExists);
+      return;
+    }
+    // Email confirmation is on: the account works once the link in the
+    // email is clicked, which signs them in and brings them back here.
+    if (!data.session) {
+      setConfirmSentTo(address);
+      setResend("idle");
+      setResendError(null);
+    }
+    // With a session (confirmation switched off), the redirect via `user` runs.
+  }
+
+  async function handleResendConfirm(address: string) {
+    const problem = captchaProblem();
+    if (problem) {
+      setResendError(problem);
+      return;
+    }
+    setResend("sending");
+    setResendError(null);
+    const { error: err } = await supabase.auth.resend({
+      type: "signup",
+      email: address,
+      options: { emailRedirectTo: returnTo, captchaToken },
+    });
+    resetCaptcha();
+    if (err) {
+      setResend("idle");
+      setResendError(authErrorMessage(err, t));
+    } else setResend("sent");
   }
 
   async function handleForgotPassword() {
@@ -175,11 +291,18 @@ export default function SignIn() {
       setForgotError(t.signIn.enterEmailFirst);
       return;
     }
+    const problem = captchaProblem();
+    if (problem) {
+      setForgotError(problem);
+      return;
+    }
     setForgotSending(true);
     setForgotError(null);
     const { error: err } = await supabase.auth.resetPasswordForEmail(address, {
       redirectTo: returnTo,
+      captchaToken,
     });
+    resetCaptcha();
     setForgotSending(false);
     if (err) setForgotError(authErrorMessage(err, t));
     else setForgotSentTo(address);
@@ -193,6 +316,8 @@ export default function SignIn() {
     setForgotSentTo(null);
     setForgotError(null);
     setSignupError(null);
+    setConfirmSentTo(null);
+    setUnconfirmed(null);
   }
 
   function switchPasswordTab(next: "signin" | "signup") {
@@ -201,7 +326,24 @@ export default function SignIn() {
     setForgotSentTo(null);
     setForgotError(null);
     setSignupError(null);
+    setConfirmSentTo(null);
+    setUnconfirmed(null);
   }
+
+  /** "Send it again", or that it was, for a confirmation email. */
+  const resendButton = (address: string) =>
+    resend === "sent" ? (
+      <span className="font-medium">{t.signIn.confirmResent}</span>
+    ) : (
+      <button
+        type="button"
+        disabled={resend === "sending"}
+        onClick={() => void handleResendConfirm(address)}
+        className="font-medium underline underline-offset-2 disabled:opacity-60"
+      >
+        {resend === "sending" ? t.signIn.confirmResending : t.signIn.confirmResend}
+      </button>
+    );
 
   return (
     <div className="min-h-screen bg-background">
@@ -212,6 +354,14 @@ export default function SignIn() {
           {t.signIn.title}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{t.signIn.intro}</p>
+
+        {/* Arrived here right after deleting an account from the profile. */}
+        {searchParams.get("deleted") && (
+          <div className="mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{t.signIn.accountDeleted}</span>
+          </div>
+        )}
 
         <div className="mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
           <button
@@ -379,6 +529,24 @@ export default function SignIn() {
                     )}
                   </form>
                 )
+              ) : confirmSentTo ? (
+                <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    {t.signIn.confirmSent(
+                      <strong>{confirmSentTo}</strong>,
+                      resendButton(confirmSentTo),
+                      <button
+                        type="button"
+                        onClick={() => setConfirmSentTo(null)}
+                        className="font-medium underline underline-offset-2"
+                      >
+                        {t.signIn.otherEmail}
+                      </button>,
+                    )}
+                    {resendError && <span className="mt-1 block text-red-800">{resendError}</span>}
+                  </span>
+                </div>
               ) : (
                 <div className="flex flex-col gap-3">
                   <label className="text-sm">
@@ -399,6 +567,7 @@ export default function SignIn() {
                     submitLabel={t.signIn.createAccount}
                     submittingLabel={t.signIn.creatingAccount}
                     passwordLabel={t.signIn.password}
+                    personal={[email]}
                     onSubmit={(pw) => void handleSignUp(pw)}
                   />
                 </div>
@@ -414,10 +583,17 @@ export default function SignIn() {
             {mode === "link" ? t.signIn.usePassword : t.signIn.useLink}
           </button>
 
+          {/* Cloudflare's bot check: invisible unless it wants a click. */}
+          <div ref={attachCaptcha} className="mt-3 empty:hidden" />
+
           {error && (
             <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
               <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{error}</span>
+              <span>
+                {error}
+                {unconfirmed && <> {resendButton(unconfirmed)}</>}
+                {unconfirmed && resendError && <span className="mt-1 block">{resendError}</span>}
+              </span>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import Footer from '@/components/Footer'
 import RequireAuth from '@/components/RequireAuth'
+import WeakPasswordNotice from '@/components/WeakPasswordNotice'
 import AuthProvider from '@/context/AuthProvider'
 import LanguageProvider from '@/i18n/LanguageProvider'
 import { persistQueries } from '@/lib/queryPersistence'
@@ -41,6 +42,8 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+            {/* After signing in with a password that no longer meets the rules. */}
+            <WeakPasswordNotice />
             {/* Plain background rather than a spinner: these chunks are small, and
                 a flash of "Loading…" would read as slower than a beat of nothing. */}
             <Suspense fallback={<div className="min-h-screen bg-background" />}>

@@ -232,7 +232,18 @@ export const en: Messages = {
     syncSomeFailed: (failed: number, n: number) =>
       `${failed} of ${n === 1 ? "1 account" : `${n} accounts`} couldn't sync. See below.`,
     password: "Password",
-    passwordSaved: "Password saved. You can use it to sign in from now on.",
+    passwordSaved:
+      "Password saved. You can use it to sign in from now on, and you are signed out on your other devices.",
+    codeSent: (email: string) =>
+      `You haven't signed in within the last day, so we sent a code to ${email} to make sure it's you. Enter it here to save your new password.`,
+    codeLabel: "Code from the email",
+    codeResend: "Send a new code",
+    codeResent: "New code sent",
+    signOutEverywhere: "Sign out on all devices",
+    signOutEverywhereHelp:
+      "Signs you out everywhere, here too. Use it if you lost a phone or were signed in on someone else's computer.",
+    signingOutEverywhere: "Signing out",
+    couldntSignOutEverywhere: "Couldn't sign out on all devices. Try again.",
     savePassword: "Save password",
     saving: "Saving",
     setPassword: "Set or change your password",
@@ -315,9 +326,15 @@ export const en: Messages = {
   },
   passwordForm: {
     newPassword: "New password",
-    atLeast: (n: number) => `At least ${n} characters.`,
     confirm: "Confirm password",
     mismatch: "Passwords don't match.",
+    ruleLength: (n: number) => `At least ${n} characters`,
+    ruleLettersDigits: "Both letters and numbers",
+    ruleNotPersonal: "Not your email address or name",
+    rulesNotMet: "The password doesn't meet the requirements under the field.",
+    checking: "Checking the password",
+    leaked: (times: string) =>
+      `That password appears ${times} times in known data leaks, so it is easy to guess. Choose another.`,
   },
   groupsSection: {
     title: "Your groups",
@@ -343,10 +360,11 @@ export const en: Messages = {
   },
   authErrors: {
     invalidCredentials: "Wrong email or password.",
-    weakPassword: "That password is too weak. Pick a longer one.",
+    weakPassword: "That password is too weak. Use at least 8 characters with both letters and numbers.",
     samePassword: "The new password must be different from the old one.",
     rateLimit: "Too many attempts. Wait a little and try again.",
     emailNotConfirmed: "Confirm your email first. Check your inbox.",
+    codeInvalid: "That code is wrong or has expired. Check the email, or get a new code.",
     userExists: "There is already an account with that email.",
   },
   categories: {
@@ -461,6 +479,22 @@ export const en: Messages = {
     useOriginalName: (name: string) => `Use the original name (${name})`,
     couldntSaveName: "Couldn't save the name",
   },
+  deleteAccount: {
+    title: "Delete account",
+    intro:
+      "Deletes your account and everything that belongs to it: your connected calendars and Casy's access to them, your busy times and your name. You leave your groups, and groups where you are the only member are deleted. Events Casy added to your calendar stay there. This can't be undone.",
+    button: "Delete my account",
+    word: "DELETE",
+    prompt: (word: string) => `Type ${word} to confirm.`,
+    confirmButton: "Delete the account for good",
+    deleting: "Deleting",
+    failed: "Couldn't delete your account. Try again.",
+  },
+  weakPasswordNotice: {
+    message: "Your password is easier to guess than Casy now allows.",
+    action: "Choose a new one",
+    dismiss: "Dismiss",
+  },
   addToCalendar: {
     button: "Add to my calendar",
     goesInto: (name: string) => `Casy adds it to ${name}.`,
@@ -520,6 +554,19 @@ export const en: Messages = {
       </>
     ),
     otherEmail: "Use another email",
+    confirmSent: (email: ReactNode, resend: ReactNode, other: ReactNode) => (
+      <>
+        Check your inbox. We sent a link to {email}. Click it to confirm your email, and your
+        account is ready and you are signed in. No email? {resend} {other}
+      </>
+    ),
+    confirmResend: "Send it again",
+    confirmResending: "Sending",
+    confirmResent: "Sent again.",
+    accountDeleted: "Your account has been deleted. Thank you for using Casy.",
+    captchaWait: "One moment: we're checking you're not a robot. Try again in a few seconds.",
+    captchaFailed:
+      "We couldn't check that you're not a robot. Reload the page, turn off any ad blocker for this site, or sign in with Google.",
     email: "Email",
     emailPlaceholder: "you@example.com",
     sendingLink: "Sending link",
@@ -591,6 +638,7 @@ export const en: Messages = {
     adminDeleteAccount: "Couldn't delete the account",
     adminSync: "Couldn't sync that account",
     loadPrimaryCalendar: "Couldn't load your primary calendar",
+    deleteAccount: "Couldn't delete your account",
     setPrimaryCalendar: "Couldn't save your primary calendar",
     setAutoAdd: "Couldn't save Add automatically",
     addToCalendar: "Couldn't add the event to your calendar",

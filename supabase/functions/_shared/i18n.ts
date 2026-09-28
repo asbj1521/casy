@@ -65,6 +65,7 @@ export const DANISH: Record<string, string> = {
   // Accounts and admin
   "That account no longer exists.": "Kontoen findes ikke længere.",
   "That account isn't connected.": "Den konto er ikke forbundet.",
+  "Couldn't delete your account. Please try again.": "Kunne ikke slette din konto. Prøv igen.",
   "You can't delete your own account from admin mode.":
     "Du kan ikke slette din egen konto fra admin-tilstand.",
 

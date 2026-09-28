@@ -47,8 +47,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       passwordRecovery,
       clearPasswordRecovery: () => setPasswordRecovery(false),
-      signOut: async () => {
-        await supabase.auth.signOut();
+      signOut: async (scope = "local") => {
+        // Supabase answers a failure (offline, say) with an error rather than
+        // throwing, and keeps the session: say so, so no button pretends.
+        const { error } = await supabase.auth.signOut({ scope });
+        if (error) throw error;
       },
     }),
     [session, loading, passwordRecovery],

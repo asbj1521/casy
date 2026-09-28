@@ -252,7 +252,18 @@ export const da = {
     syncSomeFailed: (failed: number, n: number) =>
       `${failed} af ${n === 1 ? "1 konto" : `${n} konti`} kunne ikke synkroniseres. Se nedenfor.`,
     password: "Adgangskode",
-    passwordSaved: "Adgangskoden er gemt. Du kan bruge den til at logge ind fra nu af.",
+    passwordSaved:
+      "Adgangskoden er gemt. Du kan bruge den til at logge ind fra nu af, og du er logget ud på dine andre enheder.",
+    codeSent: (email: string) =>
+      `Du har ikke logget ind det seneste døgn, så vi har sendt en kode til ${email} for at være sikre på, at det er dig. Skriv den her for at gemme din nye adgangskode.`,
+    codeLabel: "Kode fra mailen",
+    codeResend: "Send en ny kode",
+    codeResent: "Ny kode sendt",
+    signOutEverywhere: "Log ud på alle enheder",
+    signOutEverywhereHelp:
+      "Logger dig ud overalt, også her. Brug den, hvis du har mistet en telefon eller har været logget ind på en andens computer.",
+    signingOutEverywhere: "Logger ud",
+    couldntSignOutEverywhere: "Kunne ikke logge ud på alle enheder. Prøv igen.",
     savePassword: "Gem adgangskode",
     saving: "Gemmer",
     setPassword: "Angiv eller skift din adgangskode",
@@ -336,9 +347,15 @@ export const da = {
   },
   passwordForm: {
     newPassword: "Ny adgangskode",
-    atLeast: (n: number) => `Mindst ${n} tegn.`,
     confirm: "Bekræft adgangskode",
     mismatch: "Adgangskoderne er ikke ens.",
+    ruleLength: (n: number) => `Mindst ${n} tegn`,
+    ruleLettersDigits: "Både bogstaver og tal",
+    ruleNotPersonal: "Ikke din e-mailadresse eller dit navn",
+    rulesNotMet: "Adgangskoden opfylder ikke kravene under feltet.",
+    checking: "Tjekker adgangskoden",
+    leaked: (times: string) =>
+      `Den adgangskode optræder ${times} gange i kendte datalæk, så den er let at gætte. Vælg en anden.`,
   },
   groupsSection: {
     title: "Dine grupper",
@@ -364,11 +381,12 @@ export const da = {
   },
   authErrors: {
     invalidCredentials: "Forkert e-mail eller adgangskode.",
-    weakPassword: "Adgangskoden er for svag. Vælg en længere.",
+    weakPassword: "Adgangskoden er for svag. Brug mindst 8 tegn med både bogstaver og tal.",
     samePassword: "Den nye adgangskode skal være en anden end den gamle.",
     rateLimit: "For mange forsøg. Vent lidt, og prøv igen.",
     emailNotConfirmed: "Bekræft din e-mail først. Tjek din indbakke.",
     userExists: "Der findes allerede en konto med den e-mail.",
+    codeInvalid: "Koden er forkert eller udløbet. Tjek mailen, eller få en ny kode.",
   },
   categories: {
     work: "Arbejde",
@@ -482,6 +500,22 @@ export const da = {
     useOriginalName: (name: string) => `Brug det oprindelige navn (${name})`,
     couldntSaveName: "Kunne ikke gemme navnet",
   },
+  deleteAccount: {
+    title: "Slet konto",
+    intro:
+      "Sletter din konto og alt, der hører til den: dine forbundne kalendere og Casys adgang til dem, dine optagede tidsrum og dit navn. Du forlader dine grupper, og grupper, hvor du er det eneste medlem, bliver slettet. Aftaler, Casy har lagt i din kalender, bliver liggende. Det kan ikke fortrydes.",
+    button: "Slet min konto",
+    word: "SLET",
+    prompt: (word: string) => `Skriv ${word} for at bekræfte.`,
+    confirmButton: "Slet kontoen for altid",
+    deleting: "Sletter",
+    failed: "Kunne ikke slette din konto. Prøv igen.",
+  },
+  weakPasswordNotice: {
+    message: "Din adgangskode er nemmere at gætte, end Casy tillader nu.",
+    action: "Vælg en ny",
+    dismiss: "Luk",
+  },
   addToCalendar: {
     button: "Tilføj til min kalender",
     goesInto: (name: string) => `Casy lægger den i ${name}.`,
@@ -541,6 +575,19 @@ export const da = {
       </>
     ),
     otherEmail: "Brug en anden e-mail",
+    confirmSent: (email: ReactNode, resend: ReactNode, other: ReactNode) => (
+      <>
+        Tjek din indbakke. Vi har sendt et link til {email}. Klik på det for at bekræfte din e-mail,
+        så er din konto klar, og du er logget ind. Ingen mail? {resend} {other}
+      </>
+    ),
+    confirmResend: "Send det igen",
+    confirmResending: "Sender",
+    confirmResent: "Sendt igen.",
+    accountDeleted: "Din konto er slettet. Tak, fordi du brugte Casy.",
+    captchaWait: "Et øjeblik: vi tjekker lige, at du ikke er en robot. Prøv igen om et par sekunder.",
+    captchaFailed:
+      "Vi kunne ikke tjekke, at du ikke er en robot. Genindlæs siden, slå en eventuel reklameblokering fra her, eller log ind med Google.",
     email: "E-mail",
     emailPlaceholder: "dig@eksempel.dk",
     sendingLink: "Sender link",
@@ -612,6 +659,7 @@ export const da = {
     adminDeleteAccount: "Kunne ikke slette kontoen",
     adminSync: "Kunne ikke synkronisere kontoen",
     loadPrimaryCalendar: "Kunne ikke hente din primære kalender",
+    deleteAccount: "Kunne ikke slette din konto",
     setPrimaryCalendar: "Kunne ikke gemme din primære kalender",
     setAutoAdd: "Kunne ikke gemme Tilføj automatisk",
     addToCalendar: "Kunne ikke lægge aftalen i din kalender",

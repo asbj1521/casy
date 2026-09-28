@@ -13,6 +13,8 @@ export function authErrorMessage(err: { code?: string; message: string }, t: Mes
       return t.authErrors.weakPassword;
     case "same_password":
       return t.authErrors.samePassword;
+    case "reauthentication_not_valid":
+      return t.authErrors.codeInvalid;
     case "over_email_send_rate_limit":
     case "over_request_rate_limit":
       return t.authErrors.rateLimit;
