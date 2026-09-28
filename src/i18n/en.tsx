@@ -75,7 +75,6 @@ export const en: Messages = {
     privacy: "Privacy",
   },
   scheduler: {
-    plan: "Your plan",
     group: "Group",
     name: "What are you doing",
     namePlaceholder: "E.g. drinks or board games",
@@ -104,6 +103,8 @@ export const en: Messages = {
     tripTimes: (start: string, end: string) => `Leave ${start}, home ${end}`,
     countCan: (n: number, total: number) => `${n} of ${total} can`,
     nextOption: "Next option",
+    nextShort: "Next",
+    suggestShort: "Suggest",
     chartTitle: (month: string) => `${month}, day by day`,
     legendAll: "Everyone can",
     legendFree: "Free",

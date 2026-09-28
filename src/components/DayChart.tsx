@@ -43,7 +43,7 @@ export default function DayChart({
   const { lang } = useLang();
   const days = grid.weeks.flat().filter((c) => c.inMonth);
   const title = grid.label.charAt(0).toUpperCase() + grid.label.slice(1);
-  const MAX_BAR = 150;
+  const bestNumbers = new Set(days.filter((c) => bestDays.has(c.date)).map((c) => c.dayOfMonth));
 
   function describe(c: DayCell) {
     return conditionalKind === "timeOff"
@@ -52,7 +52,7 @@ export default function DayChart({
   }
 
   return (
-    <section className="rounded-2xl border bg-card px-4 pb-4 pt-5 shadow-sm sm:px-7">
+    <section className="rounded-2xl border bg-card px-4 pb-4 pt-4 shadow-sm sm:px-7 sm:pt-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
@@ -64,7 +64,7 @@ export default function DayChart({
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <h2 className="text-base font-bold text-foreground sm:text-lg">
+          <h2 className="text-[15px] font-bold text-foreground sm:text-lg">
             {t.scheduler.chartTitle(title)}
           </h2>
           <button
@@ -98,12 +98,17 @@ export default function DayChart({
       </div>
 
       {/* The bars, then the day numbers under them in the same columns. */}
-      <div className="mt-5 flex items-end gap-[2px] border-b sm:gap-1.5" style={{ height: MAX_BAR + 24 }}>
+      {/* The tallest bar is --bar-max: shorter on a phone, so the chart fits
+          on the first screen under the answer. */}
+      <div
+        className="mt-4 flex items-end gap-[2px] border-b [--bar-max:110px] sm:mt-5 sm:gap-1.5 sm:[--bar-max:150px]"
+        style={{ height: "calc(var(--bar-max) + 24px)" }}
+      >
         {days.map((c) => {
           const dead = c.excluded || c.isPast;
           const best = bestDays.has(c.date);
-          const freeH = dead ? 0 : (c.freeCount / Math.max(c.total, 1)) * MAX_BAR;
-          const condH = dead ? 0 : (c.conditionalCount / Math.max(c.total, 1)) * MAX_BAR;
+          const freeH = dead ? 0 : c.freeCount / Math.max(c.total, 1);
+          const condH = dead ? 0 : c.conditionalCount / Math.max(c.total, 1);
           return (
             <button
               key={c.date}
@@ -128,7 +133,7 @@ export default function DayChart({
                 {condH > 0 && (
                   <span
                     className="w-full rounded-t-[4px] bg-amber-300"
-                    style={{ height: condH }}
+                    style={{ height: `calc(var(--bar-max) * ${condH})` }}
                   />
                 )}
                 <span
@@ -141,7 +146,7 @@ export default function DayChart({
                         ? "bg-primary"
                         : "bg-primary/30 group-hover:bg-primary/50",
                   )}
-                  style={dead ? undefined : { height: Math.max(freeH, 3) }}
+                  style={dead ? undefined : { height: `max(3px, calc(var(--bar-max) * ${freeH}))` }}
                 />
               </span>
             </button>
@@ -165,7 +170,12 @@ export default function DayChart({
                   "font-semibold",
                   // A phone has no room for 31 numbers: every fifth day, the
                   // first, and the answer's days.
-                  !best && c.dayOfMonth !== 1 && c.dayOfMonth % 5 !== 0 && "invisible sm:visible",
+                  // A number right beside the answer's would run into it.
+                  !best &&
+                    (c.dayOfMonth !== 1 && c.dayOfMonth % 5 !== 0
+                      ? true
+                      : bestNumbers.has(c.dayOfMonth - 1) || bestNumbers.has(c.dayOfMonth + 1)) &&
+                    "invisible sm:visible",
                   best
                     ? "font-extrabold text-primary"
                     : c.excluded || c.isPast

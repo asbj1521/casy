@@ -129,7 +129,7 @@ function Switch({
       aria-checked={checked}
       aria-label={children ? undefined : label}
       onClick={() => onChange(!checked)}
-      className="flex min-h-11 items-center gap-2 text-sm font-bold text-foreground"
+      className="flex min-h-9 items-center gap-2 text-sm font-bold text-foreground"
     >
       {children}
       <span
@@ -309,21 +309,22 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
   ];
 
   return (
-    <section className="rounded-2xl border bg-card p-4 shadow-sm xl:hidden">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {t.scheduler.plan}
-        </span>
-        <Switch
-          checked={settings.multiDay}
-          onChange={(multiDay) => onChange({ multiDay })}
-          label={t.scheduler.tripToggleAria}
-        >
-          {t.scheduler.tripToggle}
-        </Switch>
+    <section className="rounded-2xl border bg-card p-3.5 shadow-sm sm:p-4 xl:hidden">
+      {/* The group and the Tur / ferie switch share a line, so the chart
+          under the answer still makes the first screen on a phone. */}
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">{groupSwitcher}</div>
+        <div className="flex shrink-0 flex-col items-center">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            {t.scheduler.tripToggle}
+          </span>
+          <Switch
+            checked={settings.multiDay}
+            onChange={(multiDay) => onChange({ multiDay })}
+            label={t.scheduler.tripToggleAria}
+          />
+        </div>
       </div>
-
-      <div className="mt-2">{groupSwitcher}</div>
 
       <input
         type="text"

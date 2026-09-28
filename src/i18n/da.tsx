@@ -84,7 +84,6 @@ export const da = {
   },
   scheduler: {
     // The settings bar (desktop) and the sentence (phone).
-    plan: "Det planlægger I",
     group: "Gruppe",
     name: "Hvad skal I",
     namePlaceholder: "Fx fredagsbar eller brætspil",
@@ -114,6 +113,8 @@ export const da = {
     tripTimes: (start: string, end: string) => `Afgang ${start}, hjem ${end}`,
     countCan: (n: number, total: number) => `${n} af ${total} kan`,
     nextOption: "Næste mulighed",
+    nextShort: "Næste",
+    suggestShort: "Foreslå",
     chartTitle: (month: string) => `${month}, dag for dag`,
     legendAll: "Alle kan",
     legendFree: "Ledige",

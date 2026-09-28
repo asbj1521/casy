@@ -521,6 +521,65 @@ export default function FindDate() {
       <div className="h-[42px] rounded-lg border bg-background" />
     );
 
+  // Step back, step on, and send (or first accept the time off). Drawn in the
+  // answer card on wider screens and in the bottom bar on a phone.
+  const actionButtons = activeSlot && (
+    <>
+      <button
+        type="button"
+        onClick={handleFindPrev}
+        disabled={historyIndex <= 0}
+        aria-label={t.scheduler.previousTime}
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        onClick={handleFindNext}
+        className="h-12 min-w-0 flex-1 truncate rounded-xl border bg-card px-3 text-[15px] font-semibold text-foreground transition hover:bg-secondary sm:flex-none sm:px-4"
+      >
+        <span className="sm:hidden">{t.scheduler.nextShort}</span>
+        <span className="hidden sm:inline">{t.scheduler.nextOption}</span>
+      </button>
+      {tone === "approve" ? (
+        <button
+          type="button"
+          onClick={() => setAcceptedSlot(activeSlot.start)}
+          className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 text-[15px] font-bold text-white transition hover:bg-amber-700 sm:flex-none sm:px-5"
+        >
+          <Check className="h-5 w-5 shrink-0" />
+          {t.scheduler.accept}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleSuggest}
+          disabled={!canSuggest || suggestMutation.isPending || suggestedThis}
+          className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-orange-700 px-4 text-[15px] font-bold text-white transition hover:bg-orange-800 disabled:opacity-50 sm:flex-none sm:px-5"
+        >
+          {suggestMutation.isPending ? (
+            <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+          ) : suggestedThis ? (
+            <Check className="h-5 w-5 shrink-0" />
+          ) : (
+            <Send className="h-5 w-5 shrink-0" />
+          )}
+          <span className="truncate">
+            {suggestedThis ? (
+              t.scheduler.suggested
+            ) : (
+              <>
+                <span className="sm:hidden">{t.scheduler.suggestShort}</span>
+                <span className="hidden sm:inline">{t.scheduler.suggest}</span>
+              </>
+            )}
+          </span>
+        </button>
+      )}
+    </>
+  );
+
   const settingsProps = {
     groupSwitcher,
     name,
@@ -538,11 +597,11 @@ export default function FindDate() {
         that works for everyone, big, then the month day by day so you can
         see why. Everything about the group itself sits at the bottom.
       */}
-      <div className="mx-auto flex max-w-[90rem] flex-col gap-5 px-4 pb-16 pt-4 sm:px-6 lg:px-10">
+      <div className="mx-auto flex max-w-[90rem] flex-col gap-3 px-4 pb-6 pt-2 sm:gap-5 sm:pt-4 sm:px-6 sm:pb-16 lg:px-10">
         <div
           onPointerDownCapture={stopCarousel}
           onFocusCapture={stopCarousel}
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-3 sm:gap-5"
         >
           <SettingsBar {...settingsProps} />
           <SettingsSentence {...settingsProps} />
@@ -550,7 +609,7 @@ export default function FindDate() {
           {/* ───────── The answer ───────── */}
           <section
             className={cn(
-              "rounded-3xl border p-5 shadow-xl shadow-black/5 sm:p-8",
+              "rounded-3xl border p-4 shadow-xl shadow-black/5 sm:p-8",
               tone === "none" && "border-rose-200 bg-rose-50",
               (tone === "approve" || tone === "skip") && "border-amber-300 bg-amber-50",
               tone === "review" && "border-sky-200 bg-sky-50",
@@ -568,7 +627,7 @@ export default function FindDate() {
                       : t.scheduler.noSingle(`${String(sched.startHour).padStart(2, "0")}:00`)}
               </p>
             ) : (
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <p
                     className={cn(
@@ -587,7 +646,7 @@ export default function FindDate() {
                     )}
                     <span className="truncate">{kicker}</span>
                   </p>
-                  <h1 className="mt-2 text-[2rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                  <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
                     {headline}
                   </h1>
                   <p className="mt-2 text-base text-muted-foreground sm:text-xl">{subline}</p>
@@ -651,51 +710,11 @@ export default function FindDate() {
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleFindPrev}
-                      disabled={historyIndex <= 0}
-                      aria-label={t.scheduler.previousTime}
-                      className="flex h-12 w-12 items-center justify-center rounded-xl border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleFindNext}
-                      className="h-12 flex-1 rounded-xl border bg-card px-4 text-[15px] font-semibold text-foreground transition hover:bg-secondary sm:flex-none"
-                    >
-                      {t.scheduler.nextOption}
-                    </button>
-                    {tone === "approve" ? (
-                      <button
-                        type="button"
-                        onClick={() => setAcceptedSlot(activeSlot!.start)}
-                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-5 sm:w-auto text-[15px] font-bold text-white transition hover:bg-amber-700"
-                      >
-                        <Check className="h-5 w-5" />
-                        {t.scheduler.accept}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleSuggest}
-                        disabled={!canSuggest || suggestMutation.isPending || suggestedThis}
-                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-700 px-5 sm:w-auto text-[15px] font-bold text-white transition hover:bg-orange-800 disabled:opacity-50"
-                      >
-                        {suggestMutation.isPending ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : suggestedThis ? (
-                          <Check className="h-5 w-5" />
-                        ) : (
-                          <Send className="h-5 w-5" />
-                        )}
-                        {suggestedThis ? t.scheduler.suggested : t.scheduler.suggest}
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground lg:max-w-xs lg:text-right">
+                  {/* On a phone these live in the bar pinned to the bottom of
+                      the screen instead, so the card stays short and the
+                      chart under it is on the first screen. */}
+                  <div className="hidden items-center gap-2 sm:flex">{actionButtons}</div>
+                  <p className="text-xs text-muted-foreground sm:text-sm lg:max-w-xs lg:text-right">
                     {suggestedThis ? (
                       t.scheduler.sent(
                         <Link
@@ -721,6 +740,22 @@ export default function FindDate() {
               </div>
             )}
           </section>
+
+          {/* The month day by day, straight under the answer: it's what
+              shows why the answer is what it is. */}
+          {monthGrid && (
+            <DayChart
+              grid={monthGrid}
+              bestDays={bestDays}
+              timeZone={TZ}
+              canPrev={viewMonth > MIN_MONTH}
+              canNext={viewMonth < MAX_MONTH}
+              onPrev={() => pageMonth(-1)}
+              onNext={() => pageMonth(1)}
+              onPickDay={jumpTo}
+              conditionalKind={isMultiDay ? "timeOff" : "skip"}
+            />
+          )}
 
           {/* Workarounds for a holiday that doesn't fit cleanly, or else the
               next few dates found by the same search. */}
@@ -763,23 +798,25 @@ export default function FindDate() {
             </div>
           ) : (
             later.length > 0 && (
-              <div className="grid gap-3 sm:grid-cols-3">
+              // One compact line per date on a phone, three cards side by
+              // side on anything wider.
+              <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
                 {later.map((r) => (
                   <button
                     key={r.slot!.start}
                     type="button"
                     onClick={() => jumpTo(dayOf(r.slot!.start, TZ))}
-                    className="rounded-2xl border bg-card px-5 py-4 text-left transition hover:border-primary/40 hover:bg-secondary/40"
+                    className="flex items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 text-left transition hover:border-primary/40 hover:bg-secondary/40 sm:block sm:px-5 sm:py-4"
                   >
-                    <span className="block text-xs text-muted-foreground">
+                    <span className="hidden text-xs text-muted-foreground sm:block">
                       {t.scheduler.alsoPossible}
                     </span>
-                    <span className="mt-0.5 block text-lg font-bold text-foreground">
+                    <span className="block min-w-0 truncate text-[15px] font-bold text-foreground sm:mt-0.5 sm:text-lg">
                       {search.kind === "single"
                         ? formatLongDate(r.slot!.start, lang)
                         : formatLongSpan(r.slot!.start, r.slot!.end, lang)}
                     </span>
-                    <span className="mt-0.5 block text-sm text-muted-foreground">
+                    <span className="block shrink-0 text-sm text-muted-foreground sm:mt-0.5">
                       {t.scheduler.countCan(
                         participants.length - r.conflicts.length,
                         participants.length,
@@ -789,20 +826,6 @@ export default function FindDate() {
                 ))}
               </div>
             )
-          )}
-
-          {monthGrid && (
-            <DayChart
-              grid={monthGrid}
-              bestDays={bestDays}
-              timeZone={TZ}
-              canPrev={viewMonth > MIN_MONTH}
-              canNext={viewMonth < MAX_MONTH}
-              onPrev={() => pageMonth(-1)}
-              onNext={() => pageMonth(1)}
-              onPickDay={jumpTo}
-              conditionalKind={isMultiDay ? "timeOff" : "skip"}
-            />
           )}
         </div>
 
@@ -884,6 +907,15 @@ export default function FindDate() {
           )}
         </div>
       </div>
+
+      {/* A phone's actions, pinned to the bottom of the screen while the page
+          scrolls. Sticky rather than fixed, so at the very end it comes to
+          rest above the footer instead of covering it. */}
+      {actionButtons && (
+        <div className="sticky bottom-0 z-30 flex gap-2 border-t bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)] sm:hidden">
+          {actionButtons}
+        </div>
+      )}
 
       <NewGroupDialog
         open={newGroupOpen}
