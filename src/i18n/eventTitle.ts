@@ -4,12 +4,20 @@ import { en } from "@/i18n/en";
 type EventTypeId = keyof Messages["eventTypes"];
 
 /**
+ * English names an event type had before, still found on events suggested
+ * back then: "Gaming session" became "Gaming" to fit the scheduling panel.
+ */
+const FORMER_NAMES: Record<string, EventTypeId> = { "Gaming session": "gaming" };
+
+/**
  * A suggested event stores its type's English name as its title ("Evening"),
  * whoever suggested it, so everyone in a mixed group reads the same event in
  * their own language. Any other title is shown as it was written.
  */
 export function eventTitle(stored: string, t: Messages): string {
-  const id = (Object.keys(en.eventTypes) as EventTypeId[]).find((k) => en.eventTypes[k] === stored);
+  const id =
+    (Object.keys(en.eventTypes) as EventTypeId[]).find((k) => en.eventTypes[k] === stored) ??
+    FORMER_NAMES[stored];
   return id ? t.eventTypes[id] : stored;
 }
 

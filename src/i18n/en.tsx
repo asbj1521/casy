@@ -26,7 +26,8 @@ export const en: Messages = {
       const h = Math.floor(min / 60);
       const m = min % 60;
       if (h === 0) return `${m} min`;
-      if (m === 0) return hours(h);
+      if (m === 0) return `${h} h`;
+      if (m === 30) return `${h}½ h`;
       return `${h} h ${m} min`;
     },
     withYou: (name: string) => `${name} (you)`,
@@ -36,7 +37,7 @@ export const en: Messages = {
     evening: "Evening",
     lunch: "Lunch",
     dinner: "Dinner",
-    gaming: "Gaming session",
+    gaming: "Gaming",
     nightout: "Night out",
     weekend: "Weekend trip",
     vacation: "Vacation",

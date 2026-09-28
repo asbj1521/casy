@@ -764,9 +764,14 @@ export default function FindDate() {
                   <span className="text-sm font-medium text-muted-foreground">
                     {t.scheduler.whatKind}
                   </span>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {/* One line, always. The narrowest phones drop the type's icon
+                      (its name says what it is) and a little spacing; if that is
+                      still not enough, the type shortens, never the time. */}
+                  <div className="mt-2 flex items-center gap-1 min-[360px]:gap-1.5">
                     <Dropdown
-                      icon={<Tag className="h-3.5 w-3.5 text-muted-foreground" />}
+                      icon={
+                        <Tag className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground min-[360px]:block" />
+                      }
                       value={eventTypeIdx}
                       options={typeOptions}
                       onChange={handleEventType}
@@ -774,25 +779,28 @@ export default function FindDate() {
                     />
                     {eventType.kind === "vacation" && (
                       <Dropdown
-                        icon={<CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />}
+                        icon={<CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
                         value={days}
                         options={daysOptions}
                         onChange={handleDays}
+                        className="shrink-0"
                       />
                     )}
                     {eventType.kind === "single" && (
                       <>
                         <Dropdown
-                          icon={<Hourglass className="h-3.5 w-3.5 text-muted-foreground" />}
+                          icon={<Hourglass className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
                           value={durationMinutes}
                           options={durationOptions}
                           onChange={handleDuration}
+                          className="shrink-0"
                         />
                         <Dropdown
-                          icon={<Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+                          icon={<Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
                           value={startHour}
                           options={START_OPTIONS}
                           onChange={handleStartHour}
+                          className="shrink-0"
                         />
                       </>
                     )}

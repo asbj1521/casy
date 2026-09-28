@@ -27,12 +27,13 @@ export const da = {
     nextMonth: "Næste måned",
     days,
     hours,
-    /** 90 -> "1 t 30 min", 180 -> "3 timer". */
+    /** Short, for the duration picker: 30 -> "30 min", 90 -> "1½ t", 180 -> "3 t". */
     duration: (min: number) => {
       const h = Math.floor(min / 60);
       const m = min % 60;
       if (h === 0) return `${m} min`;
-      if (m === 0) return hours(h);
+      if (m === 0) return `${h} t`;
+      if (m === 30) return `${h}½ t`;
       return `${h} t ${m} min`;
     },
     /** Marks you in a member list: "Asbjørn (dig)". */

@@ -1,17 +1,23 @@
 import { type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
 
 import Popover from "@/components/Popover";
 import WheelPicker from "@/components/WheelPicker";
 import { cn } from "@/lib/utils";
 
-/** A small labelled dropdown that opens a looping wheel (type / duration / start). */
+/**
+ * A small labelled dropdown that opens a looping wheel (type / duration /
+ * start). No chevron: three of these share one line in a narrow panel, and
+ * the icon already says what each one is. If the line is still too narrow
+ * (the smallest phones), the label shortens with an ellipsis rather than
+ * wrapping onto a second line.
+ */
 export default function Dropdown({
   icon,
   value,
   options,
   onChange,
   menuWidth = "w-32",
+  className,
 }: {
   icon: ReactNode;
   value: number;
@@ -19,24 +25,20 @@ export default function Dropdown({
   onChange: (value: number) => void;
   /** Tailwind width class for the wheel popup (wider for long labels). */
   menuWidth?: string;
+  /** Classes for the outer box, e.g. whether it may shrink in its row. */
+  className?: string;
 }) {
   const current = options.find((o) => o.value === value);
 
   return (
     <Popover
-      className="inline-block"
-      triggerClassName="inline-flex items-center gap-1 rounded-lg border bg-card px-2 py-1.5 text-sm font-medium text-foreground transition hover:bg-secondary"
+      className={cn("inline-block min-w-0", className)}
+      triggerClassName="inline-flex max-w-full items-center gap-1 rounded-lg border bg-card px-2 py-1.5 text-sm font-medium text-foreground transition hover:bg-secondary"
       panelClassName={menuWidth}
-      trigger={(open) => (
+      trigger={() => (
         <>
           {icon}
-          {current?.label}
-          <ChevronDown
-            className={cn(
-              "h-3.5 w-3.5 text-muted-foreground transition",
-              open && "rotate-180",
-            )}
-          />
+          <span className="truncate">{current?.label}</span>
         </>
       )}
     >
