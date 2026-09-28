@@ -9,8 +9,8 @@ import {
   ArrowRight,
   CheckCircle2,
   ChevronDown,
-  Copy,
   ExternalLink,
+  Fingerprint,
   Loader2,
   ShieldCheck,
   XCircle,
@@ -18,7 +18,7 @@ import {
 
 import { connectApple } from "@/api/apple";
 import AppleCredentialFields from "@/components/AppleCredentialFields";
-import { BrowserChrome, MockPanel, MockRow } from "@/components/HelpGuide";
+import AppleWalkthrough, { AppleWalkthroughChecklist } from "@/components/AppleWalkthrough";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
 import { useLang, useT } from "@/i18n/lang";
@@ -29,29 +29,31 @@ import { cn } from "@/lib/utils";
  * made an app-specific password. Linked from the Apple iCloud Calendar card
  * and its form; the card's own form stays the quick way for everyone else.
  *
- * Three steps and a finish: what an app-specific password is, making one at
- * Apple, and pasting it in here, where the calendar is actually connected
- * (through the same connectApple() the card uses). The step lives in the URL
- * (?step=apple, ?step=enter) rather than in memory, so it survives the things
- * that happen in the middle of this: a phone reloading the tab while its
- * owner is off at Apple, and signing in by email link, which opens a new tab.
- * It also lets the phone's back gesture go back a step instead of leaving.
+ * Four steps and a finish: what an app-specific password is, watching it
+ * being made at Apple (AppleWalkthrough), making it there, and pasting it in
+ * here, where the calendar is actually connected (through the same
+ * connectApple() the card uses). The link to Apple only turns up on the third
+ * step, after the walkthrough: handed the link first, people went straight to
+ * Apple and found themselves on a page they didn't know what to do with.
  *
- * The drawn screens quote Apple's own wording. The Danish names come from
- * Apple's Danish account pages ("Apple-konto", "Login og sikkerhed",
- * "App-specifikke adgangskoder"); check them there if Apple renames anything.
- * Apple ID became Apple Account (Apple-konto) in 2024.
+ * The step lives in the URL (?step=watch, ?step=apple, ?step=enter) rather
+ * than in memory, so it survives the things that happen in the middle of
+ * this: a phone reloading the tab while its owner is off at Apple, and signing
+ * in by email link, which opens a new tab. It also lets the phone's back
+ * gesture go back a step instead of leaving.
+ *
+ * Apple ID became Apple Account (Apple-konto) in 2024; the copy follows Apple.
  */
 
 const PATH = "/help/connect-icloud";
 const ACCOUNT_URL = "https://account.apple.com/account/manage";
 const ACCOUNT_LABEL = "account.apple.com/account/manage";
 
-type Step = "intro" | "apple" | "enter";
-const STEPS: Step[] = ["intro", "apple", "enter"];
+type Step = "intro" | "watch" | "apple" | "enter";
+const STEPS: Step[] = ["intro", "watch", "apple", "enter"];
 
 function stepFrom(value: string | null): Step {
-  return value === "apple" || value === "enter" ? value : "intro";
+  return value === "watch" || value === "apple" || value === "enter" ? value : "intro";
 }
 
 const link = (
@@ -75,40 +77,35 @@ const da = {
     body: "Apple lader ikke andre apps komme ind i din kalender med din almindelige Apple-adgangskode. I stedet laver du en ekstra adgangskode hos Apple og giver den til Casy. Tænk på den som en ekstranøgle: Casy bruger den kun til at se, hvornår du er optaget, og du kan smide den væk når som helst uden at røre din almindelige adgangskode.",
     needTitle: "Det skal du bruge",
     need: [
-      "Den e-mail, du logger ind hos Apple med",
-      "Din iPhone eller Mac i nærheden, hvis Apple sender den en kode",
-      "Cirka 2 minutter",
+      "Din e-mail og adgangskode til Apple. Touch ID er ikke nok her.",
+      "Din iPhone i nærheden, til den kode Apple sender",
+      "En Mac eller en anden computer",
+      "Cirka 5 minutter",
     ],
     safe: "Casy ser aldrig din almindelige Apple-adgangskode. Casy spørger kun Apple om, hvornår du er optaget, aldrig hvad dine aftaler hedder, og gemmer den ekstra adgangskode krypteret.",
     start: "Kom i gang",
     haveOne: "Jeg har allerede en",
   },
+  watch: {
+    title: "Sådan gør du hos Apple",
+    body: "Se det hele igennem her først, så du ved, hvad du skal klikke på. Linket til Apple kommer på næste trin.",
+    next: "Jeg er klar",
+  },
   apple: {
-    title: "Lav adgangskoden hos Apple",
-    body: "Åbn Apples kontoside i en ny fane, og gør de fire ting herunder. Kom så tilbage til denne fane.",
+    title: "Nu er det din tur",
+    body: "Åbn Apples side i en ny fane, og gør det, du lige har set. Kom tilbage til denne fane, når du har adgangskoden.",
+    touchId:
+      "Log ind med din e-mail og adgangskode, ikke med Touch ID. Ellers kan Apple ikke lave adgangskoden.",
     open: "Åbn Apples kontoside",
-    steps: [
-      {
-        title: "Log ind",
-        body: "Log ind med den Apple-konto, hvis kalender du vil forbinde.",
-      },
-      {
-        title: "Vælg Login og sikkerhed",
-        body: "Du finder det i menuen.",
-      },
-      {
-        title: "Åbn App-specifikke adgangskoder",
-        body: "Rul ned til App-specifikke adgangskoder, vælg det, og vælg at lave en ny.",
-      },
-      {
-        title: "Kald den Casy, og kopiér den",
-        body: 'Skriv "Casy" som navn, og bekræft. Apple viser kun adgangskoden én gang, så kopiér den, før du lukker vinduet.',
-      },
-    ],
+    stepsTitle: "Trinene igen",
+    watchAgain: "Se animationen igen",
+    failedTitle: "Siger Apple, at der ikke kunne genereres en adgangskode?",
+    failedBody:
+      "Så er du logget ind med Touch ID. Klik på den hvide knap, Log ind med adgangskode, ikke den blå Annuller. Log ind med e-mail og adgangskode, og start igen fra App-specifikke adgang…",
     missingTitle: "Kan du ikke finde App-specifikke adgangskoder?",
     missingBody:
       "Apple tilbyder dem kun, når tofaktorgodkendelse er slået til for din Apple-konto. De fleste har det allerede. Hvis du ikke har, så slå det til under Login og sikkerhed først, så dukker muligheden op.",
-    next: "Jeg har kopieret den",
+    next: "Jeg har adgangskoden",
   },
   enter: {
     title: "Sæt den ind i Casy",
@@ -140,16 +137,6 @@ const da = {
     toCalendar: "Gå til Min kalender",
     toProfile: "Tilbage til profil",
   },
-  mock: {
-    signInPrompt: "Log ind med din Apple-konto",
-    signIn: "Log ind",
-    menu: ["Personlige oplysninger", "Login og sikkerhed", "Betaling og levering", "Enheder"],
-    security: "Login og sikkerhed",
-    passwords: "App-specifikke adgangskoder",
-    generate: "Opret adgangskode…",
-    dialog: "Opret en app-specifik adgangskode",
-    create: "Opret",
-  },
 };
 
 const en: typeof da = {
@@ -162,40 +149,35 @@ const en: typeof da = {
     body: "Apple doesn't let other apps into your calendar with your normal Apple password. Instead, you make an extra password at Apple and give it to Casy. Think of it as a spare key: Casy only uses it to see when you're busy, and you can throw it away at any time without touching your normal password.",
     needTitle: "What you need",
     need: [
-      "The email you sign in to Apple with",
-      "Your iPhone or Mac nearby, in case Apple sends it a code",
-      "About 2 minutes",
+      "Your Apple email and password. Touch ID isn't enough here.",
+      "Your iPhone nearby, for the code Apple sends",
+      "A Mac or another computer",
+      "About 5 minutes",
     ],
     safe: "Casy never sees your normal Apple password. It only asks Apple when you're busy, never what your events are called, and keeps the extra password encrypted.",
     start: "Let's start",
     haveOne: "I already have one",
   },
+  watch: {
+    title: "Here's how it goes at Apple",
+    body: "Watch it all here first, so you know what to click. The link to Apple comes on the next step.",
+    next: "I'm ready",
+  },
   apple: {
-    title: "Make the password at Apple",
-    body: "Open Apple's account page in a new tab and do the four things below. Then come back to this tab.",
+    title: "Now it's your turn",
+    body: "Open Apple's page in a new tab and do what you just watched. Come back to this tab when you have the password.",
+    touchId:
+      "Sign in with your email and password, not Touch ID. Otherwise Apple can't make the password.",
     open: "Open Apple's account page",
-    steps: [
-      {
-        title: "Sign in",
-        body: "Sign in with the Apple Account whose calendar you want to connect.",
-      },
-      {
-        title: "Choose Sign-In and Security",
-        body: "You'll find it in the menu.",
-      },
-      {
-        title: "Open App-Specific Passwords",
-        body: "Scroll down to App-Specific Passwords and select it, then choose to generate a new one.",
-      },
-      {
-        title: "Name it Casy and copy it",
-        body: 'Type "Casy" as the name and confirm. Apple shows the password only once, so copy it before closing the window.',
-      },
-    ],
+    stepsTitle: "The steps again",
+    watchAgain: "Watch the animation again",
+    failedTitle: "Does Apple say it couldn't generate a password?",
+    failedBody:
+      "Then you signed in with Touch ID. Click the white button, Sign in with password, not the blue Cancel. Sign in with your email and password, and start again from App-Specific Passwo…",
     missingTitle: "Can't find App-Specific Passwords?",
     missingBody:
       "Apple only offers them when two-factor authentication is on for your Apple Account. Most accounts have it already. If yours doesn't, turn it on under Sign-In and Security first, and the option will appear.",
-    next: "I've copied it",
+    next: "I have the password",
   },
   enter: {
     title: "Paste it into Casy",
@@ -225,16 +207,6 @@ const en: typeof da = {
     toCalendar: "Go to My calendar",
     toProfile: "Back to profile",
   },
-  mock: {
-    signInPrompt: "Sign in with your Apple Account",
-    signIn: "Sign In",
-    menu: ["Personal Information", "Sign-In and Security", "Payment & Shipping", "Devices"],
-    security: "Sign-In and Security",
-    passwords: "App-Specific Passwords",
-    generate: "Generate Password…",
-    dialog: "Generate an app-specific password",
-    create: "Create",
-  },
 };
 
 const primaryButton =
@@ -256,10 +228,22 @@ function StepFooter({ secondary, children }: { secondary?: ReactNode; children: 
   );
 }
 
+/** A question that opens to its answer. Native, so it needs no state and works with a keyboard. */
+function FoldOut({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <details className="group mt-3 rounded-lg border bg-background">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
+        {title}
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+      </summary>
+      <p className="border-t px-4 py-3 text-sm leading-relaxed text-muted-foreground">{children}</p>
+    </details>
+  );
+}
+
 export default function ConnectIcloudHelp() {
   const { lang } = useLang();
   const c = lang === "da" ? da : en;
-  const m = c.mock;
   const t = useT();
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
@@ -306,54 +290,6 @@ export default function ConnectIcloudHelp() {
 
   const stepIndex = STEPS.indexOf(step);
   const headingClass = "text-xl font-bold tracking-tight text-foreground outline-none sm:text-2xl";
-
-  // The drawings for Apple's four steps, in the same order as the copy.
-  const appleVisuals: ReactNode[] = [
-    <div key="sign-in" className="overflow-hidden rounded-xl border bg-background shadow-sm">
-      <BrowserChrome url={ACCOUNT_LABEL} />
-      <div className="flex flex-col items-center gap-3 p-5">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-900 text-white">
-          <SiApple className="h-5 w-5" />
-        </div>
-        <p className="text-sm font-medium text-foreground">{m.signInPrompt}</p>
-        <span className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground ring-2 ring-primary/40 ring-offset-2">
-          {m.signIn}
-        </span>
-      </div>
-    </div>,
-    <div key="menu" className="overflow-hidden rounded-xl border bg-background shadow-sm">
-      <div className="divide-y">
-        {m.menu.map((item, i) => (
-          <MockRow key={item} active={i === 1}>
-            {item}
-          </MockRow>
-        ))}
-      </div>
-    </div>,
-    <div key="passwords" className="rounded-xl border bg-background p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {m.security}
-      </p>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2 ring-1 ring-inset ring-primary/40">
-        <span className="text-sm font-medium text-primary">{m.passwords}</span>
-        <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
-          {m.generate}
-        </span>
-      </div>
-    </div>,
-    <MockPanel key="create" title={m.dialog}>
-      <div className="space-y-3 p-4">
-        <div className="rounded-lg border bg-secondary/40 px-3 py-2 text-sm text-foreground">Casy</div>
-        <span className="inline-block rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-          {m.create}
-        </span>
-        <div className="flex items-center justify-between rounded-lg border border-dashed px-3 py-2">
-          <span className="font-mono text-sm tracking-wide text-foreground">abcd-efgh-ijkl-mnop</span>
-          <Copy className="h-4 w-4 text-muted-foreground" />
-        </div>
-      </div>
-    </MockPanel>,
-  ];
 
   let body: ReactNode;
   if (view === "done" && result) {
@@ -422,8 +358,35 @@ export default function ConnectIcloudHelp() {
             </button>
           }
         >
-          <button type="button" onClick={() => goTo("apple")} className={primaryButton}>
+          <button type="button" onClick={() => goTo("watch")} className={primaryButton}>
             {c.intro.start}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </StepFooter>
+      </>
+    );
+  } else if (step === "watch") {
+    body = (
+      <>
+        <h2 ref={headingRef} tabIndex={-1} className={headingClass}>
+          {c.watch.title}
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+          {c.watch.body}
+        </p>
+        <div className="mt-5">
+          <AppleWalkthrough />
+        </div>
+        <StepFooter
+          secondary={
+            <button type="button" onClick={() => goTo("intro")} className={secondaryButton}>
+              <ArrowLeft className="h-4 w-4" />
+              {c.back}
+            </button>
+          }
+        >
+          <button type="button" onClick={() => goTo("apple")} className={primaryButton}>
+            {c.watch.next}
             <ArrowRight className="h-4 w-4" />
           </button>
         </StepFooter>
@@ -438,6 +401,11 @@ export default function ConnectIcloudHelp() {
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
           {c.apple.body}
         </p>
+        {/* The one thing that trips people up at Apple, said before they go. */}
+        <p className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <Fingerprint className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{c.apple.touchId}</span>
+        </p>
         <a
           href={ACCOUNT_URL}
           target="_blank"
@@ -448,33 +416,28 @@ export default function ConnectIcloudHelp() {
           {c.apple.open}
           <ExternalLink className="h-4 w-4" />
         </a>
-        <ol className="mt-6 space-y-5">
-          {c.apple.steps.map((s, i) => (
-            <li key={s.title} className="flex gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold tabular-nums text-primary">
-                {i + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-foreground">{s.title}</h3>
-                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
-                <div className="mt-3">{appleVisuals[i]}</div>
-              </div>
-            </li>
-          ))}
-        </ol>
-        {/* Native disclosure: works without script state and with a keyboard. */}
-        <details className="group mt-6 rounded-lg border bg-background">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
-            {c.apple.missingTitle}
-            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
-          </summary>
-          <p className="border-t px-4 py-3 text-sm leading-relaxed text-muted-foreground">
-            {c.apple.missingBody}
-          </p>
-        </details>
+        <div className="mt-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <p className="text-sm font-semibold text-foreground">{c.apple.stepsTitle}</p>
+            <button
+              type="button"
+              onClick={() => goTo("watch")}
+              className="text-sm font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
+            >
+              {c.apple.watchAgain}
+            </button>
+          </div>
+          <div className="mt-3">
+            <AppleWalkthroughChecklist />
+          </div>
+        </div>
+        <div className="mt-5">
+          <FoldOut title={c.apple.failedTitle}>{c.apple.failedBody}</FoldOut>
+          <FoldOut title={c.apple.missingTitle}>{c.apple.missingBody}</FoldOut>
+        </div>
         <StepFooter
           secondary={
-            <button type="button" onClick={() => goTo("intro")} className={secondaryButton}>
+            <button type="button" onClick={() => goTo("watch")} className={secondaryButton}>
               <ArrowLeft className="h-4 w-4" />
               {c.back}
             </button>
@@ -529,7 +492,7 @@ export default function ConnectIcloudHelp() {
             </StepFooter>
           </>
         ) : (
-          <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="mt-5 flex max-w-lg flex-col gap-4">
             <AppleCredentialFields
               email={email}
               password={password}
@@ -562,7 +525,9 @@ export default function ConnectIcloudHelp() {
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
-      <main className="mx-auto max-w-2xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
+      {/* A size wider than the other guides, so the drawing of Apple's pages
+          on the watch step is big enough to read on a laptop. */}
+      <main className="mx-auto max-w-3xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
         <Link
           to="/profile"
           className="flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
