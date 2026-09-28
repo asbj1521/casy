@@ -34,6 +34,7 @@ import {
   type CalendarConnectionStatus,
 } from "@/api/calendarStatus";
 import { adminStatusQuery } from "@/api/admin";
+import { connectApple } from "@/api/apple";
 import {
   createGroup,
   createInvite,
@@ -424,21 +425,14 @@ export default function Profile() {
     setAppleError(null);
     setAppleResult(null);
     try {
-      const body = await callFunction<{
-        label: string;
-        calendars: number;
-        busyBlocks: number;
-        skippedEvents: number;
-      }>("calendar-add-apple", {
-        body: { username, password },
-        errorMessage: t.profile.couldntIcloud,
-      });
+      // Also refreshes the calendar list before returning, so the new account
+      // is listed by the time the form closes.
+      const body = await connectApple(queryClient, user.id, username, password);
       setAppleResult(
         t.profile.appleConnected(body.label, body.calendars, body.busyBlocks, body.skippedEvents),
       );
       setAppleFormOpen(false);
       setAppleAddedCount((n) => n + 1);
-      await refetchStatus();
     } catch (err) {
       setAppleError(err instanceof Error ? err.message : t.profile.couldntIcloud);
     } finally {
@@ -731,7 +725,7 @@ export default function Profile() {
                         />
                       )}
 
-                      {/* Apple: Apple ID email + app-specific password */}
+                      {/* Apple: Apple Account email + app-specific password */}
                       {provider.id === "apple" && appleResult && (
                         <p className="mt-3 flex items-center gap-2 text-sm text-emerald-800">
                           <CheckCircle2 className="h-4 w-4 shrink-0" />

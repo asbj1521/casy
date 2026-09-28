@@ -1,9 +1,13 @@
-import { useId, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Lock, XCircle } from "lucide-react";
+import { Loader2, XCircle } from "lucide-react";
 
-import InfoTip from "@/components/InfoTip";
+import AppleCredentialFields from "@/components/AppleCredentialFields";
 import { useT } from "@/i18n/lang";
+
+/** The step-by-step setup, for anyone who opens this form not knowing what the password is. */
+const SETUP_PATH = "/help/connect-icloud";
 
 /**
  * Apple's sign-in form. iCloud has no consent-screen flow for calendars, so
@@ -12,6 +16,10 @@ import { useT } from "@/i18n/lang";
  * Like the ICS form, it owns its fields: the page only needs to hear that the
  * form was submitted. The submitting/error state comes from the page, since it
  * belongs to the request rather than the form.
+ *
+ * This is the quick way, for people who know what an app-specific password
+ * is. Anyone who doesn't is pointed at the step-by-step setup, under the
+ * password field and again beside any error.
  */
 export default function AppleCredentialsForm({
   open,
@@ -29,8 +37,6 @@ export default function AppleCredentialsForm({
   const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const emailId = useId();
-  const passwordId = useId();
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,44 +54,34 @@ export default function AppleCredentialsForm({
           className="overflow-hidden"
         >
           <div className="mt-4 flex flex-col gap-3 border-t pt-4">
-            <div className="text-sm">
-              <label htmlFor={emailId} className="mb-1 block font-medium text-foreground">
-                {t.appleForm.email}
-              </label>
-              <input
-                id={emailId}
-                type="email"
-                required
-                autoComplete="off"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@icloud.com"
-                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <div className="text-sm">
-              {/* The (i) sits beside the label, not inside it: a button inside a
-                  <label> would take over the label from its input. */}
-              <div className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
-                <Lock className="h-3.5 w-3.5" />
-                <label htmlFor={passwordId}>{t.appleForm.password}</label>
-                <InfoTip label={t.appleForm.about}>{t.appleForm.aboutBody}</InfoTip>
-              </div>
-              <input
-                id={passwordId}
-                type="password"
-                required
-                autoComplete="off"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="xxxx-xxxx-xxxx-xxxx"
-                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
+            <AppleCredentialFields
+              email={email}
+              password={password}
+              onEmailChange={setEmail}
+              onPasswordChange={setPassword}
+              withAboutTip
+              passwordHint={t.appleForm.noPasswordYet(
+                <Link
+                  to={SETUP_PATH}
+                  className="font-medium text-foreground underline underline-offset-2"
+                >
+                  {t.appleForm.stepByStep}
+                </Link>,
+              )}
+            />
             {error && (
               <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
                 <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{error}</span>
+                <div>
+                  <p>{error}</p>
+                  <p className="mt-1">
+                    {t.appleForm.stuck(
+                      <Link to={SETUP_PATH} className="font-medium underline underline-offset-2">
+                        {t.appleForm.stepByStep}
+                      </Link>,
+                    )}
+                  </p>
+                </div>
               </div>
             )}
             <div className="flex items-center gap-3">

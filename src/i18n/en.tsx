@@ -195,7 +195,7 @@ export const en: Messages = {
     create: "Create group",
   },
   providers: {
-    apple: { label: "Apple iCloud Calendar", help: "How to connect iCloud" },
+    apple: { label: "Apple iCloud Calendar", help: "Get help connecting" },
     ics: { label: "Calendar link (ICS)", help: "How to find your link" },
     google: { label: "Google Calendar", help: "How it works" },
     outlook: { label: "Outlook Calendar", help: "How it works" },
@@ -287,12 +287,21 @@ export const en: Messages = {
     unknownError: "unknown error",
   },
   appleForm: {
-    email: "Apple ID email",
+    email: "Apple Account email",
     password: "App-specific password",
     about: "About app-specific passwords",
     aboutBody:
-      "Apple has no one-click sign-in for calendars. In Sign-In and Security at account.apple.com, open App-Specific Passwords and create one for Casy. Casy never sees your main Apple ID password. It only asks Apple for event times, never titles, and stores this password encrypted. You can revoke it at any time in the same place.",
+      "Apple has no one-click sign-in for calendars. In Sign-In and Security at account.apple.com, open App-Specific Passwords and create one for Casy. Casy never sees your main Apple Account password. It only asks Apple for event times, never titles, and stores this password encrypted. You can revoke it at any time in the same place.",
     reading: "Reading calendars",
+    stepByStep: "Get step-by-step help",
+    noPasswordYet: (link: ReactNode) => <>Don't have one yet? {link}</>,
+    stuck: (link: ReactNode) => <>Stuck? {link}</>,
+    looksWrong: (example: ReactNode) => (
+      <>
+        That doesn't look like an app-specific password. They look like this: {example}. Did you
+        paste your normal Apple password?
+      </>
+    ),
   },
   icsForm: {
     link: "Calendar link",

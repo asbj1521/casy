@@ -214,7 +214,7 @@ export const da = {
     create: "Opret gruppe",
   },
   providers: {
-    apple: { label: "Apple iCloud-kalender", help: "Sådan forbinder du iCloud" },
+    apple: { label: "Apple iCloud-kalender", help: "Få hjælp til at forbinde" },
     ics: { label: "Kalenderlink (ICS)", help: "Sådan finder du dit link" },
     google: { label: "Google Kalender", help: "Sådan virker det" },
     outlook: { label: "Outlook-kalender", help: "Sådan virker det" },
@@ -307,12 +307,22 @@ export const da = {
     unknownError: "ukendt fejl",
   },
   appleForm: {
-    email: "Apple-id (e-mail)",
+    email: "Apple-konto (e-mail)",
     password: "App-specifik adgangskode",
     about: "Om app-specifikke adgangskoder",
     aboutBody:
-      "Apple har ingen login med ét klik til kalendere. Gå til Login og sikkerhed på account.apple.com, åbn App-specifikke adgangskoder, og opret en til Casy. Casy ser aldrig din rigtige Apple-id-adgangskode. Casy spørger kun Apple om tidspunkter, aldrig titler, og gemmer adgangskoden krypteret. Du kan tilbagekalde den når som helst samme sted.",
+      "Apple har ingen login med ét klik til kalendere. Gå til Login og sikkerhed på account.apple.com, åbn App-specifikke adgangskoder, og opret en til Casy. Casy ser aldrig adgangskoden til din Apple-konto. Casy spørger kun Apple om tidspunkter, aldrig titler, og gemmer adgangskoden krypteret. Du kan tilbagekalde den når som helst samme sted.",
     reading: "Læser kalendere",
+    stepByStep: "Få hjælp trin for trin",
+    noPasswordYet: (link: ReactNode) => <>Har du ikke en endnu? {link}</>,
+    stuck: (link: ReactNode) => <>Sidder du fast? {link}</>,
+    /** `example` is the shape itself, kept on one line. */
+    looksWrong: (example: ReactNode) => (
+      <>
+        Det ligner ikke en app-specifik adgangskode. De ser sådan ud: {example}. Har du sat din
+        almindelige Apple-adgangskode ind?
+      </>
+    ),
   },
   icsForm: {
     link: "Kalenderlink",
