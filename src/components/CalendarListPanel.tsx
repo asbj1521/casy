@@ -54,8 +54,9 @@ function GroupCheckbox({
  * opening it reveals a checkbox, a category picker and a priority
  * picker (how much it matters when scheduling) for each calendar. Unchecking
  * a calendar means it doesn't count: hidden here and left out when finding
- * dates (saved on the server). Nothing is disconnected or deleted; that
- * lives on the profile page.
+ * dates (saved on the server). It then moves out of its group into a folded
+ * "not counted" section at the bottom, and ticking it there moves it back.
+ * Nothing is disconnected or deleted; that lives on the profile page.
  */
 export default function CalendarListPanel({
   calendars,
@@ -85,6 +86,11 @@ export default function CalendarListPanel({
   // The built-in holiday calendar is named in the page's language.
   const nameOf = (c: OverviewCalendar) => (c.id === HOLIDAY_CALENDAR_ID ? words.holidayCalendar : c.name);
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+  const [uncountedOpen, setUncountedOpen] = useState(false);
+  // Unticked calendars, in the same brand order as the groups above.
+  const uncounted = groups.flatMap((g) =>
+    g.calendars.filter((c) => hidden.has(c.id)).map((c) => ({ calendar: c, brandId: g.id, brandLabel: g.label })),
+  );
 
   const toggleOpen = (id: string) =>
     setOpen((prev) => {
@@ -104,11 +110,17 @@ export default function CalendarListPanel({
 
       <ul className="mt-3 divide-y">
         {groups.map((group) => {
+          // Only the ticked ones are listed here; unticked ones wait in the
+          // section below, and a group with none ticked steps aside entirely.
+          const shown = group.calendars.filter((c) => !hidden.has(c.id));
+          if (shown.length === 0) return null;
           const isOpen = open.has(group.id);
+          // Over the whole group, so a dash says some of it is down below,
+          // and clicking it then brings those back.
           const state = groupVisibility(group, hidden);
           const ids = group.calendars.map((c) => c.id);
-          const inView = ids.reduce((sum, id) => sum + (blockCounts.get(id) ?? 0), 0);
-          const n = group.calendars.length;
+          const inView = shown.reduce((sum, c) => sum + (blockCounts.get(c.id) ?? 0), 0);
+          const n = shown.length;
           const brand = words.brands[group.id] ?? group.label;
 
           return (
@@ -135,7 +147,7 @@ export default function CalendarListPanel({
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-0.5">
-                    {group.calendars.slice(0, MAX_HEADER_DOTS).map((c) => (
+                    {shown.slice(0, MAX_HEADER_DOTS).map((c) => (
                       <span
                         key={c.id}
                         className={cn("h-2 w-2 rounded-full", hidden.has(c.id) && "opacity-30")}
@@ -160,7 +172,7 @@ export default function CalendarListPanel({
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    {group.calendars.map((c) => {
+                    {shown.map((c) => {
                       const isBuiltIn = c.provider === "builtin";
                       const isHidden = hidden.has(c.id);
                       const saving = savingId === c.id;
@@ -255,6 +267,57 @@ export default function CalendarListPanel({
           );
         })}
       </ul>
+
+      {uncounted.length > 0 && (
+        <div className="mt-1 border-t pt-1">
+          <button
+            type="button"
+            onClick={() => setUncountedOpen((o) => !o)}
+            aria-expanded={uncountedOpen}
+            className="flex w-full items-center gap-2 py-2 text-left text-sm font-medium text-muted-foreground transition hover:text-foreground"
+          >
+            <span className="flex-1">{words.notCounted(uncounted.length)}</span>
+            <ChevronDown
+              className={cn("h-4 w-4 shrink-0 transition-transform", uncountedOpen && "rotate-180")}
+            />
+          </button>
+          <AnimatePresence initial={false}>
+            {uncountedOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <ul>
+                  {uncounted.map(({ calendar: c, brandId, brandLabel }) => (
+                    <li key={c.id} className="flex items-start gap-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        onChange={() => onSetVisible([c.id], true)}
+                        aria-label={words.show(nameOf(c))}
+                        className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                      />
+                      <span
+                        className="mt-1 h-3 w-3 shrink-0 rounded-full opacity-40"
+                        style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm text-muted-foreground">{nameOf(c)}</p>
+                        <p className="truncate text-xs text-muted-foreground/80">
+                          {words.brands[brandId] ?? brandLabel}
+                          {c.provider !== "builtin" && c.account ? ` · ${c.account}` : ""}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {saveError && <p className="mt-2 text-xs text-red-700">{saveError}</p>}
     </aside>

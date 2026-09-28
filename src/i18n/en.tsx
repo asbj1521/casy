@@ -435,6 +435,7 @@ export const en: Messages = {
     inView: (n: number) => `${n} in this view`,
     builtInNoAccount: "Built in, no account needed",
     categoryFor: (name: string) => `Category for ${name}`,
+    notCounted: (n: number) => `Not counted (${n})`,
     priorityFor: (name: string) => `How much ${name} matters`,
     priorities: {
       skip: "Can skip",

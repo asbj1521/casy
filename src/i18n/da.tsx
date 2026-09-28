@@ -455,6 +455,7 @@ export const da = {
     inView: (n: number) => `${n} i denne visning`,
     builtInNoAccount: "Indbygget, kræver ingen konto",
     categoryFor: (name: string) => `Kategori for ${name}`,
+    notCounted: (n: number) => `Tæller ikke med (${n})`,
     priorityFor: (name: string) => `Hvor vigtig er ${name}`,
     priorities: {
       skip: "Kan springes over",
