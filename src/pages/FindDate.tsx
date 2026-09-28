@@ -67,6 +67,29 @@ import TopNav from "@/components/TopNav";
  */
 const TZ = APP_TIME_ZONE;
 
+/**
+ * The real group you last scheduled for, per account, so a reload opens on
+ * it rather than on your first group. Only a convenience: if storage is
+ * blocked, or the group is gone, the page simply starts on the first group.
+ */
+const lastGroupKey = (userId: string) => `casy-last-group:${userId}`;
+
+function readLastGroup(userId: string): string | null {
+  try {
+    return localStorage.getItem(lastGroupKey(userId));
+  } catch {
+    return null;
+  }
+}
+
+function writeLastGroup(userId: string, groupId: string) {
+  try {
+    localStorage.setItem(lastGroupKey(userId), groupId);
+  } catch {
+    // Not remembered; the first group it is next time.
+  }
+}
+
 /** Today as a local-midnight ISO (computed once), so the calendar can circle it. */
 const TODAY_DAY = dayOf(new Date().toISOString(), TZ);
 
@@ -228,6 +251,11 @@ export default function FindDate() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  // The group you last scheduled for, read once your account is known. A
+  // group picked on this visit wins; a remembered one that's gone falls back
+  // to the first group, like any unknown id.
+  const userId = user?.id ?? null;
+  const rememberedGroupId = useMemo(() => (userId ? readLastGroup(userId) : null), [userId]);
   const {
     groups,
     activeGroup,
@@ -237,7 +265,14 @@ export default function FindDate() {
     myCalendarsFailed,
     youProfileId,
     carousel,
-  } = useSchedulingGroups(selectedGroupId);
+  } = useSchedulingGroups(selectedGroupId ?? rememberedGroupId);
+
+  // Remember whichever real group is on screen, however it got there
+  // (picked, just made, or the fallback after leaving one).
+  const rememberableGroupId = activeGroup && !activeGroup.isExample ? activeGroup.id : null;
+  useEffect(() => {
+    if (userId && rememberableGroupId) writeLastGroup(userId, rememberableGroupId);
+  }, [userId, rememberableGroupId]);
 
   /**
    * Any touch of either card stops the example carousel, for good.
