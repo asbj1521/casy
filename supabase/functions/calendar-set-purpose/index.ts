@@ -1,6 +1,7 @@
 /**
  * Set (or clear) the category of one calendar: work, school, personal, other;
- * and/or its priority: skip, normal, never.
+ * and/or its priority: skip, normal, never; and/or whether it counts at all
+ * (the tick box on My calendar).
  *
  * This is the "mark them after what they are" step from the privacy design:
  * categories and priorities live on the calendar (calendar_sources.purpose
@@ -37,19 +38,19 @@ Deno.serve(withLanguage(async (req) => {
   const profileId = await callerId(req, db);
   if (!profileId) return json({ error: "Please sign in again." }, 401);
 
-  let payload: { calendarId?: unknown; purpose?: unknown; priority?: unknown };
+  let payload: { calendarId?: unknown; purpose?: unknown; priority?: unknown; included?: unknown };
   try {
     payload = await req.json();
   } catch {
     return json({ error: "Body must be JSON" }, 400);
   }
-  const { calendarId, purpose, priority } = payload;
+  const { calendarId, purpose, priority, included } = payload;
   if (typeof calendarId !== "string") {
     return json({ error: "calendarId is required" }, 400);
   }
-  // Either field may be left out to keep it as it is, but not both.
-  if (purpose === undefined && priority === undefined) {
-    return json({ error: "purpose or priority is required" }, 400);
+  // Any field may be left out to keep it as it is, but not all of them.
+  if (purpose === undefined && priority === undefined && included === undefined) {
+    return json({ error: "purpose, priority or included is required" }, 400);
   }
   // null clears the category; anything else must be one of the four.
   if (
@@ -61,6 +62,9 @@ Deno.serve(withLanguage(async (req) => {
   }
   if (priority !== undefined && !(typeof priority === "string" && PRIORITIES.has(priority))) {
     return json({ error: "priority must be skip, normal or never" }, 400);
+  }
+  if (included !== undefined && typeof included !== "boolean") {
+    return json({ error: "included must be true or false" }, 400);
   }
 
   // Ownership check first: the calendar's connection must belong to the caller.
@@ -79,16 +83,22 @@ Deno.serve(withLanguage(async (req) => {
   const changes = {
     ...(purpose !== undefined ? { purpose } : {}),
     ...(priority !== undefined ? { priority } : {}),
+    ...(included !== undefined ? { included } : {}),
   };
   const { data: updated, error: updateErr } = await db
     .from("calendar_sources")
     .update(changes)
     .eq("id", calendarId)
-    .select("purpose, priority")
+    .select("purpose, priority, included")
     .single();
   if (updateErr) {
     console.error("calendar-set-purpose update failed", updateErr);
     return json({ error: "Update failed" }, 500);
   }
-  return json({ calendarId, purpose: updated.purpose, priority: updated.priority });
+  return json({
+    calendarId,
+    purpose: updated.purpose,
+    priority: updated.priority,
+    included: updated.included,
+  });
 }));

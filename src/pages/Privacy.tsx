@@ -66,9 +66,9 @@ const da: Copy = {
           </li>
           <li>
             <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
-            e-mailadressen på en Google-konto), navnene på deres kalendere og den kategori og
+            e-mailadressen på en Google-konto), navnene på deres kalendere, den kategori og
             prioritet, du giver hver af dem (arbejde, skole, privat, andet; kan springes over,
-            normal, spring aldrig over).
+            normal, spring aldrig over), og om den tæller med.
           </li>
           <li>
             <Term>Optagede tidsrum:</Term> start og slut på hvert tidsrum, hvor du er optaget, for
@@ -235,9 +235,9 @@ const en: Copy = {
           </li>
           <li>
             <Term>Connected calendars:</Term> which accounts you connected (for example the email
-            address of a Google account), the names of their calendars, and the category and
-            priority you give each one (work, school, personal, other; can skip, normal, never
-            skip).
+            address of a Google account), the names of their calendars, the category and priority
+            you give each one (work, school, personal, other; can skip, normal, never skip), and
+            whether it counts.
           </li>
           <li>
             <Term>Busy times:</Term> the start and end of each busy period, for roughly the next

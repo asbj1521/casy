@@ -397,6 +397,7 @@ export const en: Messages = {
     nothingBusy: "Nothing busy on this day in the calendars shown.",
     couldntSave: "Couldn't save.",
     couldntSaveCategory: "Couldn't save the category",
+    couldntSaveIncluded: "Couldn't save whether the calendar counts",
     couldntLoad: "Couldn't load your calendars",
     cellLabel: (date: string, busy: number, holidays: string) =>
       `${date}, ${busy} busy ${busy === 1 ? "block" : "blocks"}${holidays ? `, ${holidays}` : ""}`,
@@ -428,9 +429,9 @@ export const en: Messages = {
     } as Record<string, string>,
     listTitle: "Your calendars",
     listIntro:
-      "Tick a calendar to show it on the grid. Open a group to give each calendar a category; every busy block takes its calendar's category and colour.",
-    showAll: (brand: string) => `Show all ${brand} calendars`,
-    show: (name: string) => `Show ${name}`,
+      "Only ticked calendars count when Casy finds dates, and show here. Open a group to give each calendar a category and say how much it matters.",
+    showAll: (brand: string) => `Count all ${brand} calendars`,
+    show: (name: string) => `Count ${name}`,
     inView: (n: number) => `${n} in this view`,
     builtInNoAccount: "Built in, no account needed",
     categoryFor: (name: string) => `Category for ${name}`,

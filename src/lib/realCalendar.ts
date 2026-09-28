@@ -31,7 +31,8 @@ const CATEGORY_FOR_PURPOSE: Partial<Record<string, EventCategory>> = {
  * `title`, which is what the approval banner shows ("you have Work in your
  * calendar"): the person's own label for their own calendar, never an event
  * title, since none are stored. Its priority comes along too, left out when
- * normal, the same as the groups function sends it.
+ * normal, the same as the groups function sends it. A calendar its owner
+ * unticked on My calendar is left out entirely, as the groups function does.
  */
 export function busyFromCalendars(data: OverviewData): BusyInterval[] {
   const byId = new Map(data.calendars.map((c) => [c.id, c]));
@@ -39,6 +40,7 @@ export function busyFromCalendars(data: OverviewData): BusyInterval[] {
   for (const b of data.blocks) {
     const cal = byId.get(b.calendarId);
     if (!cal) continue; // a block from a calendar that's no longer listed
+    if (cal.included === false) continue;
     busy.push({
       start: b.start,
       end: b.end,

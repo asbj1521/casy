@@ -194,7 +194,9 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
     .from("calendar_sources")
     .select("id, purpose, priority, calendar_connections!inner(profile_id, status)")
     .in("calendar_connections.profile_id", memberIds)
-    .eq("calendar_connections.status", "connected");
+    .eq("calendar_connections.status", "connected")
+    // A calendar its owner unticked on My calendar doesn't count at all.
+    .eq("included", true);
   if (sourcesErr) throw sourcesErr;
 
   type SourceRow = {

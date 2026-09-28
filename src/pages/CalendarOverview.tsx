@@ -72,6 +72,30 @@ const GRID_COLUMNS = "grid grid-cols-7 sm:grid-cols-[2.75rem_repeat(7,minmax(0,1
 /** Rows shown inside a day cell before collapsing the rest into "+N more". */
 const MAX_ROWS_PER_CELL = 3;
 
+/**
+ * Whether the built-in holiday calendar is ticked. It has no row in the
+ * database and never counts when scheduling (a holiday isn't busy time), so
+ * its tick is only a view setting, remembered in this browser.
+ */
+const HOLIDAYS_HIDDEN_KEY = "casy-hide-holidays";
+
+function readHolidaysHidden(): boolean {
+  try {
+    return localStorage.getItem(HOLIDAYS_HIDDEN_KEY) === "1";
+  } catch {
+    return false; // storage blocked: holidays simply show
+  }
+}
+
+function writeHolidaysHidden(hidden: boolean) {
+  try {
+    if (hidden) localStorage.setItem(HOLIDAYS_HIDDEN_KEY, "1");
+    else localStorage.removeItem(HOLIDAYS_HIDDEN_KEY);
+  } catch {
+    // Not remembered next time; nothing else depends on it.
+  }
+}
+
 function fetchOverview(from: Date, to: Date): Promise<OverviewData> {
   return callFunction<OverviewData>("calendar-busy", {
     params: {
@@ -103,7 +127,7 @@ export default function CalendarOverview() {
     return { year: now.getFullYear(), month: now.getMonth() };
   });
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [holidaysHidden, setHolidaysHidden] = useState(readHolidaysHidden);
 
   const layout = useMemo(
     () => buildMonthLayout(month.year, month.month, LOCALE[lang]),
@@ -139,7 +163,54 @@ export default function CalendarOverview() {
     },
   });
 
+  // Tick or untick calendars: whether they count at all, saved on the
+  // server. The tick moves at once (the cached answer is patched before the
+  // call) and moves back if saving fails.
+  const setIncluded = useMutation({
+    mutationFn: async (v: { ids: string[]; included: boolean }) => {
+      await Promise.all(
+        v.ids.map((calendarId) =>
+          callFunction("calendar-set-purpose", {
+            body: { calendarId, included: v.included },
+            errorMessage: t.calendarView.couldntSaveIncluded,
+          }),
+        ),
+      );
+    },
+    onMutate: async ({ ids, included }) => {
+      // Both this page and the scheduling page's copy of your calendars.
+      const key = { queryKey: ["calendar-busy"] };
+      await queryClient.cancelQueries(key);
+      const previous = queryClient.getQueriesData<OverviewData>(key);
+      queryClient.setQueriesData<OverviewData>(key, (old) =>
+        old
+          ? {
+              ...old,
+              calendars: old.calendars.map((c) => (ids.includes(c.id) ? { ...c, included } : c)),
+            }
+          : old,
+      );
+      return { previous };
+    },
+    onError: (_err, _v, context) => {
+      for (const [queryKey, old] of context?.previous ?? []) queryClient.setQueryData(queryKey, old);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
+      void queryClient.invalidateQueries({ queryKey: ["group-busy"] });
+    },
+  });
+
   const calendars = useMemo(() => data?.calendars ?? [], [data]);
+  // Unticked: calendars that don't count, plus the holidays if you hid them.
+  const hidden = useMemo(
+    () =>
+      new Set([
+        ...calendars.filter((c) => c.included === false).map((c) => c.id),
+        ...(holidaysHidden ? [HOLIDAY_CALENDAR_ID] : []),
+      ]),
+    [calendars, holidaysHidden],
+  );
   // The built-in holiday calendar is always present, ahead of the connected ones.
   const allCalendars = useMemo(() => [HOLIDAY_CALENDAR, ...calendars], [calendars]);
   const calendarById = useMemo(() => new Map(allCalendars.map((c) => [c.id, c])), [allCalendars]);
@@ -196,16 +267,16 @@ export default function CalendarOverview() {
     setSelectedKey(dayKey(now));
     setMonth({ year: now.getFullYear(), month: now.getMonth() });
   };
-  // Show or hide any number of calendars at once: one, or a whole brand group.
-  const setCalendarsVisible = (ids: string[], visible: boolean) =>
-    setHidden((prev) => {
-      const next = new Set(prev);
-      for (const id of ids) {
-        if (visible) next.delete(id);
-        else next.add(id);
-      }
-      return next;
-    });
+  // Tick or untick any number of calendars at once: one, or a whole brand
+  // group. Holidays stay in this browser; everything else is saved.
+  const setCalendarsVisible = (ids: string[], visible: boolean) => {
+    if (ids.includes(HOLIDAY_CALENDAR_ID)) {
+      setHolidaysHidden(!visible);
+      writeHolidaysHidden(!visible);
+    }
+    const connected = ids.filter((id) => id !== HOLIDAY_CALENDAR_ID);
+    if (connected.length > 0) setIncluded.mutate({ ids: connected, included: visible });
+  };
 
   const noConnectedCalendars = !isLoading && !error && calendars.length === 0;
 
@@ -465,9 +536,9 @@ export default function CalendarOverview() {
               colorOf={colorOf}
               savingId={setLabels.isPending ? (setLabels.variables?.calendarId ?? null) : null}
               saveError={
-                setLabels.isError
-                  ? setLabels.error instanceof Error
-                    ? setLabels.error.message
+                setLabels.isError || setIncluded.isError
+                  ? (setLabels.error ?? setIncluded.error) instanceof Error
+                    ? (setLabels.error ?? setIncluded.error).message
                     : t.calendarView.couldntSave
                   : null
               }

@@ -50,10 +50,12 @@ function GroupCheckbox({
 
 /**
  * The overview's calendar list, grouped by brand. Each group is collapsed by
- * default and has a checkbox that shows or hides all of its calendars on the
- * month grid; opening it reveals a checkbox, a category picker and a priority
- * picker (how much it matters when scheduling) for each calendar. Unchecking only hides a calendar from the view: nothing is
- * disconnected or deleted (that lives on the profile page).
+ * default and has a checkbox that ticks or unticks all of its calendars;
+ * opening it reveals a checkbox, a category picker and a priority
+ * picker (how much it matters when scheduling) for each calendar. Unchecking
+ * a calendar means it doesn't count: hidden here and left out when finding
+ * dates (saved on the server). Nothing is disconnected or deleted; that
+ * lives on the profile page.
  */
 export default function CalendarListPanel({
   calendars,

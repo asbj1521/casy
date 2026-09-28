@@ -26,6 +26,11 @@ export interface OverviewCalendar {
    * priorities existed, and on the built-in calendar: read as "normal".
    */
   priority?: CalendarPriority;
+  /**
+   * False once its owner unticked it on My calendar: it then counts nowhere.
+   * Missing (older function, built-in calendar) means it counts.
+   */
+  included?: boolean;
   /** "builtin" marks a calendar Autodate provides itself, with no account behind it. */
   provider: CalendarProvider | "builtin";
   /** The account it belongs to (an email, or a link's name). */

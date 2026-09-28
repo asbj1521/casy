@@ -417,6 +417,7 @@ export const da = {
     nothingBusy: "Intet optaget denne dag i de viste kalendere.",
     couldntSave: "Kunne ikke gemme.",
     couldntSaveCategory: "Kunne ikke gemme kategorien",
+    couldntSaveIncluded: "Kunne ikke gemme, om kalenderen tæller med",
     couldntLoad: "Kunne ikke hente dine kalendere",
     cellLabel: (date: string, busy: number, holidays: string) =>
       `${date}, ${busy === 1 ? "1 optaget tidsrum" : `${busy} optagede tidsrum`}${holidays ? `, ${holidays}` : ""}`,
@@ -448,9 +449,9 @@ export const da = {
     } as Record<string, string>,
     listTitle: "Dine kalendere",
     listIntro:
-      "Sæt flueben ved en kalender for at vise den i oversigten. Åbn en gruppe for at give hver kalender en kategori. Hvert optaget tidsrum får sin kalenders kategori og farve.",
-    showAll: (brand: string) => `Vis alle ${brand}-kalendere`,
-    show: (name: string) => `Vis ${name}`,
+      "Kun kalendere med flueben tæller med, når Casy finder datoer, og vises her. Åbn en gruppe for at give hver kalender en kategori, og sige hvor vigtig den er.",
+    showAll: (brand: string) => `Tæl alle ${brand}-kalendere med`,
+    show: (name: string) => `Tæl ${name} med`,
     inView: (n: number) => `${n} i denne visning`,
     builtInNoAccount: "Indbygget, kræver ingen konto",
     categoryFor: (name: string) => `Kategori for ${name}`,

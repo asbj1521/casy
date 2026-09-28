@@ -66,6 +66,16 @@ describe("busyFromCalendars", () => {
     expect(isHardBlock(withPriorities[1])).toBe(false);
   });
 
+  it("leaves out calendars you unticked", () => {
+    const withUnticked = busyFromCalendars({
+      ...DATA,
+      calendars: DATA.calendars.map((c) => (c.id === "uni" ? { ...c, included: false } : c)),
+    });
+
+    expect(withUnticked).toHaveLength(3);
+    expect(withUnticked.some((b) => b.calendarId === "uni")).toBe(false);
+  });
+
   it("drops blocks from a calendar that isn't listed", () => {
     expect(busy).toHaveLength(4);
     expect(busy.some((b) => b.calendarId === "gone")).toBe(false);

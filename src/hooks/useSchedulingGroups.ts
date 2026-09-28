@@ -158,7 +158,8 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
       // Your real calendar replaces the "you" slot only once there is one:
       // with nothing connected you would read as free all year, which is less
       // honest than leaving the generated calendar in place.
-      const swapped = !!base && !!myCalendars && myCalendars.calendars.length > 0;
+      const swapped =
+        !!base && !!myCalendars && myCalendars.calendars.some((c) => c.included !== false);
       const participants = swapped
         ? withRealCalendar(
             [base],

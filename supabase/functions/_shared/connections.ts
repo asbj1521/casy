@@ -6,9 +6,9 @@
  * account_label is the email the provider reported. Connecting the same
  * account again therefore replaces its old connection rather than adding a
  * second copy; connecting a different account simply adds a row. Categories
- * (work, school, ...) and priorities the user set on the old connection's
- * calendars are carried over to the new one, matched by the provider's
- * calendar id.
+ * (work, school, ...), priorities and tick boxes the user set on the old
+ * connection's calendars are carried over to the new one, matched by the
+ * provider's calendar id.
  */
 import type { supabaseAdmin } from "./supabaseAdmin.ts";
 
@@ -18,9 +18,9 @@ import type { supabaseAdmin } from "./supabaseAdmin.ts";
 const STALE_PENDING_MS = 10 * 60_000;
 
 /**
- * Copy calendar categories and priorities (calendar_sources.purpose and
- * .priority) from connections that are about to be deleted onto the calendars
- * of their replacement, matching by external_calendar_id. If several old
+ * Copy calendar categories, priorities and tick boxes (calendar_sources
+ * .purpose, .priority and .included) from connections that are about to be
+ * deleted onto the calendars of their replacement, matching by external_calendar_id. If several old
  * connections disagree, the newest wins. Never throws: losing a category is a
  * nuisance, not a reason to fail.
  */
@@ -33,9 +33,9 @@ export async function carryOverPurposes(
   try {
     const { data: oldSources, error: oldErr } = await db
       .from("calendar_sources")
-      .select("external_calendar_id, purpose, priority")
+      .select("external_calendar_id, purpose, priority, included")
       .in("connection_id", fromConnectionIds)
-      .or("purpose.not.is.null,priority.neq.normal")
+      .or("purpose.not.is.null,priority.neq.normal,included.is.false")
       .order("created_at", { ascending: true });
     if (oldErr) throw oldErr;
     if (!oldSources || oldSources.length === 0) return;
@@ -47,9 +47,13 @@ export async function carryOverPurposes(
     if (newErr) throw newErr;
 
     // Later rows overwrite earlier ones.
-    const wanted = new Map<string, { purpose: string | null; priority: string }>();
+    const wanted = new Map<string, { purpose: string | null; priority: string; included: boolean }>();
     for (const o of oldSources) {
-      wanted.set(o.external_calendar_id, { purpose: o.purpose, priority: o.priority });
+      wanted.set(o.external_calendar_id, {
+        purpose: o.purpose,
+        priority: o.priority,
+        included: o.included,
+      });
     }
     for (const n of newSources ?? []) {
       const labels = wanted.get(n.external_calendar_id);
