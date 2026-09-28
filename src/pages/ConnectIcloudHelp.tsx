@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type Ref } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
@@ -62,17 +62,14 @@ function stepFrom(value: string | null): Step {
 }
 
 /**
- * Which device's drawing to show first: the one this page is open on, since
- * that is usually where Apple's page will be opened too. Phones get the
- * iPhone version (an iPad gets the Mac one, which is closer to its layout).
+ * Which device's guide to show: the one this page is open on, since that is
+ * where Apple's page will be opened too. Read from the browser rather than
+ * the window's width, so a Mac with a narrow window still gets the Mac guide.
+ * An iPad gets it too, its layout being the closer of the two; other phones
+ * get the iPhone one, the closer for them.
  */
 function detectDevice(): Device {
-  try {
-    if (/iPhone|iPod/.test(navigator.userAgent)) return "iphone";
-    return window.matchMedia("(max-width: 639px)").matches ? "iphone" : "mac";
-  } catch {
-    return "mac";
-  }
+  return /iPhone|iPod|Android.+Mobile/.test(navigator.userAgent) ? "iphone" : "mac";
 }
 
 const link = (
@@ -107,7 +104,7 @@ const da = {
         "En af dine Apple-enheder i nærheden, til den kode Apple sender",
         "Cirka 5 minutter",
       ],
-    } as Record<Device, string[]>,
+    } satisfies Record<Device, string[]>,
     safe: "Casy ser aldrig din almindelige Apple-adgangskode. Casy spørger kun Apple om, hvornår du er optaget, aldrig hvad dine aftaler hedder, og gemmer den ekstra adgangskode krypteret.",
     start: "Kom i gang",
     haveOne: "Jeg har allerede en",
@@ -117,7 +114,7 @@ const da = {
     body: {
       mac: "Se det hele igennem her først, så du ved, hvad du skal klikke på. Linket til Apple kommer på næste trin.",
       iphone: "Se det hele igennem her først, så du ved, hvad du skal trykke på. Linket til Apple kommer på næste trin.",
-    } as Record<Device, string>,
+    } satisfies Record<Device, string>,
     next: "Jeg er klar",
   },
   apple: {
@@ -127,7 +124,7 @@ const da = {
       mac: "Log ind med din e-mail og adgangskode, ikke med Touch ID. Ellers kan Apple ikke lave adgangskoden.",
       iphone:
         "Log ind med din e-mail og adgangskode, ikke med Face ID eller en loginnøgle. Ellers kan Apple ikke lave adgangskoden.",
-    } as Record<Device, string>,
+    } satisfies Record<Device, string>,
     open: "Åbn Apples kontoside",
     stepsTitle: "Trinene igen",
     watchAgain: "Se animationen igen",
@@ -137,7 +134,7 @@ const da = {
       // On an iPhone both of that box's buttons are blue, so it is named by its words.
       iphone:
         "Så er du logget ind med Face ID eller en loginnøgle. Tryk på Log ind med adgangskode, ikke på Annuller. Log ind med e-mail og adgangskode, og start igen fra App-specifikke adgang…",
-    } as Record<Device, string>,
+    } satisfies Record<Device, string>,
     missingTitle: "Kan du ikke finde App-specifikke adgangskoder?",
     missingBody:
       "Apple tilbyder dem kun, når tofaktorgodkendelse er slået til for din Apple-konto. De fleste har det allerede. Hvis du ikke har, så slå det til under Login og sikkerhed først, så dukker muligheden op.",
@@ -260,6 +257,7 @@ const en: typeof da = {
   },
 };
 
+const headingClass = "text-xl font-bold tracking-tight text-foreground outline-none sm:text-2xl";
 const primaryButton =
   "inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60 sm:w-auto";
 const watchAgainLink =
@@ -291,6 +289,36 @@ function FoldOut({ title, children }: { title: string; children: ReactNode }) {
       </summary>
       <p className="border-t px-4 py-3 text-sm leading-relaxed text-muted-foreground">{children}</p>
     </details>
+  );
+}
+
+/** A step's heading, which takes focus when the step changes, and the line under it. */
+function StepHeading({ ref, title, children }: { ref: Ref<HTMLHeadingElement>; title: string; children: ReactNode }) {
+  return (
+    <>
+      <h2 ref={ref} tabIndex={-1} className={headingClass}>
+        {title}
+      </h2>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">{children}</p>
+    </>
+  );
+}
+
+function BackButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} className={secondaryButton}>
+      <ArrowLeft className="h-4 w-4" />
+      {label}
+    </button>
+  );
+}
+
+function NextButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className={primaryButton}>
+      {label}
+      <ArrowRight className="h-4 w-4" />
+    </button>
   );
 }
 
@@ -349,7 +377,6 @@ export default function ConnectIcloudHelp() {
   }
 
   const stepIndex = STEPS.indexOf(step);
-  const headingClass = "text-xl font-bold tracking-tight text-foreground outline-none sm:text-2xl";
 
   let body: ReactNode;
   if (view === "done" && result) {
@@ -392,12 +419,9 @@ export default function ConnectIcloudHelp() {
   } else if (step === "intro") {
     body = (
       <>
-        <h2 ref={headingRef} tabIndex={-1} className={headingClass}>
-          {c.intro.title}
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <StepHeading ref={headingRef} title={c.intro.title}>
           {c.intro.body}
-        </p>
+        </StepHeading>
         <p className="mt-5 text-sm font-semibold text-foreground">{c.intro.needTitle}</p>
         <ul className="mt-2 space-y-2">
           {c.intro.need[device].map((item) => (
@@ -418,22 +442,16 @@ export default function ConnectIcloudHelp() {
             </button>
           }
         >
-          <button type="button" onClick={() => goTo("watch")} className={primaryButton}>
-            {c.intro.start}
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <NextButton label={c.intro.start} onClick={() => goTo("watch")} />
         </StepFooter>
       </>
     );
   } else if (step === "watch") {
     body = (
       <>
-        <h2 ref={headingRef} tabIndex={-1} className={headingClass}>
-          {c.watch.title}
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <StepHeading ref={headingRef} title={c.watch.title}>
           {c.watch.body[device]}
-        </p>
+        </StepHeading>
         {onPhone && (
           <div className="mt-4">
             <DevicePicker device={device} onChange={setDevice} />
@@ -442,30 +460,22 @@ export default function ConnectIcloudHelp() {
         <div className={onPhone ? "mt-4" : "mt-5"}>
           <AppleWalkthrough key={device} device={device} />
         </div>
-        <StepFooter
-          secondary={
-            <button type="button" onClick={() => goTo("intro")} className={secondaryButton}>
-              <ArrowLeft className="h-4 w-4" />
-              {c.back}
-            </button>
-          }
-        >
-          <button type="button" onClick={() => goTo("apple")} className={primaryButton}>
-            {c.watch.next}
-            <ArrowRight className="h-4 w-4" />
-          </button>
+        <StepFooter secondary={<BackButton label={c.back} onClick={() => goTo("intro")} />}>
+          <NextButton label={c.watch.next} onClick={() => goTo("apple")} />
         </StepFooter>
       </>
     );
   } else if (step === "apple") {
+    const watchAgain = (className?: string) => (
+      <button type="button" onClick={() => goTo("watch")} className={cn(watchAgainLink, className)}>
+        {c.apple.watchAgain}
+      </button>
+    );
     body = (
       <>
-        <h2 ref={headingRef} tabIndex={-1} className={headingClass}>
-          {c.apple.title}
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <StepHeading ref={headingRef} title={c.apple.title}>
           {c.apple.body}
-        </p>
+        </StepHeading>
         {/* The one thing that trips people up at Apple, said before they go. */}
         <p className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           {device === "iphone" ? (
@@ -485,73 +495,39 @@ export default function ConnectIcloudHelp() {
           {c.apple.open}
           <ExternalLink className="h-4 w-4" />
         </a>
+        {/* On a phone the switch takes the place beside the title, and "watch
+            again" moves under the list. */}
         <div className="mt-6">
-          {onPhone ? (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                <p className="text-sm font-semibold text-foreground">{c.apple.stepsTitle}</p>
-                <DevicePicker device={device} onChange={setDevice} />
-              </div>
-              <div className="mt-3">
-                <AppleWalkthroughChecklist device={device} />
-              </div>
-              <button type="button" onClick={() => goTo("watch")} className={cn(watchAgainLink, "mt-3")}>
-                {c.apple.watchAgain}
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <p className="text-sm font-semibold text-foreground">{c.apple.stepsTitle}</p>
-                <button type="button" onClick={() => goTo("watch")} className={watchAgainLink}>
-                  {c.apple.watchAgain}
-                </button>
-              </div>
-              <div className="mt-3">
-                <AppleWalkthroughChecklist device={device} />
-              </div>
-            </>
-          )}
+          <div
+            className={cn(
+              "flex flex-wrap justify-between gap-x-3",
+              onPhone ? "items-center gap-y-2" : "items-baseline gap-y-1",
+            )}
+          >
+            <p className="text-sm font-semibold text-foreground">{c.apple.stepsTitle}</p>
+            {onPhone ? <DevicePicker device={device} onChange={setDevice} /> : watchAgain()}
+          </div>
+          <div className="mt-3">
+            <AppleWalkthroughChecklist device={device} />
+          </div>
+          {onPhone && watchAgain("mt-3")}
         </div>
         <div className="mt-5">
           <FoldOut title={c.apple.failedTitle}>{c.apple.failedBody[device]}</FoldOut>
           <FoldOut title={c.apple.missingTitle}>{c.apple.missingBody}</FoldOut>
         </div>
-        <StepFooter
-          secondary={
-            <button type="button" onClick={() => goTo("watch")} className={secondaryButton}>
-              <ArrowLeft className="h-4 w-4" />
-              {c.back}
-            </button>
-          }
-        >
-          <button type="button" onClick={() => goTo("enter")} className={primaryButton}>
-            {c.apple.next}
-            <ArrowRight className="h-4 w-4" />
-          </button>
+        <StepFooter secondary={<BackButton label={c.back} onClick={() => goTo("watch")} />}>
+          <NextButton label={c.apple.next} onClick={() => goTo("enter")} />
         </StepFooter>
       </>
     );
   } else {
-    const backButton = (
-      <button
-        type="button"
-        onClick={() => goTo("apple")}
-        disabled={connect.isPending}
-        className={secondaryButton}
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {c.back}
-      </button>
-    );
+    const backButton = <BackButton label={c.back} onClick={() => goTo("apple")} disabled={connect.isPending} />;
     body = (
       <>
-        <h2 ref={headingRef} tabIndex={-1} className={headingClass}>
-          {c.enter.title}
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <StepHeading ref={headingRef} title={c.enter.title}>
           {c.enter.body}
-        </p>
+        </StepHeading>
         {authLoading ? (
           <div className="mt-6 flex justify-center py-6 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />

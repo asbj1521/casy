@@ -46,6 +46,8 @@ export const MAC_CHROME = 34;
 export const BLUE = "#0071e3";
 export const INK = "#1d1d1f";
 export const GREY = "#6e6e73";
+/** Apple's blue on a button that can't be pressed yet. */
+export const FAINT_BLUE = "#a9c8f3";
 
 /** The made-up person the drawings show, never a real account. */
 export const PERSON = { name: "Frida Jensen", initials: "FJ", email: "frida@icloud.com" };

@@ -1,12 +1,56 @@
+import type { ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { SiApple } from "react-icons/si";
 import { Apple, Contact, Diamond, LifeBuoy, RectangleEllipsis, ShieldEllipsis } from "lucide-react";
 
-import { at, BLUE } from "@/components/appleWalkthrough/layout";
+import { at, BLUE, PERSON, type SceneId } from "@/components/appleWalkthrough/layout";
 
 /**
- * Drawing pieces both devices use: Apple's ring of coloured dots, the dotted
- * logo atop its dialogs, and the icons on the Login og sikkerhed tiles.
+ * Drawing pieces both devices use: the fade between scenes, Apple's ring of
+ * coloured dots, the dotted logo atop its dialogs, the account's avatar, and
+ * the icons on the Login og sikkerhed tiles.
  */
+
+/** Cross-fades from one scene to the next; instant for anyone who asks for less motion. */
+export function SceneFade({
+  scene,
+  width,
+  height,
+  children,
+}: {
+  scene: SceneId;
+  width: number;
+  height: number;
+  children: ReactNode;
+}) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <AnimatePresence initial={false}>
+      <motion.div
+        key={scene}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.3 }}
+        style={at(0, 0, width, height)}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/** The made-up person's initials in a violet circle, as Apple's sign-in boxes show an account. */
+export function Avatar({ size, fontSize }: { size: number; fontSize: number }) {
+  return (
+    <span
+      className="flex items-center justify-center rounded-full bg-gradient-to-b from-[#a5b4fc] to-[#6366f1] font-semibold text-white"
+      style={{ width: size, height: size, fontSize }}
+    >
+      {PERSON.initials}
+    </span>
+  );
+}
 
 /** Apple's ring of coloured dots, round the logo on its sign-in pages. `size` is its width. */
 export function DotRing({ size = 140 }: { size?: number }) {

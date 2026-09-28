@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { looksLikeAppSpecificPassword } from "@/lib/appleCredentials";
+import { APP_PASSWORD_EXAMPLE, looksLikeAppSpecificPassword } from "@/lib/appleCredentials";
 
 describe("looksLikeAppSpecificPassword", () => {
-  it("accepts the shape Apple shows", () => {
+  it("accepts the shape Apple shows, including the example people are shown", () => {
     expect(looksLikeAppSpecificPassword("abcd-efgh-ijkl-mnop")).toBe(true);
+    expect(looksLikeAppSpecificPassword(APP_PASSWORD_EXAMPLE)).toBe(true);
   });
 
   it("accepts it without the dashes, and in either case", () => {

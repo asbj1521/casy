@@ -3,7 +3,7 @@ import { AlertTriangle, Lock } from "lucide-react";
 
 import InfoTip from "@/components/InfoTip";
 import { useT } from "@/i18n/lang";
-import { looksLikeAppSpecificPassword } from "@/lib/appleCredentials";
+import { APP_PASSWORD_EXAMPLE, looksLikeAppSpecificPassword } from "@/lib/appleCredentials";
 
 /**
  * The two things connecting iCloud takes: the Apple Account email and an
@@ -129,7 +129,7 @@ export default function AppleCredentialFields({
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 {t.appleForm.looksWrong(
-                  <span className="whitespace-nowrap font-mono">abcd-efgh-ijkl-mnop</span>,
+                  <span className="whitespace-nowrap font-mono">{APP_PASSWORD_EXAMPLE}</span>,
                 )}
               </span>
             </p>

@@ -5,8 +5,10 @@
  * iOS text menu. The English is translated from those, not copied from
  * Apple's English pages; check it there before relying on it.
  */
-import type { Lang } from "@/i18n/locale";
 import { PERSON } from "@/components/appleWalkthrough/layout";
+import { useLang } from "@/i18n/lang";
+import type { Lang } from "@/i18n/locale";
+import { APP_PASSWORD_EXAMPLE } from "@/lib/appleCredentials";
 
 const da = {
   nav: ["Store", "Mac", "iPad", "iPhone", "Watch", "AirPods", "TV og hjem", "Underholdning", "Tilbehør", "Support"],
@@ -120,7 +122,15 @@ const en: typeof da = {
 
 export type AppleWords = typeof da;
 
-export const APPLE_WORDS: Record<Lang, AppleWords> = { da, en };
+const APPLE_WORDS: Record<Lang, AppleWords> = { da, en };
 
-/** The example password the drawings show; never a real one. */
-export const EXAMPLE_PASSWORD = ["abcd", "efgh", "ijkl", "mnop"];
+/** Apple's wording in the page's language. */
+export function useAppleWords(): AppleWords {
+  return APPLE_WORDS[useLang().lang];
+}
+
+/** The example password the drawings show, in its four groups; never a real one. */
+export const EXAMPLE_PASSWORD = APP_PASSWORD_EXAMPLE.split("-");
+
+/** The two-factor code the drawings type in. */
+export const EXAMPLE_CODE = "381047";

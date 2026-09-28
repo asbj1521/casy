@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Laptop, Pause, Play, RotateCcw, Smartphone } from "lucide-react";
 
 import IphoneScreen from "@/components/appleWalkthrough/IphoneScreen";
 import MacScreen from "@/components/appleWalkthrough/MacScreen";
 import { at, BLUE, SCENES, SIZE, type Device, type SceneId } from "@/components/appleWalkthrough/layout";
+import { BEATS, keyBeat } from "@/components/appleWalkthrough/timeline";
 import { useLang } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 
@@ -23,128 +24,11 @@ import { cn } from "@/lib/utils";
  * And the final box has no copy button, so the password is selected by hand,
  * which on a phone means dragging iOS's selection handles out to both ends.
  *
- * The timeline is a list of beats per device: where the pointer is, whether
- * it clicks (or presses and holds), and which state the screen is in. Anyone
- * whose system asks for less motion gets no autoplay and no gliding, just the
- * same frames to step through.
+ * The timeline (timeline.ts) is a list of beats per device: where the
+ * pointer is, whether it clicks (or presses and holds), and which state the
+ * screen is in. Anyone whose system asks for less motion gets no autoplay and
+ * no gliding, just the same frames to step through.
  */
-
-interface Beat {
-  scene: SceneId;
-  /** Which state the scene is drawn in: typed text, scrolled, selected. */
-  phase: number;
-  /** Where the pointer is, in the drawing's coordinates. */
-  at: [number, number];
-  click?: boolean;
-  /** A long press (iPhone), which gets a slower ripple than a tap. */
-  press?: boolean;
-  /** How long this beat lasts before the next one. */
-  ms: number;
-  /** The beat shown when someone steps to this scene by hand. */
-  key?: boolean;
-}
-
-// Coordinates follow the layouts in MacScreen.tsx and IphoneScreen.tsx.
-const BEATS: Record<Device, Beat[]> = {
-  mac: [
-    { scene: "landing", phase: 0, at: [560, 260], ms: 900 },
-    { scene: "landing", phase: 0, at: [360, 377], ms: 1100, key: true },
-    { scene: "landing", phase: 0, at: [360, 377], ms: 700, click: true },
-
-    { scene: "biometric", phase: 0, at: [360, 377], ms: 900 },
-    { scene: "biometric", phase: 0, at: [454, 123], ms: 1200, key: true },
-    { scene: "biometric", phase: 0, at: [454, 123], ms: 700, click: true },
-
-    { scene: "signIn", phase: 0, at: [360, 198], ms: 1000 },
-    { scene: "signIn", phase: 1, at: [360, 198], ms: 900 },
-    { scene: "signIn", phase: 2, at: [360, 232], ms: 1000 },
-    { scene: "signIn", phase: 2, at: [452, 232], ms: 800, key: true },
-    { scene: "signIn", phase: 2, at: [452, 232], ms: 700, click: true },
-
-    { scene: "code", phase: 0, at: [360, 200], ms: 900 },
-    { scene: "code", phase: 1, at: [360, 200], ms: 1300, key: true },
-
-    { scene: "security", phase: 0, at: [470, 250], ms: 1100 },
-    { scene: "security", phase: 1, at: [470, 250], ms: 900 },
-    { scene: "security", phase: 2, at: [346, 321], ms: 1000, key: true },
-    { scene: "security", phase: 2, at: [346, 321], ms: 700, click: true },
-
-    // The tip rests on the corner of the +, so the arrow doesn't hide it.
-    { scene: "list", phase: 0, at: [346, 321], ms: 800 },
-    { scene: "list", phase: 0, at: [512, 244], ms: 1100, key: true },
-    { scene: "list", phase: 0, at: [512, 244], ms: 700, click: true },
-
-    { scene: "generate", phase: 0, at: [360, 215], ms: 1000 },
-    { scene: "generate", phase: 1, at: [360, 215], ms: 900 },
-    { scene: "generate", phase: 1, at: [360, 253], ms: 800, key: true },
-    { scene: "generate", phase: 1, at: [360, 253], ms: 700, click: true },
-
-    { scene: "confirm", phase: 0, at: [360, 219], ms: 1000 },
-    { scene: "confirm", phase: 1, at: [360, 219], ms: 900 },
-    { scene: "confirm", phase: 1, at: [360, 255], ms: 800, key: true },
-    { scene: "confirm", phase: 1, at: [360, 255], ms: 700, click: true },
-
-    { scene: "reveal", phase: 0, at: [360, 180], ms: 1100 },
-    { scene: "reveal", phase: 1, at: [360, 180], ms: 800, click: true },
-    { scene: "reveal", phase: 2, at: [360, 180], ms: 1300, key: true },
-    { scene: "reveal", phase: 2, at: [360, 259], ms: 900 },
-    { scene: "reveal", phase: 2, at: [360, 259], ms: 1000, click: true },
-  ],
-  iphone: [
-    { scene: "landing", phase: 0, at: [270, 520], ms: 900 },
-    { scene: "landing", phase: 0, at: [180, 414], ms: 1100, key: true },
-    { scene: "landing", phase: 0, at: [180, 414], ms: 700, click: true },
-
-    { scene: "biometric", phase: 0, at: [180, 414], ms: 900 },
-    { scene: "biometric", phase: 0, at: [319, 405], ms: 1200, key: true },
-    { scene: "biometric", phase: 0, at: [319, 405], ms: 700, click: true },
-
-    { scene: "signIn", phase: 0, at: [180, 260], ms: 1000 },
-    { scene: "signIn", phase: 1, at: [180, 260], ms: 900 },
-    { scene: "signIn", phase: 1, at: [93, 366], ms: 800 },
-    { scene: "signIn", phase: 1, at: [93, 366], ms: 600, click: true },
-    { scene: "signIn", phase: 2, at: [180, 310], ms: 1000 },
-    { scene: "signIn", phase: 2, at: [93, 366], ms: 800, key: true },
-    { scene: "signIn", phase: 2, at: [93, 366], ms: 600, click: true },
-
-    { scene: "code", phase: 0, at: [180, 218], ms: 900 },
-    { scene: "code", phase: 1, at: [180, 218], ms: 1300, key: true },
-
-    // A long scroll: the tile needed is the last of seven.
-    { scene: "security", phase: 0, at: [240, 300], ms: 1100 },
-    { scene: "security", phase: 1, at: [240, 300], ms: 1600 },
-    { scene: "security", phase: 2, at: [180, 422], ms: 1000, key: true },
-    { scene: "security", phase: 2, at: [180, 422], ms: 700, click: true },
-
-    { scene: "list", phase: 0, at: [180, 422], ms: 800 },
-    { scene: "list", phase: 0, at: [329, 251], ms: 1100, key: true },
-    { scene: "list", phase: 0, at: [329, 251], ms: 700, click: true },
-
-    { scene: "generate", phase: 0, at: [180, 338], ms: 1000 },
-    { scene: "generate", phase: 1, at: [180, 338], ms: 900 },
-    { scene: "generate", phase: 1, at: [180, 393], ms: 800, key: true },
-    { scene: "generate", phase: 1, at: [180, 393], ms: 700, click: true },
-
-    { scene: "confirm", phase: 0, at: [180, 332], ms: 1000 },
-    { scene: "confirm", phase: 1, at: [180, 332], ms: 900 },
-    { scene: "confirm", phase: 1, at: [180, 385], ms: 800, key: true },
-    { scene: "confirm", phase: 1, at: [180, 385], ms: 700, click: true },
-
-    // Press and hold selects one group; drag both handles out; Kopier; OK.
-    { scene: "reveal", phase: 0, at: [157, 291], ms: 1100 },
-    { scene: "reveal", phase: 1, at: [157, 291], ms: 1400, press: true },
-    { scene: "reveal", phase: 2, at: [94, 291], ms: 900 },
-    { scene: "reveal", phase: 3, at: [266, 291], ms: 1000, key: true },
-    { scene: "reveal", phase: 3, at: [52, 327], ms: 900 },
-    { scene: "reveal", phase: 4, at: [52, 327], ms: 700, click: true },
-    { scene: "reveal", phase: 4, at: [180, 407], ms: 900 },
-    { scene: "reveal", phase: 4, at: [180, 407], ms: 1000, click: true },
-  ],
-};
-
-function keyBeat(beats: Beat[], scene: SceneId): number {
-  return beats.findIndex((b) => b.scene === scene && b.key);
-}
 
 type Captions = Record<Device, Record<SceneId, string>>;
 
@@ -299,7 +183,8 @@ export default function AppleWalkthrough({ device }: { device: Device }) {
   }
 
   const isPhone = device === "iphone";
-  // The phone's bezel, both sides together, which the height must allow for.
+  // The phone's bezel, both sides together, which the height allows for. The
+  // Mac frame's 1px border instead takes the drawing's blank bottom edge.
   const frameBorder = isPhone ? 14 : 0;
   const pointerOffset = isPhone ? 14 : 1;
   const tapping = current.click || current.press;
@@ -404,14 +289,17 @@ export default function AppleWalkthrough({ device }: { device: Device }) {
  */
 export function DevicePicker({ device, onChange }: { device: Device; onChange: (device: Device) => void }) {
   const c = useCopy();
+  const labelId = useId();
   const options: { id: Device; label: string; Icon: typeof Laptop }[] = [
     { id: "mac", label: "Mac", Icon: Laptop },
     { id: "iphone", label: "iPhone", Icon: Smartphone },
   ];
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">{c.controls.showFor}</span>
-      <div role="group" aria-label={c.controls.showFor} className="inline-flex rounded-full border bg-secondary/60 p-0.5">
+      <span id={labelId} className="text-sm text-muted-foreground">
+        {c.controls.showFor}
+      </span>
+      <div role="group" aria-labelledby={labelId} className="inline-flex rounded-full border bg-secondary/60 p-0.5">
         {options.map(({ id, label, Icon }) => (
           <button
             key={id}

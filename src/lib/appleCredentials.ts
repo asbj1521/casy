@@ -12,6 +12,9 @@
  * without the dashes) rather than warn about a password that would work.
  */
 
+/** What an app-specific password looks like, for showing people; not a real one. */
+export const APP_PASSWORD_EXAMPLE = "abcd-efgh-ijkl-mnop";
+
 const GROUPED = /^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$/i;
 const UNGROUPED = /^[a-z]{16}$/i;
 

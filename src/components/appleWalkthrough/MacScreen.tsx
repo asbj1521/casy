@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { SiApple } from "react-icons/si";
 import { ArrowRight, Fingerprint, Plus, Search, ShoppingBag, X } from "lucide-react";
 
 import {
   at,
   BLUE,
+  FAINT_BLUE,
   GREY,
   INK,
   MAC_CHROME,
@@ -13,9 +14,13 @@ import {
   SIZE,
   type SceneId,
 } from "@/components/appleWalkthrough/layout";
-import { DotRing, DottedAppleIcon, TileIcon } from "@/components/appleWalkthrough/Parts";
-import { APPLE_WORDS, EXAMPLE_PASSWORD, type AppleWords } from "@/components/appleWalkthrough/words";
-import { useLang } from "@/i18n/lang";
+import { Avatar, DotRing, DottedAppleIcon, SceneFade, TileIcon } from "@/components/appleWalkthrough/Parts";
+import {
+  EXAMPLE_CODE,
+  EXAMPLE_PASSWORD,
+  useAppleWords,
+  type AppleWords,
+} from "@/components/appleWalkthrough/words";
 import { cn } from "@/lib/utils";
 
 /**
@@ -128,7 +133,7 @@ function DialogButton({ top, label, filled, faint }: { top: number; label: strin
     <div
       style={{
         ...at(255, top, 210, 22),
-        background: filled ? (faint ? "#a9c8f3" : BLUE) : "white",
+        background: filled ? (faint ? FAINT_BLUE : BLUE) : "white",
         color: filled ? "white" : BLUE,
         borderColor: BLUE,
       }}
@@ -188,9 +193,7 @@ function BiometricSheet({ a }: { a: AppleWords }) {
         {a.sheetText}
       </p>
       <div style={at(245, 166, 230, 34)} className="flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2">
-        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-gradient-to-b from-[#a5b4fc] to-[#6366f1] text-[8px] font-semibold text-white">
-          {PERSON.initials}
-        </span>
+        <Avatar size={22} fontSize={8} />
         <span className="flex flex-col">
           <span className="text-[9px] text-white">{PERSON.name}</span>
           <span className="text-[7.5px] text-white/60">{a.yourAccount}</span>
@@ -236,7 +239,6 @@ function SignInForm({ a, phase }: { a: AppleWords; phase: number }) {
 }
 
 function CodeEntry({ a, phase }: { a: AppleWords; phase: number }) {
-  const digits = "381047";
   return (
     <>
       <AppleNav a={a} />
@@ -250,7 +252,7 @@ function CodeEntry({ a, phase }: { a: AppleWords; phase: number }) {
           style={{ ...at(262 + i * 34, 150, 26, 32), color: INK }}
           className="flex items-center justify-center rounded-[7px] border border-[#86868b] bg-white text-[14px]"
         >
-          {phase >= 1 ? digits[i] : ""}
+          {phase >= 1 ? EXAMPLE_CODE[i] : ""}
         </span>
       ))}
     </>
@@ -462,24 +464,14 @@ function Scene({ id, phase, a }: { id: SceneId; phase: number; a: AppleWords }) 
 
 /** The whole Mac drawing for one moment: the browser bar and the page in it. */
 export default function MacScreen({ scene, phase }: { scene: SceneId; phase: number }) {
-  const { lang } = useLang();
-  const reduceMotion = useReducedMotion();
+  const a = useAppleWords();
   return (
     <>
       <BrowserBar url={URLS[scene]} />
       <div style={at(0, MAC_CHROME, W, PAGE_H)} className="overflow-hidden bg-white">
-        <AnimatePresence initial={false}>
-          <motion.div
-            key={scene}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.3 }}
-            style={at(0, 0, W, PAGE_H)}
-          >
-            <Scene id={scene} phase={phase} a={APPLE_WORDS[lang]} />
-          </motion.div>
-        </AnimatePresence>
+        <SceneFade scene={scene} width={W} height={PAGE_H}>
+          <Scene id={scene} phase={phase} a={a} />
+        </SceneFade>
       </div>
     </>
   );

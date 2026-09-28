@@ -1,12 +1,16 @@
 import { Fragment, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { SiApple } from "react-icons/si";
 import { ChevronDown, ChevronRight, KeyRound, Menu, Plus, Search, ShoppingBag, Sparkles, X } from "lucide-react";
 
-import { at, BLUE, GREY, INK, PERSON, SIZE, type SceneId } from "@/components/appleWalkthrough/layout";
-import { DotRing, DottedAppleIcon, TileIcon } from "@/components/appleWalkthrough/Parts";
-import { APPLE_WORDS, EXAMPLE_PASSWORD, type AppleWords } from "@/components/appleWalkthrough/words";
-import { useLang } from "@/i18n/lang";
+import { at, BLUE, FAINT_BLUE, GREY, INK, PERSON, SIZE, type SceneId } from "@/components/appleWalkthrough/layout";
+import { Avatar, DotRing, DottedAppleIcon, SceneFade, TileIcon } from "@/components/appleWalkthrough/Parts";
+import {
+  EXAMPLE_CODE,
+  EXAMPLE_PASSWORD,
+  useAppleWords,
+  type AppleWords,
+} from "@/components/appleWalkthrough/words";
 import { cn } from "@/lib/utils";
 
 /**
@@ -100,7 +104,7 @@ function PhoneDialogButton({ top, label, filled, faint }: { top: number; label: 
     <div
       style={{
         ...at(66, top, 228, 30),
-        background: filled ? (faint ? "#a9c8f3" : BLUE) : "white",
+        background: filled ? (faint ? FAINT_BLUE : BLUE) : "white",
         color: filled ? "white" : BLUE,
         borderColor: BLUE,
       }}
@@ -158,7 +162,7 @@ function PhoneBiometric({ a }: { a: AppleWords }) {
       <span style={at(302, 388, 34, 34)} className="flex items-center justify-center rounded-full border border-white/25 bg-white/10">
         <X className="h-4 w-4 text-white" />
       </span>
-      <span style={at(26, 436, 34, 34)} className="relative">
+      <span style={at(26, 436, 34, 34)}>
         <DotRing size={34} />
         <span style={at(11, 10, 12, 13)} className="flex items-center justify-center">
           <SiApple className="h-3 w-3 text-white" />
@@ -168,9 +172,7 @@ function PhoneBiometric({ a }: { a: AppleWords }) {
         {a.sheetText}
       </p>
       <div style={at(22, 486, 316, 46)} className="flex items-center gap-3 rounded-full bg-[#1c1c1e] px-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-b from-[#a5b4fc] to-[#6366f1] text-[11px] font-semibold text-white">
-          {PERSON.initials}
-        </span>
+        <Avatar size={32} fontSize={11} />
         <span className="text-[12px] text-white">{PERSON.name}</span>
       </div>
       <div style={at(8, 552, 344, 1)} className="bg-white/15" />
@@ -208,7 +210,7 @@ function PhoneSignIn({ a, phase }: { a: AppleWords; phase: number }) {
         </p>
       )}
       <div
-        style={{ ...at(16, 350, 154, 32), background: phase >= 1 ? BLUE : "#a9c8f3" }}
+        style={{ ...at(16, 350, 154, 32), background: phase >= 1 ? BLUE : FAINT_BLUE }}
         className="flex items-center justify-center rounded-[9px] text-[12px] text-white transition-colors"
       >
         {a.continue}
@@ -226,7 +228,6 @@ function PhoneSignIn({ a, phase }: { a: AppleWords; phase: number }) {
 }
 
 function PhoneCode({ a, phase }: { a: AppleWords; phase: number }) {
-  const digits = "381047";
   return (
     <>
       <PhoneNav />
@@ -240,7 +241,7 @@ function PhoneCode({ a, phase }: { a: AppleWords; phase: number }) {
           style={{ ...at(52 + i * 44, 196, 36, 44), color: INK }}
           className="flex items-center justify-center rounded-[9px] border border-[#86868b] bg-white text-[18px]"
         >
-          {phase >= 1 ? digits[i] : ""}
+          {phase >= 1 ? EXAMPLE_CODE[i] : ""}
         </span>
       ))}
       <SafariPill />
@@ -494,22 +495,12 @@ function Scene({ id, phase, a }: { id: SceneId; phase: number; a: AppleWords }) 
 
 /** The whole iPhone drawing for one moment: the screen below the status bar. */
 export default function IphoneScreen({ scene, phase }: { scene: SceneId; phase: number }) {
-  const { lang } = useLang();
-  const reduceMotion = useReducedMotion();
+  const a = useAppleWords();
   return (
     <div style={at(0, 0, W, H)} className="overflow-hidden bg-white">
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={scene}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.3 }}
-          style={at(0, 0, W, H)}
-        >
-          <Scene id={scene} phase={phase} a={APPLE_WORDS[lang]} />
-        </motion.div>
-      </AnimatePresence>
+      <SceneFade scene={scene} width={W} height={H}>
+        <Scene id={scene} phase={phase} a={a} />
+      </SceneFade>
     </div>
   );
 }
