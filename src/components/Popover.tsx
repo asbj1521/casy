@@ -1,12 +1,12 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
 /**
- * The shell a menu needs: a trigger button, a click-away backdrop, and a panel
- * that fades in. Written once so the event-settings dropdown and the group
- * switcher can't drift apart in behaviour or timing.
+ * The shell a menu needs: a trigger button, a click-away backdrop (Esc works
+ * too), and a panel that fades in. Written once so the event-settings dropdown
+ * and the group switcher can't drift apart in behaviour or timing.
  */
 export default function Popover({
   className,
@@ -24,6 +24,15 @@ export default function Popover({
   children: (close: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   return (
     <div className={cn("relative", className)}>

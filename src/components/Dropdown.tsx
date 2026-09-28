@@ -40,7 +40,9 @@ export default function Dropdown({
         </>
       )}
     >
-      {() => <WheelPicker options={options} value={value} onChange={onChange} />}
+      {(close) => (
+        <WheelPicker options={options} value={value} onChange={onChange} onPick={close} />
+      )}
     </Popover>
   );
 }

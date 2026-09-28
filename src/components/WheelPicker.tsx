@@ -4,15 +4,22 @@ import { useEffect, useMemo, useRef } from "react";
  * An iOS-style looping scroll wheel. The options are repeated many times so the
  * user can spin freely; on settle we snap to the centred item, report it, and
  * seamlessly recenter to keep the loop effectively endless.
+ *
+ * Clicking works too: an item off-centre scrolls smoothly into the middle
+ * (and is reported when it settles, like any scroll); the centred item,
+ * which is already the choice, calls `onPick`, which closes the menu.
  */
 export default function WheelPicker({
   options,
   value,
   onChange,
+  onPick,
 }: {
   options: { label: string; value: number }[];
   value: number;
   onChange: (value: number) => void;
+  /** Clicked the item already in the middle: done choosing. */
+  onPick?: () => void;
 }) {
   const ITEM = 36;
   const VISIBLE = 5;
@@ -60,6 +67,18 @@ export default function WheelPicker({
     }, 90);
   }
 
+  function handleClick(absIdx: number) {
+    const el = containerRef.current;
+    if (!el) return;
+    if (absIdx === Math.round(el.scrollTop / ITEM)) {
+      onPick?.();
+      return;
+    }
+    // Item absIdx sits in the middle at scrollTop absIdx * ITEM (the padding
+    // above the list is what centres it); handleScroll reports it on settle.
+    el.scrollTo({ top: absIdx * ITEM, behavior: "smooth" });
+  }
+
   const pad = ((VISIBLE - 1) / 2) * ITEM;
 
   return (
@@ -82,7 +101,8 @@ export default function WheelPicker({
           {list.map((o, i) => (
             <div
               key={i}
-              className="flex items-center justify-center text-sm text-foreground"
+              onClick={() => handleClick(i)}
+              className="flex cursor-pointer items-center justify-center text-sm text-foreground"
               style={{ height: ITEM, scrollSnapAlign: "center" }}
             >
               {o.label}
