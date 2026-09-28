@@ -110,7 +110,12 @@ Deno.serve(withLanguage(async (req) => {
         caldav_username: username,
         caldav_password: await encryptSecret(password, encryptionKey),
       },
-      calendars: fetched.map((c) => ({ externalId: c.id, displayName: c.name, intervals: c.intervals })),
+      calendars: fetched.map((c) => ({
+        externalId: c.id,
+        displayName: c.name,
+        writable: c.writable,
+        intervals: c.intervals,
+      })),
     }));
   } catch (err) {
     console.error("calendar-add-apple failed while saving", err);

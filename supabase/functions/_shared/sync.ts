@@ -104,7 +104,7 @@ async function refreshBusy(
   const [{ data: secrets, error: secretsErr }, { data: sources, error: sourcesErr }] =
     await Promise.all([
       db.from("calendar_secrets").select("*").eq("connection_id", target.id).maybeSingle(),
-      db.from("calendar_sources").select("id, external_calendar_id").eq("connection_id", target.id),
+      db.from("calendar_sources").select("id, external_calendar_id, writable").eq("connection_id", target.id),
     ]);
   if (secretsErr) throw secretsErr;
   if (sourcesErr) throw sourcesErr;
@@ -119,7 +119,7 @@ async function refreshBusy(
   const fresh = await fetchFresh(db, target, secrets as SecretsRow, key, externalIds, windowStart, windowEnd);
 
   const blocks = (sources ?? []).flatMap((s: { id: string; external_calendar_id: string }) =>
-    (fresh[s.external_calendar_id] ?? []).map((iv) => ({
+    (fresh.busy[s.external_calendar_id] ?? []).map((iv) => ({
       source_id: s.id,
       start_at: iv.start,
       end_at: iv.end,
@@ -131,10 +131,29 @@ async function refreshBusy(
     p_blocks: blocks,
   });
   if (replaceErr) throw replaceErr;
+
+  // Whether Casy may add events to each calendar can change (a share turned
+  // view-only), and accounts connected before it was recorded start at false.
+  // Only rows that changed are written, which is usually none.
+  if (fresh.writable) {
+    for (const s of (sources ?? []) as { id: string; external_calendar_id: string; writable: boolean }[]) {
+      const writable = fresh.writable[s.external_calendar_id];
+      if (writable === undefined || writable === s.writable) continue;
+      const { error } = await db.from("calendar_sources").update({ writable }).eq("id", s.id);
+      if (error) throw error;
+    }
+  }
   return stored as number;
 }
 
-/** Busy intervals keyed by the provider's calendar id. */
+/** A fresh fetch: busy intervals, plus which calendars Casy may write to where known. */
+interface Fresh {
+  /** Busy intervals keyed by the provider's calendar id. */
+  busy: Record<string, RawBusyInterval[]>;
+  /** Per calendar id; only iCloud reports it so far. */
+  writable?: Record<string, boolean>;
+}
+
 async function fetchFresh(
   db: Db,
   target: SyncTarget,
@@ -143,7 +162,7 @@ async function fetchFresh(
   externalIds: string[],
   windowStart: Date,
   windowEnd: Date,
-): Promise<Record<string, RawBusyInterval[]>> {
+): Promise<Fresh> {
   const from = windowStart.toISOString();
   const to = windowEnd.toISOString();
 
@@ -152,13 +171,13 @@ async function fetchFresh(
       const accessToken = await oauthAccess(db, target.id, secrets, key, windowStart, (refreshToken) =>
         google.refreshAccessToken({ refreshToken, ...oauthClient("GOOGLE") }),
       );
-      return await google.queryFreeBusy(accessToken, externalIds, from, to);
+      return { busy: await google.queryFreeBusy(accessToken, externalIds, from, to) };
     }
     case "outlook": {
       const accessToken = await oauthAccess(db, target.id, secrets, key, windowStart, (refreshToken) =>
         outlook.refreshAccessToken({ refreshToken, ...oauthClient("MICROSOFT") }),
       );
-      return await outlook.queryFreeBusy(accessToken, externalIds, from, to);
+      return { busy: await outlook.queryFreeBusy(accessToken, externalIds, from, to) };
     }
     case "apple": {
       if (!secrets.caldav_username || !secrets.caldav_password) {
@@ -170,7 +189,10 @@ async function fetchFresh(
         windowStart,
         windowEnd,
       );
-      return Object.fromEntries(calendars.map((c) => [c.id, c.intervals]));
+      return {
+        busy: Object.fromEntries(calendars.map((c) => [c.id, c.intervals])),
+        writable: Object.fromEntries(calendars.map((c) => [c.id, c.writable])),
+      };
     }
     case "ics": {
       if (!secrets.ics_url) throw new ReauthRequired("No stored link.");
@@ -178,7 +200,7 @@ async function fetchFresh(
       // hosts are safe to fetch may have tightened since.
       const url = assertSafeFeedUrl(await decryptSecret(secrets.ics_url, key));
       const parsed = parseBusyIntervals(await fetchFeedText(url.toString()), windowStart, windowEnd);
-      return { ics: parsed.intervals }; // a feed is one calendar, stored as "ics"
+      return { busy: { ics: parsed.intervals } }; // a feed is one calendar, stored as "ics"
     }
   }
 }

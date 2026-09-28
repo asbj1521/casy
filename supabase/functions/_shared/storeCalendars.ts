@@ -18,6 +18,8 @@ export interface CalendarToStore {
   /** The provider's own id for this calendar; unique within the connection. */
   externalId: string;
   displayName: string | null;
+  /** Casy may add events to it; left out (ICS links) means no. */
+  writable?: boolean;
   intervals: RawBusyInterval[];
 }
 
@@ -71,6 +73,7 @@ export async function storeCalendars(
             connection_id: connection.id,
             external_calendar_id: c.externalId,
             display_name: c.displayName,
+            writable: c.writable ?? false,
           })),
         )
         .select();

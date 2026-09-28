@@ -425,6 +425,11 @@ verify_jwt = false
 # calendars can be changed.
 verify_jwt = false
 
+[functions.calendar-primary]
+# Checks the caller's login in code (_shared/auth.ts); only their own
+# calendars, and only ones Casy may write to, can be made primary.
+verify_jwt = false
+
 [functions.calendar-add-ics]
 # Checks the caller's login in code (_shared/auth.ts). The feed link is
 # stored only in calendar_secrets; non-public URLs are refused.

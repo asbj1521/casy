@@ -9,6 +9,9 @@
  *   3. PROPFIND home, Depth 1              -> every calendar, with type info
  *   4. REPORT calendar-query per calendar  -> events in a time range
  *
+ * And, only for the calendar its owner made primary: PUT one agreed event
+ * into it, or DELETE one Casy put there when the event is cancelled.
+ *
  * Privacy: step 4 asks for timing properties only (no title, place or
  * attendees), and the ICS adapter strips anything else before parsing. iCloud
  * honours the request, but the promise is enforced by our code, not by Apple.
@@ -42,6 +45,11 @@ export interface CalDavCalendar {
   /** The last path segment of the URL: stable and unique within the account. */
   id: string;
   name: string | null;
+  /**
+   * Casy may add events to it: one of the account's own calendars, not a
+   * subscription or a calendar someone shared with view-only access.
+   */
+  writable: boolean;
 }
 
 const START_URL = "https://caldav.icloud.com/";
@@ -76,13 +84,18 @@ export function assertIcloudUrl(raw: string | URL): URL {
  * Transport
  * ------------------------------------------------------------------------- */
 
-async function dav(
+/**
+ * Send one request to iCloud and return the final response, body unread.
+ * Redirects are followed by hand so every hop is re-checked: the password is
+ * only ever sent to *.icloud.com over https.
+ */
+async function send(
   creds: CalDavCredentials,
-  method: "PROPFIND" | "REPORT",
+  method: "PROPFIND" | "REPORT" | "PUT" | "DELETE",
   rawUrl: string | URL,
-  body: string,
-  depth: 0 | 1,
-): Promise<string> {
+  body: string | null,
+  headers: Record<string, string>,
+): Promise<Response> {
   const authorization = "Basic " + btoa(unescape(encodeURIComponent(`${creds.username}:${creds.password}`)));
   let url = assertIcloudUrl(rawUrl);
 
@@ -93,12 +106,7 @@ async function dav(
         method,
         redirect: "manual", // follow by hand so every hop is re-validated
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        headers: {
-          Authorization: authorization,
-          "Content-Type": "application/xml; charset=utf-8",
-          Depth: String(depth),
-          "User-Agent": "Casy/1.0",
-        },
+        headers: { Authorization: authorization, "User-Agent": "Casy/1.0", ...headers },
         body,
       });
     } catch (err) {
@@ -113,18 +121,33 @@ async function dav(
       url = assertIcloudUrl(new URL(location, url));
       continue;
     }
-    if (res.status === 401 || res.status === 403) {
-      await res.body?.cancel();
-      throw new CalDavLoginError(BAD_LOGIN);
-    }
-    if (!res.ok) {
-      await res.body?.cancel();
-      throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
-    }
-    const text = await res.text();
-    if (text.length > MAX_RESPONSE_CHARS) throw new CalDavError("iCloud sent back more data than we accept.");
-    return text;
+    return res;
   }
+}
+
+/** A read (PROPFIND or REPORT): the multistatus body, or a friendly error. */
+async function dav(
+  creds: CalDavCredentials,
+  method: "PROPFIND" | "REPORT",
+  rawUrl: string | URL,
+  body: string,
+  depth: 0 | 1,
+): Promise<string> {
+  const res = await send(creds, method, rawUrl, body, {
+    "Content-Type": "application/xml; charset=utf-8",
+    Depth: String(depth),
+  });
+  if (res.status === 401 || res.status === 403) {
+    await res.body?.cancel();
+    throw new CalDavLoginError(BAD_LOGIN);
+  }
+  if (!res.ok) {
+    await res.body?.cancel();
+    throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
+  }
+  const text = await res.text();
+  if (text.length > MAX_RESPONSE_CHARS) throw new CalDavError("iCloud sent back more data than we accept.");
+  return text;
 }
 
 /* ----------------------------------------------------------------------------
@@ -193,6 +216,27 @@ function hrefInside(prop: XmlValue): string | null {
 
 const NS = `xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"`;
 
+/** Privileges that allow adding an event (RFC 3744: bind, or an aggregate holding it). */
+const WRITE_PRIVILEGES = new Set(["write", "bind", "all"]);
+
+/**
+ * Whether we may add events to a calendar in a listing. A subscription never;
+ * otherwise whatever iCloud says the signed-in account may do. If it says
+ * nothing about privileges, the account's own calendar is taken as writable,
+ * and a refused write is still reported when it happens.
+ */
+export function canWrite(r: DavResponse): boolean {
+  const type = r.prop["resourcetype"];
+  if (type && typeof type === "object" && "subscribed" in type) return false;
+  const set = r.prop["current-user-privilege-set"];
+  if (set === undefined) return true;
+  const privileges = set && typeof set === "object" ? (set as { privilege?: unknown }).privilege : undefined;
+  const list = Array.isArray(privileges) ? privileges : privileges ? [privileges] : [];
+  return list.some(
+    (p) => !!p && typeof p === "object" && Object.keys(p).some((name) => WRITE_PRIVILEGES.has(name)),
+  );
+}
+
 /**
  * Turn a listing of collections into event calendars: collections that are
  * real or subscribed calendars AND hold events. That skips the home root, the
@@ -214,7 +258,7 @@ export function pickEventCalendars(responses: DavResponse[], homeUrl: URL): CalD
     const url = assertIcloudUrl(new URL(r.href, homeUrl));
     const id = url.pathname.split("/").filter(Boolean).pop();
     if (!id) continue;
-    calendars.push({ url: url.toString(), id, name: textOf(r.prop["displayname"]) });
+    calendars.push({ url: url.toString(), id, name: textOf(r.prop["displayname"]), writable: canWrite(r) });
   }
   return calendars;
 }
@@ -246,7 +290,7 @@ export async function discoverCalendars(creds: CalDavCredentials): Promise<CalDa
     creds,
     "PROPFIND",
     homeUrl,
-    `<d:propfind ${NS}><d:prop><d:displayname/><d:resourcetype/><c:supported-calendar-component-set/></d:prop></d:propfind>`,
+    `<d:propfind ${NS}><d:prop><d:displayname/><d:resourcetype/><c:supported-calendar-component-set/><d:current-user-privilege-set/></d:prop></d:propfind>`,
     1,
   );
   return pickEventCalendars(parseMultistatus(listXml), homeUrl);
@@ -299,6 +343,53 @@ export async function fetchEventDocuments(
   return parseMultistatus(xml)
     .map((r) => textOf(r.prop["calendar-data"]))
     .filter((doc): doc is string => !!doc && doc.includes("BEGIN:VCALENDAR"));
+}
+
+/* ----------------------------------------------------------------------------
+ * Writing (the primary calendar)
+ * ------------------------------------------------------------------------- */
+
+/** Where one event file lives inside a calendar collection. */
+function resourceUrl(calendarUrl: string, resourceName: string): URL {
+  const base = calendarUrl.endsWith("/") ? calendarUrl : `${calendarUrl}/`;
+  return new URL(encodeURIComponent(resourceName), base);
+}
+
+/**
+ * Add one event to a calendar, as `resourceName` inside it. Never overwrites:
+ * if the file is already there (a retry after a timeout that had in fact
+ * worked), that counts as done, so a retry can't make a duplicate.
+ */
+export async function putEvent(
+  creds: CalDavCredentials,
+  calendarUrl: string,
+  resourceName: string,
+  ics: string,
+): Promise<void> {
+  const res = await send(creds, "PUT", resourceUrl(calendarUrl, resourceName), ics, {
+    "Content-Type": "text/calendar; charset=utf-8",
+    "If-None-Match": "*",
+  });
+  await res.body?.cancel();
+  if (res.ok || res.status === 412) return;
+  if (res.status === 401) throw new CalDavLoginError(BAD_LOGIN);
+  // A calendar shared view-only, or one iCloud won't take events in.
+  if (res.status === 403) throw new CalDavError("iCloud didn't let Casy add events to that calendar.");
+  throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
+}
+
+/** Remove an event Casy added. Already gone (deleted by hand) counts as done. */
+export async function deleteEvent(
+  creds: CalDavCredentials,
+  calendarUrl: string,
+  resourceName: string,
+): Promise<void> {
+  const res = await send(creds, "DELETE", resourceUrl(calendarUrl, resourceName), null, {});
+  await res.body?.cancel();
+  if (res.ok || res.status === 404 || res.status === 410) return;
+  if (res.status === 401) throw new CalDavLoginError(BAD_LOGIN);
+  if (res.status === 403) throw new CalDavError("iCloud didn't let Casy remove the event.");
+  throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
 }
 
 /* ----------------------------------------------------------------------------

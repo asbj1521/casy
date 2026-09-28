@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, Pencil, Star } from "lucide-react";
 
 import InfoTip from "@/components/InfoTip";
+import InlineTextEdit from "@/components/InlineTextEdit";
+import PrimaryCalendarConfirm from "@/components/PrimaryCalendarConfirm";
 import { useT } from "@/i18n/lang";
 import {
   CATEGORIES,
@@ -15,6 +17,9 @@ import { cn } from "@/lib/utils";
 import type { CalendarPriority, CalendarPurpose } from "@/types";
 
 const PRIORITIES: CalendarPriority[] = ["skip", "normal", "never"];
+
+/** Matches the check on calendar_sources.custom_name. */
+const MAX_CALENDAR_NAME_LENGTH = 60;
 
 /** Most colour dots shown on a collapsed group's header before they stop helping. */
 const MAX_HEADER_DOTS = 6;
@@ -56,6 +61,11 @@ function GroupCheckbox({
  * a calendar means it doesn't count: hidden here and left out when finding
  * dates (saved on the server). It then moves out of its group into a folded
  * "not counted" section at the bottom, and ticking it there moves it back.
+ * The pencil beside a name renames it; a renamed calendar shows its original
+ * name underneath, so it can still be found in Apple, Google or Outlook.
+ * The primary calendar (where Casy adds agreed events) is named at the top
+ * and badged in its row; any other calendar Casy may write to can be made
+ * primary from its row, always after a second "yes".
  * Nothing is disconnected or deleted; that lives on the profile page.
  */
 export default function CalendarListPanel({
@@ -68,6 +78,19 @@ export default function CalendarListPanel({
   onSetVisible,
   onSetPurpose,
   onSetPriority,
+  renamingId,
+  renameSubmitting,
+  renameError,
+  onStartRename,
+  onCancelRename,
+  onRename,
+  primaryId,
+  askingPrimaryId,
+  primaryBusy,
+  primaryError,
+  onAskPrimary,
+  onCancelPrimary,
+  onConfirmPrimary,
 }: {
   calendars: OverviewCalendar[];
   hidden: ReadonlySet<string>;
@@ -79,14 +102,35 @@ export default function CalendarListPanel({
   onSetVisible: (calendarIds: string[], visible: boolean) => void;
   onSetPurpose: (calendarId: string, purpose: CalendarPurpose | null) => void;
   onSetPriority: (calendarId: string, priority: CalendarPriority) => void;
+  /** The calendar whose name is being edited, if any. */
+  renamingId: string | null;
+  renameSubmitting: boolean;
+  renameError: string | null;
+  onStartRename: (calendarId: string) => void;
+  onCancelRename: () => void;
+  /** A new name, or null to go back to the provider's own. */
+  onRename: (calendarId: string, name: string | null) => void;
+  /** The primary calendar's id, if one is chosen. */
+  primaryId: string | null;
+  /** The calendar whose "make primary" is waiting for a yes, if any. */
+  askingPrimaryId: string | null;
+  primaryBusy: boolean;
+  primaryError: string | null;
+  onAskPrimary: (calendarId: string) => void;
+  onCancelPrimary: () => void;
+  onConfirmPrimary: (calendarId: string) => void;
 }) {
   const t = useT();
   const words = t.calendarView;
+  const primaryWords = t.primaryCalendar;
   const groups = useMemo(() => groupCalendarsByBrand(calendars), [calendars]);
   // The built-in holiday calendar is named in the page's language.
   const nameOf = (c: OverviewCalendar) => (c.id === HOLIDAY_CALENDAR_ID ? words.holidayCalendar : c.name);
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const [uncountedOpen, setUncountedOpen] = useState(false);
+  const primary = primaryId ? calendars.find((c) => c.id === primaryId) : undefined;
+  // Only worth a line when a primary calendar exists or could be chosen.
+  const showPrimaryLine = !!primary || calendars.some((c) => c.writable);
   // Unticked calendars, in the same brand order as the groups above.
   const uncounted = groups.flatMap((g) =>
     g.calendars.filter((c) => hidden.has(c.id)).map((c) => ({ calendar: c, brandId: g.id, brandLabel: g.label })),
@@ -107,6 +151,14 @@ export default function CalendarListPanel({
         <InfoTip label={words.priorityHelpLabel}>{words.priorityHelp}</InfoTip>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{words.listIntro}</p>
+      {showPrimaryLine && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-foreground">
+          <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />
+          <span className="truncate">
+            {primary ? primaryWords.current(nameOf(primary)) : primaryWords.noneYet}
+          </span>
+        </p>
+      )}
 
       <ul className="mt-3 divide-y">
         {groups.map((group) => {
@@ -191,16 +243,63 @@ export default function CalendarListPanel({
                               style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
                             />
                             <div className="min-w-0 flex-1">
-                              <p
-                                className={cn(
-                                  "truncate text-sm font-medium text-foreground",
-                                  isHidden && "text-muted-foreground line-through",
-                                )}
-                              >
-                                {nameOf(c)}
-                              </p>
+                              {renamingId === c.id ? (
+                                <>
+                                  <InlineTextEdit
+                                    value={nameOf(c)}
+                                    maxLength={MAX_CALENDAR_NAME_LENGTH}
+                                    submitting={renameSubmitting}
+                                    error={renameError}
+                                    onSubmit={(name) => onRename(c.id, name)}
+                                    onCancel={onCancelRename}
+                                  />
+                                  {c.renamed && c.originalName && (
+                                    <button
+                                      type="button"
+                                      disabled={renameSubmitting}
+                                      onClick={() => onRename(c.id, null)}
+                                      className="mt-1 text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-50"
+                                    >
+                                      {words.useOriginalName(c.originalName)}
+                                    </button>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="flex min-w-0 items-center gap-1">
+                                  <p
+                                    className={cn(
+                                      "truncate text-sm font-medium text-foreground",
+                                      isHidden && "text-muted-foreground line-through",
+                                    )}
+                                  >
+                                    {nameOf(c)}
+                                  </p>
+                                  {c.id === primaryId && (
+                                    <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                                      <Star className="h-2.5 w-2.5 fill-current" />
+                                      {primaryWords.badge}
+                                    </span>
+                                  )}
+                                  {/* The holiday calendar has no stored row to rename. */}
+                                  {!isBuiltIn && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onStartRename(c.id)}
+                                      title={words.rename(nameOf(c))}
+                                      aria-label={words.rename(nameOf(c))}
+                                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                               <p className="truncate text-xs text-muted-foreground">
-                                {isBuiltIn ? words.builtInNoAccount : (c.account ?? "")}
+                                {isBuiltIn
+                                  ? words.builtInNoAccount
+                                  : [c.renamed && c.originalName ? words.originally(c.originalName) : null, c.account]
+                                      .filter(Boolean)
+                                      .join(" · ")}
                               </p>
                             </div>
                           </div>
@@ -256,7 +355,33 @@ export default function CalendarListPanel({
                             <span className="text-xs text-muted-foreground">
                               {words.inView(blockCounts.get(c.id) ?? 0)}
                             </span>
+                            {c.writable && c.id !== primaryId && askingPrimaryId !== c.id && (
+                              <button
+                                type="button"
+                                onClick={() => onAskPrimary(c.id)}
+                                className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium text-foreground transition hover:bg-secondary"
+                              >
+                                <Star className="h-3 w-3" />
+                                {primaryWords.makePrimary}
+                              </button>
+                            )}
                           </div>
+                          {askingPrimaryId === c.id && (
+                            <div className="pl-[2.375rem]">
+                              <PrimaryCalendarConfirm
+                                message={
+                                  primary
+                                    ? primaryWords.confirmChange(nameOf(c), nameOf(primary))
+                                    : primaryWords.confirmFirst(nameOf(c))
+                                }
+                                confirmLabel={primary ? primaryWords.yesChange : primaryWords.yesChoose}
+                                busy={primaryBusy}
+                                error={primaryError}
+                                onConfirm={() => onConfirmPrimary(c.id)}
+                                onCancel={onCancelPrimary}
+                              />
+                            </div>
+                          )}
                         </li>
                       );
                     })}

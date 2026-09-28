@@ -14,6 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { primaryCalendarQuery, updatePrimaryCalendar } from "@/api/primaryCalendar";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
@@ -128,6 +129,8 @@ export default function CalendarOverview() {
   });
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [holidaysHidden, setHolidaysHidden] = useState(readHolidaysHidden);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [askingPrimaryId, setAskingPrimaryId] = useState<string | null>(null);
 
   const layout = useMemo(
     () => buildMonthLayout(month.year, month.month, LOCALE[lang]),
@@ -161,6 +164,29 @@ export default function CalendarOverview() {
       // Your groups' searches read both from the groups function.
       void queryClient.invalidateQueries({ queryKey: ["group-busy"] });
     },
+  });
+
+  // A calendar's own name, or null to go back to the provider's. The editor
+  // stays open until the new name is saved, so a failure shows beside it.
+  const rename = useMutation({
+    mutationFn: (v: { calendarId: string; name: string | null }) =>
+      callFunction("calendar-set-purpose", {
+        body: v,
+        errorMessage: t.calendarView.couldntSaveName,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
+      setRenamingId(null);
+      // The profile page lists the names too.
+      void queryClient.invalidateQueries({ queryKey: ["calendar-status"] });
+    },
+  });
+
+  // The primary calendar: shown here, changed only after a second "yes".
+  const { data: primary } = useQuery(primaryCalendarQuery(user.id));
+  const setPrimary = useMutation({
+    mutationFn: (calendarId: string) => updatePrimaryCalendar(queryClient, user.id, { calendarId }),
+    onSuccess: () => setAskingPrimaryId(null),
   });
 
   // Tick or untick calendars: whether they count at all, saved on the
@@ -538,6 +564,25 @@ export default function CalendarOverview() {
               onSetVisible={setCalendarsVisible}
               onSetPurpose={(calendarId, purpose) => setLabels.mutate({ calendarId, purpose })}
               onSetPriority={(calendarId, priority) => setLabels.mutate({ calendarId, priority })}
+              renamingId={renamingId}
+              renameSubmitting={rename.isPending}
+              renameError={rename.error instanceof Error ? rename.error.message : null}
+              onStartRename={(calendarId) => {
+                rename.reset();
+                setRenamingId(calendarId);
+              }}
+              onCancelRename={() => setRenamingId(null)}
+              onRename={(calendarId, name) => rename.mutate({ calendarId, name })}
+              primaryId={primary?.calendarId ?? null}
+              askingPrimaryId={askingPrimaryId}
+              primaryBusy={setPrimary.isPending}
+              primaryError={setPrimary.error instanceof Error ? setPrimary.error.message : null}
+              onAskPrimary={(calendarId) => {
+                setPrimary.reset();
+                setAskingPrimaryId(calendarId);
+              }}
+              onCancelPrimary={() => setAskingPrimaryId(null)}
+              onConfirmPrimary={(calendarId) => setPrimary.mutate(calendarId)}
             />
           </div>
         </div>

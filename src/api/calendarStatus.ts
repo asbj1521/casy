@@ -13,10 +13,15 @@ import type { CalendarPriority, CalendarProvider } from "@/types";
 /** One calendar discovered within a connected account (see calendar_sources). */
 export interface CalendarSourceStatus {
   id: string;
+  /** The provider's own name for it, saved when the account was connected. */
   display_name: string | null;
+  /** The name its owner gave it on My calendar; missing from an older function. */
+  custom_name?: string | null;
   purpose: "work" | "school" | "personal" | "other" | null;
   /** Missing from a function deployed before priorities existed: read as "normal". */
   priority?: CalendarPriority;
+  /** Casy may add events to it, so it can be the primary calendar. Missing means no. */
+  writable?: boolean;
 }
 
 /** A linked account's real, persisted state: what calendar-status returns. */

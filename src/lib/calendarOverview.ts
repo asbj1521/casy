@@ -18,7 +18,14 @@ import type { CalendarPriority, CalendarProvider, CalendarPurpose } from "@/type
 /** One connected calendar, as returned by the calendar-busy function. */
 export interface OverviewCalendar {
   id: string;
+  /** The name to show: the one its owner gave it, else the provider's own. */
   name: string;
+  /** The provider's own name, shown under a renamed calendar. */
+  originalName?: string | null;
+  /** True when its owner renamed it. Missing (older function, built-in) means no. */
+  renamed?: boolean;
+  /** Casy may add events to it, so it can be the primary calendar. Missing means no. */
+  writable?: boolean;
   /** The category the user gave this calendar, or null if unset. */
   purpose: CalendarPurpose | null;
   /**

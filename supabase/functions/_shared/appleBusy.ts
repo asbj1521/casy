@@ -18,6 +18,8 @@ export interface AppleCalendarBusy {
   /** The calendar's CalDAV id: calendar_sources.external_calendar_id. */
   id: string;
   name: string | null;
+  /** Casy may add events to it (see CalDavCalendar). */
+  writable: boolean;
   intervals: RawBusyInterval[];
 }
 
@@ -42,7 +44,7 @@ export async function fetchAppleBusy(
         skippedEvents++;
       }
     }
-    return { id: cal.id, name: cal.name, intervals: mergeIntervals(intervals) };
+    return { id: cal.id, name: cal.name, writable: cal.writable, intervals: mergeIntervals(intervals) };
   });
   return { calendars: fetched, skippedEvents };
 }

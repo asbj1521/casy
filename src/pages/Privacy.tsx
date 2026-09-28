@@ -50,8 +50,10 @@ const da: Copy = {
         <p>
           Casy (en forkortelse af Calendar Syncing) hjælper en gruppe med at finde et tidspunkt, der
           passer alle. For at gøre det læser Casy, hvornår du er optaget, og intet andet: aldrig
-          titler, steder, noter eller gæster i dine aftaler. Dine data bliver ikke solgt, ikke brugt
-          til reklamer og ikke delt med nogen uden for tjenesten.
+          titler, steder, noter eller gæster i dine aftaler. Casy skriver kun i din kalender, når du
+          beder om det: så lægger den aftaler, din gruppe er blevet enige om, i den kalender, du har
+          valgt som primær. Dine data bliver ikke solgt, ikke brugt til reklamer og ikke delt med
+          nogen uden for tjenesten.
         </p>
       ),
     },
@@ -66,9 +68,10 @@ const da: Copy = {
           </li>
           <li>
             <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
-            e-mailadressen på en Google-konto), navnene på deres kalendere, den kategori og
-            prioritet, du giver hver af dem (arbejde, skole, privat, andet; kan springes over,
-            normal, spring aldrig over), og om den tæller med.
+            e-mailadressen på en Google-konto), navnene på deres kalendere og et navn, du selv giver
+            en af dem, den kategori og prioritet, du giver hver af dem (arbejde, skole, privat,
+            andet; kan springes over, normal, spring aldrig over), om den tæller med, hvilken der er
+            din primære kalender, og om Casy må tilføje aftaler automatisk.
           </li>
           <li>
             <Term>Optagede tidsrum:</Term> start og slut på hvert tidsrum, hvor du er optaget, for
@@ -88,6 +91,10 @@ const da: Copy = {
             til hver dato.
           </li>
           <li>
+            <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære kalender,
+            så den kan fjerne dem igen, hvis en aftale bliver aflyst.
+          </li>
+          <li>
             <Term>Adgangsoplysninger:</Term> det, der skal til for at holde dine kalendere opdateret:
             adgangsnøgler fra Google eller Microsoft, en app-specifik adgangskode til iCloud eller et
             kalenderlink. De krypteres, før de gemmes, og nøglen opbevares adskilt fra databasen.
@@ -102,6 +109,14 @@ const da: Copy = {
           <p>
             Optagede tidsrum bruges kun til at vise, hvornår du og dine grupper er ledige, og til at
             foreslå tidspunkter. Casy opdaterer dem cirka en gang i timen, så de passer.
+          </p>
+          <p>
+            Har du valgt en primær kalender, bruger Casy din adgang til den til at lægge aftaler, I er
+            blevet enige om, i den: når du trykker Tilføj til min kalender, eller af sig selv, hvis du
+            har slået Tilføj automatisk til. Aftalen får aftalens navn, gruppens navn og navnene på de
+            andre, der er med. Bliver aftalen aflyst, fjerner Casy den igen. Casy ændrer eller sletter
+            aldrig andre aftaler i din kalender. Indtil videre kan det kun lade sig gøre med
+            iCloud-kalendere.
           </p>
           <p>
             Casys brug og overførsel af oplysninger fra Googles API&apos;er følger{" "}
@@ -124,7 +139,8 @@ const da: Copy = {
             muligt".
           </p>
           <p>
-            Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere, hvilke konti du har
+            Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere (heller ikke dem, du selv
+            har givet dem), hvilke konti du har
             forbundet eller hvad dine aftaler hedder. Casy gemmer slet ikke titler på aftaler, så der
             er intet at afsløre. Én undtagelse: har du logget ind med din e-mail og ikke valgt et navn
             på din profil, er det navn, medlemmer ser, delen af din e-mailadresse før @ (for eksempel
@@ -219,8 +235,10 @@ const en: Copy = {
         <p>
           Casy (short for Calendar Syncing) helps a group find a time that works for everyone. To
           do that it reads when you are busy, and nothing else: never the titles, places, notes or
-          guests of your events. Your data is not sold, not used for advertising, and not shared
-          with anyone outside the service.
+          guests of your events. Casy only writes to your calendar when you ask it to: it then adds
+          events your group has agreed on to the calendar you chose as your primary calendar. Your
+          data is not sold, not used for advertising, and not shared with anyone outside the
+          service.
         </p>
       ),
     },
@@ -235,9 +253,10 @@ const en: Copy = {
           </li>
           <li>
             <Term>Connected calendars:</Term> which accounts you connected (for example the email
-            address of a Google account), the names of their calendars, the category and priority
-            you give each one (work, school, personal, other; can skip, normal, never skip), and
-            whether it counts.
+            address of a Google account), the names of their calendars and any name you give one
+            yourself, the category and priority you give each one (work, school, personal, other;
+            can skip, normal, never skip), whether it counts, which one is your primary calendar,
+            and whether Casy may add events automatically.
           </li>
           <li>
             <Term>Busy times:</Term> the start and end of each busy period, for roughly the next
@@ -256,6 +275,10 @@ const en: Copy = {
             the dates offered, who suggested it, and who accepted or declined each date.
           </li>
           <li>
+            <Term>Events in your calendar:</Term> which events Casy added to your primary calendar,
+            so it can take them out again if an event is cancelled.
+          </li>
+          <li>
             <Term>Access credentials:</Term> what is needed to keep your calendars up to date: access
             tokens from Google or Microsoft, an iCloud app-specific password, or a calendar link.
             These are encrypted before they are stored, and the key is kept separately from the
@@ -271,6 +294,14 @@ const en: Copy = {
           <p>
             Busy times are used only to show when you and your groups are free and to suggest
             times. Casy refreshes them about once an hour so they stay current.
+          </p>
+          <p>
+            If you chose a primary calendar, Casy uses your access to it to add the events you
+            agree on: when you press Add to my calendar, or on its own if you switched on Add
+            automatically. The entry holds the event&apos;s name, the group&apos;s name and the
+            names of the others taking part. If the event is cancelled, Casy takes it out again.
+            Casy never changes or deletes any other event in your calendar. For now this works with
+            iCloud calendars only.
           </p>
           <p>
             Casy&apos;s use and transfer of information received from Google APIs adheres to the{" "}
@@ -292,7 +323,8 @@ const en: Copy = {
             Casy tell "could take time off" apart from "not possible".
           </p>
           <p>
-            Members do not see your email address, the names of your calendars, which accounts you
+            Members do not see your email address, the names of your calendars (including names you
+            gave them), which accounts you
             connected, or what any of your events are called. Casy never stores event titles at
             all, so there is nothing there to reveal. One exception to keep in mind: if you signed
             in with your email and have not chosen a name on your profile, the name members see is

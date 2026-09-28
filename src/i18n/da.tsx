@@ -477,6 +477,55 @@ export const da = {
       "Kan springes over: Casy må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden. Normal: optaget, men til ture og ferier kan du tage fri fra arbejde og skole. Spring aldrig over: optaget, også når der planlægges ture.",
     priorityHelpLabel: "Hvad betyder det?",
     couldntSavePriority: "Kunne ikke gemme, hvor vigtig kalenderen er",
+    rename: (name: string) => `Omdøb ${name}`,
+    originally: (name: string) => `Oprindeligt navn: ${name}`,
+    useOriginalName: (name: string) => `Brug det oprindelige navn (${name})`,
+    couldntSaveName: "Kunne ikke gemme navnet",
+  },
+  addToCalendar: {
+    button: "Tilføj til min kalender",
+    goesInto: (name: string) => `Casy lægger den i ${name}.`,
+    goesIntoFallback: "Casy lægger den i din primære kalender.",
+    willAsk: "Du vælger, hvilken kalender den skal i.",
+    asFile: "Du får en kalenderfil, som din kalender kan åbne.",
+    added: (name: string) => `Lagt i ${name}`,
+    addedFallback: "Lagt i din kalender",
+    adding: "Casy lægger den i din kalender.",
+    notYet: "Casy kunne ikke lægge den i din kalender endnu og prøver igen inden for en time.",
+    tryAgain: "Prøv igen nu",
+    chooseTitle: "Hvilken kalender skal Casy lægge aftaler i?",
+    chooseHelp: "Den bliver din primære kalender. Du kan skifte den på din profil.",
+    useAndAdd: "Brug den og tilføj",
+    downloadInstead: "Hent en kalenderfil i stedet",
+  },
+  primaryCalendar: {
+    title: "Primær kalender",
+    intro:
+      "Casy lægger de aftaler, I bliver enige om, i denne kalender: når du beder om det, eller af sig selv, hvis Tilføj automatisk er slået til.",
+    noWritable:
+      "Forbind en iCloud-kalender herunder, så kan Casy lægge jeres aftaler direkte i den. Google og Outlook kommer senere.",
+    waitingForSync:
+      "Casy tjekker, hvilke af dine iCloud-kalendere den må lægge aftaler i. Tryk Synkronisér nu, eller vent op til en time.",
+    selectLabel: "Vælg primær kalender",
+    choose: "Vælg en kalender",
+    noneOption: "Ingen (Casy lægger intet i dine kalendere)",
+    confirmFirst: (name: string) =>
+      `Gør ${name} til din primære kalender? Casy lægger kun aftaler i den, når du beder om det, eller når Tilføj automatisk er slået til.`,
+    confirmChange: (name: string, current: string) =>
+      `Gør ${name} til din primære kalender? Nye aftaler lægges i ${name}. Aftaler, der allerede er lagt i ${current}, bliver, hvor de er.`,
+    confirmClear: (current: string) =>
+      `Stop med at bruge ${current} som primær kalender? Så lægger Casy ingen aftaler i dine kalendere. Aftaler, der allerede er lagt der, bliver.`,
+    yesChange: "Ja, skift",
+    yesChoose: "Ja, brug den",
+    yesStop: "Ja, stop",
+    autoAdd: "Tilføj automatisk",
+    autoAddHelp:
+      "Når alle har sagt ja til en aftale, lægger Casy den i din primære kalender med det samme.",
+    autoAddNeedsPrimary: "Vælg en primær kalender først.",
+    badge: "Primær",
+    makePrimary: "Gør til primær kalender",
+    current: (name: string) => `Primær kalender: ${name}`,
+    noneYet: "Ingen primær kalender valgt endnu.",
   },
   signIn: {
     title: "Log ind",
@@ -560,6 +609,11 @@ export const da = {
     adminRemoveMember: "Kunne ikke fjerne personen fra gruppen",
     adminDeleteAccount: "Kunne ikke slette kontoen",
     adminSync: "Kunne ikke synkronisere kontoen",
+    loadPrimaryCalendar: "Kunne ikke hente din primære kalender",
+    setPrimaryCalendar: "Kunne ikke gemme din primære kalender",
+    setAutoAdd: "Kunne ikke gemme Tilføj automatisk",
+    addToCalendar: "Kunne ikke lægge aftalen i din kalender",
+    downloadEvent: "Kunne ikke hente kalenderfilen",
     failed: (name: string, status: number) => `${name} fejlede (HTTP ${status})`,
   },
   admin: {

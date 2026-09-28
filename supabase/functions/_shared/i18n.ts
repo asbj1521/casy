@@ -59,6 +59,8 @@ export const DANISH: Record<string, string> = {
     "Kun den, der foreslog aftalen, kan aflyse den.",
   "This group already has 20 events waiting for answers.":
     "Gruppen har allerede 20 aftaler, der venter på svar.",
+  "Only upcoming events everyone has accepted can be added.":
+    "Kun kommende aftaler, som alle har sagt ja til, kan tilføjes.",
 
   // Accounts and admin
   "That account no longer exists.": "Kontoen findes ikke længere.",
@@ -75,6 +77,9 @@ export const DANISH: Record<string, string> = {
   "Delete failed": "Sletningen fejlede",
   "Couldn't save the calendar.": "Kunne ikke gemme kalenderen.",
   "Couldn't save the calendars.": "Kunne ikke gemme kalenderne.",
+  "Keep the name to 60 characters.": "Navnet må højst være 60 tegn.",
+  "Casy can't add events to that calendar.": "Casy kan ikke lægge aftaler i den kalender.",
+  "Choose a primary calendar first.": "Vælg en primær kalender først.",
   "Syncing isn't set up on the server yet.": "Synkronisering er ikke sat op på serveren endnu.",
   "Google connections aren't set up on the server yet.":
     "Google-forbindelser er ikke sat op på serveren endnu.",
@@ -103,6 +108,14 @@ export const DANISH: Record<string, string> = {
   "Apple returned an address we couldn't read.": "Apple sendte en adresse, vi ikke kunne læse.",
   "Apple pointed us at an unexpected server, so we stopped.":
     "Apple sendte os til en uventet server, så vi stoppede.",
+  "iCloud didn't let Casy add events to that calendar.":
+    "iCloud lod ikke Casy lægge aftaler i den kalender.",
+  "iCloud didn't let Casy remove the event.": "iCloud lod ikke Casy fjerne aftalen.",
+  "That calendar is no longer in the iCloud account.":
+    "Den kalender findes ikke længere på iCloud-kontoen.",
+  "Reconnect your iCloud account on your profile.": "Forbind din iCloud-konto igen på din profil.",
+  "Couldn't reach iCloud. Casy will try again within the hour.":
+    "Kunne ikke nå iCloud. Casy prøver igen inden for en time.",
 
   // Calendar links
   "Couldn't read that calendar link.": "Kunne ikke læse det kalenderlink.",

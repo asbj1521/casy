@@ -15,15 +15,60 @@
  * What members see of each other here: names, and who has accepted or
  * declined which date. Never an email, a calendar or an event title from
  * anyone's calendar.
+ *
+ * Agreed events also go into people's primary calendars (calendarWrites.ts):
+ * on an "Add to my calendar" click (add-to-calendar), or on their own for
+ * anyone with "Add automatically" on, once an event is scheduled. A cancel
+ * takes them out again. The calendar work runs after the answer is sent, so
+ * accepting or cancelling never waits on iCloud; the hourly sync retries
+ * whatever didn't work. `ics` hands out the same entry as a file, for
+ * people with no primary calendar.
  */
 import { callerUser } from "../_shared/auth.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import {
+  processWrites,
+  queueAutoAdds,
+  unwantEverywhere,
+  wantInCalendar,
+  type WriteScope,
+} from "../_shared/calendarWrites.ts";
+import { buildEventIcs, eventResourceName } from "../_shared/eventIcs.ts";
 import { cleanEventTitle, isEventSettings, parseEventDate } from "../_shared/events.ts";
 import { displayNameFor } from "../_shared/groups.ts";
+import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { withLanguage } from "../_shared/i18n.ts";
+import { langOf, withLanguage } from "../_shared/i18n.ts";
 
 type Db = ReturnType<typeof supabaseAdmin>;
+
+/** Supabase's edge runtime: keeps the function alive for work after the response. */
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
+
+/**
+ * After a change that may have scheduled or cancelled an event: queue the
+ * automatic adds it calls for, and carry out every calendar write for it,
+ * once the answer has gone. Failures only log; the hourly sync tries again.
+ */
+function syncCalendarsLater(db: Db, scope: WriteScope, { queue }: { queue: boolean }) {
+  let key: string;
+  try {
+    key = encryptionKeyFromEnv();
+  } catch (err) {
+    console.error("calendar writes are not configured", err);
+    return;
+  }
+  EdgeRuntime.waitUntil(
+    (async () => {
+      try {
+        if (queue) await queueAutoAdds(db, scope);
+        await processWrites(db, key, scope);
+      } catch (err) {
+        console.error("calendar writes after an event change failed", scope, err);
+      }
+    })(),
+  );
+}
 
 /** How many events the list returns, newest first. Plenty for a person's groups. */
 const LIST_LIMIT = 100;
@@ -119,14 +164,25 @@ async function listEvents(db: Db, profileId: string, callerName: string) {
   // Everyone invited, and everyone's answer to each current date: neither
   // needs the other, so both are asked at once. Every accept and decline
   // waits on this list, so it's worth the round trip saved.
-  const [invitees, answers] = await Promise.all([
+  const [invitees, answers, writes] = await Promise.all([
     db.from("event_invitees").select("proposal_id, profile_id").in("proposal_id", proposalIds),
     currentIds.length > 0
       ? db.from("event_responses").select("date_id, profile_id, response").in("date_id", currentIds)
       : Promise.resolve({ data: [], error: null }),
+    // Whether Casy has put each event into the caller's own calendar.
+    db
+      .from("calendar_event_writes")
+      .select("proposal_id, wanted, added, last_error")
+      .eq("profile_id", profileId)
+      .in("proposal_id", proposalIds),
   ]);
   if (invitees.error) throw invitees.error;
   if (answers.error) throw answers.error;
+  if (writes.error) throw writes.error;
+  const writeOf = new Map(
+    ((writes.data ?? []) as { proposal_id: string; wanted: boolean; added: boolean; last_error: string | null }[])
+      .map((w) => [w.proposal_id, w]),
+  );
 
   const inviteesOf = new Map<string, string[]>();
   for (const r of (invitees.data ?? []) as { proposal_id: string; profile_id: string }[]) {
@@ -182,6 +238,13 @@ async function listEvents(db: Db, profileId: string, callerName: string) {
         .filter((d) => d.declined_at !== null)
         .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
         .map((d) => ({ start: d.starts_at, end: d.ends_at, declinedBy: nameOf(d.declined_by) })),
+      // Your own calendar only: "added", "adding" (wanted, not there yet,
+      // with the last failure if any), or null when Casy hasn't been asked.
+      myCalendar: (() => {
+        const w = writeOf.get(p.id);
+        if (!w || !w.wanted) return null;
+        return w.added ? { state: "added" } : { state: "adding", error: w.last_error };
+      })(),
     };
   });
 }
@@ -224,7 +287,7 @@ Deno.serve(withLanguage(async (req) => {
           return json({ error: "You are not in that group." }, 403);
         }
 
-        const { error } = await db.rpc("suggest_event", {
+        const { data: proposalId, error } = await db.rpc("suggest_event", {
           p_group_id: groupId,
           p_created_by: profileId,
           p_title: title,
@@ -238,6 +301,8 @@ Deno.serve(withLanguage(async (req) => {
           if (error.code === "23514") return json({ error: error.message }, 400);
           throw error;
         }
+        // A group of one is scheduled the moment it is suggested.
+        syncCalendarsLater(db, { proposalId: proposalId as string }, { queue: true });
         return json({ events: await listEvents(db, profileId, callerName) });
       }
 
@@ -289,6 +354,8 @@ Deno.serve(withLanguage(async (req) => {
             409,
           );
         }
+        // The last yes schedules it: in go the automatic adds.
+        if (outcome === "accepted") syncCalendarsLater(db, { proposalId }, { queue: true });
         return json({ outcome, events: await listEvents(db, profileId, callerName) });
       }
 
@@ -315,7 +382,67 @@ Deno.serve(withLanguage(async (req) => {
           .update({ status: "cancelled", updated_at: new Date().toISOString() })
           .eq("id", proposalId);
         if (updErr) throw updErr;
+        // Out of every calendar Casy put it in.
+        await unwantEverywhere(db, proposalId);
+        syncCalendarsLater(db, { proposalId }, { queue: false });
         return json({ events: await listEvents(db, profileId, callerName) });
+      }
+
+      case "add-to-calendar": {
+        const proposalId = payload.proposalId;
+        if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
+        const events = await listEvents(db, profileId, callerName);
+        const event = events.find((e) => e.id === proposalId);
+        if (!event) return json({ error: "That event no longer exists." }, 404);
+        if (event.status !== "scheduled" || !event.currentDate || Date.parse(event.currentDate.end) <= Date.now()) {
+          return json({ error: "Only upcoming events everyone has accepted can be added." }, 409);
+        }
+        if ((await wantInCalendar(db, proposalId, profileId)) === "no_primary") {
+          return json({ error: "Choose a primary calendar first." }, 409);
+        }
+        // Waited for, unlike the automatic adds: the button says how it went.
+        let key: string;
+        try {
+          key = encryptionKeyFromEnv();
+        } catch (err) {
+          console.error("calendar writes are not configured", err);
+          return json({ error: "Syncing isn't set up on the server yet." }, 500);
+        }
+        await processWrites(db, key, { proposalId, profileId });
+        const after = await listEvents(db, profileId, callerName);
+        const mine = after.find((e) => e.id === proposalId)?.myCalendar;
+        if (mine && mine.state === "adding") {
+          return json(
+            { error: mine.error ?? "Couldn't reach iCloud. Casy will try again within the hour.", events: after },
+            502,
+          );
+        }
+        return json({ events: after });
+      }
+
+      case "ics": {
+        // The same entry as a file, for adding by hand.
+        const proposalId = payload.proposalId;
+        if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
+        const events = await listEvents(db, profileId, callerName);
+        const event = events.find((e) => e.id === proposalId);
+        if (!event) return json({ error: "That event no longer exists." }, 404);
+        if (event.status !== "scheduled" || !event.currentDate) {
+          return json({ error: "Only upcoming events everyone has accepted can be added." }, 409);
+        }
+        const ics = buildEventIcs(
+          {
+            id: event.id,
+            title: event.title,
+            groupName: event.group.name,
+            others: event.invitees.filter((i) => !i.isYou).map((i) => i.name),
+            kind: (event.settings as { kind?: string } | null)?.kind ?? "single",
+            start: event.currentDate.start,
+            end: event.currentDate.end,
+          },
+          langOf(req),
+        );
+        return json({ filename: eventResourceName(event.id), ics });
       }
 
       default:

@@ -41,6 +41,12 @@ export interface SuggestedEvent {
   invitees: EventInvitee[];
   /** Dates offered earlier and turned down, oldest first. */
   declinedDates: { start: string; end: string; declinedBy: string }[];
+  /**
+   * Whether Casy has put it into your own primary calendar: "added", or
+   * "adding" (asked for, not there yet; `error` says why the last try
+   * failed). Null or missing: Casy hasn't been asked to.
+   */
+  myCalendar?: { state: "added" } | { state: "adding"; error: string | null } | null;
 }
 
 export function eventsQueryKey(userId: string) {
@@ -158,5 +164,25 @@ export async function declineEvent(
       next: slot ? { start: slot.start, end: slot.end } : null,
     },
     errorMessage: currentMessages().api.declineEvent,
+  });
+}
+
+/**
+ * Put a scheduled event into your primary calendar now. Waits for iCloud's
+ * answer, so a failure (with its reason) comes back as an error; Casy then
+ * keeps trying on its own every hour.
+ */
+export async function addToMyCalendar(proposalId: string): Promise<{ events: SuggestedEvent[] }> {
+  return await callFunction("events", {
+    body: { action: "add-to-calendar", proposalId },
+    errorMessage: currentMessages().api.addToCalendar,
+  });
+}
+
+/** A scheduled event as a calendar file, for adding by hand. */
+export async function eventCalendarFile(proposalId: string): Promise<{ filename: string; ics: string }> {
+  return await callFunction("events", {
+    body: { action: "ics", proposalId },
+    errorMessage: currentMessages().api.downloadEvent,
   });
 }

@@ -21,6 +21,7 @@ import {
   type EventInvitee,
   type SuggestedEvent,
 } from "@/api/events";
+import AddToCalendar from "@/components/AddToCalendar";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
 import { eventTitle } from "@/i18n/eventTitle";
@@ -377,6 +378,7 @@ export default function MyEvents() {
                       <div className="mt-3">
                         <People invitees={event.invitees} />
                       </div>
+                      <AddToCalendar event={event} />
                       {cancelControl(event)}
                     </li>
                   ))}

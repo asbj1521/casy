@@ -27,6 +27,12 @@ describe("calendarNames", () => {
   it("falls back to the id when a calendar has no name", () => {
     expect(calendarNames(account("a@b.c", ["Work", null]))).toEqual(["Work", "src-1"]);
   });
+
+  it("uses the name its owner gave a calendar over the provider's", () => {
+    const renamed = account("me@icloud.com", ["Home", "Calendar"]);
+    renamed.calendar_sources[1].custom_name = "Football";
+    expect(calendarNames(renamed)).toEqual(["Home", "Football"]);
+  });
 });
 
 describe("hasDistinctCalendarNames", () => {

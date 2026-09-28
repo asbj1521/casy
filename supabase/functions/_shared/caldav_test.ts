@@ -7,11 +7,14 @@ import { assert, assertEquals, assertRejects, assertThrows } from "jsr:@std/asse
 import {
   assertIcloudUrl,
   CalDavError,
+  CalDavLoginError,
+  deleteEvent,
   discoverCalendars,
   fetchEventDocuments,
   mapPool,
   parseMultistatus,
   pickEventCalendars,
+  putEvent,
 } from "./caldav.ts";
 
 const CREDS = { username: "me@example.com", password: "abcd-efgh-ijkl-mnop" };
@@ -56,6 +59,47 @@ Deno.test("only real and subscribed event calendars are picked", () => {
     ],
   );
   assert(found[0].url.startsWith("https://p48-caldav.icloud.com/111/calendars/AAAA-1111"));
+});
+
+/** A calendar collection that also answers which privileges we hold on it. */
+const withPrivileges = (href: string, type: string, privileges: string[] | null) =>
+  wrap(`
+  <response><href>${href}</href><propstat><prop>
+    <displayname xmlns="DAV:">Shared</displayname>
+    <resourcetype xmlns="DAV:"><collection/>${type}</resourcetype>
+    <supported-calendar-component-set xmlns="urn:ietf:params:xml:ns:caldav"><comp name='VEVENT'/></supported-calendar-component-set>
+    ${privileges === null ? "" : `<current-user-privilege-set xmlns="DAV:">${privileges
+      .map((p) => `<privilege><${p}/></privilege>`)
+      .join("")}</current-user-privilege-set>`}
+  </prop><status>HTTP/1.1 200 OK</status></propstat></response>`);
+
+Deno.test("an own calendar we may write to is writable", () => {
+  const xml = withPrivileges("/111/calendars/AAAA-1111/", CAL, ["read", "write", "read-acl"]);
+  assertEquals(pickEventCalendars(parseMultistatus(xml), HOME)[0].writable, true);
+});
+
+Deno.test("bind alone is enough to add events; all counts too", () => {
+  for (const privilege of ["bind", "all"]) {
+    const xml = withPrivileges("/111/calendars/AAAA-1111/", CAL, ["read", privilege]);
+    assertEquals(pickEventCalendars(parseMultistatus(xml), HOME)[0].writable, true, privilege);
+  }
+});
+
+Deno.test("a calendar shared view-only is not writable", () => {
+  for (const privileges of [["read"], ["read", "read-current-user-privilege-set"], []]) {
+    const xml = withPrivileges("/111/calendars/AAAA-1111/", CAL, privileges);
+    assertEquals(pickEventCalendars(parseMultistatus(xml), HOME)[0].writable, false, privileges.join());
+  }
+});
+
+Deno.test("a subscribed calendar is never writable, whatever it claims", () => {
+  const xml = withPrivileges("/111/calendars/CCCC-3333/", SUBSCRIBED, ["read", "write"]);
+  assertEquals(pickEventCalendars(parseMultistatus(xml), HOME)[0].writable, false);
+});
+
+Deno.test("an own calendar with no privilege answer is taken as writable", () => {
+  const xml = withPrivileges("/111/calendars/AAAA-1111/", CAL, null);
+  assertEquals(pickEventCalendars(parseMultistatus(xml), HOME)[0].writable, true);
 });
 
 Deno.test("a calendar without a name comes back with a null name", () => {
@@ -254,4 +298,83 @@ Deno.test("mapPool keeps order and respects the concurrency limit", async () => 
   });
   assertEquals(out, [10, 20, 30, 40, 50, 60, 70]);
   assert(peak <= 3, `peak concurrency was ${peak}`);
+});
+
+/* ---- Writing to the primary calendar ---- */
+
+const CALENDAR_URL = "https://p48-caldav.icloud.com/111/calendars/AAAA-1111/";
+
+Deno.test("an event is PUT once, never overwriting, as text/calendar", async () => {
+  const seen: Request[] = [];
+  await withFetch(
+    (req) => {
+      seen.push(req);
+      return new Response(null, { status: 201 });
+    },
+    async () => {
+      await putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n");
+    },
+  );
+  assertEquals(seen.length, 1);
+  assertEquals(seen[0].method, "PUT");
+  assertEquals(seen[0].url, CALENDAR_URL + "casy-abc.ics");
+  assertEquals(seen[0].headers.get("if-none-match"), "*");
+  assert(seen[0].headers.get("content-type")?.startsWith("text/calendar"));
+});
+
+Deno.test("a calendar URL without a trailing slash still gets the file inside it", async () => {
+  let url = "";
+  await withFetch(
+    (req) => {
+      url = req.url;
+      return new Response(null, { status: 201 });
+    },
+    () => putEvent(CREDS, CALENDAR_URL.slice(0, -1), "casy-abc.ics", "x"),
+  );
+  assertEquals(url, CALENDAR_URL + "casy-abc.ics");
+});
+
+Deno.test("an event that is already there counts as added (a retry)", async () => {
+  await withFetch(() => new Response(null, { status: 412 }), () =>
+    putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"));
+});
+
+Deno.test("a refused write is a plain error, not a wrong password", async () => {
+  await withFetch(() => new Response(null, { status: 403 }), async () => {
+    const err = await assertRejects(() => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"), CalDavError);
+    assert(!(err instanceof CalDavLoginError));
+  });
+});
+
+Deno.test("a refused password on a write asks for reconnecting", async () => {
+  await withFetch(() => new Response(null, { status: 401 }), async () => {
+    await assertRejects(() => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"), CalDavLoginError);
+  });
+});
+
+Deno.test("a write never follows a redirect off icloud.com", async () => {
+  const hosts: string[] = [];
+  await withFetch(
+    (req) => {
+      hosts.push(new URL(req.url).host);
+      return new Response(null, { status: 307, headers: { location: "https://evil.example.com/x.ics" } });
+    },
+    async () => {
+      await assertRejects(() => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"), CalDavError, "unexpected server");
+    },
+  );
+  assertEquals(hosts, ["p48-caldav.icloud.com"]);
+});
+
+Deno.test("deleting an event that is already gone counts as done", async () => {
+  for (const status of [204, 404, 410]) {
+    await withFetch(() => new Response(null, { status }), () =>
+      deleteEvent(CREDS, CALENDAR_URL, "casy-abc.ics"));
+  }
+});
+
+Deno.test("a delete that fails for another reason says so", async () => {
+  await withFetch(() => new Response(null, { status: 500 }), async () => {
+    await assertRejects(() => deleteEvent(CREDS, CALENDAR_URL, "casy-abc.ics"), CalDavError, "HTTP 500");
+  });
 });

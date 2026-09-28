@@ -2,11 +2,16 @@
  * Small pieces of wording and logic for a connected account's row on the
  * profile page, kept out of the components so they can be tested.
  */
-import type { CalendarConnectionStatus } from "@/api/calendarStatus";
+import type { CalendarConnectionStatus, CalendarSourceStatus } from "@/api/calendarStatus";
 
 /** The names of an account's calendars, as the profile page lists them. */
 export function calendarNames(account: CalendarConnectionStatus): string[] {
-  return account.calendar_sources.map((s) => s.display_name ?? s.id);
+  return account.calendar_sources.map(calendarSourceName);
+}
+
+/** One calendar's name: the one its owner gave it, else the provider's own. */
+export function calendarSourceName(source: CalendarSourceStatus): string {
+  return source.custom_name ?? source.display_name ?? source.id;
 }
 
 const normalise = (text: string | null | undefined) => (text ?? "").trim().toLowerCase();

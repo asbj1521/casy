@@ -21,6 +21,8 @@ import { withLanguage } from "../_shared/i18n.ts";
 interface SourceRow {
   id: string;
   display_name: string | null;
+  custom_name: string | null;
+  writable: boolean;
   purpose: string | null;
   priority: string;
   included: boolean;
@@ -106,7 +108,7 @@ Deno.serve(withLanguage(async (req) => {
     db
       .from("calendar_sources")
       .select(
-        "id, display_name, purpose, priority, included, calendar_connections!inner(id, provider, account_label, status, profile_id)",
+        "id, display_name, custom_name, writable, purpose, priority, included, calendar_connections!inner(id, provider, account_label, status, profile_id)",
       )
       .eq("calendar_connections.profile_id", profileId)
       .eq("calendar_connections.status", "connected"),
@@ -128,7 +130,13 @@ Deno.serve(withLanguage(async (req) => {
   const calendars = ((sourcesResult.value.data ?? []) as SourceRow[])
     .map((s) => ({
       id: s.id,
-      name: s.display_name ?? "Calendar",
+      // The name its owner gave it wins; the provider's own name comes
+      // along so the page can say which calendar it really is.
+      name: s.custom_name ?? s.display_name ?? "Calendar",
+      originalName: s.display_name,
+      renamed: s.custom_name !== null,
+      // Whether it can be made the primary calendar (Casy may add events to it).
+      writable: s.writable,
       purpose: s.purpose,
       priority: s.priority,
       // Unticked calendars still come back, blocks and all: the page lists
@@ -138,9 +146,12 @@ Deno.serve(withLanguage(async (req) => {
       account: s.calendar_connections.account_label,
       connectionId: s.calendar_connections.id,
     }))
+    // By the provider's name, not the owner's: calendars without a category
+    // are coloured in this order, so renaming one must not recolour the rest.
     .sort(
       (a, b) =>
-        (a.account ?? "").localeCompare(b.account ?? "") || a.name.localeCompare(b.name),
+        (a.account ?? "").localeCompare(b.account ?? "") ||
+        (a.originalName ?? a.name).localeCompare(b.originalName ?? b.name),
     );
 
   return json({ calendars, ...blocksResult.value });

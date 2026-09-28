@@ -21,6 +21,7 @@ import IcsLinkForm from "@/components/IcsLinkForm";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import PasswordForm from "@/components/PasswordForm";
+import PrimaryCalendarCard from "@/components/PrimaryCalendarCard";
 import ProviderCard, { type ProviderMeta } from "@/components/ProviderCard";
 import TopNav from "@/components/TopNav";
 import { displayName, useAuth } from "@/context/auth";
@@ -408,6 +409,8 @@ export default function Profile() {
         errorMessage: t.profile.couldntRemove,
       });
       setConfirmRemoveId(null);
+      // Removing the account that holds the primary calendar clears it too.
+      void queryClient.invalidateQueries({ queryKey: ["primary-calendar"] });
       await refetchStatus();
     } catch (err) {
       // Leave the confirm panel open so the user can see why and retry.
@@ -595,51 +598,6 @@ export default function Profile() {
           </Suspense>
         ) : (
           <>
-            {/* Your groups */}
-            <GroupsSection
-              groups={groups}
-              isPending={groupsPending}
-              isError={groupsFailed}
-              youId={user.id}
-              confirm={groupConfirm}
-              leavingId={leaveGroupMutation.isPending ? (leaveGroupMutation.variables ?? null) : null}
-              deletingId={
-                deleteGroupMutation.isPending ? (deleteGroupMutation.variables ?? null) : null
-              }
-              actionError={groupActionError}
-              renamingId={renamingGroupId}
-              renameSubmittingId={
-                renameGroupMutation.isPending ? (renameGroupMutation.variables?.groupId ?? null) : null
-              }
-              renameError={renameActionError}
-              inviteOpenId={inviteGroupId}
-              inviteUrl={invite?.url ?? null}
-              inviteExpiresAt={invite?.expiresAt ?? null}
-              invitePending={inviteMutation.isPending}
-              inviteError={inviteActionError}
-              onAskLeave={askLeaveGroup}
-              onAskDelete={askDeleteGroup}
-              onCancel={() => setGroupConfirm(null)}
-              onLeave={(groupId) => leaveGroupMutation.mutate(groupId)}
-              onDelete={(groupId) => deleteGroupMutation.mutate(groupId)}
-              onStartRename={startRenameGroup}
-              onCancelRename={cancelRenameGroup}
-              onSubmitRename={(groupId, name) => renameGroupMutation.mutate({ groupId, name })}
-              onCreateGroup={() => {
-                createGroupMutation.reset();
-                setNewGroupOpen(true);
-              }}
-              onShareInvite={shareInvite}
-              onCloseInvite={closeInvite}
-            />
-            <NewGroupDialog
-              open={newGroupOpen}
-              submitting={createGroupMutation.isPending}
-              error={createGroupMutation.error instanceof Error ? createGroupMutation.error.message : null}
-              onSubmit={(name) => createGroupMutation.mutate(name)}
-              onCancel={() => setNewGroupOpen(false)}
-            />
-
             {/* Connected calendars */}
             <section className="mt-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -675,6 +633,9 @@ export default function Profile() {
                   {syncResult.text}
                 </p>
               )}
+
+              {/* Where Casy adds agreed events, and whether it does so on its own. */}
+              <PrimaryCalendarCard connections={connections} />
 
               <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
                 {PROVIDERS.map(({ helpTo, ...provider }) => {
@@ -750,6 +711,51 @@ export default function Profile() {
                 })}
               </div>
             </section>
+
+            {/* Your groups */}
+            <GroupsSection
+              groups={groups}
+              isPending={groupsPending}
+              isError={groupsFailed}
+              youId={user.id}
+              confirm={groupConfirm}
+              leavingId={leaveGroupMutation.isPending ? (leaveGroupMutation.variables ?? null) : null}
+              deletingId={
+                deleteGroupMutation.isPending ? (deleteGroupMutation.variables ?? null) : null
+              }
+              actionError={groupActionError}
+              renamingId={renamingGroupId}
+              renameSubmittingId={
+                renameGroupMutation.isPending ? (renameGroupMutation.variables?.groupId ?? null) : null
+              }
+              renameError={renameActionError}
+              inviteOpenId={inviteGroupId}
+              inviteUrl={invite?.url ?? null}
+              inviteExpiresAt={invite?.expiresAt ?? null}
+              invitePending={inviteMutation.isPending}
+              inviteError={inviteActionError}
+              onAskLeave={askLeaveGroup}
+              onAskDelete={askDeleteGroup}
+              onCancel={() => setGroupConfirm(null)}
+              onLeave={(groupId) => leaveGroupMutation.mutate(groupId)}
+              onDelete={(groupId) => deleteGroupMutation.mutate(groupId)}
+              onStartRename={startRenameGroup}
+              onCancelRename={cancelRenameGroup}
+              onSubmitRename={(groupId, name) => renameGroupMutation.mutate({ groupId, name })}
+              onCreateGroup={() => {
+                createGroupMutation.reset();
+                setNewGroupOpen(true);
+              }}
+              onShareInvite={shareInvite}
+              onCloseInvite={closeInvite}
+            />
+            <NewGroupDialog
+              open={newGroupOpen}
+              submitting={createGroupMutation.isPending}
+              error={createGroupMutation.error instanceof Error ? createGroupMutation.error.message : null}
+              onSubmit={(name) => createGroupMutation.mutate(name)}
+              onCancel={() => setNewGroupOpen(false)}
+            />
 
             {/* Password: works alongside Google and the email link, never
                 replacing them. One form handles both setting a first

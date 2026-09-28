@@ -13,12 +13,18 @@
  *    and gets their own accounts synced, waiting for the result. An account
  *    tried in the last minute is skipped, so the button can't be used to
  *    hammer the providers.
+ *
+ * Both also catch up on calendar writes (_shared/calendarWrites.ts): agreed
+ * events that should be in someone's primary calendar but aren't yet (a
+ * failed try, or an event completed by someone leaving its group), and
+ * cancelled ones still to be taken out.
  */
 import { callerId } from "../_shared/auth.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { syncConnection, type SyncOutcome, type SyncTarget } from "../_shared/sync.ts";
+import { processWrites, queueAutoAdds, type WriteScope } from "../_shared/calendarWrites.ts";
 import { withLanguage } from "../_shared/i18n.ts";
 
 /** Supabase's edge runtime: keeps the function alive for work after the response. */
@@ -109,8 +115,27 @@ Deno.serve(withLanguage(async (req) => {
   // parallel would only risk tripping a provider's rate limit.
   const results: SyncOutcome[] = [];
   for (const target of due) results.push(await syncConnection(db, target, encryptionKey));
+  EdgeRuntime.waitUntil(catchUpWrites(db, encryptionKey, { profileId }, 30_000));
   return json({ results, skipped: (data ?? []).length - due.length });
 }));
+
+/** Queue missed automatic adds and retry calendar writes. Never throws. */
+async function catchUpWrites(
+  db: ReturnType<typeof supabaseAdmin>,
+  encryptionKey: string,
+  scope: WriteScope,
+  budgetMs: number,
+): Promise<void> {
+  try {
+    const queued = await queueAutoAdds(db, scope);
+    const { done, failed } = await processWrites(db, encryptionKey, scope, { budgetMs });
+    if (queued || done || failed) {
+      console.log(`calendar writes: ${queued} queued, ${done} done, ${failed} failed`);
+    }
+  } catch (err) {
+    console.error("calendar write catch-up failed", err);
+  }
+}
 
 async function runScheduled(
   db: ReturnType<typeof supabaseAdmin>,
@@ -127,4 +152,6 @@ async function runScheduled(
     else failed++;
   }
   console.log(`scheduled sync: ${ok} ok, ${failed} failed, ${targets.length - ok - failed} left for next run`);
+  // Busy times first; calendar writes get what is left of the budget.
+  await catchUpWrites(db, encryptionKey, {}, Math.max(10_000, SCHEDULED_BUDGET_MS - (Date.now() - started)));
 }

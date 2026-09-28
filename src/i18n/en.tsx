@@ -456,6 +456,55 @@ export const en: Messages = {
       "Can skip: Casy may plan over it when no date within a week works without. Normal: busy, but for trips and vacations you can take time off work and school. Never skip: busy, even when planning trips.",
     priorityHelpLabel: "What does this mean?",
     couldntSavePriority: "Couldn't save how much the calendar matters",
+    rename: (name: string) => `Rename ${name}`,
+    originally: (name: string) => `Original name: ${name}`,
+    useOriginalName: (name: string) => `Use the original name (${name})`,
+    couldntSaveName: "Couldn't save the name",
+  },
+  addToCalendar: {
+    button: "Add to my calendar",
+    goesInto: (name: string) => `Casy adds it to ${name}.`,
+    goesIntoFallback: "Casy adds it to your primary calendar.",
+    willAsk: "You choose which calendar it goes into.",
+    asFile: "You get a calendar file your calendar app can open.",
+    added: (name: string) => `Added to ${name}`,
+    addedFallback: "Added to your calendar",
+    adding: "Casy is adding it to your calendar.",
+    notYet: "Casy couldn't add it to your calendar yet and will try again within the hour.",
+    tryAgain: "Try again now",
+    chooseTitle: "Which calendar should Casy add events to?",
+    chooseHelp: "It becomes your primary calendar. You can change it on your profile.",
+    useAndAdd: "Use it and add",
+    downloadInstead: "Download a calendar file instead",
+  },
+  primaryCalendar: {
+    title: "Primary calendar",
+    intro:
+      "Casy adds the events you agree on to this calendar: when you ask it to, or on its own if Add automatically is on.",
+    noWritable:
+      "Connect an iCloud calendar below and Casy can add your agreed events straight to it. Google and Outlook are coming later.",
+    waitingForSync:
+      "Casy is checking which of your iCloud calendars it may add events to. Press Sync now, or wait up to an hour.",
+    selectLabel: "Choose primary calendar",
+    choose: "Choose a calendar",
+    noneOption: "None (Casy adds nothing to your calendars)",
+    confirmFirst: (name: string) =>
+      `Make ${name} your primary calendar? Casy only adds events to it when you ask, or when Add automatically is on.`,
+    confirmChange: (name: string, current: string) =>
+      `Make ${name} your primary calendar? New events go into ${name}. Events already added to ${current} stay where they are.`,
+    confirmClear: (current: string) =>
+      `Stop using ${current} as your primary calendar? Casy then adds no events to your calendars. Events already added stay.`,
+    yesChange: "Yes, change",
+    yesChoose: "Yes, use it",
+    yesStop: "Yes, stop",
+    autoAdd: "Add automatically",
+    autoAddHelp:
+      "When everyone has accepted an event, Casy adds it to your primary calendar straight away.",
+    autoAddNeedsPrimary: "Choose a primary calendar first.",
+    badge: "Primary",
+    makePrimary: "Make primary calendar",
+    current: (name: string) => `Primary calendar: ${name}`,
+    noneYet: "No primary calendar chosen yet.",
   },
   signIn: {
     title: "Sign in",
@@ -539,6 +588,11 @@ export const en: Messages = {
     adminRemoveMember: "Couldn't remove them from the group",
     adminDeleteAccount: "Couldn't delete the account",
     adminSync: "Couldn't sync that account",
+    loadPrimaryCalendar: "Couldn't load your primary calendar",
+    setPrimaryCalendar: "Couldn't save your primary calendar",
+    setAutoAdd: "Couldn't save Add automatically",
+    addToCalendar: "Couldn't add the event to your calendar",
+    downloadEvent: "Couldn't get the calendar file",
     failed: (name: string, status: number) => `${name} failed (HTTP ${status})`,
   },
   admin: {
