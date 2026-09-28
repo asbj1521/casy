@@ -37,6 +37,21 @@ export type EventCategory =
   | "family";
 
 /**
+ * How much a calendar's busy time matters to its owner, set per calendar:
+ *
+ * - "skip":   happy to skip it for anything (a lecture, training). It never
+ *             blocks a search; a date that needs it skipped says so.
+ * - "normal": the default and the original rules: blocks a meeting; for a
+ *             trip, work/school needs time off and short plans don't count.
+ * - "never":  never skipped: blocks meetings and trips alike (an exam, a
+ *             shift that can't move).
+ *
+ * Per calendar rather than per event because event titles are never stored,
+ * so one lecture can't be told from another.
+ */
+export type CalendarPriority = "skip" | "normal" | "never";
+
+/**
  * A single block of time during which someone is unavailable.
  *
  * This is deliberately *just* a time range — no event title, location, or
@@ -55,6 +70,8 @@ export interface BusyInterval {
   title?: string;
   /** Optional category, for colouring/filtering in test data. */
   category?: EventCategory;
+  /** Its calendar's priority; omitted means "normal". */
+  priority?: CalendarPriority;
 }
 
 /** A person invited to an event, plus their aggregated busy time. */

@@ -48,6 +48,24 @@ describe("busyFromCalendars", () => {
     expect(isHardBlock(busy[3])).toBe(false);
   });
 
+  it("carries a calendar's priority over, leaving normal out", () => {
+    const withPriorities = busyFromCalendars({
+      ...DATA,
+      calendars: [
+        { ...calendar("work", "Work", "work"), priority: "never" },
+        { ...calendar("uni", "CBS timetable", "school"), priority: "skip" },
+        { ...calendar("home", "Family", "personal"), priority: "normal" },
+        calendar("misc", "Shared", null),
+      ],
+    });
+
+    expect(withPriorities.map((b) => b.priority)).toEqual(["never", "skip", undefined, undefined]);
+    // Never-skip work can't be taken off for a trip; skippable school needs no time off.
+    expect(isHardBlock(withPriorities[0])).toBe(true);
+    expect(isSoftBlock(withPriorities[1])).toBe(false);
+    expect(isHardBlock(withPriorities[1])).toBe(false);
+  });
+
   it("drops blocks from a calendar that isn't listed", () => {
     expect(busy).toHaveLength(4);
     expect(busy.some((b) => b.calendarId === "gone")).toBe(false);

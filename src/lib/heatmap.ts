@@ -13,6 +13,7 @@
 
 import {
   blockOverlaps,
+  isSkippable,
   spanAvailability,
   type WeeklySpanShape,
 } from "@/lib/availability";
@@ -32,9 +33,9 @@ export interface DayCell {
   /** Participants genuinely free for the event on/starting this day. */
   freeCount: number;
   /**
-   * Participants who are only free if they take time off work/school
-   * (multi-day modes only; always 0 for single meetings, where the chosen
-   * time either works or it doesn't).
+   * Participants who are only free if they give something up: time off
+   * work/school (multi-day modes), or skipping a calendar they marked
+   * skippable (single meetings).
    */
   conditionalCount: number;
   /** True if this day is not part of the search (unselected weekday, or a
@@ -56,9 +57,22 @@ export interface MonthGrid {
 }
 
 
-/** True if the participant has no busy block overlapping [start, end). */
-function isFree(participant: Participant, start: number, end: number): boolean {
-  return !participant.busy.some((b) => blockOverlaps(b, start, end));
+/**
+ * Whether the participant is free for [start, end): outright, only by
+ * skipping blocks they marked skippable ("conditional"), or not at all.
+ */
+function meetingAvailability(
+  participant: Participant,
+  start: number,
+  end: number,
+): "free" | "conditional" | "busy" {
+  let skipping = false;
+  for (const b of participant.busy) {
+    if (!blockOverlaps(b, start, end)) continue;
+    if (!isSkippable(b)) return "busy";
+    skipping = true;
+  }
+  return skipping ? "conditional" : "free";
 }
 
 /**
@@ -76,14 +90,17 @@ function freeForMeetingOnDay(
   startHour: number,
   durationMs: number,
   timeZone: string,
-): number {
+): { free: number; conditional: number } {
   const start = atHour(dayMidnight, startHour, timeZone);
   const end = start + durationMs;
-  let count = 0;
+  let free = 0;
+  let conditional = 0;
   for (const p of participants) {
-    if (isFree(p, start, end)) count++;
+    const a = meetingAvailability(p, start, end);
+    if (a === "free") free++;
+    else if (a === "conditional") conditional++;
   }
-  return count;
+  return { free, conditional };
 }
 
 /** How availability is computed for each day cell. */
@@ -194,13 +211,15 @@ export function buildMonthGrid(
         } else if (allowedDays && !allowedDays.includes(dow)) {
           excluded = true;
         } else {
-          freeCount = freeForMeetingOnDay(
+          const a = freeForMeetingOnDay(
             participants,
             dayMidnight,
             startHour,
             durationMs,
             timeZone,
           );
+          freeCount = a.free;
+          conditionalCount = a.conditional;
         }
       }
 

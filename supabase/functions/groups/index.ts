@@ -192,7 +192,7 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
 
   const { data: sources, error: sourcesErr } = await db
     .from("calendar_sources")
-    .select("id, purpose, calendar_connections!inner(profile_id, status)")
+    .select("id, purpose, priority, calendar_connections!inner(profile_id, status)")
     .in("calendar_connections.profile_id", memberIds)
     .eq("calendar_connections.status", "connected");
   if (sourcesErr) throw sourcesErr;
@@ -200,16 +200,19 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
   type SourceRow = {
     id: string;
     purpose: string | null;
+    priority: string;
     calendar_connections: { profile_id: string; status: string };
   };
   const ownerOf = new Map<string, string>();
   const purposeOf = new Map<string, string | null>();
+  const priorityOf = new Map<string, string>();
   // The generated row type describes the joined connection as an array (it is
   // a to-many relationship in general); `!inner` on a to-one join makes it a
   // single row, which only a cast can say.
   for (const s of (sources ?? []) as unknown as SourceRow[]) {
     ownerOf.set(s.id, s.calendar_connections.profile_id);
     purposeOf.set(s.id, s.purpose);
+    priorityOf.set(s.id, s.priority);
   }
 
   const sourceIds = [...ownerOf.keys()];
@@ -255,6 +258,12 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
         // is the category, not the calendar's name.
         ...(purposeOf.get(r.source_id) === "work" || purposeOf.get(r.source_id) === "school"
           ? { category: purposeOf.get(r.source_id) }
+          : {}),
+        // Whether its owner would skip it ("skip") or never would ("never");
+        // left out when normal. Like the category, it says how much the
+        // block matters, never what it is.
+        ...(priorityOf.get(r.source_id) === "skip" || priorityOf.get(r.source_id) === "never"
+          ? { priority: priorityOf.get(r.source_id) }
           : {}),
       });
     }

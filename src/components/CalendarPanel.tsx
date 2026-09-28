@@ -21,6 +21,7 @@ export default function CalendarPanel({
   bestTimeLabel,
   todayDay,
   timeZone,
+  conditional,
 }: {
   grid: MonthGrid;
   bestDay: string | null;
@@ -30,6 +31,11 @@ export default function CalendarPanel({
   todayDay: string | null;
   /** The zone the grid's days are local to. */
   timeZone: string;
+  /**
+   * What the amber "conditional" people would give up: time off work/school
+   * (trips, vacations) or something they marked skippable (single meetings).
+   */
+  conditional: "timeOff" | "skip";
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -86,7 +92,11 @@ export default function CalendarPanel({
               key={cell.date}
               title={
                 inMonth && !isPast && !cell.excluded
-                  ? t.scheduler.cellTitle(cell.freeCount, cell.total, cell.conditionalCount)
+                  ? (conditional === "skip" ? t.scheduler.cellTitleSkip : t.scheduler.cellTitle)(
+                      cell.freeCount,
+                      cell.total,
+                      cell.conditionalCount,
+                    )
                   : undefined
               }
               className="relative min-h-[58px] border-b border-r p-1 sm:min-h-[80px] sm:p-1.5"
@@ -99,8 +109,8 @@ export default function CalendarPanel({
                     : cell.conditionalCount > 0
                       ? {
                           // Nobody is outright free, but some could take time
-                          // off: amber, not orange, so it reads as "possible
-                          // with effort" rather than "available".
+                          // off or skip something: amber, not orange, so it
+                          // reads as "possible with effort", not "available".
                           backgroundColor: `rgba(${AMBER_RGB}, ${(0.08 + 0.22 * condFrac).toFixed(3)})`,
                         }
                       : undefined
@@ -165,7 +175,10 @@ export default function CalendarPanel({
                         {cell.freeCount}/{cell.total}
                         <span className="hidden sm:inline">
                           {t.scheduler.cellFree}
-                          {cell.conditionalCount > 0 && t.scheduler.cellWork(cell.conditionalCount)}
+                          {cell.conditionalCount > 0 &&
+                            (conditional === "skip" ? t.scheduler.cellSkip : t.scheduler.cellWork)(
+                              cell.conditionalCount,
+                            )}
                         </span>
                       </span>
                     </div>

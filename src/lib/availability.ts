@@ -25,6 +25,12 @@
  * ending by 17:00 is no obstacle — you leave in the evening, exactly like a
  * weekend trip starting Friday after work.
  *
+ * Each calendar's owner can also set its priority (CalendarPriority), which
+ * overrides both rules: a "skip" calendar never blocks anything, and a
+ * "never" calendar always blocks, trips included. Single meetings skip "skip"
+ * blocks only when waiting for a date nobody skips for would take more than
+ * a week (findMeetingSlot).
+ *
  * Time zones: blocks and results are instants, but hours, weekdays and whole
  * days are local to the zone each search is given ("18:00" means 18:00 in
  * Copenhagen). Days are stepped with src/lib/zone.ts rather than by adding
@@ -64,6 +70,13 @@ const MIN_HARD_BLOCK_MS = 20 * MS_PER_HOUR;
 
 /** The departure-day rule's cutoff: work ending by 17:00 = leave after work. */
 const DEPARTURE_HOUR = 17;
+
+/**
+ * How much later a meeting date nobody has to skip anything for may be and
+ * still win over an earlier one that needs a skip: no reason to skip school
+ * today for a lunch that works for everyone next week anyway.
+ */
+const SKIP_PATIENCE_DAYS = 7;
 
 /* ----------------------------------------------------------------------------
  * Shared primitives
@@ -187,13 +200,25 @@ function subtractIntervals(base: Interval[], holes: Interval[]): Interval[] {
  * Block classification (multi-day rules)
  * ------------------------------------------------------------------------- */
 
-/** True if this block is one you could take time off from (work / school). */
+/** True if its owner is happy to skip this block for any event. */
+export function isSkippable(block: BusyInterval): boolean {
+  return block.priority === "skip";
+}
+
+/**
+ * True if this block is one you could take time off from (work / school).
+ * Its calendar's priority wins over the category: "skip" needs no time off
+ * at all, and "never" can't be taken off.
+ */
 export function isSoftBlock(block: BusyInterval): boolean {
+  if (block.priority === "skip" || block.priority === "never") return false;
   return block.category !== undefined && SOFT_CATEGORIES.has(block.category);
 }
 
 /** True if this block rules a day out for a multi-day event entirely. */
 export function isHardBlock(block: BusyInterval): boolean {
+  if (block.priority === "skip") return false;
+  if (block.priority === "never") return true;
   if (isSoftBlock(block)) return false;
   const iv = parseBlock(block);
   return iv !== null && iv.end - iv.start >= MIN_HARD_BLOCK_MS;
@@ -268,6 +293,50 @@ export function findEarliestSlot(event: Event): SchedulingResult {
 }
 
 /**
+ * A meeting slot, letting people skip what they marked skippable, but only
+ * when it's worth it: the earliest date nobody skips anything for wins,
+ * unless it is more than SKIP_PATIENCE_DAYS later than the earliest date that
+ * works with skipping. Then that one wins, and `conflicts` says who would
+ * skip what.
+ */
+export function findMeetingSlot(event: Event): MultiDayResult {
+  const strict = findEarliestSlot(event);
+  const anySkippable = event.participants.some((p) => p.busy.some(isSkippable));
+  if (!anySkippable) return { slot: strict.slot, conflicts: [] };
+
+  // The same search with the skippable blocks gone. It can only find the
+  // same date or an earlier one.
+  const relaxed = findEarliestSlot({
+    ...event,
+    participants: event.participants.map((p) => ({
+      ...p,
+      busy: p.busy.filter((b) => !isSkippable(b)),
+    })),
+  });
+  if (!relaxed.slot) return { slot: strict.slot, conflicts: [] };
+
+  // Compared as local days: a clean lunch exactly a week on still wins,
+  // whatever the hour.
+  const relaxedStart = Date.parse(relaxed.slot.start);
+  const lastPatientDay = addDays(relaxedStart, SKIP_PATIENCE_DAYS, event.timeZone);
+  if (
+    strict.slot &&
+    startOfDay(Date.parse(strict.slot.start), event.timeZone) <= lastPatientDay
+  ) {
+    return { slot: strict.slot, conflicts: [] };
+  }
+  return {
+    slot: relaxed.slot,
+    conflicts: collectConflicts(
+      event.participants,
+      relaxedStart,
+      Date.parse(relaxed.slot.end),
+      isSkippable,
+    ),
+  };
+}
+
+/**
  * The intervals a meeting is *allowed* to land in, from the daily-hour /
  * weekend / weekday constraints, read as local time in `timeZone`.
  * `latestHour` may exceed 24 so a night event can spill past midnight; a
@@ -328,11 +397,15 @@ function collectBusy(participants: Participant[], range: Interval): Interval[] {
  * Multi-day spans (vacations)
  * ------------------------------------------------------------------------- */
 
-/** One participant's work/school overlaps with a proposed multi-day span. */
+/**
+ * Something one participant would have to give up for a proposed date: work
+ * or school to take time off from (multi-day spans), or blocks they marked
+ * skippable (single meetings).
+ */
 export interface SpanConflict {
   profileId: string;
   name: string;
-  /** The overlapping work/school blocks, in time order. */
+  /** The overlapping blocks, in time order. */
   events: BusyInterval[];
 }
 
@@ -341,8 +414,9 @@ export interface MultiDayResult {
   /** The chosen day-aligned span, or null if none was found. */
   slot: TimeSlot | null;
   /**
-   * Work/school commitments overlapping the span, per affected participant.
-   * Empty means the span works outright for everyone.
+   * What each affected participant would give up for the slot: work/school
+   * for a multi-day span, skippable blocks for a single meeting. Empty means
+   * it works outright for everyone.
    */
   conflicts: SpanConflict[];
 }
@@ -359,11 +433,22 @@ function collectSoftConflicts(
   endMs: number,
   departureCutoffMs = -Infinity,
 ): SpanConflict[] {
+  return collectConflicts(participants, startMs, endMs, isSoftBlock, departureCutoffMs);
+}
+
+/** Each participant's blocks passing `include` that overlap [startMs, endMs). */
+function collectConflicts(
+  participants: Participant[],
+  startMs: number,
+  endMs: number,
+  include: (block: BusyInterval) => boolean,
+  departureCutoffMs = -Infinity,
+): SpanConflict[] {
   const conflicts: SpanConflict[] = [];
   for (const p of participants) {
     const overlapping = p.busy
       .filter((b) => {
-        if (!isSoftBlock(b)) return false;
+        if (!include(b)) return false;
         const iv = parseBlock(b);
         return iv !== null && iv.start < endMs && iv.end > startMs && iv.end > departureCutoffMs;
       })

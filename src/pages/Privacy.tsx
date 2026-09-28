@@ -42,7 +42,7 @@ interface Copy {
 
 const da: Copy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 22. september 2026",
+  updated: "Senest opdateret 28. september 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -66,8 +66,9 @@ const da: Copy = {
           </li>
           <li>
             <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
-            e-mailadressen på en Google-konto), navnene på deres kalendere og den kategori, du giver
-            hver af dem (arbejde, skole, privat, andet).
+            e-mailadressen på en Google-konto), navnene på deres kalendere og den kategori og
+            prioritet, du giver hver af dem (arbejde, skole, privat, andet; kan springes over,
+            normal, spring aldrig over).
           </li>
           <li>
             <Term>Optagede tidsrum:</Term> start og slut på hvert tidsrum, hvor du er optaget, for
@@ -118,8 +119,9 @@ const da: Copy = {
             Når du er med i en gruppe, kan de andre medlemmer se dit navn, og hvornår du er optaget.
             Det er hele pointen med en gruppe: Casy kan ikke finde et tidspunkt, der passer alle, uden
             det. Optagede tidsrum vises som tidsintervaller og om et tidsrum kom fra en kalender, du
-            har markeret som arbejde eller skole. Det er det, der lader Casy skelne mellem "kunne tage
-            fri" og "ikke muligt".
+            har markeret som arbejde eller skole, eller som en, du kan springe over eller aldrig
+            springer over. Det er det, der lader Casy skelne mellem "kunne tage fri" og "ikke
+            muligt".
           </p>
           <p>
             Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere, hvilke konti du har
@@ -209,7 +211,7 @@ const da: Copy = {
 
 const en: Copy = {
   title: "Privacy policy",
-  updated: "Last updated 22 September 2026",
+  updated: "Last updated 28 September 2026",
   sections: [
     {
       title: "In short",
@@ -233,8 +235,9 @@ const en: Copy = {
           </li>
           <li>
             <Term>Connected calendars:</Term> which accounts you connected (for example the email
-            address of a Google account), the names of their calendars, and the category you give
-            each one (work, school, personal, other).
+            address of a Google account), the names of their calendars, and the category and
+            priority you give each one (work, school, personal, other; can skip, normal, never
+            skip).
           </li>
           <li>
             <Term>Busy times:</Term> the start and end of each busy period, for roughly the next
@@ -285,8 +288,8 @@ const en: Copy = {
             Joining a group means the other members can see your name and when you are busy. That
             is the whole point of a group: Casy cannot find a time that works for everyone without
             it. Busy periods are shown as time ranges, plus whether a range came from a calendar
-            you marked as work or school, which is what lets Casy tell "could take time off" apart
-            from "not possible".
+            you marked as work or school, or as one you can skip or never skip, which is what lets
+            Casy tell "could take time off" apart from "not possible".
           </p>
           <p>
             Members do not see your email address, the names of your calendars, which accounts you

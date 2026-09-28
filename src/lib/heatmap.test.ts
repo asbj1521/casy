@@ -291,3 +291,28 @@ describe("buildMonthGrid in Copenhagen time", () => {
     expect(cellFor(utc.weeks, 3).freeCount).toBe(2);
   });
 });
+
+describe("buildMonthGrid with calendar priorities", () => {
+  it("counts someone whose only clash is skippable as free if skipping", () => {
+    const alice = makeParticipant("Alice", []);
+    const bob: Participant = {
+      profileId: "bob",
+      name: "Bob",
+      busy: [{ start: "2026-06-10T18:00:00.000Z", end: "2026-06-10T19:00:00.000Z", priority: "skip" }],
+    };
+    const carol: Participant = {
+      profileId: "carol",
+      name: "Carol",
+      busy: [
+        { start: "2026-06-10T18:00:00.000Z", end: "2026-06-10T19:00:00.000Z", priority: "skip" },
+        { start: "2026-06-10T19:00:00.000Z", end: "2026-06-10T20:00:00.000Z" },
+      ],
+    };
+
+    const grid = buildMonthGrid([alice, bob, carol], YEAR, JUNE, makeOptions());
+    const cell = cellFor(grid.weeks, 10);
+
+    expect(cell.freeCount).toBe(1); // Alice
+    expect(cell.conditionalCount).toBe(1); // Bob; Carol is busy regardless
+  });
+});

@@ -22,6 +22,7 @@ interface SourceRow {
   id: string;
   display_name: string | null;
   purpose: string | null;
+  priority: string;
   calendar_connections: {
     id: string;
     provider: string;
@@ -104,7 +105,7 @@ Deno.serve(withLanguage(async (req) => {
     db
       .from("calendar_sources")
       .select(
-        "id, display_name, purpose, calendar_connections!inner(id, provider, account_label, status, profile_id)",
+        "id, display_name, purpose, priority, calendar_connections!inner(id, provider, account_label, status, profile_id)",
       )
       .eq("calendar_connections.profile_id", profileId)
       .eq("calendar_connections.status", "connected"),
@@ -128,6 +129,7 @@ Deno.serve(withLanguage(async (req) => {
       id: s.id,
       name: s.display_name ?? "Calendar",
       purpose: s.purpose,
+      priority: s.priority,
       provider: s.calendar_connections.provider,
       account: s.calendar_connections.account_label,
       connectionId: s.calendar_connections.id,

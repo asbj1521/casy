@@ -13,7 +13,7 @@
  */
 import { danishHolidays, type Holiday } from "@/lib/danishHolidays";
 import { mondayFirstWeekdays } from "@/lib/dateLabels";
-import type { CalendarProvider, CalendarPurpose } from "@/types";
+import type { CalendarPriority, CalendarProvider, CalendarPurpose } from "@/types";
 
 /** One connected calendar, as returned by the calendar-busy function. */
 export interface OverviewCalendar {
@@ -21,6 +21,11 @@ export interface OverviewCalendar {
   name: string;
   /** The category the user gave this calendar, or null if unset. */
   purpose: CalendarPurpose | null;
+  /**
+   * How much it matters to its owner. Missing from a function deployed before
+   * priorities existed, and on the built-in calendar: read as "normal".
+   */
+  priority?: CalendarPriority;
   /** "builtin" marks a calendar Autodate provides itself, with no account behind it. */
   provider: CalendarProvider | "builtin";
   /** The account it belongs to (an email, or a link's name). */

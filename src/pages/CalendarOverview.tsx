@@ -37,7 +37,7 @@ import {
 } from "@/lib/calendarOverview";
 import { callFunction } from "@/lib/supabaseFunctions";
 import { cn } from "@/lib/utils";
-import type { CalendarPurpose } from "@/types";
+import type { CalendarPriority, CalendarPurpose } from "@/types";
 
 /** A holiday's name in the page's language. */
 function holidayName(holiday: NonNullable<DaySegment["holiday"]>, lang: Lang): string {
@@ -117,15 +117,25 @@ export default function CalendarOverview() {
     placeholderData: keepPreviousData, // no flash of emptiness when changing month
   });
 
-  const setPurpose = useMutation({
-    mutationFn: (v: { calendarId: string; purpose: CalendarPurpose | null }) =>
+  // One calendar's category or priority; the function takes either.
+  const setLabels = useMutation({
+    mutationFn: (v: {
+      calendarId: string;
+      purpose?: CalendarPurpose | null;
+      priority?: CalendarPriority;
+    }) =>
       callFunction("calendar-set-purpose", {
         body: v,
-        errorMessage: t.calendarView.couldntSaveCategory,
+        errorMessage:
+          v.priority !== undefined
+            ? t.calendarView.couldntSavePriority
+            : t.calendarView.couldntSaveCategory,
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
       void queryClient.invalidateQueries({ queryKey: ["calendar-status"] });
+      // Your groups' searches read both from the groups function.
+      void queryClient.invalidateQueries({ queryKey: ["group-busy"] });
     },
   });
 
@@ -453,16 +463,17 @@ export default function CalendarOverview() {
               hidden={hidden}
               blockCounts={blockCounts}
               colorOf={colorOf}
-              savingId={setPurpose.isPending ? (setPurpose.variables?.calendarId ?? null) : null}
+              savingId={setLabels.isPending ? (setLabels.variables?.calendarId ?? null) : null}
               saveError={
-                setPurpose.isError
-                  ? setPurpose.error instanceof Error
-                    ? setPurpose.error.message
+                setLabels.isError
+                  ? setLabels.error instanceof Error
+                    ? setLabels.error.message
                     : t.calendarView.couldntSave
                   : null
               }
               onSetVisible={setCalendarsVisible}
-              onSetPurpose={(calendarId, purpose) => setPurpose.mutate({ calendarId, purpose })}
+              onSetPurpose={(calendarId, purpose) => setLabels.mutate({ calendarId, purpose })}
+              onSetPriority={(calendarId, priority) => setLabels.mutate({ calendarId, priority })}
             />
           </div>
         </div>

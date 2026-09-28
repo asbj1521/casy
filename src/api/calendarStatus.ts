@@ -8,13 +8,15 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { callFunction } from "@/lib/supabaseFunctions";
-import type { CalendarProvider } from "@/types";
+import type { CalendarPriority, CalendarProvider } from "@/types";
 
 /** One calendar discovered within a connected account (see calendar_sources). */
 export interface CalendarSourceStatus {
   id: string;
   display_name: string | null;
   purpose: "work" | "school" | "personal" | "other" | null;
+  /** Missing from a function deployed before priorities existed: read as "normal". */
+  priority?: CalendarPriority;
 }
 
 /** A linked account's real, persisted state: what calendar-status returns. */

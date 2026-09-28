@@ -34,6 +34,29 @@ describe("findEventSlot", () => {
     expect(conflicts).toEqual([]);
   });
 
+  it("reports what a single meeting would have people skip", () => {
+    const skippable = {
+      start: "2026-06-22T12:00:00.000Z",
+      end: "2026-06-22T13:00:00.000Z",
+      priority: "skip" as const,
+    };
+    // Monday's lunch needs Alice to skip; the only other lunch is weeks away.
+    const alice: Participant = {
+      profileId: "alice",
+      name: "Alice",
+      busy: [skippable, { start: "2026-06-23T00:00:00.000Z", end: "2026-07-10T00:00:00.000Z" }],
+    };
+    const { slot, conflicts } = findEventSlot(
+      [alice],
+      { kind: "single", durationMinutes: 60, startHour: 12 },
+      START,
+      END,
+      TZ,
+    );
+    expect(slot?.start).toBe("2026-06-22T12:00:00.000Z");
+    expect(conflicts).toEqual([{ profileId: "alice", name: "Alice", events: [skippable] }]);
+  });
+
   it("only searches the allowed days of week", () => {
     const { slot } = findEventSlot(
       [person("Alice", [])],

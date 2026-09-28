@@ -93,11 +93,15 @@ export const en: Messages = {
     fewerFree: "Fewer free",
     moreFree: "More free",
     freeWithTimeOff: "free only with time off",
+    freeIfSkipping: "free only by skipping",
     best: "Best",
     cellTitle: (free: number, total: number, needTimeOff: number) =>
       `${free}/${total} can meet${needTimeOff > 0 ? `, ${needTimeOff} would need time off` : ""}`,
+    cellTitleSkip: (free: number, total: number, skipping: number) =>
+      `${free}/${total} can meet${skipping > 0 ? `, ${skipping} would skip something` : ""}`,
     cellFree: " free",
     cellWork: (n: number) => ` · ${n} work`,
+    cellSkip: (n: number) => ` · ${n} skipping`,
     noVacation: (n: number) =>
       `No stretch of ${days(n)} works for the whole group in this range. Try fewer days or another group.`,
     noTrip:
@@ -115,6 +119,10 @@ export const en: Messages = {
       `${names} ${count === 1 ? "has" : "have"} work or school during these dates and must approve them.`,
     youApprovedTimeOff: " You have approved taking time off.",
     worksForEveryone: "Works for everyone",
+    worksIfSkipping: "Works if some skip",
+    youSkip: (titles: string) => `You'd skip ${titles}. `,
+    othersSkip: (names: string) => `${names} would skip something. `,
+    skipWhy: "No date within a week works without.",
     youApprovedDates: "You approved taking time off for these dates.",
     suggestionFits: (requested: number, needsTimeOff: boolean, fits: number, span: string, extra: string) => (
       <>
@@ -426,6 +434,16 @@ export const en: Messages = {
     inView: (n: number) => `${n} in this view`,
     builtInNoAccount: "Built in, no account needed",
     categoryFor: (name: string) => `Category for ${name}`,
+    priorityFor: (name: string) => `How much ${name} matters`,
+    priorities: {
+      skip: "Can skip",
+      normal: "Normal",
+      never: "Never skip",
+    },
+    priorityHelp:
+      "Can skip: Casy may plan over it when no date within a week works without. Normal: busy, but for trips and vacations you can take time off work and school. Never skip: busy, even when planning trips.",
+    priorityHelpLabel: "What does this mean?",
+    couldntSavePriority: "Couldn't save how much the calendar matters",
   },
   signIn: {
     title: "Sign in",

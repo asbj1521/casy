@@ -9,7 +9,7 @@
  */
 import {
   findBestDaySpan,
-  findEarliestSlot,
+  findMeetingSlot,
   findWeeklySpan,
   type MultiDayResult,
   type WeeklySpanShape,
@@ -28,9 +28,10 @@ export type EventSettings =
   | { kind: "vacation"; days: number };
 
 /**
- * The best date for `settings` on or after `searchStart`. Single meetings
- * never carry conflicts (a clash rules the time out); multi-day spans report
- * the work/school the dates would need time off from.
+ * The best date for `settings` on or after `searchStart`. A single meeting
+ * reports what people would skip, if it's worth skipping anything at all
+ * (findMeetingSlot); multi-day spans report the work/school the dates would
+ * need time off from.
  */
 export function findEventSlot(
   participants: Participant[],
@@ -41,7 +42,7 @@ export function findEventSlot(
 ): MultiDayResult {
   switch (settings.kind) {
     case "single": {
-      const { slot } = findEarliestSlot({
+      return findMeetingSlot({
         id: "search",
         title: "",
         organizerId: "",
@@ -60,7 +61,6 @@ export function findEventSlot(
           allowedDays: settings.allowedDays,
         },
       });
-      return { slot, conflicts: [] };
     }
     case "trip":
       return findWeeklySpan(participants, settings.shape, searchStart, searchEnd, timeZone);

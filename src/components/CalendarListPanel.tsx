@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Loader2 } from "lucide-react";
 
+import InfoTip from "@/components/InfoTip";
 import { useT } from "@/i18n/lang";
 import {
   CATEGORIES,
@@ -11,7 +12,9 @@ import {
   type OverviewCalendar,
 } from "@/lib/calendarOverview";
 import { cn } from "@/lib/utils";
-import type { CalendarPurpose } from "@/types";
+import type { CalendarPriority, CalendarPurpose } from "@/types";
+
+const PRIORITIES: CalendarPriority[] = ["skip", "normal", "never"];
 
 /** Most colour dots shown on a collapsed group's header before they stop helping. */
 const MAX_HEADER_DOTS = 6;
@@ -48,8 +51,8 @@ function GroupCheckbox({
 /**
  * The overview's calendar list, grouped by brand. Each group is collapsed by
  * default and has a checkbox that shows or hides all of its calendars on the
- * month grid; opening it reveals a checkbox and a category picker for each
- * calendar. Unchecking only hides a calendar from the view: nothing is
+ * month grid; opening it reveals a checkbox, a category picker and a priority
+ * picker (how much it matters when scheduling) for each calendar. Unchecking only hides a calendar from the view: nothing is
  * disconnected or deleted (that lives on the profile page).
  */
 export default function CalendarListPanel({
@@ -61,6 +64,7 @@ export default function CalendarListPanel({
   saveError,
   onSetVisible,
   onSetPurpose,
+  onSetPriority,
 }: {
   calendars: OverviewCalendar[];
   hidden: ReadonlySet<string>;
@@ -71,6 +75,7 @@ export default function CalendarListPanel({
   saveError: string | null;
   onSetVisible: (calendarIds: string[], visible: boolean) => void;
   onSetPurpose: (calendarId: string, purpose: CalendarPurpose | null) => void;
+  onSetPriority: (calendarId: string, priority: CalendarPriority) => void;
 }) {
   const t = useT();
   const words = t.calendarView;
@@ -89,7 +94,10 @@ export default function CalendarListPanel({
 
   return (
     <aside className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
-      <h2 className="font-semibold text-foreground">{words.listTitle}</h2>
+      <div className="flex items-center gap-1.5">
+        <h2 className="font-semibold text-foreground">{words.listTitle}</h2>
+        <InfoTip label={words.priorityHelpLabel}>{words.priorityHelp}</InfoTip>
+      </div>
       <p className="mt-1 text-xs text-muted-foreground">{words.listIntro}</p>
 
       <ul className="mt-3 divide-y">
@@ -182,7 +190,7 @@ export default function CalendarListPanel({
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 pl-[2.375rem]">
+                          <div className="flex flex-wrap items-center gap-2 pl-[2.375rem]">
                             {isBuiltIn ? (
                               // Holidays are always categorised as such; there is nothing to pick.
                               <span
@@ -208,6 +216,24 @@ export default function CalendarListPanel({
                                 {CATEGORIES.map((category) => (
                                   <option key={category} value={category}>
                                     {t.categories[category]}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            {/* Holidays have no priority: a day off blocks nothing. */}
+                            {!isBuiltIn && (
+                              <select
+                                value={c.priority ?? "normal"}
+                                disabled={saving}
+                                onChange={(e) =>
+                                  onSetPriority(c.id, e.target.value as CalendarPriority)
+                                }
+                                aria-label={words.priorityFor(nameOf(c))}
+                                className="rounded-lg border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                              >
+                                {PRIORITIES.map((priority) => (
+                                  <option key={priority} value={priority}>
+                                    {words.priorities[priority]}
                                   </option>
                                 ))}
                               </select>

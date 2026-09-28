@@ -101,11 +101,15 @@ export const da = {
     fewerFree: "Færre ledige",
     moreFree: "Flere ledige",
     freeWithTimeOff: "kun ledig med fri",
+    freeIfSkipping: "kun ledig ved at springe over",
     best: "Bedst",
     cellTitle: (free: number, total: number, needTimeOff: number) =>
       `${free} af ${total} kan${needTimeOff > 0 ? `, ${needTimeOff} skal have fri` : ""}`,
+    cellTitleSkip: (free: number, total: number, skipping: number) =>
+      `${free} af ${total} kan${skipping > 0 ? `, ${skipping} skal springe noget over` : ""}`,
     cellFree: " ledige",
     cellWork: (n: number) => ` · ${n} arbejde`,
+    cellSkip: (n: number) => ` · ${n} afbud`,
     noVacation: (n: number) =>
       `Der er ingen periode på ${days(n)}, hvor hele gruppen kan. Prøv færre dage eller en anden gruppe.`,
     noTrip:
@@ -128,6 +132,10 @@ export const da = {
     ) => string,
     youApprovedTimeOff: " Du har godkendt at tage fri.",
     worksForEveryone: "Passer alle",
+    worksIfSkipping: "Passer, hvis der springes over",
+    youSkip: (titles: string) => `Du springer ${titles} over. `,
+    othersSkip: (names: string) => `${names} springer noget over. `,
+    skipWhy: "Ingen dato inden for en uge passer uden.",
     youApprovedDates: "Du har godkendt at tage fri på de datoer.",
     suggestionFits: (requested: number, needsTimeOff: boolean, fits: number, span: string, extra: string) => (
       <>
@@ -446,6 +454,16 @@ export const da = {
     inView: (n: number) => `${n} i denne visning`,
     builtInNoAccount: "Indbygget, kræver ingen konto",
     categoryFor: (name: string) => `Kategori for ${name}`,
+    priorityFor: (name: string) => `Hvor vigtig er ${name}`,
+    priorities: {
+      skip: "Kan springes over",
+      normal: "Normal",
+      never: "Spring aldrig over",
+    },
+    priorityHelp:
+      "Kan springes over: Casy må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden. Normal: optaget, men til ture og ferier kan du tage fri fra arbejde og skole. Spring aldrig over: optaget, også når der planlægges ture.",
+    priorityHelpLabel: "Hvad betyder det?",
+    couldntSavePriority: "Kunne ikke gemme, hvor vigtig kalenderen er",
   },
   signIn: {
     title: "Log ind",

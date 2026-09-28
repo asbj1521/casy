@@ -3,10 +3,11 @@ import {
   findBestDaySpan,
   findEarliestDaySpan,
   findEarliestSlot,
+  findMeetingSlot,
   findVacationSuggestions,
   findWeeklySpan,
 } from "@/lib/availability";
-import type { Event, EventCategory, Participant } from "@/types";
+import type { CalendarPriority, Event, EventCategory, Participant } from "@/types";
 
 /**
  * Tests for the availability engine.
@@ -826,5 +827,173 @@ describe("searching in Copenhagen time", () => {
     );
     expect(slot?.start).toBe("2026-06-25T22:00:00.000Z");
     expect(conflicts).toEqual([]);
+  });
+});
+
+describe("calendar priorities", () => {
+  /** A participant whose blocks each carry a priority (and maybe a category). */
+  function withPriorities(
+    name: string,
+    busy: Array<[string, string, CalendarPriority, EventCategory?]>,
+  ): Participant {
+    return {
+      profileId: name.toLowerCase(),
+      name,
+      busy: busy.map(([start, end, priority, category]) => ({ start, end, priority, category })),
+    };
+  }
+
+  /** A 12:00-13:00 lunch on the given June/July 2026 date ("2026-06-22"). */
+  const lunch = (date: string): [string, string] => [`${date}T12:00:00.000Z`, `${date}T13:00:00.000Z`];
+
+  /** A lunch search over three weeks from Monday 22 June. */
+  function lunchEvent(participants: Participant[]): Event {
+    return makeEvent({
+      participants,
+      searchStart: "2026-06-22T00:00:00.000Z",
+      searchEnd: "2026-07-13T00:00:00.000Z",
+      constraints: { earliestHour: 12, latestHour: 13 },
+    });
+  }
+
+  /** Bob's ordinary (normal-priority) lunches on each of the given dates. */
+  const bobBusyOn = (dates: string[]) =>
+    makeParticipant("Bob", dates.map((d) => lunch(d)));
+
+  describe("findMeetingSlot", () => {
+    it("is the plain search when nobody marked anything skippable", () => {
+      const event = lunchEvent([bobBusyOn(["2026-06-22"])]);
+
+      expect(findMeetingSlot(event)).toEqual({
+        slot: findEarliestSlot(event).slot,
+        conflicts: [],
+      });
+    });
+
+    it("schedules over school both people would skip when there is no other lunch", () => {
+      // Every weekday lunch clashes with school for one of them, weekends too.
+      const days = Array.from({ length: 21 }, (_, i) =>
+        new Date(Date.UTC(2026, 5, 22 + i)).toISOString().slice(0, 10),
+      );
+      const alice = withPriorities(
+        "Alice",
+        days.filter((_, i) => i % 2 === 0).map((d) => [...lunch(d), "skip", "school"]),
+      );
+      const bob = withPriorities(
+        "Bob",
+        days.filter((_, i) => i % 2 === 1).map((d) => [...lunch(d), "skip", "school"]),
+      );
+
+      const { slot, conflicts } = findMeetingSlot(lunchEvent([alice, bob]));
+
+      expect(slot).toEqual({ start: "2026-06-22T12:00:00.000Z", end: "2026-06-22T13:00:00.000Z" });
+      expect(conflicts.map((c) => c.name)).toEqual(["Alice"]);
+      expect(conflicts[0].events).toHaveLength(1);
+    });
+
+    it("waits for a date nobody skips for when it is at most a week later", () => {
+      // Alice would skip Monday's lecture; Bob is busy Tue-Sun; the next
+      // Monday, exactly a week on, is clean.
+      const alice = withPriorities("Alice", [[...lunch("2026-06-22"), "skip"]]);
+      const bob = bobBusyOn([
+        "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28",
+      ]);
+
+      const { slot, conflicts } = findMeetingSlot(lunchEvent([alice, bob]));
+
+      expect(slot?.start).toBe("2026-06-29T12:00:00.000Z");
+      expect(conflicts).toEqual([]);
+    });
+
+    it("skips rather than wait more than a week", () => {
+      // As above, but Bob is also busy that next Monday: the clean date is
+      // now eight days out, so Alice skipping Monday's lecture wins.
+      const alice = withPriorities("Alice", [[...lunch("2026-06-22"), "skip"]]);
+      const bob = bobBusyOn([
+        "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28",
+        "2026-06-29",
+      ]);
+
+      const { slot, conflicts } = findMeetingSlot(lunchEvent([alice, bob]));
+
+      expect(slot?.start).toBe("2026-06-22T12:00:00.000Z");
+      expect(conflicts).toEqual([
+        { profileId: "alice", name: "Alice", events: [alice.busy[0]] },
+      ]);
+    });
+
+    it("never skips a normal or never-skip block, even if a skippable one overlaps it", () => {
+      const alice = withPriorities("Alice", [
+        [...lunch("2026-06-22"), "skip"],
+        [...lunch("2026-06-22"), "normal"],
+        [...lunch("2026-06-23"), "never"],
+      ]);
+
+      const { slot, conflicts } = findMeetingSlot(lunchEvent([alice]));
+
+      expect(slot?.start).toBe("2026-06-24T12:00:00.000Z");
+      expect(conflicts).toEqual([]);
+    });
+  });
+
+  describe("trips and vacations", () => {
+    it("lets a skippable calendar through without asking anyone for time off", () => {
+      const alice = withPriorities("Alice", [
+        // All-day and work: normally a hard block and a conflict respectively.
+        ["2026-06-01T00:00:00.000Z", "2026-06-02T00:00:00.000Z", "skip"],
+        ["2026-06-02T09:00:00.000Z", "2026-06-02T17:00:00.000Z", "skip", "work"],
+      ]);
+
+      const result = findEarliestDaySpan(
+        [alice],
+        3,
+        "2026-06-01T00:00:00.000Z",
+        "2026-06-10T00:00:00.000Z",
+        TZ,
+      );
+
+      expect(result.slot?.start).toBe("2026-06-01T00:00:00.000Z");
+      expect(result.conflicts).toEqual([]);
+    });
+
+    it("never takes time off a never-skip calendar, however short", () => {
+      const alice = withPriorities("Alice", [
+        // A one-hour exam: a plain short plan wouldn't count for a vacation.
+        ["2026-06-02T09:00:00.000Z", "2026-06-02T10:00:00.000Z", "never"],
+        // Work marked never-skip: normally just a conflict to approve.
+        ["2026-06-04T09:00:00.000Z", "2026-06-04T17:00:00.000Z", "never", "work"],
+      ]);
+
+      const result = findEarliestDaySpan(
+        [alice],
+        2,
+        "2026-06-01T00:00:00.000Z",
+        "2026-06-10T00:00:00.000Z",
+        TZ,
+      );
+
+      // Mon 1 + Tue 2 is out (the exam), so is anything touching Thu 4.
+      expect(result.slot).toEqual({
+        start: "2026-06-05T00:00:00.000Z",
+        end: "2026-06-07T00:00:00.000Z",
+      });
+      expect(result.conflicts).toEqual([]);
+    });
+
+    it("skips a weekend with a never-skip block on it", () => {
+      const alice = withPriorities("Alice", [
+        ["2026-06-06T10:00:00.000Z", "2026-06-06T12:00:00.000Z", "never"],
+      ]);
+
+      const result = findWeeklySpan(
+        [alice],
+        { anchorDow: 5, spanDays: 3, startHour: 17, endHour: 21 },
+        "2026-06-01T00:00:00.000Z",
+        "2026-06-30T00:00:00.000Z",
+        TZ,
+      );
+
+      expect(result.slot?.start).toBe("2026-06-12T17:00:00.000Z");
+    });
   });
 });

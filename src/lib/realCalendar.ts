@@ -30,7 +30,8 @@ const CATEGORY_FOR_PURPOSE: Partial<Record<string, EventCategory>> = {
  * The person's blocks in the engine's shape. The calendar's own name goes in
  * `title`, which is what the approval banner shows ("you have Work in your
  * calendar"): the person's own label for their own calendar, never an event
- * title, since none are stored.
+ * title, since none are stored. Its priority comes along too, left out when
+ * normal, the same as the groups function sends it.
  */
 export function busyFromCalendars(data: OverviewData): BusyInterval[] {
   const byId = new Map(data.calendars.map((c) => [c.id, c]));
@@ -44,6 +45,7 @@ export function busyFromCalendars(data: OverviewData): BusyInterval[] {
       calendarId: b.calendarId,
       title: cal.name,
       category: cal.purpose ? CATEGORY_FOR_PURPOSE[cal.purpose] : undefined,
+      ...(cal.priority === "skip" || cal.priority === "never" ? { priority: cal.priority } : {}),
     });
   }
   return busy;

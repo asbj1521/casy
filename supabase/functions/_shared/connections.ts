@@ -6,8 +6,9 @@
  * account_label is the email the provider reported. Connecting the same
  * account again therefore replaces its old connection rather than adding a
  * second copy; connecting a different account simply adds a row. Categories
- * the user set on the old connection's calendars (work, school, ...) are
- * carried over to the new one, matched by the provider's calendar id.
+ * (work, school, ...) and priorities the user set on the old connection's
+ * calendars are carried over to the new one, matched by the provider's
+ * calendar id.
  */
 import type { supabaseAdmin } from "./supabaseAdmin.ts";
 
@@ -17,10 +18,11 @@ import type { supabaseAdmin } from "./supabaseAdmin.ts";
 const STALE_PENDING_MS = 10 * 60_000;
 
 /**
- * Copy calendar categories (calendar_sources.purpose) from connections that
- * are about to be deleted onto the calendars of their replacement, matching by
- * external_calendar_id. If several old connections disagree, the newest wins.
- * Never throws: losing a category is a nuisance, not a reason to fail.
+ * Copy calendar categories and priorities (calendar_sources.purpose and
+ * .priority) from connections that are about to be deleted onto the calendars
+ * of their replacement, matching by external_calendar_id. If several old
+ * connections disagree, the newest wins. Never throws: losing a category is a
+ * nuisance, not a reason to fail.
  */
 export async function carryOverPurposes(
   db: ReturnType<typeof supabaseAdmin>,
@@ -31,9 +33,9 @@ export async function carryOverPurposes(
   try {
     const { data: oldSources, error: oldErr } = await db
       .from("calendar_sources")
-      .select("external_calendar_id, purpose")
+      .select("external_calendar_id, purpose, priority")
       .in("connection_id", fromConnectionIds)
-      .not("purpose", "is", null)
+      .or("purpose.not.is.null,priority.neq.normal")
       .order("created_at", { ascending: true });
     if (oldErr) throw oldErr;
     if (!oldSources || oldSources.length === 0) return;
@@ -44,12 +46,15 @@ export async function carryOverPurposes(
       .eq("connection_id", toConnectionId);
     if (newErr) throw newErr;
 
-    const wanted = new Map<string, string>(); // later rows overwrite earlier ones
-    for (const o of oldSources) wanted.set(o.external_calendar_id, o.purpose);
+    // Later rows overwrite earlier ones.
+    const wanted = new Map<string, { purpose: string | null; priority: string }>();
+    for (const o of oldSources) {
+      wanted.set(o.external_calendar_id, { purpose: o.purpose, priority: o.priority });
+    }
     for (const n of newSources ?? []) {
-      const purpose = wanted.get(n.external_calendar_id);
-      if (!purpose) continue;
-      const { error } = await db.from("calendar_sources").update({ purpose }).eq("id", n.id);
+      const labels = wanted.get(n.external_calendar_id);
+      if (!labels) continue;
+      const { error } = await db.from("calendar_sources").update(labels).eq("id", n.id);
       if (error) throw error;
     }
   } catch (err) {

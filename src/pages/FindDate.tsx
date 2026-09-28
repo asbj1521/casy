@@ -668,10 +668,23 @@ export default function FindDate() {
   const suggestedThis = suggestIsForThis && suggestMutation.isSuccess;
   const suggestError =
     suggestIsForThis && suggestMutation.isError ? suggestMutation.error.message : null;
+  // A single meeting that needs someone to skip something they marked
+  // skippable: what you'd skip, and who else would skip something.
+  const skipConflicts = !isMultiDay && activeSlot ? (result?.conflicts ?? []) : [];
+  const yourSkip = skipConflicts.find((c) => c.profileId === youProfileId) ?? null;
+  const othersSkipping = skipConflicts.filter((c) => c.profileId !== youProfileId);
+  const monthHasSkipping =
+    !isMultiDay && !!monthGrid?.weeks.some((w) => w.some((c) => c.conditionalCount > 0));
+
   // Unique titles of your own conflicting commitments: a generated title like
   // "Arbejde", or with real data the name of the calendar, e.g. "Work".
   const selfConflictTitles = selfConflict
     ? [...new Set(selfConflict.events.map((e) => e.title ?? t.scheduler.aCommitment))]
+        .slice(0, 3)
+        .join(", ")
+    : "";
+  const yourSkipTitles = yourSkip
+    ? [...new Set(yourSkip.events.map((e) => e.title ?? t.scheduler.aCommitment))]
         .slice(0, 3)
         .join(", ")
     : "";
@@ -956,6 +969,7 @@ export default function FindDate() {
                                 bestTimeLabel={bestTimeLabel}
                                 todayDay={TODAY_DAY}
                                 timeZone={TZ}
+                                conditional={isMultiDay ? "timeOff" : "skip"}
                               />
                             )}
                           </motion.div>
@@ -999,13 +1013,18 @@ export default function FindDate() {
                   />
                 ))}
                 <span>{t.scheduler.moreFree}</span>
-                {isMultiDay && (
+                {/* Trips can always need time off; a meeting only shows the
+                    amber key when someone in the group marked a calendar
+                    skippable and it shows up this month. */}
+                {(isMultiDay || monthHasSkipping) && (
                   <>
                     <span
                       className="ml-3 h-3 w-5 rounded-sm"
                       style={{ backgroundColor: `rgba(${AMBER_RGB}, 0.5)` }}
                     />
-                    <span>{t.scheduler.freeWithTimeOff}</span>
+                    <span>
+                      {isMultiDay ? t.scheduler.freeWithTimeOff : t.scheduler.freeIfSkipping}
+                    </span>
                   </>
                 )}
               </div>
@@ -1080,6 +1099,33 @@ export default function FindDate() {
                               otherConflicts.length,
                             )}
                             {selfAccepted && t.scheduler.youApprovedTimeOff}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : skipConflicts.length > 0 ? (
+                    // A meeting that works once someone skips what they
+                    // marked skippable: no approval needed (they chose it),
+                    // but it says who, and why it's worth it.
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+                          <Check className="h-5 w-5" />
+                        </span>
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
+                            {t.scheduler.worksIfSkipping}
+                          </p>
+                          <p className="text-lg font-bold text-foreground">
+                            {slotLabel}
+                          </p>
+                          <p className="mt-0.5 text-sm text-amber-800">
+                            {yourSkip && t.scheduler.youSkip(yourSkipTitles)}
+                            {othersSkipping.length > 0 &&
+                              t.scheduler.othersSkip(
+                                nameList(othersSkipping.map((c) => c.name), lang),
+                              )}
+                            {t.scheduler.skipWhy}
                           </p>
                         </div>
                       </div>
