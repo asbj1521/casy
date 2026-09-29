@@ -203,6 +203,7 @@ export const da = {
     ),
     exampleSignedInLink: "Forbind en kalender",
     busyFailed: "Kunne ikke hente gruppens kalendere, så tiderne er ufuldstændige.",
+    noCalendars: "Ingen i gruppen har forbundet en kalender endnu, så der er ikke noget at søge i.",
     busyLoading: "Henter alles kalendere…",
     realTimes:
       "Tiderne kommer fra hvert medlems egne kalendere. Ingen kan se, hvad dine aftaler hedder.",

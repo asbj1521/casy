@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -26,7 +26,7 @@ import {
   type MultiDayResult,
   type VacationSuggestion,
 } from "@/lib/availability";
-import { findEventSlot } from "@/lib/eventSearch";
+import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import { buildMonthGrid } from "@/lib/heatmap";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { useAuth } from "@/context/auth";
@@ -103,6 +103,18 @@ const SEARCH_BASE =
   Date.parse(TODAY_DAY) > Date.parse(SEARCH_WINDOW.start)
     ? TODAY_DAY
     : SEARCH_WINDOW.start;
+
+/**
+ * Where a search begins: the day asked for, but for a meeting never a moment
+ * already gone, so at 20:00 today's 18:00 isn't offered. (The engine trims a
+ * day's window to the search start, and a window cut short no longer fits
+ * the meeting.) Trips and holidays are whole days and keep today.
+ */
+function searchStartFor(search: EventSettings, from: string | null): string {
+  const base = from ?? SEARCH_BASE;
+  if (search.kind !== "single") return base;
+  return new Date(Math.max(Date.parse(base), Date.now())).toISOString();
+}
 
 /** What the page opens on: an evening, every day; a weekend trip if switched. */
 const DEFAULT_SETTINGS: SchedulerSettings = {
@@ -228,22 +240,30 @@ export default function FindDate() {
 
   // What is being searched for, as data. The same settings travel with a
   // suggested event, so a decline re-runs exactly this search (eventSearch.ts).
-  const search = useMemo(() => settingsToSearch(sched), [sched]);
+  // The controls show a change at once; the search (a few to a few dozen ms,
+  // several times that on a slow phone) follows a beat later, so tapping +
+  // a few times in a row never stutters.
+  const deferredSched = useDeferredValue(sched);
+  const search = useMemo(() => settingsToSearch(deferredSched), [deferredSched]);
   const isMultiDay = search.kind !== "single";
 
   // The search itself, cheap and pure, so it simply follows the settings:
   // single meetings need the whole group free at that hour; multi-day spans
   // let work/school through as conflicts to review.
+  // Nothing to search until someone's calendar is in: while a real group's
+  // calendars load, if they fail, or if nobody has linked one, there are no
+  // participants, and "everyone" would be free today.
+  const searchable = !!activeGroup && !busyLoading && activeGroup.participants.length > 0;
   const found = useMemo<MultiDayResult | null>(() => {
-    if (!activeGroup) return null;
+    if (!activeGroup || !searchable) return null;
     return findEventSlot(
       activeGroup.participants,
       search,
-      searchFrom ?? SEARCH_BASE,
+      searchStartFor(search, searchFrom),
       SEARCH_WINDOW.end,
       TZ,
     );
-  }, [activeGroup, search, searchFrom]);
+  }, [activeGroup, searchable, search, searchFrom]);
   const activeSlot = found?.slot ?? null;
   const result = isMultiDay ? null : found;
   const multiResult = isMultiDay ? found : null;
@@ -298,12 +318,12 @@ export default function FindDate() {
 
   // The month, day by day, for the chart under the answer.
   const monthGrid = useMemo(() => {
-    if (!activeGroup) return null;
+    if (!activeGroup || !searchable) return null;
     const vm = localDate(viewMonth, TZ);
     return buildMonthGrid(activeGroup.participants, vm.year, vm.month, {
       timeZone: TZ,
-      startHour: sched.startHour,
-      durationMinutes: sched.durationMinutes,
+      startHour: deferredSched.startHour,
+      durationMinutes: deferredSched.durationMinutes,
       todayMs: Date.parse(TODAY_DAY),
       allowedDays: search.kind === "single" ? search.allowedDays : undefined,
       multiDay:
@@ -314,7 +334,7 @@ export default function FindDate() {
           : undefined,
       locale: LOCALE[lang],
     });
-  }, [lang, activeGroup, viewMonth, sched, search]);
+  }, [lang, activeGroup, searchable, viewMonth, deferredSched, search]);
 
   /** Back to the first date from today: any setting or group change does this. */
   function resetSearch() {
@@ -340,6 +360,19 @@ export default function FindDate() {
     setHistory((h) => [...h.slice(0, historyIndex + 1), dayIso]);
     setHistoryIndex(historyIndex + 1);
     setAcceptedSlot(null);
+  }
+
+  /**
+   * A day clicked in the chart. For a trip, any day of it means that trip:
+   * search from the day it starts (never before today), or clicking the
+   * Saturday of a free weekend would jump to the weekend after.
+   */
+  function pickDay(dayIso: string) {
+    if (search.kind !== "trip") return jumpTo(dayIso);
+    const day = Date.parse(dayIso);
+    const offset = (localDate(day, TZ).dow - search.shape.anchorDow + 7) % 7;
+    const start = Math.max(addDays(day, -offset, TZ), Date.parse(SEARCH_BASE));
+    jumpTo(new Date(start).toISOString());
   }
 
   /** Adopt a suggested workaround: shorter stay, anchored on its dates. */
@@ -488,8 +521,21 @@ export default function FindDate() {
   // The answer's tone: the plain "everyone can" in orange, or one of the
   // review states the old banner had, in their own colours.
   const conflicts = found?.conflicts ?? [];
-  const tone = !activeSlot
-    ? "none"
+  // Why there is nothing to search yet, if there isn't: said plainly, never
+  // as the red "no date works" box.
+  const waitingText = !activeGroup
+    ? t.common.loading
+    : busyLoading
+      ? t.scheduler.busyLoading
+      : activeGroup.participants.length === 0
+        ? busyFailed
+          ? t.scheduler.busyFailed
+          : t.scheduler.noCalendars
+        : null;
+  const tone = waitingText
+    ? "waiting"
+    : !activeSlot
+      ? "none"
     : isMultiDay && needsSelfApproval
       ? "approve"
       : isMultiDay && otherConflicts.length > 0
@@ -522,8 +568,9 @@ export default function FindDate() {
     );
 
   // Step back, step on, and send (or first accept the time off). Drawn in the
-  // answer card on wider screens and in the bottom bar on a phone.
-  const actionButtons = activeSlot && (
+  // answer card on wider screens and in the bottom bar on a phone. Still there
+  // after stepping past the last date, so the way back never disappears.
+  const actionButtons = tone !== "waiting" && (activeSlot || historyIndex > 0) && (
     <>
       <button
         type="button"
@@ -537,7 +584,8 @@ export default function FindDate() {
       <button
         type="button"
         onClick={handleFindNext}
-        className="h-12 min-w-0 flex-1 truncate rounded-xl border bg-card px-3 text-[15px] font-semibold text-foreground transition hover:bg-secondary sm:flex-none sm:px-4"
+        disabled={!activeSlot}
+        className="h-12 min-w-0 flex-1 truncate rounded-xl border bg-card px-3 text-[15px] font-semibold text-foreground transition hover:bg-secondary disabled:opacity-30 sm:flex-none sm:px-4"
       >
         <span className="sm:hidden">{t.scheduler.nextShort}</span>
         <span className="hidden sm:inline">{t.scheduler.nextOption}</span>
@@ -545,7 +593,7 @@ export default function FindDate() {
       {tone === "approve" ? (
         <button
           type="button"
-          onClick={() => setAcceptedSlot(activeSlot.start)}
+          onClick={() => setAcceptedSlot(activeSlot?.start ?? null)}
           className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 text-[15px] font-bold text-white transition hover:bg-amber-700 sm:flex-none sm:px-5"
         >
           <Check className="h-5 w-5 shrink-0" />
@@ -613,19 +661,28 @@ export default function FindDate() {
               tone === "none" && "border-rose-200 bg-rose-50",
               (tone === "approve" || tone === "skip") && "border-amber-300 bg-amber-50",
               tone === "review" && "border-sky-200 bg-sky-50",
-              tone === "clean" && "bg-card",
+              (tone === "clean" || tone === "waiting") && "bg-card",
             )}
           >
-            {tone === "none" ? (
-              <p className="text-base text-rose-800">
-                {!activeGroup
-                  ? t.common.loading
-                  : search.kind === "vacation"
+            {tone === "waiting" ? (
+              <p className="flex items-center gap-2.5 text-base text-muted-foreground">
+                {(!activeGroup || busyLoading) && <Loader2 className="h-5 w-5 shrink-0 animate-spin" />}
+                {waitingText}
+              </p>
+            ) : tone === "none" ? (
+              <>
+                <p className="text-base text-rose-800">
+                  {search.kind === "vacation"
                     ? t.scheduler.noVacation(search.days)
                     : search.kind === "trip"
                       ? t.scheduler.noTrip
-                      : t.scheduler.noSingle(`${String(sched.startHour).padStart(2, "0")}:00`)}
-              </p>
+                      : t.scheduler.noSingle(`${String(deferredSched.startHour).padStart(2, "0")}:00`)}
+                </p>
+                {/* Stepped past the last date: the way back stays. */}
+                {actionButtons && (
+                  <div className="mt-4 hidden items-center gap-2 sm:flex">{actionButtons}</div>
+                )}
+              </>
             ) : (
               <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
@@ -752,7 +809,7 @@ export default function FindDate() {
               canNext={viewMonth < MAX_MONTH}
               onPrev={() => pageMonth(-1)}
               onNext={() => pageMonth(1)}
-              onPickDay={jumpTo}
+              onPickDay={pickDay}
               conditionalKind={isMultiDay ? "timeOff" : "skip"}
             />
           )}
@@ -771,7 +828,7 @@ export default function FindDate() {
                     <span>
                       {s.conflicts.length === 0
                         ? t.scheduler.suggestionFits(
-                            sched.days,
+                            deferredSched.days,
                             !!multiResult?.slot,
                             s.days,
                             formatDaySpan(s.slot.start, s.slot.end, lang),

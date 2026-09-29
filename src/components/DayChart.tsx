@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
  * Days that aren't searched, and days already gone, are flat grey stubs.
  *
  * Built from the same month grid the calendar view used (heatmap.ts), so the
- * numbers are the ones the search is based on. A bar you can click moves the
- * answer to the first date from that day.
+ * numbers are the ones the search is based on. Clicking a day the whole
+ * group can make moves the answer there.
  */
 export default function DayChart({
   grid,
@@ -106,6 +106,9 @@ export default function DayChart({
       >
         {days.map((c) => {
           const dead = c.excluded || c.isPast;
+          // Only a day the whole group can make (some by skipping or taking
+          // time off) moves the answer; any other would land on the same one.
+          const pickable = !dead && c.total > 0 && c.freeCount + c.conditionalCount >= c.total;
           const best = bestDays.has(c.date);
           const freeH = dead ? 0 : c.freeCount / Math.max(c.total, 1);
           const condH = dead ? 0 : c.conditionalCount / Math.max(c.total, 1);
@@ -114,10 +117,14 @@ export default function DayChart({
               key={c.date}
               type="button"
               disabled={dead}
-              onClick={() => onPickDay(c.date)}
+              aria-disabled={!pickable}
+              onClick={() => pickable && onPickDay(c.date)}
               title={dead ? undefined : describe(c)}
               aria-label={`${c.dayOfMonth}. ${dead ? t.scheduler.legendOff : describe(c)}`}
-              className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1 disabled:cursor-default"
+              className={cn(
+                "group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1",
+                pickable ? "cursor-pointer" : "cursor-default",
+              )}
             >
               {!dead && (
                 <span
@@ -144,7 +151,7 @@ export default function DayChart({
                       ? "h-1.5 rounded-t-[3px] bg-secondary"
                       : best
                         ? "bg-primary"
-                        : "bg-primary/30 group-hover:bg-primary/50",
+                        : cn("bg-primary/30", pickable && "group-hover:bg-primary/50"),
                   )}
                   style={dead ? undefined : { height: `max(3px, calc(var(--bar-max) * ${freeH}))` }}
                 />

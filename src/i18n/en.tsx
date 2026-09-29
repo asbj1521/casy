@@ -183,6 +183,7 @@ export const en: Messages = {
     ),
     exampleSignedInLink: "Connect a calendar",
     busyFailed: "Couldn't load this group's calendars, so these times are incomplete.",
+    noCalendars: "Nobody in the group has linked a calendar yet, so there is nothing to search.",
     busyLoading: "Loading everyone's calendars…",
     realTimes:
       "These times come from every member's own connected calendars. Nobody sees what your events are called.",
