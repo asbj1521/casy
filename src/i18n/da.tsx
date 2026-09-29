@@ -271,6 +271,9 @@ export const da = {
     statCalendars: "Kalendere",
     statBusy: "Optaget",
     connectedCalendars: "Forbundne kalendere",
+    onboardingTitle: "Forbind din kalender",
+    onboardingIntro:
+      "Så snart du har forbundet en kalender, kan Casy finde datoer, der passer for hele gruppen.",
     syncing: "Synkroniserer",
     syncNow: "Synkronisér nu",
     syncAllFresh: "Alt blev synkroniseret inden for det sidste minut.",

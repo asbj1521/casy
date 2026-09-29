@@ -1,13 +1,16 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, KeyRound, Loader2, Mail, XCircle } from "lucide-react";
 
+import { calendarStatusQuery } from "@/api/calendarStatus";
 import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
+import { hasSeenCalendarOnboarding } from "@/lib/calendarOnboarding";
 import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/passwordRules";
 import { supabase } from "@/lib/supabase";
 import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
@@ -93,6 +96,13 @@ export default function SignIn() {
     reset: resetCaptcha,
   } = useCaptcha(lang);
 
+  // Whether to route a freshly-signed-in person through "connect your
+  // calendar" first (see the redirect below) rather than send them straight
+  // on. Already warmed from localStorage for anyone who has visited before
+  // (see queryPersistence.ts), so this only waits on a network round trip
+  // the very first time a browser ever asks it.
+  const calendarStatus = useQuery({ ...calendarStatusQuery(user?.id ?? ""), enabled: !!user });
+
   if (loading) return <div className="min-h-screen bg-background" />;
 
   // Come back to this page, still carrying where to go afterwards.
@@ -146,7 +156,17 @@ export default function SignIn() {
     );
   }
 
-  if (user) return <Navigate to={next} replace />;
+  if (user) {
+    // Give calendarStatus a moment to answer before deciding where to send a
+    // freshly-signed-in person, so nobody is bounced to `next` and then
+    // immediately on again to the connect-a-calendar step.
+    if (calendarStatus.isLoading) return <div className="min-h-screen bg-background" />;
+    const hasCalendar = (calendarStatus.data?.length ?? 0) > 0;
+    if (!hasCalendar && !hasSeenCalendarOnboarding(user.id)) {
+      return <Navigate to="/profile?onboarding=1" replace />;
+    }
+    return <Navigate to={next} replace />;
+  }
 
   async function handleGoogle() {
     setError(null);

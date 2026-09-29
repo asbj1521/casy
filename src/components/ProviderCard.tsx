@@ -202,6 +202,7 @@ export default function ProviderCard({
   onAskRemove,
   onCancelRemove,
   onRemove,
+  highlightDelayMs,
   children,
 }: {
   meta: ProviderMeta;
@@ -219,6 +220,12 @@ export default function ProviderCard({
   onAskRemove: (connectionId: string) => void;
   onCancelRemove: () => void;
   onRemove: (connectionId: string) => void;
+  /**
+   * Nobody has connected a calendar yet: this card takes its turn glowing in
+   * the chase (see connect-highlight in index.css), starting this many ms
+   * into the cycle. Omitted (or null) once at least one calendar is linked.
+   */
+  highlightDelayMs?: number | null;
   children?: ReactNode;
 }) {
   const t = useT();
@@ -233,7 +240,13 @@ export default function ProviderCard({
         : t.providerCard.connect;
 
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+    <div
+      className={cn(
+        "rounded-2xl border bg-card p-4 shadow-sm sm:p-5",
+        highlightDelayMs != null && "animate-connect-highlight",
+      )}
+      style={highlightDelayMs != null ? { animationDelay: `${highlightDelayMs}ms` } : undefined}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span

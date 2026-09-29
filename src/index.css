@@ -36,3 +36,32 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+@layer utilities {
+  /* One card at a time glows and fades: with a 3.2s cycle and cards staggered
+     0.8s apart (see ProviderCard's highlightDelayMs), each card's own peak
+     (25% of its cycle) lands exactly when the next one's cycle starts, so the
+     glow visibly hands off from card to card instead of pulsing in unison. */
+  @keyframes connect-highlight {
+    0%,
+    75%,
+    100% {
+      border-color: hsl(var(--border));
+      box-shadow: none;
+    }
+    25% {
+      border-color: hsl(var(--primary) / 0.7);
+      box-shadow: 0 0 0 4px hsl(var(--primary) / 0.25);
+    }
+  }
+
+  .animate-connect-highlight {
+    animation: connect-highlight 3.2s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-connect-highlight {
+      animation: none;
+    }
+  }
+}

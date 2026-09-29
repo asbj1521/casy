@@ -250,6 +250,9 @@ export const en: Messages = {
     statCalendars: "Calendars",
     statBusy: "Busy blocks",
     connectedCalendars: "Connected calendars",
+    onboardingTitle: "Connect your calendar",
+    onboardingIntro:
+      "Once you connect a calendar, Casy can find dates that work for the whole group.",
     syncing: "Syncing",
     syncNow: "Sync now",
     syncAllFresh: "Everything was synced within the last minute.",

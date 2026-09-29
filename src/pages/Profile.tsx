@@ -30,6 +30,7 @@ import { displayName, useAuth } from "@/context/auth";
 import { authErrorMessage } from "@/i18n/authError";
 import { useT } from "@/i18n/lang";
 import { avatarColor } from "@/lib/avatar";
+import { markCalendarOnboardingSeen } from "@/lib/calendarOnboarding";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
 import { supabase } from "@/lib/supabase";
 import {
@@ -108,6 +109,7 @@ const PROVIDERS: (Omit<ProviderMeta, "label" | "help"> & { helpTo: string })[] =
  * the admin ever downloads its code.
  */
 const AdminPanel = lazy(() => import("@/components/AdminPanel"));
+
 
 /**
  * The "Connect calendars" section of the user's profile.
@@ -328,6 +330,15 @@ export default function Profile() {
     // Only run once per redirect landing, not on every searchParams identity change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectedParam, errorParam]);
+
+  // Arrived here straight from sign-in with no calendars connected yet (see
+  // SignIn.tsx). Marked seen at once so this device isn't sent back here
+  // every visit; the banner itself is shown below based on hasConnected,
+  // not this flag, so it also reappears if every calendar is later removed.
+  const onboarding = searchParams.get("onboarding") === "1";
+  useEffect(() => {
+    if (onboarding) markCalendarOnboardingSeen(user.id);
+  }, [onboarding, user.id]);
 
   const handleConnect = async (provider: CalendarProvider) => {
     if (provider === "google" || provider === "outlook") {
@@ -663,6 +674,17 @@ export default function Profile() {
           </Suspense>
         ) : (
           <>
+            {!hasConnected && (
+              <div className="mt-6 rounded-2xl border-2 border-primary/40 bg-primary/5 p-4 text-center sm:p-5">
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
+                  {t.profile.onboardingTitle}
+                </h2>
+                <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground sm:text-base">
+                  {t.profile.onboardingIntro}
+                </p>
+              </div>
+            )}
+
             {/* Connected calendars */}
             <section className="mt-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -703,7 +725,7 @@ export default function Profile() {
               <PrimaryCalendarCard connections={connections} />
 
               <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
-                {PROVIDERS.map(({ helpTo, ...provider }) => {
+                {PROVIDERS.map(({ helpTo, ...provider }, index) => {
                   const attempts = attemptsFor(connections, provider.id);
                   const words = t.providers[provider.id];
                   return (
@@ -720,6 +742,7 @@ export default function Profile() {
                       confirmRemoveId={confirmRemoveId}
                       removingId={removingId}
                       removeError={removeError}
+                      highlightDelayMs={hasConnected ? null : index * 800}
                       onConnect={() => void handleConnect(provider.id)}
                       onAskRemove={(id) => {
                         setRemoveError(null);
