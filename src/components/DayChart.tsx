@@ -133,7 +133,10 @@ export default function DayChart({
                     best ? "text-primary" : "text-muted-foreground",
                   )}
                 >
-                  {c.freeCount}
+                  {/* Matches the bar's full stacked height (green + amber),
+                      not just the outright-free count the green part alone
+                      shows. */}
+                  {c.freeCount + c.conditionalCount}
                 </span>
               )}
               <span className="flex w-full flex-col justify-end">
