@@ -110,8 +110,6 @@ export const en: Messages = {
     legendFree: "Free",
     legendOff: "Not searched",
     alsoPossible: "Also possible",
-    schedulingFor: "Scheduling for",
-    whatKind: "What kind of event",
     suggest: "Suggest this date",
     suggested: "Suggested",
     sent: (link: ReactNode) => <>Sent to the group. {link}.</>,
@@ -123,21 +121,13 @@ export const en: Messages = {
     hintAccept: "First accept taking the time off.",
     copyLink: "Copy link",
     copiedLink: "Copied!",
-    findBest: "Find best time",
     previousTime: "Previous recommended time",
-    nextTime: "Next recommended time",
-    fewerFree: "Fewer free",
-    moreFree: "More free",
     freeWithTimeOff: "free only with time off",
     freeIfSkipping: "free only by skipping",
-    best: "Best",
     cellTitle: (free: number, total: number, needTimeOff: number) =>
       `${free}/${total} can meet${needTimeOff > 0 ? `, ${needTimeOff} would need time off` : ""}`,
     cellTitleSkip: (free: number, total: number, skipping: number) =>
       `${free}/${total} can meet${skipping > 0 ? `, ${skipping} would skip something` : ""}`,
-    cellFree: " free",
-    cellWork: (n: number) => ` · ${n} work`,
-    cellSkip: (n: number) => ` · ${n} skipping`,
     noVacation: (n: number) =>
       `No stretch of ${days(n)} works for the whole group in this range. Try fewer days or another group.`,
     noTrip:
@@ -154,7 +144,6 @@ export const en: Messages = {
     othersMustApprove: (names: string, count: number) =>
       `${names} ${count === 1 ? "has" : "have"} work or school during these dates and must approve them.`,
     youApprovedTimeOff: " You have approved taking time off.",
-    worksForEveryone: "Works for everyone",
     worksIfSkipping: "Works if some skip",
     youSkip: (titles: string) => `You'd skip ${titles}. `,
     othersSkip: (names: string) => `${names} would skip something. `,
