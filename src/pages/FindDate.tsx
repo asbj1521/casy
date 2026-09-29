@@ -48,7 +48,7 @@ import { ALL_DOWS } from "@/lib/weekdays";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfMonth } from "@/lib/zone";
 import DayChart from "@/components/DayChart";
-import GroupPanel from "@/components/GroupPanel";
+import GroupPanel, { SignUpNudge } from "@/components/GroupPanel";
 import GroupSwitcher from "@/components/GroupSwitcher";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import { SettingsBar, SettingsSentence } from "@/components/SchedulerSettings";
@@ -887,82 +887,88 @@ export default function FindDate() {
         </div>
 
         {/* ───────── The group ───────── */}
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-          <section className="rounded-2xl border bg-card p-5 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-foreground">{t.scheduler.groupMembers}</h2>
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
-              >
-                {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-                {copied ? t.scheduler.copiedLink : t.scheduler.copyLink}
-              </button>
-            </div>
-            {/* Whose times are real. The example group is the only place
-                generated calendars are still used, and it says so. */}
-            <p className="mt-1 text-xs text-muted-foreground">
-              {activeGroup?.isExample ? (
-                !user ? (
-                  t.scheduler.exampleSignedOut(
-                    <Link to="/sign-in?next=/" className="font-medium text-foreground underline underline-offset-2">
-                      {t.scheduler.exampleSignedOutLink}
-                    </Link>,
-                  )
-                ) : myCalendarsFailed ? (
-                  t.scheduler.exampleCalendarsFailed
-                ) : (
-                  t.scheduler.exampleSignedIn(
-                    <Link to="/profile" className="font-medium text-foreground underline underline-offset-2">
-                      {t.scheduler.exampleSignedInLink}
-                    </Link>,
-                  )
-                )
-              ) : busyFailed ? (
-                t.scheduler.busyFailed
-              ) : busyLoading ? (
-                t.scheduler.busyLoading
-              ) : (
-                t.scheduler.realTimes
-              )}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {participants.map((p, i) => (
-                <span
-                  key={p.profileId}
-                  className="flex items-center gap-2 rounded-full border bg-card py-1 pl-1 pr-3"
+        {activeGroup && !activeGroup.isExample ? (
+          // A real group: one box with its members, where their times come
+          // from, and the invite and leave buttons.
+          <GroupPanel
+            group={activeGroup}
+            busyLoading={busyLoading}
+            inviteUrl={invite?.url ?? null}
+            inviteExpiresAt={invite?.expiresAt ?? null}
+            invitePending={inviteMutation.isPending}
+            inviteError={inviteMutation.error ? (inviteMutation.error as Error).message : null}
+            onInvite={() => inviteMutation.mutate(activeGroup.id)}
+            leavePending={leaveMutation.isPending}
+            onLeave={() => leaveMutation.mutate(activeGroup.id)}
+            note={
+              busyFailed
+                ? t.scheduler.busyFailed
+                : busyLoading
+                  ? t.scheduler.busyLoading
+                  : t.scheduler.realTimes
+            }
+          />
+        ) : (
+          // An example: who is in it and that it is made up, plus (signed
+          // out) the nudge to make a profile beside it.
+          <div
+            className={cn(
+              "grid gap-5 lg:items-start",
+              !user && "lg:grid-cols-[minmax(0,1fr)_22rem]",
+            )}
+          >
+            <section className="rounded-2xl border bg-card p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-sm font-semibold text-foreground">{t.scheduler.groupMembers}</h2>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
                 >
+                  {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                  {copied ? t.scheduler.copiedLink : t.scheduler.copyLink}
+                </button>
+              </div>
+              {/* The example group is the only place generated calendars are
+                  still used, and it says so. */}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {!user
+                  ? t.scheduler.exampleSignedOut(
+                      <Link to="/sign-in?next=/" className="font-medium text-foreground underline underline-offset-2">
+                        {t.scheduler.exampleSignedOutLink}
+                      </Link>,
+                    )
+                  : myCalendarsFailed
+                    ? t.scheduler.exampleCalendarsFailed
+                    : t.scheduler.exampleSignedIn(
+                        <Link to="/profile" className="font-medium text-foreground underline underline-offset-2">
+                          {t.scheduler.exampleSignedInLink}
+                        </Link>,
+                      )}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {participants.map((p, i) => (
                   <span
-                    className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
-                      avatarColor(i),
-                    )}
+                    key={p.profileId}
+                    className="flex items-center gap-2 rounded-full border bg-card py-1 pl-1 pr-3"
                   >
-                    {p.name.charAt(0)}
+                    <span
+                      className={cn(
+                        "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
+                        avatarColor(i),
+                      )}
+                    >
+                      {p.name.charAt(0)}
+                    </span>
+                    <span className="text-sm text-foreground">{p.name}</span>
                   </span>
-                  <span className="text-sm text-foreground">{p.name}</span>
-                </span>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
 
-          {activeGroup && (
-            <GroupPanel
-              group={activeGroup}
-              busyLoading={busyLoading}
-              inviteUrl={invite?.url ?? null}
-              inviteExpiresAt={invite?.expiresAt ?? null}
-              invitePending={inviteMutation.isPending}
-              inviteError={
-                inviteMutation.error ? (inviteMutation.error as Error).message : null
-              }
-              onInvite={() => inviteMutation.mutate(activeGroup.id)}
-              leavePending={leaveMutation.isPending}
-              onLeave={() => leaveMutation.mutate(activeGroup.id)}
-            />
-          )}
-        </div>
+            <SignUpNudge />
+          </div>
+        )}
       </div>
 
       {/* A phone's actions, pinned to the bottom of the screen while the page
