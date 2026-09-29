@@ -124,6 +124,7 @@ const DEFAULT_SETTINGS: SchedulerSettings = {
   dows: ALL_DOWS,
   days: 3,
   startDow: 5,
+  anyTime: false,
 };
 
 /** How many later dates the "Også muligt" row offers. */
@@ -324,6 +325,7 @@ export default function FindDate() {
       timeZone: TZ,
       startHour: deferredSched.startHour,
       durationMinutes: deferredSched.durationMinutes,
+      anyTime: deferredSched.anyTime,
       todayMs: Date.parse(TODAY_DAY),
       allowedDays: search.kind === "single" ? search.allowedDays : undefined,
       multiDay:
@@ -676,7 +678,9 @@ export default function FindDate() {
                     ? t.scheduler.noVacation(search.days)
                     : search.kind === "trip"
                       ? t.scheduler.noTrip
-                      : t.scheduler.noSingle(`${String(deferredSched.startHour).padStart(2, "0")}:00`)}
+                      : search.anyTime
+                        ? t.scheduler.noSingleAnyTime(t.common.duration(deferredSched.durationMinutes))
+                        : t.scheduler.noSingle(`${String(deferredSched.startHour).padStart(2, "0")}:00`)}
                 </p>
                 {/* Stepped past the last date: the way back stays. */}
                 {actionButtons && (

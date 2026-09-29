@@ -16,11 +16,26 @@ import {
 } from "@/lib/availability";
 import type { Participant } from "@/types";
 
+/**
+ * The hours "any time" may place a meeting within: not overnight, even for
+ * someone who happens to be free then. The longest selectable meeting
+ * (12 hours, see DURATION_VALUES in SchedulerSettings.tsx) exactly fills this
+ * window, so it never makes a fully-free day unreachable.
+ */
+export const ANY_TIME_EARLIEST_HOUR = 10;
+export const ANY_TIME_LATEST_HOUR = 22;
+
 export type EventSettings =
   | {
       kind: "single";
       durationMinutes: number;
       startHour: number;
+      /**
+       * Ignore startHour and search the day's 10:00-22:00 window for a free
+       * stretch this long, wherever it falls, instead of a fixed time
+       * everyone must be free at.
+       */
+      anyTime?: boolean;
       /** Local days of week to search (0 = Sun … 6 = Sat); omitted = every day. */
       allowedDays?: number[];
     }
@@ -51,15 +66,26 @@ export function findEventSlot(
         searchStart,
         searchEnd,
         timeZone,
-        constraints: {
-          // A fixed meeting time: the allowed window is exactly one meeting
-          // long, so only days the whole group is free at that hour qualify.
-          // Not capped at 24, so a night out can run past midnight.
-          earliestHour: settings.startHour,
-          latestHour: settings.startHour + settings.durationMinutes / 60,
-          excludeWeekends: false,
-          allowedDays: settings.allowedDays,
-        },
+        constraints: settings.anyTime
+          ? // Nobody cares what time it starts, but not the middle of the
+            // night: the allowed window is 10:00-22:00, and the engine finds
+            // the earliest free stretch long enough within it.
+            {
+              earliestHour: ANY_TIME_EARLIEST_HOUR,
+              latestHour: ANY_TIME_LATEST_HOUR,
+              excludeWeekends: false,
+              allowedDays: settings.allowedDays,
+            }
+          : {
+              // A fixed meeting time: the allowed window is exactly one
+              // meeting long, so only days the whole group is free at that
+              // hour qualify. Not capped at 24, so a night out can run past
+              // midnight.
+              earliestHour: settings.startHour,
+              latestHour: settings.startHour + settings.durationMinutes / 60,
+              excludeWeekends: false,
+              allowedDays: settings.allowedDays,
+            },
       });
     }
     case "trip":
@@ -80,6 +106,7 @@ export function isEventSettings(value: unknown): value is EventSettings {
       return (
         int(s.durationMinutes, 1, 24 * 60) &&
         int(s.startHour, 0, 23) &&
+        (s.anyTime === undefined || typeof s.anyTime === "boolean") &&
         (s.allowedDays === undefined ||
           (Array.isArray(s.allowedDays) && s.allowedDays.every((d) => int(d, 0, 6))))
       );

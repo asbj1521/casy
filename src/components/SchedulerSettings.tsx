@@ -5,6 +5,7 @@ import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
 import Popover from "@/components/Popover";
 import { DAY_END, DAY_START } from "@/api/mockData";
+import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { nameList } from "@/lib/myEvents";
 import {
@@ -38,6 +39,18 @@ export const MAX_NAME_LENGTH = 60;
 
 /** Stands for "any day" where a start day is picked from numbers. */
 const ANY_DAY = -1;
+/** Stands for "any time" atop the start-hour dropdown, same trick as ANY_DAY. */
+const ANY_TIME = -1;
+
+/** startsAt's options, "any time" first. */
+function startHourOptions(t: Messages) {
+  return [{ label: t.scheduler.anyTime, value: ANY_TIME }, ...START_OPTIONS];
+}
+
+/** Maps a startsAt pick back onto the settings, "any time" included. */
+function pickStartHour(value: number, onChange: (patch: Partial<SchedulerSettings>) => void) {
+  onChange(value === ANY_TIME ? { anyTime: true } : { startHour: value, anyTime: false });
+}
 
 interface Props {
   /** The group picker, drawn by the page (it knows the groups). */
@@ -241,9 +254,9 @@ export function SettingsBar({ groupSwitcher, name, onName, settings, onChange }:
         <>
           <Field label={t.scheduler.startsAt}>
             <Dropdown
-              value={settings.startHour}
-              options={START_OPTIONS}
-              onChange={(startHour) => onChange({ startHour })}
+              value={settings.anyTime ? ANY_TIME : settings.startHour}
+              options={startHourOptions(t)}
+              onChange={(value) => pickStartHour(value, onChange)}
               suffix={<ChevronDown className="h-4 w-4 text-muted-foreground" />}
               triggerClassName="inline-flex h-12 items-center gap-2 rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary"
             />
@@ -359,11 +372,13 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
           </>
         ) : (
           <>
-            <span>{t.scheduler.sentenceAt}</span>
+            {/* "Whenever, for 3h..." reads fine without a leading "at"; a
+                fixed hour still needs it ("at 18:00, for 3h..."). */}
+            {!settings.anyTime && <span>{t.scheduler.sentenceAt}</span>}
             <Dropdown
-              value={settings.startHour}
-              options={START_OPTIONS}
-              onChange={(startHour) => onChange({ startHour })}
+              value={settings.anyTime ? ANY_TIME : settings.startHour}
+              options={startHourOptions(t)}
+              onChange={(value) => pickStartHour(value, onChange)}
               triggerClassName={CHIP}
               suffix={chevron}
             />

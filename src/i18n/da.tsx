@@ -49,6 +49,7 @@ export const da = {
     nightout: "I byen",
     weekend: "Weekendtur",
     vacation: "Ferie",
+    meeting: "Hyggetime",
   },
   examples: {
     you: "Dig",
@@ -88,6 +89,7 @@ export const da = {
     name: "Hvad skal I",
     namePlaceholder: "Fx fredagsbar eller brætspil",
     startsAt: "Fra kl.",
+    anyTime: "Når som helst",
     duration: "Varighed",
     dayLabel: "Dage",
     tripToggle: "Tur / ferie",
@@ -144,6 +146,8 @@ export const da = {
       "Ingen uge har et ledigt tidsrum til turen for hele gruppen. Prøv at ændre, hvilke dage turen dækker.",
     noSingle: (time: string) =>
       `Intet tidspunkt kl. ${time} på de valgte dage passer hele gruppen. Prøv et andet starttidspunkt, en anden varighed eller flere dage.`,
+    noSingleAnyTime: (duration: string) =>
+      `Ingen dag har ${duration} i træk mellem kl. 10 og 22, som passer hele gruppen, på de valgte dage. Prøv en anden varighed eller flere dage.`,
     needsApproval: "Kræver din godkendelse",
     selfConflict: (titles: string) =>
       `De tidligste mulige datoer, men du har ${titles} i din kalender.`,

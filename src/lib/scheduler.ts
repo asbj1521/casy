@@ -33,6 +33,8 @@ export interface SchedulerSettings {
   startHour: number;
   durationMinutes: number;
   dows: number[];
+  /** One meeting: ignore startHour, search the whole day for a free window this long. */
+  anyTime: boolean;
   /** Tur / ferie: how many days, and the weekday it starts on (null = any day). */
   days: number;
   startDow: number | null;
@@ -60,6 +62,7 @@ export function settingsToSearch(s: SchedulerSettings): EventSettings {
     kind: "single",
     durationMinutes: s.durationMinutes,
     startHour: s.startHour,
+    anyTime: s.anyTime,
     allowedDays: s.dows.length < 7 ? s.dows : undefined,
   };
 }
@@ -72,6 +75,7 @@ export function settingsToSearch(s: SchedulerSettings): EventSettings {
 export function fallbackTitleId(search: EventSettings): keyof Messages["eventTypes"] {
   if (search.kind === "vacation") return "vacation";
   if (search.kind === "trip") return "weekend";
+  if (search.anyTime) return "meeting";
   return search.startHour < 16 ? "lunch" : "evening";
 }
 

@@ -57,6 +57,45 @@ describe("findEventSlot", () => {
     expect(conflicts).toEqual([{ profileId: "alice", name: "Alice", events: [skippable] }]);
   });
 
+  it("with anyTime, finds a free window wherever it falls instead of only at startHour", () => {
+    // Alice is busy from local midnight until 14:00 on Monday, then free the
+    // rest of the day. A fixed 18:00 start would also happen to work here,
+    // but anyTime should land on the earliest big-enough gap, 14:00, not wait
+    // for the chosen hour.
+    const alice: Participant = {
+      profileId: "alice",
+      name: "Alice",
+      busy: [{ start: "2026-06-22T00:00:00.000Z", end: "2026-06-22T14:00:00.000Z" }],
+    };
+    const { slot } = findEventSlot(
+      [alice],
+      { kind: "single", durationMinutes: 240, startHour: 18, anyTime: true },
+      START,
+      END,
+      TZ,
+    );
+    expect(slot).toEqual({ start: "2026-06-22T14:00:00.000Z", end: "2026-06-22T18:00:00.000Z" });
+  });
+
+  it("with anyTime, never suggests a start outside 10:00-22:00 even if free all night", () => {
+    // Alice is busy exactly across the allowed window on Monday, so Monday
+    // has no fit; Tuesday she's entirely free, and the fit should land at
+    // 10:00, not overnight even though she's free then too.
+    const alice: Participant = {
+      profileId: "alice",
+      name: "Alice",
+      busy: [{ start: "2026-06-22T10:00:00.000Z", end: "2026-06-22T22:00:00.000Z" }],
+    };
+    const { slot } = findEventSlot(
+      [alice],
+      { kind: "single", durationMinutes: 60, startHour: 18, anyTime: true },
+      START,
+      END,
+      TZ,
+    );
+    expect(slot).toEqual({ start: "2026-06-23T10:00:00.000Z", end: "2026-06-23T11:00:00.000Z" });
+  });
+
   it("only searches the allowed days of week", () => {
     const { slot } = findEventSlot(
       [person("Alice", [])],
@@ -107,6 +146,9 @@ describe("isEventSettings", () => {
       isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, allowedDays: [5, 6] }),
     ).toBe(true);
     expect(
+      isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, anyTime: true }),
+    ).toBe(true);
+    expect(
       isEventSettings({ kind: "trip", shape: { anchorDow: 5, spanDays: 3, startHour: 17, endHour: 21 } }),
     ).toBe(true);
     expect(isEventSettings({ kind: "vacation", days: 7 })).toBe(true);
@@ -118,6 +160,7 @@ describe("isEventSettings", () => {
     expect(isEventSettings({ kind: "single", durationMinutes: 90 })).toBe(false);
     expect(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 25 })).toBe(false);
     expect(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, allowedDays: [9] })).toBe(false);
+    expect(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, anyTime: "yes" })).toBe(false);
     expect(isEventSettings({ kind: "trip", shape: { anchorDow: 5 } })).toBe(false);
     expect(isEventSettings({ kind: "vacation", days: 0 })).toBe(false);
   });

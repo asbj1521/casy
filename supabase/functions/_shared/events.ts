@@ -27,6 +27,7 @@ export function isEventSettings(value: unknown): boolean {
       return (
         int(s.durationMinutes, 1, 24 * 60) &&
         int(s.startHour, 0, 23) &&
+        (s.anyTime === undefined || typeof s.anyTime === "boolean") &&
         (s.allowedDays === undefined ||
           (Array.isArray(s.allowedDays) &&
             s.allowedDays.length <= 7 &&

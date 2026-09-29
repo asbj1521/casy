@@ -18,6 +18,7 @@ const BASE: SchedulerSettings = {
   dows: [1, 2, 3, 4, 5, 6, 0],
   days: 3,
   startDow: 5,
+  anyTime: false,
 };
 
 describe("settingsToSearch", () => {
@@ -26,9 +27,17 @@ describe("settingsToSearch", () => {
       kind: "single",
       durationMinutes: 180,
       startHour: 18,
+      anyTime: false,
       allowedDays: undefined,
     });
     expect(settingsToSearch({ ...BASE, dows: [5, 6] })).toMatchObject({ allowedDays: [5, 6] });
+  });
+
+  it("carries anyTime through instead of the fixed start hour", () => {
+    expect(settingsToSearch({ ...BASE, anyTime: true })).toMatchObject({
+      kind: "single",
+      anyTime: true,
+    });
   });
 
   it("is a trip from a set weekday with the switch on", () => {
@@ -55,6 +64,9 @@ describe("fallbackTitleId", () => {
   it("names an unnamed event after its shape", () => {
     expect(fallbackTitleId({ kind: "single", durationMinutes: 60, startHour: 12 })).toBe("lunch");
     expect(fallbackTitleId({ kind: "single", durationMinutes: 60, startHour: 19 })).toBe("evening");
+    expect(
+      fallbackTitleId({ kind: "single", durationMinutes: 60, startHour: 12, anyTime: true }),
+    ).toBe("meeting");
     expect(fallbackTitleId({ kind: "vacation", days: 7 })).toBe("vacation");
     expect(
       fallbackTitleId({ kind: "trip", shape: { anchorDow: 5, spanDays: 3, startHour: 17, endHour: 21 } }),

@@ -41,6 +41,7 @@ export const en: Messages = {
     nightout: "Night out",
     weekend: "Weekend trip",
     vacation: "Vacation",
+    meeting: "Hangout",
   },
   examples: {
     you: "You",
@@ -79,6 +80,7 @@ export const en: Messages = {
     name: "What are you doing",
     namePlaceholder: "E.g. drinks or board games",
     startsAt: "Starts at",
+    anyTime: "Any time",
     duration: "Duration",
     dayLabel: "Days",
     tripToggle: "Trip / holiday",
@@ -134,6 +136,8 @@ export const en: Messages = {
       "No week has a free trip window for the whole group in this range. Try changing which days the trip covers.",
     noSingle: (time: string) =>
       `No time works for the whole group at ${time} on the selected days in this range. Try a different start time, duration, or more days.`,
+    noSingleAnyTime: (duration: string) =>
+      `No day has ${duration} free in a row between 10:00 and 22:00 that works for the whole group, on the selected days. Try a different duration or more days.`,
     needsApproval: "Needs your approval",
     selfConflict: (titles: string) =>
       `The earliest possible dates, but you have ${titles} in your calendar.`,

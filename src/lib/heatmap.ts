@@ -18,7 +18,8 @@ import {
   type WeeklySpanShape,
 } from "@/lib/availability";
 import { mondayFirstWeekdays } from "@/lib/dateLabels";
-import type { Participant } from "@/types";
+import { ANY_TIME_EARLIEST_HOUR, ANY_TIME_LATEST_HOUR } from "@/lib/eventSearch";
+import type { BusyInterval, Participant } from "@/types";
 import { addDays, atHour, localDate, startOfDay, wallTime } from "@/lib/zone";
 
 export interface DayCell {
@@ -103,14 +104,74 @@ function freeForMeetingOnDay(
   return { free, conditional };
 }
 
+/**
+ * The longest free stretch (ms) in [start, end) once blocks `skip` filters
+ * out are set aside — the building block for "is there room somewhere in the
+ * day", rather than "is this one exact window free".
+ */
+function longestGapMs(
+  busy: BusyInterval[],
+  start: number,
+  end: number,
+  skip: (b: BusyInterval) => boolean,
+): number {
+  const bounds: Array<{ start: number; end: number }> = [];
+  for (const b of busy) {
+    if (skip(b) || !blockOverlaps(b, start, end)) continue;
+    const s = Math.max(Date.parse(b.start), start);
+    const e = Math.min(Date.parse(b.end), end);
+    if (e > s) bounds.push({ start: s, end: e });
+  }
+  bounds.sort((a, b) => a.start - b.start);
+
+  let cursor = start;
+  let longest = 0;
+  for (const b of bounds) {
+    if (b.start > cursor) longest = Math.max(longest, b.start - cursor);
+    cursor = Math.max(cursor, b.end);
+  }
+  return Math.max(longest, end - cursor);
+}
+
+/**
+ * How many participants have room for a meeting of `durationMs` *somewhere*
+ * in [windowStart, windowEnd) — the day's allowed any-time hours, not the
+ * whole day: outright if a long-enough free stretch exists without touching
+ * anything skippable, conditional if it only opens up once skippable blocks
+ * are set aside.
+ */
+function freeAnyTimeOnDay(
+  participants: Participant[],
+  windowStart: number,
+  windowEnd: number,
+  durationMs: number,
+): { free: number; conditional: number } {
+  let free = 0;
+  let conditional = 0;
+  for (const p of participants) {
+    if (longestGapMs(p.busy, windowStart, windowEnd, () => false) >= durationMs) {
+      free++;
+    } else if (longestGapMs(p.busy, windowStart, windowEnd, isSkippable) >= durationMs) {
+      conditional++;
+    }
+  }
+  return { free, conditional };
+}
+
 /** How availability is computed for each day cell. */
 export interface MonthGridOptions {
   /** IANA zone the days, hours and weekdays are local to. */
   timeZone: string;
-  /** Local meeting start hour for single-day events, 0–23. */
+  /** Local meeting start hour for single-day events, 0–23. Unused if anyTime. */
   startHour: number;
   /** Meeting length in minutes (may cross midnight). */
   durationMinutes: number;
+  /**
+   * Single-day events only: ignore startHour and look for a free stretch of
+   * durationMinutes anywhere in the day's 10:00-22:00 window, instead of
+   * only at that exact hour.
+   */
+  anyTime?: boolean;
   /** Any instant "now", used to flag past days. */
   todayMs: number;
   /**
@@ -211,13 +272,14 @@ export function buildMonthGrid(
         } else if (allowedDays && !allowedDays.includes(dow)) {
           excluded = true;
         } else {
-          const a = freeForMeetingOnDay(
-            participants,
-            dayMidnight,
-            startHour,
-            durationMs,
-            timeZone,
-          );
+          const a = opts.anyTime
+            ? freeAnyTimeOnDay(
+                participants,
+                atHour(dayMidnight, ANY_TIME_EARLIEST_HOUR, timeZone),
+                atHour(dayMidnight, ANY_TIME_LATEST_HOUR, timeZone),
+                durationMs,
+              )
+            : freeForMeetingOnDay(participants, dayMidnight, startHour, durationMs, timeZone);
           freeCount = a.free;
           conditionalCount = a.conditional;
         }

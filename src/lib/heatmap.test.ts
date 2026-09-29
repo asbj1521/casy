@@ -160,6 +160,85 @@ describe("buildMonthGrid for a single meeting", () => {
   });
 });
 
+describe("buildMonthGrid with anyTime", () => {
+  it("finds a free stretch anywhere in the 10:00-22:00 window, not just at startHour", () => {
+    // Alice is busy all morning but free from 14:00; the chosen startHour
+    // (18:00) would also happen to work, but anyTime shouldn't need it to.
+    const people = [
+      makeParticipant("Alice", [
+        ["2026-06-03T00:00:00.000Z", "2026-06-03T14:00:00.000Z"],
+      ]),
+    ];
+
+    const grid = buildMonthGrid(
+      people,
+      YEAR,
+      JUNE,
+      makeOptions({ anyTime: true, durationMinutes: 240 }),
+    );
+
+    expect(cellFor(grid.weeks, 3).freeCount).toBe(1);
+  });
+
+  it("never counts a gap outside 10:00-22:00, even an all-night-free person", () => {
+    // Busy exactly across the allowed window; free all night, which doesn't count.
+    const people = [
+      makeParticipant("Alice", [
+        ["2026-06-03T10:00:00.000Z", "2026-06-03T22:00:00.000Z"],
+      ]),
+    ];
+
+    const grid = buildMonthGrid(
+      people,
+      YEAR,
+      JUNE,
+      makeOptions({ anyTime: true, durationMinutes: 60 }),
+    );
+
+    expect(cellFor(grid.weeks, 3).freeCount).toBe(0);
+  });
+
+  it("still reports busy when no gap in the window is long enough", () => {
+    const people = [
+      makeParticipant("Alice", [
+        ["2026-06-03T10:00:00.000Z", "2026-06-03T20:00:00.000Z"],
+      ]),
+    ];
+
+    // Only a 2h gap (20:00-22:00) is left in the window, but the meeting needs 4h.
+    const grid = buildMonthGrid(
+      people,
+      YEAR,
+      JUNE,
+      makeOptions({ anyTime: true, durationMinutes: 240 }),
+    );
+
+    expect(cellFor(grid.weeks, 3).freeCount).toBe(0);
+  });
+
+  it("counts someone free only by skipping as conditional", () => {
+    const bob: Participant = {
+      profileId: "bob",
+      name: "Bob",
+      busy: [
+        { start: "2026-06-03T10:00:00.000Z", end: "2026-06-03T20:00:00.000Z", priority: "skip" },
+      ],
+    };
+
+    // Without skipping, only a 2h gap remains in the window (20:00-22:00),
+    // not enough for a 10h meeting; skipping opens the whole 12h window.
+    const grid = buildMonthGrid(
+      [bob],
+      YEAR,
+      JUNE,
+      makeOptions({ anyTime: true, durationMinutes: 10 * 60 }),
+    );
+
+    expect(cellFor(grid.weeks, 3).freeCount).toBe(0);
+    expect(cellFor(grid.weeks, 3).conditionalCount).toBe(1);
+  });
+});
+
 describe("buildMonthGrid in vacation mode", () => {
   const windowEndMs = Date.parse("2027-01-01T00:00:00.000Z");
 
