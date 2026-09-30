@@ -92,9 +92,12 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
   const hasRealGroups = realGroups.length > 0;
 
   // The carousel only turns while the examples are what's on screen, and it
-  // stops for good the first time the person touches the page.
+  // stops for good the first time the person touches the page. Touching it
+  // picks the example on screen, so a page opened again with an example
+  // already picked (FindDate's pageMemory) starts with it stopped.
   const showingExamples = !realQuery.isLoading && !hasRealGroups;
-  const carousel = useExampleCarousel(EXAMPLE_GROUPS.length, showingExamples);
+  const examplePicked = EXAMPLE_GROUPS.some((g) => g.id === selectedGroupId);
+  const carousel = useExampleCarousel(EXAMPLE_GROUPS.length, showingExamples && !examplePicked);
   // Drawn once per mount, so the random real group stays put across renders.
   const [fallbackSeed] = useState(Math.random);
 

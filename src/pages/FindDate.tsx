@@ -86,6 +86,28 @@ function writeLastGroup(userId: string, groupId: string) {
   }
 }
 
+/** Where a step through the answers searched from (see `history` below). */
+type HistoryEntry = { from: string | null; day?: boolean };
+
+/**
+ * The page as it was left, so going to My calendar or the profile and back
+ * finds it just as you set it up: settings, name, group, the date stepped to
+ * and the month paged to. In memory only, never in storage, so a reload (or
+ * a new tab) starts afresh with new random settings. Per account, so someone
+ * signing in after you doesn't find your half-typed event.
+ */
+interface PageMemory {
+  userId: string | null;
+  name: string;
+  sched: SchedulerSettings;
+  selectedGroupId: string | null;
+  acceptedSlot: string | null;
+  history: HistoryEntry[];
+  historyIndex: number;
+  monthPick: { month: number; anchor: string | null } | null;
+}
+let pageMemory: PageMemory | null = null;
+
 /** Today as a local-midnight ISO (computed once), for "om 11 dage" and the chart. */
 const TODAY_DAY = dayOf(new Date().toISOString(), TZ);
 
@@ -125,44 +147,52 @@ const LATER_COUNT = 3;
 export default function FindDate() {
   const t = useT();
   const { lang } = useLang();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  // The page as this person left it earlier in this visit, if they did
+  // (pageMemory); otherwise it starts fresh, with random settings.
+  const [left] = useState(() => (pageMemory?.userId === userId ? pageMemory : null));
   const [copied, setCopied] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(left?.selectedGroupId ?? null);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   // What the event is called: only for the group to read, never searched on.
-  const [name, setName] = useState("");
-  const [sched, setSched] = useState<SchedulerSettings>(() => randomDefaultSettings());
+  const [name, setName] = useState(left?.name ?? "");
+  const [sched, setSched] = useState<SchedulerSettings>(() => left?.sched ?? randomDefaultSettings());
   // Multi-day spans with work/school conflicts need the user's sign-off; this
   // holds the slot start they accepted (null = nothing accepted yet).
-  const [acceptedSlot, setAcceptedSlot] = useState<string | null>(null);
+  const [acceptedSlot, setAcceptedSlot] = useState<string | null>(left?.acceptedSlot ?? null);
   // The answer follows the settings: history[0] is the first date from today
   // (null), and each later entry is where a step forward (or a picked day)
   // searched from. historyIndex is which one is on screen; back only replays.
   // Changing a setting starts over from today.
   // `day` marks a meeting day picked on purpose (the chart, a later date):
   // that very day is shown if it works at all, even by skipping.
-  const [history, setHistory] = useState<{ from: string | null; day?: boolean }[]>([{ from: null }]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+  const [history, setHistory] = useState<HistoryEntry[]>(left?.history ?? [{ from: null }]);
+  const [historyIndex, setHistoryIndex] = useState(left?.historyIndex ?? 0);
   const searchFrom = history[historyIndex]?.from ?? null;
   const pickedDay = !!history[historyIndex]?.day;
   // A month paged to by hand, remembered for the answer it was paged from:
   // once the answer moves, the chart follows it again.
   const [monthPick, setMonthPick] = useState<{ month: number; anchor: string | null } | null>(
-    null,
+    left?.monthPick ?? null,
   );
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Don't leave the "Copied!" timer running after the page goes away.
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
 
+  // Keep the page as it is for the next time it opens this visit (pageMemory).
+  useEffect(() => {
+    pageMemory = { userId, name, sched, selectedGroupId, acceptedSlot, history, historyIndex, monthPick };
+  }, [userId, name, sched, selectedGroupId, acceptedSlot, history, historyIndex, monthPick]);
+
   // Real groups and everyone's real busy time, or the labelled example group
   // for someone who has not made a group yet. See the hook for which is which.
-  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // The group you last scheduled for, read once your account is known. A
   // group picked on this visit wins; a remembered one that's gone falls back
   // to the first group, like any unknown id.
-  const userId = user?.id ?? null;
   const rememberedGroupId = useMemo(() => (userId ? readLastGroup(userId) : null), [userId]);
   const {
     groups,
