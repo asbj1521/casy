@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import type { MouseEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarCheck,
@@ -16,6 +17,7 @@ import { groupsQuery } from "@/api/groups";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useAuth } from "@/context/auth";
 import { useT } from "@/i18n/lang";
+import { goWithCard } from "@/lib/cardTransition";
 import { cn } from "@/lib/utils";
 
 /**
@@ -84,6 +86,15 @@ export default function TopNav() {
   // "Sign in" and is the one sign-in link in the bar.
   const signedOut = !loading && !user;
 
+  const loadSignIn = () => import("@/pages/SignIn");
+  // On the landing page, its chart card flies into the sign-in box
+  // (cardTransition.ts), as from the landing page's own "Sign in" link.
+  const signInFromLanding = (e: MouseEvent) => {
+    if (pathname !== "/" || user) return;
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (goWithCard(() => navigate("/sign-in"), loadSignIn)) e.preventDefault();
+  };
+
   const tabs: Tab[] = [
     // The logo also goes home, but that isn't obvious from Profile or My
     // events, so it gets its own labelled link like the others.
@@ -107,12 +118,15 @@ export default function TopNav() {
     },
     signedOut
       ? {
-          // Through /profile, so signing in lands you on your profile.
-          to: "/profile",
+          // Straight to sign-in, which then picks the scheduler or the
+          // profile by whether you have a calendar (SignIn.tsx).
+          to: "/sign-in",
           label: t.nav.signIn,
           short: t.nav.signIn,
           icon: LogIn,
           active: pathname === "/sign-in",
+          prefetch: () => void loadSignIn(),
+          onClick: signInFromLanding,
         }
       : {
           to: "/profile",
@@ -127,8 +141,9 @@ export default function TopNav() {
   return (
     // Edge to edge on every page, with the same responsive gutter as the
     // full-width pages' content, so the logo and links sit in the same place
-    // wherever you are.
-    <nav className="flex items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-5 lg:px-8">
+    // wherever you are. vt-top-nav: it holds still while the landing page
+    // turns into another page (cardTransition.ts).
+    <nav className="vt-top-nav flex items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-5 lg:px-8">
       <div className="flex items-center gap-2 sm:gap-3">
         <Link to="/" className="flex items-center">
           <span className="text-xl font-bold tracking-tight sm:text-2xl">casy</span>
@@ -145,6 +160,7 @@ export default function TopNav() {
             onMouseEnter={tab.prefetch}
             onFocus={tab.prefetch}
             onTouchStart={tab.prefetch}
+            onClick={tab.onClick}
             aria-current={tab.active ? "page" : undefined}
             className={cn(
               "flex min-w-12 flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[11px] max-[359px]:min-w-0 max-[359px]:px-0.5 max-[359px]:text-[10px] font-medium transition hover:text-foreground sm:min-w-0 sm:flex-row sm:gap-1.5 sm:p-0 sm:text-sm sm:font-normal",
@@ -194,5 +210,6 @@ interface Tab {
   icon: LucideIcon;
   active: boolean;
   prefetch?: () => void;
+  onClick?: (e: MouseEvent) => void;
   badge?: number;
 }

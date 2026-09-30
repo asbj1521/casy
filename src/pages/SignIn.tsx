@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useLayoutEffect, useState, type FormEvent } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, KeyRound, Loader2, Mail, XCircle } from "lucide-react";
@@ -10,6 +10,7 @@ import { useAuth } from "@/context/auth";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
+import { cardArrived } from "@/lib/cardTransition";
 import { hasSeenCalendarOnboarding } from "@/lib/calendarOnboarding";
 import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/passwordRules";
 import { supabase } from "@/lib/supabase";
@@ -58,6 +59,9 @@ export default function SignIn() {
   const { lang } = useLang();
   const [searchParams] = useSearchParams();
   const next = safeNext(searchParams.get("next"));
+  // Arriving from the landing page's "Sign in", its chart card flies into
+  // the box below (cardTransition.ts), which waits for this page to be drawn.
+  useLayoutEffect(cardArrived, []);
 
   const [mode, setMode] = useState<"link" | "password">("password");
   // A "Sign up" link elsewhere (e.g. the example-group nudge) can land here
@@ -387,7 +391,10 @@ export default function SignIn() {
           </div>
         )}
 
-        <div className="mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
+        {/* vt-card: where the landing chart lands (cardTransition.ts); its
+            contents fade in once it has. */}
+        <div className="vt-card mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
+          <div className="vt-card-content">
           <button
             type="button"
             onClick={() => void handleGoogle()}
@@ -620,6 +627,7 @@ export default function SignIn() {
               </span>
             </div>
           )}
+          </div>
         </div>
       </main>
     </div>

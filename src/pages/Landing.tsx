@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -17,6 +17,7 @@ import TopNav from "@/components/TopNav";
 import { useExampleCarousel } from "@/hooks/useExampleCarousel";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { barRiseDelay, RISE_FULL } from "@/lib/barRise";
+import { goWithCard } from "@/lib/cardTransition";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay } from "@/lib/zone";
 
@@ -185,7 +186,9 @@ function ChartDrawing() {
   const title = month.charAt(0).toUpperCase() + month.slice(1);
 
   return (
-    <div aria-hidden="true" className="rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-6 sm:pt-5">
+    // vt-card: the card that flies into the scheduler's chart ("Go to Casy")
+    // or the sign-in box ("Sign in"), see cardTransition.ts.
+    <div aria-hidden="true" className="vt-card rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-6 sm:pt-5">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <p className="text-[15px] font-bold text-foreground sm:text-lg">{t.scheduler.chartTitle(title)}</p>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -256,10 +259,27 @@ function ChartDrawing() {
   );
 }
 
+/**
+ * On to the scheduler, with the chart flying into place where it can
+ * (cardTransition.ts). Still a real link, so it opens in a new tab like one.
+ */
+/**
+ * The sign-in page's code, which App.tsx lazy-loads (same specifier, so the
+ * same chunk). Loaded on hover, and before the card flies (goWithCard's
+ * prepare), so the transition never waits on a download mid-flight.
+ */
+const loadSignIn = () => import("@/pages/SignIn");
+
 function GoButton({ label }: { label: string }) {
+  const navigate = useNavigate();
   return (
     <Link
       to="/plan"
+      onClick={(e) => {
+        // A new tab or window is the browser's business, not an animation's.
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (goWithCard(() => navigate("/plan"))) e.preventDefault();
+      }}
       className="flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 sm:px-8 sm:py-4 sm:text-lg"
     >
       {label}
@@ -270,6 +290,7 @@ function GoButton({ label }: { label: string }) {
 
 export default function Landing() {
   const { lang } = useLang();
+  const navigate = useNavigate();
   const c = lang === "da" ? da : en;
 
   return (
@@ -298,6 +319,13 @@ export default function Landing() {
                   <GoButton label={c.go} />
                   <Link
                     to="/sign-in"
+                    onMouseEnter={() => void loadSignIn()}
+                    onFocus={() => void loadSignIn()}
+                    onTouchStart={() => void loadSignIn()}
+                    onClick={(e) => {
+                      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                      if (goWithCard(() => navigate("/sign-in"), loadSignIn)) e.preventDefault();
+                    }}
                     className="text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline sm:text-base"
                   >
                     {c.signIn}

@@ -68,3 +68,70 @@
     }
   }
 }
+
+/*
+ * A card flying from one page into the next (src/lib/cardTransition.ts): the
+ * landing chart into the scheduler's chart or the sign-in box. Everything is
+ * under html.card-flight, which is only there while that transition runs.
+ * The timeline, from the click:
+ *   0-150ms    the old card's contents fade out of it
+ *   0-200ms    the rest of the old page fades out
+ *   0-550ms    the card moves and resizes into place (CARD_LANDS_S)
+ *   250-550ms  the rest of the new page fades in
+ *   450-700ms  the new card's contents fade in (the chart's bars rise after)
+ * The header is named too, so it holds still instead of fading.
+ */
+html.card-flight .vt-card {
+  view-transition-name: card;
+}
+html.card-flight .vt-card-content {
+  view-transition-name: card-content;
+}
+html.card-flight .vt-top-nav {
+  view-transition-name: top-nav;
+}
+
+/* The card is drawn by the group itself, which the browser resizes with
+   width and height rather than stretching a picture, so its corners and
+   border stay crisp at every size. Same look as the cards (bg-card, border,
+   rounded-2xl, shadow-sm); the border is an inset shadow so it takes no
+   room. */
+html.card-flight::view-transition-group(card) {
+  animation-duration: 550ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1rem;
+  background: hsl(var(--card));
+  box-shadow:
+    inset 0 0 0 1px hsl(var(--border)),
+    0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+html.card-flight::view-transition-old(card) {
+  animation: vt-fade-out 150ms ease-out both;
+}
+/* The new card is the group above, and its contents are captured on their
+   own (card-content), so this picture has nothing to add. */
+html.card-flight::view-transition-new(card) {
+  animation: none;
+  opacity: 0;
+}
+html.card-flight::view-transition-new(card-content) {
+  animation: vt-fade-in 250ms ease-out 450ms both;
+}
+
+html.card-flight::view-transition-old(root) {
+  animation: vt-fade-out 200ms ease-out both;
+}
+html.card-flight::view-transition-new(root) {
+  animation: vt-fade-in 300ms ease-out 250ms both;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}

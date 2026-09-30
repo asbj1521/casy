@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -11,6 +11,7 @@ import {
   type ChartMotion,
 } from "@/lib/barRise";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
+import { cardArrived, cardTransitionRunning, CARD_LANDS_S } from "@/lib/cardTransition";
 import type { DayCell, MonthGrid } from "@/lib/heatmap";
 import { cn } from "@/lib/utils";
 
@@ -92,7 +93,11 @@ export default function DayChart({
   const chartMotion = reduceMotion ? null : last.motion;
   const rise = chartMotion?.kind === "rise";
   const slide = { on: chartMotion?.kind === "slide", back: chartMotion?.kind === "slide" && chartMotion.back };
-  const riseDelay = (i: number) => barRiseDelay(i);
+  // Arriving from the landing page's "Go to Casy" (cardTransition.ts), the
+  // card is still flying into place: the bars wait until it has landed.
+  const [arriving] = useState(cardTransitionRunning);
+  useLayoutEffect(cardArrived, []);
+  const riseDelay = (i: number) => barRiseDelay(i, RISE_FULL, arriving ? CARD_LANDS_S : undefined);
   const riseTransition = (i: number) =>
     rise ? { duration: RISE_FULL.duration, delay: riseDelay(i), ease: "easeOut" as const } : { duration: 0 };
   // A settings change: each bar glides to its new height, and colours and
@@ -109,7 +114,11 @@ export default function DayChart({
   }
 
   return (
-    <section className="rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-7 sm:pt-5">
+    // The vt- classes name the card and its contents for the landing page's
+    // transition (cardTransition.ts, index.css): the card flies in, the
+    // contents fade in once it has landed.
+    <section className="vt-card rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-7 sm:pt-5">
+      <div className="vt-card-content">
       <FadeSwap swapKey={swapKey} playChildrenOnLoad>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -333,6 +342,7 @@ export default function DayChart({
       </AnimatePresence>
       </div>
       </FadeSwap>
+      </div>
     </section>
   );
 }
