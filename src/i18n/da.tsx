@@ -770,6 +770,11 @@ export const da = {
     theAccount: "Kontoen",
     syncedBlocks: (n: number) => `Synkroniseret: ${n === 1 ? "1 optaget tidsrum" : `${n} optagede tidsrum`}.`,
     syncFailed: "Synkroniseringen fejlede.",
+    syncUserTitle: (name: string) => `Synkronisér alle kalendere for ${name}`,
+    syncedUser: (ok: number, failed: number, blocks: number) =>
+      failed === 0
+        ? `Synkroniseret: ${ok === 1 ? "1 konto" : `${ok} konti`}, ${blocks === 1 ? "1 optaget tidsrum" : `${blocks} optagede tidsrum`}.`
+        : `${ok} af ${ok + failed} konti synkroniseret. Se Kalendersundhed for fejlen.`,
     couldntDeleteGroup: "Kunne ikke slette gruppen",
     couldntRemove: "Kunne ikke fjerne personen",
     couldntDeleteAccount: "Kunne ikke slette kontoen",

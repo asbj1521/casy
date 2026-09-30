@@ -747,6 +747,11 @@ export const en: Messages = {
     theAccount: "The account",
     syncedBlocks: (n: number) => `Synced: ${n === 1 ? "1 busy block" : `${n} busy blocks`}.`,
     syncFailed: "Sync failed.",
+    syncUserTitle: (name: string) => `Sync all calendars for ${name}`,
+    syncedUser: (ok: number, failed: number, blocks: number) =>
+      failed === 0
+        ? `Synced: ${ok === 1 ? "1 account" : `${ok} accounts`}, ${blocks === 1 ? "1 busy block" : `${blocks} busy blocks`}.`
+        : `${ok} of ${ok + failed} accounts synced. See Calendar health for the error.`,
     couldntDeleteGroup: "Couldn't delete the group",
     couldntRemove: "Couldn't remove them",
     couldntDeleteAccount: "Couldn't delete the account",

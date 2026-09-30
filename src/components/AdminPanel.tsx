@@ -19,6 +19,7 @@ import {
   adminOverviewQuery,
   adminRemoveMember,
   adminSyncConnection,
+  adminSyncUser,
   type AdminConnection,
   type AdminGroup,
   type AdminOverview,
@@ -223,6 +224,9 @@ function UserRow({
   onAsk,
   onCancel,
   onDelete,
+  syncing,
+  syncResult,
+  onSync,
 }: {
   user: AdminUser;
   index: number;
@@ -234,6 +238,11 @@ function UserRow({
   onAsk: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  /** Re-syncing all their calendar accounts right now. */
+  syncing: boolean;
+  /** How the last re-sync from here went, if there was one. */
+  syncResult: { ok: boolean; text: string } | undefined;
+  onSync: () => void;
 }) {
   const { lang } = useLang();
   const t = useT();
@@ -276,6 +285,11 @@ function UserRow({
             {t.admin.joined(formatDate(user.createdAt, lang))}
             {user.lastSignInAt && t.admin.lastSignIn(formatDate(user.lastSignInAt, lang))}
           </p>
+          {syncResult && (
+            <p className={cn("mt-0.5 text-xs", syncResult.ok ? "text-emerald-700" : "text-amber-700")}>
+              {syncResult.text}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 gap-4 text-right text-xs text-muted-foreground">
           <span>
@@ -294,6 +308,17 @@ function UserRow({
             {t.admin.calendarsLabel}
           </span>
         </div>
+        {/* Every account they've linked, synced now; nothing to do without one. */}
+        <button
+          type="button"
+          onClick={onSync}
+          disabled={syncing || user.calendars === 0}
+          title={t.admin.syncUserTitle(user.name)}
+          aria-label={t.admin.syncUserTitle(user.name)}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+        </button>
         {/* Never on your own row: the server refuses it too. */}
         {isYou ? (
           <span className="h-8 w-8 shrink-0" />
@@ -488,6 +513,31 @@ export default function AdminPanel({ youId }: { youId: string }) {
       setSyncResults((r) => ({ ...r, [connectionId]: { ok: false, text: messageOf(err, t.admin.syncFailed) } }));
     },
   });
+
+  // A person's sync can take a while (each account in turn), so several can
+  // run at once, each row spinning and reporting on its own.
+  const [syncingUsers, setSyncingUsers] = useState<ReadonlySet<string>>(new Set());
+  const [userSyncResults, setUserSyncResults] = useState<Record<string, { ok: boolean; text: string }>>({});
+  async function syncUser(userId: string) {
+    setSyncingUsers((s) => new Set(s).add(userId));
+    try {
+      const res = await adminSyncUser(userId);
+      setUserSyncResults((r) => ({
+        ...r,
+        [userId]: { ok: res.failed === 0, text: t.admin.syncedUser(res.synced, res.failed, res.busyBlocks) },
+      }));
+      void queryClient.invalidateQueries({ queryKey: adminOverviewKey(youId) });
+      if (userId === youId) void queryClient.invalidateQueries({ queryKey: ["calendar-status"] });
+    } catch (err) {
+      setUserSyncResults((r) => ({ ...r, [userId]: { ok: false, text: messageOf(err, t.admin.syncFailed) } }));
+    } finally {
+      setSyncingUsers((s) => {
+        const next = new Set(s);
+        next.delete(userId);
+        return next;
+      });
+    }
+  }
 
   function ask(next: Confirm) {
     deleteMutation.reset();
@@ -708,6 +758,9 @@ export default function AdminPanel({ youId }: { youId: string }) {
                     onAsk={() => askDeleteUser(u.id)}
                     onCancel={() => setConfirmUserId(null)}
                     onDelete={() => deleteUserMutation.mutate(u.id)}
+                    syncing={syncingUsers.has(u.id)}
+                    syncResult={userSyncResults[u.id]}
+                    onSync={() => syncUser(u.id)}
                   />
                 ))}
               </ul>

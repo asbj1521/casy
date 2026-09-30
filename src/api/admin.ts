@@ -128,6 +128,16 @@ export async function adminDeleteUser(
   });
 }
 
+/** Re-sync every connected calendar account of one person. */
+export async function adminSyncUser(
+  userId: string,
+): Promise<{ synced: number; failed: number; busyBlocks: number }> {
+  return await callFunction("admin", {
+    body: { action: "syncUser", userId },
+    errorMessage: currentMessages().api.adminSync,
+  });
+}
+
 export async function adminSyncConnection(
   connectionId: string,
 ): Promise<{ ok: boolean; message?: string; busyBlocks?: number }> {

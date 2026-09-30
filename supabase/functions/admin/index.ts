@@ -274,6 +274,41 @@ Deno.serve(withLanguage(async (req) => {
         return json(await syncConnection(db, target as SyncTarget, key));
       }
 
+      case "syncUser": {
+        // Every connected account of one person, like their own "Sync now"
+        // but without its cooldown: an admin asking means now.
+        const profileId = payload.userId;
+        if (typeof profileId !== "string") return json({ error: "userId is required" }, 400);
+        const { data: targets, error } = await db
+          .from("calendar_connections")
+          .select("id, provider")
+          .eq("profile_id", profileId)
+          .eq("status", "connected");
+        if (error) throw error;
+        let key: string;
+        try {
+          key = encryptionKeyFromEnv();
+        } catch (err) {
+          console.error("admin sync is not configured", err);
+          return json({ error: "Syncing isn't set up on the server yet." }, 500);
+        }
+        const { syncConnection } = await import("../_shared/sync.ts");
+        let synced = 0;
+        let failed = 0;
+        let busyBlocks = 0;
+        // One at a time, as the person's own sync does: a handful of
+        // accounts, and parallel calls only risk a provider's rate limit.
+        for (const target of (targets ?? []) as SyncTarget[]) {
+          const outcome = await syncConnection(db, target, key);
+          if (outcome.ok) {
+            synced++;
+            busyBlocks += outcome.busyBlocks;
+          } else failed++;
+        }
+        console.log(`admin ${caller.id} re-synced user ${profileId}: ${synced} ok, ${failed} failed`);
+        return json({ synced, failed, busyBlocks });
+      }
+
       default:
         return json({ error: `Unknown action "${action}"` }, 400);
     }
