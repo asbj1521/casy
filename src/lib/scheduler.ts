@@ -40,6 +40,37 @@ export interface SchedulerSettings {
   startDow: number | null;
 }
 
+/** A meeting the page may open on: start hour and length. */
+type MeetingPreset = Pick<SchedulerSettings, "startHour" | "durationMinutes">;
+
+/**
+ * Realistic starting points, one picked per page load so the first answer
+ * varies between visits. Curated rather than random per field, which would
+ * open on things like 03:00 for 11 hours. Weekdays stay all seven: a chart
+ * with a bar on every day reads far better than one or two bars a week.
+ */
+export const DEFAULT_PRESETS: readonly MeetingPreset[] = [
+  { startHour: 18, durationMinutes: 180 },
+  { startHour: 19, durationMinutes: 120 },
+  { startHour: 12, durationMinutes: 60 },
+  { startHour: 10, durationMinutes: 120 },
+  { startHour: 14, durationMinutes: 180 },
+  { startHour: 17, durationMinutes: 120 },
+];
+
+/** What the page opens on: a random preset meeting; a weekend trip if switched. */
+export function randomDefaultSettings(random: () => number = Math.random): SchedulerSettings {
+  const preset = DEFAULT_PRESETS[Math.floor(random() * DEFAULT_PRESETS.length)];
+  return {
+    multiDay: false,
+    ...preset,
+    dows: [...ALL_DOWS],
+    anyTime: false,
+    days: 3,
+    startDow: 5,
+  };
+}
+
 /**
  * The search the settings describe. With the switch on, a trip that starts
  * on a set weekday is a weekly span (leave after work, home in the evening);

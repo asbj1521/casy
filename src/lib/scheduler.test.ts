@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { formatLongDate, formatLongSpan } from "@/lib/format";
 import {
+  DEFAULT_PRESETS,
   daysUntil,
   describeDays,
   fallbackTitleId,
   laterSlots,
+  randomDefaultSettings,
   settingsToSearch,
   type SchedulerSettings,
 } from "@/lib/scheduler";
@@ -129,5 +131,35 @@ describe("formatLongDate / formatLongSpan", () => {
     expect(formatLongSpan(start, end, "da")).toBe("Fredag 9. oktober til søndag 11. oktober");
     expect(formatLongSpan(start, end, "en")).toBe("Friday 9 October to Sunday 11 October");
     expect(formatLongSpan(start, "2026-10-09T22:00:00.000Z", "da")).toBe("Fredag 9. oktober");
+  });
+});
+
+describe("randomDefaultSettings", () => {
+  it("keeps every preset within the settings dropdowns", () => {
+    for (const p of DEFAULT_PRESETS) {
+      expect(Number.isInteger(p.startHour) && p.startHour >= 0 && p.startHour < 24).toBe(true);
+      expect(p.durationMinutes % 30).toBe(0);
+      expect(p.durationMinutes).toBeGreaterThanOrEqual(30);
+      expect(p.durationMinutes).toBeLessThanOrEqual(720);
+      expect(p.startHour * 60 + p.durationMinutes).toBeLessThanOrEqual(24 * 60);
+    }
+  });
+
+  it("picks the preset the random value points at, first to last", () => {
+    const first = randomDefaultSettings(() => 0);
+    expect(first).toMatchObject(DEFAULT_PRESETS[0]);
+    const last = randomDefaultSettings(() => 0.9999);
+    expect(last).toMatchObject(DEFAULT_PRESETS[DEFAULT_PRESETS.length - 1]);
+  });
+
+  it("opens as a single meeting on every weekday, with the fixed trip defaults", () => {
+    const s = randomDefaultSettings(() => 0.5);
+    expect(s).toMatchObject({ multiDay: false, anyTime: false, days: 3, startDow: 5 });
+    expect(describeDays(s.dows)).toEqual({ kind: "all" });
+  });
+
+  it("hands out its own weekday list, so editing it leaves the next one whole", () => {
+    randomDefaultSettings(() => 0).dows.pop();
+    expect(randomDefaultSettings(() => 0).dows).toHaveLength(7);
   });
 });

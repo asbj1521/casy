@@ -23,7 +23,7 @@
  * the examples that means nine groups' worth of generated years never happen;
  * for real groups it means one request rather than one per group.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import {
@@ -93,6 +93,8 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
   // stops for good the first time the person touches the page.
   const showingExamples = !realQuery.isLoading && !hasRealGroups;
   const carousel = useExampleCarousel(EXAMPLE_GROUPS.length, showingExamples);
+  // Drawn once per mount, so the random real group stays put across renders.
+  const [fallbackSeed] = useState(Math.random);
 
   // Your own busy time, for the examples only. Real groups get yours from the
   // server along with everyone else's.
@@ -107,16 +109,16 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
     staleTime: 60_000,
   });
 
-  // Which group is being scheduled for. A group picked by hand wins; failing
-  // that, real groups start at the first and examples follow the carousel, so
-  // the page is never left without a selection.
+  // Which group is being scheduled for. A group picked by hand (or the one
+  // last scheduled for) wins; failing that, real groups start at a random one
+  // and examples follow the carousel, so the page is never left without one.
   const candidateIds = hasRealGroups
     ? realGroups.map((g) => g.id)
     : showingExamples
       ? EXAMPLE_GROUPS.map((g) => g.id)
       : [];
   const fallbackId = hasRealGroups
-    ? candidateIds[0]
+    ? candidateIds[Math.floor(fallbackSeed * candidateIds.length)]
     : EXAMPLE_GROUPS[carousel.index % EXAMPLE_GROUPS.length]?.id;
   const activeGroupId =
     selectedGroupId && candidateIds.includes(selectedGroupId)

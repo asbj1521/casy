@@ -33,7 +33,8 @@ export interface Carousel {
 
 export function useExampleCarousel(count: number, enabled: boolean): Carousel {
   const reduceMotion = useReducedMotion();
-  const [index, setIndex] = useState(0);
+  // A random first example, so a reload doesn't always open on the same group.
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * Math.max(count, 1)));
   const [stopped, setStopped] = useState(false);
 
   const running = enabled && !stopped && !reduceMotion && count > 1;

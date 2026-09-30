@@ -41,10 +41,10 @@ import {
   fallbackTitleId,
   laterSlots,
   MAX_TRIP_DAYS,
+  randomDefaultSettings,
   settingsToSearch,
   type SchedulerSettings,
 } from "@/lib/scheduler";
-import { ALL_DOWS } from "@/lib/weekdays";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfMonth } from "@/lib/zone";
 import DayChart from "@/components/DayChart";
@@ -116,17 +116,6 @@ function searchStartFor(search: EventSettings, from: string | null): string {
   return new Date(Math.max(Date.parse(base), Date.now())).toISOString();
 }
 
-/** What the page opens on: an evening, every day; a weekend trip if switched. */
-const DEFAULT_SETTINGS: SchedulerSettings = {
-  multiDay: false,
-  startHour: 18,
-  durationMinutes: 180,
-  dows: ALL_DOWS,
-  days: 3,
-  startDow: 5,
-  anyTime: false,
-};
-
 /** How many later dates the "Også muligt" row offers. */
 const LATER_COUNT = 3;
 
@@ -138,7 +127,7 @@ export default function FindDate() {
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   // What the event is called: only for the group to read, never searched on.
   const [name, setName] = useState("");
-  const [sched, setSched] = useState<SchedulerSettings>(DEFAULT_SETTINGS);
+  const [sched, setSched] = useState<SchedulerSettings>(() => randomDefaultSettings());
   // Multi-day spans with work/school conflicts need the user's sign-off; this
   // holds the slot start they accepted (null = nothing accepted yet).
   const [acceptedSlot, setAcceptedSlot] = useState<string | null>(null);
