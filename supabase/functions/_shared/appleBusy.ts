@@ -10,7 +10,12 @@
  * calendars: that is how the sync notices an entry Casy added being deleted
  * by hand (calendarWrites.ts). The UIDs are only compared, never stored.
  */
-import { discoverCalendars, fetchEventDocuments, mapPool, type CalDavCredentials } from "./caldav.ts";
+import {
+  discoverCalendars,
+  fetchEventDocuments,
+  mapPool,
+  type CalDavCredentials,
+} from "./caldav.ts";
 import { fetchFeedText, parseBusyIntervals } from "./ics.ts";
 import { mergeIntervals, type RawBusyInterval } from "./intervals.ts";
 import { addMissingTimezones } from "./timezones.ts";
@@ -34,7 +39,9 @@ export interface AppleCalendarBusy {
  */
 export function eventUids(doc: string): string[] {
   const unfolded = doc.replace(/\r?\n[ \t]/g, "");
-  return [...unfolded.matchAll(/^UID(?:;[^:\r\n]*)?:(.*)$/gm)].map((m) => m[1].trim()).filter(Boolean);
+  return [...unfolded.matchAll(/^UID(?:;[^:\r\n]*)?:(.*)$/gm)]
+    .map((m) => m[1].trim())
+    .filter(Boolean);
 }
 
 /**
@@ -92,7 +99,12 @@ export async function fetchAppleBusy(
         skippedEvents++;
       }
     }
-    return { id: cal.id, name: cal.name, writable: cal.writable, intervals: mergeIntervals(intervals) };
+    return {
+      id: cal.id,
+      name: cal.name,
+      writable: cal.writable,
+      intervals: mergeIntervals(intervals),
+    };
   });
   return { calendars: fetched, skippedEvents, uids, failedFeeds };
 }

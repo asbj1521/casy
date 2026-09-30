@@ -27,48 +27,52 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-Deno.serve(withLanguage(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-  if (req.method !== "POST") {
-    return json({ error: "Use POST" }, 405);
-  }
+Deno.serve(
+  withLanguage(async (req) => {
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+    if (req.method !== "POST") {
+      return json({ error: "Use POST" }, 405);
+    }
 
-  const profileId = await callerId(req, supabaseAdmin());
-  if (!profileId) return json({ error: "Please sign in again." }, 401);
+    const profileId = await callerId(req, supabaseAdmin());
+    if (!profileId) return json({ error: "Please sign in again." }, 401);
 
-  const clientId = Deno.env.get("MICROSOFT_OAUTH_CLIENT_ID");
-  const stateSecret = Deno.env.get("OAUTH_STATE_SECRET");
-  const functionsBaseUrl = Deno.env.get("FUNCTIONS_BASE_URL");
-  if (!clientId || !stateSecret || !functionsBaseUrl) {
-    console.error("Server is missing MICROSOFT_OAUTH_CLIENT_ID / OAUTH_STATE_SECRET / FUNCTIONS_BASE_URL");
-    return json({ error: "Microsoft connections aren't set up on the server yet." }, 500);
-  }
+    const clientId = Deno.env.get("MICROSOFT_OAUTH_CLIENT_ID");
+    const stateSecret = Deno.env.get("OAUTH_STATE_SECRET");
+    const functionsBaseUrl = Deno.env.get("FUNCTIONS_BASE_URL");
+    if (!clientId || !stateSecret || !functionsBaseUrl) {
+      console.error(
+        "Server is missing MICROSOFT_OAUTH_CLIENT_ID / OAUTH_STATE_SECRET / FUNCTIONS_BASE_URL",
+      );
+      return json({ error: "Microsoft connections aren't set up on the server yet." }, 500);
+    }
 
-  const state = await signState(
-    {
-      profileId,
-      nonce: crypto.randomUUID(),
-      ts: Date.now(),
-      // The browser names the site the request came from; the callback only
-      // honours it if it's on the allowlist.
-      returnTo: req.headers.get("Origin") ?? undefined,
-    },
-    stateSecret,
-  );
+    const state = await signState(
+      {
+        profileId,
+        nonce: crypto.randomUUID(),
+        ts: Date.now(),
+        // The browser names the site the request came from; the callback only
+        // honours it if it's on the allowlist.
+        returnTo: req.headers.get("Origin") ?? undefined,
+      },
+      stateSecret,
+    );
 
-  const redirectUri = `${functionsBaseUrl}/oauth-outlook-callback`;
+    const redirectUri = `${functionsBaseUrl}/oauth-outlook-callback`;
 
-  const authUrl = new URL(AUTHORIZE_URL);
-  authUrl.searchParams.set("client_id", clientId);
-  authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("response_mode", "query");
-  authUrl.searchParams.set("scope", SCOPES); // includes offline_access, which is what yields a refresh token
-  authUrl.searchParams.set("prompt", "select_account"); // lets someone with several Microsoft accounts pick, incl. on reconnect
-  authUrl.searchParams.set("state", state);
-  authUrl.searchParams.set("ui_locales", langOf(req)); // Microsoft's sign-in in the site's language
+    const authUrl = new URL(AUTHORIZE_URL);
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("response_mode", "query");
+    authUrl.searchParams.set("scope", SCOPES); // includes offline_access, which is what yields a refresh token
+    authUrl.searchParams.set("prompt", "select_account"); // lets someone with several Microsoft accounts pick, incl. on reconnect
+    authUrl.searchParams.set("state", state);
+    authUrl.searchParams.set("ui_locales", langOf(req)); // Microsoft's sign-in in the site's language
 
-  return json({ url: authUrl.toString() });
-}));
+    return json({ url: authUrl.toString() });
+  }),
+);

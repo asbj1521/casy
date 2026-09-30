@@ -17,54 +17,56 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { withLanguage } from "../_shared/i18n.ts";
 
-Deno.serve(withLanguage(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+Deno.serve(
+  withLanguage(async (req) => {
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
 
-  const db = supabaseAdmin();
-  const profileId = await callerId(req, db);
-  if (!profileId) {
-    return new Response(JSON.stringify({ error: "Please sign in again." }), {
-      status: 401,
+    const db = supabaseAdmin();
+    const profileId = await callerId(req, db);
+    if (!profileId) {
+      return new Response(JSON.stringify({ error: "Please sign in again." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: connections, error } = await db
+      .from("calendar_connections")
+      .select(
+        "id, provider, status, account_label, error_message, created_at, last_synced_at, last_sync_attempt_at, sync_error, needs_reconnect, calendar_sources(id, display_name, custom_name, purpose, priority, writable)",
+      )
+      .eq("profile_id", profileId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("calendar-status query failed", error);
+      return new Response(JSON.stringify({ error: "Query failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // One busy-interval count per connection, via a lightweight count-only
+    // query rather than pulling every row back.
+    const withCounts = await Promise.all(
+      (connections ?? []).map(async (c) => {
+        const sourceIds = (c.calendar_sources ?? []).map((s: { id: string }) => s.id);
+        let busyCount = 0;
+        if (sourceIds.length > 0) {
+          const { count } = await db
+            .from("calendar_busy_cache")
+            .select("id", { count: "exact", head: true })
+            .in("source_id", sourceIds);
+          busyCount = count ?? 0;
+        }
+        return { ...c, busyCount };
+      }),
+    );
+
+    return new Response(JSON.stringify({ connections: withCounts }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  }
-
-  const { data: connections, error } = await db
-    .from("calendar_connections")
-    .select(
-      "id, provider, status, account_label, error_message, created_at, last_synced_at, last_sync_attempt_at, sync_error, needs_reconnect, calendar_sources(id, display_name, custom_name, purpose, priority, writable)",
-    )
-    .eq("profile_id", profileId)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("calendar-status query failed", error);
-    return new Response(JSON.stringify({ error: "Query failed" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  // One busy-interval count per connection, via a lightweight count-only
-  // query rather than pulling every row back.
-  const withCounts = await Promise.all(
-    (connections ?? []).map(async (c) => {
-      const sourceIds = (c.calendar_sources ?? []).map((s: { id: string }) => s.id);
-      let busyCount = 0;
-      if (sourceIds.length > 0) {
-        const { count } = await db
-          .from("calendar_busy_cache")
-          .select("id", { count: "exact", head: true })
-          .in("source_id", sourceIds);
-        busyCount = count ?? 0;
-      }
-      return { ...c, busyCount };
-    }),
-  );
-
-  return new Response(JSON.stringify({ connections: withCounts }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}));
+  }),
+);

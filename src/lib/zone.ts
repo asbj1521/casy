@@ -62,7 +62,14 @@ export function offsetAt(ms: number, timeZone: string): number {
   for (const p of formatterFor(timeZone).formatToParts(at)) {
     if (p.type !== "literal") parts[p.type] = Number(p.value);
   }
-  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  const asUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+  );
   const offset = asUtc - at;
   cache.set(bucket, offset);
   return offset;

@@ -1,19 +1,34 @@
 import { describe, expect, it } from "vitest";
 
-import { backToBackEnds, backToBackNote, earlyMorningNote, earlyMorningStarts } from "@/lib/earlyMorning";
+import {
+  backToBackEnds,
+  backToBackNote,
+  earlyMorningNote,
+  earlyMorningStarts,
+} from "@/lib/earlyMorning";
 import type { BusyInterval, Participant } from "@/types";
 
 const TZ = "Europe/Copenhagen";
 // Thursday 1 October 2026, Danish summer time (UTC+2).
-const person = (profileId: string, busy: BusyInterval[]): Participant => ({ profileId, name: profileId, busy });
-const block = (start: string, end: string, extra: Partial<BusyInterval> = {}): BusyInterval => ({ start, end, ...extra });
+const person = (profileId: string, busy: BusyInterval[]): Participant => ({
+  profileId,
+  name: profileId,
+  busy,
+});
+const block = (start: string, end: string, extra: Partial<BusyInterval> = {}): BusyInterval => ({
+  start,
+  end,
+  ...extra,
+});
 
 // 19:00 to 23:00 local.
 const LATE = { start: "2026-10-01T17:00:00.000Z", end: "2026-10-01T21:00:00.000Z" };
 
 describe("earlyMorningStarts", () => {
   it("flags someone with something before 10:00 the morning after a late meeting", () => {
-    const nicolai = person("nicolai", [block("2026-10-02T06:00:00.000Z", "2026-10-02T10:00:00.000Z")]); // 08:00
+    const nicolai = person("nicolai", [
+      block("2026-10-02T06:00:00.000Z", "2026-10-02T10:00:00.000Z"),
+    ]); // 08:00
     expect(earlyMorningStarts([nicolai], LATE, TZ)).toEqual([
       { profileId: "nicolai", name: "nicolai", start: "2026-10-02T06:00:00.000Z" },
     ]);
@@ -21,7 +36,9 @@ describe("earlyMorningStarts", () => {
 
   it("says nothing when the meeting ends before 23:00", () => {
     const early = { start: "2026-10-01T17:00:00.000Z", end: "2026-10-01T20:30:00.000Z" }; // 19:00 to 22:30
-    const nicolai = person("nicolai", [block("2026-10-02T05:00:00.000Z", "2026-10-02T07:00:00.000Z")]);
+    const nicolai = person("nicolai", [
+      block("2026-10-02T05:00:00.000Z", "2026-10-02T07:00:00.000Z"),
+    ]);
     expect(earlyMorningStarts([nicolai], early, TZ)).toEqual([]);
   });
 
@@ -35,14 +52,20 @@ describe("earlyMorningStarts", () => {
   });
 
   it("counts a calendar marked skippable: an early lecture is early either way", () => {
-    const p = person("p", [block("2026-10-02T06:00:00.000Z", "2026-10-02T15:00:00.000Z", { priority: "skip" })]);
-    expect(earlyMorningStarts([p], LATE, TZ).map((s) => s.start)).toEqual(["2026-10-02T06:00:00.000Z"]);
+    const p = person("p", [
+      block("2026-10-02T06:00:00.000Z", "2026-10-02T15:00:00.000Z", { priority: "skip" }),
+    ]);
+    expect(earlyMorningStarts([p], LATE, TZ).map((s) => s.start)).toEqual([
+      "2026-10-02T06:00:00.000Z",
+    ]);
   });
 
   it("reads the morning as the day it ends on when it runs past midnight", () => {
     const night = { start: "2026-10-01T19:00:00.000Z", end: "2026-10-02T00:00:00.000Z" }; // 21:00 to 02:00
     const p = person("p", [block("2026-10-02T05:30:00.000Z", "2026-10-02T07:00:00.000Z")]); // 07:30 same night
-    expect(earlyMorningStarts([p], night, TZ).map((s) => s.start)).toEqual(["2026-10-02T05:30:00.000Z"]);
+    expect(earlyMorningStarts([p], night, TZ).map((s) => s.start)).toEqual([
+      "2026-10-02T05:30:00.000Z",
+    ]);
   });
 
   it("lists each person once, by their first thing, soonest first", () => {
@@ -77,8 +100,13 @@ describe("earlyMorningNote", () => {
   });
 
   it("lists several with their times, you first", () => {
-    const starts = [at("nicolai", "2026-10-02T05:30:00.000Z"), at("me", "2026-10-02T06:00:00.000Z")];
-    expect(earlyMorningNote(starts, "me", "da", words)).toBe("Du (08:00) og nicolai (07:30) har noget tidligt.");
+    const starts = [
+      at("nicolai", "2026-10-02T05:30:00.000Z"),
+      at("me", "2026-10-02T06:00:00.000Z"),
+    ];
+    expect(earlyMorningNote(starts, "me", "da", words)).toBe(
+      "Du (08:00) og nicolai (07:30) har noget tidligt.",
+    );
   });
 
   it("says nothing when nobody starts early", () => {
@@ -92,14 +120,22 @@ describe("backToBackEnds", () => {
 
   it("names whoever has something ending exactly when it starts", () => {
     const school = person("me", [block("2026-10-01T06:00:00.000Z", "2026-10-01T14:00:00.000Z")]); // 08:00 to 16:00
-    const earlier = person("nicolai", [block("2026-10-01T10:00:00.000Z", "2026-10-01T13:45:00.000Z")]); // to 15:45
-    expect(backToBackEnds([school, earlier], AFTER_SCHOOL, TZ)).toEqual([{ profileId: "me", name: "me" }]);
+    const earlier = person("nicolai", [
+      block("2026-10-01T10:00:00.000Z", "2026-10-01T13:45:00.000Z"),
+    ]); // to 15:45
+    expect(backToBackEnds([school, earlier], AFTER_SCHOOL, TZ)).toEqual([
+      { profileId: "me", name: "me" },
+    ]);
   });
 
   it("counts skippable calendars but not all-day entries", () => {
-    const skip = person("skip", [block("2026-10-01T12:00:00.000Z", "2026-10-01T14:00:00.000Z", { priority: "skip" })]);
+    const skip = person("skip", [
+      block("2026-10-01T12:00:00.000Z", "2026-10-01T14:00:00.000Z", { priority: "skip" }),
+    ]);
     const midnight = { start: "2026-10-01T22:00:00.000Z", end: "2026-10-02T01:00:00.000Z" }; // 00:00 to 03:00
-    const dayOff = person("dayoff", [block("2026-09-30T22:00:00.000Z", "2026-10-01T22:00:00.000Z")]);
+    const dayOff = person("dayoff", [
+      block("2026-09-30T22:00:00.000Z", "2026-10-01T22:00:00.000Z"),
+    ]);
     expect(backToBackEnds([skip], AFTER_SCHOOL, TZ).map((p) => p.profileId)).toEqual(["skip"]);
     expect(backToBackEnds([dayOff], midnight, TZ)).toEqual([]);
   });
@@ -115,7 +151,9 @@ describe("backToBackEnds", () => {
     const nicolai = { profileId: "nicolai", name: "Nicolai" };
     expect(backToBackNote([me], "me", "da", words)).toBe("Du har noget lige før.");
     expect(backToBackNote([nicolai], "me", "da", words)).toBe("Nicolai har noget lige før.");
-    expect(backToBackNote([nicolai, me], "me", "da", words)).toBe("Du og Nicolai har noget lige før.");
+    expect(backToBackNote([nicolai, me], "me", "da", words)).toBe(
+      "Du og Nicolai har noget lige før.",
+    );
     expect(backToBackNote([], "me", "da", words)).toBeNull();
   });
 });

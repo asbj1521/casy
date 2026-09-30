@@ -16,13 +16,7 @@ import { cn } from "@/lib/utils";
  * outgoing line stops taking clicks on its way out, so it can't swallow one
  * meant for what's underneath.
  */
-export default function RollingText({
-  text,
-  className,
-}: {
-  text: string;
-  className?: string;
-}) {
+export default function RollingText({ text, className }: { text: string; className?: string }) {
   return (
     <span className={cn("grid overflow-hidden [&>*]:col-start-1 [&>*]:row-start-1", className)}>
       <AnimatePresence initial={false}>

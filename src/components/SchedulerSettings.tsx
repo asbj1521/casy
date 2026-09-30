@@ -403,9 +403,7 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
                 </>
               )}
             >
-              {() => (
-                <DaySlider selected={settings.dows} onChange={(dows) => onChange({ dows })} />
-              )}
+              {() => <DaySlider selected={settings.dows} onChange={(dows) => onChange({ dows })} />}
             </Popover>
           </>
         )}

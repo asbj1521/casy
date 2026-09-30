@@ -1,16 +1,16 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import Footer from '@/components/Footer'
-import RequireAuth from '@/components/RequireAuth'
-import WeakPasswordNotice from '@/components/WeakPasswordNotice'
-import { useAuth } from '@/context/auth'
-import AuthProvider from '@/context/AuthProvider'
-import LanguageProvider from '@/i18n/LanguageProvider'
-import { persistQueries } from '@/lib/queryPersistence'
-import FindDate from '@/pages/FindDate'
-import Landing from '@/pages/Landing'
+import Footer from "@/components/Footer";
+import RequireAuth from "@/components/RequireAuth";
+import WeakPasswordNotice from "@/components/WeakPasswordNotice";
+import { useAuth } from "@/context/auth";
+import AuthProvider from "@/context/AuthProvider";
+import LanguageProvider from "@/i18n/LanguageProvider";
+import { persistQueries } from "@/lib/queryPersistence";
+import FindDate from "@/pages/FindDate";
+import Landing from "@/pages/Landing";
 
 /**
  * The scheduling page is what people land on, so it ships in the entry chunk:
@@ -19,19 +19,19 @@ import Landing from '@/pages/Landing'
  * reached by a deliberate click, and keeping them out of the entry chunk means
  * the landing page never downloads code it has no use for.
  */
-const Profile = lazy(() => import('@/pages/Profile'))
-const CalendarOverview = lazy(() => import('@/pages/CalendarOverview'))
-const SignIn = lazy(() => import('@/pages/SignIn'))
-const Privacy = lazy(() => import('@/pages/Privacy'))
-const HowItWorks = lazy(() => import('@/pages/HowItWorks'))
-const MyEvents = lazy(() => import('@/pages/MyEvents'))
-const ConnectIcloudHelp = lazy(() => import('@/pages/ConnectIcloudHelp'))
-const ConnectIcsHelp = lazy(() => import('@/pages/ConnectIcsHelp'))
-const ConnectGoogleHelp = lazy(() => import('@/pages/ConnectGoogleHelp'))
-const ConnectOutlookHelp = lazy(() => import('@/pages/ConnectOutlookHelp'))
+const Profile = lazy(() => import("@/pages/Profile"));
+const CalendarOverview = lazy(() => import("@/pages/CalendarOverview"));
+const SignIn = lazy(() => import("@/pages/SignIn"));
+const Privacy = lazy(() => import("@/pages/Privacy"));
+const HowItWorks = lazy(() => import("@/pages/HowItWorks"));
+const MyEvents = lazy(() => import("@/pages/MyEvents"));
+const ConnectIcloudHelp = lazy(() => import("@/pages/ConnectIcloudHelp"));
+const ConnectIcsHelp = lazy(() => import("@/pages/ConnectIcsHelp"));
+const ConnectGoogleHelp = lazy(() => import("@/pages/ConnectGoogleHelp"));
+const ConnectOutlookHelp = lazy(() => import("@/pages/ConnectOutlookHelp"));
 // An invite link is often the very first page someone sees, so it stays out of
 // the entry chunk like the other pages reached by a deliberate click.
-const JoinGroup = lazy(() => import('@/pages/JoinGroup'))
+const JoinGroup = lazy(() => import("@/pages/JoinGroup"));
 
 /**
  * casy.app itself: the landing page for signed-out visitors, the scheduler
@@ -41,15 +41,15 @@ const JoinGroup = lazy(() => import('@/pages/JoinGroup'))
  * would see the landing page flash first.
  */
 function Home() {
-  const { user, loading } = useAuth()
-  if (loading) return <div className="min-h-screen bg-background" />
-  return user ? <FindDate /> : <Landing />
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-background" />;
+  return user ? <FindDate /> : <Landing />;
 }
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 // Last known groups, calendar status and admin flag, shown at once on load
 // and refreshed in the background (see queryPersistence.ts).
-persistQueries(queryClient)
+persistQueries(queryClient);
 
 function App() {
   return (
@@ -107,7 +107,7 @@ function App() {
         </AuthProvider>
       </QueryClientProvider>
     </LanguageProvider>
-  )
+  );
 }
 
-export default App
+export default App;

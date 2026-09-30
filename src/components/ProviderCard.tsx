@@ -326,7 +326,9 @@ export default function ProviderCard({
         </ul>
       ) : (
         !statusPending && (
-          <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">{t.providerCard.notConnected}</p>
+          <p className="mt-3 border-t pt-3 text-sm text-muted-foreground">
+            {t.providerCard.notConnected}
+          </p>
         )
       )}
 
@@ -335,7 +337,9 @@ export default function ProviderCard({
       {latest?.status === "error" && (
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
           <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{t.providerCard.lastFailed(latest.error_message ?? t.providerCard.unknownError)}</span>
+          <span>
+            {t.providerCard.lastFailed(latest.error_message ?? t.providerCard.unknownError)}
+          </span>
         </div>
       )}
 

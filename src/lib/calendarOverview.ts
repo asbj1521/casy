@@ -251,7 +251,11 @@ export function holidaySegmentsByDay(from: Date, to: Date): Map<string, DaySegme
   for (let year = from.getFullYear(); year <= lastYear; year++) {
     for (const holiday of danishHolidays(year)) {
       if (holiday.date < from || holiday.date >= to) continue;
-      const next = new Date(holiday.date.getFullYear(), holiday.date.getMonth(), holiday.date.getDate() + 1);
+      const next = new Date(
+        holiday.date.getFullYear(),
+        holiday.date.getMonth(),
+        holiday.date.getDate() + 1,
+      );
       const list = byDay.get(holiday.key) ?? [];
       list.push({
         calendarId: HOLIDAY_CALENDAR_ID,

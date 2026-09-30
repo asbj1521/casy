@@ -51,113 +51,115 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-Deno.serve(withLanguage(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-  if (req.method !== "GET") {
-    return json({ error: "Use GET" }, 405);
-  }
-
-  const params = new URL(req.url).searchParams;
-  const from = new Date(params.get("from") ?? "");
-  const to = new Date(params.get("to") ?? "");
-  if (isNaN(from.getTime()) || isNaN(to.getTime()) || to <= from) {
-    return json({ error: "from and to must be ISO timestamps with to after from" }, 400);
-  }
-  if (to.getTime() - from.getTime() > MAX_RANGE_DAYS * 86_400_000) {
-    return json({ error: `Range is limited to ${MAX_RANGE_DAYS} days` }, 400);
-  }
-
-  const db = supabaseAdmin();
-  const profileId = await callerId(req, db);
-  if (!profileId) return json({ error: "Please sign in again." }, 401);
-
-  // The blocks query used to wait for the sources query so it could filter
-  // by source id; it now reaches the same rows through a nested join on
-  // profile_id/status, so the two can run together instead of one after the
-  // other (one fewer round trip on every load of this page).
-  async function fetchBlocks(): Promise<{
-    blocks: { calendarId: string; start: string; end: string }[];
-    truncated: boolean;
-  }> {
-    const blocks: { calendarId: string; start: string; end: string }[] = [];
-    for (let page = 0; ; page++) {
-      if (page >= MAX_PAGES) return { blocks, truncated: true };
-      // Overlap test: a block belongs to the range if it starts before the
-      // range ends and ends after the range starts.
-      const { data, error } = await db
-        .from("calendar_busy_cache")
-        .select(
-          "source_id, start_at, end_at, calendar_sources!inner(calendar_connections!inner(profile_id, status))",
-        )
-        .eq("calendar_sources.calendar_connections.profile_id", profileId)
-        .eq("calendar_sources.calendar_connections.status", "connected")
-        .lt("start_at", to.toISOString())
-        .gt("end_at", from.toISOString())
-        .order("start_at", { ascending: true })
-        .order("id", { ascending: true }) // stable paging when start times tie
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-      if (error) throw error;
-      for (const r of data ?? []) {
-        blocks.push({ calendarId: r.source_id, start: r.start_at, end: r.end_at });
-      }
-      if ((data ?? []).length < PAGE_SIZE) return { blocks, truncated: false };
+Deno.serve(
+  withLanguage(async (req) => {
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
     }
-  }
+    if (req.method !== "GET") {
+      return json({ error: "Use GET" }, 405);
+    }
 
-  const [sourcesResult, blocksResult] = await Promise.allSettled([
-    db
-      .from("calendar_sources")
-      .select(
-        "id, display_name, custom_name, writable, purpose, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label, status, profile_id)",
-      )
-      .eq("calendar_connections.profile_id", profileId)
-      .eq("calendar_connections.status", "connected"),
-    fetchBlocks(),
-  ]);
+    const params = new URL(req.url).searchParams;
+    const from = new Date(params.get("from") ?? "");
+    const to = new Date(params.get("to") ?? "");
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to <= from) {
+      return json({ error: "from and to must be ISO timestamps with to after from" }, 400);
+    }
+    if (to.getTime() - from.getTime() > MAX_RANGE_DAYS * 86_400_000) {
+      return json({ error: `Range is limited to ${MAX_RANGE_DAYS} days` }, 400);
+    }
 
-  if (sourcesResult.status === "rejected" || sourcesResult.value.error) {
-    console.error(
-      "calendar-busy sources query failed",
-      sourcesResult.status === "rejected" ? sourcesResult.reason : sourcesResult.value.error,
-    );
-    return json({ error: "Query failed" }, 500);
-  }
-  if (blocksResult.status === "rejected") {
-    console.error("calendar-busy blocks query failed", blocksResult.reason);
-    return json({ error: "Query failed" }, 500);
-  }
+    const db = supabaseAdmin();
+    const profileId = await callerId(req, db);
+    if (!profileId) return json({ error: "Please sign in again." }, 401);
 
-  const calendars = ((sourcesResult.value.data ?? []) as SourceRow[])
-    .map((s) => ({
-      id: s.id,
-      // The name its owner gave it wins; the provider's own name comes
-      // along so the page can say which calendar it really is.
-      name: s.custom_name ?? s.display_name ?? "Calendar",
-      originalName: s.display_name,
-      renamed: s.custom_name !== null,
-      // Whether it can be made the primary calendar (Casy may add events to it).
-      writable: s.writable,
-      purpose: s.purpose,
-      priority: s.priority,
-      // Unticked calendars still come back, blocks and all: the page lists
-      // them unticked, and the scheduling page leaves them out itself.
-      included: s.included,
-      // Busy blocks stored for it over the whole synced range (a week back
-      // to a year ahead), whatever range was asked for.
-      total: s.calendar_busy_cache?.[0]?.count ?? 0,
-      provider: s.calendar_connections.provider,
-      account: s.calendar_connections.account_label,
-      connectionId: s.calendar_connections.id,
-    }))
-    // By the provider's name, not the owner's: calendars without a category
-    // are coloured in this order, so renaming one must not recolour the rest.
-    .sort(
-      (a, b) =>
-        (a.account ?? "").localeCompare(b.account ?? "") ||
-        (a.originalName ?? a.name).localeCompare(b.originalName ?? b.name),
-    );
+    // The blocks query used to wait for the sources query so it could filter
+    // by source id; it now reaches the same rows through a nested join on
+    // profile_id/status, so the two can run together instead of one after the
+    // other (one fewer round trip on every load of this page).
+    async function fetchBlocks(): Promise<{
+      blocks: { calendarId: string; start: string; end: string }[];
+      truncated: boolean;
+    }> {
+      const blocks: { calendarId: string; start: string; end: string }[] = [];
+      for (let page = 0; ; page++) {
+        if (page >= MAX_PAGES) return { blocks, truncated: true };
+        // Overlap test: a block belongs to the range if it starts before the
+        // range ends and ends after the range starts.
+        const { data, error } = await db
+          .from("calendar_busy_cache")
+          .select(
+            "source_id, start_at, end_at, calendar_sources!inner(calendar_connections!inner(profile_id, status))",
+          )
+          .eq("calendar_sources.calendar_connections.profile_id", profileId)
+          .eq("calendar_sources.calendar_connections.status", "connected")
+          .lt("start_at", to.toISOString())
+          .gt("end_at", from.toISOString())
+          .order("start_at", { ascending: true })
+          .order("id", { ascending: true }) // stable paging when start times tie
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+        if (error) throw error;
+        for (const r of data ?? []) {
+          blocks.push({ calendarId: r.source_id, start: r.start_at, end: r.end_at });
+        }
+        if ((data ?? []).length < PAGE_SIZE) return { blocks, truncated: false };
+      }
+    }
 
-  return json({ calendars, ...blocksResult.value });
-}));
+    const [sourcesResult, blocksResult] = await Promise.allSettled([
+      db
+        .from("calendar_sources")
+        .select(
+          "id, display_name, custom_name, writable, purpose, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label, status, profile_id)",
+        )
+        .eq("calendar_connections.profile_id", profileId)
+        .eq("calendar_connections.status", "connected"),
+      fetchBlocks(),
+    ]);
+
+    if (sourcesResult.status === "rejected" || sourcesResult.value.error) {
+      console.error(
+        "calendar-busy sources query failed",
+        sourcesResult.status === "rejected" ? sourcesResult.reason : sourcesResult.value.error,
+      );
+      return json({ error: "Query failed" }, 500);
+    }
+    if (blocksResult.status === "rejected") {
+      console.error("calendar-busy blocks query failed", blocksResult.reason);
+      return json({ error: "Query failed" }, 500);
+    }
+
+    const calendars = ((sourcesResult.value.data ?? []) as SourceRow[])
+      .map((s) => ({
+        id: s.id,
+        // The name its owner gave it wins; the provider's own name comes
+        // along so the page can say which calendar it really is.
+        name: s.custom_name ?? s.display_name ?? "Calendar",
+        originalName: s.display_name,
+        renamed: s.custom_name !== null,
+        // Whether it can be made the primary calendar (Casy may add events to it).
+        writable: s.writable,
+        purpose: s.purpose,
+        priority: s.priority,
+        // Unticked calendars still come back, blocks and all: the page lists
+        // them unticked, and the scheduling page leaves them out itself.
+        included: s.included,
+        // Busy blocks stored for it over the whole synced range (a week back
+        // to a year ahead), whatever range was asked for.
+        total: s.calendar_busy_cache?.[0]?.count ?? 0,
+        provider: s.calendar_connections.provider,
+        account: s.calendar_connections.account_label,
+        connectionId: s.calendar_connections.id,
+      }))
+      // By the provider's name, not the owner's: calendars without a category
+      // are coloured in this order, so renaming one must not recolour the rest.
+      .sort(
+        (a, b) =>
+          (a.account ?? "").localeCompare(b.account ?? "") ||
+          (a.originalName ?? a.name).localeCompare(b.originalName ?? b.name),
+      );
+
+    return json({ calendars, ...blocksResult.value });
+  }),
+);

@@ -168,7 +168,13 @@ export const da = {
     othersSkip: (names: string) => `${names} springer noget over. `,
     skipWhy: "Ingen dato inden for en uge passer uden.",
     youApprovedDates: "Du har godkendt at tage fri på de datoer.",
-    suggestionFits: (requested: number, needsTimeOff: boolean, fits: number, span: string, extra: string) => (
+    suggestionFits: (
+      requested: number,
+      needsTimeOff: boolean,
+      fits: number,
+      span: string,
+      extra: string,
+    ) => (
       <>
         {days(requested)} {needsTimeOff ? "kræver fri" : "passer ikke"}, men{" "}
         <span className="font-semibold">{days(fits)} passer alle</span>: {span}
@@ -192,7 +198,10 @@ export const da = {
     exampleSignedOutLink: "Log ind",
     exampleCalendarsFailed: "Kunne ikke hente dine kalendere, så du vises også med eksempeldata.",
     exampleSignedIn: (link: ReactNode) => (
-      <>De andre her er eksempeldata. {link} og lav en gruppe for at finde en dato med rigtige mennesker.</>
+      <>
+        De andre her er eksempeldata. {link} og lav en gruppe for at finde en dato med rigtige
+        mennesker.
+      </>
     ),
     exampleSignedInLink: "Forbind en kalender",
     busyFailed: "Kunne ikke hente gruppens kalendere, så tiderne er ufuldstændige.",
@@ -208,7 +217,8 @@ export const da = {
   },
   groupPanel: {
     noProfileTitle: "Har du ikke en profil endnu?",
-    noProfileBody: "Opret en profil for at forbinde din egen kalender og lave en gruppe med rigtige mennesker.",
+    noProfileBody:
+      "Opret en profil for at forbinde din egen kalender og lave en gruppe med rigtige mennesker.",
     signUp: "Opret profil",
     members: (n: number) => (n === 1 ? "1 medlem" : `${n} medlemmer`),
     whatMembersSee: "Hvad medlemmer kan se",
@@ -293,8 +303,7 @@ export const da = {
     syncing: "Synkroniserer",
     syncNow: "Synkronisér nu",
     syncAllFresh: "Alt blev synkroniseret inden for det sidste minut.",
-    syncedAccounts: (n: number) =>
-      `Synkroniserede ${n === 1 ? "1 konto" : `${n} konti`}.`,
+    syncedAccounts: (n: number) => `Synkroniserede ${n === 1 ? "1 konto" : `${n} konti`}.`,
     syncSomeFailed: (failed: number, n: number) =>
       `${failed} af ${n === 1 ? "1 konto" : `${n} konti`} kunne ikke synkroniseres. Se nedenfor.`,
     password: "Adgangskode",
@@ -636,7 +645,8 @@ export const da = {
     confirmResending: "Sender",
     confirmResent: "Sendt igen.",
     accountDeleted: "Din konto er slettet. Tak, fordi du brugte Casy.",
-    captchaWait: "Et øjeblik: vi tjekker lige, at du ikke er en robot. Prøv igen om et par sekunder.",
+    captchaWait:
+      "Et øjeblik: vi tjekker lige, at du ikke er en robot. Prøv igen om et par sekunder.",
     captchaFailed:
       "Vi kunne ikke tjekke, at du ikke er en robot. Genindlæs siden, slå en eventuel reklameblokering fra her, eller log ind med Google.",
     email: "E-mail",
@@ -671,7 +681,8 @@ export const da = {
       `${reason} Invitationslinks virker i syv dage, så bed den, der sendte det, om et nyt.`,
     goToCasy: "Gå til Casy",
     invitedTo: "Du er inviteret til",
-    membersSoFar: (n: number) => (n === 1 ? "1 medlem indtil videre" : `${n} medlemmer indtil videre`),
+    membersSoFar: (n: number) =>
+      n === 1 ? "1 medlem indtil videre" : `${n} medlemmer indtil videre`,
     privacy:
       "Medlemmer kan se hinandens navne, og hvornår de er optaget, så Casy kan finde et tidspunkt, der passer alle. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder.",
     alreadyIn: "Du er allerede med i gruppen.",
@@ -778,9 +789,12 @@ export const da = {
     syncTitle: "Synkronisér kontoen nu",
     userDeleted: (who: string, groups: number) =>
       `${who} blev slettet` +
-      (groups > 0 ? `, sammen med ${groups === 1 ? "1 gruppe" : `${groups} grupper`}, kun personen var med i.` : "."),
+      (groups > 0
+        ? `, sammen med ${groups === 1 ? "1 gruppe" : `${groups} grupper`}, kun personen var med i.`
+        : "."),
     theAccount: "Kontoen",
-    syncedBlocks: (n: number) => `Synkroniseret: ${n === 1 ? "1 optaget tidsrum" : `${n} optagede tidsrum`}.`,
+    syncedBlocks: (n: number) =>
+      `Synkroniseret: ${n === 1 ? "1 optaget tidsrum" : `${n} optagede tidsrum`}.`,
     syncFailed: "Synkroniseringen fejlede.",
     syncUserTitle: (name: string) => `Synkronisér alle kalendere for ${name}`,
     syncedUser: (ok: number, failed: number, blocks: number) =>
@@ -791,10 +805,12 @@ export const da = {
     couldntRemove: "Kunne ikke fjerne personen",
     couldntDeleteAccount: "Kunne ikke slette kontoen",
     couldntLoad: "Kunne ikke hente admin-oversigten",
-    providers: { google: "Google", outlook: "Outlook", apple: "iCloud", ics: "Kalenderlink" } as Record<
-      string,
-      string
-    >,
+    providers: {
+      google: "Google",
+      outlook: "Outlook",
+      apple: "iCloud",
+      ics: "Kalenderlink",
+    } as Record<string, string>,
   },
 };
 

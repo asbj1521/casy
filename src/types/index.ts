@@ -28,13 +28,7 @@ export type CalendarPurpose = "work" | "school" | "personal" | "other";
  * optional so the same `BusyInterval` shape covers mock and real data.
  */
 export type EventCategory =
-  | "work"
-  | "school"
-  | "social"
-  | "health"
-  | "travel"
-  | "personal"
-  | "family";
+  "work" | "school" | "social" | "health" | "travel" | "personal" | "family";
 
 /**
  * How much a calendar's busy time matters to its owner, set per calendar:

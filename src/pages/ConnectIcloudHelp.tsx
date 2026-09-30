@@ -113,7 +113,8 @@ const da = {
     title: "Sådan gør du hos Apple",
     body: {
       mac: "Se det hele igennem her først, så du ved, hvad du skal klikke på. Linket til Apple kommer på næste trin.",
-      iphone: "Se det hele igennem her først, så du ved, hvad du skal trykke på. Linket til Apple kommer på næste trin.",
+      iphone:
+        "Se det hele igennem her først, så du ved, hvad du skal trykke på. Linket til Apple kommer på næste trin.",
     } satisfies Record<Device, string>,
     next: "Jeg er klar",
   },
@@ -151,7 +152,9 @@ const da = {
     signInBody: "Log ind på Casy først. Bagefter kommer du direkte tilbage til dette trin.",
     signIn: "Log ind på Casy",
     revoke: (
-      <>Du kan tilbagekalde adgangskoden når som helst under App-specifikke adgangskoder på {link}.</>
+      <>
+        Du kan tilbagekalde adgangskoden når som helst under App-specifikke adgangskoder på {link}.
+      </>
     ),
   },
   done: {
@@ -202,7 +205,8 @@ const en: typeof da = {
     title: "Here's how it goes at Apple",
     body: {
       mac: "Watch it all here first, so you know what to click. The link to Apple comes on the next step.",
-      iphone: "Watch it all here first, so you know what to tap. The link to Apple comes on the next step.",
+      iphone:
+        "Watch it all here first, so you know what to tap. The link to Apple comes on the next step.",
     },
     next: "I'm ready",
   },
@@ -211,7 +215,8 @@ const en: typeof da = {
     body: "Open Apple's page in a new tab and do what you just watched. Come back to this tab when you have the password.",
     touchId: {
       mac: "Sign in with your email and password, not Touch ID. Otherwise Apple can't make the password.",
-      iphone: "Sign in with your email and password, not Face ID or a passkey. Otherwise Apple can't make the password.",
+      iphone:
+        "Sign in with your email and password, not Face ID or a passkey. Otherwise Apple can't make the password.",
     },
     open: "Open Apple's account page",
     stepsTitle: "The steps again",
@@ -293,7 +298,15 @@ function FoldOut({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** A step's heading, which takes focus when the step changes, and the line under it. */
-function StepHeading({ ref, title, children }: { ref: Ref<HTMLHeadingElement>; title: string; children: ReactNode }) {
+function StepHeading({
+  ref,
+  title,
+  children,
+}: {
+  ref: Ref<HTMLHeadingElement>;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <>
       <h2 ref={ref} tabIndex={-1} className={headingClass}>
@@ -304,7 +317,15 @@ function StepHeading({ ref, title, children }: { ref: Ref<HTMLHeadingElement>; t
   );
 }
 
-function BackButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+function BackButton({
+  label,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} className={secondaryButton}>
       <ArrowLeft className="h-4 w-4" />
@@ -522,7 +543,9 @@ export default function ConnectIcloudHelp() {
       </>
     );
   } else {
-    const backButton = <BackButton label={c.back} onClick={() => goTo("apple")} disabled={connect.isPending} />;
+    const backButton = (
+      <BackButton label={c.back} onClick={() => goTo("apple")} disabled={connect.isPending} />
+    );
     body = (
       <>
         <StepHeading ref={headingRef} title={c.enter.title}>
@@ -594,7 +617,9 @@ export default function ConnectIcloudHelp() {
           {t.calendarView.back}
         </Link>
 
-        <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-primary">{c.eyebrow}</p>
+        <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-primary">
+          {c.eyebrow}
+        </p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {c.title}
         </h1>

@@ -105,7 +105,8 @@ async function send(
   body: string | null,
   headers: Record<string, string>,
 ): Promise<Response> {
-  const authorization = "Basic " + btoa(unescape(encodeURIComponent(`${creds.username}:${creds.password}`)));
+  const authorization =
+    "Basic " + btoa(unescape(encodeURIComponent(`${creds.username}:${creds.password}`)));
   let url = assertIcloudUrl(rawUrl);
 
   for (let hop = 0; ; hop++) {
@@ -155,7 +156,8 @@ async function dav(
     throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
   }
   const text = await res.text();
-  if (text.length > MAX_RESPONSE_CHARS) throw new CalDavError("iCloud sent back more data than we accept.");
+  if (text.length > MAX_RESPONSE_CHARS)
+    throw new CalDavError("iCloud sent back more data than we accept.");
   return text;
 }
 
@@ -239,10 +241,12 @@ export function canWrite(r: DavResponse): boolean {
   if (type && typeof type === "object" && "subscribed" in type) return false;
   const set = r.prop["current-user-privilege-set"];
   if (set === undefined) return true;
-  const privileges = set && typeof set === "object" ? (set as { privilege?: unknown }).privilege : undefined;
+  const privileges =
+    set && typeof set === "object" ? (set as { privilege?: unknown }).privilege : undefined;
   const list = Array.isArray(privileges) ? privileges : privileges ? [privileges] : [];
   return list.some(
-    (p) => !!p && typeof p === "object" && Object.keys(p).some((name) => WRITE_PRIVILEGES.has(name)),
+    (p) =>
+      !!p && typeof p === "object" && Object.keys(p).some((name) => WRITE_PRIVILEGES.has(name)),
   );
 }
 
@@ -255,9 +259,10 @@ export function canWrite(r: DavResponse): boolean {
 function holdsEvents(r: DavResponse): boolean {
   const componentSet = r.prop["supported-calendar-component-set"];
   if (componentSet === undefined) return true;
-  const comps = componentSet && typeof componentSet === "object"
-    ? ((componentSet as { comp?: { "@_name"?: string }[] }).comp ?? [])
-    : [];
+  const comps =
+    componentSet && typeof componentSet === "object"
+      ? ((componentSet as { comp?: { "@_name"?: string }[] }).comp ?? [])
+      : [];
   return comps.some((c) => c["@_name"]?.toUpperCase() === "VEVENT");
 }
 
@@ -285,7 +290,11 @@ export function pickEventCalendars(responses: DavResponse[], homeUrl: URL): CalD
     if (!id) continue;
     const feedUrl = subscribed ? hrefInside(r.prop["source"]) : null;
     // Whether iCloud gave the address, never the address itself (it can hold a secret key).
-    if (subscribed) console.log("CalDAV subscription", feedUrl ? "with a feed address" : "WITHOUT a feed address");
+    if (subscribed)
+      console.log(
+        "CalDAV subscription",
+        feedUrl ? "with a feed address" : "WITHOUT a feed address",
+      );
     calendars.push({
       url: url.toString(),
       id,
@@ -306,7 +315,9 @@ export async function discoverCalendars(creds: CalDavCredentials): Promise<CalDa
     `<d:propfind ${NS}><d:prop><d:current-user-principal/></d:prop></d:propfind>`,
     0,
   );
-  const principalHref = hrefInside(parseMultistatus(principalXml)[0]?.prop["current-user-principal"]);
+  const principalHref = hrefInside(
+    parseMultistatus(principalXml)[0]?.prop["current-user-principal"],
+  );
   if (!principalHref) throw new CalDavError("Couldn't find your iCloud calendar account.");
 
   const homeXml = await dav(
@@ -335,7 +346,11 @@ export async function discoverCalendars(creds: CalDavCredentials): Promise<CalDa
  * ------------------------------------------------------------------------- */
 
 /** ICS "basic" UTC form, e.g. 20260919T000000Z, as CalDAV time ranges want. */
-const caldavTime = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+const caldavTime = (d: Date) =>
+  d
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
 
 /**
  * Fetch the events of one calendar that touch [from, to). Returns one ICS
@@ -408,7 +423,8 @@ export async function putEvent(
   if (res.ok || res.status === 412) return;
   if (res.status === 401) throw new CalDavLoginError(BAD_LOGIN);
   // A calendar shared view-only, or one iCloud won't take events in.
-  if (res.status === 403) throw new CalDavError("iCloud didn't let Casy add events to that calendar.");
+  if (res.status === 403)
+    throw new CalDavError("iCloud didn't let Casy add events to that calendar.");
   throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
 }
 
@@ -431,7 +447,11 @@ export async function deleteEvent(
  * ------------------------------------------------------------------------- */
 
 /** Run `fn` over `items` with at most `limit` in flight, keeping input order. */
-export async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+export async function mapPool<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
   const results = new Array<R>(items.length);
   let next = 0;
   await Promise.all(

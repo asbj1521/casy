@@ -17,7 +17,13 @@
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 
 /** The first element of the query keys worth remembering. */
-const PERSISTED = new Set(["groups", "calendar-status", "primary-calendar", "admin-status", "whoami"]);
+const PERSISTED = new Set([
+  "groups",
+  "calendar-status",
+  "primary-calendar",
+  "admin-status",
+  "whoami",
+]);
 
 const STORAGE_PREFIX = "casy:query:";
 /** Anything older than this is dropped rather than shown. */
@@ -46,7 +52,11 @@ function readAll(now: number): Stored[] {
       if (!name?.startsWith(STORAGE_PREFIX)) continue;
       try {
         const entry = JSON.parse(localStorage.getItem(name) ?? "") as Stored;
-        if (!Array.isArray(entry.key) || !isPersisted(entry.key) || now - entry.updatedAt > MAX_AGE_MS) {
+        if (
+          !Array.isArray(entry.key) ||
+          !isPersisted(entry.key) ||
+          now - entry.updatedAt > MAX_AGE_MS
+        ) {
           localStorage.removeItem(name);
         } else {
           entries.push(entry);

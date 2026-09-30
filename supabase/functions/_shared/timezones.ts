@@ -54,7 +54,14 @@ export function offsetMinutes(zone: string, atMs: number): number {
   for (const p of formatterFor(zone).formatToParts(new Date(atMs))) {
     if (p.type !== "literal") parts[p.type] = Number(p.value);
   }
-  const wallClockAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  const wallClockAsUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+  );
   return Math.round((wallClockAsUtc - Math.floor(atMs / 1000) * 1000) / MS_PER_MINUTE);
 }
 
@@ -93,7 +100,10 @@ function formatOffset(minutes: number): string {
 
 /** 20261025T030000, the floating local form DTSTART inside a VTIMEZONE uses. */
 function formatLocal(ms: number): string {
-  return new Date(ms).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "");
+  return new Date(ms)
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "");
 }
 
 /**
@@ -128,7 +138,13 @@ export function buildVtimezone(zone: string, from: Date, to: Date): string {
   const initial = offsetMinutes(zone, scanStart);
   const observances: string[] = [
     // Where the scan begins: no change, just "this is the offset in force".
-    ["BEGIN:STANDARD", "DTSTART:19700101T000000", `TZOFFSETFROM:${formatOffset(initial)}`, `TZOFFSETTO:${formatOffset(initial)}`, "END:STANDARD"].join("\r\n"),
+    [
+      "BEGIN:STANDARD",
+      "DTSTART:19700101T000000",
+      `TZOFFSETFROM:${formatOffset(initial)}`,
+      `TZOFFSETTO:${formatOffset(initial)}`,
+      "END:STANDARD",
+    ].join("\r\n"),
   ];
 
   let previousOffset = initial;

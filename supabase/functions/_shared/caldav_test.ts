@@ -42,9 +42,24 @@ const LISTING = wrap(
     collection("/111/calendars/BBBB-2222/", "Family & friends", CAL, ["VEVENT"]),
     collection("/111/calendars/CCCC-3333/", "University feed", SUBSCRIBED, ["VEVENT"]),
     collection("/111/calendars/DDDD-4444/", "Reminders", CAL, ["VTODO"]),
-    collection("/111/calendars/inbox/", null, `<schedule-inbox xmlns="urn:ietf:params:xml:ns:caldav"/>`, ["VEVENT"]),
-    collection("/111/calendars/outbox/", null, `<schedule-outbox xmlns="urn:ietf:params:xml:ns:caldav"/>`, ["VEVENT"]),
-    collection("/111/notification/", null, `<notification xmlns="http://calendarserver.org/ns/"/>`, []),
+    collection(
+      "/111/calendars/inbox/",
+      null,
+      `<schedule-inbox xmlns="urn:ietf:params:xml:ns:caldav"/>`,
+      ["VEVENT"],
+    ),
+    collection(
+      "/111/calendars/outbox/",
+      null,
+      `<schedule-outbox xmlns="urn:ietf:params:xml:ns:caldav"/>`,
+      ["VEVENT"],
+    ),
+    collection(
+      "/111/notification/",
+      null,
+      `<notification xmlns="http://calendarserver.org/ns/"/>`,
+      [],
+    ),
   ].join(""),
 );
 
@@ -92,7 +107,10 @@ Deno.test("a calendar that doesn't list what it holds is kept (a shared calendar
       <propstat><prop><supported-calendar-component-set xmlns="urn:ietf:params:xml:ns:caldav"/></prop><status>HTTP/1.1 404 Not Found</status></propstat>
     </response>
     ${collection("/111/calendars/DDDD-4444/", "Reminders", CAL, ["VTODO"])}`);
-  assertEquals(pickEventCalendars(parseMultistatus(xml), HOME).map((c) => c.name), ["Family"]);
+  assertEquals(
+    pickEventCalendars(parseMultistatus(xml), HOME).map((c) => c.name),
+    ["Family"],
+  );
 });
 
 /** A calendar collection that also answers which privileges we hold on it. */
@@ -102,9 +120,13 @@ const withPrivileges = (href: string, type: string, privileges: string[] | null)
     <displayname xmlns="DAV:">Shared</displayname>
     <resourcetype xmlns="DAV:"><collection/>${type}</resourcetype>
     <supported-calendar-component-set xmlns="urn:ietf:params:xml:ns:caldav"><comp name='VEVENT'/></supported-calendar-component-set>
-    ${privileges === null ? "" : `<current-user-privilege-set xmlns="DAV:">${privileges
-      .map((p) => `<privilege><${p}/></privilege>`)
-      .join("")}</current-user-privilege-set>`}
+    ${
+      privileges === null
+        ? ""
+        : `<current-user-privilege-set xmlns="DAV:">${privileges
+            .map((p) => `<privilege><${p}/></privilege>`)
+            .join("")}</current-user-privilege-set>`
+    }
   </prop><status>HTTP/1.1 200 OK</status></propstat></response>`);
 
 Deno.test("an own calendar we may write to is writable", () => {
@@ -122,7 +144,11 @@ Deno.test("bind alone is enough to add events; all counts too", () => {
 Deno.test("a calendar shared view-only is not writable", () => {
   for (const privileges of [["read"], ["read", "read-current-user-privilege-set"], []]) {
     const xml = withPrivileges("/111/calendars/AAAA-1111/", CAL, privileges);
-    assertEquals(pickEventCalendars(parseMultistatus(xml), HOME)[0].writable, false, privileges.join());
+    assertEquals(
+      pickEventCalendars(parseMultistatus(xml), HOME)[0].writable,
+      false,
+      privileges.join(),
+    );
   }
 });
 
@@ -209,7 +235,10 @@ function icloud(homeHref = "https://p48-caldav.icloud.com:443/111/calendars/"): 
 Deno.test("discovery walks principal -> home -> calendars", async () => {
   await withFetch(icloud(), async () => {
     const cals = await discoverCalendars(CREDS);
-    assertEquals(cals.map((c) => c.name), ["Work", "Family & friends", "University feed"]);
+    assertEquals(
+      cals.map((c) => c.name),
+      ["Work", "Family & friends", "University feed"],
+    );
   });
 });
 
@@ -254,26 +283,32 @@ Deno.test("a wrong password gives the friendly login error", async () => {
   );
 });
 
-Deno.test("a calendar home on another host is refused, and the password never goes there", async () => {
-  const hosts: string[] = [];
-  await withFetch(
-    (req) => {
-      hosts.push(new URL(req.url).host);
-      return icloud("https://evil.example.com/111/calendars/")(req);
-    },
-    async () => {
-      await assertRejects(() => discoverCalendars(CREDS), CalDavError, "unexpected server");
-    },
-  );
-  assert(!hosts.includes("evil.example.com"));
-});
+Deno.test(
+  "a calendar home on another host is refused, and the password never goes there",
+  async () => {
+    const hosts: string[] = [];
+    await withFetch(
+      (req) => {
+        hosts.push(new URL(req.url).host);
+        return icloud("https://evil.example.com/111/calendars/")(req);
+      },
+      async () => {
+        await assertRejects(() => discoverCalendars(CREDS), CalDavError, "unexpected server");
+      },
+    );
+    assert(!hosts.includes("evil.example.com"));
+  },
+);
 
 Deno.test("a redirect to another host is refused", async () => {
   const hosts: string[] = [];
   await withFetch(
     (req) => {
       hosts.push(new URL(req.url).host);
-      return new Response(null, { status: 302, headers: { location: "https://evil.example.com/" } });
+      return new Response(null, {
+        status: 302,
+        headers: { location: "https://evil.example.com/" },
+      });
     },
     async () => {
       await assertRejects(() => discoverCalendars(CREDS), CalDavError, "unexpected server");
@@ -290,9 +325,13 @@ Deno.test("a redirect within icloud.com is followed", async () => {
       // The very first request is bounced to another iCloud host, which then
       // answers as the account root would have.
       if (url.host === "caldav.icloud.com" && url.pathname === "/" && hops++ === 0) {
-        return new Response(null, { status: 301, headers: { location: "https://p48-caldav.icloud.com/" } });
+        return new Response(null, {
+          status: 301,
+          headers: { location: "https://p48-caldav.icloud.com/" },
+        });
       }
-      if (url.host === "p48-caldav.icloud.com" && url.pathname === "/") return xmlResponse(principalXml);
+      if (url.host === "p48-caldav.icloud.com" && url.pathname === "/")
+        return xmlResponse(principalXml);
       return icloud()(req);
     },
     async () => {
@@ -303,7 +342,8 @@ Deno.test("a redirect within icloud.com is followed", async () => {
 });
 
 Deno.test("event documents are pulled out, entities decoded, empty ones dropped", async () => {
-  const ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:1\r\nDTSTART:20261001T100000Z\r\nDTEND:20261001T110000Z\r\nEND:VEVENT\r\nEND:VCALENDAR";
+  const ics =
+    "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:1\r\nDTSTART:20261001T100000Z\r\nDTEND:20261001T110000Z\r\nEND:VEVENT\r\nEND:VCALENDAR";
   const xml = wrap(`
     <response><href>/a.ics</href><propstat><prop><calendar-data xmlns="urn:ietf:params:xml:ns:caldav">${ics}</calendar-data></prop><status>HTTP/1.1 200 OK</status></propstat></response>
     <response><href>/b.ics</href><propstat><prop><getetag>x</getetag></prop><status>HTTP/1.1 200 OK</status></propstat></response>`);
@@ -382,21 +422,35 @@ Deno.test("a calendar URL without a trailing slash still gets the file inside it
 });
 
 Deno.test("an event that is already there counts as added (a retry)", async () => {
-  await withFetch(() => new Response(null, { status: 412 }), () =>
-    putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"));
+  await withFetch(
+    () => new Response(null, { status: 412 }),
+    () => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"),
+  );
 });
 
 Deno.test("a refused write is a plain error, not a wrong password", async () => {
-  await withFetch(() => new Response(null, { status: 403 }), async () => {
-    const err = await assertRejects(() => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"), CalDavError);
-    assert(!(err instanceof CalDavLoginError));
-  });
+  await withFetch(
+    () => new Response(null, { status: 403 }),
+    async () => {
+      const err = await assertRejects(
+        () => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"),
+        CalDavError,
+      );
+      assert(!(err instanceof CalDavLoginError));
+    },
+  );
 });
 
 Deno.test("a refused password on a write asks for reconnecting", async () => {
-  await withFetch(() => new Response(null, { status: 401 }), async () => {
-    await assertRejects(() => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"), CalDavLoginError);
-  });
+  await withFetch(
+    () => new Response(null, { status: 401 }),
+    async () => {
+      await assertRejects(
+        () => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"),
+        CalDavLoginError,
+      );
+    },
+  );
 });
 
 Deno.test("a write never follows a redirect off icloud.com", async () => {
@@ -404,10 +458,17 @@ Deno.test("a write never follows a redirect off icloud.com", async () => {
   await withFetch(
     (req) => {
       hosts.push(new URL(req.url).host);
-      return new Response(null, { status: 307, headers: { location: "https://evil.example.com/x.ics" } });
+      return new Response(null, {
+        status: 307,
+        headers: { location: "https://evil.example.com/x.ics" },
+      });
     },
     async () => {
-      await assertRejects(() => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"), CalDavError, "unexpected server");
+      await assertRejects(
+        () => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x"),
+        CalDavError,
+        "unexpected server",
+      );
     },
   );
   assertEquals(hosts, ["p48-caldav.icloud.com"]);
@@ -415,13 +476,22 @@ Deno.test("a write never follows a redirect off icloud.com", async () => {
 
 Deno.test("deleting an event that is already gone counts as done", async () => {
   for (const status of [204, 404, 410]) {
-    await withFetch(() => new Response(null, { status }), () =>
-      deleteEvent(CREDS, CALENDAR_URL, "casy-abc.ics"));
+    await withFetch(
+      () => new Response(null, { status }),
+      () => deleteEvent(CREDS, CALENDAR_URL, "casy-abc.ics"),
+    );
   }
 });
 
 Deno.test("a delete that fails for another reason says so", async () => {
-  await withFetch(() => new Response(null, { status: 500 }), async () => {
-    await assertRejects(() => deleteEvent(CREDS, CALENDAR_URL, "casy-abc.ics"), CalDavError, "HTTP 500");
-  });
+  await withFetch(
+    () => new Response(null, { status: 500 }),
+    async () => {
+      await assertRejects(
+        () => deleteEvent(CREDS, CALENDAR_URL, "casy-abc.ics"),
+        CalDavError,
+        "HTTP 500",
+      );
+    },
+  );
 });

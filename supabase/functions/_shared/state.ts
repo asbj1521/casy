@@ -55,10 +55,7 @@ export interface OAuthStatePayload {
 const MAX_STATE_AGE_MS = 10 * 60_000; // 10 minutes: long enough for a consent screen, no longer.
 
 /** Sign a state payload into the opaque string passed as the OAuth `state` param. */
-export async function signState(
-  payload: OAuthStatePayload,
-  secret: string,
-): Promise<string> {
+export async function signState(payload: OAuthStatePayload, secret: string): Promise<string> {
   const body = base64UrlEncode(encoder.encode(JSON.stringify(payload)));
   const key = await hmacKey(secret);
   const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
@@ -79,16 +76,13 @@ export async function verifyState(
   const [body, sig] = parts;
 
   const key = await hmacKey(secret);
-  const valid = await crypto.subtle.verify(
-    "HMAC",
-    key,
-    base64UrlDecode(sig),
-    encoder.encode(body),
-  );
+  const valid = await crypto.subtle.verify("HMAC", key, base64UrlDecode(sig), encoder.encode(body));
   if (!valid) return null;
 
   try {
-    const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(body))) as OAuthStatePayload;
+    const payload = JSON.parse(
+      new TextDecoder().decode(base64UrlDecode(body)),
+    ) as OAuthStatePayload;
     if (typeof payload.profileId !== "string" || typeof payload.ts !== "number") return null;
     if (Date.now() - payload.ts > MAX_STATE_AGE_MS) return null;
     return payload;

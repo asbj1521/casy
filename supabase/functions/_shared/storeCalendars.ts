@@ -80,7 +80,10 @@ export async function storeCalendars(
       if (sourcesErr || !sources) throw sourcesErr ?? new Error("No calendar_sources returned");
 
       const sourceIdByExternalId = new Map<string, string>(
-        sources.map((s: { external_calendar_id: string; id: string }) => [s.external_calendar_id, s.id]),
+        sources.map((s: { external_calendar_id: string; id: string }) => [
+          s.external_calendar_id,
+          s.id,
+        ]),
       );
       busyRows = input.calendars.flatMap((c) => {
         const sourceId = sourceIdByExternalId.get(c.externalId);

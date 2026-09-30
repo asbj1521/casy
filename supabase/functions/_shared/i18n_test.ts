@@ -30,12 +30,18 @@ Deno.test("every translated message still exists word for word in the code", asy
 
 Deno.test("Danish copy follows the site's rules: no em or en dashes", () => {
   const all = [...Object.values(DANISH), ...DANISH_PATTERNS.map(([, render]) => render("x", "y"))];
-  assertEquals(all.filter((s) => /[–—]/.test(s)), []);
+  assertEquals(
+    all.filter((s) => /[–—]/.test(s)),
+    [],
+  );
 });
 
 Deno.test("translates exact and patterned messages, and leaves the rest", () => {
   assertEquals(translateError("Please sign in again.", "da"), "Log ind igen.");
-  assertEquals(translateError("That link responded with HTTP 404.", "da"), "Linket svarede med HTTP 404.");
+  assertEquals(
+    translateError("That link responded with HTTP 404.", "da"),
+    "Linket svarede med HTTP 404.",
+  );
   assertEquals(translateError("groupId is required", "da"), "groupId is required");
   assertEquals(translateError("Please sign in again.", "en"), "Please sign in again.");
 });
@@ -52,12 +58,15 @@ const failing = () =>
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 
-Deno.test("withLanguage rewrites a failed JSON response and keeps its status and headers", async () => {
-  const res = await withLanguage(failing)(new Request("https://x.test/fn?lang=da"));
-  assertEquals(res.status, 401);
-  assertEquals(res.headers.get("Access-Control-Allow-Origin"), "*");
-  assertEquals(await res.json(), { error: "Log ind igen." });
-});
+Deno.test(
+  "withLanguage rewrites a failed JSON response and keeps its status and headers",
+  async () => {
+    const res = await withLanguage(failing)(new Request("https://x.test/fn?lang=da"));
+    assertEquals(res.status, 401);
+    assertEquals(res.headers.get("Access-Control-Allow-Origin"), "*");
+    assertEquals(await res.json(), { error: "Log ind igen." });
+  },
+);
 
 Deno.test("withLanguage leaves English callers and successes alone", async () => {
   const en = await withLanguage(failing)(new Request("https://x.test/fn?lang=en"));

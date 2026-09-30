@@ -25,7 +25,10 @@ export function parseAdminIds(raw: string | undefined | null): Set<string> {
 }
 
 /** True if this verified user id is one of the admins. */
-export function isAdminId(userId: string | null | undefined, raw: string | undefined | null): boolean {
+export function isAdminId(
+  userId: string | null | undefined,
+  raw: string | undefined | null,
+): boolean {
   if (!userId) return false;
   return parseAdminIds(raw).has(userId.toLowerCase());
 }

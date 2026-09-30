@@ -41,7 +41,8 @@ function loadTurnstile(): Promise<Turnstile> {
     const script = document.createElement("script");
     script.src = SCRIPT_URL;
     script.async = true;
-    script.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("no turnstile")));
+    script.onload = () =>
+      window.turnstile ? resolve(window.turnstile) : reject(new Error("no turnstile"));
     script.onerror = () => {
       loading = null; // let a later page try again
       reject(new Error("turnstile failed to load"));

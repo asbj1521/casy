@@ -17,10 +17,7 @@ const JUNE = 5; // 0-based
 /** Well before the month under test, so no day counts as past unless asked. */
 const LONG_AGO = Date.parse("2020-01-01T00:00:00.000Z");
 
-function makeParticipant(
-  name: string,
-  busy: Array<[string, string, EventCategory?]>,
-): Participant {
+function makeParticipant(name: string, busy: Array<[string, string, EventCategory?]>): Participant {
   return {
     profileId: name.toLowerCase(),
     name,
@@ -41,9 +38,7 @@ function makeOptions(overrides: Partial<MonthGridOptions> = {}): MonthGridOption
 
 /** The cell for a given day of June 2026. */
 function cellFor(weeks: DayCell[][], dayOfMonth: number): DayCell {
-  const cell = weeks
-    .flat()
-    .find((c) => c.inMonth && c.dayOfMonth === dayOfMonth);
+  const cell = weeks.flat().find((c) => c.inMonth && c.dayOfMonth === dayOfMonth);
   if (!cell) throw new Error(`no in-month cell for June ${dayOfMonth}`);
   return cell;
 }
@@ -53,15 +48,7 @@ describe("buildMonthGrid layout", () => {
     const grid = buildMonthGrid([], YEAR, JUNE, makeOptions());
 
     expect(grid.label).toContain("2026");
-    expect(grid.weekdayLabels).toEqual([
-      "man.",
-      "tirs.",
-      "ons.",
-      "tors.",
-      "fre.",
-      "lør.",
-      "søn.",
-    ]);
+    expect(grid.weekdayLabels).toEqual(["man.", "tirs.", "ons.", "tors.", "fre.", "lør.", "søn."]);
     // June 2026 starts on a Monday and has 30 days: exactly five rows.
     expect(grid.weeks).toHaveLength(5);
     for (const week of grid.weeks) expect(week).toHaveLength(7);
@@ -79,9 +66,14 @@ describe("buildMonthGrid layout", () => {
   });
 
   it("marks days before today as past", () => {
-    const grid = buildMonthGrid([], YEAR, JUNE, makeOptions({
-      todayMs: Date.parse("2026-06-10T09:00:00.000Z"),
-    }));
+    const grid = buildMonthGrid(
+      [],
+      YEAR,
+      JUNE,
+      makeOptions({
+        todayMs: Date.parse("2026-06-10T09:00:00.000Z"),
+      }),
+    );
 
     expect(cellFor(grid.weeks, 9).isPast).toBe(true);
     expect(cellFor(grid.weeks, 10).isPast).toBe(false); // today is not past
@@ -101,12 +93,8 @@ describe("buildMonthGrid for a single meeting", () => {
   it("counts only people free at the chosen hour", () => {
     // The meeting is 18:00-20:00. Alice is busy across it, Bob finishes before.
     const people = [
-      makeParticipant("Alice", [
-        ["2026-06-03T19:00:00.000Z", "2026-06-03T21:00:00.000Z"],
-      ]),
-      makeParticipant("Bob", [
-        ["2026-06-03T09:00:00.000Z", "2026-06-03T17:00:00.000Z"],
-      ]),
+      makeParticipant("Alice", [["2026-06-03T19:00:00.000Z", "2026-06-03T21:00:00.000Z"]]),
+      makeParticipant("Bob", [["2026-06-03T09:00:00.000Z", "2026-06-03T17:00:00.000Z"]]),
     ];
 
     const grid = buildMonthGrid(people, YEAR, JUNE, makeOptions());
@@ -118,9 +106,7 @@ describe("buildMonthGrid for a single meeting", () => {
   it("counts a meeting that runs past midnight against the next day too", () => {
     // A night out: 22:00 for four hours, ending 02:00 the following day.
     const people = [
-      makeParticipant("Alice", [
-        ["2026-06-09T00:30:00.000Z", "2026-06-09T01:30:00.000Z"],
-      ]),
+      makeParticipant("Alice", [["2026-06-09T00:30:00.000Z", "2026-06-09T01:30:00.000Z"]]),
     ];
 
     const grid = buildMonthGrid(
@@ -138,12 +124,7 @@ describe("buildMonthGrid for a single meeting", () => {
   it("excludes weekdays outside allowedDays instead of tinting them", () => {
     const people = [makeParticipant("Alice", [])];
     // Fridays and Saturdays only (5 = Fri, 6 = Sat).
-    const grid = buildMonthGrid(
-      people,
-      YEAR,
-      JUNE,
-      makeOptions({ allowedDays: [5, 6] }),
-    );
+    const grid = buildMonthGrid(people, YEAR, JUNE, makeOptions({ allowedDays: [5, 6] }));
 
     expect(cellFor(grid.weeks, 5).excluded).toBe(false); // Friday
     expect(cellFor(grid.weeks, 6).excluded).toBe(false); // Saturday
@@ -165,9 +146,7 @@ describe("buildMonthGrid with anyTime", () => {
     // Alice is busy all morning but free from 14:00; the chosen startHour
     // (18:00) would also happen to work, but anyTime shouldn't need it to.
     const people = [
-      makeParticipant("Alice", [
-        ["2026-06-03T00:00:00.000Z", "2026-06-03T14:00:00.000Z"],
-      ]),
+      makeParticipant("Alice", [["2026-06-03T00:00:00.000Z", "2026-06-03T14:00:00.000Z"]]),
     ];
 
     const grid = buildMonthGrid(
@@ -183,9 +162,7 @@ describe("buildMonthGrid with anyTime", () => {
   it("never counts a gap outside 10:00-22:00, even an all-night-free person", () => {
     // Busy exactly across the allowed window; free all night, which doesn't count.
     const people = [
-      makeParticipant("Alice", [
-        ["2026-06-03T10:00:00.000Z", "2026-06-03T22:00:00.000Z"],
-      ]),
+      makeParticipant("Alice", [["2026-06-03T10:00:00.000Z", "2026-06-03T22:00:00.000Z"]]),
     ];
 
     const grid = buildMonthGrid(
@@ -200,9 +177,7 @@ describe("buildMonthGrid with anyTime", () => {
 
   it("still reports busy when no gap in the window is long enough", () => {
     const people = [
-      makeParticipant("Alice", [
-        ["2026-06-03T10:00:00.000Z", "2026-06-03T20:00:00.000Z"],
-      ]),
+      makeParticipant("Alice", [["2026-06-03T10:00:00.000Z", "2026-06-03T20:00:00.000Z"]]),
     ];
 
     // Only a 2h gap (20:00-22:00) is left in the window, but the meeting needs 4h.
@@ -249,18 +224,11 @@ describe("buildMonthGrid in vacation mode", () => {
         ["2026-06-15T00:00:00.000Z", "2026-06-16T00:00:00.000Z", "travel"],
       ]),
       // Work only: free, but conditionally.
-      makeParticipant("Bob", [
-        ["2026-06-15T09:00:00.000Z", "2026-06-15T17:00:00.000Z", "work"],
-      ]),
+      makeParticipant("Bob", [["2026-06-15T09:00:00.000Z", "2026-06-15T17:00:00.000Z", "work"]]),
       makeParticipant("Cara", []),
     ];
 
-    const grid = buildMonthGrid(
-      people,
-      YEAR,
-      JUNE,
-      makeOptions({ multiDay: { windowEndMs } }),
-    );
+    const grid = buildMonthGrid(people, YEAR, JUNE, makeOptions({ multiDay: { windowEndMs } }));
 
     const cell = cellFor(grid.weeks, 15);
     expect(cell.freeCount).toBe(1); // Cara
@@ -308,9 +276,7 @@ describe("buildMonthGrid in weekend-trip mode", () => {
   it("only counts the first day from the departure hour", () => {
     // A workday ending at 17:00 does not touch a trip leaving at 17:00.
     const people = [
-      makeParticipant("Alice", [
-        ["2026-06-05T09:00:00.000Z", "2026-06-05T17:00:00.000Z", "work"],
-      ]),
+      makeParticipant("Alice", [["2026-06-05T09:00:00.000Z", "2026-06-05T17:00:00.000Z", "work"]]),
     ];
 
     const grid = buildMonthGrid(people, YEAR, JUNE, makeOptions({ weeklySpan }));
@@ -321,9 +287,7 @@ describe("buildMonthGrid in weekend-trip mode", () => {
 
   it("counts work overlapping the departure evening as conditional", () => {
     const people = [
-      makeParticipant("Alice", [
-        ["2026-06-05T16:00:00.000Z", "2026-06-05T20:00:00.000Z", "work"],
-      ]),
+      makeParticipant("Alice", [["2026-06-05T16:00:00.000Z", "2026-06-05T20:00:00.000Z", "work"]]),
     ];
 
     const grid = buildMonthGrid(people, YEAR, JUNE, makeOptions({ weeklySpan }));
@@ -377,7 +341,9 @@ describe("buildMonthGrid with calendar priorities", () => {
     const bob: Participant = {
       profileId: "bob",
       name: "Bob",
-      busy: [{ start: "2026-06-10T18:00:00.000Z", end: "2026-06-10T19:00:00.000Z", priority: "skip" }],
+      busy: [
+        { start: "2026-06-10T18:00:00.000Z", end: "2026-06-10T19:00:00.000Z", priority: "skip" },
+      ],
     };
     const carol: Participant = {
       profileId: "carol",

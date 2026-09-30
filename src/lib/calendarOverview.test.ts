@@ -45,7 +45,15 @@ describe("buildMonthLayout", () => {
     expect(layout.weeks[0][1].inMonth).toBe(true);
     expect(layout.weeks[4][6].key).toBe("2026-10-04"); // trailing spill-over
     expect(layout.weeks[4][6].inMonth).toBe(false);
-    expect(layout.weekdayLabels).toEqual(["man.", "tirs.", "ons.", "tors.", "fre.", "lør.", "søn."]);
+    expect(layout.weekdayLabels).toEqual([
+      "man.",
+      "tirs.",
+      "ons.",
+      "tors.",
+      "fre.",
+      "lør.",
+      "søn.",
+    ]);
   });
 
   it("needs 6 rows when a 31-day month starts late in the week (August 2026)", () => {
@@ -152,7 +160,9 @@ describe("segmentByDay", () => {
     const start = iso(2026, 10, 23, 18);
     const end = iso(2026, 10, 27, 7);
     const seg = segmentByDay([block(start, end)], new Date(2026, 9, 1), new Date(2026, 10, 1));
-    const total = [...seg.values()].flat().reduce((sum, s) => sum + (s.end.getTime() - s.start.getTime()), 0);
+    const total = [...seg.values()]
+      .flat()
+      .reduce((sum, s) => sum + (s.end.getTime() - s.start.getTime()), 0);
     expect(total).toBe(Date.parse(end) - Date.parse(start));
   });
 });
@@ -177,7 +187,12 @@ describe("calendarColors", () => {
   });
 
   it("colours by category when set, and gives uncategorised calendars distinct palette colours", () => {
-    const colors = calendarColors([cal("a", "school"), cal("b", null), cal("c", null), cal("d", "school")]);
+    const colors = calendarColors([
+      cal("a", "school"),
+      cal("b", null),
+      cal("c", null),
+      cal("d", "school"),
+    ]);
     expect(colors.get("a")).toBe(colors.get("d")); // same category, same colour
     expect(colors.get("b")).not.toBe(colors.get("c"));
     expect(colors.get("a")).not.toBe(colors.get("b"));
@@ -216,7 +231,13 @@ describe("built-in Danish holidays", () => {
   it("includes days from the next year when a December grid spills into January", () => {
     const layout = buildMonthLayout(2026, 11); // grid runs to Sunday 3 January 2027
     const byDay = holidaySegmentsByDay(layout.from, layout.to);
-    expect([...byDay.keys()]).toEqual(["2026-12-24", "2026-12-25", "2026-12-26", "2026-12-31", "2027-01-01"]);
+    expect([...byDay.keys()]).toEqual([
+      "2026-12-24",
+      "2026-12-25",
+      "2026-12-26",
+      "2026-12-31",
+      "2027-01-01",
+    ]);
   });
 
   it("only returns holidays inside the requested range", () => {
@@ -230,7 +251,10 @@ describe("built-in Danish holidays", () => {
     const timed = segmentByDay([block(iso(2026, 4, 3, 9), iso(2026, 4, 3, 10), "x")], from, to);
     const holidays = holidaySegmentsByDay(from, to);
     const merged = withHolidays(timed, holidays);
-    expect(merged.get("2026-04-03")!.map((s) => s.holiday?.name ?? s.calendarId)).toEqual(["Langfredag", "x"]);
+    expect(merged.get("2026-04-03")!.map((s) => s.holiday?.name ?? s.calendarId)).toEqual([
+      "Langfredag",
+      "x",
+    ]);
     expect(timed.get("2026-04-03")).toHaveLength(1); // untouched
     expect(merged.get("2026-04-02")).toHaveLength(1); // holiday on a day with no blocks
   });
@@ -239,10 +263,19 @@ describe("built-in Danish holidays", () => {
     expect(HOLIDAY_CALENDAR.provider).toBe("builtin");
     expect(HOLIDAY_CALENDAR.account).toBeNull();
     const many = Array.from({ length: 10 }, (_, i) => ({
-      id: `x${i}`, name: `x${i}`, purpose: null, provider: "ics" as const, account: null, connectionId: "c",
+      id: `x${i}`,
+      name: `x${i}`,
+      purpose: null,
+      provider: "ics" as const,
+      account: null,
+      connectionId: "c",
     }));
     const colors = calendarColors(many);
-    expect([...colors.entries()].filter(([id, rgb]) => id !== HOLIDAY_CALENDAR_ID && rgb === colors.get(HOLIDAY_CALENDAR_ID))).toEqual([]);
+    expect(
+      [...colors.entries()].filter(
+        ([id, rgb]) => id !== HOLIDAY_CALENDAR_ID && rgb === colors.get(HOLIDAY_CALENDAR_ID),
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -327,13 +360,21 @@ describe("groupCalendarsByBrand", () => {
       cal("o1", "outlook"),
       cal("g2", "google"),
     ]);
-    expect(groups.map((g) => g.label)).toEqual(["Google", "Outlook", "Apple", "Special", "Built in"]);
+    expect(groups.map((g) => g.label)).toEqual([
+      "Google",
+      "Outlook",
+      "Apple",
+      "Special",
+      "Built in",
+    ]);
     expect(groups[0].calendars.map((c) => c.id)).toEqual(["g1", "g2"]);
   });
 
   it("calls calendars added by link 'Special'", () => {
     const groups = groupCalendarsByBrand([cal("l1", "ics")]);
-    expect(groups).toEqual([{ id: "ics", label: "Special", calendars: [expect.objectContaining({ id: "l1" })] }]);
+    expect(groups).toEqual([
+      { id: "ics", label: "Special", calendars: [expect.objectContaining({ id: "l1" })] },
+    ]);
   });
 
   it("leaves out brands with no calendars", () => {

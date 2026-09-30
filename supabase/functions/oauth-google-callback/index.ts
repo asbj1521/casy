@@ -172,7 +172,14 @@ Deno.serve(async (req) => {
     // provider hands its one-time code to the first request and refuses the
     // second with invalid_grant, which is no failure at all: the account
     // connected. Drop this duplicate attempt instead of recording an error.
-    if (await discardIfRepeatedCallback(db, { connection, profileId, provider: "google", failure: err })) {
+    if (
+      await discardIfRepeatedCallback(db, {
+        connection,
+        profileId,
+        provider: "google",
+        failure: err,
+      })
+    ) {
       return redirectToProfile(frontendUrl, { connected: "google" });
     }
     await db

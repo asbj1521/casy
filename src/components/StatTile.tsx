@@ -22,10 +22,17 @@ export default function StatTile({
         alert ? "bg-red-50 text-red-800" : "bg-secondary",
       )}
     >
-      <p className={cn("text-2xl font-bold tabular-nums", alert ? "text-red-700" : "text-foreground")}>
+      <p
+        className={cn(
+          "text-2xl font-bold tabular-nums",
+          alert ? "text-red-700" : "text-foreground",
+        )}
+      >
         {value === null ? "..." : value.toLocaleString("en-GB")}
       </p>
-      <p className={cn("mt-0.5 text-xs", alert ? "text-red-800/80" : "text-muted-foreground")}>{label}</p>
+      <p className={cn("mt-0.5 text-xs", alert ? "text-red-800/80" : "text-muted-foreground")}>
+        {label}
+      </p>
     </div>
   );
 }

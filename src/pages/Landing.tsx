@@ -2,15 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import {
-  ArrowRight,
-  Ban,
-  Clock,
-  DatabaseZap,
-  Lock,
-  MapPin,
-  Users,
-} from "lucide-react";
+import { ArrowRight, Ban, Clock, DatabaseZap, Lock, MapPin, Users } from "lucide-react";
 
 import FadeSwap from "@/components/FadeSwap";
 import TopNav from "@/components/TopNav";
@@ -45,7 +37,8 @@ const da = {
   go: "Gå til Casy",
   signIn: "Log ind",
   dataTitle: "Dine data, kort fortalt",
-  dataIntro: "Casy skal kende dine kalendere for at gøre sit arbejde. Så lidt som muligt, og godt passet på.",
+  dataIntro:
+    "Casy skal kende dine kalendere for at gøre sit arbejde. Så lidt som muligt, og godt passet på.",
   facts: [
     {
       title: "Kun hvornår du er optaget",
@@ -85,7 +78,8 @@ const en: typeof da = {
   go: "Go to Casy",
   signIn: "Sign in",
   dataTitle: "Your data, in short",
-  dataIntro: "Casy needs your calendars to do its job. As little as possible, and well looked after.",
+  dataIntro:
+    "Casy needs your calendars to do its job. As little as possible, and well looked after.",
   facts: [
     {
       title: "Only when you are busy",
@@ -134,7 +128,15 @@ const DRAWING_GROUPS: { total: number; free: number[] }[] = [
 const riseDelay = (i: number) => barRiseDelay(i, RISE_FULL, 0.4);
 
 /** Fades in and rises a little; `delay` staggers the hero's parts. */
-function Rise({ delay = 0, className, children }: { delay?: number; className?: string; children: ReactNode }) {
+function Rise({
+  delay = 0,
+  className,
+  children,
+}: {
+  delay?: number;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <motion.div
       className={className}
@@ -179,18 +181,29 @@ function ChartDrawing() {
       ms,
       best: free === group.total,
       dayOfMonth: localDate(ms, APP_TIME_ZONE).day,
-      dow: new Date(ms).toLocaleDateString(LOCALE[lang], { weekday: "narrow", timeZone: APP_TIME_ZONE }),
+      dow: new Date(ms).toLocaleDateString(LOCALE[lang], {
+        weekday: "narrow",
+        timeZone: APP_TIME_ZONE,
+      }),
     };
   });
-  const month = new Date(today).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: APP_TIME_ZONE });
+  const month = new Date(today).toLocaleDateString(LOCALE[lang], {
+    month: "long",
+    timeZone: APP_TIME_ZONE,
+  });
   const title = month.charAt(0).toUpperCase() + month.slice(1);
 
   return (
     // vt-card: the card that flies into the scheduler's chart ("Go to Casy")
     // or the sign-in box ("Sign in"), see cardTransition.ts.
-    <div aria-hidden="true" className="vt-card rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-6 sm:pt-5">
+    <div
+      aria-hidden="true"
+      className="vt-card rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-6 sm:pt-5"
+    >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <p className="text-[15px] font-bold text-foreground sm:text-lg">{t.scheduler.chartTitle(title)}</p>
+        <p className="text-[15px] font-bold text-foreground sm:text-lg">
+          {t.scheduler.chartTitle(title)}
+        </p>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-sm bg-everyone" />
@@ -217,9 +230,15 @@ function ChartDrawing() {
             // swaps only fade.
             const delay = riseDelay(i);
             return (
-              <div key={d.ms} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+              <div
+                key={d.ms}
+                className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
+              >
                 <motion.span
-                  className={cn("text-[11px] font-bold", d.best ? "text-everyone" : "text-muted-foreground")}
+                  className={cn(
+                    "text-[11px] font-bold",
+                    d.best ? "text-everyone" : "text-muted-foreground",
+                  )}
                   initial={still ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.2, delay }}
@@ -228,7 +247,9 @@ function ChartDrawing() {
                 </motion.span>
                 <motion.span
                   className={cn("w-full rounded-t-[4px]", d.best ? "bg-everyone" : "bg-primary/30")}
-                  style={{ height: `max(3px, calc(var(--bar-max) * ${d.free / group.total} * var(--grow)))` }}
+                  style={{
+                    height: `max(3px, calc(var(--bar-max) * ${d.free / group.total} * var(--grow)))`,
+                  }}
                   initial={still ? { "--grow": 1 } : { "--grow": 0 }}
                   animate={{ "--grow": 1 }}
                   transition={{ duration: RISE_FULL.duration, delay, ease: "easeOut" }}
@@ -247,7 +268,12 @@ function ChartDrawing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: RISE_FULL.duration, delay: riseDelay(i), ease: "easeOut" }}
             >
-              <span className={cn("font-semibold", d.best ? "font-extrabold text-everyone" : "text-foreground")}>
+              <span
+                className={cn(
+                  "font-semibold",
+                  d.best ? "font-extrabold text-everyone" : "text-foreground",
+                )}
+              >
                 {d.dayOfMonth}
               </span>
               <span className="text-muted-foreground">{d.dow}</span>
@@ -323,7 +349,8 @@ export default function Landing() {
                     onFocus={() => void loadSignIn()}
                     onTouchStart={() => void loadSignIn()}
                     onClick={(e) => {
-                      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+                        return;
                       if (goWithCard(() => navigate("/sign-in"), loadSignIn)) e.preventDefault();
                     }}
                     className="text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline sm:text-base"
@@ -342,7 +369,9 @@ export default function Landing() {
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {c.dataTitle}
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">{c.dataIntro}</p>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
+              {c.dataIntro}
+            </p>
             <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {c.facts.map((fact, i) => {
                 const Icon = FACT_ICONS[i];
@@ -352,23 +381,33 @@ export default function Landing() {
                       <Icon className="h-5 w-5" />
                     </span>
                     <h3 className="mt-3 text-base font-semibold text-foreground">{fact.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{fact.body}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      {fact.body}
+                    </p>
                   </li>
                 );
               })}
             </ul>
             <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">
+              <Link
+                to="/privacy"
+                className="font-medium text-foreground underline underline-offset-2"
+              >
                 {c.privacyLink}
               </Link>
-              <Link to="/how-it-works" className="font-medium text-foreground underline underline-offset-2">
+              <Link
+                to="/how-it-works"
+                className="font-medium text-foreground underline underline-offset-2"
+              >
                 {c.howLink}
               </Link>
             </div>
           </section>
 
           <section className="mt-16 flex flex-col items-center gap-5 rounded-3xl bg-secondary px-6 py-10 text-center sm:mt-24 sm:py-14">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{c.ctaTitle}</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              {c.ctaTitle}
+            </h2>
             <GoButton label={c.go} />
           </section>
         </main>

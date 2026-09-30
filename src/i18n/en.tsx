@@ -153,7 +153,13 @@ export const en: Messages = {
     othersSkip: (names: string) => `${names} would skip something. `,
     skipWhy: "No date within a week works without.",
     youApprovedDates: "You approved taking time off for these dates.",
-    suggestionFits: (requested: number, needsTimeOff: boolean, fits: number, span: string, extra: string) => (
+    suggestionFits: (
+      requested: number,
+      needsTimeOff: boolean,
+      fits: number,
+      span: string,
+      extra: string,
+    ) => (
       <>
         {days(requested)} {needsTimeOff ? "needs time off" : "does not fit"}, but{" "}
         <span className="font-semibold">{days(fits)} works for everyone</span>: {span}
@@ -172,7 +178,10 @@ export const en: Messages = {
     exampleSignedOutLink: "Sign in",
     exampleCalendarsFailed: "Couldn't load your calendars, so you are shown with example data too.",
     exampleSignedIn: (link: ReactNode) => (
-      <>The other people here are example data. {link} and make a group to find a date with real people.</>
+      <>
+        The other people here are example data. {link} and make a group to find a date with real
+        people.
+      </>
     ),
     exampleSignedInLink: "Connect a calendar",
     busyFailed: "Couldn't load this group's calendars, so these times are incomplete.",
@@ -232,7 +241,8 @@ export const en: Messages = {
   earlyMorning: {
     you: "You",
     oneYou: (time: string) => `Heads up: you have something at ${time} the next morning.`,
-    one: (who: string, time: string) => `Heads up: ${who} has something at ${time} the next morning.`,
+    one: (who: string, time: string) =>
+      `Heads up: ${who} has something at ${time} the next morning.`,
     many: (list: string) => `Heads up: ${list} have something early the next morning.`,
   },
   backToBack: {
@@ -404,7 +414,8 @@ export const en: Messages = {
   },
   authErrors: {
     invalidCredentials: "Wrong email or password.",
-    weakPassword: "That password is too weak. Use at least 8 characters with both letters and numbers.",
+    weakPassword:
+      "That password is too weak. Use at least 8 characters with both letters and numbers.",
     samePassword: "The new password must be different from the old one.",
     rateLimit: "Too many attempts. Wait a little and try again.",
     emailNotConfirmed: "Confirm your email first. Check your inbox.",
@@ -428,7 +439,8 @@ export const en: Messages = {
       "Find a date on the scheduling page and press Suggest this date. It shows up here for everyone in the group.",
     findDate: "Find a date",
     needsAnswer: "Needs your answer",
-    cantMake: "Can't make it? Casy finds the next date that works for the group and asks everyone again.",
+    cantMake:
+      "Can't make it? Casy finds the next date that works for the group and asks everyone again.",
     declineFind: "Decline and find a new date",
     keepIt: "Keep it",
     accept: "Accept",
@@ -452,7 +464,8 @@ export const en: Messages = {
     you: "You",
     youSuggested: "You suggested this",
     suggestedBy: (name: string) => `Suggested by ${name}`,
-    newDateBecause: (who: string, date: string) => `. New date because ${who} couldn't make ${date}`,
+    newDateBecause: (who: string, date: string) =>
+      `. New date because ${who} couldn't make ${date}`,
   },
   calendarView: {
     back: "Back to profile",
@@ -755,7 +768,9 @@ export const en: Messages = {
     syncTitle: "Sync this account now",
     userDeleted: (who: string, groups: number) =>
       `${who} was deleted` +
-      (groups > 0 ? `, along with ${groups === 1 ? "1 group" : `${groups} groups`} only they were in.` : "."),
+      (groups > 0
+        ? `, along with ${groups === 1 ? "1 group" : `${groups} groups`} only they were in.`
+        : "."),
     theAccount: "The account",
     syncedBlocks: (n: number) => `Synced: ${n === 1 ? "1 busy block" : `${n} busy blocks`}.`,
     syncFailed: "Sync failed.",
@@ -768,9 +783,11 @@ export const en: Messages = {
     couldntRemove: "Couldn't remove them",
     couldntDeleteAccount: "Couldn't delete the account",
     couldntLoad: "Couldn't load the admin overview",
-    providers: { google: "Google", outlook: "Outlook", apple: "iCloud", ics: "Calendar link" } as Record<
-      string,
-      string
-    >,
+    providers: {
+      google: "Google",
+      outlook: "Outlook",
+      apple: "iCloud",
+      ics: "Calendar link",
+    } as Record<string, string>,
   },
 };

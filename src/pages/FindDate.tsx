@@ -14,13 +14,7 @@ import {
 } from "lucide-react";
 
 import { eventsQueryKey, suggestEvent } from "@/api/events";
-import {
-  createGroup,
-  createInvite,
-  groupsQueryKey,
-  leaveGroup,
-  type Group,
-} from "@/api/groups";
+import { createGroup, createInvite, groupsQueryKey, leaveGroup, type Group } from "@/api/groups";
 import { SEARCH_WINDOW } from "@/api/mockData";
 import {
   findVacationSuggestions,
@@ -33,9 +27,20 @@ import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { useAuth } from "@/context/auth";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { formatDaySpan, formatLongDate, formatLongSpan, formatLongSpanLines, formatTime } from "@/lib/format";
+import {
+  formatDaySpan,
+  formatLongDate,
+  formatLongSpan,
+  formatLongSpanLines,
+  formatTime,
+} from "@/lib/format";
 import { nameList } from "@/lib/myEvents";
-import { backToBackEnds, backToBackNote, earlyMorningNote, earlyMorningStarts } from "@/lib/earlyMorning";
+import {
+  backToBackEnds,
+  backToBackNote,
+  earlyMorningNote,
+  earlyMorningStarts,
+} from "@/lib/earlyMorning";
 import { avatarColor } from "@/lib/avatar";
 import { dayOf, monthStartMs } from "@/lib/day";
 import {
@@ -114,10 +119,7 @@ const TODAY_DAY = dayOf(new Date().toISOString(), TZ);
 /** First-of-month (ms) for the month containing today. */
 const DEFAULT_MONTH = monthStartMs(Date.parse(TODAY_DAY), TZ);
 /** Navigable month range: from this month up to the last month with data. */
-const MIN_MONTH = Math.max(
-  DEFAULT_MONTH,
-  monthStartMs(Date.parse(SEARCH_WINDOW.start), TZ),
-);
+const MIN_MONTH = Math.max(DEFAULT_MONTH, monthStartMs(Date.parse(SEARCH_WINDOW.start), TZ));
 const MAX_MONTH = monthStartMs(Date.parse(SEARCH_WINDOW.end) - 1, TZ);
 
 /**
@@ -125,9 +127,7 @@ const MAX_MONTH = monthStartMs(Date.parse(SEARCH_WINDOW.end) - 1, TZ);
  * The past is never searched.
  */
 const SEARCH_BASE =
-  Date.parse(TODAY_DAY) > Date.parse(SEARCH_WINDOW.start)
-    ? TODAY_DAY
-    : SEARCH_WINDOW.start;
+  Date.parse(TODAY_DAY) > Date.parse(SEARCH_WINDOW.start) ? TODAY_DAY : SEARCH_WINDOW.start;
 
 /**
  * Where a search begins: the day asked for, but for a meeting never a moment
@@ -153,11 +153,15 @@ export default function FindDate() {
   // (pageMemory); otherwise it starts fresh, with random settings.
   const [left] = useState(() => (pageMemory?.userId === userId ? pageMemory : null));
   const [copied, setCopied] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(left?.selectedGroupId ?? null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
+    left?.selectedGroupId ?? null,
+  );
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   // What the event is called: only for the group to read, never searched on.
   const [name, setName] = useState(left?.name ?? "");
-  const [sched, setSched] = useState<SchedulerSettings>(() => left?.sched ?? randomDefaultSettings());
+  const [sched, setSched] = useState<SchedulerSettings>(
+    () => left?.sched ?? randomDefaultSettings(),
+  );
   // Multi-day spans with work/school conflicts need the user's sign-off; this
   // holds the slot start they accepted (null = nothing accepted yet).
   const [acceptedSlot, setAcceptedSlot] = useState<string | null>(left?.acceptedSlot ?? null);
@@ -183,7 +187,16 @@ export default function FindDate() {
 
   // Keep the page as it is for the next time it opens this visit (pageMemory).
   useEffect(() => {
-    pageMemory = { userId, name, sched, selectedGroupId, acceptedSlot, history, historyIndex, monthPick };
+    pageMemory = {
+      userId,
+      name,
+      sched,
+      selectedGroupId,
+      acceptedSlot,
+      history,
+      historyIndex,
+      monthPick,
+    };
   }, [userId, name, sched, selectedGroupId, acceptedSlot, history, historyIndex, monthPick]);
 
   // Real groups and everyone's real busy time, or the labelled example group
@@ -260,9 +273,7 @@ export default function FindDate() {
   // A link belongs to the group it was made for; switching groups must not
   // leave the previous group's invite on screen.
   const invite =
-    inviteMutation.data && inviteMutation.variables === activeGroupId
-      ? inviteMutation.data
-      : null;
+    inviteMutation.data && inviteMutation.variables === activeGroupId ? inviteMutation.data : null;
 
   // What is being searched for, as data. The same settings travel with a
   // suggested event, so a decline re-runs exactly this search (eventSearch.ts).
@@ -526,12 +537,9 @@ export default function FindDate() {
 
   // Conflict review state for multi-day spans. Your own work/school conflicts
   // need your explicit approval; other people's put the dates under review.
-  const selfConflict =
-    multiResult?.conflicts.find((c) => c.profileId === youProfileId) ?? null;
-  const otherConflicts =
-    multiResult?.conflicts.filter((c) => c.profileId !== youProfileId) ?? [];
-  const selfAccepted =
-    multiResult?.slot != null && acceptedSlot === multiResult.slot.start;
+  const selfConflict = multiResult?.conflicts.find((c) => c.profileId === youProfileId) ?? null;
+  const otherConflicts = multiResult?.conflicts.filter((c) => c.profileId !== youProfileId) ?? [];
+  const selfAccepted = multiResult?.slot != null && acceptedSlot === multiResult.slot.start;
   const needsSelfApproval = selfConflict !== null && !selfAccepted;
   // Dates that clash with your own work/school wait for your "Accept" before
   // they can go to the group.
@@ -540,11 +548,7 @@ export default function FindDate() {
   // Suggesting needs a signed-in person, a real group, a date to suggest, and
   // your sign-off on any time off it would cost you.
   const canSuggest =
-    !!user &&
-    !!activeGroup &&
-    !activeGroup.isExample &&
-    !!activeSlot &&
-    !awaitingYourApproval;
+    !!user && !!activeGroup && !activeGroup.isExample && !!activeSlot && !awaitingYourApproval;
   // Success and errors belong to the exact date they were for: switch group,
   // step to another date or change a setting, and they stop showing.
   const suggestedFor = suggestMutation.variables;
@@ -613,13 +617,13 @@ export default function FindDate() {
     ? "waiting"
     : !activeSlot
       ? "none"
-    : isMultiDay && needsSelfApproval
-      ? "approve"
-      : isMultiDay && otherConflicts.length > 0
-        ? "review"
-        : skipConflicts.length > 0
-          ? "skip"
-          : "clean";
+      : isMultiDay && needsSelfApproval
+        ? "approve"
+        : isMultiDay && otherConflicts.length > 0
+          ? "review"
+          : skipConflicts.length > 0
+            ? "skip"
+            : "clean";
   const kicker =
     tone === "approve"
       ? t.scheduler.needsApproval
@@ -721,7 +725,7 @@ export default function FindDate() {
         that works for everyone, big, then the month day by day so you can
         see why. Everything about the group itself sits at the bottom.
       */}
-      <div className="mx-auto flex max-w-[90rem] flex-col gap-2 px-4 pb-6 pt-2 sm:gap-5 sm:pt-4 sm:px-6 sm:pb-16 lg:px-10">
+      <div className="mx-auto flex max-w-[90rem] flex-col gap-2 px-4 pb-6 pt-2 sm:gap-5 sm:px-6 sm:pb-16 sm:pt-4 lg:px-10">
         <div
           onPointerDownCapture={stopCarousel}
           onFocusCapture={stopCarousel}
@@ -743,120 +747,128 @@ export default function FindDate() {
           >
             {/* The box stays; what it says fades to the next group's answer. */}
             <FadeSwap swapKey={fadeKey}>
-            {tone === "waiting" && loadingGroup ? (
-              // The answer's own layout, blank until the calendars are in.
-              <div aria-busy="true">
-              <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                    <span className="truncate">{waitingText}</span>
-                  </p>
-                  <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-                    <Bone chars={16} />
-                  </h1>
-                  <p className="mt-1.5 text-base sm:text-xl">
-                    <Bone chars={20} />
-                  </p>
-                </div>
-                <div aria-hidden="true" className="flex flex-col gap-3 lg:shrink-0 lg:items-end">
-                  <div className="hidden items-center gap-2 sm:flex">
-                    <span className="h-12 w-12 animate-pulse rounded-xl bg-secondary" />
-                    <span className="h-12 w-40 animate-pulse rounded-xl bg-secondary" />
-                    <span className="h-12 w-52 animate-pulse rounded-xl bg-secondary" />
+              {tone === "waiting" && loadingGroup ? (
+                // The answer's own layout, blank until the calendars are in.
+                <div aria-busy="true">
+                  <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                        <span className="truncate">{waitingText}</span>
+                      </p>
+                      <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+                        <Bone chars={16} />
+                      </h1>
+                      <p className="mt-1.5 text-base sm:text-xl">
+                        <Bone chars={20} />
+                      </p>
+                    </div>
+                    <div
+                      aria-hidden="true"
+                      className="flex flex-col gap-3 lg:shrink-0 lg:items-end"
+                    >
+                      <div className="hidden items-center gap-2 sm:flex">
+                        <span className="h-12 w-12 animate-pulse rounded-xl bg-secondary" />
+                        <span className="h-12 w-40 animate-pulse rounded-xl bg-secondary" />
+                        <span className="h-12 w-52 animate-pulse rounded-xl bg-secondary" />
+                      </div>
+                      <p className="text-xs sm:text-sm lg:w-0 lg:min-w-full lg:text-right">
+                        <Bone chars={34} />
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs sm:text-sm lg:w-0 lg:min-w-full lg:text-right">
-                    <Bone chars={34} />
-                  </p>
+                  {/* The answer's warning strip, held here too. */}
+                  <div className="sm:min-h-8" />
                 </div>
-              </div>
-              {/* The answer's warning strip, held here too. */}
-              <div className="sm:min-h-8" />
-              </div>
-            ) : tone === "waiting" ? (
-              <p className="flex items-center gap-2.5 text-base text-muted-foreground">
-                {(!activeGroup || busyLoading) && <Loader2 className="h-5 w-5 shrink-0 animate-spin" />}
-                {waitingText}
-              </p>
-            ) : tone === "none" ? (
-              <>
-                <p className="text-base text-rose-800">
-                  {search.kind === "vacation"
-                    ? t.scheduler.noVacation(search.days)
-                    : search.kind === "trip"
-                      ? t.scheduler.noTrip
-                      : search.anyTime
-                        ? t.scheduler.noSingleAnyTime(t.common.duration(deferredSched.durationMinutes))
-                        : t.scheduler.noSingle(`${String(deferredSched.startHour).padStart(2, "0")}:00`)}
+              ) : tone === "waiting" ? (
+                <p className="flex items-center gap-2.5 text-base text-muted-foreground">
+                  {(!activeGroup || busyLoading) && (
+                    <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+                  )}
+                  {waitingText}
                 </p>
-                {/* Stepped past the last date: the way back stays. */}
-                {actionButtons && (
-                  <div className="mt-4 hidden items-center gap-2 sm:flex">{actionButtons}</div>
-                )}
-              </>
-            ) : (
-              <div>
-              {/* The date on the left, what to do on the right. The buttons
+              ) : tone === "none" ? (
+                <>
+                  <p className="text-base text-rose-800">
+                    {search.kind === "vacation"
+                      ? t.scheduler.noVacation(search.days)
+                      : search.kind === "trip"
+                        ? t.scheduler.noTrip
+                        : search.anyTime
+                          ? t.scheduler.noSingleAnyTime(
+                              t.common.duration(deferredSched.durationMinutes),
+                            )
+                          : t.scheduler.noSingle(
+                              `${String(deferredSched.startHour).padStart(2, "0")}:00`,
+                            )}
+                  </p>
+                  {/* Stepped past the last date: the way back stays. */}
+                  {actionButtons && (
+                    <div className="mt-4 hidden items-center gap-2 sm:flex">{actionButtons}</div>
+                  )}
+                </>
+              ) : (
+                <div>
+                  {/* The date on the left, what to do on the right. The buttons
                   keep their width (shrink-0) and the date wraps to make
                   room: a trip's "Fredag 12. februar til mandag 15. februar"
                   takes two lines rather than pushing the buttons out of the
                   card. The caption under them wraps to the buttons' width
                   (w-0 min-w-full) instead of widening the column. */}
-              <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <p
-                    className={cn(
-                      "flex items-center gap-2 text-xs font-bold uppercase tracking-wider sm:text-sm",
-                      tone === "clean" && "text-orange-700",
-                      (tone === "approve" || tone === "skip") && "text-amber-800",
-                      tone === "review" && "text-sky-800",
-                    )}
-                  >
-                    {tone === "approve" ? (
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
-                    ) : tone === "review" ? (
-                      <Hourglass className="h-4 w-4 shrink-0" />
-                    ) : (
-                      <Check className="h-4 w-4 shrink-0" />
-                    )}
-                    <span className="truncate">{kicker}</span>
-                  </p>
-                  <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                    {headline}
-                  </h1>
-                  <p className="mt-1.5 text-base text-muted-foreground sm:text-xl">{subline}</p>
+                  <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <p
+                        className={cn(
+                          "flex items-center gap-2 text-xs font-bold uppercase tracking-wider sm:text-sm",
+                          tone === "clean" && "text-orange-700",
+                          (tone === "approve" || tone === "skip") && "text-amber-800",
+                          tone === "review" && "text-sky-800",
+                        )}
+                      >
+                        {tone === "approve" ? (
+                          <AlertTriangle className="h-4 w-4 shrink-0" />
+                        ) : tone === "review" ? (
+                          <Hourglass className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <Check className="h-4 w-4 shrink-0" />
+                        )}
+                        <span className="truncate">{kicker}</span>
+                      </p>
+                      <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                        {headline}
+                      </h1>
+                      <p className="mt-1.5 text-base text-muted-foreground sm:text-xl">{subline}</p>
+                    </div>
 
-                </div>
-
-                <div className="flex flex-col gap-3 lg:shrink-0 lg:items-end">
-                  {/* On a phone these live in the bar pinned to the bottom of
+                    <div className="flex flex-col gap-3 lg:shrink-0 lg:items-end">
+                      {/* On a phone these live in the bar pinned to the bottom of
                       the screen instead, so the card stays short and the
                       chart under it is on the first screen. */}
-                  <div className="hidden items-center gap-2 sm:flex">{actionButtons}</div>
-                  <p className="text-xs text-muted-foreground sm:text-sm lg:w-0 lg:min-w-full lg:text-right">
-                    {suggestedThis ? (
-                      t.scheduler.sent(
-                        <Link
-                          to="/events"
-                          className="font-medium text-foreground underline underline-offset-2"
-                        >
-                          {t.scheduler.sentLink}
-                        </Link>,
-                      )
-                    ) : suggestError ? (
-                      <span className="text-red-700">{suggestError}</span>
-                    ) : !user ? (
-                      t.scheduler.hintSignIn
-                    ) : activeGroup?.isExample ? (
-                      t.scheduler.hintExample
-                    ) : awaitingYourApproval ? (
-                      t.scheduler.hintAccept
-                    ) : (
-                      t.scheduler.hintEveryone
-                    )}
-                  </p>
-                </div>
-              </div>
+                      <div className="hidden items-center gap-2 sm:flex">{actionButtons}</div>
+                      <p className="text-xs text-muted-foreground sm:text-sm lg:w-0 lg:min-w-full lg:text-right">
+                        {suggestedThis ? (
+                          t.scheduler.sent(
+                            <Link
+                              to="/events"
+                              className="font-medium text-foreground underline underline-offset-2"
+                            >
+                              {t.scheduler.sentLink}
+                            </Link>,
+                          )
+                        ) : suggestError ? (
+                          <span className="text-red-700">{suggestError}</span>
+                        ) : !user ? (
+                          t.scheduler.hintSignIn
+                        ) : activeGroup?.isExample ? (
+                          t.scheduler.hintExample
+                        ) : awaitingYourApproval ? (
+                          t.scheduler.hintAccept
+                        ) : (
+                          t.scheduler.hintEveryone
+                        )}
+                      </p>
+                    </div>
+                  </div>
                   {/* Warnings, in a strip across the whole card, side by
                       side. There is always room for one line of them (a
                       12px gap and a line: min-h-8), and two usually fit on
@@ -868,53 +880,64 @@ export default function FindDate() {
                       so the warnings' top margins stay inside the slot
                       instead of collapsing out above it. */}
                   <div className="flex flex-col sm:min-h-8 sm:flex-row sm:flex-wrap sm:gap-x-8">
-                  {/* What the date costs, in the review states. */}
-                  {tone === "approve" && (
-                    <p className="mt-3 text-sm text-amber-900">
-                      {t.scheduler.selfConflict(selfConflictTitles)}
-                      {otherConflicts.length > 0 &&
-                        t.scheduler.othersNeedTimeOff(
-                          nameList(otherConflicts.map((c) => c.name), lang),
+                    {/* What the date costs, in the review states. */}
+                    {tone === "approve" && (
+                      <p className="mt-3 text-sm text-amber-900">
+                        {t.scheduler.selfConflict(selfConflictTitles)}
+                        {otherConflicts.length > 0 &&
+                          t.scheduler.othersNeedTimeOff(
+                            nameList(
+                              otherConflicts.map((c) => c.name),
+                              lang,
+                            ),
+                          )}
+                      </p>
+                    )}
+                    {tone === "review" && (
+                      <p className="mt-3 text-sm text-sky-900">
+                        {t.scheduler.othersMustApprove(
+                          nameList(
+                            otherConflicts.map((c) => c.name),
+                            lang,
+                          ),
+                          otherConflicts.length,
                         )}
-                    </p>
-                  )}
-                  {tone === "review" && (
-                    <p className="mt-3 text-sm text-sky-900">
-                      {t.scheduler.othersMustApprove(
-                        nameList(otherConflicts.map((c) => c.name), lang),
-                        otherConflicts.length,
-                      )}
-                      {selfAccepted && t.scheduler.youApprovedTimeOff}
-                    </p>
-                  )}
-                  {tone === "skip" && (
-                    <p className="mt-3 text-sm text-amber-900">
-                      {yourSkip && t.scheduler.youSkip(yourSkipTitles)}
-                      {othersSkipping.length > 0 &&
-                        t.scheduler.othersSkip(nameList(othersSkipping.map((c) => c.name), lang))}
-                      {t.scheduler.skipWhy}
-                    </p>
-                  )}
-                  {backNote && (
-                    <p className="mt-3 flex items-start gap-2 text-sm text-amber-900">
-                      <Hourglass className="mt-0.5 h-4 w-4 shrink-0" />
-                      {backNote}
-                    </p>
-                  )}
-                  {earlyNote && (
-                    <p className="mt-3 flex items-start gap-2 text-sm text-amber-900">
-                      <Moon className="mt-0.5 h-4 w-4 shrink-0" />
-                      {earlyNote}
-                    </p>
-                  )}
-                  {tone === "clean" && isMultiDay && selfAccepted && (
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {t.scheduler.youApprovedDates}
-                    </p>
-                  )}
+                        {selfAccepted && t.scheduler.youApprovedTimeOff}
+                      </p>
+                    )}
+                    {tone === "skip" && (
+                      <p className="mt-3 text-sm text-amber-900">
+                        {yourSkip && t.scheduler.youSkip(yourSkipTitles)}
+                        {othersSkipping.length > 0 &&
+                          t.scheduler.othersSkip(
+                            nameList(
+                              othersSkipping.map((c) => c.name),
+                              lang,
+                            ),
+                          )}
+                        {t.scheduler.skipWhy}
+                      </p>
+                    )}
+                    {backNote && (
+                      <p className="mt-3 flex items-start gap-2 text-sm text-amber-900">
+                        <Hourglass className="mt-0.5 h-4 w-4 shrink-0" />
+                        {backNote}
+                      </p>
+                    )}
+                    {earlyNote && (
+                      <p className="mt-3 flex items-start gap-2 text-sm text-amber-900">
+                        <Moon className="mt-0.5 h-4 w-4 shrink-0" />
+                        {earlyNote}
+                      </p>
+                    )}
+                    {tone === "clean" && isMultiDay && selfAccepted && (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        {t.scheduler.youApprovedDates}
+                      </p>
+                    )}
                   </div>
-              </div>
-            )}
+                </div>
+              )}
             </FadeSwap>
           </section>
 
@@ -979,7 +1002,10 @@ export default function FindDate() {
                         : t.scheduler.closestWorkaround(
                             s.days,
                             formatDaySpan(s.slot.start, s.slot.end, lang),
-                            nameList(s.conflicts.map((c) => c.name), lang),
+                            nameList(
+                              s.conflicts.map((c) => c.name),
+                              lang,
+                            ),
                             s.conflicts.length,
                           )}
                     </span>
@@ -1012,20 +1038,20 @@ export default function FindDate() {
                       swapKey={fadeKey}
                       className="flex items-center justify-between gap-3 sm:block"
                     >
-                    <span className="hidden text-xs text-muted-foreground sm:block">
-                      {t.scheduler.alsoPossible}
-                    </span>
-                    <span className="block min-w-0 truncate text-[15px] font-bold text-foreground sm:mt-0.5 sm:text-lg">
-                      {search.kind === "single"
-                        ? formatLongDate(r.slot!.start, lang)
-                        : formatLongSpan(r.slot!.start, r.slot!.end, lang)}
-                    </span>
-                    <span className="block shrink-0 text-sm text-muted-foreground sm:mt-0.5">
-                      {t.scheduler.countCan(
-                        participants.length - r.conflicts.length,
-                        participants.length,
-                      )}
-                    </span>
+                      <span className="hidden text-xs text-muted-foreground sm:block">
+                        {t.scheduler.alsoPossible}
+                      </span>
+                      <span className="block min-w-0 truncate text-[15px] font-bold text-foreground sm:mt-0.5 sm:text-lg">
+                        {search.kind === "single"
+                          ? formatLongDate(r.slot!.start, lang)
+                          : formatLongSpan(r.slot!.start, r.slot!.end, lang)}
+                      </span>
+                      <span className="block shrink-0 text-sm text-muted-foreground sm:mt-0.5">
+                        {t.scheduler.countCan(
+                          participants.length - r.conflicts.length,
+                          participants.length,
+                        )}
+                      </span>
                     </FadeSwap>
                   </button>
                 ))}
@@ -1067,13 +1093,19 @@ export default function FindDate() {
           >
             <section className="rounded-2xl border bg-card p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold text-foreground">{t.scheduler.groupMembers}</h2>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {t.scheduler.groupMembers}
+                </h2>
                 <button
                   type="button"
                   onClick={handleCopy}
                   className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
                 >
-                  {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <Check className="h-4 w-4 text-primary" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                   {copied ? t.scheduler.copiedLink : t.scheduler.copyLink}
                 </button>
               </div>
@@ -1082,14 +1114,20 @@ export default function FindDate() {
               <p className="mt-1 text-xs text-muted-foreground">
                 {!user
                   ? t.scheduler.exampleSignedOut(
-                      <Link to="/sign-in?next=/" className="font-medium text-foreground underline underline-offset-2">
+                      <Link
+                        to="/sign-in?next=/"
+                        className="font-medium text-foreground underline underline-offset-2"
+                      >
                         {t.scheduler.exampleSignedOutLink}
                       </Link>,
                     )
                   : myCalendarsFailed
                     ? t.scheduler.exampleCalendarsFailed
                     : t.scheduler.exampleSignedIn(
-                        <Link to="/profile" className="font-medium text-foreground underline underline-offset-2">
+                        <Link
+                          to="/profile"
+                          className="font-medium text-foreground underline underline-offset-2"
+                        >
                           {t.scheduler.exampleSignedInLink}
                         </Link>,
                       )}

@@ -86,9 +86,7 @@ export default function GroupSwitcher({
                 )}
               </span>
               <span className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {g.memberCount}
-                </span>
+                <span className="text-xs text-muted-foreground">{g.memberCount}</span>
                 {g.id === selectedId && <Check className="h-4 w-4 text-primary" />}
               </span>
             </button>

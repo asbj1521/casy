@@ -93,12 +93,23 @@ export function DottedAppleIcon({ cx, cy, r = 13 }: { cx: number; cy: number; r?
         return (
           <span
             key={i}
-            style={{ ...at(cx + r * Math.cos(angle) - dot / 2, cy + r * Math.sin(angle) - dot / 2, dot, dot), background: BLUE }}
+            style={{
+              ...at(
+                cx + r * Math.cos(angle) - dot / 2,
+                cy + r * Math.sin(angle) - dot / 2,
+                dot,
+                dot,
+              ),
+              background: BLUE,
+            }}
             className="rounded-full"
           />
         );
       })}
-      <span style={at(cx - logo / 2, cy - logo * 0.6, logo, logo * 1.1)} className="flex items-center justify-center">
+      <span
+        style={at(cx - logo / 2, cy - logo * 0.6, logo, logo * 1.1)}
+        className="flex items-center justify-center"
+      >
         <SiApple style={{ color: BLUE, width: logo, height: logo }} />
       </span>
     </>

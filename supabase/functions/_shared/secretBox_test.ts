@@ -23,7 +23,10 @@ Deno.test("the same secret encrypts differently each time", async () => {
 
 Deno.test("unicode secrets round trip", async () => {
   const key = newKey();
-  assertEquals(await decryptSecret(await encryptSecret("blåbærgrød ø å æ", key), key), "blåbærgrød ø å æ");
+  assertEquals(
+    await decryptSecret(await encryptSecret("blåbærgrød ø å æ", key), key),
+    "blåbærgrød ø å æ",
+  );
 });
 
 Deno.test("the wrong key cannot decrypt", async () => {

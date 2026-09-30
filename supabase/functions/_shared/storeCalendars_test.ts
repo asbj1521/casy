@@ -26,7 +26,10 @@ function fakeDb(failOn?: string) {
         if (table === "calendar_sources" && call.op === "insert") {
           const rows = call.payload as { external_calendar_id: string }[];
           return {
-            data: rows.map((r, i) => ({ id: `source-${i}`, external_calendar_id: r.external_calendar_id })),
+            data: rows.map((r, i) => ({
+              id: `source-${i}`,
+              external_calendar_id: r.external_calendar_id,
+            })),
             error: null,
           };
         }
@@ -51,7 +54,11 @@ function fakeDb(failOn?: string) {
         eq: () => chain,
         select: () => chain,
         single: () =>
-          Promise.resolve(fails() ? { data: null, error: { message: "boom" } } : { data: { id: "conn-1" }, error: null }),
+          Promise.resolve(
+            fails()
+              ? { data: null, error: { message: "boom" } }
+              : { data: { id: "conn-1" }, error: null },
+          ),
         then: (resolve: (v: unknown) => unknown) => Promise.resolve(outcome()).then(resolve),
       };
       return chain;
@@ -60,30 +67,41 @@ function fakeDb(failOn?: string) {
   return { db: db as unknown as Parameters<typeof storeCalendars>[0], calls };
 }
 
-const iv = (n: number) => ({ start: `2026-10-${String(n).padStart(2, "0")}T10:00:00.000Z`, end: `2026-10-${String(n).padStart(2, "0")}T11:00:00.000Z` });
-
-Deno.test("stores several calendars and attaches each one's busy blocks to its own source", async () => {
-  const { db, calls } = fakeDb();
-  const res = await storeCalendars(db, {
-    profileId: "asbjorn",
-    provider: "apple",
-    accountLabel: "me@icloud.com",
-    secrets: { caldav_username: "me@icloud.com", caldav_password: "enc" },
-    calendars: [
-      { externalId: "cal-a", displayName: "Work", intervals: [iv(1), iv(2)] },
-      { externalId: "cal-b", displayName: "Family", intervals: [iv(3)] },
-    ],
-  });
-  assertEquals(res, { connectionId: "conn-1" });
-
-  const busy = calls.find((c) => c.table === "calendar_busy_cache")!.payload as { source_id: string }[];
-  assertEquals(busy.map((b) => b.source_id), ["source-0", "source-0", "source-1"]);
-
-  const last = calls[calls.length - 1];
-  assertEquals(last.table, "calendar_connections");
-  assertEquals(last.op, "update");
-  assertEquals((last.payload as { status: string }).status, "connected");
+const iv = (n: number) => ({
+  start: `2026-10-${String(n).padStart(2, "0")}T10:00:00.000Z`,
+  end: `2026-10-${String(n).padStart(2, "0")}T11:00:00.000Z`,
 });
+
+Deno.test(
+  "stores several calendars and attaches each one's busy blocks to its own source",
+  async () => {
+    const { db, calls } = fakeDb();
+    const res = await storeCalendars(db, {
+      profileId: "asbjorn",
+      provider: "apple",
+      accountLabel: "me@icloud.com",
+      secrets: { caldav_username: "me@icloud.com", caldav_password: "enc" },
+      calendars: [
+        { externalId: "cal-a", displayName: "Work", intervals: [iv(1), iv(2)] },
+        { externalId: "cal-b", displayName: "Family", intervals: [iv(3)] },
+      ],
+    });
+    assertEquals(res, { connectionId: "conn-1" });
+
+    const busy = calls.find((c) => c.table === "calendar_busy_cache")!.payload as {
+      source_id: string;
+    }[];
+    assertEquals(
+      busy.map((b) => b.source_id),
+      ["source-0", "source-0", "source-1"],
+    );
+
+    const last = calls[calls.length - 1];
+    assertEquals(last.table, "calendar_connections");
+    assertEquals(last.op, "update");
+    assertEquals((last.payload as { status: string }).status, "connected");
+  },
+);
 
 Deno.test("inserts busy blocks in chunks of 500", async () => {
   const { db, calls } = fakeDb();

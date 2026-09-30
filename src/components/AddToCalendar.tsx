@@ -82,7 +82,11 @@ export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
       disabled={download.isPending}
       className="flex items-center gap-1.5 text-sm font-medium text-emerald-800 underline underline-offset-2 transition hover:text-emerald-950 disabled:opacity-60"
     >
-      {download.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+      {download.isPending ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Download className="h-3.5 w-3.5" />
+      )}
       {words.downloadInstead}
     </button>
   );

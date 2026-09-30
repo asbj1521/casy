@@ -26,12 +26,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  groupBusyQuery,
-  groupsQuery,
-  participantsFromGroup,
-  type GroupMember,
-} from "@/api/groups";
+import { groupBusyQuery, groupsQuery, participantsFromGroup, type GroupMember } from "@/api/groups";
 import { EXAMPLE_GROUPS, exampleGroup, SEARCH_WINDOW } from "@/api/mockData";
 import { CURRENT_USER_ID } from "@/api/currentUser";
 import { useExampleCarousel, type Carousel } from "@/hooks/useExampleCarousel";
@@ -189,7 +184,18 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
         memberCount: def.members.length,
       };
     });
-  }, [hasRealGroups, realGroups, showingExamples, activeGroupId, busyQuery.data, myCalendars, user, markYou, exampleNames, exampleYou]);
+  }, [
+    hasRealGroups,
+    realGroups,
+    showingExamples,
+    activeGroupId,
+    busyQuery.data,
+    myCalendars,
+    user,
+    markYou,
+    exampleNames,
+    exampleYou,
+  ]);
 
   return {
     groups,

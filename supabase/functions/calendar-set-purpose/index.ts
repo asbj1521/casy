@@ -29,97 +29,104 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-Deno.serve(withLanguage(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-  if (req.method !== "POST") {
-    return json({ error: "Use POST" }, 405);
-  }
+Deno.serve(
+  withLanguage(async (req) => {
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+    if (req.method !== "POST") {
+      return json({ error: "Use POST" }, 405);
+    }
 
-  const db = supabaseAdmin();
-  const profileId = await callerId(req, db);
-  if (!profileId) return json({ error: "Please sign in again." }, 401);
+    const db = supabaseAdmin();
+    const profileId = await callerId(req, db);
+    if (!profileId) return json({ error: "Please sign in again." }, 401);
 
-  let payload: {
-    calendarId?: unknown;
-    purpose?: unknown;
-    priority?: unknown;
-    included?: unknown;
-    name?: unknown;
-  };
-  try {
-    payload = await req.json();
-  } catch {
-    return json({ error: "Body must be JSON" }, 400);
-  }
-  const { calendarId, purpose, priority, included, name } = payload;
-  if (typeof calendarId !== "string") {
-    return json({ error: "calendarId is required" }, 400);
-  }
-  // Any field may be left out to keep it as it is, but not all of them.
-  if (purpose === undefined && priority === undefined && included === undefined && name === undefined) {
-    return json({ error: "purpose, priority, included or name is required" }, 400);
-  }
-  // null clears the category; anything else must be one of the four.
-  if (
-    purpose !== undefined &&
-    purpose !== null &&
-    !(typeof purpose === "string" && PURPOSES.has(purpose))
-  ) {
-    return json({ error: "purpose must be work, school, personal, other or null" }, 400);
-  }
-  if (priority !== undefined && !(typeof priority === "string" && PRIORITIES.has(priority))) {
-    return json({ error: "priority must be skip, normal or never" }, 400);
-  }
-  if (included !== undefined && typeof included !== "boolean") {
-    return json({ error: "included must be true or false" }, 400);
-  }
-  // A name is trimmed; null or nothing left goes back to the provider's name.
-  if (name !== undefined && name !== null && typeof name !== "string") {
-    return json({ error: "name must be text or null" }, 400);
-  }
-  const customName = typeof name === "string" && name.trim() ? name.trim() : null;
-  if (customName !== null && customName.length > MAX_NAME_LENGTH) {
-    // Written out rather than built from the constant, so its translation
-    // (_shared/i18n.ts) can find it word for word.
-    return json({ error: "Keep the name to 60 characters." }, 400);
-  }
+    let payload: {
+      calendarId?: unknown;
+      purpose?: unknown;
+      priority?: unknown;
+      included?: unknown;
+      name?: unknown;
+    };
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "Body must be JSON" }, 400);
+    }
+    const { calendarId, purpose, priority, included, name } = payload;
+    if (typeof calendarId !== "string") {
+      return json({ error: "calendarId is required" }, 400);
+    }
+    // Any field may be left out to keep it as it is, but not all of them.
+    if (
+      purpose === undefined &&
+      priority === undefined &&
+      included === undefined &&
+      name === undefined
+    ) {
+      return json({ error: "purpose, priority, included or name is required" }, 400);
+    }
+    // null clears the category; anything else must be one of the four.
+    if (
+      purpose !== undefined &&
+      purpose !== null &&
+      !(typeof purpose === "string" && PURPOSES.has(purpose))
+    ) {
+      return json({ error: "purpose must be work, school, personal, other or null" }, 400);
+    }
+    if (priority !== undefined && !(typeof priority === "string" && PRIORITIES.has(priority))) {
+      return json({ error: "priority must be skip, normal or never" }, 400);
+    }
+    if (included !== undefined && typeof included !== "boolean") {
+      return json({ error: "included must be true or false" }, 400);
+    }
+    // A name is trimmed; null or nothing left goes back to the provider's name.
+    if (name !== undefined && name !== null && typeof name !== "string") {
+      return json({ error: "name must be text or null" }, 400);
+    }
+    const customName = typeof name === "string" && name.trim() ? name.trim() : null;
+    if (customName !== null && customName.length > MAX_NAME_LENGTH) {
+      // Written out rather than built from the constant, so its translation
+      // (_shared/i18n.ts) can find it word for word.
+      return json({ error: "Keep the name to 60 characters." }, 400);
+    }
 
-  // Ownership check first: the calendar's connection must belong to the caller.
-  const { data: owned, error: lookupErr } = await db
-    .from("calendar_sources")
-    .select("id, calendar_connections!inner(profile_id)")
-    .eq("id", calendarId)
-    .eq("calendar_connections.profile_id", profileId)
-    .maybeSingle();
-  if (lookupErr) {
-    console.error("calendar-set-purpose lookup failed", lookupErr);
-    return json({ error: "Lookup failed" }, 500);
-  }
-  if (!owned) return json({ error: "Calendar not found" }, 404);
+    // Ownership check first: the calendar's connection must belong to the caller.
+    const { data: owned, error: lookupErr } = await db
+      .from("calendar_sources")
+      .select("id, calendar_connections!inner(profile_id)")
+      .eq("id", calendarId)
+      .eq("calendar_connections.profile_id", profileId)
+      .maybeSingle();
+    if (lookupErr) {
+      console.error("calendar-set-purpose lookup failed", lookupErr);
+      return json({ error: "Lookup failed" }, 500);
+    }
+    if (!owned) return json({ error: "Calendar not found" }, 404);
 
-  const changes = {
-    ...(purpose !== undefined ? { purpose } : {}),
-    ...(priority !== undefined ? { priority } : {}),
-    ...(included !== undefined ? { included } : {}),
-    ...(name !== undefined ? { custom_name: customName } : {}),
-  };
-  const { data: updated, error: updateErr } = await db
-    .from("calendar_sources")
-    .update(changes)
-    .eq("id", calendarId)
-    .select("purpose, priority, included, custom_name")
-    .single();
-  if (updateErr) {
-    console.error("calendar-set-purpose update failed", updateErr);
-    return json({ error: "Update failed" }, 500);
-  }
-  return json({
-    calendarId,
-    purpose: updated.purpose,
-    priority: updated.priority,
-    included: updated.included,
-    customName: updated.custom_name,
-  });
-}));
+    const changes = {
+      ...(purpose !== undefined ? { purpose } : {}),
+      ...(priority !== undefined ? { priority } : {}),
+      ...(included !== undefined ? { included } : {}),
+      ...(name !== undefined ? { custom_name: customName } : {}),
+    };
+    const { data: updated, error: updateErr } = await db
+      .from("calendar_sources")
+      .update(changes)
+      .eq("id", calendarId)
+      .select("purpose, priority, included, custom_name")
+      .single();
+    if (updateErr) {
+      console.error("calendar-set-purpose update failed", updateErr);
+      return json({ error: "Update failed" }, 500);
+    }
+    return json({
+      calendarId,
+      purpose: updated.purpose,
+      priority: updated.priority,
+      included: updated.included,
+      customName: updated.custom_name,
+    });
+  }),
+);

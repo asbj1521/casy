@@ -33,10 +33,7 @@ import { avatarColor } from "@/lib/avatar";
 import { markCalendarOnboardingSeen } from "@/lib/calendarOnboarding";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
 import { supabase } from "@/lib/supabase";
-import {
-  calendarStatusQuery,
-  type CalendarConnectionStatus,
-} from "@/api/calendarStatus";
+import { calendarStatusQuery, type CalendarConnectionStatus } from "@/api/calendarStatus";
 import { adminStatusQuery } from "@/api/admin";
 import { connectApple } from "@/api/apple";
 import {
@@ -109,7 +106,6 @@ const PROVIDERS: (Omit<ProviderMeta, "label" | "help"> & { helpTo: string })[] =
  * the admin ever downloads its code.
  */
 const AdminPanel = lazy(() => import("@/components/AdminPanel"));
-
 
 /**
  * The "Connect calendars" section of the user's profile.
@@ -203,7 +199,8 @@ export default function Profile() {
   const leaveGroupMutation = useMutation({ mutationFn: leaveGroup, onSuccess: onGroupsChanged });
   const deleteGroupMutation = useMutation({ mutationFn: deleteGroup, onSuccess: onGroupsChanged });
   const renameGroupMutation = useMutation({
-    mutationFn: ({ groupId, name }: { groupId: string; name: string }) => renameGroup(groupId, name),
+    mutationFn: ({ groupId, name }: { groupId: string; name: string }) =>
+      renameGroup(groupId, name),
     onSuccess: (data) => {
       onGroupsChanged(data);
       setRenamingGroupId(null);
@@ -393,7 +390,10 @@ export default function Profile() {
       // A sync also notices entries deleted from the calendar by hand (My events).
       void queryClient.invalidateQueries({ queryKey: ["events"] });
     } catch (err) {
-      setSyncResult({ ok: false, text: err instanceof Error ? err.message : t.profile.couldntSync });
+      setSyncResult({
+        ok: false,
+        text: err instanceof Error ? err.message : t.profile.couldntSync,
+      });
     } finally {
       setSyncing(false);
     }
@@ -407,7 +407,9 @@ export default function Profile() {
   const handlePasswordSubmit = async (password: string, nonce?: string) => {
     setPasswordSubmitting(true);
     setPasswordError(null);
-    const { error: err } = await supabase.auth.updateUser(nonce ? { password, nonce } : { password });
+    const { error: err } = await supabase.auth.updateUser(
+      nonce ? { password, nonce } : { password },
+    );
     if (err?.code === "reauthentication_needed") {
       const { error: sendErr } = await supabase.auth.reauthenticate();
       setPasswordSubmitting(false);
@@ -450,21 +452,19 @@ export default function Profile() {
     : (connections?.filter((c) => c.status === "connected").length ?? 0);
   const busyCount = statusPending
     ? null
-    : (connections?.filter((c) => c.status === "connected").reduce((sum, c) => sum + c.busyCount, 0) ??
-      0);
+    : (connections
+        ?.filter((c) => c.status === "connected")
+        .reduce((sum, c) => sum + c.busyCount, 0) ?? 0);
 
   const handleIcsSubmit = async (url: string, name: string) => {
     setIcsSubmitting(true);
     setIcsError(null);
     setIcsResult(null);
     try {
-      const body = await callFunction<{ label: string; busyBlocks: number }>(
-        "calendar-add-ics",
-        {
-          body: { url, name },
-          errorMessage: t.profile.couldntAddLink,
-        },
-      );
+      const body = await callFunction<{ label: string; busyBlocks: number }>("calendar-add-ics", {
+        body: { url, name },
+        errorMessage: t.profile.couldntAddLink,
+      });
       setIcsResult(t.profile.icsAdded(body.label, body.busyBlocks));
       setIcsFormOpen(false);
       setIcsAddedCount((n) => n + 1);
@@ -617,9 +617,7 @@ export default function Profile() {
                   maxLength={MAX_DISPLAY_NAME_LENGTH}
                   submitting={setNameMutation.isPending}
                   error={
-                    setNameMutation.error instanceof Error
-                      ? setNameMutation.error.message
-                      : null
+                    setNameMutation.error instanceof Error ? setNameMutation.error.message : null
                   }
                   inputClassName="text-xl font-bold"
                   onSubmit={(newName) => setNameMutation.mutate(newName)}
@@ -640,21 +638,15 @@ export default function Profile() {
             </div>
             <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:shrink-0 sm:flex-wrap sm:items-center">
               <div className="flex items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                <span className="text-sm font-bold text-foreground">
-                  {groupsCount ?? "…"}
-                </span>
+                <span className="text-sm font-bold text-foreground">{groupsCount ?? "…"}</span>
                 {t.profile.statGroups}
               </div>
               <div className="flex items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                <span className="text-sm font-bold text-foreground">
-                  {connectedCount ?? "…"}
-                </span>
+                <span className="text-sm font-bold text-foreground">{connectedCount ?? "…"}</span>
                 {t.profile.statCalendars}
               </div>
               <div className="flex items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                <span className="text-sm font-bold text-foreground">
-                  {busyCount ?? "…"}
-                </span>
+                <span className="text-sm font-bold text-foreground">{busyCount ?? "…"}</span>
                 {t.profile.statBusy}
               </div>
             </div>
@@ -688,7 +680,9 @@ export default function Profile() {
             {/* Connected calendars */}
             <section className="mt-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <h2 className="text-lg font-semibold text-foreground">{t.profile.connectedCalendars}</h2>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {t.profile.connectedCalendars}
+                </h2>
                 {hasConnected && (
                   <button
                     type="button"
@@ -731,7 +725,11 @@ export default function Profile() {
                   return (
                     <ProviderCard
                       key={provider.id}
-                      meta={{ ...provider, label: words.label, help: { to: helpTo, label: words.help } }}
+                      meta={{
+                        ...provider,
+                        label: words.label,
+                        help: { to: helpTo, label: words.help },
+                      }}
                       accounts={attempts.filter((c) => c.status === "connected")}
                       latest={attempts[0]}
                       statusPending={statusPending}
@@ -807,14 +805,18 @@ export default function Profile() {
               isError={groupsFailed}
               youId={user.id}
               confirm={groupConfirm}
-              leavingId={leaveGroupMutation.isPending ? (leaveGroupMutation.variables ?? null) : null}
+              leavingId={
+                leaveGroupMutation.isPending ? (leaveGroupMutation.variables ?? null) : null
+              }
               deletingId={
                 deleteGroupMutation.isPending ? (deleteGroupMutation.variables ?? null) : null
               }
               actionError={groupActionError}
               renamingId={renamingGroupId}
               renameSubmittingId={
-                renameGroupMutation.isPending ? (renameGroupMutation.variables?.groupId ?? null) : null
+                renameGroupMutation.isPending
+                  ? (renameGroupMutation.variables?.groupId ?? null)
+                  : null
               }
               renameError={renameActionError}
               inviteOpenId={inviteGroupId}
@@ -840,7 +842,11 @@ export default function Profile() {
             <NewGroupDialog
               open={newGroupOpen}
               submitting={createGroupMutation.isPending}
-              error={createGroupMutation.error instanceof Error ? createGroupMutation.error.message : null}
+              error={
+                createGroupMutation.error instanceof Error
+                  ? createGroupMutation.error.message
+                  : null
+              }
               onSubmit={(name) => createGroupMutation.mutate(name)}
               onCancel={() => setNewGroupOpen(false)}
             />
@@ -921,11 +927,17 @@ export default function Profile() {
                     ) : (
                       <LogOut className="h-4 w-4" />
                     )}
-                    {signingOutEverywhere ? t.profile.signingOutEverywhere : t.profile.signOutEverywhere}
+                    {signingOutEverywhere
+                      ? t.profile.signingOutEverywhere
+                      : t.profile.signOutEverywhere}
                   </button>
-                  <p className="mt-2 text-xs text-muted-foreground">{t.profile.signOutEverywhereHelp}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {t.profile.signOutEverywhereHelp}
+                  </p>
                   {signOutEverywhereFailed && (
-                    <p className="mt-2 text-sm text-red-700">{t.profile.couldntSignOutEverywhere}</p>
+                    <p className="mt-2 text-sm text-red-700">
+                      {t.profile.couldntSignOutEverywhere}
+                    </p>
                   )}
                 </div>
               </div>

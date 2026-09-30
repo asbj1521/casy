@@ -44,98 +44,100 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-Deno.serve(withLanguage(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-  if (req.method !== "POST") {
-    return json({ error: "Use POST" }, 405);
-  }
-
-  const db = supabaseAdmin();
-  const profileId = await callerId(req, db);
-  if (!profileId) return json({ error: "Please sign in again." }, 401);
-
-  let payload: { url?: unknown; name?: unknown };
-  try {
-    payload = await req.json();
-  } catch {
-    return json({ error: "Body must be JSON" }, 400);
-  }
-  const { url: rawUrl, name: rawName } = payload;
-  if (typeof rawUrl !== "string" || !rawUrl) {
-    return json({ error: "url is required" }, 400);
-  }
-  const name =
-    typeof rawName === "string"
-      ? stripControlChars(rawName).trim().slice(0, MAX_NAME_LENGTH)
-      : "";
-
-  // Refuse before fetching anything if there is nowhere safe to keep the link.
-  let encryptionKey: string;
-  try {
-    encryptionKey = encryptionKeyFromEnv();
-  } catch (err) {
-    console.error("calendar-add-ics is not configured", err);
-    return json({ error: "Calendar links aren't set up on the server yet." }, 500);
-  }
-
-  // Everything that can fail because of the link happens before any write.
-  let feedUrl: URL;
-  let parsed: ReturnType<typeof parseBusyIntervals>;
-  try {
-    feedUrl = assertSafeFeedUrl(rawUrl);
-    const text = await fetchFeedText(feedUrl.toString());
-    const { start: windowStart, end: windowEnd } = syncWindow();
-    parsed = parseBusyIntervals(text, windowStart, windowEnd);
-  } catch (err) {
-    if (err instanceof IcsError) return json({ error: err.message }, 400);
-    console.error("calendar-add-ics unexpected failure before writing", err);
-    return json({ error: "Couldn't read that calendar link." }, 500);
-  }
-
-  const label = name || parsed.calendarName || feedUrl.hostname;
-  // The link is a bearer secret, so only its encrypted form is stored. The
-  // hash is what finds "this same link, added before" below.
-  const normalizedUrl = feedUrl.toString();
-  const urlHash = await lookupHash(normalizedUrl, encryptionKey);
-
-  // A feed is one calendar, so it gets a single source.
-  let connectionId: string;
-  try {
-    ({ connectionId } = await storeCalendars(db, {
-      profileId,
-      provider: "ics",
-      accountLabel: label,
-      secrets: {
-        ics_url: await encryptSecret(normalizedUrl, encryptionKey),
-        ics_url_hash: urlHash,
-      },
-      calendars: [{ externalId: "ics", displayName: label, intervals: parsed.intervals }],
-    }));
-  } catch (err) {
-    console.error("calendar-add-ics failed while saving", err);
-    return json({ error: "Couldn't save the calendar." }, 500);
-  }
-
-  // Same link added before by this profile: the new connection supersedes it.
-  try {
-    const { data: older } = await db
-      .from("calendar_secrets")
-      .select("connection_id, calendar_connections!inner(profile_id, provider)")
-      .eq("ics_url_hash", urlHash)
-      .eq("calendar_connections.profile_id", profileId)
-      .eq("calendar_connections.provider", "ics")
-      .neq("connection_id", connectionId);
-    const oldIds = (older ?? []).map((r: { connection_id: string }) => r.connection_id);
-    if (oldIds.length > 0) {
-      // Keep any category the user set on the link's calendar.
-      await carryOverPurposes(db, oldIds, connectionId);
-      await db.from("calendar_connections").delete().in("id", oldIds);
+Deno.serve(
+  withLanguage(async (req) => {
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
     }
-  } catch (err) {
-    console.error("Failed to remove superseded ICS connection (new one is fine)", err);
-  }
+    if (req.method !== "POST") {
+      return json({ error: "Use POST" }, 405);
+    }
 
-  return json({ connectionId, label, busyBlocks: parsed.intervals.length });
-}));
+    const db = supabaseAdmin();
+    const profileId = await callerId(req, db);
+    if (!profileId) return json({ error: "Please sign in again." }, 401);
+
+    let payload: { url?: unknown; name?: unknown };
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "Body must be JSON" }, 400);
+    }
+    const { url: rawUrl, name: rawName } = payload;
+    if (typeof rawUrl !== "string" || !rawUrl) {
+      return json({ error: "url is required" }, 400);
+    }
+    const name =
+      typeof rawName === "string"
+        ? stripControlChars(rawName).trim().slice(0, MAX_NAME_LENGTH)
+        : "";
+
+    // Refuse before fetching anything if there is nowhere safe to keep the link.
+    let encryptionKey: string;
+    try {
+      encryptionKey = encryptionKeyFromEnv();
+    } catch (err) {
+      console.error("calendar-add-ics is not configured", err);
+      return json({ error: "Calendar links aren't set up on the server yet." }, 500);
+    }
+
+    // Everything that can fail because of the link happens before any write.
+    let feedUrl: URL;
+    let parsed: ReturnType<typeof parseBusyIntervals>;
+    try {
+      feedUrl = assertSafeFeedUrl(rawUrl);
+      const text = await fetchFeedText(feedUrl.toString());
+      const { start: windowStart, end: windowEnd } = syncWindow();
+      parsed = parseBusyIntervals(text, windowStart, windowEnd);
+    } catch (err) {
+      if (err instanceof IcsError) return json({ error: err.message }, 400);
+      console.error("calendar-add-ics unexpected failure before writing", err);
+      return json({ error: "Couldn't read that calendar link." }, 500);
+    }
+
+    const label = name || parsed.calendarName || feedUrl.hostname;
+    // The link is a bearer secret, so only its encrypted form is stored. The
+    // hash is what finds "this same link, added before" below.
+    const normalizedUrl = feedUrl.toString();
+    const urlHash = await lookupHash(normalizedUrl, encryptionKey);
+
+    // A feed is one calendar, so it gets a single source.
+    let connectionId: string;
+    try {
+      ({ connectionId } = await storeCalendars(db, {
+        profileId,
+        provider: "ics",
+        accountLabel: label,
+        secrets: {
+          ics_url: await encryptSecret(normalizedUrl, encryptionKey),
+          ics_url_hash: urlHash,
+        },
+        calendars: [{ externalId: "ics", displayName: label, intervals: parsed.intervals }],
+      }));
+    } catch (err) {
+      console.error("calendar-add-ics failed while saving", err);
+      return json({ error: "Couldn't save the calendar." }, 500);
+    }
+
+    // Same link added before by this profile: the new connection supersedes it.
+    try {
+      const { data: older } = await db
+        .from("calendar_secrets")
+        .select("connection_id, calendar_connections!inner(profile_id, provider)")
+        .eq("ics_url_hash", urlHash)
+        .eq("calendar_connections.profile_id", profileId)
+        .eq("calendar_connections.provider", "ics")
+        .neq("connection_id", connectionId);
+      const oldIds = (older ?? []).map((r: { connection_id: string }) => r.connection_id);
+      if (oldIds.length > 0) {
+        // Keep any category the user set on the link's calendar.
+        await carryOverPurposes(db, oldIds, connectionId);
+        await db.from("calendar_connections").delete().in("id", oldIds);
+      }
+    } catch (err) {
+      console.error("Failed to remove superseded ICS connection (new one is fine)", err);
+    }
+
+    return json({ connectionId, label, busyBlocks: parsed.intervals.length });
+  }),
+);

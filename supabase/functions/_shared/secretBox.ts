@@ -90,7 +90,11 @@ export async function encryptSecret(plaintext: string, base64Key: string): Promi
   const key = await importKey(base64Key);
   const nonce = crypto.getRandomValues(new Uint8Array(NONCE_BYTES));
   const ciphertext = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key, new TextEncoder().encode(plaintext)),
+    await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: nonce },
+      key,
+      new TextEncoder().encode(plaintext),
+    ),
   );
   return `${VERSION}:${toBase64(nonce)}:${toBase64(ciphertext)}`;
 }

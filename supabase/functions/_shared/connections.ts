@@ -47,7 +47,10 @@ export async function carryOverPurposes(
     if (newErr) throw newErr;
 
     // Later rows overwrite earlier ones.
-    const wanted = new Map<string, { purpose: string | null; priority: string; included: boolean }>();
+    const wanted = new Map<
+      string,
+      { purpose: string | null; priority: string; included: boolean }
+    >();
     for (const o of oldSources) {
       wanted.set(o.external_calendar_id, {
         purpose: o.purpose,
@@ -98,7 +101,8 @@ export async function pruneSupersededConnections(
     const wanted = opts.accountLabel?.toLowerCase() ?? null;
     const staleBefore = Date.now() - STALE_PENDING_MS;
     const sameAccount = (others ?? []).filter(
-      (c) => c.status === "connected" && wanted !== null && c.account_label?.toLowerCase() === wanted,
+      (c) =>
+        c.status === "connected" && wanted !== null && c.account_label?.toLowerCase() === wanted,
     );
     const noise = (others ?? []).filter(
       (c) =>
@@ -107,7 +111,11 @@ export async function pruneSupersededConnections(
     );
 
     // The replacement inherits the categories set on the account it replaces.
-    await carryOverPurposes(db, sameAccount.map((c) => c.id), opts.keepId);
+    await carryOverPurposes(
+      db,
+      sameAccount.map((c) => c.id),
+      opts.keepId,
+    );
 
     const doomed = [...sameAccount, ...noise].map((c) => c.id);
     if (doomed.length > 0) {
@@ -196,9 +204,14 @@ export async function discardIfRepeatedCallback(
     });
     if (!duplicate) return false;
 
-    const { error: delErr } = await db.from("calendar_connections").delete().eq("id", opts.connection.id);
+    const { error: delErr } = await db
+      .from("calendar_connections")
+      .delete()
+      .eq("id", opts.connection.id);
     if (delErr) throw delErr;
-    console.log(`Ignored a repeated ${opts.provider} callback (its one-time code was already used)`);
+    console.log(
+      `Ignored a repeated ${opts.provider} callback (its one-time code was already used)`,
+    );
     return true;
   } catch (err) {
     console.error("discardIfRepeatedCallback failed (treating as a real failure)", err);

@@ -50,8 +50,7 @@ export default function JoinGroup() {
     queryFn: () => [] as Group[],
     enabled: false, // only ever read what another page already put there
   }).data;
-  const alreadyIn =
-    !!preview.data && !!myGroups?.some((g) => g.id === preview.data.group.id);
+  const alreadyIn = !!preview.data && !!myGroups?.some((g) => g.id === preview.data.group.id);
 
   const here = `/join/${encodeURIComponent(token)}`;
 
@@ -84,9 +83,7 @@ export default function JoinGroup() {
           ) : (
             <>
               <h1 className="text-lg font-bold text-foreground">{t.join.invitedTo}</h1>
-              <p className="mt-1 text-2xl font-bold text-foreground">
-                {preview.data.group.name}
-              </p>
+              <p className="mt-1 text-2xl font-bold text-foreground">{preview.data.group.name}</p>
               <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
                 {t.join.membersSoFar(preview.data.group.memberCount)}
@@ -96,9 +93,7 @@ export default function JoinGroup() {
 
               {alreadyIn ? (
                 <>
-                  <p className="mt-5 text-sm font-medium text-foreground">
-                    {t.join.alreadyIn}
-                  </p>
+                  <p className="mt-5 text-sm font-medium text-foreground">{t.join.alreadyIn}</p>
                   <Link
                     to="/"
                     className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
@@ -118,9 +113,7 @@ export default function JoinGroup() {
                     {t.join.joinGroup}
                   </button>
                   {join.isError && (
-                    <p className="mt-3 text-sm text-red-700">
-                      {(join.error as Error).message}
-                    </p>
+                    <p className="mt-3 text-sm text-red-700">{(join.error as Error).message}</p>
                   )}
                 </>
               ) : (

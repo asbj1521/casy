@@ -22,10 +22,7 @@ import type { CalendarPriority, Event, EventCategory, Participant } from "@/type
  */
 const TZ = "UTC";
 
-function makeParticipant(
-  name: string,
-  busy: Array<[string, string]>,
-): Participant {
+function makeParticipant(name: string, busy: Array<[string, string]>): Participant {
   return {
     profileId: name.toLowerCase(),
     name,
@@ -64,9 +61,7 @@ describe("findEarliestSlot", () => {
   it("finds the first gap after a busy block at the window start", () => {
     const event = makeEvent({
       participants: [
-        makeParticipant("Alice", [
-          ["2026-06-22T00:00:00.000Z", "2026-06-22T09:00:00.000Z"],
-        ]),
+        makeParticipant("Alice", [["2026-06-22T00:00:00.000Z", "2026-06-22T09:00:00.000Z"]]),
       ],
     });
 
@@ -83,12 +78,8 @@ describe("findEarliestSlot", () => {
     // are free is 10:00, so the union of busy time pushes the slot to 10:00.
     const event = makeEvent({
       participants: [
-        makeParticipant("Alice", [
-          ["2026-06-22T00:00:00.000Z", "2026-06-22T09:00:00.000Z"],
-        ]),
-        makeParticipant("Bob", [
-          ["2026-06-22T00:00:00.000Z", "2026-06-22T10:00:00.000Z"],
-        ]),
+        makeParticipant("Alice", [["2026-06-22T00:00:00.000Z", "2026-06-22T09:00:00.000Z"]]),
+        makeParticipant("Bob", [["2026-06-22T00:00:00.000Z", "2026-06-22T10:00:00.000Z"]]),
       ],
     });
 
@@ -124,9 +115,7 @@ describe("findEarliestSlot", () => {
   it("returns null when no slot fits anywhere in the window", () => {
     const event = makeEvent({
       participants: [
-        makeParticipant("Alice", [
-          ["2026-06-22T00:00:00.000Z", "2026-06-27T00:00:00.000Z"],
-        ]),
+        makeParticipant("Alice", [["2026-06-22T00:00:00.000Z", "2026-06-27T00:00:00.000Z"]]),
       ],
     });
 
@@ -186,12 +175,8 @@ describe("findEarliestSlot", () => {
     // Two overlapping busy blocks should behave as one continuous block.
     const event = makeEvent({
       participants: [
-        makeParticipant("Alice", [
-          ["2026-06-22T00:00:00.000Z", "2026-06-22T10:00:00.000Z"],
-        ]),
-        makeParticipant("Bob", [
-          ["2026-06-22T08:00:00.000Z", "2026-06-22T12:00:00.000Z"],
-        ]),
+        makeParticipant("Alice", [["2026-06-22T00:00:00.000Z", "2026-06-22T10:00:00.000Z"]]),
+        makeParticipant("Bob", [["2026-06-22T08:00:00.000Z", "2026-06-22T12:00:00.000Z"]]),
       ],
     });
 
@@ -302,18 +287,8 @@ describe("findEarliestDaySpan", () => {
     // An evening dinner and even a six-hour family outing are not reasons a
     // whole vacation day is impossible, so the span still starts on day one.
     const alice = makeCategorised("Alice", [
-      [
-        "2026-06-22T18:00:00.000Z",
-        "2026-06-22T21:00:00.000Z",
-        "Middag",
-        "social",
-      ],
-      [
-        "2026-06-23T11:00:00.000Z",
-        "2026-06-23T17:00:00.000Z",
-        "Familietid",
-        "family",
-      ],
+      ["2026-06-22T18:00:00.000Z", "2026-06-22T21:00:00.000Z", "Middag", "social"],
+      ["2026-06-23T11:00:00.000Z", "2026-06-23T17:00:00.000Z", "Familietid", "family"],
     ]);
 
     const { slot, conflicts } = findEarliestDaySpan([alice], 3, START, END, TZ);
@@ -358,12 +333,7 @@ describe("findEarliestDaySpan", () => {
       ["2026-06-22T00:00:00.000Z", "2026-06-25T00:00:00.000Z", "Ferie", "travel"],
     ]);
     const bob = makeCategorised("Bob", [
-      [
-        "2026-06-25T00:00:00.000Z",
-        "2026-06-26T00:00:00.000Z",
-        "Hyttetur",
-        "travel",
-      ],
+      ["2026-06-25T00:00:00.000Z", "2026-06-26T00:00:00.000Z", "Hyttetur", "travel"],
     ]);
 
     const { slot } = findEarliestDaySpan([alice, bob], 2, START, END, TZ);
@@ -420,11 +390,7 @@ describe("findBestDaySpan", () => {
   const END = "2026-07-20T00:00:00.000Z";
 
   /** Works 09-17 every weekday in the window, except [freeFrom, freeTo). */
-  function workerExcept(
-    name: string,
-    freeFrom: string,
-    freeTo: string,
-  ): Participant {
+  function workerExcept(name: string, freeFrom: string, freeTo: string): Participant {
     const busy: Participant["busy"] = [];
     for (let t = Date.parse(START); t < Date.parse(END); t += 86_400_000) {
       const dow = new Date(t).getUTCDay();
@@ -444,11 +410,7 @@ describe("findBestDaySpan", () => {
     // Alice works every weekday except her leave, 6-10 July. The earliest
     // clean 7-day window starts Friday 3 July — she leaves after work Friday,
     // then weekend + her leave week. NOT tomorrow with a week of conflicts.
-    const alice = workerExcept(
-      "Alice",
-      "2026-07-06T00:00:00.000Z",
-      "2026-07-13T00:00:00.000Z",
-    );
+    const alice = workerExcept("Alice", "2026-07-06T00:00:00.000Z", "2026-07-13T00:00:00.000Z");
 
     const { slot, conflicts } = findBestDaySpan([alice], 7, START, END, TZ);
 
@@ -491,11 +453,7 @@ describe("findBestDaySpan", () => {
   it("falls back to the least-bad span when the clean week is hard-blocked", () => {
     // Alice's only work-free stretch is 4-13 July, but Bob is travelling
     // exactly then — so the result must carry Alice's work conflicts.
-    const alice = workerExcept(
-      "Alice",
-      "2026-07-06T00:00:00.000Z",
-      "2026-07-13T00:00:00.000Z",
-    );
+    const alice = workerExcept("Alice", "2026-07-06T00:00:00.000Z", "2026-07-13T00:00:00.000Z");
     const bob = makeCategorised("Bob", [
       ["2026-07-04T00:00:00.000Z", "2026-07-13T00:00:00.000Z", "Ferie", "travel"],
     ]);
@@ -508,13 +466,7 @@ describe("findBestDaySpan", () => {
   });
 
   it("breaks score ties by picking the earliest span", () => {
-    const { slot } = findBestDaySpan(
-      [makeParticipant("Alice", [])],
-      3,
-      START,
-      END,
-      TZ,
-    );
+    const { slot } = findBestDaySpan([makeParticipant("Alice", [])], 3, START, END, TZ);
 
     expect(slot?.start).toBe(START);
   });
@@ -844,7 +796,10 @@ describe("calendar priorities", () => {
   }
 
   /** A 12:00-13:00 lunch on the given June/July 2026 date ("2026-06-22"). */
-  const lunch = (date: string): [string, string] => [`${date}T12:00:00.000Z`, `${date}T13:00:00.000Z`];
+  const lunch = (date: string): [string, string] => [
+    `${date}T12:00:00.000Z`,
+    `${date}T13:00:00.000Z`,
+  ];
 
   /** A lunch search over three weeks from Monday 22 June. */
   function lunchEvent(participants: Participant[]): Event {
@@ -858,7 +813,10 @@ describe("calendar priorities", () => {
 
   /** Bob's ordinary (normal-priority) lunches on each of the given dates. */
   const bobBusyOn = (dates: string[]) =>
-    makeParticipant("Bob", dates.map((d) => lunch(d)));
+    makeParticipant(
+      "Bob",
+      dates.map((d) => lunch(d)),
+    );
 
   describe("findMeetingSlot", () => {
     it("is the plain search when nobody marked anything skippable", () => {
@@ -896,7 +854,12 @@ describe("calendar priorities", () => {
       // Monday, exactly a week on, is clean.
       const alice = withPriorities("Alice", [[...lunch("2026-06-22"), "skip"]]);
       const bob = bobBusyOn([
-        "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28",
+        "2026-06-23",
+        "2026-06-24",
+        "2026-06-25",
+        "2026-06-26",
+        "2026-06-27",
+        "2026-06-28",
       ]);
 
       const { slot, conflicts } = findMeetingSlot(lunchEvent([alice, bob]));
@@ -910,16 +873,19 @@ describe("calendar priorities", () => {
       // now eight days out, so Alice skipping Monday's lecture wins.
       const alice = withPriorities("Alice", [[...lunch("2026-06-22"), "skip"]]);
       const bob = bobBusyOn([
-        "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28",
+        "2026-06-23",
+        "2026-06-24",
+        "2026-06-25",
+        "2026-06-26",
+        "2026-06-27",
+        "2026-06-28",
         "2026-06-29",
       ]);
 
       const { slot, conflicts } = findMeetingSlot(lunchEvent([alice, bob]));
 
       expect(slot?.start).toBe("2026-06-22T12:00:00.000Z");
-      expect(conflicts).toEqual([
-        { profileId: "alice", name: "Alice", events: [alice.busy[0]] },
-      ]);
+      expect(conflicts).toEqual([{ profileId: "alice", name: "Alice", events: [alice.busy[0]] }]);
     });
 
     it("never skips a normal or never-skip block, even if a skippable one overlaps it", () => {

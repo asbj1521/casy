@@ -69,7 +69,8 @@ export function earlyMorningStarts(
       if (b.holiday || bStart < end || bStart > until || isAllDay(bStart, bEnd, timeZone)) continue;
       if (first === null || bStart < first) first = bStart;
     }
-    if (first !== null) found.push({ profileId: p.profileId, name: p.name, start: new Date(first).toISOString() });
+    if (first !== null)
+      found.push({ profileId: p.profileId, name: p.name, start: new Date(first).toISOString() });
   }
   return found.sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 }
@@ -90,10 +91,14 @@ export function earlyMorningNote(
   words: EarlyMorningWords,
 ): string | null {
   if (starts.length === 0) return null;
-  const ordered = [...starts].sort((a, b) => Number(b.profileId === youId) - Number(a.profileId === youId));
+  const ordered = [...starts].sort(
+    (a, b) => Number(b.profileId === youId) - Number(a.profileId === youId),
+  );
   if (ordered.length === 1) {
     const [s] = ordered;
-    return s.profileId === youId ? words.oneYou(formatTime(s.start)) : words.one(s.name, formatTime(s.start));
+    return s.profileId === youId
+      ? words.oneYou(formatTime(s.start))
+      : words.one(s.name, formatTime(s.start));
   }
   return words.many(
     nameList(
@@ -147,9 +152,16 @@ export function backToBackNote(
   words: BackToBackWords,
 ): string | null {
   if (people.length === 0) return null;
-  const ordered = [...people].sort((a, b) => Number(b.profileId === youId) - Number(a.profileId === youId));
+  const ordered = [...people].sort(
+    (a, b) => Number(b.profileId === youId) - Number(a.profileId === youId),
+  );
   if (ordered.length === 1) {
     return ordered[0].profileId === youId ? words.oneYou : words.one(ordered[0].name);
   }
-  return words.many(nameList(ordered.map((p) => (p.profileId === youId ? words.you : p.name)), lang));
+  return words.many(
+    nameList(
+      ordered.map((p) => (p.profileId === youId ? words.you : p.name)),
+      lang,
+    ),
+  );
 }

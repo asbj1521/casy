@@ -45,12 +45,13 @@ const da = {
     permission: "Læse dine kalendere",
     accept: "Accepter",
   },
-  never: "Casy beder aldrig Microsoft om titler, steder eller gæster. Casy ser kun, hvornår du er optaget.",
+  never:
+    "Casy beder aldrig Microsoft om titler, steder eller gæster. Casy ser kun, hvornår du er optaget.",
   blocked: (
     <>
-      Nogle skoler og arbejdspladser blokerer det her login helt. Kommer du ikke videre efter Forbind,
-      kan du som regel få det samme ved at udgive din Outlook-kalender og tilføje det link under{" "}
-      {icsLink("Kalenderlink (ICS)")} i stedet. Det er en almindelig løsning for konti, som en
+      Nogle skoler og arbejdspladser blokerer det her login helt. Kommer du ikke videre efter
+      Forbind, kan du som regel få det samme ved at udgive din Outlook-kalender og tilføje det link
+      under {icsLink("Kalenderlink (ICS)")} i stedet. Det er en almindelig løsning for konti, som en
       organisation styrer.
     </>
   ),
@@ -84,12 +85,13 @@ const en: typeof da = {
     permission: "Read your calendars",
     accept: "Accept",
   },
-  never: "Casy never asks Microsoft for event titles, places or guests. It only sees when you're busy.",
+  never:
+    "Casy never asks Microsoft for event titles, places or guests. It only sees when you're busy.",
   blocked: (
     <>
-      Some schools and workplaces block this sign-in from working at all. If Connect doesn't get
-      you anywhere, you can usually get the same result by publishing your Outlook calendar and
-      adding that link under {icsLink("Calendar link (ICS)")} instead. It's a common workaround for
+      Some schools and workplaces block this sign-in from working at all. If Connect doesn't get you
+      anywhere, you can usually get the same result by publishing your Outlook calendar and adding
+      that link under {icsLink("Calendar link (ICS)")} instead. It's a common workaround for
       accounts managed by an organization.
     </>
   ),

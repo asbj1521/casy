@@ -98,7 +98,13 @@ export default function TopNav() {
   const tabs: Tab[] = [
     // The logo also goes home, but that isn't obvious from Profile or My
     // events, so it gets its own labelled link like the others.
-    { to: user ? "/" : "/plan", label: t.nav.scheduler, short: t.nav.schedulerShort, icon: CalendarSearch, active: onHome },
+    {
+      to: user ? "/" : "/plan",
+      label: t.nav.scheduler,
+      short: t.nav.schedulerShort,
+      icon: CalendarSearch,
+      active: onHome,
+    },
     {
       to: "/events",
       label: t.nav.events,
@@ -163,7 +169,7 @@ export default function TopNav() {
             onClick={tab.onClick}
             aria-current={tab.active ? "page" : undefined}
             className={cn(
-              "flex min-w-12 flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[11px] max-[359px]:min-w-0 max-[359px]:px-0.5 max-[359px]:text-[10px] font-medium transition hover:text-foreground sm:min-w-0 sm:flex-row sm:gap-1.5 sm:p-0 sm:text-sm sm:font-normal",
+              "flex min-w-12 flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-medium transition hover:text-foreground max-[359px]:min-w-0 max-[359px]:px-0.5 max-[359px]:text-[10px] sm:min-w-0 sm:flex-row sm:gap-1.5 sm:p-0 sm:text-sm sm:font-normal",
               tab.active && "text-primary sm:text-foreground",
             )}
           >

@@ -8,8 +8,7 @@
 import { isInvalidGrant, ReauthRequired } from "./reauth.ts";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
-const CALENDAR_LIST_URL =
-  "https://www.googleapis.com/calendar/v3/users/me/calendarList";
+const CALENDAR_LIST_URL = "https://www.googleapis.com/calendar/v3/users/me/calendarList";
 const FREEBUSY_URL = "https://www.googleapis.com/calendar/v3/freeBusy";
 
 export interface GoogleTokens {
@@ -111,7 +110,9 @@ export async function listCalendars(accessToken: string): Promise<GoogleCalendar
       throw new Error(`Google calendarList failed: ${res.status} ${await res.text()}`);
     }
     const body = await res.json();
-    items.push(...(body.items ?? []).filter((c: GoogleCalendarListEntry) => !isGoogleBuiltInCalendar(c.id)));
+    items.push(
+      ...(body.items ?? []).filter((c: GoogleCalendarListEntry) => !isGoogleBuiltInCalendar(c.id)),
+    );
     pageToken = body.nextPageToken;
   } while (pageToken);
   return items;

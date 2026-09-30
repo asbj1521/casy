@@ -1,10 +1,25 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Laptop, Pause, Play, RotateCcw, Smartphone } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Laptop,
+  Pause,
+  Play,
+  RotateCcw,
+  Smartphone,
+} from "lucide-react";
 
 import IphoneScreen from "@/components/appleWalkthrough/IphoneScreen";
 import MacScreen from "@/components/appleWalkthrough/MacScreen";
-import { at, BLUE, SCENES, SIZE, type Device, type SceneId } from "@/components/appleWalkthrough/layout";
+import {
+  at,
+  BLUE,
+  SCENES,
+  SIZE,
+  type Device,
+  type SceneId,
+} from "@/components/appleWalkthrough/layout";
 import { BEATS, keyBeat } from "@/components/appleWalkthrough/timeline";
 import { useLang } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
@@ -48,7 +63,8 @@ const da = {
     },
     iphone: {
       landing: "Tryk på Log ind.",
-      biometric: "Brug ikke Face ID her. Tryk på krydset for at lukke boksen. Apple skal have din adgangskode.",
+      biometric:
+        "Brug ikke Face ID her. Tryk på krydset for at lukke boksen. Apple skal have din adgangskode.",
       signIn:
         "Skriv din e-mail, og tryk på Fortsæt, ikke på Log ind med loginnøgle. Skriv så din adgangskode, og tryk på Fortsæt.",
       code: "Skriv den kode, Apple sender dig.",
@@ -118,7 +134,12 @@ function useCopy() {
 /** macOS's arrow pointer, tip at the element's top left. */
 function Pointer() {
   return (
-    <svg width="14" height="20" viewBox="0 0 14 20" style={{ filter: "drop-shadow(0 1px 1.5px rgba(0,0,0,0.35))" }}>
+    <svg
+      width="14"
+      height="20"
+      viewBox="0 0 14 20"
+      style={{ filter: "drop-shadow(0 1px 1.5px rgba(0,0,0,0.35))" }}
+    >
       <path
         d="M1 1 L1 16 L4.8 12.4 L7.6 18.6 L10 17.6 L7.3 11.5 L12.5 11.5 Z"
         fill="#000"
@@ -132,7 +153,9 @@ function Pointer() {
 
 /** A fingertip on the phone: a soft circle centred on the spot it touches. */
 function Fingertip() {
-  return <span className="block h-7 w-7 rounded-full border-2 border-white/90 bg-black/25 shadow-[0_1px_4px_rgba(0,0,0,0.3)]" />;
+  return (
+    <span className="block h-7 w-7 rounded-full border-2 border-white/90 bg-black/25 shadow-[0_1px_4px_rgba(0,0,0,0.3)]" />
+  );
 }
 
 export default function AppleWalkthrough({ device }: { device: Device }) {
@@ -204,7 +227,10 @@ export default function AppleWalkthrough({ device }: { device: Device }) {
         )}
         style={{ height: h * scale + frameBorder }}
       >
-        <div style={{ width: w, height: h, transform: `scale(${scale})`, transformOrigin: "top left" }} className="relative">
+        <div
+          style={{ width: w, height: h, transform: `scale(${scale})`, transformOrigin: "top left" }}
+          className="relative"
+        >
           {isPhone ? (
             <IphoneScreen scene={current.scene} phase={current.phase} />
           ) : (
@@ -223,7 +249,11 @@ export default function AppleWalkthrough({ device }: { device: Device }) {
           <motion.div
             style={at(0, 0)}
             initial={false}
-            animate={{ x: current.at[0] - pointerOffset, y: current.at[1] - pointerOffset, scale: tapping ? 0.85 : 1 }}
+            animate={{
+              x: current.at[0] - pointerOffset,
+              y: current.at[1] - pointerOffset,
+              scale: tapping ? 0.85 : 1,
+            }}
             transition={{ duration: reduceMotion ? 0 : 0.65, ease: "easeInOut" }}
           >
             {isPhone ? <Fingertip /> : <Pointer />}
@@ -233,14 +263,23 @@ export default function AppleWalkthrough({ device }: { device: Device }) {
 
       {/* Spoken only when someone steps by hand; read aloud every few
           seconds while it plays, it would talk over everything else. */}
-      <p aria-live={playing ? "off" : "polite"} className="mt-3 min-h-[2.75rem] text-sm leading-relaxed text-foreground">
+      <p
+        aria-live={playing ? "off" : "polite"}
+        className="mt-3 min-h-[2.75rem] text-sm leading-relaxed text-foreground"
+      >
         <span className="mr-1.5 font-semibold tabular-nums text-primary">{sceneIndex + 1}.</span>
         {c.captions[device][current.scene]}
       </p>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5">
-          <button type="button" onClick={() => showScene(sceneIndex - 1)} disabled={sceneIndex === 0} aria-label={c.controls.previous} className={iconButton}>
+          <button
+            type="button"
+            onClick={() => showScene(sceneIndex - 1)}
+            disabled={sceneIndex === 0}
+            aria-label={c.controls.previous}
+            className={iconButton}
+          >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
@@ -272,8 +311,19 @@ export default function AppleWalkthrough({ device }: { device: Device }) {
         </div>
         <div className="flex items-center">
           {SCENES.map((s, i) => (
-            <button key={s} type="button" onClick={() => showScene(i)} aria-label={c.controls.goTo(i + 1)} className="p-1">
-              <span className={cn("block h-2 w-2 rounded-full transition-colors", i === sceneIndex ? "bg-primary" : "bg-border")} />
+            <button
+              key={s}
+              type="button"
+              onClick={() => showScene(i)}
+              aria-label={c.controls.goTo(i + 1)}
+              className="p-1"
+            >
+              <span
+                className={cn(
+                  "block h-2 w-2 rounded-full transition-colors",
+                  i === sceneIndex ? "bg-primary" : "bg-border",
+                )}
+              />
             </button>
           ))}
         </div>
@@ -287,7 +337,13 @@ export default function AppleWalkthrough({ device }: { device: Device }) {
  * page picks a default from the screen it's on; this lets someone reading on
  * one device follow along for the other.
  */
-export function DevicePicker({ device, onChange }: { device: Device; onChange: (device: Device) => void }) {
+export function DevicePicker({
+  device,
+  onChange,
+}: {
+  device: Device;
+  onChange: (device: Device) => void;
+}) {
   const c = useCopy();
   const labelId = useId();
   const options: { id: Device; label: string; Icon: typeof Laptop }[] = [
@@ -299,7 +355,11 @@ export function DevicePicker({ device, onChange }: { device: Device; onChange: (
       <span id={labelId} className="text-sm text-muted-foreground">
         {c.controls.showFor}
       </span>
-      <div role="group" aria-labelledby={labelId} className="inline-flex rounded-full border bg-secondary/60 p-0.5">
+      <div
+        role="group"
+        aria-labelledby={labelId}
+        className="inline-flex rounded-full border bg-secondary/60 p-0.5"
+      >
         {options.map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -308,7 +368,9 @@ export function DevicePicker({ device, onChange }: { device: Device; onChange: (
             onClick={() => onChange(id)}
             className={cn(
               "flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition",
-              device === id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              device === id
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5" />

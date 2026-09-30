@@ -112,10 +112,7 @@ export function fallbackTitleId(search: EventSettings): keyof Messages["eventTyp
 
 /** How a set of searched weekdays reads: every day, weekdays, weekends, or a list. */
 export type DayListLabel =
-  | { kind: "all" }
-  | { kind: "weekdays" }
-  | { kind: "weekends" }
-  | { kind: "list"; dows: number[] };
+  { kind: "all" } | { kind: "weekdays" } | { kind: "weekends" } | { kind: "list"; dows: number[] };
 
 export function describeDays(dows: number[]): DayListLabel {
   const set = new Set(dows);

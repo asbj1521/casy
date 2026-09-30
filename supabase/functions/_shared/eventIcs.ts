@@ -43,7 +43,11 @@ export interface AgreedEvent {
 
 /** The event's title in the reader's language. */
 export function localTitle(stored: string, lang: IcsLang): string {
-  return lang === "da" ? (DANISH_TYPE_NAMES[stored] ?? stored) : stored === "Gaming session" ? "Gaming" : stored;
+  return lang === "da"
+    ? (DANISH_TYPE_NAMES[stored] ?? stored)
+    : stored === "Gaming session"
+      ? "Gaming"
+      : stored;
 }
 
 /** "Dinner with The friends" / "Middag med Vennerne". */
@@ -108,7 +112,10 @@ export function foldLine(line: string): string {
 
 /** 20261002T160000Z */
 function utcStamp(iso: string): string {
-  return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return new Date(iso)
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
 }
 
 /** 20261002: the date in Copenhagen at that instant. */

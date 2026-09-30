@@ -17,7 +17,11 @@ const feed = (...eventLines: string[][]) =>
 const busy = (ics: string) => parseBusyIntervals(ics, FROM, TO).intervals;
 
 Deno.test("a multi-day all-day event shown as free still blocks (Apple's default)", () => {
-  const ics = feed(["DTSTART;VALUE=DATE:20260713", "DTEND;VALUE=DATE:20260720", "TRANSP:TRANSPARENT"]);
+  const ics = feed([
+    "DTSTART;VALUE=DATE:20260713",
+    "DTEND;VALUE=DATE:20260720",
+    "TRANSP:TRANSPARENT",
+  ]);
   // Summer: Danish midnight is 22:00 UTC the day before.
   assertEquals(busy(ics), [{ start: "2026-07-12T22:00:00.000Z", end: "2026-07-19T22:00:00.000Z" }]);
 });
@@ -28,7 +32,11 @@ Deno.test("a timed event shown as free still doesn't block", () => {
 });
 
 Deno.test("a cancelled all-day event doesn't block", () => {
-  const ics = feed(["DTSTART;VALUE=DATE:20261001", "DTEND;VALUE=DATE:20261002", "STATUS:CANCELLED"]);
+  const ics = feed([
+    "DTSTART;VALUE=DATE:20261001",
+    "DTEND;VALUE=DATE:20261002",
+    "STATUS:CANCELLED",
+  ]);
   assertEquals(busy(ics), []);
 });
 

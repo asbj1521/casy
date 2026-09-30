@@ -127,11 +127,13 @@ export const DANISH: Record<string, string> = {
     "Det link ligner ikke en kalender (der er ingen VCALENDAR).",
   "Couldn't read that calendar feed. Is it a valid .ics link?":
     "Kunne ikke læse kalenderen. Er det et gyldigt .ics-link?",
-  "That feed has too many events to import.": "Kalenderen har for mange aftaler til at blive hentet.",
+  "That feed has too many events to import.":
+    "Kalenderen har for mange aftaler til at blive hentet.",
   "Only https:// (or webcal://) links are supported.": "Kun https://- og webcal://-links virker.",
   "Links with a username or password in them aren't supported.":
     "Links med et brugernavn eller en adgangskode i virker ikke.",
-  "Links on non-standard ports aren't supported.": "Links på andre porte end standarden virker ikke.",
+  "Links on non-standard ports aren't supported.":
+    "Links på andre porte end standarden virker ikke.",
   "That link points at a private or internal address.":
     "Linket peger på en privat eller intern adresse.",
   "Couldn't reach that link (network error or timeout).":
@@ -175,7 +177,10 @@ export function withLanguage(
     const lang = langOf(req);
     if (lang === "en" || res.status < 400) return res;
     if (!res.headers.get("content-type")?.includes("application/json")) return res;
-    const body = await res.clone().json().catch(() => null);
+    const body = await res
+      .clone()
+      .json()
+      .catch(() => null);
     if (!body || typeof body.error !== "string") return res;
     const error = translateError(body.error, lang);
     if (error === body.error) return res;

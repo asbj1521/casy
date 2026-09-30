@@ -71,9 +71,7 @@ export default function IcsLinkForm({
               </span>
             </div>
             <label className="text-sm">
-              <span className="mb-1 block font-medium text-foreground">
-                {t.icsForm.name}
-              </span>
+              <span className="mb-1 block font-medium text-foreground">{t.icsForm.name}</span>
               <input
                 type="text"
                 maxLength={80}

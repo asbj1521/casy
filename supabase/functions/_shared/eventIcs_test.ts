@@ -50,7 +50,10 @@ Deno.test("a typed title is kept as written; old type names still translate", ()
   assertEquals(localTitle("Board games", "da"), "Board games");
   assertEquals(localTitle("Gaming session", "da"), "Gaming");
   assertEquals(localTitle("Gaming session", "en"), "Gaming");
-  assertEquals(eventSummary({ ...dinner, title: "Weekend trip" }, "da"), "Weekendtur med The friends");
+  assertEquals(
+    eventSummary({ ...dinner, title: "Weekend trip" }, "da"),
+    "Weekendtur med The friends",
+  );
 });
 
 Deno.test("a vacation is whole days, ending the day after the last", () => {
@@ -92,7 +95,8 @@ Deno.test("the calendar entry's file name is stable per event", () => {
 
 Deno.test("the UIDs in a document are found, folded or not, whatever else is in it", () => {
   assertEquals(eventUids(buildEventIcs(dinner, "en", NOW)), [`${dinner.id}@casy.app`]);
-  const folded = "BEGIN:VEVENT\r\nUID:a-very-long-uid-that-an-\r\n other-server-folded@example.com\r\nEND:VEVENT\r\n";
+  const folded =
+    "BEGIN:VEVENT\r\nUID:a-very-long-uid-that-an-\r\n other-server-folded@example.com\r\nEND:VEVENT\r\n";
   assertEquals(eventUids(folded), ["a-very-long-uid-that-an-other-server-folded@example.com"]);
   assertEquals(eventUids("BEGIN:VEVENT\nUID;X-PARAM=1:with-param\nEND:VEVENT"), ["with-param"]);
   assertEquals(eventUids("no events here"), []);

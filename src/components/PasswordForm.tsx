@@ -144,7 +144,9 @@ export default function PasswordForm({
               </ul>
             </div>
             <label className="text-sm">
-              <span className="mb-1 block font-medium text-foreground">{t.passwordForm.confirm}</span>
+              <span className="mb-1 block font-medium text-foreground">
+                {t.passwordForm.confirm}
+              </span>
               <input
                 id={confirmId}
                 type="password"

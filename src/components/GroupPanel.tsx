@@ -1,16 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  CalendarOff,
-  Check,
-  Copy,
-  Link2,
-  Loader2,
-  LogOut,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { CalendarOff, Check, Copy, Link2, Loader2, LogOut, UserPlus, Users } from "lucide-react";
 
 import InfoTip from "@/components/InfoTip";
 import { useAuth } from "@/context/auth";

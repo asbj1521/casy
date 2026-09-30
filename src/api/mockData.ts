@@ -26,13 +26,7 @@
  * calendar.
  */
 
-import type {
-  BusyInterval,
-  EventCategory,
-  Event,
-  FriendGroup,
-  Participant,
-} from "@/types";
+import type { BusyInterval, EventCategory, Event, FriendGroup, Participant } from "@/types";
 import { APP_TIME_ZONE, localDate, wallTime } from "@/lib/zone";
 
 /** The zone the generated people live in. */
@@ -171,7 +165,18 @@ export const EXAMPLE_GROUPS: ExampleGroupDef[] = [
   {
     id: "basketball",
     name: "Basketball team",
-    members: ["you", "mikkel", "rasmus", "oliver", "emil", "noah", "villads", "august", "malthe", "elias"],
+    members: [
+      "you",
+      "mikkel",
+      "rasmus",
+      "oliver",
+      "emil",
+      "noah",
+      "villads",
+      "august",
+      "malthe",
+      "elias",
+    ],
   },
   {
     id: "highschool",
@@ -290,9 +295,7 @@ const TITLES = {
 // Saturday day-indices that have a following Sunday inside the window, so a
 // weekend trip never spills past the generated range.
 const SATURDAYS = Array.from({ length: PLAN_DAYS }, (_, i) => i).filter(
-  (i) =>
-    i + 1 < PLAN_DAYS &&
-    new Date(PLAN_START + i * MS_PER_DAY).getUTCDay() === 6,
+  (i) => i + 1 < PLAN_DAYS && new Date(PLAN_START + i * MS_PER_DAY).getUTCDay() === 6,
 );
 
 /* ----------------------------------------------------------------------------
@@ -331,20 +334,15 @@ const BREAKS = buildBreaks();
 const inRange = (dayMs: number, r: BreakRange | null): boolean =>
   r !== null && dayMs >= r.start && dayMs < r.end;
 
-const inSchoolBreak = (dayMs: number): boolean =>
-  BREAKS.school.some((b) => inRange(dayMs, b));
+const inSchoolBreak = (dayMs: number): boolean => BREAKS.school.some((b) => inRange(dayMs, b));
 
-const inChristmasBreak = (dayMs: number): boolean =>
-  BREAKS.xmas.some((b) => inRange(dayMs, b));
+const inChristmasBreak = (dayMs: number): boolean => BREAKS.xmas.some((b) => inRange(dayMs, b));
 
 /** The first break of a given start month that overlaps the plan window. */
 function breakInWindow(month: number): BreakRange | null {
   return (
     BREAKS.school.find(
-      (b) =>
-        new Date(b.start).getUTCMonth() === month &&
-        b.end > PLAN_START &&
-        b.start < PLAN_END,
+      (b) => new Date(b.start).getUTCMonth() === month && b.end > PLAN_START && b.start < PLAN_END,
     ) ?? null
   );
 }
@@ -365,7 +363,7 @@ function hashSeed(str: string): number {
 
 /** Small deterministic PRNG (xorshift32) returning floats in [0, 1). */
 function makeRng(seed: number): () => number {
-  let s = (seed >>> 0) || 1;
+  let s = seed >>> 0 || 1;
   return () => {
     s ^= s << 13;
     s >>>= 0;
@@ -502,12 +500,10 @@ function generateCalendar(personId: string): BusyInterval[] {
       0,
       Math.floor((SUMMER_WINDOW.end - SUMMER_WINDOW.start - leaveLen) / MS_PER_DAY),
     );
-    const start =
-      SUMMER_WINDOW.start + Math.floor(rng() * (maxOffsetDays + 1)) * MS_PER_DAY;
+    const start = SUMMER_WINDOW.start + Math.floor(rng() * (maxOffsetDays + 1)) * MS_PER_DAY;
     summerLeave = { start, end: start + leaveLen };
   }
-  const workerOff = (dayMs: number) =>
-    inRange(dayMs, summerLeave) || inChristmasBreak(dayMs);
+  const workerOff = (dayMs: number) => inRange(dayMs, summerLeave) || inChristmasBreak(dayMs);
 
   // --- Christmas itself is family time --------------------------------------
   // Nobody group-vacations over Christmas: the 24th to the 26th are spent
@@ -530,8 +526,7 @@ function generateCalendar(personId: string): BusyInterval[] {
   // travel in exactly those weeks, which (added first) blocks everything else.
   if (summerLeave && rng() < 0.55) {
     const len = 6 + Math.floor(rng() * 4); // 6-9 days
-    const start =
-      summerLeave.start + Math.floor(rng() * (22 - len)) * MS_PER_DAY;
+    const start = summerLeave.start + Math.floor(rng() * (22 - len)) * MS_PER_DAY;
     for (let i = 0; i < len; i++) {
       tryPush(allDay(start + i * MS_PER_DAY, "Sommerferie", "travel"));
     }
@@ -546,12 +541,9 @@ function generateCalendar(personId: string): BusyInterval[] {
   }
   if (AUTUMN_WINDOW && rng() < (p.social + p.family >= 7 ? 0.35 : 0.15)) {
     const len = 3 + Math.floor(rng() * 3); // 3-5 day city break
-    const maxOffset = Math.floor(
-      (AUTUMN_WINDOW.end - AUTUMN_WINDOW.start) / MS_PER_DAY - len,
-    );
+    const maxOffset = Math.floor((AUTUMN_WINDOW.end - AUTUMN_WINDOW.start) / MS_PER_DAY - len);
     const start =
-      AUTUMN_WINDOW.start +
-      Math.floor(rng() * (Math.max(0, maxOffset) + 1)) * MS_PER_DAY;
+      AUTUMN_WINDOW.start + Math.floor(rng() * (Math.max(0, maxOffset) + 1)) * MS_PER_DAY;
     for (let i = 0; i < len; i++) {
       tryPush(allDay(start + i * MS_PER_DAY, "Efterårsferie", "travel"));
     }
@@ -588,11 +580,7 @@ function generateCalendar(personId: string): BusyInterval[] {
       }
       // Evening study groups are arranged that week, so they fade with the
       // planning horizon (and don't happen in breaks either).
-      if (
-        p.study >= 3 &&
-        !inSchoolBreak(dayMs) &&
-        rng() < p.study * 0.08 * planningFactor(dayMs)
-      ) {
+      if (p.study >= 3 && !inSchoolBreak(dayMs) && rng() < p.study * 0.08 * planningFactor(dayMs)) {
         tryPush(event(dayMs, 18, 3, pick(rng, TITLES.studyEve), "school"));
       }
 
@@ -619,8 +607,7 @@ function generateCalendar(personId: string): BusyInterval[] {
     // SOCIAL hangouts further ahead simply haven't been arranged yet, so those
     // evenings read as free (until, in real life, they fill in closer to the day).
     const heavyNight = dow === 4 || dow === 5 || dow === 6;
-    const socialChance =
-      p.social * (heavyNight ? 0.22 : 0.12) * planningFactor(dayMs);
+    const socialChance = p.social * (heavyNight ? 0.22 : 0.12) * planningFactor(dayMs);
     if (rng() < socialChance) {
       const start = 18 + Math.floor(rng() * 2); // 18-19: dinners/plans bite early
       const big = heavyNight && rng() < 0.5;
@@ -637,9 +624,7 @@ function generateCalendar(personId: string): BusyInterval[] {
 
     // The odd appointment (dentist, haircut). Usually booked ahead, so no horizon.
     if (rng() < 0.03) {
-      tryPush(
-        event(dayMs, 9 + Math.floor(rng() * 7), 1, pick(rng, TITLES.errand), "personal"),
-      );
+      tryPush(event(dayMs, 9 + Math.floor(rng() * 7), 1, pick(rng, TITLES.errand), "personal"));
     }
   }
 

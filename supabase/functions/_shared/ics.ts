@@ -66,7 +66,10 @@ export function stripToTimingLines(raw: string): string {
     if (!m) continue;
     const name = m[1].toUpperCase();
     if (name === "BEGIN") {
-      const component = line.slice(line.indexOf(":") + 1).trim().toUpperCase();
+      const component = line
+        .slice(line.indexOf(":") + 1)
+        .trim()
+        .toUpperCase();
       if (skipDepth > 0 || !KEEP_COMPONENTS.has(component)) {
         skipDepth++;
       } else {
@@ -165,8 +168,10 @@ export function parseBusyIntervals(raw: string, windowStart: Date, windowEnd: Da
     const minute = t.isDate ? 0 : t.minute;
     const second = t.isDate ? 0 : t.second;
     if (feedZone) {
-      return new ICAL.Time({ year: t.year, month: t.month, day: t.day, hour, minute, second, isDate: false }, feedZone)
-        .toJSDate();
+      return new ICAL.Time(
+        { year: t.year, month: t.month, day: t.day, hour, minute, second, isDate: false },
+        feedZone,
+      ).toJSDate();
     }
     return wallClockToUtc(DEFAULT_ZONE, t.year, t.month, t.day, hour, minute, second);
   };
@@ -192,7 +197,11 @@ export function parseBusyIntervals(raw: string, windowStart: Date, windowEnd: Da
       if (blocks(ev, ev.startDate.isDate)) add(toDate(ev.startDate), toDate(ev.endDate));
     } else {
       const it = ev.iterator();
-      for (let n = 0, next = it.next(); next && n < MAX_OCCURRENCES_PER_EVENT; n++, next = it.next()) {
+      for (
+        let n = 0, next = it.next();
+        next && n < MAX_OCCURRENCES_PER_EVENT;
+        n++, next = it.next()
+      ) {
         const d = ev.getOccurrenceDetails(next);
         const start = toDate(d.startDate);
         if (start >= windowEnd) break; // occurrences come in ascending order
@@ -243,9 +252,12 @@ export function assertSafeFeedUrl(raw: string): URL {
   } catch {
     throw new IcsError("That doesn't look like a valid link.");
   }
-  if (url.protocol !== "https:") throw new IcsError("Only https:// (or webcal://) links are supported.");
-  if (url.username || url.password) throw new IcsError("Links with a username or password in them aren't supported.");
-  if (url.port && url.port !== "443") throw new IcsError("Links on non-standard ports aren't supported.");
+  if (url.protocol !== "https:")
+    throw new IcsError("Only https:// (or webcal://) links are supported.");
+  if (url.username || url.password)
+    throw new IcsError("Links with a username or password in them aren't supported.");
+  if (url.port && url.port !== "443")
+    throw new IcsError("Links on non-standard ports aren't supported.");
 
   const host = url.hostname.toLowerCase().replace(/\.$/, "");
   const looksInternal =

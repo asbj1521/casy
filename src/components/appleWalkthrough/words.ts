@@ -11,7 +11,18 @@ import type { Lang } from "@/i18n/locale";
 import { APP_PASSWORD_EXAMPLE } from "@/lib/appleCredentials";
 
 const da = {
-  nav: ["Store", "Mac", "iPad", "iPhone", "Watch", "AirPods", "TV og hjem", "Underholdning", "Tilbehør", "Support"],
+  nav: [
+    "Store",
+    "Mac",
+    "iPad",
+    "iPhone",
+    "Watch",
+    "AirPods",
+    "TV og hjem",
+    "Underholdning",
+    "Tilbehør",
+    "Support",
+  ],
   account: "Apple-konto",
   headerLinks: ["Log ind", "Opret din Apple-konto", "Ofte stillede spørgsmål"],
   signOut: "Log ud",
@@ -38,7 +49,15 @@ const da = {
   security: "Login og sikkerhed",
   securityBody:
     "Administrer indstillinger, der er relateret til at logge ind på din konto, kontosikkerhed, og hvordan du gendanner dine data, når du har problemer med at logge ind.",
-  menu: ["Personlige oplysninger", "Login og sikkerhed", "Betaling og levering", "Abonnementer", "Familie", "Enheder", "Anonymitet"],
+  menu: [
+    "Personlige oplysninger",
+    "Login og sikkerhed",
+    "Betaling og levering",
+    "Abonnementer",
+    "Familie",
+    "Enheder",
+    "Anonymitet",
+  ],
   tiles: [
     ["E-mails og telefonnumre", PERSON.email, "og yderligere 1"],
     ["Adgangskode", "Sidst opdateret den 03.02.2025"],
@@ -68,7 +87,18 @@ const da = {
 };
 
 const en: typeof da = {
-  nav: ["Store", "Mac", "iPad", "iPhone", "Watch", "AirPods", "TV & Home", "Entertainment", "Accessories", "Support"],
+  nav: [
+    "Store",
+    "Mac",
+    "iPad",
+    "iPhone",
+    "Watch",
+    "AirPods",
+    "TV & Home",
+    "Entertainment",
+    "Accessories",
+    "Support",
+  ],
   account: "Apple Account",
   headerLinks: ["Sign In", "Create Your Apple Account", "FAQ"],
   signOut: "Sign Out",
@@ -85,7 +115,8 @@ const en: typeof da = {
   emailField: "Email or Phone Number",
   macEmailField: "Email or Phone Number",
   passwordField: "Password",
-  privacy: "Your Apple Account information is used to allow you to sign in securely and access your data.",
+  privacy:
+    "Your Apple Account information is used to allow you to sign in securely and access your data.",
   privacyLink: "See how your data is managed…",
   passkey: "Sign in with Passkey",
   passkeyNote: "Requires iOS 17 or macOS Sonoma or later.",
@@ -93,7 +124,15 @@ const en: typeof da = {
   security: "Sign-In and Security",
   securityBody:
     "Manage settings related to signing in to your account, account security, and how to recover your data when you have trouble signing in.",
-  menu: ["Personal Information", "Sign-In and Security", "Payment & Shipping", "Subscriptions", "Family", "Devices", "Privacy"],
+  menu: [
+    "Personal Information",
+    "Sign-In and Security",
+    "Payment & Shipping",
+    "Subscriptions",
+    "Family",
+    "Devices",
+    "Privacy",
+  ],
   tiles: [
     ["Email & Phone Numbers", PERSON.email, "and 1 more"],
     ["Password", "Last updated 3 Feb 2025"],

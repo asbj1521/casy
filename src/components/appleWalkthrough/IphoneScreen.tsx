@@ -1,10 +1,35 @@
 import { Fragment, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SiApple } from "react-icons/si";
-import { ChevronDown, ChevronRight, KeyRound, Menu, Plus, Search, ShoppingBag, Sparkles, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  KeyRound,
+  Menu,
+  Plus,
+  Search,
+  ShoppingBag,
+  Sparkles,
+  X,
+} from "lucide-react";
 
-import { at, BLUE, FAINT_BLUE, GREY, INK, PERSON, SIZE, type SceneId } from "@/components/appleWalkthrough/layout";
-import { Avatar, DotRing, DottedAppleIcon, SceneFade, TileIcon } from "@/components/appleWalkthrough/Parts";
+import {
+  at,
+  BLUE,
+  FAINT_BLUE,
+  GREY,
+  INK,
+  PERSON,
+  SIZE,
+  type SceneId,
+} from "@/components/appleWalkthrough/layout";
+import {
+  Avatar,
+  DotRing,
+  DottedAppleIcon,
+  SceneFade,
+  TileIcon,
+} from "@/components/appleWalkthrough/Parts";
 import {
   EXAMPLE_CODE,
   EXAMPLE_PASSWORD,
@@ -43,16 +68,30 @@ function PhoneNav() {
 }
 
 /** "Apple-konto" with its section menu (and Log ud, once signed in). */
-function PhoneHeader({ a, signedIn, top = 40 }: { a: AppleWords; signedIn: boolean; top?: number }) {
+function PhoneHeader({
+  a,
+  signedIn,
+  top = 40,
+}: {
+  a: AppleWords;
+  signedIn: boolean;
+  top?: number;
+}) {
   return (
-    <div style={at(0, top, W, 38)} className="flex items-center border-b border-[#d2d2d7] bg-white px-4">
+    <div
+      style={at(0, top, W, 38)}
+      className="flex items-center border-b border-[#d2d2d7] bg-white px-4"
+    >
       <span className="text-[15px] font-semibold" style={{ color: INK }}>
         {a.account}
       </span>
       <span className="ml-auto flex items-center gap-4">
         <ChevronDown className="h-4 w-4" style={{ color: INK }} />
         {signedIn && (
-          <span className="rounded-full px-3 py-0.5 text-[11px] text-white" style={{ background: BLUE }}>
+          <span
+            className="rounded-full px-3 py-0.5 text-[11px] text-white"
+            style={{ background: BLUE }}
+          >
             {a.signOut}
           </span>
         )}
@@ -93,13 +132,27 @@ function PhoneField({
       style={at(left, top, width, 40)}
       className="flex items-center rounded-[10px] border border-[#86868b] bg-white px-3 text-[12px]"
     >
-      {value ? <span style={{ color: INK }}>{value}</span> : <span style={{ color: GREY }}>{placeholder}</span>}
+      {value ? (
+        <span style={{ color: INK }}>{value}</span>
+      ) : (
+        <span style={{ color: GREY }}>{placeholder}</span>
+      )}
       {caret && <span className="ml-px h-4 w-px animate-pulse" style={{ background: INK }} />}
     </div>
   );
 }
 
-function PhoneDialogButton({ top, label, filled, faint }: { top: number; label: string; filled?: boolean; faint?: boolean }) {
+function PhoneDialogButton({
+  top,
+  label,
+  filled,
+  faint,
+}: {
+  top: number;
+  label: string;
+  filled?: boolean;
+  faint?: boolean;
+}) {
   return (
     <div
       style={{
@@ -108,7 +161,10 @@ function PhoneDialogButton({ top, label, filled, faint }: { top: number; label: 
         color: filled ? "white" : BLUE,
         borderColor: BLUE,
       }}
-      className={cn("flex items-center justify-center rounded-[8px] text-[12px] transition-colors", !filled && "border")}
+      className={cn(
+        "flex items-center justify-center rounded-[8px] text-[12px] transition-colors",
+        !filled && "border",
+      )}
     >
       {label}
     </div>
@@ -127,10 +183,16 @@ function PhoneLanding({ a }: { a: AppleWords }) {
           <SiApple className="h-8 w-8" style={{ color: "#000" }} />
         </span>
       </div>
-      <p style={{ ...at(0, 272, W), color: INK }} className="text-center text-[21px] font-semibold tracking-tight">
+      <p
+        style={{ ...at(0, 272, W), color: INK }}
+        className="text-center text-[21px] font-semibold tracking-tight"
+      >
         {a.landingTitle}
       </p>
-      <p style={{ ...at(30, 310, 300), color: INK }} className="text-center text-[11.5px] leading-snug">
+      <p
+        style={{ ...at(30, 310, 300), color: INK }}
+        className="text-center text-[11.5px] leading-snug"
+      >
         {a.landingBody}
       </p>
       <div
@@ -159,7 +221,10 @@ function PhoneBiometric({ a }: { a: AppleWords }) {
       <span style={at(28, 392)} className="text-[16px] font-semibold text-white">
         {a.account}
       </span>
-      <span style={at(302, 388, 34, 34)} className="flex items-center justify-center rounded-full border border-white/25 bg-white/10">
+      <span
+        style={at(302, 388, 34, 34)}
+        className="flex items-center justify-center rounded-full border border-white/25 bg-white/10"
+      >
         <X className="h-4 w-4 text-white" />
       </span>
       <span style={at(26, 436, 34, 34)}>
@@ -171,7 +236,10 @@ function PhoneBiometric({ a }: { a: AppleWords }) {
       <p style={at(70, 443, 262)} className="text-[9.5px] leading-snug text-white">
         {a.sheetText}
       </p>
-      <div style={at(22, 486, 316, 46)} className="flex items-center gap-3 rounded-full bg-[#1c1c1e] px-2">
+      <div
+        style={at(22, 486, 316, 46)}
+        className="flex items-center gap-3 rounded-full bg-[#1c1c1e] px-2"
+      >
         <Avatar size={32} fontSize={11} />
         <span className="text-[12px] text-white">{PERSON.name}</span>
       </div>
@@ -201,7 +269,12 @@ function PhoneSignIn({ a, phase }: { a: AppleWords; phase: number }) {
       <p style={{ ...at(0, 212, W), color: INK }} className="text-center text-[12px]">
         {a.manageAccount}
       </p>
-      <PhoneField top={240} placeholder={a.emailField} value={phase >= 1 ? PERSON.email : undefined} caret={phase === 1} />
+      <PhoneField
+        top={240}
+        placeholder={a.emailField}
+        value={phase >= 1 ? PERSON.email : undefined}
+        caret={phase === 1}
+      />
       {phase >= 2 ? (
         <PhoneField top={290} placeholder={a.passwordField} value="••••••••••" caret />
       ) : (
@@ -215,11 +288,17 @@ function PhoneSignIn({ a, phase }: { a: AppleWords; phase: number }) {
       >
         {a.continue}
       </div>
-      <div style={at(178, 350, 166, 32)} className="flex items-center justify-center gap-1.5 rounded-[9px] bg-black text-[10.5px] text-white">
+      <div
+        style={at(178, 350, 166, 32)}
+        className="flex items-center justify-center gap-1.5 rounded-[9px] bg-black text-[10.5px] text-white"
+      >
         <KeyRound className="h-3.5 w-3.5" />
         {a.passkey}
       </div>
-      <p style={{ ...at(178, 388, 166), color: INK }} className="text-center text-[7.5px] leading-snug">
+      <p
+        style={{ ...at(178, 388, 166), color: INK }}
+        className="text-center text-[7.5px] leading-snug"
+      >
         {a.passkeyNote}
       </p>
       <SafariPill />
@@ -253,7 +332,15 @@ function PhoneCode({ a, phase }: { a: AppleWords; phase: number }) {
 const TILE_SCROLL = 527;
 
 /** Login og sikkerhed: one column of tiles, the one to tap is the last. */
-function PhoneSecurity({ a, scrolled, hover }: { a: AppleWords; scrolled: boolean; hover: boolean }) {
+function PhoneSecurity({
+  a,
+  scrolled,
+  hover,
+}: {
+  a: AppleWords;
+  scrolled: boolean;
+  hover: boolean;
+}) {
   return (
     <>
       <div style={at(0, 0, W, H)} className="overflow-hidden">
@@ -264,7 +351,10 @@ function PhoneSecurity({ a, scrolled, hover }: { a: AppleWords; scrolled: boolea
         >
           <PhoneNav />
           <PhoneHeader a={a} signedIn />
-          <span style={{ ...at(52, 96), color: INK }} className="text-[20px] font-bold tracking-tight">
+          <span
+            style={{ ...at(52, 96), color: INK }}
+            className="text-[20px] font-bold tracking-tight"
+          >
             {a.security}
           </span>
           <p style={{ ...at(52, 128, 262), color: INK }} className="text-[10.5px] leading-snug">
@@ -276,7 +366,9 @@ function PhoneSecurity({ a, scrolled, hover }: { a: AppleWords; scrolled: boolea
               style={at(52, 204 + i * 116, 256, 98)}
               className={cn(
                 "rounded-[14px] border bg-white px-4 py-3.5 shadow-[0_1px_6px_rgba(0,0,0,0.06)] transition-shadow",
-                i === a.tiles.length - 1 && hover ? "border-[#0071e3] ring-2 ring-[#0071e3]/25" : "border-[#e5e5ea]",
+                i === a.tiles.length - 1 && hover
+                  ? "border-[#0071e3] ring-2 ring-[#0071e3]/25"
+                  : "border-[#e5e5ea]",
               )}
             >
               <div className="flex items-start justify-between gap-2">
@@ -297,7 +389,12 @@ function PhoneSecurity({ a, scrolled, hover }: { a: AppleWords; scrolled: boolea
       {/* Once scrolled, Apple keeps its account bar pinned at the top. */}
       <AnimatePresence>
         {scrolled && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: 0.5 }}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.5 }}
+          >
             <PhoneHeader a={a} signedIn top={0} />
           </motion.div>
         )}
@@ -313,10 +410,16 @@ function PhoneList({ a }: { a: AppleWords }) {
     <>
       <div style={at(0, 0, W, H)} className="bg-white" />
       <X style={{ ...at(18, 22, 20, 20), color: INK }} />
-      <p style={{ ...at(0, 100, W), color: INK }} className="text-center text-[18.5px] font-semibold">
+      <p
+        style={{ ...at(0, 100, W), color: INK }}
+        className="text-center text-[18.5px] font-semibold"
+      >
         {a.listTitle}
       </p>
-      <p style={{ ...at(24, 140, 312), color: INK }} className="text-center text-[10.5px] leading-snug">
+      <p
+        style={{ ...at(24, 140, 312), color: INK }}
+        className="text-center text-[10.5px] leading-snug"
+      >
         {a.listBody}
       </p>
       <p style={{ ...at(0, 178, W), color: BLUE }} className="text-center text-[10.5px]">
@@ -332,11 +435,22 @@ function PhoneList({ a }: { a: AppleWords }) {
 }
 
 /** One of Apple's boxes over the list, centred on the screen. */
-function PhoneCard({ top, height, children }: { top: number; height: number; children: ReactNode }) {
+function PhoneCard({
+  top,
+  height,
+  children,
+}: {
+  top: number;
+  height: number;
+  children: ReactNode;
+}) {
   return (
     <>
       <div style={at(0, 0, W, H)} className="bg-[#e5e5ea]/75" />
-      <div style={at(43, top, 274, height)} className="rounded-[16px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.15)]" />
+      <div
+        style={at(43, top, 274, height)}
+        className="rounded-[16px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.15)]"
+      />
       {children}
     </>
   );
@@ -346,13 +460,26 @@ function PhoneGenerate({ a, phase }: { a: AppleWords; phase: number }) {
   return (
     <PhoneCard top={150} height={330}>
       <DottedAppleIcon cx={180} cy={190} r={18} />
-      <p style={{ ...at(55, 218, 250), color: INK }} className="text-center text-[15px] font-semibold leading-tight">
+      <p
+        style={{ ...at(55, 218, 250), color: INK }}
+        className="text-center text-[15px] font-semibold leading-tight"
+      >
         {a.generateTitle}
       </p>
-      <p style={{ ...at(62, 264, 236), color: GREY }} className="text-center text-[10.5px] leading-snug">
+      <p
+        style={{ ...at(62, 264, 236), color: GREY }}
+        className="text-center text-[10.5px] leading-snug"
+      >
         {a.listBody}
       </p>
-      <PhoneField left={66} top={318} width={228} placeholder={a.namePlaceholder} value={phase >= 1 ? "Casy" : undefined} caret={phase >= 1} />
+      <PhoneField
+        left={66}
+        top={318}
+        width={228}
+        placeholder={a.namePlaceholder}
+        value={phase >= 1 ? "Casy" : undefined}
+        caret={phase >= 1}
+      />
       <PhoneDialogButton top={378} label={a.create} filled faint={phase < 1} />
       <PhoneDialogButton top={416} label={a.cancel} />
     </PhoneCard>
@@ -363,15 +490,28 @@ function PhoneConfirm({ a, phase }: { a: AppleWords; phase: number }) {
   return (
     <PhoneCard top={160} height={320}>
       <DottedAppleIcon cx={180} cy={198} r={18} />
-      <p style={{ ...at(55, 226, 250), color: INK }} className="text-center text-[15px] font-semibold">
+      <p
+        style={{ ...at(55, 226, 250), color: INK }}
+        className="text-center text-[15px] font-semibold"
+      >
         {a.confirmTitle}
       </p>
-      <p style={{ ...at(62, 252, 236), color: GREY }} className="text-center text-[10.5px] leading-snug">
+      <p
+        style={{ ...at(62, 252, 236), color: GREY }}
+        className="text-center text-[10.5px] leading-snug"
+      >
         {a.confirmBody}
         <br />
         {PERSON.email}
       </p>
-      <PhoneField left={76} top={312} width={208} placeholder={a.passwordField} value={phase >= 1 ? "••••••••••" : undefined} caret={phase >= 1} />
+      <PhoneField
+        left={76}
+        top={312}
+        width={208}
+        placeholder={a.passwordField}
+        value={phase >= 1 ? "••••••••••" : undefined}
+        caret={phase >= 1}
+      />
       <PhoneDialogButton top={370} label={a.continue} filled faint={phase < 1} />
       <PhoneDialogButton top={408} label={a.cancel} />
     </PhoneCard>
@@ -381,7 +521,12 @@ function PhoneConfirm({ a, phase }: { a: AppleWords; phase: number }) {
 /** iOS's selection handle: a line with a dot, above the start or below the end. */
 function Handle({ side }: { side: "start" | "end" }) {
   return (
-    <span className={cn("absolute top-0 h-full w-[2px] bg-[#0a84ff]", side === "start" ? "-left-px" : "-right-px")}>
+    <span
+      className={cn(
+        "absolute top-0 h-full w-[2px] bg-[#0a84ff]",
+        side === "start" ? "-left-px" : "-right-px",
+      )}
+    >
       <span
         className={cn(
           "absolute left-1/2 h-[9px] w-[9px] -translate-x-1/2 rounded-full bg-[#0a84ff]",
@@ -400,7 +545,13 @@ function SelectablePassword({ selected }: { selected: number[] }) {
     <>
       {EXAMPLE_PASSWORD.map((group, i) => (
         <Fragment key={group}>
-          {i > 0 && <span className={cn(selected.includes(i - 1) && selected.includes(i) && "bg-[#b3d7ff]")}>-</span>}
+          {i > 0 && (
+            <span
+              className={cn(selected.includes(i - 1) && selected.includes(i) && "bg-[#b3d7ff]")}
+            >
+              -
+            </span>
+          )}
           <span className={cn("relative", selected.includes(i) && "bg-[#b3d7ff]")}>
             {group}
             {selected.length > 0 && i === first && <Handle side="start" />}
@@ -424,13 +575,22 @@ function PhoneReveal({ a, phase }: { a: AppleWords; phase: number }) {
   return (
     <PhoneCard top={170} height={290}>
       <DottedAppleIcon cx={180} cy={208} r={18} />
-      <p style={{ ...at(55, 234, 250), color: INK }} className="text-center text-[15px] font-semibold leading-tight">
+      <p
+        style={{ ...at(55, 234, 250), color: INK }}
+        className="text-center text-[15px] font-semibold leading-tight"
+      >
         {a.revealTitle}
       </p>
-      <p style={{ ...at(43, 280, 274), color: INK }} className="text-center text-[16px] font-semibold">
+      <p
+        style={{ ...at(43, 280, 274), color: INK }}
+        className="text-center text-[16px] font-semibold"
+      >
         <SelectablePassword selected={SELECTED_BY_PHASE[phase] ?? []} />
       </p>
-      <p style={{ ...at(62, 314, 236), color: GREY }} className="text-center text-[10.5px] leading-snug">
+      <p
+        style={{ ...at(62, 314, 236), color: GREY }}
+        className="text-center text-[10.5px] leading-snug"
+      >
         {a.revealBody}
       </p>
       <PhoneDialogButton top={392} label={a.ok} filled />

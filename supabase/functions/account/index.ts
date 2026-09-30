@@ -21,34 +21,38 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-Deno.serve(withLanguage(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Use POST" }, 405);
+Deno.serve(
+  withLanguage(async (req) => {
+    if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    if (req.method !== "POST") return json({ error: "Use POST" }, 405);
 
-  let payload: { action?: unknown; confirm?: unknown };
-  try {
-    payload = await req.json();
-  } catch {
-    return json({ error: "Body must be JSON" }, 400);
-  }
-
-  const db = supabaseAdmin();
-  const profileId = await callerId(req, db);
-  if (!profileId) return json({ error: "Please sign in again." }, 401);
-
-  switch (payload.action) {
-    case "delete": {
-      if (payload.confirm !== true) return json({ error: "confirm must be true" }, 400);
-      try {
-        const { leftGroups, deletedGroups } = await deleteAccount(db, profileId);
-        console.log(`account ${profileId} deleted itself; left ${leftGroups} groups, ${deletedGroups} deleted`);
-        return json({ outcome: "deleted" });
-      } catch (err) {
-        console.error("account delete failed", profileId, err);
-        return json({ error: "Couldn't delete your account. Please try again." }, 500);
-      }
+    let payload: { action?: unknown; confirm?: unknown };
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "Body must be JSON" }, 400);
     }
-    default:
-      return json({ error: "Unknown action" }, 400);
-  }
-}));
+
+    const db = supabaseAdmin();
+    const profileId = await callerId(req, db);
+    if (!profileId) return json({ error: "Please sign in again." }, 401);
+
+    switch (payload.action) {
+      case "delete": {
+        if (payload.confirm !== true) return json({ error: "confirm must be true" }, 400);
+        try {
+          const { leftGroups, deletedGroups } = await deleteAccount(db, profileId);
+          console.log(
+            `account ${profileId} deleted itself; left ${leftGroups} groups, ${deletedGroups} deleted`,
+          );
+          return json({ outcome: "deleted" });
+        } catch (err) {
+          console.error("account delete failed", profileId, err);
+          return json({ error: "Couldn't delete your account. Please try again." }, 500);
+        }
+      }
+      default:
+        return json({ error: "Unknown action" }, 400);
+    }
+  }),
+);

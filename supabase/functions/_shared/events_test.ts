@@ -13,7 +13,10 @@ Deno.test("settings in each known shape are accepted", () => {
     true,
   );
   assertEquals(
-    isEventSettings({ kind: "trip", shape: { anchorDow: 5, spanDays: 3, startHour: 17, endHour: 21 } }),
+    isEventSettings({
+      kind: "trip",
+      shape: { anchorDow: 5, spanDays: 3, startHour: 17, endHour: 21 },
+    }),
     true,
   );
   assertEquals(isEventSettings({ kind: "vacation", days: 7 }), true);
@@ -25,8 +28,14 @@ Deno.test("malformed settings are refused", () => {
   assertEquals(isEventSettings({ kind: "party" }), false);
   assertEquals(isEventSettings({ kind: "single", durationMinutes: 90 }), false);
   assertEquals(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 24 }), false);
-  assertEquals(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, allowedDays: [7] }), false);
-  assertEquals(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, anyTime: "yes" }), false);
+  assertEquals(
+    isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, allowedDays: [7] }),
+    false,
+  );
+  assertEquals(
+    isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, anyTime: "yes" }),
+    false,
+  );
   assertEquals(isEventSettings({ kind: "trip", shape: { anchorDow: 5 } }), false);
   assertEquals(isEventSettings({ kind: "vacation", days: 31 }), false);
 });

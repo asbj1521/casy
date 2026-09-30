@@ -36,9 +36,15 @@ export function eventHeadline(
     case "vacation":
       return { date: formatLongSpan(start, end, lang), time: words.days(event.settings.days) };
     case "trip":
-      return { date: formatLongSpan(start, end, lang), time: words.tripTimes(formatTime(start), formatTime(end)) };
+      return {
+        date: formatLongSpan(start, end, lang),
+        time: words.tripTimes(formatTime(start), formatTime(end)),
+      };
     default:
-      return { date: formatLongDate(start, lang), time: words.timeRange(formatTime(start), formatTime(end)) };
+      return {
+        date: formatLongDate(start, lang),
+        time: words.timeRange(formatTime(start), formatTime(end)),
+      };
   }
 }
 
@@ -53,8 +59,7 @@ export interface EventSections {
   closed: SuggestedEvent[];
 }
 
-const startOf = (e: SuggestedEvent) =>
-  e.currentDate ? Date.parse(e.currentDate.start) : Infinity;
+const startOf = (e: SuggestedEvent) => (e.currentDate ? Date.parse(e.currentDate.start) : Infinity);
 
 export function sectionEvents(events: SuggestedEvent[], now = Date.now()): EventSections {
   const sections: EventSections = { needsAnswer: [], waiting: [], scheduled: [], closed: [] };

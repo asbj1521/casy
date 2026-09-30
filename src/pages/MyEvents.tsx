@@ -28,7 +28,12 @@ import {
 } from "@/api/events";
 import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
 import { SEARCH_WINDOW } from "@/api/mockData";
-import { backToBackEnds, backToBackNote, earlyMorningNote, earlyMorningStarts } from "@/lib/earlyMorning";
+import {
+  backToBackEnds,
+  backToBackNote,
+  earlyMorningNote,
+  earlyMorningStarts,
+} from "@/lib/earlyMorning";
 import { APP_TIME_ZONE } from "@/lib/zone";
 import AddToCalendar from "@/components/AddToCalendar";
 import TopNav from "@/components/TopNav";
@@ -107,7 +112,9 @@ function GroupName({ event }: { event: SuggestedEvent }) {
   useEffect(() => {
     if (!open) return;
     const close = (e: Event) => {
-      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) {
+      if (
+        e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -130,7 +137,9 @@ function GroupName({ event }: { event: SuggestedEvent }) {
       >
         <Users className="h-4 w-4 shrink-0" />
         <span className="min-w-0 break-words">{event.group.name}</span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} />
+        <ChevronDown
+          className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")}
+        />
       </button>
       {open && (
         // Padded rather than spaced from the name, so the pointer never
@@ -181,11 +190,18 @@ function EdgeWarnings({ event, className }: { event: SuggestedEvent; className?:
   if (!meeting || !group || !busy || !event.currentDate) return null;
 
   const invited = new Set(event.invitees.map((i) => i.profileId));
-  const participants = participantsFromGroup(group, busy).participants.filter((p) => invited.has(p.profileId));
+  const participants = participantsFromGroup(group, busy).participants.filter((p) =>
+    invited.has(p.profileId),
+  );
   const notes = [
     {
       icon: Hourglass,
-      text: backToBackNote(backToBackEnds(participants, event.currentDate, APP_TIME_ZONE), userId, lang, t.backToBack),
+      text: backToBackNote(
+        backToBackEnds(participants, event.currentDate, APP_TIME_ZONE),
+        userId,
+        lang,
+        t.backToBack,
+      ),
     },
     {
       icon: Moon,
@@ -219,8 +235,7 @@ function Origin({ event, inline = false }: { event: SuggestedEvent; inline?: boo
   return (
     <Tag className="text-sm text-muted-foreground">
       {event.createdBy.isYou ? t.events.youSuggested : t.events.suggestedBy(event.createdBy.name)}
-      {last && t.events.newDateBecause(last.declinedBy, pastDateLabel(event, last, lang))}
-      .
+      {last && t.events.newDateBecause(last.declinedBy, pastDateLabel(event, last, lang))}.
     </Tag>
   );
 }
@@ -477,7 +492,9 @@ export default function MyEvents() {
             {/* ───── Waiting for others ───── */}
             {sections.waiting.length > 0 && (
               <section className="mt-8">
-                <h2 className="text-lg font-semibold text-foreground">{t.events.waitingForOthers}</h2>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {t.events.waitingForOthers}
+                </h2>
                 <ul className="mt-3 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
                   {sections.waiting.map((event) => {
                     const error = errorFor(event.id);
@@ -557,7 +574,9 @@ export default function MyEvents() {
                           {pending.length > 0 ? (
                             <People invitees={pending} />
                           ) : (
-                            <p className="text-xl font-bold text-foreground">{t.events.acceptedByAll}</p>
+                            <p className="text-xl font-bold text-foreground">
+                              {t.events.acceptedByAll}
+                            </p>
                           )}
                           <EdgeWarnings event={event} className="mt-1.5" />
                         </div>
@@ -588,7 +607,10 @@ export default function MyEvents() {
                 <h2 className="text-lg font-semibold text-foreground">{t.events.pastClosed}</h2>
                 <ul className="mt-3 grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
                   {sections.closed.map((event) => (
-                    <li key={event.id} className="flex items-start gap-3 rounded-2xl border bg-card p-4">
+                    <li
+                      key={event.id}
+                      className="flex items-start gap-3 rounded-2xl border bg-card p-4"
+                    >
                       <CalendarX className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                       <div className="min-w-0 text-sm">
                         <p className="font-medium text-foreground">

@@ -5,10 +5,7 @@ import { da } from "@/i18n/da";
 import { en } from "@/i18n/en";
 import { calendarNames, hasDistinctCalendarNames, syncedAgo } from "@/lib/accountSummary";
 
-const account = (
-  label: string | null,
-  names: (string | null)[],
-): CalendarConnectionStatus => ({
+const account = (label: string | null, names: (string | null)[]): CalendarConnectionStatus => ({
   id: "conn",
   provider: "google",
   status: "connected",
@@ -49,11 +46,15 @@ describe("hasDistinctCalendarNames", () => {
   });
 
   it("is true when calendars have their own names (an Apple account)", () => {
-    expect(hasDistinctCalendarNames(account("me@icloud.com", ["Work", "Family", "CBS"]))).toBe(true);
+    expect(hasDistinctCalendarNames(account("me@icloud.com", ["Work", "Family", "CBS"]))).toBe(
+      true,
+    );
   });
 
   it("is true if just one of several names is different", () => {
-    expect(hasDistinctCalendarNames(account("me@gmail.com", ["me@gmail.com", "Birthdays"]))).toBe(true);
+    expect(hasDistinctCalendarNames(account("me@gmail.com", ["me@gmail.com", "Birthdays"]))).toBe(
+      true,
+    );
   });
 
   it("is true for a nameless calendar, since its id is not the account label", () => {

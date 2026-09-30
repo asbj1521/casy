@@ -57,7 +57,6 @@ export interface MonthGrid {
   total: number;
 }
 
-
 /**
  * Whether the participant is free for [start, end): outright, only by
  * skipping blocks they marked skippable ("conditional"), or not at all.
@@ -212,8 +211,7 @@ export function buildMonthGrid(
   month: number,
   opts: MonthGridOptions,
 ): MonthGrid {
-  const { timeZone, startHour, durationMinutes, todayMs, allowedDays, multiDay, weeklySpan } =
-    opts;
+  const { timeZone, startHour, durationMinutes, todayMs, allowedDays, multiDay, weeklySpan } = opts;
   const durationMs = durationMinutes * 60_000;
   const firstOfMonth = wallTime(year, month, 1, 0, timeZone);
   const firstDow = localDate(firstOfMonth, timeZone).dow; // 0 = Sun … 6 = Sat

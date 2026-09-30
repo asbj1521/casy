@@ -12,9 +12,17 @@ const user = (id: string, groups: number, calendars = 0) => ({
   calendars,
 });
 
-const member = (profileId: string) => ({ profileId, name: profileId, joinedAt: "2026-09-02T00:00:00.000Z" });
+const member = (profileId: string) => ({
+  profileId,
+  name: profileId,
+  joinedAt: "2026-09-02T00:00:00.000Z",
+});
 
-const connection = (id: string, ownerId: string, extra: Partial<AdminConnection> = {}): AdminConnection => ({
+const connection = (
+  id: string,
+  ownerId: string,
+  extra: Partial<AdminConnection> = {},
+): AdminConnection => ({
   id,
   ownerId,
   ownerName: ownerId,
@@ -33,8 +41,22 @@ const connection = (id: string, ownerId: string, extra: Partial<AdminConnection>
 const OVERVIEW: AdminOverview = {
   stats: { users: 2, groups: 2, connectedAccounts: 2, failingSyncs: 1, busyBlocks: 500 },
   groups: [
-    { id: "both", name: "Both", createdAt: "", createdBy: "ann", createdByName: "ann", members: [member("ann"), member("bo")] },
-    { id: "solo", name: "Solo", createdAt: "", createdBy: "bo", createdByName: "bo", members: [member("bo")] },
+    {
+      id: "both",
+      name: "Both",
+      createdAt: "",
+      createdBy: "ann",
+      createdByName: "ann",
+      members: [member("ann"), member("bo")],
+    },
+    {
+      id: "solo",
+      name: "Solo",
+      createdAt: "",
+      createdBy: "bo",
+      createdByName: "bo",
+      members: [member("bo")],
+    },
   ],
   users: [user("ann", 1, 1), user("bo", 2, 1)],
   usersTruncated: false,
@@ -46,14 +68,19 @@ describe("withoutGroup", () => {
     const next = withoutGroup(OVERVIEW, "both");
     expect(next.groups.map((g) => g.id)).toEqual(["solo"]);
     expect(next.stats.groups).toBe(1);
-    expect(next.users.map((u) => [u.id, u.groups])).toEqual([["ann", 0], ["bo", 1]]);
+    expect(next.users.map((u) => [u.id, u.groups])).toEqual([
+      ["ann", 0],
+      ["bo", 1],
+    ]);
   });
 });
 
 describe("withoutMember", () => {
   it("takes one person out and leaves the group for the rest", () => {
     const next = withoutMember(OVERVIEW, "both", "bo");
-    expect(next.groups.find((g) => g.id === "both")?.members.map((m) => m.profileId)).toEqual(["ann"]);
+    expect(next.groups.find((g) => g.id === "both")?.members.map((m) => m.profileId)).toEqual([
+      "ann",
+    ]);
     expect(next.users.find((u) => u.id === "bo")?.groups).toBe(1);
   });
 
@@ -69,8 +96,16 @@ describe("withoutUser", () => {
     const next = withoutUser(OVERVIEW, "bo");
     expect(next.users.map((u) => u.id)).toEqual(["ann"]);
     expect(next.connections.map((c) => c.id)).toEqual(["c-ann"]);
-    expect(next.groups.map((g) => [g.id, g.members.map((m) => m.profileId)])).toEqual([["both", ["ann"]]]);
-    expect(next.stats).toEqual({ users: 1, groups: 1, connectedAccounts: 1, failingSyncs: 0, busyBlocks: 500 });
+    expect(next.groups.map((g) => [g.id, g.members.map((m) => m.profileId)])).toEqual([
+      ["both", ["ann"]],
+    ]);
+    expect(next.stats).toEqual({
+      users: 1,
+      groups: 1,
+      connectedAccounts: 1,
+      failingSyncs: 0,
+      busyBlocks: 500,
+    });
   });
 
   it("leaves the overview it was given untouched", () => {

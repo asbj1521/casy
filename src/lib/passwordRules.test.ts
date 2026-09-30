@@ -50,7 +50,8 @@ describe("the leak check", () => {
   });
 
   it("finds the suffix in a range answer, and never counts padding", () => {
-    const answer = "0018A45C4D1DEF81644B54AB7F969B88D65:1\r\n1E4C9B93F3F0682250B6CF8331B7EE68FD8:9545824\r\nAAAA:0";
+    const answer =
+      "0018A45C4D1DEF81644B54AB7F969B88D65:1\r\n1E4C9B93F3F0682250B6CF8331B7EE68FD8:9545824\r\nAAAA:0";
     expect(breachCount(answer, "1E4C9B93F3F0682250B6CF8331B7EE68FD8")).toBe(9545824);
     expect(breachCount(answer, "AAAA")).toBe(0);
     expect(breachCount(answer, "FFFF")).toBe(0);

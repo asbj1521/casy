@@ -1,0 +1,13 @@
+# Generated or installed
+dist
+node_modules
+package-lock.json
+supabase/.temp
+
+# Prose is written by hand; the auth email templates are pasted into the
+# Supabase dashboard as they are.
+*.md
+supabase/templates
+
+# Local, untracked settings
+.claude

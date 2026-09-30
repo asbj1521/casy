@@ -1,18 +1,7 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Info,
-  Loader2,
-  XCircle,
-} from "lucide-react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight, Info, Loader2, XCircle } from "lucide-react";
 
 import { primaryCalendarQuery, updatePrimaryCalendar } from "@/api/primaryCalendar";
 import CalendarListPanel from "@/components/CalendarListPanel";
@@ -219,7 +208,8 @@ export default function CalendarOverview() {
       return { previous };
     },
     onError: (_err, _v, context) => {
-      for (const [queryKey, old] of context?.previous ?? []) queryClient.setQueryData(queryKey, old);
+      for (const [queryKey, old] of context?.previous ?? [])
+        queryClient.setQueryData(queryKey, old);
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
@@ -257,7 +247,10 @@ export default function CalendarOverview() {
     const yearAhead = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
     counts.set(
       HOLIDAY_CALENDAR_ID,
-      [...holidaySegmentsByDay(today, yearAhead).values()].reduce((sum, list) => sum + list.length, 0),
+      [...holidaySegmentsByDay(today, yearAhead).values()].reduce(
+        (sum, list) => sum + list.length,
+        0,
+      ),
     );
     return counts;
   }, [calendars]);
@@ -496,7 +489,9 @@ export default function CalendarOverview() {
                               />
                               <span className="truncate text-foreground/80">
                                 {seg.holiday ? (
-                                  <span className="font-medium">{holidayName(seg.holiday, lang)}</span>
+                                  <span className="font-medium">
+                                    {holidayName(seg.holiday, lang)}
+                                  </span>
                                 ) : (
                                   <>
                                     <span className="font-medium">
@@ -537,9 +532,7 @@ export default function CalendarOverview() {
               })}
             </h3>
             {selectedSegments.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t.calendarView.nothingBusy}
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">{t.calendarView.nothingBusy}</p>
             ) : (
               <ul className="mt-3 divide-y">
                 {selectedSegments.map((seg, i) => (

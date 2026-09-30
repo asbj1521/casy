@@ -5,7 +5,11 @@ import { type AddedEntry, missingEntries, nextStep } from "./calendarWrites.ts";
 
 const NOW = Date.parse("2026-09-28T12:00:00Z");
 const scheduled = { status: "scheduled", end: "2026-10-02T19:00:00Z" };
-const row = (wanted: boolean, added: boolean, source_id: string | null = "src") => ({ wanted, added, source_id });
+const row = (wanted: boolean, added: boolean, source_id: string | null = "src") => ({
+  wanted,
+  added,
+  source_id,
+});
 
 Deno.test("a wanted, scheduled, upcoming event is added", () => {
   assertEquals(nextStep(row(true, false), scheduled, NOW), "put");
@@ -19,7 +23,10 @@ Deno.test("nothing to do once wanted and added agree", () => {
 Deno.test("a cancelled, finished or missing event is never added", () => {
   assertEquals(nextStep(row(true, false), { ...scheduled, status: "cancelled" }, NOW), "forget");
   assertEquals(nextStep(row(true, false), { ...scheduled, status: "pending" }, NOW), "forget");
-  assertEquals(nextStep(row(true, false), { ...scheduled, end: "2026-09-01T00:00:00Z" }, NOW), "forget");
+  assertEquals(
+    nextStep(row(true, false), { ...scheduled, end: "2026-09-01T00:00:00Z" }, NOW),
+    "forget",
+  );
   assertEquals(nextStep(row(true, false), null, NOW), "forget");
 });
 
@@ -60,10 +67,19 @@ Deno.test("an entry added while the account was being read is not judged", () =>
 
 Deno.test("only events the read could have seen are judged", () => {
   // Over already, or further ahead than the sync reads.
-  assertEquals(missing([entry("a", { start: "2026-09-01T10:00:00Z", end: "2026-09-01T11:00:00Z" })], []), []);
-  assertEquals(missing([entry("a", { start: "2027-10-01T10:00:00Z", end: "2027-10-01T11:00:00Z" })], []), []);
+  assertEquals(
+    missing([entry("a", { start: "2026-09-01T10:00:00Z", end: "2026-09-01T11:00:00Z" })], []),
+    [],
+  );
+  assertEquals(
+    missing([entry("a", { start: "2027-10-01T10:00:00Z", end: "2027-10-01T11:00:00Z" })], []),
+    [],
+  );
   // Under way right now: still in the read.
-  assertEquals(missing([entry("a", { start: "2026-09-28T11:00:00Z", end: "2026-09-28T13:00:00Z" })], []), ["a"]);
+  assertEquals(
+    missing([entry("a", { start: "2026-09-28T11:00:00Z", end: "2026-09-28T13:00:00Z" })], []),
+    ["a"],
+  );
 });
 
 Deno.test("cancelled events, and events with no date, are left to the cancel path", () => {

@@ -38,7 +38,11 @@ Deno.serve(async (req) => {
     // The user declined consent, or Microsoft reported some other error.
     // error_description carries the AADSTS detail; log it (it never goes into
     // the redirect URL) since `error` alone is often just "access_denied".
-    console.error("Microsoft returned an OAuth error", error, url.searchParams.get("error_description"));
+    console.error(
+      "Microsoft returned an OAuth error",
+      error,
+      url.searchParams.get("error_description"),
+    );
     return redirectToProfile(frontendUrl, { error: `outlook:${error}` });
   }
 
@@ -97,7 +101,9 @@ Deno.serve(async (req) => {
       // Microsoft only issues one when offline_access was in the requested
       // scopes. If it's missing there's no way to refresh access later, so
       // fail loudly instead of storing a connection that dies in an hour.
-      throw new Error("Microsoft did not return a refresh_token (is offline_access in the scope list?)");
+      throw new Error(
+        "Microsoft did not return a refresh_token (is offline_access in the scope list?)",
+      );
     }
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
@@ -178,7 +184,14 @@ Deno.serve(async (req) => {
     // provider hands its one-time code to the first request and refuses the
     // second with invalid_grant, which is no failure at all: the account
     // connected. Drop this duplicate attempt instead of recording an error.
-    if (await discardIfRepeatedCallback(db, { connection, profileId, provider: "outlook", failure: err })) {
+    if (
+      await discardIfRepeatedCallback(db, {
+        connection,
+        profileId,
+        provider: "outlook",
+        failure: err,
+      })
+    ) {
       return redirectToProfile(frontendUrl, { connected: "outlook" });
     }
     await db

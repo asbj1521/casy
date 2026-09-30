@@ -11,7 +11,10 @@ Deno.test("an allowed origin is returned to", () => {
 
 Deno.test("anything else goes to the default site", () => {
   assertEquals(pickFrontend("https://evil.example", ALLOWED), "https://casy.vercel.app");
-  assertEquals(pickFrontend("https://casy.vercel.app.evil.example", ALLOWED), "https://casy.vercel.app");
+  assertEquals(
+    pickFrontend("https://casy.vercel.app.evil.example", ALLOWED),
+    "https://casy.vercel.app",
+  );
   assertEquals(pickFrontend("not a url", ALLOWED), "https://casy.vercel.app");
   assertEquals(pickFrontend(null, ALLOWED), "https://casy.vercel.app");
 });

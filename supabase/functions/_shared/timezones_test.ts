@@ -46,8 +46,14 @@ const event = (dtstart: string, dtend: string, extra = "") =>
     .join("\r\n");
 
 Deno.test("an undefined-zone event now parses to the correct UTC time (summer and winter)", () => {
-  const summer = event("DTSTART;TZID=Europe/Copenhagen:20261001T100000", "DTEND;TZID=Europe/Copenhagen:20261001T113000");
-  const winter = event("DTSTART;TZID=Europe/Copenhagen:20270115T100000", "DTEND;TZID=Europe/Copenhagen:20270115T113000");
+  const summer = event(
+    "DTSTART;TZID=Europe/Copenhagen:20261001T100000",
+    "DTEND;TZID=Europe/Copenhagen:20261001T113000",
+  );
+  const winter = event(
+    "DTSTART;TZID=Europe/Copenhagen:20270115T100000",
+    "DTEND;TZID=Europe/Copenhagen:20270115T113000",
+  );
 
   assertEquals(parseBusyIntervals(addMissingTimezones(summer, FROM, TO), FROM, TO).intervals, [
     { start: "2026-10-01T08:00:00.000Z", end: "2026-10-01T09:30:00.000Z" }, // CEST, UTC+2
@@ -57,20 +63,23 @@ Deno.test("an undefined-zone event now parses to the correct UTC time (summer an
   ]);
 });
 
-Deno.test("a weekly recurring event stays at the same wall-clock time across the DST change", () => {
-  // Every Thursday 10:00 Copenhagen time, starting well before the window.
-  const weekly = event(
-    "DTSTART;TZID=Europe/Copenhagen:20250102T100000",
-    "DTEND;TZID=Europe/Copenhagen:20250102T110000",
-    "RRULE:FREQ=WEEKLY;BYDAY=TH",
-  );
-  const { intervals } = parseBusyIntervals(addMissingTimezones(weekly, FROM, TO), FROM, TO);
-  const starts = new Map(intervals.map((iv) => [iv.start.slice(0, 10), iv.start.slice(11, 16)]));
-  assertEquals(starts.get("2026-10-22"), "08:00"); // still CEST
-  assertEquals(starts.get("2026-10-29"), "09:00"); // clocks went back on the 25th
-  assertEquals(starts.get("2027-03-25"), "09:00"); // still CET
-  assertEquals(starts.get("2027-04-01"), "08:00"); // clocks went forward on the 28th
-});
+Deno.test(
+  "a weekly recurring event stays at the same wall-clock time across the DST change",
+  () => {
+    // Every Thursday 10:00 Copenhagen time, starting well before the window.
+    const weekly = event(
+      "DTSTART;TZID=Europe/Copenhagen:20250102T100000",
+      "DTEND;TZID=Europe/Copenhagen:20250102T110000",
+      "RRULE:FREQ=WEEKLY;BYDAY=TH",
+    );
+    const { intervals } = parseBusyIntervals(addMissingTimezones(weekly, FROM, TO), FROM, TO);
+    const starts = new Map(intervals.map((iv) => [iv.start.slice(0, 10), iv.start.slice(11, 16)]));
+    assertEquals(starts.get("2026-10-22"), "08:00"); // still CEST
+    assertEquals(starts.get("2026-10-29"), "09:00"); // clocks went back on the 25th
+    assertEquals(starts.get("2027-03-25"), "09:00"); // still CET
+    assertEquals(starts.get("2027-04-01"), "08:00"); // clocks went forward on the 28th
+  },
+);
 
 Deno.test("an event outside the first years still resolves (recurring master years back)", () => {
   const old = event(
@@ -113,7 +122,10 @@ Deno.test("a zone the document already defines is not defined twice", () => {
 });
 
 Deno.test("an unknown zone name is left alone, so the parser still reports it", () => {
-  const bogus = event("DTSTART;TZID=Not/AZone:20261001T100000", "DTEND;TZID=Not/AZone:20261001T110000");
+  const bogus = event(
+    "DTSTART;TZID=Not/AZone:20261001T100000",
+    "DTEND;TZID=Not/AZone:20261001T110000",
+  );
   assertEquals(addMissingTimezones(bogus, FROM, TO), bogus);
 });
 

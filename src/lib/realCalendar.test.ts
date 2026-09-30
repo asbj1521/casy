@@ -92,7 +92,11 @@ describe("withRealCalendar", () => {
         { profileId: "friend", name: "Friend", busy: [] },
       ],
     },
-    { id: "b", name: "Without me", participants: [{ profileId: "friend", name: "Friend", busy: [] }] },
+    {
+      id: "b",
+      name: "Without me",
+      participants: [{ profileId: "friend", name: "Friend", busy: [] }],
+    },
   ];
   const real = [{ start: "2026-06-22T07:00:00.000Z", end: "2026-06-22T15:00:00.000Z" }];
 

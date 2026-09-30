@@ -37,8 +37,7 @@ type Tab = "groups" | "users" | "calendars";
 
 /** What a confirm panel is open for: a whole group, or one member of one. */
 type Confirm =
-  | { kind: "group"; groupId: string }
-  | { kind: "member"; groupId: string; profileId: string };
+  { kind: "group"; groupId: string } | { kind: "member"; groupId: string; profileId: string };
 
 /** The error text of whichever mutation failed, for the row it failed on. */
 function messageOf(err: unknown, fallback: string): string {
@@ -120,7 +119,10 @@ function GroupRow({
 }) {
   const { lang } = useLang();
   const t = useT();
-  const removing = confirm?.kind === "member" ? group.members.find((m) => m.profileId === confirm.profileId) : null;
+  const removing =
+    confirm?.kind === "member"
+      ? group.members.find((m) => m.profileId === confirm.profileId)
+      : null;
   const lastOne = group.members.length <= 1;
 
   return (
@@ -286,14 +288,21 @@ function UserRow({
             {user.lastSignInAt && t.admin.lastSignIn(formatDate(user.lastSignInAt, lang))}
           </p>
           {syncResult && (
-            <p className={cn("mt-0.5 text-xs", syncResult.ok ? "text-emerald-700" : "text-amber-700")}>
+            <p
+              className={cn(
+                "mt-0.5 text-xs",
+                syncResult.ok ? "text-emerald-700" : "text-amber-700",
+              )}
+            >
               {syncResult.text}
             </p>
           )}
         </div>
         <div className="flex shrink-0 gap-4 text-right text-xs text-muted-foreground">
           <span>
-            <span className="block text-sm font-semibold tabular-nums text-foreground">{user.groups}</span>
+            <span className="block text-sm font-semibold tabular-nums text-foreground">
+              {user.groups}
+            </span>
             {t.admin.groupsLabel}
           </span>
           <span>
@@ -407,7 +416,10 @@ function ConnectionRow({
         )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
-            {c.ownerName} <span className="font-normal text-muted-foreground">· {t.admin.providers[c.provider]}</span>
+            {c.ownerName}{" "}
+            <span className="font-normal text-muted-foreground">
+              · {t.admin.providers[c.provider]}
+            </span>
           </p>
           <p className="text-xs text-muted-foreground">
             {c.status === "connected"
@@ -422,7 +434,12 @@ function ConnectionRow({
             c.syncError && <p className="mt-0.5 text-xs text-amber-700">{c.syncError}</p>
           )}
           {result && (
-            <p className={cn("mt-0.5 text-xs font-medium", result.ok ? "text-emerald-700" : "text-red-700")}>
+            <p
+              className={cn(
+                "mt-0.5 text-xs font-medium",
+                result.ok ? "text-emerald-700" : "text-red-700",
+              )}
+            >
               {result.text}
             </p>
           )}
@@ -455,7 +472,9 @@ export default function AdminPanel({ youId }: { youId: string }) {
   const t = useT();
   const { lang } = useLang();
   const queryClient = useQueryClient();
-  const { data, isPending, isError, error, refetch, isFetching } = useQuery(adminOverviewQuery(youId));
+  const { data, isPending, isError, error, refetch, isFetching } = useQuery(
+    adminOverviewQuery(youId),
+  );
   const [tab, setTab] = useState<Tab>("groups");
   const [query, setQuery] = useState("");
   const [problemsOnly, setProblemsOnly] = useState(false);
@@ -487,7 +506,8 @@ export default function AdminPanel({ youId }: { youId: string }) {
   });
   const removeMutation = useMutation({
     mutationFn: adminRemoveMember,
-    onSuccess: (_res, { groupId, profileId }) => afterChange((o) => withoutMember(o, groupId, profileId)),
+    onSuccess: (_res, { groupId, profileId }) =>
+      afterChange((o) => withoutMember(o, groupId, profileId)),
   });
   const deleteUserMutation = useMutation({
     mutationFn: adminDeleteUser,
@@ -510,26 +530,37 @@ export default function AdminPanel({ youId }: { youId: string }) {
       void queryClient.invalidateQueries({ queryKey: ["calendar-status"] });
     },
     onError: (err, connectionId) => {
-      setSyncResults((r) => ({ ...r, [connectionId]: { ok: false, text: messageOf(err, t.admin.syncFailed) } }));
+      setSyncResults((r) => ({
+        ...r,
+        [connectionId]: { ok: false, text: messageOf(err, t.admin.syncFailed) },
+      }));
     },
   });
 
   // A person's sync can take a while (each account in turn), so several can
   // run at once, each row spinning and reporting on its own.
   const [syncingUsers, setSyncingUsers] = useState<ReadonlySet<string>>(new Set());
-  const [userSyncResults, setUserSyncResults] = useState<Record<string, { ok: boolean; text: string }>>({});
+  const [userSyncResults, setUserSyncResults] = useState<
+    Record<string, { ok: boolean; text: string }>
+  >({});
   async function syncUser(userId: string) {
     setSyncingUsers((s) => new Set(s).add(userId));
     try {
       const res = await adminSyncUser(userId);
       setUserSyncResults((r) => ({
         ...r,
-        [userId]: { ok: res.failed === 0, text: t.admin.syncedUser(res.synced, res.failed, res.busyBlocks) },
+        [userId]: {
+          ok: res.failed === 0,
+          text: t.admin.syncedUser(res.synced, res.failed, res.busyBlocks),
+        },
       }));
       void queryClient.invalidateQueries({ queryKey: adminOverviewKey(youId) });
       if (userId === youId) void queryClient.invalidateQueries({ queryKey: ["calendar-status"] });
     } catch (err) {
-      setUserSyncResults((r) => ({ ...r, [userId]: { ok: false, text: messageOf(err, t.admin.syncFailed) } }));
+      setUserSyncResults((r) => ({
+        ...r,
+        [userId]: { ok: false, text: messageOf(err, t.admin.syncFailed) },
+      }));
     } finally {
       setSyncingUsers((s) => {
         const next = new Set(s);
@@ -552,7 +583,9 @@ export default function AdminPanel({ youId }: { youId: string }) {
 
   /** What deleting this account would take with it, from the loaded overview. */
   const impactOf = (profileId: string): UserImpact => {
-    const theirGroups = (data?.groups ?? []).filter((g) => g.members.some((m) => m.profileId === profileId));
+    const theirGroups = (data?.groups ?? []).filter((g) =>
+      g.members.some((m) => m.profileId === profileId),
+    );
     return {
       calendarAccounts: (data?.connections ?? []).filter((c) => c.ownerId === profileId).length,
       groups: theirGroups.length,
@@ -624,7 +657,11 @@ export default function AdminPanel({ youId }: { youId: string }) {
         <StatTile label={t.admin.statUsers} value={stats?.users ?? null} />
         <StatTile label={t.admin.statGroups} value={stats?.groups ?? null} />
         <StatTile label={t.admin.statAccounts} value={stats?.connectedAccounts ?? null} />
-        <StatTile label={t.admin.statFailing} value={stats?.failingSyncs ?? null} alert={!!stats?.failingSyncs} />
+        <StatTile
+          label={t.admin.statFailing}
+          value={stats?.failingSyncs ?? null}
+          alert={!!stats?.failingSyncs}
+        />
         <StatTile label={t.admin.statBusy} value={stats?.busyBlocks ?? null} />
       </div>
 
@@ -639,7 +676,12 @@ export default function AdminPanel({ youId }: { youId: string }) {
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <span className="flex-1">{notice}</span>
-          <button type="button" onClick={() => setNotice(null)} title={t.admin.dismiss} className="text-emerald-900/70 hover:text-emerald-900">
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            title={t.admin.dismiss}
+            className="text-emerald-900/70 hover:text-emerald-900"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -738,7 +780,9 @@ export default function AdminPanel({ youId }: { youId: string }) {
               </p>
             )}
             {users.length === 0 ? (
-              <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">{t.admin.noUserMatch}</p>
+              <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">
+                {t.admin.noUserMatch}
+              </p>
             ) : (
               <ul className="mt-4 divide-y border-t">
                 {users.map((u, i) => (

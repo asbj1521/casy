@@ -22,8 +22,20 @@
  * "Add it again", and "Add automatically" leaves it alone rather than fight
  * its owner.
  */
-import { CalDavError, type CalDavCredentials, deleteEvent, discoverCalendars, putEvent } from "./caldav.ts";
-import { type AgreedEvent, buildEventIcs, eventResourceName, eventUid, type IcsLang } from "./eventIcs.ts";
+import {
+  CalDavError,
+  type CalDavCredentials,
+  deleteEvent,
+  discoverCalendars,
+  putEvent,
+} from "./caldav.ts";
+import {
+  type AgreedEvent,
+  buildEventIcs,
+  eventResourceName,
+  eventUid,
+  type IcsLang,
+} from "./eventIcs.ts";
 import { decryptSecret } from "./secretBox.ts";
 import type { supabaseAdmin } from "./supabaseAdmin.ts";
 
@@ -66,7 +78,8 @@ export function nextStep(
 ): "put" | "delete" | "forget" | "none" {
   if (row.wanted === row.added) return "none";
   if (row.wanted) {
-    const addable = !!event && event.status === "scheduled" && !!event.end && Date.parse(event.end) > now;
+    const addable =
+      !!event && event.status === "scheduled" && !!event.end && Date.parse(event.end) > now;
     return addable && row.source_id ? "put" : "forget";
   }
   return row.source_id ? "delete" : "forget";
@@ -95,15 +108,16 @@ export async function wantInCalendar(
   proposalId: string,
   profileId: string,
 ): Promise<"queued" | "no_primary"> {
-  const [{ data: primary, error: primaryErr }, { data: existing, error: existingErr }] = await Promise.all([
-    db.from("primary_calendars").select("source_id").eq("profile_id", profileId).maybeSingle(),
-    db
-      .from("calendar_event_writes")
-      .select("source_id, added")
-      .eq("proposal_id", proposalId)
-      .eq("profile_id", profileId)
-      .maybeSingle(),
-  ]);
+  const [{ data: primary, error: primaryErr }, { data: existing, error: existingErr }] =
+    await Promise.all([
+      db.from("primary_calendars").select("source_id").eq("profile_id", profileId).maybeSingle(),
+      db
+        .from("calendar_event_writes")
+        .select("source_id, added")
+        .eq("proposal_id", proposalId)
+        .eq("profile_id", profileId)
+        .maybeSingle(),
+    ]);
   if (primaryErr) throw primaryErr;
   if (existingErr) throw existingErr;
   if (!primary) return "no_primary";
@@ -195,7 +209,12 @@ export async function markGoneEntries(
     updated_at: string;
     event_proposals: {
       status: string;
-      event_proposal_dates: { starts_at: string; ends_at: string; declined_at: string | null; created_at: string }[];
+      event_proposal_dates: {
+        starts_at: string;
+        ends_at: string;
+        declined_at: string | null;
+        created_at: string;
+      }[];
     };
   };
   const rows = (data ?? []) as unknown as Row[];
@@ -218,7 +237,14 @@ export async function markGoneEntries(
     const now = new Date().toISOString();
     const { data: updated, error: updErr } = await db
       .from("calendar_event_writes")
-      .update({ wanted: false, added: false, gone_at: now, attempts: 0, last_error: null, updated_at: now })
+      .update({
+        wanted: false,
+        added: false,
+        gone_at: now,
+        attempts: 0,
+        last_error: null,
+        updated_at: now,
+      })
       .eq("proposal_id", r.proposal_id)
       .eq("profile_id", r.profile_id)
       // Unless it changed while the account was being read.
@@ -233,7 +259,11 @@ export async function markGoneEntries(
 }
 
 /** A cancelled event: take it out of every calendar Casy put it in. */
-export async function unwantEverywhere(db: Db, proposalId: string, profileId?: string): Promise<void> {
+export async function unwantEverywhere(
+  db: Db,
+  proposalId: string,
+  profileId?: string,
+): Promise<void> {
   let query = db
     .from("calendar_event_writes")
     .update({ wanted: false, attempts: 0, last_error: null, updated_at: new Date().toISOString() })
@@ -262,7 +292,9 @@ export async function queueAutoAdds(db: Db, scope: WriteScope, now = Date.now())
 
   let invited = db
     .from("event_invitees")
-    .select("proposal_id, profile_id, event_proposals!inner(status, event_proposal_dates(ends_at, declined_at, created_at))")
+    .select(
+      "proposal_id, profile_id, event_proposals!inner(status, event_proposal_dates(ends_at, declined_at, created_at))",
+    )
     .in("profile_id", [...sourceOf.keys()])
     .eq("event_proposals.status", "scheduled");
   if (scope.proposalId) invited = invited.eq("proposal_id", scope.proposalId);
@@ -291,7 +323,11 @@ export async function queueAutoAdds(db: Db, scope: WriteScope, now = Date.now())
     .select("proposal_id, profile_id")
     .in("proposal_id", [...new Set(upcoming.map((i) => i.proposal_id))]);
   if (knownErr) throw knownErr;
-  const seen = new Set((known ?? []).map((k: { proposal_id: string; profile_id: string }) => `${k.proposal_id}:${k.profile_id}`));
+  const seen = new Set(
+    (known ?? []).map(
+      (k: { proposal_id: string; profile_id: string }) => `${k.proposal_id}:${k.profile_id}`,
+    ),
+  );
 
   const rows = upcoming
     .filter((i) => !seen.has(`${i.proposal_id}:${i.profile_id}`))
@@ -339,7 +375,9 @@ export async function processWrites(
   const [proposals, sources, langs, invitees] = await Promise.all([
     db
       .from("event_proposals")
-      .select("id, title, status, settings, friend_groups(name), event_proposal_dates(starts_at, ends_at, declined_at, created_at)")
+      .select(
+        "id, title, status, settings, friend_groups(name), event_proposal_dates(starts_at, ends_at, declined_at, created_at)",
+      )
       .in("id", proposalIds),
     sourceIds.length > 0
       ? db
@@ -358,7 +396,12 @@ export async function processWrites(
     status: string;
     settings: { kind?: string } | null;
     friend_groups: { name: string } | null;
-    event_proposal_dates: { starts_at: string; ends_at: string; declined_at: string | null; created_at: string }[];
+    event_proposal_dates: {
+      starts_at: string;
+      ends_at: string;
+      declined_at: string | null;
+      created_at: string;
+    }[];
   };
   const proposalById = new Map(
     ((proposals.data ?? []) as unknown as ProposalRow[]).map((p) => {
@@ -368,10 +411,19 @@ export async function processWrites(
       return [p.id, { ...p, current: current ?? null }];
     }),
   );
-  type SourceRow = { id: string; external_calendar_id: string; calendar_connections: { id: string; provider: string } };
-  const sourceById = new Map(((sources.data ?? []) as unknown as SourceRow[]).map((s) => [s.id, s]));
+  type SourceRow = {
+    id: string;
+    external_calendar_id: string;
+    calendar_connections: { id: string; provider: string };
+  };
+  const sourceById = new Map(
+    ((sources.data ?? []) as unknown as SourceRow[]).map((s) => [s.id, s]),
+  );
   const langOf = new Map(
-    ((langs.data ?? []) as { profile_id: string; lang: IcsLang }[]).map((l) => [l.profile_id, l.lang]),
+    ((langs.data ?? []) as { profile_id: string; lang: IcsLang }[]).map((l) => [
+      l.profile_id,
+      l.lang,
+    ]),
   );
 
   // Everyone's names, for "Agreed in Casy with Anna and Bo".
@@ -381,7 +433,9 @@ export async function processWrites(
     .select("id, display_name")
     .in("id", [...new Set(inviteeRows.map((i) => i.profile_id))]);
   if (namesErr) throw namesErr;
-  const nameById = new Map((names ?? []).map((n: { id: string; display_name: string | null }) => [n.id, n.display_name]));
+  const nameById = new Map(
+    (names ?? []).map((n: { id: string; display_name: string | null }) => [n.id, n.display_name]),
+  );
 
   // One login and calendar listing per account, however many rows it has.
   const accounts = new Map<string, Promise<Account>>();
@@ -403,7 +457,10 @@ export async function processWrites(
     const source = row.source_id ? (sourceById.get(row.source_id) ?? null) : null;
     const step = nextStep(
       // A calendar that is no longer iCloud's can't be written: treat it as gone.
-      { ...row, source_id: source?.calendar_connections.provider === "apple" ? row.source_id : null },
+      {
+        ...row,
+        source_id: source?.calendar_connections.provider === "apple" ? row.source_id : null,
+      },
       proposal ? { status: proposal.status, end: proposal.current?.ends_at ?? null } : null,
       now,
     );
@@ -445,10 +502,20 @@ export async function processWrites(
           start: proposal!.current!.starts_at,
           end: proposal!.current!.ends_at,
         };
-        await putEvent(account.creds, calendarUrl, resource, buildEventIcs(event, langOf.get(row.profile_id) ?? "da"));
+        await putEvent(
+          account.creds,
+          calendarUrl,
+          resource,
+          buildEventIcs(event, langOf.get(row.profile_id) ?? "da"),
+        );
         const { error } = await db
           .from("calendar_event_writes")
-          .update({ added: true, attempts: 0, last_error: null, updated_at: new Date().toISOString() })
+          .update({
+            added: true,
+            attempts: 0,
+            last_error: null,
+            updated_at: new Date().toISOString(),
+          })
           .eq("proposal_id", row.proposal_id)
           .eq("profile_id", row.profile_id);
         if (error) throw error;
@@ -456,7 +523,12 @@ export async function processWrites(
         await deleteEvent(account.creds, calendarUrl, resource);
         const { error } = await db
           .from("calendar_event_writes")
-          .update({ added: false, attempts: 0, last_error: null, updated_at: new Date().toISOString() })
+          .update({
+            added: false,
+            attempts: 0,
+            last_error: null,
+            updated_at: new Date().toISOString(),
+          })
           .eq("proposal_id", row.proposal_id)
           .eq("profile_id", row.profile_id);
         if (error) throw error;
@@ -466,10 +538,17 @@ export async function processWrites(
       failed++;
       console.error("calendar write failed", step, row.proposal_id, err);
       // Only messages written for people are stored; anything else is generic.
-      const message = err instanceof CalDavError ? err.message : "Couldn't reach iCloud. Casy will try again within the hour.";
+      const message =
+        err instanceof CalDavError
+          ? err.message
+          : "Couldn't reach iCloud. Casy will try again within the hour.";
       const { error } = await db
         .from("calendar_event_writes")
-        .update({ attempts: row.attempts + 1, last_error: message, updated_at: new Date().toISOString() })
+        .update({
+          attempts: row.attempts + 1,
+          last_error: message,
+          updated_at: new Date().toISOString(),
+        })
         .eq("proposal_id", row.proposal_id)
         .eq("profile_id", row.profile_id);
       if (error) console.error("could not record the failed calendar write", error);
@@ -489,7 +568,10 @@ async function openAccount(db: Db, connectionId: string, key: string): Promise<A
   if (!secrets?.caldav_username || !secrets.caldav_password) {
     throw new CalDavError("Reconnect your iCloud account on your profile.");
   }
-  const creds = { username: secrets.caldav_username, password: await decryptSecret(secrets.caldav_password, key) };
+  const creds = {
+    username: secrets.caldav_username,
+    password: await decryptSecret(secrets.caldav_password, key),
+  };
   const calendars = await discoverCalendars(creds);
   return { creds, calendarUrlById: new Map(calendars.map((c) => [c.id, c.url])) };
 }

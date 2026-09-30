@@ -29,7 +29,8 @@ function fakeDb(
         },
         gt: () => chain,
         order: () => chain,
-        range: () => Promise.resolve({ data: cached.filter((c) => inIds.includes(c.source_id)), error: null }),
+        range: () =>
+          Promise.resolve({ data: cached.filter((c) => inIds.includes(c.source_id)), error: null }),
         update(payload: Record<string, unknown>) {
           updates.push({ table, payload });
           return chain;
@@ -37,7 +38,9 @@ function fakeDb(
         maybeSingle: () => Promise.resolve({ data: secrets, error: null }),
         then: (resolve: (v: unknown) => unknown) =>
           Promise.resolve(
-            table === "calendar_sources" ? { data: sources, error: null } : { data: null, error: null },
+            table === "calendar_sources"
+              ? { data: sources, error: null }
+              : { data: null, error: null },
           ).then(resolve),
       };
       return chain;
@@ -93,7 +96,11 @@ Deno.test("an ICS link is fetched again and its busy times swapped in", async ()
   }
   assertEquals(rpcs[0].fn, "replace_busy_blocks");
   assertEquals(rpcs[0].args.p_blocks, [
-    { source_id: "source-1", start_at: "2026-10-01T10:00:00.000Z", end_at: "2026-10-01T11:00:00.000Z" },
+    {
+      source_id: "source-1",
+      start_at: "2026-10-01T10:00:00.000Z",
+      end_at: "2026-10-01T11:00:00.000Z",
+    },
   ]);
   const done = connectionUpdate(updates);
   assertEquals(done.sync_error, null);
@@ -161,18 +168,24 @@ Deno.test("a still-valid Google access token is used without refreshing", async 
     },
     [{ id: "source-1", external_calendar_id: "primary" }],
   );
-  const net = stubFetch(() =>
-    new Response(
-      JSON.stringify({
-        calendars: { primary: { busy: [{ start: "2026-10-02T08:00:00Z", end: "2026-10-02T09:00:00Z" }] } },
-      }),
-      { status: 200 },
-    )
+  const net = stubFetch(
+    () =>
+      new Response(
+        JSON.stringify({
+          calendars: {
+            primary: { busy: [{ start: "2026-10-02T08:00:00Z", end: "2026-10-02T09:00:00Z" }] },
+          },
+        }),
+        { status: 200 },
+      ),
   );
   try {
     const outcome = await syncConnection(db, { id: "conn-1", provider: "google" }, KEY, NOW);
     assertEquals(outcome.ok, true);
-    assert(net.urls.every((u) => u.includes("freeBusy")), "no token refresh expected");
+    assert(
+      net.urls.every((u) => u.includes("freeBusy")),
+      "no token refresh expected",
+    );
   } finally {
     net.restore();
   }
@@ -181,35 +194,44 @@ Deno.test("a still-valid Google access token is used without refreshing", async 
   assert(blocks.length > 0 && blocks.every((b) => b.source_id === "source-1"));
 });
 
-Deno.test("an event under way during a sync is stored whole, not cut to the sync time", async () => {
-  // A lecture from 11:00 to 13:00, synced at 12:00 (NOW). It used to be
-  // stored as 12:00-13:00, replacing the whole one for good.
-  const lecture = FEED.replace("DTSTART:20261001T100000Z", "DTSTART:20260920T110000Z").replace(
-    "DTEND:20261001T110000Z",
-    "DTEND:20260920T130000Z",
-  );
-  const { db, rpcs } = fakeDb(
-    { ics_url: await encryptSecret("https://calendar.example.com/feed.ics", KEY) },
-    [{ id: "source-1", external_calendar_id: "ics" }],
-  );
-  const net = stubFetch(() => new Response(lecture, { status: 200 }));
-  try {
-    await syncConnection(db, { id: "conn-1", provider: "ics" }, KEY, NOW);
-  } finally {
-    net.restore();
-  }
-  const replace = rpcs.find((r) => r.fn === "replace_busy_blocks")!;
-  assertEquals(replace.args.p_blocks, [
-    { source_id: "source-1", start_at: "2026-09-20T11:00:00.000Z", end_at: "2026-09-20T13:00:00.000Z" },
-  ]);
-  // Everything from a week back is replaced, so last week is refreshed too.
-  assertEquals(replace.args.p_from, "2026-09-13T12:00:00.000Z");
-});
+Deno.test(
+  "an event under way during a sync is stored whole, not cut to the sync time",
+  async () => {
+    // A lecture from 11:00 to 13:00, synced at 12:00 (NOW). It used to be
+    // stored as 12:00-13:00, replacing the whole one for good.
+    const lecture = FEED.replace("DTSTART:20261001T100000Z", "DTSTART:20260920T110000Z").replace(
+      "DTEND:20261001T110000Z",
+      "DTEND:20260920T130000Z",
+    );
+    const { db, rpcs } = fakeDb(
+      { ics_url: await encryptSecret("https://calendar.example.com/feed.ics", KEY) },
+      [{ id: "source-1", external_calendar_id: "ics" }],
+    );
+    const net = stubFetch(() => new Response(lecture, { status: 200 }));
+    try {
+      await syncConnection(db, { id: "conn-1", provider: "ics" }, KEY, NOW);
+    } finally {
+      net.restore();
+    }
+    const replace = rpcs.find((r) => r.fn === "replace_busy_blocks")!;
+    assertEquals(replace.args.p_blocks, [
+      {
+        source_id: "source-1",
+        start_at: "2026-09-20T11:00:00.000Z",
+        end_at: "2026-09-20T13:00:00.000Z",
+      },
+    ]);
+    // Everything from a week back is replaced, so last week is refreshed too.
+    assertEquals(replace.args.p_from, "2026-09-13T12:00:00.000Z");
+  },
+);
 
 /* ---- iCloud: subscriptions read from their own feed ---- */
 
-const multistatus = (responses: string) => `<?xml version='1.0'?><multistatus xmlns="DAV:">${responses}</multistatus>`;
-const ok = (prop: string) => `<propstat><prop>${prop}</prop><status>HTTP/1.1 200 OK</status></propstat>`;
+const multistatus = (responses: string) =>
+  `<?xml version='1.0'?><multistatus xmlns="DAV:">${responses}</multistatus>`;
+const ok = (prop: string) =>
+  `<propstat><prop>${prop}</prop><status>HTTP/1.1 200 OK</status></propstat>`;
 const ICLOUD_LISTING = multistatus(`
   <response><href>/111/calendars/WORK/</href>${ok(`
     <resourcetype><collection/><calendar xmlns="urn:ietf:params:xml:ns:caldav"/></resourcetype>
@@ -229,16 +251,25 @@ function stubIcloud(feed: () => Response) {
     const url = new URL(req.url);
     seen.push({ host: url.host, auth: req.headers.get("authorization") });
     if (url.host === "school.example.com") return Promise.resolve(feed());
-    const body = url.pathname === "/"
-      ? multistatus(`<response><href>/</href>${ok(`<current-user-principal><href>/111/principal/</href></current-user-principal>`)}</response>`)
-      : url.pathname === "/111/principal/"
-      ? multistatus(`<response><href>/111/principal/</href>${ok(`<calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav"><href xmlns="DAV:">/111/calendars/</href></calendar-home-set>`)}</response>`)
-      : url.pathname === "/111/calendars/"
-      ? ICLOUD_LISTING
-      : url.pathname === "/111/calendars/WORK/"
-      ? multistatus(`<response><href>/111/calendars/WORK/w.ics</href>${ok(`<calendar-data xmlns="urn:ietf:params:xml:ns:caldav">${workEvent}</calendar-data>`)}</response>`)
-      : null;
-    return Promise.resolve(body ? new Response(body, { status: 207 }) : new Response("unexpected", { status: 500 }));
+    const body =
+      url.pathname === "/"
+        ? multistatus(
+            `<response><href>/</href>${ok(`<current-user-principal><href>/111/principal/</href></current-user-principal>`)}</response>`,
+          )
+        : url.pathname === "/111/principal/"
+          ? multistatus(
+              `<response><href>/111/principal/</href>${ok(`<calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav"><href xmlns="DAV:">/111/calendars/</href></calendar-home-set>`)}</response>`,
+            )
+          : url.pathname === "/111/calendars/"
+            ? ICLOUD_LISTING
+            : url.pathname === "/111/calendars/WORK/"
+              ? multistatus(
+                  `<response><href>/111/calendars/WORK/w.ics</href>${ok(`<calendar-data xmlns="urn:ietf:params:xml:ns:caldav">${workEvent}</calendar-data>`)}</response>`,
+                )
+              : null;
+    return Promise.resolve(
+      body ? new Response(body, { status: 207 }) : new Response("unexpected", { status: 500 }),
+    );
   }) as typeof fetch;
   return { seen, restore: () => (globalThis.fetch = original) };
 }
@@ -266,8 +297,16 @@ Deno.test("an iCloud subscription is read from its feed, without the iCloud pass
     net.restore();
   }
   assertEquals(rpcs.find((r) => r.fn === "replace_busy_blocks")!.args.p_blocks, [
-    { source_id: "source-work", start_at: "2026-10-01T10:00:00.000Z", end_at: "2026-10-01T11:00:00.000Z" },
-    { source_id: "source-school", start_at: "2026-10-02T08:00:00.000Z", end_at: "2026-10-02T09:00:00.000Z" },
+    {
+      source_id: "source-work",
+      start_at: "2026-10-01T10:00:00.000Z",
+      end_at: "2026-10-01T11:00:00.000Z",
+    },
+    {
+      source_id: "source-school",
+      start_at: "2026-10-02T08:00:00.000Z",
+      end_at: "2026-10-02T09:00:00.000Z",
+    },
   ]);
   const toSchool = net.seen.filter((s) => s.host === "school.example.com");
   assertEquals(toSchool.length, 1);
@@ -277,8 +316,16 @@ Deno.test("an iCloud subscription is read from its feed, without the iCloud pass
 });
 
 Deno.test("a subscription whose feed fails keeps its old times; the rest still syncs", async () => {
-  const oldSchool = { source_id: "source-school", start_at: "2026-10-05T08:00:00.000Z", end_at: "2026-10-05T09:00:00.000Z" };
-  const oldWork = { source_id: "source-work", start_at: "2026-10-06T08:00:00.000Z", end_at: "2026-10-06T09:00:00.000Z" };
+  const oldSchool = {
+    source_id: "source-school",
+    start_at: "2026-10-05T08:00:00.000Z",
+    end_at: "2026-10-05T09:00:00.000Z",
+  };
+  const oldWork = {
+    source_id: "source-work",
+    start_at: "2026-10-06T08:00:00.000Z",
+    end_at: "2026-10-06T09:00:00.000Z",
+  };
   const { db, rpcs, updates } = fakeDb(await appleSecrets(), APPLE_SOURCES, [oldSchool, oldWork]);
   const net = stubIcloud(() => new Response("gone", { status: 404 }));
   try {
@@ -288,7 +335,11 @@ Deno.test("a subscription whose feed fails keeps its old times; the rest still s
     net.restore();
   }
   assertEquals(rpcs.find((r) => r.fn === "replace_busy_blocks")!.args.p_blocks, [
-    { source_id: "source-work", start_at: "2026-10-01T10:00:00.000Z", end_at: "2026-10-01T11:00:00.000Z" },
+    {
+      source_id: "source-work",
+      start_at: "2026-10-01T10:00:00.000Z",
+      end_at: "2026-10-01T11:00:00.000Z",
+    },
     oldSchool, // kept; the work calendar's old block is replaced by its fresh one
   ]);
   assertEquals(connectionUpdate(updates).sync_error, null);

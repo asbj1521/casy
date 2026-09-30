@@ -125,7 +125,8 @@ export default function CalendarListPanel({
   const primaryWords = t.primaryCalendar;
   const groups = useMemo(() => groupCalendarsByBrand(calendars), [calendars]);
   // The built-in holiday calendar is named in the page's language.
-  const nameOf = (c: OverviewCalendar) => (c.id === HOLIDAY_CALENDAR_ID ? words.holidayCalendar : c.name);
+  const nameOf = (c: OverviewCalendar) =>
+    c.id === HOLIDAY_CALENDAR_ID ? words.holidayCalendar : c.name;
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const [uncountedOpen, setUncountedOpen] = useState(false);
   const primary = primaryId ? calendars.find((c) => c.id === primaryId) : undefined;
@@ -133,7 +134,9 @@ export default function CalendarListPanel({
   const showPrimaryLine = !!primary || calendars.some((c) => c.writable);
   // Unticked calendars, in the same brand order as the groups above.
   const uncounted = groups.flatMap((g) =>
-    g.calendars.filter((c) => hidden.has(c.id)).map((c) => ({ calendar: c, brandId: g.id, brandLabel: g.label })),
+    g.calendars
+      .filter((c) => hidden.has(c.id))
+      .map((c) => ({ calendar: c, brandId: g.id, brandLabel: g.label })),
   );
 
   const toggleOpen = (id: string) =>
@@ -173,7 +176,8 @@ export default function CalendarListPanel({
           const ids = group.calendars.map((c) => c.id);
           // Unknown (a function deployed before totals existed) shows no number, not 0.
           const known = shown.filter((c) => blockCounts.has(c.id));
-          const total = known.length > 0 ? known.reduce((sum, c) => sum + blockCounts.get(c.id)!, 0) : null;
+          const total =
+            known.length > 0 ? known.reduce((sum, c) => sum + blockCounts.get(c.id)!, 0) : null;
           const n = shown.length;
           const brand = words.brands[group.id] ?? group.label;
           // One account behind the whole group (an iCloud login, say): named
@@ -242,11 +246,17 @@ export default function CalendarListPanel({
                       // Only what the group header doesn't already say.
                       const note = isBuiltIn
                         ? null
-                        : [c.renamed && c.originalName ? words.originally(c.originalName) : null, sharedAccount ? null : c.account]
+                        : [
+                            c.renamed && c.originalName ? words.originally(c.originalName) : null,
+                            sharedAccount ? null : c.account,
+                          ]
                             .filter(Boolean)
                             .join(" · ");
                       return (
-                        <li key={c.id} className="flex flex-col gap-1.5 border-t border-dashed py-2 pl-7">
+                        <li
+                          key={c.id}
+                          className="flex flex-col gap-1.5 border-t border-dashed py-2 pl-7"
+                        >
                           <div className="flex items-start gap-3">
                             <input
                               type="checkbox"
@@ -256,7 +266,10 @@ export default function CalendarListPanel({
                               className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
                             />
                             <span
-                              className={cn("mt-1 h-3 w-3 shrink-0 rounded-full", isHidden && "opacity-30")}
+                              className={cn(
+                                "mt-1 h-3 w-3 shrink-0 rounded-full",
+                                isHidden && "opacity-30",
+                              )}
                               style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
                             />
                             <div className="min-w-0 flex-1">
@@ -311,7 +324,9 @@ export default function CalendarListPanel({
                                   )}
                                 </div>
                               )}
-                              {note && <p className="truncate text-xs text-muted-foreground">{note}</p>}
+                              {note && (
+                                <p className="truncate text-xs text-muted-foreground">{note}</p>
+                              )}
                             </div>
                             {blockCounts.has(c.id) && (
                               <span className="mt-0.5 shrink-0 text-xs text-muted-foreground">
@@ -336,7 +351,10 @@ export default function CalendarListPanel({
                                 value={c.purpose ?? ""}
                                 disabled={saving}
                                 onChange={(e) =>
-                                  onSetPurpose(c.id, (e.target.value || null) as CalendarPurpose | null)
+                                  onSetPurpose(
+                                    c.id,
+                                    (e.target.value || null) as CalendarPurpose | null,
+                                  )
                                 }
                                 aria-label={words.categoryFor(nameOf(c))}
                                 className="rounded-lg border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
@@ -367,7 +385,9 @@ export default function CalendarListPanel({
                                 ))}
                               </select>
                             )}
-                            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                            {saving && (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                            )}
                             {c.writable && c.id !== primaryId && askingPrimaryId !== c.id && (
                               <button
                                 type="button"
@@ -387,7 +407,9 @@ export default function CalendarListPanel({
                                     ? primaryWords.confirmChange(nameOf(c), nameOf(primary))
                                     : primaryWords.confirmFirst(nameOf(c))
                                 }
-                                confirmLabel={primary ? primaryWords.yesChange : primaryWords.yesChoose}
+                                confirmLabel={
+                                  primary ? primaryWords.yesChange : primaryWords.yesChoose
+                                }
                                 busy={primaryBusy}
                                 error={primaryError}
                                 onConfirm={() => onConfirmPrimary(c.id)}

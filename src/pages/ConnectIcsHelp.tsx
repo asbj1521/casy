@@ -115,8 +115,8 @@ const en: typeof da = {
     keywords: ["Subscribe", "Sync calendar", "Export", "iCal feed", "ICS link"],
     looksLike: (
       <>
-        The link itself usually starts with <span className="font-mono">webcal://</span> or ends
-        in <span className="font-mono">.ics</span>.
+        The link itself usually starts with <span className="font-mono">webcal://</span> or ends in{" "}
+        <span className="font-mono">.ics</span>.
       </>
     ),
   },
@@ -153,7 +153,9 @@ export default function ConnectIcsHelp() {
                 <div className="rounded-md bg-primary/10 px-2.5 py-1.5 font-medium text-primary">
                   {m.getInfo}
                 </div>
-                <div className="rounded-md px-2.5 py-1.5 text-muted-foreground">{m.unsubscribe}</div>
+                <div className="rounded-md px-2.5 py-1.5 text-muted-foreground">
+                  {m.unsubscribe}
+                </div>
               </div>
             </div>
           </div>

@@ -131,7 +131,13 @@ describe("findEventSlot", () => {
     );
     expect(trip.slot?.start).toBe("2026-06-26T17:00:00.000Z");
 
-    const vacation = findEventSlot([person("Alice", [])], { kind: "vacation", days: 3 }, START, END, TZ);
+    const vacation = findEventSlot(
+      [person("Alice", [])],
+      { kind: "vacation", days: 3 },
+      START,
+      END,
+      TZ,
+    );
     expect(vacation.slot).toEqual({
       start: "2026-06-22T00:00:00.000Z",
       end: "2026-06-25T00:00:00.000Z",
@@ -149,7 +155,10 @@ describe("isEventSettings", () => {
       isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, anyTime: true }),
     ).toBe(true);
     expect(
-      isEventSettings({ kind: "trip", shape: { anchorDow: 5, spanDays: 3, startHour: 17, endHour: 21 } }),
+      isEventSettings({
+        kind: "trip",
+        shape: { anchorDow: 5, spanDays: 3, startHour: 17, endHour: 21 },
+      }),
     ).toBe(true);
     expect(isEventSettings({ kind: "vacation", days: 7 })).toBe(true);
   });
@@ -159,8 +168,12 @@ describe("isEventSettings", () => {
     expect(isEventSettings({ kind: "party" })).toBe(false);
     expect(isEventSettings({ kind: "single", durationMinutes: 90 })).toBe(false);
     expect(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 25 })).toBe(false);
-    expect(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, allowedDays: [9] })).toBe(false);
-    expect(isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, anyTime: "yes" })).toBe(false);
+    expect(
+      isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, allowedDays: [9] }),
+    ).toBe(false);
+    expect(
+      isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, anyTime: "yes" }),
+    ).toBe(false);
     expect(isEventSettings({ kind: "trip", shape: { anchorDow: 5 } })).toBe(false);
     expect(isEventSettings({ kind: "vacation", days: 0 })).toBe(false);
   });

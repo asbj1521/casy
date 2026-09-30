@@ -156,7 +156,10 @@ export default function HowItWorks() {
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
             {c.neverSeesBody}{" "}
-            <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">
+            <Link
+              to="/privacy"
+              className="font-medium text-foreground underline underline-offset-2"
+            >
               {c.privacyLink}
             </Link>
             .

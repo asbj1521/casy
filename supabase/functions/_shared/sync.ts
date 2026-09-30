@@ -90,23 +90,25 @@ export async function syncConnection(
     console.error(`sync of ${target.provider} connection ${target.id} failed`, err);
     await db
       .from("calendar_connections")
-      .update({ last_sync_attempt_at: attemptedAt, sync_error: message, needs_reconnect: needsReconnect })
+      .update({
+        last_sync_attempt_at: attemptedAt,
+        sync_error: message,
+        needs_reconnect: needsReconnect,
+      })
       .eq("id", target.id);
     return { connectionId: target.id, ok: false, needsReconnect, message };
   }
 }
 
 /** Fetch and store fresh busy times; returns how many blocks were stored. */
-async function refreshBusy(
-  db: Db,
-  target: SyncTarget,
-  key: string,
-  now: Date,
-): Promise<number> {
+async function refreshBusy(db: Db, target: SyncTarget, key: string, now: Date): Promise<number> {
   const [{ data: secrets, error: secretsErr }, { data: sources, error: sourcesErr }] =
     await Promise.all([
       db.from("calendar_secrets").select("*").eq("connection_id", target.id).maybeSingle(),
-      db.from("calendar_sources").select("id, external_calendar_id, writable").eq("connection_id", target.id),
+      db
+        .from("calendar_sources")
+        .select("id, external_calendar_id, writable")
+        .eq("connection_id", target.id),
     ]);
   if (secretsErr) throw secretsErr;
   if (sourcesErr) throw sourcesErr;
@@ -116,11 +118,22 @@ async function refreshBusy(
 
   // From a week back (syncWindow.ts): events under way are fetched whole.
   const { start: windowStart, end: windowEnd } = syncWindow(now);
-  const externalIds = (sources ?? []).map((s: { external_calendar_id: string }) => s.external_calendar_id);
+  const externalIds = (sources ?? []).map(
+    (s: { external_calendar_id: string }) => s.external_calendar_id,
+  );
 
   // Entries Casy adds from here on can't be in this read, so they aren't judged by it.
   const readStartedAt = new Date();
-  const fresh = await fetchFresh(db, target, secrets as SecretsRow, key, externalIds, windowStart, windowEnd, now);
+  const fresh = await fetchFresh(
+    db,
+    target,
+    secrets as SecretsRow,
+    key,
+    externalIds,
+    windowStart,
+    windowEnd,
+    now,
+  );
 
   const blocks = (sources ?? []).flatMap((s: { id: string; external_calendar_id: string }) =>
     (fresh.busy[s.external_calendar_id] ?? []).map((iv) => ({
@@ -158,7 +171,11 @@ async function refreshBusy(
   // view-only), and accounts connected before it was recorded start at false.
   // Only rows that changed are written, which is usually none.
   if (fresh.writable) {
-    for (const s of (sources ?? []) as { id: string; external_calendar_id: string; writable: boolean }[]) {
+    for (const s of (sources ?? []) as {
+      id: string;
+      external_calendar_id: string;
+      writable: boolean;
+    }[]) {
       const writable = fresh.writable[s.external_calendar_id];
       if (writable === undefined || writable === s.writable) continue;
       const { error } = await db.from("calendar_sources").update({ writable }).eq("id", s.id);
@@ -241,7 +258,11 @@ async function fetchFresh(
       // Re-checked on every fetch, not just when added: the rules for which
       // hosts are safe to fetch may have tightened since.
       const url = assertSafeFeedUrl(await decryptSecret(secrets.ics_url, key));
-      const parsed = parseBusyIntervals(await fetchFeedText(url.toString()), windowStart, windowEnd);
+      const parsed = parseBusyIntervals(
+        await fetchFeedText(url.toString()),
+        windowStart,
+        windowEnd,
+      );
       return { busy: { ics: parsed.intervals } }; // a feed is one calendar, stored as "ics"
     }
   }
@@ -267,7 +288,9 @@ async function oauthAccess(
   secrets: SecretsRow,
   key: string,
   now: Date,
-  refresh: (refreshToken: string) => Promise<{ access_token: string; refresh_token?: string; expires_in: number }>,
+  refresh: (
+    refreshToken: string,
+  ) => Promise<{ access_token: string; refresh_token?: string; expires_in: number }>,
 ): Promise<string> {
   const expiresAt = secrets.expires_at ? Date.parse(secrets.expires_at) : 0;
   if (secrets.access_token && expiresAt - TOKEN_MARGIN_MS > now.getTime()) {
@@ -282,7 +305,10 @@ async function oauthAccess(
     updated_at: now.toISOString(),
   };
   if (tokens.refresh_token) update.refresh_token = await encryptSecret(tokens.refresh_token, key);
-  const { error } = await db.from("calendar_secrets").update(update).eq("connection_id", connectionId);
+  const { error } = await db
+    .from("calendar_secrets")
+    .update(update)
+    .eq("connection_id", connectionId);
   if (error) throw error;
   return tokens.access_token;
 }

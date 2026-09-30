@@ -248,7 +248,10 @@ export default function SignIn() {
       return;
     }
     void (async () => {
-      if (!passesChecks(checkPassword(typed, personalWords([address]))) || (await timesLeaked(typed))) {
+      if (
+        !passesChecks(checkPassword(typed, personalWords([address]))) ||
+        (await timesLeaked(typed))
+      ) {
         flagWeakPassword(userId);
       }
     })();
@@ -395,191 +398,42 @@ export default function SignIn() {
             contents fade in once it has. */}
         <div className="vt-card mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
           <div className="vt-card-content">
-          <button
-            type="button"
-            onClick={() => void handleGoogle()}
-            className="flex w-full items-center justify-center gap-2 rounded-full border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary"
-          >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-              G
-            </span>
-            {t.signIn.google}
-          </button>
+            <button
+              type="button"
+              onClick={() => void handleGoogle()}
+              className="flex w-full items-center justify-center gap-2 rounded-full border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                G
+              </span>
+              {t.signIn.google}
+            </button>
 
-          <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            {t.signIn.or}
-            <span className="h-px flex-1 bg-border" />
-          </div>
+            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              {t.signIn.or}
+              <span className="h-px flex-1 bg-border" />
+            </div>
 
-          {mode === "link" ? (
-            sentTo ? (
-              <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  {t.signIn.linkSent(
-                    <strong>{sentTo}</strong>,
-                    <button
-                      type="button"
-                      onClick={() => setSentTo(null)}
-                      className="font-medium underline underline-offset-2"
-                    >
-                      {t.signIn.otherEmail}
-                    </button>,
-                  )}
-                </span>
-              </div>
-            ) : (
-              <form onSubmit={(e) => void handleEmail(e)} className="flex flex-col gap-3">
-                <label className="text-sm">
-                  <span className="mb-1 block font-medium text-foreground">{t.signIn.email}</span>
-                  <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t.signIn.emailPlaceholder}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  disabled={sending}
-                  className="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-                >
-                  {sending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Mail className="h-4 w-4" />
-                  )}
-                  {sending ? t.signIn.sendingLink : t.signIn.sendLink}
-                </button>
-              </form>
-            )
-          ) : (
-            <>
-              {/* Sign in with an existing password, or create an account with
-                  a new one. Signing up with an email that already has a
-                  Google or email-link account fails (manual linking is off),
-                  and the error says to sign in that way and add a password
-                  from the profile page instead of ending up with a second,
-                  disconnected account. */}
-              <div className="mb-4 flex gap-1 rounded-full bg-secondary p-1 text-sm font-semibold">
-                <button
-                  type="button"
-                  onClick={() => switchPasswordTab("signin")}
-                  className={`flex-1 rounded-full py-1.5 transition ${
-                    passwordTab === "signin"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t.signIn.tabSignIn}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchPasswordTab("signup")}
-                  className={`flex-1 rounded-full py-1.5 transition ${
-                    passwordTab === "signup"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t.signIn.tabSignUp}
-                </button>
-              </div>
-
-              {passwordTab === "signin" ? (
-                forgotSentTo ? (
-                  <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>
-                      {t.signIn.resetSent(
-                        <strong>{forgotSentTo}</strong>,
-                        <button
-                          type="button"
-                          onClick={() => setForgotSentTo(null)}
-                          className="font-medium underline underline-offset-2"
-                        >
-                          {t.signIn.tryAgain}
-                        </button>,
-                      )}
-                    </span>
-                  </div>
-                ) : (
-                  <form onSubmit={(e) => void handlePassword(e)} className="flex flex-col gap-3">
-                    <label className="text-sm">
-                      <span className="mb-1 block font-medium text-foreground">{t.signIn.email}</span>
-                      <input
-                        type="email"
-                        required
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder={t.signIn.emailPlaceholder}
-                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                      />
-                    </label>
-                    <label className="text-sm">
-                      <span className="mb-1 block font-medium text-foreground">{t.signIn.password}</span>
-                      <input
-                        type="password"
-                        required
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                      />
-                    </label>
-                    <button
-                      type="submit"
-                      disabled={sending}
-                      className="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-                    >
-                      {sending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <KeyRound className="h-4 w-4" />
-                      )}
-                      {sending ? t.signIn.signingIn : t.signIn.signInButton}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleForgotPassword()}
-                      disabled={forgotSending}
-                      className="self-start text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-60"
-                    >
-                      {forgotSending ? t.signIn.sendingReset : t.signIn.forgot}
-                    </button>
-                    {forgotError && (
-                      <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-                        <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                        <span>{forgotError}</span>
-                      </div>
-                    )}
-                  </form>
-                )
-              ) : confirmSentTo ? (
+            {mode === "link" ? (
+              sentTo ? (
                 <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
-                    {t.signIn.confirmSent(
-                      <strong>{confirmSentTo}</strong>,
-                      resendButton(confirmSentTo),
+                    {t.signIn.linkSent(
+                      <strong>{sentTo}</strong>,
                       <button
                         type="button"
-                        onClick={() => setConfirmSentTo(null)}
+                        onClick={() => setSentTo(null)}
                         className="font-medium underline underline-offset-2"
                       >
                         {t.signIn.otherEmail}
                       </button>,
                     )}
-                    {resendError && <span className="mt-1 block text-red-800">{resendError}</span>}
                   </span>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
+                <form onSubmit={(e) => void handleEmail(e)} className="flex flex-col gap-3">
                   <label className="text-sm">
                     <span className="mb-1 block font-medium text-foreground">{t.signIn.email}</span>
                     <input
@@ -592,41 +446,198 @@ export default function SignIn() {
                       className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </label>
-                  <PasswordForm
-                    submitting={signupSubmitting}
-                    error={signupError}
-                    submitLabel={t.signIn.createAccount}
-                    submittingLabel={t.signIn.creatingAccount}
-                    passwordLabel={t.signIn.password}
-                    personal={[email]}
-                    onSubmit={(pw) => void handleSignUp(pw)}
-                  />
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                  >
+                    {sending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="h-4 w-4" />
+                    )}
+                    {sending ? t.signIn.sendingLink : t.signIn.sendLink}
+                  </button>
+                </form>
+              )
+            ) : (
+              <>
+                {/* Sign in with an existing password, or create an account with
+                  a new one. Signing up with an email that already has a
+                  Google or email-link account fails (manual linking is off),
+                  and the error says to sign in that way and add a password
+                  from the profile page instead of ending up with a second,
+                  disconnected account. */}
+                <div className="mb-4 flex gap-1 rounded-full bg-secondary p-1 text-sm font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => switchPasswordTab("signin")}
+                    className={`flex-1 rounded-full py-1.5 transition ${
+                      passwordTab === "signin"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t.signIn.tabSignIn}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchPasswordTab("signup")}
+                    className={`flex-1 rounded-full py-1.5 transition ${
+                      passwordTab === "signup"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t.signIn.tabSignUp}
+                  </button>
                 </div>
-              )}
-            </>
-          )}
 
-          <button
-            type="button"
-            onClick={() => switchMode(mode === "link" ? "password" : "link")}
-            className="mt-4 text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
-          >
-            {mode === "link" ? t.signIn.usePassword : t.signIn.useLink}
-          </button>
+                {passwordTab === "signin" ? (
+                  forgotSentTo ? (
+                    <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        {t.signIn.resetSent(
+                          <strong>{forgotSentTo}</strong>,
+                          <button
+                            type="button"
+                            onClick={() => setForgotSentTo(null)}
+                            className="font-medium underline underline-offset-2"
+                          >
+                            {t.signIn.tryAgain}
+                          </button>,
+                        )}
+                      </span>
+                    </div>
+                  ) : (
+                    <form onSubmit={(e) => void handlePassword(e)} className="flex flex-col gap-3">
+                      <label className="text-sm">
+                        <span className="mb-1 block font-medium text-foreground">
+                          {t.signIn.email}
+                        </span>
+                        <input
+                          type="email"
+                          required
+                          autoComplete="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder={t.signIn.emailPlaceholder}
+                          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                      </label>
+                      <label className="text-sm">
+                        <span className="mb-1 block font-medium text-foreground">
+                          {t.signIn.password}
+                        </span>
+                        <input
+                          type="password"
+                          required
+                          autoComplete="current-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                      </label>
+                      <button
+                        type="submit"
+                        disabled={sending}
+                        className="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        {sending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <KeyRound className="h-4 w-4" />
+                        )}
+                        {sending ? t.signIn.signingIn : t.signIn.signInButton}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleForgotPassword()}
+                        disabled={forgotSending}
+                        className="self-start text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-60"
+                      >
+                        {forgotSending ? t.signIn.sendingReset : t.signIn.forgot}
+                      </button>
+                      {forgotError && (
+                        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+                          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <span>{forgotError}</span>
+                        </div>
+                      )}
+                    </form>
+                  )
+                ) : confirmSentTo ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      {t.signIn.confirmSent(
+                        <strong>{confirmSentTo}</strong>,
+                        resendButton(confirmSentTo),
+                        <button
+                          type="button"
+                          onClick={() => setConfirmSentTo(null)}
+                          className="font-medium underline underline-offset-2"
+                        >
+                          {t.signIn.otherEmail}
+                        </button>,
+                      )}
+                      {resendError && (
+                        <span className="mt-1 block text-red-800">{resendError}</span>
+                      )}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <label className="text-sm">
+                      <span className="mb-1 block font-medium text-foreground">
+                        {t.signIn.email}
+                      </span>
+                      <input
+                        type="email"
+                        required
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder={t.signIn.emailPlaceholder}
+                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </label>
+                    <PasswordForm
+                      submitting={signupSubmitting}
+                      error={signupError}
+                      submitLabel={t.signIn.createAccount}
+                      submittingLabel={t.signIn.creatingAccount}
+                      passwordLabel={t.signIn.password}
+                      personal={[email]}
+                      onSubmit={(pw) => void handleSignUp(pw)}
+                    />
+                  </div>
+                )}
+              </>
+            )}
 
-          {/* Cloudflare's bot check: invisible unless it wants a click. */}
-          <div ref={attachCaptcha} className="mt-3 empty:hidden" />
+            <button
+              type="button"
+              onClick={() => switchMode(mode === "link" ? "password" : "link")}
+              className="mt-4 text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
+            >
+              {mode === "link" ? t.signIn.usePassword : t.signIn.useLink}
+            </button>
 
-          {error && (
-            <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                {error}
-                {unconfirmed && <> {resendButton(unconfirmed)}</>}
-                {unconfirmed && resendError && <span className="mt-1 block">{resendError}</span>}
-              </span>
-            </div>
-          )}
+            {/* Cloudflare's bot check: invisible unless it wants a click. */}
+            <div ref={attachCaptcha} className="mt-3 empty:hidden" />
+
+            {error && (
+              <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  {error}
+                  {unconfirmed && <> {resendButton(unconfirmed)}</>}
+                  {unconfirmed && resendError && <span className="mt-1 block">{resendError}</span>}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </main>

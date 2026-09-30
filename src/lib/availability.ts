@@ -100,9 +100,7 @@ function startOfDayCeil(ms: number, timeZone: string): number {
 function parseRange(startIso: string, endIso: string): Interval | null {
   const start = Date.parse(startIso);
   const end = Date.parse(endIso);
-  return Number.isFinite(start) && Number.isFinite(end) && end > start
-    ? { start, end }
-    : null;
+  return Number.isFinite(start) && Number.isFinite(end) && end > start ? { start, end } : null;
 }
 
 /**
@@ -126,9 +124,7 @@ function parseBlock(block: BusyInterval): Interval | null {
   const start = Date.parse(block.start);
   const end = Date.parse(block.end);
   const parsed =
-    Number.isFinite(start) && Number.isFinite(end) && end > start
-      ? { start, end }
-      : null;
+    Number.isFinite(start) && Number.isFinite(end) && end > start ? { start, end } : null;
   parsedBlocks.set(block, parsed);
   return parsed;
 }
@@ -137,11 +133,7 @@ function parseBlock(block: BusyInterval): Interval | null {
  * True if the block overlaps [start, end) — the standard half-open test, and
  * the one definition of "busy then" the whole app shares.
  */
-export function blockOverlaps(
-  block: BusyInterval,
-  start: number,
-  end: number,
-): boolean {
+export function blockOverlaps(block: BusyInterval, start: number, end: number): boolean {
   const iv = parseBlock(block);
   return iv !== null && iv.start < end && iv.end > start;
 }
@@ -319,10 +311,7 @@ export function findMeetingSlot(event: Event): MultiDayResult {
   // whatever the hour.
   const relaxedStart = Date.parse(relaxed.slot.start);
   const lastPatientDay = addDays(relaxedStart, SKIP_PATIENCE_DAYS, event.timeZone);
-  if (
-    strict.slot &&
-    startOfDay(Date.parse(strict.slot.start), event.timeZone) <= lastPatientDay
-  ) {
+  if (strict.slot && startOfDay(Date.parse(strict.slot.start), event.timeZone) <= lastPatientDay) {
     return { slot: strict.slot, conflicts: [] };
   }
   return {

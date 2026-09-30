@@ -33,51 +33,55 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-Deno.serve(withLanguage(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-  if (req.method !== "POST") {
-    return json({ error: "Use POST" }, 405);
-  }
+Deno.serve(
+  withLanguage(async (req) => {
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+    if (req.method !== "POST") {
+      return json({ error: "Use POST" }, 405);
+    }
 
-  const profileId = await callerId(req, supabaseAdmin());
-  if (!profileId) return json({ error: "Please sign in again." }, 401);
+    const profileId = await callerId(req, supabaseAdmin());
+    if (!profileId) return json({ error: "Please sign in again." }, 401);
 
-  const clientId = Deno.env.get("GOOGLE_OAUTH_CLIENT_ID");
-  const stateSecret = Deno.env.get("OAUTH_STATE_SECRET");
-  const functionsBaseUrl = Deno.env.get("FUNCTIONS_BASE_URL");
-  if (!clientId || !stateSecret || !functionsBaseUrl) {
-    console.error("Server is missing GOOGLE_OAUTH_CLIENT_ID / OAUTH_STATE_SECRET / FUNCTIONS_BASE_URL");
-    return json({ error: "Google connections aren't set up on the server yet." }, 500);
-  }
+    const clientId = Deno.env.get("GOOGLE_OAUTH_CLIENT_ID");
+    const stateSecret = Deno.env.get("OAUTH_STATE_SECRET");
+    const functionsBaseUrl = Deno.env.get("FUNCTIONS_BASE_URL");
+    if (!clientId || !stateSecret || !functionsBaseUrl) {
+      console.error(
+        "Server is missing GOOGLE_OAUTH_CLIENT_ID / OAUTH_STATE_SECRET / FUNCTIONS_BASE_URL",
+      );
+      return json({ error: "Google connections aren't set up on the server yet." }, 500);
+    }
 
-  const state = await signState(
-    {
-      profileId,
-      nonce: crypto.randomUUID(),
-      ts: Date.now(),
-      // The browser names the site the request came from; the callback only
-      // honours it if it's on the allowlist.
-      returnTo: req.headers.get("Origin") ?? undefined,
-    },
-    stateSecret,
-  );
+    const state = await signState(
+      {
+        profileId,
+        nonce: crypto.randomUUID(),
+        ts: Date.now(),
+        // The browser names the site the request came from; the callback only
+        // honours it if it's on the allowlist.
+        returnTo: req.headers.get("Origin") ?? undefined,
+      },
+      stateSecret,
+    );
 
-  const redirectUri = `${functionsBaseUrl}/oauth-google-callback`;
+    const redirectUri = `${functionsBaseUrl}/oauth-google-callback`;
 
-  const authUrl = new URL(GOOGLE_AUTH_URL);
-  authUrl.searchParams.set("client_id", clientId);
-  authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("scope", SCOPES);
-  authUrl.searchParams.set("access_type", "offline"); // needed to receive a refresh token
-  // consent guarantees a refresh token even on re-connect; select_account
-  // always shows Google's account chooser, so a second account can be added
-  // instead of Google silently reusing the one already signed in.
-  authUrl.searchParams.set("prompt", "select_account consent");
-  authUrl.searchParams.set("state", state);
-  authUrl.searchParams.set("hl", langOf(req)); // Google's consent screen in the site's language
+    const authUrl = new URL(GOOGLE_AUTH_URL);
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("scope", SCOPES);
+    authUrl.searchParams.set("access_type", "offline"); // needed to receive a refresh token
+    // consent guarantees a refresh token even on re-connect; select_account
+    // always shows Google's account chooser, so a second account can be added
+    // instead of Google silently reusing the one already signed in.
+    authUrl.searchParams.set("prompt", "select_account consent");
+    authUrl.searchParams.set("state", state);
+    authUrl.searchParams.set("hl", langOf(req)); // Google's consent screen in the site's language
 
-  return json({ url: authUrl.toString() });
-}));
+    return json({ url: authUrl.toString() });
+  }),
+);

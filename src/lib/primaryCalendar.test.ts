@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 import type { CalendarConnectionStatus, CalendarSourceStatus } from "@/api/calendarStatus";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
 
-const source = (id: string, name: string, writable: boolean, custom?: string): CalendarSourceStatus => ({
+const source = (
+  id: string,
+  name: string,
+  writable: boolean,
+  custom?: string,
+): CalendarSourceStatus => ({
   id,
   display_name: name,
   custom_name: custom ?? null,

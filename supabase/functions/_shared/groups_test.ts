@@ -74,5 +74,8 @@ Deno.test("members are named, and never by their email address", () => {
   assertEquals(displayNameFor({ email: null, user_metadata: null }), "Someone");
   assertEquals(displayNameFor(null), "Someone");
   // A blank name in the metadata must not win over the email.
-  assertEquals(displayNameFor({ email: "jonas@example.com", user_metadata: { full_name: "  " } }), "jonas");
+  assertEquals(
+    displayNameFor({ email: "jonas@example.com", user_metadata: { full_name: "  " } }),
+    "jonas",
+  );
 });

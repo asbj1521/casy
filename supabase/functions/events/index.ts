@@ -197,7 +197,11 @@ async function listEvents(db: Db, profileId: string, callerName: string) {
     inviteesOf.set(r.proposal_id, [...(inviteesOf.get(r.proposal_id) ?? []), r.profile_id]);
   }
   const answerOf = new Map<string, string>(); // `${dateId}:${profileId}` -> response
-  for (const a of (answers.data ?? []) as { date_id: string; profile_id: string; response: string }[]) {
+  for (const a of (answers.data ?? []) as {
+    date_id: string;
+    profile_id: string;
+    response: string;
+  }[]) {
     answerOf.set(`${a.date_id}:${a.profile_id}`, a.response);
   }
 
@@ -229,7 +233,11 @@ async function listEvents(db: Db, profileId: string, callerName: string) {
       title: p.title,
       settings: p.settings,
       status: p.status,
-      createdBy: { id: p.created_by, name: nameOf(p.created_by), isYou: p.created_by === profileId },
+      createdBy: {
+        id: p.created_by,
+        name: nameOf(p.created_by),
+        isYou: p.created_by === profileId,
+      },
       createdAt: p.created_at,
       updatedAt: p.updated_at,
       currentDate: date ? { id: date.id, start: date.starts_at, end: date.ends_at } : null,
@@ -259,230 +267,245 @@ async function listEvents(db: Db, profileId: string, callerName: string) {
   });
 }
 
-Deno.serve(withLanguage(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Use POST" }, 405);
+Deno.serve(
+  withLanguage(async (req) => {
+    if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+    if (req.method !== "POST") return json({ error: "Use POST" }, 405);
 
-  let payload: Record<string, unknown>;
-  try {
-    payload = await req.json();
-  } catch {
-    return json({ error: "Body must be JSON" }, 400);
-  }
-  const action = payload.action;
-  if (typeof action !== "string") return json({ error: "action is required" }, 400);
+    let payload: Record<string, unknown>;
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "Body must be JSON" }, 400);
+    }
+    const action = payload.action;
+    if (typeof action !== "string") return json({ error: "action is required" }, 400);
 
-  const db = supabaseAdmin();
-  const caller = await callerUser(req, db);
-  if (!caller) return json({ error: "Please sign in again." }, 401);
-  const profileId = caller.id;
-  const callerName = displayNameFor(caller);
+    const db = supabaseAdmin();
+    const caller = await callerUser(req, db);
+    if (!caller) return json({ error: "Please sign in again." }, 401);
+    const profileId = caller.id;
+    const callerName = displayNameFor(caller);
 
-  try {
-    switch (action) {
-      case "list":
-        return json({ events: await listEvents(db, profileId, callerName) });
+    try {
+      switch (action) {
+        case "list":
+          return json({ events: await listEvents(db, profileId, callerName) });
 
-      case "suggest": {
-        const groupId = payload.groupId;
-        if (typeof groupId !== "string") return json({ error: "groupId is required" }, 400);
-        const title = cleanEventTitle(payload.title);
-        if (!title) return json({ error: "Give the event a name." }, 400);
-        if (!isEventSettings(payload.settings)) {
-          return json({ error: "Those event settings aren't valid." }, 400);
-        }
-        const date = parseEventDate(payload.date);
-        if (!date) return json({ error: "That date isn't valid any more. Search again." }, 400);
-        if (!(await isMember(db, groupId, profileId))) {
-          return json({ error: "You are not in that group." }, 403);
-        }
-
-        const { data: proposalId, error } = await db.rpc("suggest_event", {
-          p_group_id: groupId,
-          p_created_by: profileId,
-          p_title: title,
-          p_settings: payload.settings,
-          p_starts_at: date.start,
-          p_ends_at: date.end,
-        });
-        // The 20-open-events limit is raised by the database with a message
-        // written for people.
-        if (error) {
-          if (error.code === "23514") return json({ error: error.message }, 400);
-          throw error;
-        }
-        // A group of one is scheduled the moment it is suggested.
-        syncCalendarsLater(db, { proposalId: proposalId as string }, { queue: true });
-        return json({ events: await listEvents(db, profileId, callerName) });
-      }
-
-      case "respond": {
-        const { proposalId, dateId, response } = payload;
-        if (typeof proposalId !== "string" || typeof dateId !== "string") {
-          return json({ error: "proposalId and dateId are required" }, 400);
-        }
-        if (response !== "accepted" && response !== "declined") {
-          return json({ error: "response must be accepted or declined" }, 400);
-        }
-
-        // A decline brings the next date, or null when the search found none.
-        let next: { start: string; end: string } | null = null;
-        if (response === "declined" && payload.next != null) {
-          next = parseEventDate(payload.next);
-          if (!next) return json({ error: "The replacement date isn't valid." }, 400);
-          // It has to come after the date being declined: the search runs
-          // forward from the day after, never back over dates already seen.
-          const { data: declined, error: dateErr } = await db
-            .from("event_proposal_dates")
-            .select("starts_at")
-            .eq("id", dateId)
-            .eq("proposal_id", proposalId)
-            .maybeSingle();
-          if (dateErr) throw dateErr;
-          if (!declined) return json({ error: "That event no longer exists." }, 404);
-          if (Date.parse(next.start) <= Date.parse(declined.starts_at)) {
-            return json({ error: "The replacement date must be after the declined one." }, 400);
+        case "suggest": {
+          const groupId = payload.groupId;
+          if (typeof groupId !== "string") return json({ error: "groupId is required" }, 400);
+          const title = cleanEventTitle(payload.title);
+          if (!title) return json({ error: "Give the event a name." }, 400);
+          if (!isEventSettings(payload.settings)) {
+            return json({ error: "Those event settings aren't valid." }, 400);
           }
-        }
+          const date = parseEventDate(payload.date);
+          if (!date) return json({ error: "That date isn't valid any more. Search again." }, 400);
+          if (!(await isMember(db, groupId, profileId))) {
+            return json({ error: "You are not in that group." }, 403);
+          }
 
-        const { data: outcome, error } = await db.rpc("respond_to_event", {
-          p_proposal_id: proposalId,
-          p_date_id: dateId,
-          p_profile_id: profileId,
-          p_response: response,
-          p_next_starts_at: next?.start ?? null,
-          p_next_ends_at: next?.end ?? null,
-        });
-        if (error) throw error;
-        if (outcome === "not_invited") return json({ error: "You weren't asked about that event." }, 403);
-        if (outcome === "closed") {
-          return json({ error: "That event is no longer waiting for answers." }, 409);
-        }
-        if (outcome === "stale") {
-          return json(
-            { error: "Someone else answered first and the date changed. Have a look at the new one." },
-            409,
-          );
-        }
-        // The last yes schedules it: in go the automatic adds.
-        if (outcome === "accepted") syncCalendarsLater(db, { proposalId }, { queue: true });
-        return json({ outcome, events: await listEvents(db, profileId, callerName) });
-      }
-
-      case "cancel": {
-        const proposalId = payload.proposalId;
-        if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
-        const { data: proposal, error: propErr } = await db
-          .from("event_proposals")
-          .select("id, created_by, status")
-          .eq("id", proposalId)
-          .maybeSingle();
-        if (propErr) throw propErr;
-        if (!proposal) return json({ error: "That event no longer exists." }, 404);
-        // Only the person who suggested it can call it off; everyone else
-        // answers it instead.
-        if (proposal.created_by !== profileId) {
-          return json({ error: "Only the person who suggested this event can cancel it." }, 403);
-        }
-        if (proposal.status === "cancelled") {
+          const { data: proposalId, error } = await db.rpc("suggest_event", {
+            p_group_id: groupId,
+            p_created_by: profileId,
+            p_title: title,
+            p_settings: payload.settings,
+            p_starts_at: date.start,
+            p_ends_at: date.end,
+          });
+          // The 20-open-events limit is raised by the database with a message
+          // written for people.
+          if (error) {
+            if (error.code === "23514") return json({ error: error.message }, 400);
+            throw error;
+          }
+          // A group of one is scheduled the moment it is suggested.
+          syncCalendarsLater(db, { proposalId: proposalId as string }, { queue: true });
           return json({ events: await listEvents(db, profileId, callerName) });
         }
-        const { error: updErr } = await db
-          .from("event_proposals")
-          .update({ status: "cancelled", updated_at: new Date().toISOString() })
-          .eq("id", proposalId);
-        if (updErr) throw updErr;
-        // Out of every calendar Casy put it in.
-        await unwantEverywhere(db, proposalId);
-        syncCalendarsLater(db, { proposalId }, { queue: false });
-        return json({ events: await listEvents(db, profileId, callerName) });
-      }
 
-      case "leave": {
-        const proposalId = payload.proposalId;
-        if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
-        const { data: outcome, error } = await db.rpc("leave_event", {
-          p_proposal_id: proposalId,
-          p_profile_id: profileId,
-        });
-        if (error) throw error;
-        if (outcome === "not_found") return json({ error: "That event no longer exists." }, 404);
-        if (outcome === "creator") {
-          return json({ error: "You suggested this event, so cancel it instead." }, 403);
-        }
-        if (outcome === "closed") return json({ error: "That event is no longer going ahead." }, 409);
-        // Already gone (a second click): the list without it is the answer.
-        if (outcome === "not_invited") return json({ events: await listEvents(db, profileId, callerName) });
+        case "respond": {
+          const { proposalId, dateId, response } = payload;
+          if (typeof proposalId !== "string" || typeof dateId !== "string") {
+            return json({ error: "proposalId and dateId are required" }, 400);
+          }
+          if (response !== "accepted" && response !== "declined") {
+            return json({ error: "response must be accepted or declined" }, 400);
+          }
 
-        // Out of the leaver's own calendar; if leaving scheduled it, in go
-        // everyone else's automatic adds.
-        await unwantEverywhere(db, proposalId, profileId);
-        syncCalendarsLater(db, { proposalId }, { queue: outcome === "left_scheduled" });
-        return json({ events: await listEvents(db, profileId, callerName) });
-      }
+          // A decline brings the next date, or null when the search found none.
+          let next: { start: string; end: string } | null = null;
+          if (response === "declined" && payload.next != null) {
+            next = parseEventDate(payload.next);
+            if (!next) return json({ error: "The replacement date isn't valid." }, 400);
+            // It has to come after the date being declined: the search runs
+            // forward from the day after, never back over dates already seen.
+            const { data: declined, error: dateErr } = await db
+              .from("event_proposal_dates")
+              .select("starts_at")
+              .eq("id", dateId)
+              .eq("proposal_id", proposalId)
+              .maybeSingle();
+            if (dateErr) throw dateErr;
+            if (!declined) return json({ error: "That event no longer exists." }, 404);
+            if (Date.parse(next.start) <= Date.parse(declined.starts_at)) {
+              return json({ error: "The replacement date must be after the declined one." }, 400);
+            }
+          }
 
-      case "add-to-calendar": {
-        const proposalId = payload.proposalId;
-        if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
-        const events = await listEvents(db, profileId, callerName);
-        const event = events.find((e) => e.id === proposalId);
-        if (!event) return json({ error: "That event no longer exists." }, 404);
-        if (event.status !== "scheduled" || !event.currentDate || Date.parse(event.currentDate.end) <= Date.now()) {
-          return json({ error: "Only upcoming events everyone has accepted can be added." }, 409);
+          const { data: outcome, error } = await db.rpc("respond_to_event", {
+            p_proposal_id: proposalId,
+            p_date_id: dateId,
+            p_profile_id: profileId,
+            p_response: response,
+            p_next_starts_at: next?.start ?? null,
+            p_next_ends_at: next?.end ?? null,
+          });
+          if (error) throw error;
+          if (outcome === "not_invited")
+            return json({ error: "You weren't asked about that event." }, 403);
+          if (outcome === "closed") {
+            return json({ error: "That event is no longer waiting for answers." }, 409);
+          }
+          if (outcome === "stale") {
+            return json(
+              {
+                error:
+                  "Someone else answered first and the date changed. Have a look at the new one.",
+              },
+              409,
+            );
+          }
+          // The last yes schedules it: in go the automatic adds.
+          if (outcome === "accepted") syncCalendarsLater(db, { proposalId }, { queue: true });
+          return json({ outcome, events: await listEvents(db, profileId, callerName) });
         }
-        if ((await wantInCalendar(db, proposalId, profileId)) === "no_primary") {
-          return json({ error: "Choose a primary calendar first." }, 409);
+
+        case "cancel": {
+          const proposalId = payload.proposalId;
+          if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
+          const { data: proposal, error: propErr } = await db
+            .from("event_proposals")
+            .select("id, created_by, status")
+            .eq("id", proposalId)
+            .maybeSingle();
+          if (propErr) throw propErr;
+          if (!proposal) return json({ error: "That event no longer exists." }, 404);
+          // Only the person who suggested it can call it off; everyone else
+          // answers it instead.
+          if (proposal.created_by !== profileId) {
+            return json({ error: "Only the person who suggested this event can cancel it." }, 403);
+          }
+          if (proposal.status === "cancelled") {
+            return json({ events: await listEvents(db, profileId, callerName) });
+          }
+          const { error: updErr } = await db
+            .from("event_proposals")
+            .update({ status: "cancelled", updated_at: new Date().toISOString() })
+            .eq("id", proposalId);
+          if (updErr) throw updErr;
+          // Out of every calendar Casy put it in.
+          await unwantEverywhere(db, proposalId);
+          syncCalendarsLater(db, { proposalId }, { queue: false });
+          return json({ events: await listEvents(db, profileId, callerName) });
         }
-        // Waited for, unlike the automatic adds: the button says how it went.
-        let key: string;
-        try {
-          key = encryptionKeyFromEnv();
-        } catch (err) {
-          console.error("calendar writes are not configured", err);
-          return json({ error: "Syncing isn't set up on the server yet." }, 500);
+
+        case "leave": {
+          const proposalId = payload.proposalId;
+          if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
+          const { data: outcome, error } = await db.rpc("leave_event", {
+            p_proposal_id: proposalId,
+            p_profile_id: profileId,
+          });
+          if (error) throw error;
+          if (outcome === "not_found") return json({ error: "That event no longer exists." }, 404);
+          if (outcome === "creator") {
+            return json({ error: "You suggested this event, so cancel it instead." }, 403);
+          }
+          if (outcome === "closed")
+            return json({ error: "That event is no longer going ahead." }, 409);
+          // Already gone (a second click): the list without it is the answer.
+          if (outcome === "not_invited")
+            return json({ events: await listEvents(db, profileId, callerName) });
+
+          // Out of the leaver's own calendar; if leaving scheduled it, in go
+          // everyone else's automatic adds.
+          await unwantEverywhere(db, proposalId, profileId);
+          syncCalendarsLater(db, { proposalId }, { queue: outcome === "left_scheduled" });
+          return json({ events: await listEvents(db, profileId, callerName) });
         }
-        await processWrites(db, key, { proposalId, profileId });
-        const after = await listEvents(db, profileId, callerName);
-        const mine = after.find((e) => e.id === proposalId)?.myCalendar;
-        if (mine && mine.state === "adding") {
-          return json(
-            { error: mine.error ?? "Couldn't reach iCloud. Casy will try again within the hour.", events: after },
-            502,
+
+        case "add-to-calendar": {
+          const proposalId = payload.proposalId;
+          if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
+          const events = await listEvents(db, profileId, callerName);
+          const event = events.find((e) => e.id === proposalId);
+          if (!event) return json({ error: "That event no longer exists." }, 404);
+          if (
+            event.status !== "scheduled" ||
+            !event.currentDate ||
+            Date.parse(event.currentDate.end) <= Date.now()
+          ) {
+            return json({ error: "Only upcoming events everyone has accepted can be added." }, 409);
+          }
+          if ((await wantInCalendar(db, proposalId, profileId)) === "no_primary") {
+            return json({ error: "Choose a primary calendar first." }, 409);
+          }
+          // Waited for, unlike the automatic adds: the button says how it went.
+          let key: string;
+          try {
+            key = encryptionKeyFromEnv();
+          } catch (err) {
+            console.error("calendar writes are not configured", err);
+            return json({ error: "Syncing isn't set up on the server yet." }, 500);
+          }
+          await processWrites(db, key, { proposalId, profileId });
+          const after = await listEvents(db, profileId, callerName);
+          const mine = after.find((e) => e.id === proposalId)?.myCalendar;
+          if (mine && mine.state === "adding") {
+            return json(
+              {
+                error: mine.error ?? "Couldn't reach iCloud. Casy will try again within the hour.",
+                events: after,
+              },
+              502,
+            );
+          }
+          return json({ events: after });
+        }
+
+        case "ics": {
+          // The same entry as a file, for adding by hand.
+          const proposalId = payload.proposalId;
+          if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
+          const events = await listEvents(db, profileId, callerName);
+          const event = events.find((e) => e.id === proposalId);
+          if (!event) return json({ error: "That event no longer exists." }, 404);
+          if (event.status !== "scheduled" || !event.currentDate) {
+            return json({ error: "Only upcoming events everyone has accepted can be added." }, 409);
+          }
+          const ics = buildEventIcs(
+            {
+              id: event.id,
+              title: event.title,
+              groupName: event.group.name,
+              others: event.invitees.filter((i) => !i.isYou).map((i) => i.name),
+              kind: (event.settings as { kind?: string } | null)?.kind ?? "single",
+              start: event.currentDate.start,
+              end: event.currentDate.end,
+            },
+            langOf(req),
           );
+          return json({ filename: eventResourceName(event.id), ics });
         }
-        return json({ events: after });
-      }
 
-      case "ics": {
-        // The same entry as a file, for adding by hand.
-        const proposalId = payload.proposalId;
-        if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
-        const events = await listEvents(db, profileId, callerName);
-        const event = events.find((e) => e.id === proposalId);
-        if (!event) return json({ error: "That event no longer exists." }, 404);
-        if (event.status !== "scheduled" || !event.currentDate) {
-          return json({ error: "Only upcoming events everyone has accepted can be added." }, 409);
-        }
-        const ics = buildEventIcs(
-          {
-            id: event.id,
-            title: event.title,
-            groupName: event.group.name,
-            others: event.invitees.filter((i) => !i.isYou).map((i) => i.name),
-            kind: (event.settings as { kind?: string } | null)?.kind ?? "single",
-            start: event.currentDate.start,
-            end: event.currentDate.end,
-          },
-          langOf(req),
-        );
-        return json({ filename: eventResourceName(event.id), ics });
+        default:
+          return json({ error: `Unknown action "${action}"` }, 400);
       }
-
-      default:
-        return json({ error: `Unknown action "${action}"` }, 400);
+    } catch (err) {
+      console.error(`events ${action} failed`, err);
+      return json({ error: "Something went wrong. Please try again." }, 500);
     }
-  } catch (err) {
-    console.error(`events ${action} failed`, err);
-    return json({ error: "Something went wrong. Please try again." }, 500);
-  }
-}));
+  }),
+);

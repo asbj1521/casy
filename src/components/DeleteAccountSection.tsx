@@ -64,7 +64,11 @@ export default function DeleteAccountSection() {
                 disabled={!confirmed || deleting}
                 className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
               >
-                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
                 {deleting ? words.deleting : words.confirmButton}
               </button>
               <button

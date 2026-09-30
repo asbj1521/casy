@@ -14,7 +14,13 @@ import {
   SIZE,
   type SceneId,
 } from "@/components/appleWalkthrough/layout";
-import { Avatar, DotRing, DottedAppleIcon, SceneFade, TileIcon } from "@/components/appleWalkthrough/Parts";
+import {
+  Avatar,
+  DotRing,
+  DottedAppleIcon,
+  SceneFade,
+  TileIcon,
+} from "@/components/appleWalkthrough/Parts";
 import {
   EXAMPLE_CODE,
   EXAMPLE_PASSWORD,
@@ -48,7 +54,10 @@ const URLS: Record<SceneId, string> = {
 
 function BrowserBar({ url }: { url: string }) {
   return (
-    <div style={at(0, 0, W, MAC_CHROME)} className="flex items-center border-b border-[#d8d8dc] bg-[#f3f3f5] px-3">
+    <div
+      style={at(0, 0, W, MAC_CHROME)}
+      className="flex items-center border-b border-[#d8d8dc] bg-[#f3f3f5] px-3"
+    >
       <span className="flex gap-1.5">
         <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
@@ -64,7 +73,10 @@ function BrowserBar({ url }: { url: string }) {
 
 function AppleNav({ a }: { a: AppleWords }) {
   return (
-    <div style={at(0, 0, W, 24)} className="flex items-center justify-center gap-[17px] text-[7.5px]">
+    <div
+      style={at(0, 0, W, 24)}
+      className="flex items-center justify-center gap-[17px] text-[7.5px]"
+    >
       <SiApple className="h-2.5 w-2.5" style={{ color: INK }} />
       {a.nav.map((item) => (
         <span key={item} style={{ color: INK }}>
@@ -79,12 +91,18 @@ function AppleNav({ a }: { a: AppleWords }) {
 
 function AccountHeader({ a, signedIn }: { a: AppleWords; signedIn: boolean }) {
   return (
-    <div style={at(100, 24, 520, 36)} className="flex items-center justify-between border-b border-[#d2d2d7]">
+    <div
+      style={at(100, 24, 520, 36)}
+      className="flex items-center justify-between border-b border-[#d2d2d7]"
+    >
       <span className="text-[14px] font-semibold" style={{ color: INK }}>
         {a.account}
       </span>
       {signedIn ? (
-        <span className="rounded-full px-2 py-0.5 text-[8px] text-white" style={{ background: BLUE }}>
+        <span
+          className="rounded-full px-2 py-0.5 text-[8px] text-white"
+          style={{ background: BLUE }}
+        >
           {a.signOut}
         </span>
       ) : (
@@ -120,7 +138,11 @@ function Field({
       style={at(left, top, width, 26)}
       className="flex items-center rounded-[7px] border border-[#86868b] bg-white px-2.5 text-[10px]"
     >
-      {value ? <span style={{ color: INK }}>{value}</span> : <span style={{ color: GREY }}>{placeholder}</span>}
+      {value ? (
+        <span style={{ color: INK }}>{value}</span>
+      ) : (
+        <span style={{ color: GREY }}>{placeholder}</span>
+      )}
       {caret && <span className="ml-px h-3 w-px animate-pulse" style={{ background: INK }} />}
       {children}
     </div>
@@ -128,7 +150,17 @@ function Field({
 }
 
 /** A full-width button in one of Apple's small dialogs; `faint` until it can be pressed. */
-function DialogButton({ top, label, filled, faint }: { top: number; label: string; filled?: boolean; faint?: boolean }) {
+function DialogButton({
+  top,
+  label,
+  filled,
+  faint,
+}: {
+  top: number;
+  label: string;
+  filled?: boolean;
+  faint?: boolean;
+}) {
   return (
     <div
       style={{
@@ -137,7 +169,10 @@ function DialogButton({ top, label, filled, faint }: { top: number; label: strin
         color: filled ? "white" : BLUE,
         borderColor: BLUE,
       }}
-      className={cn("flex items-center justify-center rounded-[7px] text-[9px] transition-colors", !filled && "border")}
+      className={cn(
+        "flex items-center justify-center rounded-[7px] text-[9px] transition-colors",
+        !filled && "border",
+      )}
     >
       {label}
     </div>
@@ -156,10 +191,16 @@ function LandingPage({ a }: { a: AppleWords }) {
           <SiApple className="h-8 w-8" style={{ color: "#000" }} />
         </span>
       </div>
-      <p style={{ ...at(0, 232, W), color: INK }} className="text-center text-[24px] font-semibold tracking-tight">
+      <p
+        style={{ ...at(0, 232, W), color: INK }}
+        className="text-center text-[24px] font-semibold tracking-tight"
+      >
         {a.landingTitle}
       </p>
-      <p style={{ ...at(150, 272, 420), color: INK }} className="text-center text-[10px] leading-snug">
+      <p
+        style={{ ...at(150, 272, 420), color: INK }}
+        className="text-center text-[10px] leading-snug"
+      >
         {a.landingBody}
       </p>
       <div
@@ -179,20 +220,32 @@ function BiometricSheet({ a }: { a: AppleWords }) {
       <AppleNav a={a} />
       <AccountHeader a={a} signedIn={false} />
       <div style={at(0, 0, W, PAGE_H)} className="bg-black/45" />
-      <div style={at(225, 70, 270, 250)} className="rounded-[14px] border border-white/10 bg-[#2a2a2c] shadow-2xl" />
+      <div
+        style={at(225, 70, 270, 250)}
+        className="rounded-[14px] border border-white/10 bg-[#2a2a2c] shadow-2xl"
+      />
       <span style={at(239, 80)} className="text-[13px] font-semibold text-white">
         {a.account}
       </span>
-      <span style={at(425, 80, 58, 18)} className="flex items-center justify-center rounded-full bg-[#48484a] text-[8.5px] text-white">
+      <span
+        style={at(425, 80, 58, 18)}
+        className="flex items-center justify-center rounded-full bg-[#48484a] text-[8.5px] text-white"
+      >
         {a.cancel}
       </span>
-      <span style={at(346, 112, 28, 28)} className="flex items-center justify-center rounded-[7px] bg-white">
+      <span
+        style={at(346, 112, 28, 28)}
+        className="flex items-center justify-center rounded-[7px] bg-white"
+      >
         <SiApple className="h-4 w-4" style={{ color: "#000" }} />
       </span>
       <p style={at(225, 150, 270)} className="text-center text-[8.5px] text-white">
         {a.sheetText}
       </p>
-      <div style={at(245, 166, 230, 34)} className="flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2">
+      <div
+        style={at(245, 166, 230, 34)}
+        className="flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2"
+      >
         <Avatar size={22} fontSize={8} />
         <span className="flex flex-col">
           <span className="text-[9px] text-white">{PERSON.name}</span>
@@ -228,9 +281,26 @@ function SignInForm({ a, phase }: { a: AppleWords; phase: number }) {
       <p style={{ ...at(0, 120, W), color: INK }} className="text-center text-[15px] font-semibold">
         {a.account}
       </p>
-      <Field left={250} top={150} width={220} placeholder={a.macEmailField} value={phase >= 1 ? PERSON.email : undefined} caret={phase === 1} />
-      <Field left={250} top={184} width={220} placeholder={a.passwordField} value={phase >= 2 ? "••••••••••" : undefined} caret={phase === 2}>
-        <span style={{ borderColor: GREY }} className="ml-auto flex h-4 w-4 items-center justify-center rounded-full border">
+      <Field
+        left={250}
+        top={150}
+        width={220}
+        placeholder={a.macEmailField}
+        value={phase >= 1 ? PERSON.email : undefined}
+        caret={phase === 1}
+      />
+      <Field
+        left={250}
+        top={184}
+        width={220}
+        placeholder={a.passwordField}
+        value={phase >= 2 ? "••••••••••" : undefined}
+        caret={phase === 2}
+      >
+        <span
+          style={{ borderColor: GREY }}
+          className="ml-auto flex h-4 w-4 items-center justify-center rounded-full border"
+        >
           <ArrowRight className="h-2.5 w-2.5" style={{ color: GREY }} />
         </span>
       </Field>
@@ -260,7 +330,15 @@ function CodeEntry({ a, phase }: { a: AppleWords; phase: number }) {
 }
 
 /** Login og sikkerhed, where Apple lands you after signing in. */
-function SecurityPage({ a, scrolled, hover }: { a: AppleWords; scrolled: boolean; hover: boolean }) {
+function SecurityPage({
+  a,
+  scrolled,
+  hover,
+}: {
+  a: AppleWords;
+  scrolled: boolean;
+  hover: boolean;
+}) {
   return (
     <>
       <AppleNav a={a} />
@@ -292,7 +370,10 @@ function SecurityPage({ a, scrolled, hover }: { a: AppleWords; scrolled: boolean
               {item}
             </span>
           ))}
-          <span style={{ ...at(258, 18), color: INK }} className="text-[18px] font-bold tracking-tight">
+          <span
+            style={{ ...at(258, 18), color: INK }}
+            className="text-[18px] font-bold tracking-tight"
+          >
             {a.security}
           </span>
           <p style={{ ...at(258, 46, 360), color: INK }} className="text-[8.5px] leading-snug">
@@ -304,7 +385,9 @@ function SecurityPage({ a, scrolled, hover }: { a: AppleWords; scrolled: boolean
               style={at(i % 2 === 0 ? 258 : 444, 90 + Math.floor(i / 2) * 72, 176, 62)}
               className={cn(
                 "rounded-[10px] border bg-white px-3 py-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-shadow",
-                i === a.tiles.length - 1 && hover ? "border-[#0071e3] ring-2 ring-[#0071e3]/25" : "border-[#e5e5ea]",
+                i === a.tiles.length - 1 && hover
+                  ? "border-[#0071e3] ring-2 ring-[#0071e3]/25"
+                  : "border-[#e5e5ea]",
               )}
             >
               <div className="flex items-start justify-between gap-2">
@@ -331,12 +414,21 @@ function ListModal({ a }: { a: AppleWords }) {
   return (
     <>
       <div style={at(0, 0, W, PAGE_H)} className="bg-[#f5f5f7]/80" />
-      <div style={at(160, 30, 400, 300)} className="rounded-[16px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.12)]" />
+      <div
+        style={at(160, 30, 400, 300)}
+        className="rounded-[16px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.12)]"
+      />
       <X style={{ ...at(176, 46, 12, 12), color: INK }} />
-      <p style={{ ...at(160, 96, 400), color: INK }} className="text-center text-[15px] font-semibold">
+      <p
+        style={{ ...at(160, 96, 400), color: INK }}
+        className="text-center text-[15px] font-semibold"
+      >
         {a.listTitle}
       </p>
-      <p style={{ ...at(210, 126, 300), color: INK }} className="text-center text-[9px] leading-snug">
+      <p
+        style={{ ...at(210, 126, 300), color: INK }}
+        className="text-center text-[9px] leading-snug"
+      >
         {a.listBody}
       </p>
       <p style={{ ...at(160, 156, 400), color: BLUE }} className="text-center text-[9px]">
@@ -351,11 +443,22 @@ function ListModal({ a }: { a: AppleWords }) {
 }
 
 /** One of Apple's small boxes that open over the list. */
-function SmallModal({ top, height, children }: { top: number; height: number; children: ReactNode }) {
+function SmallModal({
+  top,
+  height,
+  children,
+}: {
+  top: number;
+  height: number;
+  children: ReactNode;
+}) {
   return (
     <>
       <div style={at(0, 0, W, PAGE_H)} className="bg-white/55" />
-      <div style={at(235, top, 250, height)} className="rounded-[14px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)]" />
+      <div
+        style={at(235, top, 250, height)}
+        className="rounded-[14px] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)]"
+      />
       {children}
     </>
   );
@@ -365,13 +468,26 @@ function GenerateModal({ a, phase }: { a: AppleWords; phase: number }) {
   return (
     <SmallModal top={60} height={232}>
       <DottedAppleIcon cx={360} cy={92} />
-      <p style={{ ...at(235, 112, 250), color: INK }} className="text-center text-[10.5px] font-semibold">
+      <p
+        style={{ ...at(235, 112, 250), color: INK }}
+        className="text-center text-[10.5px] font-semibold"
+      >
         {a.generateTitle}
       </p>
-      <p style={{ ...at(250, 131, 220), color: GREY }} className="text-center text-[8px] leading-snug">
+      <p
+        style={{ ...at(250, 131, 220), color: GREY }}
+        className="text-center text-[8px] leading-snug"
+      >
         {a.listBody}
       </p>
-      <Field left={255} top={168} width={210} placeholder={a.namePlaceholder} value={phase >= 1 ? "Casy" : undefined} caret={phase >= 1} />
+      <Field
+        left={255}
+        top={168}
+        width={210}
+        placeholder={a.namePlaceholder}
+        value={phase >= 1 ? "Casy" : undefined}
+        caret={phase >= 1}
+      />
       <DialogButton top={208} label={a.create} filled faint={phase < 1} />
       <DialogButton top={238} label={a.cancel} />
     </SmallModal>
@@ -382,15 +498,28 @@ function ConfirmModal({ a, phase }: { a: AppleWords; phase: number }) {
   return (
     <SmallModal top={60} height={234}>
       <DottedAppleIcon cx={360} cy={92} />
-      <p style={{ ...at(235, 112, 250), color: INK }} className="text-center text-[10.5px] font-semibold">
+      <p
+        style={{ ...at(235, 112, 250), color: INK }}
+        className="text-center text-[10.5px] font-semibold"
+      >
         {a.confirmTitle}
       </p>
-      <p style={{ ...at(250, 131, 220), color: GREY }} className="text-center text-[8px] leading-snug">
+      <p
+        style={{ ...at(250, 131, 220), color: GREY }}
+        className="text-center text-[8px] leading-snug"
+      >
         {a.confirmBody}
         <br />
         {PERSON.email}
       </p>
-      <Field left={270} top={172} width={180} placeholder={a.passwordField} value={phase >= 1 ? "••••••••••" : undefined} caret={phase >= 1} />
+      <Field
+        left={270}
+        top={172}
+        width={180}
+        placeholder={a.passwordField}
+        value={phase >= 1 ? "••••••••••" : undefined}
+        caret={phase >= 1}
+      />
       <DialogButton top={210} label={a.continue} filled faint={phase < 1} />
       <DialogButton top={240} label={a.cancel} />
     </SmallModal>
@@ -402,13 +531,24 @@ function RevealModal({ a, phase }: { a: AppleWords; phase: number }) {
   return (
     <SmallModal top={70} height={196}>
       <DottedAppleIcon cx={360} cy={100} />
-      <p style={{ ...at(235, 119, 250), color: INK }} className="text-center text-[10.5px] font-semibold">
+      <p
+        style={{ ...at(235, 119, 250), color: INK }}
+        className="text-center text-[10.5px] font-semibold"
+      >
         {a.revealTitle}
       </p>
-      <p style={{ ...at(235, 137, 250), color: INK }} className="text-center text-[12px] font-semibold">
-        <span className={cn("rounded-sm px-0.5", phase >= 1 && "bg-[#b3d7ff]")}>{EXAMPLE_PASSWORD.join("-")}</span>
+      <p
+        style={{ ...at(235, 137, 250), color: INK }}
+        className="text-center text-[12px] font-semibold"
+      >
+        <span className={cn("rounded-sm px-0.5", phase >= 1 && "bg-[#b3d7ff]")}>
+          {EXAMPLE_PASSWORD.join("-")}
+        </span>
       </p>
-      <p style={{ ...at(250, 160, 220), color: GREY }} className="text-center text-[8px] leading-snug">
+      <p
+        style={{ ...at(250, 160, 220), color: GREY }}
+        className="text-center text-[8px] leading-snug"
+      >
         {a.revealBody}
       </p>
       <DialogButton top={214} label={a.ok} filled />

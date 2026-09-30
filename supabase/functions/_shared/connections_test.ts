@@ -26,31 +26,54 @@ Deno.test("only a refused authorization code counts as code reuse", () => {
 
 Deno.test("a code-reuse failure next to another attempt is a duplicate, in either order", () => {
   for (const other of [secondsFrom(T0, -1), secondsFrom(T0, 1), T0]) {
-    assert(isRepeatedCallback({ failure: GOOGLE_FAILURE, attemptedAt: T0, otherAttemptTimes: [other] }));
+    assert(
+      isRepeatedCallback({ failure: GOOGLE_FAILURE, attemptedAt: T0, otherAttemptTimes: [other] }),
+    );
   }
-  assert(isRepeatedCallback({ failure: MICROSOFT_FAILURE, attemptedAt: T0, otherAttemptTimes: [secondsFrom(T0, -2)] }));
+  assert(
+    isRepeatedCallback({
+      failure: MICROSOFT_FAILURE,
+      attemptedAt: T0,
+      otherAttemptTimes: [secondsFrom(T0, -2)],
+    }),
+  );
 });
 
 Deno.test("the window is 30 seconds, inclusive", () => {
   const edge = secondsFrom(T0, -DUPLICATE_CALLBACK_WINDOW_MS / 1000);
   const past = secondsFrom(T0, -(DUPLICATE_CALLBACK_WINDOW_MS / 1000 + 1));
-  assert(isRepeatedCallback({ failure: GOOGLE_FAILURE, attemptedAt: T0, otherAttemptTimes: [edge] }));
-  assert(!isRepeatedCallback({ failure: GOOGLE_FAILURE, attemptedAt: T0, otherAttemptTimes: [past] }));
+  assert(
+    isRepeatedCallback({ failure: GOOGLE_FAILURE, attemptedAt: T0, otherAttemptTimes: [edge] }),
+  );
+  assert(
+    !isRepeatedCallback({ failure: GOOGLE_FAILURE, attemptedAt: T0, otherAttemptTimes: [past] }),
+  );
 });
 
 Deno.test("with no nearby attempt it is a genuine failure", () => {
   assert(!isRepeatedCallback({ failure: GOOGLE_FAILURE, attemptedAt: T0, otherAttemptTimes: [] }));
 });
 
-Deno.test("other failures are never treated as duplicates, however close another attempt is", () => {
-  assert(
-    !isRepeatedCallback({ failure: new Error("Google did not return a refresh_token"), attemptedAt: T0, otherAttemptTimes: [T0] }),
-  );
-});
+Deno.test(
+  "other failures are never treated as duplicates, however close another attempt is",
+  () => {
+    assert(
+      !isRepeatedCallback({
+        failure: new Error("Google did not return a refresh_token"),
+        attemptedAt: T0,
+        otherAttemptTimes: [T0],
+      }),
+    );
+  },
+);
 
 /* ---- The database-facing wrapper, against a fake client ---- */
 
-function fakeDb(opts: { others?: { created_at: string }[]; selectError?: boolean; deleteError?: boolean }) {
+function fakeDb(opts: {
+  others?: { created_at: string }[];
+  selectError?: boolean;
+  deleteError?: boolean;
+}) {
   const calls: { op: string; filters: [string, unknown][] }[] = [];
   const db = {
     from() {
@@ -95,7 +118,11 @@ function fakeDb(opts: { others?: { created_at: string }[]; selectError?: boolean
   return { db: db as unknown as Parameters<typeof discardIfRepeatedCallback>[0], calls };
 }
 
-const attempt = { connection: { id: "dup-1", created_at: T0 }, profileId: "asbjorn", provider: "google" as const };
+const attempt = {
+  connection: { id: "dup-1", created_at: T0 },
+  profileId: "asbjorn",
+  provider: "google" as const,
+};
 
 Deno.test("a duplicate deletes its own row and reports true", async () => {
   const { db, calls } = fakeDb({ others: [{ created_at: secondsFrom(T0, -1) }] });
@@ -104,15 +131,18 @@ Deno.test("a duplicate deletes its own row and reports true", async () => {
   assertEquals(del.filters, [["id", "dup-1"]]);
 });
 
-Deno.test("the lookup is scoped to this profile and provider, excludes itself, and includes pending attempts", async () => {
-  const { db, calls } = fakeDb({ others: [] });
-  await discardIfRepeatedCallback(db, { ...attempt, failure: GOOGLE_FAILURE });
-  const q = calls.find((c) => c.op === "select")!.filters;
-  assert(q.some(([k, v]) => k === "profile_id" && v === "asbjorn"));
-  assert(q.some(([k, v]) => k === "provider" && v === "google"));
-  assert(q.some(([k, v]) => k === "!id" && v === "dup-1"));
-  assertEquals(q.find(([k]) => k === "status")?.[1], ["pending", "connected"]);
-});
+Deno.test(
+  "the lookup is scoped to this profile and provider, excludes itself, and includes pending attempts",
+  async () => {
+    const { db, calls } = fakeDb({ others: [] });
+    await discardIfRepeatedCallback(db, { ...attempt, failure: GOOGLE_FAILURE });
+    const q = calls.find((c) => c.op === "select")!.filters;
+    assert(q.some(([k, v]) => k === "profile_id" && v === "asbjorn"));
+    assert(q.some(([k, v]) => k === "provider" && v === "google"));
+    assert(q.some(([k, v]) => k === "!id" && v === "dup-1"));
+    assertEquals(q.find(([k]) => k === "status")?.[1], ["pending", "connected"]);
+  },
+);
 
 Deno.test("no nearby attempt: nothing is deleted", async () => {
   const { db, calls } = fakeDb({ others: [] });
@@ -122,13 +152,25 @@ Deno.test("no nearby attempt: nothing is deleted", async () => {
 
 Deno.test("an ordinary failure doesn't even query the database", async () => {
   const { db, calls } = fakeDb({ others: [{ created_at: T0 }] });
-  assertEquals(await discardIfRepeatedCallback(db, { ...attempt, failure: new Error("boom") }), false);
+  assertEquals(
+    await discardIfRepeatedCallback(db, { ...attempt, failure: new Error("boom") }),
+    false,
+  );
   assertEquals(calls.length, 0);
 });
 
-Deno.test("if the lookup or the delete fails, it says 'not a duplicate' instead of throwing", async () => {
-  const lookup = fakeDb({ selectError: true });
-  assertEquals(await discardIfRepeatedCallback(lookup.db, { ...attempt, failure: GOOGLE_FAILURE }), false);
-  const del = fakeDb({ others: [{ created_at: T0 }], deleteError: true });
-  assertEquals(await discardIfRepeatedCallback(del.db, { ...attempt, failure: GOOGLE_FAILURE }), false);
-});
+Deno.test(
+  "if the lookup or the delete fails, it says 'not a duplicate' instead of throwing",
+  async () => {
+    const lookup = fakeDb({ selectError: true });
+    assertEquals(
+      await discardIfRepeatedCallback(lookup.db, { ...attempt, failure: GOOGLE_FAILURE }),
+      false,
+    );
+    const del = fakeDb({ others: [{ created_at: T0 }], deleteError: true });
+    assertEquals(
+      await discardIfRepeatedCallback(del.db, { ...attempt, failure: GOOGLE_FAILURE }),
+      false,
+    );
+  },
+);

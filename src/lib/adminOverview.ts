@@ -24,7 +24,8 @@ function withStats(o: AdminOverview): AdminOverview {
 /** Each user's group count, from the groups as they now stand. */
 function withGroupCounts(o: AdminOverview): AdminOverview {
   const count = new Map<string, number>();
-  for (const g of o.groups) for (const m of g.members) count.set(m.profileId, (count.get(m.profileId) ?? 0) + 1);
+  for (const g of o.groups)
+    for (const m of g.members) count.set(m.profileId, (count.get(m.profileId) ?? 0) + 1);
   return { ...o, users: o.users.map((u) => ({ ...u, groups: count.get(u.id) ?? 0 })) };
 }
 
@@ -35,7 +36,9 @@ export function withoutGroup(o: AdminOverview, groupId: string): AdminOverview {
 /** One member out of one group; a group left empty goes too, as on the server. */
 export function withoutMember(o: AdminOverview, groupId: string, profileId: string): AdminOverview {
   const groups = o.groups
-    .map((g) => (g.id === groupId ? { ...g, members: g.members.filter((m) => m.profileId !== profileId) } : g))
+    .map((g) =>
+      g.id === groupId ? { ...g, members: g.members.filter((m) => m.profileId !== profileId) } : g,
+    )
     .filter((g) => g.members.length > 0);
   return withStats(withGroupCounts({ ...o, groups }));
 }

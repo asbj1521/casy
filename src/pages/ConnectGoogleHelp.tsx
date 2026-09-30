@@ -48,7 +48,8 @@ const da = {
     permission: "Se oplysninger om ledig og optaget tid i dine kalendere",
     continue: "Fortsæt",
   },
-  never: "Casy beder aldrig Google om titler, steder eller gæster. Casy ser kun, hvornår du er optaget.",
+  never:
+    "Casy beder aldrig Google om titler, steder eller gæster. Casy ser kun, hvornår du er optaget.",
 };
 
 const en: typeof da = {
@@ -88,7 +89,8 @@ const en: typeof da = {
     permission: "See your calendars' free/busy information",
     continue: "Continue",
   },
-  never: "Casy never asks Google for event titles, places or guests. It only sees when you're busy.",
+  never:
+    "Casy never asks Google for event titles, places or guests. It only sees when you're busy.",
 };
 
 export default function ConnectGoogleHelp() {

@@ -48,10 +48,7 @@ export interface SuggestedEvent {
    * the last sync found). Null or missing: Casy hasn't been asked to.
    */
   myCalendar?:
-    | { state: "added" }
-    | { state: "adding"; error: string | null }
-    | { state: "gone" }
-    | null;
+    { state: "added" } | { state: "adding"; error: string | null } | { state: "gone" } | null;
 }
 
 export function eventsQueryKey(userId: string) {
@@ -79,10 +76,7 @@ export function eventsQuery(userId: string) {
 
 /** True if this event is waiting for your answer on its current date. */
 export function needsYourAnswer(event: SuggestedEvent): boolean {
-  return (
-    event.status === "pending" &&
-    event.invitees.some((i) => i.isYou && i.response === null)
-  );
+  return event.status === "pending" && event.invitees.some((i) => i.isYou && i.response === null);
 }
 
 export async function suggestEvent(input: {
@@ -193,7 +187,9 @@ export async function addToMyCalendar(proposalId: string): Promise<{ events: Sug
 }
 
 /** A scheduled event as a calendar file, for adding by hand. */
-export async function eventCalendarFile(proposalId: string): Promise<{ filename: string; ics: string }> {
+export async function eventCalendarFile(
+  proposalId: string,
+): Promise<{ filename: string; ics: string }> {
   return await callFunction("events", {
     body: { action: "ics", proposalId },
     errorMessage: currentMessages().api.downloadEvent,

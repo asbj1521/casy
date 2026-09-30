@@ -177,7 +177,9 @@ export async function leaveGroup(
  * Only the person who created it can do this; anyone else should leave
  * instead.
  */
-export async function deleteGroup(groupId: string): Promise<{ groups: Group[]; outcome: "deleted" }> {
+export async function deleteGroup(
+  groupId: string,
+): Promise<{ groups: Group[]; outcome: "deleted" }> {
   return await callFunction("groups", {
     body: { action: "delete", groupId },
     errorMessage: currentMessages().api.deleteGroup,

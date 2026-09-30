@@ -22,7 +22,9 @@ describe("easterSunday", () => {
     [2030, "2030-04-21"],
   ])("Easter %i is %s", (year, expected) => {
     const d = easterSunday(year);
-    expect(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`).toBe(expected);
+    expect(
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+    ).toBe(expected);
   });
 });
 

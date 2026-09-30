@@ -62,7 +62,10 @@ export function passesChecks(checks: PasswordChecks): boolean {
 /** Uppercase hex SHA-1, as Have I Been Pwned lists them. */
 export async function sha1Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+  return [...new Uint8Array(digest)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
 }
 
 /**
@@ -88,7 +91,10 @@ const LEAK_CHECK_TIMEOUT_MS = 4000;
  * The password itself is never sent anywhere. Null if the service couldn't be
  * reached: the other rules still apply, so a slow network never blocks anyone.
  */
-export async function timesLeaked(password: string, fetchImpl: typeof fetch = fetch): Promise<number | null> {
+export async function timesLeaked(
+  password: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<number | null> {
   try {
     const hash = await sha1Hex(password);
     const res = await fetchImpl(RANGE_URL + hash.slice(0, 5), {
