@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { SuggestedEvent } from "@/api/events";
-import { nameList, sectionEvents, waitingOn } from "@/lib/myEvents";
+import { eventHeadline, nameList, sectionEvents, waitingOn } from "@/lib/myEvents";
 
 const NOW = Date.parse("2026-09-22T12:00:00.000Z");
 
@@ -91,5 +91,36 @@ describe("nameList", () => {
   it("joins names in Danish", () => {
     expect(nameList(["Emilie", "Tessa"], "da")).toBe("Emilie og Tessa");
     expect(nameList(["Emilie", "Tessa", "Simon", "Nora"], "da")).toBe("Emilie, Tessa og 2 andre");
+  });
+});
+
+describe("eventHeadline", () => {
+  const words = {
+    timeRange: (a: string, b: string) => `${a} til ${b}`,
+    tripTimes: (a: string, b: string) => `Afgang ${a}, hjem ${b}`,
+    days: (n: number) => `${n} dage`,
+  };
+
+  it("puts a meeting's day big and its times under it", () => {
+    expect(eventHeadline(event({ id: "a" }), "da", words)).toEqual({
+      date: "Fredag 25. september",
+      time: "18:00 til 21:00",
+    });
+  });
+
+  it("shows a vacation as its span of days and how many", () => {
+    const e = event({
+      id: "v",
+      settings: { kind: "vacation", days: 3 },
+      currentDate: { id: "d", start: "2026-10-08T22:00:00.000Z", end: "2026-10-11T22:00:00.000Z" },
+    });
+    expect(eventHeadline(e, "da", words)).toEqual({
+      date: "Fredag 9. oktober til søndag 11. oktober",
+      time: "3 dage",
+    });
+  });
+
+  it("has nothing to show without a date", () => {
+    expect(eventHeadline(event({ id: "n", currentDate: null }), "da", words)).toBeNull();
   });
 });

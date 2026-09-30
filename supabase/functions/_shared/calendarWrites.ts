@@ -233,12 +233,15 @@ export async function markGoneEntries(
 }
 
 /** A cancelled event: take it out of every calendar Casy put it in. */
-export async function unwantEverywhere(db: Db, proposalId: string): Promise<void> {
-  const { error } = await db
+export async function unwantEverywhere(db: Db, proposalId: string, profileId?: string): Promise<void> {
+  let query = db
     .from("calendar_event_writes")
     .update({ wanted: false, attempts: 0, last_error: null, updated_at: new Date().toISOString() })
     .eq("proposal_id", proposalId)
     .eq("wanted", true);
+  // Only one person's entry, when they leave the event.
+  if (profileId) query = query.eq("profile_id", profileId);
+  const { error } = await query;
   if (error) throw error;
 }
 

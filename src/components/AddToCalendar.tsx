@@ -199,7 +199,7 @@ export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
   }
 
   return (
-    <div className="mt-3">
+    <div className="min-w-0">
       {body}
       {error && (
         <p className="mt-2 flex items-start gap-2 text-sm text-red-700">

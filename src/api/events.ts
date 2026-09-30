@@ -104,6 +104,14 @@ export async function cancelEvent(proposalId: string): Promise<{ events: Suggest
   });
 }
 
+/** Drop out of an event someone else suggested; it carries on without you. */
+export async function leaveEvent(proposalId: string): Promise<{ events: SuggestedEvent[] }> {
+  return await callFunction("events", {
+    body: { action: "leave", proposalId },
+    errorMessage: currentMessages().api.leaveEvent,
+  });
+}
+
 export async function acceptEvent(event: SuggestedEvent): Promise<{ events: SuggestedEvent[] }> {
   if (!event.currentDate) throw new Error(currentMessages().api.noDateToAccept);
   return await callFunction("events", {

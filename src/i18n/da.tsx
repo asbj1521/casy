@@ -447,7 +447,8 @@ export const da = {
     waitingForOthers: "Venter på andre",
     waitingFor: (names: string) => `Venter på ${names}`,
     scheduled: "Planlagt",
-    everyoneIn: "Alle kan.",
+    acceptedByAll: "Accepteret af alle",
+    showMembers: (name: string) => `Vis medlemmer af ${name}`,
     pastClosed: "Tidligere og lukkede",
     noDate:
       "Ingen dato i det næste år passer alle længere. Foreslå den igen fra planlægningssiden.",
@@ -455,6 +456,10 @@ export const da = {
     passed: (date: string) => `Datoen gik, før alle havde svaret: ${date}.`,
     cancelConfirm: "Aflys aftalen for alle?",
     cancelEvent: "Aflys aftale",
+    leaveConfirm:
+      "Forlad aftalen? Den fortsætter uden dig, og Casy fjerner den fra din kalender, hvis Casy satte den ind.",
+    leaveEvent: "Forlad aftale",
+    stayIn: "Bliv med",
     you: "Dig",
     youSuggested: "Du foreslog den",
     suggestedBy: (name: string) => `Foreslået af ${name}`,
@@ -680,6 +685,7 @@ export const da = {
     loadEvents: "Kunne ikke hente dine aftaler",
     suggestEvent: "Kunne ikke foreslå aftalen",
     cancelEvent: "Kunne ikke aflyse aftalen",
+    leaveEvent: "Kunne ikke forlade aftalen",
     acceptEvent: "Kunne ikke acceptere aftalen",
     declineEvent: "Kunne ikke afslå aftalen",
     noDateToAccept: "Aftalen har ingen dato at acceptere.",

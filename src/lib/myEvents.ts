@@ -5,7 +5,42 @@
  */
 import type { SuggestedEvent } from "@/api/events";
 import type { Lang } from "@/i18n/locale";
-import { formatDaySpan, formatSlot, formatTripSpan } from "@/lib/format";
+import {
+  formatDaySpan,
+  formatLongDate,
+  formatLongSpan,
+  formatSlot,
+  formatTime,
+  formatTripSpan,
+} from "@/lib/format";
+
+/** The words eventHeadline needs, from the scheduling page's copy. */
+export interface HeadlineWords {
+  timeRange: (start: string, end: string) => string;
+  tripTimes: (start: string, end: string) => string;
+  days: (n: number) => string;
+}
+
+/**
+ * An event's date as the scheduling page shows its answer: the day (or span
+ * of days) big, and the time under it. Null without a date.
+ */
+export function eventHeadline(
+  event: SuggestedEvent,
+  lang: Lang,
+  words: HeadlineWords,
+): { date: string; time: string } | null {
+  if (!event.currentDate) return null;
+  const { start, end } = event.currentDate;
+  switch (event.settings.kind) {
+    case "vacation":
+      return { date: formatLongSpan(start, end, lang), time: words.days(event.settings.days) };
+    case "trip":
+      return { date: formatLongSpan(start, end, lang), time: words.tripTimes(formatTime(start), formatTime(end)) };
+    default:
+      return { date: formatLongDate(start, lang), time: words.timeRange(formatTime(start), formatTime(end)) };
+  }
+}
 
 export interface EventSections {
   /** Pending, and you haven't answered the current date yet. */

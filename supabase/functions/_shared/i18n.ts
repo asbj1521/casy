@@ -57,6 +57,8 @@ export const DANISH: Record<string, string> = {
     "En anden svarede først, og datoen er ændret. Se den nye.",
   "Only the person who suggested this event can cancel it.":
     "Kun den, der foreslog aftalen, kan aflyse den.",
+  "You suggested this event, so cancel it instead.": "Du foreslog aftalen, så aflys den i stedet.",
+  "That event is no longer going ahead.": "Aftalen bliver ikke til noget længere.",
   "This group already has 20 events waiting for answers.":
     "Gruppen har allerede 20 aftaler, der venter på svar.",
   "Only upcoming events everyone has accepted can be added.":

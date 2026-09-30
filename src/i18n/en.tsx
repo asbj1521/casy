@@ -424,7 +424,8 @@ export const en: Messages = {
     waitingForOthers: "Waiting for others",
     waitingFor: (names: string) => `Waiting for ${names}`,
     scheduled: "Scheduled",
-    everyoneIn: "Everyone is in.",
+    acceptedByAll: "Accepted by everyone",
+    showMembers: (name: string) => `Show members of ${name}`,
     pastClosed: "Past and closed",
     noDate:
       "No date in the next year works for everyone any more. Suggest it again from the scheduling page.",
@@ -432,6 +433,10 @@ export const en: Messages = {
     passed: (date: string) => `The date passed before everyone answered: ${date}.`,
     cancelConfirm: "Cancel this event for everyone?",
     cancelEvent: "Cancel event",
+    leaveConfirm:
+      "Leave this event? It goes ahead without you, and Casy takes it out of your calendar if Casy put it there.",
+    leaveEvent: "Leave event",
+    stayIn: "Stay in",
     you: "You",
     youSuggested: "You suggested this",
     suggestedBy: (name: string) => `Suggested by ${name}`,
@@ -657,6 +662,7 @@ export const en: Messages = {
     loadEvents: "Couldn't load your events",
     suggestEvent: "Couldn't suggest the event",
     cancelEvent: "Couldn't cancel the event",
+    leaveEvent: "Couldn't leave the event",
     acceptEvent: "Couldn't accept the event",
     declineEvent: "Couldn't decline the event",
     noDateToAccept: "This event has no date to accept.",

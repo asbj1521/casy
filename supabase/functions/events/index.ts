@@ -1,6 +1,7 @@
 /**
  * Suggested events: suggest a date to your group, answer one suggested to
- * you, cancel one you suggested, and list everything you're part of.
+ * you, cancel one you suggested, leave one someone else suggested, and list
+ * everything you're part of.
  *
  * One function with an `action` in the POST body, the same shape as `groups`.
  * Identity always comes from the caller's verified login (_shared/auth.ts);
@@ -394,6 +395,29 @@ Deno.serve(withLanguage(async (req) => {
         // Out of every calendar Casy put it in.
         await unwantEverywhere(db, proposalId);
         syncCalendarsLater(db, { proposalId }, { queue: false });
+        return json({ events: await listEvents(db, profileId, callerName) });
+      }
+
+      case "leave": {
+        const proposalId = payload.proposalId;
+        if (typeof proposalId !== "string") return json({ error: "proposalId is required" }, 400);
+        const { data: outcome, error } = await db.rpc("leave_event", {
+          p_proposal_id: proposalId,
+          p_profile_id: profileId,
+        });
+        if (error) throw error;
+        if (outcome === "not_found") return json({ error: "That event no longer exists." }, 404);
+        if (outcome === "creator") {
+          return json({ error: "You suggested this event, so cancel it instead." }, 403);
+        }
+        if (outcome === "closed") return json({ error: "That event is no longer going ahead." }, 409);
+        // Already gone (a second click): the list without it is the answer.
+        if (outcome === "not_invited") return json({ events: await listEvents(db, profileId, callerName) });
+
+        // Out of the leaver's own calendar; if leaving scheduled it, in go
+        // everyone else's automatic adds.
+        await unwantEverywhere(db, proposalId, profileId);
+        syncCalendarsLater(db, { proposalId }, { queue: outcome === "left_scheduled" });
         return json({ events: await listEvents(db, profileId, callerName) });
       }
 

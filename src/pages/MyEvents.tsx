@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarCheck,
   CalendarX,
   Check,
+  ChevronDown,
   Clock,
   Loader2,
   Sparkles,
+  Users,
   X,
   XCircle,
 } from "lucide-react";
@@ -18,9 +20,11 @@ import {
   declineEvent,
   eventsQuery,
   eventsQueryKey,
+  leaveEvent,
   type EventInvitee,
   type SuggestedEvent,
 } from "@/api/events";
+import { groupsQuery } from "@/api/groups";
 import AddToCalendar from "@/components/AddToCalendar";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
@@ -28,7 +32,7 @@ import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT, type Lang } from "@/i18n/lang";
 import { avatarColor } from "@/lib/avatar";
 import { formatDaySpan, formatSlot, formatTripSpan } from "@/lib/format";
-import { eventDateLabel, nameList, sectionEvents, waitingOn } from "@/lib/myEvents";
+import { eventDateLabel, eventHeadline, nameList, sectionEvents, waitingOn } from "@/lib/myEvents";
 import { cn } from "@/lib/utils";
 
 /** A declined date, in the same words its event kind uses elsewhere. */
@@ -79,17 +83,90 @@ function People({ invitees }: { invitees: EventInvitee[] }) {
   );
 }
 
+/**
+ * The group's name as a button that opens a floating box with its members.
+ * The box closes when the pointer leaves it (or the name), and on a tap
+ * outside or Escape, since a touch screen has no pointer to move away.
+ * Members come from your cached groups; a group you've since left falls back
+ * to the people invited to this event.
+ */
+function GroupName({ event }: { event: SuggestedEvent }) {
+  const t = useT();
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const { data: groups } = useQuery(groupsQuery(user?.id ?? ""));
+  const group = groups?.find((g) => g.id === event.group.id);
+  const members = (group?.members ?? event.invitees).map((m) => (m.isYou ? t.events.you : m.name));
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative z-10" onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-label={t.events.showMembers(event.group.name)}
+        className="-mx-1.5 flex max-w-full items-center gap-1.5 rounded-lg px-1.5 text-left text-sm font-semibold text-emerald-800 transition hover:bg-emerald-200/60"
+      >
+        <Users className="h-4 w-4 shrink-0" />
+        <span className="min-w-0 break-words">{event.group.name}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        // Padded rather than spaced from the name, so the pointer never
+        // crosses a gap (and leaves) on its way into the box.
+        <div className="absolute left-0 top-full z-20 pt-1">
+          <ul className="flex w-56 max-w-[70vw] flex-col gap-1 rounded-xl border bg-card p-2 shadow-lg">
+            {members.map((name, i) => (
+              <li
+                key={`${name}-${i}`}
+                className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-sm text-foreground"
+              >
+                <span
+                  className={cn(
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+                    avatarColor(i),
+                  )}
+                >
+                  {name.trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="truncate">{name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Where the event came from: who suggested it, and why the date changed if it did. */
-function Origin({ event }: { event: SuggestedEvent }) {
+function Origin({ event, inline = false }: { event: SuggestedEvent; inline?: boolean }) {
   const { lang } = useLang();
   const t = useT();
   const last = event.declinedDates[event.declinedDates.length - 1];
+  const Tag = inline ? "span" : "p";
   return (
-    <p className="text-sm text-muted-foreground">
+    <Tag className="text-sm text-muted-foreground">
       {event.createdBy.isYou ? t.events.youSuggested : t.events.suggestedBy(event.createdBy.name)}
       {last && t.events.newDateBecause(last.declinedBy, pastDateLabel(event, last, lang))}
       .
-    </p>
+    </Tag>
   );
 }
 
@@ -101,10 +178,11 @@ export default function MyEvents() {
   const queryClient = useQueryClient();
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
 
-  // Which card has its decline or cancel confirmation open.
-  const [confirming, setConfirming] = useState<{ id: string; kind: "decline" | "cancel" } | null>(
-    null,
-  );
+  // Which card has its decline, cancel or leave confirmation open.
+  const [confirming, setConfirming] = useState<{
+    id: string;
+    kind: "decline" | "cancel" | "leave";
+  } | null>(null);
 
   const onChanged = (data: { events: SuggestedEvent[] }) => {
     queryClient.setQueryData(eventsQueryKey(userId), data.events);
@@ -121,23 +199,34 @@ export default function MyEvents() {
     onError: onFailed,
   });
   const cancel = useMutation({ mutationFn: cancelEvent, onSuccess: onChanged, onError: onFailed });
+  const leave = useMutation({ mutationFn: leaveEvent, onSuccess: onChanged, onError: onFailed });
 
   const busyId =
     (accept.isPending && accept.variables?.id) ||
     (decline.isPending && decline.variables?.id) ||
     (cancel.isPending && cancel.variables) ||
+    (leave.isPending && leave.variables) ||
     null;
   const errorFor = (id: string): string | null => {
     for (const m of [accept, decline]) {
       if (m.isError && m.variables?.id === id) return m.error.message;
     }
-    if (cancel.isError && cancel.variables === id) return cancel.error.message;
+    for (const m of [cancel, leave]) {
+      if (m.isError && m.variables === id) return m.error.message;
+    }
     return null;
   };
   const resetErrors = () => {
     accept.reset();
     decline.reset();
     cancel.reset();
+    leave.reset();
+  };
+
+  const headlineWords = {
+    timeRange: t.scheduler.timeRange,
+    tripTimes: t.scheduler.tripTimes,
+    days: t.common.days,
   };
 
   const sections = events ? sectionEvents(events) : null;
@@ -145,28 +234,37 @@ export default function MyEvents() {
   // nothing left to show, not an empty list from the server.
   const nothingToShow = !!sections && Object.values(sections).every((list) => list.length === 0);
 
-  function cancelControl(event: SuggestedEvent) {
-    if (!event.createdBy.isYou) return null;
-    if (confirming?.id === event.id && confirming.kind === "cancel") {
+  // The way out of an event: whoever suggested it cancels it for everyone,
+  // anyone else leaves it and it goes ahead without them. `inline` is the
+  // link alone, set in a row with other buttons; its confirmation then comes
+  // from a separate exitConfirm() below the row.
+  const exiting = (event: SuggestedEvent) =>
+    confirming?.id === event.id && confirming.kind === (event.createdBy.isYou ? "cancel" : "leave");
+  function exitControl(event: SuggestedEvent, inline = false) {
+    const isCancel = event.createdBy.isYou;
+    const kind = isCancel ? "cancel" : "leave";
+    const label = isCancel ? t.events.cancelEvent : t.events.leaveEvent;
+    if (exiting(event)) {
+      if (inline) return null;
       return (
         <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          {t.events.cancelConfirm}
+          {isCancel ? t.events.cancelConfirm : t.events.leaveConfirm}
           <div className="mt-2 flex items-center gap-3">
             <button
               type="button"
-              onClick={() => cancel.mutate(event.id)}
+              onClick={() => (isCancel ? cancel : leave).mutate(event.id)}
               disabled={busyId === event.id}
               className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
             >
               {busyId === event.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {t.events.cancelEvent}
+              {label}
             </button>
             <button
               type="button"
               onClick={() => setConfirming(null)}
               className="text-red-900/80 transition hover:text-red-900"
             >
-              {t.events.keepIt}
+              {isCancel ? t.events.keepIt : t.events.stayIn}
             </button>
           </div>
         </div>
@@ -177,11 +275,14 @@ export default function MyEvents() {
         type="button"
         onClick={() => {
           resetErrors();
-          setConfirming({ id: event.id, kind: "cancel" });
+          setConfirming({ id: event.id, kind });
         }}
-        className="mt-3 text-sm font-medium text-muted-foreground transition hover:text-red-700"
+        className={cn(
+          "text-sm font-medium text-muted-foreground transition hover:text-red-700",
+          inline ? "shrink-0" : "mt-3",
+        )}
       >
-        {t.events.cancelEvent}
+        {label}
       </button>
     );
   }
@@ -309,7 +410,7 @@ export default function MyEvents() {
                             {error}
                           </p>
                         )}
-                        {cancelControl(event)}
+                        {exitControl(event)}
                       </li>
                     );
                   })}
@@ -343,7 +444,7 @@ export default function MyEvents() {
                           <People invitees={event.invitees} />
                         </div>
                         {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
-                        {cancelControl(event)}
+                        {exitControl(event)}
                       </li>
                     );
                   })}
@@ -355,33 +456,70 @@ export default function MyEvents() {
             {sections.scheduled.length > 0 && (
               <section className="mt-8">
                 <h2 className="text-lg font-semibold text-foreground">{t.events.scheduled}</h2>
-                <ul className="mt-3 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                  {sections.scheduled.map((event) => (
-                    <li
-                      key={event.id}
-                      className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-5"
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
-                          <CalendarCheck className="h-5 w-5" />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
-                            {event.group.name} · {eventTitle(event.title, t)}
-                          </p>
-                          <p className="mt-0.5 text-lg font-bold text-foreground">
-                            {eventDateLabel(event, lang)}
-                          </p>
-                          <p className="text-sm text-emerald-800">{t.events.everyoneIn}</p>
+                {/* Two halves need the width: at most two cards side by side. */}
+                <ul className="mt-3 grid gap-3 xl:grid-cols-2">
+                  {sections.scheduled.map((event) => {
+                    const headline = eventHeadline(event, lang, headlineWords);
+                    const pending = event.invitees.filter((i) => i.response !== "accepted");
+                    return (
+                      // One grid for both halves, so each row lines up across them:
+                      //   group name   | title             who suggested it
+                      //   big date     | accepted by all
+                      //   time         | calendar          cancel / leave
+                      // In the markup the cells go row by row; on phones (one
+                      // column) `order` puts the left half first instead.
+                      <li
+                        key={event.id}
+                        className="relative grid gap-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 py-4 sm:grid-cols-2 sm:items-baseline sm:gap-y-1.5 sm:py-5"
+                      >
+                        {/* The left half's tint, drawn behind its cells. */}
+                        <div
+                          aria-hidden
+                          className="absolute inset-y-0 left-0 hidden w-1/2 rounded-l-2xl border-r border-emerald-200 bg-emerald-100/60 sm:block"
+                        />
+                        <div className="relative order-1 min-w-0 px-4 sm:order-none sm:px-5">
+                          <GroupName event={event} />
                         </div>
-                      </div>
-                      <div className="mt-3">
-                        <People invitees={event.invitees} />
-                      </div>
-                      <AddToCalendar event={event} />
-                      {cancelControl(event)}
-                    </li>
-                  ))}
+                        <div className="relative order-4 mt-3 flex min-w-0 items-baseline justify-between gap-3 px-4 sm:order-none sm:mt-0 sm:px-5">
+                          <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-emerald-800">
+                            <CalendarCheck className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{eventTitle(event.title, t)}</span>
+                          </p>
+                          {/* Who suggested it: the one person who can cancel it. */}
+                          <p className="shrink-0 text-sm text-muted-foreground">
+                            {event.createdBy.isYou
+                              ? t.events.youSuggested
+                              : t.events.suggestedBy(event.createdBy.name)}
+                          </p>
+                        </div>
+                        <p className="relative order-2 px-4 text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:order-none sm:px-5">
+                          {headline?.date ?? eventDateLabel(event, lang)}
+                        </p>
+                        {/* Only who still hasn't said yes; normally nobody. */}
+                        <div className="relative order-5 min-w-0 px-4 sm:order-none sm:px-5">
+                          {pending.length > 0 ? (
+                            <People invitees={pending} />
+                          ) : (
+                            <p className="text-xl font-bold text-foreground">{t.events.acceptedByAll}</p>
+                          )}
+                        </div>
+                        <p className="relative order-3 px-4 text-lg text-foreground sm:order-none sm:px-5">
+                          {headline?.time}
+                        </p>
+                        <div className="relative order-6 flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-2 px-4 sm:order-none sm:px-5">
+                          <div className="min-w-0 flex-1">
+                            <AddToCalendar event={event} />
+                          </div>
+                          {exitControl(event, true)}
+                        </div>
+                        {exiting(event) && (
+                          <div className="relative order-7 px-4 sm:order-none sm:col-start-2 sm:px-5">
+                            {exitControl(event)}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             )}
