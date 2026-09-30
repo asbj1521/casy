@@ -26,6 +26,8 @@ interface SourceRow {
   purpose: string | null;
   priority: string;
   included: boolean;
+  /** Every block stored for it (the embedded count below). */
+  calendar_busy_cache: { count: number }[];
   calendar_connections: {
     id: string;
     provider: string;
@@ -108,7 +110,7 @@ Deno.serve(withLanguage(async (req) => {
     db
       .from("calendar_sources")
       .select(
-        "id, display_name, custom_name, writable, purpose, priority, included, calendar_connections!inner(id, provider, account_label, status, profile_id)",
+        "id, display_name, custom_name, writable, purpose, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label, status, profile_id)",
       )
       .eq("calendar_connections.profile_id", profileId)
       .eq("calendar_connections.status", "connected"),
@@ -142,6 +144,9 @@ Deno.serve(withLanguage(async (req) => {
       // Unticked calendars still come back, blocks and all: the page lists
       // them unticked, and the scheduling page leaves them out itself.
       included: s.included,
+      // Busy blocks stored for it over the whole synced range (a week back
+      // to a year ahead), whatever range was asked for.
+      total: s.calendar_busy_cache?.[0]?.count ?? 0,
       provider: s.calendar_connections.provider,
       account: s.calendar_connections.account_label,
       connectionId: s.calendar_connections.id,

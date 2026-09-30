@@ -38,6 +38,11 @@ export interface OverviewCalendar {
    * Missing (older function, built-in calendar) means it counts.
    */
   included?: boolean;
+  /**
+   * Busy blocks stored for it over the whole synced range, not just the
+   * month on screen. Missing from a function deployed before it existed.
+   */
+  total?: number;
   /** "builtin" marks a calendar Autodate provides itself, with no account behind it. */
   provider: CalendarProvider | "builtin";
   /** The account it belongs to (an email, or a link's name). */

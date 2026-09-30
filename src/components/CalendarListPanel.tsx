@@ -171,9 +171,16 @@ export default function CalendarListPanel({
           // and clicking it then brings those back.
           const state = groupVisibility(group, hidden);
           const ids = group.calendars.map((c) => c.id);
-          const inView = shown.reduce((sum, c) => sum + (blockCounts.get(c.id) ?? 0), 0);
+          // Unknown (a function deployed before totals existed) shows no number, not 0.
+          const known = shown.filter((c) => blockCounts.has(c.id));
+          const total = known.length > 0 ? known.reduce((sum, c) => sum + blockCounts.get(c.id)!, 0) : null;
           const n = shown.length;
           const brand = words.brands[group.id] ?? group.label;
+          // One account behind the whole group (an iCloud login, say): named
+          // once beside the brand instead of under every calendar.
+          const accounts = new Set(group.calendars.map((c) => c.account));
+          const sharedAccount = accounts.size === 1 ? [...accounts][0] : null;
+          const headerNote = group.id === "builtin" ? words.builtInNoAccount : sharedAccount;
 
           return (
             <li key={group.id}>
@@ -191,11 +198,15 @@ export default function CalendarListPanel({
                   className="flex min-w-0 flex-1 items-center gap-2 text-left"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-foreground">
-                      {brand}
+                    <span className="block truncate text-sm text-foreground">
+                      <span className="font-medium">{brand}</span>
+                      {headerNote && (
+                        <span className="text-xs text-muted-foreground"> · {headerNote}</span>
+                      )}
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {t.counts.calendars(n)} · {words.inView(inView)}
+                      {t.counts.calendars(n)}
+                      {total !== null && ` · ${words.total(total)}`}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-0.5">
@@ -228,8 +239,14 @@ export default function CalendarListPanel({
                       const isBuiltIn = c.provider === "builtin";
                       const isHidden = hidden.has(c.id);
                       const saving = savingId === c.id;
+                      // Only what the group header doesn't already say.
+                      const note = isBuiltIn
+                        ? null
+                        : [c.renamed && c.originalName ? words.originally(c.originalName) : null, sharedAccount ? null : c.account]
+                            .filter(Boolean)
+                            .join(" · ");
                       return (
-                        <li key={c.id} className="flex flex-col gap-2 border-t border-dashed py-3 pl-7">
+                        <li key={c.id} className="flex flex-col gap-1.5 border-t border-dashed py-2 pl-7">
                           <div className="flex items-start gap-3">
                             <input
                               type="checkbox"
@@ -294,14 +311,13 @@ export default function CalendarListPanel({
                                   )}
                                 </div>
                               )}
-                              <p className="truncate text-xs text-muted-foreground">
-                                {isBuiltIn
-                                  ? words.builtInNoAccount
-                                  : [c.renamed && c.originalName ? words.originally(c.originalName) : null, c.account]
-                                      .filter(Boolean)
-                                      .join(" · ")}
-                              </p>
+                              {note && <p className="truncate text-xs text-muted-foreground">{note}</p>}
                             </div>
+                            {blockCounts.has(c.id) && (
+                              <span className="mt-0.5 shrink-0 text-xs text-muted-foreground">
+                                {words.total(blockCounts.get(c.id)!)}
+                              </span>
+                            )}
                           </div>
                           <div className="flex flex-wrap items-center gap-2 pl-[2.375rem]">
                             {isBuiltIn ? (
@@ -352,9 +368,6 @@ export default function CalendarListPanel({
                               </select>
                             )}
                             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-                            <span className="text-xs text-muted-foreground">
-                              {words.inView(blockCounts.get(c.id) ?? 0)}
-                            </span>
                             {c.writable && c.id !== primaryId && askingPrimaryId !== c.id && (
                               <button
                                 type="button"

@@ -492,7 +492,7 @@ export const en: Messages = {
       "Only ticked calendars count when Casy finds dates, and show here. Open a group to give each calendar a category and say how much it matters.",
     showAll: (brand: string) => `Count all ${brand} calendars`,
     show: (name: string) => `Count ${name}`,
-    inView: (n: number) => `${n} in this view`,
+    total: (n: number) => `${n} in total`,
     builtInNoAccount: "Built in, no account needed",
     categoryFor: (name: string) => `Category for ${name}`,
     notCounted: (n: number) => `Not counted (${n})`,

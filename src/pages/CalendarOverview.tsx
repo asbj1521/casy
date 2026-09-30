@@ -248,15 +248,19 @@ export default function CalendarOverview() {
     [palette],
   );
   const holidaysByDay = useMemo(() => holidaySegmentsByDay(layout.from, layout.to), [layout]);
+  // Each calendar's total, not just the month on screen. Holidays count over
+  // the year ahead, the same range the connected calendars are synced for.
   const blockCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const b of data?.blocks ?? []) counts.set(b.calendarId, (counts.get(b.calendarId) ?? 0) + 1);
+    for (const c of calendars) if (c.total !== undefined) counts.set(c.id, c.total);
+    const today = new Date();
+    const yearAhead = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
     counts.set(
       HOLIDAY_CALENDAR_ID,
-      [...holidaysByDay.values()].reduce((sum, list) => sum + list.length, 0),
+      [...holidaySegmentsByDay(today, yearAhead).values()].reduce((sum, list) => sum + list.length, 0),
     );
     return counts;
-  }, [data, holidaysByDay]);
+  }, [calendars]);
   const segmentsByDay = useMemo(
     () =>
       withHolidays(
