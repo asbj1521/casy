@@ -7,9 +7,7 @@ import {
   Check,
   ChevronDown,
   Clock,
-  Hourglass,
   Loader2,
-  Moon,
   Sparkles,
   Users,
   X,
@@ -27,34 +25,19 @@ import {
   type SuggestedEvent,
 } from "@/api/events";
 import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
-import { SEARCH_WINDOW } from "@/api/mockData";
-import {
-  backToBackEnds,
-  backToBackNote,
-  earlyMorningNote,
-  earlyMorningStarts,
-} from "@/lib/earlyMorning";
+import { edgeWarnings } from "@/lib/earlyMorning";
 import { APP_TIME_ZONE } from "@/lib/zone";
 import AddToCalendar from "@/components/AddToCalendar";
+import EdgeWarningList from "@/components/EdgeWarningList";
 import TopNav from "@/components/TopNav";
+import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { useSignedInUser } from "@/context/auth";
 import { eventTitle } from "@/i18n/eventTitle";
-import { useLang, useT, type Lang } from "@/i18n/lang";
+import { useLang, useT } from "@/i18n/lang";
 import { avatarColor } from "@/lib/avatar";
-import { formatDaySpan, formatSlot, formatTripSpan } from "@/lib/format";
-import { eventDateLabel, eventHeadline, nameList, sectionEvents, waitingOn } from "@/lib/myEvents";
+import { formatEventDate, formatHeadline, nameList } from "@/lib/format";
+import { sectionEvents, waitingOn } from "@/lib/myEvents";
 import { cn } from "@/lib/utils";
-
-/** A declined date, in the same words its event kind uses elsewhere. */
-function pastDateLabel(
-  event: SuggestedEvent,
-  d: { start: string; end: string },
-  lang: Lang,
-): string {
-  if (event.settings.kind === "vacation") return formatDaySpan(d.start, d.end, lang);
-  if (event.settings.kind === "trip") return formatTripSpan(d.start, d.end, lang);
-  return formatSlot(d.start, d.end, lang);
-}
 
 /** Everyone asked, each with where they stand on the current date. */
 function People({ invitees }: { invitees: EventInvitee[] }) {
@@ -192,35 +175,11 @@ function EdgeWarnings({ event, className }: { event: SuggestedEvent; className?:
   const participants = participantsFromGroup(group, busy).participants.filter((p) =>
     invited.has(p.profileId),
   );
-  const notes = [
-    {
-      icon: Hourglass,
-      text: backToBackNote(
-        backToBackEnds(participants, event.currentDate, APP_TIME_ZONE),
-        userId,
-        lang,
-        t.backToBack,
-      ),
-    },
-    {
-      icon: Moon,
-      text: earlyMorningNote(
-        earlyMorningStarts(participants, event.currentDate, APP_TIME_ZONE),
-        userId,
-        lang,
-        t.earlyMorning,
-      ),
-    },
-  ].filter((n) => n.text);
-  if (notes.length === 0) return null;
+  const warnings = edgeWarnings(participants, event.currentDate, APP_TIME_ZONE, userId, lang, t);
+  if (warnings.length === 0) return null;
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      {notes.map(({ icon: Icon, text }) => (
-        <p key={text} className="flex items-start gap-2 text-sm text-amber-900">
-          <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-          {text}
-        </p>
-      ))}
+      <EdgeWarningList warnings={warnings} />
     </div>
   );
 }
@@ -233,7 +192,9 @@ function Origin({ event }: { event: SuggestedEvent }) {
   return (
     <p className="mt-1 text-sm text-muted-foreground">
       {event.createdBy.isYou ? t.events.youSuggested : t.events.suggestedBy(event.createdBy.name)}
-      {last && t.events.newDateBecause(last.declinedBy, pastDateLabel(event, last, lang))}.
+      {last &&
+        t.events.newDateBecause(last.declinedBy, formatEventDate(event.settings.kind, last, lang))}
+      .
     </p>
   );
 }
@@ -288,12 +249,6 @@ export default function MyEvents() {
     decline.reset();
     cancel.reset();
     leave.reset();
-  };
-
-  const headlineWords = {
-    timeRange: t.scheduler.timeRange,
-    tripTimes: t.scheduler.tripTimes,
-    days: t.common.days,
   };
 
   const sections = events ? sectionEvents(events) : null;
@@ -406,7 +361,7 @@ export default function MyEvents() {
                           {event.group.name} · {eventTitle(event.title, t)}
                         </p>
                         <p className="mt-1 text-xl font-bold text-foreground">
-                          {eventDateLabel(event, lang)}
+                          {formatEventDate(event.settings.kind, event.currentDate, lang)}
                         </p>
                         <Origin event={event} />
                         <div className="mt-3">
@@ -499,7 +454,7 @@ export default function MyEvents() {
                           {event.group.name} · {eventTitle(event.title, t)}
                         </p>
                         <p className="mt-1 text-lg font-bold text-foreground">
-                          {eventDateLabel(event, lang)}
+                          {formatEventDate(event.settings.kind, event.currentDate, lang)}
                         </p>
                         <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-amber-700">
                           <Clock className="h-4 w-4" />
@@ -526,7 +481,7 @@ export default function MyEvents() {
                 {/* Two halves need the width: at most two cards side by side. */}
                 <ul className="mt-3 grid gap-3 xl:grid-cols-2">
                   {sections.scheduled.map((event) => {
-                    const headline = eventHeadline(event, lang, headlineWords);
+                    const headline = formatHeadline(event.settings, event.currentDate, lang, t);
                     const pending = event.invitees.filter((i) => i.response !== "accepted");
                     return (
                       // One grid for both halves, so each row lines up across them:
@@ -560,7 +515,7 @@ export default function MyEvents() {
                           </p>
                         </div>
                         <p className="relative order-2 px-4 text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:order-none sm:px-5">
-                          {headline?.date ?? eventDateLabel(event, lang)}
+                          {headline.lines.join(" ")}
                         </p>
                         {/* Only who still hasn't said yes; normally nobody. */}
                         <div className="relative order-5 min-w-0 px-4 sm:order-none sm:px-5">
@@ -574,7 +529,7 @@ export default function MyEvents() {
                           <EdgeWarnings event={event} className="mt-1.5" />
                         </div>
                         <p className="relative order-3 px-4 text-lg text-foreground sm:order-none sm:px-5">
-                          {headline?.time}
+                          {headline.time}
                         </p>
                         <div className="relative order-6 flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-2 px-4 sm:order-none sm:px-5">
                           <div className="min-w-0 flex-1">
@@ -610,11 +565,11 @@ export default function MyEvents() {
                           {event.group.name} · {eventTitle(event.title, t)}
                         </p>
                         <p className="text-muted-foreground">
-                          {event.status === "no_date"
+                          {event.status === "no_date" || !event.currentDate
                             ? t.events.noDate
-                            : event.status === "scheduled"
-                              ? t.events.happened(eventDateLabel(event, lang))
-                              : t.events.passed(eventDateLabel(event, lang))}
+                            : (event.status === "scheduled" ? t.events.happened : t.events.passed)(
+                                formatEventDate(event.settings.kind, event.currentDate, lang),
+                              )}
                         </p>
                       </div>
                     </li>

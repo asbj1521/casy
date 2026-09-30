@@ -1,65 +1,29 @@
 /**
- * How the My events page sorts and describes suggested events. Pure, so the
- * rules (which section an event belongs in, who it's waiting for) are tested
- * rather than trusted to the page.
+ * How the My events page sorts suggested events. Pure, so the rules (which
+ * section an event belongs in, who it's waiting for) are tested rather than
+ * trusted to the page.
  */
 import type { SuggestedEvent } from "@/api/events";
-import type { Lang } from "@/i18n/locale";
-import {
-  formatDaySpan,
-  formatLongDate,
-  formatLongSpan,
-  formatSlot,
-  formatTime,
-  formatTripSpan,
-} from "@/lib/format";
 
-/** The words eventHeadline needs, from the scheduling page's copy. */
-export interface HeadlineWords {
-  timeRange: (start: string, end: string) => string;
-  tripTimes: (start: string, end: string) => string;
-  days: (n: number) => string;
-}
-
-/**
- * An event's date as the scheduling page shows its answer: the day (or span
- * of days) big, and the time under it. Null without a date.
- */
-export function eventHeadline(
-  event: SuggestedEvent,
-  lang: Lang,
-  words: HeadlineWords,
-): { date: string; time: string } | null {
-  if (!event.currentDate) return null;
-  const { start, end } = event.currentDate;
-  switch (event.settings.kind) {
-    case "vacation":
-      return { date: formatLongSpan(start, end, lang), time: words.days(event.settings.days) };
-    case "trip":
-      return {
-        date: formatLongSpan(start, end, lang),
-        time: words.tripTimes(formatTime(start), formatTime(end)),
-      };
-    default:
-      return {
-        date: formatLongDate(start, lang),
-        time: words.timeRange(formatTime(start), formatTime(end)),
-      };
-  }
-}
+/** An event with a date on offer, or, once scheduled, the date it's on. */
+export type DatedEvent = SuggestedEvent & {
+  currentDate: NonNullable<SuggestedEvent["currentDate"]>;
+};
 
 export interface EventSections {
   /** Pending, and you haven't answered the current date yet. */
-  needsAnswer: SuggestedEvent[];
+  needsAnswer: DatedEvent[];
   /** Pending, you've said yes, others haven't answered. */
-  waiting: SuggestedEvent[];
+  waiting: DatedEvent[];
   /** Everyone accepted, and the date hasn't passed. */
-  scheduled: SuggestedEvent[];
+  scheduled: DatedEvent[];
   /** Past, or no date left. Cancelled events aren't kept anywhere. */
   closed: SuggestedEvent[];
 }
 
-const startOf = (e: SuggestedEvent) => (e.currentDate ? Date.parse(e.currentDate.start) : Infinity);
+const hasDate = (e: SuggestedEvent): e is DatedEvent => e.currentDate !== null;
+const bySoonest = (a: DatedEvent, b: DatedEvent) =>
+  Date.parse(a.currentDate.start) - Date.parse(b.currentDate.start);
 
 export function sectionEvents(events: SuggestedEvent[], now = Date.now()): EventSections {
   const sections: EventSections = { needsAnswer: [], waiting: [], scheduled: [], closed: [] };
@@ -67,18 +31,16 @@ export function sectionEvents(events: SuggestedEvent[], now = Date.now()): Event
     // A cancelled event has nothing left to act on or learn from, so it's
     // dropped rather than filed away to look at later.
     if (e.status === "cancelled") continue;
-    const over = e.currentDate !== null && Date.parse(e.currentDate.end) <= now;
-    if (e.status === "scheduled" && !over) sections.scheduled.push(e);
-    else if (e.status === "pending" && !over) {
-      const you = e.invitees.find((i) => i.isYou);
-      if (you && you.response === null) sections.needsAnswer.push(e);
-      else sections.waiting.push(e);
-    } else sections.closed.push(e);
+    if (!hasDate(e) || Date.parse(e.currentDate.end) <= now) sections.closed.push(e);
+    else if (e.status === "scheduled") sections.scheduled.push(e);
+    else if (e.status !== "pending") sections.closed.push(e);
+    else if (e.invitees.some((i) => i.isYou && i.response === null)) sections.needsAnswer.push(e);
+    else sections.waiting.push(e);
   }
   // Soonest first where there's a date to act on; most recent first for the rest.
-  sections.needsAnswer.sort((a, b) => startOf(a) - startOf(b));
-  sections.waiting.sort((a, b) => startOf(a) - startOf(b));
-  sections.scheduled.sort((a, b) => startOf(a) - startOf(b));
+  sections.needsAnswer.sort(bySoonest);
+  sections.waiting.sort(bySoonest);
+  sections.scheduled.sort(bySoonest);
   sections.closed.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   return sections;
 }
@@ -86,31 +48,4 @@ export function sectionEvents(events: SuggestedEvent[], now = Date.now()): Event
 /** The people who haven't answered the current date yet (never you). */
 export function waitingOn(event: SuggestedEvent): string[] {
   return event.invitees.filter((i) => !i.isYou && i.response === null).map((i) => i.name);
-}
-
-/** The event's date in the same words the scheduling page uses for its kind. */
-export function eventDateLabel(event: SuggestedEvent, lang: Lang): string {
-  if (!event.currentDate) return lang === "da" ? "Ingen dato" : "No date";
-  const { start, end } = event.currentDate;
-  switch (event.settings.kind) {
-    case "vacation":
-      return formatDaySpan(start, end, lang);
-    case "trip":
-      return formatTripSpan(start, end, lang);
-    default:
-      return formatSlot(start, end, lang);
-  }
-}
-
-const AND: Record<Lang, string> = { da: "og", en: "and" };
-const MORE: Record<Lang, (n: number) => string> = {
-  da: (n) => `${n} andre`,
-  en: (n) => `${n} more`,
-};
-
-/** "Emilie", "Emilie and Tessa", or "Emilie, Tessa and 2 more". */
-export function nameList(names: string[], lang: Lang): string {
-  if (names.length <= 1) return names[0] ?? "";
-  if (names.length === 2) return `${names[0]} ${AND[lang]} ${names[1]}`;
-  return `${names.slice(0, 2).join(", ")} ${AND[lang]} ${MORE[lang](names.length - 2)}`;
 }

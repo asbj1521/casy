@@ -142,3 +142,12 @@ export function startOfMonth(ms: number, timeZone: string, n = 0): number {
   const d = localDate(ms, timeZone);
   return wallTime(d.year, d.month + n, 1, 0, timeZone);
 }
+
+/**
+ * The day containing an instant, named by its local midnight as an ISO
+ * string, so "is this the answer's day?" and "is this today?" are plain
+ * string comparisons that the page and the engine agree on.
+ */
+export function dayOf(iso: string, timeZone: string): string {
+  return new Date(startOfDay(Date.parse(iso), timeZone)).toISOString();
+}

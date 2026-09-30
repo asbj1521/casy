@@ -1,12 +1,10 @@
 import { createContext, useContext } from "react";
 
-import { da, type Messages } from "@/i18n/da";
-import { en } from "@/i18n/en";
+import { MESSAGES } from "@/i18n/current";
+import type { Messages } from "@/i18n/da";
 import { LOCALE, type Lang } from "@/i18n/locale";
 
 export { LOCALE, type Lang };
-
-export const MESSAGES: Record<Lang, Messages> = { da, en };
 
 export const LANG_STORAGE_KEY = "casy-lang";
 

@@ -479,7 +479,6 @@ export const en: Messages = {
     nothingBusy: "Nothing busy on this day in the calendars shown.",
     couldntSaveCategory: "Couldn't save the category",
     couldntSaveIncluded: "Couldn't save whether the calendar counts",
-    couldntLoad: "Couldn't load your calendars",
     cellLabel: (date: string, busy: number, holidays: string) =>
       `${date}, ${busy} busy ${busy === 1 ? "block" : "blocks"}${holidays ? `, ${holidays}` : ""}`,
     allDay: "All day",

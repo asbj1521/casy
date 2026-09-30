@@ -5,6 +5,7 @@ import {
   backToBackNote,
   earlyMorningNote,
   earlyMorningStarts,
+  edgeWarnings,
 } from "@/lib/earlyMorning";
 import type { BusyInterval, Participant } from "@/types";
 
@@ -155,5 +156,37 @@ describe("backToBackEnds", () => {
       "Du og Nicolai har noget lige før.",
     );
     expect(backToBackNote([], "me", "da", words)).toBeNull();
+  });
+});
+
+describe("edgeWarnings", () => {
+  const words = {
+    backToBack: {
+      you: "You",
+      oneYou: "You come straight from something.",
+      one: (who: string) => `${who} comes straight from something.`,
+      many: (list: string) => `${list} come straight from something.`,
+    },
+    earlyMorning: {
+      you: "You",
+      oneYou: (time: string) => `You start at ${time}.`,
+      one: (who: string, time: string) => `${who} starts at ${time}.`,
+      many: (list: string) => `${list} start early.`,
+    },
+  };
+
+  it("gives back to back first, then the early morning after", () => {
+    const me = person("me", [
+      block("2026-10-01T15:00:00.000Z", "2026-10-01T17:00:00.000Z"), // until 19:00
+      block("2026-10-02T06:00:00.000Z", "2026-10-02T07:00:00.000Z"), // 08:00 the day after
+    ]);
+    expect(edgeWarnings([me], LATE, TZ, "me", "en", words)).toEqual([
+      { kind: "backToBack", text: "You come straight from something." },
+      { kind: "earlyMorning", text: "You start at 08:00." },
+    ]);
+  });
+
+  it("is empty when neither applies", () => {
+    expect(edgeWarnings([person("me", [])], LATE, TZ, "me", "en", words)).toEqual([]);
   });
 });

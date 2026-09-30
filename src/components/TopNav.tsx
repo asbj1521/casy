@@ -11,13 +11,14 @@ import {
 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
-import { calendarStatusQuery } from "@/api/calendarStatus";
+import { calendarStatusQuery } from "@/api/calendars";
 import { eventsQuery, needsYourAnswer } from "@/api/events";
 import { groupsQuery } from "@/api/groups";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useAuth } from "@/context/auth";
 import { useT } from "@/i18n/lang";
-import { goWithCard } from "@/lib/cardTransition";
+import { flyOnClick } from "@/lib/cardTransition";
+import { loadPage } from "@/pages/lazyPages";
 import { cn } from "@/lib/utils";
 
 /**
@@ -60,13 +61,12 @@ export default function TopNav() {
    * resting on a link is usually good for about that long, so the page tends
    * to have what it needs by the time it mounts. Hovering without clicking
    * costs one cheap read, and React Query dedupes it against the page's own
-   * request. The import specifier matches the one App.tsx lazy-loads, so this
-   * fetches that exact chunk rather than a second copy.
+   * request.
    */
   const prefetchProfile = () => {
     // Signed out, the link leads to the sign-in page, so there's nothing to warm.
     if (onProfile || !user) return;
-    void import("@/pages/Profile");
+    void loadPage.profile();
     void queryClient.prefetchQuery(calendarStatusQuery(user.id));
     void queryClient.prefetchQuery(groupsQuery(user.id));
     void queryClient.prefetchQuery(adminStatusQuery(user.id));
@@ -74,25 +74,22 @@ export default function TopNav() {
 
   const prefetchEvents = () => {
     if (onEvents || !user) return;
-    void import("@/pages/MyEvents");
+    void loadPage.myEvents();
   };
 
   const prefetchCalendarOverview = () => {
     if (onCalendarOverview || !user) return;
-    void import("@/pages/CalendarOverview");
+    void loadPage.calendarOverview();
   };
 
   // Signed out, the profile tab can only lead to the sign-in page, so it says
   // "Sign in" and is the one sign-in link in the bar.
   const signedOut = !loading && !user;
 
-  const loadSignIn = () => import("@/pages/SignIn");
   // On the landing page, its chart card flies into the sign-in box
   // (cardTransition.ts), as from the landing page's own "Sign in" link.
   const signInFromLanding = (e: MouseEvent) => {
-    if (pathname !== "/" || user) return;
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    if (goWithCard(() => navigate("/sign-in"), loadSignIn)) e.preventDefault();
+    if (pathname === "/" && !user) flyOnClick(e, () => navigate("/sign-in"), loadPage.signIn);
   };
 
   const tabs: Tab[] = [
@@ -131,7 +128,7 @@ export default function TopNav() {
           short: t.nav.signIn,
           icon: LogIn,
           active: pathname === "/sign-in",
-          prefetch: () => void loadSignIn(),
+          prefetch: () => void loadPage.signIn(),
           onClick: signInFromLanding,
         }
       : {

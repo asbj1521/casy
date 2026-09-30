@@ -2,7 +2,7 @@
  * Which calendars can be the primary calendar, as the profile page offers
  * them. Kept out of the component so it can be tested.
  */
-import type { CalendarConnectionStatus } from "@/api/calendarStatus";
+import type { CalendarConnectionStatus } from "@/api/calendars";
 import { calendarSourceName } from "@/lib/accountSummary";
 
 export interface PrimaryOption {

@@ -32,9 +32,16 @@ import { avatarColor } from "@/lib/avatar";
 import { markCalendarOnboardingSeen } from "@/lib/calendarOnboarding";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
 import { supabase } from "@/lib/supabase";
-import { calendarStatusQuery, type CalendarConnectionStatus } from "@/api/calendarStatus";
+import {
+  addCalendarLink,
+  calendarStatusQuery,
+  connectApple,
+  consentScreenUrl,
+  disconnectCalendar,
+  syncMyCalendars,
+  type CalendarConnectionStatus,
+} from "@/api/calendars";
 import { adminStatusQuery } from "@/api/admin";
-import { connectApple } from "@/api/apple";
 import {
   createGroup,
   createInvite,
@@ -48,7 +55,6 @@ import {
   whoAmIQueryKey,
   type Group,
 } from "@/api/groups";
-import { callFunction } from "@/lib/supabaseFunctions";
 import { cn } from "@/lib/utils";
 import { clearWeakPassword } from "@/lib/weakPassword";
 import type { CalendarProvider } from "@/types";
@@ -329,15 +335,9 @@ export default function Profile() {
 
   const handleConnect = async (provider: CalendarProvider) => {
     if (provider === "google" || provider === "outlook") {
-      // Ask for the consent-screen link with our login attached (a plain link
-      // can't carry it), then go there. The server ties the link to us.
       setConnectError(null);
       try {
-        const { url } = await callFunction<{ url: string }>(`oauth-${provider}-start`, {
-          body: {},
-          errorMessage: t.profile.couldntStartConnect,
-        });
-        window.location.assign(url);
+        window.location.assign(await consentScreenUrl(provider));
       } catch (err) {
         setConnectError(err instanceof Error ? err.message : t.profile.couldntStartConnect);
       }
@@ -354,19 +354,12 @@ export default function Profile() {
     setAppleError(null);
   };
 
-  /**
-   * Fetch every connected account's busy times now, instead of waiting for
-   * the hourly run. The scheduling page reads the same data, so its cached
-   * copy is marked stale too.
-   */
+  /** Fetch every connected account's busy times now, not at the next hourly run. */
   const handleSyncNow = async () => {
     setSyncing(true);
     setSyncResult(null);
     try {
-      const { results } = await callFunction<{ results: { ok: boolean }[] }>("calendar-sync", {
-        body: {},
-        errorMessage: t.profile.couldntSync,
-      });
+      const results = await syncMyCalendars(queryClient);
       const failed = results.filter((r) => !r.ok).length;
       setSyncResult(
         results.length === 0
@@ -375,10 +368,6 @@ export default function Profile() {
             ? { ok: true, text: t.profile.syncedAccounts(results.length) }
             : { ok: false, text: t.profile.syncSomeFailed(failed, results.length) },
       );
-      await refetchStatus();
-      void queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
-      // A sync also notices entries deleted from the calendar by hand (My events).
-      void queryClient.invalidateQueries({ queryKey: ["events"] });
     } catch (err) {
       setSyncResult({
         ok: false,
@@ -451,14 +440,10 @@ export default function Profile() {
     setIcsError(null);
     setIcsResult(null);
     try {
-      const body = await callFunction<{ label: string; busyBlocks: number }>("calendar-add-ics", {
-        body: { url, name },
-        errorMessage: t.profile.couldntAddLink,
-      });
+      const body = await addCalendarLink(queryClient, url, name);
       setIcsResult(t.profile.icsAdded(body.label, body.busyBlocks));
       setIcsFormOpen(false);
       setIcsAddedCount((n) => n + 1);
-      await refetchStatus();
     } catch (err) {
       setIcsError(err instanceof Error ? err.message : t.profile.couldntAddLink);
     } finally {
@@ -470,14 +455,8 @@ export default function Profile() {
     setRemovingId(connectionId);
     setRemoveError(null);
     try {
-      await callFunction("calendar-disconnect", {
-        body: { connectionId },
-        errorMessage: t.profile.couldntRemove,
-      });
+      await disconnectCalendar(queryClient, connectionId);
       setConfirmRemoveId(null);
-      // Removing the account that holds the primary calendar clears it too.
-      void queryClient.invalidateQueries({ queryKey: ["primary-calendar"] });
-      await refetchStatus();
     } catch (err) {
       // Leave the confirm panel open so the user can see why and retry.
       setRemoveError({
@@ -496,7 +475,7 @@ export default function Profile() {
     try {
       // Also refreshes the calendar list before returning, so the new account
       // is listed by the time the form closes.
-      const body = await connectApple(queryClient, user.id, username, password);
+      const body = await connectApple(queryClient, username, password);
       setAppleResult(
         t.profile.appleConnected(body.label, body.calendars, body.busyBlocks, body.skippedEvents),
       );

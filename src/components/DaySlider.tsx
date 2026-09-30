@@ -1,5 +1,5 @@
 import { useT } from "@/i18n/lang";
-import { ALL_DOWS } from "@/lib/weekdays";
+import { ALL_DOWS } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
 
 /**

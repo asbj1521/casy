@@ -3,11 +3,17 @@ import { Link } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Info, Loader2, XCircle } from "lucide-react";
 
-import { primaryCalendarQuery, updatePrimaryCalendar } from "@/api/primaryCalendar";
+import {
+  calendarBusyQuery,
+  calendarsChanged,
+  primaryCalendarQuery,
+  updateCalendar,
+  updatePrimaryCalendar,
+  type CalendarChange,
+} from "@/api/calendars";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
 import { useSignedInUser } from "@/context/auth";
-import { currentMessages } from "@/i18n/current";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import {
@@ -25,9 +31,8 @@ import {
   type OverviewCalendar,
   type OverviewData,
 } from "@/lib/calendarOverview";
-import { callFunction } from "@/lib/supabaseFunctions";
+import { readStored, writeStored } from "@/lib/storage";
 import { cn } from "@/lib/utils";
-import type { CalendarPriority, CalendarPurpose } from "@/types";
 
 /** A holiday's name in the page's language. */
 function holidayName(holiday: NonNullable<DaySegment["holiday"]>, lang: Lang): string {
@@ -69,33 +74,6 @@ const MAX_ROWS_PER_CELL = 3;
  */
 const HOLIDAYS_HIDDEN_KEY = "casy-hide-holidays";
 
-function readHolidaysHidden(): boolean {
-  try {
-    return localStorage.getItem(HOLIDAYS_HIDDEN_KEY) === "1";
-  } catch {
-    return false; // storage blocked: holidays simply show
-  }
-}
-
-function writeHolidaysHidden(hidden: boolean) {
-  try {
-    if (hidden) localStorage.setItem(HOLIDAYS_HIDDEN_KEY, "1");
-    else localStorage.removeItem(HOLIDAYS_HIDDEN_KEY);
-  } catch {
-    // Not remembered next time; nothing else depends on it.
-  }
-}
-
-function fetchOverview(from: Date, to: Date): Promise<OverviewData> {
-  return callFunction<OverviewData>("calendar-busy", {
-    params: {
-      from: from.toISOString(),
-      to: to.toISOString(),
-    },
-    errorMessage: currentMessages().calendarView.couldntLoad,
-  });
-}
-
 /**
  * My calendar: the signed-in person's own busy time as a month grid, and the
  * list of their calendars with the settings that decide how each one counts.
@@ -117,7 +95,9 @@ export default function CalendarOverview() {
     return { year: now.getFullYear(), month: now.getMonth() };
   });
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [holidaysHidden, setHolidaysHidden] = useState(readHolidaysHidden);
+  const [holidaysHidden, setHolidaysHidden] = useState(
+    () => readStored(HOLIDAYS_HIDDEN_KEY) === "1",
+  );
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [askingPrimaryId, setAskingPrimaryId] = useState<string | null>(null);
 
@@ -128,46 +108,25 @@ export default function CalendarOverview() {
   const gridDays = useMemo(() => layout.weeks.flat(), [layout]);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["calendar-busy", user.id, dayKey(layout.from)],
-    queryFn: () => fetchOverview(layout.from, layout.to),
+    ...calendarBusyQuery(user.id, layout.from.toISOString(), layout.to.toISOString()),
     placeholderData: keepPreviousData, // no flash of emptiness when changing month
   });
 
-  // One calendar's category or priority; the function takes either.
+  // One calendar's category or priority.
   const setLabels = useMutation({
-    mutationFn: (v: {
-      calendarId: string;
-      purpose?: CalendarPurpose | null;
-      priority?: CalendarPriority;
-    }) =>
-      callFunction("calendar-set-purpose", {
-        body: v,
-        errorMessage:
-          v.priority !== undefined
-            ? t.calendarView.couldntSavePriority
-            : t.calendarView.couldntSaveCategory,
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
-      void queryClient.invalidateQueries({ queryKey: ["calendar-status"] });
-      // Your groups' searches read both from the groups function.
-      void queryClient.invalidateQueries({ queryKey: ["group-busy"] });
-    },
+    mutationFn: ({ calendarId, change }: { calendarId: string; change: CalendarChange }) =>
+      updateCalendar(calendarId, change),
+    onSuccess: () => calendarsChanged(queryClient),
   });
 
   // A calendar's own name, or null to go back to the provider's. The editor
   // stays open until the new name is saved, so a failure shows beside it.
   const rename = useMutation({
-    mutationFn: (v: { calendarId: string; name: string | null }) =>
-      callFunction("calendar-set-purpose", {
-        body: v,
-        errorMessage: t.calendarView.couldntSaveName,
-      }),
+    mutationFn: ({ calendarId, name }: { calendarId: string; name: string | null }) =>
+      updateCalendar(calendarId, { name }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
+      await calendarsChanged(queryClient);
       setRenamingId(null);
-      // The profile page lists the names too.
-      void queryClient.invalidateQueries({ queryKey: ["calendar-status"] });
     },
   });
 
@@ -182,15 +141,8 @@ export default function CalendarOverview() {
   // server. The tick moves at once (the cached answer is patched before the
   // call) and moves back if saving fails.
   const setIncluded = useMutation({
-    mutationFn: async (v: { ids: string[]; included: boolean }) => {
-      await Promise.all(
-        v.ids.map((calendarId) =>
-          callFunction("calendar-set-purpose", {
-            body: { calendarId, included: v.included },
-            errorMessage: t.calendarView.couldntSaveIncluded,
-          }),
-        ),
-      );
+    mutationFn: async ({ ids, included }: { ids: string[]; included: boolean }) => {
+      await Promise.all(ids.map((calendarId) => updateCalendar(calendarId, { included })));
     },
     onMutate: async ({ ids, included }) => {
       // Both this page and the scheduling page's copy of your calendars.
@@ -211,10 +163,7 @@ export default function CalendarOverview() {
       for (const [queryKey, old] of context?.previous ?? [])
         queryClient.setQueryData(queryKey, old);
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ["calendar-busy"] });
-      void queryClient.invalidateQueries({ queryKey: ["group-busy"] });
-    },
+    onSettled: () => calendarsChanged(queryClient),
   });
 
   const calendars = useMemo(() => data?.calendars ?? [], [data]);
@@ -295,7 +244,7 @@ export default function CalendarOverview() {
   const setCalendarsVisible = (ids: string[], visible: boolean) => {
     if (ids.includes(HOLIDAY_CALENDAR_ID)) {
       setHolidaysHidden(!visible);
-      writeHolidaysHidden(!visible);
+      writeStored(HOLIDAYS_HIDDEN_KEY, visible ? null : "1");
     }
     const connected = ids.filter((id) => id !== HOLIDAY_CALENDAR_ID);
     if (connected.length > 0) setIncluded.mutate({ ids: connected, included: visible });
@@ -553,11 +502,15 @@ export default function CalendarOverview() {
               hidden={hidden}
               blockCounts={blockCounts}
               colorOf={colorOf}
-              savingId={setLabels.isPending ? (setLabels.variables?.calendarId ?? null) : null}
+              savingId={setLabels.isPending ? setLabels.variables.calendarId : null}
               saveError={(setLabels.error ?? setIncluded.error)?.message ?? null}
               onSetVisible={setCalendarsVisible}
-              onSetPurpose={(calendarId, purpose) => setLabels.mutate({ calendarId, purpose })}
-              onSetPriority={(calendarId, priority) => setLabels.mutate({ calendarId, priority })}
+              onSetPurpose={(calendarId, purpose) =>
+                setLabels.mutate({ calendarId, change: { purpose } })
+              }
+              onSetPriority={(calendarId, priority) =>
+                setLabels.mutate({ calendarId, change: { priority } })
+              }
               renamingId={renamingId}
               renameSubmitting={rename.isPending}
               renameError={rename.error?.message ?? null}

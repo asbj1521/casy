@@ -498,7 +498,6 @@ export const da = {
     nothingBusy: "Intet optaget denne dag i de viste kalendere.",
     couldntSaveCategory: "Kunne ikke gemme kategorien",
     couldntSaveIncluded: "Kunne ikke gemme, om kalenderen tæller med",
-    couldntLoad: "Kunne ikke hente dine kalendere",
     cellLabel: (date: string, busy: number, holidays: string) =>
       `${date}, ${busy === 1 ? "1 optaget tidsrum" : `${busy} optagede tidsrum`}${holidays ? `, ${holidays}` : ""}`,
     allDay: "Hele dagen",

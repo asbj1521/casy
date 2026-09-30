@@ -7,7 +7,6 @@
 import type { Messages } from "@/i18n/da";
 import type { MultiDayResult } from "@/lib/availability";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
-import { ALL_DOWS } from "@/lib/weekdays";
 import { addDays } from "@/lib/zone";
 import type { Participant } from "@/types";
 
@@ -24,6 +23,13 @@ export const TRIP_END_HOUR = 21;
 export const MAX_TRIP_DAYS = 7;
 /** A trip or holiday on any days: 1 to 30 days. */
 export const MAX_SPAN_DAYS = 30;
+
+/**
+ * Every day of the week in display order, Monday first, as local day-of-week
+ * values (0 = Sunday ... 6 = Saturday), as the engine's `allowedDays` and
+ * `WeeklySpanShape.anchorDow` take them.
+ */
+export const ALL_DOWS = [1, 2, 3, 4, 5, 6, 0];
 
 /** Everything the settings bar holds, in both modes. */
 export interface SchedulerSettings {

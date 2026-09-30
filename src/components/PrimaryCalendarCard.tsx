@@ -2,8 +2,11 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Star } from "lucide-react";
 
-import type { CalendarConnectionStatus } from "@/api/calendarStatus";
-import { primaryCalendarQuery, updatePrimaryCalendar } from "@/api/primaryCalendar";
+import {
+  primaryCalendarQuery,
+  updatePrimaryCalendar,
+  type CalendarConnectionStatus,
+} from "@/api/calendars";
 import PrimaryCalendarConfirm from "@/components/PrimaryCalendarConfirm";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";

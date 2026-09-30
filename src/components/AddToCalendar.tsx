@@ -2,14 +2,13 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CalendarPlus, Check, Download, Loader2, XCircle } from "lucide-react";
 
-import { calendarStatusQuery } from "@/api/calendarStatus";
+import { calendarStatusQuery, primaryCalendarQuery, updatePrimaryCalendar } from "@/api/calendars";
 import {
   addToMyCalendar,
   eventCalendarFile,
   eventsQueryKey,
   type SuggestedEvent,
 } from "@/api/events";
-import { primaryCalendarQuery, updatePrimaryCalendar } from "@/api/primaryCalendar";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";

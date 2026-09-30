@@ -4,7 +4,11 @@
  * reads "18:00" wherever the page happens to be opened.
  */
 import { LOCALE, type Lang } from "@/i18n/locale";
+import type { EventSettings } from "@/lib/eventSearch";
 import { APP_TIME_ZONE } from "@/lib/zone";
+
+/** A date that was found or suggested: an instant range, ISO UTC. */
+type DateRange = { start: string; end: string };
 
 const DATE_FMT: Intl.DateTimeFormatOptions = {
   weekday: "short",
@@ -24,6 +28,11 @@ const TIME_FMT: Intl.DateTimeFormatOptions = {
 };
 
 const TO: Record<Lang, string> = { da: "til", en: "to" };
+
+/** "juni 2026" -> "Juni 2026": Danish writes months and weekdays in lower case. */
+export function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 /** "Tue 23 Jun", or "tirs. 23. jun." in Danish. */
 export function formatDate(iso: string, lang: Lang): string {
@@ -64,9 +73,9 @@ export function formatLongDate(iso: string, lang: Lang): string {
     month: "long",
     timeZone: APP_TIME_ZONE,
   });
-  // Danish writes weekdays in lower case; this one starts a headline. English
-  // Intl puts a comma after the weekday, which a headline does without.
-  return (text.charAt(0).toUpperCase() + text.slice(1)).replace(",", "");
+  // This one starts a headline. English Intl puts a comma after the weekday,
+  // which a headline does without.
+  return capitalize(text).replace(",", "");
 }
 
 /**
@@ -101,4 +110,72 @@ export function formatMonthYear(iso: string, lang: Lang): string {
     year: "numeric",
     timeZone: APP_TIME_ZONE,
   });
+}
+
+/**
+ * A date as one line, in the words its kind uses: "Tue 23 Jun · 16:00-17:00"
+ * for a meeting, a trip's days and times, a holiday's days.
+ */
+export function formatEventDate(kind: EventSettings["kind"], date: DateRange, lang: Lang): string {
+  switch (kind) {
+    case "vacation":
+      return formatDaySpan(date.start, date.end, lang);
+    case "trip":
+      return formatTripSpan(date.start, date.end, lang);
+    default:
+      return formatSlot(date.start, date.end, lang);
+  }
+}
+
+/** The words a headline needs, in the shape of the page's copy: pass `t`. */
+export interface HeadlineWords {
+  scheduler: {
+    timeRange: (start: string, end: string) => string;
+    tripTimes: (start: string, end: string) => string;
+  };
+  common: { days: (n: number) => string };
+}
+
+/**
+ * A date as the scheduling page's big answer shows it: the day, or a span's
+ * two ends on a line each, over its times (or a holiday's length). My events
+ * shows a scheduled event the same way.
+ */
+export function formatHeadline(
+  settings: EventSettings,
+  date: DateRange,
+  lang: Lang,
+  words: HeadlineWords,
+): { lines: string[]; time: string } {
+  const { start, end } = date;
+  switch (settings.kind) {
+    case "vacation":
+      return {
+        lines: formatLongSpanLines(start, end, lang),
+        time: words.common.days(settings.days),
+      };
+    case "trip":
+      return {
+        lines: formatLongSpanLines(start, end, lang),
+        time: words.scheduler.tripTimes(formatTime(start), formatTime(end)),
+      };
+    case "single":
+      return {
+        lines: [formatLongDate(start, lang)],
+        time: words.scheduler.timeRange(formatTime(start), formatTime(end)),
+      };
+  }
+}
+
+const AND: Record<Lang, string> = { da: "og", en: "and" };
+const MORE: Record<Lang, (n: number) => string> = {
+  da: (n) => `${n} andre`,
+  en: (n) => `${n} more`,
+};
+
+/** "Emilie", "Emilie and Tessa", or "Emilie, Tessa and 2 more". */
+export function nameList(names: string[], lang: Lang): string {
+  if (names.length <= 1) return names[0] ?? "";
+  if (names.length === 2) return `${names[0]} ${AND[lang]} ${names[1]}`;
+  return `${names.slice(0, 2).join(", ")} ${AND[lang]} ${MORE[lang](names.length - 2)}`;
 }

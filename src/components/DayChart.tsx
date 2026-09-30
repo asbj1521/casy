@@ -9,10 +9,11 @@ import {
   nextChartMotion,
   RISE_FULL,
   type ChartMotion,
+  type ChartView,
 } from "@/lib/barRise";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { cardArrived, cardTransitionRunning, CARD_LANDS_S } from "@/lib/cardTransition";
-import type { DayCell, MonthGrid } from "@/lib/heatmap";
+import type { DayCell, MonthAvailability } from "@/lib/monthAvailability";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,9 +23,9 @@ import { cn } from "@/lib/utils";
  * that only works if someone skips something or takes time off is amber.
  * Days that aren't searched, and days already gone, are flat grey stubs.
  *
- * Built from the same month grid the calendar view used (heatmap.ts), so the
- * numbers are the ones the search is based on. Clicking a day the whole
- * group can make moves the answer there.
+ * Its numbers come from the same settings and rules as the search
+ * (monthAvailability.ts), so the chart shows why the answer is what it is.
+ * Clicking a day the whole group can make moves the answer there.
  *
  * When it first appears, or its data arrives, the bars rise left to right,
  * each count carried up on its bar and each date coming in with it. When the
@@ -39,7 +40,7 @@ import { cn } from "@/lib/utils";
  * jump when the numbers arrive: the bars rise out of it instead.
  */
 export default function DayChart({
-  grid,
+  month,
   bestDays,
   canPrev,
   canNext,
@@ -55,8 +56,8 @@ export default function DayChart({
   loading?: boolean;
   /** When it changes (another group), the chart's contents fade over; the box stays. */
   swapKey?: string;
-  grid: MonthGrid;
-  /** The zone the grid's days are local to, for the weekday letters. */
+  month: MonthAvailability;
+  /** The zone the month's days are local to, for the weekday letters. */
   timeZone: string;
   /** The answer's days (local-midnight ISO), highlighted. */
   bestDays: Set<string>;
@@ -70,21 +71,23 @@ export default function DayChart({
 }) {
   const t = useT();
   const { lang } = useLang();
-  const days = grid.weeks.flat().filter((c) => c.inMonth);
+  const { days, total } = month;
+  /** The whole group can make it outright: a green bar. */
+  const everyoneOn = (c: DayCell) => !c.excluded && !c.isPast && total > 0 && c.freeCount >= total;
 
   // How the chart moves as it changes (nextChartMotion). Kept in state and
   // updated during render (React's pattern for following a changed value), so
   // the render that mounts the new bars already knows why they are new.
   // The month by its first day, not its label, which changes with the language.
-  const month = days[0]?.date ?? "";
-  const [last, setLast] = useState<{
-    swapKey: string;
-    month: string;
-    loading: boolean;
-    motion: ChartMotion;
-  }>({ swapKey, month, loading, motion: { kind: "rise" } });
-  if (swapKey !== last.swapKey || month !== last.month || loading !== last.loading) {
-    const view = { swapKey, month, loading };
+  const monthKey = days[0]?.date ?? "";
+  const [last, setLast] = useState<ChartView & { motion: ChartMotion }>({
+    swapKey,
+    month: monthKey,
+    loading,
+    motion: { kind: "rise" },
+  });
+  if (swapKey !== last.swapKey || monthKey !== last.month || loading !== last.loading) {
+    const view = { swapKey, month: monthKey, loading };
     setLast({ ...view, motion: nextChartMotion(last, view, last.motion) });
   }
   // The rise animates heights, which MotionConfig's reduced-motion setting
@@ -109,13 +112,12 @@ export default function DayChart({
   // dimming fade over the same time (CSS transitions, paced from here).
   const settle = { duration: reduceMotion ? 0 : BAR_SETTLE_SECONDS, ease: "easeOut" as const };
   const fade = { transitionDuration: `${settle.duration}s` };
-  const title = grid.label.charAt(0).toUpperCase() + grid.label.slice(1);
   const bestNumbers = new Set(days.filter((c) => bestDays.has(c.date)).map((c) => c.dayOfMonth));
 
   function describe(c: DayCell) {
     return conditionalKind === "timeOff"
-      ? t.scheduler.cellTitle(c.freeCount, c.total, c.conditionalCount)
-      : t.scheduler.cellTitleSkip(c.freeCount, c.total, c.conditionalCount);
+      ? t.scheduler.cellTitle(c.freeCount, total, c.conditionalCount)
+      : t.scheduler.cellTitleSkip(c.freeCount, total, c.conditionalCount);
   }
 
   return (
@@ -140,10 +142,10 @@ export default function DayChart({
                 {loading ? (
                   // The real title's size, kept blank until the month is known.
                   <span className="animate-pulse rounded-md bg-secondary text-transparent">
-                    {t.scheduler.chartTitle(title)}
+                    {t.scheduler.chartTitle(month.label)}
                   </span>
                 ) : (
-                  t.scheduler.chartTitle(title)
+                  t.scheduler.chartTitle(month.label)
                 )}
               </h2>
               <button
@@ -187,7 +189,7 @@ export default function DayChart({
           <div className="relative mt-3 overflow-hidden sm:mt-5">
             <AnimatePresence mode="popLayout" custom={slide}>
               <motion.div
-                key={month}
+                key={monthKey}
                 custom={slide}
                 variants={SLIDE}
                 initial={slide.on ? "enter" : false}
@@ -206,14 +208,11 @@ export default function DayChart({
                     // Only a day the whole group can make (some by skipping or taking
                     // time off) moves the answer; any other would land on the same one.
                     const pickable =
-                      !loading &&
-                      !dead &&
-                      c.total > 0 &&
-                      c.freeCount + c.conditionalCount >= c.total;
+                      !loading && !dead && total > 0 && c.freeCount + c.conditionalCount >= total;
                     const best = bestDays.has(c.date);
-                    const everyone = !dead && c.total > 0 && c.freeCount >= c.total;
-                    const freeH = dead ? 0 : c.freeCount / Math.max(c.total, 1);
-                    const condH = dead ? 0 : c.conditionalCount / Math.max(c.total, 1);
+                    const everyone = everyoneOn(c);
+                    const freeH = dead ? 0 : c.freeCount / Math.max(total, 1);
+                    const condH = dead ? 0 : c.conditionalCount / Math.max(total, 1);
                     return (
                       <button
                         key={c.date}
@@ -320,8 +319,7 @@ export default function DayChart({
                 <div className="mt-1.5 flex gap-[2px] sm:gap-1.5">
                   {days.map((c, i) => {
                     const best = bestDays.has(c.date);
-                    const everyone =
-                      !c.excluded && !c.isPast && c.total > 0 && c.freeCount >= c.total;
+                    const everyone = everyoneOn(c);
                     const dow = new Date(c.date).toLocaleDateString(LOCALE[lang], {
                       weekday: "narrow",
                       timeZone,

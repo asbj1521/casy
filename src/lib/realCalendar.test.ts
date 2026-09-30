@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { OverviewData } from "@/lib/calendarOverview";
 import { busyFromCalendars, withRealCalendar } from "@/lib/realCalendar";
 import { isHardBlock, isSoftBlock } from "@/lib/availability";
-import type { FriendGroup } from "@/types";
+import type { Participant } from "@/types";
 
 const calendar = (id: string, name: string, purpose: OverviewData["calendars"][0]["purpose"]) => ({
   id,
@@ -83,36 +83,24 @@ describe("busyFromCalendars", () => {
 });
 
 describe("withRealCalendar", () => {
-  const groups: FriendGroup[] = [
-    {
-      id: "a",
-      name: "With me",
-      participants: [
-        { profileId: "me", name: "Demo me", busy: [{ start: "x", end: "y" }] },
-        { profileId: "friend", name: "Friend", busy: [] },
-      ],
-    },
-    {
-      id: "b",
-      name: "Without me",
-      participants: [{ profileId: "friend", name: "Friend", busy: [] }],
-    },
+  const participants: Participant[] = [
+    { profileId: "me", name: "Demo me", busy: [{ start: "x", end: "y" }] },
+    { profileId: "friend", name: "Friend", busy: [] },
   ];
   const real = [{ start: "2026-06-22T07:00:00.000Z", end: "2026-06-22T15:00:00.000Z" }];
 
   it("replaces only that person's calendar and name", () => {
-    const out = withRealCalendar(groups, "me", "Real Me", real);
-    expect(out[0].participants[0]).toEqual({ profileId: "me", name: "Real Me", busy: real });
-    expect(out[0].participants[1]).toBe(groups[0].participants[1]);
+    const out = withRealCalendar(participants, "me", "Real Me", real);
+    expect(out[0]).toEqual({ profileId: "me", name: "Real Me", busy: real });
+    expect(out[1]).toBe(participants[1]);
   });
 
-  it("leaves groups they aren't in untouched, and never mutates the input", () => {
-    const out = withRealCalendar(groups, "me", "Real Me", real);
-    expect(out[1]).toBe(groups[1]);
-    expect(groups[0].participants[0].name).toBe("Demo me");
+  it("never changes the participants it was given", () => {
+    withRealCalendar(participants, "me", "Real Me", real);
+    expect(participants[0].name).toBe("Demo me");
   });
 
   it("keeps the generated name when no real one is known", () => {
-    expect(withRealCalendar(groups, "me", "", real)[0].participants[0].name).toBe("Demo me");
+    expect(withRealCalendar(participants, "me", "", real)[0].name).toBe("Demo me");
   });
 });

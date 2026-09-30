@@ -2,6 +2,9 @@ import { da, type Messages } from "@/i18n/da";
 import { en } from "@/i18n/en";
 import type { Lang } from "@/i18n/locale";
 
+/** Each language's copy. */
+export const MESSAGES: Record<Lang, Messages> = { da, en };
+
 /**
  * The page's language for code that runs outside React: the API helpers'
  * fallback messages, and the `lang` sent to every Edge Function so its own
@@ -19,5 +22,5 @@ export function currentLang(): Lang {
 
 /** The current language's copy, for the same code. */
 export function currentMessages(): Messages {
-  return current === "da" ? da : en;
+  return MESSAGES[current];
 }

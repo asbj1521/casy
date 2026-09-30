@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, KeyRound, Loader2, Mail, XCircle } from "lucide-react";
 
-import { calendarStatusQuery } from "@/api/calendarStatus";
+import { calendarStatusQuery } from "@/api/calendars";
 import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";

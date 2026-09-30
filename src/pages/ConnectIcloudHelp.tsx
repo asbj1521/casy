@@ -17,7 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { connectApple } from "@/api/apple";
+import { connectApple } from "@/api/calendars";
 import AppleCredentialFields from "@/components/AppleCredentialFields";
 import AppleWalkthrough, {
   AppleWalkthroughChecklist,
@@ -363,7 +363,7 @@ export default function ConnectIcloudHelp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const connect = useMutation({
-    mutationFn: (userId: string) => connectApple(queryClient, userId, email, password),
+    mutationFn: () => connectApple(queryClient, email, password),
     // The password has done its job; don't keep it in the page any longer.
     onSuccess: () => setPassword(""),
   });
@@ -394,8 +394,7 @@ export default function ConnectIcloudHelp() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // The form is only drawn for someone signed in (see the "enter" step).
-    if (user) connect.mutate(user.id);
+    connect.mutate();
   }
 
   const stepIndex = STEPS.indexOf(step);

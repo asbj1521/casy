@@ -9,11 +9,14 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
-import { SEARCH_WINDOW } from "@/api/mockData";
-import { dayOf } from "@/lib/day";
-import { findEventSlot, isEventSettings, type EventSettings } from "@/lib/eventSearch";
+import {
+  findEventSlot,
+  isEventSettings,
+  SEARCH_WINDOW,
+  type EventSettings,
+} from "@/lib/eventSearch";
 import { callFunction } from "@/lib/supabaseFunctions";
-import { addDays, APP_TIME_ZONE } from "@/lib/zone";
+import { addDays, APP_TIME_ZONE, dayOf } from "@/lib/zone";
 import { currentMessages } from "@/i18n/current";
 
 export type EventStatus = "pending" | "scheduled" | "no_date" | "cancelled";

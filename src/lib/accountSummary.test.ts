@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { CalendarConnectionStatus } from "@/api/calendarStatus";
+import type { CalendarConnectionStatus } from "@/api/calendars";
 import { da } from "@/i18n/da";
 import { en } from "@/i18n/en";
 import { calendarNames, hasDistinctCalendarNames, syncedAgo } from "@/lib/accountSummary";
@@ -16,7 +16,14 @@ const account = (label: string | null, names: (string | null)[]): CalendarConnec
   last_sync_attempt_at: null,
   sync_error: null,
   needs_reconnect: false,
-  calendar_sources: names.map((n, i) => ({ id: `src-${i}`, display_name: n, purpose: null })),
+  calendar_sources: names.map((n, i) => ({
+    id: `src-${i}`,
+    display_name: n,
+    custom_name: null,
+    purpose: null,
+    priority: "normal",
+    writable: false,
+  })),
   busyCount: 0,
 });
 

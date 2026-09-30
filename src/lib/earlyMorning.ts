@@ -11,8 +11,8 @@
  * nobody's own plans.
  */
 import type { Lang } from "@/i18n/locale";
-import { formatTime } from "@/lib/format";
-import { nameList } from "@/lib/myEvents";
+import { blockRange } from "@/lib/availability";
+import { formatTime, nameList } from "@/lib/format";
 import { addDays, atHour, startOfDay } from "@/lib/zone";
 import type { Participant } from "@/types";
 
@@ -40,6 +40,11 @@ function isAllDay(start: number, end: number, timeZone: string): boolean {
   return start === startOfDay(start, timeZone) && end - start >= ALL_DAY_MS;
 }
 
+/** People in a warning, you first: "You, Emilie and Tessa". */
+function youFirst<T extends { profileId: string }>(people: T[], youId: string | null): T[] {
+  return [...people].sort((a, b) => Number(b.profileId === youId) - Number(a.profileId === youId));
+}
+
 /**
  * Everyone with something early the morning after `slot`, soonest first, or
  * nobody when the meeting isn't late. All-day entries don't count. Calendars
@@ -60,19 +65,23 @@ export function earlyMorningStarts(
   const morning = endDay === startOfDay(start, timeZone) ? addDays(start, 1, timeZone) : endDay;
   const until = atHour(morning, EARLY_UNTIL_HOUR, timeZone);
 
-  const found: EarlyStart[] = [];
+  const found: { profileId: string; name: string; first: number }[] = [];
   for (const p of participants) {
-    let first: number | null = null;
+    let first = Infinity;
     for (const b of p.busy) {
-      const bStart = Date.parse(b.start);
-      const bEnd = Date.parse(b.end);
-      if (b.holiday || bStart < end || bStart > until || isAllDay(bStart, bEnd, timeZone)) continue;
-      if (first === null || bStart < first) first = bStart;
+      const iv = blockRange(b);
+      if (!iv || b.holiday || iv.start < end || iv.start > until) continue;
+      if (!isAllDay(iv.start, iv.end, timeZone)) first = Math.min(first, iv.start);
     }
-    if (first !== null)
-      found.push({ profileId: p.profileId, name: p.name, start: new Date(first).toISOString() });
+    if (first < Infinity) found.push({ profileId: p.profileId, name: p.name, first });
   }
-  return found.sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  return found
+    .sort((a, b) => a.first - b.first)
+    .map(({ profileId, name, first }) => ({
+      profileId,
+      name,
+      start: new Date(first).toISOString(),
+    }));
 }
 
 /** The words earlyMorningNote needs (t.earlyMorning). */
@@ -91,9 +100,7 @@ export function earlyMorningNote(
   words: EarlyMorningWords,
 ): string | null {
   if (starts.length === 0) return null;
-  const ordered = [...starts].sort(
-    (a, b) => Number(b.profileId === youId) - Number(a.profileId === youId),
-  );
+  const ordered = youFirst(starts, youId);
   if (ordered.length === 1) {
     const [s] = ordered;
     return s.profileId === youId
@@ -128,9 +135,8 @@ export function backToBackEnds(
   return participants
     .filter((p) =>
       p.busy.some((b) => {
-        const bStart = Date.parse(b.start);
-        const bEnd = Date.parse(b.end);
-        return bEnd === start && !b.holiday && !isAllDay(bStart, bEnd, timeZone);
+        const iv = blockRange(b);
+        return !!iv && iv.end === start && !b.holiday && !isAllDay(iv.start, iv.end, timeZone);
       }),
     )
     .map((p) => ({ profileId: p.profileId, name: p.name }));
@@ -152,9 +158,7 @@ export function backToBackNote(
   words: BackToBackWords,
 ): string | null {
   if (people.length === 0) return null;
-  const ordered = [...people].sort(
-    (a, b) => Number(b.profileId === youId) - Number(a.profileId === youId),
-  );
+  const ordered = youFirst(people, youId);
   if (ordered.length === 1) {
     return ordered[0].profileId === youId ? words.oneYou : words.one(ordered[0].name);
   }
@@ -164,4 +168,40 @@ export function backToBackNote(
       lang,
     ),
   );
+}
+
+/** One of a meeting's edge warnings, as the pages show it. */
+export interface EdgeWarning {
+  kind: "backToBack" | "earlyMorning";
+  text: string;
+}
+
+/**
+ * Both warnings for a meeting on `slot`, in the order the pages show them:
+ * back to back first, then the early morning after. Empty when neither applies.
+ */
+export function edgeWarnings(
+  participants: Participant[],
+  slot: { start: string; end: string },
+  timeZone: string,
+  youId: string | null,
+  lang: Lang,
+  words: { backToBack: BackToBackWords; earlyMorning: EarlyMorningWords },
+): EdgeWarning[] {
+  const warnings: EdgeWarning[] = [];
+  const backToBack = backToBackNote(
+    backToBackEnds(participants, slot, timeZone),
+    youId,
+    lang,
+    words.backToBack,
+  );
+  if (backToBack) warnings.push({ kind: "backToBack", text: backToBack });
+  const earlyMorning = earlyMorningNote(
+    earlyMorningStarts(participants, slot, timeZone),
+    youId,
+    lang,
+    words.earlyMorning,
+  );
+  if (earlyMorning) warnings.push({ kind: "earlyMorning", text: earlyMorning });
+  return warnings;
 }

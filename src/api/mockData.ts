@@ -20,6 +20,7 @@
  */
 
 import type { BusyInterval, EventCategory, FriendGroup, Participant } from "@/types";
+import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { APP_TIME_ZONE, localDate, wallTime } from "@/lib/zone";
 
 /** The zone the generated people live in. */
@@ -36,23 +37,18 @@ const MS_PER_DAY = 86_400_000;
 const TODAY = localDate(Date.now(), TZ);
 const NOW = Date.UTC(TODAY.year, TODAY.month, TODAY.day);
 
-// Calendars are generated for a rolling window anchored to the clock: from the
-// 1st of the current month through twelve whole months. Near-term weeks are
+// Calendars are generated for the months the scheduler searches
+// (SEARCH_WINDOW, whole months in Copenhagen). Near-term weeks are
 // realistically packed; the further out, the emptier calendars get (the
 // planning horizon below thins spontaneous plans), so *some* date always
 // exists — it may just be months away.
-const NOW_DATE = new Date(NOW);
-const PLAN_START = Date.UTC(NOW_DATE.getUTCFullYear(), NOW_DATE.getUTCMonth(), 1);
-const PLAN_END = Date.UTC(NOW_DATE.getUTCFullYear(), NOW_DATE.getUTCMonth() + 12, 1);
+const wallMonth = (iso: string) => {
+  const d = localDate(Date.parse(iso), TZ);
+  return Date.UTC(d.year, d.month, 1);
+};
+const PLAN_START = wallMonth(SEARCH_WINDOW.start);
+const PLAN_END = wallMonth(SEARCH_WINDOW.end);
 const PLAN_DAYS = Math.round((PLAN_END - PLAN_START) / MS_PER_DAY);
-
-// The search window covers the generated range. Weekends are allowed — this is
-// mainly for events in the user's private life.
-const SEARCH_START = iso(PLAN_START);
-const SEARCH_END = iso(PLAN_END);
-
-/** The window the scheduler searches and has generated calendar data for. */
-export const SEARCH_WINDOW = { start: SEARCH_START, end: SEARCH_END };
 
 /* ----------------------------------------------------------------------------
  * Example people & groups

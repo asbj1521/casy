@@ -9,40 +9,31 @@ import {
   Hourglass,
   Lightbulb,
   Loader2,
-  Moon,
   Send,
 } from "lucide-react";
 
 import { eventsQueryKey, suggestEvent } from "@/api/events";
 import { createGroup, createInvite, groupsQueryKey, leaveGroup, type Group } from "@/api/groups";
-import { SEARCH_WINDOW } from "@/api/mockData";
 import {
   findVacationSuggestions,
   type MultiDayResult,
   type VacationSuggestion,
 } from "@/lib/availability";
-import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
-import { buildMonthGrid } from "@/lib/heatmap";
+import { findEventSlot, SEARCH_WINDOW, type EventSettings } from "@/lib/eventSearch";
+import { monthAvailability } from "@/lib/monthAvailability";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { useAuth } from "@/context/auth";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import {
   formatDaySpan,
+  formatHeadline,
   formatLongDate,
   formatLongSpan,
-  formatLongSpanLines,
-  formatTime,
+  nameList,
 } from "@/lib/format";
-import { nameList } from "@/lib/myEvents";
-import {
-  backToBackEnds,
-  backToBackNote,
-  earlyMorningNote,
-  earlyMorningStarts,
-} from "@/lib/earlyMorning";
+import { edgeWarnings } from "@/lib/earlyMorning";
 import { avatarColor } from "@/lib/avatar";
-import { dayOf, monthStartMs } from "@/lib/day";
 import {
   daysUntil,
   fallbackTitleId,
@@ -52,9 +43,11 @@ import {
   settingsToSearch,
   type SchedulerSettings,
 } from "@/lib/scheduler";
+import { readStored, writeStored } from "@/lib/storage";
 import { cn } from "@/lib/utils";
-import { addDays, APP_TIME_ZONE, localDate, startOfMonth } from "@/lib/zone";
+import { addDays, APP_TIME_ZONE, dayOf, localDate, startOfMonth } from "@/lib/zone";
 import DayChart from "@/components/DayChart";
+import EdgeWarningList from "@/components/EdgeWarningList";
 import FadeSwap from "@/components/FadeSwap";
 import GroupPanel, { SignUpNudge } from "@/components/GroupPanel";
 import GroupSwitcher from "@/components/GroupSwitcher";
@@ -71,22 +64,6 @@ const TZ = APP_TIME_ZONE;
  * blocked, or the group is gone, the page simply starts on the first group.
  */
 const lastGroupKey = (userId: string) => `casy-last-group:${userId}`;
-
-function readLastGroup(userId: string): string | null {
-  try {
-    return localStorage.getItem(lastGroupKey(userId));
-  } catch {
-    return null;
-  }
-}
-
-function writeLastGroup(userId: string, groupId: string) {
-  try {
-    localStorage.setItem(lastGroupKey(userId), groupId);
-  } catch {
-    // Not remembered; the first group it is next time.
-  }
-}
 
 /** Where a step through the answers searched from (see `history` below). */
 type HistoryEntry = { from: string | null; day?: boolean };
@@ -114,10 +91,10 @@ let pageMemory: PageMemory | null = null;
 const TODAY_DAY = dayOf(new Date().toISOString(), TZ);
 
 /** First-of-month (ms) for the month containing today. */
-const DEFAULT_MONTH = monthStartMs(Date.parse(TODAY_DAY), TZ);
+const DEFAULT_MONTH = startOfMonth(Date.parse(TODAY_DAY), TZ);
 /** Navigable month range: from this month up to the last month with data. */
-const MIN_MONTH = Math.max(DEFAULT_MONTH, monthStartMs(Date.parse(SEARCH_WINDOW.start), TZ));
-const MAX_MONTH = monthStartMs(Date.parse(SEARCH_WINDOW.end) - 1, TZ);
+const MIN_MONTH = Math.max(DEFAULT_MONTH, startOfMonth(Date.parse(SEARCH_WINDOW.start), TZ));
+const MAX_MONTH = startOfMonth(Date.parse(SEARCH_WINDOW.end) - 1, TZ);
 
 /**
  * Where every search starts from: today, or the window start if that's later.
@@ -203,7 +180,10 @@ export default function FindDate() {
   // The group you last scheduled for, read once your account is known. A
   // group picked on this visit wins; a remembered one that's gone falls back
   // to the first group, like any unknown id.
-  const rememberedGroupId = useMemo(() => (userId ? readLastGroup(userId) : null), [userId]);
+  const rememberedGroupId = useMemo(
+    () => (userId ? readStored(lastGroupKey(userId)) : null),
+    [userId],
+  );
   const {
     groups,
     activeGroup,
@@ -219,7 +199,7 @@ export default function FindDate() {
   // (picked, just made, or the fallback after leaving one).
   const rememberableGroupId = activeGroup && !activeGroup.isExample ? activeGroup.id : null;
   useEffect(() => {
-    if (userId && rememberableGroupId) writeLastGroup(userId, rememberableGroupId);
+    if (userId && rememberableGroupId) writeStored(lastGroupKey(userId), rememberableGroupId);
   }, [userId, rememberableGroupId]);
 
   /**
@@ -358,7 +338,7 @@ export default function FindDate() {
 
   // The chart shows the answer's month unless a month was paged to by hand
   // for this same answer.
-  const answerMonth = bestDay ? monthStartMs(Date.parse(bestDay), TZ) : DEFAULT_MONTH;
+  const answerMonth = bestDay ? startOfMonth(Date.parse(bestDay), TZ) : DEFAULT_MONTH;
   const viewMonth =
     monthPick && monthPick.anchor === bestDay
       ? monthPick.month
@@ -371,25 +351,22 @@ export default function FindDate() {
 
   // The month, day by day, for the chart under the answer. While loading,
   // an empty month gives the chart its frame (DayChart's `loading`).
-  const monthGrid = useMemo(() => {
+  const chartMonth = useMemo(() => {
     if (!searchable && !loadingGroup) return null;
     const vm = localDate(viewMonth, TZ);
-    return buildMonthGrid(searchable ? activeGroup.participants : [], vm.year, vm.month, {
-      timeZone: TZ,
-      startHour: deferredSched.startHour,
-      durationMinutes: deferredSched.durationMinutes,
-      anyTime: deferredSched.anyTime,
-      todayMs: Date.parse(TODAY_DAY),
-      allowedDays: search.kind === "single" ? search.allowedDays : undefined,
-      multiDay:
-        search.kind === "vacation" ? { windowEndMs: Date.parse(SEARCH_WINDOW.end) } : undefined,
-      weeklySpan:
-        search.kind === "trip"
-          ? { ...search.shape, windowEndMs: Date.parse(SEARCH_WINDOW.end) }
-          : undefined,
-      locale: LOCALE[lang],
-    });
-  }, [lang, activeGroup, searchable, loadingGroup, viewMonth, deferredSched, search]);
+    return monthAvailability(
+      searchable ? activeGroup.participants : [],
+      search,
+      vm.year,
+      vm.month,
+      {
+        timeZone: TZ,
+        todayMs: Date.parse(TODAY_DAY),
+        windowEndMs: Date.parse(SEARCH_WINDOW.end),
+        locale: LOCALE[lang],
+      },
+    );
+  }, [lang, activeGroup, searchable, loadingGroup, viewMonth, search]);
 
   /** Back to the first date from today: any setting or group change does this. */
   function resetSearch() {
@@ -512,25 +489,16 @@ export default function FindDate() {
   // The big answer: the date (or span), and the times plus how far away it is.
   // A trip or holiday's two dates go on a line each, "Fredag 7. maj til" over
   // "mandag 10. maj", so the break never falls somewhere random in a date.
-  const headline = activeSlot
-    ? search.kind === "single"
-      ? formatLongDate(activeSlot.start, lang)
-      : formatLongSpanLines(activeSlot.start, activeSlot.end, lang).map((line) => (
-          <span key={line} className="block">
-            {line}
-          </span>
-        ))
-    : null;
-  const subline = activeSlot
-    ? [
-        search.kind === "single"
-          ? t.scheduler.timeRange(formatTime(activeSlot.start), formatTime(activeSlot.end))
-          : search.kind === "trip"
-            ? t.scheduler.tripTimes(formatTime(activeSlot.start), formatTime(activeSlot.end))
-            : t.common.days(search.days),
-        t.scheduler.inDays(daysUntil(dayOf(activeSlot.start, TZ), TODAY_DAY)),
-      ].join(" · ")
-    : null;
+  const answer = activeSlot ? formatHeadline(search, activeSlot, lang, t) : null;
+  const headline = answer?.lines.map((line) => (
+    <span key={line} className="block">
+      {line}
+    </span>
+  ));
+  const subline =
+    answer &&
+    activeSlot &&
+    `${answer.time} · ${t.scheduler.inDays(daysUntil(dayOf(activeSlot.start, TZ), TODAY_DAY))}`;
 
   // Conflict review state for multi-day spans. Your own work/school conflicts
   // need your explicit approval; other people's put the dates under review.
@@ -563,24 +531,10 @@ export default function FindDate() {
   const othersSkipping = skipConflicts.filter((c) => c.profileId !== youProfileId);
   // A meeting's edges, said rather than blocked: someone coming straight from
   // something else, or having to be up early after a late night.
-  const backNote =
+  const edge =
     search.kind === "single" && activeSlot && activeGroup
-      ? backToBackNote(
-          backToBackEnds(activeGroup.participants, activeSlot, TZ),
-          youProfileId,
-          lang,
-          t.backToBack,
-        )
-      : null;
-  const earlyNote =
-    search.kind === "single" && activeSlot && activeGroup
-      ? earlyMorningNote(
-          earlyMorningStarts(activeGroup.participants, activeSlot, TZ),
-          youProfileId,
-          lang,
-          t.earlyMorning,
-        )
-      : null;
+      ? edgeWarnings(activeGroup.participants, activeSlot, TZ, youProfileId, lang, t)
+      : [];
 
   // Unique titles of your own conflicting commitments: a generated title like
   // "Arbejde", or with real data the name of the calendar, e.g. "Work".
@@ -914,18 +868,7 @@ export default function FindDate() {
                         {t.scheduler.skipWhy}
                       </p>
                     )}
-                    {backNote && (
-                      <p className="mt-3 flex items-start gap-2 text-sm text-amber-900">
-                        <Hourglass className="mt-0.5 h-4 w-4 shrink-0" />
-                        {backNote}
-                      </p>
-                    )}
-                    {earlyNote && (
-                      <p className="mt-3 flex items-start gap-2 text-sm text-amber-900">
-                        <Moon className="mt-0.5 h-4 w-4 shrink-0" />
-                        {earlyNote}
-                      </p>
-                    )}
+                    <EdgeWarningList warnings={edge} className="mt-3" />
                     {tone === "clean" && isMultiDay && selfAccepted && (
                       <p className="mt-3 text-sm text-muted-foreground">
                         {t.scheduler.youApprovedDates}
@@ -939,9 +882,9 @@ export default function FindDate() {
 
           {/* The month day by day, straight under the answer: it's what
               shows why the answer is what it is. */}
-          {monthGrid && (
+          {chartMonth && (
             <DayChart
-              grid={monthGrid}
+              month={chartMonth}
               bestDays={bestDays}
               timeZone={TZ}
               canPrev={viewMonth > MIN_MONTH}

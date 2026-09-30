@@ -25,19 +25,18 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { groupBusyQuery, groupsQuery, participantsFromGroup, type GroupMember } from "@/api/groups";
-import { EXAMPLE_GROUPS, exampleGroup, SEARCH_WINDOW } from "@/api/mockData";
+import { calendarBusyQuery } from "@/api/calendars";
 import { CURRENT_USER_ID } from "@/api/currentUser";
-import { useExampleCarousel, type Carousel } from "@/hooks/useExampleCarousel";
+import { groupBusyQuery, groupsQuery, participantsFromGroup, type GroupMember } from "@/api/groups";
+import { EXAMPLE_GROUPS, exampleGroup } from "@/api/mockData";
 import { displayName, useAuth } from "@/context/auth";
+import { useExampleCarousel, type Carousel } from "@/hooks/useExampleCarousel";
 import { useT } from "@/i18n/lang";
-import type { OverviewData } from "@/lib/calendarOverview";
-import { busyFromCalendars, withRealCalendar } from "@/lib/realCalendar";
+import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { withHolidayBlocks } from "@/lib/holidayBlocks";
-import { callFunction } from "@/lib/supabaseFunctions";
+import { busyFromCalendars, withRealCalendar } from "@/lib/realCalendar";
 import { APP_TIME_ZONE } from "@/lib/zone";
 import type { FriendGroup } from "@/types";
-import { currentMessages } from "@/i18n/current";
 
 /** What the page shows in the switcher: a group, plus how real it is. */
 export interface SchedulingGroup extends FriendGroup {
@@ -98,14 +97,8 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
   // Your own busy time, for the examples only. Real groups get yours from the
   // server along with everyone else's.
   const { data: myCalendars, isError: myCalendarsFailed } = useQuery({
-    queryKey: ["calendar-busy", user?.id, "search-window"],
-    queryFn: () =>
-      callFunction<OverviewData>("calendar-busy", {
-        params: { from: SEARCH_WINDOW.start, to: SEARCH_WINDOW.end },
-        errorMessage: currentMessages().api.loadCalendars,
-      }),
+    ...calendarBusyQuery(user?.id ?? "", SEARCH_WINDOW.start, SEARCH_WINDOW.end),
     enabled: !!user && !hasRealGroups,
-    staleTime: 60_000,
   });
 
   // Which group is being scheduled for. A group picked by hand (or the one
@@ -163,11 +156,11 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
         !!base && !!myCalendars && myCalendars.calendars.some((c) => c.included !== false);
       const participants = swapped
         ? withRealCalendar(
-            [base],
+            base.participants,
             CURRENT_USER_ID,
             markYou(displayName(user)),
             busyFromCalendars(myCalendars),
-          )[0].participants
+          )
         : // Still the generated "you", named in the page's language.
           (base?.participants ?? []).map((p) =>
             p.profileId === CURRENT_USER_ID ? { ...p, name: exampleYou } : p,

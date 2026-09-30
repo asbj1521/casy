@@ -6,15 +6,15 @@ import Dropdown from "@/components/Dropdown";
 import Popover from "@/components/Popover";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { nameList } from "@/lib/myEvents";
 import {
+  ALL_DOWS,
   describeDays,
   MAX_SPAN_DAYS,
   MAX_TRIP_DAYS,
   type SchedulerSettings,
 } from "@/lib/scheduler";
+import { nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { ALL_DOWS } from "@/lib/weekdays";
 
 /**
  * What the scheduling page searches for, set in one of two shapes of the same

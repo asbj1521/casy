@@ -12,7 +12,6 @@
  * There is no event title anywhere in this data, by design.
  */
 import { danishHolidays, type Holiday } from "@/lib/danishHolidays";
-import { mondayFirstWeekdays } from "@/lib/dateLabels";
 import type { CalendarPriority, CalendarProvider, CalendarPurpose } from "@/types";
 
 /** One connected calendar, as returned by the calendar-busy function. */
@@ -93,6 +92,17 @@ export interface MonthLayout {
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+/** Monday-first short weekday names: "man." to "søn.", or "Mon" to "Sun". */
+export function mondayFirstWeekdays(locale: string): string[] {
+  // 1 January 2024 was a Monday.
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(Date.UTC(2024, 0, 1 + i)).toLocaleDateString(locale, {
+      weekday: "short",
+      timeZone: "UTC",
+    }),
+  );
+}
 
 /** "YYYY-MM-DD" for the local calendar day containing `d`. */
 export function dayKey(d: Date): string {

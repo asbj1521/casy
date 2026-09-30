@@ -79,7 +79,7 @@ const SKIP_PATIENCE_DAYS = 7;
  * ------------------------------------------------------------------------- */
 
 /** A half-open interval [start, end) in epoch milliseconds. */
-interface Interval {
+export interface Interval {
   start: number;
   end: number;
 }
@@ -103,8 +103,8 @@ function parseRange(startIso: string, endIso: string): Interval | null {
  * Parsed bounds per block, remembered for the life of the block object.
  *
  * A block's ISO strings never change, but the same blocks are re-tested
- * thousands of times — the heatmap alone asks about every participant's whole
- * calendar once per day cell. `Date.parse` is ~33x slower than comparing two
+ * thousands of times: the day chart alone asks about every participant's
+ * whole calendar once per day. `Date.parse` is ~33x slower than comparing two
  * numbers, so parsing once per block instead of once per test is the
  * difference between a calendar that redraws instantly and one that stutters.
  * A WeakMap keeps this invisible to callers and lets blocks be collected
@@ -112,8 +112,12 @@ function parseRange(startIso: string, endIso: string): Interval | null {
  */
 const parsedBlocks = new WeakMap<BusyInterval, Interval | null>();
 
-/** Parse one busy block; null if malformed or empty (never crash on bad data). */
-function parseBlock(block: BusyInterval): Interval | null {
+/**
+ * A busy block's bounds in epoch ms, parsed once per block and shared by
+ * every search, the day chart and the edge warnings. Null if malformed or
+ * empty (never crash on bad data).
+ */
+export function blockRange(block: BusyInterval): Interval | null {
   const cached = parsedBlocks.get(block);
   if (cached !== undefined) return cached;
 
@@ -130,7 +134,7 @@ function parseBlock(block: BusyInterval): Interval | null {
  * the one definition of "busy then" the whole app shares.
  */
 export function blockOverlaps(block: BusyInterval, start: number, end: number): boolean {
-  const iv = parseBlock(block);
+  const iv = blockRange(block);
   return iv !== null && iv.start < end && iv.end > start;
 }
 
@@ -208,7 +212,7 @@ export function isHardBlock(block: BusyInterval): boolean {
   if (block.priority === "skip") return false;
   if (block.priority === "never") return true;
   if (isSoftBlock(block)) return false;
-  const iv = parseBlock(block);
+  const iv = blockRange(block);
   return iv !== null && iv.end - iv.start >= MIN_HARD_BLOCK_MS;
 }
 
@@ -353,7 +357,7 @@ function collectBusy(participants: Participant[], range: Interval): Interval[] {
   const raw: Interval[] = [];
   for (const p of participants) {
     for (const block of p.busy) {
-      const iv = parseBlock(block);
+      const iv = blockRange(block);
       if (!iv) continue;
       const start = Math.max(iv.start, range.start);
       const end = Math.min(iv.end, range.end);
@@ -417,12 +421,14 @@ function collectConflicts(
   const conflicts: SpanConflict[] = [];
   for (const p of participants) {
     const overlapping = p.busy
-      .filter((b) => {
-        if (!include(b)) return false;
-        const iv = parseBlock(b);
-        return iv !== null && iv.start < endMs && iv.end > startMs && iv.end > departureCutoffMs;
+      .flatMap((block) => {
+        const iv = include(block) ? blockRange(block) : null;
+        return iv && iv.start < endMs && iv.end > startMs && iv.end > departureCutoffMs
+          ? [{ block, start: iv.start }]
+          : [];
       })
-      .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+      .sort((a, b) => a.start - b.start)
+      .map(({ block }) => block);
     if (overlapping.length > 0) {
       conflicts.push({ profileId: p.profileId, name: p.name, events: overlapping });
     }
@@ -474,7 +480,7 @@ function buildDayGrid(
 
   participants.forEach((p, pi) => {
     for (const block of p.busy) {
-      const iv = parseBlock(block);
+      const iv = blockRange(block);
       if (!iv || iv.end <= first || iv.start >= last) continue;
       // Days touched: from the day containing the start through the day
       // containing the last moment before the (exclusive) end.
@@ -749,7 +755,7 @@ function spanTiming(
   for (const p of participants) {
     for (const b of p.busy) {
       if (!isSoftBlock(b)) continue;
-      const iv = parseBlock(b);
+      const iv = blockRange(b);
       if (!iv) continue;
       // A commitment on the departure day that ends before the evening.
       if (iv.end > startMs && iv.end <= departure) leaveAfterWork = true;

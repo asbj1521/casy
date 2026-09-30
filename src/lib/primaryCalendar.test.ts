@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { CalendarConnectionStatus, CalendarSourceStatus } from "@/api/calendarStatus";
+import type { CalendarConnectionStatus, CalendarSourceStatus } from "@/api/calendars";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
 
 const source = (
@@ -13,6 +13,7 @@ const source = (
   display_name: name,
   custom_name: custom ?? null,
   purpose: null,
+  priority: "normal",
   writable,
 });
 

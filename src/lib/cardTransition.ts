@@ -23,6 +23,8 @@
  * an ordinary navigation.
  */
 
+import type { MouseEvent } from "react";
+
 const FLIGHT_CLASS = "card-flight";
 
 /**
@@ -86,6 +88,20 @@ export function goWithCard(navigate: () => void, prepare?: () => Promise<unknown
     fly();
   }
   return true;
+}
+
+/**
+ * A link's onClick that flies the card there where it can (goWithCard). A
+ * click meant for a new tab or window is the browser's business, not an
+ * animation's, and is left to it.
+ */
+export function flyOnClick(
+  e: MouseEvent,
+  navigate: () => void,
+  prepare?: () => Promise<unknown>,
+): void {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  if (goWithCard(navigate, prepare)) e.preventDefault();
 }
 
 /** Called by a destination card once it is on the page. */

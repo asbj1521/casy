@@ -13,7 +13,7 @@
  * get every member's blocks, categories included, from the groups function.
  */
 import type { OverviewData } from "@/lib/calendarOverview";
-import type { BusyInterval, EventCategory, FriendGroup } from "@/types";
+import type { BusyInterval, EventCategory, Participant } from "@/types";
 
 /**
  * Which calendar categories carry over to the engine. Work and school are the
@@ -53,24 +53,17 @@ export function busyFromCalendars(data: OverviewData): BusyInterval[] {
 }
 
 /**
- * The groups with one participant's generated calendar replaced by real busy
- * time (and their real name). Groups they aren't in come back unchanged, and
- * nothing is modified in place: the generated groups are shared and cached.
+ * The participants with one person's generated calendar replaced by their
+ * real busy time (and real name). Nothing is modified in place: the example
+ * groups are shared and cached.
  */
 export function withRealCalendar(
-  groups: FriendGroup[],
+  participants: Participant[],
   profileId: string,
   name: string,
   busy: BusyInterval[],
-): FriendGroup[] {
-  return groups.map((g) =>
-    g.participants.some((p) => p.profileId === profileId)
-      ? {
-          ...g,
-          participants: g.participants.map((p) =>
-            p.profileId === profileId ? { ...p, name: name || p.name, busy } : p,
-          ),
-        }
-      : g,
+): Participant[] {
+  return participants.map((p) =>
+    p.profileId === profileId ? { ...p, name: name || p.name, busy } : p,
   );
 }

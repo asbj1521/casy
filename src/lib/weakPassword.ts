@@ -8,6 +8,8 @@
  * subscribe to it (useSyncExternalStore), since it is set by the sign-in page
  * and read by a note shown above every page.
  */
+import { readStored, writeStored } from "@/lib/storage";
+
 const KEY = "casy-weak-password";
 const listeners = new Set<() => void>();
 
@@ -17,28 +19,16 @@ function emit() {
 
 /** The id of the account whose password was found weak, if any. */
 export function weakPasswordUserId(): string | null {
-  try {
-    return sessionStorage.getItem(KEY);
-  } catch {
-    return null; // storage blocked: no note, nothing else depends on it
-  }
+  return readStored(KEY, "session");
 }
 
 export function flagWeakPassword(userId: string) {
-  try {
-    sessionStorage.setItem(KEY, userId);
-  } catch {
-    // Not remembered; the note just doesn't show.
-  }
+  writeStored(KEY, userId, "session");
   emit();
 }
 
 export function clearWeakPassword() {
-  try {
-    sessionStorage.removeItem(KEY);
-  } catch {
-    // Nothing stored to clear.
-  }
+  writeStored(KEY, null, "session");
   emit();
 }
 

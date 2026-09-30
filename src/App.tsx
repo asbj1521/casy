@@ -11,27 +11,26 @@ import LanguageProvider from "@/i18n/LanguageProvider";
 import { persistQueries } from "@/lib/queryPersistence";
 import FindDate from "@/pages/FindDate";
 import Landing from "@/pages/Landing";
+import { loadPage } from "@/pages/lazyPages";
 
 /**
- * The scheduling page is what people land on, so it ships in the entry chunk:
- * splitting it out only buys a second round trip before anything renders.
- * The profile and calendar-overview pages are a different matter — they are
- * reached by a deliberate click, and keeping them out of the entry chunk means
- * the landing page never downloads code it has no use for.
+ * The scheduler and the landing page are what people land on, so they ship
+ * in the entry chunk: splitting them out only buys a second round trip before
+ * anything renders. Every other page is reached by a deliberate click (or an
+ * invite link), and loads on its own, so the landing page never downloads
+ * code it has no use for.
  */
-const Profile = lazy(() => import("@/pages/Profile"));
-const CalendarOverview = lazy(() => import("@/pages/CalendarOverview"));
-const SignIn = lazy(() => import("@/pages/SignIn"));
-const Privacy = lazy(() => import("@/pages/Privacy"));
-const HowItWorks = lazy(() => import("@/pages/HowItWorks"));
-const MyEvents = lazy(() => import("@/pages/MyEvents"));
-const ConnectIcloudHelp = lazy(() => import("@/pages/ConnectIcloudHelp"));
-const ConnectIcsHelp = lazy(() => import("@/pages/ConnectIcsHelp"));
-const ConnectGoogleHelp = lazy(() => import("@/pages/ConnectGoogleHelp"));
-const ConnectOutlookHelp = lazy(() => import("@/pages/ConnectOutlookHelp"));
-// An invite link is often the very first page someone sees, so it stays out of
-// the entry chunk like the other pages reached by a deliberate click.
-const JoinGroup = lazy(() => import("@/pages/JoinGroup"));
+const Profile = lazy(loadPage.profile);
+const CalendarOverview = lazy(loadPage.calendarOverview);
+const MyEvents = lazy(loadPage.myEvents);
+const SignIn = lazy(loadPage.signIn);
+const JoinGroup = lazy(loadPage.joinGroup);
+const Privacy = lazy(loadPage.privacy);
+const HowItWorks = lazy(loadPage.howItWorks);
+const ConnectIcloudHelp = lazy(loadPage.connectIcloud);
+const ConnectIcsHelp = lazy(loadPage.connectIcs);
+const ConnectGoogleHelp = lazy(loadPage.connectGoogle);
+const ConnectOutlookHelp = lazy(loadPage.connectOutlook);
 
 /**
  * casy.app itself: the landing page for signed-out visitors, the scheduler

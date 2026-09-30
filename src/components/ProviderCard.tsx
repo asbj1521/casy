@@ -12,7 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import type { CalendarConnectionStatus } from "@/api/calendarStatus";
+import type { CalendarConnectionStatus } from "@/api/calendars";
 import { useT } from "@/i18n/lang";
 import { calendarNames, hasDistinctCalendarNames, syncedAgo } from "@/lib/accountSummary";
 import { cn } from "@/lib/utils";

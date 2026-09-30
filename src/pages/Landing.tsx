@@ -9,8 +9,9 @@ import TopNav from "@/components/TopNav";
 import { useExampleCarousel } from "@/hooks/useExampleCarousel";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { barRiseDelay, RISE_FULL } from "@/lib/barRise";
-import { goWithCard } from "@/lib/cardTransition";
+import { flyOnClick } from "@/lib/cardTransition";
 import { cn } from "@/lib/utils";
+import { loadPage } from "@/pages/lazyPages";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay } from "@/lib/zone";
 
 /**
@@ -286,13 +287,6 @@ function ChartDrawing() {
 }
 
 /**
- * The sign-in page's code, which App.tsx lazy-loads (same specifier, so the
- * same chunk). Loaded on hover, and before the card flies (goWithCard's
- * prepare), so the transition never waits on a download mid-flight.
- */
-const loadSignIn = () => import("@/pages/SignIn");
-
-/**
  * On to the scheduler, with the chart flying into place where it can
  * (cardTransition.ts). Still a real link, so it opens in a new tab like one.
  */
@@ -301,11 +295,7 @@ function GoButton({ label }: { label: string }) {
   return (
     <Link
       to="/plan"
-      onClick={(e) => {
-        // A new tab or window is the browser's business, not an animation's.
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        if (goWithCard(() => navigate("/plan"))) e.preventDefault();
-      }}
+      onClick={(e) => flyOnClick(e, () => navigate("/plan"))}
       className="flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 sm:px-8 sm:py-4 sm:text-lg"
     >
       {label}
@@ -343,16 +333,15 @@ export default function Landing() {
                 </Rise>
                 <Rise delay={0.2} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
                   <GoButton label={c.go} />
+                  {/* The sign-in page's code loads on hover, and before the card
+                      flies (flyOnClick's prepare), so the flight never waits
+                      on a download. */}
                   <Link
                     to="/sign-in"
-                    onMouseEnter={() => void loadSignIn()}
-                    onFocus={() => void loadSignIn()}
-                    onTouchStart={() => void loadSignIn()}
-                    onClick={(e) => {
-                      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
-                        return;
-                      if (goWithCard(() => navigate("/sign-in"), loadSignIn)) e.preventDefault();
-                    }}
+                    onMouseEnter={() => void loadPage.signIn()}
+                    onFocus={() => void loadPage.signIn()}
+                    onTouchStart={() => void loadPage.signIn()}
+                    onClick={(e) => flyOnClick(e, () => navigate("/sign-in"), loadPage.signIn)}
                     className="text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline sm:text-base"
                   >
                     {c.signIn}

@@ -14,7 +14,20 @@ import {
   type MultiDayResult,
   type WeeklySpanShape,
 } from "@/lib/availability";
+import { APP_TIME_ZONE, startOfMonth } from "@/lib/zone";
 import type { Participant } from "@/types";
+
+/**
+ * Where every search looks: from the 1st of this month through twelve whole
+ * months, in APP_TIME_ZONE. Group calendars are fetched for exactly this
+ * range (the server keeps a week back to a year ahead, syncWindow.ts), and
+ * the example groups are generated for the same months.
+ */
+const THIS_MONTH = startOfMonth(Date.now(), APP_TIME_ZONE);
+export const SEARCH_WINDOW = {
+  start: new Date(THIS_MONTH).toISOString(),
+  end: new Date(startOfMonth(THIS_MONTH, APP_TIME_ZONE, 12)).toISOString(),
+};
 
 /**
  * The hours "any time" may place a meeting within: not overnight, even for
