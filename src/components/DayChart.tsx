@@ -79,7 +79,7 @@ export default function DayChart({
         </div>
         <div className="hidden flex-wrap items-center gap-4 text-xs text-muted-foreground sm:flex">
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-sm bg-primary" />
+            <span className="h-3 w-3 rounded-sm bg-everyone" />
             {t.scheduler.legendAll}
           </span>
           <span className="flex items-center gap-1.5">
@@ -110,6 +110,7 @@ export default function DayChart({
           // time off) moves the answer; any other would land on the same one.
           const pickable = !dead && c.total > 0 && c.freeCount + c.conditionalCount >= c.total;
           const best = bestDays.has(c.date);
+          const everyone = !dead && c.total > 0 && c.freeCount >= c.total;
           const freeH = dead ? 0 : c.freeCount / Math.max(c.total, 1);
           const condH = dead ? 0 : c.conditionalCount / Math.max(c.total, 1);
           return (
@@ -130,7 +131,7 @@ export default function DayChart({
                 <span
                   className={cn(
                     "hidden text-[11px] font-bold sm:block",
-                    best ? "text-primary" : "text-muted-foreground",
+                    best ? (everyone ? "text-everyone" : "text-primary") : "text-muted-foreground",
                   )}
                 >
                   {/* Matches the bar's full stacked height (green + amber),
@@ -152,9 +153,13 @@ export default function DayChart({
                     condH > 0 ? "" : "rounded-t-[4px]",
                     dead
                       ? "h-1.5 rounded-t-[3px] bg-secondary"
-                      : best
-                        ? "bg-primary"
-                        : cn("bg-primary/30", pickable && "group-hover:bg-primary/50"),
+                      : everyone
+                        ? best
+                          ? "bg-everyone"
+                          : "bg-everyone/45 group-hover:bg-everyone/65"
+                        : best
+                          ? "bg-primary"
+                          : cn("bg-primary/30", pickable && "group-hover:bg-primary/50"),
                   )}
                   style={dead ? undefined : { height: `max(3px, calc(var(--bar-max) * ${freeH}))` }}
                 />
@@ -166,6 +171,7 @@ export default function DayChart({
       <div className="mt-1.5 flex gap-[2px] sm:gap-1.5">
         {days.map((c) => {
           const best = bestDays.has(c.date);
+          const everyone = !c.excluded && !c.isPast && c.total > 0 && c.freeCount >= c.total;
           const dow = new Date(c.date).toLocaleDateString(LOCALE[lang], {
             weekday: "narrow",
             timeZone,
@@ -187,7 +193,7 @@ export default function DayChart({
                       : bestNumbers.has(c.dayOfMonth - 1) || bestNumbers.has(c.dayOfMonth + 1)) &&
                     "invisible sm:visible",
                   best
-                    ? "font-extrabold text-primary"
+                    ? cn("font-extrabold", everyone ? "text-everyone" : "text-primary")
                     : c.excluded || c.isPast
                       ? "text-muted-foreground/70"
                       : "text-foreground",

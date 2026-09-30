@@ -16,6 +16,9 @@
     --primary: 20 90% 48%;
     --primary-foreground: 0 0% 100%;
 
+    /* A muted green beside the coral: days the whole group is free. */
+    --everyone: 150 48% 40%;
+
     --secondary: 40 20% 93%;
     --secondary-foreground: 220 25% 16%;
 
