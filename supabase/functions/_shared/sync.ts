@@ -30,6 +30,8 @@ type Db = ReturnType<typeof supabaseAdmin>;
 /** An access token this close to expiry is refreshed rather than used. */
 const TOKEN_MARGIN_MS = 2 * 60_000;
 
+const KEEP_PAGE = 1000;
+
 export type Provider = "google" | "outlook" | "apple" | "ics";
 
 export interface SyncTarget {
@@ -127,6 +129,24 @@ async function refreshBusy(
       end_at: iv.end,
     })),
   );
+  // A calendar whose own feed failed keeps what it had, rather than looking
+  // free until the feed answers again. The rest of the account still updates.
+  const keepIds = (sources ?? [])
+    .filter((s: { external_calendar_id: string }) => fresh.failed?.includes(s.external_calendar_id))
+    .map((s: { id: string }) => s.id);
+  // Paged: the API returns at most 1000 rows per request (max_rows).
+  for (let from = 0; keepIds.length > 0; from += KEEP_PAGE) {
+    const { data: kept, error: keptErr } = await db
+      .from("calendar_busy_cache")
+      .select("source_id, start_at, end_at")
+      .in("source_id", keepIds)
+      .gt("end_at", windowStart.toISOString())
+      .order("id")
+      .range(from, from + KEEP_PAGE - 1);
+    if (keptErr) throw keptErr;
+    blocks.push(...(kept ?? []));
+    if ((kept ?? []).length < KEEP_PAGE) break;
+  }
   const { data: stored, error: replaceErr } = await db.rpc("replace_busy_blocks", {
     p_connection_id: target.id,
     p_from: windowStart.toISOString(),
@@ -168,6 +188,8 @@ interface Fresh {
   writable?: Record<string, boolean>;
   /** Every event UID in the whole account (iCloud only), for markGoneEntries. */
   seenUids?: Set<string>;
+  /** Calendar ids that couldn't be read this time (iCloud subscriptions); their old blocks are kept. */
+  failed?: string[];
 }
 
 async function fetchFresh(
@@ -202,7 +224,7 @@ async function fetchFresh(
         throw new ReauthRequired("No stored iCloud login.");
       }
       const password = await decryptSecret(secrets.caldav_password, key);
-      const { calendars, uids } = await fetchAppleBusy(
+      const { calendars, uids, failedFeeds } = await fetchAppleBusy(
         { username: secrets.caldav_username, password },
         windowStart,
         windowEnd,
@@ -211,6 +233,7 @@ async function fetchFresh(
         busy: Object.fromEntries(calendars.map((c) => [c.id, c.intervals])),
         writable: Object.fromEntries(calendars.map((c) => [c.id, c.writable])),
         seenUids: uids,
+        failed: failedFeeds,
       };
     }
     case "ics": {

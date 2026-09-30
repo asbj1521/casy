@@ -61,6 +61,40 @@ Deno.test("only real and subscribed event calendars are picked", () => {
   assert(found[0].url.startsWith("https://p48-caldav.icloud.com/111/calendars/AAAA-1111"));
 });
 
+Deno.test("a subscription carries its feed's address; own calendars carry none", () => {
+  const xml = wrap(`
+    <response><href>/111/calendars/CCCC-3333/</href><propstat><prop>
+      <displayname xmlns="DAV:">School</displayname>
+      <resourcetype xmlns="DAV:"><collection/>${SUBSCRIBED}</resourcetype>
+      <supported-calendar-component-set xmlns="urn:ietf:params:xml:ns:caldav"><comp name='VEVENT'/></supported-calendar-component-set>
+      <source xmlns="http://calendarserver.org/ns/"><href xmlns="DAV:">webcal://school.example.com/feed.ics?k=1&amp;x=2</href></source>
+    </prop><status>HTTP/1.1 200 OK</status></propstat></response>
+    ${collection("/111/calendars/AAAA-1111/", "Work", CAL, ["VEVENT"])}`);
+  const [school, work] = pickEventCalendars(parseMultistatus(xml), HOME);
+  assertEquals(school.feedUrl, "webcal://school.example.com/feed.ics?k=1&x=2");
+  assertEquals(work.feedUrl, null);
+});
+
+Deno.test("a subscription whose address iCloud doesn't give has no feed", () => {
+  const found = pickEventCalendars(parseMultistatus(LISTING), HOME);
+  assertEquals(found.find((c) => c.id === "CCCC-3333")!.feedUrl, null);
+});
+
+Deno.test("a calendar that doesn't list what it holds is kept (a shared calendar)", () => {
+  // Shaped like a calendar shared into the account: the component set is
+  // answered 404 rather than listed.
+  const xml = wrap(`
+    <response><href>/111/calendars/FFFF-6666/</href>
+      <propstat><prop>
+        <displayname xmlns="DAV:">Family</displayname>
+        <resourcetype xmlns="DAV:"><collection/>${CAL}<shared xmlns="http://calendarserver.org/ns/"/></resourcetype>
+      </prop><status>HTTP/1.1 200 OK</status></propstat>
+      <propstat><prop><supported-calendar-component-set xmlns="urn:ietf:params:xml:ns:caldav"/></prop><status>HTTP/1.1 404 Not Found</status></propstat>
+    </response>
+    ${collection("/111/calendars/DDDD-4444/", "Reminders", CAL, ["VTODO"])}`);
+  assertEquals(pickEventCalendars(parseMultistatus(xml), HOME).map((c) => c.name), ["Family"]);
+});
+
 /** A calendar collection that also answers which privileges we hold on it. */
 const withPrivileges = (href: string, type: string, privileges: string[] | null) =>
   wrap(`
@@ -177,6 +211,19 @@ Deno.test("discovery walks principal -> home -> calendars", async () => {
     const cals = await discoverCalendars(CREDS);
     assertEquals(cals.map((c) => c.name), ["Work", "Family & friends", "University feed"]);
   });
+});
+
+Deno.test("the calendar listing asks for each subscription's feed address", async () => {
+  let listingBody = "";
+  await withFetch(
+    async (req) => {
+      if (new URL(req.url).pathname === "/111/calendars/") listingBody = await req.text();
+      return icloud()(req);
+    },
+    () => discoverCalendars(CREDS).then(() => {}),
+  );
+  assert(listingBody.includes("<cs:source/>"));
+  assert(listingBody.includes('xmlns:cs="http://calendarserver.org/ns/"'));
 });
 
 Deno.test("the login is sent as HTTP Basic, and only to icloud hosts", async () => {

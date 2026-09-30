@@ -87,7 +87,11 @@ Deno.serve(withLanguage(async (req) => {
   let fetched: AppleCalendarBusy[];
   let skippedEvents: number;
   try {
-    ({ calendars: fetched, skippedEvents } = await fetchAppleBusy(creds, windowStart, windowEnd));
+    const result = await fetchAppleBusy(creds, windowStart, windowEnd);
+    fetched = result.calendars;
+    // A subscription whose feed failed has nothing stored yet; it is reported
+    // with the unreadable events and filled in by a later sync.
+    skippedEvents = result.skippedEvents + result.failedFeeds.length;
     if (fetched.length === 0) {
       return json({ error: "That iCloud account has no calendars we can read." }, 400);
     }

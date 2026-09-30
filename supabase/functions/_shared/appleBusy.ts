@@ -11,7 +11,7 @@
  * by hand (calendarWrites.ts). The UIDs are only compared, never stored.
  */
 import { discoverCalendars, fetchEventDocuments, mapPool, type CalDavCredentials } from "./caldav.ts";
-import { parseBusyIntervals } from "./ics.ts";
+import { fetchFeedText, parseBusyIntervals } from "./ics.ts";
 import { mergeIntervals, type RawBusyInterval } from "./intervals.ts";
 import { addMissingTimezones } from "./timezones.ts";
 
@@ -37,15 +37,47 @@ export function eventUids(doc: string): string[] {
   return [...unfolded.matchAll(/^UID(?:;[^:\r\n]*)?:(.*)$/gm)].map((m) => m[1].trim()).filter(Boolean);
 }
 
+/**
+ * A subscription's events, read from its feed like an ICS link (public https
+ * only; the iCloud password is never sent there). Null if the feed can't be
+ * fetched or read: that is the feed's problem, not the account's, so it must
+ * not fail the other calendars.
+ */
+async function fetchSubscribedFeed(
+  feedUrl: string,
+  windowStart: Date,
+  windowEnd: Date,
+): Promise<RawBusyInterval[] | null> {
+  try {
+    const text = addMissingTimezones(await fetchFeedText(feedUrl), windowStart, windowEnd);
+    return parseBusyIntervals(text, windowStart, windowEnd).intervals;
+  } catch (err) {
+    console.error("iCloud subscription feed failed", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 export async function fetchAppleBusy(
   creds: CalDavCredentials,
   windowStart: Date,
   windowEnd: Date,
-): Promise<{ calendars: AppleCalendarBusy[]; skippedEvents: number; uids: Set<string> }> {
+): Promise<{
+  calendars: AppleCalendarBusy[];
+  skippedEvents: number;
+  uids: Set<string>;
+  /** Ids of subscriptions whose feed couldn't be read this time; their intervals are empty. */
+  failedFeeds: string[];
+}> {
   let skippedEvents = 0;
   const uids = new Set<string>();
+  const failedFeeds: string[] = [];
   const calendars = await discoverCalendars(creds);
   const fetched = await mapPool(calendars, CALENDAR_CONCURRENCY, async (cal) => {
+    if (cal.feedUrl) {
+      const intervals = await fetchSubscribedFeed(cal.feedUrl, windowStart, windowEnd);
+      if (!intervals) failedFeeds.push(cal.id);
+      return { id: cal.id, name: cal.name, writable: cal.writable, intervals: intervals ?? [] };
+    }
     const documents = await fetchEventDocuments(creds, cal.url, windowStart, windowEnd);
     const intervals: RawBusyInterval[] = [];
     for (const doc of documents) {
@@ -62,5 +94,5 @@ export async function fetchAppleBusy(
     }
     return { id: cal.id, name: cal.name, writable: cal.writable, intervals: mergeIntervals(intervals) };
   });
-  return { calendars: fetched, skippedEvents, uids };
+  return { calendars: fetched, skippedEvents, uids, failedFeeds };
 }

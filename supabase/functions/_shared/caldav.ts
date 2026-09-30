@@ -8,6 +8,8 @@
  *   2. PROPFIND principal                  -> the calendar home (a pNN-caldav host)
  *   3. PROPFIND home, Depth 1              -> every calendar, with type info
  *   4. REPORT calendar-query per calendar  -> events in a time range
+ *      (not for subscriptions: iCloud holds only their feed's address, so
+ *      appleBusy.ts fetches the feed instead)
  *
  * And, only for the calendar its owner made primary: PUT one agreed event
  * into it, or DELETE one Casy put there when the event is cancelled.
@@ -50,6 +52,13 @@ export interface CalDavCalendar {
    * subscription or a calendar someone shared with view-only access.
    */
   writable: boolean;
+  /**
+   * For a subscription: the feed it was made from. iCloud keeps only this
+   * address, not the events (each device fetches the feed itself), so the
+   * events must be fetched from here, not asked of iCloud. Null otherwise, or
+   * when iCloud didn't say.
+   */
+  feedUrl: string | null;
 }
 
 const START_URL = "https://caldav.icloud.com/";
@@ -238,6 +247,21 @@ export function canWrite(r: DavResponse): boolean {
 }
 
 /**
+ * Whether a collection may hold events. Per RFC 4791 (5.2.3) a calendar that
+ * doesn't list its component types accepts all of them; calendars shared into
+ * the account were being dropped for leaving the list out. Reminder lists
+ * always list theirs (VTODO only), so they are still left out.
+ */
+function holdsEvents(r: DavResponse): boolean {
+  const componentSet = r.prop["supported-calendar-component-set"];
+  if (componentSet === undefined) return true;
+  const comps = componentSet && typeof componentSet === "object"
+    ? ((componentSet as { comp?: { "@_name"?: string }[] }).comp ?? [])
+    : [];
+  return comps.some((c) => c["@_name"]?.toUpperCase() === "VEVENT");
+}
+
+/**
  * Turn a listing of collections into event calendars: collections that are
  * real or subscribed calendars AND hold events. That skips the home root, the
  * scheduling inbox/outbox, notification collections, and reminder lists.
@@ -246,19 +270,29 @@ export function pickEventCalendars(responses: DavResponse[], homeUrl: URL): CalD
   const calendars: CalDavCalendar[] = [];
   for (const r of responses) {
     const type = r.prop["resourcetype"];
-    if (!type || typeof type !== "object") continue;
-    if (!("calendar" in type) && !("subscribed" in type)) continue;
-
-    const componentSet = r.prop["supported-calendar-component-set"];
-    const comps = (componentSet && typeof componentSet === "object"
-      ? ((componentSet as { comp?: { "@_name"?: string }[] }).comp ?? [])
-      : []);
-    if (!comps.some((c) => c["@_name"]?.toUpperCase() === "VEVENT")) continue;
+    const kinds = type && typeof type === "object" ? Object.keys(type) : [];
+    const subscribed = kinds.includes("subscribed");
+    if (!kinds.includes("calendar") && !subscribed) continue;
+    if (!holdsEvents(r)) {
+      // Only the collection's types, never its name, so a calendar still
+      // missing can be explained from the logs.
+      console.log("CalDAV collection skipped (no events)", kinds.join(","));
+      continue;
+    }
 
     const url = assertIcloudUrl(new URL(r.href, homeUrl));
     const id = url.pathname.split("/").filter(Boolean).pop();
     if (!id) continue;
-    calendars.push({ url: url.toString(), id, name: textOf(r.prop["displayname"]), writable: canWrite(r) });
+    const feedUrl = subscribed ? hrefInside(r.prop["source"]) : null;
+    // Whether iCloud gave the address, never the address itself (it can hold a secret key).
+    if (subscribed) console.log("CalDAV subscription", feedUrl ? "with a feed address" : "WITHOUT a feed address");
+    calendars.push({
+      url: url.toString(),
+      id,
+      name: textOf(r.prop["displayname"]),
+      writable: canWrite(r),
+      feedUrl,
+    });
   }
   return calendars;
 }
@@ -290,7 +324,7 @@ export async function discoverCalendars(creds: CalDavCredentials): Promise<CalDa
     creds,
     "PROPFIND",
     homeUrl,
-    `<d:propfind ${NS}><d:prop><d:displayname/><d:resourcetype/><c:supported-calendar-component-set/><d:current-user-privilege-set/></d:prop></d:propfind>`,
+    `<d:propfind ${NS} xmlns:cs="http://calendarserver.org/ns/"><d:prop><d:displayname/><d:resourcetype/><c:supported-calendar-component-set/><d:current-user-privilege-set/><cs:source/></d:prop></d:propfind>`,
     1,
   );
   return pickEventCalendars(parseMultistatus(listXml), homeUrl);

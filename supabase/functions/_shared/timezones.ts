@@ -58,6 +58,32 @@ export function offsetMinutes(zone: string, atMs: number): number {
   return Math.round((wallClockAsUtc - Math.floor(atMs / 1000) * 1000) / MS_PER_MINUTE);
 }
 
+/**
+ * The zone times without one are read in: dates like an all-day event's, and
+ * floating times. The same zone the app works in (APP_TIME_ZONE in src/lib/zone.ts).
+ */
+export const DEFAULT_ZONE = "Europe/Copenhagen";
+
+/**
+ * The UTC instant of a wall-clock time in `zone` (month 1-12). A time skipped
+ * by a daylight saving change lands an hour later, as calendar apps do.
+ */
+export function wallClockToUtc(
+  zone: string,
+  year: number,
+  month: number,
+  day: number,
+  hour = 0,
+  minute = 0,
+  second = 0,
+): Date {
+  const asUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  // The offset at the guess can be the wrong side of a change; one more
+  // round with the offset at the first answer settles it.
+  const first = asUtc - offsetMinutes(zone, asUtc) * MS_PER_MINUTE;
+  return new Date(asUtc - offsetMinutes(zone, first) * MS_PER_MINUTE);
+}
+
 /** "+0100" / "-0330", the form TZOFFSETFROM/TZOFFSETTO use. */
 function formatOffset(minutes: number): string {
   const sign = minutes < 0 ? "-" : "+";

@@ -17,6 +17,7 @@
  */
 import ICAL from "npm:ical.js@2.2.1";
 import { mergeIntervals, type RawBusyInterval } from "./intervals.ts";
+import { DEFAULT_ZONE, wallClockToUtc } from "./timezones.ts";
 
 /** A problem with the feed or URL that is safe to show to the user as-is. */
 export class IcsError extends Error {}
@@ -154,26 +155,29 @@ export function parseBusyIntervals(raw: string, windowStart: Date, windowEnd: Da
   }
 
   const toDate = (t: InstanceType<typeof ICAL.Time>): Date => {
-    if (t.isDate) {
-      // All-day: a calendar date, meaning midnight in the feed's own zone
-      // (falling back to UTC when it declares none).
-      const midnight = new ICAL.Time(
-        { year: t.year, month: t.month, day: t.day, hour: 0, minute: 0, second: 0, isDate: false },
-        feedZone ?? ICAL.Timezone.utcTimezone,
-      );
-      return midnight.toJSDate();
+    const floating = t.isDate || t.zone === ICAL.Timezone.localTimezone;
+    if (!floating) return t.toJSDate();
+    // An all-day date means midnight, and a floating time (no zone, no Z) the
+    // clock time, in the feed's own zone. A feed that declares none (iCloud's
+    // never do) is read in Danish time, not UTC, which put all-day events
+    // an hour or two late.
+    const hour = t.isDate ? 0 : t.hour;
+    const minute = t.isDate ? 0 : t.minute;
+    const second = t.isDate ? 0 : t.second;
+    if (feedZone) {
+      return new ICAL.Time({ year: t.year, month: t.month, day: t.day, hour, minute, second, isDate: false }, feedZone)
+        .toJSDate();
     }
-    if (t.zone === ICAL.Timezone.localTimezone && feedZone) {
-      // Floating time (no zone, no Z): read it in the feed's own zone.
-      t.zone = feedZone;
-    }
-    return t.toJSDate();
+    return wallClockToUtc(DEFAULT_ZONE, t.year, t.month, t.day, hour, minute, second);
   };
 
-  const blocks = (ev: InstanceType<typeof ICAL.Event>): boolean => {
+  // All-day events block even when shown as free: Apple Calendar makes every
+  // all-day event "free" unless changed, so a vacation would otherwise not
+  // count. A calendar of reminders (birthdays, holidays) is set to skip instead.
+  const blocks = (ev: InstanceType<typeof ICAL.Event>, allDay: boolean): boolean => {
     const status = String(ev.component.getFirstPropertyValue("status") ?? "").toUpperCase();
     const transp = String(ev.component.getFirstPropertyValue("transp") ?? "").toUpperCase();
-    return status !== "CANCELLED" && transp !== "TRANSPARENT";
+    return status !== "CANCELLED" && (allDay || transp !== "TRANSPARENT");
   };
 
   const collected: RawBusyInterval[] = [];
@@ -185,14 +189,14 @@ export function parseBusyIntervals(raw: string, windowStart: Date, windowEnd: Da
 
   for (const ev of standalone) {
     if (!ev.isRecurring()) {
-      if (blocks(ev)) add(toDate(ev.startDate), toDate(ev.endDate));
+      if (blocks(ev, ev.startDate.isDate)) add(toDate(ev.startDate), toDate(ev.endDate));
     } else {
       const it = ev.iterator();
       for (let n = 0, next = it.next(); next && n < MAX_OCCURRENCES_PER_EVENT; n++, next = it.next()) {
         const d = ev.getOccurrenceDetails(next);
         const start = toDate(d.startDate);
         if (start >= windowEnd) break; // occurrences come in ascending order
-        if (blocks(d.item)) add(start, toDate(d.endDate));
+        if (blocks(d.item, d.startDate.isDate)) add(start, toDate(d.endDate));
       }
     }
     if (collected.length > MAX_INTERVALS) {

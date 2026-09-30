@@ -14,7 +14,8 @@
  * Privacy: unlike Google's calendar.freebusy scope, no Microsoft scope is
  * free/busy-only, and Calendars.Read can read event subjects and bodies. So
  * "we never read titles" is enforced here, by always sending an explicit
- * $select of start/end/showAs/isCancelled. Never widen that $select.
+ * $select of start/end/showAs/isCancelled/isAllDay. Never widen that $select
+ * beyond timing and status.
  *
  * Why Calendars.Read rather than the narrower Calendars.ReadBasic: tested
  * against a real personal (Outlook.com) account, ReadBasic authenticates but
@@ -26,6 +27,7 @@
 
 import { mergeIntervals, type RawBusyInterval } from "./intervals.ts";
 import { isInvalidGrant, ReauthRequired } from "./reauth.ts";
+import { DEFAULT_ZONE, wallClockToUtc } from "./timezones.ts";
 
 const TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
 export const AUTHORIZE_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
@@ -119,11 +121,12 @@ interface GraphList<T> {
 }
 
 /** The only event fields we ever request (see the $select in queryCalendarChunk). */
-interface GraphEvent {
+export interface GraphEvent {
   start: { dateTime: string };
   end: { dateTime: string };
   showAs?: string;
   isCancelled?: boolean;
+  isAllDay?: boolean;
 }
 
 /** GET a Graph URL as JSON, backing off on throttling (429) a couple of times. */
@@ -179,6 +182,34 @@ export async function listCalendars(accessToken: string): Promise<OutlookCalenda
 // Only these count as "busy". free and workingElsewhere leave you available;
 // unknown is what Outlook uses for things like birthdays and holidays.
 const BUSY_STATUSES = new Set(["busy", "tentative", "oof"]);
+// All-day events also block when free: Outlook makes new all-day events free,
+// so a vacation would otherwise not count (the same rule as ics.ts).
+const ALL_DAY_BUSY_STATUSES = new Set([...BUSY_STATUSES, "free"]);
+
+/** Whether an event (from the $select below) makes its time busy. */
+export function outlookEventBlocks(ev: GraphEvent): boolean {
+  if (ev.isCancelled) return false;
+  // No status at all is treated like an unknown one: not busy.
+  return (ev.isAllDay ? ALL_DAY_BUSY_STATUSES : BUSY_STATUSES).has(ev.showAs ?? "");
+}
+
+/**
+ * An all-day event's start or end: the date it names, from midnight in Danish
+ * time. Graph gives all-day dates as a midnight in the requested zone (UTC),
+ * which would place the event an hour or two early; rounding to the nearest
+ * midnight first also copes with a midnight converted from another zone.
+ */
+export function allDayInstant(iso: string): string {
+  const nearestMidnight = new Date(Math.round(new Date(iso).getTime() / MS_PER_DAY) * MS_PER_DAY);
+  return wallClockToUtc(
+    DEFAULT_ZONE,
+    nearestMidnight.getUTCFullYear(),
+    nearestMidnight.getUTCMonth() + 1,
+    nearestMidnight.getUTCDate(),
+  ).toISOString();
+}
+
+const MS_PER_DAY = 86_400_000;
 
 // calendarView's docs state no maximum date range (unlike Google's
 // freeBusy.query, which rejected long ranges). Chunking anyway to keep each
@@ -206,7 +237,7 @@ async function queryCalendarChunk(
     startDateTime: timeMin.toISOString(),
     endDateTime: timeMax.toISOString(),
     // The privacy line: never select subject, location, organizer, etc.
-    $select: "start,end,showAs,isCancelled",
+    $select: "start,end,showAs,isCancelled,isAllDay",
     $top: String(PAGE_SIZE),
   });
   let next: string | undefined =
@@ -214,10 +245,13 @@ async function queryCalendarChunk(
   while (next) {
     const body: GraphList<GraphEvent> = await graphGet(accessToken, next);
     for (const ev of body.value ?? []) {
-      // No status at all is treated like an unknown one: not busy.
-      if (ev.isCancelled || !BUSY_STATUSES.has(ev.showAs ?? "")) continue;
-      const start = new Date(Math.max(new Date(graphDateTimeToIso(ev.start.dateTime)).getTime(), timeMin.getTime()));
-      const end = new Date(Math.min(new Date(graphDateTimeToIso(ev.end.dateTime)).getTime(), timeMax.getTime()));
+      if (!outlookEventBlocks(ev)) continue;
+      const read = (dateTime: string) => {
+        const iso = graphDateTimeToIso(dateTime);
+        return new Date(ev.isAllDay ? allDayInstant(iso) : iso).getTime();
+      };
+      const start = new Date(Math.max(read(ev.start.dateTime), timeMin.getTime()));
+      const end = new Date(Math.min(read(ev.end.dateTime), timeMax.getTime()));
       if (end > start) out.push({ start: start.toISOString(), end: end.toISOString() });
     }
     next = body["@odata.nextLink"];
