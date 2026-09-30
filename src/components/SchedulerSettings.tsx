@@ -322,9 +322,10 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
   ];
 
   return (
-    <section className="rounded-2xl border bg-card p-3.5 shadow-sm sm:p-4 xl:hidden">
-      {/* The group and the Tur / ferie switch share a line, so the chart
-          under the answer still makes the first screen on a phone. */}
+    <section className="rounded-2xl border bg-card p-3 shadow-sm sm:p-4 xl:hidden">
+      {/* The group and the Tur / ferie switch share a line, and every field
+          below is a little tighter than its wide-screen counterpart, so the
+          chart under the answer still makes the first screen on a phone. */}
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">{groupSwitcher}</div>
         <div className="flex shrink-0 flex-col items-center">
@@ -346,10 +347,10 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
         onChange={(e) => onName(e.target.value)}
         placeholder={t.scheduler.namePlaceholder}
         aria-label={t.scheduler.name}
-        className="mt-2 h-12 w-full rounded-xl border bg-card px-3.5 text-[17px] font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+        className="mt-1.5 h-11 w-full rounded-xl border bg-card px-3.5 text-[17px] font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-2 text-[17px] font-semibold text-foreground">
+      <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[17px] font-semibold text-foreground">
         {settings.multiDay ? (
           <>
             <span>{t.scheduler.sentenceFor}</span>

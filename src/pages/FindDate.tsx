@@ -636,11 +636,11 @@ export default function FindDate() {
         that works for everyone, big, then the month day by day so you can
         see why. Everything about the group itself sits at the bottom.
       */}
-      <div className="mx-auto flex max-w-[90rem] flex-col gap-3 px-4 pb-6 pt-2 sm:gap-5 sm:pt-4 sm:px-6 sm:pb-16 lg:px-10">
+      <div className="mx-auto flex max-w-[90rem] flex-col gap-2 px-4 pb-6 pt-2 sm:gap-5 sm:pt-4 sm:px-6 sm:pb-16 lg:px-10">
         <div
           onPointerDownCapture={stopCarousel}
           onFocusCapture={stopCarousel}
-          className="flex flex-col gap-3 sm:gap-5"
+          className="flex flex-col gap-2 sm:gap-5"
         >
           <SettingsBar {...settingsProps} />
           <SettingsSentence {...settingsProps} />
@@ -648,7 +648,7 @@ export default function FindDate() {
           {/* ───────── The answer ───────── */}
           <section
             className={cn(
-              "rounded-3xl border p-4 shadow-xl shadow-black/5 sm:p-8",
+              "rounded-3xl border p-3 shadow-xl shadow-black/5 sm:p-8",
               tone === "none" && "border-rose-200 bg-rose-50",
               (tone === "approve" || tone === "skip") && "border-amber-300 bg-amber-50",
               tone === "review" && "border-sky-200 bg-sky-50",
@@ -677,7 +677,7 @@ export default function FindDate() {
                 )}
               </>
             ) : (
-              <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <p
                     className={cn(
@@ -699,7 +699,7 @@ export default function FindDate() {
                   <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
                     {headline}
                   </h1>
-                  <p className="mt-2 text-base text-muted-foreground sm:text-xl">{subline}</p>
+                  <p className="mt-1.5 text-base text-muted-foreground sm:text-xl">{subline}</p>
 
                   {/* What the date costs, in the review states. */}
                   {tone === "approve" && (
@@ -735,7 +735,7 @@ export default function FindDate() {
                   )}
                 </div>
 
-                <div className="flex shrink-0 flex-col gap-4 lg:items-end">
+                <div className="flex shrink-0 flex-col gap-3 lg:items-end">
                   {/* Everyone in the search; someone who'd skip or take time
                       off is shown faded. */}
                   <div className="flex items-center gap-3">
@@ -968,7 +968,7 @@ export default function FindDate() {
           scrolls. Sticky rather than fixed, so at the very end it comes to
           rest above the footer instead of covering it. */}
       {actionButtons && (
-        <div className="sticky bottom-0 z-30 flex gap-2 border-t bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)] sm:hidden">
+        <div className="sticky bottom-0 z-30 flex gap-2 border-t bg-card px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)] sm:hidden">
           {actionButtons}
         </div>
       )}

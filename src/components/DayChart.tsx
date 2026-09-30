@@ -52,7 +52,7 @@ export default function DayChart({
   }
 
   return (
-    <section className="rounded-2xl border bg-card px-4 pb-4 pt-4 shadow-sm sm:px-7 sm:pt-5">
+    <section className="rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-7 sm:pt-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
@@ -101,7 +101,7 @@ export default function DayChart({
       {/* The tallest bar is --bar-max: shorter on a phone, so the chart fits
           on the first screen under the answer. */}
       <div
-        className="mt-4 flex items-end gap-[2px] border-b [--bar-max:110px] sm:mt-5 sm:gap-1.5 sm:[--bar-max:150px]"
+        className="mt-3 flex items-end gap-[2px] border-b [--bar-max:78px] sm:mt-5 sm:gap-1.5 sm:[--bar-max:150px]"
         style={{ height: "calc(var(--bar-max) + 24px)" }}
       >
         {days.map((c) => {
