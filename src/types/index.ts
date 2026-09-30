@@ -1,9 +1,7 @@
 /**
- * Core data model for Autodate.
- *
- * Everything in the app hangs off these types. They're written to mirror what a
- * real backend (Supabase) and the calendar providers (Google / Outlook) will
- * eventually hand us, so the mock data layer and the real one share one shape.
+ * The shapes the scheduling engine works on (src/lib/availability.ts). Real
+ * groups (src/api/groups.ts) and the made-up example groups (src/api/mockData.ts)
+ * both arrive in them, so the engine never knows which it is looking at.
  *
  * Time convention: all instants are stored as ISO 8601 strings in UTC
  * (e.g. "2026-06-20T14:00:00.000Z"): a busy block is a moment in time no
@@ -16,16 +14,16 @@
 export type CalendarProvider = "google" | "outlook" | "apple" | "ics";
 
 /**
- * A user-facing label for what a calendar is *for*. This is the "mark them after
- * what they are" step — it lets us later support rules like "ignore work
- * calendars on weekends" without changing the data model.
+ * What its owner says a calendar is for, set on My calendar. Work and school
+ * carry over to its busy blocks as their category (EventCategory).
  */
 export type CalendarPurpose = "work" | "school" | "personal" | "other";
 
 /**
- * A coarse category for a busy block, used for colouring/filtering in our fake
- * test data. Real free/busy feeds won't include this (nor a title) — both are
- * optional so the same `BusyInterval` shape covers mock and real data.
+ * What a busy block is. Only "work" and "school" change anything: they are
+ * time you could take off for a trip (isSoftBlock). Real blocks carry one of
+ * those two or none, from their calendar's purpose; the example groups use
+ * the rest to make their generated calendars read like real ones.
  */
 export type EventCategory =
   "work" | "school" | "social" | "health" | "travel" | "personal" | "family";
@@ -58,11 +56,12 @@ export interface BusyInterval {
   start: string;
   /** ISO 8601 UTC instant, exclusive. */
   end: string;
-  /** Which calendar this busy block came from (for debugging / filtering). */
-  calendarId?: string;
-  /** Optional human-readable title (present in fake/test data; real free/busy omits it). */
+  /**
+   * What to call it when asking you to take time off or skip it: your own
+   * name for the calendar it came from, or a made-up title in an example
+   * group. Never an event title, since none are stored.
+   */
   title?: string;
-  /** Optional category, for colouring/filtering in test data. */
   category?: EventCategory;
   /** Its calendar's priority; omitted means "normal". */
   priority?: CalendarPriority;
@@ -93,12 +92,8 @@ export interface FriendGroup {
   participants: Participant[];
 }
 
-/** An event someone is trying to schedule. */
-export interface Event {
-  id: string;
-  title: string;
-  /** Profile id of whoever created the event. */
-  organizerId: string;
+/** A single meeting to find a time for: who, how long, and where to look. */
+export interface MeetingSearch {
   participants: Participant[];
   /** How long the meeting needs to be, in minutes. */
   durationMinutes: number;
@@ -130,8 +125,6 @@ export interface SchedulingConstraints {
    * Defaults to 24.
    */
   latestHour?: number;
-  /** If true, Saturdays and Sundays are excluded. Defaults to false. */
-  excludeWeekends?: boolean;
   /**
    * Which days of the week may host the event, as local day-of-week values
    * (0 = Sunday … 6 = Saturday). A window is kept if it *starts* on an allowed
@@ -139,17 +132,6 @@ export interface SchedulingConstraints {
    * Omitted = all seven days.
    */
   allowedDays?: number[];
-}
-
-/** The result of running the availability engine. */
-export interface SchedulingResult {
-  /** The earliest slot that works, or null if none was found. */
-  slot: TimeSlot | null;
-  /**
-   * Up to a handful of alternative slots after the first, for UX ("here are a
-   * few options"). Empty if none found.
-   */
-  alternatives: TimeSlot[];
 }
 
 /** A concrete proposed meeting time. */

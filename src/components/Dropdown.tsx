@@ -2,35 +2,28 @@ import { type ReactNode } from "react";
 
 import Popover from "@/components/Popover";
 import WheelPicker from "@/components/WheelPicker";
-import { cn } from "@/lib/utils";
 
 /**
- * A small labelled dropdown that opens a looping wheel (type / duration /
- * start). No chevron: three of these share one line in a narrow panel, and
- * the icon already says what each one is. If the line is still too narrow
- * (the smallest phones), the label shortens with an ellipsis rather than
- * wrapping onto a second line.
+ * A button showing the chosen option that opens a looping wheel to pick
+ * another: the scheduling settings' start time, length, days and start day.
+ * The label shortens with an ellipsis rather than wrap when its row is too
+ * narrow (the smallest phones).
  */
 export default function Dropdown({
-  icon,
   value,
   options,
   onChange,
   menuWidth = "w-32",
-  className,
   triggerClassName,
   suffix,
 }: {
-  icon?: ReactNode;
   value: number;
   options: { label: string; value: number }[];
   onChange: (value: number) => void;
   /** Tailwind width class for the wheel popup (wider for long labels). */
   menuWidth?: string;
-  /** Classes for the outer box, e.g. whether it may shrink in its row. */
-  className?: string;
-  /** Replaces the small default button look, e.g. for the scheduler's chips. */
-  triggerClassName?: string;
+  /** The button's look: a field in the settings bar, a chip in the sentence. */
+  triggerClassName: string;
   /** Shown after the label, e.g. a chevron. */
   suffix?: ReactNode;
 }) {
@@ -38,15 +31,11 @@ export default function Dropdown({
 
   return (
     <Popover
-      className={cn("inline-block min-w-0", className)}
-      triggerClassName={
-        triggerClassName ??
-        "inline-flex max-w-full items-center gap-1 rounded-lg border bg-card px-2 py-1.5 text-sm font-medium text-foreground transition hover:bg-secondary"
-      }
+      className="inline-block min-w-0"
+      triggerClassName={triggerClassName}
       panelClassName={menuWidth}
       trigger={() => (
         <>
-          {icon}
           <span className="truncate">{current?.label}</span>
           {suffix}
         </>

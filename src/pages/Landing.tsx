@@ -286,16 +286,16 @@ function ChartDrawing() {
 }
 
 /**
- * On to the scheduler, with the chart flying into place where it can
- * (cardTransition.ts). Still a real link, so it opens in a new tab like one.
- */
-/**
  * The sign-in page's code, which App.tsx lazy-loads (same specifier, so the
  * same chunk). Loaded on hover, and before the card flies (goWithCard's
  * prepare), so the transition never waits on a download mid-flight.
  */
 const loadSignIn = () => import("@/pages/SignIn");
 
+/**
+ * On to the scheduler, with the chart flying into place where it can
+ * (cardTransition.ts). Still a real link, so it opens in a new tab like one.
+ */
 function GoButton({ label }: { label: string }) {
   const navigate = useNavigate();
   return (

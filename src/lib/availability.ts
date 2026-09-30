@@ -6,14 +6,14 @@
  * React — deterministic and easy to unit-test, which matters because this is
  * the one piece of logic the entire product depends on being correct.
  *
- * Four searches share one vocabulary:
- *   - findEarliestSlot     a single meeting at a precise time of day
- *   - findEarliestDaySpan  N whole days, the first place they fit
- *   - findBestDaySpan      N whole days, the best-scoring place (vacations)
- *   - findWeeklySpan       a weekday-anchored window, best-scoring occurrence
- *                          (weekend trips)
+ * Three searches share one vocabulary:
+ *   - findMeetingSlot   a single meeting within set hours (findEarliestSlot,
+ *                       run with and without the skippable blocks)
+ *   - findBestDaySpan   N whole days, the best-scoring place (holidays)
+ *   - findWeeklySpan    a weekday-anchored window, best-scoring occurrence
+ *                       (weekend trips)
  * plus findVacationSuggestions, which proposes workarounds when the requested
- * vacation length doesn't work cleanly.
+ * holiday length doesn't work cleanly.
  *
  * Multi-day searches classify busy blocks with two rules:
  *   - HARD blocks (isHardBlock): all-day absences — being on another trip —
@@ -40,19 +40,15 @@
 
 import type {
   BusyInterval,
-  Event,
+  MeetingSearch,
   Participant,
   SchedulingConstraints,
-  SchedulingResult,
   TimeSlot,
 } from "@/types";
 import { addDays, atHour, dayOfWeek, startOfDay } from "@/lib/zone";
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 3_600_000;
-
-/** How many alternative slots (beyond the primary) we surface to the UI. */
-const MAX_ALTERNATIVES = 3;
 
 /**
  * Busy categories that only *soft*-block a multi-day event: they surface as
@@ -255,33 +251,21 @@ export function spanAvailability(
  * ------------------------------------------------------------------------- */
 
 /**
- * Find the earliest meeting slot that works for everyone: build the allowed
+ * The earliest meeting slot that works for everyone: build the allowed
  * windows from the constraints, subtract everyone's merged busy time, and
- * take the first gap the meeting fits into (plus a few alternatives).
+ * take the start of the first gap the meeting fits into.
  */
-export function findEarliestSlot(event: Event): SchedulingResult {
-  const range = parseRange(event.searchStart, event.searchEnd);
-  const durationMs = event.durationMinutes * MS_PER_MINUTE;
-  if (!range || durationMs <= 0) return { slot: null, alternatives: [] };
+export function findEarliestSlot(search: MeetingSearch): TimeSlot | null {
+  const range = parseRange(search.searchStart, search.searchEnd);
+  const durationMs = search.durationMinutes * MS_PER_MINUTE;
+  if (!range || durationMs <= 0) return null;
 
   const free = subtractIntervals(
-    buildAllowedWindows(range, event.timeZone, event.constraints),
-    collectBusy(event.participants, range),
+    buildAllowedWindows(range, search.timeZone, search.constraints),
+    collectBusy(search.participants, range),
   );
-
-  // Each big-enough free window yields one candidate, anchored at its start
-  // (earliest is always best within a window).
-  const candidates: TimeSlot[] = [];
-  for (const w of free) {
-    if (w.end - w.start >= durationMs) {
-      candidates.push({ start: iso(w.start), end: iso(w.start + durationMs) });
-      if (candidates.length > MAX_ALTERNATIVES) break;
-    }
-  }
-  return {
-    slot: candidates[0] ?? null,
-    alternatives: candidates.slice(1, MAX_ALTERNATIVES + 1),
-  };
+  const gap = free.find((w) => w.end - w.start >= durationMs);
+  return gap ? { start: iso(gap.start), end: iso(gap.start + durationMs) } : null;
 }
 
 /**
@@ -291,43 +275,43 @@ export function findEarliestSlot(event: Event): SchedulingResult {
  * works with skipping. Then that one wins, and `conflicts` says who would
  * skip what.
  */
-export function findMeetingSlot(event: Event): MultiDayResult {
-  const strict = findEarliestSlot(event);
-  const anySkippable = event.participants.some((p) => p.busy.some(isSkippable));
-  if (!anySkippable) return { slot: strict.slot, conflicts: [] };
+export function findMeetingSlot(search: MeetingSearch): MultiDayResult {
+  const strict = findEarliestSlot(search);
+  const anySkippable = search.participants.some((p) => p.busy.some(isSkippable));
+  if (!anySkippable) return { slot: strict, conflicts: [] };
 
   // The same search with the skippable blocks gone. It can only find the
   // same date or an earlier one.
   const relaxed = findEarliestSlot({
-    ...event,
-    participants: event.participants.map((p) => ({
+    ...search,
+    participants: search.participants.map((p) => ({
       ...p,
       busy: p.busy.filter((b) => !isSkippable(b)),
     })),
   });
-  if (!relaxed.slot) return { slot: strict.slot, conflicts: [] };
+  if (!relaxed) return { slot: strict, conflicts: [] };
 
   // Compared as local days: a clean lunch exactly a week on still wins,
   // whatever the hour.
-  const relaxedStart = Date.parse(relaxed.slot.start);
-  const lastPatientDay = addDays(relaxedStart, SKIP_PATIENCE_DAYS, event.timeZone);
-  if (strict.slot && startOfDay(Date.parse(strict.slot.start), event.timeZone) <= lastPatientDay) {
-    return { slot: strict.slot, conflicts: [] };
+  const relaxedStart = Date.parse(relaxed.start);
+  const lastPatientDay = addDays(relaxedStart, SKIP_PATIENCE_DAYS, search.timeZone);
+  if (strict && startOfDay(Date.parse(strict.start), search.timeZone) <= lastPatientDay) {
+    return { slot: strict, conflicts: [] };
   }
   return {
-    slot: relaxed.slot,
+    slot: relaxed,
     conflicts: collectConflicts(
-      event.participants,
+      search.participants,
       relaxedStart,
-      Date.parse(relaxed.slot.end),
+      Date.parse(relaxed.end),
       isSkippable,
     ),
   };
 }
 
 /**
- * The intervals a meeting is *allowed* to land in, from the daily-hour /
- * weekend / weekday constraints, read as local time in `timeZone`.
+ * The intervals a meeting is *allowed* to land in, from the daily-hour and
+ * weekday constraints, read as local time in `timeZone`.
  * `latestHour` may exceed 24 so a night event can spill past midnight; a
  * window belongs to the day it *starts* on.
  */
@@ -338,14 +322,13 @@ function buildAllowedWindows(
 ): Interval[] {
   const earliestHour = constraints?.earliestHour ?? 0;
   const latestHour = constraints?.latestHour ?? 24;
-  const excludeWeekends = constraints?.excludeWeekends ?? false;
   const allowedDays =
     constraints?.allowedDays && constraints.allowedDays.length < 7
       ? new Set(constraints.allowedDays)
       : null;
 
   // Fast path: no real constraints, the entire search range is allowed.
-  if (earliestHour === 0 && latestHour === 24 && !excludeWeekends && !allowedDays) {
+  if (earliestHour === 0 && latestHour === 24 && !allowedDays) {
     return [range];
   }
 
@@ -356,9 +339,7 @@ function buildAllowedWindows(
     day < range.end;
     day = addDays(day, 1, timeZone)
   ) {
-    const dow = dayOfWeek(day, timeZone); // 0 = Sun … 6 = Sat
-    if (excludeWeekends && (dow === 0 || dow === 6)) continue;
-    if (allowedDays && !allowedDays.has(dow)) continue;
+    if (allowedDays && !allowedDays.has(dayOfWeek(day, timeZone))) continue;
 
     const start = Math.max(range.start, atHour(day, earliestHour, timeZone));
     const end = Math.min(range.end, atHour(day, latestHour, timeZone));
@@ -524,23 +505,22 @@ function buildDayGrid(
 }
 
 /**
- * The one day-span search both public variants share. Candidates are all
- * day-aligned runs of `days` days that nobody hard-blocks; the policy decides
- * which one wins:
- *
- *   "earliest"  the first candidate, conflicts reported as-is.
- *   "best"      the candidate needing the least time off — fewest conflicted
- *               people, then fewest conflicted person-days, then earliest —
- *               with the departure-day rule applied to both the scoring and
- *               the reported conflicts.
+ * The *best* run of `days` consecutive local days: what a human organising a
+ * holiday means, the span where the most people have time for the most days.
+ * Candidates are all day-aligned runs nobody hard-blocks; the winner needs
+ * the least time off (fewest conflicted people, then fewest conflicted
+ * person-days, then earliest), with the departure-day rule applied to both
+ * the scoring and the reported conflicts. With a realistic holiday calendar
+ * in the data, short holidays land on the next free weekend and long ones in
+ * school breaks and summer leave, instead of "tomorrow, if all seven of you
+ * quit your jobs".
  */
-function searchDaySpans(
+export function findBestDaySpan(
   participants: Participant[],
   days: number,
   searchStart: string,
   searchEnd: string,
   timeZone: string,
-  policy: "earliest" | "best",
 ): MultiDayResult {
   const range = parseRange(searchStart, searchEnd);
   if (!range || !Number.isInteger(days) || days <= 0) return noSpan();
@@ -561,7 +541,6 @@ function searchDaySpans(
 
   const departures = bounds.map((day) => atHour(day, DEPARTURE_HOUR, timeZone));
   const grid = buildDayGrid(participants, bounds, departures);
-  const scored = policy === "best";
 
   let bestStart = -1;
   let bestPeople = Infinity;
@@ -569,11 +548,6 @@ function searchDaySpans(
 
   for (let i = 0; i + days <= numDays; i++) {
     if (grid.hardPrefix[i + days] - grid.hardPrefix[i] > 0) continue; // someone is away
-
-    if (!scored) {
-      bestStart = i;
-      break; // earliest hard-free span wins outright
-    }
 
     let people = 0;
     let personDays = 0;
@@ -601,45 +575,9 @@ function searchDaySpans(
   const slotEnd = bounds[bestStart + days];
   return {
     slot: { start: iso(slotStart), end: iso(slotEnd) },
-    conflicts: collectSoftConflicts(
-      participants,
-      slotStart,
-      slotEnd,
-      // Don't report the departure-day workday the scoring already forgave.
-      scored ? departures[bestStart] : undefined,
-    ),
+    // Without the departure-day workday the scoring already forgave.
+    conflicts: collectSoftConflicts(participants, slotStart, slotEnd, departures[bestStart]),
   };
-}
-
-/**
- * Find the earliest run of `days` consecutive local days no participant
- * hard-blocks. Work/school inside the span is reported, not avoided.
- */
-export function findEarliestDaySpan(
-  participants: Participant[],
-  days: number,
-  searchStart: string,
-  searchEnd: string,
-  timeZone: string,
-): MultiDayResult {
-  return searchDaySpans(participants, days, searchStart, searchEnd, timeZone, "earliest");
-}
-
-/**
- * Find the *best* run of `days` consecutive local days — what a human
- * organising a vacation means: the span where the most people have time for
- * the most days. With a realistic holiday calendar in the data, short
- * vacations land on the next free weekend and long ones in school breaks and
- * summer leave, instead of "tomorrow, if all seven of you quit your jobs".
- */
-export function findBestDaySpan(
-  participants: Participant[],
-  days: number,
-  searchStart: string,
-  searchEnd: string,
-  timeZone: string,
-): MultiDayResult {
-  return searchDaySpans(participants, days, searchStart, searchEnd, timeZone, "best");
 }
 
 /* ----------------------------------------------------------------------------

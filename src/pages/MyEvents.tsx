@@ -227,16 +227,15 @@ function EdgeWarnings({ event, className }: { event: SuggestedEvent; className?:
 }
 
 /** Where the event came from: who suggested it, and why the date changed if it did. */
-function Origin({ event, inline = false }: { event: SuggestedEvent; inline?: boolean }) {
+function Origin({ event }: { event: SuggestedEvent }) {
   const { lang } = useLang();
   const t = useT();
   const last = event.declinedDates[event.declinedDates.length - 1];
-  const Tag = inline ? "span" : "p";
   return (
-    <Tag className="text-sm text-muted-foreground">
+    <p className="mt-1 text-sm text-muted-foreground">
       {event.createdBy.isYou ? t.events.youSuggested : t.events.suggestedBy(event.createdBy.name)}
       {last && t.events.newDateBecause(last.declinedBy, pastDateLabel(event, last, lang))}.
-    </Tag>
+    </p>
   );
 }
 
@@ -411,9 +410,7 @@ export default function MyEvents() {
                         <p className="mt-1 text-xl font-bold text-foreground">
                           {eventDateLabel(event, lang)}
                         </p>
-                        <div className="mt-1">
-                          <Origin event={event} />
-                        </div>
+                        <Origin event={event} />
                         <div className="mt-3">
                           <People invitees={event.invitees} />
                         </div>
@@ -510,9 +507,7 @@ export default function MyEvents() {
                           <Clock className="h-4 w-4" />
                           {t.events.waitingFor(nameList(waitingOn(event), lang))}
                         </p>
-                        <div className="mt-1">
-                          <Origin event={event} />
-                        </div>
+                        <Origin event={event} />
                         <div className="mt-3">
                           <People invitees={event.invitees} />
                         </div>

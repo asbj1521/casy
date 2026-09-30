@@ -83,7 +83,7 @@ export interface GoogleCalendarListEntry {
  * Google's built-in calendars for holidays ("en.danish#holiday@group.v.calendar.google.com")
  * and week numbers ("e_2_en#weeknum@group.v.calendar.google.com"). They aren't
  * part of the user's account data, and free/busy answers "notFound" for them.
- * Autodate provides both itself, a built-in Danish holiday calendar and a
+ * Casy provides both itself, a built-in Danish holiday calendar and a
  * week-number column, so importing them would only add empty per-account
  * calendars to the list.
  */

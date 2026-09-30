@@ -73,12 +73,12 @@ describe("busyFromCalendars", () => {
     });
 
     expect(withUnticked).toHaveLength(3);
-    expect(withUnticked.some((b) => b.calendarId === "uni")).toBe(false);
+    expect(withUnticked.some((b) => b.title === "CBS timetable")).toBe(false);
   });
 
   it("drops blocks from a calendar that isn't listed", () => {
     expect(busy).toHaveLength(4);
-    expect(busy.some((b) => b.calendarId === "gone")).toBe(false);
+    expect(busy.map((b) => b.title)).toEqual(["Work", "CBS timetable", "Family", "Shared"]);
   });
 });
 

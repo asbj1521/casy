@@ -7,9 +7,8 @@ import { cn } from "@/lib/utils";
 import type { SchedulingGroup } from "@/hooks/useSchedulingGroups";
 
 /**
- * A dropdown to switch which friend group you're scheduling for. Used in two
- * places — the hero and the card title — via the `variant` prop, so users see
- * the "pick your group" idea immediately and again in context.
+ * A dropdown to switch which group you're scheduling for, at the head of the
+ * scheduling page's settings, with "New group" at the bottom of its list.
  *
  * The example group shown to people with no groups of their own is labelled
  * as one here too: it is the first thing anyone reads, and a made-up group
@@ -20,32 +19,24 @@ export default function GroupSwitcher({
   selectedId,
   onChange,
   onCreate,
-  variant,
 }: {
   groups: SchedulingGroup[];
   selectedId: string;
   onChange: (id: string) => void;
   onCreate: () => void;
-  variant: "hero" | "title";
 }) {
   const t = useT();
   const selected = groups.find((g) => g.id === selectedId);
-  const hero = variant === "hero";
 
   return (
     <Popover
-      className={cn("text-left", hero ? "block w-full" : "inline-block")}
-      triggerClassName={cn(
-        "transition",
-        hero
-          ? "flex w-full items-center justify-between gap-2 rounded-lg border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary"
-          : "inline-flex items-center gap-2 rounded-lg px-1 -mx-1 text-2xl font-bold text-foreground hover:bg-secondary",
-      )}
+      className="block w-full text-left"
+      triggerClassName="flex w-full items-center justify-between gap-2 rounded-lg border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary"
       panelClassName="w-full min-w-[15rem]"
       trigger={(open) => (
         <>
           <span className="flex min-w-0 items-center gap-2">
-            {hero && <Users className="h-4 w-4 shrink-0 text-primary" />}
+            <Users className="h-4 w-4 shrink-0 text-primary" />
             <RollingText text={selected?.name ?? t.groupSwitcher.select} className="min-w-0" />
             {selected?.isExample && (
               <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
@@ -54,11 +45,7 @@ export default function GroupSwitcher({
             )}
           </span>
           <ChevronDown
-            className={cn(
-              "text-muted-foreground transition",
-              hero ? "h-4 w-4" : "h-5 w-5",
-              open && "rotate-180",
-            )}
+            className={cn("h-4 w-4 text-muted-foreground transition", open && "rotate-180")}
           />
         </>
       )}

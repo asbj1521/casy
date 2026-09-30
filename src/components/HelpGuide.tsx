@@ -4,7 +4,6 @@ import { ArrowLeft } from "lucide-react";
 
 import TopNav from "@/components/TopNav";
 import { useT } from "@/i18n/lang";
-import { cn } from "@/lib/utils";
 
 /** One card in a guide: what to do, and a drawing of the screen it happens on. */
 export interface GuideStep {
@@ -101,36 +100,6 @@ export default function HelpGuide({
           </Link>
         </div>
       </main>
-    </div>
-  );
-}
-
-/** A row in a drawn screen, highlighted when it is the one to click. */
-export function MockRow({ active, children }: { active?: boolean; children: ReactNode }) {
-  return (
-    <div
-      className={cn(
-        "px-4 py-2.5 text-sm",
-        active
-          ? "bg-primary/10 font-semibold text-primary ring-1 ring-inset ring-primary/40"
-          : "text-muted-foreground",
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** The three-dot browser bar atop a drawn web page. */
-export function BrowserChrome({ url }: { url: string }) {
-  return (
-    <div className="flex items-center gap-1.5 border-b bg-secondary/60 px-3 py-2">
-      <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-      <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-      <span className="ml-2 truncate rounded-md border bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
-        {url}
-      </span>
     </div>
   );
 }

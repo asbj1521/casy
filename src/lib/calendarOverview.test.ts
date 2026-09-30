@@ -77,7 +77,7 @@ describe("buildMonthLayout", () => {
     expect(layout.weeks.flat().some((d) => d.key === "2027-01-03")).toBe(true);
   });
 
-  it("labels the month in Danish like the front page", () => {
+  it("labels the month in Danish by default", () => {
     expect(buildMonthLayout(2026, 8).label).toBe("september 2026");
   });
 });

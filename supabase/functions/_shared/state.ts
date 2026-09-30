@@ -1,7 +1,7 @@
 /**
  * Signed OAuth "state" tokens.
  *
- * The state param round-trips through the provider (Google, later Outlook)
+ * The state param round-trips through the provider (Google or Microsoft)
  * unmodified, so it's the only place to carry two things across that hop:
  * which profile is connecting, and proof the callback wasn't forged. Rather
  * than a database table of pending flows (one more thing to expire and
@@ -18,7 +18,7 @@ function base64UrlEncode(bytes: Uint8Array): string {
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function base64UrlDecode(str: string): Uint8Array {
+function base64UrlDecode(str: string): Uint8Array<ArrayBuffer> {
   const padded = str.replace(/-/g, "+").replace(/_/g, "/");
   const pad = padded.length % 4 === 0 ? "" : "=".repeat(4 - (padded.length % 4));
   const bin = atob(padded + pad);

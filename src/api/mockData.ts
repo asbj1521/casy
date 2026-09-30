@@ -1,15 +1,8 @@
 /**
- * Mock data layer.
- *
- * Stands in for what will eventually be Supabase + the real Google/Outlook
- * free-busy APIs. The important thing is the *shape* of what these functions
- * return: when we wire up real backends later, only the insides change — the
- * rest of the app keeps calling `exampleGroup()` / `buildEventForGroup()` the
- * same way.
- *
- * These groups are the example carousel on the front page: ten made-up groups
- * shown to anyone who has not created a real one yet. Real groups and their
- * members' real busy times come from the database instead (src/api/groups.ts).
+ * The example groups: ten made-up groups the scheduling page cycles through
+ * for anyone who has not created a real one yet, so an empty account still
+ * shows what Casy is for. Real groups and their members' real busy times come
+ * from the database instead (src/api/groups.ts), in the same shape.
  *
  * Availability is fully emergent. Every unique person is given a seeded
  * "personality" — five traits scored 1–5 (work, study, social, family, other) —
@@ -26,7 +19,7 @@
  * calendar.
  */
 
-import type { BusyInterval, EventCategory, Event, FriendGroup, Participant } from "@/types";
+import type { BusyInterval, EventCategory, FriendGroup, Participant } from "@/types";
 import { APP_TIME_ZONE, localDate, wallTime } from "@/lib/zone";
 
 /** The zone the generated people live in. */
@@ -34,10 +27,6 @@ const TZ = APP_TIME_ZONE;
 
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
-
-// We schedule across the full day (00:00–24:00) so any start time is valid.
-export const DAY_START = 0;
-export const DAY_END = 24;
 
 // "Today" — the planning reference point. Spontaneous plans (social hangouts)
 // only appear within a couple of weeks of this; structured commitments (work,
@@ -68,7 +57,7 @@ export const SEARCH_WINDOW = { start: SEARCH_START, end: SEARCH_END };
 /* ----------------------------------------------------------------------------
  * Example people & groups
  *
- * Ten made-up groups the front page cycles through, so someone who has not
+ * Ten made-up groups the scheduling page cycles through, so someone who has not
  * made a real group yet sees what Casy is for rather than an empty screen.
  * They are obviously examples on purpose: a basketball squad, a book club, a
  * family. Nothing here is a real person.
@@ -157,7 +146,7 @@ export interface ExampleGroupDef {
 }
 
 /**
- * The ten groups the front page rotates through. Sizes are meant to look
+ * The ten groups the scheduling page rotates through. Sizes are meant to look
  * right for what they are — a basketball squad has ten, a band has four —
  * because an example that doesn't look plausible teaches nothing.
  */
@@ -505,22 +494,6 @@ function generateCalendar(personId: string): BusyInterval[] {
   }
   const workerOff = (dayMs: number) => inRange(dayMs, summerLeave) || inChristmasBreak(dayMs);
 
-  // --- Christmas itself is family time --------------------------------------
-  // Nobody group-vacations over Christmas: the 24th to the 26th are spent
-  // with family (and many travel home on the 23rd). Added before everything
-  // else so no trip can be booked across those days. What's realistically
-  // left of the closure is the stretch between Christmas and New Year.
-  for (const b of BREAKS.xmas) {
-    if (b.end <= PLAN_START || b.start >= PLAN_END) continue;
-    const dec24 = b.start + 3 * MS_PER_DAY; // the break starts on the 21st
-    if (rng() < 0.5) {
-      tryPush(allDay(dec24 - MS_PER_DAY, "Hjem til familien", "family"));
-    }
-    tryPush(allDay(dec24, "Juleaften med familien", "family"));
-    tryPush(allDay(dec24 + MS_PER_DAY, "Juledag med familien", "family"));
-    tryPush(allDay(dec24 + 2 * MS_PER_DAY, "2. juledag med familien", "family"));
-  }
-
   // --- Personal trips, booked inside the time off ----------------------------
   // Being off work doesn't mean being available: many people book their own
   // travel in exactly those weeks, which (added first) blocks everything else.
@@ -666,7 +639,7 @@ const groupCache = new Map<string, FriendGroup>();
  * One example group, with its people's calendars.
  *
  * Built on demand rather than all ten up front: generating a year of events
- * for sixty people is most of a second's work, and the front page only ever
+ * for sixty people is most of a second's work, and the page only ever
  * shows one group at a time. The cost lands as each group is first shown, and
  * the cache means a group the carousel comes back around to is free.
  */
@@ -688,45 +661,4 @@ export function exampleGroup(id: string): FriendGroup | null {
   };
   groupCache.set(id, group);
   return group;
-}
-
-/**
- * Build the event for a given friend group: titled after the group, with the
- * shared search window and constraints. Pure (no delay) so the UI can rebuild it
- * instantly when the user switches groups.
- */
-export function buildEventForGroup(
-  group: FriendGroup,
-  opts?: {
-    durationMinutes?: number;
-    startHour?: number;
-    /** Local days of week the event may land on (0 = Sun … 6 = Sat). */
-    allowedDays?: number[];
-  },
-): Event {
-  const startHour = opts?.startHour ?? 18;
-  const durationMinutes = opts?.durationMinutes ?? 60;
-  return {
-    id: `event-${group.id}`,
-    title: group.name,
-    organizerId: group.participants[0]?.profileId ?? "",
-    participants: group.participants,
-    durationMinutes,
-    searchStart: SEARCH_START,
-    searchEnd: SEARCH_END,
-    timeZone: TZ,
-    constraints: {
-      // The picked start time is a *fixed* meeting time: the allowed window is
-      // exactly one meeting long, so the engine only ever returns days the whole
-      // group is free at that hour. This keeps "Find best/new time" in lock-step
-      // with the heatmap (which colours days by availability at the same hour),
-      // instead of digging up a late-evening gap on an otherwise-busy day.
-      // Deliberately NOT capped at 24: a night out starting 20:00 for 6 hours
-      // ends 02:00, and the engine handles windows that spill past midnight.
-      earliestHour: startHour,
-      latestHour: startHour + durationMinutes / 60,
-      excludeWeekends: false,
-      allowedDays: opts?.allowedDays,
-    },
-  };
 }

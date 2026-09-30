@@ -62,10 +62,7 @@ import NewGroupDialog from "@/components/NewGroupDialog";
 import { SettingsBar, SettingsSentence } from "@/components/SchedulerSettings";
 import TopNav from "@/components/TopNav";
 
-/**
- * The zone every search and every day on this page is local to. One constant
- * for now; once groups exist for real, each group carries its own.
- */
+/** The zone every search and every day on this page is local to. */
 const TZ = APP_TIME_ZONE;
 
 /**
@@ -641,7 +638,6 @@ export default function FindDate() {
         selectedId={activeGroupId}
         onChange={handleSelectGroup}
         onCreate={handleNewGroup}
-        variant="hero"
       />
     ) : (
       <div className="h-[42px] rounded-lg border bg-background" />

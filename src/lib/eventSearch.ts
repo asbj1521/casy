@@ -1,7 +1,7 @@
 /**
  * One search, described as data: what kind of event, and its shape.
  *
- * The scheduling page runs it when you press "Find best time", and a
+ * The scheduling page runs it whenever its settings change, and a
  * suggested event keeps the same settings so that when someone declines a
  * date, their browser can run the exact same search again from the day after.
  * Keeping both on this one function is what stops the replacement date from
@@ -56,11 +56,8 @@ export function findEventSlot(
   timeZone: string,
 ): MultiDayResult {
   switch (settings.kind) {
-    case "single": {
+    case "single":
       return findMeetingSlot({
-        id: "search",
-        title: "",
-        organizerId: "",
         participants,
         durationMinutes: settings.durationMinutes,
         searchStart,
@@ -73,7 +70,6 @@ export function findEventSlot(
             {
               earliestHour: ANY_TIME_EARLIEST_HOUR,
               latestHour: ANY_TIME_LATEST_HOUR,
-              excludeWeekends: false,
               allowedDays: settings.allowedDays,
             }
           : {
@@ -83,11 +79,9 @@ export function findEventSlot(
               // midnight.
               earliestHour: settings.startHour,
               latestHour: settings.startHour + settings.durationMinutes / 60,
-              excludeWeekends: false,
               allowedDays: settings.allowedDays,
             },
       });
-    }
     case "trip":
       return findWeeklySpan(participants, settings.shape, searchStart, searchEnd, timeZone);
     case "vacation":

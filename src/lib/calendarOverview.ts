@@ -1,12 +1,12 @@
 /**
- * Layout logic for the "Calendar overview" page: a month grid of the user's
- * own collected busy blocks.
+ * Layout logic for My calendar (/calendar-overview): a month grid of the
+ * user's own collected busy blocks.
  *
- * Unlike the scheduling page (which works in UTC over mock participants), this
- * shows one real person's data, so days are *local* days: a block that runs
- * 22:00 to 02:00 belongs partly to each of two days as the person lives them.
- * Everything here is a pure function over plain data so it can be tested
- * without a browser or a network.
+ * Days here are the viewer's own, in the browser's time zone: a block that
+ * runs 22:00 to 02:00 belongs partly to each of two days as they live them.
+ * The scheduling page works in APP_TIME_ZONE instead, since a whole group has
+ * to agree on what "18:00 on Friday" means. Everything here is a pure
+ * function over plain data so it can be tested without a browser or a network.
  *
  * Privacy: blocks carry only a time range and the calendar they came from.
  * There is no event title anywhere in this data, by design.
@@ -43,7 +43,7 @@ export interface OverviewCalendar {
    * month on screen. Missing from a function deployed before it existed.
    */
   total?: number;
-  /** "builtin" marks a calendar Autodate provides itself, with no account behind it. */
+  /** "builtin" marks a calendar Casy provides itself, with no account behind it. */
   provider: CalendarProvider | "builtin";
   /** The account it belongs to (an email, or a link's name). */
   account: string | null;
@@ -121,8 +121,8 @@ export function isoWeekNumber(date: Date): number {
 }
 
 /**
- * A Monday-first month grid padded with spill-over days to whole weeks (5 or
- * 6 rows), like the front page's calendar.
+ * A Monday-first month grid padded with spill-over days to whole weeks (4 to
+ * 6 rows).
  *
  * @param monthIndex 0-based (0 = January)
  */
@@ -321,7 +321,7 @@ export function formatDuration(start: Date, end: Date, hourUnit = "h"): string {
 /** The categories a calendar can have, in the order the picker lists them. */
 export const CATEGORIES: CalendarPurpose[] = ["work", "school", "personal", "other"];
 
-/** "r, g, b" strings, for use in rgba(...) like the front page's accent colours. */
+/** "r, g, b" strings, for use in rgba(...). */
 const CATEGORY_RGB: Record<CalendarPurpose, string> = {
   work: "59, 130, 246",
   school: "168, 85, 247",

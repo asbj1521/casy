@@ -128,7 +128,6 @@ export const da = {
     sentLink: "Følg svarene under Mine aftaler",
     hintSignIn: "Log ind og lav en gruppe for at foreslå aftaler.",
     hintExample: "Lav en gruppe for at foreslå aftaler til rigtige mennesker.",
-    hintNoDate: "Ingen dato at foreslå med disse indstillinger. Prøv at ændre dem.",
     hintEveryone: "Alle i gruppen får den og kan sige ja eller nej.",
     hintAccept: "Godkend først, at du skal have fri.",
     copyLink: "Kopiér link",
@@ -275,9 +274,7 @@ export const da = {
   counts: {
     calendars: (n: number) => (n === 1 ? "1 kalender" : `${n} kalendere`),
     busyBlocks: (n: number) => (n === 1 ? "1 optaget tidsrum" : `${n} optagede tidsrum`),
-    accounts: (n: number) => (n === 1 ? "1 konto" : `${n} konti`),
     members: (n: number) => (n === 1 ? "1 medlem" : `${n} medlemmer`),
-    groups: (n: number) => (n === 1 ? "1 gruppe" : `${n} grupper`),
   },
   synced: {
     justNow: "Synkroniseret lige nu",

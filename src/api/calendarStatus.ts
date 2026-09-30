@@ -7,8 +7,9 @@
  */
 import { queryOptions } from "@tanstack/react-query";
 
+import { currentMessages } from "@/i18n/current";
 import { callFunction } from "@/lib/supabaseFunctions";
-import type { CalendarPriority, CalendarProvider } from "@/types";
+import type { CalendarPriority, CalendarProvider, CalendarPurpose } from "@/types";
 
 /** One calendar discovered within a connected account (see calendar_sources). */
 export interface CalendarSourceStatus {
@@ -17,7 +18,7 @@ export interface CalendarSourceStatus {
   display_name: string | null;
   /** The name its owner gave it on My calendar; missing from an older function. */
   custom_name?: string | null;
-  purpose: "work" | "school" | "personal" | "other" | null;
+  purpose: CalendarPurpose | null;
   /** Missing from a function deployed before priorities existed: read as "normal". */
   priority?: CalendarPriority;
   /** Casy may add events to it, so it can be the primary calendar. Missing means no. */
@@ -61,9 +62,10 @@ export function calendarStatusQuery(userId: string) {
   return queryOptions({
     queryKey: ["calendar-status", userId],
     queryFn: async (): Promise<CalendarConnectionStatus[]> => {
-      const body = await callFunction<{
-        connections?: CalendarConnectionStatus[];
-      }>("calendar-status");
+      const body = await callFunction<{ connections?: CalendarConnectionStatus[] }>(
+        "calendar-status",
+        { errorMessage: currentMessages().api.loadStatus },
+      );
       return body.connections ?? [];
     },
     staleTime: 60_000,

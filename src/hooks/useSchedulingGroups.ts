@@ -10,14 +10,13 @@
  *   than counted as free all year, and named in `waitingFor` so the page can
  *   say who is missing.
  * - Ten made-up example groups, shown only to someone who has no real groups
- *   yet, which the front page cycles through (see useExampleCarousel). A new
+ *   yet, which the page cycles through (see useExampleCarousel). A new
  *   account gets something worth watching instead of an empty screen, and
  *   every one of them is labelled an example wherever it appears.
  *
  * The signed-in person's own real calendar is swapped into whichever example
- * is showing, which is what makes them worth watching at all. That swap used
- * to happen silently, leaving people looking at a stranger's name on their own
- * busy time; here it only ever happens inside a group that says it is made up.
+ * is showing, which is what makes them worth watching at all, and only ever
+ * inside a group that says it is made up.
  *
  * Only the group actually on screen has its calendars built or fetched. For
  * the examples that means nine groups' worth of generated years never happen;

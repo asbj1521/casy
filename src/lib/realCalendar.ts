@@ -8,9 +8,9 @@
  * take time off from) or anything else (which rules the time out), so the
  * calendar's category is copied onto its blocks here.
  *
- * Only the signed-in person's calendar is real. Everyone else in a group is
- * still generated until they have accounts of their own, so this swaps one
- * participant and leaves the rest alone.
+ * Used for the example groups only: there, the signed-in person's own real
+ * calendar takes the "you" slot, and everyone else stays made up. Real groups
+ * get every member's blocks, categories included, from the groups function.
  */
 import type { OverviewData } from "@/lib/calendarOverview";
 import type { BusyInterval, EventCategory, FriendGroup } from "@/types";
@@ -44,7 +44,6 @@ export function busyFromCalendars(data: OverviewData): BusyInterval[] {
     busy.push({
       start: b.start,
       end: b.end,
-      calendarId: b.calendarId,
       title: cal.name,
       category: cal.purpose ? CATEGORY_FOR_PURPOSE[cal.purpose] : undefined,
       ...(cal.priority === "skip" || cal.priority === "never" ? { priority: cal.priority } : {}),

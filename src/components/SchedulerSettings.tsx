@@ -4,7 +4,6 @@ import { ChevronDown, Minus, Plus } from "lucide-react";
 import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
 import Popover from "@/components/Popover";
-import { DAY_END, DAY_START } from "@/api/mockData";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { nameList } from "@/lib/myEvents";
@@ -29,13 +28,14 @@ import { ALL_DOWS } from "@/lib/weekdays";
 /** How long a meeting lasts: 30 min to 12 hours, in 30 minute steps. */
 const DURATION_VALUES = Array.from({ length: 24 }, (_, i) => (i + 1) * 30);
 
-/** Which hour a meeting starts: the hours the app searches. */
-const START_OPTIONS = Array.from({ length: 24 }, (_, h) => h)
-  .filter((h) => h >= DAY_START && h < DAY_END)
-  .map((h) => ({ label: `${String(h).padStart(2, "0")}:00`, value: h }));
+/** Which hour a meeting starts: any hour of the day. */
+const START_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
+  label: `${String(h).padStart(2, "0")}:00`,
+  value: h,
+}));
 
 /** The longest event name the server keeps (MAX_EVENT_TITLE_LENGTH). */
-export const MAX_NAME_LENGTH = 60;
+const MAX_NAME_LENGTH = 60;
 
 /** Stands for "any day" where a start day is picked from numbers. */
 const ANY_DAY = -1;

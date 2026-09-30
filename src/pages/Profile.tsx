@@ -524,9 +524,7 @@ export default function Profile() {
       <TopNav />
 
       <main className="px-4 pb-20 pt-4 sm:px-6 lg:px-8">
-        {/* Admin mode's entry point: centred on its own line, in the spot the
-            "Back to scheduling" link used to occupy (the header nav now has
-            its own link back, so that one was dropped). */}
+        {/* Admin mode's entry point, centred on its own line (admins only). */}
         {isAdmin && (
           <div className="flex justify-center">
             <button

@@ -12,9 +12,6 @@ export const INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 /** Longest group name we keep, matching the check constraint on the table. */
 export const MAX_GROUP_NAME_LENGTH = 60;
 
-/** Most people in one group, matching the enforce_group_limits trigger. */
-export const MAX_GROUP_MEMBERS = 20;
-
 /**
  * A fresh invite token: 32 random bytes in URL-safe base64.
  *

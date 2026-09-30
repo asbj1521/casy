@@ -10,9 +10,6 @@
 /** Longest group name that will be stored. */
 export const MAX_GROUP_NAME_LENGTH = 60;
 
-/** Most people in one group. */
-export const MAX_GROUP_MEMBERS = 20;
-
 /** Longest custom display name that will be stored. */
 export const MAX_DISPLAY_NAME_LENGTH = 40;
 

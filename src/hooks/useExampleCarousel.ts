@@ -1,5 +1,5 @@
 /**
- * The front page's example carousel: which made-up group is on screen, and
+ * The scheduling page's example carousel: which made-up group is on screen, and
  * when it moves on.
  *
  * It exists to answer "what is this for?" for someone who has just arrived and

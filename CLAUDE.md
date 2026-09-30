@@ -26,13 +26,13 @@ Casy Users sign in, link their calendars (Google, Outlook, Apple iCloud, or any 
 ## Tech Stack
 
 - **Frontend:** React 19 + TypeScript + Vite, React Router v7
-- **UI:** Tailwind CSS with hand-built components (`src/components/`); only `@radix-ui/react-tooltip` from Radix; icons from lucide-react, except the real Google/Microsoft/Apple brand marks on the profile page's provider cards, which come from `react-icons` (`si`/`fa6`)
+- **UI:** Tailwind CSS with hand-built components (`src/components/`), no component library; icons from lucide-react, except the real Google/Microsoft/Apple brand marks on the profile page's provider cards, which come from `react-icons` (`si`/`fa6`)
 - **Animations:** Framer Motion
 - **State:** component state plus TanStack Query for server data, with a few of the user's own answers remembered across reloads (`src/lib/queryPersistence.ts`); two React contexts: auth (`src/context/`) and language (`src/i18n/`)
 - **Hosting:** Vercel (project `casy`), auto-deploys `main`; `vercel.json` rewrites every path to `index.html` for the SPA and sets the security headers (no framing, nosniff, referrer, permissions, HSTS; deliberately no script-restricting CSP)
 - **Backend:** Supabase: Postgres, Auth (Google sign-in + email magic link), Edge Functions (Deno), Vault, pg_cron + pg_net
 - **Testing:** Vitest (frontend, `src/**/*.test.ts`) and Deno test (Edge Functions, `supabase/functions/_shared/*_test.ts`)
-- **Linting:** ESLint (TypeScript + React Hooks)
+- **Linting and formatting:** ESLint (TypeScript + React Hooks); Prettier at 100 columns with the Tailwind class-order plugin (`.prettierrc.json`); the Prettier commit is listed in `.git-blame-ignore-revs`
 
 ## Common Commands
 
@@ -41,12 +41,13 @@ npm run dev              # Dev server on port 8080 (the user runs this in their 
 npm run build            # Type-check + production build
 npm run test:run         # Frontend tests once
 npm run lint             # ESLint
+npm run format           # Prettier (format:check is what CI runs)
 npx tsc -b               # Type-check only
 
 # Edge Functions (run from supabase/functions/). --node-modules-dir=none stops Deno
 # from using the frontend's node_modules; delete any deno.lock it leaves behind.
 deno test --node-modules-dir=none --allow-all _shared/
-deno check --node-modules-dir=none */index.ts _shared/*.ts   # 2 known old errors: state.ts, calendar-busy
+deno check --node-modules-dir=none */index.ts _shared/*.ts
 
 supabase migration list  # Read-only: which migrations are applied remotely
 supabase db push --dry-run
@@ -215,7 +216,7 @@ Authorization: Bearer <token>
 {
   node(id: "PVT_kwHOD5fAM84BbNZz") {
     ... on ProjectV2 {
-      items(first: 50) {
+      items(last: 100) {
         nodes {
           id
           fieldValues(first: 10) {

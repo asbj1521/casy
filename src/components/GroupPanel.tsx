@@ -20,10 +20,8 @@ import type { SchedulingGroup } from "@/hooks/useSchedulingGroups";
  * joined but linked no calendar yet, so nothing is known about their time.
  * That is said out loud rather than quietly folded into a result, because a
  * scheduling answer is only worth anything if you know whose calendars it was
- * based on. The example group is made up entirely, which is disclosed
- * elsewhere on the page rather than repeated here, so an example gets no box
- * of its own; a logged-out visitor gets SignUpNudge (below) instead, since
- * they are the ones who would otherwise have nothing real to look at.
+ * based on. Real groups only: the page draws its own box for an example,
+ * with SignUpNudge (below) beside it for a signed-out visitor.
  */
 export default function GroupPanel({
   group,
@@ -70,9 +68,6 @@ export default function GroupPanel({
       // Clipboard access can be refused; the link is on screen to copy by hand.
     }
   }
-
-  // Examples get the sign-up nudge instead (below), placed by the page.
-  if (group.isExample) return null;
 
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-sm">

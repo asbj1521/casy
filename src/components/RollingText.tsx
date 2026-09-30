@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
  * Text that rolls when it changes: the old line slides up and out while the
  * new one rises into its place.
  *
- * Used for the group name on the front page, where the examples change by
- * themselves every few seconds. A name that simply blinked to a different
+ * Used for the group name on the scheduling page, where the example groups
+ * change by themselves every few seconds. A name that simply blinked to a different
  * word would read as a glitch; watching it roll makes it obvious that the
  * page is cycling through examples rather than telling you something new.
  *

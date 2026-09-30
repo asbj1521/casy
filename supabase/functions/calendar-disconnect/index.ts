@@ -6,7 +6,7 @@
  * migration), so the tokens and every synced busy block go with it.
  *
  * This does NOT revoke the app's access at Google or Microsoft: the user can
- * still see Autodate in their account's connected-apps settings and remove it
+ * still see Casy in their account's connected-apps settings and remove it
  * there. The profile page says so.
  *
  * Called via fetch() from the SPA with the signed-in person's token; only a

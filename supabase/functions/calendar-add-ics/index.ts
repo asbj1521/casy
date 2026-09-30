@@ -9,10 +9,10 @@
  * Flow: validate + fetch the feed, strip it down to timing lines and expand
  * it into busy intervals (all in _shared/ics.ts), then store the connection,
  * its one calendar source, the link (encrypted, plus a lookup hash), and the
- * busy blocks (see _shared/storeCalendars.ts). The feed is fully processed before anything is
- * written, so a bad link leaves no rows.
- * Adding the same link again replaces the earlier connection, which is also
- * how a link is refreshed until there's a background sync job.
+ * busy blocks (see _shared/storeCalendars.ts). The feed is fully processed
+ * before anything is written, so a bad link leaves no rows. Adding the same
+ * link again replaces the earlier connection; the hourly sync keeps it fresh
+ * in between.
  *
  * Called with the signed-in person's token; the link is stored as theirs.
  */

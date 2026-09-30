@@ -21,9 +21,9 @@ import { goWithCard } from "@/lib/cardTransition";
 import { cn } from "@/lib/utils";
 
 /**
- * The top navigation bar, shared across every page. Previously lived inline
- * inside the scheduling page; pulled out once a second page (Profile) needed
- * the same bar so the two don't drift apart.
+ * The top navigation bar on every page: the logo and language switch, a
+ * link to each main page (My events with a badge for answers waiting on
+ * you), and signing in or out.
  */
 export default function TopNav() {
   const { pathname } = useLocation();

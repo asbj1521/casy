@@ -118,7 +118,6 @@ export const en: Messages = {
     sentLink: "Follow the answers in My events",
     hintSignIn: "Sign in and make a group to suggest events.",
     hintExample: "Make a group to suggest events to real people.",
-    hintNoDate: "No date to suggest with these settings. Try changing them.",
     hintEveryone: "Everyone in the group gets it to accept or decline.",
     hintAccept: "First accept taking the time off.",
     copyLink: "Copy link",
@@ -254,9 +253,7 @@ export const en: Messages = {
   counts: {
     calendars: (n: number) => (n === 1 ? "1 calendar" : `${n} calendars`),
     busyBlocks: (n: number) => (n === 1 ? "1 busy block" : `${n} busy blocks`),
-    accounts: (n: number) => (n === 1 ? "1 account" : `${n} accounts`),
     members: (n: number) => (n === 1 ? "1 member" : `${n} members`),
-    groups: (n: number) => (n === 1 ? "1 group" : `${n} groups`),
   },
   synced: {
     justNow: "Synced just now",

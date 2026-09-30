@@ -97,15 +97,15 @@ function fetchOverview(from: Date, to: Date): Promise<OverviewData> {
 }
 
 /**
- * The user's own collected calendar data, laid out in the same month-grid
- * style as the scheduling page.
+ * My calendar: the signed-in person's own busy time as a month grid, and the
+ * list of their calendars with the settings that decide how each one counts.
  *
- * What's shown is exactly what Autodate stores: busy time ranges plus the
- * calendar (and account) each came from, coloured by the category the user
- * gave that calendar. There are no event titles: providers are only ever asked
- * for times, by design (see the privacy notes in the calendar_integrations
- * migration). Overlapping and back-to-back events are already merged into one
- * busy block, so a run of consecutive lectures appears as a single block.
+ * What's shown is exactly what Casy stores: busy time ranges plus the
+ * calendar (and account) each came from, coloured by the category its owner
+ * gave that calendar. There are no event titles, since none are ever stored
+ * (see the calendar_integrations migration). Overlapping and back-to-back
+ * events are merged into one busy block when synced, so a run of consecutive
+ * lectures appears as a single block.
  */
 export default function CalendarOverview() {
   const queryClient = useQueryClient();
@@ -511,7 +511,7 @@ export default function CalendarOverview() {
                         )}
                       </div>
 
-                      {/* Past days keep their colour under a grey veil, like the front page. */}
+                      {/* Past days keep their colour under a grey veil. */}
                       {isPast && (
                         <div className="pointer-events-none absolute inset-0 bg-zinc-400/35" />
                       )}

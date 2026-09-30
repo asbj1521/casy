@@ -1,6 +1,8 @@
 /**
- * Read-only feed for the "Calendar overview" page: a profile's connected
- * calendars plus their busy blocks inside a date range.
+ * The signed-in person's own connected calendars plus their busy blocks
+ * inside a date range: My calendar reads a month at a time, and the
+ * scheduling page its whole search window (for the example groups, where
+ * your own calendar takes the "you" slot).
  *
  * Only what the app actually stores comes back: block timestamps, the
  * calendar's own name, its account, provider and category. There are no event
@@ -74,10 +76,8 @@ Deno.serve(
     const profileId = await callerId(req, db);
     if (!profileId) return json({ error: "Please sign in again." }, 401);
 
-    // The blocks query used to wait for the sources query so it could filter
-    // by source id; it now reaches the same rows through a nested join on
-    // profile_id/status, so the two can run together instead of one after the
-    // other (one fewer round trip on every load of this page).
+    // Reaches the blocks through a nested join on profile_id/status rather
+    // than by source id, so it can run alongside the sources query.
     async function fetchBlocks(): Promise<{
       blocks: { calendarId: string; start: string; end: string }[];
       truncated: boolean;
@@ -130,7 +130,9 @@ Deno.serve(
       return json({ error: "Query failed" }, 500);
     }
 
-    const calendars = ((sourcesResult.value.data ?? []) as SourceRow[])
+    // `!inner` on a to-one join returns one connection, not the array the
+    // untyped client assumes; hence the cast, as in the groups function.
+    const calendars = ((sourcesResult.value.data ?? []) as unknown as SourceRow[])
       .map((s) => ({
         id: s.id,
         // The name its owner gave it wins; the provider's own name comes
