@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import FadeSwap from "@/components/FadeSwap";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import type { DayCell, MonthGrid } from "@/lib/heatmap";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,10 @@ export default function DayChart({
   onPickDay,
   conditionalKind,
   timeZone,
+  swapKey = "",
 }: {
+  /** When it changes (another group), the chart's contents fade over; the box stays. */
+  swapKey?: string;
   grid: MonthGrid;
   /** The zone the grid's days are local to, for the weekday letters. */
   timeZone: string;
@@ -53,6 +57,7 @@ export default function DayChart({
 
   return (
     <section className="rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-7 sm:pt-5">
+      <FadeSwap swapKey={swapKey}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
@@ -125,6 +130,9 @@ export default function DayChart({
               className={cn(
                 "group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1",
                 pickable ? "cursor-pointer" : "cursor-default",
+                // A day the group can't make, even by skipping, steps back so
+                // the ones worth picking stand out.
+                !dead && !pickable && "opacity-35",
               )}
             >
               {!dead && (
@@ -206,6 +214,7 @@ export default function DayChart({
           );
         })}
       </div>
+      </FadeSwap>
     </section>
   );
 }

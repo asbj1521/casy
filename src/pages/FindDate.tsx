@@ -48,6 +48,7 @@ import {
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfMonth } from "@/lib/zone";
 import DayChart from "@/components/DayChart";
+import FadeSwap from "@/components/FadeSwap";
 import GroupPanel, { SignUpNudge } from "@/components/GroupPanel";
 import GroupSwitcher from "@/components/GroupSwitcher";
 import NewGroupDialog from "@/components/NewGroupDialog";
@@ -135,9 +136,12 @@ export default function FindDate() {
   // (null), and each later entry is where a step forward (or a picked day)
   // searched from. historyIndex is which one is on screen; back only replays.
   // Changing a setting starts over from today.
-  const [history, setHistory] = useState<(string | null)[]>([null]);
+  // `day` marks a meeting day picked on purpose (the chart, a later date):
+  // that very day is shown if it works at all, even by skipping.
+  const [history, setHistory] = useState<{ from: string | null; day?: boolean }[]>([{ from: null }]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const searchFrom = history[historyIndex] ?? null;
+  const searchFrom = history[historyIndex]?.from ?? null;
+  const pickedDay = !!history[historyIndex]?.day;
   // A month paged to by hand, remembered for the answer it was paged from:
   // once the answer moves, the chart follows it again.
   const [monthPick, setMonthPick] = useState<{ month: number; anchor: string | null } | null>(
@@ -246,6 +250,20 @@ export default function FindDate() {
   const searchable = !!activeGroup && !busyLoading && activeGroup.participants.length > 0;
   const found = useMemo<MultiDayResult | null>(() => {
     if (!activeGroup || !searchable) return null;
+    // A picked day is searched on its own first. Searching on from it would
+    // pass over a day that needs someone to skip something whenever a clean
+    // date follows within a week (findMeetingSlot), so the click would land
+    // on that later date instead.
+    if (pickedDay && searchFrom && search.kind === "single") {
+      const onDay = findEventSlot(
+        activeGroup.participants,
+        search,
+        searchStartFor(search, searchFrom),
+        new Date(addDays(Date.parse(searchFrom), 1, TZ)).toISOString(),
+        TZ,
+      );
+      if (onDay.slot) return onDay;
+    }
     return findEventSlot(
       activeGroup.participants,
       search,
@@ -253,7 +271,7 @@ export default function FindDate() {
       SEARCH_WINDOW.end,
       TZ,
     );
-  }, [activeGroup, searchable, search, searchFrom]);
+  }, [activeGroup, searchable, search, searchFrom, pickedDay]);
   const activeSlot = found?.slot ?? null;
   const result = isMultiDay ? null : found;
   const multiResult = isMultiDay ? found : null;
@@ -329,7 +347,7 @@ export default function FindDate() {
 
   /** Back to the first date from today: any setting or group change does this. */
   function resetSearch() {
-    setHistory([null]);
+    setHistory([{ from: null }]);
     setHistoryIndex(0);
     setAcceptedSlot(null);
   }
@@ -346,9 +364,12 @@ export default function FindDate() {
     resetSearch();
   }
 
-  /** Show the first date on or after `dayIso`, keeping the way back. */
-  function jumpTo(dayIso: string) {
-    setHistory((h) => [...h.slice(0, historyIndex + 1), dayIso]);
+  /**
+   * Show the first date on or after `dayIso`, keeping the way back. With
+   * `day`, that day itself if it works at all (see `found`).
+   */
+  function jumpTo(dayIso: string, day = false) {
+    setHistory((h) => [...h.slice(0, historyIndex + 1), { from: dayIso, day }]);
     setHistoryIndex(historyIndex + 1);
     setAcceptedSlot(null);
   }
@@ -359,7 +380,7 @@ export default function FindDate() {
    * Saturday of a free weekend would jump to the weekend after.
    */
   function pickDay(dayIso: string) {
-    if (search.kind !== "trip") return jumpTo(dayIso);
+    if (search.kind !== "trip") return jumpTo(dayIso, search.kind === "single");
     const day = Date.parse(dayIso);
     const offset = (localDate(day, TZ).dow - search.shape.anchorDow + 7) % 7;
     const start = Math.max(addDays(day, -offset, TZ), Date.parse(SEARCH_BASE));
@@ -369,7 +390,7 @@ export default function FindDate() {
   /** Adopt a suggested workaround: shorter stay, anchored on its dates. */
   function applySuggestion(s: VacationSuggestion) {
     setSched((prev) => ({ ...prev, days: s.days }));
-    setHistory([dayOf(s.slot.start, TZ)]);
+    setHistory([{ from: dayOf(s.slot.start, TZ) }]);
     setHistoryIndex(0);
     setAcceptedSlot(null);
   }
@@ -523,6 +544,8 @@ export default function FindDate() {
           ? t.scheduler.busyFailed
           : t.scheduler.noCalendars
         : null;
+  // What the boxes below fade on: a different group's numbers.
+  const fadeKey = activeGroupId ?? "none";
   const tone = waitingText
     ? "waiting"
     : !activeSlot
@@ -653,8 +676,11 @@ export default function FindDate() {
               (tone === "approve" || tone === "skip") && "border-amber-300 bg-amber-50",
               tone === "review" && "border-sky-200 bg-sky-50",
               (tone === "clean" || tone === "waiting") && "bg-card",
+              "transition-colors duration-300",
             )}
           >
+            {/* The box stays; what it says fades to the next group's answer. */}
+            <FadeSwap swapKey={fadeKey}>
             {tone === "waiting" ? (
               <p className="flex items-center gap-2.5 text-base text-muted-foreground">
                 {(!activeGroup || busyLoading) && <Loader2 className="h-5 w-5 shrink-0 animate-spin" />}
@@ -789,6 +815,7 @@ export default function FindDate() {
                 </div>
               </div>
             )}
+            </FadeSwap>
           </section>
 
           {/* The month day by day, straight under the answer: it's what
@@ -804,6 +831,7 @@ export default function FindDate() {
               onNext={() => pageMonth(1)}
               onPickDay={pickDay}
               conditionalKind={isMultiDay ? "timeOff" : "skip"}
+              swapKey={fadeKey}
             />
           )}
 
@@ -851,13 +879,19 @@ export default function FindDate() {
               // One compact line per date on a phone, three cards side by
               // side on anything wider.
               <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
-                {later.map((r) => (
+                {later.map((r, i) => (
+                  // Keyed by place, not date, so the cards stay and only
+                  // their dates fade when the group changes.
                   <button
-                    key={r.slot!.start}
+                    key={i}
                     type="button"
-                    onClick={() => jumpTo(dayOf(r.slot!.start, TZ))}
-                    className="flex items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 text-left transition hover:border-primary/40 hover:bg-secondary/40 sm:block sm:px-5 sm:py-4"
+                    onClick={() => jumpTo(dayOf(r.slot!.start, TZ), search.kind === "single")}
+                    className="rounded-2xl border bg-card px-4 py-3 text-left transition hover:border-primary/40 hover:bg-secondary/40 sm:px-5 sm:py-4"
                   >
+                    <FadeSwap
+                      swapKey={fadeKey}
+                      className="flex items-center justify-between gap-3 sm:block"
+                    >
                     <span className="hidden text-xs text-muted-foreground sm:block">
                       {t.scheduler.alsoPossible}
                     </span>
@@ -872,6 +906,7 @@ export default function FindDate() {
                         participants.length,
                       )}
                     </span>
+                    </FadeSwap>
                   </button>
                 ))}
               </div>

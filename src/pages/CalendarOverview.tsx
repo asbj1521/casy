@@ -355,8 +355,11 @@ export default function CalendarOverview() {
         )}
 
         {/* One grid, so the calendar list's top lines up with the month grid's:
-            the month header is row 1, the grid box and the list start on row 2. */}
-        <div className="grid items-start gap-x-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+            the month header is row 1, the grid box and the list start on row 2.
+            The list runs on into an empty last row (1fr) that takes whatever
+            height it needs beyond the month and day boxes; without it, opening
+            part of the list stretched the month's row and pushed the day box down. */}
+        <div className="grid items-start gap-x-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_auto_auto_1fr]">
           <div className="mb-3 flex min-w-0 items-center justify-between lg:col-start-1 lg:row-start-1">
             <h2 className="flex items-center gap-2 text-lg font-semibold capitalize text-foreground">
               {layout.label}
@@ -551,7 +554,9 @@ export default function CalendarOverview() {
             )}
           </section>
 
-          <div className="mt-6 lg:col-start-2 lg:row-span-2 lg:row-start-2 lg:mt-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+          {/* Scrolls with the page rather than on its own: a box scrolling by
+              itself cut its content off at the month grid's top line. */}
+          <div className="mt-6 lg:col-start-2 lg:row-span-3 lg:row-start-2 lg:mt-0">
             <CalendarListPanel
               calendars={allCalendars}
               hidden={hidden}
