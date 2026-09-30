@@ -13,6 +13,13 @@ export interface RiseSpeed {
 /** When a chart first appears, or its data first arrives. */
 export const RISE_FULL: RiseSpeed = { stagger: 0.04, duration: 0.5 };
 
+/**
+ * Seconds a bar takes to settle at its new height, and its colour to fade,
+ * when the scheduling settings change. Every bar at once, no stagger: the
+ * change came from a click, so it should answer right away.
+ */
+export const BAR_SETTLE_SECONDS = 0.4;
+
 /** When the i-th bar starts rising, in seconds: left to right, `base` in. */
 export function barRiseDelay(i: number, speed: RiseSpeed = RISE_FULL, base = 0.1): number {
   return base + i * speed.stagger;

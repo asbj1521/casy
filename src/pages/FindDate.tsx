@@ -558,9 +558,6 @@ export default function FindDate() {
         .join(", ")
     : "";
 
-  // The answer's tone: the plain "everyone can" in orange, or one of the
-  // review states the old banner had, in their own colours.
-  const conflicts = found?.conflicts ?? [];
   // Why there is nothing to search yet, if there isn't: said plainly, never
   // as the red "no date works" box.
   const waitingText = !activeGroup
@@ -574,6 +571,8 @@ export default function FindDate() {
         : null;
   // What the boxes below fade on: a different group's numbers.
   const fadeKey = activeGroupId ?? "none";
+  // The answer's tone: the plain "everyone can" in orange, or one of the
+  // review states the old banner had, in their own colours.
   const tone = waitingText
     ? "waiting"
     : !activeSlot
@@ -594,7 +593,6 @@ export default function FindDate() {
           ? t.scheduler.worksIfSkipping
           : t.scheduler.kickerAll(name.trim());
   const participants = activeGroup?.participants ?? [];
-  const conflictIds = new Set(conflicts.map((c) => c.profileId));
 
   const groupSwitcher =
     groups && activeGroupId ? (
@@ -711,11 +709,9 @@ export default function FindDate() {
             <FadeSwap swapKey={fadeKey}>
             {tone === "waiting" && loadingGroup ? (
               // The answer's own layout, blank until the calendars are in.
-              <div
-                aria-busy="true"
-                className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between"
-              >
-                <div className="min-w-0">
+              <div aria-busy="true">
+              <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0 lg:shrink-[0.01]">
                   <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
                     <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                     <span className="truncate">{waitingText}</span>
@@ -726,26 +722,8 @@ export default function FindDate() {
                   <p className="mt-1.5 text-base sm:text-xl">
                     <Bone chars={20} />
                   </p>
-                  {/* The answer's warning slot, held here too. */}
-                  <div className="sm:min-h-8" />
                 </div>
-                <div aria-hidden="true" className="flex shrink-0 flex-col gap-3 lg:items-end">
-                  <div className="flex items-center gap-3">
-                    <div className="flex">
-                      {[0, 1, 2].map((i) => (
-                        <span
-                          key={i}
-                          className={cn(
-                            "h-7 w-7 animate-pulse rounded-full border-2 border-card bg-secondary sm:h-9 sm:w-9 sm:border-[3px]",
-                            i > 0 && "-ml-2 sm:-ml-2.5",
-                          )}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm">
-                      <Bone chars={7} />
-                    </span>
-                  </div>
+                <div aria-hidden="true" className="flex flex-col gap-3 lg:items-end">
                   <div className="hidden items-center gap-2 sm:flex">
                     <span className="h-12 w-12 animate-pulse rounded-xl bg-secondary" />
                     <span className="h-12 w-40 animate-pulse rounded-xl bg-secondary" />
@@ -755,6 +733,9 @@ export default function FindDate() {
                     <Bone chars={34} />
                   </p>
                 </div>
+              </div>
+              {/* The answer's warning strip, held here too. */}
+              <div className="sm:min-h-8" />
               </div>
             ) : tone === "waiting" ? (
               <p className="flex items-center gap-2.5 text-base text-muted-foreground">
@@ -778,8 +759,15 @@ export default function FindDate() {
                 )}
               </>
             ) : (
+              <div>
+              {/* The date on the left, who can and what to do on the right.
+                  When they don't fit side by side, the right side wraps to
+                  two rows first: flex shrinks items in proportion to
+                  shrink x width, so at 0.01 the date column gives way only
+                  once the right side is down to its narrowest (the buttons
+                  row), and the big date breaks onto a second line last. */}
               <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
+                <div className="min-w-0 lg:shrink-[0.01]">
                   <p
                     className={cn(
                       "flex items-center gap-2 text-xs font-bold uppercase tracking-wider sm:text-sm",
@@ -802,15 +790,48 @@ export default function FindDate() {
                   </h1>
                   <p className="mt-1.5 text-base text-muted-foreground sm:text-xl">{subline}</p>
 
-                  {/* Warnings. There is always room for one (a 12px gap and
-                      a line: min-h-8), so a single warning appears in space
-                      the card already has instead of stretching it and
-                      pushing the page down. More than one still makes room.
-                      Not on a phone, where they wrap to several lines
-                      anyway and the card is kept short. A flex column, so
-                      the first warning's top margin stays inside the slot
+                </div>
+
+                <div className="flex flex-col gap-3 lg:items-end">
+                  {/* On a phone these live in the bar pinned to the bottom of
+                      the screen instead, so the card stays short and the
+                      chart under it is on the first screen. */}
+                  <div className="hidden items-center gap-2 sm:flex">{actionButtons}</div>
+                  <p className="text-xs text-muted-foreground sm:text-sm lg:text-right">
+                    {suggestedThis ? (
+                      t.scheduler.sent(
+                        <Link
+                          to="/events"
+                          className="font-medium text-foreground underline underline-offset-2"
+                        >
+                          {t.scheduler.sentLink}
+                        </Link>,
+                      )
+                    ) : suggestError ? (
+                      <span className="text-red-700">{suggestError}</span>
+                    ) : !user ? (
+                      t.scheduler.hintSignIn
+                    ) : activeGroup?.isExample ? (
+                      t.scheduler.hintExample
+                    ) : awaitingYourApproval ? (
+                      t.scheduler.hintAccept
+                    ) : (
+                      t.scheduler.hintEveryone
+                    )}
+                  </p>
+                </div>
+              </div>
+                  {/* Warnings, in a strip across the whole card, side by
+                      side. There is always room for one line of them (a
+                      12px gap and a line: min-h-8), and two usually fit on
+                      it on a wide screen, so they appear in space the card
+                      already has instead of stretching it and pushing the
+                      page down as the settings change. More than fit wrap
+                      to a new line. Not on a phone, where they wrap to
+                      several lines anyway and the card is kept short. Flex,
+                      so the warnings' top margins stay inside the slot
                       instead of collapsing out above it. */}
-                  <div className="flex flex-col sm:min-h-8">
+                  <div className="flex flex-col sm:min-h-8 sm:flex-row sm:flex-wrap sm:gap-x-8">
                   {/* What the date costs, in the review states. */}
                   {tone === "approve" && (
                     <p className="mt-3 text-sm text-amber-900">
@@ -856,60 +877,6 @@ export default function FindDate() {
                     </p>
                   )}
                   </div>
-                </div>
-
-                <div className="flex shrink-0 flex-col gap-3 lg:items-end">
-                  {/* Everyone in the search; someone who'd skip or take time
-                      off is shown faded. */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex">
-                      {participants.map((p, i) => (
-                        <span
-                          key={p.profileId}
-                          title={p.name}
-                          className={cn(
-                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-card text-xs font-bold sm:h-9 sm:w-9 sm:border-[3px] sm:text-sm",
-                            avatarColor(i),
-                            i > 0 && "-ml-2 sm:-ml-2.5",
-                            conflictIds.has(p.profileId) && "opacity-40",
-                          )}
-                        >
-                          {p.name.trim().charAt(0).toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="whitespace-nowrap text-sm font-bold text-foreground">
-                      {t.scheduler.countCan(participants.length - conflictIds.size, participants.length)}
-                    </span>
-                  </div>
-
-                  {/* On a phone these live in the bar pinned to the bottom of
-                      the screen instead, so the card stays short and the
-                      chart under it is on the first screen. */}
-                  <div className="hidden items-center gap-2 sm:flex">{actionButtons}</div>
-                  <p className="text-xs text-muted-foreground sm:text-sm lg:max-w-xs lg:text-right">
-                    {suggestedThis ? (
-                      t.scheduler.sent(
-                        <Link
-                          to="/events"
-                          className="font-medium text-foreground underline underline-offset-2"
-                        >
-                          {t.scheduler.sentLink}
-                        </Link>,
-                      )
-                    ) : suggestError ? (
-                      <span className="text-red-700">{suggestError}</span>
-                    ) : !user ? (
-                      t.scheduler.hintSignIn
-                    ) : activeGroup?.isExample ? (
-                      t.scheduler.hintExample
-                    ) : awaitingYourApproval ? (
-                      t.scheduler.hintAccept
-                    ) : (
-                      t.scheduler.hintEveryone
-                    )}
-                  </p>
-                </div>
               </div>
             )}
             </FadeSwap>

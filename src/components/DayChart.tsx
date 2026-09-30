@@ -3,7 +3,13 @@ import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import FadeSwap from "@/components/FadeSwap";
-import { barRiseDelay, nextChartMotion, RISE_FULL, type ChartMotion } from "@/lib/barRise";
+import {
+  BAR_SETTLE_SECONDS,
+  barRiseDelay,
+  nextChartMotion,
+  RISE_FULL,
+  type ChartMotion,
+} from "@/lib/barRise";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import type { DayCell, MonthGrid } from "@/lib/heatmap";
 import { cn } from "@/lib/utils";
@@ -22,8 +28,10 @@ import { cn } from "@/lib/utils";
  * When it first appears, or its data arrives, the bars rise left to right,
  * each count carried up on its bar and each date coming in with it. When the
  * month changes, the old month slides out and the new one in, like a
- * carousel. A group switch only fades (FadeSwap), and a settings change just
- * updates the bars. The landing page's drawing uses the same rise.
+ * carousel. A group switch only fades (FadeSwap). A settings change glides
+ * every bar to its new height at once and fades its colour, so a day that
+ * gains people grows and one that loses them sinks. The landing page's
+ * drawing uses the same rise.
  *
  * While the group's calendars load (`loading`) the chart is already there in
  * its final shape, flat bars under a placeholder title, so the page doesn't
@@ -87,6 +95,10 @@ export default function DayChart({
   const riseDelay = (i: number) => barRiseDelay(i);
   const riseTransition = (i: number) =>
     rise ? { duration: RISE_FULL.duration, delay: riseDelay(i), ease: "easeOut" as const } : { duration: 0 };
+  // A settings change: each bar glides to its new height, and colours and
+  // dimming fade over the same time (CSS transitions, paced from here).
+  const settle = { duration: reduceMotion ? 0 : BAR_SETTLE_SECONDS, ease: "easeOut" as const };
+  const fade = { transitionDuration: `${settle.duration}s` };
   const title = grid.label.charAt(0).toUpperCase() + grid.label.slice(1);
   const bestNumbers = new Set(days.filter((c) => bestDays.has(c.date)).map((c) => c.dayOfMonth));
 
@@ -193,51 +205,67 @@ export default function DayChart({
               title={dead || loading ? undefined : describe(c)}
               aria-label={`${c.dayOfMonth}. ${loading ? "" : dead ? t.scheduler.legendOff : describe(c)}`}
               className={cn(
-                "group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1",
+                "group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1 transition-opacity",
                 pickable ? "cursor-pointer" : "cursor-default",
                 // A day the group can't make, even by skipping, steps back so
                 // the ones worth picking stand out.
                 !loading && !dead && !pickable && "opacity-35",
               )}
+              style={fade}
             >
-              {!dead && !loading && (
-                <motion.span
-                  className={cn(
-                    "hidden text-[11px] font-bold sm:block",
-                    best ? (everyone ? "text-everyone" : "text-primary") : "text-muted-foreground",
-                  )}
-                  initial={rise ? { opacity: 0 } : false}
-                  animate={{ opacity: 1 }}
-                  transition={rise ? { duration: 0.2, delay: riseDelay(i) } : { duration: 0 }}
+              {/* Kept for days out of the search too, only faded out, so a
+                  weekday switched off or on fades its count with its bar. */}
+              {!loading && (
+                <span
+                  className={cn("hidden transition-opacity sm:block", dead && "opacity-0")}
+                  style={fade}
                 >
-                  {/* Matches the bar's full stacked height (green + amber),
-                      not just the outright-free count the green part alone
-                      shows. */}
-                  {c.freeCount + c.conditionalCount}
-                </motion.span>
+                  <motion.span
+                    className={cn(
+                      "block text-[11px] font-bold transition-colors",
+                      best ? (everyone ? "text-everyone" : "text-primary") : "text-muted-foreground",
+                    )}
+                    style={fade}
+                    initial={rise ? { opacity: 0 } : false}
+                    animate={{ opacity: 1 }}
+                    transition={rise ? { duration: 0.2, delay: riseDelay(i) } : { duration: 0 }}
+                  >
+                    {/* Matches the bar's full stacked height (green + amber),
+                        not just the outright-free count the green part alone
+                        shows. */}
+                    {c.freeCount + c.conditionalCount}
+                  </motion.span>
+                </span>
               )}
-              {/* --grow (0 to 1) scales the bar's real height, not a
-                  transform, so the count on top is carried up with it. */}
+              {/* The bar's height is --bar-max times the share of the group
+                  free (--free, green) or free only by skipping (--cond,
+                  amber), times --grow. Real heights, not transforms, so the
+                  count on top is carried with them. --grow (0 to 1) is the
+                  rise; --free and --cond glide to a settings change's new
+                  numbers. The rise mounts them already at their values, and
+                  the key remounts the bar when the data arrives, so the two
+                  never run on top of each other. The rounding sits on the
+                  whole bar, so it doesn't jump between green and amber as
+                  the amber part grows in or shrinks away. */}
               <motion.span
-                className="flex w-full flex-col justify-end"
-                initial={rise ? { "--grow": 0 } : false}
-                animate={{ "--grow": loading ? 0 : 1 }}
-                transition={riseTransition(i)}
-              >
-                {condH > 0 && (
-                  <span
-                    className="w-full rounded-t-[4px] bg-amber-300"
-                    style={{ height: `calc(var(--bar-max) * ${condH} * var(--grow, 1))` }}
-                  />
+                key={loading ? "loading" : "ready"}
+                className={cn(
+                  "flex w-full flex-col justify-end overflow-hidden",
+                  loading || dead ? "rounded-t-[3px]" : "rounded-t-[4px]",
                 )}
+                initial={rise ? { "--grow": 0, "--free": freeH, "--cond": condH } : false}
+                animate={{ "--grow": loading ? 0 : 1, "--free": freeH, "--cond": condH }}
+                transition={{ default: settle, "--grow": riseTransition(i) }}
+              >
+                <span
+                  className="w-full bg-amber-300"
+                  style={{ height: "calc(var(--bar-max) * var(--cond, 0) * var(--grow, 1))" }}
+                />
                 <span
                   className={cn(
                     "w-full transition-colors",
-                    condH > 0 ? "" : "rounded-t-[4px]",
-                    loading
-                      ? "rounded-t-[3px] bg-secondary"
-                      : dead
-                      ? "h-1.5 rounded-t-[3px] bg-secondary"
+                    loading || dead
+                      ? "bg-secondary"
                       : everyone
                         ? best
                           ? "bg-everyone"
@@ -246,12 +274,13 @@ export default function DayChart({
                           ? "bg-primary"
                           : cn("bg-primary/30", pickable && "group-hover:bg-primary/50"),
                   )}
-                  style={
-                    dead && !loading
-                      ? undefined
-                      : // Flat while loading: the dead days' stub height, for every day.
-                        { height: `max(${loading ? "6px" : "3px"}, calc(var(--bar-max) * ${freeH} * var(--grow, 1)))` }
-                  }
+                  style={{
+                    ...fade,
+                    // Days out of the search, and every day while loading, are
+                    // flat stubs; --free is 0 for them, so a day switched off
+                    // sinks to the stub rather than vanishing.
+                    height: `max(${loading || dead ? "6px" : "3px"}, calc(var(--bar-max) * var(--free, 0) * var(--grow, 1)))`,
+                  }}
                 />
               </motion.span>
             </button>
@@ -275,8 +304,9 @@ export default function DayChart({
               transition={riseTransition(i)}
             >
               <span
+                style={fade}
                 className={cn(
-                  "font-semibold",
+                  "font-semibold transition-colors",
                   // A phone has no room for 31 numbers: every fifth day, the
                   // first, and the answer's days.
                   // A number right beside the answer's would run into it.
