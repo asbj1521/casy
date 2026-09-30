@@ -29,7 +29,9 @@ export default function TopNav() {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
   const t = useT();
-  const onHome = pathname === "/";
+  // The scheduler is at /plan for everyone, and at / too once signed in (signed
+  // out, / is the landing page, see App.tsx).
+  const onHome = pathname === "/plan" || (pathname === "/" && !!user);
   const onProfile = pathname === "/profile";
   const onEvents = pathname === "/events";
   const onCalendarOverview = pathname === "/calendar-overview";
@@ -85,7 +87,7 @@ export default function TopNav() {
   const tabs: Tab[] = [
     // The logo also goes home, but that isn't obvious from Profile or My
     // events, so it gets its own labelled link like the others.
-    { to: "/", label: t.nav.scheduler, short: t.nav.schedulerShort, icon: CalendarSearch, active: onHome },
+    { to: user ? "/" : "/plan", label: t.nav.scheduler, short: t.nav.schedulerShort, icon: CalendarSearch, active: onHome },
     {
       to: "/events",
       label: t.nav.events,

@@ -5,10 +5,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Footer from '@/components/Footer'
 import RequireAuth from '@/components/RequireAuth'
 import WeakPasswordNotice from '@/components/WeakPasswordNotice'
+import { useAuth } from '@/context/auth'
 import AuthProvider from '@/context/AuthProvider'
 import LanguageProvider from '@/i18n/LanguageProvider'
 import { persistQueries } from '@/lib/queryPersistence'
 import FindDate from '@/pages/FindDate'
+import Landing from '@/pages/Landing'
 
 /**
  * The scheduling page is what people land on, so it ships in the entry chunk:
@@ -31,6 +33,19 @@ const ConnectOutlookHelp = lazy(() => import('@/pages/ConnectOutlookHelp'))
 // the entry chunk like the other pages reached by a deliberate click.
 const JoinGroup = lazy(() => import('@/pages/JoinGroup'))
 
+/**
+ * casy.app itself: the landing page for signed-out visitors, the scheduler
+ * for everyone signed in, so it never stands between a user and their groups.
+ * Its "Go to Casy" button leads to /plan, the scheduler for anyone. Until the
+ * stored session is read this is a plain background, or a signed-in person
+ * would see the landing page flash first.
+ */
+function Home() {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="min-h-screen bg-background" />
+  return user ? <FindDate /> : <Landing />
+}
+
 const queryClient = new QueryClient()
 // Last known groups, calendar status and admin flag, shown at once on load
 // and refreshed in the background (see queryPersistence.ts).
@@ -48,7 +63,8 @@ function App() {
                 a flash of "Loading…" would read as slower than a beat of nothing. */}
             <Suspense fallback={<div className="min-h-screen bg-background" />}>
               <Routes>
-                <Route path="/" element={<FindDate />} />
+                <Route path="/" element={<Home />} />
+                <Route path="/plan" element={<FindDate />} />
                 <Route path="/sign-in" element={<SignIn />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
