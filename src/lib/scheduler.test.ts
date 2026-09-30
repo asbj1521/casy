@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatLongDate, formatLongSpan } from "@/lib/format";
+import { formatLongDate, formatLongSpan, formatLongSpanLines } from "@/lib/format";
 import {
   DEFAULT_PRESETS,
   daysUntil,
@@ -131,6 +131,14 @@ describe("formatLongDate / formatLongSpan", () => {
     expect(formatLongSpan(start, end, "da")).toBe("Fredag 9. oktober til søndag 11. oktober");
     expect(formatLongSpan(start, end, "en")).toBe("Friday 9 October to Sunday 11 October");
     expect(formatLongSpan(start, "2026-10-09T22:00:00.000Z", "da")).toBe("Fredag 9. oktober");
+  });
+
+  it("splits a span after \"til\" for the headline's two lines", () => {
+    const start = "2026-10-08T22:00:00.000Z";
+    const end = "2026-10-11T22:00:00.000Z";
+    expect(formatLongSpanLines(start, end, "da")).toEqual(["Fredag 9. oktober til", "søndag 11. oktober"]);
+    expect(formatLongSpanLines(start, end, "en")).toEqual(["Friday 9 October to", "Sunday 11 October"]);
+    expect(formatLongSpanLines(start, "2026-10-09T22:00:00.000Z", "da")).toEqual(["Fredag 9. oktober"]);
   });
 });
 

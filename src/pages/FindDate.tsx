@@ -33,7 +33,7 @@ import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { useAuth } from "@/context/auth";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { formatDaySpan, formatLongDate, formatLongSpan, formatTime } from "@/lib/format";
+import { formatDaySpan, formatLongDate, formatLongSpan, formatLongSpanLines, formatTime } from "@/lib/format";
 import { nameList } from "@/lib/myEvents";
 import { backToBackEnds, backToBackNote, earlyMorningNote, earlyMorningStarts } from "@/lib/earlyMorning";
 import { avatarColor } from "@/lib/avatar";
@@ -502,10 +502,16 @@ export default function FindDate() {
   }
 
   // The big answer: the date (or span), and the times plus how far away it is.
+  // A trip or holiday's two dates go on a line each, "Fredag 7. maj til" over
+  // "mandag 10. maj", so the break never falls somewhere random in a date.
   const headline = activeSlot
     ? search.kind === "single"
       ? formatLongDate(activeSlot.start, lang)
-      : formatLongSpan(activeSlot.start, activeSlot.end, lang)
+      : formatLongSpanLines(activeSlot.start, activeSlot.end, lang).map((line) => (
+          <span key={line} className="block">
+            {line}
+          </span>
+        ))
     : null;
   const subline = activeSlot
     ? [
@@ -741,7 +747,7 @@ export default function FindDate() {
               // The answer's own layout, blank until the calendars are in.
               <div aria-busy="true">
               <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0 lg:shrink-[0.01]">
+                <div className="min-w-0">
                   <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
                     <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                     <span className="truncate">{waitingText}</span>
@@ -753,13 +759,13 @@ export default function FindDate() {
                     <Bone chars={20} />
                   </p>
                 </div>
-                <div aria-hidden="true" className="flex flex-col gap-3 lg:items-end">
+                <div aria-hidden="true" className="flex flex-col gap-3 lg:shrink-0 lg:items-end">
                   <div className="hidden items-center gap-2 sm:flex">
                     <span className="h-12 w-12 animate-pulse rounded-xl bg-secondary" />
                     <span className="h-12 w-40 animate-pulse rounded-xl bg-secondary" />
                     <span className="h-12 w-52 animate-pulse rounded-xl bg-secondary" />
                   </div>
-                  <p className="text-xs sm:text-sm">
+                  <p className="text-xs sm:text-sm lg:w-0 lg:min-w-full lg:text-right">
                     <Bone chars={34} />
                   </p>
                 </div>
@@ -790,14 +796,14 @@ export default function FindDate() {
               </>
             ) : (
               <div>
-              {/* The date on the left, who can and what to do on the right.
-                  When they don't fit side by side, the right side wraps to
-                  two rows first: flex shrinks items in proportion to
-                  shrink x width, so at 0.01 the date column gives way only
-                  once the right side is down to its narrowest (the buttons
-                  row), and the big date breaks onto a second line last. */}
+              {/* The date on the left, what to do on the right. The buttons
+                  keep their width (shrink-0) and the date wraps to make
+                  room: a trip's "Fredag 12. februar til mandag 15. februar"
+                  takes two lines rather than pushing the buttons out of the
+                  card. The caption under them wraps to the buttons' width
+                  (w-0 min-w-full) instead of widening the column. */}
               <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0 lg:shrink-[0.01]">
+                <div className="min-w-0">
                   <p
                     className={cn(
                       "flex items-center gap-2 text-xs font-bold uppercase tracking-wider sm:text-sm",
@@ -822,12 +828,12 @@ export default function FindDate() {
 
                 </div>
 
-                <div className="flex flex-col gap-3 lg:items-end">
+                <div className="flex flex-col gap-3 lg:shrink-0 lg:items-end">
                   {/* On a phone these live in the bar pinned to the bottom of
                       the screen instead, so the card stays short and the
                       chart under it is on the first screen. */}
                   <div className="hidden items-center gap-2 sm:flex">{actionButtons}</div>
-                  <p className="text-xs text-muted-foreground sm:text-sm lg:text-right">
+                  <p className="text-xs text-muted-foreground sm:text-sm lg:w-0 lg:min-w-full lg:text-right">
                     {suggestedThis ? (
                       t.scheduler.sent(
                         <Link

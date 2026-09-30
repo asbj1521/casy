@@ -70,18 +70,28 @@ export function formatLongDate(iso: string, lang: Lang): string {
 }
 
 /**
+ * formatLongSpan in its two halves, "Fredag 9. oktober til" and "søndag 11.
+ * oktober", so the scheduling page's big answer can put each on its own line
+ * (the break always falls after "til", however long the months are). A span
+ * that starts and ends on the same day is that one day, a single line.
+ */
+export function formatLongSpanLines(start: string, end: string, lang: Lang): string[] {
+  const last = new Date(Date.parse(end) - 1).toISOString();
+  const first = formatLongDate(start, lang);
+  const second = formatLongDate(last, lang);
+  if (first === second) return [first];
+  // Mid-sentence, a Danish weekday goes back to lower case; English keeps its capital.
+  const tail = lang === "da" ? second.charAt(0).toLowerCase() + second.slice(1) : second;
+  return [`${first} ${TO[lang]}`, tail];
+}
+
+/**
  * "Fredag 9. oktober til søndag 11. oktober" for a whole-day span, `end`
  * being the exclusive midnight after it (see formatDaySpan). A span that
  * starts and ends on the same day reads as that one day.
  */
 export function formatLongSpan(start: string, end: string, lang: Lang): string {
-  const last = new Date(Date.parse(end) - 1).toISOString();
-  const first = formatLongDate(start, lang);
-  const second = formatLongDate(last, lang);
-  if (first === second) return first;
-  // Mid-sentence, a Danish weekday goes back to lower case; English keeps its capital.
-  const tail = lang === "da" ? second.charAt(0).toLowerCase() + second.slice(1) : second;
-  return `${first} ${TO[lang]} ${tail}`;
+  return formatLongSpanLines(start, end, lang).join(" ");
 }
 
 /** "Sep 2026": how long someone has had a Casy account, or a group has existed. */
