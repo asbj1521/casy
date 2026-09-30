@@ -7,7 +7,9 @@ import {
   Check,
   ChevronDown,
   Clock,
+  Hourglass,
   Loader2,
+  Moon,
   Sparkles,
   Users,
   X,
@@ -24,7 +26,10 @@ import {
   type EventInvitee,
   type SuggestedEvent,
 } from "@/api/events";
-import { groupsQuery } from "@/api/groups";
+import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
+import { SEARCH_WINDOW } from "@/api/mockData";
+import { backToBackEnds, backToBackNote, earlyMorningNote, earlyMorningStarts } from "@/lib/earlyMorning";
+import { APP_TIME_ZONE } from "@/lib/zone";
 import AddToCalendar from "@/components/AddToCalendar";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
@@ -151,6 +156,56 @@ function GroupName({ event }: { event: SuggestedEvent }) {
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * A meeting's edge warnings on My events, for those still invited: someone
+ * coming straight from something that ends as it starts, or having to be up
+ * early after a late night (lib/earlyMorning.ts). Meetings only; the group's
+ * calendars are the same cached data a decline uses, one fetch per group.
+ */
+function EdgeWarnings({ event, className }: { event: SuggestedEvent; className?: string }) {
+  const { lang } = useLang();
+  const t = useT();
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+  const meeting = event.settings.kind === "single" && !!event.currentDate;
+  const { data: groups } = useQuery({ ...groupsQuery(userId), enabled: meeting });
+  const { data: busy } = useQuery({
+    ...groupBusyQuery(userId, event.group.id, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
+    enabled: meeting,
+  });
+  const group = groups?.find((g) => g.id === event.group.id);
+  if (!meeting || !group || !busy || !event.currentDate) return null;
+
+  const invited = new Set(event.invitees.map((i) => i.profileId));
+  const participants = participantsFromGroup(group, busy).participants.filter((p) => invited.has(p.profileId));
+  const notes = [
+    {
+      icon: Hourglass,
+      text: backToBackNote(backToBackEnds(participants, event.currentDate, APP_TIME_ZONE), userId, lang, t.backToBack),
+    },
+    {
+      icon: Moon,
+      text: earlyMorningNote(
+        earlyMorningStarts(participants, event.currentDate, APP_TIME_ZONE),
+        userId,
+        lang,
+        t.earlyMorning,
+      ),
+    },
+  ].filter((n) => n.text);
+  if (notes.length === 0) return null;
+  return (
+    <div className={cn("flex flex-col gap-1.5", className)}>
+      {notes.map(({ icon: Icon, text }) => (
+        <p key={text} className="flex items-start gap-2 text-sm text-amber-900">
+          <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+          {text}
+        </p>
+      ))}
     </div>
   );
 }
@@ -347,6 +402,7 @@ export default function MyEvents() {
                         <div className="mt-3">
                           <People invitees={event.invitees} />
                         </div>
+                        <EdgeWarnings event={event} className="mt-3" />
 
                         {declining ? (
                           <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4">
@@ -443,6 +499,7 @@ export default function MyEvents() {
                         <div className="mt-3">
                           <People invitees={event.invitees} />
                         </div>
+                        <EdgeWarnings event={event} className="mt-3" />
                         {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
                         {exitControl(event)}
                       </li>
@@ -502,6 +559,7 @@ export default function MyEvents() {
                           ) : (
                             <p className="text-xl font-bold text-foreground">{t.events.acceptedByAll}</p>
                           )}
+                          <EdgeWarnings event={event} className="mt-1.5" />
                         </div>
                         <p className="relative order-3 px-4 text-lg text-foreground sm:order-none sm:px-5">
                           {headline?.time}

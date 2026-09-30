@@ -229,6 +229,18 @@ export const en: Messages = {
     google: { label: "Google Calendar", help: "How it works" },
     outlook: { label: "Outlook Calendar", help: "How it works" },
   },
+  earlyMorning: {
+    you: "You",
+    oneYou: (time: string) => `Heads up: you have something at ${time} the next morning.`,
+    one: (who: string, time: string) => `Heads up: ${who} has something at ${time} the next morning.`,
+    many: (list: string) => `Heads up: ${list} have something early the next morning.`,
+  },
+  backToBack: {
+    you: "You",
+    oneYou: "Heads up: you have something that ends just as this starts.",
+    one: (who: string) => `Heads up: ${who} has something that ends just as this starts.`,
+    many: (list: string) => `Heads up: ${list} have something that ends just as this starts.`,
+  },
   counts: {
     calendars: (n: number) => (n === 1 ? "1 calendar" : `${n} calendars`),
     busyBlocks: (n: number) => (n === 1 ? "1 busy block" : `${n} busy blocks`),

@@ -9,6 +9,7 @@ import {
   Hourglass,
   Lightbulb,
   Loader2,
+  Moon,
   Send,
 } from "lucide-react";
 
@@ -34,6 +35,7 @@ import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { formatDaySpan, formatLongDate, formatLongSpan, formatTime } from "@/lib/format";
 import { nameList } from "@/lib/myEvents";
+import { backToBackEnds, backToBackNote, earlyMorningNote, earlyMorningStarts } from "@/lib/earlyMorning";
 import { avatarColor } from "@/lib/avatar";
 import { dayOf, monthStartMs } from "@/lib/day";
 import {
@@ -516,6 +518,26 @@ export default function FindDate() {
   const skipConflicts = !isMultiDay && activeSlot ? (result?.conflicts ?? []) : [];
   const yourSkip = skipConflicts.find((c) => c.profileId === youProfileId) ?? null;
   const othersSkipping = skipConflicts.filter((c) => c.profileId !== youProfileId);
+  // A meeting's edges, said rather than blocked: someone coming straight from
+  // something else, or having to be up early after a late night.
+  const backNote =
+    search.kind === "single" && activeSlot && activeGroup
+      ? backToBackNote(
+          backToBackEnds(activeGroup.participants, activeSlot, TZ),
+          youProfileId,
+          lang,
+          t.backToBack,
+        )
+      : null;
+  const earlyNote =
+    search.kind === "single" && activeSlot && activeGroup
+      ? earlyMorningNote(
+          earlyMorningStarts(activeGroup.participants, activeSlot, TZ),
+          youProfileId,
+          lang,
+          t.earlyMorning,
+        )
+      : null;
 
   // Unique titles of your own conflicting commitments: a generated title like
   // "Arbejde", or with real data the name of the calendar, e.g. "Work".
@@ -752,6 +774,18 @@ export default function FindDate() {
                       {othersSkipping.length > 0 &&
                         t.scheduler.othersSkip(nameList(othersSkipping.map((c) => c.name), lang))}
                       {t.scheduler.skipWhy}
+                    </p>
+                  )}
+                  {backNote && (
+                    <p className="mt-3 flex items-start gap-2 text-sm text-amber-900">
+                      <Hourglass className="mt-0.5 h-4 w-4 shrink-0" />
+                      {backNote}
+                    </p>
+                  )}
+                  {earlyNote && (
+                    <p className="mt-3 flex items-start gap-2 text-sm text-amber-900">
+                      <Moon className="mt-0.5 h-4 w-4 shrink-0" />
+                      {earlyNote}
                     </p>
                   )}
                   {tone === "clean" && isMultiDay && selfAccepted && (

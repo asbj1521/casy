@@ -250,6 +250,18 @@ export const da = {
     google: { label: "Google Kalender", help: "Sådan virker det" },
     outlook: { label: "Outlook-kalender", help: "Sådan virker det" },
   },
+  earlyMorning: {
+    you: "Du",
+    oneYou: (time: string) => `Bemærk: Du har noget kl. ${time} næste morgen.`,
+    one: (who: string, time: string) => `Bemærk: ${who} har noget kl. ${time} næste morgen.`,
+    many: (list: string) => `Bemærk: ${list} har noget tidligt næste morgen.`,
+  },
+  backToBack: {
+    you: "Du",
+    oneYou: "Bemærk: Du har noget, der slutter lige når aftalen starter.",
+    one: (who: string) => `Bemærk: ${who} har noget, der slutter lige når aftalen starter.`,
+    many: (list: string) => `Bemærk: ${list} har noget, der slutter lige når aftalen starter.`,
+  },
   counts: {
     calendars: (n: number) => (n === 1 ? "1 kalender" : `${n} kalendere`),
     busyBlocks: (n: number) => (n === 1 ? "1 optaget tidsrum" : `${n} optagede tidsrum`),
