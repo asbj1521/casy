@@ -6,7 +6,9 @@
  *    (school until 16:00, the meeting at 16:00).
  *
  * Only warnings: the date still stands. What they show (a name and a time)
- * is what group members can already see of each other's busy time.
+ * is what group members can already see of each other's busy time. The
+ * holiday blocks everyone shares (holidayBlocks.ts) never count: they are
+ * nobody's own plans.
  */
 import type { Lang } from "@/i18n/locale";
 import { formatTime } from "@/lib/format";
@@ -64,7 +66,7 @@ export function earlyMorningStarts(
     for (const b of p.busy) {
       const bStart = Date.parse(b.start);
       const bEnd = Date.parse(b.end);
-      if (bStart < end || bStart > until || isAllDay(bStart, bEnd, timeZone)) continue;
+      if (b.holiday || bStart < end || bStart > until || isAllDay(bStart, bEnd, timeZone)) continue;
       if (first === null || bStart < first) first = bStart;
     }
     if (first !== null) found.push({ profileId: p.profileId, name: p.name, start: new Date(first).toISOString() });
@@ -123,7 +125,7 @@ export function backToBackEnds(
       p.busy.some((b) => {
         const bStart = Date.parse(b.start);
         const bEnd = Date.parse(b.end);
-        return bEnd === start && !isAllDay(bStart, bEnd, timeZone);
+        return bEnd === start && !b.holiday && !isAllDay(bStart, bEnd, timeZone);
       }),
     )
     .map((p) => ({ profileId: p.profileId, name: p.name }));

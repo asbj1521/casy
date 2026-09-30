@@ -72,6 +72,12 @@ export interface BusyInterval {
   category?: EventCategory;
   /** Its calendar's priority; omitted means "normal". */
   priority?: CalendarPriority;
+  /**
+   * True for the times nobody is free (Christmas, New Year: holidayBlocks.ts),
+   * given to everyone alike. Not anyone's own plans, so the warnings about a
+   * meeting's edges (earlyMorning.ts) leave them out.
+   */
+  holiday?: boolean;
 }
 
 /** A person invited to an event, plus their aggregated busy time. */

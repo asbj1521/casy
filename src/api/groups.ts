@@ -12,7 +12,9 @@
  */
 import { queryOptions } from "@tanstack/react-query";
 
+import { withHolidayBlocks } from "@/lib/holidayBlocks";
 import { callFunction } from "@/lib/supabaseFunctions";
+import { APP_TIME_ZONE } from "@/lib/zone";
 import type { BusyInterval, EventCategory } from "@/types";
 import { currentMessages } from "@/i18n/current";
 
@@ -199,11 +201,17 @@ export function participantsFromGroup(
 ) {
   const connected = group.members.filter((m) => data?.connected[m.profileId]);
   return {
-    participants: connected.map((m) => ({
-      profileId: m.profileId,
-      name: m.isYou ? markYou(m.name) : m.name,
-      busy: (data?.busy[m.profileId] ?? []) as BusyInterval[],
-    })),
+    // With Christmas and New Year blocked for everyone (holidayBlocks.ts):
+    // every search of a real group starts here, the scheduler's and a
+    // decline's alike.
+    participants: withHolidayBlocks(
+      connected.map((m) => ({
+        profileId: m.profileId,
+        name: m.isYou ? markYou(m.name) : m.name,
+        busy: (data?.busy[m.profileId] ?? []) as BusyInterval[],
+      })),
+      APP_TIME_ZONE,
+    ),
     /** Members left out because they have not linked a calendar yet. */
     waitingFor: group.members.filter((m) => !data?.connected[m.profileId]),
   };

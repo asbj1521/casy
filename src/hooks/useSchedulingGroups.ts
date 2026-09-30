@@ -39,7 +39,9 @@ import { displayName, useAuth } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import type { OverviewData } from "@/lib/calendarOverview";
 import { busyFromCalendars, withRealCalendar } from "@/lib/realCalendar";
+import { withHolidayBlocks } from "@/lib/holidayBlocks";
 import { callFunction } from "@/lib/supabaseFunctions";
+import { APP_TIME_ZONE } from "@/lib/zone";
 import type { FriendGroup } from "@/types";
 import { currentMessages } from "@/i18n/current";
 
@@ -177,7 +179,8 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
       return {
         id: def.id,
         name: exampleNames[def.id as keyof typeof exampleNames] ?? def.name,
-        participants,
+        // Christmas and New Year as in a real group (participantsFromGroup).
+        participants: withHolidayBlocks(participants, APP_TIME_ZONE),
         isExample: true,
         waitingFor: [],
         memberCount: def.members.length,
