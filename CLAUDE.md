@@ -60,7 +60,7 @@ supabase db push --dry-run
 src/
 ├── api/          # Server data: groups, events, calendarStatus, admin (queries + calls); mockData (example groups), currentUser
 ├── components/   # Hand-built UI components; RequireAuth guards signed-in routes; AdminPanel is lazy-loaded
-├── context/      # Auth: AuthProvider (session) + auth.ts (useAuth, displayName)
+├── context/      # Auth: AuthProvider (session) + auth.ts (useAuth; useSignedInUser for pages behind RequireAuth; displayName)
 ├── hooks/        # useSchedulingGroups (real vs example groups), useExampleCarousel
 ├── i18n/         # Languages: da.tsx (the shape) + en.tsx, useT/useLang, current.ts for code outside React
 ├── lib/          # Pure logic + clients (see below); tests sit next to the code
@@ -134,7 +134,7 @@ supabase/
 
 ### TypeScript configuration
 - Path alias `@/*` maps to `src/*`
-- Strict mode is relaxed: `noImplicitAny: false`, `strictNullChecks: false`
+- Full strict mode (`strict`, `noUnusedLocals`, `noUnusedParameters`, `erasableSyntaxOnly`). Pages behind `RequireAuth` read the user with `useSignedInUser()`, which is never null there; TanStack Query types errors as `Error`, so `mutation.error?.message` needs no `instanceof` check.
 
 ## Environment Variables
 
@@ -171,7 +171,7 @@ Order: migrations before the functions that depend on them. Afterwards, `supabas
 
 ## CI/CD
 
-GitHub Actions workflow at `.github/workflows/ci.yml` runs ESLint on push/PR. It does not run tests or type-checks, so run `npm run test:run`, `npx tsc -b` and the Deno tests before handing work over.
+GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push and PR to `main`, in two jobs: the web app (ESLint, the Prettier check, `npm run build`, which type-checks first, and the Vitest suite) and the Edge Functions (`deno check` and the Deno tests). Run the same locally before handing work over.
 
 ---
 

@@ -532,7 +532,7 @@ export default function AdminPanel({ youId }: { youId: string }) {
     onError: (err, connectionId) => {
       setSyncResults((r) => ({
         ...r,
-        [connectionId]: { ok: false, text: messageOf(err, t.admin.syncFailed) },
+        [connectionId]: { ok: false, text: err.message },
       }));
     },
   });
@@ -595,9 +595,9 @@ export default function AdminPanel({ youId }: { youId: string }) {
 
   const groupError = (groupId: string) =>
     deleteMutation.isError && deleteMutation.variables === groupId
-      ? messageOf(deleteMutation.error, t.admin.couldntDeleteGroup)
-      : removeMutation.isError && removeMutation.variables?.groupId === groupId
-        ? messageOf(removeMutation.error, t.admin.couldntRemove)
+      ? deleteMutation.error.message
+      : removeMutation.isError && removeMutation.variables.groupId === groupId
+        ? removeMutation.error.message
         : null;
 
   const groups = useMemo(
@@ -668,7 +668,7 @@ export default function AdminPanel({ youId }: { youId: string }) {
       {isError && (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
           <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{messageOf(error, t.admin.couldntLoad)}</span>
+          <span>{error.message}</span>
         </div>
       )}
 
@@ -796,7 +796,7 @@ export default function AdminPanel({ youId }: { youId: string }) {
                     deleting={deleteUserMutation.isPending && deleteUserMutation.variables === u.id}
                     error={
                       deleteUserMutation.isError && deleteUserMutation.variables === u.id
-                        ? messageOf(deleteUserMutation.error, t.admin.couldntDeleteAccount)
+                        ? deleteUserMutation.error.message
                         : null
                     }
                     onAsk={() => askDeleteUser(u.id)}

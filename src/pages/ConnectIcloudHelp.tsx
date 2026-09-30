@@ -363,7 +363,7 @@ export default function ConnectIcloudHelp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const connect = useMutation({
-    mutationFn: () => connectApple(queryClient, user.id, email, password),
+    mutationFn: (userId: string) => connectApple(queryClient, userId, email, password),
     // The password has done its job; don't keep it in the page any longer.
     onSuccess: () => setPassword(""),
   });
@@ -394,7 +394,8 @@ export default function ConnectIcloudHelp() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    connect.mutate();
+    // The form is only drawn for someone signed in (see the "enter" step).
+    if (user) connect.mutate(user.id);
   }
 
   const stepIndex = STEPS.indexOf(step);
@@ -585,9 +586,7 @@ export default function ConnectIcloudHelp() {
             {connect.isError && (
               <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
                 <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  {connect.error instanceof Error ? connect.error.message : t.profile.couldntIcloud}
-                </span>
+                <span>{connect.error.message}</span>
               </div>
             )}
             <p className="text-xs leading-relaxed text-muted-foreground">{c.enter.revoke}</p>

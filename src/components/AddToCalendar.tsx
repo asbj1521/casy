@@ -10,7 +10,7 @@ import {
   type SuggestedEvent,
 } from "@/api/events";
 import { primaryCalendarQuery, updatePrimaryCalendar } from "@/api/primaryCalendar";
-import { useAuth } from "@/context/auth";
+import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
 
@@ -40,7 +40,7 @@ function saveFile(filename: string, text: string, type: string) {
 export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
   const t = useT();
   const words = t.addToCalendar;
-  const { user } = useAuth();
+  const user = useSignedInUser();
   const queryClient = useQueryClient();
   const { data: primary } = useQuery(primaryCalendarQuery(user.id));
   const { data: connections } = useQuery(calendarStatusQuery(user.id));
@@ -70,10 +70,7 @@ export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
     onSuccess: ({ filename, ics }) => saveFile(filename, ics, "text/calendar;charset=utf-8"),
   });
 
-  const error =
-    (add.error instanceof Error && add.error.message) ||
-    (download.error instanceof Error && download.error.message) ||
-    null;
+  const error = (add.error ?? download.error)?.message ?? null;
 
   const downloadLink = (
     <button

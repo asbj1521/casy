@@ -305,10 +305,6 @@ export const en: Messages = {
       (skipped > 0
         ? ` ${skipped} ${skipped === 1 ? "event" : "events"} couldn't be read and ${skipped === 1 ? "was" : "were"} left out.`
         : ""),
-    couldntRename: "Couldn't rename the group",
-    couldntInvite: "Couldn't make an invite link",
-    couldntLeave: "Couldn't leave the group",
-    couldntDelete: "Couldn't delete the group",
     couldntStartConnect: "Couldn't start connecting",
     couldntSync: "Couldn't sync",
     couldntAddLink: "Couldn't add the link",
@@ -466,7 +462,6 @@ export const en: Messages = {
   },
   calendarView: {
     back: "Back to profile",
-    somethingWrong: "Something went wrong.",
     tryAgain: "Try again",
     truncated: "This month has more busy blocks than can be shown, so some are missing.",
     noCalendars: (link: ReactNode) => (
@@ -482,7 +477,6 @@ export const en: Messages = {
     week: (n: number) => `Week ${n}`,
     more: (n: number) => `+${n} more`,
     nothingBusy: "Nothing busy on this day in the calendars shown.",
-    couldntSave: "Couldn't save.",
     couldntSaveCategory: "Couldn't save the category",
     couldntSaveIncluded: "Couldn't save whether the calendar counts",
     couldntLoad: "Couldn't load your calendars",
@@ -776,10 +770,6 @@ export const en: Messages = {
       failed === 0
         ? `Synced: ${ok === 1 ? "1 account" : `${ok} accounts`}, ${blocks === 1 ? "1 busy block" : `${blocks} busy blocks`}.`
         : `${ok} of ${ok + failed} accounts synced. See Calendar health for the error.`,
-    couldntDeleteGroup: "Couldn't delete the group",
-    couldntRemove: "Couldn't remove them",
-    couldntDeleteAccount: "Couldn't delete the account",
-    couldntLoad: "Couldn't load the admin overview",
     providers: {
       google: "Google",
       outlook: "Outlook",

@@ -5,7 +5,7 @@ import { Loader2, Star } from "lucide-react";
 import type { CalendarConnectionStatus } from "@/api/calendarStatus";
 import { primaryCalendarQuery, updatePrimaryCalendar } from "@/api/primaryCalendar";
 import PrimaryCalendarConfirm from "@/components/PrimaryCalendarConfirm";
-import { useAuth } from "@/context/auth";
+import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,7 @@ export default function PrimaryCalendarCard({
 }) {
   const t = useT();
   const words = t.primaryCalendar;
-  const { user } = useAuth();
+  const user = useSignedInUser();
   const queryClient = useQueryClient();
   const { data: primary, isPending } = useQuery(primaryCalendarQuery(user.id));
   // The choice waiting for a yes: a calendar id, or null for "none".
@@ -45,7 +45,7 @@ export default function PrimaryCalendarCard({
   const nameOf = (id: string) => primaryName(list, id) ?? id;
   const hasApple = list.some((c) => c.provider === "apple" && c.status === "connected");
   const busy = save.isPending;
-  const error = save.error instanceof Error ? save.error.message : null;
+  const error = save.error?.message ?? null;
 
   function choose(value: string) {
     const calendarId = value || null;

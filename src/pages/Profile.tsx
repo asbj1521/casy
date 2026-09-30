@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   Link2,
@@ -26,7 +25,7 @@ import PasswordForm from "@/components/PasswordForm";
 import PrimaryCalendarCard from "@/components/PrimaryCalendarCard";
 import ProviderCard, { type ProviderMeta } from "@/components/ProviderCard";
 import TopNav from "@/components/TopNav";
-import { displayName, useAuth } from "@/context/auth";
+import { displayName, useAuth, useSignedInUser } from "@/context/auth";
 import { authErrorMessage } from "@/i18n/authError";
 import { useT } from "@/i18n/lang";
 import { avatarColor } from "@/lib/avatar";
@@ -101,6 +100,16 @@ const PROVIDERS: (Omit<ProviderMeta, "label" | "help"> & { helpTo: string })[] =
   },
 ];
 
+/** What an OAuth callback sent the browser back with, if anything. */
+type OAuthOutcome = { connected: string } | { failed: string };
+
+function oauthOutcome(params: URLSearchParams): OAuthOutcome | null {
+  const connected = params.get("connected");
+  if (connected) return { connected };
+  const failed = params.get("error");
+  return failed ? { failed } : null;
+}
+
 /**
  * Admin mode's panel, loaded only when someone actually opens it: nobody but
  * the admin ever downloads its code.
@@ -115,7 +124,8 @@ const AdminPanel = lazy(() => import("@/components/AdminPanel"));
  * and show the outcome inline (Apple takes an app-specific password).
  */
 export default function Profile() {
-  const { user, signOut } = useAuth();
+  const user = useSignedInUser();
+  const { signOut } = useAuth();
   const t = useT();
   const navigate = useNavigate();
   const [passwordFormOpen, setPasswordFormOpen] = useState(false);
@@ -207,16 +217,9 @@ export default function Profile() {
     },
   });
 
-  const renameActionError =
-    renameGroupMutation.isError && renameGroupMutation.variables
-      ? {
-          groupId: renameGroupMutation.variables.groupId,
-          message:
-            renameGroupMutation.error instanceof Error
-              ? renameGroupMutation.error.message
-              : t.profile.couldntRename,
-        }
-      : null;
+  const renameActionError = renameGroupMutation.isError
+    ? { groupId: renameGroupMutation.variables.groupId, message: renameGroupMutation.error.message }
+    : null;
 
   function startRenameGroup(groupId: string) {
     renameGroupMutation.reset();
@@ -242,9 +245,7 @@ export default function Profile() {
     inviteMutation.data && inviteMutation.variables === inviteGroupId ? inviteMutation.data : null;
   const inviteActionError =
     inviteMutation.isError && inviteMutation.variables === inviteGroupId
-      ? inviteMutation.error instanceof Error
-        ? inviteMutation.error.message
-        : t.profile.couldntInvite
+      ? inviteMutation.error.message
       : null;
 
   function shareInvite(groupId: string) {
@@ -255,24 +256,11 @@ export default function Profile() {
     setInviteGroupId(null);
   }
 
-  const groupActionError =
-    leaveGroupMutation.isError && leaveGroupMutation.variables
-      ? {
-          groupId: leaveGroupMutation.variables,
-          message:
-            leaveGroupMutation.error instanceof Error
-              ? leaveGroupMutation.error.message
-              : t.profile.couldntLeave,
-        }
-      : deleteGroupMutation.isError && deleteGroupMutation.variables
-        ? {
-            groupId: deleteGroupMutation.variables,
-            message:
-              deleteGroupMutation.error instanceof Error
-                ? deleteGroupMutation.error.message
-                : t.profile.couldntDelete,
-          }
-        : null;
+  const groupActionError = leaveGroupMutation.isError
+    ? { groupId: leaveGroupMutation.variables, message: leaveGroupMutation.error.message }
+    : deleteGroupMutation.isError
+      ? { groupId: deleteGroupMutation.variables, message: deleteGroupMutation.error.message }
+      : null;
 
   function askLeaveGroup(groupId: string) {
     leaveGroupMutation.reset();
@@ -312,9 +300,11 @@ export default function Profile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [passwordParam]);
 
-  // The OAuth callbacks redirect back here with ?connected=<provider> or
-  // ?error=<provider>:<reason>. Read it once, show a banner, then strip the
-  // params so a page refresh doesn't repeat the message.
+  // The OAuth callbacks send the browser back here, a fresh page load, with
+  // ?connected=<provider> or ?error=<provider>:<reason>. The outcome is read
+  // once as the page loads and stays on screen; the parameters are stripped
+  // from the address, so a refresh doesn't show it again.
+  const [oauthReturn] = useState(() => oauthOutcome(searchParams));
   const connectedParam = searchParams.get("connected");
   const errorParam = searchParams.get("error");
   useEffect(() => {
@@ -544,39 +534,30 @@ export default function Profile() {
         )}
 
         {/* Result of a just-completed OAuth round trip, if any */}
-        <AnimatePresence initial={false}>
-          {(connectedParam || errorParam) && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mt-4 overflow-hidden"
-            >
-              {connectedParam ? (
-                <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>
-                    {t.profile.connected(
-                      connectedParam in t.providers
-                        ? t.providers[connectedParam as keyof typeof t.providers].label
-                        : t.profile.yourCalendar,
-                    )}
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-                  <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>
-                    {t.profile.couldntConnect(
-                      // "google:access_denied": the reason after the colon, in words.
-                      t.profile.oauthErrors[errorParam.split(":")[1] ?? ""] ?? errorParam,
-                    )}
-                  </span>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {oauthReturn &&
+          ("connected" in oauthReturn ? (
+            <div className="mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                {t.profile.connected(
+                  oauthReturn.connected in t.providers
+                    ? t.providers[oauthReturn.connected as keyof typeof t.providers].label
+                    : t.profile.yourCalendar,
+                )}
+              </span>
+            </div>
+          ) : (
+            <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                {t.profile.couldntConnect(
+                  // "google:access_denied": the reason after the colon, in words.
+                  t.profile.oauthErrors[oauthReturn.failed.split(":")[1] ?? ""] ??
+                    oauthReturn.failed,
+                )}
+              </span>
+            </div>
+          ))}
 
         {connectError && (
           <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
@@ -614,9 +595,7 @@ export default function Profile() {
                   value={name}
                   maxLength={MAX_DISPLAY_NAME_LENGTH}
                   submitting={setNameMutation.isPending}
-                  error={
-                    setNameMutation.error instanceof Error ? setNameMutation.error.message : null
-                  }
+                  error={setNameMutation.error?.message ?? null}
                   inputClassName="text-xl font-bold"
                   onSubmit={(newName) => setNameMutation.mutate(newName)}
                   onCancel={() => setEditingName(false)}
@@ -628,7 +607,7 @@ export default function Profile() {
                   </span>
                   {/* Under a Google name, the email says which account this is;
                       when the email is already the name, it would only repeat it. */}
-                  {user?.email && user.email !== name && (
+                  {user.email && user.email !== name && (
                     <span className="truncate text-sm text-muted-foreground">{user.email}</span>
                   )}
                 </p>
@@ -840,11 +819,7 @@ export default function Profile() {
             <NewGroupDialog
               open={newGroupOpen}
               submitting={createGroupMutation.isPending}
-              error={
-                createGroupMutation.error instanceof Error
-                  ? createGroupMutation.error.message
-                  : null
-              }
+              error={createGroupMutation.error?.message ?? null}
               onSubmit={(name) => createGroupMutation.mutate(name)}
               onCancel={() => setNewGroupOpen(false)}
             />
@@ -864,7 +839,7 @@ export default function Profile() {
                 )}
                 {passwordFormOpen && codeFor ? (
                   <PasswordCodeStep
-                    email={user?.email ?? ""}
+                    email={user.email ?? ""}
                     submitting={passwordSubmitting}
                     error={passwordError}
                     resent={codeResent}
@@ -882,7 +857,7 @@ export default function Profile() {
                     error={passwordError}
                     submitLabel={t.profile.savePassword}
                     submittingLabel={t.profile.saving}
-                    personal={[user?.email, name]}
+                    personal={[user.email, name]}
                     onSubmit={(password) => void handlePasswordSubmit(password)}
                     onCancel={() => {
                       setPasswordFormOpen(false);

@@ -1066,7 +1066,7 @@ export default function FindDate() {
             inviteUrl={invite?.url ?? null}
             inviteExpiresAt={invite?.expiresAt ?? null}
             invitePending={inviteMutation.isPending}
-            inviteError={inviteMutation.error ? (inviteMutation.error as Error).message : null}
+            inviteError={inviteMutation.error?.message ?? null}
             onInvite={() => inviteMutation.mutate(activeGroup.id)}
             leavePending={leaveMutation.isPending}
             onLeave={() => leaveMutation.mutate(activeGroup.id)}
@@ -1165,7 +1165,7 @@ export default function FindDate() {
       <NewGroupDialog
         open={newGroupOpen}
         submitting={createMutation.isPending}
-        error={createMutation.error ? (createMutation.error as Error).message : null}
+        error={createMutation.error?.message ?? null}
         onSubmit={(groupName) => createMutation.mutate(groupName)}
         onCancel={() => setNewGroupOpen(false)}
       />

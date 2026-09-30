@@ -2,7 +2,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, Loader2, Users, XCircle } from "lucide-react";
 
-import { joinGroup, previewInvite, type Group } from "@/api/groups";
+import { groupsQuery, groupsQueryKey, joinGroup, previewInvite } from "@/api/groups";
 import { useAuth } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import TopNav from "@/components/TopNav";
@@ -31,26 +31,24 @@ export default function JoinGroup() {
     queryFn: () => previewInvite(token),
     retry: false,
   });
+  const invited = preview.data?.group;
+
+  // Someone who is already a member gets a different button: the link is not
+  // an error for them, it simply has nothing left to do. Their groups are
+  // usually remembered from an earlier visit (queryPersistence.ts), so this
+  // rarely waits on the network.
+  const { data: myGroups } = useQuery({ ...groupsQuery(user?.id ?? ""), enabled: !!user });
+  const alreadyIn = !!invited && !!myGroups?.some((g) => g.id === invited.id);
 
   const join = useMutation({
     mutationFn: () => joinGroup(token),
-    onSuccess: (data: { groups: Group[]; joinedId: string }) => {
+    onSuccess: (data) => {
       // The reply carries the new list, so the scheduling page has it already
       // and doesn't ask again the moment it opens.
-      queryClient.setQueryData(["groups", user?.id ?? ""], data.groups);
+      if (user) queryClient.setQueryData(groupsQueryKey(user.id), data.groups);
       navigate("/", { replace: true });
     },
   });
-
-  // Someone who is already a member gets a different button: the link is not
-  // an error for them, it simply has nothing left to do. Read straight from
-  // the cache rather than held in state, so it can't go stale after joining.
-  const myGroups = useQuery({
-    queryKey: ["groups", user?.id ?? ""],
-    queryFn: () => [] as Group[],
-    enabled: false, // only ever read what another page already put there
-  }).data;
-  const alreadyIn = !!preview.data && !!myGroups?.some((g) => g.id === preview.data.group.id);
 
   const here = `/join/${encodeURIComponent(token)}`;
 
@@ -59,19 +57,19 @@ export default function JoinGroup() {
       <TopNav />
       <main className="mx-auto flex max-w-md flex-col px-4 py-8 sm:px-6 sm:py-16">
         <div className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
-          {preview.isLoading || loading ? (
+          {preview.isPending || loading ? (
             <div className="flex items-center gap-3 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
               {t.join.opening}
             </div>
-          ) : preview.isError ? (
+          ) : !invited ? (
             <>
               <h1 className="flex items-center gap-2 text-lg font-bold text-foreground">
                 <XCircle className="h-5 w-5 text-red-600" />
                 {t.join.broken}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                {t.join.brokenBody((preview.error as Error).message)}
+                {t.join.brokenBody(preview.error?.message ?? "")}
               </p>
               <Link
                 to="/"
@@ -83,10 +81,10 @@ export default function JoinGroup() {
           ) : (
             <>
               <h1 className="text-lg font-bold text-foreground">{t.join.invitedTo}</h1>
-              <p className="mt-1 text-2xl font-bold text-foreground">{preview.data.group.name}</p>
+              <p className="mt-1 text-2xl font-bold text-foreground">{invited.name}</p>
               <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
-                {t.join.membersSoFar(preview.data.group.memberCount)}
+                {t.join.membersSoFar(invited.memberCount)}
               </p>
 
               <p className="mt-5 text-sm text-muted-foreground">{t.join.privacy}</p>
@@ -105,6 +103,7 @@ export default function JoinGroup() {
               ) : user ? (
                 <>
                   <button
+                    type="button"
                     onClick={() => join.mutate()}
                     disabled={join.isPending}
                     className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
@@ -113,7 +112,7 @@ export default function JoinGroup() {
                     {t.join.joinGroup}
                   </button>
                   {join.isError && (
-                    <p className="mt-3 text-sm text-red-700">{(join.error as Error).message}</p>
+                    <p className="mt-3 text-sm text-red-700">{join.error.message}</p>
                   )}
                 </>
               ) : (

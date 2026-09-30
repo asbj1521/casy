@@ -37,7 +37,7 @@ import {
 import { APP_TIME_ZONE } from "@/lib/zone";
 import AddToCalendar from "@/components/AddToCalendar";
 import TopNav from "@/components/TopNav";
-import { useAuth } from "@/context/auth";
+import { useSignedInUser } from "@/context/auth";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT, type Lang } from "@/i18n/lang";
 import { avatarColor } from "@/lib/avatar";
@@ -102,10 +102,10 @@ function People({ invitees }: { invitees: EventInvitee[] }) {
  */
 function GroupName({ event }: { event: SuggestedEvent }) {
   const t = useT();
-  const { user } = useAuth();
+  const userId = useSignedInUser().id;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { data: groups } = useQuery(groupsQuery(user?.id ?? ""));
+  const { data: groups } = useQuery(groupsQuery(userId));
   const group = groups?.find((g) => g.id === event.group.id);
   const members = (group?.members ?? event.invitees).map((m) => (m.isYou ? t.events.you : m.name));
 
@@ -178,8 +178,7 @@ function GroupName({ event }: { event: SuggestedEvent }) {
 function EdgeWarnings({ event, className }: { event: SuggestedEvent; className?: string }) {
   const { lang } = useLang();
   const t = useT();
-  const { user } = useAuth();
-  const userId = user?.id ?? "";
+  const userId = useSignedInUser().id;
   const meeting = event.settings.kind === "single" && !!event.currentDate;
   const { data: groups } = useQuery({ ...groupsQuery(userId), enabled: meeting });
   const { data: busy } = useQuery({
@@ -240,10 +239,9 @@ function Origin({ event }: { event: SuggestedEvent }) {
 }
 
 export default function MyEvents() {
-  const { user } = useAuth();
+  const userId = useSignedInUser().id;
   const { lang } = useLang();
   const t = useT();
-  const userId = user?.id ?? "";
   const queryClient = useQueryClient();
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
 

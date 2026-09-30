@@ -326,10 +326,6 @@ export const da = {
       (skipped > 0
         ? ` ${skipped === 1 ? "1 aftale" : `${skipped} aftaler`} kunne ikke læses og blev sprunget over.`
         : ""),
-    couldntRename: "Kunne ikke omdøbe gruppen",
-    couldntInvite: "Kunne ikke lave et invitationslink",
-    couldntLeave: "Kunne ikke forlade gruppen",
-    couldntDelete: "Kunne ikke slette gruppen",
     couldntStartConnect: "Kunne ikke begynde at forbinde",
     couldntSync: "Kunne ikke synkronisere",
     couldntAddLink: "Kunne ikke tilføje linket",
@@ -485,7 +481,6 @@ export const da = {
   },
   calendarView: {
     back: "Tilbage til profil",
-    somethingWrong: "Noget gik galt.",
     tryAgain: "Prøv igen",
     truncated: "Måneden har flere optagede tidsrum, end der kan vises, så nogle mangler.",
     noCalendars: (link: ReactNode) => (
@@ -501,7 +496,6 @@ export const da = {
     week: (n: number) => `Uge ${n}`,
     more: (n: number) => `+${n} mere`,
     nothingBusy: "Intet optaget denne dag i de viste kalendere.",
-    couldntSave: "Kunne ikke gemme.",
     couldntSaveCategory: "Kunne ikke gemme kategorien",
     couldntSaveIncluded: "Kunne ikke gemme, om kalenderen tæller med",
     couldntLoad: "Kunne ikke hente dine kalendere",
@@ -798,10 +792,6 @@ export const da = {
       failed === 0
         ? `Synkroniseret: ${ok === 1 ? "1 konto" : `${ok} konti`}, ${blocks === 1 ? "1 optaget tidsrum" : `${blocks} optagede tidsrum`}.`
         : `${ok} af ${ok + failed} konti synkroniseret. Se Kalendersundhed for fejlen.`,
-    couldntDeleteGroup: "Kunne ikke slette gruppen",
-    couldntRemove: "Kunne ikke fjerne personen",
-    couldntDeleteAccount: "Kunne ikke slette kontoen",
-    couldntLoad: "Kunne ikke hente admin-oversigten",
     providers: {
       google: "Google",
       outlook: "Outlook",

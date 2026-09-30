@@ -42,6 +42,17 @@ export function useAuth(): AuthState {
   return auth;
 }
 
+/**
+ * The signed-in user, for everything rendered behind <RequireAuth>, which
+ * never draws its children without one. Anywhere else, use useAuth() and
+ * handle the signed-out case.
+ */
+export function useSignedInUser(): User {
+  const { user } = useAuth();
+  if (!user) throw new Error("useSignedInUser is only for pages behind <RequireAuth>");
+  return user;
+}
+
 /** The name to greet someone by: their Google name if we have it, else their email. */
 export function displayName(user: User | null): string {
   const meta = user?.user_metadata as { full_name?: string; name?: string } | undefined;

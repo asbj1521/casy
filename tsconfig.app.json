@@ -20,12 +20,12 @@
       "@/*": ["./src/*"]
     },
 
-    /* Linting — relaxed like Revo */
-    "noImplicitAny": false,
-    "strictNullChecks": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true
+    /* Type checking */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "erasableSyntaxOnly": true
   },
   "include": ["src"]
 }

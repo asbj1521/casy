@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Info, Loader2, XCircle } from "lucide-react"
 import { primaryCalendarQuery, updatePrimaryCalendar } from "@/api/primaryCalendar";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
-import { useAuth } from "@/context/auth";
+import { useSignedInUser } from "@/context/auth";
 import { currentMessages } from "@/i18n/current";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
@@ -109,7 +109,7 @@ function fetchOverview(from: Date, to: Date): Promise<OverviewData> {
  */
 export default function CalendarOverview() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const user = useSignedInUser();
   const t = useT();
   const { lang } = useLang();
   const [month, setMonth] = useState(() => {
@@ -312,9 +312,7 @@ export default function CalendarOverview() {
         {error && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
             <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="flex-1">
-              {error instanceof Error ? error.message : t.calendarView.somethingWrong}
-            </span>
+            <span className="flex-1">{error.message}</span>
             <button
               onClick={() => void refetch()}
               className="font-medium underline underline-offset-2"
@@ -556,19 +554,13 @@ export default function CalendarOverview() {
               blockCounts={blockCounts}
               colorOf={colorOf}
               savingId={setLabels.isPending ? (setLabels.variables?.calendarId ?? null) : null}
-              saveError={
-                setLabels.isError || setIncluded.isError
-                  ? (setLabels.error ?? setIncluded.error) instanceof Error
-                    ? (setLabels.error ?? setIncluded.error).message
-                    : t.calendarView.couldntSave
-                  : null
-              }
+              saveError={(setLabels.error ?? setIncluded.error)?.message ?? null}
               onSetVisible={setCalendarsVisible}
               onSetPurpose={(calendarId, purpose) => setLabels.mutate({ calendarId, purpose })}
               onSetPriority={(calendarId, priority) => setLabels.mutate({ calendarId, priority })}
               renamingId={renamingId}
               renameSubmitting={rename.isPending}
-              renameError={rename.error instanceof Error ? rename.error.message : null}
+              renameError={rename.error?.message ?? null}
               onStartRename={(calendarId) => {
                 rename.reset();
                 setRenamingId(calendarId);
@@ -578,7 +570,7 @@ export default function CalendarOverview() {
               primaryId={primary?.calendarId ?? null}
               askingPrimaryId={askingPrimaryId}
               primaryBusy={setPrimary.isPending}
-              primaryError={setPrimary.error instanceof Error ? setPrimary.error.message : null}
+              primaryError={setPrimary.error?.message ?? null}
               onAskPrimary={(calendarId) => {
                 setPrimary.reset();
                 setAskingPrimaryId(calendarId);
