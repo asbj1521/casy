@@ -63,6 +63,10 @@ export default function GroupPanel({
   const [confirmingLeave, setConfirmingLeave] = useState(false);
 
   const memberCount = group.participants.length + group.waitingFor.length;
+  // Until the calendars are in, nobody is known to lack one: everyone is
+  // listed alike with a spinner, not all as "no calendar yet".
+  const listed = busyLoading ? [...group.participants, ...group.waitingFor] : group.participants;
+  const waiting = busyLoading ? [] : group.waitingFor;
   const lastOneIn = memberCount <= 1;
 
   async function copyLink() {
@@ -116,7 +120,7 @@ export default function GroupPanel({
       {note && <p className="mt-1 text-xs text-muted-foreground">{note}</p>}
 
       <ul className="mt-3 flex flex-wrap gap-2">
-        {group.participants.map((p, i) => (
+        {listed.map((p, i) => (
           <li
             key={p.profileId}
             className="flex items-center gap-2 rounded-full border bg-card py-1 pl-1 pr-3 text-sm"
@@ -133,7 +137,7 @@ export default function GroupPanel({
             {busyLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </li>
         ))}
-        {group.waitingFor.map((m) => (
+        {waiting.map((m) => (
           <li
             key={m.profileId}
             className="flex items-center gap-2 rounded-full border border-dashed bg-card py-1 pl-1 pr-3 text-sm"
@@ -150,11 +154,11 @@ export default function GroupPanel({
         ))}
       </ul>
 
-      {group.waitingFor.length > 0 && (
+      {waiting.length > 0 && (
         <p className="mt-3 rounded-lg bg-secondary p-2.5 text-xs text-muted-foreground">
-          {group.waitingFor.length === 1
-            ? t.groupPanel.waitingOne(group.waitingFor[0].name)
-            : t.groupPanel.waitingMany(group.waitingFor.length)}{" "}
+          {waiting.length === 1
+            ? t.groupPanel.waitingOne(waiting[0].name)
+            : t.groupPanel.waitingMany(waiting.length)}{" "}
           {t.groupPanel.waitingWhy}
         </p>
       )}

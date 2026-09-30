@@ -16,6 +16,7 @@ import FadeSwap from "@/components/FadeSwap";
 import TopNav from "@/components/TopNav";
 import { useExampleCarousel } from "@/hooks/useExampleCarousel";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
+import { barRiseDelay, RISE_FULL } from "@/lib/barRise";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay } from "@/lib/zone";
 
@@ -128,8 +129,8 @@ const DRAWING_GROUPS: { total: number; free: number[] }[] = [
   { total: 5, free: [2, 4, 3, 1, 2, 3, 4, 2, 1, 3, 4, 5, 2, 3] },
 ];
 
-/** When the i-th day's bar (and its date) starts rising on first load, in seconds. */
-const riseDelay = (i: number) => 0.4 + i * 0.04;
+/** When the i-th day's bar (and its date) starts rising, after the hero's own fade-in. */
+const riseDelay = (i: number) => barRiseDelay(i, RISE_FULL, 0.4);
 
 /** Fades in and rises a little; `delay` staggers the hero's parts. */
 function Rise({ delay = 0, className, children }: { delay?: number; className?: string; children: ReactNode }) {
@@ -227,7 +228,7 @@ function ChartDrawing() {
                   style={{ height: `max(3px, calc(var(--bar-max) * ${d.free / group.total} * var(--grow)))` }}
                   initial={still ? { "--grow": 1 } : { "--grow": 0 }}
                   animate={{ "--grow": 1 }}
-                  transition={{ duration: 0.5, delay, ease: "easeOut" }}
+                  transition={{ duration: RISE_FULL.duration, delay, ease: "easeOut" }}
                 />
               </div>
             );
@@ -241,7 +242,7 @@ function ChartDrawing() {
               className="flex min-w-0 flex-1 flex-col items-center text-[10px] leading-tight sm:text-xs"
               initial={still ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: riseDelay(i), ease: "easeOut" }}
+              transition={{ duration: RISE_FULL.duration, delay: riseDelay(i), ease: "easeOut" }}
             >
               <span className={cn("font-semibold", d.best ? "font-extrabold text-everyone" : "text-foreground")}>
                 {d.dayOfMonth}

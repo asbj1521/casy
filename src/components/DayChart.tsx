@@ -1,6 +1,9 @@
+import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import FadeSwap from "@/components/FadeSwap";
+import { barRiseDelay, nextChartMotion, RISE_FULL, type ChartMotion } from "@/lib/barRise";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import type { DayCell, MonthGrid } from "@/lib/heatmap";
 import { cn } from "@/lib/utils";
@@ -15,6 +18,16 @@ import { cn } from "@/lib/utils";
  * Built from the same month grid the calendar view used (heatmap.ts), so the
  * numbers are the ones the search is based on. Clicking a day the whole
  * group can make moves the answer there.
+ *
+ * When it first appears, or its data arrives, the bars rise left to right,
+ * each count carried up on its bar and each date coming in with it. When the
+ * month changes, the old month slides out and the new one in, like a
+ * carousel. A group switch only fades (FadeSwap), and a settings change just
+ * updates the bars. The landing page's drawing uses the same rise.
+ *
+ * While the group's calendars load (`loading`) the chart is already there in
+ * its final shape, flat bars under a placeholder title, so the page doesn't
+ * jump when the numbers arrive: the bars rise out of it instead.
  */
 export default function DayChart({
   grid,
@@ -27,7 +40,10 @@ export default function DayChart({
   conditionalKind,
   timeZone,
   swapKey = "",
+  loading = false,
 }: {
+  /** The calendars aren't in yet: flat bars, nothing to click. */
+  loading?: boolean;
   /** When it changes (another group), the chart's contents fade over; the box stays. */
   swapKey?: string;
   grid: MonthGrid;
@@ -46,6 +62,31 @@ export default function DayChart({
   const t = useT();
   const { lang } = useLang();
   const days = grid.weeks.flat().filter((c) => c.inMonth);
+
+  // How the chart moves as it changes (nextChartMotion). Kept in state and
+  // updated during render (React's pattern for following a changed value), so
+  // the render that mounts the new bars already knows why they are new.
+  // The month by its first day, not its label, which changes with the language.
+  const month = days[0]?.date ?? "";
+  const [last, setLast] = useState<{
+    swapKey: string;
+    month: string;
+    loading: boolean;
+    motion: ChartMotion;
+  }>({ swapKey, month, loading, motion: { kind: "rise" } });
+  if (swapKey !== last.swapKey || month !== last.month || loading !== last.loading) {
+    const view = { swapKey, month, loading };
+    setLast({ ...view, motion: nextChartMotion(last, view, last.motion) });
+  }
+  // The rise animates heights, which MotionConfig's reduced-motion setting
+  // (transforms only) wouldn't catch, so reduced motion is handled here.
+  const reduceMotion = useReducedMotion();
+  const chartMotion = reduceMotion ? null : last.motion;
+  const rise = chartMotion?.kind === "rise";
+  const slide = { on: chartMotion?.kind === "slide", back: chartMotion?.kind === "slide" && chartMotion.back };
+  const riseDelay = (i: number) => barRiseDelay(i);
+  const riseTransition = (i: number) =>
+    rise ? { duration: RISE_FULL.duration, delay: riseDelay(i), ease: "easeOut" as const } : { duration: 0 };
   const title = grid.label.charAt(0).toUpperCase() + grid.label.slice(1);
   const bestNumbers = new Set(days.filter((c) => bestDays.has(c.date)).map((c) => c.dayOfMonth));
 
@@ -57,25 +98,32 @@ export default function DayChart({
 
   return (
     <section className="rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-7 sm:pt-5">
-      <FadeSwap swapKey={swapKey}>
+      <FadeSwap swapKey={swapKey} playChildrenOnLoad>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onPrev}
-            disabled={!canPrev}
+            disabled={!canPrev || loading}
             aria-label={t.common.previousMonth}
             className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <h2 className="text-[15px] font-bold text-foreground sm:text-lg">
-            {t.scheduler.chartTitle(title)}
+            {loading ? (
+              // The real title's size, kept blank until the month is known.
+              <span className="animate-pulse rounded-md bg-secondary text-transparent">
+                {t.scheduler.chartTitle(title)}
+              </span>
+            ) : (
+              t.scheduler.chartTitle(title)
+            )}
           </h2>
           <button
             type="button"
             onClick={onNext}
-            disabled={!canNext}
+            disabled={!canNext || loading}
             aria-label={t.common.nextMonth}
             className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
           >
@@ -102,18 +150,35 @@ export default function DayChart({
         </div>
       </div>
 
+      {/* Paging months slides the old month out and the new one in; the
+          title and legend stay put. AnimatePresence keeps its default
+          `initial`: false would also silence the bars' own first rise. The
+          gap above sits on this wrapper, not the bars: popLayout makes the
+          outgoing month absolute, where a margin inside it stops collapsing
+          and would drop that month by the margin as it leaves. */}
+      <div className="relative mt-3 overflow-hidden sm:mt-5">
+      <AnimatePresence mode="popLayout" custom={slide}>
+      <motion.div
+        key={month}
+        custom={slide}
+        variants={SLIDE}
+        initial={slide.on ? "enter" : false}
+        animate="center"
+        exit="exit"
+      >
       {/* The bars, then the day numbers under them in the same columns. */}
       {/* The tallest bar is --bar-max: shorter on a phone, so the chart fits
           on the first screen under the answer. */}
       <div
-        className="mt-3 flex items-end gap-[2px] border-b [--bar-max:78px] sm:mt-5 sm:gap-1.5 sm:[--bar-max:150px]"
+        className="flex items-end gap-[2px] border-b [--bar-max:78px] sm:gap-1.5 sm:[--bar-max:150px]"
         style={{ height: "calc(var(--bar-max) + 24px)" }}
       >
-        {days.map((c) => {
+        {days.map((c, i) => {
           const dead = c.excluded || c.isPast;
           // Only a day the whole group can make (some by skipping or taking
           // time off) moves the answer; any other would land on the same one.
-          const pickable = !dead && c.total > 0 && c.freeCount + c.conditionalCount >= c.total;
+          const pickable =
+            !loading && !dead && c.total > 0 && c.freeCount + c.conditionalCount >= c.total;
           const best = bestDays.has(c.date);
           const everyone = !dead && c.total > 0 && c.freeCount >= c.total;
           const freeH = dead ? 0 : c.freeCount / Math.max(c.total, 1);
@@ -122,44 +187,56 @@ export default function DayChart({
             <button
               key={c.date}
               type="button"
-              disabled={dead}
+              disabled={dead || loading}
               aria-disabled={!pickable}
               onClick={() => pickable && onPickDay(c.date)}
-              title={dead ? undefined : describe(c)}
-              aria-label={`${c.dayOfMonth}. ${dead ? t.scheduler.legendOff : describe(c)}`}
+              title={dead || loading ? undefined : describe(c)}
+              aria-label={`${c.dayOfMonth}. ${loading ? "" : dead ? t.scheduler.legendOff : describe(c)}`}
               className={cn(
                 "group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1",
                 pickable ? "cursor-pointer" : "cursor-default",
                 // A day the group can't make, even by skipping, steps back so
                 // the ones worth picking stand out.
-                !dead && !pickable && "opacity-35",
+                !loading && !dead && !pickable && "opacity-35",
               )}
             >
-              {!dead && (
-                <span
+              {!dead && !loading && (
+                <motion.span
                   className={cn(
                     "hidden text-[11px] font-bold sm:block",
                     best ? (everyone ? "text-everyone" : "text-primary") : "text-muted-foreground",
                   )}
+                  initial={rise ? { opacity: 0 } : false}
+                  animate={{ opacity: 1 }}
+                  transition={rise ? { duration: 0.2, delay: riseDelay(i) } : { duration: 0 }}
                 >
                   {/* Matches the bar's full stacked height (green + amber),
                       not just the outright-free count the green part alone
                       shows. */}
                   {c.freeCount + c.conditionalCount}
-                </span>
+                </motion.span>
               )}
-              <span className="flex w-full flex-col justify-end">
+              {/* --grow (0 to 1) scales the bar's real height, not a
+                  transform, so the count on top is carried up with it. */}
+              <motion.span
+                className="flex w-full flex-col justify-end"
+                initial={rise ? { "--grow": 0 } : false}
+                animate={{ "--grow": loading ? 0 : 1 }}
+                transition={riseTransition(i)}
+              >
                 {condH > 0 && (
                   <span
                     className="w-full rounded-t-[4px] bg-amber-300"
-                    style={{ height: `calc(var(--bar-max) * ${condH})` }}
+                    style={{ height: `calc(var(--bar-max) * ${condH} * var(--grow, 1))` }}
                   />
                 )}
                 <span
                   className={cn(
                     "w-full transition-colors",
                     condH > 0 ? "" : "rounded-t-[4px]",
-                    dead
+                    loading
+                      ? "rounded-t-[3px] bg-secondary"
+                      : dead
                       ? "h-1.5 rounded-t-[3px] bg-secondary"
                       : everyone
                         ? best
@@ -169,15 +246,20 @@ export default function DayChart({
                           ? "bg-primary"
                           : cn("bg-primary/30", pickable && "group-hover:bg-primary/50"),
                   )}
-                  style={dead ? undefined : { height: `max(3px, calc(var(--bar-max) * ${freeH}))` }}
+                  style={
+                    dead && !loading
+                      ? undefined
+                      : // Flat while loading: the dead days' stub height, for every day.
+                        { height: `max(${loading ? "6px" : "3px"}, calc(var(--bar-max) * ${freeH} * var(--grow, 1)))` }
+                  }
                 />
-              </span>
+              </motion.span>
             </button>
           );
         })}
       </div>
       <div className="mt-1.5 flex gap-[2px] sm:gap-1.5">
-        {days.map((c) => {
+        {days.map((c, i) => {
           const best = bestDays.has(c.date);
           const everyone = !c.excluded && !c.isPast && c.total > 0 && c.freeCount >= c.total;
           const dow = new Date(c.date).toLocaleDateString(LOCALE[lang], {
@@ -185,9 +267,12 @@ export default function DayChart({
             timeZone,
           });
           return (
-            <div
+            <motion.div
               key={c.date}
               className="flex min-w-0 flex-1 flex-col items-center text-[10px] leading-tight sm:text-xs"
+              initial={rise ? { opacity: 0, y: 6 } : false}
+              animate={loading ? { opacity: 0, y: 6 } : { opacity: 1, y: 0 }}
+              transition={riseTransition(i)}
             >
               <span
                 className={cn(
@@ -210,11 +295,25 @@ export default function DayChart({
                 {c.dayOfMonth}
               </span>
               <span className="hidden text-muted-foreground sm:block">{dow}</span>
-            </div>
+            </motion.div>
           );
         })}
+      </div>
+      </motion.div>
+      </AnimatePresence>
       </div>
       </FadeSwap>
     </section>
   );
 }
+
+/** A month change's slide, forward or `back`; any other change swaps at once. */
+const SLIDE_SECONDS = 0.35;
+const SLIDE: Variants = {
+  enter: ({ back }: { back: boolean }) => ({ x: back ? "-100%" : "100%" }),
+  center: { x: 0, transition: { duration: SLIDE_SECONDS, ease: "easeInOut" } },
+  exit: ({ on, back }: { on: boolean; back: boolean }) =>
+    on
+      ? { x: back ? "100%" : "-100%", transition: { duration: SLIDE_SECONDS, ease: "easeInOut" } }
+      : { opacity: 0, transition: { duration: 0 } },
+};

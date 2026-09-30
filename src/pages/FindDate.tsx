@@ -326,11 +326,17 @@ export default function FindDate() {
       ? monthPick.month
       : Math.min(Math.max(answerMonth, MIN_MONTH), MAX_MONTH);
 
-  // The month, day by day, for the chart under the answer.
+  // Still fetching the group (or its calendars), as opposed to having
+  // nothing to search: the page then keeps its full layout, with the answer,
+  // chart and later dates as placeholders, so it doesn't jump when they land.
+  const loadingGroup = !activeGroup || busyLoading;
+
+  // The month, day by day, for the chart under the answer. While loading,
+  // an empty month gives the chart its frame (DayChart's `loading`).
   const monthGrid = useMemo(() => {
-    if (!activeGroup || !searchable) return null;
+    if (!searchable && !loadingGroup) return null;
     const vm = localDate(viewMonth, TZ);
-    return buildMonthGrid(activeGroup.participants, vm.year, vm.month, {
+    return buildMonthGrid(searchable ? activeGroup.participants : [], vm.year, vm.month, {
       timeZone: TZ,
       startHour: deferredSched.startHour,
       durationMinutes: deferredSched.durationMinutes,
@@ -345,7 +351,7 @@ export default function FindDate() {
           : undefined,
       locale: LOCALE[lang],
     });
-  }, [lang, activeGroup, searchable, viewMonth, deferredSched, search]);
+  }, [lang, activeGroup, searchable, loadingGroup, viewMonth, deferredSched, search]);
 
   /** Back to the first date from today: any setting or group change does this. */
   function resetSearch() {
@@ -703,7 +709,54 @@ export default function FindDate() {
           >
             {/* The box stays; what it says fades to the next group's answer. */}
             <FadeSwap swapKey={fadeKey}>
-            {tone === "waiting" ? (
+            {tone === "waiting" && loadingGroup ? (
+              // The answer's own layout, blank until the calendars are in.
+              <div
+                aria-busy="true"
+                className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                    <span className="truncate">{waitingText}</span>
+                  </p>
+                  <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+                    <Bone chars={16} />
+                  </h1>
+                  <p className="mt-1.5 text-base sm:text-xl">
+                    <Bone chars={20} />
+                  </p>
+                  {/* The answer's warning slot, held here too. */}
+                  <div className="sm:min-h-8" />
+                </div>
+                <div aria-hidden="true" className="flex shrink-0 flex-col gap-3 lg:items-end">
+                  <div className="flex items-center gap-3">
+                    <div className="flex">
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            "h-7 w-7 animate-pulse rounded-full border-2 border-card bg-secondary sm:h-9 sm:w-9 sm:border-[3px]",
+                            i > 0 && "-ml-2 sm:-ml-2.5",
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm">
+                      <Bone chars={7} />
+                    </span>
+                  </div>
+                  <div className="hidden items-center gap-2 sm:flex">
+                    <span className="h-12 w-12 animate-pulse rounded-xl bg-secondary" />
+                    <span className="h-12 w-40 animate-pulse rounded-xl bg-secondary" />
+                    <span className="h-12 w-52 animate-pulse rounded-xl bg-secondary" />
+                  </div>
+                  <p className="text-xs sm:text-sm">
+                    <Bone chars={34} />
+                  </p>
+                </div>
+              </div>
+            ) : tone === "waiting" ? (
               <p className="flex items-center gap-2.5 text-base text-muted-foreground">
                 {(!activeGroup || busyLoading) && <Loader2 className="h-5 w-5 shrink-0 animate-spin" />}
                 {waitingText}
@@ -749,6 +802,15 @@ export default function FindDate() {
                   </h1>
                   <p className="mt-1.5 text-base text-muted-foreground sm:text-xl">{subline}</p>
 
+                  {/* Warnings. There is always room for one (a 12px gap and
+                      a line: min-h-8), so a single warning appears in space
+                      the card already has instead of stretching it and
+                      pushing the page down. More than one still makes room.
+                      Not on a phone, where they wrap to several lines
+                      anyway and the card is kept short. A flex column, so
+                      the first warning's top margin stays inside the slot
+                      instead of collapsing out above it. */}
+                  <div className="flex flex-col sm:min-h-8">
                   {/* What the date costs, in the review states. */}
                   {tone === "approve" && (
                     <p className="mt-3 text-sm text-amber-900">
@@ -793,6 +855,7 @@ export default function FindDate() {
                       {t.scheduler.youApprovedDates}
                     </p>
                   )}
+                  </div>
                 </div>
 
                 <div className="flex shrink-0 flex-col gap-3 lg:items-end">
@@ -866,12 +929,32 @@ export default function FindDate() {
               onPickDay={pickDay}
               conditionalKind={isMultiDay ? "timeOff" : "skip"}
               swapKey={fadeKey}
+              loading={loadingGroup}
             />
           )}
 
           {/* Workarounds for a holiday that doesn't fit cleanly, or else the
               next few dates found by the same search. */}
-          {suggestions.length > 0 ? (
+          {loadingGroup ? (
+            // The three later dates' places, held while loading.
+            <div aria-hidden="true" className="grid gap-2 sm:grid-cols-3 sm:gap-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="rounded-2xl border bg-card px-4 py-3 sm:px-5 sm:py-4">
+                  <div className="flex items-center justify-between gap-3 sm:block">
+                    <span className="hidden text-xs text-muted-foreground sm:block">
+                      {t.scheduler.alsoPossible}
+                    </span>
+                    <span className="block min-w-0 text-[15px] font-bold sm:mt-0.5 sm:text-lg">
+                      <Bone chars={16} />
+                    </span>
+                    <span className="block shrink-0 text-sm sm:mt-0.5">
+                      <Bone chars={7} />
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : suggestions.length > 0 ? (
             <div className="flex flex-col gap-2">
               {suggestions.map((s) => (
                 <div
@@ -1050,5 +1133,22 @@ export default function FindDate() {
         onCancel={() => setNewGroupOpen(false)}
       />
     </div>
+  );
+}
+
+/**
+ * A grey, pulsing stand-in for text that hasn't loaded yet, as wide as
+ * `chars` digits and exactly as tall as a line of the surrounding text (it is
+ * made of figure spaces, which don't collapse or wrap), so the placeholder
+ * takes the finished text's room.
+ */
+function Bone({ chars }: { chars: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block max-w-full animate-pulse overflow-hidden whitespace-nowrap rounded-lg bg-secondary"
+    >
+      {"\u2007".repeat(chars)}
+    </span>
   );
 }
