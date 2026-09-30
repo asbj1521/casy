@@ -16,13 +16,14 @@ import { supabase } from "@/lib/supabase";
 import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
 
 /**
- * Where to go after signing in. Only a path on this site is accepted: taking
- * any URL from the query string would let a crafted link bounce someone to a
- * look-alike site straight after they log in. "//evil.com" is a full URL to a
- * browser, so it is refused along with "https://...".
+ * Where to go after signing in, if the link said. Only a path on this site is
+ * accepted: taking any URL from the query string would let a crafted link
+ * bounce someone to a look-alike site straight after they log in.
+ * "//evil.com" is a full URL to a browser, so it is refused along with
+ * "https://...". Null when there is none; see the redirect below.
  */
-function safeNext(raw: string | null): string {
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/profile";
+function safeNext(raw: string | null): string | null {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : null;
 }
 
 /**
@@ -106,7 +107,7 @@ export default function SignIn() {
   if (loading) return <div className="min-h-screen bg-background" />;
 
   // Come back to this page, still carrying where to go afterwards.
-  const returnTo = `${window.location.origin}/sign-in?next=${encodeURIComponent(next)}`;
+  const returnTo = `${window.location.origin}/sign-in${next ? `?next=${encodeURIComponent(next)}` : ""}`;
 
   /** Why a call can't go yet (no bot-check token), or null when it can. */
   function captchaProblem(): string | null {
@@ -165,7 +166,10 @@ export default function SignIn() {
     if (!hasCalendar && !hasSeenCalendarOnboarding(user.id)) {
       return <Navigate to="/profile?onboarding=1" replace />;
     }
-    return <Navigate to={next} replace />;
+    // No destination in the link (the header's or landing page's "Log ind"):
+    // the scheduler for anyone with a calendar, the profile to connect one
+    // otherwise.
+    return <Navigate to={next ?? (hasCalendar ? "/" : "/profile")} replace />;
   }
 
   async function handleGoogle() {
