@@ -1,5 +1,6 @@
 // Run with: deno test --node-modules-dir=none --allow-all supabase/functions/_shared/
-import { assert, assertEquals } from "jsr:@std/assert@1";
+import { assert, assertEquals, assertThrows } from "jsr:@std/assert@1";
+import { HttpError } from "./http.ts";
 import {
   cleanDisplayName,
   cleanGroupName,
@@ -7,8 +8,12 @@ import {
   inviteUrl,
   looksLikeInviteToken,
   MAX_DISPLAY_NAME_LENGTH,
+  MAX_EMAILS_PER_REQUEST,
   MAX_GROUP_NAME_LENGTH,
+  MAX_PICKED_PER_REQUEST,
   newInviteToken,
+  normalizeEmail,
+  readInvitees,
 } from "./groups.ts";
 
 Deno.test("an invite token survives a URL and is never repeated", () => {
@@ -78,4 +83,42 @@ Deno.test("members are named, and never by their email address", () => {
     displayNameFor({ email: "jonas@example.com", user_metadata: { full_name: "  " } }),
     "jonas",
   );
+});
+
+const ID = "0b8e6f1e-2a4c-4d7b-9a51-6c3f0e2d1a90";
+
+Deno.test("an email is matched the way accounts store it", () => {
+  assertEquals(normalizeEmail("  Anna@Example.DK "), "anna@example.dk");
+  assertEquals(normalizeEmail("anna"), null);
+  assertEquals(normalizeEmail("anna@example"), null);
+  assertEquals(normalizeEmail("an na@example.dk"), null);
+  assertEquals(normalizeEmail(42), null);
+});
+
+Deno.test("invitees are optional, and repeats count once", () => {
+  assertEquals(readInvitees({}), { profileIds: [], emails: [] });
+  assertEquals(
+    readInvitees({ profileIds: [ID, ID.toUpperCase()], emails: ["A@b.dk", "a@b.dk "] }),
+    { profileIds: [ID], emails: ["a@b.dk"] },
+  );
+});
+
+Deno.test("one bad invitee refuses the whole request", () => {
+  assertThrows(() => readInvitees({ profileIds: ["not-an-id"] }), HttpError);
+  assertThrows(() => readInvitees({ profileIds: ID }), HttpError);
+  assertThrows(
+    () => readInvitees({ emails: ["a@b.dk", "nope"] }),
+    HttpError,
+    "That is not an email address.",
+  );
+});
+
+Deno.test("a request can't invite more than a group could hold", () => {
+  const ids = Array.from(
+    { length: MAX_PICKED_PER_REQUEST + 1 },
+    (_, i) => `0b8e6f1e-2a4c-4d7b-9a51-${String(i).padStart(12, "0")}`,
+  );
+  assertThrows(() => readInvitees({ profileIds: ids }), HttpError, "too many");
+  const emails = Array.from({ length: MAX_EMAILS_PER_REQUEST + 1 }, (_, i) => `p${i}@b.dk`);
+  assertThrows(() => readInvitees({ emails }), HttpError, "too many");
 });

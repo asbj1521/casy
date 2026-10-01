@@ -19,6 +19,11 @@
  * What members learn about each other is deliberately narrow: a display name
  * and busy time ranges. Never an email address, never a calendar's name,
  * never an event title (none are stored anywhere, see the calendar tables).
+ *
+ * Invitations (invite-members, invitations, accept-invitation,
+ * decline-invitation) bring people in from inside Casy: someone you share a
+ * group with, or the exact email of an account. Joining always takes the
+ * invited person's own yes, and an email never reveals whether it matched.
  */
 import { type Caller, requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
@@ -27,10 +32,14 @@ import {
   cleanGroupName,
   displayNameFor,
   INVITE_LIFETIME_MS,
+  type Invitees,
   inviteUrl,
   isMember,
   looksLikeInviteToken,
+  MAX_EMAIL_LOOKUPS_PER_DAY,
+  MAX_PICKED_PER_DAY,
   newInviteToken,
+  readInvitees,
   requireMember,
 } from "../_shared/groups.ts";
 import { afterResponse, HttpError, readRange, requireString, serve } from "../_shared/http.ts";
@@ -109,6 +118,25 @@ async function listGroups(db: Db, profileId: string, callerName: string) {
   const own = profileOf.get(profileId);
   const ownName = own?.name_is_custom && own.display_name ? own.display_name : callerName;
 
+  // Who has been invited to each group, but only people the caller already
+  // shares a group with: anyone else's name (or the fact that an email found
+  // an account) is not theirs to learn. Declined invitations read as invited,
+  // so a "no thanks" is never reported back.
+  const known = new Set(memberIds);
+  const { data: invitations, error: invitationsErr } = await db
+    .from("group_invitations")
+    .select("group_id, profile_id")
+    .in(
+      "group_id",
+      groups.map((g) => g.id),
+    );
+  if (invitationsErr) throw invitationsErr;
+  const invitedTo = new Map<string, string[]>();
+  for (const i of invitations) {
+    if (!known.has(i.profile_id)) continue;
+    invitedTo.set(i.group_id, [...(invitedTo.get(i.group_id) ?? []), i.profile_id]);
+  }
+
   return groups.map((g) => ({
     id: g.id,
     name: g.name,
@@ -128,6 +156,163 @@ async function listGroups(db: Db, profileId: string, callerName: string) {
         isYou: m.profile_id === profileId,
         joinedAt: m.joined_at,
       })),
+    invited: invitedTo.get(g.id) ?? [],
+  }));
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Everyone the caller shares a group with right now, themself left out. */
+async function knownPeople(db: Db, profileId: string): Promise<Set<string>> {
+  const { data: mine, error: mineErr } = await db
+    .from("group_members")
+    .select("group_id")
+    .eq("profile_id", profileId);
+  if (mineErr) throw mineErr;
+  if (mine.length === 0) return new Set();
+  const { data: others, error } = await db
+    .from("group_members")
+    .select("profile_id")
+    .in(
+      "group_id",
+      mine.map((m) => m.group_id),
+    )
+    .neq("profile_id", profileId);
+  if (error) throw error;
+  return new Set(others.map((o) => o.profile_id));
+}
+
+/** Who is about to be invited: picked people, and the accounts behind the emails. */
+interface ResolvedInvitees {
+  picked: string[];
+  byEmail: string[];
+}
+
+/**
+ * Check the daily limits and work out who the invitees are, before anything
+ * is changed (so a refused request makes no group and sends nothing).
+ *
+ * Picked people must share a group with the caller; anyone else is dropped
+ * without a word, since only a doctored request could name them.
+ *
+ * Email addresses are where care is needed: nothing the caller gets back may
+ * say whether an address has an account. So their limit counts every lookup
+ * (in group_email_lookups, which stores no address), never the matches, and
+ * an address that matches nobody is simply not invited.
+ */
+async function resolveInvitees(
+  db: Db,
+  profileId: string,
+  invitees: Invitees,
+): Promise<ResolvedInvitees> {
+  const since = new Date(Date.now() - DAY_MS).toISOString();
+
+  if (invitees.profileIds.length > 0) {
+    const { count, error } = await db
+      .from("group_invitations")
+      .select("profile_id", { count: "exact", head: true })
+      .eq("invited_by", profileId)
+      .eq("via_email", false)
+      .gt("created_at", since);
+    if (error) throw error;
+    if ((count ?? 0) + invitees.profileIds.length > MAX_PICKED_PER_DAY) {
+      throw new HttpError(429, "You have sent too many invitations today. Try again tomorrow.");
+    }
+  }
+
+  let byEmail: string[] = [];
+  if (invitees.emails.length > 0) {
+    const { count, error } = await db
+      .from("group_email_lookups")
+      .select("id", { count: "exact", head: true })
+      .eq("profile_id", profileId)
+      .gt("created_at", since);
+    if (error) throw error;
+    if ((count ?? 0) + invitees.emails.length > MAX_EMAIL_LOOKUPS_PER_DAY) {
+      throw new HttpError(
+        429,
+        "You have looked up too many email addresses today. Try again tomorrow.",
+      );
+    }
+    // Old rows only ever served yesterday's limit.
+    const { error: pruneErr } = await db
+      .from("group_email_lookups")
+      .delete()
+      .eq("profile_id", profileId)
+      .lt("created_at", since);
+    if (pruneErr) throw pruneErr;
+    const { error: logErr } = await db
+      .from("group_email_lookups")
+      .insert(invitees.emails.map(() => ({ profile_id: profileId })));
+    if (logErr) throw logErr;
+
+    const found = await Promise.all(
+      invitees.emails.map(async (email) => {
+        const { data, error: findErr } = await db.rpc("find_user_by_email", { p_email: email });
+        if (findErr) throw findErr;
+        return data as string | null;
+      }),
+    );
+    byEmail = found.filter((id): id is string => !!id && id !== profileId);
+  }
+
+  const known = invitees.profileIds.length > 0 ? await knownPeople(db, profileId) : new Set();
+  return { picked: invitees.profileIds.filter((id) => known.has(id)), byEmail };
+}
+
+/** Send the invitations; who was skipped (already in, already invited) is never said. */
+async function sendInvites(
+  db: Db,
+  groupId: string,
+  profileId: string,
+  { picked, byEmail }: ResolvedInvitees,
+): Promise<void> {
+  for (const [ids, viaEmail] of [
+    [picked, false],
+    [byEmail, true],
+  ] as const) {
+    if (ids.length === 0) continue;
+    const { error } = await db.rpc("send_group_invitations", {
+      p_group_id: groupId,
+      p_inviter: profileId,
+      p_profile_ids: ids,
+      p_via_email: viaEmail,
+    });
+    if (error) throw error;
+  }
+}
+
+/** The caller's open invitations: which group, who asked, how many are in it already. */
+async function listInvitations(db: Db, profileId: string) {
+  const { data: rows, error } = await db
+    .from("group_invitations")
+    .select("group_id, invited_by, created_at, friend_groups!inner(name)")
+    .eq("profile_id", profileId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  if (rows.length === 0) return [];
+
+  const groupIds = rows.map((r) => r.group_id);
+  const inviterIds = [...new Set(rows.map((r) => r.invited_by).filter((id) => id !== null))];
+  const [members, inviters] = await Promise.all([
+    db.from("group_members").select("group_id").in("group_id", groupIds),
+    db.from("profiles").select("id, display_name").in("id", inviterIds),
+  ]);
+  if (members.error) throw members.error;
+  if (inviters.error) throw inviters.error;
+  const memberCount = new Map<string, number>();
+  for (const m of members.data) memberCount.set(m.group_id, (memberCount.get(m.group_id) ?? 0) + 1);
+  const nameOf = new Map(inviters.data.map((p) => [p.id, p.display_name]));
+
+  return rows.map((r) => ({
+    groupId: r.group_id,
+    // A to-one embed, which the untyped client takes for a list.
+    groupName: (r.friend_groups as unknown as { name: string }).name,
+    memberCount: memberCount.get(r.group_id) ?? 0,
+    // Null once the inviter's account is gone; the invitation still stands.
+    invitedBy: r.invited_by ? (nameOf.get(r.invited_by) ?? null) : null,
+    createdAt: r.created_at,
   }));
 }
 
@@ -302,6 +487,8 @@ serve("groups", async (req, body) => {
     case "create": {
       const name = cleanGroupName(body.name);
       if (!name) throw new HttpError(400, "Give the group a name.");
+      // Limits and lookups first: a refused invitation makes no group.
+      const invitees = await resolveInvitees(db, profileId, readInvitees(body));
       const { data: group, error: groupErr } = await db
         .from("friend_groups")
         .insert({ name, created_by: profileId })
@@ -319,7 +506,56 @@ serve("groups", async (req, body) => {
         await db.from("friend_groups").delete().eq("id", group.id);
         throw new HttpError(400, memberErr.message);
       }
+      await sendInvites(db, group.id, profileId, invitees);
       return { ...(await list()), createdId: group.id };
+    }
+
+    case "invite-members": {
+      const groupId = requireString(body, "groupId");
+      // Any member may invite, as with links.
+      await requireMember(db, groupId, profileId);
+      await sendInvites(
+        db,
+        groupId,
+        profileId,
+        await resolveInvitees(db, profileId, readInvitees(body)),
+      );
+      return await list();
+    }
+
+    case "invitations":
+      return { invitations: await listInvitations(db, profileId) };
+
+    case "accept-invitation": {
+      const groupId = requireString(body, "groupId");
+      const { data: outcome, error } = await db.rpc("accept_group_invitation", {
+        p_group_id: groupId,
+        p_profile_id: profileId,
+      });
+      // The member limits trigger refused (group full, or 20 groups already).
+      if (error) throw new HttpError(400, error.message);
+      if (outcome === "not_invited") {
+        throw new HttpError(404, "That invitation is no longer open.");
+      }
+      return {
+        ...(await list()),
+        invitations: await listInvitations(db, profileId),
+        joinedId: groupId,
+      };
+    }
+
+    case "decline-invitation": {
+      const groupId = requireString(body, "groupId");
+      // Kept as declined, which stops new invitations to this group; the
+      // inviter is not told (their list shows the person as invited still).
+      const { error } = await db
+        .from("group_invitations")
+        .update({ status: "declined" })
+        .eq("group_id", groupId)
+        .eq("profile_id", profileId)
+        .eq("status", "pending");
+      if (error) throw error;
+      return { invitations: await listInvitations(db, profileId) };
     }
 
     case "rename": {
@@ -373,6 +609,13 @@ serve("groups", async (req, body) => {
           .insert({ group_id: groupId, profile_id: profileId });
         if (error) throw new HttpError(400, error.message);
       }
+      // In now, so any invitation to this group (open or declined) is done with.
+      const { error: clearErr } = await db
+        .from("group_invitations")
+        .delete()
+        .eq("group_id", groupId)
+        .eq("profile_id", profileId);
+      if (clearErr) throw clearErr;
       return { ...(await list()), joinedId: groupId };
     }
 

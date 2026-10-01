@@ -38,6 +38,13 @@ export const DANISH: Record<string, string> = {
   "That invite link is not valid.": "Invitationslinket er ikke gyldigt.",
   "That invite link has expired. Ask for a new one.":
     "Invitationslinket er udløbet. Bed om et nyt.",
+  "That invitation is no longer open.": "Invitationen er ikke længere åben.",
+  "That is not an email address.": "Det er ikke en e-mailadresse.",
+  "That is too many people at once.": "Det er for mange på én gang.",
+  "You have sent too many invitations today. Try again tomorrow.":
+    "Du har sendt for mange invitationer i dag. Prøv igen i morgen.",
+  "You have looked up too many email addresses today. Try again tomorrow.":
+    "Du har slået for mange e-mailadresser op i dag. Prøv igen i morgen.",
   "This group is full (20 members).": "Gruppen er fuld (20 medlemmer).",
   "You are already in 20 groups, which is the limit.":
     "Du er allerede med i 20 grupper, som er grænsen.",

@@ -78,6 +78,56 @@ export function displayNameFor(user: NameableUser | null | undefined): string {
   return local || "Someone";
 }
 
+/** Most people one request may pick to invite: a group holds 20, the inviter included. */
+export const MAX_PICKED_PER_REQUEST = 19;
+
+/** Most email addresses one request may look up. */
+export const MAX_EMAILS_PER_REQUEST = 10;
+
+/** Picked people one person may invite in a day; email invitations don't count here. */
+export const MAX_PICKED_PER_DAY = 50;
+
+/** Email addresses one person may look up in a day, whether or not they match an account. */
+export const MAX_EMAIL_LOOKUPS_PER_DAY = 20;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** An email address as accounts store it (trimmed, lower case), or null if it isn't one. */
+export function normalizeEmail(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const email = raw.trim().toLowerCase();
+  return email.length <= 254 && EMAIL.test(email) ? email : null;
+}
+
+/** Who a request asks to invite: people picked by id, and email addresses. */
+export interface Invitees {
+  profileIds: string[];
+  emails: string[];
+}
+
+/**
+ * The invitees a request names, both lists optional. Anything malformed
+ * refuses the whole request, so nobody is invited by half of a bad one.
+ */
+export function readInvitees(body: Record<string, unknown>): Invitees {
+  const ids = body.profileIds ?? [];
+  const emails = body.emails ?? [];
+  if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string" && UUID.test(id))) {
+    throw new HttpError(400, "profileIds must be a list of ids");
+  }
+  if (!Array.isArray(emails)) throw new HttpError(400, "emails must be a list");
+  const cleaned = emails.map(normalizeEmail);
+  if (cleaned.some((e) => e === null)) throw new HttpError(400, "That is not an email address.");
+
+  const profileIds = [...new Set(ids.map((id: string) => id.toLowerCase()))];
+  const unique = [...new Set(cleaned as string[])];
+  if (profileIds.length > MAX_PICKED_PER_REQUEST || unique.length > MAX_EMAILS_PER_REQUEST) {
+    throw new HttpError(400, "That is too many people at once.");
+  }
+  return { profileIds, emails: unique };
+}
+
 /** True if this person is in this group. */
 export async function isMember(db: Db, groupId: string, profileId: string): Promise<boolean> {
   const { data, error } = await db
