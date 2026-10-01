@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# Casy
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Casy (short for Calendar Syncing) finds dates that work for a whole group. Everyone links their calendars, and Casy finds the first time the group is free, suggests it to them, and puts the agreed event in their calendars.
 
-Currently, two official plugins are available:
+Live at **[casy.app](https://casy.app)**, in Danish with an English switch. [How it works](https://casy.app/how-it-works) walks through it step by step.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What it does
 
-## React Compiler
+- **Calendars:** Google, Outlook, iCloud, or any calendar link (ICS), re-synced every hour. Casy stores only the start and end of busy times, never what the events are.
+- **Groups:** made with an invite link. Members see each other's names and busy times, nothing more.
+- **Scheduling:** name the plan, set its start time, length and days (or a multi-day trip), and the first date everyone can make appears at once, with the month drawn day by day under it. Each calendar can be marked as work or school (time you could take off for a trip) and as skippable, normal or never to skip.
+- **Agreeing:** a suggested date goes to the group, who accept or decline it. A decline swaps in the next date that works. Once everyone has accepted, Casy can add the event to an iCloud calendar, or hand out an .ics file.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Stack
 
-## Expanding the ESLint configuration
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, TanStack Query, Framer Motion. Hosted on Vercel.
+- **Backend:** Supabase: Postgres (every table closed to the browser by RLS), Auth, Edge Functions in Deno, Vault, and pg_cron for the hourly sync.
+- Calendar credentials are encrypted at rest with AES-256-GCM.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Running it locally
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+You need Node and the Supabase CLI, plus a `.env.local` with at least:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<publishable key>
+VITE_TURNSTILE_SITE_KEY=<optional; without it sign-in has no CAPTCHA>
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+```bash
+npm install
+npm run dev         # http://localhost:8080
+npm run build       # type-check and production build
+npm run test:run    # frontend tests (Vitest)
+npm run lint
+npm run format      # Prettier
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Edge Functions, from supabase/functions/
+deno test --node-modules-dir=none --allow-all _shared/
 ```
+
+CI runs lint, the Prettier check, the build, and both test suites on every push and pull request to `main`.
+
+## Deploying
+
+Pushing to `main` deploys the site on Vercel. Database migrations and Edge Functions are deployed by hand with `supabase db push` and `supabase functions deploy`, migrations first.
+
+## More
+
+[CLAUDE.md](CLAUDE.md) has the full picture: architecture, data model, auth, sync and the conventions the code follows.

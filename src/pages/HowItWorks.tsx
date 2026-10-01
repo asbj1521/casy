@@ -2,12 +2,14 @@ import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
+  CalendarCheck,
   CalendarPlus,
   EyeOff,
   LogIn,
-  Sparkles,
+  PencilLine,
+  Send,
   SlidersHorizontal,
-  Tags,
+  Sparkles,
   Users,
 } from "lucide-react";
 
@@ -16,22 +18,52 @@ import { useAuth } from "@/context/auth";
 import { useLang } from "@/i18n/lang";
 
 /**
- * What Casy does, from signing in to a found date, in six steps.
+ * What Casy does, from signing in to an event in your calendar, in eight steps.
  *
  * Every claim here describes what the code actually does (the engine's
- * soft/hard rules, the 7-day invite links, the hourly sync), so update it
- * when those change, the same way as the privacy policy. The page's copy
- * lives here rather than in the shared dictionaries: it is only ever used on
- * this page, and English must match Danish key for key all the same.
+ * soft/hard rules and calendar priorities, the 7-day invite links, the hourly
+ * sync, the blocked holidays, iCloud as the only calendar Casy writes to), so
+ * update it when those change, the same way as the privacy policy. Button and
+ * page names are quoted as the app shows them. The copy lives here rather
+ * than in the shared dictionaries: it is only ever used on this page.
  */
 
-const ICONS: LucideIcon[] = [LogIn, CalendarPlus, Tags, Users, SlidersHorizontal, Sparkles];
+const ICONS: LucideIcon[] = [
+  LogIn,
+  CalendarPlus,
+  SlidersHorizontal,
+  Users,
+  PencilLine,
+  Sparkles,
+  Send,
+  CalendarCheck,
+];
 
-const da = {
+interface Step {
+  title: string;
+  body: string;
+  /** Named options under the body, such as the three calendar priorities. */
+  points?: { term: string; text: string }[];
+}
+
+interface Copy {
+  eyebrow: string;
+  title: string;
+  intro: string;
+  steps: Step[];
+  neverSeesTitle: string;
+  neverSeesBody: string;
+  privacyLink: string;
+  findDate: string;
+  getStarted: string;
+  connect: string;
+}
+
+const da: Copy = {
   eyebrow: "Sådan virker det",
   title: 'Fra "hvornår kan I?" til en dato, uden gruppechatten.',
   intro:
-    "Casy sammenligner alles kalendere og finder det første tidspunkt, hvor hele gruppen kan. Sæt det op én gang, så tager hver plan derefter få sekunder.",
+    "Casy sammenligner alles kalendere, finder den første dato, hvor hele gruppen kan, og spørger gruppen, om den passer. Sæt det op én gang, så tager hver plan derefter få sekunder.",
   steps: [
     {
       title: "Log ind",
@@ -42,20 +74,42 @@ const da = {
       body: "Forbind Google, Outlook eller iCloud, eller indsæt et kalenderlink, for eksempel et skoleskema. Casy læser kun, hvornår du er optaget, aldrig hvad dine aftaler er, og opdaterer hver time.",
     },
     {
-      title: "Sig, hvad hver kalender bruges til",
-      body: "Marker kalendere som arbejde, skole, privat eller andet. Til en middag eller en aften tæller alle aftaler som optaget. Til en weekendtur eller en ferie tæller arbejde og skole som tid, du kan tage fri fra: Casy foreslår stadig de datoer og siger, hvem der skal have en fridag. Korte planer som en middag står ikke i vejen for en tur, men at være væk hele dagen gør.",
+      title: "Vælg, hvad der tæller",
+      body: "Under Min kalender tæller kun kalendere med flueben med. Giv hver kalender en kategori (Arbejde, Skole, Privat eller Andet), og sig, hvor vigtig den er:",
+      points: [
+        {
+          term: "Kan springes over",
+          text: "Casy må planlægge oven i den. Til en enkelt aftale sker det kun, hvis ingen dato inden for en uge passer uden.",
+        },
+        {
+          term: "Normal",
+          text: "Optaget. Til en tur eller ferie tæller arbejde og skole som tid, du kan tage fri fra, og korte planer som en middag står ikke i vejen, men at være væk hele dagen gør.",
+        },
+        {
+          term: "Spring aldrig over",
+          text: "Altid optaget, også når I planlægger en tur.",
+        },
+      ],
     },
     {
       title: "Lav en gruppe, og del linket",
-      body: "Giv gruppen et navn, kopiér dens invitationslink, og send det til dem, du planlægger med. Et link virker i syv dage. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet.",
+      body: "Giv gruppen et navn, kopiér dens invitationslink, og send det til dem, du planlægger med. Et link virker i syv dage, og en gruppe kan have op til 20 medlemmer. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet. Medlemmer, der ikke har forbundet en kalender endnu, bliver nævnt og holdt uden for i stedet for at blive talt som ledige. Indtil du har en gruppe, kan du se, hvordan det virker, på eksempelgrupper med din egen kalender.",
     },
     {
-      title: "Vælg, hvad I planlægger",
-      body: "En aften, frokost, middag, gaming, en tur i byen, en weekendtur eller en ferie. Juster, hvor lang tid det tager, hvornår det starter, og hvilke ugedage der passer.",
+      title: "Sig, hvad I skal",
+      body: "Skriv, hvad I skal, og vælg, hvornår det starter (eller Når som helst), hvor længe det varer, og hvilke dage der passer. Skal I af sted i flere dage, så slå Tur / ferie til, og vælg antal dage, og hvilken dag I tager af sted, eller Alle dage.",
     },
     {
       title: "Casy finder datoen",
-      body: "Du får det tidligste tidspunkt, hvor alle kan. Kalenderen farver hver dag efter, hvor mange der er ledige, og gul betyder kun ledig, hvis nogen tager fri. Passer det ikke helt? Bed om den næste mulighed. Medlemmer, der ikke har forbundet en kalender endnu, bliver nævnt og holdt uden for i stedet for at blive talt som ledige.",
+      body: "Øverst står den første dato, hvor alle kan, og den skifter med det samme, når du ændrer noget. Pilene ved siden af viser de næste muligheder. Under den ser du måneden dag for dag: hver søjle viser, hvor mange der er ledige, og gul betyder kun ledig, hvis nogen tager fri eller springer noget over. Tryk på en dag for at prøve den. Casy siger også til, hvis nogen kommer lige fra noget andet eller skal tidligt op dagen efter. Ingen er ledige fra 23. til 26. december eller nytårsaften.",
+    },
+    {
+      title: "Foreslå datoen",
+      body: "Tryk på Foreslå denne dato, så kan alle i gruppen acceptere eller afslå den under Mine aftaler. Kræver datoen, at du selv tager fri, godkender du det først. Afslår nogen, finder Casy den næste dato, der passer alle, og spørger igen. Den, der foreslog aftalen, kan aflyse den, og alle andre kan forlade den.",
+    },
+    {
+      title: "Læg den i kalenderen",
+      body: "Når alle har accepteret, er aftalen planlagt. Tilføj til min kalender lægger den i din primære kalender, og med Tilføj automatisk slået til sker det af sig selv. Indtil videre kan Casy kun lægge aftaler i iCloud-kalendere. Bruger du en anden, får du en kalenderfil, som din kalender kan åbne.",
     },
   ],
   neverSeesTitle: "Det ser Casy aldrig",
@@ -67,11 +121,11 @@ const da = {
   connect: "Forbind kalendere",
 };
 
-const en: typeof da = {
+const en: Copy = {
   eyebrow: "How it works",
   title: 'From "when are you free?" to a date, without the group chat.',
   intro:
-    "Casy compares everyone's calendars and finds the first time the whole group is free. Set it up once, and every plan after that takes seconds.",
+    "Casy compares everyone's calendars, finds the first date the whole group is free, and asks the group whether it works. Set it up once, and every plan after that takes seconds.",
   steps: [
     {
       title: "Sign in",
@@ -82,20 +136,42 @@ const en: typeof da = {
       body: "Link Google, Outlook or iCloud, or paste any calendar link, such as a school timetable. Casy only reads when you are busy, never what your events are, and refreshes every hour.",
     },
     {
-      title: "Say what each calendar is for",
-      body: "Mark calendars as work, school, personal or other. For a dinner or an evening, every event counts as busy. For a weekend trip or a vacation, work and school count as time you could take off: Casy still suggests those dates and says who would need a day off. Short plans like a dinner don't stand in the way of a trip, but being away all day does.",
+      title: "Choose what counts",
+      body: "On My calendar, only ticked calendars count. Give each calendar a category (Work, School, Personal or Other), and say how much it matters:",
+      points: [
+        {
+          term: "Can skip",
+          text: "Casy may plan over it. For a single event, only when no date within a week works without it.",
+        },
+        {
+          term: "Normal",
+          text: "Busy. For a trip or a holiday, work and school count as time you could take off, and short plans like a dinner don't stand in the way, but being away all day does.",
+        },
+        {
+          term: "Never skip",
+          text: "Always busy, trips included.",
+        },
+      ],
     },
     {
       title: "Make a group and share the link",
-      body: "Name a group, copy its invite link and send it to the people you plan with. A link works for seven days. Everyone in the group sees each other's names and busy times, and nothing more.",
+      body: "Name a group, copy its invite link and send it to the people you plan with. A link works for seven days, and a group can have up to 20 members. Everyone in the group sees each other's names and busy times, and nothing more. Members who have not linked a calendar yet are named and left out, rather than counted as free. Until you have a group, example groups with your own calendar show how it works.",
     },
     {
-      title: "Pick what you are planning",
-      body: "An evening, lunch, dinner, gaming session, night out, weekend trip or vacation. Adjust how long it takes, when it starts and which days of the week work.",
+      title: "Say what you're doing",
+      body: "Write what you're doing, and choose when it starts (or Any time), how long it lasts and which days work. Going away for several days? Switch on Trip / holiday, then choose the number of days and the day you leave, or Any day.",
     },
     {
       title: "Casy finds the date",
-      body: "You get the earliest time that works for everyone. The calendar shades every day by how many people are free, and amber means free only if someone takes time off. Not quite right? Ask for the next option. Members who have not linked a calendar yet are named and left out, rather than counted as free.",
+      body: "At the top is the first date everyone is free, and it changes the moment you change anything. The arrows beside it show the next options. Below, you see the month day by day: each bar shows how many people are free, and amber means free only if someone takes time off or skips something. Tap a day to try it. Casy also tells you when someone comes straight from something else or has an early start the next morning. Nobody is free from 23 to 26 December or on New Year's Eve.",
+    },
+    {
+      title: "Suggest the date",
+      body: "Tap Suggest this date, and everyone in the group can accept or decline it on My events. If the date needs you to take time off, you approve that first. If someone declines, Casy finds the next date that works for everyone and asks again. Whoever suggested the event can cancel it, and anyone else can leave it.",
+    },
+    {
+      title: "Put it in your calendar",
+      body: "Once everyone has accepted, the event is scheduled. Add to my calendar puts it in your primary calendar, and with Add automatically switched on it happens by itself. For now, Casy can only add events to iCloud calendars. If you use another, you get a calendar file your calendar can open.",
     },
   ],
   neverSeesTitle: "What Casy never sees",
@@ -143,6 +219,16 @@ export default function HowItWorks() {
                     {step.title}
                   </h2>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+                  {step.points && (
+                    <dl className="mt-3 space-y-2 border-l-2 border-primary/20 pl-3">
+                      {step.points.map((point) => (
+                        <div key={point.term} className="text-sm leading-relaxed">
+                          <dt className="font-medium text-foreground">{point.term}</dt>
+                          <dd className="text-muted-foreground">{point.text}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
                 </div>
               </li>
             );
