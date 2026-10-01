@@ -20,7 +20,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 
 /** How long each example group stays on screen. */
-export const CAROUSEL_INTERVAL_MS = 5000;
+const CAROUSEL_INTERVAL_MS = 5000;
 
 export interface Carousel {
   /** Which example is showing. */

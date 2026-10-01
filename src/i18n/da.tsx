@@ -421,7 +421,6 @@ export const da = {
     inviteShort: (expiry: string) => `Alle med linket kan blive medlem. Det virker i ${expiry}.`,
     done: "Færdig",
     makingLink: "Laver et link…",
-    linkFailed: "Kunne ikke lave et invitationslink.",
     deleteConfirm: (name: string, members: number) =>
       `Slet "${name}" for alle? Alle ${members === 1 ? "1 medlem" : `${members} medlemmer`} mister adgangen med det samme.`,
     leaveSole: (name: string) =>

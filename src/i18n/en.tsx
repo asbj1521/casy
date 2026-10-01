@@ -399,7 +399,6 @@ export const en: Messages = {
     inviteShort: (expiry: string) => `Anyone with this link can join. It works for ${expiry}.`,
     done: "Done",
     makingLink: "Making a link…",
-    linkFailed: "Couldn't make an invite link.",
     deleteConfirm: (name: string, members: number) =>
       `Delete "${name}" for everyone? All ${members === 1 ? "1 member" : `${members} members`} lose access right away.`,
     leaveSole: (name: string) =>

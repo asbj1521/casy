@@ -69,9 +69,6 @@ export interface SchedulingGroups {
   busyFailed: boolean;
   /** True if your own calendars could not be loaded (examples only). */
   myCalendarsFailed: boolean;
-  /** True once there is at least one real group, so the examples are gone. */
-  hasRealGroups: boolean;
-  isLoading: boolean;
 }
 
 export function useSchedulingGroups(selectedGroupId: string | null): SchedulingGroups {
@@ -152,8 +149,7 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
       // Your real calendar replaces the "you" slot only once there is one:
       // with nothing connected you would read as free all year, which is less
       // honest than leaving the generated calendar in place.
-      const swapped =
-        !!base && !!myCalendars && myCalendars.calendars.some((c) => c.included !== false);
+      const swapped = !!base && !!myCalendars && myCalendars.calendars.some((c) => c.included);
       const participants = swapped
         ? withRealCalendar(
             base.participants,
@@ -198,7 +194,5 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
     busyLoading: busyQuery.isLoading && !!busyEnabledId,
     busyFailed: busyQuery.isError,
     myCalendarsFailed: !hasRealGroups && myCalendarsFailed,
-    hasRealGroups,
-    isLoading: realQuery.isLoading,
   };
 }

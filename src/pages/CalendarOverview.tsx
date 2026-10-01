@@ -3,14 +3,7 @@ import { Link } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Info, Loader2 } from "lucide-react";
 
-import {
-  calendarBusyQuery,
-  calendarsChanged,
-  primaryCalendarQuery,
-  updateCalendar,
-  updatePrimaryCalendar,
-  type CalendarChange,
-} from "@/api/calendars";
+import { calendarBusyQuery, calendarsChanged, updateCalendar } from "@/api/calendars";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
 import Notice from "@/components/ui/Notice";
@@ -38,11 +31,6 @@ import { cn } from "@/lib/utils";
 /** A holiday's name in the page's language. */
 function holidayName(holiday: NonNullable<DaySegment["holiday"]>, lang: Lang): string {
   return lang === "da" ? holiday.name : holiday.englishName;
-}
-
-/** A calendar's name; the built-in holiday calendar is named in the page's language. */
-function calendarName(calendar: OverviewCalendar, t: Messages): string {
-  return calendar.id === HOLIDAY_CALENDAR_ID ? t.calendarView.holidayCalendar : calendar.name;
 }
 
 /** "Tue 22 Sept 2026, 2 busy blocks" plus any holiday names, for screen readers and tests. */
@@ -99,8 +87,6 @@ export default function CalendarOverview() {
   const [holidaysHidden, setHolidaysHidden] = useState(
     () => readStored(HOLIDAYS_HIDDEN_KEY) === "1",
   );
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [askingPrimaryId, setAskingPrimaryId] = useState<string | null>(null);
 
   const layout = useMemo(
     () => buildMonthLayout(month.year, month.month, LOCALE[lang]),
@@ -111,31 +97,6 @@ export default function CalendarOverview() {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     ...calendarBusyQuery(user.id, layout.from.toISOString(), layout.to.toISOString()),
     placeholderData: keepPreviousData, // no flash of emptiness when changing month
-  });
-
-  // One calendar's category or priority.
-  const setLabels = useMutation({
-    mutationFn: ({ calendarId, change }: { calendarId: string; change: CalendarChange }) =>
-      updateCalendar(calendarId, change),
-    onSuccess: () => calendarsChanged(queryClient),
-  });
-
-  // A calendar's own name, or null to go back to the provider's. The editor
-  // stays open until the new name is saved, so a failure shows beside it.
-  const rename = useMutation({
-    mutationFn: ({ calendarId, name }: { calendarId: string; name: string | null }) =>
-      updateCalendar(calendarId, { name }),
-    onSuccess: async () => {
-      await calendarsChanged(queryClient);
-      setRenamingId(null);
-    },
-  });
-
-  // The primary calendar: shown here, changed only after a second "yes".
-  const { data: primary } = useQuery(primaryCalendarQuery(user.id));
-  const setPrimary = useMutation({
-    mutationFn: (calendarId: string) => updatePrimaryCalendar(queryClient, user.id, { calendarId }),
-    onSuccess: () => setAskingPrimaryId(null),
   });
 
   // Tick or untick calendars: whether they count at all, saved on the
@@ -167,54 +128,51 @@ export default function CalendarOverview() {
     onSettled: () => calendarsChanged(queryClient),
   });
 
-  const calendars = useMemo(() => data?.calendars ?? [], [data]);
-  // Unticked: calendars that don't count, plus the holidays if you hid them.
-  const hidden = useMemo(
-    () =>
-      new Set([
-        ...calendars.filter((c) => c.included === false).map((c) => c.id),
-        ...(holidaysHidden ? [HOLIDAY_CALENDAR_ID] : []),
-      ]),
-    [calendars, holidaysHidden],
+  const connected = useMemo(() => data?.calendars ?? [], [data]);
+  // The built-in holiday calendar is always present, ahead of the connected
+  // ones, named in the page's language. Its total counts the year ahead, the
+  // range the connected calendars are synced for.
+  const holidayCount = useMemo(() => {
+    const today = new Date();
+    const yearAhead = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+    return [...holidaySegmentsByDay(today, yearAhead).values()].reduce(
+      (sum, list) => sum + list.length,
+      0,
+    );
+  }, []);
+  const calendars = useMemo(
+    () => [
+      {
+        ...HOLIDAY_CALENDAR,
+        name: t.calendarView.holidayCalendar,
+        total: holidayCount,
+        included: !holidaysHidden,
+      },
+      ...connected,
+    ],
+    [connected, t, holidayCount, holidaysHidden],
   );
-  // The built-in holiday calendar is always present, ahead of the connected ones.
-  const allCalendars = useMemo(() => [HOLIDAY_CALENDAR, ...calendars], [calendars]);
-  const calendarById = useMemo(() => new Map(allCalendars.map((c) => [c.id, c])), [allCalendars]);
-  const palette = useMemo(() => calendarColors(calendars), [calendars]);
+  const calendarById = useMemo(() => new Map(calendars.map((c) => [c.id, c])), [calendars]);
+  const palette = useMemo(() => calendarColors(connected), [connected]);
   // Every lookup wants the same fallback, so ask through one function instead
   // of repeating the grey at each call site.
   const colorOf = useCallback(
     (calendarId: string) => palette.get(calendarId) ?? FALLBACK_RGB,
     [palette],
   );
-  const holidaysByDay = useMemo(() => holidaySegmentsByDay(layout.from, layout.to), [layout]);
-  // Each calendar's total, not just the month on screen. Holidays count over
-  // the year ahead, the same range the connected calendars are synced for.
-  const blockCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const c of calendars) if (c.total !== undefined) counts.set(c.id, c.total);
-    const today = new Date();
-    const yearAhead = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-    counts.set(
-      HOLIDAY_CALENDAR_ID,
-      [...holidaySegmentsByDay(today, yearAhead).values()].reduce(
-        (sum, list) => sum + list.length,
-        0,
-      ),
-    );
-    return counts;
-  }, [calendars]);
   const segmentsByDay = useMemo(
     () =>
       withHolidays(
         segmentByDay(
-          (data?.blocks ?? []).filter((b) => !hidden.has(b.calendarId)),
+          // Unticked calendars drop out; a block whose calendar is somehow missing
+          // from the list still shows, in grey (FALLBACK_RGB).
+          (data?.blocks ?? []).filter((b) => calendarById.get(b.calendarId)?.included !== false),
           layout.from,
           layout.to,
         ),
-        hidden.has(HOLIDAY_CALENDAR_ID) ? new Map() : holidaysByDay,
+        holidaysHidden ? new Map() : holidaySegmentsByDay(layout.from, layout.to),
       ),
-    [data, hidden, layout, holidaysByDay],
+    [data, calendarById, layout, holidaysHidden],
   );
 
   const todayKey = dayKey(new Date());
@@ -251,7 +209,7 @@ export default function CalendarOverview() {
     if (connected.length > 0) setIncluded.mutate({ ids: connected, included: visible });
   };
 
-  const noConnectedCalendars = !isLoading && !error && calendars.length === 0;
+  const noConnectedCalendars = !isLoading && !error && connected.length === 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -443,7 +401,7 @@ export default function CalendarOverview() {
                                     <span className="font-medium">
                                       {formatSegmentRange(seg, t.calendarView.allDay)}
                                     </span>{" "}
-                                    {cal && calendarName(cal, t)}
+                                    {cal?.name}
                                   </>
                                 )}
                               </span>
@@ -497,38 +455,10 @@ export default function CalendarOverview() {
               itself cut its content off at the month grid's top line. */}
           <div className="mt-6 lg:col-start-2 lg:row-span-3 lg:row-start-2 lg:mt-0">
             <CalendarListPanel
-              calendars={allCalendars}
-              hidden={hidden}
-              blockCounts={blockCounts}
+              calendars={calendars}
               colorOf={colorOf}
-              savingId={setLabels.isPending ? setLabels.variables.calendarId : null}
-              saveError={(setLabels.error ?? setIncluded.error)?.message ?? null}
               onSetVisible={setCalendarsVisible}
-              onSetPurpose={(calendarId, purpose) =>
-                setLabels.mutate({ calendarId, change: { purpose } })
-              }
-              onSetPriority={(calendarId, priority) =>
-                setLabels.mutate({ calendarId, change: { priority } })
-              }
-              renamingId={renamingId}
-              renameSubmitting={rename.isPending}
-              renameError={rename.error?.message ?? null}
-              onStartRename={(calendarId) => {
-                rename.reset();
-                setRenamingId(calendarId);
-              }}
-              onCancelRename={() => setRenamingId(null)}
-              onRename={(calendarId, name) => rename.mutate({ calendarId, name })}
-              primaryId={primary?.calendarId ?? null}
-              askingPrimaryId={askingPrimaryId}
-              primaryBusy={setPrimary.isPending}
-              primaryError={setPrimary.error?.message ?? null}
-              onAskPrimary={(calendarId) => {
-                setPrimary.reset();
-                setAskingPrimaryId(calendarId);
-              }}
-              onCancelPrimary={() => setAskingPrimaryId(null)}
-              onConfirmPrimary={(calendarId) => setPrimary.mutate(calendarId)}
+              visibilityError={setIncluded.error?.message ?? null}
             />
           </div>
         </div>
@@ -567,7 +497,7 @@ function DayRow({
   const source = holiday
     ? `${holiday.kind === "public" ? words.publicHoliday : words.observedDay} · ${words.denmark}`
     : [
-        calendar ? calendarName(calendar, t) : words.calendarFallback,
+        calendar?.name ?? words.calendarFallback,
         calendar?.account,
         calendar && words.providerNames[calendar.provider],
       ]

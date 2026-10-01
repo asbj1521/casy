@@ -20,28 +20,19 @@ export interface OverviewCalendar {
   /** The name to show: the one its owner gave it, else the provider's own. */
   name: string;
   /** The provider's own name, shown under a renamed calendar. */
-  originalName?: string | null;
-  /** True when its owner renamed it. Missing (older function, built-in) means no. */
-  renamed?: boolean;
-  /** Casy may add events to it, so it can be the primary calendar. Missing means no. */
-  writable?: boolean;
+  originalName: string | null;
+  /** True when its owner renamed it. */
+  renamed: boolean;
+  /** Casy may add events to it, so it can be the primary calendar. */
+  writable: boolean;
   /** The category the user gave this calendar, or null if unset. */
   purpose: CalendarPurpose | null;
-  /**
-   * How much it matters to its owner. Missing from a function deployed before
-   * priorities existed, and on the built-in calendar: read as "normal".
-   */
-  priority?: CalendarPriority;
-  /**
-   * False once its owner unticked it on My calendar: it then counts nowhere.
-   * Missing (older function, built-in calendar) means it counts.
-   */
-  included?: boolean;
-  /**
-   * Busy blocks stored for it over the whole synced range, not just the
-   * month on screen. Missing from a function deployed before it existed.
-   */
-  total?: number;
+  /** How much it matters to its owner when scheduling. */
+  priority: CalendarPriority;
+  /** False once its owner unticked it on My calendar: it then counts nowhere. */
+  included: boolean;
+  /** Busy blocks stored for it over the whole synced range, not just the month on screen. */
+  total: number;
   /** "builtin" marks a calendar Casy provides itself, with no account behind it. */
   provider: CalendarProvider | "builtin";
   /** The account it belongs to (an email, or a link's name). */
@@ -94,7 +85,7 @@ export interface MonthLayout {
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** Monday-first short weekday names: "man." to "søn.", or "Mon" to "Sun". */
-export function mondayFirstWeekdays(locale: string): string[] {
+function mondayFirstWeekdays(locale: string): string[] {
   // 1 January 2024 was a Monday.
   return Array.from({ length: 7 }, (_, i) =>
     new Date(Date.UTC(2024, 0, 1 + i)).toLocaleDateString(locale, {
@@ -110,7 +101,7 @@ export function dayKey(d: Date): string {
 }
 
 /** Local midnight at the start of the day containing `d`. */
-export function startOfLocalDay(d: Date): Date {
+function startOfLocalDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
@@ -245,7 +236,13 @@ export const HOLIDAY_CALENDAR_ID = "builtin:dk-holidays";
 export const HOLIDAY_CALENDAR: OverviewCalendar = {
   id: HOLIDAY_CALENDAR_ID,
   name: "Danish public holidays",
+  originalName: null,
+  renamed: false,
+  writable: false,
   purpose: null,
+  priority: "normal",
+  included: true,
+  total: 0,
   provider: "builtin",
   account: null,
   connectionId: HOLIDAY_CALENDAR_ID,
@@ -303,7 +300,7 @@ const TIME_FORMAT = new Intl.DateTimeFormat("en-GB", {
 });
 
 /** "09:15" in the viewer's local time zone. */
-export function formatLocalTime(d: Date): string {
+function formatLocalTime(d: Date): string {
   return TIME_FORMAT.format(d);
 }
 
@@ -413,14 +410,11 @@ export function groupCalendarsByBrand(calendars: OverviewCalendar[]): CalendarGr
 }
 
 /**
- * What a group's checkbox should show: every calendar visible ("all"), none
+ * What a group's checkbox should show: every calendar ticked ("all"), none
  * of them ("none"), or a mix ("some", the indeterminate dash).
  */
-export function groupVisibility(
-  group: CalendarGroup,
-  hidden: ReadonlySet<string>,
-): "all" | "none" | "some" {
-  const hiddenCount = group.calendars.filter((c) => hidden.has(c.id)).length;
-  if (hiddenCount === 0) return "all";
-  return hiddenCount === group.calendars.length ? "none" : "some";
+export function groupVisibility(group: CalendarGroup): "all" | "none" | "some" {
+  const unticked = group.calendars.filter((c) => !c.included).length;
+  if (unticked === 0) return "all";
+  return unticked === group.calendars.length ? "none" : "some";
 }

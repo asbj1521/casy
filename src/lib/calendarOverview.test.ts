@@ -34,6 +34,16 @@ const block = (start: string, end: string, calendarId = "cal"): OverviewBlock =>
   end,
 });
 
+/** What every calendar carries that these tests don't look at. */
+const DEFAULTS = {
+  originalName: null,
+  renamed: false,
+  writable: false,
+  priority: "normal",
+  included: true,
+  total: 0,
+} as const;
+
 describe("buildMonthLayout", () => {
   it("pads September 2026 (starts on a Tuesday) with one leading day, 5 rows", () => {
     const layout = buildMonthLayout(2026, 8);
@@ -178,6 +188,7 @@ describe("formatDuration", () => {
 
 describe("calendarColors", () => {
   const cal = (id: string, purpose: OverviewCalendar["purpose"]): OverviewCalendar => ({
+    ...DEFAULTS,
     id,
     name: id,
     purpose,
@@ -263,6 +274,7 @@ describe("built-in Danish holidays", () => {
     expect(HOLIDAY_CALENDAR.provider).toBe("builtin");
     expect(HOLIDAY_CALENDAR.account).toBeNull();
     const many = Array.from({ length: 10 }, (_, i) => ({
+      ...DEFAULTS,
       id: `x${i}`,
       name: `x${i}`,
       purpose: null,
@@ -343,6 +355,7 @@ describe("month layout week numbers", () => {
 
 describe("groupCalendarsByBrand", () => {
   const cal = (id: string, provider: OverviewCalendar["provider"]): OverviewCalendar => ({
+    ...DEFAULTS,
     id,
     name: id,
     purpose: null,
@@ -401,30 +414,31 @@ describe("groupCalendarsByBrand", () => {
 });
 
 describe("groupVisibility", () => {
-  const group = {
+  const group = (unticked: string[]) => ({
     id: "google" as const,
     label: "Google",
     calendars: ["a", "b", "c"].map((id) => ({
+      ...DEFAULTS,
       id,
       name: id,
       purpose: null,
+      included: !unticked.includes(id),
       provider: "google" as const,
       account: null,
       connectionId: "conn",
     })),
-  };
-
-  it("is 'all' when nothing in the group is hidden", () => {
-    expect(groupVisibility(group, new Set())).toBe("all");
-    expect(groupVisibility(group, new Set(["some-other-calendar"]))).toBe("all");
   });
 
-  it("is 'none' when everything in the group is hidden", () => {
-    expect(groupVisibility(group, new Set(["a", "b", "c"]))).toBe("none");
+  it("is 'all' when every calendar in the group is ticked", () => {
+    expect(groupVisibility(group([]))).toBe("all");
+  });
+
+  it("is 'none' when every calendar in the group is unticked", () => {
+    expect(groupVisibility(group(["a", "b", "c"]))).toBe("none");
   });
 
   it("is 'some' for a mix", () => {
-    expect(groupVisibility(group, new Set(["b"]))).toBe("some");
-    expect(groupVisibility(group, new Set(["a", "c"]))).toBe("some");
+    expect(groupVisibility(group(["b"]))).toBe("some");
+    expect(groupVisibility(group(["a", "c"]))).toBe("some");
   });
 });

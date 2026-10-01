@@ -60,7 +60,7 @@ export default function DayChart({
   /** The zone the month's days are local to, for the weekday letters. */
   timeZone: string;
   /** The answer's days (local-midnight ISO), highlighted. */
-  bestDays: Set<string>;
+  bestDays: ReadonlySet<string>;
   canPrev: boolean;
   canNext: boolean;
   onPrev: () => void;

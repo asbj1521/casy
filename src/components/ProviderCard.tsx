@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CalendarPlus,
@@ -11,7 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import type { CalendarConnectionStatus } from "@/api/calendars";
+import { disconnectCalendar, type CalendarConnectionStatus } from "@/api/calendars";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
 import { useT } from "@/i18n/lang";
@@ -41,26 +42,19 @@ function RemoveNote({ provider, label }: { provider: CalendarProvider; label: st
 function AccountRow({
   account,
   provider,
-  confirming,
-  removing,
-  removeError,
   onReconnect,
-  onAskRemove,
-  onCancelRemove,
-  onRemove,
 }: {
   account: CalendarConnectionStatus;
   provider: CalendarProvider;
-  confirming: boolean;
-  removing: boolean;
-  removeError: string | null;
   onReconnect: () => void;
-  onAskRemove: () => void;
-  onCancelRemove: () => void;
-  onRemove: () => void;
 }) {
   const t = useT();
+  const queryClient = useQueryClient();
   const [namesOpen, setNamesOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  // On success the account is gone from the list, and this row with it; a
+  // failure keeps the panel open so the reason shows and can be retried.
+  const remove = useMutation({ mutationFn: () => disconnectCalendar(queryClient, account.id) });
   const count = account.calendar_sources.length;
   // The clock is read once, when the row appears: rendering must not depend
   // on the time it happens to run, and minutes-level freshness is plenty.
@@ -120,6 +114,7 @@ function AccountRow({
               type="button"
               onClick={onReconnect}
               title={t.providerCard.reconnectTitle}
+              aria-label={t.providerCard.reconnectTitle}
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-full border transition",
                 reconnect
@@ -132,8 +127,12 @@ function AccountRow({
           )}
           <button
             type="button"
-            onClick={onAskRemove}
+            onClick={() => {
+              remove.reset();
+              setConfirming(true);
+            }}
             title={t.providerCard.removeTitle}
+            aria-label={t.providerCard.removeTitle}
             className="flex h-8 w-8 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-red-50 hover:text-red-700"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -159,10 +158,10 @@ function AccountRow({
           className="mt-3"
           message={<RemoveNote provider={provider} label={account.account_label} />}
           confirmLabel={t.providerCard.remove}
-          busy={removing}
-          error={removeError}
-          onConfirm={onRemove}
-          onCancel={onCancelRemove}
+          busy={remove.isPending}
+          error={remove.error?.message}
+          onConfirm={() => remove.mutate()}
+          onCancel={() => setConfirming(false)}
         />
       )}
     </li>
@@ -171,8 +170,8 @@ function AccountRow({
 
 /**
  * One calendar brand on the profile page: its name and a link to its guide,
- * the accounts connected under it, and the button that adds another. Forms
- * and result lines the page owns are passed in as children.
+ * the accounts connected under it (each removable), and the button that adds
+ * another. The add form and its result line come in as children.
  */
 export default function ProviderCard({
   meta,
@@ -180,13 +179,7 @@ export default function ProviderCard({
   latest,
   statusPending,
   formOpen,
-  confirmRemoveId,
-  removingId,
-  removeError,
   onConnect,
-  onAskRemove,
-  onCancelRemove,
-  onRemove,
   highlightDelayMs,
   children,
 }: {
@@ -198,13 +191,7 @@ export default function ProviderCard({
   statusPending: boolean;
   /** This provider's add form is open, so its own button steps aside. */
   formOpen: boolean;
-  confirmRemoveId: string | null;
-  removingId: string | null;
-  removeError: { id: string; message: string } | null;
   onConnect: () => void;
-  onAskRemove: (connectionId: string) => void;
-  onCancelRemove: () => void;
-  onRemove: (connectionId: string) => void;
   /**
    * Nobody has connected a calendar yet: this card takes its turn glowing in
    * the chase (see connect-highlight in index.css), starting this many ms
@@ -295,18 +282,7 @@ export default function ProviderCard({
       {accounts.length > 0 ? (
         <ul className="mt-3 divide-y border-t">
           {accounts.map((acc) => (
-            <AccountRow
-              key={acc.id}
-              account={acc}
-              provider={meta.id}
-              confirming={confirmRemoveId === acc.id}
-              removing={removingId === acc.id}
-              removeError={removeError?.id === acc.id ? removeError.message : null}
-              onReconnect={onConnect}
-              onAskRemove={() => onAskRemove(acc.id)}
-              onCancelRemove={onCancelRemove}
-              onRemove={() => onRemove(acc.id)}
-            />
+            <AccountRow key={acc.id} account={acc} provider={meta.id} onReconnect={onConnect} />
           ))}
         </ul>
       ) : (

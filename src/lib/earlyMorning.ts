@@ -17,9 +17,9 @@ import { addDays, atHour, startOfDay } from "@/lib/zone";
 import type { Participant } from "@/types";
 
 /** A meeting ending at this local hour or later counts as late. */
-export const LATE_FROM_HOUR = 23;
+const LATE_FROM_HOUR = 23;
 /** Something starting at this local hour or earlier the next morning counts as early. */
-export const EARLY_UNTIL_HOUR = 10;
+const EARLY_UNTIL_HOUR = 10;
 
 /** At least this long from a local midnight, it's an all-day entry, not an early start. */
 const ALL_DAY_MS = 23 * 60 * 60 * 1000;
@@ -32,7 +32,7 @@ export interface EarlyStart {
 }
 
 /** True if the meeting ends at LATE_FROM_HOUR or later (or past midnight). */
-export function isLateMeeting(slot: { start: string; end: string }, timeZone: string): boolean {
+function isLateMeeting(slot: { start: string; end: string }, timeZone: string): boolean {
   return Date.parse(slot.end) >= atHour(Date.parse(slot.start), LATE_FROM_HOUR, timeZone);
 }
 

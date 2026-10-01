@@ -53,7 +53,7 @@ let running = false;
  * lazy page's code: started first, the transition would capture the old page
  * a second time while the new one was still downloading.
  */
-export function goWithCard(navigate: () => void, prepare?: () => Promise<unknown>): boolean {
+function goWithCard(navigate: () => void, prepare?: () => Promise<unknown>): boolean {
   if (typeof document.startViewTransition !== "function") return false;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
   const from = document.querySelector(".vt-card")?.getBoundingClientRect();

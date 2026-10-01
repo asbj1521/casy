@@ -9,7 +9,7 @@
 import { currentLang, currentMessages } from "@/i18n/current";
 import { supabase } from "@/lib/supabase";
 
-export const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 

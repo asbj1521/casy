@@ -39,8 +39,8 @@ export function busyFromCalendars(data: OverviewData): BusyInterval[] {
   const busy: BusyInterval[] = [];
   for (const b of data.blocks) {
     const cal = byId.get(b.calendarId);
-    if (!cal) continue; // a block from a calendar that's no longer listed
-    if (cal.included === false) continue;
+    // From a calendar no longer listed, or one its owner unticked.
+    if (!cal?.included) continue;
     busy.push({
       start: b.start,
       end: b.end,

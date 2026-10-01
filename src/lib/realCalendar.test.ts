@@ -4,8 +4,18 @@ import { busyFromCalendars, withRealCalendar } from "@/lib/realCalendar";
 import { isHardBlock, isSoftBlock } from "@/lib/availability";
 import type { Participant } from "@/types";
 
-const calendar = (id: string, name: string, purpose: OverviewData["calendars"][0]["purpose"]) => ({
+const calendar = (
+  id: string,
+  name: string,
+  purpose: OverviewData["calendars"][0]["purpose"],
+): OverviewData["calendars"][0] => ({
   id,
+  originalName: name,
+  renamed: false,
+  writable: false,
+  priority: "normal",
+  included: true,
+  total: 0,
   name,
   purpose,
   provider: "google" as const,

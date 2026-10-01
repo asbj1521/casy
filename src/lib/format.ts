@@ -45,7 +45,7 @@ export function formatTime(iso: string): string {
 }
 
 /** "Tue 23 Jun · 16:00-17:00" */
-export function formatSlot(start: string, end: string, lang: Lang): string {
+function formatSlot(start: string, end: string, lang: Lang): string {
   return `${formatDate(start, lang)} · ${formatTime(start)}-${formatTime(end)}`;
 }
 
@@ -61,7 +61,7 @@ export function formatDaySpan(start: string, end: string, lang: Lang): string {
 }
 
 /** "Fri 25 Sep 17:00 to Sun 27 Sep 21:00" for a trip with concrete times. */
-export function formatTripSpan(start: string, end: string, lang: Lang): string {
+function formatTripSpan(start: string, end: string, lang: Lang): string {
   return `${formatDate(start, lang)} ${formatTime(start)} ${TO[lang]} ${formatDate(end, lang)} ${formatTime(end)}`;
 }
 

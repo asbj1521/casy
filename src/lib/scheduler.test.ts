@@ -8,6 +8,7 @@ import {
   fallbackTitleId,
   laterSlots,
   randomDefaultSettings,
+  reviewAnswer,
   settingsToSearch,
   type SchedulerSettings,
 } from "@/lib/scheduler";
@@ -180,5 +181,46 @@ describe("randomDefaultSettings", () => {
   it("hands out its own weekday list, so editing it leaves the next one whole", () => {
     randomDefaultSettings(() => 0).dows.pop();
     expect(randomDefaultSettings(() => 0).dows).toHaveLength(7);
+  });
+});
+
+describe("reviewAnswer", () => {
+  const SLOT = { start: "2026-06-26T15:00:00.000Z", end: "2026-06-28T19:00:00.000Z" };
+  const conflict = (profileId: string) => ({ profileId, name: profileId, events: [] });
+  const meeting = settingsToSearch(BASE);
+  const trip = settingsToSearch({ ...BASE, multiDay: true });
+
+  it("has nothing to say without a date", () => {
+    expect(reviewAnswer(null, meeting, "me", null).tone).toBe("none");
+    expect(reviewAnswer({ slot: null, conflicts: [] }, trip, "me", null)).toEqual({
+      tone: "none",
+      yours: null,
+      others: [],
+      accepted: false,
+    });
+  });
+
+  it("is clean when nobody gives anything up", () => {
+    expect(reviewAnswer({ slot: SLOT, conflicts: [] }, meeting, "me", null).tone).toBe("clean");
+    expect(reviewAnswer({ slot: SLOT, conflicts: [] }, trip, "me", null).tone).toBe("clean");
+  });
+
+  it("calls a meeting someone must skip for a skip, whoever it is", () => {
+    const yours = reviewAnswer({ slot: SLOT, conflicts: [conflict("me")] }, meeting, "me", null);
+    expect(yours).toMatchObject({ tone: "skip", yours: { profileId: "me" }, others: [] });
+    const theirs = reviewAnswer({ slot: SLOT, conflicts: [conflict("bo")] }, meeting, "me", null);
+    expect(theirs).toMatchObject({ tone: "skip", yours: null, others: [{ profileId: "bo" }] });
+  });
+
+  it("asks you first when a trip costs you time off, then the others", () => {
+    const found = { slot: SLOT, conflicts: [conflict("me"), conflict("bo")] };
+    expect(reviewAnswer(found, trip, "me", null).tone).toBe("approve");
+    expect(reviewAnswer(found, trip, "me", "another date").tone).toBe("approve");
+    expect(reviewAnswer(found, trip, "me", SLOT.start)).toMatchObject({
+      tone: "review",
+      accepted: true,
+    });
+    const onlyYou = { slot: SLOT, conflicts: [conflict("me")] };
+    expect(reviewAnswer(onlyYou, trip, "me", SLOT.start).tone).toBe("clean");
   });
 });

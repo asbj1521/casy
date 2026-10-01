@@ -5,10 +5,10 @@
  * trusted to the page.
  */
 import type { Messages } from "@/i18n/da";
-import type { MultiDayResult } from "@/lib/availability";
+import type { MultiDayResult, SpanConflict } from "@/lib/availability";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import { addDays } from "@/lib/zone";
-import type { Participant } from "@/types";
+import type { Participant, TimeSlot } from "@/types";
 
 /**
  * When a trip that starts on a set weekday leaves and comes home. 17:00 is
@@ -16,8 +16,8 @@ import type { Participant } from "@/types";
  * Friday at the office doesn't show up as a conflict on every weekend; 21:00
  * is "home in time for the week".
  */
-export const TRIP_START_HOUR = 17;
-export const TRIP_END_HOUR = 21;
+const TRIP_START_HOUR = 17;
+const TRIP_END_HOUR = 21;
 
 /** A trip tied to a weekday covers at most a week (the engine's weekly window). */
 export const MAX_TRIP_DAYS = 7;
@@ -137,6 +137,9 @@ export function daysUntil(dayIso: string, todayIso: string): number {
   return Math.round((Date.parse(dayIso) - Date.parse(todayIso)) / 86_400_000);
 }
 
+/** A date a search found, and what it costs whom. */
+export type FoundDate = MultiDayResult & { slot: TimeSlot };
+
 /**
  * The next `count` dates after `afterStart`, each found by the same search
  * from the day after the one before: the "Også muligt" row under the answer.
@@ -148,15 +151,63 @@ export function laterSlots(
   count: number,
   searchEnd: string,
   timeZone: string,
-): MultiDayResult[] {
-  const out: MultiDayResult[] = [];
+): FoundDate[] {
+  const out: FoundDate[] = [];
   let from = afterStart;
   for (let i = 0; i < count; i++) {
     const next = new Date(addDays(Date.parse(from), 1, timeZone)).toISOString();
-    const found = findEventSlot(participants, search, next, searchEnd, timeZone);
-    if (!found.slot) break;
-    out.push(found);
-    from = found.slot.start;
+    const { slot, conflicts } = findEventSlot(participants, search, next, searchEnd, timeZone);
+    if (!slot) break;
+    out.push({ slot, conflicts });
+    from = slot.start;
   }
   return out;
+}
+
+/**
+ * How the answer on screen stands, which decides its colour and what it says:
+ *
+ * - `clean`: everyone can, as things are.
+ * - `skip`: a meeting only works if someone skips something they marked
+ *   skippable.
+ * - `approve`: a trip or holiday costs you time off from work or school, which
+ *   you sign off before it can go to the group.
+ * - `review`: it costs others time off, so they will be asked.
+ * - `none`: no date at all.
+ */
+export type AnswerTone = "clean" | "skip" | "approve" | "review" | "none";
+
+export interface AnswerReview {
+  tone: AnswerTone;
+  /** What it costs you: time off for a trip or holiday, a skip for a meeting. */
+  yours: SpanConflict | null;
+  /** What it costs everyone else, the same way. */
+  others: SpanConflict[];
+  /** You have signed off your time off for this date. */
+  accepted: boolean;
+}
+
+export function reviewAnswer(
+  found: MultiDayResult | null,
+  search: EventSettings,
+  youProfileId: string | null,
+  acceptedStart: string | null,
+): AnswerReview {
+  const slot = found?.slot ?? null;
+  const conflicts = found?.slot ? found.conflicts : [];
+  const yours = conflicts.find((c) => c.profileId === youProfileId) ?? null;
+  const others = conflicts.filter((c) => c.profileId !== youProfileId);
+  const accepted = !!slot && acceptedStart === slot.start;
+  const tone: AnswerTone = !slot
+    ? "none"
+    : search.kind === "single"
+      ? conflicts.length > 0
+        ? "skip"
+        : "clean"
+      : yours && !accepted
+        ? "approve"
+        : others.length > 0
+          ? "review"
+          : "clean";
+  return { tone, yours, others, accepted };
 }
