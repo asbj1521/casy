@@ -453,6 +453,15 @@ serve("groups", async (req, body) => {
   }
 
   const caller = await requireCaller(req, db);
+
+  // Asked every few seconds by every open page, so it does nothing else: no
+  // name saved, one read-only query (live_pulse in the live_pulse migration).
+  if (action === "pulse") {
+    const { data, error } = await db.rpc("live_pulse", { p_profile_id: caller.id });
+    if (error) throw error;
+    return { pulse: data as string };
+  }
+
   const profileId = caller.id;
   const callerName = displayNameFor(caller);
   // Saved in the background: nothing below waits on it, since the caller's

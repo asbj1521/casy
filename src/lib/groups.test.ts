@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { da } from "@/i18n/da";
 import { en } from "@/i18n/en";
-import { inviteExpiryLabel, knownPeople, looksLikeEmail } from "@/lib/groups";
+import { inviteExpiryLabel, knownPeople, looksLikeEmail, membershipKey } from "@/lib/groups";
 
 describe("inviteExpiryLabel", () => {
   const now = Date.parse("2026-09-20T12:00:00.000Z");
@@ -70,5 +70,29 @@ describe("looksLikeEmail", () => {
     expect(looksLikeEmail("anna")).toBe(false);
     expect(looksLikeEmail("anna@example")).toBe(false);
     expect(looksLikeEmail("an na@example.dk")).toBe(false);
+  });
+});
+
+describe("membershipKey", () => {
+  const m = (...ids: string[]) => ids.map((profileId) => ({ profileId }));
+
+  it("is the same for the same memberships in any order", () => {
+    expect(
+      membershipKey([
+        { id: "g1", members: m("a", "b") },
+        { id: "g2", members: m("c") },
+      ]),
+    ).toBe(
+      membershipKey([
+        { id: "g2", members: m("c") },
+        { id: "g1", members: m("b", "a") },
+      ]),
+    );
+  });
+
+  it("changes when someone joins or leaves", () => {
+    const before = membershipKey([{ id: "g1", members: m("a", "b") }]);
+    expect(membershipKey([{ id: "g1", members: m("a", "b", "c") }])).not.toBe(before);
+    expect(membershipKey([{ id: "g1", members: m("a") }])).not.toBe(before);
   });
 });

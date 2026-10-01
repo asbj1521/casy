@@ -11,8 +11,10 @@
  *
  * Every key those queries use includes the user's id, so one person's cache
  * is never served to another; everything is wiped on sign-out anyway (see
- * AuthProvider). A restored answer is marked with the time it was fetched,
- * so React Query still treats an old one as stale and refetches it.
+ * AuthProvider). A restored answer keeps the time it was fetched but is
+ * always marked out of date, so the page fetches the real answer behind it:
+ * a reload must show what changed since, even seconds later, not whatever
+ * this device last saw.
  */
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 
@@ -79,6 +81,9 @@ function readAll(now: number): Stored[] {
 export function persistQueries(client: QueryClient, now = Date.now()): () => void {
   for (const entry of readAll(now)) {
     client.setQueryData(entry.key, entry.data, { updatedAt: entry.updatedAt });
+    // Without this, an answer fetched under a minute ago counts as fresh and
+    // the reload never asks the server. "none": fetched when a page uses it.
+    void client.invalidateQueries({ queryKey: entry.key, exact: true, refetchType: "none" });
   }
 
   // Only successes are written. A query that is dropped from memory (React

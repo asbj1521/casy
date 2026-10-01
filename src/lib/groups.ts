@@ -51,6 +51,26 @@ export function knownPeople(
   return [...people.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * Who is in which group, as one string: equal for the same memberships in
+ * any order. A change means some group's calendars need fetching again (a new
+ * member's busy times are missing until then); anything else doesn't.
+ */
+export function membershipKey(
+  groups: { id: string; members: { profileId: string }[] }[] | undefined,
+): string {
+  return (groups ?? [])
+    .map(
+      (g) =>
+        `${g.id}:${g.members
+          .map((m) => m.profileId)
+          .sort()
+          .join(",")}`,
+    )
+    .sort()
+    .join(";");
+}
+
 /** Shaped like an email address: enough to catch a typo before asking the server. */
 export function looksLikeEmail(text: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text.trim());

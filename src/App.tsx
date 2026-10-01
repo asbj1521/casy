@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import RequireAuth from "@/components/RequireAuth";
 import WeakPasswordNotice from "@/components/WeakPasswordNotice";
 import { useAuth } from "@/context/auth";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import AuthProvider from "@/context/AuthProvider";
 import LanguageProvider from "@/i18n/LanguageProvider";
 import { persistQueries } from "@/lib/queryPersistence";
@@ -45,6 +46,12 @@ function Home() {
   return user ? <FindDate /> : <Landing />;
 }
 
+/** Keeps open pages up to date with what others do (useLiveUpdates). */
+function LiveUpdates() {
+  useLiveUpdates();
+  return null;
+}
+
 const queryClient = new QueryClient();
 // Last known groups, calendar status and admin flag, shown at once on load
 // and refreshed in the background (see queryPersistence.ts).
@@ -55,6 +62,7 @@ function App() {
     <LanguageProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <LiveUpdates />
           <BrowserRouter>
             {/* After signing in with a password that no longer meets the rules. */}
             <WeakPasswordNotice />

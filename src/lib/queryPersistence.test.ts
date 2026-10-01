@@ -48,14 +48,17 @@ describe("queryPersistence", () => {
     expect(localStorage.length).toBe(0);
   });
 
-  it("keeps the fetch time, so a restored answer is still refetched once stale", () => {
+  it("keeps the fetch time, but always fetches again on load, however recent", () => {
     const first = new QueryClient();
     persistQueries(first);
     first.setQueryData(["calendar-status", "u1"], [], { updatedAt: 1_000 });
 
+    // A reload one second later: still shown at once, but marked out of date.
     const next = new QueryClient();
     persistQueries(next, 2_000);
-    expect(next.getQueryState(["calendar-status", "u1"])?.dataUpdatedAt).toBe(1_000);
+    const state = next.getQueryState(["calendar-status", "u1"]);
+    expect(state?.dataUpdatedAt).toBe(1_000);
+    expect(state?.isInvalidated).toBe(true);
   });
 
   it("drops answers older than a week instead of showing them", () => {

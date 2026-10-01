@@ -161,6 +161,29 @@ export function invitationsQuery(userId: string) {
   });
 }
 
+/** How often an open page asks whether anything changed for you. */
+export const LIVE_POLL_MS = 5_000;
+
+/**
+ * A short fingerprint of everything that can change for you (groups,
+ * invitations, events and answers): different whenever any of it changed.
+ * Asked every few seconds while the page is visible, and at once when you
+ * come back to the tab; React Query pauses it while the tab is hidden.
+ */
+export function pulseQuery(userId: string) {
+  return queryOptions({
+    queryKey: ["pulse", userId],
+    queryFn: async (): Promise<string> => {
+      const body = await callFunction<{ pulse: string }>("groups", { body: { action: "pulse" } });
+      return body.pulse;
+    },
+    staleTime: 0,
+    refetchInterval: LIVE_POLL_MS,
+    // A missed beat is simply asked again on the next one.
+    retry: false,
+  });
+}
+
 /** Join the group you were invited to. */
 export async function acceptInvitation(
   groupId: string,
