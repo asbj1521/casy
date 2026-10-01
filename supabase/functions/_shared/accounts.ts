@@ -14,9 +14,7 @@
  * Should deleting the account fail after the groups were left, it can simply
  * be tried again: leaving is already done, and nothing else changed.
  */
-import type { supabaseAdmin } from "./supabaseAdmin.ts";
-
-type Db = ReturnType<typeof supabaseAdmin>;
+import type { Db } from "./supabaseAdmin.ts";
 
 export async function deleteAccount(
   db: Db,

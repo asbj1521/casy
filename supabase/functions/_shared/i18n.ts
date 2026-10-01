@@ -2,12 +2,12 @@
  * Danish for the errors people actually see.
  *
  * The site sends `?lang=da` or `?lang=en` with every call (src/lib/
- * supabaseFunctions.ts). Functions keep writing their errors in English;
- * `withLanguage` translates a failed response's `error` on its way out when
- * Danish was asked for. Messages meant for developers ("groupId is required")
- * are left out on purpose and pass through in English, as does anything not
- * listed here. A caller that sends no `lang` (the hourly cron, an older copy
- * of the site) gets English, exactly as before.
+ * supabaseFunctions.ts). Functions keep writing their errors in English, and
+ * http.ts translates each one as it answers when Danish was asked for.
+ * Messages meant for developers ("groupId is required") are left out on
+ * purpose and pass through in English, as does anything not listed here. A
+ * caller that sends no `lang` (the hourly cron, an older copy of the site)
+ * gets English.
  *
  * The keys must match the English text word for word: i18n_test.ts fails if
  * one no longer appears anywhere in the functions or migrations, so a
@@ -38,7 +38,6 @@ export const DANISH: Record<string, string> = {
   "That invite link is not valid.": "Invitationslinket er ikke gyldigt.",
   "That invite link has expired. Ask for a new one.":
     "Invitationslinket er udløbet. Bed om et nyt.",
-  "Invites are not set up yet.": "Invitationer er ikke sat op endnu.",
   "This group is full (20 members).": "Gruppen er fuld (20 medlemmer).",
   "You are already in 20 groups, which is the limit.":
     "Du er allerede med i 20 grupper, som er grænsen.",
@@ -67,31 +66,15 @@ export const DANISH: Record<string, string> = {
   // Accounts and admin
   "That account no longer exists.": "Kontoen findes ikke længere.",
   "That account isn't connected.": "Den konto er ikke forbundet.",
-  "Couldn't delete your account. Please try again.": "Kunne ikke slette din konto. Prøv igen.",
   "You can't delete your own account from admin mode.":
     "Du kan ikke slette din egen konto fra admin-tilstand.",
 
   // Calendars
   "Connection not found": "Forbindelsen blev ikke fundet",
   "Calendar not found": "Kalenderen blev ikke fundet",
-  "Query failed": "Forespørgslen fejlede",
-  "Lookup failed": "Opslaget fejlede",
-  "Update failed": "Opdateringen fejlede",
-  "Delete failed": "Sletningen fejlede",
-  "Couldn't save the calendar.": "Kunne ikke gemme kalenderen.",
-  "Couldn't save the calendars.": "Kunne ikke gemme kalenderne.",
   "Keep the name to 60 characters.": "Navnet må højst være 60 tegn.",
   "Casy can't add events to that calendar.": "Casy kan ikke lægge aftaler i den kalender.",
   "Choose a primary calendar first.": "Vælg en primær kalender først.",
-  "Syncing isn't set up on the server yet.": "Synkronisering er ikke sat op på serveren endnu.",
-  "Google connections aren't set up on the server yet.":
-    "Google-forbindelser er ikke sat op på serveren endnu.",
-  "Microsoft connections aren't set up on the server yet.":
-    "Microsoft-forbindelser er ikke sat op på serveren endnu.",
-  "Apple calendar connections aren't set up on the server yet.":
-    "Apple-kalenderforbindelser er ikke sat op på serveren endnu.",
-  "Calendar links aren't set up on the server yet.":
-    "Kalenderlinks er ikke sat op på serveren endnu.",
 
   // iCloud
   "Enter your iCloud email and your app-specific password.":
@@ -100,7 +83,6 @@ export const DANISH: Record<string, string> = {
     "Apple afviste den e-mail eller adgangskode. Brug en app-specifik adgangskode (ikke din Apple-id-adgangskode) sammen med det Apple-id, den hører til.",
   "That iCloud account has no calendars we can read.":
     "Den iCloud-konto har ingen kalendere, vi kan læse.",
-  "Couldn't read that iCloud account.": "Kunne ikke læse den iCloud-konto.",
   "Couldn't reach iCloud (network error or timeout).":
     "Kunne ikke nå iCloud (netværksfejl eller timeout).",
   "iCloud redirected too many times.": "iCloud viderestillede for mange gange.",
@@ -121,7 +103,6 @@ export const DANISH: Record<string, string> = {
     "Kunne ikke nå iCloud. Casy prøver igen inden for en time.",
 
   // Calendar links
-  "Couldn't read that calendar link.": "Kunne ikke læse det kalenderlink.",
   "That doesn't look like a valid link.": "Det ligner ikke et gyldigt link.",
   "That link doesn't look like a calendar feed (no VCALENDAR found).":
     "Det link ligner ikke en kalender (der er ingen VCALENDAR).",
@@ -162,31 +143,4 @@ export function translateError(message: string, lang: Lang): string {
     if (match) return render(...match.slice(1));
   }
   return message;
-}
-
-/**
- * Wrap a function's handler so a failed JSON response speaks the caller's
- * language. Successful responses, redirects and non-JSON bodies are passed on
- * untouched.
- */
-export function withLanguage(
-  handler: (req: Request) => Response | Promise<Response>,
-): (req: Request) => Promise<Response> {
-  return async (req) => {
-    const res = await handler(req);
-    const lang = langOf(req);
-    if (lang === "en" || res.status < 400) return res;
-    if (!res.headers.get("content-type")?.includes("application/json")) return res;
-    const body = await res
-      .clone()
-      .json()
-      .catch(() => null);
-    if (!body || typeof body.error !== "string") return res;
-    const error = translateError(body.error, lang);
-    if (error === body.error) return res;
-    return new Response(JSON.stringify({ ...body, error }), {
-      status: res.status,
-      headers: res.headers,
-    });
-  };
 }

@@ -7,17 +7,12 @@
  * Only what the app actually stores comes back: block timestamps, the
  * calendar's own name, its account, provider and category. There are no event
  * titles anywhere in this data by design (see the calendar_integrations
- * migration and each adapter), so none can leak from here.
- *
- * Called via fetch() from the SPA with the signed-in person's token, like
- * calendar-status, and answers only for them. RLS blocks direct table access,
- * so this service-role function is the read path. Never touches
+ * migration and each adapter), so none can leak from here. Never touches
  * calendar_secrets.
  */
-import { callerId } from "../_shared/auth.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { withLanguage } from "../_shared/i18n.ts";
+import { requireCaller } from "../_shared/auth.ts";
+import { readRange, serve } from "../_shared/http.ts";
+import { supabaseAdmin, type Db } from "../_shared/supabaseAdmin.ts";
 
 /** A calendar_sources row joined to its connection, as selected below. */
 interface SourceRow {
@@ -34,105 +29,35 @@ interface SourceRow {
     id: string;
     provider: string;
     account_label: string | null;
-    status: string;
-    profile_id: string;
   };
 }
 
-// A month grid needs 42 days; the scheduling page asks for its whole search
-// window, twelve months from the 1st of this one. MAX_PAGES still bounds the
-// response however busy the year is.
-const MAX_RANGE_DAYS = 400;
 const PAGE_SIZE = 1000; // PostgREST's default row cap per request
 const MAX_PAGES = 10; // stop at 10k blocks rather than build an unbounded response
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-Deno.serve(
-  withLanguage(async (req) => {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-    if (req.method !== "GET") {
-      return json({ error: "Use GET" }, 405);
-    }
-
+serve(
+  "calendar-busy",
+  async (req) => {
     const params = new URL(req.url).searchParams;
-    const from = new Date(params.get("from") ?? "");
-    const to = new Date(params.get("to") ?? "");
-    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to <= from) {
-      return json({ error: "from and to must be ISO timestamps with to after from" }, 400);
-    }
-    if (to.getTime() - from.getTime() > MAX_RANGE_DAYS * 86_400_000) {
-      return json({ error: `Range is limited to ${MAX_RANGE_DAYS} days` }, 400);
-    }
-
+    const { from, to } = readRange(params.get("from"), params.get("to"));
     const db = supabaseAdmin();
-    const profileId = await callerId(req, db);
-    if (!profileId) return json({ error: "Please sign in again." }, 401);
+    const { id: profileId } = await requireCaller(req, db);
 
-    // Reaches the blocks through a nested join on profile_id/status rather
-    // than by source id, so it can run alongside the sources query.
-    async function fetchBlocks(): Promise<{
-      blocks: { calendarId: string; start: string; end: string }[];
-      truncated: boolean;
-    }> {
-      const blocks: { calendarId: string; start: string; end: string }[] = [];
-      for (let page = 0; ; page++) {
-        if (page >= MAX_PAGES) return { blocks, truncated: true };
-        // Overlap test: a block belongs to the range if it starts before the
-        // range ends and ends after the range starts.
-        const { data, error } = await db
-          .from("calendar_busy_cache")
-          .select(
-            "source_id, start_at, end_at, calendar_sources!inner(calendar_connections!inner(profile_id, status))",
-          )
-          .eq("calendar_sources.calendar_connections.profile_id", profileId)
-          .eq("calendar_sources.calendar_connections.status", "connected")
-          .lt("start_at", to.toISOString())
-          .gt("end_at", from.toISOString())
-          .order("start_at", { ascending: true })
-          .order("id", { ascending: true }) // stable paging when start times tie
-          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-        if (error) throw error;
-        for (const r of data ?? []) {
-          blocks.push({ calendarId: r.source_id, start: r.start_at, end: r.end_at });
-        }
-        if ((data ?? []).length < PAGE_SIZE) return { blocks, truncated: false };
-      }
-    }
-
-    const [sourcesResult, blocksResult] = await Promise.allSettled([
+    const [sources, blocks] = await Promise.all([
       db
         .from("calendar_sources")
         .select(
-          "id, display_name, custom_name, writable, purpose, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label, status, profile_id)",
+          "id, display_name, custom_name, writable, purpose, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label)",
         )
         .eq("calendar_connections.profile_id", profileId)
         .eq("calendar_connections.status", "connected"),
-      fetchBlocks(),
+      fetchBlocks(db, profileId, from, to),
     ]);
-
-    if (sourcesResult.status === "rejected" || sourcesResult.value.error) {
-      console.error(
-        "calendar-busy sources query failed",
-        sourcesResult.status === "rejected" ? sourcesResult.reason : sourcesResult.value.error,
-      );
-      return json({ error: "Query failed" }, 500);
-    }
-    if (blocksResult.status === "rejected") {
-      console.error("calendar-busy blocks query failed", blocksResult.reason);
-      return json({ error: "Query failed" }, 500);
-    }
+    if (sources.error) throw sources.error;
 
     // `!inner` on a to-one join returns one connection, not the array the
     // untyped client assumes; hence the cast, as in the groups function.
-    const calendars = ((sourcesResult.value.data ?? []) as unknown as SourceRow[])
+    const calendars = ((sources.data ?? []) as unknown as SourceRow[])
       .map((s) => ({
         id: s.id,
         // The name its owner gave it wins; the provider's own name comes
@@ -149,7 +74,7 @@ Deno.serve(
         included: s.included,
         // Busy blocks stored for it over the whole synced range (a week back
         // to a year ahead), whatever range was asked for.
-        total: s.calendar_busy_cache?.[0]?.count ?? 0,
+        total: s.calendar_busy_cache[0]?.count ?? 0,
         provider: s.calendar_connections.provider,
         account: s.calendar_connections.account_label,
         connectionId: s.calendar_connections.id,
@@ -162,6 +87,37 @@ Deno.serve(
           (a.originalName ?? a.name).localeCompare(b.originalName ?? b.name),
       );
 
-    return json({ calendars, ...blocksResult.value });
-  }),
+    return { calendars, ...blocks };
+  },
+  "GET",
 );
+
+/**
+ * Every block of the caller's connected calendars that overlaps the range,
+ * a page at a time. Reached through a join on the owner rather than by source
+ * id, so it can run alongside the sources query.
+ */
+async function fetchBlocks(db: Db, profileId: string, from: Date, to: Date) {
+  const blocks: { calendarId: string; start: string; end: string }[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    // Overlap test: a block belongs to the range if it starts before the
+    // range ends and ends after the range starts.
+    const { data, error } = await db
+      .from("calendar_busy_cache")
+      .select(
+        "source_id, start_at, end_at, calendar_sources!inner(calendar_connections!inner(profile_id, status))",
+      )
+      .eq("calendar_sources.calendar_connections.profile_id", profileId)
+      .eq("calendar_sources.calendar_connections.status", "connected")
+      .lt("start_at", to.toISOString())
+      .gt("end_at", from.toISOString())
+      .order("start_at", { ascending: true })
+      .order("id", { ascending: true }) // stable paging when start times tie
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    if (error) throw error;
+    for (const r of data)
+      blocks.push({ calendarId: r.source_id, start: r.start_at, end: r.end_at });
+    if (data.length < PAGE_SIZE) return { blocks, truncated: false };
+  }
+  return { blocks, truncated: true };
+}

@@ -1,68 +1,84 @@
 /**
- * Thin wrappers over the three Google endpoints the Google adapter needs:
- * token exchange, listing calendars (names only), and free/busy. Kept
- * separate from the Edge Functions themselves so the same calls can be
- * reused by a future scheduled sync function, not just the OAuth callback.
+ * The Google side of a connected account: the consent screen, tokens, the
+ * calendar list (names only) and free/busy. The same shape as outlook.ts
+ * (OAuthAdapter in oauth.ts), so connecting and syncing treat both alike.
+ *
+ * Scopes are deliberately minimal: freebusy (busy/free intervals, never
+ * event titles) and calendarlist.readonly (calendar *names*, so each one can
+ * be given a category on My calendar).
  */
-
+import { requireEnv } from "./env.ts";
+import type { Lang } from "./i18n.ts";
+import type { RawBusyInterval } from "./intervals.ts";
+import type { AccountCalendars, OAuthTokens } from "./oauth.ts";
 import { isInvalidGrant, ReauthRequired } from "./reauth.ts";
 
+const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const CALENDAR_LIST_URL = "https://www.googleapis.com/calendar/v3/users/me/calendarList";
 const FREEBUSY_URL = "https://www.googleapis.com/calendar/v3/freeBusy";
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar.freebusy",
+  "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+].join(" ");
 
-export interface GoogleTokens {
-  access_token: string;
-  /** Only present on the first consent (or a forced re-consent). */
-  refresh_token?: string;
-  expires_in: number;
-  scope: string;
-  token_type: string;
+/** The app's OAuth client at Google, from the function's secrets. */
+function client() {
+  return {
+    client_id: requireEnv("GOOGLE_OAUTH_CLIENT_ID"),
+    client_secret: requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
+  };
 }
 
-export async function exchangeCodeForTokens(opts: {
-  code: string;
-  clientId: string;
-  clientSecret: string;
-  redirectUri: string;
-}): Promise<GoogleTokens> {
-  const res = await fetch(TOKEN_URL, {
+/** Google's consent screen, coming back to `redirectUri` with `state`. */
+export function consentUrl(redirectUri: string, state: string, lang: Lang): string {
+  const url = new URL(AUTH_URL);
+  url.search = new URLSearchParams({
+    client_id: client().client_id,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: SCOPES,
+    access_type: "offline", // needed to receive a refresh token
+    // consent guarantees a refresh token even on re-connect; select_account
+    // always shows Google's account chooser, so a second account can be added
+    // instead of Google silently reusing the one already signed in.
+    prompt: "select_account consent",
+    state,
+    hl: lang, // the consent screen in the site's language
+  }).toString();
+  return url.toString();
+}
+
+function tokenRequest(params: Record<string, string>): Promise<Response> {
+  return fetch(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code: opts.code,
-      client_id: opts.clientId,
-      client_secret: opts.clientSecret,
-      redirect_uri: opts.redirectUri,
-      grant_type: "authorization_code",
-    }),
+    body: new URLSearchParams({ ...client(), ...params }),
+  });
+}
+
+export async function exchangeCodeForTokens(
+  code: string,
+  redirectUri: string,
+): Promise<OAuthTokens> {
+  const res = await tokenRequest({
+    code,
+    redirect_uri: redirectUri,
+    grant_type: "authorization_code",
   });
   if (!res.ok) {
     throw new Error(`Google token exchange failed: ${res.status} ${await res.text()}`);
   }
-  return res.json();
+  return await res.json();
 }
 
 /**
  * Trade the stored refresh token for a fresh access token (they last an
- * hour). Throws ReauthRequired when Google refuses the refresh token itself,
- * which in Testing mode happens seven days after consent.
+ * hour). Throws ReauthRequired when Google refuses the refresh token itself:
+ * revoked by its owner, or expired.
  */
-export async function refreshAccessToken(opts: {
-  refreshToken: string;
-  clientId: string;
-  clientSecret: string;
-}): Promise<GoogleTokens> {
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      refresh_token: opts.refreshToken,
-      client_id: opts.clientId,
-      client_secret: opts.clientSecret,
-      grant_type: "refresh_token",
-    }),
-  });
+export async function refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
+  const res = await tokenRequest({ refresh_token: refreshToken, grant_type: "refresh_token" });
   if (!res.ok) {
     const body = await res.text();
     if (isInvalidGrant(res.status, body)) {
@@ -70,10 +86,10 @@ export async function refreshAccessToken(opts: {
     }
     throw new Error(`Google token refresh failed: ${res.status} ${body}`);
   }
-  return res.json();
+  return await res.json();
 }
 
-export interface GoogleCalendarListEntry {
+interface CalendarListEntry {
   id: string;
   summary: string;
   primary?: boolean;
@@ -87,16 +103,16 @@ export interface GoogleCalendarListEntry {
  * week-number column, so importing them would only add empty per-account
  * calendars to the list.
  */
-export function isGoogleBuiltInCalendar(id: string): boolean {
+function isGoogleBuiltInCalendar(id: string): boolean {
   return (
     id.endsWith("#holiday@group.v.calendar.google.com") ||
     id.endsWith("#weeknum@group.v.calendar.google.com")
   );
 }
 
-/** List the calendars this account can see: names and ids only, never events. */
-export async function listCalendars(accessToken: string): Promise<GoogleCalendarListEntry[]> {
-  const items: GoogleCalendarListEntry[] = [];
+/** The account's calendars: names and ids only, never events. */
+export async function listCalendars(accessToken: string): Promise<AccountCalendars> {
+  const items: CalendarListEntry[] = [];
   let pageToken: string | undefined;
   do {
     const url = new URL(CALENDAR_LIST_URL);
@@ -111,17 +127,17 @@ export async function listCalendars(accessToken: string): Promise<GoogleCalendar
     }
     const body = await res.json();
     items.push(
-      ...(body.items ?? []).filter((c: GoogleCalendarListEntry) => !isGoogleBuiltInCalendar(c.id)),
+      ...(body.items ?? []).filter((c: CalendarListEntry) => !isGoogleBuiltInCalendar(c.id)),
     );
     pageToken = body.nextPageToken;
   } while (pageToken);
-  return items;
-}
 
-/** One provider-agnostic busy interval, mirroring the frontend's BusyInterval shape. */
-export interface RawBusyInterval {
-  start: string;
-  end: string;
+  // The primary calendar's id is the account's own address.
+  const primary = items.find((c) => c.primary) ?? items[0];
+  return {
+    calendars: items.map((c) => ({ id: c.id, name: c.summary })),
+    accountLabel: primary?.id ?? null,
+  };
 }
 
 /**

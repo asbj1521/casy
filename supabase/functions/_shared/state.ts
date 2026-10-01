@@ -9,23 +9,9 @@
  * over the payload using a secret only our functions know. If it verifies,
  * it's ours; if the signature or the timestamp is stale, it's rejected.
  */
+import { decodeBase64Url, encodeBase64Url } from "jsr:@std/encoding@1/base64url";
 
 const encoder = new TextEncoder();
-
-function base64UrlEncode(bytes: Uint8Array): string {
-  let str = "";
-  for (const b of bytes) str += String.fromCharCode(b);
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function base64UrlDecode(str: string): Uint8Array<ArrayBuffer> {
-  const padded = str.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = padded.length % 4 === 0 ? "" : "=".repeat(4 - (padded.length % 4));
-  const bin = atob(padded + pad);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
 
 async function hmacKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey(
@@ -56,10 +42,9 @@ const MAX_STATE_AGE_MS = 10 * 60_000; // 10 minutes: long enough for a consent s
 
 /** Sign a state payload into the opaque string passed as the OAuth `state` param. */
 export async function signState(payload: OAuthStatePayload, secret: string): Promise<string> {
-  const body = base64UrlEncode(encoder.encode(JSON.stringify(payload)));
-  const key = await hmacKey(secret);
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
-  return `${body}.${base64UrlEncode(new Uint8Array(sig))}`;
+  const body = encodeBase64Url(JSON.stringify(payload));
+  const sig = await crypto.subtle.sign("HMAC", await hmacKey(secret), encoder.encode(body));
+  return `${body}.${encodeBase64Url(sig)}`;
 }
 
 /**
@@ -74,14 +59,13 @@ export async function verifyState(
   const parts = state.split(".");
   if (parts.length !== 2) return null;
   const [body, sig] = parts;
-
-  const key = await hmacKey(secret);
-  const valid = await crypto.subtle.verify("HMAC", key, base64UrlDecode(sig), encoder.encode(body));
-  if (!valid) return null;
-
   try {
+    const key = await hmacKey(secret);
+    if (!(await crypto.subtle.verify("HMAC", key, decodeBase64Url(sig), encoder.encode(body)))) {
+      return null;
+    }
     const payload = JSON.parse(
-      new TextDecoder().decode(base64UrlDecode(body)),
+      new TextDecoder().decode(decodeBase64Url(body)),
     ) as OAuthStatePayload;
     if (typeof payload.profileId !== "string" || typeof payload.ts !== "number") return null;
     if (Date.now() - payload.ts > MAX_STATE_AGE_MS) return null;

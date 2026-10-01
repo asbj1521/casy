@@ -99,7 +99,11 @@ Deno.test(
     const last = calls[calls.length - 1];
     assertEquals(last.table, "calendar_connections");
     assertEquals(last.op, "update");
-    assertEquals((last.payload as { status: string }).status, "connected");
+    assertEquals(last.payload as Record<string, unknown>, {
+      status: "connected",
+      account_label: "me@icloud.com",
+      last_synced_at: (last.payload as { last_synced_at: string }).last_synced_at,
+    });
   },
 );
 

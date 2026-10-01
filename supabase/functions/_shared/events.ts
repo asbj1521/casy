@@ -1,11 +1,13 @@
 /**
  * The rules for suggested events that are worth testing on their own: what
- * counts as valid search settings, and what counts as a sensible date.
+ * counts as valid search settings, what counts as a sensible date, and which
+ * of an event's dates is the one on offer.
  *
  * isEventSettings mirrors src/lib/eventSearch.ts, which the browser uses to
  * run the search. Edge Functions can't import from src/, so the shape is
  * written out twice; this copy is the one that decides what gets stored.
  */
+import { cleanText } from "./text.ts";
 
 /** Longest event title we keep, matching the check constraint on the table. */
 export const MAX_EVENT_TITLE_LENGTH = 60;
@@ -72,15 +74,21 @@ export function parseEventDate(
 
 /** An event title as it should be stored, or null if nothing is left of it. */
 export function cleanEventTitle(raw: unknown): string | null {
-  if (typeof raw !== "string") return null;
-  const title = Array.from(raw)
-    .filter((ch) => {
-      const code = ch.charCodeAt(0);
-      return code > 31 && code !== 127;
-    })
-    .join("")
-    .trim()
-    .slice(0, MAX_EVENT_TITLE_LENGTH)
-    .trim();
-  return title.length > 0 ? title : null;
+  return cleanText(raw, MAX_EVENT_TITLE_LENGTH);
+}
+
+/**
+ * The date on offer: the newest one nobody declined, as the database's
+ * event_current_date says. Null once every date was declined.
+ */
+export function currentDate<D extends { declined_at: string | null; created_at: string }>(
+  dates: D[],
+): D | null {
+  return dates
+    .filter((d) => d.declined_at === null)
+    .reduce<D | null>(
+      (newest, d) =>
+        !newest || Date.parse(d.created_at) > Date.parse(newest.created_at) ? d : newest,
+      null,
+    );
 }

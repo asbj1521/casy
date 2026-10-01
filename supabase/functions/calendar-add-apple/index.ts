@@ -1,9 +1,9 @@
 /**
  * Connect an iCloud account over CalDAV with an app-specific password.
  *
- * Like calendar-add-ics, the profile page POSTs here with fetch() (no browser
- * redirect dance), so this handles CORS and returns errors straight to the
- * form. Apple has no OAuth for calendars, hence the password.
+ * Like calendar-add-ics, the profile page POSTs here (no browser redirect
+ * dance), and errors go straight back to the form. Apple has no OAuth for
+ * calendars, hence the password.
  *
  * Flow: log in and discover every event calendar in the account, pull each
  * one's events as timing-only ICS, and reduce them to busy intervals with the
@@ -12,137 +12,84 @@
  * is encrypted (see _shared/secretBox.ts) before it is stored. Re-adding the
  * same account replaces the old connection and keeps its calendar categories.
  *
- * Called with the signed-in person's token; the account is stored as theirs.
+ * The account is stored as the signed-in caller's.
  */
-import { callerId } from "../_shared/auth.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-import { fetchAppleBusy, type AppleCalendarBusy } from "../_shared/appleBusy.ts";
+import { fetchAppleBusy } from "../_shared/appleBusy.ts";
+import { requireCaller } from "../_shared/auth.ts";
 import { CalDavError } from "../_shared/caldav.ts";
 import { pruneSupersededConnections } from "../_shared/connections.ts";
+import { HttpError, serve } from "../_shared/http.ts";
 import { encryptionKeyFromEnv, encryptSecret } from "../_shared/secretBox.ts";
 import { storeCalendars } from "../_shared/storeCalendars.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { withLanguage } from "../_shared/i18n.ts";
 import { syncWindow } from "../_shared/syncWindow.ts";
+import { stripControlChars } from "../_shared/text.ts";
+
 const MAX_FIELD_LENGTH = 254;
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+/** Trimmed text with nothing odd in it, or null. */
+function field(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const text = raw.trim();
+  return text && text.length <= MAX_FIELD_LENGTH && stripControlChars(text) === text ? text : null;
 }
 
-/** True for strings with no control characters (newlines, tabs, NUL, DEL, ...). */
-const isPlainText = (text: string) =>
-  Array.from(text).every((ch) => ch.charCodeAt(0) > 31 && ch.charCodeAt(0) !== 127);
+serve("calendar-add-apple", async (req, body) => {
+  // Checked before anything else, so no one can make us log in to iCloud
+  // with a password without being signed in themselves.
+  const db = supabaseAdmin();
+  const { id: profileId } = await requireCaller(req, db);
 
-Deno.serve(
-  withLanguage(async (req) => {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-    if (req.method !== "POST") {
-      return json({ error: "Use POST" }, 405);
-    }
+  const username = field(body.username);
+  // Apple shows app-specific passwords with dashes, and people paste stray spaces.
+  const password = field(body.password);
+  if (!username || !password) {
+    throw new HttpError(400, "Enter your iCloud email and your app-specific password.");
+  }
+  // Before contacting Apple: better an error than an unencrypted credential.
+  const key = encryptionKeyFromEnv();
 
-    // Checked before anything else, so no one can make us log in to iCloud
-    // with a password without being signed in themselves.
-    const db = supabaseAdmin();
-    const profileId = await callerId(req, db);
-    if (!profileId) return json({ error: "Please sign in again." }, 401);
+  // Everything that can fail because of the account happens before any write.
+  const { start, end } = syncWindow();
+  const fetched = await fetchAppleBusy({ username, password }, start, end).catch((err) => {
+    throw err instanceof CalDavError ? new HttpError(400, err.message) : err;
+  });
+  if (fetched.calendars.length === 0) {
+    throw new HttpError(400, "That iCloud account has no calendars we can read.");
+  }
 
-    let payload: { username?: unknown; password?: unknown };
-    try {
-      payload = await req.json();
-    } catch {
-      return json({ error: "Body must be JSON" }, 400);
-    }
-    const { username: rawUsername, password: rawPassword } = payload;
-    if (typeof rawUsername !== "string" || typeof rawPassword !== "string") {
-      return json({ error: "username and password are required" }, 400);
-    }
-    const username = rawUsername.trim();
-    // Apple shows app-specific passwords with dashes and people paste stray spaces.
-    const password = rawPassword.trim();
-    if (
-      !username ||
-      !password ||
-      username.length > MAX_FIELD_LENGTH ||
-      password.length > MAX_FIELD_LENGTH ||
-      !isPlainText(username) ||
-      !isPlainText(password)
-    ) {
-      return json({ error: "Enter your iCloud email and your app-specific password." }, 400);
-    }
+  const { connectionId } = await storeCalendars(db, {
+    profileId,
+    provider: "apple",
+    accountLabel: username,
+    secrets: {
+      caldav_username: username,
+      caldav_password: await encryptSecret(password, key),
+    },
+    calendars: fetched.calendars.map((c) => ({
+      externalId: c.id,
+      displayName: c.name,
+      writable: c.writable,
+      intervals: c.intervals,
+    })),
+  });
 
-    // Refuse up front, before contacting Apple, if there is nowhere safe to keep
-    // the password: better an error than an unencrypted credential.
-    let encryptionKey: string;
-    try {
-      encryptionKey = encryptionKeyFromEnv();
-    } catch (err) {
-      console.error("calendar-add-apple is not configured", err);
-      return json({ error: "Apple calendar connections aren't set up on the server yet." }, 500);
-    }
+  // Same account added before: the new connection supersedes it (and failed
+  // attempts), carrying over any work/school labels. Never throws.
+  await pruneSupersededConnections(db, {
+    profileId,
+    provider: "apple",
+    keepId: connectionId,
+    accountLabel: username,
+  });
 
-    // Everything that can fail because of the account happens before any write.
-    const creds = { username, password };
-    const { start: windowStart, end: windowEnd } = syncWindow();
-    let fetched: AppleCalendarBusy[];
-    let skippedEvents: number;
-    try {
-      const result = await fetchAppleBusy(creds, windowStart, windowEnd);
-      fetched = result.calendars;
-      // A subscription whose feed failed has nothing stored yet; it is reported
-      // with the unreadable events and filled in by a later sync.
-      skippedEvents = result.skippedEvents + result.failedFeeds.length;
-      if (fetched.length === 0) {
-        return json({ error: "That iCloud account has no calendars we can read." }, 400);
-      }
-    } catch (err) {
-      if (err instanceof CalDavError) return json({ error: err.message }, 400);
-      console.error("calendar-add-apple unexpected failure before writing", err);
-      return json({ error: "Couldn't read that iCloud account." }, 500);
-    }
-
-    let connectionId: string;
-    try {
-      ({ connectionId } = await storeCalendars(db, {
-        profileId,
-        provider: "apple",
-        accountLabel: username,
-        secrets: {
-          caldav_username: username,
-          caldav_password: await encryptSecret(password, encryptionKey),
-        },
-        calendars: fetched.map((c) => ({
-          externalId: c.id,
-          displayName: c.name,
-          writable: c.writable,
-          intervals: c.intervals,
-        })),
-      }));
-    } catch (err) {
-      console.error("calendar-add-apple failed while saving", err);
-      return json({ error: "Couldn't save the calendars." }, 500);
-    }
-
-    // Same account added before: the new connection supersedes it (and failed
-    // attempts), carrying over any work/school labels. Never throws.
-    await pruneSupersededConnections(db, {
-      profileId,
-      provider: "apple",
-      keepId: connectionId,
-      accountLabel: username,
-    });
-
-    return json({
-      connectionId,
-      label: username,
-      calendars: fetched.length,
-      busyBlocks: fetched.reduce((sum, c) => sum + c.intervals.length, 0),
-      skippedEvents,
-    });
-  }),
-);
+  return {
+    connectionId,
+    label: username,
+    calendars: fetched.calendars.length,
+    busyBlocks: fetched.calendars.reduce((sum, c) => sum + c.intervals.length, 0),
+    // A subscription whose feed failed has nothing stored yet; it is reported
+    // with the unreadable events and filled in by a later sync.
+    skippedEvents: fetched.skippedEvents + fetched.failedFeeds.length,
+  };
+});

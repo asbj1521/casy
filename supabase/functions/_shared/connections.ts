@@ -10,7 +10,7 @@
  * connection's calendars are carried over to the new one, matched by the
  * provider's calendar id.
  */
-import type { supabaseAdmin } from "./supabaseAdmin.ts";
+import type { Db } from "./supabaseAdmin.ts";
 
 // A row left 'pending' this long is a callback that died mid-flight (edge
 // function timeout or crash), not one still running. Anything younger might
@@ -25,7 +25,7 @@ const STALE_PENDING_MS = 10 * 60_000;
  * nuisance, not a reason to fail.
  */
 export async function carryOverPurposes(
-  db: ReturnType<typeof supabaseAdmin>,
+  db: Db,
   fromConnectionIds: string[],
   toConnectionId: string,
 ): Promise<void> {
@@ -81,7 +81,7 @@ export async function carryOverPurposes(
  * successful connect into an error, so it just logs.
  */
 export async function pruneSupersededConnections(
-  db: ReturnType<typeof supabaseAdmin>,
+  db: Db,
   opts: {
     profileId: string;
     provider: "google" | "outlook" | "apple";
@@ -175,7 +175,7 @@ export function isRepeatedCallback(opts: {
  * the original is still fetching calendars and hasn't reached `connected` yet.
  */
 export async function discardIfRepeatedCallback(
-  db: ReturnType<typeof supabaseAdmin>,
+  db: Db,
   opts: {
     connection: { id: string; created_at: string };
     profileId: string;

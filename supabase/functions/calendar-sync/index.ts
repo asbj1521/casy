@@ -19,16 +19,12 @@
  * failed try, or an event completed by someone leaving its group), and
  * cancelled ones still to be taken out.
  */
-import { callerId } from "../_shared/auth.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { requireCaller } from "../_shared/auth.ts";
+import { catchUpWrites } from "../_shared/calendarWrites.ts";
+import { afterResponse, HttpError, json, serve } from "../_shared/http.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
-import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { syncConnection, type SyncOutcome, type SyncTarget } from "../_shared/sync.ts";
-import { processWrites, queueAutoAdds, type WriteScope } from "../_shared/calendarWrites.ts";
-import { withLanguage } from "../_shared/i18n.ts";
-
-/** Supabase's edge runtime: keeps the function alive for work after the response. */
-declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
 /** Stop starting new syncs after this long; the runtime's own limit is higher. */
 const SCHEDULED_BUDGET_MS = 100_000;
@@ -36,13 +32,8 @@ const SCHEDULED_BUDGET_MS = 100_000;
 const SCHEDULED_BATCH = 200;
 /** "Sync now" leaves an account alone if it was tried this recently. */
 const MANUAL_COOLDOWN_MS = 60_000;
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
+/** How long "Sync now" gives the calendar writes, after its answer has gone. */
+const MANUAL_WRITES_BUDGET_MS = 30_000;
 
 /** Compare secrets without leaking, through timing, how much of a guess was right. */
 function sameSecret(a: string, b: string): boolean {
@@ -53,103 +44,57 @@ function sameSecret(a: string, b: string): boolean {
   return diff === 0;
 }
 
-Deno.serve(
-  withLanguage(async (req) => {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-    if (req.method !== "POST") {
-      return json({ error: "Use POST" }, 405);
-    }
+serve("calendar-sync", async (req) => {
+  const key = encryptionKeyFromEnv();
+  const db = supabaseAdmin();
 
-    let encryptionKey: string;
-    try {
-      encryptionKey = encryptionKeyFromEnv();
-    } catch (err) {
-      console.error("calendar-sync is not configured", err);
-      return json({ error: "Syncing isn't set up on the server yet." }, 500);
-    }
-    const db = supabaseAdmin();
-
-    // --- The scheduler -------------------------------------------------------
-    const presented = req.headers.get("x-sync-secret");
-    if (presented !== null) {
-      const expected = Deno.env.get("CALENDAR_SYNC_SECRET");
-      if (!expected || !sameSecret(presented, expected)) {
-        return json({ error: "Not allowed" }, 401);
-      }
-      const { data, error } = await db
-        .from("calendar_connections")
-        .select("id, provider")
-        .eq("status", "connected")
-        .order("last_sync_attempt_at", { ascending: true, nullsFirst: true })
-        .limit(SCHEDULED_BATCH);
-      if (error) {
-        console.error("calendar-sync could not list connections", error);
-        return json({ error: "Query failed" }, 500);
-      }
-      const targets = (data ?? []) as SyncTarget[];
-      EdgeRuntime.waitUntil(runScheduled(db, targets, encryptionKey));
-      return json({ queued: targets.length }, 202);
-    }
-
-    // --- A signed-in person's "Sync now" ---------------------------------------
-    const profileId = await callerId(req, db);
-    if (!profileId) return json({ error: "Please sign in again." }, 401);
-
+  // --- The scheduler ---------------------------------------------------------
+  const presented = req.headers.get("x-sync-secret");
+  if (presented !== null) {
+    const expected = Deno.env.get("CALENDAR_SYNC_SECRET");
+    if (!expected || !sameSecret(presented, expected)) throw new HttpError(401, "Not allowed");
     const { data, error } = await db
       .from("calendar_connections")
-      .select("id, provider, last_sync_attempt_at")
-      .eq("profile_id", profileId)
-      .eq("status", "connected");
-    if (error) {
-      console.error("calendar-sync could not list the caller's connections", error);
-      return json({ error: "Query failed" }, 500);
-    }
-    const cutoff = Date.now() - MANUAL_COOLDOWN_MS;
-    const due = (data ?? []).filter(
-      (c: { last_sync_attempt_at: string | null }) =>
-        !c.last_sync_attempt_at || Date.parse(c.last_sync_attempt_at) < cutoff,
-    ) as SyncTarget[];
-
-    // One at a time: a person has a handful of accounts, and running them in
-    // parallel would only risk tripping a provider's rate limit.
-    const results: SyncOutcome[] = [];
-    for (const target of due) results.push(await syncConnection(db, target, encryptionKey));
-    EdgeRuntime.waitUntil(catchUpWrites(db, encryptionKey, { profileId }, 30_000));
-    return json({ results, skipped: (data ?? []).length - due.length });
-  }),
-);
-
-/** Queue missed automatic adds and retry calendar writes. Never throws. */
-async function catchUpWrites(
-  db: ReturnType<typeof supabaseAdmin>,
-  encryptionKey: string,
-  scope: WriteScope,
-  budgetMs: number,
-): Promise<void> {
-  try {
-    const queued = await queueAutoAdds(db, scope);
-    const { done, failed } = await processWrites(db, encryptionKey, scope, { budgetMs });
-    if (queued || done || failed) {
-      console.log(`calendar writes: ${queued} queued, ${done} done, ${failed} failed`);
-    }
-  } catch (err) {
-    console.error("calendar write catch-up failed", err);
+      .select("id, provider")
+      .eq("status", "connected")
+      .order("last_sync_attempt_at", { ascending: true, nullsFirst: true })
+      .limit(SCHEDULED_BATCH);
+    if (error) throw error;
+    const targets = data as SyncTarget[];
+    afterResponse("scheduled sync", () => runScheduled(db, targets, key));
+    return json({ queued: targets.length }, 202);
   }
-}
 
-async function runScheduled(
-  db: ReturnType<typeof supabaseAdmin>,
-  targets: SyncTarget[],
-  encryptionKey: string,
-): Promise<void> {
+  // --- A signed-in person's "Sync now" ---------------------------------------
+  const { id: profileId } = await requireCaller(req, db);
+  const { data, error } = await db
+    .from("calendar_connections")
+    .select("id, provider, last_sync_attempt_at")
+    .eq("profile_id", profileId)
+    .eq("status", "connected");
+  if (error) throw error;
+  const cutoff = Date.now() - MANUAL_COOLDOWN_MS;
+  const due = data.filter(
+    (c) => !c.last_sync_attempt_at || Date.parse(c.last_sync_attempt_at) < cutoff,
+  ) as SyncTarget[];
+
+  // One at a time: a person has a handful of accounts, and running them in
+  // parallel would only risk tripping a provider's rate limit.
+  const results: SyncOutcome[] = [];
+  for (const target of due) results.push(await syncConnection(db, target, key));
+  afterResponse("calendar writes after Sync now", () =>
+    catchUpWrites(db, key, { profileId }, MANUAL_WRITES_BUDGET_MS),
+  );
+  return { results, skipped: data.length - due.length };
+});
+
+async function runScheduled(db: Db, targets: SyncTarget[], key: string): Promise<void> {
   const started = Date.now();
   let ok = 0;
   let failed = 0;
   for (const target of targets) {
     if (Date.now() - started > SCHEDULED_BUDGET_MS) break;
-    const outcome = await syncConnection(db, target, encryptionKey);
+    const outcome = await syncConnection(db, target, key);
     if (outcome.ok) ok++;
     else failed++;
   }
@@ -157,10 +102,5 @@ async function runScheduled(
     `scheduled sync: ${ok} ok, ${failed} failed, ${targets.length - ok - failed} left for next run`,
   );
   // Busy times first; calendar writes get what is left of the budget.
-  await catchUpWrites(
-    db,
-    encryptionKey,
-    {},
-    Math.max(10_000, SCHEDULED_BUDGET_MS - (Date.now() - started)),
-  );
+  await catchUpWrites(db, key, {}, Math.max(10_000, SCHEDULED_BUDGET_MS - (Date.now() - started)));
 }

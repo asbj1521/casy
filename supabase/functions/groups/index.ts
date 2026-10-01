@@ -20,8 +20,7 @@
  * and busy time ranges. Never an email address, never a calendar's name,
  * never an event title (none are stored anywhere, see the calendar tables).
  */
-import { callerUser } from "../_shared/auth.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { type Caller, requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
 import {
   cleanDisplayName,
@@ -29,50 +28,36 @@ import {
   displayNameFor,
   INVITE_LIFETIME_MS,
   inviteUrl,
+  isMember,
   looksLikeInviteToken,
   newInviteToken,
-  type NameableUser,
+  requireMember,
 } from "../_shared/groups.ts";
+import { afterResponse, HttpError, readRange, requireString, serve } from "../_shared/http.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
-import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { withLanguage } from "../_shared/i18n.ts";
+import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 
-type Db = ReturnType<typeof supabaseAdmin>;
-
-/** Supabase's edge runtime: keeps the function alive for work after the response. */
-declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
-
-/** Same cap as calendar-busy: a month grid needs 42 days, the search a year. */
-const MAX_RANGE_DAYS = 400;
 const PAGE_SIZE = 1000; // PostgREST's default row cap per request
 const MAX_PAGES = 20; // a whole group's year, bounded
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
 
 /**
  * Remember what the caller is called, from their own verified login.
  *
  * This is how a member list can say "Simon": names live in auth.users, which
  * group queries can't join to, so each person's name is copied into `profiles`
- * whenever they use the app. Failing to write it is not worth failing the
- * request over; the worst case is a slightly stale name.
+ * whenever they use the app.
  *
  * Goes through the remember_login_name function rather than a plain upsert
  * because it has to back off once someone has chosen their own name: a plain
  * upsert would stomp a custom name right back to the login-derived one on the
  * very next call.
  */
-async function rememberName(db: Db, user: NameableUser & { id: string }): Promise<void> {
+async function rememberName(db: Db, caller: Caller): Promise<void> {
   const { error } = await db.rpc("remember_login_name", {
-    p_id: user.id,
-    p_display_name: displayNameFor(user),
+    p_id: caller.id,
+    p_display_name: displayNameFor(caller),
   });
-  if (error) console.error("remember_login_name failed", error);
+  if (error) throw error;
 }
 
 /**
@@ -101,9 +86,9 @@ async function listGroups(db: Db, profileId: string, callerName: string) {
 
   // A to-one embed comes back as a single row, which the untyped client
   // can't know; hence the cast.
-  const groups = ((mine ?? []) as unknown as Row[])
+  const groups = (mine as unknown as Row[])
     .map((r) => r.friend_groups)
-    .filter((g): g is NonNullable<Row["friend_groups"]> => !!g)
+    .filter((g) => g !== null)
     .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
   if (groups.length === 0) return [];
 
@@ -111,29 +96,18 @@ async function listGroups(db: Db, profileId: string, callerName: string) {
   // they have chosen a custom name, that is what they should see themself
   // called, the same as everyone else does.
   const memberIds = [...new Set(groups.flatMap((g) => g.group_members.map((m) => m.profile_id)))];
-  const nameById = new Map<string, string | null>();
-  const customById = new Map<string, boolean>();
-  if (memberIds.length > 0) {
-    const { data: names, error: namesErr } = await db
-      .from("profiles")
-      .select("id, display_name, name_is_custom")
-      .in("id", memberIds);
-    if (namesErr) throw namesErr;
-    for (const p of (names ?? []) as {
-      id: string;
-      display_name: string | null;
-      name_is_custom: boolean;
-    }[]) {
-      nameById.set(p.id, p.display_name);
-      customById.set(p.id, p.name_is_custom);
-    }
-  }
+  const { data: names, error: namesErr } = await db
+    .from("profiles")
+    .select("id, display_name, name_is_custom")
+    .in("id", memberIds);
+  if (namesErr) throw namesErr;
+  const profileOf = new Map(names.map((p) => [p.id, p]));
 
   // The caller's own login-derived name (callerName) is fresher than
   // whatever rememberName last saved, so it wins unless a custom name is on
-  // file — that one only a deliberate "set-name" call can produce.
-  const ownName =
-    customById.get(profileId) && nameById.get(profileId) ? nameById.get(profileId)! : callerName;
+  // file: that one only a deliberate "set-name" call can produce.
+  const own = profileOf.get(profileId);
+  const ownName = own?.name_is_custom && own.display_name ? own.display_name : callerName;
 
   return groups.map((g) => ({
     id: g.id,
@@ -147,7 +121,10 @@ async function listGroups(db: Db, profileId: string, callerName: string) {
       .sort((a, b) => Date.parse(a.joined_at) - Date.parse(b.joined_at))
       .map((m) => ({
         profileId: m.profile_id,
-        name: m.profile_id === profileId ? ownName : (nameById.get(m.profile_id) ?? "Someone"),
+        name:
+          m.profile_id === profileId
+            ? ownName
+            : (profileOf.get(m.profile_id)?.display_name ?? "Someone"),
         isYou: m.profile_id === profileId,
         joinedAt: m.joined_at,
       })),
@@ -165,16 +142,22 @@ async function resolveOwnName(db: Db, profileId: string, callerName: string): Pr
   return data?.name_is_custom && data.display_name ? data.display_name : callerName;
 }
 
-/** True if this person is in this group. Checked before every group action. */
-async function isMember(db: Db, groupId: string, profileId: string): Promise<boolean> {
-  const { data, error } = await db
-    .from("group_members")
-    .select("profile_id")
-    .eq("group_id", groupId)
-    .eq("profile_id", profileId)
+/** The live invite behind a link, with its group; refused if it never was one or has expired. */
+async function findInvite(db: Db, token: unknown) {
+  if (!looksLikeInviteToken(token)) throw new HttpError(400, "That invite link is not valid.");
+  const { data: invite, error } = await db
+    .from("group_invites")
+    .select("group_id, expires_at, friend_groups!inner(name)")
+    .eq("token_hash", await lookupHash(token, encryptionKeyFromEnv()))
     .maybeSingle();
   if (error) throw error;
-  return !!data;
+  if (!invite) throw new HttpError(404, "That invite link is not valid.");
+  if (Date.parse(invite.expires_at) <= Date.now()) {
+    throw new HttpError(410, "That invite link has expired. Ask for a new one.");
+  }
+  // A to-one embed, which the untyped client takes for a list.
+  const group = invite.friend_groups as unknown as { name: string };
+  return { groupId: invite.group_id as string, groupName: group.name };
 }
 
 /**
@@ -185,9 +168,6 @@ async function isMember(db: Db, groupId: string, profileId: string): Promise<boo
  * are busy, never that it was "Work" or "Dentist".
  */
 async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
-  const busyByMember = new Map<string, { start: string; end: string }[]>();
-  for (const id of memberIds) busyByMember.set(id, []);
-
   const { data: sources, error: sourcesErr } = await db
     .from("calendar_sources")
     .select("id, purpose, priority, calendar_connections!inner(profile_id, status)")
@@ -201,21 +181,32 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
     id: string;
     purpose: string | null;
     priority: string;
-    calendar_connections: { profile_id: string; status: string };
+    calendar_connections: { profile_id: string };
   };
-  const ownerOf = new Map<string, string>();
-  const purposeOf = new Map<string, string | null>();
-  const priorityOf = new Map<string, string>();
-  // The generated row type describes the joined connection as an array (it is
-  // a to-many relationship in general); `!inner` on a to-one join makes it a
-  // single row, which only a cast can say.
-  for (const s of (sources ?? []) as unknown as SourceRow[]) {
-    ownerOf.set(s.id, s.calendar_connections.profile_id);
-    purposeOf.set(s.id, s.purpose);
-    priorityOf.set(s.id, s.priority);
-  }
+  // What each block carries besides its times, from its calendar. Work and
+  // school are the "soft" kinds the multi-day rules treat as time you could
+  // take off, and a priority says whether its owner would skip it ("skip")
+  // or never would ("never"); both are left out when they don't apply. Like
+  // this, a block says how much it matters, never what it is.
+  const sourceById = new Map(
+    // `!inner` on a to-one join makes the connection a single row, which
+    // only a cast can say.
+    (sources as unknown as SourceRow[]).map((s) => [
+      s.id,
+      {
+        owner: s.calendar_connections.profile_id,
+        tags: {
+          ...(s.purpose === "work" || s.purpose === "school" ? { category: s.purpose } : {}),
+          ...(s.priority === "skip" || s.priority === "never" ? { priority: s.priority } : {}),
+        },
+      },
+    ]),
+  );
 
-  const sourceIds = [...ownerOf.keys()];
+  const busyByMember = new Map<string, { start: string; end: string }[]>(
+    memberIds.map((id) => [id, []]),
+  );
+  const sourceIds = [...sourceById.keys()];
   let truncated = false;
   if (sourceIds.length > 0) {
     // Overlap test: a block is in range if it starts before the range ends
@@ -235,42 +226,24 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
     // other page can be asked for at once instead of one after another.
     const first = await fetchPage(0, true);
     if (first.error) throw first.error;
-    const total = first.count ?? (first.data ?? []).length;
-    const pagesNeeded = Math.ceil(total / PAGE_SIZE);
+    const pagesNeeded = Math.ceil((first.count ?? first.data.length) / PAGE_SIZE);
     truncated = pagesNeeded > MAX_PAGES;
     const extraPages = Math.max(0, Math.min(pagesNeeded, MAX_PAGES) - 1);
     const rest = await Promise.all(Array.from({ length: extraPages }, (_, i) => fetchPage(i + 1)));
-    const rows = [first, ...rest].flatMap((res) => {
-      if (res.error) throw res.error;
-      return res.data ?? [];
-    });
-
-    for (const r of rows) {
-      const owner = ownerOf.get(r.source_id);
-      if (!owner) continue;
-      busyByMember.get(owner)?.push({
-        start: r.start_at,
-        end: r.end_at,
-        // Work and school are the "soft" kinds the multi-day rules treat as
-        // time you could take off; everything else is simply busy. The label
-        // is the category, not the calendar's name.
-        ...(purposeOf.get(r.source_id) === "work" || purposeOf.get(r.source_id) === "school"
-          ? { category: purposeOf.get(r.source_id) }
-          : {}),
-        // Whether its owner would skip it ("skip") or never would ("never");
-        // left out when normal. Like the category, it says how much the
-        // block matters, never what it is.
-        ...(priorityOf.get(r.source_id) === "skip" || priorityOf.get(r.source_id) === "never"
-          ? { priority: priorityOf.get(r.source_id) }
-          : {}),
-      });
+    for (const page of [first, ...rest]) {
+      if (page.error) throw page.error;
+      for (const r of page.data) {
+        const source = sourceById.get(r.source_id);
+        if (!source) continue;
+        busyByMember.get(source.owner)?.push({ start: r.start_at, end: r.end_at, ...source.tags });
+      }
     }
   }
 
   // Who has actually linked something: a member with no calendar reads as
   // free all year, which the page must be able to say out loud rather than
   // quietly counting them as available.
-  const hasCalendar = new Set([...ownerOf.values()]);
+  const hasCalendar = new Set([...sourceById.values()].map((s) => s.owner));
   return {
     busy: Object.fromEntries(busyByMember),
     connected: Object.fromEntries(memberIds.map((id) => [id, hasCalendar.has(id)])),
@@ -278,288 +251,183 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
   };
 }
 
-Deno.serve(
-  withLanguage(async (req) => {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-    if (req.method !== "POST") {
-      return json({ error: "Use POST" }, 405);
+serve("groups", async (req, body) => {
+  const action = requireString(body, "action");
+  const db = supabaseAdmin();
+
+  // Previewing an invite is the one thing that happens before signing in:
+  // the link itself is the only thing proving you were meant to see it.
+  if (action === "preview") {
+    const { groupId, groupName } = await findInvite(db, body.token);
+    const { count, error } = await db
+      .from("group_members")
+      .select("profile_id", { count: "exact", head: true })
+      .eq("group_id", groupId);
+    if (error) throw error;
+    return { group: { id: groupId, name: groupName, memberCount: count ?? 0 } };
+  }
+
+  const caller = await requireCaller(req, db);
+  const profileId = caller.id;
+  const callerName = displayNameFor(caller);
+  // Saved in the background: nothing below waits on it, since the caller's
+  // own name is taken straight from their login wherever it is shown. The
+  // worst a failure does is leave a slightly stale name.
+  afterResponse("remember_login_name", () => rememberName(db, caller));
+  const list = async () => ({ groups: await listGroups(db, profileId, callerName) });
+
+  switch (action) {
+    case "list":
+      return await list();
+
+    case "whoami":
+      return { name: await resolveOwnName(db, profileId, callerName) };
+
+    case "set-name": {
+      const name = cleanDisplayName(body.name);
+      if (!name) throw new HttpError(400, "Give yourself a name.");
+      const { error } = await db.from("profiles").upsert(
+        {
+          id: profileId,
+          display_name: name,
+          name_is_custom: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" },
+      );
+      if (error) throw error;
+      return { name };
     }
 
-    let payload: Record<string, unknown>;
-    try {
-      payload = await req.json();
-    } catch {
-      return json({ error: "Body must be JSON" }, 400);
-    }
-    const action = payload.action;
-    if (typeof action !== "string") return json({ error: "action is required" }, 400);
+    case "create": {
+      const name = cleanGroupName(body.name);
+      if (!name) throw new HttpError(400, "Give the group a name.");
+      const { data: group, error: groupErr } = await db
+        .from("friend_groups")
+        .insert({ name, created_by: profileId })
+        .select("id")
+        .single();
+      if (groupErr) throw groupErr;
 
-    const db = supabaseAdmin();
-
-    // Previewing an invite is the one thing that happens before signing in:
-    // the link itself is the only thing proving you were meant to see it.
-    if (action === "preview") {
-      if (!looksLikeInviteToken(payload.token)) {
-        return json({ error: "That invite link is not valid." }, 400);
-      }
-      let hash: string;
-      try {
-        hash = await lookupHash(payload.token, encryptionKeyFromEnv());
-      } catch (err) {
-        console.error("groups is not configured", err);
-        return json({ error: "Invites are not set up yet." }, 500);
-      }
-      const { data: invite, error } = await db
-        .from("group_invites")
-        .select("group_id, expires_at, friend_groups!inner(id, name)")
-        .eq("token_hash", hash)
-        .maybeSingle();
-      if (error) {
-        console.error("groups preview query failed", error);
-        return json({ error: "Query failed" }, 500);
-      }
-      if (!invite) return json({ error: "That invite link is not valid." }, 404);
-      if (new Date(invite.expires_at) <= new Date()) {
-        return json({ error: "That invite link has expired. Ask for a new one." }, 410);
-      }
-      const { count } = await db
+      // The creator is simply its first member; nothing else marks them out.
+      const { error: memberErr } = await db
         .from("group_members")
-        .select("profile_id", { count: "exact", head: true })
-        .eq("group_id", invite.group_id);
-      const group = invite.friend_groups as unknown as { id: string; name: string };
-      return json({ group: { id: group.id, name: group.name, memberCount: count ?? 0 } });
-    }
-
-    const caller = await callerUser(req, db);
-    if (!caller) return json({ error: "Please sign in again." }, 401);
-    const profileId = caller.id;
-    const callerName = displayNameFor(caller);
-    // Saved in the background: nothing below waits on it, since the caller's
-    // own name is taken straight from their login wherever it is shown.
-    EdgeRuntime.waitUntil(rememberName(db, caller));
-
-    try {
-      switch (action) {
-        case "list": {
-          return json({ groups: await listGroups(db, profileId, callerName) });
-        }
-
-        case "whoami": {
-          return json({ name: await resolveOwnName(db, profileId, callerName) });
-        }
-
-        case "set-name": {
-          const name = cleanDisplayName(payload.name);
-          if (!name) return json({ error: "Give yourself a name." }, 400);
-
-          const { error: nameErr } = await db.from("profiles").upsert(
-            {
-              id: profileId,
-              display_name: name,
-              name_is_custom: true,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "id" },
-          );
-          if (nameErr) throw nameErr;
-          return json({ name });
-        }
-
-        case "create": {
-          const name = cleanGroupName(payload.name);
-          if (!name) return json({ error: "Give the group a name." }, 400);
-
-          const { data: group, error: groupErr } = await db
-            .from("friend_groups")
-            .insert({ name, created_by: profileId })
-            .select("id")
-            .single();
-          if (groupErr) throw groupErr;
-
-          // The creator is simply its first member; nothing else marks them out.
-          const { error: memberErr } = await db
-            .from("group_members")
-            .insert({ group_id: group.id, profile_id: profileId });
-          if (memberErr) {
-            // The limit trigger refused, so undo the group rather than leave one
-            // nobody is in.
-            await db.from("friend_groups").delete().eq("id", group.id);
-            return json({ error: memberErr.message }, 400);
-          }
-          return json({ groups: await listGroups(db, profileId, callerName), createdId: group.id });
-        }
-
-        case "rename": {
-          const groupId = payload.groupId;
-          if (typeof groupId !== "string") return json({ error: "groupId is required" }, 400);
-          const name = cleanGroupName(payload.name);
-          if (!name) return json({ error: "Give the group a name." }, 400);
-
-          // Any member may rename, the same as inviting: it is a shared label
-          // for the group, not something only its creator should control.
-          if (!(await isMember(db, groupId, profileId))) {
-            return json({ error: "You are not in that group." }, 403);
-          }
-
-          const { error: renameErr } = await db
-            .from("friend_groups")
-            .update({ name })
-            .eq("id", groupId);
-          if (renameErr) throw renameErr;
-          return json({ groups: await listGroups(db, profileId, callerName) });
-        }
-
-        case "invite": {
-          const groupId = payload.groupId;
-          if (typeof groupId !== "string") return json({ error: "groupId is required" }, 400);
-          // Any member may invite, which was a deliberate choice: asking the
-          // group's creator to hand out every link is a bottleneck, not a
-          // safeguard.
-          if (!(await isMember(db, groupId, profileId))) {
-            return json({ error: "You are not in that group." }, 403);
-          }
-
-          let key: string;
-          try {
-            key = encryptionKeyFromEnv();
-          } catch (err) {
-            console.error("groups is not configured", err);
-            return json({ error: "Invites are not set up yet." }, 500);
-          }
-
-          // A new link every time this is pressed, and every unexpired link for
-          // the group keeps working. That falls out of storing only a
-          // fingerprint: nothing can turn a stored hash back into a link, so an
-          // earlier one can't be handed out again — and replacing it would
-          // quietly break the link already sent to someone else.
-          //
-          // Old links are left to expire on their own. Each is reusable by any
-          // number of people for its seven days, so this is a handful of rows
-          // per group, not a stream of them.
-          const freshToken = newInviteToken();
-          const origin = pickFrontend(req.headers.get("Origin"), allowedFrontends());
-          const expiresAt = new Date(Date.now() + INVITE_LIFETIME_MS).toISOString();
-          const { error: inviteErr } = await db.from("group_invites").insert({
-            group_id: groupId,
-            token_hash: await lookupHash(freshToken, key),
-            created_by: profileId,
-            expires_at: expiresAt,
-          });
-          if (inviteErr) throw inviteErr;
-
-          return json({ url: inviteUrl(origin, freshToken), expiresAt });
-        }
-
-        case "join": {
-          if (!looksLikeInviteToken(payload.token)) {
-            return json({ error: "That invite link is not valid." }, 400);
-          }
-          let hash: string;
-          try {
-            hash = await lookupHash(payload.token, encryptionKeyFromEnv());
-          } catch (err) {
-            console.error("groups is not configured", err);
-            return json({ error: "Invites are not set up yet." }, 500);
-          }
-          const { data: invite, error: inviteErr } = await db
-            .from("group_invites")
-            .select("group_id, expires_at")
-            .eq("token_hash", hash)
-            .maybeSingle();
-          if (inviteErr) throw inviteErr;
-          if (!invite) return json({ error: "That invite link is not valid." }, 404);
-          if (new Date(invite.expires_at) <= new Date()) {
-            return json({ error: "That invite link has expired. Ask for a new one." }, 410);
-          }
-
-          // Already in it: say so plainly instead of failing on the primary key.
-          if (!(await isMember(db, invite.group_id, profileId))) {
-            const { error: joinErr } = await db
-              .from("group_members")
-              .insert({ group_id: invite.group_id, profile_id: profileId });
-            if (joinErr) return json({ error: joinErr.message }, 400);
-          }
-          return json({
-            groups: await listGroups(db, profileId, callerName),
-            joinedId: invite.group_id,
-          });
-        }
-
-        case "leave": {
-          const groupId = payload.groupId;
-          if (typeof groupId !== "string") return json({ error: "groupId is required" }, 400);
-          // The database decides whether that was the last member, and deletes
-          // the group with them if so (leave_friend_group, one transaction).
-          const { data: outcome, error } = await db.rpc("leave_friend_group", {
-            p_group_id: groupId,
-            p_profile_id: profileId,
-          });
-          if (error) throw error;
-          if (outcome === "not_a_member") {
-            return json({ error: "You are not in that group." }, 403);
-          }
-          return json({ groups: await listGroups(db, profileId, callerName), outcome });
-        }
-
-        case "delete": {
-          const groupId = payload.groupId;
-          if (typeof groupId !== "string") return json({ error: "groupId is required" }, 400);
-
-          // Only the person who made the group may delete it outright — the one
-          // power `created_by` actually grants. Everyone else's way out is
-          // "leave", which only removes themself.
-          const { data: group, error: groupErr } = await db
-            .from("friend_groups")
-            .select("id, created_by")
-            .eq("id", groupId)
-            .maybeSingle();
-          if (groupErr) throw groupErr;
-          if (!group) return json({ error: "That group no longer exists." }, 404);
-          if (group.created_by !== profileId) {
-            return json({ error: "Only the person who made this group can delete it." }, 403);
-          }
-
-          // group_members and group_invites cascade off this delete (see the
-          // friend_groups migration's foreign keys), so nothing else to clean up.
-          const { error: deleteErr } = await db.from("friend_groups").delete().eq("id", groupId);
-          if (deleteErr) throw deleteErr;
-          return json({ groups: await listGroups(db, profileId, callerName), outcome: "deleted" });
-        }
-
-        case "busy": {
-          const groupId = payload.groupId;
-          if (typeof groupId !== "string") return json({ error: "groupId is required" }, 400);
-          const from = new Date(String(payload.from ?? ""));
-          const to = new Date(String(payload.to ?? ""));
-          if (isNaN(from.getTime()) || isNaN(to.getTime()) || to <= from) {
-            return json({ error: "from and to must be ISO timestamps with to after from" }, 400);
-          }
-          if (to.getTime() - from.getTime() > MAX_RANGE_DAYS * 86_400_000) {
-            return json({ error: `Range is limited to ${MAX_RANGE_DAYS} days` }, 400);
-          }
-          // Only a member may read a group's availability, and the membership
-          // check is what decides it: holding the group's id proves nothing.
-          // One query answers both "who is in it" and "is the caller in it".
-          const { data: members, error: membersErr } = await db
-            .from("group_members")
-            .select("profile_id")
-            .eq("group_id", groupId);
-          if (membersErr) throw membersErr;
-          const memberIds = (members ?? []).map((m: { profile_id: string }) => m.profile_id);
-          if (!memberIds.includes(profileId)) {
-            return json({ error: "You are not in that group." }, 403);
-          }
-          return json(await groupBusy(db, memberIds, from, to));
-        }
-
-        default:
-          return json({ error: `Unknown action "${action}"` }, 400);
+        .insert({ group_id: group.id, profile_id: profileId });
+      if (memberErr) {
+        // The limit trigger refused, so undo the group rather than leave one
+        // nobody is in.
+        await db.from("friend_groups").delete().eq("id", group.id);
+        throw new HttpError(400, memberErr.message);
       }
-    } catch (err) {
-      console.error(`groups ${action} failed`, err);
-      return json({ error: "Something went wrong. Please try again." }, 500);
+      return { ...(await list()), createdId: group.id };
     }
-  }),
-);
+
+    case "rename": {
+      const groupId = requireString(body, "groupId");
+      const name = cleanGroupName(body.name);
+      if (!name) throw new HttpError(400, "Give the group a name.");
+      // Any member may rename, the same as inviting: it is a shared label
+      // for the group, not something only its creator should control.
+      await requireMember(db, groupId, profileId);
+      const { error } = await db.from("friend_groups").update({ name }).eq("id", groupId);
+      if (error) throw error;
+      return await list();
+    }
+
+    case "invite": {
+      const groupId = requireString(body, "groupId");
+      // Any member may invite, which was a deliberate choice: asking the
+      // group's creator to hand out every link is a bottleneck, not a
+      // safeguard.
+      await requireMember(db, groupId, profileId);
+
+      // A new link every time this is pressed, and every unexpired link for
+      // the group keeps working. That falls out of storing only a
+      // fingerprint: nothing can turn a stored hash back into a link, so an
+      // earlier one can't be handed out again, and replacing it would
+      // quietly break the link already sent to someone else.
+      //
+      // Old links are left to expire on their own. Each is reusable by any
+      // number of people for its seven days, so this is a handful of rows
+      // per group, not a stream of them.
+      const token = newInviteToken();
+      const expiresAt = new Date(Date.now() + INVITE_LIFETIME_MS).toISOString();
+      const { error } = await db.from("group_invites").insert({
+        group_id: groupId,
+        token_hash: await lookupHash(token, encryptionKeyFromEnv()),
+        created_by: profileId,
+        expires_at: expiresAt,
+      });
+      if (error) throw error;
+      const origin = pickFrontend(req.headers.get("Origin"), allowedFrontends());
+      return { url: inviteUrl(origin, token), expiresAt };
+    }
+
+    case "join": {
+      const { groupId } = await findInvite(db, body.token);
+      // Already in it: nothing to do, rather than failing on the primary key
+      // (or on the member limit, if the group is full with them in it).
+      if (!(await isMember(db, groupId, profileId))) {
+        const { error } = await db
+          .from("group_members")
+          .insert({ group_id: groupId, profile_id: profileId });
+        if (error) throw new HttpError(400, error.message);
+      }
+      return { ...(await list()), joinedId: groupId };
+    }
+
+    case "leave": {
+      const groupId = requireString(body, "groupId");
+      // The database decides whether that was the last member, and deletes
+      // the group with them if so (leave_friend_group, one transaction).
+      const { data: outcome, error } = await db.rpc("leave_friend_group", {
+        p_group_id: groupId,
+        p_profile_id: profileId,
+      });
+      if (error) throw error;
+      if (outcome === "not_a_member") throw new HttpError(403, "You are not in that group.");
+      return { ...(await list()), outcome };
+    }
+
+    case "delete": {
+      const groupId = requireString(body, "groupId");
+      // Only the person who made the group may delete it outright: the one
+      // power `created_by` actually grants. Everyone else's way out is
+      // "leave", which only removes themself.
+      const { data: group, error: groupErr } = await db
+        .from("friend_groups")
+        .select("created_by")
+        .eq("id", groupId)
+        .maybeSingle();
+      if (groupErr) throw groupErr;
+      if (!group) throw new HttpError(404, "That group no longer exists.");
+      if (group.created_by !== profileId) {
+        throw new HttpError(403, "Only the person who made this group can delete it.");
+      }
+      // group_members and group_invites cascade off this delete (see the
+      // friend_groups migration's foreign keys), so nothing else to clean up.
+      const { error } = await db.from("friend_groups").delete().eq("id", groupId);
+      if (error) throw error;
+      return { ...(await list()), outcome: "deleted" };
+    }
+
+    case "busy": {
+      const groupId = requireString(body, "groupId");
+      const { from, to } = readRange(body.from, body.to);
+      // Only a member may read a group's availability, and the membership
+      // check is what decides it: holding the group's id proves nothing.
+      // One query answers both "who is in it" and "is the caller in it".
+      const { data: members, error } = await db
+        .from("group_members")
+        .select("profile_id")
+        .eq("group_id", groupId);
+      if (error) throw error;
+      const memberIds = members.map((m) => m.profile_id);
+      if (!memberIds.includes(profileId)) throw new HttpError(403, "You are not in that group.");
+      return await groupBusy(db, memberIds, from, to);
+    }
+
+    default:
+      throw new HttpError(400, `Unknown action "${action}"`);
+  }
+});

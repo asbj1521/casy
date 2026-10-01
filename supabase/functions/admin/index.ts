@@ -18,30 +18,20 @@
  * about an event.
  */
 import { isAdminId } from "../_shared/admin.ts";
-import { callerUser } from "../_shared/auth.ts";
 import { deleteAccount } from "../_shared/accounts.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { requireCaller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
+import { HttpError, requireString, serve } from "../_shared/http.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
-import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 // Only the type here. The sync code itself (with ical.js and an XML parser
-// behind it) is imported inside "syncConnection", so the everyday calls,
+// behind it) is imported inside the sync actions, so the everyday calls,
 // "status" above all, don't pay for loading it on a cold start.
 import type { SyncTarget } from "../_shared/sync.ts";
-import { withLanguage } from "../_shared/i18n.ts";
-
-type Db = ReturnType<typeof supabaseAdmin>;
 
 /** Auth's admin API pages users; this many per page, this many pages at most. */
 const USERS_PER_PAGE = 1000;
 const MAX_USER_PAGES = 10;
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
 
 interface AuthUserRow {
   id: string;
@@ -189,160 +179,111 @@ async function overview(db: Db) {
   };
 }
 
-Deno.serve(
-  withLanguage(async (req) => {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
+serve("admin", async (req, body) => {
+  const action = requireString(body, "action");
+  const db = supabaseAdmin();
+  const caller = await requireCaller(req, db);
+  const isAdmin = isAdminId(caller.id, Deno.env.get("ADMIN_USER_IDS"));
+
+  if (action === "status") return { isAdmin };
+  if (!isAdmin) throw new HttpError(403, "Admins only.");
+
+  switch (action) {
+    case "overview":
+      return await overview(db);
+
+    case "deleteGroup": {
+      const groupId = requireString(body, "groupId");
+      // Members and invites cascade off the group (friend_groups migration).
+      const { data, error } = await db
+        .from("friend_groups")
+        .delete()
+        .eq("id", groupId)
+        .select("name");
+      if (error) throw error;
+      if (data.length === 0) throw new HttpError(404, "That group no longer exists.");
+      console.log(`admin ${caller.id} deleted group ${groupId} ("${data[0].name}")`);
+      return { outcome: "deleted" };
     }
-    if (req.method !== "POST") {
-      return json({ error: "Use POST" }, 405);
+
+    case "removeMember": {
+      const groupId = requireString(body, "groupId");
+      const profileId = requireString(body, "profileId");
+      // The same transaction as leaving, so removing the last member deletes
+      // the group rather than leaving an empty one nobody can reach.
+      const { data: outcome, error } = await db.rpc("leave_friend_group", {
+        p_group_id: groupId,
+        p_profile_id: profileId,
+      });
+      if (error) throw error;
+      if (outcome === "not_a_member") throw new HttpError(404, "They are not in that group.");
+      console.log(`admin ${caller.id} removed ${profileId} from group ${groupId}: ${outcome}`);
+      return { outcome };
     }
 
-    let payload: Record<string, unknown>;
-    try {
-      payload = await req.json();
-    } catch {
-      return json({ error: "Body must be JSON" }, 400);
-    }
-    const action = payload.action;
-    if (typeof action !== "string") return json({ error: "action is required" }, 400);
-
-    const db = supabaseAdmin();
-    const caller = await callerUser(req, db);
-    if (!caller) return json({ error: "Please sign in again." }, 401);
-    const isAdmin = isAdminId(caller.id, Deno.env.get("ADMIN_USER_IDS"));
-
-    if (action === "status") return json({ isAdmin });
-    if (!isAdmin) return json({ error: "Admins only." }, 403);
-
-    try {
-      switch (action) {
-        case "overview": {
-          return json(await overview(db));
-        }
-
-        case "deleteGroup": {
-          const groupId = payload.groupId;
-          if (typeof groupId !== "string") return json({ error: "groupId is required" }, 400);
-          // Members and invites cascade off the group (friend_groups migration).
-          const { data, error } = await db
-            .from("friend_groups")
-            .delete()
-            .eq("id", groupId)
-            .select("id, name");
-          if (error) throw error;
-          if (!data || data.length === 0)
-            return json({ error: "That group no longer exists." }, 404);
-          console.log(`admin ${caller.id} deleted group ${groupId} ("${data[0].name}")`);
-          return json({ outcome: "deleted" });
-        }
-
-        case "removeMember": {
-          const { groupId, profileId } = payload;
-          if (typeof groupId !== "string" || typeof profileId !== "string") {
-            return json({ error: "groupId and profileId are required" }, 400);
-          }
-          // The same transaction as leaving, so removing the last member deletes
-          // the group rather than leaving an empty one nobody can reach.
-          const { data: outcome, error } = await db.rpc("leave_friend_group", {
-            p_group_id: groupId,
-            p_profile_id: profileId,
-          });
-          if (error) throw error;
-          if (outcome === "not_a_member")
-            return json({ error: "They are not in that group." }, 404);
-          console.log(`admin ${caller.id} removed ${profileId} from group ${groupId}: ${outcome}`);
-          return json({ outcome });
-        }
-
-        case "deleteUser": {
-          const profileId = payload.profileId;
-          if (typeof profileId !== "string") return json({ error: "profileId is required" }, 400);
-          // Deleting yourself from here would be an accident, never the intent.
-          if (profileId === caller.id) {
-            return json({ error: "You can't delete your own account from admin mode." }, 400);
-          }
-          const { data: found, error: findErr } = await db.auth.admin.getUserById(profileId);
-          if (findErr || !found?.user)
-            return json({ error: "That account no longer exists." }, 404);
-
-          // The same as someone deleting their own account (_shared/accounts.ts).
-          const { leftGroups, deletedGroups } = await deleteAccount(db, profileId);
-          console.log(
-            `admin ${caller.id} deleted user ${profileId}; left ${leftGroups} groups, ${deletedGroups} deleted as empty`,
-          );
-          return json({ outcome: "deleted", leftGroups, deletedGroups });
-        }
-
-        case "syncConnection": {
-          const connectionId = payload.connectionId;
-          if (typeof connectionId !== "string")
-            return json({ error: "connectionId is required" }, 400);
-          const { data: target, error } = await db
-            .from("calendar_connections")
-            .select("id, provider, status")
-            .eq("id", connectionId)
-            .maybeSingle();
-          if (error) throw error;
-          if (!target) return json({ error: "That account no longer exists." }, 404);
-          if (target.status !== "connected")
-            return json({ error: "That account isn't connected." }, 400);
-          let key: string;
-          try {
-            key = encryptionKeyFromEnv();
-          } catch (err) {
-            console.error("admin sync is not configured", err);
-            return json({ error: "Syncing isn't set up on the server yet." }, 500);
-          }
-          console.log(`admin ${caller.id} re-synced connection ${connectionId}`);
-          const { syncConnection } = await import("../_shared/sync.ts");
-          // Never throws; the outcome is recorded on the connection either way.
-          return json(await syncConnection(db, target as SyncTarget, key));
-        }
-
-        case "syncUser": {
-          // Every connected account of one person, like their own "Sync now"
-          // but without its cooldown: an admin asking means now.
-          const profileId = payload.userId;
-          if (typeof profileId !== "string") return json({ error: "userId is required" }, 400);
-          const { data: targets, error } = await db
-            .from("calendar_connections")
-            .select("id, provider")
-            .eq("profile_id", profileId)
-            .eq("status", "connected");
-          if (error) throw error;
-          let key: string;
-          try {
-            key = encryptionKeyFromEnv();
-          } catch (err) {
-            console.error("admin sync is not configured", err);
-            return json({ error: "Syncing isn't set up on the server yet." }, 500);
-          }
-          const { syncConnection } = await import("../_shared/sync.ts");
-          let synced = 0;
-          let failed = 0;
-          let busyBlocks = 0;
-          // One at a time, as the person's own sync does: a handful of
-          // accounts, and parallel calls only risk a provider's rate limit.
-          for (const target of (targets ?? []) as SyncTarget[]) {
-            const outcome = await syncConnection(db, target, key);
-            if (outcome.ok) {
-              synced++;
-              busyBlocks += outcome.busyBlocks;
-            } else failed++;
-          }
-          console.log(
-            `admin ${caller.id} re-synced user ${profileId}: ${synced} ok, ${failed} failed`,
-          );
-          return json({ synced, failed, busyBlocks });
-        }
-
-        default:
-          return json({ error: `Unknown action "${action}"` }, 400);
+    case "deleteUser": {
+      const profileId = requireString(body, "profileId");
+      // Deleting yourself from here would be an accident, never the intent.
+      if (profileId === caller.id) {
+        throw new HttpError(400, "You can't delete your own account from admin mode.");
       }
-    } catch (err) {
-      console.error(`admin ${action} failed`, err);
-      return json({ error: "Something went wrong. Please try again." }, 500);
+      const { data: found, error } = await db.auth.admin.getUserById(profileId);
+      if (error || !found.user) throw new HttpError(404, "That account no longer exists.");
+
+      // The same as someone deleting their own account (_shared/accounts.ts).
+      const { leftGroups, deletedGroups } = await deleteAccount(db, profileId);
+      console.log(
+        `admin ${caller.id} deleted user ${profileId}; left ${leftGroups} groups, ${deletedGroups} deleted as empty`,
+      );
+      return { outcome: "deleted", leftGroups, deletedGroups };
     }
-  }),
-);
+
+    case "syncConnection": {
+      const connectionId = requireString(body, "connectionId");
+      const { data: target, error } = await db
+        .from("calendar_connections")
+        .select("id, provider, status")
+        .eq("id", connectionId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!target) throw new HttpError(404, "That account no longer exists.");
+      if (target.status !== "connected") throw new HttpError(400, "That account isn't connected.");
+      const key = encryptionKeyFromEnv();
+      console.log(`admin ${caller.id} re-synced connection ${connectionId}`);
+      const { syncConnection } = await import("../_shared/sync.ts");
+      // Never throws; the outcome is recorded on the connection either way.
+      return await syncConnection(db, target as SyncTarget, key);
+    }
+
+    case "syncUser": {
+      // Every connected account of one person, like their own "Sync now"
+      // but without its cooldown: an admin asking means now.
+      const profileId = requireString(body, "userId");
+      const { data: targets, error } = await db
+        .from("calendar_connections")
+        .select("id, provider")
+        .eq("profile_id", profileId)
+        .eq("status", "connected");
+      if (error) throw error;
+      const key = encryptionKeyFromEnv();
+      const { syncConnection } = await import("../_shared/sync.ts");
+      let synced = 0;
+      let failed = 0;
+      let busyBlocks = 0;
+      // One at a time, as the person's own sync does: a handful of
+      // accounts, and parallel calls only risk a provider's rate limit.
+      for (const target of targets as SyncTarget[]) {
+        const outcome = await syncConnection(db, target, key);
+        if (outcome.ok) {
+          synced++;
+          busyBlocks += outcome.busyBlocks;
+        } else failed++;
+      }
+      console.log(`admin ${caller.id} re-synced user ${profileId}: ${synced} ok, ${failed} failed`);
+      return { synced, failed, busyBlocks };
+    }
+
+    default:
+      throw new HttpError(400, `Unknown action "${action}"`);
+  }
+});

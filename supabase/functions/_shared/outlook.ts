@@ -1,8 +1,10 @@
 /**
- * Thin wrappers over the Microsoft endpoints the Outlook adapter needs:
- * token exchange, listing calendars (names only), and busy intervals. Same
- * exported shape as _shared/google.ts so the OAuth callbacks read alike, and
- * so a future scheduled sync function can reuse these calls.
+ * The Microsoft side of a connected account: the consent screen, tokens, the
+ * calendar list (names only) and busy intervals. The same shape as google.ts
+ * (OAuthAdapter in oauth.ts), so connecting and syncing treat both alike.
+ *
+ * Uses the `common` tenant, so both work/school (Entra ID) and personal
+ * (Outlook.com / Hotmail) accounts can sign in.
  *
  * Why calendarView and not getSchedule (the obvious "free/busy" endpoint):
  * delegated getSchedule is documented as unsupported for personal Microsoft
@@ -24,13 +26,15 @@
  * but the account type isn't known until after sign-in, so one scope set has
  * to serve both.
  */
-
+import { requireEnv } from "./env.ts";
+import type { Lang } from "./i18n.ts";
 import { mergeIntervals, type RawBusyInterval } from "./intervals.ts";
+import type { AccountCalendars, OAuthTokens } from "./oauth.ts";
 import { isInvalidGrant, ReauthRequired } from "./reauth.ts";
 import { DEFAULT_ZONE, wallClockToUtc } from "./timezones.ts";
 
+const AUTHORIZE_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
 const TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-export const AUTHORIZE_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
 const GRAPH_URL = "https://graph.microsoft.com/v1.0";
 
 /**
@@ -43,43 +47,57 @@ const GRAPH_URL = "https://graph.microsoft.com/v1.0";
  * calendar scope got 401 UnknownError from Graph on every endpoint, including
  * /me, until User.Read was also consented.
  */
-export const SCOPES = [
+const SCOPES = [
   "offline_access",
   "https://graph.microsoft.com/Calendars.Read",
   "https://graph.microsoft.com/User.Read",
 ].join(" ");
 
-export interface OutlookTokens {
-  access_token: string;
-  /** Only present because offline_access was requested. */
-  refresh_token?: string;
-  expires_in: number;
-  scope: string;
-  token_type: string;
+/** The app's OAuth client at Microsoft, from the function's secrets. */
+function client() {
+  return {
+    client_id: requireEnv("MICROSOFT_OAUTH_CLIENT_ID"),
+    client_secret: requireEnv("MICROSOFT_OAUTH_CLIENT_SECRET"),
+  };
 }
 
-export async function exchangeCodeForTokens(opts: {
-  code: string;
-  clientId: string;
-  clientSecret: string;
-  redirectUri: string;
-}): Promise<OutlookTokens> {
-  const res = await fetch(TOKEN_URL, {
+/** Microsoft's sign-in and consent, coming back to `redirectUri` with `state`. */
+export function consentUrl(redirectUri: string, state: string, lang: Lang): string {
+  const url = new URL(AUTHORIZE_URL);
+  url.search = new URLSearchParams({
+    client_id: client().client_id,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    response_mode: "query",
+    scope: SCOPES, // includes offline_access, which is what yields a refresh token
+    prompt: "select_account", // someone with several Microsoft accounts picks one, also on reconnect
+    state,
+    ui_locales: lang, // the sign-in in the site's language
+  }).toString();
+  return url.toString();
+}
+
+function tokenRequest(params: Record<string, string>): Promise<Response> {
+  return fetch(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code: opts.code,
-      client_id: opts.clientId,
-      client_secret: opts.clientSecret,
-      redirect_uri: opts.redirectUri,
-      grant_type: "authorization_code",
-      scope: SCOPES,
-    }),
+    body: new URLSearchParams({ ...client(), scope: SCOPES, ...params }),
+  });
+}
+
+export async function exchangeCodeForTokens(
+  code: string,
+  redirectUri: string,
+): Promise<OAuthTokens> {
+  const res = await tokenRequest({
+    code,
+    redirect_uri: redirectUri,
+    grant_type: "authorization_code",
   });
   if (!res.ok) {
     throw new Error(`Microsoft token exchange failed: ${res.status} ${await res.text()}`);
   }
-  return res.json();
+  return await res.json();
 }
 
 /**
@@ -88,22 +106,8 @@ export async function exchangeCodeForTokens(opts: {
  * working, so the caller must store the replacement. Throws ReauthRequired
  * when Microsoft refuses the refresh token itself.
  */
-export async function refreshAccessToken(opts: {
-  refreshToken: string;
-  clientId: string;
-  clientSecret: string;
-}): Promise<OutlookTokens> {
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      refresh_token: opts.refreshToken,
-      client_id: opts.clientId,
-      client_secret: opts.clientSecret,
-      grant_type: "refresh_token",
-      scope: SCOPES,
-    }),
-  });
+export async function refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
+  const res = await tokenRequest({ refresh_token: refreshToken, grant_type: "refresh_token" });
   if (!res.ok) {
     const body = await res.text();
     if (isInvalidGrant(res.status, body)) {
@@ -111,7 +115,7 @@ export async function refreshAccessToken(opts: {
     }
     throw new Error(`Microsoft token refresh failed: ${res.status} ${body}`);
   }
-  return res.json();
+  return await res.json();
 }
 
 /** The shape of a paged Graph collection response. */
@@ -159,24 +163,30 @@ async function graphGet<T>(accessToken: string, url: string): Promise<T> {
   }
 }
 
-export interface OutlookCalendarListEntry {
+interface CalendarListEntry {
   id: string;
   name: string;
   isDefaultCalendar?: boolean;
   owner?: { name?: string; address?: string } | null;
 }
 
-/** List the calendars this account can see: names and ids only, never events. */
-export async function listCalendars(accessToken: string): Promise<OutlookCalendarListEntry[]> {
-  const items: OutlookCalendarListEntry[] = [];
+/** The account's calendars: names and ids only, never events. */
+export async function listCalendars(accessToken: string): Promise<AccountCalendars> {
+  const items: CalendarListEntry[] = [];
   let next: string | undefined =
     `${GRAPH_URL}/me/calendars?$select=id,name,isDefaultCalendar,owner&$top=100`;
   while (next) {
-    const body: GraphList<OutlookCalendarListEntry> = await graphGet(accessToken, next);
+    const body: GraphList<CalendarListEntry> = await graphGet(accessToken, next);
     items.push(...(body.value ?? []));
     next = body["@odata.nextLink"];
   }
-  return items;
+  // The default calendar's owner is the account itself, which gives its
+  // address without a separate /me call.
+  const primary = items.find((c) => c.isDefaultCalendar) ?? items[0];
+  return {
+    calendars: items.map((c) => ({ id: c.id, name: c.name })),
+    accountLabel: primary?.owner?.address ?? primary?.name ?? null,
+  };
 }
 
 // Only these count as "busy". free and workingElsewhere leave you available;
@@ -261,7 +271,7 @@ async function queryCalendarChunk(
 
 /**
  * Busy intervals for a set of calendars over one range, keyed by calendar id.
- * Same signature and return shape as the Google adapter's queryFreeBusy.
+ * The same signature and return shape as Google's queryFreeBusy.
  *
  * Calendars are queried sequentially rather than in parallel: Outlook limits
  * concurrent requests per mailbox (documented as 4), and throttling costs

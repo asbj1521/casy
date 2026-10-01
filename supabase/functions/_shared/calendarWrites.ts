@@ -9,9 +9,9 @@
  *    (a cancel). These only write rows.
  *  - processWrites carries out whatever rows are left to do: it logs in to
  *    iCloud once per account, finds the calendar, and PUTs or DELETEs.
- *  - The events function runs both at once; the hourly sync runs them again
- *    for anything that failed or was missed (someone leaving a group can
- *    complete an event, for instance).
+ *  - catchUpWrites does both: the events function after each change, once its
+ *    answer has gone, and the hourly sync for anything that failed or was
+ *    missed (someone leaving a group can complete an event, for instance).
  *
  * Only iCloud calendars can be written to so far. Every write is keyed by the
  * event (eventResourceName), and iCloud is told never to overwrite, so a retry
@@ -29,17 +29,11 @@ import {
   discoverCalendars,
   putEvent,
 } from "./caldav.ts";
-import {
-  type AgreedEvent,
-  buildEventIcs,
-  eventResourceName,
-  eventUid,
-  type IcsLang,
-} from "./eventIcs.ts";
+import { type AgreedEvent, buildEventIcs, eventResourceName, eventUid } from "./eventIcs.ts";
+import { currentDate } from "./events.ts";
+import type { Lang } from "./i18n.ts";
 import { decryptSecret } from "./secretBox.ts";
-import type { supabaseAdmin } from "./supabaseAdmin.ts";
-
-type Db = ReturnType<typeof supabaseAdmin>;
+import type { Db } from "./supabaseAdmin.ts";
 
 /** Failed tries before a write is left alone; the person can still click again. */
 export const MAX_ATTEMPTS = 6;
@@ -219,9 +213,7 @@ export async function markGoneEntries(
   };
   const rows = (data ?? []) as unknown as Row[];
   const entries = rows.map((r) => {
-    const current = r.event_proposals.event_proposal_dates
-      .filter((d) => d.declined_at === null)
-      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+    const current = currentDate(r.event_proposals.event_proposal_dates);
     return {
       proposal_id: r.proposal_id,
       updated_at: r.updated_at,
@@ -310,9 +302,7 @@ export async function queueAutoAdds(db: Db, scope: WriteScope, now = Date.now())
   };
   // Upcoming only: the current date (newest not declined) hasn't ended.
   const upcoming = ((invites ?? []) as unknown as Invite[]).filter((i) => {
-    const current = i.event_proposals.event_proposal_dates
-      .filter((d) => d.declined_at === null)
-      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+    const current = currentDate(i.event_proposals.event_proposal_dates);
     return !!current && Date.parse(current.ends_at) > now;
   });
   if (upcoming.length === 0) return 0;
@@ -344,6 +334,23 @@ export async function queueAutoAdds(db: Db, scope: WriteScope, now = Date.now())
     .upsert(rows, { onConflict: "proposal_id,profile_id", ignoreDuplicates: true });
   if (error) throw error;
   return rows.length;
+}
+
+/**
+ * Bring the calendars in `scope` in line: queue the automatic adds it calls
+ * for, then carry out every write still to do, within `budgetMs`.
+ */
+export async function catchUpWrites(
+  db: Db,
+  key: string,
+  scope: WriteScope,
+  budgetMs?: number,
+): Promise<void> {
+  const queued = await queueAutoAdds(db, scope);
+  const { done, failed } = await processWrites(db, key, scope, { budgetMs });
+  if (queued || done || failed) {
+    console.log(`calendar writes: ${queued} queued, ${done} done, ${failed} failed`);
+  }
 }
 
 /** What one account needs to be written to: its login and its calendars. */
@@ -404,12 +411,10 @@ export async function processWrites(
     }[];
   };
   const proposalById = new Map(
-    ((proposals.data ?? []) as unknown as ProposalRow[]).map((p) => {
-      const current = p.event_proposal_dates
-        .filter((d) => d.declined_at === null)
-        .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
-      return [p.id, { ...p, current: current ?? null }];
-    }),
+    ((proposals.data ?? []) as unknown as ProposalRow[]).map((p) => [
+      p.id,
+      { ...p, current: currentDate(p.event_proposal_dates) },
+    ]),
   );
   type SourceRow = {
     id: string;
@@ -420,10 +425,7 @@ export async function processWrites(
     ((sources.data ?? []) as unknown as SourceRow[]).map((s) => [s.id, s]),
   );
   const langOf = new Map(
-    ((langs.data ?? []) as { profile_id: string; lang: IcsLang }[]).map((l) => [
-      l.profile_id,
-      l.lang,
-    ]),
+    ((langs.data ?? []) as { profile_id: string; lang: Lang }[]).map((l) => [l.profile_id, l.lang]),
   );
 
   // Everyone's names, for "Agreed in Casy with Anna and Bo".

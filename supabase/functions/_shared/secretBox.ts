@@ -13,6 +13,9 @@
  * Stored format: "v1:<base64 nonce>:<base64 ciphertext>". The version prefix
  * leaves room to rotate the scheme later without guessing what old rows are.
  */
+import { decodeBase64, encodeBase64 } from "jsr:@std/encoding@1/base64";
+
+import { requireEnv } from "./env.ts";
 
 const VERSION = "v1";
 /**
@@ -24,21 +27,11 @@ const LOOKUP_KEY_INFO = "autodate lookup hash v1";
 const NONCE_BYTES = 12; // the size AES-GCM is designed around
 const KEY_BYTES = 32; // AES-256
 
-function toBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary);
-}
-
-function fromBase64(text: string): Uint8Array<ArrayBuffer> {
-  return Uint8Array.from(atob(text), (ch) => ch.charCodeAt(0));
-}
-
 /** The key's raw bytes, checked for size. */
 function decodeKey(base64Key: string): Uint8Array<ArrayBuffer> {
   let raw: Uint8Array<ArrayBuffer>;
   try {
-    raw = fromBase64(base64Key);
+    raw = decodeBase64(base64Key);
   } catch {
     throw new Error("Encryption key is not valid base64.");
   }
@@ -82,21 +75,19 @@ export async function lookupHash(text: string, base64Key: string): Promise<strin
     ["sign"],
   );
   const mac = await crypto.subtle.sign("HMAC", hmacKey, new TextEncoder().encode(text));
-  return toBase64(new Uint8Array(mac));
+  return encodeBase64(mac);
 }
 
 /** Encrypt `plaintext` with a base64 32-byte key. */
 export async function encryptSecret(plaintext: string, base64Key: string): Promise<string> {
   const key = await importKey(base64Key);
   const nonce = crypto.getRandomValues(new Uint8Array(NONCE_BYTES));
-  const ciphertext = new Uint8Array(
-    await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: nonce },
-      key,
-      new TextEncoder().encode(plaintext),
-    ),
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: nonce },
+    key,
+    new TextEncoder().encode(plaintext),
   );
-  return `${VERSION}:${toBase64(nonce)}:${toBase64(ciphertext)}`;
+  return `${VERSION}:${encodeBase64(nonce)}:${encodeBase64(ciphertext)}`;
 }
 
 /** Reverse of encryptSecret. Throws if the key is wrong or the value was altered. */
@@ -107,9 +98,9 @@ export async function decryptSecret(stored: string, base64Key: string): Promise<
   }
   const key = await importKey(base64Key);
   const plain = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: fromBase64(nonce) },
+    { name: "AES-GCM", iv: decodeBase64(nonce) },
     key,
-    fromBase64(ciphertext),
+    decodeBase64(ciphertext),
   );
   return new TextDecoder().decode(plain);
 }
@@ -123,7 +114,5 @@ export async function decryptSecret(stored: string, base64Key: string): Promise<
  * for no gain in safety.
  */
 export function encryptionKeyFromEnv(): string {
-  const key = Deno.env.get("CALDAV_ENCRYPTION_KEY");
-  if (!key) throw new Error("CALDAV_ENCRYPTION_KEY is not set for this function.");
-  return key;
+  return requireEnv("CALDAV_ENCRYPTION_KEY");
 }

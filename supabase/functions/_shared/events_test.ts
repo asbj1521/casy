@@ -1,6 +1,6 @@
 // Run with: deno test --node-modules-dir=none --allow-all supabase/functions/_shared/
 import { assertEquals } from "jsr:@std/assert@1";
-import { cleanEventTitle, isEventSettings, parseEventDate } from "./events.ts";
+import { cleanEventTitle, currentDate, isEventSettings, parseEventDate } from "./events.ts";
 
 Deno.test("settings in each known shape are accepted", () => {
   assertEquals(isEventSettings({ kind: "single", durationMinutes: 180, startHour: 18 }), true);
@@ -64,4 +64,20 @@ Deno.test("titles are tidied and never left blank", () => {
   assertEquals(cleanEventTitle("Two\nlines"), "Twolines");
   assertEquals(cleanEventTitle("   "), null);
   assertEquals(cleanEventTitle(3), null);
+});
+
+Deno.test("the date on offer is the newest one nobody declined", () => {
+  const date = (id: string, createdAt: string, declined = false) => ({
+    id,
+    created_at: createdAt,
+    declined_at: declined ? createdAt : null,
+  });
+  const dates = [
+    date("first", "2026-09-01T10:00:00Z", true),
+    date("second", "2026-09-02T10:00:00Z"),
+    date("third", "2026-09-03T10:00:00Z", true),
+  ];
+  assertEquals(currentDate(dates)?.id, "second");
+  assertEquals(currentDate(dates.slice(0, 1)), null);
+  assertEquals(currentDate([]), null);
 });

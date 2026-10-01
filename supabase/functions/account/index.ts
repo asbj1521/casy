@@ -9,50 +9,24 @@
  * (_shared/auth.ts), never from the request.
  */
 import { deleteAccount } from "../_shared/accounts.ts";
-import { callerId } from "../_shared/auth.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { requireCaller } from "../_shared/auth.ts";
+import { HttpError, serve } from "../_shared/http.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { withLanguage } from "../_shared/i18n.ts";
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
+serve("account", async (req, body) => {
+  const db = supabaseAdmin();
+  const { id: profileId } = await requireCaller(req, db);
 
-Deno.serve(
-  withLanguage(async (req) => {
-    if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-    if (req.method !== "POST") return json({ error: "Use POST" }, 405);
-
-    let payload: { action?: unknown; confirm?: unknown };
-    try {
-      payload = await req.json();
-    } catch {
-      return json({ error: "Body must be JSON" }, 400);
+  switch (body.action) {
+    case "delete": {
+      if (body.confirm !== true) throw new HttpError(400, "confirm must be true");
+      const { leftGroups, deletedGroups } = await deleteAccount(db, profileId);
+      console.log(
+        `account ${profileId} deleted itself; left ${leftGroups} groups, ${deletedGroups} deleted`,
+      );
+      return { outcome: "deleted" };
     }
-
-    const db = supabaseAdmin();
-    const profileId = await callerId(req, db);
-    if (!profileId) return json({ error: "Please sign in again." }, 401);
-
-    switch (payload.action) {
-      case "delete": {
-        if (payload.confirm !== true) return json({ error: "confirm must be true" }, 400);
-        try {
-          const { leftGroups, deletedGroups } = await deleteAccount(db, profileId);
-          console.log(
-            `account ${profileId} deleted itself; left ${leftGroups} groups, ${deletedGroups} deleted`,
-          );
-          return json({ outcome: "deleted" });
-        } catch (err) {
-          console.error("account delete failed", profileId, err);
-          return json({ error: "Couldn't delete your account. Please try again." }, 500);
-        }
-      }
-      default:
-        return json({ error: "Unknown action" }, 400);
-    }
-  }),
-);
+    default:
+      throw new HttpError(400, "Unknown action");
+  }
+});

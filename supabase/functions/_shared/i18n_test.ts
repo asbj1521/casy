@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 
-import { DANISH, DANISH_PATTERNS, langOf, translateError, withLanguage } from "./i18n.ts";
+import { DANISH, DANISH_PATTERNS, langOf, translateError } from "./i18n.ts";
 
 /** Every .ts and .sql file the English messages could come from. */
 async function allSource(): Promise<string> {
@@ -50,29 +50,4 @@ Deno.test("only ?lang=da asks for Danish", () => {
   assertEquals(langOf(new Request("https://x.test/fn?lang=da")), "da");
   assertEquals(langOf(new Request("https://x.test/fn?lang=en")), "en");
   assertEquals(langOf(new Request("https://x.test/fn")), "en");
-});
-
-const failing = () =>
-  new Response(JSON.stringify({ error: "Please sign in again." }), {
-    status: 401,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-  });
-
-Deno.test(
-  "withLanguage rewrites a failed JSON response and keeps its status and headers",
-  async () => {
-    const res = await withLanguage(failing)(new Request("https://x.test/fn?lang=da"));
-    assertEquals(res.status, 401);
-    assertEquals(res.headers.get("Access-Control-Allow-Origin"), "*");
-    assertEquals(await res.json(), { error: "Log ind igen." });
-  },
-);
-
-Deno.test("withLanguage leaves English callers and successes alone", async () => {
-  const en = await withLanguage(failing)(new Request("https://x.test/fn?lang=en"));
-  assertEquals(await en.json(), { error: "Please sign in again." });
-  const ok = await withLanguage(() => new Response(JSON.stringify({ ok: true }), { status: 200 }))(
-    new Request("https://x.test/fn?lang=da"),
-  );
-  assertEquals(await ok.json(), { ok: true });
 });

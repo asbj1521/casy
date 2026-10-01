@@ -1,16 +1,23 @@
 /**
- * The pieces of group handling that are worth testing on their own: invite
- * tokens, the tidying of names people type, and what a member is called.
- *
- * The database work itself lives in the `groups` function; this file stays
- * free of Supabase so every rule here can be checked with a plain unit test.
+ * The rules for groups that the groups and events functions share: invite
+ * tokens, the names people type, what a member is called, and who counts as
+ * one. Everything but the membership check is free of the database, so it
+ * can be checked with plain unit tests.
  */
+import { encodeBase64Url } from "jsr:@std/encoding@1/base64url";
+
+import { HttpError } from "./http.ts";
+import type { Db } from "./supabaseAdmin.ts";
+import { cleanText } from "./text.ts";
 
 /** How long a freshly made invite link keeps working. */
 export const INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Longest group name we keep, matching the check constraint on the table. */
 export const MAX_GROUP_NAME_LENGTH = 60;
+
+/** Longest custom display name we keep. */
+export const MAX_DISPLAY_NAME_LENGTH = 40;
 
 /**
  * A fresh invite token: 32 random bytes in URL-safe base64.
@@ -20,10 +27,7 @@ export const MAX_GROUP_NAME_LENGTH = 60;
  * randomness means nobody finds a live invite by trying.
  */
 export function newInviteToken(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+  return encodeBase64Url(crypto.getRandomValues(new Uint8Array(32)));
 }
 
 /**
@@ -39,35 +43,14 @@ export function inviteUrl(origin: string, token: string): string {
   return `${origin}/join/${token}`;
 }
 
-/** Drop ASCII control characters (newlines, tabs, NUL, DEL, ...) from user text. */
-function stripControlChars(text: string): string {
-  return Array.from(text)
-    .filter((ch) => {
-      const code = ch.charCodeAt(0);
-      return code > 31 && code !== 127;
-    })
-    .join("");
-}
-
-/**
- * A group name as it should be stored, or null if there is nothing left once
- * the invisible characters and surrounding spaces are gone. Trimming happens
- * after the length cap too, so a name cut mid-space doesn't end in one.
- */
+/** A group name as it should be stored, or null if nothing is left of it. */
 export function cleanGroupName(raw: unknown): string | null {
-  if (typeof raw !== "string") return null;
-  const name = stripControlChars(raw).trim().slice(0, MAX_GROUP_NAME_LENGTH).trim();
-  return name.length > 0 ? name : null;
+  return cleanText(raw, MAX_GROUP_NAME_LENGTH);
 }
-
-/** Longest custom display name we keep. */
-export const MAX_DISPLAY_NAME_LENGTH = 40;
 
 /** A display name as a person typed it, cleaned up the same way a group name is. */
 export function cleanDisplayName(raw: unknown): string | null {
-  if (typeof raw !== "string") return null;
-  const name = stripControlChars(raw).trim().slice(0, MAX_DISPLAY_NAME_LENGTH).trim();
-  return name.length > 0 ? name : null;
+  return cleanText(raw, MAX_DISPLAY_NAME_LENGTH);
 }
 
 /** The shape of an auth user, as much of it as naming someone needs. */
@@ -93,4 +76,23 @@ export function displayNameFor(user: NameableUser | null | undefined): string {
   }
   const local = user?.email?.split("@")[0]?.trim();
   return local || "Someone";
+}
+
+/** True if this person is in this group. */
+export async function isMember(db: Db, groupId: string, profileId: string): Promise<boolean> {
+  const { data, error } = await db
+    .from("group_members")
+    .select("profile_id")
+    .eq("group_id", groupId)
+    .eq("profile_id", profileId)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
+/** Refuses anyone not in the group: holding a group's id proves nothing. */
+export async function requireMember(db: Db, groupId: string, profileId: string): Promise<void> {
+  if (!(await isMember(db, groupId, profileId))) {
+    throw new HttpError(403, "You are not in that group.");
+  }
 }

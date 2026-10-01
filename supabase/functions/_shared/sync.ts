@@ -19,13 +19,12 @@ import { markGoneEntries } from "./calendarWrites.ts";
 import * as google from "./google.ts";
 import { assertSafeFeedUrl, fetchFeedText, parseBusyIntervals } from "./ics.ts";
 import type { RawBusyInterval } from "./intervals.ts";
+import type { OAuthTokens } from "./oauth.ts";
 import * as outlook from "./outlook.ts";
 import { ReauthRequired } from "./reauth.ts";
 import { decryptSecret, encryptSecret } from "./secretBox.ts";
+import type { Db } from "./supabaseAdmin.ts";
 import { syncWindow } from "./syncWindow.ts";
-import type { supabaseAdmin } from "./supabaseAdmin.ts";
-
-type Db = ReturnType<typeof supabaseAdmin>;
 
 /** An access token this close to expiry is refreshed rather than used. */
 const TOKEN_MARGIN_MS = 2 * 60_000;
@@ -225,14 +224,24 @@ async function fetchFresh(
 
   switch (target.provider) {
     case "google": {
-      const accessToken = await oauthAccess(db, target.id, secrets, key, now, (refreshToken) =>
-        google.refreshAccessToken({ refreshToken, ...oauthClient("GOOGLE") }),
+      const accessToken = await oauthAccess(
+        db,
+        target.id,
+        secrets,
+        key,
+        now,
+        google.refreshAccessToken,
       );
       return { busy: await google.queryFreeBusy(accessToken, externalIds, from, to) };
     }
     case "outlook": {
-      const accessToken = await oauthAccess(db, target.id, secrets, key, now, (refreshToken) =>
-        outlook.refreshAccessToken({ refreshToken, ...oauthClient("MICROSOFT") }),
+      const accessToken = await oauthAccess(
+        db,
+        target.id,
+        secrets,
+        key,
+        now,
+        outlook.refreshAccessToken,
       );
       return { busy: await outlook.queryFreeBusy(accessToken, externalIds, from, to) };
     }
@@ -268,14 +277,6 @@ async function fetchFresh(
   }
 }
 
-/** The app's OAuth client credentials for a provider, from the function's secrets. */
-function oauthClient(prefix: "GOOGLE" | "MICROSOFT"): { clientId: string; clientSecret: string } {
-  const clientId = Deno.env.get(`${prefix}_OAUTH_CLIENT_ID`);
-  const clientSecret = Deno.env.get(`${prefix}_OAUTH_CLIENT_SECRET`);
-  if (!clientId || !clientSecret) throw new Error(`${prefix}_OAUTH_CLIENT_ID / _SECRET not set`);
-  return { clientId, clientSecret };
-}
-
 /**
  * A usable access token: the stored one while it has a couple of minutes
  * left, otherwise a fresh one from the refresh token. Whatever the provider
@@ -288,9 +289,7 @@ async function oauthAccess(
   secrets: SecretsRow,
   key: string,
   now: Date,
-  refresh: (
-    refreshToken: string,
-  ) => Promise<{ access_token: string; refresh_token?: string; expires_in: number }>,
+  refresh: (refreshToken: string) => Promise<OAuthTokens>,
 ): Promise<string> {
   const expiresAt = secrets.expires_at ? Date.parse(secrets.expires_at) : 0;
   if (secrets.access_token && expiresAt - TOKEN_MARGIN_MS > now.getTime()) {

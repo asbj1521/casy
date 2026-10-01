@@ -1,72 +1,55 @@
 /**
- * Read-only status of a profile's linked calendars.
+ * The signed-in caller's linked calendar accounts: each one's state, sync
+ * health, calendars and how many busy blocks it holds.
  *
  * The profile page calls this on every load (not just right after an OAuth
  * redirect) so "connected" is a real, persistent fact backed by the
  * database, not something that only shows up once in a banner and vanishes
- * on refresh. RLS denies the anon/publishable key direct access to these
- * tables (see the calendar_integrations migration), so this function, using
- * the service role key, is the only sanctioned read path, and it only ever
- * returns non-secret fields (never touches calendar_secrets).
- *
- * Called via fetch() from the SPA, unlike the OAuth functions, so this one
- * needs CORS handling. Answers only for the signed-in caller (_shared/auth.ts).
+ * on refresh. Only ever non-secret fields: calendar_secrets is never touched.
  */
-import { callerId } from "../_shared/auth.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { requireCaller } from "../_shared/auth.ts";
+import { serve } from "../_shared/http.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { withLanguage } from "../_shared/i18n.ts";
 
-Deno.serve(
-  withLanguage(async (req) => {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
+interface SourceRow {
+  id: string;
+  display_name: string | null;
+  custom_name: string | null;
+  purpose: string | null;
+  priority: string;
+  writable: boolean;
+  /** The blocks stored for it, counted by the database (an embedded count). */
+  calendar_busy_cache: { count: number }[];
+}
 
+serve(
+  "calendar-status",
+  async (req) => {
     const db = supabaseAdmin();
-    const profileId = await callerId(req, db);
-    if (!profileId) {
-      return new Response(JSON.stringify({ error: "Please sign in again." }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { id: profileId } = await requireCaller(req, db);
 
-    const { data: connections, error } = await db
+    const { data, error } = await db
       .from("calendar_connections")
       .select(
-        "id, provider, status, account_label, error_message, created_at, last_synced_at, last_sync_attempt_at, sync_error, needs_reconnect, calendar_sources(id, display_name, custom_name, purpose, priority, writable)",
+        "id, provider, status, account_label, error_message, created_at, last_synced_at, last_sync_attempt_at, sync_error, needs_reconnect, " +
+          "calendar_sources(id, display_name, custom_name, purpose, priority, writable, calendar_busy_cache(count))",
       )
       .eq("profile_id", profileId)
       .order("created_at", { ascending: false });
+    if (error) throw error;
 
-    if (error) {
-      console.error("calendar-status query failed", error);
-      return new Response(JSON.stringify({ error: "Query failed" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // One busy-interval count per connection, via a lightweight count-only
-    // query rather than pulling every row back.
-    const withCounts = await Promise.all(
-      (connections ?? []).map(async (c) => {
-        const sourceIds = (c.calendar_sources ?? []).map((s: { id: string }) => s.id);
+    // Each source's count is added up for its account and left off the source.
+    const connections = (data as unknown as { calendar_sources: SourceRow[] }[]).map(
+      ({ calendar_sources, ...connection }) => {
         let busyCount = 0;
-        if (sourceIds.length > 0) {
-          const { count } = await db
-            .from("calendar_busy_cache")
-            .select("id", { count: "exact", head: true })
-            .in("source_id", sourceIds);
-          busyCount = count ?? 0;
-        }
-        return { ...c, busyCount };
-      }),
+        const sources = calendar_sources.map(({ calendar_busy_cache: [blocks], ...source }) => {
+          busyCount += blocks?.count ?? 0;
+          return source;
+        });
+        return { ...connection, calendar_sources: sources, busyCount };
+      },
     );
-
-    return new Response(JSON.stringify({ connections: withCounts }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }),
+    return { connections };
+  },
+  "GET",
 );

@@ -23,6 +23,7 @@
  * links) is re-checked before we send credentials to it, so a malformed or
  * malicious response can't make us hand the password to another host.
  */
+import { encodeBase64 } from "jsr:@std/encoding@1/base64";
 import { XMLParser } from "npm:fast-xml-parser@4.5.1";
 
 /** A problem that is safe to show to the user as-is. */
@@ -105,8 +106,7 @@ async function send(
   body: string | null,
   headers: Record<string, string>,
 ): Promise<Response> {
-  const authorization =
-    "Basic " + btoa(unescape(encodeURIComponent(`${creds.username}:${creds.password}`)));
+  const authorization = `Basic ${encodeBase64(`${creds.username}:${creds.password}`)}`;
   let url = assertIcloudUrl(rawUrl);
 
   for (let hop = 0; ; hop++) {

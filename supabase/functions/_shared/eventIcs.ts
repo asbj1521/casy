@@ -8,11 +8,10 @@
  * type's English name ("Dinner"), so the Danish names are repeated here from
  * src/i18n/da.tsx (Edge Functions can't import from src/).
  */
+import type { Lang } from "./i18n.ts";
 
 /** The zone the app reads local dates in (src/lib/zone.ts APP_TIME_ZONE). */
 const APP_TIME_ZONE = "Europe/Copenhagen";
-
-export type IcsLang = "da" | "en";
 
 /** Danish names of the event types, keyed by the English name events store. */
 const DANISH_TYPE_NAMES: Record<string, string> = {
@@ -42,7 +41,7 @@ export interface AgreedEvent {
 }
 
 /** The event's title in the reader's language. */
-export function localTitle(stored: string, lang: IcsLang): string {
+export function localTitle(stored: string, lang: Lang): string {
   return lang === "da"
     ? (DANISH_TYPE_NAMES[stored] ?? stored)
     : stored === "Gaming session"
@@ -51,17 +50,17 @@ export function localTitle(stored: string, lang: IcsLang): string {
 }
 
 /** "Dinner with The friends" / "Middag med Vennerne". */
-export function eventSummary(event: AgreedEvent, lang: IcsLang): string {
+export function eventSummary(event: AgreedEvent, lang: Lang): string {
   return `${localTitle(event.title, lang)} ${lang === "da" ? "med" : "with"} ${event.groupName}`;
 }
 
-function nameList(names: string[], lang: IcsLang): string {
+function nameList(names: string[], lang: Lang): string {
   const and = lang === "da" ? "og" : "and";
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} ${and} ${names[names.length - 1]}`;
 }
 
-export function eventDescription(event: AgreedEvent, lang: IcsLang): string {
+export function eventDescription(event: AgreedEvent, lang: Lang): string {
   const who = nameList(event.others, lang);
   if (lang === "da") {
     return who ? `Aftalt i Casy med ${who}.` : "Aftalt i Casy.";
@@ -137,7 +136,7 @@ function localDate(iso: string): string {
  * written as whole days (DTEND is the day after the last, as the standard
  * wants). No METHOD line: CalDAV refuses one in a stored event.
  */
-export function buildEventIcs(event: AgreedEvent, lang: IcsLang, now = new Date()): string {
+export function buildEventIcs(event: AgreedEvent, lang: Lang, now = new Date()): string {
   const allDay = event.kind === "vacation";
   const lines = [
     "BEGIN:VCALENDAR",
