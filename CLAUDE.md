@@ -8,8 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Prioritize methodical execution over speed; explain reasoning as you go
 - Treat the user as a capable engineer; avoid over-explaining obvious concepts
 - Explain code changes as you would to a junior engineer: clear, educational, thorough
-- Request confirmation before committing changes to git; validate correctness together first
-- Commit only when the user explicitly says so ("commit"); never commit or push on your own
+- Commit on the feature branch whenever a step is done and checks pass; no need to ask
+- Never merge into `main` (or push `main`) unless the user explicitly says so: it deploys to casy.app
 - Provide critical, honest analysis; prioritize solution quality over convenience
 - Ask clarifying questions when intent is ambiguous rather than assuming
 - Website copy: no emojis, and no em or en dashes, in both Danish and English
@@ -289,11 +289,10 @@ mutation { addProjectV2ItemById(input: { projectId: "PVT_kwHOD5fAM84BbNZz" conte
 
 - One step at a time — explain what you're about to do before doing it
 - User tests locally with `npm run dev` in a separate terminal
-- Commit only when the user explicitly says "commit"; "it works" is not enough on its own
+- Commit freely on the feature branch once checks pass; never commit directly to main
 - Changes under `supabase/` need deploying before the user can test them (see Deploying)
-- Each commit on the feature branch; never commit directly to main
 
-### Step 8 — Wrap Up (after user confirms everything works)
+### Step 8 — Wrap Up (only when the user explicitly says so, e.g. "finish the workflow")
 
 1. **Update the issue body** — append a `## What was done` section (3–5 bullet points) to the original description:
    ```bash
