@@ -14,7 +14,7 @@ import { useLang, useT } from "@/i18n/lang";
 import { cardArrived } from "@/lib/cardTransition";
 import { hasSeenCalendarOnboarding } from "@/lib/calendarOnboarding";
 import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/passwordRules";
-import { supabase } from "@/lib/supabase";
+import { supabaseAuth } from "@/lib/supabase";
 import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
 
 /**
@@ -125,14 +125,14 @@ export default function SignIn() {
   async function handleNewPassword(newPassword: string) {
     setRecoverySubmitting(true);
     setRecoveryError(null);
-    const { error: err } = await supabase.auth.updateUser({ password: newPassword });
+    const { error: err } = await supabaseAuth.updateUser({ password: newPassword });
     if (err) {
       setRecoverySubmitting(false);
       setRecoveryError(authErrorMessage(err, t));
       return;
     }
     // A reset is often because someone else got in: sign out every other device.
-    await supabase.auth.signOut({ scope: "others" });
+    await supabaseAuth.signOut({ scope: "others" });
     setRecoverySubmitting(false);
     clearWeakPassword();
     clearPasswordRecovery();
@@ -179,7 +179,7 @@ export default function SignIn() {
 
   async function handleGoogle() {
     setError(null);
-    const { error: err } = await supabase.auth.signInWithOAuth({
+    const { error: err } = await supabaseAuth.signInWithOAuth({
       provider: "google",
       // hl: Google's own sign-in screen in the page's language.
       options: { redirectTo: returnTo, queryParams: { hl: lang } },
@@ -198,7 +198,7 @@ export default function SignIn() {
     setSending(true);
     setError(null);
     const address = email.trim();
-    const { error: err } = await supabase.auth.signInWithOtp({
+    const { error: err } = await supabaseAuth.signInWithOtp({
       email: address,
       options: { emailRedirectTo: returnTo, captchaToken },
     });
@@ -220,7 +220,7 @@ export default function SignIn() {
     setUnconfirmed(null);
     const address = email.trim();
     const typed = password;
-    const { data, error: err } = await supabase.auth.signInWithPassword({
+    const { data, error: err } = await supabaseAuth.signInWithPassword({
       email: address,
       password: typed,
       options: { captchaToken },
@@ -267,7 +267,7 @@ export default function SignIn() {
     setSignupSubmitting(true);
     setSignupError(null);
     const address = email.trim();
-    const { data, error: err } = await supabase.auth.signUp({
+    const { data, error: err } = await supabaseAuth.signUp({
       email: address,
       password: newPassword,
       options: { emailRedirectTo: returnTo, captchaToken },
@@ -305,7 +305,7 @@ export default function SignIn() {
     }
     setResend("sending");
     setResendError(null);
-    const { error: err } = await supabase.auth.resend({
+    const { error: err } = await supabaseAuth.resend({
       type: "signup",
       email: address,
       options: { emailRedirectTo: returnTo, captchaToken },
@@ -330,7 +330,7 @@ export default function SignIn() {
     }
     setForgotSending(true);
     setForgotError(null);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(address, {
+    const { error: err } = await supabaseAuth.resetPasswordForEmail(address, {
       redirectTo: returnTo,
       captchaToken,
     });

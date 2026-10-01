@@ -8,7 +8,7 @@ import Notice from "@/components/ui/Notice";
 import { useAuth, useSignedInUser } from "@/context/auth";
 import { authErrorMessage } from "@/i18n/authError";
 import { useT } from "@/i18n/lang";
-import { supabase } from "@/lib/supabase";
+import { supabaseAuth } from "@/lib/supabase";
 import { clearWeakPassword } from "@/lib/weakPassword";
 
 /**
@@ -85,11 +85,11 @@ export default function PasswordSection({
   async function save(password: string, nonce?: string) {
     setSubmitting(true);
     setError(null);
-    const { error: err } = await supabase.auth.updateUser(
+    const { error: err } = await supabaseAuth.updateUser(
       nonce ? { password, nonce } : { password },
     );
     if (err?.code === "reauthentication_needed") {
-      const { error: sendErr } = await supabase.auth.reauthenticate();
+      const { error: sendErr } = await supabaseAuth.reauthenticate();
       setSubmitting(false);
       if (sendErr) setError(authErrorMessage(sendErr, t));
       else {
@@ -105,7 +105,7 @@ export default function PasswordSection({
     }
     // Whoever else might be signed in as you (the reason to change a
     // password, often) is signed out; this device stays signed in.
-    await supabase.auth.signOut({ scope: "others" });
+    await supabaseAuth.signOut({ scope: "others" });
     setSubmitting(false);
     close();
     setSaved(true);
@@ -114,7 +114,7 @@ export default function PasswordSection({
 
   async function resendCode() {
     setError(null);
-    const { error: err } = await supabase.auth.reauthenticate();
+    const { error: err } = await supabaseAuth.reauthenticate();
     if (err) setError(authErrorMessage(err, t));
     else setCodeResent(true);
   }

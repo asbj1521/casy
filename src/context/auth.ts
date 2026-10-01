@@ -6,7 +6,7 @@
  * hot-reload it in place.
  */
 import { createContext, useContext } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/auth-js";
 
 export interface AuthState {
   session: Session | null;

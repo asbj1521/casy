@@ -4,7 +4,7 @@ import { setCurrentLang } from "@/i18n/current";
 import { callFunction } from "@/lib/supabaseFunctions";
 
 vi.mock("@/lib/supabase", () => ({
-  supabase: { auth: { getSession: async () => ({ data: { session: null } }) } },
+  supabaseAuth: { getSession: async () => ({ data: { session: null } }) },
 }));
 
 function answer(status: number, body: unknown) {

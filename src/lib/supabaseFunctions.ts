@@ -7,7 +7,7 @@
  * calendars it is looking at: nothing in the request body says so any more.
  */
 import { currentLang, currentMessages } from "@/i18n/current";
-import { supabase } from "@/lib/supabase";
+import { supabaseAuth } from "@/lib/supabase";
 
 const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
@@ -20,7 +20,7 @@ const PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
  * and the function answers 401.
  */
 async function functionHeaders(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
+  const { data } = await supabaseAuth.getSession();
   return {
     apikey: PUBLISHABLE_KEY,
     Authorization: `Bearer ${data.session?.access_token ?? PUBLISHABLE_KEY}`,

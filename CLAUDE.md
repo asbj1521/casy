@@ -91,7 +91,7 @@ supabase/
 - `src/lib/passwordRules.ts`: what a password must be (8+ characters, an a-z letter and a digit like Supabase's `letters_digits`, not the person's email or name, not in Have I Been Pwned's leaks via the k-anonymity range API: only 5 hash characters leave the browser, fails open). Used by `PasswordForm` everywhere a password is chosen, and after a password sign-in to set the weak-password note (`src/lib/weakPassword.ts`, `WeakPasswordNotice` above every page).
 - `src/hooks/useCaptcha.ts`: Cloudflare Turnstile on the sign-in page; every email/password auth call sends its one-time token. Without `VITE_TURNSTILE_SITE_KEY` there is no widget and calls go without one.
 - `src/lib/supabaseFunctions.ts`: `callFunction()`, the only way the frontend calls Edge Functions, used only by `src/api/`. It attaches the session's access token and `?lang=` (a query parameter, not a header, so no CORS change is needed).
-- `src/lib/supabase.ts`: the Supabase client, used for auth only (tables are not read from the browser).
+- `src/lib/supabase.ts`: `supabaseAuth`, the browser's only Supabase client: `@supabase/auth-js` on its own, not supabase-js (tables are not read from the browser, so the other clients were dead weight). `authOptions()` repeats what supabase-js's `createClient()` passed; its storage key (`sb-<ref>-auth-token`) must never change or everyone is signed out. `vite.config.ts` puts the libraries the first page loads (react, motion, auth, query) in chunks of their own so deploys leave them cached.
 
 ### Languages
 - Danish is the default; the DA | EN switch in the header (`LanguageToggle`) is remembered in localStorage (`casy-lang`), and `?lang=en` forces English for that visit (Google's privacy link uses it).

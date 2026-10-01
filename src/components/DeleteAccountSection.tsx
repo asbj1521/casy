@@ -5,7 +5,7 @@ import { Trash2 } from "lucide-react";
 import { deleteMyAccount } from "@/api/account";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { useT } from "@/i18n/lang";
-import { supabase } from "@/lib/supabase";
+import { supabaseAuth } from "@/lib/supabase";
 
 /**
  * "Delete account" at the bottom of the profile: says what goes and what
@@ -35,7 +35,7 @@ export default function DeleteAccountSection() {
     }
     // The account is gone, so its session is too: forget it here. Supabase
     // accepts that the server no longer knows it, and signs this browser out.
-    await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+    await supabaseAuth.signOut({ scope: "local" }).catch(() => undefined);
     navigate("/sign-in?deleted=1", { replace: true });
   }
 

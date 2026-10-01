@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Session } from "@supabase/supabase-js";
+import type { Session } from "@supabase/auth-js";
 
 import { AuthContext, type AuthState } from "@/context/auth";
 import { clearPersistedQueries } from "@/lib/queryPersistence";
-import { supabase } from "@/lib/supabase";
+import { supabaseAuth } from "@/lib/supabase";
 
 /**
  * Holds the current session and keeps it in step with Supabase.
@@ -22,7 +22,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+    const { data } = supabaseAuth.onAuthStateChange((event, next) => {
       setSession(next);
       setLoading(false);
       // Fires when the browser lands on a password-reset link: it carries a
@@ -50,7 +50,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       signOut: async (scope = "local") => {
         // Supabase answers a failure (offline, say) with an error rather than
         // throwing, and keeps the session: say so, so no button pretends.
-        const { error } = await supabase.auth.signOut({ scope });
+        const { error } = await supabaseAuth.signOut({ scope });
         if (error) throw error;
       },
     }),
