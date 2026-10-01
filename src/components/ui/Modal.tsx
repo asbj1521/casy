@@ -1,0 +1,74 @@
+import type { FormEvent, ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+
+import { cn } from "@/lib/utils";
+
+/**
+ * A dialog's backdrop and centring. Children render only while open, so a
+ * form inside starts fresh every time. Clicking the backdrop closes it,
+ * except while `busy`, so a request in flight can't be abandoned halfway.
+ */
+export default function Modal({
+  open,
+  busy = false,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  busy?: boolean;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/40"
+            onClick={busy ? undefined : onClose}
+          />
+          {children}
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+const PANEL_MOTION = {
+  initial: { opacity: 0, scale: 0.97, y: 8 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.97, y: 8 },
+};
+
+// Scrolls inside when it's taller than the screen (a long list of people).
+const PANEL_CLASS =
+  "relative z-10 max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-2xl border bg-card p-5 shadow-xl";
+
+/** The dialog box, as a form: Enter in a field submits it. */
+export function ModalForm({
+  className,
+  onSubmit,
+  children,
+}: {
+  className?: string;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  children: ReactNode;
+}) {
+  return (
+    <motion.form {...PANEL_MOTION} onSubmit={onSubmit} className={cn(PANEL_CLASS, className)}>
+      {children}
+    </motion.form>
+  );
+}
+
+/** The dialog box, when there's nothing to submit. */
+export function ModalPanel({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <motion.div {...PANEL_MOTION} className={cn(PANEL_CLASS, className)}>
+      {children}
+    </motion.div>
+  );
+}

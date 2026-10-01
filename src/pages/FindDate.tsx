@@ -450,7 +450,7 @@ export default function FindDate() {
         open={newGroupOpen}
         submitting={create.isPending}
         error={create.error?.message ?? null}
-        onSubmit={(groupName) => create.mutate(groupName)}
+        onSubmit={(group) => create.mutate(group)}
         onCancel={() => setNewGroupOpen(false)}
       />
     </div>

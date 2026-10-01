@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { da } from "@/i18n/da";
 import { en } from "@/i18n/en";
-import { inviteExpiryLabel } from "@/lib/groups";
+import { inviteExpiryLabel, knownPeople, looksLikeEmail } from "@/lib/groups";
 
 describe("inviteExpiryLabel", () => {
   const now = Date.parse("2026-09-20T12:00:00.000Z");
@@ -32,5 +32,43 @@ describe("inviteExpiryLabel", () => {
     expect(inviteExpiryLabel(inMs(7 * 86_400_000), da.inviteExpiry, now)).toBe("7 dage");
     expect(inviteExpiryLabel(inMs(86_400_000 + 1000), da.inviteExpiry, now)).toBe("1 dag");
     expect(inviteExpiryLabel(inMs(59 * 60_000), da.inviteExpiry, now)).toBe("under en time");
+  });
+});
+
+describe("knownPeople", () => {
+  const you = { profileId: "me", name: "Asbjørn", isYou: true };
+  const anna = { profileId: "a", name: "Anna", isYou: false };
+  const bo = { profileId: "b", name: "Bo", isYou: false };
+  const cille = { profileId: "c", name: "Cille", isYou: false };
+  const groups = [
+    { id: "g1", name: "Gymnasiet", members: [you, cille, anna] },
+    { id: "g2", name: "Kollegerne", members: [you, anna, bo] },
+  ];
+
+  it("lists everyone once, by name, with every group you share", () => {
+    expect(knownPeople(groups)).toEqual([
+      { profileId: "a", name: "Anna", groupNames: ["Gymnasiet", "Kollegerne"] },
+      { profileId: "b", name: "Bo", groupNames: ["Kollegerne"] },
+      { profileId: "c", name: "Cille", groupNames: ["Gymnasiet"] },
+    ]);
+  });
+
+  it("leaves out whoever is already in the group being invited to", () => {
+    expect(knownPeople(groups, "g2").map((p) => p.name)).toEqual(["Cille"]);
+  });
+
+  it("knows nobody without groups", () => {
+    expect(knownPeople([])).toEqual([]);
+  });
+});
+
+describe("looksLikeEmail", () => {
+  it("takes an address, spaces around it included", () => {
+    expect(looksLikeEmail(" anna@example.dk ")).toBe(true);
+  });
+  it("catches the usual typos", () => {
+    expect(looksLikeEmail("anna")).toBe(false);
+    expect(looksLikeEmail("anna@example")).toBe(false);
+    expect(looksLikeEmail("an na@example.dk")).toBe(false);
   });
 });

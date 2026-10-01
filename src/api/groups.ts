@@ -38,6 +38,28 @@ export interface Group {
    */
   createdBy: string | null;
   members: GroupMember[];
+  /**
+   * People invited who haven't joined, as profile ids, but only those you
+   * already share a group with (the function leaves out anyone else). A "no
+   * thanks" still reads as invited here: declining is never reported back.
+   */
+  invited: string[];
+}
+
+/** Who to invite: people picked from your groups, and email addresses. */
+export interface Invitees {
+  profileIds: string[];
+  emails: string[];
+}
+
+/** An invitation waiting for your answer. */
+export interface Invitation {
+  groupId: string;
+  groupName: string;
+  memberCount: number;
+  /** Who invited you; null if their account has since been deleted. */
+  invitedBy: string | null;
+  createdAt: string;
 }
 
 /** What the group's members are busy with, as far as anyone else may know. */
@@ -92,10 +114,68 @@ export function groupBusyQuery(userId: string, groupId: string | null, from: str
   });
 }
 
-export async function createGroup(name: string): Promise<{ groups: Group[]; createdId: string }> {
+/** A new group, with invitations to whoever is named (nobody, if no one is). */
+export async function createGroup({
+  name,
+  invitees,
+}: {
+  name: string;
+  invitees?: Invitees;
+}): Promise<{ groups: Group[]; createdId: string }> {
   return await callFunction("groups", {
-    body: { action: "create", name },
+    body: { action: "create", name, ...invitees },
     errorMessage: currentMessages().api.createGroup,
+  });
+}
+
+/**
+ * Invite people to a group you're in. The answer never says which emails
+ * matched an account: that is the invited person's business.
+ */
+export async function inviteMembers(
+  groupId: string,
+  invitees: Invitees,
+): Promise<{ groups: Group[] }> {
+  return await callFunction("groups", {
+    body: { action: "invite-members", groupId, ...invitees },
+    errorMessage: currentMessages().api.inviteMembers,
+  });
+}
+
+export function invitationsQueryKey(userId: string) {
+  return ["invitations", userId] as const;
+}
+
+/** Invitations to groups, waiting for your yes or no. */
+export function invitationsQuery(userId: string) {
+  return queryOptions({
+    queryKey: invitationsQueryKey(userId),
+    queryFn: async (): Promise<Invitation[]> => {
+      const body = await callFunction<{ invitations?: Invitation[] }>("groups", {
+        body: { action: "invitations" },
+        errorMessage: currentMessages().api.loadInvitations,
+      });
+      return body.invitations ?? [];
+    },
+    staleTime: 60_000,
+  });
+}
+
+/** Join the group you were invited to. */
+export async function acceptInvitation(
+  groupId: string,
+): Promise<{ groups: Group[]; invitations: Invitation[]; joinedId: string }> {
+  return await callFunction("groups", {
+    body: { action: "accept-invitation", groupId },
+    errorMessage: currentMessages().api.answerInvitation,
+  });
+}
+
+/** Say no thanks. Whoever invited you isn't told. */
+export async function declineInvitation(groupId: string): Promise<{ invitations: Invitation[] }> {
+  return await callFunction("groups", {
+    body: { action: "decline-invitation", groupId },
+    errorMessage: currentMessages().api.answerInvitation,
   });
 }
 

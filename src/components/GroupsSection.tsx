@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Loader2, LogOut, Pencil, Trash2, Users } from "lucide-react";
+import { Loader2, LogOut, Pencil, Trash2, UserPlus, Users } from "lucide-react";
 
 import {
   createGroup,
-  createInvite,
   deleteGroup,
   groupsQuery,
   groupsQueryKey,
@@ -14,22 +13,22 @@ import {
 } from "@/api/groups";
 import InfoTip from "@/components/InfoTip";
 import InlineTextEdit from "@/components/InlineTextEdit";
+import InviteDialog from "@/components/InviteDialog";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import Avatar from "@/components/ui/Avatar";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
-import CopyField from "@/components/ui/CopyField";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useLang, useT } from "@/i18n/lang";
 import { formatMonthYear } from "@/lib/format";
-import { inviteExpiryLabel, MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
+import { MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
 import { cn } from "@/lib/utils";
 
 /**
  * The profile page's "Your groups": every group you're in, who else is in
  * each one, and a way out: leave any of them, or delete one you made
  * outright (which removes it for every member, not just you). Also where a
- * new group is made, and an invite link fetched for an existing one.
+ * new group is made, and more people invited to one.
  */
 export default function GroupsSection() {
   const t = useT();
@@ -99,7 +98,7 @@ export default function GroupsSection() {
         open={newGroupOpen}
         submitting={create.isPending}
         error={create.error?.message ?? null}
-        onSubmit={(name) => create.mutate(name)}
+        onSubmit={(group) => create.mutate(group)}
         onCancel={() => setNewGroupOpen(false)}
       />
     </section>
@@ -131,10 +130,6 @@ function GroupRow({ group, youId }: { group: Group; youId: string }) {
       setRenaming(false);
     },
   });
-  // A fresh link every time: only a fingerprint of each is stored (see the
-  // groups function), so an earlier one can't be shown again.
-  const invite = useMutation({ mutationFn: () => createInvite(group.id) });
-
   // Leaving a group you're the only member of already deletes it (see
   // leave_friend_group), so a separate delete button would just be a second
   // way to do the same thing.
@@ -214,15 +209,12 @@ function GroupRow({ group, youId }: { group: Group; youId: string }) {
         <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
           <button
             type="button"
-            onClick={() => {
-              setInviteOpen(true);
-              invite.mutate();
-            }}
+            onClick={() => setInviteOpen(true)}
             title={t.groupsSection.inviteTitle}
             className="flex items-center gap-1.5 rounded-full border bg-background px-3.5 py-1.5 text-sm font-semibold text-foreground transition hover:bg-secondary"
           >
-            <Link2 className="h-4 w-4" />
-            {t.groupsSection.inviteLink}
+            <UserPlus className="h-4 w-4" />
+            {t.groupsSection.invite}
           </button>
           <button
             type="button"
@@ -234,7 +226,7 @@ function GroupRow({ group, youId }: { group: Group; youId: string }) {
             <LogOut className="h-3.5 w-3.5" />
           </button>
           {/* Always reserve this button's space, even when it doesn't apply
-              to this group, so the invite-link button lines up at the same
+              to this group, so the invite button lines up at the same
               spot on every row instead of drifting with who can delete. */}
           <button
             type="button"
@@ -253,38 +245,7 @@ function GroupRow({ group, youId }: { group: Group; youId: string }) {
         </div>
       </div>
 
-      {inviteOpen && (
-        <div className="mt-3 rounded-lg border bg-secondary/50 p-3">
-          {invite.data ? (
-            <>
-              <CopyField value={invite.data.url} label={t.groupsSection.inviteLink} />
-              <div className="mt-2 flex items-center justify-between gap-3">
-                <p className="text-xs text-muted-foreground">
-                  {t.groupsSection.inviteShort(
-                    inviteExpiryLabel(invite.data.expiresAt, t.inviteExpiry),
-                  )}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setInviteOpen(false)}
-                  className="shrink-0 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-                >
-                  {t.groupsSection.done}
-                </button>
-              </div>
-            </>
-          ) : invite.isError ? (
-            <Notice tone="error" bare>
-              {invite.error.message}
-            </Notice>
-          ) : (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t.groupsSection.makingLink}
-            </p>
-          )}
-        </div>
-      )}
+      <InviteDialog group={group} open={inviteOpen} onClose={() => setInviteOpen(false)} />
 
       {confirm && (
         <ConfirmPanel

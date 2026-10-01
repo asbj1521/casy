@@ -13,6 +13,49 @@ export const MAX_GROUP_NAME_LENGTH = 60;
 /** Longest custom display name that will be stored. */
 export const MAX_DISPLAY_NAME_LENGTH = 40;
 
+/** Most email addresses one invitation may carry (the groups function's own limit). */
+export const MAX_EMAILS_PER_INVITE = 10;
+
+/** Someone you share at least one group with, and which groups those are. */
+export interface KnownPerson {
+  profileId: string;
+  name: string;
+  groupNames: string[];
+}
+
+/**
+ * Everyone you're in a group with, to invite somewhere new: you left out, and
+ * so is anyone already in `except` (the group being invited to). Sorted by
+ * name, so the list reads the same every time it opens.
+ */
+export function knownPeople(
+  groups: {
+    id: string;
+    name: string;
+    members: { profileId: string; name: string; isYou: boolean }[];
+  }[],
+  except?: string,
+): KnownPerson[] {
+  const inExcept = new Set(
+    groups.find((g) => g.id === except)?.members.map((m) => m.profileId) ?? [],
+  );
+  const people = new Map<string, KnownPerson>();
+  for (const g of groups) {
+    for (const m of g.members) {
+      if (m.isYou || inExcept.has(m.profileId)) continue;
+      const person = people.get(m.profileId);
+      if (person) person.groupNames.push(g.name);
+      else people.set(m.profileId, { profileId: m.profileId, name: m.name, groupNames: [g.name] });
+    }
+  }
+  return [...people.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Shaped like an email address: enough to catch a typo before asking the server. */
+export function looksLikeEmail(text: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text.trim());
+}
+
 /** The words for "7 days", "3 hours" and so on, from the page's dictionary. */
 export interface InviteExpiryWords {
   expired: string;

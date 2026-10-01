@@ -1,24 +1,20 @@
 import { useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarOff, Link2, Loader2, LogOut, Users } from "lucide-react";
+import { CalendarOff, Loader2, LogOut, UserPlus, Users } from "lucide-react";
 
-import { createInvite, groupsQueryKey, leaveGroup } from "@/api/groups";
+import { groupsQueryKey, leaveGroup } from "@/api/groups";
 import InfoTip from "@/components/InfoTip";
+import InviteDialog from "@/components/InviteDialog";
 import Avatar from "@/components/ui/Avatar";
-import Collapse from "@/components/ui/Collapse";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
-import CopyField from "@/components/ui/CopyField";
-import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import type { SchedulingGroup } from "@/hooks/useSchedulingGroups";
 import { useT } from "@/i18n/lang";
-import { inviteExpiryLabel } from "@/lib/groups";
 
 /**
  * Who is in the real group you are scheduling for, how to get more people
  * in, and how to get out: one full-width box under the answer, members as a
- * row of names with the invite and leave buttons beside the heading. The page
- * keys it by group, so an invite link never outlives the group it was for.
+ * row of names with the invite and leave buttons beside the heading.
  *
  * The member list is honest about a gap real groups can have: someone who has
  * joined but linked no calendar yet, so nothing is known about their time.
@@ -43,9 +39,7 @@ export default function GroupPanel({
   const youId = useSignedInUser().id;
   const queryClient = useQueryClient();
   const [confirmingLeave, setConfirmingLeave] = useState(false);
-  // A fresh link every time: only a fingerprint of each is stored (see the
-  // groups function), so an earlier one can't be shown again.
-  const invite = useMutation({ mutationFn: () => createInvite(group.id) });
+  const [inviting, setInviting] = useState(false);
   const leave = useMutation({
     mutationFn: () => leaveGroup(group.id),
     onSuccess: (data) => {
@@ -71,16 +65,11 @@ export default function GroupPanel({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => invite.mutate()}
-            disabled={invite.isPending}
-            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
+            onClick={() => setInviting(true)}
+            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
           >
-            {invite.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Link2 className="h-4 w-4" />
-            )}
-            {invite.data ? t.groupPanel.newInvite : t.groupPanel.invite}
+            <UserPlus className="h-4 w-4" />
+            {t.groupPanel.invite}
           </button>
           {!confirmingLeave && (
             <button
@@ -135,26 +124,7 @@ export default function GroupPanel({
         </p>
       )}
 
-      <Collapse open={!!invite.data}>
-        {invite.data && (
-          <>
-            <CopyField
-              value={invite.data.url}
-              label={t.groupsSection.inviteLink}
-              className="mt-4 max-w-2xl border-t pt-4"
-            />
-            <p className="mt-2 text-xs text-muted-foreground">
-              {t.groupPanel.inviteInfo(inviteExpiryLabel(invite.data.expiresAt, t.inviteExpiry))}
-            </p>
-          </>
-        )}
-      </Collapse>
-
-      {invite.isError && (
-        <Notice tone="error" bare className="mt-2">
-          {invite.error.message}
-        </Notice>
-      )}
+      <InviteDialog group={group} open={inviting} onClose={() => setInviting(false)} />
 
       {confirmingLeave && (
         <ConfirmPanel

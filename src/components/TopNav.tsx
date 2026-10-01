@@ -13,7 +13,7 @@ import {
 import { adminStatusQuery } from "@/api/admin";
 import { calendarStatusQuery } from "@/api/calendars";
 import { eventsQuery, needsYourAnswer } from "@/api/events";
-import { groupsQuery } from "@/api/groups";
+import { groupsQuery, invitationsQuery } from "@/api/groups";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useAuth } from "@/context/auth";
 import { useT } from "@/i18n/lang";
@@ -39,10 +39,14 @@ export default function TopNav() {
   const onEvents = pathname === "/events";
   const onCalendarOverview = pathname === "/calendar-overview";
 
-  // How many suggested events are waiting for your answer: the badge on My
-  // events is how people find out something was suggested to them.
+  // How many suggested events and group invitations are waiting for your
+  // answer: the badge on My events is how people find out about either.
   const { data: events } = useQuery({ ...eventsQuery(user?.id ?? ""), enabled: !!user });
-  const pendingCount = events?.filter(needsYourAnswer).length ?? 0;
+  const { data: invitations } = useQuery({
+    ...invitationsQuery(user?.id ?? ""),
+    enabled: !!user,
+  });
+  const pendingCount = (events?.filter(needsYourAnswer).length ?? 0) + (invitations?.length ?? 0);
 
   async function handleSignOut() {
     try {

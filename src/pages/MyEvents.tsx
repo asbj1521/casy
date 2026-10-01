@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, CalendarX, Loader2, Sparkles } from "lucide-react";
 
 import { eventsQuery, type SuggestedEvent } from "@/api/events";
+import InvitationsSection from "@/components/myEvents/InvitationsSection";
 import NeedsAnswerCard from "@/components/myEvents/NeedsAnswerCard";
 import ScheduledCard from "@/components/myEvents/ScheduledCard";
 import WaitingCard from "@/components/myEvents/WaitingCard";
@@ -18,8 +19,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * My events: every date suggested to your groups, sorted by what it needs
- * from you (lib/myEvents.ts). Answering comes first; then the dates waiting
- * on others, the ones everyone accepted, and the past.
+ * from you (lib/myEvents.ts). Invitations to groups come first, then dates
+ * to answer; then the dates waiting on others, the ones everyone accepted,
+ * and the past.
  */
 export default function MyEvents() {
   const userId = useSignedInUser().id;
@@ -32,6 +34,8 @@ export default function MyEvents() {
       <main className="px-4 pb-16 pt-2 sm:px-6 sm:pt-0 lg:px-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.events.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.events.intro}</p>
+
+        <InvitationsSection />
 
         {isPending ? (
           <p className="mt-8 flex items-center gap-2 text-sm text-muted-foreground">
