@@ -26,9 +26,11 @@ import {
   type AdminUser,
 } from "@/api/admin";
 import StatTile from "@/components/StatTile";
+import Avatar from "@/components/ui/Avatar";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import Notice from "@/components/ui/Notice";
 import { withoutGroup, withoutMember, withoutUser } from "@/lib/adminOverview";
 import { syncedAgo } from "@/lib/accountSummary";
-import { avatarColor } from "@/lib/avatar";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -48,50 +50,6 @@ function messageOf(err: unknown, fallback: string): string {
 function matches(query: string, ...fields: (string | null | undefined)[]): boolean {
   const q = query.trim().toLowerCase();
   return !q || fields.some((f) => f?.toLowerCase().includes(q));
-}
-
-/** A red inline "are you sure", the same shape as the rest of the profile page's. */
-function ConfirmBox({
-  text,
-  action,
-  pending,
-  error,
-  onConfirm,
-  onCancel,
-}: {
-  text: string;
-  action: string;
-  pending: boolean;
-  error: string | null;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const t = useT();
-  return (
-    <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-      <p>{text}</p>
-      {error && <p className="mt-2 font-medium">{error}</p>}
-      <div className="mt-2 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onConfirm}
-          disabled={pending}
-          className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
-        >
-          {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          {action}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={pending}
-          className="text-sm text-red-900/80 transition hover:text-red-900"
-        >
-          {t.common.cancel}
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function GroupRow({
@@ -143,14 +101,7 @@ function GroupRow({
                 key={m.profileId}
                 className="flex items-center gap-1.5 rounded-full border bg-background py-0.5 pl-0.5 pr-1.5 text-xs text-foreground"
               >
-                <span
-                  className={cn(
-                    "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold",
-                    avatarColor(i),
-                  )}
-                >
-                  {m.name.trim().charAt(0).toUpperCase()}
-                </span>
+                <Avatar name={m.name} index={i} size="xs" />
                 {m.name}
                 <button
                   type="button"
@@ -179,24 +130,26 @@ function GroupRow({
       </div>
 
       {confirm?.kind === "group" && (
-        <ConfirmBox
-          text={t.admin.deleteGroupConfirm(group.name, group.members.length)}
-          action={t.admin.deleteGroup}
-          pending={deleting}
+        <ConfirmPanel
+          className="mt-3"
+          message={t.admin.deleteGroupConfirm(group.name, group.members.length)}
+          confirmLabel={t.admin.deleteGroup}
+          busy={deleting}
           error={error}
           onConfirm={onDelete}
           onCancel={onCancel}
         />
       )}
       {removing && (
-        <ConfirmBox
-          text={
+        <ConfirmPanel
+          className="mt-3"
+          message={
             lastOne
               ? t.admin.removeLast(removing.name, group.name)
               : t.admin.removeMember(removing.name, group.name)
           }
-          action={lastOne ? t.admin.removeAndDelete : t.admin.remove}
-          pending={removingId === removing.profileId}
+          confirmLabel={lastOne ? t.admin.removeAndDelete : t.admin.remove}
+          busy={removingId === removing.profileId}
           error={error}
           onConfirm={() => onRemove(removing.profileId)}
           onCancel={onCancel}
@@ -266,14 +219,7 @@ function UserRow({
   return (
     <li className="py-3">
       <div className="flex items-center gap-3">
-        <span
-          className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-            avatarColor(index),
-          )}
-        >
-          {user.name.trim().charAt(0).toUpperCase()}
-        </span>
+        <Avatar name={user.name} index={index} size="md" />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 truncate text-sm font-medium text-foreground">
             {user.name}
@@ -347,8 +293,16 @@ function UserRow({
       </div>
 
       {confirming && (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          <p>{t.admin.deleteUserConfirm(user.name, parts.join(t.admin.and))}</p>
+        <ConfirmPanel
+          className="mt-3"
+          message={t.admin.deleteUserConfirm(user.name, parts.join(t.admin.and))}
+          confirmLabel={t.admin.deleteAccount}
+          busy={deleting}
+          error={error}
+          confirmDisabled={!nameMatches}
+          onConfirm={onDelete}
+          onCancel={onCancel}
+        >
           <label htmlFor={inputId} className="mt-3 block text-xs font-medium">
             {t.admin.typeToConfirm(<span className="font-semibold">{user.name}</span>)}
           </label>
@@ -360,27 +314,7 @@ function UserRow({
             autoComplete="off"
             className="mt-1 w-full max-w-xs rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-red-300"
           />
-          {error && <p className="mt-2 font-medium">{error}</p>}
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={deleting || !nameMatches}
-              className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-            >
-              {deleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {t.admin.deleteAccount}
-            </button>
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={deleting}
-              className="text-sm text-red-900/80 transition hover:text-red-900"
-            >
-              {t.common.cancel}
-            </button>
-          </div>
-        </div>
+        </ConfirmPanel>
       )}
     </li>
   );
@@ -666,25 +600,26 @@ export default function AdminPanel({ youId }: { youId: string }) {
       </div>
 
       {isError && (
-        <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{error.message}</span>
-        </div>
+        <Notice tone="error" className="mt-4">
+          {error.message}
+        </Notice>
       )}
 
       {notice && (
-        <div className="mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-          <span className="flex-1">{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            title={t.admin.dismiss}
-            className="text-emerald-900/70 hover:text-emerald-900"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <Notice tone="success" className="mt-4">
+          <div className="flex items-start justify-between gap-2">
+            {notice}
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              title={t.admin.dismiss}
+              aria-label={t.admin.dismiss}
+              className="text-emerald-900/70 hover:text-emerald-900"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </Notice>
       )}
 
       <div className="mt-6 rounded-2xl border bg-card p-5 shadow-sm">

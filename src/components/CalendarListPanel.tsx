@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Loader2, Pencil, Star } from "lucide-react";
 
 import InfoTip from "@/components/InfoTip";
 import InlineTextEdit from "@/components/InlineTextEdit";
-import PrimaryCalendarConfirm from "@/components/PrimaryCalendarConfirm";
+import Collapse from "@/components/ui/Collapse";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import Notice from "@/components/ui/Notice";
 import { useT } from "@/i18n/lang";
 import {
   CATEGORIES,
@@ -231,198 +232,193 @@ export default function CalendarListPanel({
                 </button>
               </div>
 
-              <AnimatePresence initial={false}>
-                {isOpen && (
-                  <motion.ul
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    {shown.map((c) => {
-                      const isBuiltIn = c.provider === "builtin";
-                      const isHidden = hidden.has(c.id);
-                      const saving = savingId === c.id;
-                      // Only what the group header doesn't already say.
-                      const note = isBuiltIn
-                        ? null
-                        : [
-                            c.renamed && c.originalName ? words.originally(c.originalName) : null,
-                            sharedAccount ? null : c.account,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ");
-                      return (
-                        <li
-                          key={c.id}
-                          className="flex flex-col gap-1.5 border-t border-dashed py-2 pl-7"
-                        >
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={!isHidden}
-                              onChange={() => onSetVisible([c.id], isHidden)}
-                              aria-label={words.show(nameOf(c))}
-                              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                            />
-                            <span
-                              className={cn(
-                                "mt-1 h-3 w-3 shrink-0 rounded-full",
-                                isHidden && "opacity-30",
-                              )}
-                              style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
-                            />
-                            <div className="min-w-0 flex-1">
-                              {renamingId === c.id ? (
-                                <>
-                                  <InlineTextEdit
-                                    value={nameOf(c)}
-                                    maxLength={MAX_CALENDAR_NAME_LENGTH}
-                                    submitting={renameSubmitting}
-                                    error={renameError}
-                                    onSubmit={(name) => onRename(c.id, name)}
-                                    onCancel={onCancelRename}
-                                  />
-                                  {c.renamed && c.originalName && (
-                                    <button
-                                      type="button"
-                                      disabled={renameSubmitting}
-                                      onClick={() => onRename(c.id, null)}
-                                      className="mt-1 text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-50"
-                                    >
-                                      {words.useOriginalName(c.originalName)}
-                                    </button>
-                                  )}
-                                </>
-                              ) : (
-                                <div className="flex min-w-0 items-center gap-1">
-                                  <p
-                                    className={cn(
-                                      "truncate text-sm font-medium text-foreground",
-                                      isHidden && "text-muted-foreground line-through",
-                                    )}
+              <Collapse open={isOpen}>
+                <ul>
+                  {shown.map((c) => {
+                    const isBuiltIn = c.provider === "builtin";
+                    const isHidden = hidden.has(c.id);
+                    const saving = savingId === c.id;
+                    // Only what the group header doesn't already say.
+                    const note = isBuiltIn
+                      ? null
+                      : [
+                          c.renamed && c.originalName ? words.originally(c.originalName) : null,
+                          sharedAccount ? null : c.account,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ");
+                    return (
+                      <li
+                        key={c.id}
+                        className="flex flex-col gap-1.5 border-t border-dashed py-2 pl-7"
+                      >
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={!isHidden}
+                            onChange={() => onSetVisible([c.id], isHidden)}
+                            aria-label={words.show(nameOf(c))}
+                            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                          />
+                          <span
+                            className={cn(
+                              "mt-1 h-3 w-3 shrink-0 rounded-full",
+                              isHidden && "opacity-30",
+                            )}
+                            style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            {renamingId === c.id ? (
+                              <>
+                                <InlineTextEdit
+                                  value={nameOf(c)}
+                                  maxLength={MAX_CALENDAR_NAME_LENGTH}
+                                  submitting={renameSubmitting}
+                                  error={renameError}
+                                  onSubmit={(name) => onRename(c.id, name)}
+                                  onCancel={onCancelRename}
+                                />
+                                {c.renamed && c.originalName && (
+                                  <button
+                                    type="button"
+                                    disabled={renameSubmitting}
+                                    onClick={() => onRename(c.id, null)}
+                                    className="mt-1 text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-50"
                                   >
-                                    {nameOf(c)}
-                                  </p>
-                                  {c.id === primaryId && (
-                                    <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
-                                      <Star className="h-2.5 w-2.5 fill-current" />
-                                      {primaryWords.badge}
-                                    </span>
-                                  )}
-                                  {/* The holiday calendar has no stored row to rename. */}
-                                  {!isBuiltIn && (
-                                    <button
-                                      type="button"
-                                      onClick={() => onStartRename(c.id)}
-                                      title={words.rename(nameOf(c))}
-                                      aria-label={words.rename(nameOf(c))}
-                                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-                                    >
-                                      <Pencil className="h-3 w-3" />
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                              {note && (
-                                <p className="truncate text-xs text-muted-foreground">{note}</p>
-                              )}
-                            </div>
-                            {blockCounts.has(c.id) && (
-                              <span className="mt-0.5 shrink-0 text-xs text-muted-foreground">
-                                {words.total(blockCounts.get(c.id)!)}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 pl-[2.375rem]">
-                            {isBuiltIn ? (
-                              // Holidays are always categorised as such; there is nothing to pick.
-                              <span
-                                className="rounded-full px-2 py-0.5 text-xs"
-                                style={{
-                                  backgroundColor: `rgba(${colorOf(c.id)}, 0.16)`,
-                                  color: `rgb(${colorOf(c.id)})`,
-                                }}
-                              >
-                                {words.holidayCategory}
-                              </span>
+                                    {words.useOriginalName(c.originalName)}
+                                  </button>
+                                )}
+                              </>
                             ) : (
-                              <select
-                                value={c.purpose ?? ""}
-                                disabled={saving}
-                                onChange={(e) =>
-                                  onSetPurpose(
-                                    c.id,
-                                    (e.target.value || null) as CalendarPurpose | null,
-                                  )
-                                }
-                                aria-label={words.categoryFor(nameOf(c))}
-                                className="rounded-lg border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-                              >
-                                <option value="">{words.noCategory}</option>
-                                {CATEGORIES.map((category) => (
-                                  <option key={category} value={category}>
-                                    {t.categories[category]}
-                                  </option>
-                                ))}
-                              </select>
+                              <div className="flex min-w-0 items-center gap-1">
+                                <p
+                                  className={cn(
+                                    "truncate text-sm font-medium text-foreground",
+                                    isHidden && "text-muted-foreground line-through",
+                                  )}
+                                >
+                                  {nameOf(c)}
+                                </p>
+                                {c.id === primaryId && (
+                                  <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                                    <Star className="h-2.5 w-2.5 fill-current" />
+                                    {primaryWords.badge}
+                                  </span>
+                                )}
+                                {/* The holiday calendar has no stored row to rename. */}
+                                {!isBuiltIn && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onStartRename(c.id)}
+                                    title={words.rename(nameOf(c))}
+                                    aria-label={words.rename(nameOf(c))}
+                                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
                             )}
-                            {/* Holidays have no priority: a day off blocks nothing. */}
-                            {!isBuiltIn && (
-                              <select
-                                value={c.priority ?? "normal"}
-                                disabled={saving}
-                                onChange={(e) =>
-                                  onSetPriority(c.id, e.target.value as CalendarPriority)
-                                }
-                                aria-label={words.priorityFor(nameOf(c))}
-                                className="rounded-lg border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-                              >
-                                {PRIORITIES.map((priority) => (
-                                  <option key={priority} value={priority}>
-                                    {words.priorities[priority]}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                            {saving && (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                            )}
-                            {c.writable && c.id !== primaryId && askingPrimaryId !== c.id && (
-                              <button
-                                type="button"
-                                onClick={() => onAskPrimary(c.id)}
-                                className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium text-foreground transition hover:bg-secondary"
-                              >
-                                <Star className="h-3 w-3" />
-                                {primaryWords.makePrimary}
-                              </button>
+                            {note && (
+                              <p className="truncate text-xs text-muted-foreground">{note}</p>
                             )}
                           </div>
-                          {askingPrimaryId === c.id && (
-                            <div className="pl-[2.375rem]">
-                              <PrimaryCalendarConfirm
-                                message={
-                                  primary
-                                    ? primaryWords.confirmChange(nameOf(c), nameOf(primary))
-                                    : primaryWords.confirmFirst(nameOf(c))
-                                }
-                                confirmLabel={
-                                  primary ? primaryWords.yesChange : primaryWords.yesChoose
-                                }
-                                busy={primaryBusy}
-                                error={primaryError}
-                                onConfirm={() => onConfirmPrimary(c.id)}
-                                onCancel={onCancelPrimary}
-                              />
-                            </div>
+                          {blockCounts.has(c.id) && (
+                            <span className="mt-0.5 shrink-0 text-xs text-muted-foreground">
+                              {words.total(blockCounts.get(c.id)!)}
+                            </span>
                           )}
-                        </li>
-                      );
-                    })}
-                  </motion.ul>
-                )}
-              </AnimatePresence>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 pl-[2.375rem]">
+                          {isBuiltIn ? (
+                            // Holidays are always categorised as such; there is nothing to pick.
+                            <span
+                              className="rounded-full px-2 py-0.5 text-xs"
+                              style={{
+                                backgroundColor: `rgba(${colorOf(c.id)}, 0.16)`,
+                                color: `rgb(${colorOf(c.id)})`,
+                              }}
+                            >
+                              {words.holidayCategory}
+                            </span>
+                          ) : (
+                            <select
+                              value={c.purpose ?? ""}
+                              disabled={saving}
+                              onChange={(e) =>
+                                onSetPurpose(
+                                  c.id,
+                                  (e.target.value || null) as CalendarPurpose | null,
+                                )
+                              }
+                              aria-label={words.categoryFor(nameOf(c))}
+                              className="rounded-lg border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                            >
+                              <option value="">{words.noCategory}</option>
+                              {CATEGORIES.map((category) => (
+                                <option key={category} value={category}>
+                                  {t.categories[category]}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {/* Holidays have no priority: a day off blocks nothing. */}
+                          {!isBuiltIn && (
+                            <select
+                              value={c.priority ?? "normal"}
+                              disabled={saving}
+                              onChange={(e) =>
+                                onSetPriority(c.id, e.target.value as CalendarPriority)
+                              }
+                              aria-label={words.priorityFor(nameOf(c))}
+                              className="rounded-lg border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                            >
+                              {PRIORITIES.map((priority) => (
+                                <option key={priority} value={priority}>
+                                  {words.priorities[priority]}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {saving && (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                          )}
+                          {c.writable && c.id !== primaryId && askingPrimaryId !== c.id && (
+                            <button
+                              type="button"
+                              onClick={() => onAskPrimary(c.id)}
+                              className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium text-foreground transition hover:bg-secondary"
+                            >
+                              <Star className="h-3 w-3" />
+                              {primaryWords.makePrimary}
+                            </button>
+                          )}
+                        </div>
+                        {askingPrimaryId === c.id && (
+                          <div className="pl-[2.375rem]">
+                            <ConfirmPanel
+                              tone="neutral"
+                              className="mt-3"
+                              message={
+                                primary
+                                  ? primaryWords.confirmChange(nameOf(c), nameOf(primary))
+                                  : primaryWords.confirmFirst(nameOf(c))
+                              }
+                              confirmLabel={
+                                primary ? primaryWords.yesChange : primaryWords.yesChoose
+                              }
+                              busy={primaryBusy}
+                              error={primaryError}
+                              onConfirm={() => onConfirmPrimary(c.id)}
+                              onCancel={onCancelPrimary}
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Collapse>
             </li>
           );
         })}
@@ -441,45 +437,40 @@ export default function CalendarListPanel({
               className={cn("h-4 w-4 shrink-0 transition-transform", uncountedOpen && "rotate-180")}
             />
           </button>
-          <AnimatePresence initial={false}>
-            {uncountedOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <ul>
-                  {uncounted.map(({ calendar: c, brandId, brandLabel }) => (
-                    <li key={c.id} className="flex items-start gap-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={false}
-                        onChange={() => onSetVisible([c.id], true)}
-                        aria-label={words.show(nameOf(c))}
-                        className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                      />
-                      <span
-                        className="mt-1 h-3 w-3 shrink-0 rounded-full opacity-40"
-                        style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-muted-foreground">{nameOf(c)}</p>
-                        <p className="truncate text-xs text-muted-foreground/80">
-                          {words.brands[brandId] ?? brandLabel}
-                          {c.provider !== "builtin" && c.account ? ` · ${c.account}` : ""}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <Collapse open={uncountedOpen}>
+            <ul>
+              {uncounted.map(({ calendar: c, brandId, brandLabel }) => (
+                <li key={c.id} className="flex items-start gap-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={false}
+                    onChange={() => onSetVisible([c.id], true)}
+                    aria-label={words.show(nameOf(c))}
+                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                  />
+                  <span
+                    className="mt-1 h-3 w-3 shrink-0 rounded-full opacity-40"
+                    style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-muted-foreground">{nameOf(c)}</p>
+                    <p className="truncate text-xs text-muted-foreground/80">
+                      {words.brands[brandId] ?? brandLabel}
+                      {c.provider !== "builtin" && c.account ? ` · ${c.account}` : ""}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Collapse>
         </div>
       )}
 
-      {saveError && <p className="mt-2 text-xs text-red-700">{saveError}</p>}
+      {saveError && (
+        <Notice tone="error" bare className="mt-2 text-xs">
+          {saveError}
+        </Notice>
+      )}
     </aside>
   );
 }

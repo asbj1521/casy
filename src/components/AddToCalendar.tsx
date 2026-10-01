@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarPlus, Check, Download, Loader2, XCircle } from "lucide-react";
+import { AlertTriangle, CalendarPlus, Check, Download, Loader2 } from "lucide-react";
 
 import { calendarStatusQuery, primaryCalendarQuery, updatePrimaryCalendar } from "@/api/calendars";
 import {
@@ -9,6 +9,7 @@ import {
   eventsQueryKey,
   type SuggestedEvent,
 } from "@/api/events";
+import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
@@ -202,10 +203,9 @@ export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
     <div className="min-w-0">
       {body}
       {error && (
-        <p className="mt-2 flex items-start gap-2 text-sm text-red-700">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+        <Notice tone="error" bare className="mt-2">
           {error}
-        </p>
+        </Notice>
       )}
     </div>
   );

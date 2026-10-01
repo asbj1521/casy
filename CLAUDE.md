@@ -59,7 +59,7 @@ supabase db push --dry-run
 ```
 src/
 ├── api/          # Every Edge Function call: groups, events, calendars (status, busy, settings, connect, primary calendar), account, admin; mockData (example groups), currentUser
-├── components/   # Hand-built UI components; RequireAuth guards signed-in routes; AdminPanel is lazy-loaded
+├── components/   # Hand-built UI components; RequireAuth guards signed-in routes; AdminPanel is lazy-loaded; ui/ holds the shared pieces (Notice, ConfirmPanel, Collapse, Avatar, Switch, CopyField): use them rather than restyling a box or a confirm by hand
 ├── context/      # Auth: AuthProvider (session) + auth.ts (useAuth; useSignedInUser for pages behind RequireAuth; displayName)
 ├── hooks/        # useSchedulingGroups (real vs example groups), useExampleCarousel
 ├── i18n/         # Languages: da.tsx (the shape) + en.tsx, useT/useLang, current.ts for code outside React

@@ -1,3 +1,4 @@
+import Notice from "@/components/ui/Notice";
 import { useState, type FormEvent } from "react";
 import { Check, Loader2, X } from "lucide-react";
 
@@ -77,7 +78,11 @@ export default function InlineTextEdit({
       >
         <X className="h-3.5 w-3.5" />
       </button>
-      {error && <p className="basis-full text-xs text-red-700">{error}</p>}
+      {error && (
+        <Notice tone="error" bare className="basis-full text-xs">
+          {error}
+        </Notice>
+      )}
     </form>
   );
 }

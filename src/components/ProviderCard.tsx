@@ -9,10 +9,11 @@ import {
   Loader2,
   RefreshCw,
   Trash2,
-  XCircle,
 } from "lucide-react";
 
 import type { CalendarConnectionStatus } from "@/api/calendars";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import Notice from "@/components/ui/Notice";
 import { useT } from "@/i18n/lang";
 import { calendarNames, hasDistinctCalendarNames, syncedAgo } from "@/lib/accountSummary";
 import { cn } from "@/lib/utils";
@@ -154,31 +155,15 @@ function AccountRow({
       )}
 
       {confirming && (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          <p>
-            <RemoveNote provider={provider} label={account.account_label} />
-          </p>
-          {removeError && <p className="mt-2 font-medium">{removeError}</p>}
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onRemove}
-              disabled={removing}
-              className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
-            >
-              {removing && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {t.providerCard.remove}
-            </button>
-            <button
-              type="button"
-              onClick={onCancelRemove}
-              disabled={removing}
-              className="text-sm text-red-900/80 transition hover:text-red-900"
-            >
-              {t.common.cancel}
-            </button>
-          </div>
-        </div>
+        <ConfirmPanel
+          className="mt-3"
+          message={<RemoveNote provider={provider} label={account.account_label} />}
+          confirmLabel={t.providerCard.remove}
+          busy={removing}
+          error={removeError}
+          onConfirm={onRemove}
+          onCancel={onCancelRemove}
+        />
       )}
     </li>
   );
@@ -335,12 +320,9 @@ export default function ProviderCard({
       {/* The latest attempt failed (e.g. adding another account), with the real
           reason. Cleared automatically by the next successful connect. */}
       {latest?.status === "error" && (
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
-            {t.providerCard.lastFailed(latest.error_message ?? t.providerCard.unknownError)}
-          </span>
-        </div>
+        <Notice tone="error" className="mt-3">
+          {t.providerCard.lastFailed(latest.error_message ?? t.providerCard.unknownError)}
+        </Notice>
       )}
 
       {children}

@@ -11,7 +11,6 @@ import {
   Sparkles,
   Users,
   X,
-  XCircle,
 } from "lucide-react";
 
 import {
@@ -25,6 +24,9 @@ import {
   type SuggestedEvent,
 } from "@/api/events";
 import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
+import Avatar from "@/components/ui/Avatar";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import Notice from "@/components/ui/Notice";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { APP_TIME_ZONE } from "@/lib/zone";
 import AddToCalendar from "@/components/AddToCalendar";
@@ -34,7 +36,6 @@ import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { useSignedInUser } from "@/context/auth";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
-import { avatarColor } from "@/lib/avatar";
 import { formatEventDate, formatHeadline, nameList } from "@/lib/format";
 import { sectionEvents, waitingOn } from "@/lib/myEvents";
 import { cn } from "@/lib/utils";
@@ -54,14 +55,7 @@ function People({ invitees }: { invitees: EventInvitee[] }) {
             p.response === null && "bg-background text-muted-foreground",
           )}
         >
-          <span
-            className={cn(
-              "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold",
-              avatarColor(i),
-            )}
-          >
-            {p.name.trim().charAt(0).toUpperCase()}
-          </span>
+          <Avatar name={p.name} index={i} size="xs" />
           {p.isYou ? t.events.you : p.name}
           {p.response === "accepted" ? (
             <Check className="h-3 w-3" />
@@ -134,14 +128,7 @@ function GroupName({ event }: { event: SuggestedEvent }) {
                 key={`${name}-${i}`}
                 className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-sm text-foreground"
               >
-                <span
-                  className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-                    avatarColor(i),
-                  )}
-                >
-                  {name.trim().charAt(0).toUpperCase()}
-                </span>
+                <Avatar name={name} index={i} />
                 <span className="truncate">{name}</span>
               </li>
             ))}
@@ -269,27 +256,15 @@ export default function MyEvents() {
     if (exiting(event)) {
       if (inline) return null;
       return (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          {isCancel ? t.events.cancelConfirm : t.events.leaveConfirm}
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => (isCancel ? cancel : leave).mutate(event.id)}
-              disabled={busyId === event.id}
-              className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
-            >
-              {busyId === event.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {label}
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirming(null)}
-              className="text-red-900/80 transition hover:text-red-900"
-            >
-              {isCancel ? t.events.keepIt : t.events.stayIn}
-            </button>
-          </div>
-        </div>
+        <ConfirmPanel
+          className="mt-3"
+          message={isCancel ? t.events.cancelConfirm : t.events.leaveConfirm}
+          confirmLabel={label}
+          cancelLabel={isCancel ? t.events.keepIt : t.events.stayIn}
+          busy={busyId === event.id}
+          onConfirm={() => (isCancel ? cancel : leave).mutate(event.id)}
+          onCancel={() => setConfirming(null)}
+        />
       );
     }
     return (
@@ -322,7 +297,9 @@ export default function MyEvents() {
             {t.events.loading}
           </p>
         ) : isError || !sections ? (
-          <p className="mt-8 text-sm text-red-700">{t.events.loadFailed}</p>
+          <Notice tone="error" bare className="mt-8">
+            {t.events.loadFailed}
+          </Notice>
         ) : nothingToShow ? (
           <div className="mt-6 flex flex-col items-start rounded-2xl border bg-card p-5 sm:mt-8 sm:p-6">
             <CalendarCheck className="h-8 w-8 text-primary" />
@@ -426,10 +403,9 @@ export default function MyEvents() {
                         )}
 
                         {error && (
-                          <p className="mt-3 flex items-start gap-2 text-sm text-red-700">
-                            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <Notice tone="error" bare className="mt-3">
                             {error}
-                          </p>
+                          </Notice>
                         )}
                         {exitControl(event)}
                       </li>
@@ -465,7 +441,11 @@ export default function MyEvents() {
                           <People invitees={event.invitees} />
                         </div>
                         <EdgeWarnings event={event} className="mt-3" />
-                        {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+                        {error && (
+                          <Notice tone="error" bare className="mt-3">
+                            {error}
+                          </Notice>
+                        )}
                         {exitControl(event)}
                       </li>
                     );

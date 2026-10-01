@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -14,6 +14,7 @@ import {
 
 import { eventsQueryKey, suggestEvent } from "@/api/events";
 import { createGroup, createInvite, groupsQueryKey, leaveGroup, type Group } from "@/api/groups";
+import Avatar from "@/components/ui/Avatar";
 import {
   findVacationSuggestions,
   type MultiDayResult,
@@ -33,7 +34,6 @@ import {
   nameList,
 } from "@/lib/format";
 import { edgeWarnings } from "@/lib/earlyMorning";
-import { avatarColor } from "@/lib/avatar";
 import {
   daysUntil,
   fallbackTitleId,
@@ -43,6 +43,7 @@ import {
   settingsToSearch,
   type SchedulerSettings,
 } from "@/lib/scheduler";
+import { useCopy } from "@/hooks/useCopy";
 import { readStored, writeStored } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, dayOf, localDate, startOfMonth } from "@/lib/zone";
@@ -126,7 +127,7 @@ export default function FindDate() {
   // The page as this person left it earlier in this visit, if they did
   // (pageMemory); otherwise it starts fresh, with random settings.
   const [left] = useState(() => (pageMemory?.userId === userId ? pageMemory : null));
-  const [copied, setCopied] = useState(false);
+  const [copied, copy] = useCopy();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
     left?.selectedGroupId ?? null,
   );
@@ -154,11 +155,6 @@ export default function FindDate() {
   const [monthPick, setMonthPick] = useState<{ month: number; anchor: string | null } | null>(
     left?.monthPick ?? null,
   );
-  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  // Don't leave the "Copied!" timer running after the page goes away.
-  useEffect(() => () => clearTimeout(copiedTimer.current), []);
-
   // Keep the page as it is for the next time it opens this visit (pageMemory).
   useEffect(() => {
     pageMemory = {
@@ -477,13 +473,6 @@ export default function FindDate() {
       settings: search,
       date: { start: activeSlot.start, end: activeSlot.end },
     });
-  }
-
-  function handleCopy() {
-    navigator.clipboard?.writeText(window.location.href).catch(() => {});
-    setCopied(true);
-    clearTimeout(copiedTimer.current);
-    copiedTimer.current = setTimeout(() => setCopied(false), 1800);
   }
 
   // The big answer: the date (or span), and the times plus how far away it is.
@@ -1037,7 +1026,7 @@ export default function FindDate() {
                 </h2>
                 <button
                   type="button"
-                  onClick={handleCopy}
+                  onClick={() => copy(window.location.href)}
                   className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
                 >
                   {copied ? (
@@ -1077,14 +1066,7 @@ export default function FindDate() {
                     key={p.profileId}
                     className="flex items-center gap-2 rounded-full border bg-card py-1 pl-1 pr-3"
                   >
-                    <span
-                      className={cn(
-                        "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
-                        avatarColor(i),
-                      )}
-                    >
-                      {p.name.charAt(0)}
-                    </span>
+                    <Avatar name={p.name} index={i} />
                     <span className="text-sm text-foreground">{p.name}</span>
                   </span>
                 ))}

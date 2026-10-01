@@ -1,16 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CheckCircle2,
-  Link2,
-  Loader2,
-  LogOut,
-  Pencil,
-  RefreshCw,
-  ShieldCheck,
-  XCircle,
-} from "lucide-react";
+import { Link2, Loader2, LogOut, Pencil, RefreshCw, ShieldCheck } from "lucide-react";
 import { FaMicrosoft } from "react-icons/fa6";
 import { SiApple, SiGoogle } from "react-icons/si";
 
@@ -25,10 +16,11 @@ import PasswordForm from "@/components/PasswordForm";
 import PrimaryCalendarCard from "@/components/PrimaryCalendarCard";
 import ProviderCard, { type ProviderMeta } from "@/components/ProviderCard";
 import TopNav from "@/components/TopNav";
+import Avatar from "@/components/ui/Avatar";
+import Notice from "@/components/ui/Notice";
 import { displayName, useAuth, useSignedInUser } from "@/context/auth";
 import { authErrorMessage } from "@/i18n/authError";
 import { useT } from "@/i18n/lang";
-import { avatarColor } from "@/lib/avatar";
 import { markCalendarOnboardingSeen } from "@/lib/calendarOnboarding";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
 import { supabase } from "@/lib/supabase";
@@ -515,34 +507,26 @@ export default function Profile() {
         {/* Result of a just-completed OAuth round trip, if any */}
         {oauthReturn &&
           ("connected" in oauthReturn ? (
-            <div className="mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                {t.profile.connected(
-                  oauthReturn.connected in t.providers
-                    ? t.providers[oauthReturn.connected as keyof typeof t.providers].label
-                    : t.profile.yourCalendar,
-                )}
-              </span>
-            </div>
+            <Notice tone="success" className="mt-4">
+              {t.profile.connected(
+                oauthReturn.connected in t.providers
+                  ? t.providers[oauthReturn.connected as keyof typeof t.providers].label
+                  : t.profile.yourCalendar,
+              )}
+            </Notice>
           ) : (
-            <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                {t.profile.couldntConnect(
-                  // "google:access_denied": the reason after the colon, in words.
-                  t.profile.oauthErrors[oauthReturn.failed.split(":")[1] ?? ""] ??
-                    oauthReturn.failed,
-                )}
-              </span>
-            </div>
+            <Notice tone="error" className="mt-4">
+              {t.profile.couldntConnect(
+                // "google:access_denied": the reason after the colon, in words.
+                t.profile.oauthErrors[oauthReturn.failed.split(":")[1] ?? ""] ?? oauthReturn.failed,
+              )}
+            </Notice>
           ))}
 
         {connectError && (
-          <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{connectError}</span>
-          </div>
+          <Notice tone="error" className="mt-4">
+            {connectError}
+          </Notice>
         )}
 
         {/* Who this is, plus a compact stat strip beside the name: three
@@ -558,12 +542,10 @@ export default function Profile() {
                 setEditingName(true);
               }}
               title={t.profile.changeName}
-              className={cn(
-                "group relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-semibold",
-                avatarColor(0),
-              )}
+              aria-label={t.profile.changeName}
+              className="group relative shrink-0 rounded-full"
             >
-              {name.charAt(0).toUpperCase()}
+              <Avatar name={name} index={0} size="lg" />
               <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                 <Pencil className="h-5 w-5 text-white" />
               </span>
@@ -656,19 +638,9 @@ export default function Profile() {
                 )}
               </div>
               {syncResult && (
-                <p
-                  className={cn(
-                    "mt-2 flex items-center gap-2 text-sm",
-                    syncResult.ok ? "text-emerald-800" : "text-red-800",
-                  )}
-                >
-                  {syncResult.ok ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  ) : (
-                    <XCircle className="h-4 w-4 shrink-0" />
-                  )}
+                <Notice tone={syncResult.ok ? "success" : "error"} bare className="mt-2">
                   {syncResult.text}
-                </p>
+                </Notice>
               )}
 
               {/* Where Casy adds agreed events, and whether it does so on its own. */}
@@ -707,10 +679,9 @@ export default function Profile() {
                     >
                       {/* ICS: paste a calendar feed link */}
                       {provider.id === "ics" && icsResult && (
-                        <p className="mt-3 flex items-center gap-2 text-sm text-emerald-800">
-                          <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        <Notice tone="success" bare className="mt-3">
                           {icsResult}
-                        </p>
+                        </Notice>
                       )}
                       {provider.id === "ics" && (
                         // The key clears the typed link after a successful add, so
@@ -730,10 +701,9 @@ export default function Profile() {
 
                       {/* Apple: Apple Account email + app-specific password */}
                       {provider.id === "apple" && appleResult && (
-                        <p className="mt-3 flex items-center gap-2 text-sm text-emerald-800">
-                          <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        <Notice tone="success" bare className="mt-3">
                           {appleResult}
-                        </p>
+                        </Notice>
                       )}
                       {provider.id === "apple" && (
                         <AppleCredentialsForm
@@ -811,10 +781,9 @@ export default function Profile() {
               <h2 className="text-lg font-semibold text-foreground">{t.profile.password}</h2>
               <div className="mt-4 rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
                 {passwordSaved && !passwordFormOpen && (
-                  <p className="mb-3 flex items-center gap-2 text-sm text-emerald-800">
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <Notice tone="success" bare className="mb-3">
                     {t.profile.passwordSaved}
-                  </p>
+                  </Notice>
                 )}
                 {passwordFormOpen && codeFor ? (
                   <PasswordCodeStep
@@ -887,9 +856,9 @@ export default function Profile() {
                     {t.profile.signOutEverywhereHelp}
                   </p>
                   {signOutEverywhereFailed && (
-                    <p className="mt-2 text-sm text-red-700">
+                    <Notice tone="error" bare className="mt-2">
                       {t.profile.couldntSignOutEverywhere}
-                    </p>
+                    </Notice>
                   )}
                 </div>
               </div>

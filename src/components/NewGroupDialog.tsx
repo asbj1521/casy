@@ -1,7 +1,8 @@
 import { useId, useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Users, XCircle } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 
+import Notice from "@/components/ui/Notice";
 import { useT } from "@/i18n/lang";
 import { MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
 
@@ -102,10 +103,9 @@ function NewGroupForm({
       </label>
 
       {error && (
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{error}</span>
-        </div>
+        <Notice tone="error" className="mt-3">
+          {error}
+        </Notice>
       )}
 
       <div className="mt-5 flex justify-end gap-2">

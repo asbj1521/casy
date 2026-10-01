@@ -1,6 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
-import { KeyRound, Loader2, XCircle } from "lucide-react";
+import { KeyRound, Loader2 } from "lucide-react";
 
+import Notice from "@/components/ui/Notice";
 import { useT } from "@/i18n/lang";
 
 /**
@@ -59,12 +60,7 @@ export default function PasswordCodeStep({
           className="w-40 rounded-lg border bg-background px-3 py-2 text-lg tracking-[0.3em] outline-none focus:ring-2 focus:ring-primary/30"
         />
       </label>
-      {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <Notice tone="error">{error}</Notice>}
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"

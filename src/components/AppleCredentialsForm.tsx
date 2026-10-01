@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, XCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import AppleCredentialFields from "@/components/AppleCredentialFields";
+import Collapse from "@/components/ui/Collapse";
+import Notice from "@/components/ui/Notice";
 import { useT } from "@/i18n/lang";
 
 /** The step-by-step setup, for anyone who opens this form not knowing what the password is. */
@@ -44,67 +45,56 @@ export default function AppleCredentialsForm({
   }
 
   return (
-    <AnimatePresence initial={false}>
-      {open && (
-        <motion.form
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          onSubmit={handleSubmit}
-          className="overflow-hidden"
-        >
-          <div className="mt-4 flex flex-col gap-3 border-t pt-4">
-            <AppleCredentialFields
-              email={email}
-              password={password}
-              onEmailChange={setEmail}
-              onPasswordChange={setPassword}
-              withAboutTip
-              passwordHint={t.appleForm.noPasswordYet(
-                <Link
-                  to={SETUP_PATH}
-                  className="font-medium text-foreground underline underline-offset-2"
-                >
-                  {t.appleForm.stepByStep}
-                </Link>,
-              )}
-            />
-            {error && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <div>
-                  <p>{error}</p>
-                  <p className="mt-1">
-                    {t.appleForm.stuck(
-                      <Link to={SETUP_PATH} className="font-medium underline underline-offset-2">
-                        {t.appleForm.stepByStep}
-                      </Link>,
-                    )}
-                  </p>
-                </div>
-              </div>
+    <Collapse open={open}>
+      <form onSubmit={handleSubmit}>
+        <div className="mt-4 flex flex-col gap-3 border-t pt-4">
+          <AppleCredentialFields
+            email={email}
+            password={password}
+            onEmailChange={setEmail}
+            onPasswordChange={setPassword}
+            withAboutTip
+            passwordHint={t.appleForm.noPasswordYet(
+              <Link
+                to={SETUP_PATH}
+                className="font-medium text-foreground underline underline-offset-2"
+              >
+                {t.appleForm.stepByStep}
+              </Link>,
             )}
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-              >
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {submitting ? t.appleForm.reading : t.providerCard.connect}
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={onCancel}
-                className="text-sm text-muted-foreground transition hover:text-foreground"
-              >
-                {t.common.cancel}
-              </button>
-            </div>
+          />
+          {error && (
+            <Notice tone="error">
+              <p>{error}</p>
+              <p className="mt-1">
+                {t.appleForm.stuck(
+                  <Link to={SETUP_PATH} className="font-medium underline underline-offset-2">
+                    {t.appleForm.stepByStep}
+                  </Link>,
+                )}
+              </p>
+            </Notice>
+          )}
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {submitting ? t.appleForm.reading : t.providerCard.connect}
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={onCancel}
+              className="text-sm text-muted-foreground transition hover:text-foreground"
+            >
+              {t.common.cancel}
+            </button>
           </div>
-        </motion.form>
-      )}
-    </AnimatePresence>
+        </div>
+      </form>
+    </Collapse>
   );
 }

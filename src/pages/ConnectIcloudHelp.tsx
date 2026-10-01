@@ -14,7 +14,6 @@ import {
   Loader2,
   ScanFace,
   ShieldCheck,
-  XCircle,
 } from "lucide-react";
 
 import { connectApple } from "@/api/calendars";
@@ -25,6 +24,7 @@ import AppleWalkthrough, {
 } from "@/components/appleWalkthrough/AppleWalkthrough";
 import type { Device } from "@/components/appleWalkthrough/layout";
 import TopNav from "@/components/TopNav";
+import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { useLang, useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
@@ -582,12 +582,7 @@ export default function ConnectIcloudHelp() {
               emailHint={c.enter.emailHint}
               passwordHint={c.enter.passwordHint}
             />
-            {connect.isError && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{connect.error.message}</span>
-              </div>
-            )}
+            {connect.isError && <Notice tone="error">{connect.error.message}</Notice>}
             <p className="text-xs leading-relaxed text-muted-foreground">{c.enter.revoke}</p>
             <StepFooter secondary={backButton}>
               <button type="submit" disabled={connect.isPending} className={primaryButton}>

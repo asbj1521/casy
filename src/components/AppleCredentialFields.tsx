@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 
 import InfoTip from "@/components/InfoTip";
+import Notice from "@/components/ui/Notice";
 import { useT } from "@/i18n/lang";
 import { APP_PASSWORD_EXAMPLE, looksLikeAppSpecificPassword } from "@/lib/appleCredentials";
 
@@ -122,17 +123,11 @@ export default function AppleCredentialFields({
         {/* Announced when it appears, without moving focus off the field. */}
         <div aria-live="polite">
           {shapeLooksWrong && (
-            <p
-              id={warningId}
-              className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
-            >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                {t.appleForm.looksWrong(
-                  <span className="whitespace-nowrap font-mono">{APP_PASSWORD_EXAMPLE}</span>,
-                )}
-              </span>
-            </p>
+            <Notice tone="warning" id={warningId} className="mt-2">
+              {t.appleForm.looksWrong(
+                <span className="whitespace-nowrap font-mono">{APP_PASSWORD_EXAMPLE}</span>,
+              )}
+            </Notice>
           )}
         </div>
       </div>

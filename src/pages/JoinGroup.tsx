@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, Loader2, Users, XCircle } from "lucide-react";
 
 import { groupsQuery, groupsQueryKey, joinGroup, previewInvite } from "@/api/groups";
+import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import TopNav from "@/components/TopNav";
@@ -112,7 +113,9 @@ export default function JoinGroup() {
                     {t.join.joinGroup}
                   </button>
                   {join.isError && (
-                    <p className="mt-3 text-sm text-red-700">{join.error.message}</p>
+                    <Notice tone="error" bare className="mt-3">
+                      {join.error.message}
+                    </Notice>
                   )}
                 </>
               ) : (

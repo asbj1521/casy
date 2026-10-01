@@ -1,11 +1,12 @@
 import { useLayoutEffect, useState, type FormEvent } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, KeyRound, Loader2, Mail, XCircle } from "lucide-react";
+import { KeyRound, Loader2, Mail } from "lucide-react";
 
 import { calendarStatusQuery } from "@/api/calendars";
 import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
+import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { authErrorMessage } from "@/i18n/authError";
@@ -388,10 +389,9 @@ export default function SignIn() {
 
         {/* Arrived here right after deleting an account from the profile. */}
         {searchParams.get("deleted") && (
-          <div className="mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{t.signIn.accountDeleted}</span>
-          </div>
+          <Notice tone="success" className="mt-4">
+            {t.signIn.accountDeleted}
+          </Notice>
         )}
 
         {/* vt-card: where the landing chart lands (cardTransition.ts); its
@@ -417,21 +417,18 @@ export default function SignIn() {
 
             {mode === "link" ? (
               sentTo ? (
-                <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>
-                    {t.signIn.linkSent(
-                      <strong>{sentTo}</strong>,
-                      <button
-                        type="button"
-                        onClick={() => setSentTo(null)}
-                        className="font-medium underline underline-offset-2"
-                      >
-                        {t.signIn.otherEmail}
-                      </button>,
-                    )}
-                  </span>
-                </div>
+                <Notice tone="success">
+                  {t.signIn.linkSent(
+                    <strong>{sentTo}</strong>,
+                    <button
+                      type="button"
+                      onClick={() => setSentTo(null)}
+                      className="font-medium underline underline-offset-2"
+                    >
+                      {t.signIn.otherEmail}
+                    </button>,
+                  )}
+                </Notice>
               ) : (
                 <form onSubmit={(e) => void handleEmail(e)} className="flex flex-col gap-3">
                   <label className="text-sm">
@@ -495,21 +492,18 @@ export default function SignIn() {
 
                 {passwordTab === "signin" ? (
                   forgotSentTo ? (
-                    <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span>
-                        {t.signIn.resetSent(
-                          <strong>{forgotSentTo}</strong>,
-                          <button
-                            type="button"
-                            onClick={() => setForgotSentTo(null)}
-                            className="font-medium underline underline-offset-2"
-                          >
-                            {t.signIn.tryAgain}
-                          </button>,
-                        )}
-                      </span>
-                    </div>
+                    <Notice tone="success">
+                      {t.signIn.resetSent(
+                        <strong>{forgotSentTo}</strong>,
+                        <button
+                          type="button"
+                          onClick={() => setForgotSentTo(null)}
+                          className="font-medium underline underline-offset-2"
+                        >
+                          {t.signIn.tryAgain}
+                        </button>,
+                      )}
+                    </Notice>
                   ) : (
                     <form onSubmit={(e) => void handlePassword(e)} className="flex flex-col gap-3">
                       <label className="text-sm">
@@ -559,34 +553,24 @@ export default function SignIn() {
                       >
                         {forgotSending ? t.signIn.sendingReset : t.signIn.forgot}
                       </button>
-                      {forgotError && (
-                        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-                          <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                          <span>{forgotError}</span>
-                        </div>
-                      )}
+                      {forgotError && <Notice tone="error">{forgotError}</Notice>}
                     </form>
                   )
                 ) : confirmSentTo ? (
-                  <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                    <Mail className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>
-                      {t.signIn.confirmSent(
-                        <strong>{confirmSentTo}</strong>,
-                        resendButton(confirmSentTo),
-                        <button
-                          type="button"
-                          onClick={() => setConfirmSentTo(null)}
-                          className="font-medium underline underline-offset-2"
-                        >
-                          {t.signIn.otherEmail}
-                        </button>,
-                      )}
-                      {resendError && (
-                        <span className="mt-1 block text-red-800">{resendError}</span>
-                      )}
-                    </span>
-                  </div>
+                  <Notice tone="success" icon={Mail}>
+                    {t.signIn.confirmSent(
+                      <strong>{confirmSentTo}</strong>,
+                      resendButton(confirmSentTo),
+                      <button
+                        type="button"
+                        onClick={() => setConfirmSentTo(null)}
+                        className="font-medium underline underline-offset-2"
+                      >
+                        {t.signIn.otherEmail}
+                      </button>,
+                    )}
+                    {resendError && <span className="mt-1 block text-red-800">{resendError}</span>}
+                  </Notice>
                 ) : (
                   <div className="flex flex-col gap-3">
                     <label className="text-sm">
@@ -629,14 +613,11 @@ export default function SignIn() {
             <div ref={attachCaptcha} className="mt-3 empty:hidden" />
 
             {error && (
-              <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  {error}
-                  {unconfirmed && <> {resendButton(unconfirmed)}</>}
-                  {unconfirmed && resendError && <span className="mt-1 block">{resendError}</span>}
-                </span>
-              </div>
+              <Notice tone="error" className="mt-4">
+                {error}
+                {unconfirmed && <> {resendButton(unconfirmed)}</>}
+                {unconfirmed && resendError && <span className="mt-1 block">{resendError}</span>}
+              </Notice>
             )}
           </div>
         </div>

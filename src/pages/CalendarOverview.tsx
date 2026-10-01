@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Info, Loader2, XCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Loader2 } from "lucide-react";
 
 import {
   calendarBusyQuery,
@@ -13,6 +13,7 @@ import {
 } from "@/api/calendars";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
+import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
@@ -259,39 +260,37 @@ export default function CalendarOverview() {
       {/* No "back" link: the header is how every page is reached. */}
       <main className="px-4 pb-20 pt-4 sm:px-6 lg:px-8">
         {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="flex-1">{error.message}</span>
-            <button
-              onClick={() => void refetch()}
-              className="font-medium underline underline-offset-2"
-            >
-              {t.calendarView.tryAgain}
-            </button>
-          </div>
+          <Notice tone="error" className="mb-4">
+            <div className="flex items-start justify-between gap-2">
+              {error.message}
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="shrink-0 font-medium underline underline-offset-2"
+              >
+                {t.calendarView.tryAgain}
+              </button>
+            </div>
+          </Notice>
         )}
 
         {data?.truncated && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-            <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{t.calendarView.truncated}</span>
-          </div>
+          <Notice tone="warning" icon={Info} className="mb-4">
+            {t.calendarView.truncated}
+          </Notice>
         )}
 
         {noConnectedCalendars && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border bg-secondary/40 p-3 text-sm text-muted-foreground">
-            <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              {t.calendarView.noCalendars(
-                <Link
-                  to="/profile"
-                  className="font-medium text-foreground underline underline-offset-2"
-                >
-                  {t.calendarView.noCalendarsLink}
-                </Link>,
-              )}
-            </span>
-          </div>
+          <Notice tone="info" className="mb-4">
+            {t.calendarView.noCalendars(
+              <Link
+                to="/profile"
+                className="font-medium text-foreground underline underline-offset-2"
+              >
+                {t.calendarView.noCalendarsLink}
+              </Link>,
+            )}
+          </Notice>
         )}
 
         {/* One grid, so the calendar list's top lines up with the month grid's:

@@ -7,11 +7,12 @@ import {
   updatePrimaryCalendar,
   type CalendarConnectionStatus,
 } from "@/api/calendars";
-import PrimaryCalendarConfirm from "@/components/PrimaryCalendarConfirm";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import Notice from "@/components/ui/Notice";
+import Switch from "@/components/ui/Switch";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
-import { cn } from "@/lib/utils";
 
 /**
  * The profile page's primary calendar setting: which calendar Casy adds
@@ -96,7 +97,9 @@ export default function PrimaryCalendarCard({
           </div>
 
           {asking && (
-            <PrimaryCalendarConfirm
+            <ConfirmPanel
+              tone="neutral"
+              className="mt-3"
               message={
                 asking.calendarId
                   ? words.confirmChange(nameOf(asking.calendarId), currentName ?? "")
@@ -111,28 +114,16 @@ export default function PrimaryCalendarCard({
           )}
 
           <div className="mt-4 flex items-start gap-3 border-t pt-4">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={!!primary?.autoAdd}
-              aria-label={words.autoAdd}
-              disabled={!primary || busy}
-              onClick={() => {
+            <Switch
+              checked={!!primary?.autoAdd}
+              onChange={(autoAdd) => {
                 save.reset();
-                save.mutate({ autoAdd: !primary?.autoAdd });
+                save.mutate({ autoAdd });
               }}
-              className={cn(
-                "relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition disabled:opacity-50",
-                primary?.autoAdd ? "bg-primary" : "bg-zinc-300",
-              )}
-            >
-              <span
-                className={cn(
-                  "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform",
-                  primary?.autoAdd ? "translate-x-[1.125rem]" : "translate-x-0.5",
-                )}
-              />
-            </button>
+              label={words.autoAdd}
+              disabled={!primary || busy}
+              className="mt-0.5"
+            />
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground">{words.autoAdd}</p>
               <p className="text-xs text-muted-foreground">
@@ -141,7 +132,11 @@ export default function PrimaryCalendarCard({
             </div>
           </div>
 
-          {error && !asking && <p className="mt-3 text-sm text-red-700">{error}</p>}
+          {error && !asking && (
+            <Notice tone="error" bare className="mt-3">
+              {error}
+            </Notice>
+          )}
         </>
       )}
     </div>

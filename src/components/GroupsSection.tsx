@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Check, Copy, Link2, Loader2, LogOut, Pencil, Trash2, Users } from "lucide-react";
+import { Link2, Loader2, LogOut, Pencil, Trash2, Users } from "lucide-react";
 
 import type { Group } from "@/api/groups";
 import InfoTip from "@/components/InfoTip";
 import InlineTextEdit from "@/components/InlineTextEdit";
-import { avatarColor } from "@/lib/avatar";
+import Avatar from "@/components/ui/Avatar";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import CopyField from "@/components/ui/CopyField";
+import Notice from "@/components/ui/Notice";
 import { useLang, useT } from "@/i18n/lang";
 import { formatMonthYear } from "@/lib/format";
 import { inviteExpiryLabel, MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
@@ -77,18 +79,6 @@ function GroupRow({
   const soleMember = group.members.length <= 1;
   const canDelete = isCreator && !soleMember;
   const busy = leaving || deleting;
-  const [copied, setCopied] = useState(false);
-
-  async function copyLink() {
-    if (!inviteUrl) return;
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard access can be refused; the link is on screen to copy by hand.
-    }
-  }
 
   return (
     <li className="py-4">
@@ -103,16 +93,14 @@ function GroupRow({
             name. */}
         <div className="flex w-32 shrink-0 justify-end -space-x-2">
           {group.members.slice(0, 4).map((m, i) => (
-            <span
+            <Avatar
               key={m.profileId}
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-card text-xs font-semibold",
-                avatarColor(i),
-              )}
-              title={m.name}
-            >
-              {m.name.trim().charAt(0).toUpperCase()}
-            </span>
+              name={m.name}
+              index={i}
+              size="md"
+              labelled
+              className="border-2 border-card"
+            />
           ))}
           {group.members.length > 4 && (
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-card bg-secondary text-xs font-semibold text-muted-foreground">
@@ -191,27 +179,7 @@ function GroupRow({
         <div className="mt-3 rounded-lg border bg-secondary/50 p-3">
           {inviteUrl ? (
             <>
-              <div className="flex items-center gap-2">
-                <input
-                  readOnly
-                  value={inviteUrl}
-                  onFocus={(e) => e.currentTarget.select()}
-                  className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2 font-mono text-xs text-foreground outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={copyLink}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition",
-                    copied
-                      ? "bg-primary/10 text-primary"
-                      : "bg-primary text-primary-foreground hover:opacity-90",
-                  )}
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copied ? t.common.copied : t.common.copy}
-                </button>
-              </div>
+              <CopyField value={inviteUrl} label={t.groupsSection.inviteLink} />
               <div className="mt-2 flex items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
                   {t.groupsSection.inviteShort(
@@ -235,43 +203,33 @@ function GroupRow({
               {t.groupsSection.makingLink}
             </p>
           ) : (
-            <p className="text-sm text-red-700">{inviteError ?? t.groupsSection.linkFailed}</p>
+            <Notice tone="error" bare>
+              {inviteError ?? t.groupsSection.linkFailed}
+            </Notice>
           )}
         </div>
       )}
 
       {confirm && (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-          <p>
-            {confirm.action === "delete"
+        <ConfirmPanel
+          className="mt-3"
+          message={
+            confirm.action === "delete"
               ? t.groupsSection.deleteConfirm(group.name, group.members.length)
               : soleMember
                 ? t.groupsSection.leaveSole(group.name)
-                : t.groupPanel.leaveConfirm(group.name)}
-          </p>
-          {error && <p className="mt-2 font-medium">{error}</p>}
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={confirm.action === "delete" ? onDelete : onLeave}
-              disabled={busy}
-              className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
-            >
-              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {confirm.action === "delete" || soleMember
-                ? t.groupPanel.deleteGroup
-                : t.groupPanel.leaveGroup}
-            </button>
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={busy}
-              className="text-sm text-red-900/80 transition hover:text-red-900"
-            >
-              {t.common.cancel}
-            </button>
-          </div>
-        </div>
+                : t.groupPanel.leaveConfirm(group.name)
+          }
+          confirmLabel={
+            confirm.action === "delete" || soleMember
+              ? t.groupPanel.deleteGroup
+              : t.groupPanel.leaveGroup
+          }
+          busy={busy}
+          error={error}
+          onConfirm={confirm.action === "delete" ? onDelete : onLeave}
+          onCancel={onCancel}
+        />
       )}
     </li>
   );
@@ -365,7 +323,9 @@ export default function GroupsSection({
           {t.groupsSection.loading}
         </p>
       ) : isError ? (
-        <p className="mt-4 text-sm text-red-700">{t.groupsSection.loadFailed}</p>
+        <Notice tone="error" bare className="mt-4">
+          {t.groupsSection.loadFailed}
+        </Notice>
       ) : !groups || groups.length === 0 ? (
         <p className="mt-4 rounded-lg bg-secondary p-3 text-sm text-muted-foreground">
           {t.groupsSection.empty(

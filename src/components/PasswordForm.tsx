@@ -1,7 +1,8 @@
 import { useId, useMemo, useState, type FormEvent } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, Circle, Loader2, Lock, XCircle } from "lucide-react";
+import { Check, Circle, Loader2, Lock } from "lucide-react";
 
+import Collapse from "@/components/ui/Collapse";
+import Notice from "@/components/ui/Notice";
 import { useLang, useT, LOCALE } from "@/i18n/lang";
 import {
   checkPassword,
@@ -95,101 +96,86 @@ export default function PasswordForm({
   const clearLocalError = () => setLocalError(null);
 
   return (
-    <AnimatePresence initial={false}>
-      {open && (
-        <motion.form
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          onSubmit={(e) => void handleSubmit(e)}
-          className="overflow-hidden"
-        >
-          <div className="flex flex-col gap-3">
-            <div className="text-sm">
-              <div className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
-                <Lock className="h-3.5 w-3.5" />
-                <label htmlFor={passwordId}>{passwordLabel ?? t.passwordForm.newPassword}</label>
-              </div>
-              <input
-                id={passwordId}
-                type="password"
-                required
-                minLength={MIN_PASSWORD_LENGTH}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  clearLocalError();
-                }}
-                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              {/* The rules, ticked off as they are met. */}
-              <ul className="mt-2 flex flex-col gap-1 text-xs">
-                {rules.map((rule) => (
-                  <li
-                    key={rule.label}
-                    className={cn(
-                      "flex items-center gap-1.5",
-                      rule.met && password ? "text-emerald-700" : "text-muted-foreground",
-                    )}
-                  >
-                    {rule.met && password ? (
-                      <Check className="h-3.5 w-3.5 shrink-0" />
-                    ) : (
-                      <Circle className="h-3 w-3 shrink-0" />
-                    )}
-                    {rule.label}
-                  </li>
-                ))}
-              </ul>
+    <Collapse open={open}>
+      <form onSubmit={(e) => void handleSubmit(e)}>
+        <div className="flex flex-col gap-3">
+          <div className="text-sm">
+            <div className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
+              <Lock className="h-3.5 w-3.5" />
+              <label htmlFor={passwordId}>{passwordLabel ?? t.passwordForm.newPassword}</label>
             </div>
-            <label className="text-sm">
-              <span className="mb-1 block font-medium text-foreground">
-                {t.passwordForm.confirm}
-              </span>
-              <input
-                id={confirmId}
-                type="password"
-                required
-                minLength={MIN_PASSWORD_LENGTH}
-                autoComplete="new-password"
-                value={confirm}
-                onChange={(e) => {
-                  setConfirm(e.target.value);
-                  clearLocalError();
-                }}
-                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </label>
-            {(localError || error) && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{localError ?? error}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={busy}
-                className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-              >
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                {checking ? t.passwordForm.checking : submitting ? submittingLabel : submitLabel}
-              </button>
-              {onCancel && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={onCancel}
-                  className="text-sm text-muted-foreground transition hover:text-foreground"
+            <input
+              id={passwordId}
+              type="password"
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearLocalError();
+              }}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            {/* The rules, ticked off as they are met. */}
+            <ul className="mt-2 flex flex-col gap-1 text-xs">
+              {rules.map((rule) => (
+                <li
+                  key={rule.label}
+                  className={cn(
+                    "flex items-center gap-1.5",
+                    rule.met && password ? "text-emerald-700" : "text-muted-foreground",
+                  )}
                 >
-                  {t.common.cancel}
-                </button>
-              )}
-            </div>
+                  {rule.met && password ? (
+                    <Check className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <Circle className="h-3 w-3 shrink-0" />
+                  )}
+                  {rule.label}
+                </li>
+              ))}
+            </ul>
           </div>
-        </motion.form>
-      )}
-    </AnimatePresence>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-foreground">{t.passwordForm.confirm}</span>
+            <input
+              id={confirmId}
+              type="password"
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => {
+                setConfirm(e.target.value);
+                clearLocalError();
+              }}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </label>
+          {(localError || error) && <Notice tone="error">{localError ?? error}</Notice>}
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={busy}
+              className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              {checking ? t.passwordForm.checking : submitting ? submittingLabel : submitLabel}
+            </button>
+            {onCancel && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onCancel}
+                className="text-sm text-muted-foreground transition hover:text-foreground"
+              >
+                {t.common.cancel}
+              </button>
+            )}
+          </div>
+        </div>
+      </form>
+    </Collapse>
   );
 }

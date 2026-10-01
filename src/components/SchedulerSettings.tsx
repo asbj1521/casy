@@ -4,6 +4,7 @@ import { ChevronDown, Minus, Plus } from "lucide-react";
 import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
 import Popover from "@/components/Popover";
+import Switch from "@/components/ui/Switch";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import {
@@ -120,40 +121,6 @@ function Stepper({
         <Plus className="h-4 w-4" />
       </button>
     </div>
-  );
-}
-
-/** The Tur / ferie switch. */
-function Switch({
-  checked,
-  onChange,
-  label,
-  children,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label: string;
-  children?: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={children ? undefined : label}
-      onClick={() => onChange(!checked)}
-      className="flex min-h-9 items-center gap-2 text-sm font-bold text-foreground"
-    >
-      {children}
-      <span
-        className={cn(
-          "flex h-[30px] w-[52px] shrink-0 items-center rounded-full p-[3px] transition-colors",
-          checked ? "justify-end bg-primary" : "justify-start bg-border",
-        )}
-      >
-        <span className="h-6 w-6 rounded-full bg-white shadow" />
-      </span>
-    </button>
   );
 }
 
@@ -289,6 +256,8 @@ export function SettingsBar({ groupSwitcher, name, onName, settings, onChange }:
           checked={settings.multiDay}
           onChange={(multiDay) => onChange({ multiDay })}
           label={t.scheduler.tripToggleAria}
+          size="lg"
+          className="my-[3px]"
         />
       </Field>
     </section>
@@ -336,6 +305,8 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
             checked={settings.multiDay}
             onChange={(multiDay) => onChange({ multiDay })}
             label={t.scheduler.tripToggleAria}
+            size="lg"
+            className="my-[3px]"
           />
         </div>
       </div>
