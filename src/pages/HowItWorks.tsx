@@ -92,8 +92,8 @@ const da: Copy = {
       ],
     },
     {
-      title: "Lav en gruppe, og del linket",
-      body: "Giv gruppen et navn, kopiér dens invitationslink, og send det til dem, du planlægger med. Et link virker i syv dage, og en gruppe kan have op til 20 medlemmer. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet. Medlemmer, der ikke har forbundet en kalender endnu, bliver nævnt og holdt uden for i stedet for at blive talt som ledige. Indtil du har en gruppe, kan du se, hvordan det virker, på eksempelgrupper med din egen kalender.",
+      title: "Lav en gruppe, og invitér folk",
+      body: "Giv gruppen et navn, og invitér folk, du allerede er i en gruppe med, eller skriv en e-mailadresse. De får en invitation under Mine aftaler og bliver først medlemmer, når de siger ja. Alle andre kan du sende gruppens link, som virker i syv dage. En gruppe kan have op til 20 medlemmer. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet. Medlemmer, der ikke har forbundet en kalender endnu, bliver nævnt og holdt uden for i stedet for at blive talt som ledige. Indtil du har en gruppe, kan du se, hvordan det virker, på eksempelgrupper med din egen kalender.",
     },
     {
       title: "Sig, hvad I skal",
@@ -154,8 +154,8 @@ const en: Copy = {
       ],
     },
     {
-      title: "Make a group and share the link",
-      body: "Name a group, copy its invite link and send it to the people you plan with. A link works for seven days, and a group can have up to 20 members. Everyone in the group sees each other's names and busy times, and nothing more. Members who have not linked a calendar yet are named and left out, rather than counted as free. Until you have a group, example groups with your own calendar show how it works.",
+      title: "Make a group and invite people",
+      body: "Name a group, and invite people you already share a group with, or type an email address. They get an invitation on My events and only join once they say yes. Anyone else you can send the group's link, which works for seven days. A group can have up to 20 members. Everyone in the group sees each other's names and busy times, and nothing more. Members who have not linked a calendar yet are named and left out, rather than counted as free. Until you have a group, example groups with your own calendar show how it works.",
     },
     {
       title: "Say what you're doing",

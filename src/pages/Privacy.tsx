@@ -42,7 +42,7 @@ interface Copy {
 
 const da: Copy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 28. september 2026",
+  updated: "Senest opdateret 1. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -83,7 +83,11 @@ const da: Copy = {
           <li>
             <Term>Grupper:</Term> navnet på hver gruppe, du er med i, hvem der ellers er med, hvem
             der lavede den, og de invitationslinks, der er lavet til den. Invitationslinks gemmes
-            som et fingeraftryk, der ikke kan laves om til et link, der virker.
+            som et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til
+            grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev afslået.
+            Slår du en e-mailadresse op for at invitere nogen, noterer Casy kun, at du gjorde det,
+            så der kan sættes en grænse for, hvor mange du kan slå op om dagen. Adressen gemmes
+            ikke.
           </li>
           <li>
             <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags aftale
@@ -161,6 +165,15 @@ const da: Copy = {
             en gruppe, kan slette den, hvilket fjerner den for alle medlemmer på én gang.
           </p>
           <p>
+            Andre kan også invitere dig til en gruppe inde i Casy: folk, du allerede er i en gruppe
+            med, og alle, der kender den e-mailadresse, du bruger til Casy. Du bliver kun medlem,
+            hvis du selv siger ja under Mine aftaler. Den, der inviterer dig med e-mail, får ikke at
+            vide, om adressen har en konto hos Casy, og ser ikke dit navn, før du har sagt ja.
+            Medlemmer af gruppen, der allerede er i en anden gruppe med dig, kan se, at du er
+            inviteret. Siger du nej tak, får ingen besked, og du kan ikke blive inviteret til den
+            gruppe igen, men du kan stadig blive medlem med et link.
+          </p>
+          <p>
             Når nogen foreslår en aftale, kan alle i gruppen se den, den dato, der er tilbudt, og
             hvem der har sagt ja eller nej. Siger du nej, kan de andre se, at du ikke kunne den
             dato, og Casy tilbyder den næste dato, der passer, i stedet.
@@ -236,7 +249,7 @@ const da: Copy = {
 
 const en: Copy = {
   title: "Privacy policy",
-  updated: "Last updated 28 September 2026",
+  updated: "Last updated 1 October 2026",
   sections: [
     {
       title: "In short",
@@ -277,7 +290,10 @@ const en: Copy = {
           <li>
             <Term>Groups:</Term> the name of each group you are in, who else is in it, who made it,
             and the invite links made for it. Invite links are stored as a fingerprint that cannot
-            be turned back into a working link.
+            be turned back into a working link. Invitations to groups: who invited whom, and whether
+            the invitation is still open or was declined. When you look up an email address to
+            invite someone, Casy only notes that you did, so it can limit how many you can look up
+            in a day. The address is not stored.
           </li>
           <li>
             <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
@@ -352,6 +368,15 @@ const en: Copy = {
             like an address you would only send to people you want in the group. Leaving a group
             stops the other members seeing anything about you from then on. The person who made a
             group can delete it, which removes it for every member at once.
+          </p>
+          <p>
+            People can also invite you to a group from inside Casy: anyone you already share a group
+            with, and anyone who knows the email address you use for Casy. You only join if you say
+            yes yourself, on My events. Someone inviting you by email is not told whether the
+            address has a Casy account, and doesn&apos;t see your name until you say yes. Members of
+            that group who already share another group with you can see that you were invited. If
+            you say no thanks, nobody is told, and you can&apos;t be invited to that group again,
+            though you can still join with a link.
           </p>
           <p>
             When someone suggests an event, everyone in the group sees it, the date on offer, and
