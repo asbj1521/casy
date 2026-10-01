@@ -36,11 +36,14 @@ describe("callFunction", () => {
     await expect(callFunction("groups", { body: {} })).rejects.toThrow("groups fejlede (HTTP 502)");
   });
 
-  it("asks the function to answer in the page's language", async () => {
+  it("calls the function by name, in the page's language", async () => {
     const fetchMock = answer(200, { ok: true });
     setCurrentLang("en");
     await callFunction("calendar-busy", { params: { from: "a" } });
     const url = new URL(String(fetchMock.mock.calls[0][0]));
+    expect(url.origin + url.pathname).toBe(
+      "https://test-project.supabase.co/functions/v1/calendar-busy",
+    );
     expect(url.searchParams.get("lang")).toBe("en");
     expect(url.searchParams.get("from")).toBe("a");
   });
