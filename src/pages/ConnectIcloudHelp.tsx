@@ -26,7 +26,8 @@ import type { Device } from "@/components/appleWalkthrough/layout";
 import TopNav from "@/components/TopNav";
 import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
-import { useLang, useT } from "@/i18n/lang";
+import { useCalendarsHome } from "@/hooks/useCalendarsHome";
+import { useLang } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 
 /**
@@ -171,7 +172,6 @@ const da = {
     nextBody:
       "Fortæl Casy, hvilke kalendere der er arbejde eller skole, så Casy ved, hvad du ville kunne tage fri fra.",
     toCalendar: "Gå til Min kalender",
-    toProfile: "Tilbage til profil",
   },
 };
 
@@ -258,7 +258,6 @@ const en: typeof da = {
     nextBody:
       "Tell Casy which calendars are work or school, so it knows what you could take time off from.",
     toCalendar: "Go to My calendar",
-    toProfile: "Back to profile",
   },
 };
 
@@ -346,7 +345,8 @@ function NextButton({ label, onClick }: { label: string; onClick: () => void }) 
 export default function ConnectIcloudHelp() {
   const { lang } = useLang();
   const c = lang === "da" ? da : en;
-  const t = useT();
+  // Back to where connecting calendars happens (the profile on a computer).
+  const calendarsHome = useCalendarsHome();
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const reduceMotion = useReducedMotion();
@@ -425,8 +425,8 @@ export default function ConnectIcloudHelp() {
         </div>
         <StepFooter
           secondary={
-            <Link to="/profile" className={secondaryButton}>
-              {c.done.toProfile}
+            <Link to={calendarsHome.to} className={secondaryButton}>
+              {calendarsHome.back}
             </Link>
           }
         >
@@ -603,11 +603,11 @@ export default function ConnectIcloudHelp() {
           on the watch step is big enough to read on a laptop. */}
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
         <Link
-          to="/profile"
+          to={calendarsHome.to}
           className="flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t.calendarView.back}
+          {calendarsHome.back}
         </Link>
 
         <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-primary">

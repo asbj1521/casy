@@ -5,13 +5,11 @@ import { Loader2 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
 import { whoAmIQuery } from "@/api/groups";
-import CalendarReturnNotice from "@/components/CalendarReturnNotice";
-import CalendarsSection from "@/components/CalendarsSection";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
 import PasswordSection from "@/components/PasswordSection";
 import PhoneSubHeader from "@/components/PhoneSubHeader";
 import { displayName, useSignedInUser } from "@/context/auth";
-import { useCalendarReturn } from "@/hooks/useCalendarReturn";
+import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 
@@ -31,8 +29,8 @@ export default function ProfileScreen() {
   if (!phone)
     return <Navigate to={`/profile${screen === "admin" ? "?mode=admin" : search}`} replace />;
   switch (screen) {
-    case "calendars":
-      return <CalendarsScreen />;
+    case "calendars": // moved to the Calendar tab; old links still arrive
+      return <Navigate to={`${CALENDAR_ACCOUNTS_PATH}${search}`} replace />;
     case "password":
       return <PasswordScreen />;
     case "account":
@@ -51,17 +49,6 @@ function Screen({ title, children }: { title: string; children: ReactNode }) {
       <PhoneSubHeader title={title} back="/profile" backLabel={t.nav.profileShort} />
       <main className="px-4 pb-8">{children}</main>
     </div>
-  );
-}
-
-function CalendarsScreen() {
-  const t = useT();
-  const oauthReturn = useCalendarReturn(useSignedInUser().id);
-  return (
-    <Screen title={t.profile.statCalendars}>
-      {oauthReturn && <CalendarReturnNotice outcome={oauthReturn} className="mt-2" />}
-      <CalendarsSection />
-    </Screen>
   );
 }
 

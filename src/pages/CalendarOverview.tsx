@@ -1,13 +1,16 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Info, Loader2 } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, Info, Loader2 } from "lucide-react";
 
 import { calendarBusyQuery, calendarsChanged, updateCalendar } from "@/api/calendars";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
+import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { useCalendarsHome } from "@/hooks/useCalendarsHome";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import {
@@ -79,6 +82,8 @@ export default function CalendarOverview() {
   const user = useSignedInUser();
   const t = useT();
   const { lang } = useLang();
+  const phone = usePhoneLayout();
+  const calendarsHome = useCalendarsHome();
   const [month, setMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -242,7 +247,7 @@ export default function CalendarOverview() {
           <Notice tone="info" className="mb-4">
             {t.calendarView.noCalendars(
               <Link
-                to="/profile"
+                to={calendarsHome.to}
                 className="font-medium text-foreground underline underline-offset-2"
               >
                 {t.calendarView.noCalendarsLink}
@@ -450,6 +455,20 @@ export default function CalendarOverview() {
               </ul>
             )}
           </section>
+
+          {/* On a phone, connecting calendars is a screen of its own here (on
+              a computer it's on the profile page). */}
+          {phone && (
+            <ListGroup className="mt-4">
+              <ListRow
+                to={calendarsHome.to}
+                icon={CalendarPlus}
+                label={t.calendarAccounts.row}
+                detail={t.calendarAccounts.rowDetail}
+                value={isLoading ? null : connected.length}
+              />
+            </ListGroup>
+          )}
 
           {/* Scrolls with the page rather than on its own: a box scrolling by
               itself cut its content off at the month grid's top line. */}

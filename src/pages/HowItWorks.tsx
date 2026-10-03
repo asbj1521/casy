@@ -15,6 +15,7 @@ import {
 
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/context/auth";
+import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useLang } from "@/i18n/lang";
 
 /**
@@ -185,6 +186,7 @@ const en: Copy = {
 
 export default function HowItWorks() {
   const { user } = useAuth();
+  const calendarsHome = useCalendarsHome();
   const { lang } = useLang();
   const c = lang === "da" ? da : en;
 
@@ -262,7 +264,7 @@ export default function HowItWorks() {
           </Link>
           {user && (
             <Link
-              to="/profile"
+              to={calendarsHome.to}
               className="rounded-full border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary"
             >
               {c.connect}

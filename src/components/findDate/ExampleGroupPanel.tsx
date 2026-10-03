@@ -3,6 +3,7 @@ import { Check, Copy, UserPlus } from "lucide-react";
 
 import Avatar from "@/components/ui/Avatar";
 import { useAuth } from "@/context/auth";
+import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useCopy } from "@/hooks/useCopy";
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export default function ExampleGroupPanel({
   myCalendarsFailed: boolean;
 }) {
   const t = useT();
+  const calendarsHome = useCalendarsHome();
   const { user } = useAuth();
   const [copied, copy] = useCopy();
   const link = "font-medium text-foreground underline underline-offset-2";
@@ -50,7 +52,7 @@ export default function ExampleGroupPanel({
             : myCalendarsFailed
               ? t.scheduler.exampleCalendarsFailed
               : t.scheduler.exampleSignedIn(
-                  <Link to="/profile" className={link}>
+                  <Link to={calendarsHome.to} className={link}>
                     {t.scheduler.exampleSignedInLink}
                   </Link>,
                 )}

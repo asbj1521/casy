@@ -89,6 +89,11 @@ export const da = {
     intro:
       "De grupper, du planlægger med. Her laver du nye, inviterer folk og svarer på invitationer.",
   },
+  calendarAccounts: {
+    back: "Tilbage til kalendere",
+    row: "Forbundne kalendere",
+    rowDetail: "Tilføj konti, synkronisér og vælg primær kalender",
+  },
   profileHub: {
     admin: "Admin-tilstand",
     invitations: (n: number) => (n === 1 ? "1 invitation venter" : `${n} invitationer venter`),

@@ -74,7 +74,7 @@ function PhoneTabBar() {
       to: "/calendar-overview",
       label: t.nav.calendarShort,
       icon: CalendarDays,
-      active: pathname === "/calendar-overview",
+      active: pathname.startsWith("/calendar-overview"),
       prefetch: () => void loadPage.calendarOverview(),
     },
     signedOut

@@ -29,6 +29,7 @@ import TopNav from "@/components/TopNav";
 import Avatar from "@/components/ui/Avatar";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { displayName, useAuth, useSignedInUser } from "@/context/auth";
+import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
 import { useT } from "@/i18n/lang";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
 
@@ -39,10 +40,10 @@ import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
  */
 function screenFor(params: URLSearchParams): string | null {
   if (params.has("connected") || params.has("error") || params.has("onboarding")) {
-    return "calendars";
+    return CALENDAR_ACCOUNTS_PATH;
   }
-  if (params.has("password")) return "password";
-  if (params.get("mode") === "admin") return "admin";
+  if (params.has("password")) return "/profile/password";
+  if (params.get("mode") === "admin") return "/profile/admin";
   return null;
 }
 
@@ -78,7 +79,7 @@ export default function ProfileHub() {
   const { data: isAdmin } = useQuery(adminStatusQuery(user.id));
 
   const screen = screenFor(searchParams);
-  if (screen) return <Navigate to={`/profile/${screen}?${searchParams}`} replace />;
+  if (screen) return <Navigate to={`${screen}?${searchParams}`} replace />;
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,7 +133,7 @@ export default function ProfileHub() {
             detail={invitations?.length ? t.profileHub.invitations(invitations.length) : null}
           />
           <Tile
-            to="/profile/calendars"
+            to="/calendar-overview"
             icon={CalendarDays}
             value={connected?.length}
             label={t.profile.statCalendars}

@@ -67,7 +67,12 @@ const PROVIDERS: (Omit<ProviderMeta, "label" | "help"> & { helpTo: string })[] =
  * calendar is linked, the section opens with a note saying it is the next
  * step, and the cards take turns glowing.
  */
-export default function CalendarsSection() {
+export default function CalendarsSection({
+  titled = true,
+}: {
+  /** False on the phone's calendars screen, whose header already says it. */
+  titled?: boolean;
+}) {
   const t = useT();
   const user = useSignedInUser();
   const queryClient = useQueryClient();
@@ -120,9 +125,17 @@ export default function CalendarsSection() {
         </div>
       )}
 
-      <section className="mt-8">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">{t.profile.connectedCalendars}</h2>
+      <section className={titled ? "mt-8" : "mt-2"}>
+        <div
+          className={
+            titled ? "flex flex-wrap items-start justify-between gap-3" : "flex justify-end"
+          }
+        >
+          {titled && (
+            <h2 className="text-lg font-semibold text-foreground">
+              {t.profile.connectedCalendars}
+            </h2>
+          )}
           {hasConnected && (
             <button
               type="button"

@@ -80,6 +80,11 @@ export const en: Messages = {
     empty: "You're not in a group yet. Make one and invite people.",
     intro: "The groups you plan with. Make new ones, invite people and answer invitations here.",
   },
+  calendarAccounts: {
+    back: "Back to calendars",
+    row: "Connected calendars",
+    rowDetail: "Add accounts, sync and choose your primary calendar",
+  },
   profileHub: {
     admin: "Admin mode",
     invitations: (n: number) => (n === 1 ? "1 invitation waiting" : `${n} invitations waiting`),

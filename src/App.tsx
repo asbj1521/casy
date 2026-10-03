@@ -24,6 +24,7 @@ import { loadPage } from "@/pages/lazyPages";
  */
 const Profile = lazy(loadPage.profile);
 const CalendarOverview = lazy(loadPage.calendarOverview);
+const CalendarAccounts = lazy(loadPage.calendarAccounts);
 const MyEvents = lazy(loadPage.myEvents);
 const Groups = lazy(loadPage.groups);
 const GroupScreen = lazy(loadPage.groupScreen);
@@ -134,6 +135,15 @@ function App() {
                   element={
                     <RequireAuth>
                       <CalendarOverview />
+                    </RequireAuth>
+                  }
+                />
+                {/* The phone's screen for connecting calendars (Calendar tab). */}
+                <Route
+                  path="/calendar-overview/accounts"
+                  element={
+                    <RequireAuth>
+                      <CalendarAccounts />
                     </RequireAuth>
                   }
                 />

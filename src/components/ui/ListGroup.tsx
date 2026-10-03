@@ -22,7 +22,9 @@ export function ListGroup({
   children: ReactNode;
 }) {
   return (
-    <section className={cn("mt-6", className)}>
+    // min-w-0: in a grid or flex parent, long truncated lines would otherwise
+    // stretch the list (and everything beside it) past the screen.
+    <section className={cn("mt-6 min-w-0", className)}>
       {title && (
         <h2 className="mb-1.5 px-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {title}
