@@ -15,6 +15,7 @@ import TopNav from "@/components/TopNav";
 import Avatar from "@/components/ui/Avatar";
 import Notice from "@/components/ui/Notice";
 import { displayName, useAuth, useSignedInUser } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { markCalendarOnboardingSeen } from "@/lib/calendarOnboarding";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
@@ -45,6 +46,7 @@ export default function Profile() {
   const user = useSignedInUser();
   const { signOut } = useAuth();
   const t = useT();
+  const phone = usePhoneLayout();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -213,7 +215,8 @@ export default function Profile() {
         ) : (
           <>
             <CalendarsSection />
-            <GroupsSection />
+            {/* On a phone, groups have their own tab (TabBar). */}
+            {!phone && <GroupsSection />}
             <PasswordSection name={name} />
             <DeleteAccountSection />
           </>

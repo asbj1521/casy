@@ -437,11 +437,11 @@ export default function FindDate() {
         )}
       </div>
 
-      {/* A phone's actions, pinned to the bottom of the screen while the page
+      {/* A phone's actions, pinned above the tab bar (TabBar) while the page
           scrolls. Sticky rather than fixed, so at the very end it comes to
           rest above the footer instead of covering it. */}
       {actions && (
-        <div className="sticky bottom-0 z-30 flex gap-2 border-t bg-card px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)] sm:hidden">
+        <div className="sticky bottom-[var(--tab-bar-height)] z-30 flex gap-2 border-t bg-card px-4 pb-2 pt-2 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)] sm:hidden">
           {actions}
         </div>
       )}

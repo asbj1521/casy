@@ -11,6 +11,7 @@ import WaitingCard from "@/components/myEvents/WaitingCard";
 import TopNav from "@/components/TopNav";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate } from "@/lib/format";
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils";
 export default function MyEvents() {
   const userId = useSignedInUser().id;
   const t = useT();
+  const phone = usePhoneLayout();
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
 
   return (
@@ -35,7 +37,8 @@ export default function MyEvents() {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.events.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.events.intro}</p>
 
-        <InvitationsSection />
+        {/* On a phone, invitations have the Groups tab instead. */}
+        {!phone && <InvitationsSection />}
 
         {isPending ? (
           <p className="mt-8 flex items-center gap-2 text-sm text-muted-foreground">

@@ -73,11 +73,17 @@ export const da = {
     eventsShort: "Aftaler",
     calendar: "Min kalender",
     calendarShort: "Kalender",
+    groupsShort: "Grupper",
     profile: "Profil",
     profileShort: "Profil",
     signIn: "Log ind",
     signOut: "Log ud",
     waitingForAnswer: (n: number) => `${n} venter på dit svar`,
+  },
+  groupsPage: {
+    title: "Grupper",
+    intro:
+      "De grupper, du planlægger med. Her laver du nye, inviterer folk og svarer på invitationer.",
   },
   footer: {
     howItWorks: "Sådan virker det",

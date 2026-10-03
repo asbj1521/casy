@@ -15,7 +15,9 @@ import { calendarStatusQuery } from "@/api/calendars";
 import { eventsQuery, needsYourAnswer } from "@/api/events";
 import { groupsQuery, invitationsQuery } from "@/api/groups";
 import LanguageToggle from "@/components/LanguageToggle";
+import PhoneHeader from "@/components/PhoneHeader";
 import { useAuth } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { flyOnClick } from "@/lib/cardTransition";
 import { loadPage } from "@/pages/lazyPages";
@@ -32,6 +34,7 @@ export default function TopNav() {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
   const t = useT();
+  const phone = usePhoneLayout();
   // The scheduler is at /plan for everyone, and at / too once signed in (signed
   // out, / is the landing page, see App.tsx).
   const onHome = pathname === "/plan" || (pathname === "/" && !!user);
@@ -144,6 +147,10 @@ export default function TopNav() {
           prefetch: prefetchProfile,
         },
   ];
+
+  // On a phone the links are in the tab bar (TabBar), so the top is just the
+  // logo and the language switch.
+  if (phone) return <PhoneHeader />;
 
   return (
     // Edge to edge on every page, with the same responsive gutter as the

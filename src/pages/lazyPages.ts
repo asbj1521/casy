@@ -10,6 +10,7 @@ export const loadPage = {
   profile: () => import("@/pages/Profile"),
   calendarOverview: () => import("@/pages/CalendarOverview"),
   myEvents: () => import("@/pages/MyEvents"),
+  groups: () => import("@/pages/Groups"),
   signIn: () => import("@/pages/SignIn"),
   joinGroup: () => import("@/pages/JoinGroup"),
   privacy: () => import("@/pages/Privacy"),

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import Footer from "@/components/Footer";
 import RequireAuth from "@/components/RequireAuth";
+import TabBar from "@/components/TabBar";
 import WeakPasswordNotice from "@/components/WeakPasswordNotice";
 import { useAuth } from "@/context/auth";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
@@ -24,6 +25,7 @@ import { loadPage } from "@/pages/lazyPages";
 const Profile = lazy(loadPage.profile);
 const CalendarOverview = lazy(loadPage.calendarOverview);
 const MyEvents = lazy(loadPage.myEvents);
+const Groups = lazy(loadPage.groups);
 const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
 const Privacy = lazy(loadPage.privacy);
@@ -99,6 +101,15 @@ function App() {
                     </RequireAuth>
                   }
                 />
+                {/* The phone's Groups tab (TabBar). */}
+                <Route
+                  path="/groups"
+                  element={
+                    <RequireAuth>
+                      <Groups />
+                    </RequireAuth>
+                  }
+                />
                 <Route
                   path="/calendar-overview"
                   element={
@@ -110,6 +121,8 @@ function App() {
               </Routes>
             </Suspense>
             <Footer />
+            {/* Phones only: the main links along the bottom. */}
+            <TabBar />
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>

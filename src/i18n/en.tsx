@@ -65,11 +65,16 @@ export const en: Messages = {
     eventsShort: "Events",
     calendar: "My calendar",
     calendarShort: "Calendar",
+    groupsShort: "Groups",
     profile: "Profile",
     profileShort: "Profile",
     signIn: "Sign in",
     signOut: "Sign out",
     waitingForAnswer: (n: number) => `${n} waiting for your answer`,
+  },
+  groupsPage: {
+    title: "Groups",
+    intro: "The groups you plan with. Make new ones, invite people and answer invitations here.",
   },
   footer: {
     howItWorks: "How it works",

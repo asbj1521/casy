@@ -27,6 +27,16 @@
 
     --border: 220 14% 90%;
     --radius: 0.75rem;
+
+    /* The phone's tab bar (TabBar), with the home indicator under it; none
+       on a computer. Phones are below md, as in usePhoneLayout.ts. */
+    --tab-bar-height: 0px;
+  }
+
+  @media (max-width: 767.98px) {
+    :root {
+      --tab-bar-height: calc(3.5rem + 1px + env(safe-area-inset-bottom));
+    }
   }
 
   * {
@@ -47,6 +57,13 @@
   html.native-app body {
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
       env(safe-area-inset-left);
+  }
+
+  /* On a phone the tab bar already covers the home indicator. */
+  @media (max-width: 767.98px) {
+    html.native-app body {
+      padding-bottom: 0;
+    }
   }
 
   html.native-app body::before {
