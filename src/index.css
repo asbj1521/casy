@@ -40,6 +40,23 @@
       "calt" 1;
     -webkit-font-smoothing: antialiased;
   }
+
+  /* The iPhone app only (fitToApp in nativeApp.ts): keep the page clear of
+     the clock, the notch and the home indicator, and give the clock a solid
+     strip, so the page doesn't scroll into view behind it. */
+  html.native-app body {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+
+  html.native-app body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 100;
+    height: env(safe-area-inset-top);
+    background: hsl(var(--background));
+  }
 }
 
 @layer utilities {
