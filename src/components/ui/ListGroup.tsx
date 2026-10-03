@@ -52,6 +52,7 @@ export function ListRow({
   onClick,
   tone = "default",
   chevron = !!to,
+  selected = false,
 }: {
   icon?: LucideIcon;
   leading?: ReactNode;
@@ -63,6 +64,8 @@ export function ListRow({
   /** "danger" for rows that delete or leave; "primary" for the row that adds. */
   tone?: "default" | "danger" | "primary";
   chevron?: boolean;
+  /** The row whose content is open beside the list (a computer's groups page). */
+  selected?: boolean;
 }) {
   const color = {
     default: "text-foreground",
@@ -90,13 +93,13 @@ export function ListRow({
       </span>
     </>
   );
-  const row = "flex w-full items-center gap-3 pl-4 text-left";
+  const row = cn("flex w-full items-center gap-3 pl-4 text-left", selected && "bg-secondary");
   const pressable = cn(row, "transition-colors active:bg-secondary");
 
   return (
     <li className="group/row">
       {to ? (
-        <Link to={to} className={pressable}>
+        <Link to={to} aria-current={selected ? "page" : undefined} className={pressable}>
           {inner}
         </Link>
       ) : onClick ? (

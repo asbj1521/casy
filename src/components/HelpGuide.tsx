@@ -16,7 +16,7 @@ export interface GuideStep {
 }
 
 /**
- * The frame every "how to connect" guide shares: a way back to the profile,
+ * The frame every "how to connect" guide shares: a way back to the calendars page,
  * the heading, the steps, and whatever the guide adds around them. Numbered
  * steps are one procedure in order; unnumbered ones are alternatives.
  */
@@ -37,7 +37,7 @@ export default function HelpGuide({
   numbered?: boolean;
   afterSteps?: ReactNode;
 }) {
-  // Back to where connecting calendars happens (the profile on a computer).
+  // Back to where calendars are connected (CalendarAccounts).
   const calendarsHome = useCalendarsHome();
   const List = numbered ? "ol" : "ul";
 

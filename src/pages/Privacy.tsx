@@ -222,7 +222,7 @@ const da: Copy = {
       body: (
         <>
           <p>
-            Fjerner du en kalenderkonto på din profil, slettes dens optagede tidsrum og
+            Fjerner du en kalenderkonto under Forbundne kalendere, slettes dens optagede tidsrum og
             adgangsoplysninger fra Casy med det samme. For også at stoppe det hos udbyderen skal du
             fjerne Casys adgang i indstillingerne for din Google- eller Microsoft-konto eller slette
             den app-specifikke adgangskode på account.apple.com/account/manage.
@@ -428,10 +428,10 @@ const en: Copy = {
       body: (
         <>
           <p>
-            Removing a calendar account on your profile deletes its busy times and credentials from
-            Casy immediately. To stop the provider&apos;s side as well, remove Casy&apos;s access in
-            your Google or Microsoft account settings, or delete the app-specific password at
-            account.apple.com/account/manage.
+            Removing a calendar account under Connected calendars deletes its busy times and
+            credentials from Casy immediately. To stop the provider&apos;s side as well, remove
+            Casy&apos;s access in your Google or Microsoft account settings, or delete the
+            app-specific password at account.apple.com/account/manage.
           </p>
           <p>
             Leaving a group removes you from it straight away, and the other members stop seeing

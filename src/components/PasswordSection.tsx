@@ -135,7 +135,7 @@ export default function PasswordSection({
 
   return (
     <section ref={sectionRef} className={titled ? "mt-8 scroll-mt-4" : "scroll-mt-4"}>
-      {titled && <h2 className="text-lg font-semibold text-foreground">{t.profile.password}</h2>}
+      {titled && <h2 className="text-lg font-semibold text-foreground">{t.profileHub.security}</h2>}
       <div className="mt-4 rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
         {saved && !formOpen && (
           <Notice tone="success" bare className="mb-3">

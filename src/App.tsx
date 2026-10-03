@@ -27,7 +27,6 @@ const CalendarOverview = lazy(loadPage.calendarOverview);
 const CalendarAccounts = lazy(loadPage.calendarAccounts);
 const MyEvents = lazy(loadPage.myEvents);
 const Groups = lazy(loadPage.groups);
-const GroupScreen = lazy(loadPage.groupScreen);
 const ProfileScreen = lazy(loadPage.profileScreen);
 const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
@@ -104,7 +103,7 @@ function App() {
                     </RequireAuth>
                   }
                 />
-                {/* The phone's Groups tab (TabBar), and one group's screen. */}
+                {/* Your groups, and one group (both the same page, Groups.tsx). */}
                 <Route
                   path="/groups"
                   element={
@@ -117,7 +116,7 @@ function App() {
                   path="/groups/:groupId"
                   element={
                     <RequireAuth>
-                      <GroupScreen />
+                      <Groups />
                     </RequireAuth>
                   }
                 />

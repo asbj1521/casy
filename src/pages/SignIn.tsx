@@ -8,6 +8,7 @@ import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
 import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
+import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
@@ -169,12 +170,12 @@ export default function SignIn() {
     if (calendarStatus.isLoading) return <div className="min-h-screen bg-background" />;
     const hasCalendar = (calendarStatus.data?.length ?? 0) > 0;
     if (!hasCalendar && !hasSeenCalendarOnboarding(user.id)) {
-      return <Navigate to="/profile?onboarding=1" replace />;
+      return <Navigate to={`${CALENDAR_ACCOUNTS_PATH}?onboarding=1`} replace />;
     }
     // No destination in the link (the header's or landing page's "Log ind"):
-    // the scheduler for anyone with a calendar, the profile to connect one
+    // the scheduler for anyone with a calendar, the page to connect one
     // otherwise.
-    return <Navigate to={next ?? (hasCalendar ? "/" : "/profile")} replace />;
+    return <Navigate to={next ?? (hasCalendar ? "/" : CALENDAR_ACCOUNTS_PATH)} replace />;
   }
 
   async function handleGoogle() {

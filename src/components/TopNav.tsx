@@ -7,13 +7,13 @@ import {
   CalendarSearch,
   LogIn,
   User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
-import { calendarStatusQuery } from "@/api/calendars";
 import { eventsQuery, needsYourAnswer } from "@/api/events";
-import { groupsQuery, invitationsQuery } from "@/api/groups";
+import { groupsQuery, invitationsQuery, whoAmIQuery } from "@/api/groups";
 import LanguageToggle from "@/components/LanguageToggle";
 import PhoneHeader from "@/components/PhoneHeader";
 import { useAuth } from "@/context/auth";
@@ -40,16 +40,16 @@ export default function TopNav() {
   const onHome = pathname === "/plan" || (pathname === "/" && !!user);
   const onProfile = pathname === "/profile";
   const onEvents = pathname === "/events";
+  const onGroups = pathname.startsWith("/groups");
   const onCalendarOverview = pathname === "/calendar-overview";
 
-  // How many suggested events and group invitations are waiting for your
-  // answer: the badge on My events is how people find out about either.
+  // What's waiting for your answer, each on the page where it's given:
+  // suggested events on My events, group invitations on My groups.
   const { data: events } = useQuery({ ...eventsQuery(user?.id ?? ""), enabled: !!user });
   const { data: invitations } = useQuery({
     ...invitationsQuery(user?.id ?? ""),
     enabled: !!user,
   });
-  const pendingCount = (events?.filter(needsYourAnswer).length ?? 0) + (invitations?.length ?? 0);
 
   async function handleSignOut() {
     try {
@@ -62,8 +62,8 @@ export default function TopNav() {
 
   /**
    * Warm both halves of the profile page as soon as someone shows intent to go
-   * there: its code chunk, and the three answers it opens by asking for
-   * (calendar status, groups, and whether this person is an admin).
+   * there: its code chunk, and the two answers it opens by asking for (the
+   * name you chose, and whether you are an admin).
    * Supabase takes roughly a third of a second to answer, and a pointer
    * resting on a link is usually good for about that long, so the page tends
    * to have what it needs by the time it mounts. Hovering without clicking
@@ -74,14 +74,19 @@ export default function TopNav() {
     // Signed out, the link leads to the sign-in page, so there's nothing to warm.
     if (onProfile || !user) return;
     void loadPage.profile();
-    void queryClient.prefetchQuery(calendarStatusQuery(user.id));
-    void queryClient.prefetchQuery(groupsQuery(user.id));
+    void queryClient.prefetchQuery(whoAmIQuery(user.id));
     void queryClient.prefetchQuery(adminStatusQuery(user.id));
   };
 
   const prefetchEvents = () => {
     if (onEvents || !user) return;
     void loadPage.myEvents();
+  };
+
+  const prefetchGroups = () => {
+    if (onGroups || !user) return;
+    void loadPage.groups();
+    void queryClient.prefetchQuery(groupsQuery(user.id));
   };
 
   const prefetchCalendarOverview = () => {
@@ -116,7 +121,16 @@ export default function TopNav() {
       icon: CalendarCheck,
       active: onEvents,
       prefetch: prefetchEvents,
-      badge: pendingCount,
+      badge: events?.filter(needsYourAnswer).length,
+    },
+    {
+      to: "/groups",
+      label: t.nav.groups,
+      short: t.nav.groupsShort,
+      icon: Users,
+      active: onGroups,
+      prefetch: prefetchGroups,
+      badge: invitations?.length,
     },
     {
       to: "/calendar-overview",
@@ -189,8 +203,10 @@ export default function TopNav() {
                 </span>
               )}
             </span>
-            <span className="whitespace-nowrap sm:hidden">{tab.short}</span>
-            <span className="hidden sm:inline">{tab.label}</span>
+            {/* Five full names only fit from lg; narrower computers get the
+                phone's one-word names. */}
+            <span className="whitespace-nowrap lg:hidden">{tab.short}</span>
+            <span className="hidden whitespace-nowrap lg:inline">{tab.label}</span>
             {!!tab.badge && (
               <span
                 aria-label={t.nav.waitingForAnswer(tab.badge)}
@@ -206,7 +222,7 @@ export default function TopNav() {
           <button
             type="button"
             onClick={() => void handleSignOut()}
-            className="hidden transition hover:text-foreground sm:block"
+            className="hidden whitespace-nowrap transition hover:text-foreground sm:block"
           >
             {t.nav.signOut}
           </button>

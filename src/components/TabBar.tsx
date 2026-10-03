@@ -11,9 +11,8 @@ import {
 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
-import { calendarStatusQuery } from "@/api/calendars";
 import { eventsQuery, needsYourAnswer } from "@/api/events";
-import { groupsQuery, invitationsQuery } from "@/api/groups";
+import { invitationsQuery, whoAmIQuery } from "@/api/groups";
 import { useAuth } from "@/context/auth";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
@@ -90,12 +89,11 @@ function PhoneTabBar() {
           label: t.nav.profileShort,
           icon: User,
           active: pathname.startsWith("/profile"),
-          // The page and the three answers it opens by asking for, as TopNav does.
+          // The page and the two answers it opens by asking for, as TopNav does.
           prefetch: () => {
             if (!user) return;
             void loadPage.profile();
-            void queryClient.prefetchQuery(calendarStatusQuery(user.id));
-            void queryClient.prefetchQuery(groupsQuery(user.id));
+            void queryClient.prefetchQuery(whoAmIQuery(user.id));
             void queryClient.prefetchQuery(adminStatusQuery(user.id));
           },
         },

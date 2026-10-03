@@ -12,7 +12,6 @@ export const loadPage = {
   calendarAccounts: () => import("@/pages/CalendarAccounts"),
   myEvents: () => import("@/pages/MyEvents"),
   groups: () => import("@/pages/Groups"),
-  groupScreen: () => import("@/pages/GroupScreen"),
   profileScreen: () => import("@/pages/ProfileScreen"),
   signIn: () => import("@/pages/SignIn"),
   joinGroup: () => import("@/pages/JoinGroup"),

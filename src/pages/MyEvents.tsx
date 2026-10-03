@@ -4,14 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, CalendarX, Loader2, Sparkles } from "lucide-react";
 
 import { eventsQuery, type SuggestedEvent } from "@/api/events";
-import InvitationsSection from "@/components/myEvents/InvitationsSection";
 import NeedsAnswerCard from "@/components/myEvents/NeedsAnswerCard";
 import ScheduledCard from "@/components/myEvents/ScheduledCard";
 import WaitingCard from "@/components/myEvents/WaitingCard";
 import TopNav from "@/components/TopNav";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
-import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate } from "@/lib/format";
@@ -27,7 +25,6 @@ import { cn } from "@/lib/utils";
 export default function MyEvents() {
   const userId = useSignedInUser().id;
   const t = useT();
-  const phone = usePhoneLayout();
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
 
   return (
@@ -36,9 +33,6 @@ export default function MyEvents() {
       <main className="px-4 pb-16 pt-2 sm:px-6 sm:pt-0 lg:px-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.events.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.events.intro}</p>
-
-        {/* On a phone, invitations have the Groups tab instead. */}
-        {!phone && <InvitationsSection />}
 
         {isPending ? (
           <p className="mt-8 flex items-center gap-2 text-sm text-muted-foreground">

@@ -73,6 +73,7 @@ export const da = {
     eventsShort: "Aftaler",
     calendar: "Min kalender",
     calendarShort: "Kalender",
+    groups: "Mine grupper",
     groupsShort: "Grupper",
     profile: "Profil",
     profileShort: "Profil",
@@ -341,9 +342,6 @@ export const da = {
     yourCalendar: "din kalender",
     couldntConnect: (reason: string) => `Kunne ikke forbinde: ${reason}`,
     changeName: "Skift dit viste navn",
-    statGroups: "Grupper",
-    statCalendars: "Kalendere",
-    statBusy: "Optaget",
     connectedCalendars: "Forbundne kalendere",
     onboardingTitle: "Forbind din kalender",
     onboardingIntro:
@@ -354,7 +352,6 @@ export const da = {
     syncedAccounts: (n: number) => `Synkroniserede ${n === 1 ? "1 konto" : `${n} konti`}.`,
     syncSomeFailed: (failed: number, n: number) =>
       `${failed} af ${n === 1 ? "1 konto" : `${n} konti`} kunne ikke synkroniseres. Se nedenfor.`,
-    password: "Adgangskode",
     passwordSaved:
       "Adgangskoden er gemt. Du kan bruge den til at logge ind fra nu af, og du er logget ud på dine andre enheder.",
     codeSent: (email: string) =>
@@ -461,12 +458,8 @@ export const da = {
     makeGroup: "Lav en gruppe",
     loading: "Henter dine grupper…",
     loadFailed: "Kunne ikke hente dine grupper.",
-    empty: (button: ReactNode) => <>Du er ikke i en gruppe endnu. {button} og invitér folk.</>,
-    makeOne: "Lav en",
     made: (date: string) => `lavet ${date}`,
     renameTitle: "Omdøb gruppen",
-    inviteTitle: "Invitér folk til gruppen",
-    invite: "Invitér",
     inviteLink: "Invitationslink",
     leaveTitle: "Forlad gruppen",
     deleteTitle: "Slet gruppen for alle",
@@ -534,7 +527,6 @@ export const da = {
     newDateBecause: (who: string, date: string) => `. Ny dato, fordi ${who} ikke kunne ${date}`,
   },
   calendarView: {
-    back: "Tilbage til profil",
     tryAgain: "Prøv igen",
     truncated: "Måneden har flere optagede tidsrum, end der kan vises, så nogle mangler.",
     noCalendars: (link: ReactNode) => (
@@ -543,7 +535,7 @@ export const da = {
         helligdage vises allerede.
       </>
     ),
-    noCalendarsLink: "Forbind en på din profil",
+    noCalendarsLink: "Forbind en kalender",
     today: "I dag",
     weekHeader: "uge",
     weekNumber: "Ugenummer",
@@ -634,7 +626,7 @@ export const da = {
     gone: "Den er ikke i din kalender længere.",
     addAgain: "Tilføj igen",
     chooseTitle: "Hvilken kalender skal Casy lægge aftaler i?",
-    chooseHelp: "Den bliver din primære kalender. Du kan skifte den på din profil.",
+    chooseHelp: "Den bliver din primære kalender. Du kan skifte den under Forbundne kalendere.",
     useAndAdd: "Brug den og tilføj",
     downloadInstead: "Hent en kalenderfil i stedet",
   },

@@ -167,7 +167,7 @@ const da = {
         ? "1 aftale kunne ikke læses og blev sprunget over."
         : `${n} aftaler kunne ikke læses og blev sprunget over.`,
     empty:
-      "Er din kalender ikke tom? Så kommer aftalerne i din iPhones Kalender-app måske fra en Google- eller Outlook-konto, og så ligger de ikke i iCloud. Forbind den konto på din profil i stedet.",
+      "Er din kalender ikke tom? Så kommer aftalerne i din iPhones Kalender-app måske fra en Google- eller Outlook-konto, og så ligger de ikke i iCloud. Forbind den konto under Forbundne kalendere i stedet.",
     nextTitle: "Hvad nu?",
     nextBody:
       "Fortæl Casy, hvilke kalendere der er arbejde eller skole, så Casy ved, hvad du ville kunne tage fri fra.",
@@ -253,7 +253,7 @@ const en: typeof da = {
         ? "1 event couldn't be read and was left out."
         : `${n} events couldn't be read and were left out.`,
     empty:
-      "Is your calendar not empty? Then the events in your iPhone's Calendar app may come from a Google or Outlook account, which means they aren't in iCloud. Connect that account on your profile instead.",
+      "Is your calendar not empty? Then the events in your iPhone's Calendar app may come from a Google or Outlook account, which means they aren't in iCloud. Connect that account under Connected calendars instead.",
     nextTitle: "What's next?",
     nextBody:
       "Tell Casy which calendars are work or school, so it knows what you could take time off from.",
@@ -345,7 +345,7 @@ function NextButton({ label, onClick }: { label: string; onClick: () => void }) 
 export default function ConnectIcloudHelp() {
   const { lang } = useLang();
   const c = lang === "da" ? da : en;
-  // Back to where connecting calendars happens (the profile on a computer).
+  // Back to where calendars are connected (CalendarAccounts).
   const calendarsHome = useCalendarsHome();
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();

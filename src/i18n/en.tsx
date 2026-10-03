@@ -65,6 +65,7 @@ export const en: Messages = {
     eventsShort: "Events",
     calendar: "My calendar",
     calendarShort: "Calendar",
+    groups: "My groups",
     groupsShort: "Groups",
     profile: "Profile",
     profileShort: "Profile",
@@ -321,9 +322,6 @@ export const en: Messages = {
     yourCalendar: "your calendar",
     couldntConnect: (reason: string) => `Couldn't connect: ${reason}`,
     changeName: "Change your display name",
-    statGroups: "Groups",
-    statCalendars: "Calendars",
-    statBusy: "Busy blocks",
     connectedCalendars: "Connected calendars",
     onboardingTitle: "Connect your calendar",
     onboardingIntro:
@@ -334,7 +332,6 @@ export const en: Messages = {
     syncedAccounts: (n: number) => `Synced ${n === 1 ? "1 account" : `${n} accounts`}.`,
     syncSomeFailed: (failed: number, n: number) =>
       `${failed} of ${n === 1 ? "1 account" : `${n} accounts`} couldn't sync. See below.`,
-    password: "Password",
     passwordSaved:
       "Password saved. You can use it to sign in from now on, and you are signed out on your other devices.",
     codeSent: (email: string) =>
@@ -440,12 +437,8 @@ export const en: Messages = {
     makeGroup: "Make a group",
     loading: "Loading your groups…",
     loadFailed: "Couldn't load your groups.",
-    empty: (button: ReactNode) => <>You're not in a group yet. {button} and invite people in.</>,
-    makeOne: "Make one",
     made: (date: string) => `made ${date}`,
     renameTitle: "Rename this group",
-    inviteTitle: "Invite people to this group",
-    invite: "Invite",
     inviteLink: "Invite link",
     leaveTitle: "Leave this group",
     deleteTitle: "Delete this group for everyone",
@@ -516,7 +509,6 @@ export const en: Messages = {
       `. New date because ${who} couldn't make ${date}`,
   },
   calendarView: {
-    back: "Back to profile",
     tryAgain: "Try again",
     truncated: "This month has more busy blocks than can be shown, so some are missing.",
     noCalendars: (link: ReactNode) => (
@@ -525,7 +517,7 @@ export const en: Messages = {
         already shown.
       </>
     ),
-    noCalendarsLink: "Connect one on your profile",
+    noCalendarsLink: "Connect a calendar",
     today: "Today",
     weekHeader: "wk",
     weekNumber: "Week number",
@@ -616,7 +608,7 @@ export const en: Messages = {
     gone: "It's no longer in your calendar.",
     addAgain: "Add it again",
     chooseTitle: "Which calendar should Casy add events to?",
-    chooseHelp: "It becomes your primary calendar. You can change it on your profile.",
+    chooseHelp: "It becomes your primary calendar. You can change it under Connected calendars.",
     useAndAdd: "Use it and add",
     downloadInstead: "Download a calendar file instead",
   },

@@ -10,7 +10,6 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
-import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import {
@@ -82,7 +81,6 @@ export default function CalendarOverview() {
   const user = useSignedInUser();
   const t = useT();
   const { lang } = useLang();
-  const phone = usePhoneLayout();
   const calendarsHome = useCalendarsHome();
   const [month, setMonth] = useState(() => {
     const now = new Date();
@@ -456,10 +454,11 @@ export default function CalendarOverview() {
             )}
           </section>
 
-          {/* On a phone, connecting calendars is a screen of its own here (on
-              a computer it's on the profile page). */}
-          {phone && (
-            <ListGroup className="mt-4">
+          {/* Scrolls with the page rather than on its own: a box scrolling by
+              itself cut its content off at the month grid's top line. */}
+          <div className="mt-6 min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-2 lg:mt-0">
+            {/* Connecting calendars is a page of its own (CalendarAccounts). */}
+            <ListGroup className="mb-4 mt-0">
               <ListRow
                 to={calendarsHome.to}
                 icon={CalendarPlus}
@@ -468,11 +467,6 @@ export default function CalendarOverview() {
                 value={isLoading ? null : connected.length}
               />
             </ListGroup>
-          )}
-
-          {/* Scrolls with the page rather than on its own: a box scrolling by
-              itself cut its content off at the month grid's top line. */}
-          <div className="mt-6 lg:col-start-2 lg:row-span-3 lg:row-start-2 lg:mt-0">
             <CalendarListPanel
               calendars={calendars}
               colorOf={colorOf}

@@ -1,27 +1,49 @@
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus } from "lucide-react";
+import { Navigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
-import { createGroup, groupsQuery, groupsQueryKey, type Group } from "@/api/groups";
-import GroupsSection from "@/components/GroupsSection";
+import { groupsQuery } from "@/api/groups";
+import GroupDetails from "@/components/groups/GroupDetails";
+import GroupList from "@/components/groups/GroupList";
 import InvitationsSection from "@/components/myEvents/InvitationsSection";
-import NewGroupDialog from "@/components/NewGroupDialog";
+import PhoneSubHeader from "@/components/PhoneSubHeader";
 import TopNav from "@/components/TopNav";
-import Avatar from "@/components/ui/Avatar";
-import { ListGroup, ListRow } from "@/components/ui/ListGroup";
-import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 
 /**
- * Your groups and the invitations waiting for your answer: the phone's Groups
- * tab (TabBar). On a computer the same sections stay where they always were,
- * on the profile page and on My events, and nothing links here.
+ * Your groups, and the invitations waiting for your answer (/groups, and
+ * /groups/:groupId for one group). A phone shows the list (its Groups tab)
+ * and each group as a screen of its own; a computer shows both side by side,
+ * the group in the address open on the right, else the first.
  */
 export default function Groups() {
+  const { groupId } = useParams();
+  const phone = usePhoneLayout();
+  if (phone) return groupId ? <PhoneGroupScreen groupId={groupId} /> : <GroupsPage />;
+  return <GroupsPage selectedId={groupId} />;
+}
+
+/** The list (a phone) or the list beside the open group (a computer). */
+function GroupsPage({ selectedId }: { selectedId?: string }) {
   const t = useT();
   const phone = usePhoneLayout();
+  const youId = useSignedInUser().id;
+  const { data: groups } = useQuery(groupsQuery(youId));
+
+  // A computer always has a group open: the one asked for, else the first.
+  const index =
+    phone || !groups
+      ? -1
+      : Math.max(
+          groups.findIndex((g) => g.id === selectedId),
+          0,
+        );
+  const open = groups?.[index];
+  // Asked for one that's gone (left, deleted, or never yours): the plain page.
+  if (!phone && selectedId && groups && open?.id !== selectedId) {
+    return <Navigate to="/groups" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,87 +52,43 @@ export default function Groups() {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.groupsPage.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.groupsPage.intro}</p>
         <InvitationsSection />
-        {phone ? <GroupList /> : <GroupsSection />}
+        {phone ? (
+          <GroupList />
+        ) : (
+          <div className="grid items-start gap-x-8 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+            <GroupList selectedId={open?.id} privacyNote={false} />
+            {open && (
+              <section className="mt-6 min-w-0 rounded-2xl border bg-card/60 p-5 pt-0 sm:p-6 sm:pt-0">
+                <GroupDetails group={open} index={index} youId={youId} layout="pane" />
+              </section>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );
 }
 
-/**
- * The groups as an iPhone list: one row each, opening the group's own screen
- * (GroupScreen), and a row at the end to make a new one.
- */
-function GroupList() {
+/** One group on a phone, opened from the Groups tab, with a way back. */
+function PhoneGroupScreen({ groupId }: { groupId: string }) {
   const t = useT();
   const youId = useSignedInUser().id;
-  const queryClient = useQueryClient();
-  const { data: groups, isPending, isError } = useQuery(groupsQuery(youId));
-  const [newGroupOpen, setNewGroupOpen] = useState(false);
-  const create = useMutation({
-    mutationFn: createGroup,
-    onSuccess: (data) => {
-      queryClient.setQueryData(groupsQueryKey(youId), data.groups);
-      setNewGroupOpen(false);
-    },
-  });
+  const { data: groups, isError } = useQuery(groupsQuery(youId));
 
-  if (isPending) {
-    return (
-      <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {t.groupsSection.loading}
-      </p>
-    );
-  }
-  if (isError) {
-    return (
-      <Notice tone="error" bare className="mt-6">
-        {t.groupsSection.loadFailed}
-      </Notice>
-    );
-  }
+  // The list says why it couldn't load them.
+  if (isError) return <Navigate to="/groups" replace />;
+  if (!groups) return null; // the groups are almost always cached already
+  const index = groups.findIndex((g) => g.id === groupId);
+  // Gone (left or deleted, here or elsewhere): back to the list.
+  if (index === -1) return <Navigate to="/groups" replace />;
+  const group = groups[index];
 
   return (
-    <>
-      <ListGroup
-        title={t.groupsSection.title}
-        footnote={groups.length === 0 ? t.groupsPage.empty : t.groupPanel.whatMembersSeeBody}
-      >
-        {groups.map((group, i) => (
-          <ListRow
-            key={group.id}
-            to={`/groups/${group.id}`}
-            leading={<Avatar name={group.name} index={i} size="row" />}
-            label={group.name}
-            detail={memberLine(group, t.groupsPage.you)}
-          />
-        ))}
-        <ListRow
-          icon={Plus}
-          tone="primary"
-          label={t.groupsSection.makeGroup}
-          onClick={() => {
-            create.reset();
-            setNewGroupOpen(true);
-          }}
-        />
-      </ListGroup>
-
-      <NewGroupDialog
-        open={newGroupOpen}
-        submitting={create.isPending}
-        error={create.error?.message ?? null}
-        onSubmit={(group) => create.mutate(group)}
-        onCancel={() => setNewGroupOpen(false)}
-      />
-    </>
+    <div className="min-h-screen bg-background">
+      <PhoneSubHeader title={group.name} back="/groups" backLabel={t.groupsPage.title} />
+      <main className="px-4 pb-8">
+        <GroupDetails group={group} index={index} youId={youId} layout="screen" />
+      </main>
+    </div>
   );
-}
-
-/** Who's in it, you first: "Dig, Simon, Maja". */
-function memberLine(group: Group, you: string): string {
-  return [...group.members]
-    .sort((a, b) => Number(b.isYou) - Number(a.isYou))
-    .map((m) => (m.isYou ? you : m.name))
-    .join(", ");
 }
