@@ -2,6 +2,25 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { execSync } from "node:child_process";
+
+/**
+ * Which code a build was made from, shown on the phone profile and sent with
+ * feedback (src/lib/feedback.ts): the short commit id, Vercel's own when it
+ * builds (it may not have the git history), or "dev" without one.
+ */
+function buildId(): string {
+  const vercel = process.env.VERCEL_GIT_COMMIT_SHA;
+  if (vercel) return vercel.slice(0, 7);
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return "dev";
+  }
+}
+process.env.VITE_APP_BUILD ??= buildId();
 
 /**
  * Libraries the first page needs, each in a chunk of its own: they change far

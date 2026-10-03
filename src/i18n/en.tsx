@@ -87,6 +87,14 @@ export const en: Messages = {
   },
   profileHub: {
     admin: "Admin mode",
+    security: "Sign-in and security",
+    feedback: "Send feedback",
+    feedbackSubject: "Feedback on Casy",
+    feedbackPrompt: "Write what you think, or what isn't working:",
+    share: "Share Casy",
+    shareText: "Casy finds the first day everyone can make. Try it here:",
+    linkCopied: "Link copied",
+    version: (build: string) => `Casy · ${build}`,
   },
   footer: {
     howItWorks: "How it works",

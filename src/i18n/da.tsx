@@ -96,6 +96,14 @@ export const da = {
   },
   profileHub: {
     admin: "Admin-tilstand",
+    security: "Log ind og sikkerhed",
+    feedback: "Send feedback",
+    feedbackSubject: "Feedback på Casy",
+    feedbackPrompt: "Skriv her, hvad du tænker, eller hvad der ikke virker:",
+    share: "Del Casy",
+    shareText: "Casy finder den første dag, hvor alle kan. Prøv den her:",
+    linkCopied: "Link kopieret",
+    version: (build: string) => `Casy · ${build}`,
   },
   footer: {
     howItWorks: "Sådan virker det",

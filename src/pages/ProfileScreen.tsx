@@ -57,7 +57,7 @@ function PasswordScreen() {
   const user = useSignedInUser();
   const { data: whoAmI } = useQuery(whoAmIQuery(user.id));
   return (
-    <Screen title={t.profile.password}>
+    <Screen title={t.profileHub.security}>
       <PasswordSection name={whoAmI?.name ?? displayName(user)} titled={false} />
     </Screen>
   );

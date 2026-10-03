@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleHelp, KeyRound, Lock, LogOut, Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  CircleHelp,
+  KeyRound,
+  Lock,
+  LogOut,
+  MessageSquare,
+  Pencil,
+  Share,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
 import { setDisplayName, whoAmIQuery, whoAmIQueryKey } from "@/api/groups";
@@ -11,8 +21,14 @@ import Avatar from "@/components/ui/Avatar";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { displayName, useAuth, useSignedInUser } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
+import { useCopy } from "@/hooks/useCopy";
 import { useT } from "@/i18n/lang";
+import { APP_BUILD, feedbackMailto } from "@/lib/feedback";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
+import { isNativeApp } from "@/lib/nativeApp";
+
+/** What "Share Casy" hands on. */
+const CASY_URL = "https://casy.app";
 
 /**
  * Links into the profile that the computer's single page answers in place,
@@ -54,6 +70,18 @@ export default function ProfileHub() {
   });
 
   const { data: isAdmin } = useQuery(adminStatusQuery(user.id));
+
+  // The phone's own share sheet where there is one (the app, phone browsers);
+  // otherwise the link goes on the clipboard, and the row says so.
+  const [copied, copy] = useCopy();
+  function shareCasy() {
+    const text = t.profileHub.shareText;
+    if (typeof navigator.share === "function") {
+      navigator.share({ title: "Casy", text, url: CASY_URL }).catch(() => undefined); // closed
+    } else {
+      copy(`${text} ${CASY_URL}`);
+    }
+  }
 
   const screen = screenFor(searchParams);
   if (screen) return <Navigate to={`${screen}?${searchParams}`} replace />;
@@ -102,8 +130,30 @@ export default function ProfileHub() {
         </div>
 
         <ListGroup>
-          <ListRow to="/profile/password" icon={KeyRound} label={t.profile.password} />
+          <ListRow to="/profile/password" icon={KeyRound} label={t.profileHub.security} />
           {isAdmin && <ListRow to="/profile/admin" icon={ShieldCheck} label={t.profileHub.admin} />}
+        </ListGroup>
+
+        <ListGroup>
+          <ListRow
+            icon={MessageSquare}
+            label={t.profileHub.feedback}
+            onClick={() => {
+              window.location.href = feedbackMailto({
+                subject: t.profileHub.feedbackSubject,
+                prompt: t.profileHub.feedbackPrompt,
+                build: APP_BUILD,
+                platform: isNativeApp ? "app" : "web",
+                userAgent: navigator.userAgent,
+              });
+            }}
+          />
+          <ListRow
+            icon={Share}
+            label={t.profileHub.share}
+            value={copied ? t.profileHub.linkCopied : undefined}
+            onClick={shareCasy}
+          />
         </ListGroup>
 
         <ListGroup>
@@ -128,6 +178,11 @@ export default function ProfileHub() {
             tone="danger"
           />
         </ListGroup>
+
+        {/* Which build this is, for anyone reporting a bug. */}
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          {t.profileHub.version(APP_BUILD)}
+        </p>
       </main>
     </div>
   );
