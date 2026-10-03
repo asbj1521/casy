@@ -93,7 +93,6 @@ export const en: Messages = {
     feedbackPrompt: "Write what you think, or what isn't working:",
     share: "Share Casy",
     shareText: "Casy finds the first day everyone can make. Try it here:",
-    linkCopied: "Link copied",
     version: (build: string) => `Casy · ${build}`,
   },
   footer: {

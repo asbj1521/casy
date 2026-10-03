@@ -18,14 +18,15 @@ import { setDisplayName, whoAmIQuery, whoAmIQueryKey } from "@/api/groups";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import TopNav from "@/components/TopNav";
 import Avatar from "@/components/ui/Avatar";
+import CopyField from "@/components/ui/CopyField";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { displayName, useAuth, useSignedInUser } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
-import { useCopy } from "@/hooks/useCopy";
 import { useT } from "@/i18n/lang";
 import { APP_BUILD, feedbackMailto } from "@/lib/feedback";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
 import { isNativeApp } from "@/lib/nativeApp";
+import { shareLink } from "@/lib/share";
 
 /** What "Share Casy" hands on. */
 const CASY_URL = "https://casy.app";
@@ -71,16 +72,13 @@ export default function ProfileHub() {
 
   const { data: isAdmin } = useQuery(adminStatusQuery(user.id));
 
-  // The phone's own share sheet where there is one (the app, phone browsers);
-  // otherwise the link goes on the clipboard, and the row says so.
-  const [copied, copy] = useCopy();
+  // The phone's share sheet; where there is none (a computer, or a dev
+  // server's http:// address), the link is shown to copy instead.
+  const [showLink, setShowLink] = useState(false);
   function shareCasy() {
-    const text = t.profileHub.shareText;
-    if (typeof navigator.share === "function") {
-      navigator.share({ title: "Casy", text, url: CASY_URL }).catch(() => undefined); // closed
-    } else {
-      copy(`${text} ${CASY_URL}`);
-    }
+    void shareLink({ title: "Casy", text: t.profileHub.shareText, url: CASY_URL }).then((opened) =>
+      setShowLink(!opened),
+    );
   }
 
   const screen = screenFor(searchParams);
@@ -148,13 +146,9 @@ export default function ProfileHub() {
               });
             }}
           />
-          <ListRow
-            icon={Share}
-            label={t.profileHub.share}
-            value={copied ? t.profileHub.linkCopied : undefined}
-            onClick={shareCasy}
-          />
+          <ListRow icon={Share} label={t.profileHub.share} onClick={shareCasy} />
         </ListGroup>
+        {showLink && <CopyField value={CASY_URL} label={t.profileHub.share} className="mt-2" />}
 
         <ListGroup>
           <ListRow to="/how-it-works" icon={CircleHelp} label={t.footer.howItWorks} />
