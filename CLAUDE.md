@@ -23,6 +23,8 @@ Casy Users sign in, link their calendars (Google, Outlook, Apple iCloud, or any 
 
 **Current state:** a signed-out visitor to `/` sees the landing page (`src/pages/Landing.tsx`: what Casy is for, a short "your data" section, and "Go to Casy" to the scheduler at `/plan`); a signed-in person gets the scheduler at `/` directly. Everything a signed-in user touches is real: their calendars (stored in Supabase, re-synced hourly), friend groups with invite links (`/join/:token`), and group availability built from every member's real busy times. Someone with no groups yet sees ten generated example groups (`src/api/mockData.ts`), each labelled "Example", with their own real calendar swapped into the "you" slot. The profile page lists your groups (make one, rename, share an invite link, leave, delete ones you created), lets you set your own display name, and, for admins only, opens admin mode. The scheduling page puts the answer first: you name the event yourself and set start time, length and weekdays (or, with the "Tur / ferie" switch, a number of days and a start day), and the first date everyone can make updates as you change them, with the month drawn day by day under it. "Suggest this date" (arrows beside it step through dates) sends the date to the group, who accept or decline it on My events (`/events`), and a decline swaps in the next date automatically. Once everyone has accepted, "Add to my calendar" puts the event into the person's primary calendar (iCloud only so far; chosen on the profile page or My calendar), or on its own with "Add automatically" on; without a writable calendar the button downloads an .ics file instead.
 
+On a phone (below 768px, the website and the iPhone app alike) the same pages are laid out like an app: a tab bar along the bottom (Groups, Events, Scheduler in the middle, Calendar, Profile), a compact header, and screens that open into their own screens with a back button (a group, the profile's sign-in and security, connecting calendars). Groups and invitations get their own tab, connecting calendars moves into the Calendar tab, and the profile is a short list (security, feedback, share, help, sign out, delete). Computers keep the layout they always had, rendered from the same code as before. The iPhone app (`ios/`, Capacitor) is a spike (#63): it runs on a phone from Xcode with a free Apple ID; reading the phone's calendars, the reason for an app, is not built yet.
+
 ## Tech Stack
 
 - **Frontend:** React 19 + TypeScript + Vite, React Router v7
@@ -31,6 +33,7 @@ Casy Users sign in, link their calendars (Google, Outlook, Apple iCloud, or any 
 - **State:** component state plus TanStack Query for server data, with a few of the user's own answers remembered across reloads (`src/lib/queryPersistence.ts`); two React contexts: auth (`src/context/`) and language (`src/i18n/`)
 - **Hosting:** Vercel (project `casy`), auto-deploys `main`; `vercel.json` rewrites every path to `index.html` for the SPA and sets the security headers (no framing, nosniff, referrer, permissions, HSTS; deliberately no script-restricting CSP)
 - **Backend:** Supabase: Postgres, Auth (Google sign-in + email magic link), Edge Functions (Deno), Vault, pg_cron + pg_net
+- **iPhone app:** Capacitor 8 (`capacitor.config.ts`, bundle id `app.casy`): `ios/` is an Xcode project that packages the same Vite build. Swift Package Manager, no CocoaPods. Native touches live in `ios/App/App/MainViewController.swift`; plugins (so far `@capacitor/share`) are imported dynamically so the website never downloads them. Build into Xcode's default DerivedData, never a folder inside the repo: the repo sits in iCloud-synced Desktop, and code signing rejects files carrying iCloud's attributes ("resource fork, Finder information, or similar detritus")
 - **Testing:** Vitest (frontend, `src/**/*.test.ts`) and Deno test (Edge Functions, `supabase/functions/_shared/*_test.ts`)
 - **Linting and formatting:** ESLint (TypeScript + React Hooks); Prettier at 100 columns with the Tailwind class-order plugin (`.prettierrc.json`); the Prettier commit is listed in `.git-blame-ignore-revs`
 
@@ -38,6 +41,7 @@ Casy Users sign in, link their calendars (Google, Outlook, Apple iCloud, or any 
 
 ```bash
 npm run dev              # Dev server on port 8080 (the user runs this in their own terminal)
+npm run ios              # Build the site and copy it into the iPhone app; then ▶ in Xcode (npx cap open ios)
 npm run build            # Type-check + production build
 npm run test:run         # Frontend tests once
 npm run lint             # ESLint
@@ -59,13 +63,14 @@ supabase db push --dry-run
 ```
 src/
 ├── api/          # Every Edge Function call: groups, events, calendars (status, busy, settings, connect, primary calendar), account, admin; mockData (example groups), currentUser
-├── components/   # Hand-built UI components; RequireAuth guards signed-in routes; AdminPanel is lazy-loaded; ui/ holds the shared pieces (Notice, ConfirmPanel, Collapse, Avatar, Switch, CopyField, Bone): use them rather than restyling a box or a confirm by hand. One page's own pieces get a folder (findDate/, myEvents/, appleWalkthrough/). A section or row owns its queries and mutations (GroupsSection and its rows, CalendarsSection, PasswordSection, CalendarListPanel's rows, GroupPanel, My events' cards); pages compose them instead of passing handlers down
+├── components/   # Hand-built UI components; RequireAuth guards signed-in routes; AdminPanel is lazy-loaded; ui/ holds the shared pieces (Notice, ConfirmPanel, Collapse, Avatar, Switch, CopyField, Bone): use them rather than restyling a box or a confirm by hand. One page's own pieces get a folder (findDate/, myEvents/, appleWalkthrough/, profile/). The phone layout's pieces: TabBar, PhoneHeader (TopNav on a phone), PhoneSubHeader (a screen's back button and title), and ui/ListGroup (iPhone-style grouped rows, ListRow inside), which every phone screen is built from. A section or row owns its queries and mutations (GroupsSection and its rows, CalendarsSection, PasswordSection, CalendarListPanel's rows, GroupPanel, My events' cards); pages compose them instead of passing handlers down
 ├── context/      # Auth: AuthProvider (session) + auth.ts (useAuth; useSignedInUser for pages behind RequireAuth; displayName)
-├── hooks/        # useSchedulingGroups (real vs example groups), useDateSearch (the scheduling page's answer), useExampleCarousel, useEventChange (one change to a suggested event), useCopy, useCaptcha
+├── hooks/        # usePhoneLayout (phone or computer), useCalendarsHome (where connecting calendars happens), useCalendarReturn (back from Google or Outlook), useSchedulingGroups (real vs example groups), useDateSearch (the scheduling page's answer), useExampleCarousel, useEventChange (one change to a suggested event), useCopy, useCaptcha
 ├── i18n/         # Languages: da.tsx (the shape) + en.tsx, useT/useLang, current.ts for code outside React
 ├── lib/          # Pure logic + clients (see below); tests sit next to the code
 ├── pages/        # Landing (/ signed out), FindDate (/plan, and / signed in), MyEvents (/events), SignIn, Profile, CalendarOverview, JoinGroup (/join/:token), Privacy, HowItWorks; lazyPages.ts holds the one loader per lazy page (App.tsx and prefetching share it)
 └── types/        # Core data model (BusyInterval, Participant, TimeSlot, ...)
+ios/              # The iPhone app's Xcode project (Capacitor); App/App/public is the copied build, not in git
 supabase/
 ├── functions/    # One folder per Edge Function; _shared/ holds what they share: the HTTP shell (http.ts), the caller check (auth.ts), provider adapters and helpers
 └── migrations/   # Schema history; applied with `supabase db push`
@@ -92,6 +97,8 @@ supabase/
 - `src/lib/passwordRules.ts`: what a password must be (8+ characters, an a-z letter and a digit like Supabase's `letters_digits`, not the person's email or name, not in Have I Been Pwned's leaks via the k-anonymity range API: only 5 hash characters leave the browser, fails open). Used by `PasswordForm` everywhere a password is chosen, and after a password sign-in to set the weak-password note (`src/lib/weakPassword.ts`, `WeakPasswordNotice` above every page).
 - `src/hooks/useCaptcha.ts`: Cloudflare Turnstile on the sign-in page; every email/password auth call sends its one-time token. Without `VITE_TURNSTILE_SITE_KEY` there is no widget and calls go without one.
 - `src/lib/supabaseFunctions.ts`: `callFunction()`, the only way the frontend calls Edge Functions, used only by `src/api/`. It attaches the session's access token and `?lang=` (a query parameter, not a header, so no CORS change is needed).
+- `src/hooks/usePhoneLayout.ts`: the phone layout's switch (below Tailwind's `md`, 768px; `--tab-bar-height` in `index.css` uses the same line). Where a page differs on a phone, the phone version is a separate component chosen in JavaScript (`Profile` picks `ProfileHub` or the computer's page; `Groups` the list or `GroupsSection`), so a computer renders exactly what it did before the phone layout existed: change the computer's version only on purpose. Phone-only routes (`/groups/:groupId`, `/profile/:screen`, `/calendar-overview/accounts`) send a computer to where it does the same thing. Links the computer's profile answers in place (`?connected`, `?error`, `?onboarding`, `?password`, `?mode=admin`) are passed on to the matching phone screen by `ProfileHub`.
+- `src/lib/nativeApp.ts`: `isNativeApp` (read from the bridge the app injects, not `@capacitor/core`, to keep it off the website's first load) and `fitToApp()`, which in the app only covers the screen (`viewport-fit=cover`, padded by the safe areas in `index.css` under `html.native-app`) and stops iOS zooming into small text fields. `src/lib/share.ts` (the share sheet, or false so the caller shows the link) and `src/lib/feedback.ts` (the feedback email, with `APP_BUILD`, the commit id `vite.config.ts` stamps on every build) serve the phone profile.
 - `src/lib/supabase.ts`: `supabaseAuth`, the browser's only Supabase client: `@supabase/auth-js` on its own, not supabase-js (tables are not read from the browser, so the other clients were dead weight). `authOptions()` repeats what supabase-js's `createClient()` passed; its storage key (`sb-<ref>-auth-token`) must never change or everyone is signed out. `vite.config.ts` puts the libraries the first page loads (react, motion, auth, query) in chunks of their own so deploys leave them cached.
 
 ### Languages
@@ -175,7 +182,7 @@ Order: migrations before the functions that depend on them. Afterwards, `supabas
 
 ## CI/CD
 
-GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push and PR to `main`, in two jobs: the web app (ESLint, the Prettier check, `npm run build`, which type-checks first, and the Vitest suite) and the Edge Functions (`deno check` and the Deno tests). Run the same locally before handing work over.
+GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push and PR to `main`, in two jobs: the web app (ESLint, the Prettier check, `npm run build`, which type-checks first, and the Vitest suite) and the Edge Functions (`deno check` and the Deno tests). Run the same locally before handing work over. CI never builds the iPhone app; ESLint and Prettier skip `ios/`.
 
 ---
 
