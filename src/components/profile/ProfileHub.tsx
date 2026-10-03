@@ -1,29 +1,10 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CalendarDays,
-  ChevronRight,
-  CircleHelp,
-  KeyRound,
-  Lock,
-  LogOut,
-  Pencil,
-  ShieldCheck,
-  Trash2,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { CircleHelp, KeyRound, Lock, LogOut, Pencil, ShieldCheck, Trash2 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
-import { calendarStatusQuery } from "@/api/calendars";
-import {
-  groupsQuery,
-  invitationsQuery,
-  setDisplayName,
-  whoAmIQuery,
-  whoAmIQueryKey,
-} from "@/api/groups";
+import { setDisplayName, whoAmIQuery, whoAmIQueryKey } from "@/api/groups";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import TopNav from "@/components/TopNav";
 import Avatar from "@/components/ui/Avatar";
@@ -48,9 +29,9 @@ function screenFor(params: URLSearchParams): string | null {
 }
 
 /**
- * The phone's profile: who you are and two tiles at a glance, then rows that
- * each open their own screen (ProfileScreen), so it fits on one screen
- * instead of the computer's long page.
+ * The phone's profile: who you are, then rows that each open their own screen
+ * (ProfileScreen), so it fits on one screen instead of the computer's long
+ * page. Groups and calendars aren't repeated here: they have their own tabs.
  */
 export default function ProfileHub() {
   const user = useSignedInUser();
@@ -72,10 +53,6 @@ export default function ProfileHub() {
     },
   });
 
-  const { data: groups } = useQuery(groupsQuery(user.id));
-  const { data: invitations } = useQuery(invitationsQuery(user.id));
-  const { data: connections } = useQuery(calendarStatusQuery(user.id));
-  const connected = connections?.filter((c) => c.status === "connected");
   const { data: isAdmin } = useQuery(adminStatusQuery(user.id));
 
   const screen = screenFor(searchParams);
@@ -124,25 +101,6 @@ export default function ProfileHub() {
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <Tile
-            to="/groups"
-            icon={Users}
-            value={groups?.length}
-            label={t.profile.statGroups}
-            detail={invitations?.length ? t.profileHub.invitations(invitations.length) : null}
-          />
-          <Tile
-            to="/calendar-overview"
-            icon={CalendarDays}
-            value={connected?.length}
-            label={t.profile.statCalendars}
-            detail={
-              connected && t.counts.busyBlocks(connected.reduce((sum, c) => sum + c.busyCount, 0))
-            }
-          />
-        </div>
-
         <ListGroup>
           <ListRow to="/profile/password" icon={KeyRound} label={t.profile.password} />
           {isAdmin && <ListRow to="/profile/admin" icon={ShieldCheck} label={t.profileHub.admin} />}
@@ -172,36 +130,5 @@ export default function ProfileHub() {
         </ListGroup>
       </main>
     </div>
-  );
-}
-
-/** A square at a glance: how many, of what, and a line more; opens its screen. */
-function Tile({
-  to,
-  icon: Icon,
-  value,
-  label,
-  detail,
-}: {
-  to: string;
-  icon: LucideIcon;
-  value: number | undefined;
-  label: string;
-  detail?: string | null;
-}) {
-  return (
-    <Link
-      to={to}
-      className="flex flex-col rounded-2xl border bg-card p-4 transition-colors active:bg-secondary"
-    >
-      <span className="flex items-center justify-between">
-        <Icon className="h-5 w-5 text-primary" />
-        <ChevronRight className="h-4 w-4 text-muted-foreground/60" />
-      </span>
-      <span className="mt-3 text-2xl font-bold text-foreground">{value ?? "…"}</span>
-      <span className="text-sm font-medium text-foreground">{label}</span>
-      {/* Always a line high, so the two tiles stay the same size. */}
-      <span className="mt-0.5 min-h-4 truncate text-xs text-muted-foreground">{detail}</span>
-    </Link>
   );
 }

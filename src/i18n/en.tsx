@@ -87,7 +87,6 @@ export const en: Messages = {
   },
   profileHub: {
     admin: "Admin mode",
-    invitations: (n: number) => (n === 1 ? "1 invitation waiting" : `${n} invitations waiting`),
   },
   footer: {
     howItWorks: "How it works",

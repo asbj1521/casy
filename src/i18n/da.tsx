@@ -96,7 +96,6 @@ export const da = {
   },
   profileHub: {
     admin: "Admin-tilstand",
-    invitations: (n: number) => (n === 1 ? "1 invitation venter" : `${n} invitationer venter`),
   },
   footer: {
     howItWorks: "Sådan virker det",
