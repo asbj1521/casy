@@ -74,7 +74,15 @@ export const en: Messages = {
   },
   groupsPage: {
     title: "Groups",
+    you: "You",
+    members: "Members",
+    invitePeople: "Invite people",
+    empty: "You're not in a group yet. Make one and invite people.",
     intro: "The groups you plan with. Make new ones, invite people and answer invitations here.",
+  },
+  profileHub: {
+    admin: "Admin mode",
+    invitations: (n: number) => (n === 1 ? "1 invitation waiting" : `${n} invitations waiting`),
   },
   footer: {
     howItWorks: "How it works",

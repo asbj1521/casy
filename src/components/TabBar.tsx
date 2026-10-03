@@ -46,12 +46,15 @@ function PhoneTabBar() {
   // Signed out, the last tab can only lead to the sign-in page, so it says so.
   const signedOut = !loading && !user;
 
+  // Groups first and the scheduler in the middle, where the thumb rests.
   const tabs: Tab[] = [
     {
-      to: user ? "/" : "/plan",
-      label: t.nav.schedulerShort,
-      icon: CalendarSearch,
-      active: pathname === "/plan" || (pathname === "/" && !!user),
+      to: "/groups",
+      label: t.nav.groupsShort,
+      icon: Users,
+      active: pathname.startsWith("/groups"),
+      prefetch: () => void loadPage.groups(),
+      badge: invitations?.length,
     },
     {
       to: "/events",
@@ -62,12 +65,10 @@ function PhoneTabBar() {
       badge: events?.filter(needsYourAnswer).length,
     },
     {
-      to: "/groups",
-      label: t.nav.groupsShort,
-      icon: Users,
-      active: pathname === "/groups",
-      prefetch: () => void loadPage.groups(),
-      badge: invitations?.length,
+      to: user ? "/" : "/plan",
+      label: t.nav.schedulerShort,
+      icon: CalendarSearch,
+      active: pathname === "/plan" || (pathname === "/" && !!user),
     },
     {
       to: "/calendar-overview",
@@ -88,7 +89,7 @@ function PhoneTabBar() {
           to: "/profile",
           label: t.nav.profileShort,
           icon: User,
-          active: pathname === "/profile",
+          active: pathname.startsWith("/profile"),
           // The page and the three answers it opens by asking for, as TopNav does.
           prefetch: () => {
             if (!user) return;

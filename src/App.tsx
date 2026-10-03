@@ -26,6 +26,8 @@ const Profile = lazy(loadPage.profile);
 const CalendarOverview = lazy(loadPage.calendarOverview);
 const MyEvents = lazy(loadPage.myEvents);
 const Groups = lazy(loadPage.groups);
+const GroupScreen = lazy(loadPage.groupScreen);
+const ProfileScreen = lazy(loadPage.profileScreen);
 const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
 const Privacy = lazy(loadPage.privacy);
@@ -101,12 +103,29 @@ function App() {
                     </RequireAuth>
                   }
                 />
-                {/* The phone's Groups tab (TabBar). */}
+                {/* The phone's Groups tab (TabBar), and one group's screen. */}
                 <Route
                   path="/groups"
                   element={
                     <RequireAuth>
                       <Groups />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/groups/:groupId"
+                  element={
+                    <RequireAuth>
+                      <GroupScreen />
+                    </RequireAuth>
+                  }
+                />
+                {/* The phone profile's screens, opened from its hub. */}
+                <Route
+                  path="/profile/:screen"
+                  element={
+                    <RequireAuth>
+                      <ProfileScreen />
                     </RequireAuth>
                   }
                 />

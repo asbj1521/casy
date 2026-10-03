@@ -22,9 +22,12 @@ import { clearWeakPassword } from "@/lib/weakPassword";
  */
 export default function PasswordSection({
   name,
+  titled = true,
 }: {
   /** The name the password mustn't be built from, beside the email. */
   name: string;
+  /** False on the phone's password screen, whose header already says it. */
+  titled?: boolean;
 }) {
   const t = useT();
   const user = useSignedInUser();
@@ -131,8 +134,8 @@ export default function PasswordSection({
   }
 
   return (
-    <section ref={sectionRef} className="mt-8 scroll-mt-4">
-      <h2 className="text-lg font-semibold text-foreground">{t.profile.password}</h2>
+    <section ref={sectionRef} className={titled ? "mt-8 scroll-mt-4" : "scroll-mt-4"}>
+      {titled && <h2 className="text-lg font-semibold text-foreground">{t.profile.password}</h2>}
       <div className="mt-4 rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
         {saved && !formOpen && (
           <Notice tone="success" bare className="mb-3">

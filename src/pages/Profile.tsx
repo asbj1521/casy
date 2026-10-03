@@ -1,23 +1,24 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, LogOut, Pencil, ShieldCheck } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
-import { calendarsChanged, calendarStatusQuery } from "@/api/calendars";
+import { calendarStatusQuery } from "@/api/calendars";
 import { groupsQuery, setDisplayName, whoAmIQuery, whoAmIQueryKey } from "@/api/groups";
+import CalendarReturnNotice from "@/components/CalendarReturnNotice";
 import CalendarsSection from "@/components/CalendarsSection";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
 import GroupsSection from "@/components/GroupsSection";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import PasswordSection from "@/components/PasswordSection";
+import ProfileHub from "@/components/profile/ProfileHub";
 import TopNav from "@/components/TopNav";
 import Avatar from "@/components/ui/Avatar";
-import Notice from "@/components/ui/Notice";
 import { displayName, useAuth, useSignedInUser } from "@/context/auth";
+import { useCalendarReturn } from "@/hooks/useCalendarReturn";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
-import { markCalendarOnboardingSeen } from "@/lib/calendarOnboarding";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
 import { cn } from "@/lib/utils";
 
@@ -27,26 +28,23 @@ import { cn } from "@/lib/utils";
  */
 const AdminPanel = lazy(() => import("@/components/AdminPanel"));
 
-/** What an OAuth callback sent the browser back with, if anything. */
-type OAuthOutcome = { connected: string } | { failed: string };
-
-function oauthOutcome(params: URLSearchParams): OAuthOutcome | null {
-  const connected = params.get("connected");
-  if (connected) return { connected };
-  const failed = params.get("error");
-  return failed ? { failed } : null;
+/**
+ * Your profile. On a phone, a short hub whose rows open their own screens
+ * (ProfileHub, ProfileScreen); on a computer, everything on one page.
+ */
+export default function Profile() {
+  return usePhoneLayout() ? <ProfileHub /> : <DesktopProfile />;
 }
 
 /**
- * Your profile: who you are (click the avatar to change the name your groups
- * see) with a few counts, then your calendars, your groups, your password,
- * and deleting the account. Admins can switch the page to admin mode.
+ * The computer's profile: who you are (click the avatar to change the name
+ * your groups see) with a few counts, then your calendars, your groups, your
+ * password, and deleting the account. Admins can switch the page to admin mode.
  */
-export default function Profile() {
+function DesktopProfile() {
   const user = useSignedInUser();
   const { signOut } = useAuth();
   const t = useT();
-  const phone = usePhoneLayout();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -81,31 +79,8 @@ export default function Profile() {
       return params;
     });
 
-  // The OAuth callbacks send the browser back here, a fresh page load, with
-  // ?connected=<provider> or ?error=<provider>:<reason>. The outcome is read
-  // once as the page loads and stays on screen; the parameters are stripped
-  // from the address, so a refresh doesn't show it again.
-  const [oauthReturn] = useState(() => oauthOutcome(searchParams));
-  useEffect(() => {
-    if (!oauthReturn) return;
-    setSearchParams(
-      (params) => {
-        params.delete("connected");
-        params.delete("error");
-        return params;
-      },
-      { replace: true },
-    );
-    void calendarsChanged(queryClient);
-  }, [oauthReturn, setSearchParams, queryClient]);
-
-  // Arrived straight from sign-in with no calendars connected yet (see
-  // SignIn.tsx). Marked seen at once so this device isn't sent back here on
-  // every visit; the note itself shows whenever no calendar is linked.
-  const onboarding = searchParams.get("onboarding") === "1";
-  useEffect(() => {
-    if (onboarding) markCalendarOnboardingSeen(user.id);
-  }, [onboarding, user.id]);
+  // Back from connecting Google or Outlook, or new from sign-in.
+  const oauthReturn = useCalendarReturn(user.id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,23 +106,7 @@ export default function Profile() {
           </div>
         )}
 
-        {oauthReturn &&
-          ("connected" in oauthReturn ? (
-            <Notice tone="success" className="mt-4">
-              {t.profile.connected(
-                oauthReturn.connected in t.providers
-                  ? t.providers[oauthReturn.connected as keyof typeof t.providers].label
-                  : t.profile.yourCalendar,
-              )}
-            </Notice>
-          ) : (
-            <Notice tone="error" className="mt-4">
-              {t.profile.couldntConnect(
-                // "google:access_denied": the reason after the colon, in words.
-                t.profile.oauthErrors[oauthReturn.failed.split(":")[1] ?? ""] ?? oauthReturn.failed,
-              )}
-            </Notice>
-          ))}
+        {oauthReturn && <CalendarReturnNotice outcome={oauthReturn} className="mt-4" />}
 
         {/* Who this is, and how much Casy is doing for them, at a glance. */}
         <div className="mt-5 rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
@@ -215,8 +174,7 @@ export default function Profile() {
         ) : (
           <>
             <CalendarsSection />
-            {/* On a phone, groups have their own tab (TabBar). */}
-            {!phone && <GroupsSection />}
+            <GroupsSection />
             <PasswordSection name={name} />
             <DeleteAccountSection />
           </>

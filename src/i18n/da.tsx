@@ -82,8 +82,16 @@ export const da = {
   },
   groupsPage: {
     title: "Grupper",
+    you: "Dig",
+    members: "Medlemmer",
+    invitePeople: "Invitér folk",
+    empty: "Du er ikke i en gruppe endnu. Lav en, og invitér folk.",
     intro:
       "De grupper, du planlægger med. Her laver du nye, inviterer folk og svarer på invitationer.",
+  },
+  profileHub: {
+    admin: "Admin-tilstand",
+    invitations: (n: number) => (n === 1 ? "1 invitation venter" : `${n} invitationer venter`),
   },
   footer: {
     howItWorks: "Sådan virker det",

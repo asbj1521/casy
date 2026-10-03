@@ -13,6 +13,8 @@ const SIZES = {
   xs: "h-5 w-5 text-[10px]",
   sm: "h-6 w-6 text-[11px]",
   md: "h-8 w-8 text-xs",
+  /** In front of a phone list row (ListRow). */
+  row: "h-10 w-10 text-base",
   lg: "h-14 w-14 text-xl",
 };
 

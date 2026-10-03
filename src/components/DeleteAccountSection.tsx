@@ -13,7 +13,12 @@ import { supabaseAuth } from "@/lib/supabase";
  * be undone. Afterwards the browser's session is dropped and the sign-in
  * page says the account is gone.
  */
-export default function DeleteAccountSection() {
+export default function DeleteAccountSection({
+  titled = true,
+}: {
+  /** False on the phone's account screen, whose header already says it. */
+  titled?: boolean;
+}) {
   const t = useT();
   const words = t.deleteAccount;
   const navigate = useNavigate();
@@ -40,8 +45,8 @@ export default function DeleteAccountSection() {
   }
 
   return (
-    <section className="mt-8">
-      <h2 className="text-lg font-semibold text-foreground">{words.title}</h2>
+    <section className={titled ? "mt-8" : undefined}>
+      {titled && <h2 className="text-lg font-semibold text-foreground">{words.title}</h2>}
       <div className="mt-4 rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
         <p className="text-sm text-muted-foreground">{words.intro}</p>
         {open ? (
