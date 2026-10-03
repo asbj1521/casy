@@ -3,6 +3,8 @@ dist
 node_modules
 package-lock.json
 supabase/.temp
+# The Xcode project; its web copy is the build above
+ios
 
 # Prose is written by hand; the auth email templates are pasted into the
 # Supabase dashboard as they are.
