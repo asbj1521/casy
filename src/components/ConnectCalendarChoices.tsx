@@ -1,15 +1,12 @@
 import { useEffect, useId } from "react";
 import { CalendarPlus, ShieldCheck } from "lucide-react";
 
-import { PROVIDER_BRANDS } from "@/components/calendarProviders";
+import { ADD_ORDER, PROVIDER_BRANDS } from "@/components/calendarProviders";
 import { ModalPanel } from "@/components/ui/Modal";
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 import { loadPage } from "@/pages/lazyPages";
 import type { CalendarProvider } from "@/types";
-
-/** The choices, in the order people are most likely to need them; the link last. */
-const CHOICES: CalendarProvider[] = ["apple", "google", "outlook", "ics"];
 
 /**
  * The connect pop-up's box (ConnectCalendarPrompt decides when it opens):
@@ -37,7 +34,7 @@ export default function ConnectCalendarChoices({
       <p className="mt-2 text-sm text-muted-foreground">{t.connectPrompt.body}</p>
 
       <ul className="mt-5 grid gap-2 sm:grid-cols-2">
-        {CHOICES.map((id) => {
+        {ADD_ORDER.map((id) => {
           const brand = PROVIDER_BRANDS[id];
           return (
             <li key={id}>

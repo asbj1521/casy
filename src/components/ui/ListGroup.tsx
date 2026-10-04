@@ -43,6 +43,7 @@ export function ListGroup({
  * neither.
  */
 export function ListRow({
+  id,
   icon: Icon,
   leading,
   label,
@@ -54,6 +55,8 @@ export function ListRow({
   chevron = !!to,
   selected = false,
 }: {
+  /** The row's element id, so a page can scroll to it. */
+  id?: string;
   icon?: LucideIcon;
   leading?: ReactNode;
   label: ReactNode;
@@ -97,7 +100,7 @@ export function ListRow({
   const pressable = cn(row, "transition-colors active:bg-secondary");
 
   return (
-    <li className="group/row">
+    <li id={id} className="group/row">
       {to ? (
         <Link to={to} aria-current={selected ? "page" : undefined} className={pressable}>
           {inner}

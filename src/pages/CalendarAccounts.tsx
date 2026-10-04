@@ -33,7 +33,7 @@ export default function CalendarAccounts() {
         />
         <main className="px-4 pb-8">
           {notice}
-          <CalendarsSection titled={false} />
+          <CalendarsSection />
         </main>
       </div>
     );
@@ -54,7 +54,7 @@ export default function CalendarAccounts() {
           {t.profile.connectedCalendars}
         </h1>
         {notice}
-        <CalendarsSection titled={false} />
+        <CalendarsSection />
       </main>
     </div>
   );

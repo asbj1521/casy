@@ -38,3 +38,9 @@ export const PROVIDER_BRANDS: Record<
     helpTo: "/help/connect-outlook",
   },
 };
+
+/** The order they are offered in (the connect pop-up, adding a calendar): the most likely first, the link last. */
+export const ADD_ORDER: CalendarProvider[] = ["apple", "google", "outlook", "ics"];
+
+/** The element id of a provider's tile or row on the calendars page, for scrolling to it. */
+export const addTargetId = (provider: CalendarProvider) => `connect-${provider}`;

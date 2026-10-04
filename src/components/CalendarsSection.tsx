@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, RefreshCw } from "lucide-react";
 
 import {
   addCalendarLink,
@@ -12,47 +11,49 @@ import {
   type AppleConnectResult,
 } from "@/api/calendars";
 import AppleCredentialsForm from "@/components/AppleCredentialsForm";
-import { PROVIDER_BRANDS } from "@/components/calendarProviders";
+import AccountList from "@/components/calendars/AccountList";
+import AddCalendar from "@/components/calendars/AddCalendar";
+import { ADD_ORDER, addTargetId, PROVIDER_BRANDS } from "@/components/calendarProviders";
 import IcsLinkForm from "@/components/IcsLinkForm";
 import PrimaryCalendarCard from "@/components/PrimaryCalendarCard";
-import ProviderCard from "@/components/ProviderCard";
 import Collapse from "@/components/ui/Collapse";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { CONNECT_PARAM, readyProvider } from "@/lib/calendarPrompt";
+import { cn } from "@/lib/utils";
 import type { CalendarProvider } from "@/types";
 
 /**
- * Apple and the ICS link come first: they take a form to fill in, so putting
- * them ahead of the one-click Google/Outlook cards keeps the grid from
- * alternating between quick cards and ones that need typing.
- */
-const PROVIDER_ORDER: CalendarProvider[] = ["apple", "ics", "google", "outlook"];
-
-/**
- * The profile page's calendars: every linked account under its brand, the
- * ways to add another, "Sync now", and the primary calendar.
+ * The calendars page (CalendarAccounts): what you have connected, then
+ * adding another, then the primary calendar, in that order of how often
+ * each is needed.
  *
- * Google and Outlook connect through their consent screens (the browser goes
- * there and comes back). An ICS link and iCloud have none, so their forms
- * send straight to an Edge Function and show the outcome here. Until a first
- * calendar is linked, the section opens with a note saying it is the next
- * step, and the cards take turns glowing; arriving with one picked
- * (?connect=apple, from ConnectCalendarPrompt), that card glows alone, its
- * form already open if it has one.
+ * - Your accounts: one list of every connected account, whatever the
+ *   provider, ending in "Sync now" (AccountList). Absent until there is one.
+ * - Add a calendar: the four providers (AddCalendar). Google and Outlook
+ *   connect through their consent screens (the browser goes there and comes
+ *   back); iCloud and an ICS link have none, so their forms open under the
+ *   providers, send straight to an Edge Function and show the outcome here.
+ * - The primary calendar, once there is anything to choose it from.
+ *
+ * Until a first calendar is linked, the page opens with a note saying it is
+ * the next step, and the providers take turns glowing; arriving with one
+ * picked (?connect=apple, from ConnectCalendarPrompt), that one is marked
+ * instead, its form already open if it has one.
  */
-export default function CalendarsSection({
-  titled = true,
-}: {
-  /** False on the phone's calendars screen, whose header already says it. */
-  titled?: boolean;
-}) {
+export default function CalendarsSection() {
   const t = useT();
   const user = useSignedInUser();
+  const phone = usePhoneLayout();
   const queryClient = useQueryClient();
   const { data: connections, isPending } = useQuery(calendarStatusQuery(user.id));
-  const hasConnected = connections?.some((c) => c.status === "connected") ?? false;
+  const accounts = (connections ?? [])
+    .filter((c) => c.status === "connected")
+    // Grouped by provider, in the order they are offered; newest first within one.
+    .sort((a, b) => ADD_ORDER.indexOf(a.provider) - ADD_ORDER.indexOf(b.provider));
+  const hasConnected = accounts.length > 0;
 
   // The provider picked before arriving, read once; the address is then
   // cleaned so a refresh doesn't open its form again.
@@ -67,13 +68,13 @@ export default function CalendarsSection({
       },
       { replace: true },
     );
-    document.getElementById(cardId(ready))?.scrollIntoView({ block: "nearest" });
+    document.getElementById(addTargetId(ready))?.scrollIntoView({ block: "nearest" });
   }, [ready, setSearchParams]);
 
   const [openForm, setOpenForm] = useState<"apple" | "ics" | null>(
     ready === "apple" || ready === "ics" ? ready : null,
   );
-  // What the last link or iCloud account added was, for the line under its card.
+  // What the last link or iCloud account added was, for the line above the forms.
   const [linkAdded, setLinkAdded] = useState<{ label: string; busyBlocks: number } | null>(null);
   const [appleAdded, setAppleAdded] = useState<AppleConnectResult | null>(null);
   const sync = useMutation({ mutationFn: () => syncMyCalendars(queryClient) });
@@ -104,6 +105,19 @@ export default function CalendarsSection({
 
   const synced = sync.data;
   const failedSyncs = synced?.filter((r) => !r.ok).length ?? 0;
+  const syncNote = sync.isError
+    ? { tone: "error" as const, text: sync.error.message }
+    : synced
+      ? {
+          tone: failedSyncs === 0 ? ("success" as const) : ("error" as const),
+          text:
+            synced.length === 0
+              ? t.profile.syncAllFresh
+              : failedSyncs === 0
+                ? t.profile.syncedAccounts(synced.length)
+                : t.profile.syncSomeFailed(failedSyncs, synced.length),
+        }
+      : null;
 
   return (
     <>
@@ -118,152 +132,120 @@ export default function CalendarsSection({
         </div>
       )}
 
-      <section className={titled ? "mt-8" : "mt-2"}>
-        <div
-          className={
-            titled ? "flex flex-wrap items-start justify-between gap-3" : "flex justify-end"
-          }
-        >
-          {titled && (
-            <h2 className="text-lg font-semibold text-foreground">
-              {t.profile.connectedCalendars}
-            </h2>
-          )}
-          {hasConnected && (
-            <button
-              type="button"
-              onClick={() => sync.mutate()}
-              disabled={sync.isPending}
-              className="flex shrink-0 items-center gap-2 rounded-full border bg-background px-3.5 py-1.5 text-sm font-semibold text-foreground transition hover:bg-secondary disabled:opacity-60"
-            >
-              {sync.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              {sync.isPending ? t.profile.syncing : t.profile.syncNow}
-            </button>
-          )}
-        </div>
-        {sync.isError && (
-          <Notice tone="error" bare className="mt-2">
-            {sync.error.message}
-          </Notice>
-        )}
-        {synced && (
-          <Notice tone={failedSyncs === 0 ? "success" : "error"} bare className="mt-2">
-            {synced.length === 0
-              ? t.profile.syncAllFresh
-              : failedSyncs === 0
-                ? t.profile.syncedAccounts(synced.length)
-                : t.profile.syncSomeFailed(failedSyncs, synced.length)}
-          </Notice>
-        )}
-        {consent.isError && (
-          <Notice tone="error" className="mt-4">
-            {consent.error.message}
-          </Notice>
-        )}
+      {consent.isError && (
+        <Notice tone="error" className="mt-4">
+          {consent.error.message}
+        </Notice>
+      )}
 
-        {/* Where Casy adds agreed events, and whether it does so on its own. */}
-        <PrimaryCalendarCard connections={connections} />
+      {hasConnected && (
+        <AccountList
+          accounts={accounts}
+          onReconnect={connect}
+          syncing={sync.isPending}
+          syncNote={syncNote}
+          onSync={() => sync.mutate()}
+        />
+      )}
 
-        <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
-          {PROVIDER_ORDER.map((id, index) => {
-            // Every attempt for this brand, newest first (calendar-status
-            // orders them): the connected accounts, and the latest attempt,
-            // which is what "Connecting" and an error describe.
-            const attempts = connections?.filter((c) => c.provider === id) ?? [];
-            const { helpTo, ...brand } = PROVIDER_BRANDS[id];
-            const words = t.providers[id];
-            return (
-              <ProviderCard
-                key={id}
-                id={cardId(id)}
-                meta={{ id, ...brand, label: words.label, help: { to: helpTo, label: words.help } }}
-                accounts={attempts.filter((c) => c.status === "connected")}
-                latest={attempts[0]}
-                statusPending={isPending}
-                formOpen={openForm === id}
-                highlightDelayMs={hasConnected || ready ? null : index * 800}
-                ready={!hasConnected && ready === id}
-                onConnect={() => connect(id)}
-              >
-                {id === "ics" && (
-                  <>
-                    {linkAdded && (
-                      <Notice tone="success" bare className="mt-3">
-                        {t.profile.icsAdded(linkAdded.label, linkAdded.busyBlocks)}
-                      </Notice>
-                    )}
-                    <Collapse open={openForm === "ics"}>
-                      <IcsLinkForm
-                        submitting={addLink.isPending}
-                        error={addLink.error?.message ?? null}
-                        onSubmit={(url, name) =>
-                          addLink.mutate(
-                            { url, name },
-                            {
-                              onSuccess: (added) => {
-                                setLinkAdded(added);
-                                setOpenForm(null);
-                                addLink.reset();
-                              },
-                            },
-                          )
-                        }
-                        onCancel={() => {
-                          setOpenForm(null);
-                          addLink.reset();
-                        }}
-                      />
-                    </Collapse>
-                  </>
-                )}
-                {id === "apple" && (
-                  <>
-                    {appleAdded && (
-                      <Notice tone="success" bare className="mt-3">
-                        {t.profile.appleConnected(
-                          appleAdded.label,
-                          appleAdded.calendars,
-                          appleAdded.busyBlocks,
-                          appleAdded.skippedEvents,
-                        )}
-                      </Notice>
-                    )}
-                    <Collapse open={openForm === "apple"}>
-                      <AppleCredentialsForm
-                        submitting={addApple.isPending}
-                        error={addApple.error?.message ?? null}
-                        onSubmit={(email, password) =>
-                          addApple.mutate(
-                            { email, password },
-                            {
-                              onSuccess: (added) => {
-                                setAppleAdded(added);
-                                setOpenForm(null);
-                                addApple.reset();
-                              },
-                            },
-                          )
-                        }
-                        onCancel={() => {
-                          setOpenForm(null);
-                          addApple.reset();
-                        }}
-                      />
-                    </Collapse>
-                  </>
-                )}
-              </ProviderCard>
-            );
-          })}
-        </div>
-      </section>
+      <AddCalendar
+        connections={connections ?? []}
+        statusPending={isPending}
+        chosen={openForm ?? (hasConnected ? null : ready)}
+        glow={!isPending && !hasConnected && !ready && !openForm}
+        phone={phone}
+        onConnect={connect}
+      />
+
+      {linkAdded && (
+        <Notice tone="success" className="mt-3">
+          {t.profile.icsAdded(linkAdded.label, linkAdded.busyBlocks)}
+        </Notice>
+      )}
+      {appleAdded && (
+        <Notice tone="success" className="mt-3">
+          {t.profile.appleConnected(
+            appleAdded.label,
+            appleAdded.calendars,
+            appleAdded.busyBlocks,
+            appleAdded.skippedEvents,
+          )}
+        </Notice>
+      )}
+
+      <Collapse open={openForm === "ics"}>
+        <FormCard provider="ics">
+          <IcsLinkForm
+            submitting={addLink.isPending}
+            error={addLink.error?.message ?? null}
+            onSubmit={(url, name) =>
+              addLink.mutate(
+                { url, name },
+                {
+                  onSuccess: (added) => {
+                    setLinkAdded(added);
+                    setOpenForm(null);
+                    addLink.reset();
+                  },
+                },
+              )
+            }
+            onCancel={() => {
+              setOpenForm(null);
+              addLink.reset();
+            }}
+          />
+        </FormCard>
+      </Collapse>
+      <Collapse open={openForm === "apple"}>
+        <FormCard provider="apple">
+          <AppleCredentialsForm
+            submitting={addApple.isPending}
+            error={addApple.error?.message ?? null}
+            onSubmit={(email, password) =>
+              addApple.mutate(
+                { email, password },
+                {
+                  onSuccess: (added) => {
+                    setAppleAdded(added);
+                    setOpenForm(null);
+                    addApple.reset();
+                  },
+                },
+              )
+            }
+            onCancel={() => {
+              setOpenForm(null);
+              addApple.reset();
+            }}
+          />
+        </FormCard>
+      </Collapse>
+
+      {/* Where Casy adds agreed events, and whether it does so on its own. */}
+      {hasConnected && <PrimaryCalendarCard connections={connections} />}
     </>
   );
 }
 
-/** The element id of a provider's card, for scrolling to it. */
-const cardId = (provider: CalendarProvider) => `connect-${provider}`;
+/** The open form for iCloud or a link, under its provider's mark and name. */
+function FormCard({ provider, children }: { provider: CalendarProvider; children: ReactNode }) {
+  const t = useT();
+  const brand = PROVIDER_BRANDS[provider];
+  return (
+    <div className="mt-4 rounded-2xl border border-primary/40 bg-card p-4 shadow-sm sm:p-5">
+      <div className="flex items-center gap-3">
+        <span
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+            brand.badgeClass,
+          )}
+        >
+          {brand.icon}
+        </span>
+        <h3 className="font-semibold text-foreground">{t.providers[provider].label}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}

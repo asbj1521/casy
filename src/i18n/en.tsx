@@ -85,6 +85,9 @@ export const en: Messages = {
     back: "Back to calendars",
     row: "Connected calendars",
     rowDetail: "Add accounts, sync and choose your primary calendar",
+    accounts: "Your accounts",
+    add: "Add a calendar",
+    help: "Help connecting:",
   },
   profileHub: {
     admin: "Admin mode",
@@ -298,7 +301,7 @@ export const en: Messages = {
       apple: "iPhone, iPad and Mac",
       google: "Gmail and Android",
       outlook: "Microsoft 365, Outlook.com and Hotmail",
-      ics: "Other calendars with a link, like school or a club",
+      ics: "Other calendars with a link",
     },
     later: "Not now",
   },

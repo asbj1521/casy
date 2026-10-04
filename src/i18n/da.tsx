@@ -94,6 +94,9 @@ export const da = {
     back: "Tilbage til kalendere",
     row: "Forbundne kalendere",
     rowDetail: "Tilføj konti, synkronisér og vælg primær kalender",
+    accounts: "Dine konti",
+    add: "Tilføj en kalender",
+    help: "Hjælp til at forbinde:",
   },
   profileHub: {
     admin: "Admin-tilstand",
@@ -319,7 +322,7 @@ export const da = {
       apple: "iPhone, iPad og Mac",
       google: "Gmail og Android",
       outlook: "Microsoft 365, Outlook.com og Hotmail",
-      ics: "Andre kalendere med et link, fx skole eller klub",
+      ics: "Andre kalendere med et link",
     },
     later: "Ikke nu",
   },
