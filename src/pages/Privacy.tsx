@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import TopNav from "@/components/TopNav";
 import { useLang } from "@/i18n/lang";
@@ -60,51 +61,60 @@ const da: Copy = {
     {
       title: "Det gemmer Casy",
       body: (
-        <ul className="list-disc space-y-2 pl-5">
-          <li>
-            <Term>Din konto:</Term> din e-mailadresse og dit navn, hvis du logger ind med Google,
-            eller et navn, du selv vælger på din profil. Logger du ind med din e-mail og ikke har
-            valgt et navn, bruger Casy delen af din e-mailadresse før @.
-          </li>
-          <li>
-            <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
-            e-mailadressen på en Google-konto), navnene på deres kalendere og et navn, du selv giver
-            en af dem, den kategori og prioritet, du giver hver af dem (arbejde, skole, privat,
-            andet; kan springes over, normal, spring aldrig over), om den tæller med, hvilken der er
-            din primære kalender, og om Casy må tilføje aftaler automatisk.
-          </li>
-          <li>
-            <Term>Optagede tidsrum:</Term> start og slut på hvert tidsrum, hvor du er optaget, for
-            cirka de næste tolv måneder. Aftaler, der overlapper, bliver slået sammen til ét
-            tidsrum. Titler, beskrivelser, steder og deltagere bliver aldrig gemt. Google og
-            Microsoft bliver aldrig spurgt om dem. Apple og kalenderlinks sender altid hele aftaler,
-            så de oplysninger fjernes, før noget gemmes.
-          </li>
-          <li>
-            <Term>Grupper:</Term> navnet på hver gruppe, du er med i, hvem der ellers er med, hvem
-            der lavede den, og de invitationslinks, der er lavet til den. Invitationslinks gemmes
-            som et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til
-            grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev afslået.
-            Slår du en e-mailadresse op for at invitere nogen, noterer Casy kun, at du gjorde det,
-            så der kan sættes en grænse for, hvor mange du kan slå op om dagen. Adressen gemmes
-            ikke.
-          </li>
-          <li>
-            <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags aftale
-            det er, de datoer, der er tilbudt, hvem der foreslog den, og hvem der har sagt ja eller
-            nej til hver dato.
-          </li>
-          <li>
-            <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære
-            kalender, så den kan fjerne dem igen, hvis en aftale bliver aflyst.
-          </li>
-          <li>
-            <Term>Adgangsoplysninger:</Term> det, der skal til for at holde dine kalendere
-            opdateret: adgangsnøgler fra Google eller Microsoft, en app-specifik adgangskode til din
-            Apple-konto eller et kalenderlink. De krypteres, før de gemmes, og nøglen opbevares
-            adskilt fra databasen.
-          </li>
-        </ul>
+        <>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              <Term>Din konto:</Term> din e-mailadresse og dit navn, hvis du logger ind med Google,
+              eller et navn, du selv vælger på din profil. Logger du ind med din e-mail og ikke har
+              valgt et navn, bruger Casy delen af din e-mailadresse før @.
+            </li>
+            <li>
+              <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
+              e-mailadressen på en Google-konto), navnene på deres kalendere og et navn, du selv
+              giver en af dem, den kategori og prioritet, du giver hver af dem (arbejde, skole,
+              privat, andet; kan springes over, normal, spring aldrig over), om den tæller med,
+              hvilken der er din primære kalender, og om Casy må tilføje aftaler automatisk.
+            </li>
+            <li>
+              <Term>Optagede tidsrum:</Term> start og slut på hvert tidsrum, hvor du er optaget, for
+              cirka de næste tolv måneder. Aftaler, der overlapper, bliver slået sammen til ét
+              tidsrum. Titler, beskrivelser, steder og deltagere bliver aldrig gemt. Google og
+              Microsoft bliver aldrig spurgt om dem. Apple og kalenderlinks sender altid hele
+              aftaler, så de oplysninger fjernes, før noget gemmes.
+            </li>
+            <li>
+              <Term>Grupper:</Term> navnet på hver gruppe, du er med i, hvem der ellers er med, hvem
+              der lavede den, og de invitationslinks, der er lavet til den. Invitationslinks gemmes
+              som et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til
+              grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev
+              afslået. Slår du en e-mailadresse op for at invitere nogen, noterer Casy kun, at du
+              gjorde det, så der kan sættes en grænse for, hvor mange du kan slå op om dagen.
+              Adressen gemmes ikke.
+            </li>
+            <li>
+              <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
+              aftale det er, de datoer, der er tilbudt, hvem der foreslog den, og hvem der har sagt
+              ja eller nej til hver dato.
+            </li>
+            <li>
+              <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære
+              kalender, så den kan fjerne dem igen, hvis en aftale bliver aflyst.
+            </li>
+            <li>
+              <Term>Adgangsoplysninger:</Term> det, der skal til for at holde dine kalendere
+              opdateret: adgangsnøgler fra Google eller Microsoft, en app-specifik adgangskode til
+              din Apple-konto eller et kalenderlink. De krypteres, før de gemmes, og nøglen
+              opbevares adskilt fra databasen.
+            </li>
+          </ul>
+          <p className="mt-3">
+            Er du logget ind, kan du se alt dette om dig selv og hente en kopi under{" "}
+            <Link to="/profile/data" className="underline underline-offset-2">
+              Profil, Dine data
+            </Link>
+            .
+          </p>
+        </>
       ),
     },
     {
@@ -267,49 +277,58 @@ const en: Copy = {
     {
       title: "What Casy stores",
       body: (
-        <ul className="list-disc space-y-2 pl-5">
-          <li>
-            <Term>Your account:</Term> your email address, and your name if you sign in with Google,
-            or a name you choose on your profile. If you sign in with your email and have not chosen
-            a name, Casy uses the part of your email address before the @.
-          </li>
-          <li>
-            <Term>Connected calendars:</Term> which accounts you connected (for example the email
-            address of a Google account), the names of their calendars and any name you give one
-            yourself, the category and priority you give each one (work, school, personal, other;
-            can skip, normal, never skip), whether it counts, which one is your primary calendar,
-            and whether Casy may add events automatically.
-          </li>
-          <li>
-            <Term>Busy times:</Term> the start and end of each busy period, for roughly the next
-            twelve months. Overlapping events are merged into one period. Event titles,
-            descriptions, locations and attendees are never stored. Google and Microsoft are never
-            asked for them. Apple and calendar links always send whole events, so those details are
-            removed before anything is saved.
-          </li>
-          <li>
-            <Term>Groups:</Term> the name of each group you are in, who else is in it, who made it,
-            and the invite links made for it. Invite links are stored as a fingerprint that cannot
-            be turned back into a working link. Invitations to groups: who invited whom, and whether
-            the invitation is still open or was declined. When you look up an email address to
-            invite someone, Casy only notes that you did, so it can limit how many you can look up
-            in a day. The address is not stored.
-          </li>
-          <li>
-            <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
-            is, the dates offered, who suggested it, and who accepted or declined each date.
-          </li>
-          <li>
-            <Term>Events in your calendar:</Term> which events Casy added to your primary calendar,
-            so it can take them out again if an event is cancelled.
-          </li>
-          <li>
-            <Term>Access credentials:</Term> what is needed to keep your calendars up to date:
-            access tokens from Google or Microsoft, an app-specific password for your Apple account,
-            or a calendar link. These are encrypted before they are stored, and the key is kept
-            separately from the database.
-          </li>
-        </ul>
+        <>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              <Term>Your account:</Term> your email address, and your name if you sign in with
+              Google, or a name you choose on your profile. If you sign in with your email and have
+              not chosen a name, Casy uses the part of your email address before the @.
+            </li>
+            <li>
+              <Term>Connected calendars:</Term> which accounts you connected (for example the email
+              address of a Google account), the names of their calendars and any name you give one
+              yourself, the category and priority you give each one (work, school, personal, other;
+              can skip, normal, never skip), whether it counts, which one is your primary calendar,
+              and whether Casy may add events automatically.
+            </li>
+            <li>
+              <Term>Busy times:</Term> the start and end of each busy period, for roughly the next
+              twelve months. Overlapping events are merged into one period. Event titles,
+              descriptions, locations and attendees are never stored. Google and Microsoft are never
+              asked for them. Apple and calendar links always send whole events, so those details
+              are removed before anything is saved.
+            </li>
+            <li>
+              <Term>Groups:</Term> the name of each group you are in, who else is in it, who made
+              it, and the invite links made for it. Invite links are stored as a fingerprint that
+              cannot be turned back into a working link. Invitations to groups: who invited whom,
+              and whether the invitation is still open or was declined. When you look up an email
+              address to invite someone, Casy only notes that you did, so it can limit how many you
+              can look up in a day. The address is not stored.
+            </li>
+            <li>
+              <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
+              is, the dates offered, who suggested it, and who accepted or declined each date.
+            </li>
+            <li>
+              <Term>Events in your calendar:</Term> which events Casy added to your primary
+              calendar, so it can take them out again if an event is cancelled.
+            </li>
+            <li>
+              <Term>Access credentials:</Term> what is needed to keep your calendars up to date:
+              access tokens from Google or Microsoft, an app-specific password for your Apple
+              account, or a calendar link. These are encrypted before they are stored, and the key
+              is kept separately from the database.
+            </li>
+          </ul>
+          <p className="mt-3">
+            Signed in, you can see all of this about yourself, and download a copy, under{" "}
+            <Link to="/profile/data" className="underline underline-offset-2">
+              Profile, Your data
+            </Link>
+            .
+          </p>
+        </>
       ),
     },
     {

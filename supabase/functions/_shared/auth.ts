@@ -20,6 +20,9 @@ export interface Caller {
   id: string;
   email?: string | null;
   user_metadata?: Record<string, unknown>;
+  /** How they sign in ("providers"), set by Supabase Auth; read by "Your data". */
+  app_metadata?: Record<string, unknown>;
+  created_at?: string;
 }
 
 /** The signed-in caller; anyone without a valid login is answered 401. */

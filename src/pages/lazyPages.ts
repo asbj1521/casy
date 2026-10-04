@@ -13,6 +13,7 @@ export const loadPage = {
   myEvents: () => import("@/pages/MyEvents"),
   groups: () => import("@/pages/Groups"),
   profileScreen: () => import("@/pages/ProfileScreen"),
+  myData: () => import("@/pages/MyData"),
   signIn: () => import("@/pages/SignIn"),
   joinGroup: () => import("@/pages/JoinGroup"),
   privacy: () => import("@/pages/Privacy"),

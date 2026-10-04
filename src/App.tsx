@@ -29,6 +29,7 @@ const CalendarAccounts = lazy(loadPage.calendarAccounts);
 const MyEvents = lazy(loadPage.myEvents);
 const Groups = lazy(loadPage.groups);
 const ProfileScreen = lazy(loadPage.profileScreen);
+const MyData = lazy(loadPage.myData);
 const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
 const Privacy = lazy(loadPage.privacy);
@@ -127,6 +128,15 @@ function App() {
                   element={
                     <RequireAuth>
                       <Groups />
+                    </RequireAuth>
+                  }
+                />
+                {/* Everything Casy holds about you: a screen on a phone, a page on a computer. */}
+                <Route
+                  path="/profile/data"
+                  element={
+                    <RequireAuth>
+                      <MyData />
                     </RequireAuth>
                   }
                 />
