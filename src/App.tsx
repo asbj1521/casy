@@ -104,6 +104,15 @@ function App() {
                     </RequireAuth>
                   }
                 />
+                {/* One event open beside the list (a computer; a phone goes back to /events). */}
+                <Route
+                  path="/events/:eventId"
+                  element={
+                    <RequireAuth>
+                      <MyEvents />
+                    </RequireAuth>
+                  }
+                />
                 {/* Your groups, and one group (both the same page, Groups.tsx). */}
                 <Route
                   path="/groups"

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { SuggestedEvent } from "@/api/events";
-import { sectionEvents, waitingOn } from "@/lib/myEvents";
+import { eventsInOrder, sectionEvents, waitingOn } from "@/lib/myEvents";
 
 const NOW = Date.parse("2026-09-22T12:00:00.000Z");
 
@@ -78,5 +78,33 @@ describe("sectionEvents", () => {
       currentDate: { id: "d4", start: "2026-09-21T16:00:00.000Z", end: "2026-09-21T19:00:00.000Z" },
     });
     expect(sectionEvents([stale], NOW).closed.map((e) => e.id)).toEqual(["stale"]);
+  });
+});
+
+describe("eventsInOrder", () => {
+  it("lists the sections in the page's order, each event with its section", () => {
+    const accepted = [
+      { profileId: "me", name: "Asbjørn", isYou: true, response: "accepted" as const },
+      { profileId: "tessa", name: "Tessa", isYou: false, response: null },
+    ];
+    const s = sectionEvents(
+      [
+        event({ id: "closed", currentDate: null, status: "no_date" }),
+        event({ id: "scheduled", status: "scheduled" }),
+        event({ id: "waiting", invitees: accepted }),
+        event({ id: "answer" }),
+      ],
+      NOW,
+    );
+    expect(eventsInOrder(s).map(({ stage, event }) => [stage, event.id])).toEqual([
+      ["needsAnswer", "answer"],
+      ["waiting", "waiting"],
+      ["scheduled", "scheduled"],
+      ["closed", "closed"],
+    ]);
+  });
+
+  it("is empty when there is nothing to show", () => {
+    expect(eventsInOrder(sectionEvents([], NOW))).toEqual([]);
   });
 });

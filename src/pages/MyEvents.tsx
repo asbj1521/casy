@@ -1,31 +1,40 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, CalendarX, Loader2, Sparkles } from "lucide-react";
 
 import { eventsQuery, type SuggestedEvent } from "@/api/events";
+import EventDetails from "@/components/myEvents/EventDetails";
+import EventList from "@/components/myEvents/EventList";
 import NeedsAnswerCard from "@/components/myEvents/NeedsAnswerCard";
 import ScheduledCard from "@/components/myEvents/ScheduledCard";
 import WaitingCard from "@/components/myEvents/WaitingCard";
 import TopNav from "@/components/TopNav";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate } from "@/lib/format";
-import { sectionEvents } from "@/lib/myEvents";
+import { eventsInOrder, sectionEvents } from "@/lib/myEvents";
 import { cn } from "@/lib/utils";
 
 /**
  * My events: every date suggested to your groups, sorted by what it needs
- * from you (lib/myEvents.ts). Invitations to groups come first, then dates
- * to answer; then the dates waiting on others, the ones everyone accepted,
- * and the past.
+ * from you (lib/myEvents.ts): dates to answer first, then the dates waiting
+ * on others, the ones everyone accepted, and the past. A phone shows them as
+ * cards, section by section; a computer as a list beside the open event
+ * (/events/:eventId, else the first), like My groups.
  */
 export default function MyEvents() {
   const userId = useSignedInUser().id;
   const t = useT();
+  const { eventId } = useParams();
+  const phone = usePhoneLayout();
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
+
+  // A phone has no screen for one event: its cards hold everything.
+  if (phone && eventId) return <Navigate to="/events" replace />;
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,37 +52,70 @@ export default function MyEvents() {
           <Notice tone="error" bare className="mt-8">
             {t.events.loadFailed}
           </Notice>
-        ) : (
+        ) : phone ? (
           <EventSections events={events} />
+        ) : (
+          <EventPanes events={events} selectedId={eventId} />
         )}
       </main>
     </div>
   );
 }
 
+/** Nothing to show: cancelled events are in no section, so this can follow a non-empty answer. */
+function NoEvents() {
+  const t = useT();
+  return (
+    <div className="mt-6 flex flex-col items-start rounded-2xl border bg-card p-5 sm:mt-8 sm:p-6">
+      <CalendarCheck className="h-8 w-8 text-primary" />
+      <p className="mt-3 font-semibold text-foreground">{t.events.emptyTitle}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{t.events.emptyBody}</p>
+      <Link
+        to="/"
+        className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+      >
+        <Sparkles className="h-4 w-4" />
+        {t.events.findDate}
+      </Link>
+    </div>
+  );
+}
+
+/**
+ * A computer's My events: the list on the left, the open event on the right,
+ * in the same columns as My groups. An event asked for that's gone (cancelled,
+ * left, or never yours) sends the page back to the first.
+ */
+function EventPanes({
+  events,
+  selectedId,
+}: {
+  events: SuggestedEvent[];
+  selectedId: string | undefined;
+}) {
+  const ordered = eventsInOrder(sectionEvents(events));
+  if (ordered.length === 0) return <NoEvents />;
+  const open = selectedId ? ordered.find((e) => e.event.id === selectedId) : ordered[0];
+  if (!open) return <Navigate to="/events" replace />;
+
+  return (
+    <div className="grid items-start gap-x-8 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+      <EventList events={ordered} selectedId={open.event.id} />
+      <section className="mt-6 min-w-0 rounded-2xl border bg-card/60 p-5 pt-0 sm:p-6 sm:pt-0">
+        {/* Keyed, so a half-asked "decline?" never carries over to the next event. */}
+        <EventDetails key={open.event.id} staged={open} />
+      </section>
+    </div>
+  );
+}
+
+/** A phone's My events: each section's events as cards. */
 function EventSections({ events }: { events: SuggestedEvent[] }) {
   const t = useT();
   const { lang } = useLang();
   const sections = sectionEvents(events);
 
-  // Cancelled events are in no section, so this means nothing left to show,
-  // not an empty list from the server.
-  if (Object.values(sections).every((list) => list.length === 0)) {
-    return (
-      <div className="mt-6 flex flex-col items-start rounded-2xl border bg-card p-5 sm:mt-8 sm:p-6">
-        <CalendarCheck className="h-8 w-8 text-primary" />
-        <p className="mt-3 font-semibold text-foreground">{t.events.emptyTitle}</p>
-        <p className="mt-1 text-sm text-muted-foreground">{t.events.emptyBody}</p>
-        <Link
-          to="/"
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-        >
-          <Sparkles className="h-4 w-4" />
-          {t.events.findDate}
-        </Link>
-      </div>
-    );
-  }
+  if (Object.values(sections).every((list) => list.length === 0)) return <NoEvents />;
 
   return (
     <>

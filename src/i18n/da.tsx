@@ -537,6 +537,12 @@ export const da = {
     youSuggested: "Du foreslog den",
     suggestedBy: (name: string) => `Foreslået af ${name}`,
     newDateBecause: (who: string, date: string) => `. Ny dato, fordi ${who} ikke kunne ${date}`,
+    answers: "Svar",
+    answered: { accepted: "Har sagt ja", declined: "Har sagt nej", none: "Har ikke svaret endnu" },
+    earlierDates: "Datoer tilbudt før",
+    stagePast: "Overstået",
+    stageNoDate: "Ingen dato",
+    couldntMake: (who: string) => `${who} kunne ikke`,
   },
   calendarView: {
     title: "Min kalender",

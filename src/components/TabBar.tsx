@@ -59,7 +59,7 @@ function PhoneTabBar() {
       to: "/events",
       label: t.nav.eventsShort,
       icon: CalendarCheck,
-      active: pathname === "/events",
+      active: pathname.startsWith("/events"),
       prefetch: () => void loadPage.myEvents(),
       badge: events?.filter(needsYourAnswer).length,
     },

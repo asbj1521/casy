@@ -519,6 +519,12 @@ export const en: Messages = {
     suggestedBy: (name: string) => `Suggested by ${name}`,
     newDateBecause: (who: string, date: string) =>
       `. New date because ${who} couldn't make ${date}`,
+    answers: "Answers",
+    answered: { accepted: "Accepted", declined: "Declined", none: "No answer yet" },
+    earlierDates: "Dates offered earlier",
+    stagePast: "Past",
+    stageNoDate: "No date",
+    couldntMake: (who: string) => `${who} couldn't make it`,
   },
   calendarView: {
     title: "My calendar",

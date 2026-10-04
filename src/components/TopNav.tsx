@@ -39,7 +39,7 @@ export default function TopNav() {
   // out, / is the landing page, see App.tsx).
   const onHome = pathname === "/plan" || (pathname === "/" && !!user);
   const onProfile = pathname === "/profile";
-  const onEvents = pathname === "/events";
+  const onEvents = pathname.startsWith("/events");
   const onGroups = pathname.startsWith("/groups");
   const onCalendarOverview = pathname === "/calendar-overview";
 

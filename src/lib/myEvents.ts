@@ -45,6 +45,23 @@ export function sectionEvents(events: SuggestedEvent[], now = Date.now()): Event
   return sections;
 }
 
+/** Which section an event is in: what it needs from you, or that it's over. */
+export type EventStage = keyof EventSections;
+
+/** The sections in the order the page shows them. */
+export const STAGES: readonly EventStage[] = ["needsAnswer", "waiting", "scheduled", "closed"];
+
+/** Every event the page shows, section by section, each with its section. */
+export type StagedEvent =
+  | { stage: Exclude<EventStage, "closed">; event: DatedEvent }
+  | { stage: "closed"; event: SuggestedEvent };
+
+export function eventsInOrder(sections: EventSections): StagedEvent[] {
+  return STAGES.flatMap((stage) =>
+    sections[stage].map((event) => ({ stage, event }) as StagedEvent),
+  );
+}
+
 /** The people who haven't answered the current date yet (never you). */
 export function waitingOn(event: SuggestedEvent): string[] {
   return event.invitees.filter((i) => !i.isYou && i.response === null).map((i) => i.name);
