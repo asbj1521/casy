@@ -64,10 +64,27 @@ export function ModalForm({
   );
 }
 
-/** The dialog box, when there's nothing to submit. */
-export function ModalPanel({ className, children }: { className?: string; children: ReactNode }) {
+/**
+ * The dialog box, when there's nothing to submit. `labelledBy` is the id of
+ * its heading, which screen readers announce as the dialog's name.
+ */
+export function ModalPanel({
+  className,
+  labelledBy,
+  children,
+}: {
+  className?: string;
+  labelledBy?: string;
+  children: ReactNode;
+}) {
   return (
-    <motion.div {...PANEL_MOTION} className={cn(PANEL_CLASS, className)}>
+    <motion.div
+      {...PANEL_MOTION}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={labelledBy}
+      className={cn(PANEL_CLASS, className)}
+    >
       {children}
     </motion.div>
   );

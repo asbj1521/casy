@@ -24,8 +24,8 @@ function oauthOutcome(params: URLSearchParams): OAuthOutcome | null {
  * the page loads and stays on screen; the parameters are stripped from the
  * address, so a refresh doesn't show it again.
  *
- * ?onboarding=1 means straight from sign-in with no calendars connected yet
- * (see SignIn.tsx). Marked seen at once so this device isn't sent back on
+ * ?onboarding=1 means straight from sign-in on a phone with no calendars
+ * connected yet (see SignIn.tsx). Marked seen at once so this device isn't sent back on
  * every visit; the note itself shows whenever no calendar is linked.
  */
 export function useCalendarReturn(userId: string): OAuthOutcome | null {

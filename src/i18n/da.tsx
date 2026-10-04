@@ -311,6 +311,18 @@ export const da = {
     google: { label: "Google Kalender", help: "Sådan virker det" },
     outlook: { label: "Outlook-kalender", help: "Sådan virker det" },
   },
+  connectPrompt: {
+    title: "Forbind din kalender",
+    body: "Indtil da kan Casy ikke se, hvornår du er optaget, så den finder datoer uden dig. Hvor ligger din kalender?",
+    privacy: "Casy ser kun, hvornår du er optaget, aldrig hvad du laver.",
+    hints: {
+      apple: "iPhone, iPad og Mac",
+      google: "Gmail og Android",
+      outlook: "Microsoft 365, Outlook.com og Hotmail",
+      ics: "Andre kalendere med et link, fx skole eller klub",
+    },
+    later: "Ikke nu",
+  },
   earlyMorning: {
     you: "Du",
     oneYou: (time: string) => `Bemærk: Du har noget kl. ${time} næste morgen.`,

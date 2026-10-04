@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import ConnectCalendarPrompt from "@/components/ConnectCalendarPrompt";
 import Footer from "@/components/Footer";
 import RequireAuth from "@/components/RequireAuth";
 import TabBar from "@/components/TabBar";
@@ -137,7 +138,7 @@ function App() {
                     </RequireAuth>
                   }
                 />
-                {/* The phone's screen for connecting calendars (Calendar tab). */}
+                {/* Connecting calendars, opened from My calendar (the Calendar tab). */}
                 <Route
                   path="/calendar-overview/accounts"
                   element={
@@ -151,6 +152,8 @@ function App() {
             <Footer />
             {/* Phones only: the main links along the bottom. */}
             <TabBar />
+            {/* Computers only: asks someone with no calendar to connect one. */}
+            <ConnectCalendarPrompt />
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>

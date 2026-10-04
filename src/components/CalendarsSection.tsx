@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Loader2, RefreshCw } from "lucide-react";
-import { FaMicrosoft } from "react-icons/fa6";
-import { SiApple, SiGoogle } from "react-icons/si";
+import { Loader2, RefreshCw } from "lucide-react";
 
 import {
   addCalendarLink,
@@ -13,13 +12,15 @@ import {
   type AppleConnectResult,
 } from "@/api/calendars";
 import AppleCredentialsForm from "@/components/AppleCredentialsForm";
+import { PROVIDER_BRANDS } from "@/components/calendarProviders";
 import IcsLinkForm from "@/components/IcsLinkForm";
 import PrimaryCalendarCard from "@/components/PrimaryCalendarCard";
-import ProviderCard, { type ProviderMeta } from "@/components/ProviderCard";
+import ProviderCard from "@/components/ProviderCard";
 import Collapse from "@/components/ui/Collapse";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
+import { CONNECT_PARAM, readyProvider } from "@/lib/calendarPrompt";
 import type { CalendarProvider } from "@/types";
 
 /**
@@ -27,35 +28,7 @@ import type { CalendarProvider } from "@/types";
  * them ahead of the one-click Google/Outlook cards keeps the grid from
  * alternating between quick cards and ones that need typing.
  */
-const PROVIDERS: (Omit<ProviderMeta, "label" | "help"> & { helpTo: string })[] = [
-  {
-    id: "apple",
-    icon: <SiApple className="h-4 w-4 text-neutral-800" />,
-    badgeClass: "bg-neutral-200",
-    helpTo: "/help/connect-icloud",
-  },
-  {
-    id: "ics",
-    // Not a company, so a generic link icon rather than a brand mark.
-    icon: <Link2 className="h-4 w-4 text-violet-700" />,
-    badgeClass: "bg-violet-100",
-    helpTo: "/help/connect-ics",
-  },
-  {
-    id: "google",
-    icon: <SiGoogle className="h-4 w-4" style={{ color: "#4285F4" }} />,
-    badgeClass: "bg-blue-100",
-    helpTo: "/help/connect-google",
-  },
-  {
-    id: "outlook",
-    // Simple Icons carries no Outlook-specific mark, so this is Microsoft's
-    // own logo (the closest real brand mark available) rather than a letter.
-    icon: <FaMicrosoft className="h-4 w-4" style={{ color: "#0078D4" }} />,
-    badgeClass: "bg-sky-100",
-    helpTo: "/help/connect-outlook",
-  },
-];
+const PROVIDER_ORDER: CalendarProvider[] = ["apple", "ics", "google", "outlook"];
 
 /**
  * The profile page's calendars: every linked account under its brand, the
@@ -65,7 +38,9 @@ const PROVIDERS: (Omit<ProviderMeta, "label" | "help"> & { helpTo: string })[] =
  * there and comes back). An ICS link and iCloud have none, so their forms
  * send straight to an Edge Function and show the outcome here. Until a first
  * calendar is linked, the section opens with a note saying it is the next
- * step, and the cards take turns glowing.
+ * step, and the cards take turns glowing; arriving with one picked
+ * (?connect=apple, from ConnectCalendarPrompt), that card glows alone, its
+ * form already open if it has one.
  */
 export default function CalendarsSection({
   titled = true,
@@ -79,7 +54,25 @@ export default function CalendarsSection({
   const { data: connections, isPending } = useQuery(calendarStatusQuery(user.id));
   const hasConnected = connections?.some((c) => c.status === "connected") ?? false;
 
-  const [openForm, setOpenForm] = useState<"apple" | "ics" | null>(null);
+  // The provider picked before arriving, read once; the address is then
+  // cleaned so a refresh doesn't open its form again.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [ready] = useState(() => readyProvider(searchParams));
+  useEffect(() => {
+    if (!ready) return;
+    setSearchParams(
+      (params) => {
+        params.delete(CONNECT_PARAM);
+        return params;
+      },
+      { replace: true },
+    );
+    document.getElementById(cardId(ready))?.scrollIntoView({ block: "nearest" });
+  }, [ready, setSearchParams]);
+
+  const [openForm, setOpenForm] = useState<"apple" | "ics" | null>(
+    ready === "apple" || ready === "ics" ? ready : null,
+  );
   // What the last link or iCloud account added was, for the line under its card.
   const [linkAdded, setLinkAdded] = useState<{ label: string; busyBlocks: number } | null>(null);
   const [appleAdded, setAppleAdded] = useState<AppleConnectResult | null>(null);
@@ -176,24 +169,27 @@ export default function CalendarsSection({
         <PrimaryCalendarCard connections={connections} />
 
         <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
-          {PROVIDERS.map(({ helpTo, ...provider }, index) => {
+          {PROVIDER_ORDER.map((id, index) => {
             // Every attempt for this brand, newest first (calendar-status
             // orders them): the connected accounts, and the latest attempt,
             // which is what "Connecting" and an error describe.
-            const attempts = connections?.filter((c) => c.provider === provider.id) ?? [];
-            const words = t.providers[provider.id];
+            const attempts = connections?.filter((c) => c.provider === id) ?? [];
+            const { helpTo, ...brand } = PROVIDER_BRANDS[id];
+            const words = t.providers[id];
             return (
               <ProviderCard
-                key={provider.id}
-                meta={{ ...provider, label: words.label, help: { to: helpTo, label: words.help } }}
+                key={id}
+                id={cardId(id)}
+                meta={{ id, ...brand, label: words.label, help: { to: helpTo, label: words.help } }}
                 accounts={attempts.filter((c) => c.status === "connected")}
                 latest={attempts[0]}
                 statusPending={isPending}
-                formOpen={openForm === provider.id}
-                highlightDelayMs={hasConnected ? null : index * 800}
-                onConnect={() => connect(provider.id)}
+                formOpen={openForm === id}
+                highlightDelayMs={hasConnected || ready ? null : index * 800}
+                ready={!hasConnected && ready === id}
+                onConnect={() => connect(id)}
               >
-                {provider.id === "ics" && (
+                {id === "ics" && (
                   <>
                     {linkAdded && (
                       <Notice tone="success" bare className="mt-3">
@@ -224,7 +220,7 @@ export default function CalendarsSection({
                     </Collapse>
                   </>
                 )}
-                {provider.id === "apple" && (
+                {id === "apple" && (
                   <>
                     {appleAdded && (
                       <Notice tone="success" bare className="mt-3">
@@ -268,3 +264,6 @@ export default function CalendarsSection({
     </>
   );
 }
+
+/** The element id of a provider's card, for scrolling to it. */
+const cardId = (provider: CalendarProvider) => `connect-${provider}`;

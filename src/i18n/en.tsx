@@ -290,6 +290,18 @@ export const en: Messages = {
     google: { label: "Google Calendar", help: "How it works" },
     outlook: { label: "Outlook Calendar", help: "How it works" },
   },
+  connectPrompt: {
+    title: "Connect your calendar",
+    body: "Until you do, Casy can't see when you're busy, so it finds dates without you. Where does your calendar live?",
+    privacy: "Casy only sees when you're busy, never what you're doing.",
+    hints: {
+      apple: "iPhone, iPad and Mac",
+      google: "Gmail and Android",
+      outlook: "Microsoft 365, Outlook.com and Hotmail",
+      ics: "Other calendars with a link, like school or a club",
+    },
+    later: "Not now",
+  },
   earlyMorning: {
     you: "You",
     oneYou: (time: string) => `Heads up: you have something at ${time} the next morning.`,

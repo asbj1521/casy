@@ -1,7 +1,8 @@
 /**
  * Whether this device has already been shown the "connect your calendar"
  * step after signing in with no calendars linked yet, so a person who skips
- * it (or just has none yet) isn't sent back to it on every visit.
+ * it (or just has none yet) isn't sent back to it on every visit. Phones
+ * only: a computer asks with a pop-up instead (calendarPrompt.ts).
  */
 import { readStored, writeStored } from "@/lib/storage";
 

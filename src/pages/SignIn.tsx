@@ -10,6 +10,7 @@ import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
 import { useCaptcha } from "@/hooks/useCaptcha";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
 import { cardArrived } from "@/lib/cardTransition";
@@ -61,6 +62,7 @@ export default function SignIn() {
   const { lang } = useLang();
   const [searchParams] = useSearchParams();
   const next = safeNext(searchParams.get("next"));
+  const phone = usePhoneLayout();
   // Arriving from the landing page's "Sign in", its chart card flies into
   // the box below (cardTransition.ts), which waits for this page to be drawn.
   useLayoutEffect(cardArrived, []);
@@ -103,9 +105,9 @@ export default function SignIn() {
     reset: resetCaptcha,
   } = useCaptcha(lang);
 
-  // Whether to route a freshly-signed-in person through "connect your
-  // calendar" first (see the redirect below) rather than send them straight
-  // on. Already warmed from localStorage for anyone who has visited before
+  // Whether to route a freshly-signed-in person on a phone through "connect
+  // your calendar" first (see the redirect below) rather than send them
+  // straight on; on a computer, it is the answer the pop-up waits for. Already warmed from localStorage for anyone who has visited before
   // (see queryPersistence.ts), so this only waits on a network round trip
   // the very first time a browser ever asks it.
   const calendarStatus = useQuery({ ...calendarStatusQuery(user?.id ?? ""), enabled: !!user });
@@ -164,6 +166,9 @@ export default function SignIn() {
   }
 
   if (user) {
+    // A computer goes where it was heading, and asks for a calendar there if
+    // none is connected (ConnectCalendarPrompt).
+    if (!phone) return <Navigate to={next ?? "/"} replace />;
     // Give calendarStatus a moment to answer before deciding where to send a
     // freshly-signed-in person, so nobody is bounced to `next` and then
     // immediately on again to the connect-a-calendar step.
@@ -174,7 +179,7 @@ export default function SignIn() {
     }
     // No destination in the link (the header's or landing page's "Log ind"):
     // the scheduler for anyone with a calendar, the page to connect one
-    // otherwise.
+    // otherwise (on a phone; a computer was sent on above).
     return <Navigate to={next ?? (hasCalendar ? "/" : CALENDAR_ACCOUNTS_PATH)} replace />;
   }
 

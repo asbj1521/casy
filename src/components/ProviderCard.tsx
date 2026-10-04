@@ -174,6 +174,7 @@ function AccountRow({
  * another. The add form and its result line come in as children.
  */
 export default function ProviderCard({
+  id,
   meta,
   accounts,
   latest,
@@ -181,8 +182,11 @@ export default function ProviderCard({
   formOpen,
   onConnect,
   highlightDelayMs,
+  ready = false,
   children,
 }: {
+  /** The card's element id, so a page can scroll to it. */
+  id?: string;
   meta: ProviderMeta;
   /** Connected accounts only. */
   accounts: CalendarConnectionStatus[];
@@ -198,6 +202,11 @@ export default function ProviderCard({
    * into the cycle. Omitted (or null) once at least one calendar is linked.
    */
   highlightDelayMs?: number | null;
+  /**
+   * Picked before arriving (the connect pop-up's choice): the card holds the
+   * glow's peak instead of taking turns, so it is plainly the one to use.
+   */
+  ready?: boolean;
   children?: ReactNode;
 }) {
   const t = useT();
@@ -213,9 +222,11 @@ export default function ProviderCard({
 
   return (
     <div
+      id={id}
       className={cn(
         "rounded-2xl border bg-card p-4 shadow-sm sm:p-5",
         highlightDelayMs != null && "animate-connect-highlight",
+        ready && "border-primary/70 ring-4 ring-primary/25",
       )}
       style={highlightDelayMs != null ? { animationDelay: `${highlightDelayMs}ms` } : undefined}
     >
