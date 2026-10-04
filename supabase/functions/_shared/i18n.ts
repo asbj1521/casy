@@ -84,30 +84,33 @@ export const DANISH: Record<string, string> = {
   "Choose a primary calendar first.": "Vælg en primær kalender først.",
 
   // iCloud
-  "Enter your iCloud email and your app-specific password.":
-    "Skriv din iCloud-e-mail og din app-specifikke adgangskode.",
+  "Enter your Apple account email and your app-specific password.":
+    "Skriv e-mailen til din Apple-konto og din app-specifikke adgangskode.",
   "Apple rejected that email or password. Use an app-specific password (not your Apple ID password) with the Apple ID email it belongs to.":
     "Apple afviste den e-mail eller adgangskode. Brug en app-specifik adgangskode (ikke din Apple-id-adgangskode) sammen med det Apple-id, den hører til.",
-  "That iCloud account has no calendars we can read.":
-    "Den iCloud-konto har ingen kalendere, vi kan læse.",
-  "Couldn't reach iCloud (network error or timeout).":
-    "Kunne ikke nå iCloud (netværksfejl eller timeout).",
-  "iCloud redirected too many times.": "iCloud viderestillede for mange gange.",
-  "iCloud sent back more data than we accept.": "iCloud sendte flere data, end vi tager imod.",
-  "iCloud sent a response we couldn't read.": "iCloud sendte et svar, vi ikke kunne læse.",
-  "Couldn't find your iCloud calendar account.": "Kunne ikke finde din iCloud-kalenderkonto.",
-  "Couldn't find your iCloud calendars.": "Kunne ikke finde dine iCloud-kalendere.",
+  "That Apple account has no calendars we can read.":
+    "Den Apple-konto har ingen kalendere, vi kan læse.",
+  "Couldn't reach Apple Calendar (network error or timeout).":
+    "Kunne ikke nå Apple-kalenderen (netværksfejl eller timeout).",
+  "Apple Calendar redirected too many times.": "Apple-kalenderen viderestillede for mange gange.",
+  "Apple Calendar sent back more data than we accept.":
+    "Apple-kalenderen sendte flere data, end vi tager imod.",
+  "Apple Calendar sent a response we couldn't read.":
+    "Apple-kalenderen sendte et svar, vi ikke kunne læse.",
+  "Couldn't find your Apple calendar account.": "Kunne ikke finde din Apple-kalenderkonto.",
+  "Couldn't find your Apple calendars.": "Kunne ikke finde dine Apple-kalendere.",
   "Apple returned an address we couldn't read.": "Apple sendte en adresse, vi ikke kunne læse.",
   "Apple pointed us at an unexpected server, so we stopped.":
     "Apple sendte os til en uventet server, så vi stoppede.",
-  "iCloud didn't let Casy add events to that calendar.":
-    "iCloud lod ikke Casy lægge aftaler i den kalender.",
-  "iCloud didn't let Casy remove the event.": "iCloud lod ikke Casy fjerne aftalen.",
-  "That calendar is no longer in the iCloud account.":
-    "Den kalender findes ikke længere på iCloud-kontoen.",
-  "Reconnect your iCloud account on your profile.": "Forbind din iCloud-konto igen på din profil.",
-  "Couldn't reach iCloud. Casy will try again within the hour.":
-    "Kunne ikke nå iCloud. Casy prøver igen inden for en time.",
+  "Apple didn't let Casy add events to that calendar.":
+    "Apple lod ikke Casy lægge aftaler i den kalender.",
+  "Apple didn't let Casy remove the event.": "Apple lod ikke Casy fjerne aftalen.",
+  "That calendar is no longer in the Apple account.":
+    "Den kalender findes ikke længere på Apple-kontoen.",
+  "Reconnect your Apple account under Connected calendars.":
+    "Forbind din Apple-konto igen under Forbundne kalendere.",
+  "Couldn't reach Apple Calendar. Casy will try again within the hour.":
+    "Kunne ikke nå Apple-kalenderen. Casy prøver igen inden for en time.",
 
   // Calendar links
   "That doesn't look like a valid link.": "Det ligner ikke et gyldigt link.",
@@ -133,7 +136,10 @@ export const DANISH: Record<string, string> = {
 /** Messages with a number or name in them, matched by shape. */
 export const DANISH_PATTERNS: [RegExp, (...groups: string[]) => string][] = [
   [/^That link responded with HTTP (\d+)\.$/, (status) => `Linket svarede med HTTP ${status}.`],
-  [/^iCloud responded with HTTP (\d+)\.$/, (status) => `iCloud svarede med HTTP ${status}.`],
+  [
+    /^Apple Calendar responded with HTTP (\d+)\.$/,
+    (status) => `Apple-kalenderen svarede med HTTP ${status}.`,
+  ],
   [
     /^This feed uses the time zone "(.+)" without defining it, so event times can't be placed reliably\.$/,
     (zone) =>

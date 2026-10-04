@@ -16,7 +16,7 @@ const da = {
   eyebrow: "Sådan finder du dit link",
   title: "Find din kalenders link",
   intro:
-    "Et kalenderlink (også kaldet et ICS- eller webcal-link) virker for enhver kalender, der udgiver et: et skoleskema, en arbejdsplan eller en kalender fra Google, Outlook eller iCloud. Hvor du finder det, afhænger af, hvor kalenderen ligger, så vælg den, der passer til din.",
+    "Et kalenderlink (også kaldet et ICS- eller webcal-link) virker for enhver kalender, der udgiver et: et skoleskema, en arbejdsplan eller en kalender fra Google, Outlook eller Apple. Hvor du finder det, afhænger af, hvor kalenderen ligger, så vælg den, der passer til din.",
   warning:
     "Alle med linket kan læse kalenderen, så behandl det som en adgangskode. Casy gemmer kun start- og sluttider fra det. Titler, steder og deltagere fjernes, før noget gemmes.",
   sources: {
@@ -26,9 +26,9 @@ const da = {
       body: "Har du allerede tilføjet kalenderen på din iPhone eller Mac (for eksempel et skoleskema), behøver du ikke finde det oprindelige link igen. Åbn Kalender-appen, højreklik (eller ctrl-klik) på kalenderen i sidepanelet, og vælg Vis info. Kalenderens link står lige der, klar til at blive kopieret.",
     },
     own: {
-      badge: "Din egen iCloud-kalender",
+      badge: "Din egen Apple-kalender",
       title: "Del en kalender, du selv har lavet",
-      body: "Har du selv lavet kalenderen i iCloud, så højreklik på den, vælg Delingsindstillinger, og slå Offentlig kalender til. Apple laver et webcal://-link, som du kan kopiere ind i Casy.",
+      body: "Har du selv lavet kalenderen i Apples Kalender-app, så højreklik på den, vælg Delingsindstillinger, og slå Offentlig kalender til. Apple laver et webcal://-link, som du kan kopiere ind i Casy.",
     },
     google: {
       badge: "Google Kalender",
@@ -71,7 +71,7 @@ const en: typeof da = {
   eyebrow: "How to find your link",
   title: "Find your calendar's link",
   intro:
-    "A calendar link (also called an ICS or webcal link) works for any calendar that publishes one: a school timetable, a work schedule, or one from Google, Outlook or iCloud. Where to find it depends on where the calendar lives, so pick whichever matches yours below.",
+    "A calendar link (also called an ICS or webcal link) works for any calendar that publishes one: a school timetable, a work schedule, or one from Google, Outlook or Apple. Where to find it depends on where the calendar lives, so pick whichever matches yours below.",
   warning:
     "Anyone who has this link can read the calendar, so treat it like a password. Casy only ever keeps start and end times from it; titles, places and attendees are removed before anything is stored.",
   sources: {
@@ -81,9 +81,9 @@ const en: typeof da = {
       body: "If you've already added this calendar to your iPhone or Mac (a school timetable, for example), you don't need to go find the original link again. Open the Calendar app, right-click (or Control-click) the calendar in the sidebar and choose Get Info. The feed's link is right there, ready to copy.",
     },
     own: {
-      badge: "Your own iCloud calendar",
+      badge: "Your own Apple calendar",
       title: "Sharing a calendar you own",
-      body: "For a calendar you created yourself in iCloud, right-click it and choose Sharing Settings, then turn on Public Calendar. Apple generates a webcal:// link there that you can copy into Casy.",
+      body: "For a calendar you created yourself in Apple's Calendar app, right-click it and choose Sharing Settings, then turn on Public Calendar. Apple generates a webcal:// link there that you can copy into Casy.",
     },
     google: {
       badge: "Google Calendar",

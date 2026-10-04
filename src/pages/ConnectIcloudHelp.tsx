@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Connecting an Apple calendar, one step at a time, for people who have never
- * made an app-specific password. Linked from the Apple iCloud Calendar card
+ * made an app-specific password. Linked from the Apple Calendar tile
  * and its form; the card's own form stays the quick way for everyone else.
  *
  * Four steps and a finish: what an app-specific password is, watching it
@@ -85,7 +85,7 @@ const link = (
 );
 
 const da = {
-  eyebrow: "Forbind iCloud",
+  eyebrow: "Apple-kalender",
   title: "Forbind din Apple-kalender",
   progress: (n: number, total: number) => `Trin ${n} af ${total}`,
   back: "Tilbage",
@@ -167,7 +167,7 @@ const da = {
         ? "1 aftale kunne ikke læses og blev sprunget over."
         : `${n} aftaler kunne ikke læses og blev sprunget over.`,
     empty:
-      "Er din kalender ikke tom? Så kommer aftalerne i din iPhones Kalender-app måske fra en Google- eller Outlook-konto, og så ligger de ikke i iCloud. Forbind den konto under Forbundne kalendere i stedet.",
+      "Er din kalender ikke tom? Så kommer aftalerne i din iPhones Kalender-app måske fra en Google- eller Outlook-konto og ikke fra Apple. Forbind den konto under Forbundne kalendere i stedet.",
     nextTitle: "Hvad nu?",
     nextBody:
       "Fortæl Casy, hvilke kalendere der er arbejde eller skole, så Casy ved, hvad du ville kunne tage fri fra.",
@@ -176,8 +176,8 @@ const da = {
 };
 
 const en: typeof da = {
-  eyebrow: "Connect iCloud",
-  title: "Connect your Apple calendar",
+  eyebrow: "Apple Calendar",
+  title: "Connect your Apple Calendar",
   progress: (n: number, total: number) => `Step ${n} of ${total}`,
   back: "Back",
   intro: {
@@ -253,7 +253,7 @@ const en: typeof da = {
         ? "1 event couldn't be read and was left out."
         : `${n} events couldn't be read and were left out.`,
     empty:
-      "Is your calendar not empty? Then the events in your iPhone's Calendar app may come from a Google or Outlook account, which means they aren't in iCloud. Connect that account under Connected calendars instead.",
+      "Is your calendar not empty? Then the events in your iPhone's Calendar app may come from a Google or Outlook account rather than from Apple. Connect that account under Connected calendars instead.",
     nextTitle: "What's next?",
     nextBody:
       "Tell Casy which calendars are work or school, so it knows what you could take time off from.",

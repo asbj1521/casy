@@ -44,7 +44,7 @@ serve("calendar-add-apple", async (req, body) => {
   // Apple shows app-specific passwords with dashes, and people paste stray spaces.
   const password = field(body.password);
   if (!username || !password) {
-    throw new HttpError(400, "Enter your iCloud email and your app-specific password.");
+    throw new HttpError(400, "Enter your Apple account email and your app-specific password.");
   }
   // Before contacting Apple: better an error than an unencrypted credential.
   const key = encryptionKeyFromEnv();
@@ -55,7 +55,7 @@ serve("calendar-add-apple", async (req, body) => {
     throw err instanceof CalDavError ? new HttpError(400, err.message) : err;
   });
   if (fetched.calendars.length === 0) {
-    throw new HttpError(400, "That iCloud account has no calendars we can read.");
+    throw new HttpError(400, "That Apple account has no calendars we can read.");
   }
 
   const { connectionId } = await storeCalendars(db, {

@@ -121,13 +121,13 @@ async function send(
       });
     } catch (err) {
       console.error("CalDAV request failed", method, url.hostname, err);
-      throw new CalDavError("Couldn't reach iCloud (network error or timeout).");
+      throw new CalDavError("Couldn't reach Apple Calendar (network error or timeout).");
     }
 
     const location = res.headers.get("location");
     if (res.status >= 300 && res.status < 400 && location) {
       await res.body?.cancel();
-      if (hop >= MAX_REDIRECTS) throw new CalDavError("iCloud redirected too many times.");
+      if (hop >= MAX_REDIRECTS) throw new CalDavError("Apple Calendar redirected too many times.");
       url = assertIcloudUrl(new URL(location, url));
       continue;
     }
@@ -153,11 +153,11 @@ async function dav(
   }
   if (!res.ok) {
     await res.body?.cancel();
-    throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
+    throw new CalDavError(`Apple Calendar responded with HTTP ${res.status}.`);
   }
   const text = await res.text();
   if (text.length > MAX_RESPONSE_CHARS)
-    throw new CalDavError("iCloud sent back more data than we accept.");
+    throw new CalDavError("Apple Calendar sent back more data than we accept.");
   return text;
 }
 
@@ -196,7 +196,7 @@ export function parseMultistatus(xml: string): DavResponse[] {
   try {
     doc = parser.parse(xml);
   } catch {
-    throw new CalDavError("iCloud sent a response we couldn't read.");
+    throw new CalDavError("Apple Calendar sent a response we couldn't read.");
   }
   const responses = (doc.multistatus?.response ?? []) as {
     href?: XmlValue;
@@ -318,7 +318,7 @@ export async function discoverCalendars(creds: CalDavCredentials): Promise<CalDa
   const principalHref = hrefInside(
     parseMultistatus(principalXml)[0]?.prop["current-user-principal"],
   );
-  if (!principalHref) throw new CalDavError("Couldn't find your iCloud calendar account.");
+  if (!principalHref) throw new CalDavError("Couldn't find your Apple calendar account.");
 
   const homeXml = await dav(
     creds,
@@ -328,7 +328,7 @@ export async function discoverCalendars(creds: CalDavCredentials): Promise<CalDa
     0,
   );
   const homeHref = hrefInside(parseMultistatus(homeXml)[0]?.prop["calendar-home-set"]);
-  if (!homeHref) throw new CalDavError("Couldn't find your iCloud calendars.");
+  if (!homeHref) throw new CalDavError("Couldn't find your Apple calendars.");
   const homeUrl = assertIcloudUrl(new URL(homeHref, START_URL));
 
   const listXml = await dav(
@@ -424,8 +424,8 @@ export async function putEvent(
   if (res.status === 401) throw new CalDavLoginError(BAD_LOGIN);
   // A calendar shared view-only, or one iCloud won't take events in.
   if (res.status === 403)
-    throw new CalDavError("iCloud didn't let Casy add events to that calendar.");
-  throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
+    throw new CalDavError("Apple didn't let Casy add events to that calendar.");
+  throw new CalDavError(`Apple Calendar responded with HTTP ${res.status}.`);
 }
 
 /** Remove an event Casy added. Already gone (deleted by hand) counts as done. */
@@ -438,8 +438,8 @@ export async function deleteEvent(
   await res.body?.cancel();
   if (res.ok || res.status === 404 || res.status === 410) return;
   if (res.status === 401) throw new CalDavLoginError(BAD_LOGIN);
-  if (res.status === 403) throw new CalDavError("iCloud didn't let Casy remove the event.");
-  throw new CalDavError(`iCloud responded with HTTP ${res.status}.`);
+  if (res.status === 403) throw new CalDavError("Apple didn't let Casy remove the event.");
+  throw new CalDavError(`Apple Calendar responded with HTTP ${res.status}.`);
 }
 
 /* ----------------------------------------------------------------------------

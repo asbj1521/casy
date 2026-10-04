@@ -486,7 +486,7 @@ export async function processWrites(
 
       const account = await accountFor(source!.calendar_connections.id);
       const calendarUrl = account.calendarUrlById.get(source!.external_calendar_id);
-      if (!calendarUrl) throw new CalDavError("That calendar is no longer in the iCloud account.");
+      if (!calendarUrl) throw new CalDavError("That calendar is no longer in the Apple account.");
       const resource = eventResourceName(row.proposal_id);
 
       if (step === "put") {
@@ -543,7 +543,7 @@ export async function processWrites(
       const message =
         err instanceof CalDavError
           ? err.message
-          : "Couldn't reach iCloud. Casy will try again within the hour.";
+          : "Couldn't reach Apple Calendar. Casy will try again within the hour.";
       const { error } = await db
         .from("calendar_event_writes")
         .update({
@@ -568,7 +568,7 @@ async function openAccount(db: Db, connectionId: string, key: string): Promise<A
     .maybeSingle();
   if (error) throw error;
   if (!secrets?.caldav_username || !secrets.caldav_password) {
-    throw new CalDavError("Reconnect your iCloud account on your profile.");
+    throw new CalDavError("Reconnect your Apple account under Connected calendars.");
   }
   const creds = {
     username: secrets.caldav_username,

@@ -288,7 +288,7 @@ export const en: Messages = {
     close: "Close",
   },
   providers: {
-    apple: { label: "Apple iCloud Calendar", help: "Get help connecting" },
+    apple: { label: "Apple Calendar", help: "Get help connecting" },
     ics: { label: "Calendar link (ICS)", help: "How to find your link" },
     google: { label: "Google Calendar", help: "How it works" },
     outlook: { label: "Outlook Calendar", help: "How it works" },
@@ -373,7 +373,7 @@ export const en: Messages = {
     couldntSync: "Couldn't sync",
     couldntAddLink: "Couldn't add the link",
     couldntRemove: "Couldn't remove the account",
-    couldntIcloud: "Couldn't connect to iCloud",
+    couldntIcloud: "Couldn't connect to Apple Calendar",
     oauthErrors: {
       access_denied: "You cancelled, or didn't allow access.",
       missing_code_or_state: "The provider's answer was missing something. Try again.",
@@ -640,9 +640,9 @@ export const en: Messages = {
     intro:
       "Casy adds the events you agree on to this calendar: when you ask it to, or on its own if Add automatically is on.",
     noWritable:
-      "Connect an iCloud calendar below and Casy can add your agreed events straight to it. Google and Outlook are coming later.",
+      "Connect an Apple calendar above and Casy can add your agreed events straight to it. Google and Outlook are coming later.",
     waitingForSync:
-      "Casy is checking which of your iCloud calendars it may add events to. Press Sync now, or wait up to an hour.",
+      "Casy is checking which of your Apple calendars it may add events to. Press Sync now, or wait up to an hour.",
     selectLabel: "Choose primary calendar",
     choose: "Choose a calendar",
     noneOption: "None (Casy adds nothing to your calendars)",
@@ -845,7 +845,7 @@ export const en: Messages = {
     providers: {
       google: "Google",
       outlook: "Outlook",
-      apple: "iCloud",
+      apple: "Apple",
       ics: "Calendar link",
     } as Record<string, string>,
   },

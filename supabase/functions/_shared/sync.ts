@@ -54,7 +54,7 @@ interface SecretsRow {
 const PROVIDER_NAMES: Record<Provider, string> = {
   google: "Google",
   outlook: "Microsoft",
-  apple: "iCloud",
+  apple: "Apple",
   ics: "the calendar link",
 };
 

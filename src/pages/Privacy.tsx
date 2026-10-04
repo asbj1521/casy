@@ -77,8 +77,8 @@ const da: Copy = {
             <Term>Optagede tidsrum:</Term> start og slut på hvert tidsrum, hvor du er optaget, for
             cirka de næste tolv måneder. Aftaler, der overlapper, bliver slået sammen til ét
             tidsrum. Titler, beskrivelser, steder og deltagere bliver aldrig gemt. Google og
-            Microsoft bliver aldrig spurgt om dem. iCloud og kalenderlinks sender altid hele
-            aftaler, så de oplysninger fjernes, før noget gemmes.
+            Microsoft bliver aldrig spurgt om dem. Apple og kalenderlinks sender altid hele aftaler,
+            så de oplysninger fjernes, før noget gemmes.
           </li>
           <li>
             <Term>Grupper:</Term> navnet på hver gruppe, du er med i, hvem der ellers er med, hvem
@@ -100,9 +100,9 @@ const da: Copy = {
           </li>
           <li>
             <Term>Adgangsoplysninger:</Term> det, der skal til for at holde dine kalendere
-            opdateret: adgangsnøgler fra Google eller Microsoft, en app-specifik adgangskode til
-            iCloud eller et kalenderlink. De krypteres, før de gemmes, og nøglen opbevares adskilt
-            fra databasen.
+            opdateret: adgangsnøgler fra Google eller Microsoft, en app-specifik adgangskode til din
+            Apple-konto eller et kalenderlink. De krypteres, før de gemmes, og nøglen opbevares
+            adskilt fra databasen.
           </li>
         </ul>
       ),
@@ -121,7 +121,7 @@ const da: Copy = {
             hvis du har slået Tilføj automatisk til. Aftalen får aftalens navn, gruppens navn og
             navnene på de andre, der er med. Bliver aftalen aflyst, fjerner Casy den igen. Casy
             ændrer eller sletter aldrig andre aftaler i din kalender. Indtil videre kan det kun lade
-            sig gøre med iCloud-kalendere.
+            sig gøre med Apple-kalendere.
           </p>
           <p>
             Når du vælger en adgangskode, eller logger ind med en, tjekker din browser den mod Have
@@ -284,7 +284,7 @@ const en: Copy = {
             <Term>Busy times:</Term> the start and end of each busy period, for roughly the next
             twelve months. Overlapping events are merged into one period. Event titles,
             descriptions, locations and attendees are never stored. Google and Microsoft are never
-            asked for them. iCloud and calendar links always send whole events, so those details are
+            asked for them. Apple and calendar links always send whole events, so those details are
             removed before anything is saved.
           </li>
           <li>
@@ -305,9 +305,9 @@ const en: Copy = {
           </li>
           <li>
             <Term>Access credentials:</Term> what is needed to keep your calendars up to date:
-            access tokens from Google or Microsoft, an iCloud app-specific password, or a calendar
-            link. These are encrypted before they are stored, and the key is kept separately from
-            the database.
+            access tokens from Google or Microsoft, an app-specific password for your Apple account,
+            or a calendar link. These are encrypted before they are stored, and the key is kept
+            separately from the database.
           </li>
         </ul>
       ),
@@ -326,7 +326,7 @@ const en: Copy = {
             automatically. The entry holds the event&apos;s name, the group&apos;s name and the
             names of the others taking part. If the event is cancelled, Casy takes it out again.
             Casy never changes or deletes any other event in your calendar. For now this works with
-            iCloud calendars only.
+            Apple calendars only.
           </p>
           <p>
             When you choose a password, or sign in with one, your browser checks it against Have I

@@ -309,7 +309,7 @@ export const da = {
     close: "Luk",
   },
   providers: {
-    apple: { label: "Apple iCloud-kalender", help: "Få hjælp til at forbinde" },
+    apple: { label: "Apple-kalender", help: "Få hjælp til at forbinde" },
     ics: { label: "Kalenderlink (ICS)", help: "Sådan finder du dit link" },
     google: { label: "Google Kalender", help: "Sådan virker det" },
     outlook: { label: "Outlook-kalender", help: "Sådan virker det" },
@@ -393,7 +393,7 @@ export const da = {
     couldntSync: "Kunne ikke synkronisere",
     couldntAddLink: "Kunne ikke tilføje linket",
     couldntRemove: "Kunne ikke fjerne kontoen",
-    couldntIcloud: "Kunne ikke forbinde til iCloud",
+    couldntIcloud: "Kunne ikke forbinde til Apple-kalender",
     oauthErrors: {
       access_denied: "Du afbrød forbindelsen eller gav ikke adgang.",
       missing_code_or_state: "Svaret fra udbyderen manglede noget. Prøv igen.",
@@ -658,9 +658,9 @@ export const da = {
     intro:
       "Casy lægger de aftaler, I bliver enige om, i denne kalender: når du beder om det, eller af sig selv, hvis Tilføj automatisk er slået til.",
     noWritable:
-      "Forbind en iCloud-kalender herunder, så kan Casy lægge jeres aftaler direkte i den. Google og Outlook kommer senere.",
+      "Forbind en Apple-kalender ovenfor, så kan Casy lægge jeres aftaler direkte i den. Google og Outlook kommer senere.",
     waitingForSync:
-      "Casy tjekker, hvilke af dine iCloud-kalendere den må lægge aftaler i. Tryk Synkronisér nu, eller vent op til en time.",
+      "Casy tjekker, hvilke af dine Apple-kalendere den må lægge aftaler i. Tryk Synkronisér nu, eller vent op til en time.",
     selectLabel: "Vælg primær kalender",
     choose: "Vælg en kalender",
     noneOption: "Ingen (Casy lægger intet i dine kalendere)",
@@ -866,7 +866,7 @@ export const da = {
     providers: {
       google: "Google",
       outlook: "Outlook",
-      apple: "iCloud",
+      apple: "Apple",
       ics: "Kalenderlink",
     } as Record<string, string>,
   },

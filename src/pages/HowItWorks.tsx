@@ -72,7 +72,7 @@ const da: Copy = {
     },
     {
       title: "Forbind dine kalendere",
-      body: "Forbind Google, Outlook eller iCloud, eller indsæt et kalenderlink, for eksempel et skoleskema. Casy læser kun, hvornår du er optaget, aldrig hvad dine aftaler er, og opdaterer hver time.",
+      body: "Forbind Google, Outlook eller Apple, eller indsæt et kalenderlink, for eksempel et skoleskema. Casy læser kun, hvornår du er optaget, aldrig hvad dine aftaler er, og opdaterer hver time.",
     },
     {
       title: "Vælg, hvad der tæller",
@@ -110,12 +110,12 @@ const da: Copy = {
     },
     {
       title: "Læg den i kalenderen",
-      body: "Når alle har accepteret, er aftalen planlagt. Tilføj til min kalender lægger den i din primære kalender, og med Tilføj automatisk slået til sker det af sig selv. Indtil videre kan Casy kun lægge aftaler i iCloud-kalendere. Bruger du en anden, får du en kalenderfil, som din kalender kan åbne.",
+      body: "Når alle har accepteret, er aftalen planlagt. Tilføj til min kalender lægger den i din primære kalender, og med Tilføj automatisk slået til sker det af sig selv. Indtil videre kan Casy kun lægge aftaler i Apple-kalendere. Bruger du en anden, får du en kalenderfil, som din kalender kan åbne.",
     },
   ],
   neverSeesTitle: "Det ser Casy aldrig",
   neverSeesBody:
-    "Kun start og slut på hvert optaget tidsrum gemmes. Titler, steder, noter og gæster bliver aldrig hentet fra Google eller Microsoft. iCloud og kalenderlinks sender altid hele aftaler, så Casy fjerner de oplysninger, før noget gemmes. Gruppemedlemmer ser aldrig navnene på dine kalendere eller hvilke konti, du har forbundet.",
+    "Kun start og slut på hvert optaget tidsrum gemmes. Titler, steder, noter og gæster bliver aldrig hentet fra Google eller Microsoft. Apple og kalenderlinks sender altid hele aftaler, så Casy fjerner de oplysninger, før noget gemmes. Gruppemedlemmer ser aldrig navnene på dine kalendere eller hvilke konti, du har forbundet.",
   privacyLink: "Læs privatlivspolitikken",
   findDate: "Find en dato",
   getStarted: "Kom i gang",
@@ -134,7 +134,7 @@ const en: Copy = {
     },
     {
       title: "Connect your calendars",
-      body: "Link Google, Outlook or iCloud, or paste any calendar link, such as a school timetable. Casy only reads when you are busy, never what your events are, and refreshes every hour.",
+      body: "Link Google, Outlook or Apple, or paste any calendar link, such as a school timetable. Casy only reads when you are busy, never what your events are, and refreshes every hour.",
     },
     {
       title: "Choose what counts",
@@ -172,12 +172,12 @@ const en: Copy = {
     },
     {
       title: "Put it in your calendar",
-      body: "Once everyone has accepted, the event is scheduled. Add to my calendar puts it in your primary calendar, and with Add automatically switched on it happens by itself. For now, Casy can only add events to iCloud calendars. If you use another, you get a calendar file your calendar can open.",
+      body: "Once everyone has accepted, the event is scheduled. Add to my calendar puts it in your primary calendar, and with Add automatically switched on it happens by itself. For now, Casy can only add events to Apple calendars. If you use another, you get a calendar file your calendar can open.",
     },
   ],
   neverSeesTitle: "What Casy never sees",
   neverSeesBody:
-    "Only the start and end of each busy period is stored. Event titles, places, notes and guests are never requested from Google or Microsoft. iCloud and calendar links always send whole events, so Casy removes those details before anything is saved. Group members never see your calendars' names or which accounts you connected.",
+    "Only the start and end of each busy period is stored. Event titles, places, notes and guests are never requested from Google or Microsoft. Apple and calendar links always send whole events, so Casy removes those details before anything is saved. Group members never see your calendars' names or which accounts you connected.",
   privacyLink: "Read the privacy policy",
   findDate: "Find a date",
   getStarted: "Get started",
