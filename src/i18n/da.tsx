@@ -539,6 +539,8 @@ export const da = {
     newDateBecause: (who: string, date: string) => `. Ny dato, fordi ${who} ikke kunne ${date}`,
   },
   calendarView: {
+    title: "Min kalender",
+    intro: "Det, Casy ser i dine kalendere: kun hvornår du er optaget, aldrig hvad du laver.",
     tryAgain: "Prøv igen",
     truncated: "Måneden har flere optagede tidsrum, end der kan vises, så nogle mangler.",
     noCalendars: (link: ReactNode) => (

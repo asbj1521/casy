@@ -521,6 +521,8 @@ export const en: Messages = {
       `. New date because ${who} couldn't make ${date}`,
   },
   calendarView: {
+    title: "My calendar",
+    intro: "What Casy sees in your calendars: only when you're busy, never what you're doing.",
     tryAgain: "Try again",
     truncated: "This month has more busy blocks than can be shown, so some are missing.",
     noCalendars: (link: ReactNode) => (

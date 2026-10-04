@@ -219,9 +219,14 @@ export default function CalendarOverview() {
       <TopNav />
 
       {/* No "back" link: the header is how every page is reached. */}
-      <main className="px-4 pb-20 pt-4 sm:px-6 lg:px-8">
+      <main className="px-4 pb-20 pt-2 sm:px-6 sm:pt-0 lg:px-8">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {t.calendarView.title}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t.calendarView.intro}</p>
+
         {error && (
-          <Notice tone="error" className="mb-4">
+          <Notice tone="error" className="mt-6">
             <div className="flex items-start justify-between gap-2">
               {error.message}
               <button
@@ -236,13 +241,13 @@ export default function CalendarOverview() {
         )}
 
         {data?.truncated && (
-          <Notice tone="warning" icon={Info} className="mb-4">
+          <Notice tone="warning" icon={Info} className="mt-6">
             {t.calendarView.truncated}
           </Notice>
         )}
 
         {noConnectedCalendars && (
-          <Notice tone="info" className="mb-4">
+          <Notice tone="info" className="mt-6">
             {t.calendarView.noCalendars(
               <Link
                 to={calendarsHome.to}
@@ -254,13 +259,15 @@ export default function CalendarOverview() {
           </Notice>
         )}
 
-        {/* One grid, so the calendar list's top lines up with the month grid's:
-            the month header is row 1, the grid box and the list start on row 2.
-            The list runs on into an empty last row (1fr) that takes whatever
-            height it needs beyond the month and day boxes; without it, opening
-            part of the list stretched the month's row and pushed the day box down. */}
-        <div className="grid items-start gap-x-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_auto_auto_1fr]">
-          <div className="mb-3 flex min-w-0 items-center justify-between lg:col-start-1 lg:row-start-1">
+        {/* One grid: the calendar list on the left, as on My groups, its top
+            level with the month's header (row 1); the grid box is row 2 and the
+            day box row 3. The list runs on into an empty last row (1fr) that
+            takes whatever height it needs beyond the month and day boxes;
+            without it, opening part of the list stretched the month's rows and
+            pushed the day box down. Narrower screens stack the month first, in
+            the order of the markup. */}
+        <div className="mt-6 grid items-start gap-x-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_auto_1fr]">
+          <div className="mb-3 flex min-w-0 items-center justify-between lg:col-start-2 lg:row-start-1">
             <h2 className="flex items-center gap-2 text-lg font-semibold capitalize text-foreground">
               {layout.label}
               {(isLoading || isFetching) && (
@@ -291,7 +298,7 @@ export default function CalendarOverview() {
             </div>
           </div>
 
-          <div className="min-w-0 overflow-hidden rounded-xl border bg-card lg:col-start-1 lg:row-start-2">
+          <div className="min-w-0 overflow-hidden rounded-xl border bg-card lg:col-start-2 lg:row-start-2">
             <div className={cn(GRID_COLUMNS, "border-b bg-secondary/40")}>
               <div
                 className="hidden px-1 py-2 text-center text-xs font-medium text-muted-foreground sm:block"
@@ -429,7 +436,7 @@ export default function CalendarOverview() {
             </div>
           </div>
 
-          <section className="mt-4 min-w-0 rounded-2xl border bg-card p-4 shadow-sm sm:mt-6 sm:p-5 lg:col-start-1 lg:row-start-3">
+          <section className="mt-4 min-w-0 rounded-2xl border bg-card p-4 shadow-sm sm:mt-6 sm:p-5 lg:col-start-2 lg:row-start-3">
             <h3 className="font-semibold text-foreground">
               {selectedDay?.date.toLocaleDateString(LOCALE[lang], {
                 weekday: "long",
@@ -456,7 +463,7 @@ export default function CalendarOverview() {
 
           {/* Scrolls with the page rather than on its own: a box scrolling by
               itself cut its content off at the month grid's top line. */}
-          <div className="mt-6 min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-2 lg:mt-0">
+          <div className="mt-6 min-w-0 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:mt-0">
             {/* Connecting calendars is a page of its own (CalendarAccounts). */}
             <ListGroup className="mb-4 mt-0">
               <ListRow
