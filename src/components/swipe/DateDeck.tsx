@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AnimatePresence,
   motion,
@@ -19,6 +19,7 @@ import YourTime from "@/components/time/YourTime";
 import Avatar from "@/components/ui/Avatar";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { useDecidingRefresh } from "@/hooks/useDecidingRefresh";
 import { useMyCalendarDays, type MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { TODAY } from "@/hooks/useDateSearch";
 import { eventTitle } from "@/i18n/eventTitle";
@@ -99,26 +100,34 @@ export default function DateDeck({
   const calendarOpen = calendarFrom !== null;
   const [error, setError] = useState<string | null>(null);
 
-  const save = useMutation({
-    mutationFn: (v: { dateId: string; response: EventResponse }) =>
-      answerDate(event.id, v.dateId, v.response),
-    onSuccess: (data) => {
-      queryClient.setQueryData(eventsQueryKey(userId), data.events);
-      if (data.outcome === "scheduled") {
-        setCelebrate(true);
-        haptic("success");
+  // Answers are saved one after another, in the order given, while the
+  // cards move on without waiting. Each reply is the whole list of events
+  // as it stood; sent side by side, an earlier reply could arrive after a
+  // later one and put back an older picture, such as a vote still waiting
+  // after the last answer had already decided it.
+  const saving = useRef<Promise<void>>(Promise.resolve());
+  function save(dateId: string, response: EventResponse) {
+    saving.current = saving.current.then(async () => {
+      try {
+        const data = await answerDate(event.id, dateId, response);
+        queryClient.setQueryData(eventsQueryKey(userId), data.events);
+        if (data.outcome === "scheduled") {
+          setCelebrate(true);
+          haptic("success");
+        }
+      } catch (err) {
+        setGiven((g) => {
+          const rest = { ...g };
+          delete rest[dateId];
+          return rest;
+        });
+        setError(err instanceof Error ? err.message : String(err));
+        void queryClient.invalidateQueries({ queryKey: eventsQueryKey(userId) });
       }
-    },
-    onError: (err, v) => {
-      setGiven((g) => {
-        const rest = { ...g };
-        delete rest[v.dateId];
-        return rest;
-      });
-      setError(err.message);
-      void queryClient.invalidateQueries({ queryKey: eventsQueryKey(userId) });
-    },
-  });
+    });
+  }
+  // And should this page's copy still be behind, it catches up by itself.
+  useDecidingRefresh(event);
 
   // Settled (or called off) while swiping, by someone else's answer: the
   // cards left can't be answered any more, so the outcome shows instead.
@@ -132,7 +141,7 @@ export default function DateDeck({
     setGiven((g) => ({ ...g, [current.id]: response }));
     setIndex((i) => i + 1);
     haptic("answer");
-    save.mutate({ dateId: current.id, response });
+    save(current.id, response);
   }
   function back(to = index - 1) {
     if (to < 0) return;

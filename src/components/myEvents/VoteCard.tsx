@@ -5,6 +5,7 @@ import { Clock, Hand, Layers } from "lucide-react";
 import { ExitConfirm, ExitLink } from "@/components/myEvents/parts";
 import VoteTallies from "@/components/myEvents/VoteTallies";
 import { eventTitle } from "@/i18n/eventTitle";
+import { useDecidingRefresh } from "@/hooks/useDecidingRefresh";
 import { useLang, useT } from "@/i18n/lang";
 import { formatDate, nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,8 @@ export default function VoteCard({ event }: { event: VoteEvent }) {
   const { lang } = useLang();
   const [exiting, setExiting] = useState(false);
   const stage = voteStage(event);
+  // Everyone has answered: the decided date shows as soon as it exists.
+  useDecidingRefresh(event);
   const dates = upcomingDates(event);
   const you = event.invitees.find((i) => i.isYou)?.profileId;
   const answered = dates.filter((d) => you && d.answers[you]).length;
