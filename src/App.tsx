@@ -8,6 +8,7 @@ import RequireAuth from "@/components/RequireAuth";
 import TabBar from "@/components/TabBar";
 import WeakPasswordNotice from "@/components/WeakPasswordNotice";
 import { useAuth } from "@/context/auth";
+import { useAccountLanguage } from "@/hooks/useAccountLanguage";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import AuthProvider from "@/context/AuthProvider";
 import LanguageProvider from "@/i18n/LanguageProvider";
@@ -53,9 +54,13 @@ function Home() {
   return user ? <FindDate /> : <Landing />;
 }
 
-/** Keeps open pages up to date with what others do (useLiveUpdates). */
+/**
+ * Keeps open pages up to date with what others do (useLiveUpdates), and the
+ * account's saved language with the site's, for its emails (useAccountLanguage).
+ */
 function LiveUpdates() {
   useLiveUpdates();
+  useAccountLanguage();
   return null;
 }
 

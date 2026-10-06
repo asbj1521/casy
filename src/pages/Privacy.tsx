@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 1. oktober 2026",
+  updated: "Senest opdateret 6. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -46,7 +46,8 @@ const da: LegalCopy = {
             <li>
               <Term>Din konto:</Term> din e-mailadresse og dit navn, hvis du logger ind med Google,
               eller et navn, du selv vælger på din profil. Logger du ind med din e-mail og ikke har
-              valgt et navn, bruger Casy delen af din e-mailadresse før @.
+              valgt et navn, bruger Casy delen af din e-mailadresse før @. Og det sprog, du bruger
+              Casy på, så e-mails fra Casy kommer på det sprog.
             </li>
             <li>
               <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
@@ -239,7 +240,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 1 October 2026",
+  updated: "Last updated 6 October 2026",
   sections: [
     {
       title: "In short",
@@ -262,7 +263,8 @@ const en: LegalCopy = {
             <li>
               <Term>Your account:</Term> your email address, and your name if you sign in with
               Google, or a name you choose on your profile. If you sign in with your email and have
-              not chosen a name, Casy uses the part of your email address before the @.
+              not chosen a name, Casy uses the part of your email address before the @. And the
+              language you use Casy in, so emails from Casy come in that language.
             </li>
             <li>
               <Term>Connected calendars:</Term> which accounts you connected (for example the email

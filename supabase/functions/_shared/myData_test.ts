@@ -2,6 +2,7 @@ import { assertEquals } from "jsr:@std/assert@1";
 
 import {
   credentialKind,
+  savedLanguage,
   shapeCalendars,
   shapeGroups,
   signInMethods,
@@ -94,4 +95,11 @@ Deno.test("groups say how many are in them and whether you made them", () => {
       { name: "Friends", members: 2, createdByYou: false, joinedAt: "2026-09-03T10:00:00Z" },
     ],
   );
+});
+
+Deno.test("the email language is shown only when it is one Casy writes in", () => {
+  assertEquals(savedLanguage({ id: "u", user_metadata: { lang: "en" } }), "en");
+  assertEquals(savedLanguage({ id: "u", user_metadata: { lang: "da" } }), "da");
+  assertEquals(savedLanguage({ id: "u", user_metadata: { lang: "fr" } }), null);
+  assertEquals(savedLanguage({ id: "u" }), null);
 });

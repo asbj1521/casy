@@ -257,42 +257,22 @@ pass = "env(RESEND_API_KEY)"
 admin_email = "noreply@casy.app"
 sender_name = "Casy"
 
-# The sign-in email itself, sent by signInWithOtp. With confirmations on, an
-# email link for an address that has no account yet sends `confirmation`
-# instead.
-[auth.email.template.magic_link]
-subject = "Your Casy sign-in link"
-content_path = "./supabase/templates/magic_link.html"
-
-# Sent by resetPasswordForEmail when someone sets or forgets a password
-# (Profile's "Set or change your password" and Sign in's "Forgot password?").
-[auth.email.template.recovery]
-subject = "Reset your Casy password"
-content_path = "./supabase/templates/recovery.html"
-
-# Sent when someone creates an account with an email and password; the
-# account can't be used until the link is clicked.
-[auth.email.template.confirmation]
-subject = "Confirm your email for Casy"
-content_path = "./supabase/templates/confirmation.html"
-
-# The code asked for before changing the password, when the last sign-in was
-# more than a day ago (secure_password_change above).
-[auth.email.template.reauthentication]
-subject = "Your Casy security code"
-content_path = "./supabase/templates/reauthentication.html"
-
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Every auth email (sign-in link, confirmation, password reset, the security
+# code, the notices) is written and sent by the auth-email Edge Function, in
+# the person's language, through the Send Email hook below; the SMTP settings
+# above are only used if that hook is switched off. Casy keeps no email
+# templates here any more: the dashboard still holds the old English ones,
+# which is what people get while the hook is off.
+#
+# Asked for by signInWithOtp (a sign-in link, or with confirmations on and no
+# account yet, a confirmation), signUp (confirmation), resetPasswordForEmail
+# (recovery) and reauthenticate (the code, before a password change more than
+# a day after signing in; secure_password_change above).
 
 # Tells someone their password was changed, so a change they didn't make
-# doesn't go unnoticed.
+# doesn't go unnoticed. Switched on here; written by auth-email.
 [auth.email.notification.password_changed]
 enabled = true
-subject = "Your Casy password was changed"
-content_path = "./supabase/templates/password_changed_notification.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
@@ -314,6 +294,15 @@ max_frequency = "5s"
 # timebox = "24h"
 # Force log out if the user has been inactive longer than the specified duration.
 # inactivity_timeout = "8h"
+
+# Casy: Auth hands every email to the auth-email Edge Function instead of
+# sending it (see [auth.email] above). The secret is the hook's signing secret
+# from the dashboard (Authentication > Hooks), also set as the function secret
+# SEND_EMAIL_HOOK_SECRET, which the function checks on every call.
+[auth.hook.send_email]
+enabled = true
+uri = "https://lymygsndrhgpdqczkzrv.supabase.co/functions/v1/auth-email"
+secrets = "env(SEND_EMAIL_HOOK_SECRET)"
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
@@ -481,6 +470,12 @@ verify_jwt = false
 [functions.events]
 # Checks the caller's login in code (_shared/auth.ts) and only ever acts on
 # events in groups they are a member of and were invited to.
+verify_jwt = false
+
+[functions.auth-email]
+# Called by Supabase Auth (the Send Email hook), never by the site, so there is
+# no login to check. Instead every call must carry Auth's signature made with
+# the hook's secret (_shared/webhookSignature.ts); anything else is refused.
 verify_jwt = false
 
 [functions.account]

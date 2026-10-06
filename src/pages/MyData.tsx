@@ -171,6 +171,11 @@ function AccountPart({ data }: { data: MyData }) {
         label={w.signIn}
         value={account.signIn.map((m) => w.signInMethods[m] ?? m).join(", ") || "-"}
       />
+      <Fact
+        label={w.emailLanguage}
+        value={(account.language && w.languages[account.language]) || w.languages.da}
+        detail={account.language ? undefined : w.languageDefault}
+      />
       {account.createdAt && <Fact label={w.created} value={day(account.createdAt, lang)} />}
     </ListGroup>
   );

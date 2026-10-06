@@ -114,8 +114,12 @@ export default function SignIn() {
 
   if (loading) return <div className="min-h-screen bg-background" />;
 
-  // Come back to this page, still carrying where to go afterwards.
-  const returnTo = `${window.location.origin}/sign-in${next ? `?next=${encodeURIComponent(next)}` : ""}`;
+  // Come back to this page, still carrying where to go afterwards, and in
+  // which language: the auth-email hook writes the email in it, and the link
+  // in the email opens the site in it too.
+  const returnParams = new URLSearchParams({ lang });
+  if (next) returnParams.set("next", next);
+  const returnTo = `${window.location.origin}/sign-in?${returnParams}`;
 
   /** Why a call can't go yet (no bot-check token), or null when it can. */
   function captchaProblem(): string | null {
@@ -276,7 +280,9 @@ export default function SignIn() {
     const { data, error: err } = await supabaseAuth.signUp({
       email: address,
       password: newPassword,
-      options: { emailRedirectTo: returnTo, captchaToken },
+      // The account's language, for emails sent later with no page to ask
+      // (the security code, "password changed"); see useAccountLanguage.
+      options: { emailRedirectTo: returnTo, captchaToken, data: { lang } },
     });
     resetCaptcha();
     setSignupSubmitting(false);

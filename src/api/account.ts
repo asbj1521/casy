@@ -31,6 +31,8 @@ export interface MyData {
     name: string | null;
     nameIsCustom: boolean;
     signIn: string[];
+    /** The language Casy's emails are written in, if one is saved. */
+    language: string | null;
     createdAt: string | null;
   };
   calendars: {

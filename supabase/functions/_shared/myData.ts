@@ -24,6 +24,8 @@ export interface MyData {
     nameIsCustom: boolean;
     /** How you sign in: "email", "google". */
     signIn: string[];
+    /** The language Casy's emails to you are written in, if one is saved ("da", "en"). */
+    language: string | null;
     createdAt: string | null;
   };
   calendars: {
@@ -158,6 +160,12 @@ async function count(query: PromiseLike<{ count: number | null; error: unknown }
 }
 
 /** Everything for the screen: one read each, all at once. */
+/** The language saved on the account for its emails (auth-email), if it is one Casy writes in. */
+export function savedLanguage(caller: Caller): string | null {
+  const lang = caller.user_metadata?.lang;
+  return lang === "da" || lang === "en" ? lang : null;
+}
+
 export async function readMyData(db: Db, caller: Caller, now = new Date()): Promise<MyData> {
   const me = caller.id;
   const head = { count: "exact" as const, head: true };
@@ -289,6 +297,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       name: profileRow?.display_name ?? null,
       nameIsCustom: profileRow?.name_is_custom ?? false,
       signIn: signInMethods(caller),
+      language: savedLanguage(caller),
       createdAt: caller.created_at ?? null,
     },
     calendars: shapeCalendars(connectionRows),
