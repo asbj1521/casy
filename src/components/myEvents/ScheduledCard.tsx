@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { CalendarCheck } from "lucide-react";
 
 import AddToCalendar from "@/components/AddToCalendar";
@@ -77,7 +78,18 @@ export default function ScheduledCard({ event }: { event: DatedEvent }) {
           <AddToCalendar event={event} />
         </div>
         {!exiting && (
-          <ExitLink event={event} onClick={() => setExiting(true)} className="shrink-0" />
+          <span className="flex shrink-0 items-baseline gap-4">
+            {/* A vote's answers can be changed after it is decided (#74). */}
+            {event.mode === "vote" && (
+              <Link
+                to={`/events/${event.id}/dates`}
+                className="text-sm font-medium text-primary transition hover:opacity-80"
+              >
+                {t.events.changeAnswers}
+              </Link>
+            )}
+            <ExitLink event={event} onClick={() => setExiting(true)} />
+          </span>
         )}
       </div>
       {exiting && (

@@ -622,6 +622,15 @@ export const en: Messages = {
     decidedBy: (day: string, time: string) =>
       `Settled by ${day} at ${time} at the latest, even without the last answers.`,
     goChoose: "Choose the date",
+    tapToChange: "Tap to change",
+    changeAnswerFor: (date: string) => `Change your answer for ${date}`,
+    changeAfter:
+      "Can't make it after all? Change your answer for the date below, and Casy finds a new date for everyone.",
+    moveConfirm:
+      "This is the date that was chosen. If you say you can't make it, Casy finds a new date for everyone from your answers.",
+    moveYes: "I can't, find a new one",
+    moveKeep: "Keep the date",
+    moved: (date: string) => `The date has moved to ${date}.`,
     yourAnswers: "Your answers",
   },
   calendarView: {

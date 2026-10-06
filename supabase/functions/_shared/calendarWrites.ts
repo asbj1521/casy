@@ -21,6 +21,11 @@
  * (markGoneEntries): the row is closed and marked `gone_at`, the page offers
  * "Add it again", and "Add automatically" leaves it alone rather than fight
  * its owner.
+ *
+ * An event that moves to another date (a vote whose decided date someone
+ * can no longer make, #74) marks its added entries `requeue`: each is taken
+ * out like a cancelled one, and then its row is deleted, so the new date
+ * goes in as a newly agreed event would.
  */
 import {
   CalDavError,
@@ -53,6 +58,8 @@ export interface WriteRow {
   wanted: boolean;
   added: boolean;
   attempts: number;
+  /** Taken out because the event moved: once out, the row goes (see the top). */
+  requeue: boolean;
 }
 
 /**
@@ -83,7 +90,7 @@ export function nextStep(
 function todoQuery(db: Db, scope: WriteScope) {
   let q = db
     .from("calendar_event_writes")
-    .select("proposal_id, profile_id, source_id, wanted, added, attempts")
+    .select("proposal_id, profile_id, source_id, wanted, added, attempts, requeue")
     .or("and(wanted.eq.true,added.eq.false),and(wanted.eq.false,added.eq.true)")
     .lt("attempts", MAX_ATTEMPTS)
     .order("updated_at", { ascending: true })
@@ -107,7 +114,7 @@ export async function wantInCalendar(
       db.from("primary_calendars").select("source_id").eq("profile_id", profileId).maybeSingle(),
       db
         .from("calendar_event_writes")
-        .select("source_id, added")
+        .select("source_id, added, requeue")
         .eq("proposal_id", proposalId)
         .eq("profile_id", profileId)
         .maybeSingle(),
@@ -115,6 +122,9 @@ export async function wantInCalendar(
   if (primaryErr) throw primaryErr;
   if (existingErr) throw existingErr;
   if (!primary) return "no_primary";
+  // The entry on the old date is still being taken out after a move: the
+  // new date goes in once it is (catchUpWrites), so nothing to change here.
+  if (existing?.requeue) return "queued";
 
   const { error } = await db.from("calendar_event_writes").upsert(
     {
@@ -353,7 +363,14 @@ export async function catchUpWrites(
   budgetMs?: number,
 ): Promise<void> {
   const queued = await queueAutoAdds(db, scope);
-  const { done, failed } = await processWrites(db, key, scope, { budgetMs });
+  let { done, failed } = await processWrites(db, key, scope, { budgetMs });
+  // Entries taken out because their event moved free their rows: the new
+  // date's entries are queued and written now rather than in an hour.
+  if (done > 0 && (await queueAutoAdds(db, scope)) > 0) {
+    const again = await processWrites(db, key, scope, { budgetMs });
+    done += again.done;
+    failed += again.failed;
+  }
   if (queued || done || failed) {
     console.log(`calendar writes: ${queued} queued, ${done} done, ${failed} failed`);
   }
@@ -475,6 +492,12 @@ export async function processWrites(
     );
     try {
       if (step === "none") continue;
+      if (step === "forget" && row.requeue) {
+        // Nothing to take out after all (the calendar is gone): the row goes.
+        await forgetMoved(db, row);
+        done++;
+        continue;
+      }
       if (step === "forget") {
         // Close the row: wanted and added both say "not in the calendar".
         const { error } = await db
@@ -528,6 +551,9 @@ export async function processWrites(
           .eq("proposal_id", row.proposal_id)
           .eq("profile_id", row.profile_id);
         if (error) throw error;
+      } else if (row.requeue) {
+        await deleteEvent(account.creds, calendarUrl, resource);
+        await forgetMoved(db, row);
       } else {
         await deleteEvent(account.creds, calendarUrl, resource);
         const { error } = await db
@@ -564,6 +590,21 @@ export async function processWrites(
     }
   }
   return { done, failed };
+}
+
+/**
+ * The row of an entry taken out because its event moved, deleted, so the
+ * new date can be queued like a newly agreed event. Only while it is still
+ * that row: a write that changed it meanwhile is left to its next turn.
+ */
+async function forgetMoved(db: Db, row: WriteRow): Promise<void> {
+  const { error } = await db
+    .from("calendar_event_writes")
+    .delete()
+    .eq("proposal_id", row.proposal_id)
+    .eq("profile_id", row.profile_id)
+    .eq("requeue", true);
+  if (error) throw error;
 }
 
 /** Log in to one iCloud account and list its calendars. */

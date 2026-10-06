@@ -413,8 +413,12 @@ serve("events", async (req, body) => {
         throw new HttpError(409, "That event is no longer waiting for answers.");
       }
       if (outcome === "past") throw new HttpError(409, "That date has already begun.");
-      // The answer that decides it: in go the automatic adds.
-      if (outcome === "scheduled") syncCalendarsLater(proposalId);
+      // The answer that decides it puts it into calendars; one that moves a
+      // decided date ("moved", or "undecided" after a move) takes the old
+      // entries out and, once decided again, puts the new date in.
+      if (outcome === "scheduled" || outcome === "moved" || outcome === "undecided") {
+        syncCalendarsLater(proposalId);
+      }
       return { outcome, ...(await list()) };
     }
 

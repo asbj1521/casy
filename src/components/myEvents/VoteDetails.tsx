@@ -1,11 +1,10 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { LogOut, Users, X } from "lucide-react";
 
+import DeckBox from "@/components/myEvents/DeckBox";
 import { ExitConfirm } from "@/components/myEvents/parts";
 import VoteTallies from "@/components/myEvents/VoteTallies";
-import DateDeck from "@/components/swipe/DateDeck";
 import { eventTitle } from "@/i18n/eventTitle";
-import { useFillViewport } from "@/hooks/useFillViewport";
 import { useDecidingRefresh } from "@/hooks/useDecidingRefresh";
 import { useLang, useT } from "@/i18n/lang";
 import { nameList } from "@/lib/format";
@@ -30,10 +29,6 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
   const missing = stillToAnswer(event);
   // Everyone has answered: the decided date shows as soon as it exists.
   useDecidingRefresh(event);
-  // The cards fill the window below the header, so the date, the answers and
-  // your calendar fit on one screen; the box's own padding, and a gap, below.
-  const deckBox = useRef<HTMLDivElement>(null);
-  const deckHeight = useFillViewport(deckBox, { bottom: 40, min: 460, active: showDeck });
   const link = "shrink-0 text-sm font-medium transition";
 
   return (
@@ -82,9 +77,7 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
       {exiting && <ExitConfirm event={event} onCancel={() => setExiting(false)} className="mt-3" />}
 
       {showDeck ? (
-        <div ref={deckBox} className="mt-3" style={{ height: deckHeight ?? undefined }}>
-          {deckHeight !== null && <DateDeck event={event} variant="pane" />}
-        </div>
+        <DeckBox event={event} />
       ) : (
         <div className="mt-4 max-w-xl pb-2">
           <p className="text-lg font-bold text-foreground">

@@ -9,6 +9,7 @@ import AddToCalendar from "@/components/AddToCalendar";
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
 import DateConflicts from "@/components/myEvents/DateConflicts";
 import { EdgeWarnings, ExitConfirm, Origin } from "@/components/myEvents/parts";
+import DeckBox from "@/components/myEvents/DeckBox";
 import VoteDetails from "@/components/myEvents/VoteDetails";
 import YourTime from "@/components/time/YourTime";
 import Avatar from "@/components/ui/Avatar";
@@ -18,6 +19,7 @@ import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate, formatHeadline, nameList } from "@/lib/format";
 import { waitingOn, type StagedEvent } from "@/lib/myEvents";
+import { isVote } from "@/lib/vote";
 import { cn } from "@/lib/utils";
 
 /** Each stage's colour, as its card has it on a phone. */
@@ -51,6 +53,8 @@ function DatedDetails({
   const { lang } = useLang();
   const userId = useSignedInUser().id;
   const [exiting, setExiting] = useState(false);
+  // A decided vote's cards, opened again to change an answer (#74).
+  const [changing, setChanging] = useState(false);
   const { stage, event } = staged;
   const { data: groups } = useQuery(groupsQuery(userId));
   // A link to the group while you're still in it.
@@ -131,6 +135,16 @@ function DatedDetails({
           <div className="mt-2">
             <AddToCalendar event={event} />
           </div>
+          {isVote(event) && (
+            <button
+              type="button"
+              onClick={() => setChanging((c) => !c)}
+              className="mt-3 text-sm font-medium text-primary transition hover:opacity-80"
+            >
+              {changing ? t.swipe.done : t.events.changeAnswers}
+            </button>
+          )}
+          {changing && isVote(event) && <DeckBox event={event} />}
         </div>
       )}
       {stage === "closed" && (

@@ -647,6 +647,15 @@ export const da = {
     decidedBy: (day: string, time: string) =>
       `Afgøres senest ${day} kl. ${time}, også uden de sidste svar.`,
     goChoose: "Vælg datoen",
+    tapToChange: "Tryk for at rette",
+    changeAnswerFor: (date: string) => `Ret dit svar for ${date}`,
+    changeAfter:
+      "Kan du ikke alligevel? Ret dit svar til datoen herunder, så finder Casy en ny dato til alle.",
+    moveConfirm:
+      "Det er den dato, der er valgt. Siger du, at du ikke kan, finder Casy en ny dato til alle ud fra jeres svar.",
+    moveYes: "Jeg kan ikke, find en ny",
+    moveKeep: "Behold datoen",
+    moved: (date: string) => `Datoen er flyttet til ${date}.`,
     yourAnswers: "Dine svar",
   },
   calendarView: {

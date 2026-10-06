@@ -9,7 +9,16 @@ import {
   useReducedMotion,
   useTransform,
 } from "framer-motion";
-import { CalendarCheck, Check, ChevronLeft, Clock, Meh, RotateCcw, X } from "lucide-react";
+import {
+  CalendarCheck,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Meh,
+  RotateCcw,
+  X,
+} from "lucide-react";
 
 import { answerDate, eventsQueryKey, type CandidateDate, type EventResponse } from "@/api/events";
 import CalendarSheet from "@/components/swipe/CalendarSheet";
@@ -17,6 +26,7 @@ import CalendarStrip from "@/components/swipe/CalendarStrip";
 import Celebration from "@/components/swipe/Celebration";
 import YourTime from "@/components/time/YourTime";
 import Avatar from "@/components/ui/Avatar";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useDecidingRefresh } from "@/hooks/useDecidingRefresh";
@@ -115,6 +125,10 @@ export default function DateDeck({
           setCelebrate(true);
           haptic("success");
         }
+        if (data.outcome === "moved") {
+          const now = data.events.find((e) => e.id === event.id)?.currentDate;
+          if (now) setMoved(formatEventDate(event.settings.kind, now, lang));
+        }
       } catch (err) {
         setGiven((g) => {
           const rest = { ...g };
@@ -129,13 +143,28 @@ export default function DateDeck({
   // And should this page's copy still be behind, it catches up by itself.
   useDecidingRefresh(event);
 
-  // Settled (or called off) while swiping, by someone else's answer: the
-  // cards left can't be answered any more, so the outcome shows instead.
-  const done = index >= dates.length || event.status !== "pending";
+  // Called off (or out of dates) while swiping: the cards left can't be
+  // answered any more, so the outcome shows instead. A decided vote can
+  // still be answered: a change of heart about its date moves it (below).
+  const done =
+    index >= dates.length || (event.status !== "pending" && event.status !== "scheduled");
   const current = done ? null : (dates[index] ?? null);
+  // "I can't" on the date already decided moves it for everyone, so it is
+  // asked first; and once moved, the new date is said.
+  const [confirmMove, setConfirmMove] = useState(false);
+  const [moved, setMoved] = useState<string | null>(null);
 
-  function answer(response: EventResponse) {
+  function answer(response: EventResponse, confirmed = false) {
     if (!current) return;
+    const movesDate =
+      event.status === "scheduled" &&
+      event.currentDate?.id === current.id &&
+      response === "declined";
+    if (movesDate && !confirmed) {
+      setConfirmMove(true);
+      return;
+    }
+    setConfirmMove(false);
     setError(null);
     setExit(response);
     setGiven((g) => ({ ...g, [current.id]: response }));
@@ -145,6 +174,7 @@ export default function DateDeck({
   }
   function back(to = index - 1) {
     if (to < 0) return;
+    setConfirmMove(false);
     setExit("back");
     setIndex(to);
   }
@@ -249,7 +279,14 @@ export default function DateDeck({
       {screen && progress}
 
       {done ? (
-        <DoneView event={event} dates={dates} answerOf={answerOf} onChange={back} screen={screen} />
+        <DoneView
+          event={event}
+          dates={dates}
+          answerOf={answerOf}
+          onChange={back}
+          moved={moved}
+          screen={screen}
+        />
       ) : (
         current &&
         (() => {
@@ -312,14 +349,30 @@ export default function DateDeck({
               <div className="mt-3 px-4">
                 <div className="mx-auto max-w-md">{strip}</div>
               </div>
-              <AnswerButtons onAnswer={answer} screen />
+              {confirmMove ? (
+                <MoveConfirm
+                  onConfirm={() => answer("declined", true)}
+                  onCancel={() => setConfirmMove(false)}
+                  className="mx-4 my-3"
+                />
+              ) : (
+                <AnswerButtons onAnswer={answer} screen />
+              )}
               {hint}
             </>
           ) : (
             <div className="mt-3 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-5">
               <div className="flex min-h-0 flex-col">
                 <div className="relative min-h-[200px] flex-1">{stack}</div>
-                <AnswerButtons onAnswer={answer} screen={false} />
+                {confirmMove ? (
+                  <MoveConfirm
+                    onConfirm={() => answer("declined", true)}
+                    onCancel={() => setConfirmMove(false)}
+                    className="mt-3"
+                  />
+                ) : (
+                  <AnswerButtons onAnswer={answer} screen={false} />
+                )}
                 {hint}
               </div>
               {strip}
@@ -630,12 +683,15 @@ function DoneView({
   dates,
   answerOf,
   onChange,
+  moved,
   screen,
 }: {
   event: VoteEvent;
   dates: CandidateDate[];
   answerOf: (d: CandidateDate) => EventResponse | undefined;
   onChange: (index: number) => void;
+  /** The new date, after your answer moved the decided one. */
+  moved: string | null;
   screen: boolean;
 }) {
   const t = useT();
@@ -647,6 +703,11 @@ function DoneView({
   return (
     <div className={cn("min-h-0 flex-1 overflow-y-auto", screen ? "px-4 pb-6 pt-5" : "mt-4")}>
       <div className={cn(screen && "mx-auto max-w-md")}>
+        {moved && (
+          <Notice tone="info" className="mb-4">
+            {t.swipe.moved(moved)}
+          </Notice>
+        )}
         {settled ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5">
             <CalendarCheck className="h-8 w-8 text-emerald-600" />
@@ -662,6 +723,7 @@ function DoneView({
             >
               {t.swipe.seeEvent}
             </Link>
+            <p className="mt-3 text-sm text-emerald-900/80">{t.swipe.changeAfter}</p>
           </div>
         ) : dates.length === 0 ? (
           <p className="text-muted-foreground">{t.swipe.noDates}</p>
@@ -698,8 +760,11 @@ function DoneView({
 
         {dates.length > 0 && (
           <section className="mt-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="flex items-baseline justify-between gap-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {t.swipe.yourAnswers}
+              <span className="text-xs font-medium normal-case tracking-normal">
+                {t.swipe.tapToChange}
+              </span>
             </h3>
             <ul className="mt-2 flex flex-col gap-1.5">
               {dates.map((d, i) => {
@@ -709,8 +774,10 @@ function DoneView({
                     <button
                       type="button"
                       onClick={() => onChange(i)}
-                      disabled={!!settled}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl border bg-card px-3 py-2.5 text-left text-sm transition hover:bg-secondary disabled:hover:bg-card"
+                      aria-label={t.swipe.changeAnswerFor(
+                        formatEventDate(event.settings.kind, d, lang),
+                      )}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border bg-card px-3 py-2.5 text-left text-sm transition hover:bg-secondary"
                     >
                       <span className="min-w-0 truncate font-medium text-foreground">
                         {formatEventDate(event.settings.kind, d, lang)}
@@ -726,6 +793,7 @@ function DoneView({
                       >
                         <AnswerIcon answer={a} />
                         {a ? t.swipe.answerWord[a] : t.swipe.notAnswered}
+                        <ChevronRight className="ml-1 h-4 w-4 text-muted-foreground" />
                       </span>
                     </button>
                   </li>
@@ -745,5 +813,32 @@ function DoneView({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Asked before "I can't" on a vote's decided date, which moves it for
+ * everyone: Casy then decides again from everyone's answers.
+ */
+function MoveConfirm({
+  onConfirm,
+  onCancel,
+  className,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  className?: string;
+}) {
+  const t = useT();
+  return (
+    <ConfirmPanel
+      className={className}
+      message={t.swipe.moveConfirm}
+      confirmLabel={t.swipe.moveYes}
+      cancelLabel={t.swipe.moveKeep}
+      busy={false}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
   );
 }

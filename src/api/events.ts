@@ -164,12 +164,11 @@ export async function answerDate(
   response: EventResponse,
 ): Promise<{
   events: SuggestedEvent[];
-  outcome: "answered" | "scheduled" | "undecided" | "no_date";
+  outcome: "answered" | "scheduled" | "moved" | "undecided" | "no_date";
 }> {
-  return await eventsCall<{ outcome: "answered" | "scheduled" | "undecided" | "no_date" }>(
-    { action: "answer", proposalId, dateId, response },
-    currentMessages().api.answerDate,
-  );
+  return await eventsCall<{
+    outcome: "answered" | "scheduled" | "moved" | "undecided" | "no_date";
+  }>({ action: "answer", proposalId, dateId, response }, currentMessages().api.answerDate);
 }
 
 /** The suggester settles a vote on one of its dates. */
