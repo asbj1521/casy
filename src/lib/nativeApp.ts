@@ -15,23 +15,12 @@ export const isNativeApp =
   ).Capacitor?.isNativePlatform?.() === true;
 
 /**
- * Fit the page to the app's screen; called once before the first render.
- *
- * The app draws the page edge to edge, under the clock and the home
- * indicator. `viewport-fit=cover` makes iOS report those areas to CSS as
- * env(safe-area-inset-*), which `html.native-app` in index.css pads the page
- * by. `maximum-scale=1` stops iOS zooming in on a text field smaller than
- * 16px when it's tapped: the app can't be pinched (Capacitor turns zoom off,
- * as native apps don't zoom), so the page stayed zoomed in after signing in.
- * Neither belongs on the website, where pinching must keep working.
+ * Mark the page as the app's; called once before the first render. The app
+ * draws the page edge to edge, and `html.native-app` in index.css pads it by
+ * the safe areas the viewport tag reports (see viewport.ts, which also stops
+ * iOS zooming into small text fields, in the app and on the website alike).
  */
 export function fitToApp() {
   if (!isNativeApp) return;
-  document
-    .querySelector('meta[name="viewport"]')
-    ?.setAttribute(
-      "content",
-      "width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover",
-    );
   document.documentElement.classList.add("native-app");
 }
