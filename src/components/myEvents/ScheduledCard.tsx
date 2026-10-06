@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarCheck } from "lucide-react";
+import { CalendarCheck, Check } from "lucide-react";
 
 import AddToCalendar from "@/components/AddToCalendar";
 import {
@@ -46,13 +46,13 @@ export default function ScheduledCard({ event }: { event: DatedEvent }) {
       <div className="relative order-1 min-w-0 px-4 sm:order-none sm:px-5">
         <GroupName event={event} buttonClassName="text-emerald-800 hover:bg-emerald-200/60" />
       </div>
-      <div className="relative order-4 mt-3 flex min-w-0 items-baseline justify-between gap-3 px-4 sm:order-none sm:mt-0 sm:px-5">
+      <div className="relative order-4 mt-2 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 border-t border-emerald-200 px-4 pt-3 sm:order-none sm:mt-0 sm:flex-nowrap sm:justify-between sm:gap-3 sm:border-0 sm:px-5 sm:pt-0">
         <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-emerald-800">
           <CalendarCheck className="h-4 w-4 shrink-0" />
           <span className="truncate">{eventTitle(event.title, t)}</span>
         </p>
         {/* Who suggested it: the one person who can cancel it. */}
-        <p className="shrink-0 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground sm:shrink-0">
           {event.createdBy.isYou
             ? t.events.youSuggested
             : t.events.suggestedBy(event.createdBy.name)}
@@ -65,7 +65,10 @@ export default function ScheduledCard({ event }: { event: DatedEvent }) {
         {pending.length > 0 ? (
           <People invitees={pending} />
         ) : (
-          <p className="text-xl font-bold text-foreground">{t.events.acceptedByAll}</p>
+          <p className="flex items-center gap-1.5 text-base font-semibold text-emerald-800 sm:text-xl sm:font-bold sm:text-foreground">
+            <Check className="h-4 w-4 shrink-0 sm:hidden" />
+            {t.events.acceptedByAll}
+          </p>
         )}
         <EdgeWarnings event={event} className="mt-1.5" />
       </div>
@@ -73,12 +76,14 @@ export default function ScheduledCard({ event }: { event: DatedEvent }) {
         {headline.time}
         <YourTime kind={event.settings.kind} date={event.currentDate} />
       </p>
-      <div className="relative order-6 flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-2 px-4 sm:order-none sm:px-5">
-        <div className="min-w-0 flex-1">
-          <AddToCalendar event={event} />
+      {/* A phone: the calendar button across the card, its note under it, and
+          the smaller ways to change things in a row of their own. */}
+      <div className="relative order-6 mt-1 flex min-w-0 flex-col gap-3 px-4 sm:order-none sm:mt-0 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-4 sm:gap-y-2 sm:px-5">
+        <div className="min-w-0 sm:flex-1">
+          <AddToCalendar event={event} wide />
         </div>
         {!exiting && (
-          <span className="flex shrink-0 items-baseline gap-4">
+          <span className="flex items-baseline justify-between gap-4 sm:shrink-0 sm:justify-start">
             {/* A vote's answers can be changed after it is decided (#74). */}
             {event.mode === "vote" && (
               <Link

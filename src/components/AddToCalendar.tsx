@@ -10,6 +10,7 @@ import {
   type SuggestedEvent,
 } from "@/api/events";
 import Notice from "@/components/ui/Notice";
+import { cn } from "@/lib/utils";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
@@ -37,7 +38,14 @@ function saveFile(filename: string, text: string, type: string) {
  * If the last sync found the entry deleted from the calendar by hand, the
  * card says so and the button adds it again.
  */
-export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
+export default function AddToCalendar({
+  event,
+  wide = false,
+}: {
+  event: SuggestedEvent;
+  /** The phone's card: the button across the card's width (up to the two-column layout). */
+  wide?: boolean;
+}) {
   const t = useT();
   const words = t.addToCalendar;
   const user = useSignedInUser();
@@ -177,7 +185,10 @@ export default function AddToCalendar({ event }: { event: SuggestedEvent }) {
             } else download.mutate();
           }}
           disabled={add.isPending || download.isPending}
-          className="flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          className={cn(
+            "flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60",
+            wide && "w-full justify-center py-3 text-base sm:w-auto sm:py-2 sm:text-sm",
+          )}
         >
           {add.isPending || download.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
