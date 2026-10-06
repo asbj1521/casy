@@ -47,19 +47,10 @@ export function useDateSearch(
 ): DateSearch {
   const { from, day: pickedDay } = step;
 
-  const found = useMemo(() => {
-    if (!participants) return null;
-    // A picked day is searched on its own first. Searching on from it would
-    // pass over a day that needs someone to skip something whenever a clean
-    // date follows within a week (findMeetingSlot), so the click would land
-    // on that later date instead.
-    if (pickedDay && from && search.kind === "single") {
-      const dayEnd = new Date(addDays(Date.parse(from), 1, TZ)).toISOString();
-      const onDay = findEventSlot(participants, search, searchStart(search, from), dayEnd, TZ);
-      if (onDay.slot) return onDay;
-    }
-    return findEventSlot(participants, search, searchStart(search, from), SEARCH_WINDOW.end, TZ);
-  }, [participants, search, from, pickedDay]);
+  const found = useMemo(
+    () => (participants ? findAnswer(participants, search, { from, day: pickedDay }) : null),
+    [participants, search, from, pickedDay],
+  );
 
   // "6 days works for everyone if you leave after work Friday" and the like.
   const suggestions = useMemo(() => {
@@ -87,6 +78,30 @@ export function useDateSearch(
   }, [firstDay, spanDays]);
 
   return { found, suggestions, later, firstDay, days };
+}
+
+/**
+ * The date the page shows for `step`: the first that works for `participants`,
+ * and what it costs whom. Also run on its own, with fresh busy times, to check
+ * a date still holds before it is sent (FindDate's suggest), so the check and
+ * the page can never disagree about what "the answer" is.
+ */
+export function findAnswer(
+  participants: Participant[],
+  search: EventSettings,
+  step: Pick<Step, "from" | "day">,
+): MultiDayResult {
+  const { from, day: pickedDay } = step;
+  // A picked day is searched on its own first. Searching on from it would
+  // pass over a day that needs someone to skip something whenever a clean
+  // date follows within a week (findMeetingSlot), so the click would land
+  // on that later date instead.
+  if (pickedDay && from && search.kind === "single") {
+    const dayEnd = new Date(addDays(Date.parse(from), 1, TZ)).toISOString();
+    const onDay = findEventSlot(participants, search, searchStart(search, from), dayEnd, TZ);
+    if (onDay.slot) return onDay;
+  }
+  return findEventSlot(participants, search, searchStart(search, from), SEARCH_WINDOW.end, TZ);
 }
 
 /**

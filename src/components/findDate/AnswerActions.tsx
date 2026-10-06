@@ -15,6 +15,7 @@ export default function AnswerActions({
   approving,
   onAccept,
   canSuggest,
+  checking,
   suggesting,
   suggested,
   onSuggest,
@@ -27,6 +28,8 @@ export default function AnswerActions({
   approving: boolean;
   onAccept: () => void;
   canSuggest: boolean;
+  /** Making sure everyone's calendars are fresh before the date goes (#85). */
+  checking: boolean;
   suggesting: boolean;
   /** This exact date has just gone to the group. */
   suggested: boolean;
@@ -66,10 +69,10 @@ export default function AnswerActions({
         <button
           type="button"
           onClick={onSuggest}
-          disabled={!canSuggest || suggesting || suggested}
+          disabled={!canSuggest || checking || suggesting || suggested}
           className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-orange-700 px-4 text-[15px] font-bold text-white transition hover:bg-orange-800 disabled:opacity-50 sm:flex-none sm:px-5"
         >
-          {suggesting ? (
+          {checking || suggesting ? (
             <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
           ) : suggested ? (
             <Check className="h-5 w-5 shrink-0" />
@@ -79,6 +82,11 @@ export default function AnswerActions({
           <span className="truncate">
             {suggested ? (
               t.scheduler.suggested
+            ) : checking ? (
+              <>
+                <span className="sm:hidden">{t.scheduler.checkingShort}</span>
+                <span className="hidden sm:inline">{t.scheduler.checking}</span>
+              </>
             ) : (
               <>
                 <span className="sm:hidden">{t.scheduler.suggestShort}</span>

@@ -125,8 +125,9 @@ const da: LegalCopy = {
         <>
           <p>
             Casy foreslår datoer ud fra de kalendere, folk har forbundet, og de svar, de har givet.
-            Kalendere kan være forældede (Casy opdaterer dem cirka en gang i timen), mangle noget
-            eller være forkerte, og meget af det, folk laver, står ikke i nogen kalender.
+            Kalendere kan være forældede (Casy opdaterer dem cirka en gang i timen, og når nogen
+            planlægger noget), mangle noget eller være forkerte, og meget af det, folk laver, står
+            ikke i nogen kalender.
           </p>
           <p>
             En foreslået dato er derfor et forslag og ikke et løfte om, at alle kan. Tjek den selv,
@@ -378,8 +379,9 @@ const en: LegalCopy = {
         <>
           <p>
             Casy suggests dates from the calendars people connected and the answers they gave.
-            Calendars can be out of date (Casy refreshes them about once an hour), incomplete or
-            wrong, and much of what people do is not in any calendar.
+            Calendars can be out of date (Casy refreshes them about once an hour, and when someone
+            plans something), incomplete or wrong, and much of what people do is not in any
+            calendar.
           </p>
           <p>
             So a suggested date is a suggestion, not a promise that everyone can make it. Check it

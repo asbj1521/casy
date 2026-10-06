@@ -158,6 +158,11 @@ export const da = {
     legendOff: "Ikke valgt",
     alsoPossible: "Også muligt",
     suggest: "Foreslå denne dato",
+    checking: "Tjekker kalendere…",
+    checkingShort: "Tjekker…",
+    refreshedDate: "Opdateret med de nyeste kalendere.",
+    changedBeforeSending:
+      "Nogens kalender er ændret, så datoen er opdateret. Se den igen, og foreslå den, hvis den passer.",
     suggested: "Foreslået",
     sent: (link: ReactNode) => <>Sendt til gruppen. {link}.</>,
     sentLink: "Følg svarene under Mine aftaler",

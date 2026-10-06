@@ -146,6 +146,11 @@ export const en: Messages = {
     legendOff: "Not searched",
     alsoPossible: "Also possible",
     suggest: "Suggest this date",
+    checking: "Checking calendars…",
+    checkingShort: "Checking…",
+    refreshedDate: "Updated with the latest calendars.",
+    changedBeforeSending:
+      "Someone's calendar changed, so the date was updated. Have a look, and suggest it if it works.",
     suggested: "Suggested",
     sent: (link: ReactNode) => <>Sent to the group. {link}.</>,
     sentLink: "Follow the answers in My events",

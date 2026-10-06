@@ -1,9 +1,16 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 
 import { eventsQueryKey, suggestEvent } from "@/api/events";
-import { createGroup, groupsQueryKey } from "@/api/groups";
+import {
+  createGroup,
+  groupBusyQuery,
+  groupsQueryKey,
+  participantsFromGroup,
+  type Group,
+  type GroupBusy,
+} from "@/api/groups";
 import DayChart from "@/components/DayChart";
 import AnswerActions from "@/components/findDate/AnswerActions";
 import AnswerCard from "@/components/findDate/AnswerCard";
@@ -16,7 +23,8 @@ import { SettingsBar, SettingsSentence } from "@/components/SchedulerSettings";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { useAuth } from "@/context/auth";
-import { TODAY, useDateSearch } from "@/hooks/useDateSearch";
+import { findAnswer, TODAY, useDateSearch } from "@/hooks/useDateSearch";
+import { useGroupRefresh, type RefreshOutcome } from "@/hooks/useGroupRefresh";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
@@ -29,11 +37,12 @@ import {
   restart,
   type AnswerSteps,
 } from "@/lib/answerSteps";
-import type { VacationSuggestion } from "@/lib/availability";
+import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { monthAvailability } from "@/lib/monthAvailability";
 import {
+  answerKey,
   fallbackTitleId,
   MAX_TRIP_DAYS,
   randomDefaultSettings,
@@ -158,6 +167,64 @@ export default function FindDate() {
   const slot = found?.slot ?? null;
   const review = reviewAnswer(found, search, youProfileId, steps.accepted);
 
+  // Fresh busy times while planning (#85): calendars sync hourly, so the
+  // group's are synced again in the background as soon as someone starts
+  // planning for it, and once more (or the same sync waited for) before a
+  // date is sent. See useGroupRefresh.
+  const freshen = useGroupRefresh(userId ?? "");
+  // The search and step on screen, for checks that finish after a render.
+  const shownSearch = useRef({ search, step: currentStep(steps) });
+  useEffect(() => {
+    shownSearch.current = { search, step: currentStep(steps) };
+  });
+  /**
+   * The answer the page would show from `data`, a copy of the group's busy
+   * times: the same search the page runs (findAnswer), from the same group
+   * members, so it can be compared with the one on screen.
+   */
+  function answerFrom(groupId: string, data: GroupBusy | undefined): MultiDayResult | null {
+    const group = queryClient
+      .getQueryData<Group[]>(groupsQueryKey(userId ?? ""))
+      ?.find((g) => g.id === groupId);
+    if (!group || !data) return null;
+    const { participants: people } = participantsFromGroup(group, data, t.common.withYou);
+    if (people.length === 0) return null;
+    return findAnswer(people, shownSearch.current.search, shownSearch.current.step);
+  }
+  // The date moved because calendars changed, said in the hint line for as
+  // long as that new date is the one on screen.
+  const [moved, setMoved] = useState<{
+    groupId: string;
+    start: string | null;
+    when: "background" | "suggest";
+  } | null>(null);
+
+  // Planning starts with the first change on the page: settings, a step, a
+  // picked day or month, another group. Not merely opening it (and not the
+  // page as it was left earlier in the visit), or every glance at Casy would
+  // sync a whole group's calendars.
+  const [atOpen] = useState(() => ({ sched, steps, selectedGroupId, monthPick }));
+  const planning =
+    sched !== atOpen.sched ||
+    steps !== atOpen.steps ||
+    selectedGroupId !== atOpen.selectedGroupId ||
+    monthPick !== atOpen.monthPick;
+  const planningGroupId =
+    planning && userId && activeGroup && !activeGroup.isExample ? activeGroup.id : null;
+  useEffect(() => {
+    if (!planningGroupId) return;
+    void freshen(planningGroupId).then((outcome: RefreshOutcome) => {
+      if (!outcome.after || !outcome.before) return;
+      const was = answerFrom(planningGroupId, outcome.before);
+      const now = answerFrom(planningGroupId, outcome.after);
+      if (answerKey(was) !== answerKey(now)) {
+        setMoved({ groupId: planningGroupId, start: now?.slot?.start ?? null, when: "background" });
+      }
+    });
+    // answerFrom reads the latest search through a ref; it isn't a trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planningGroupId, freshen]);
+
   // The chart shows the answer's month unless a month was paged to by hand
   // for this same answer.
   const viewMonth =
@@ -269,20 +336,43 @@ export default function FindDate() {
     mutationFn: suggestEvent,
     onSuccess: (data) => queryClient.setQueryData(eventsQueryKey(userId ?? ""), data.events),
   });
+  // Waiting for the calendars to be fresh before sending.
+  const [checking, setChecking] = useState(false);
   // Suggesting needs a signed-in person, a real group, a date, and your
   // sign-off on any time off it would cost you.
   const canSuggest =
     !!user && !!activeGroup && !activeGroup.isExample && !!slot && review.tone !== "approve";
-  function sendSuggestion() {
-    if (!activeGroup || !slot) return;
-    suggest.mutate({
-      groupId: activeGroup.id,
+  /**
+   * Send the date on screen, once the group's calendars are fresh: wait for
+   * the refresh (usually done already, from the background), then search the
+   * fresh busy times the way the page does. If the answer is still this date,
+   * costing the same people the same, it goes; if not, it doesn't, and the
+   * page shows the new answer to look at first. A refresh that fails sends
+   * with what there is, as before.
+   */
+  async function sendSuggestion() {
+    if (!activeGroup || !slot || !userId) return;
+    const groupId = activeGroup.id;
+    const shown = answerKey(found);
+    const toSend = {
+      groupId,
       // A name left empty is stored as the matching type's name, which each
       // reader sees in their own language (eventTitle.ts).
       title: name.trim() || storedEventTitle(fallbackTitleId(search)),
       settings: search,
       date: { start: slot.start, end: slot.end },
-    });
+    };
+    setMoved(null);
+    setChecking(true);
+    const outcome = await freshen(groupId);
+    setChecking(false);
+    const busy = groupBusyQuery(userId, groupId, SEARCH_WINDOW.start, SEARCH_WINDOW.end);
+    const now = answerFrom(groupId, outcome.after ?? queryClient.getQueryData(busy.queryKey));
+    if (now && answerKey(now) !== shown) {
+      setMoved({ groupId, start: now.slot?.start ?? null, when: "suggest" });
+      return;
+    }
+    suggest.mutate(toSend);
   }
   // How sending went belongs to the exact date it was for: switch group, step
   // to another date or change a setting, and it stops showing.
@@ -318,17 +408,24 @@ export default function FindDate() {
       approving={review.tone === "approve"}
       onAccept={() => slot && setSteps((s) => accept(s, slot.start))}
       canSuggest={canSuggest}
+      checking={checking}
       suggesting={suggest.isPending}
       suggested={suggested}
-      onSuggest={sendSuggestion}
+      onSuggest={() => void sendSuggestion()}
     />
   );
+  const showMoved =
+    !!moved && moved.groupId === activeGroup?.id && moved.start === (slot?.start ?? null);
   const hint = suggested ? (
     t.scheduler.sent(
       <Link to="/events" className="font-medium text-foreground underline underline-offset-2">
         {t.scheduler.sentLink}
       </Link>,
     )
+  ) : showMoved ? (
+    <span className="font-medium text-foreground">
+      {moved.when === "suggest" ? t.scheduler.changedBeforeSending : t.scheduler.refreshedDate}
+    </span>
   ) : suggestIsForThis && suggest.isError ? (
     <span className="text-red-700">{suggest.error.message}</span>
   ) : !user ? (

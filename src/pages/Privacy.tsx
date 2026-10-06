@@ -104,7 +104,8 @@ const da: LegalCopy = {
         <>
           <p>
             Optagede tidsrum bruges kun til at vise, hvornår du og dine grupper er ledige, og til at
-            foreslå tidspunkter. Casy opdaterer dem cirka en gang i timen, så de passer.
+            foreslå tidspunkter. Casy opdaterer dem cirka en gang i timen, og igen, når nogen i en
+            af dine grupper planlægger en aftale med gruppen, så de passer.
           </p>
           <p>
             Har du valgt en primær kalender, bruger Casy din adgang til den til at lægge aftaler, I
@@ -319,7 +320,8 @@ const en: LegalCopy = {
         <>
           <p>
             Busy times are used only to show when you and your groups are free and to suggest times.
-            Casy refreshes them about once an hour so they stay current.
+            Casy refreshes them about once an hour, and again when someone in one of your groups
+            plans an event with the group, so they stay current.
           </p>
           <p>
             If you chose a primary calendar, Casy uses your access to it to add the events you agree

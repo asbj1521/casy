@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { formatLongDate, formatLongSpan, formatLongSpanLines } from "@/lib/format";
 import {
+  answerKey,
   DEFAULT_PRESETS,
   daysUntil,
   describeDays,
@@ -222,5 +223,36 @@ describe("reviewAnswer", () => {
     });
     const onlyYou = { slot: SLOT, conflicts: [conflict("me")] };
     expect(reviewAnswer(onlyYou, trip, "me", SLOT.start).tone).toBe("clean");
+  });
+});
+
+describe("answerKey", () => {
+  const slot = { start: "2026-10-09T16:00:00.000Z", end: "2026-10-09T18:00:00.000Z" };
+  const skip = {
+    profileId: "p1",
+    name: "Maja",
+    events: [{ start: "2026-10-09T15:00:00.000Z", end: "2026-10-09T17:00:00.000Z" }],
+  };
+
+  it("is the same for the same date on the same terms", () => {
+    expect(answerKey({ slot: { ...slot }, conflicts: [] })).toBe(
+      answerKey({ slot: { ...slot }, conflicts: [] }),
+    );
+  });
+
+  it("changes when the date moves", () => {
+    const later = { ...slot, start: "2026-10-10T16:00:00.000Z", end: "2026-10-10T18:00:00.000Z" };
+    expect(answerKey({ slot, conflicts: [] })).not.toBe(answerKey({ slot: later, conflicts: [] }));
+  });
+
+  it("changes when the same date now costs someone something", () => {
+    expect(answerKey({ slot, conflicts: [] })).not.toBe(
+      answerKey({ slot, conflicts: [skip as never] }),
+    );
+  });
+
+  it("calls no date the same whether nothing was found or nothing searched", () => {
+    expect(answerKey(null)).toBe("none");
+    expect(answerKey({ slot: null, conflicts: [] })).toBe("none");
   });
 });

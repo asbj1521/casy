@@ -114,6 +114,19 @@ export function groupBusyQuery(userId: string, groupId: string | null, from: str
   });
 }
 
+/**
+ * Sync the members' calendars that haven't been for a while (the groups
+ * function's `refresh`), so the next search uses fresh busy times. Answers
+ * within about 10 seconds: `complete` is false if some syncs were still
+ * running then (they finish on the server anyway), `synced` whether any
+ * account was due at all.
+ */
+export async function refreshGroupCalendars(
+  groupId: string,
+): Promise<{ complete: boolean; synced: boolean }> {
+  return await callFunction("groups", { body: { action: "refresh", groupId } });
+}
+
 /** A new group, with invitations to whoever is named (nobody, if no one is). */
 export async function createGroup({
   name,

@@ -72,7 +72,7 @@ const da: Copy = {
     },
     {
       title: "Forbind dine kalendere",
-      body: "Forbind Google, Outlook eller Apple, eller indsæt et kalenderlink, for eksempel et skoleskema. Casy læser kun, hvornår du er optaget, aldrig hvad dine aftaler er, og opdaterer hver time.",
+      body: "Forbind Google, Outlook eller Apple, eller indsæt et kalenderlink, for eksempel et skoleskema. Casy læser kun, hvornår du er optaget, aldrig hvad dine aftaler er, og opdaterer hver time og igen, når din gruppe planlægger noget.",
     },
     {
       title: "Vælg, hvad der tæller",
@@ -134,7 +134,7 @@ const en: Copy = {
     },
     {
       title: "Connect your calendars",
-      body: "Link Google, Outlook or Apple, or paste any calendar link, such as a school timetable. Casy only reads when you are busy, never what your events are, and refreshes every hour.",
+      body: "Link Google, Outlook or Apple, or paste any calendar link, such as a school timetable. Casy only reads when you are busy, never what your events are, and refreshes every hour, and again when your group plans something.",
     },
     {
       title: "Choose what counts",

@@ -24,9 +24,14 @@
  * decline-invitation) bring people in from inside Casy: someone you share a
  * group with, or the exact email of an account. Joining always takes the
  * invited person's own yes, and an email never reveals whether it matched.
+ *
+ * `refresh` syncs the members' calendars that are more than a few minutes
+ * old, while someone plans for the group, so the search doesn't offer a time
+ * filled since the hourly sync (_shared/groupRefresh.ts).
  */
 import { type Caller, requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
+import { claimStaleConnections, refreshTargets } from "../_shared/groupRefresh.ts";
 import {
   cleanDisplayName,
   cleanGroupName,
@@ -45,6 +50,7 @@ import {
 import { afterResponse, HttpError, readRange, requireString, serve } from "../_shared/http.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
 import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
+import { syncConnection } from "../_shared/sync.ts";
 
 const PAGE_SIZE = 1000; // PostgREST's default row cap per request
 const MAX_PAGES = 20; // a whole group's year, bounded
@@ -67,6 +73,23 @@ async function rememberName(db: Db, caller: Caller): Promise<void> {
     p_display_name: displayNameFor(caller),
   });
   if (error) throw error;
+}
+
+/**
+ * Everyone in a group, for a caller who must be in it. Only a member may read
+ * or refresh a group's availability, and the membership check is what decides
+ * it: holding the group's id proves nothing. One query answers both "who is in
+ * it" and "is the caller in it".
+ */
+async function membersAsMember(db: Db, groupId: string, profileId: string): Promise<string[]> {
+  const { data: members, error } = await db
+    .from("group_members")
+    .select("profile_id")
+    .eq("group_id", groupId);
+  if (error) throw error;
+  const memberIds = members.map((m) => m.profile_id as string);
+  if (!memberIds.includes(profileId)) throw new HttpError(403, "You are not in that group.");
+  return memberIds;
 }
 
 /**
@@ -666,17 +689,24 @@ serve("groups", async (req, body) => {
     case "busy": {
       const groupId = requireString(body, "groupId");
       const { from, to } = readRange(body.from, body.to);
-      // Only a member may read a group's availability, and the membership
-      // check is what decides it: holding the group's id proves nothing.
-      // One query answers both "who is in it" and "is the caller in it".
-      const { data: members, error } = await db
-        .from("group_members")
-        .select("profile_id")
-        .eq("group_id", groupId);
-      if (error) throw error;
-      const memberIds = members.map((m) => m.profile_id);
-      if (!memberIds.includes(profileId)) throw new HttpError(403, "You are not in that group.");
+      const memberIds = await membersAsMember(db, groupId, profileId);
       return await groupBusy(db, memberIds, from, to);
+    }
+
+    // Someone is planning for this group: sync the members' calendars that
+    // haven't been for a while, so the search uses busy times minutes old
+    // rather than up to an hour (_shared/groupRefresh.ts). Answers by a
+    // deadline; slower syncs finish after it. Says nothing about whose.
+    case "refresh": {
+      const groupId = requireString(body, "groupId");
+      const memberIds = await membersAsMember(db, groupId, profileId);
+      const key = encryptionKeyFromEnv();
+      const due = await claimStaleConnections(db, memberIds);
+      const { complete, synced, rest } = await refreshTargets(due, (target) =>
+        syncConnection(db, target, key),
+      );
+      if (!complete) afterResponse("group refresh", () => rest);
+      return { complete, synced };
     }
 
     default:

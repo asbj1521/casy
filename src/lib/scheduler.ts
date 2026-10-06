@@ -211,3 +211,14 @@ export function reviewAnswer(
           : "clean";
   return { tone, yours, others, accepted };
 }
+
+/**
+ * An answer as one comparable string: its date and what it costs whom. Two
+ * answers with the same key show the same thing, so a check after fresh busy
+ * times can tell "still this date, on the same terms" from "something moved"
+ * (FindDate's suggest, #85).
+ */
+export function answerKey(answer: MultiDayResult | null): string {
+  if (!answer?.slot) return "none";
+  return JSON.stringify([answer.slot.start, answer.slot.end, answer.conflicts]);
+}
