@@ -1,0 +1,89 @@
+# A nightly copy of Casy's database, kept off Supabase (#88).
+#
+# Dumps roles, schema and data (the login accounts included) the way
+# Supabase documents it, encrypts the lot with `age` to the operator's
+# public key, and keeps it as this run's artifact for 30 days. The repo is
+# public, so anyone signed in to GitHub can download an artifact: only the
+# encryption keeps it private, and only the operator's private key (never in
+# GitHub) can open it. Restoring: docs/backups.md.
+#
+# Calendar credentials inside are encrypted again with CALDAV_ENCRYPTION_KEY,
+# which is not in this backup: keep that key somewhere else.
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   SUPABASE_DB_URL       the Session pooler connection string, with the
+#                         database password (GitHub's runners have no IPv6,
+#                         which the direct connection needs)
+#   BACKUP_AGE_RECIPIENT  the age public key, "age1..."
+# A failed run is emailed to the repo owner by GitHub.
+
+name: Backup
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC, the quietest hour
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check the secrets are set
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_AGE_RECIPIENT" ]; then
+            echo "::error::Set SUPABASE_DB_URL and BACKUP_AGE_RECIPIENT in the repo's Actions secrets."
+            exit 1
+          fi
+          case "$BACKUP_AGE_RECIPIENT" in
+            age1*) ;;
+            *) echo "::error::BACKUP_AGE_RECIPIENT must be an age public key (age1...)."; exit 1 ;;
+          esac
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+
+      - name: Dump the database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/roles.sql --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/data.sql --use-copy --data-only \
+            -x "storage.buckets_vectors" -x "storage.vector_indexes"
+          # A dump that came out empty is a failure, not a backup.
+          for f in roles schema data; do
+            test -s "backup/$f.sql" || { echo "::error::backup/$f.sql is empty"; exit 1; }
+          done
+          grep -q "friend_groups" backup/data.sql || { echo "::error::data.sql has no friend_groups"; exit 1; }
+          ls -l backup
+
+      - name: Encrypt
+        env:
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          name="casy-backup-$(date -u +%Y-%m-%d)"
+          tar -czf - -C backup . | age -r "$BACKUP_AGE_RECIPIENT" -o "$name.tar.gz.age"
+          # Nothing unencrypted is left for the artifact step to pick up.
+          rm -rf backup
+          echo "BACKUP_NAME=$name" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BACKUP_NAME }}
+          path: ${{ env.BACKUP_NAME }}.tar.gz.age
+          retention-days: 30
+          if-no-files-found: error

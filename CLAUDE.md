@@ -134,6 +134,10 @@ supabase/
 - Events: `event_proposals` (group, suggester, title, the search `settings` as jsonb, status pending / scheduled / no_date / cancelled; max 20 pending per group) -> `event_proposal_dates` (every date offered; the current one is the newest not declined) and `event_invitees` (everyone in the group when it was suggested). `event_responses` are per date, so a new date starts with no answers. `suggest_event()` and `respond_to_event()` do the writes in one transaction; `respond_to_event()` locks the event and answers `stale` if someone else changed the date first.
 - `leave_friend_group()` removes a member and deletes the group if they were the last one; it also drops them from the group's pending events (which may then become scheduled). Deleting an account cascades everything it owns; the admin delete also removes groups it leaves empty.
 
+### Backups and health (#88)
+- `.github/workflows/backup.yml` dumps the database nightly (roles, schema, data with the auth schema), encrypts it with `age` to the operator's public key and keeps it 30 days as an artifact. The repo is public, so only the encryption keeps it private; secrets `SUPABASE_DB_URL` (Session pooler) and `BACKUP_AGE_RECIPIENT`. Restoring, and what a backup doesn't hold (Vault, function secrets, `CALDAV_ENCRYPTION_KEY`): `docs/backups.md`.
+- The public `health` function (GET, no login, `_shared/health.ts`) answers 200 `{ ok: true }` or 503 with `stale` (nothing synced for 3 hours) or `failing` (over 30% of at least 4 accounts failing, not counting those needing a reconnect). An uptime monitor watches it and casy.app; admin mode shows the same status. It judges the result, not the job, so a stopped scheduler shows up too.
+
 ### Secrets
 - Every credential in `calendar_secrets` is encrypted with `_shared/secretBox.ts` (AES-256-GCM, format `v1:<nonce>:<ciphertext>`); a check constraint rejects anything else. The key is the `CALDAV_ENCRYPTION_KEY` function secret (the name is historical; it protects all secrets).
 - ICS links are looked up by `ics_url_hash` (HMAC with an HKDF-derived subkey), since encrypted values can't be compared.

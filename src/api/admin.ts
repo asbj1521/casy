@@ -53,6 +53,8 @@ export interface AdminConnection {
 }
 
 export interface AdminOverview {
+  /** Whether calendar syncing works, as the health function tells the uptime monitor. */
+  health: { ok: true } | { ok: false; reason: "stale" | "failing" };
   stats: AdminStats;
   groups: AdminGroup[];
   users: AdminUser[];
