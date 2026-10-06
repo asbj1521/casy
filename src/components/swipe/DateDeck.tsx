@@ -174,6 +174,32 @@ export default function DateDeck({
   const slotLabel = eventTitle(event.title, t);
   const screen = variant === "screen";
 
+  // One segment per date: answered, the one on screen, still to come.
+  const progress = (
+    <div className={cn("flex gap-1", screen ? "px-4" : "min-w-0 flex-1")}>
+      {dates.map((d, i) => (
+        <button
+          key={d.id}
+          type="button"
+          onClick={() => back(i)}
+          aria-label={t.swipe.dateOf(i + 1, dates.length)}
+          className={cn(
+            "h-1.5 flex-1 rounded-full transition-colors",
+            i === index
+              ? "bg-foreground"
+              : answerOf(d) === "accepted"
+                ? "bg-emerald-500"
+                : answerOf(d) === "maybe"
+                  ? "bg-amber-400"
+                  : answerOf(d) === "declined"
+                    ? "bg-rose-400"
+                    : "bg-secondary",
+          )}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className={cn("flex flex-col", screen ? "h-full" : "")}>
       {/* Back to My events (a phone), the event, how far along, and a step back. */}
@@ -187,17 +213,18 @@ export default function DateDeck({
             <ChevronLeft className="h-6 w-6" />
           </Link>
         )}
-        {/* A computer's pane already names the event above the cards. */}
-        <div className="min-w-0 flex-1">
-          {screen && (
-            <>
-              <p className="truncate text-[15px] font-semibold text-foreground">
-                {eventTitle(event.title, t)}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">{event.group.name}</p>
-            </>
-          )}
-        </div>
+        {/* A computer's pane already names the event above the cards, so
+            how far along it is takes the title's place there. */}
+        {screen ? (
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-semibold text-foreground">
+              {eventTitle(event.title, t)}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{event.group.name}</p>
+          </div>
+        ) : (
+          progress
+        )}
         <button
           type="button"
           onClick={() => back()}
@@ -208,96 +235,86 @@ export default function DateDeck({
           <RotateCcw className="h-5 w-5" />
         </button>
       </header>
-
-      {/* One segment per date: answered, the one on screen, still to come. */}
-      <div className={cn("flex gap-1", screen && "px-4")}>
-        {dates.map((d, i) => (
-          <button
-            key={d.id}
-            type="button"
-            onClick={() => back(i)}
-            aria-label={t.swipe.dateOf(i + 1, dates.length)}
-            className={cn(
-              "h-1.5 flex-1 rounded-full transition-colors",
-              i === index
-                ? "bg-foreground"
-                : answerOf(d) === "accepted"
-                  ? "bg-emerald-500"
-                  : answerOf(d) === "maybe"
-                    ? "bg-amber-400"
-                    : answerOf(d) === "declined"
-                      ? "bg-rose-400"
-                      : "bg-secondary",
-            )}
-          />
-        ))}
-      </div>
+      {screen && progress}
 
       {done ? (
         <DoneView event={event} dates={dates} answerOf={answerOf} onChange={back} screen={screen} />
       ) : (
-        current && (
-          <>
-            <div
-              className={cn("relative mt-3", screen ? "min-h-[230px] flex-1 px-4" : "h-[300px]")}
+        current &&
+        (() => {
+          // The card, the next date waiting under it, your calendar, and the answers.
+          const stack = (
+            <div className={cn("relative h-full", screen && "mx-auto max-w-md")}>
+              {/* The next date waits underneath, so the stack reads as a stack. */}
+              {dates[index + 1] && (
+                <div aria-hidden className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
+                  <CardFace
+                    event={event}
+                    date={dates[index + 1]}
+                    position={index + 2}
+                    total={dates.length}
+                    yours={answerOf(dates[index + 1])}
+                    calendar={calendar}
+                  />
+                </div>
+              )}
+              <AnimatePresence custom={exit} initial={false}>
+                <SwipeCard key={current.id} exitTo={exit} onAnswer={answer} draggable={screen}>
+                  <CardFace
+                    event={event}
+                    date={current}
+                    position={index + 1}
+                    total={dates.length}
+                    yours={answerOf(current)}
+                    calendar={calendar}
+                  />
+                </SwipeCard>
+              </AnimatePresence>
+            </div>
+          );
+          const strip = (
+            <CalendarStrip
+              key={current.id}
+              date={current}
+              slotLabel={slotLabel}
+              calendar={calendar}
+              onOpen={setCalendarFrom}
+              fit={!screen}
+            />
+          );
+          const hint = index === 0 && !Object.keys(given).length && (
+            <p
+              className={cn(
+                "text-center text-xs text-muted-foreground",
+                screen ? "px-6 pb-2" : "mt-1",
+              )}
             >
-              <div className={cn("relative h-full", screen && "mx-auto max-w-md")}>
-                {/* The next date waits underneath, so the stack reads as a stack. */}
-                {dates[index + 1] && (
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60"
-                  >
-                    <CardFace
-                      event={event}
-                      date={dates[index + 1]}
-                      position={index + 2}
-                      total={dates.length}
-                      yours={answerOf(dates[index + 1])}
-                      calendar={calendar}
-                    />
-                  </div>
-                )}
-                <AnimatePresence custom={exit} initial={false}>
-                  <SwipeCard key={current.id} exitTo={exit} onAnswer={answer}>
-                    <CardFace
-                      event={event}
-                      date={current}
-                      position={index + 1}
-                      total={dates.length}
-                      yours={answerOf(current)}
-                      calendar={calendar}
-                    />
-                  </SwipeCard>
-                </AnimatePresence>
+              {screen ? t.swipe.hint : t.swipe.keysHint}
+            </p>
+          );
+          // A phone: one column, the card taking what height is left. A
+          // computer: the card and its answers beside your calendar, all in
+          // one screen's height; no swiping, buttons and keys instead.
+          return screen ? (
+            <>
+              <div className="relative mt-3 min-h-[230px] flex-1 px-4">{stack}</div>
+              <div className="mt-3 px-4">
+                <div className="mx-auto max-w-md">{strip}</div>
               </div>
-            </div>
-
-            <div className={cn("mt-3", screen && "px-4")}>
-              <div className={cn(screen && "mx-auto max-w-md")}>
-                <CalendarStrip
-                  key={current.id}
-                  date={current}
-                  slotLabel={slotLabel}
-                  calendar={calendar}
-                  onOpen={setCalendarFrom}
-                />
+              <AnswerButtons onAnswer={answer} screen />
+              {hint}
+            </>
+          ) : (
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-start gap-5">
+              <div>
+                <div className="relative h-[330px]">{stack}</div>
+                <AnswerButtons onAnswer={answer} screen={false} />
+                {hint}
               </div>
+              {strip}
             </div>
-
-            <AnswerButtons onAnswer={answer} screen={screen} />
-            {index === 0 && !Object.keys(given).length && (
-              <p
-                className={cn(
-                  "text-center text-xs text-muted-foreground",
-                  screen ? "px-6 pb-2" : "mt-1",
-                )}
-              >
-                {screen ? t.swipe.hint : t.swipe.keysHint}
-              </p>
-            )}
-          </>
-        )
+          );
+        })()
       )}
 
       {error && (
@@ -314,6 +331,7 @@ export default function DateDeck({
           marked={marked}
           calendar={calendar}
           from={calendarFrom}
+          contained={!screen}
           onClose={() => setCalendarFrom(null)}
         />
       )}
@@ -332,10 +350,13 @@ export default function DateDeck({
 function SwipeCard({
   exitTo,
   onAnswer,
+  draggable,
   children,
 }: {
   exitTo: Exit;
   onAnswer: (response: EventResponse) => void;
+  /** A phone's card follows the thumb; a computer's is answered by buttons and keys. */
+  draggable: boolean;
   children: ReactNode;
 }) {
   const t = useT();
@@ -365,7 +386,8 @@ function SwipeCard({
   useMotionValueEvent(x, "change", track);
   useMotionValueEvent(y, "change", track);
 
-  const away = 640;
+  // Off the screen on a phone; on a computer just out of the card's own room.
+  const away = draggable ? 640 : 120;
   const variants = {
     enter: { scale: 0.96, y: 8, opacity: 0.6 },
     center: { scale: 1, y: 0, opacity: 1 },
@@ -381,9 +403,12 @@ function SwipeCard({
 
   return (
     <motion.div
-      className="absolute inset-0 z-10 cursor-grab touch-none active:cursor-grabbing"
+      className={cn(
+        "absolute inset-0 z-10",
+        draggable && "cursor-grab touch-none active:cursor-grabbing",
+      )}
       style={{ x, y, rotate: reduceMotion ? 0 : rotate }}
-      drag
+      drag={draggable}
       dragSnapToOrigin
       dragElastic={0.85}
       custom={exitTo}

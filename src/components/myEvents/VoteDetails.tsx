@@ -52,7 +52,7 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
       </div>
 
       {deck || stage === "answer" ? (
-        <div className="mt-4 max-w-xl">
+        <div className="mt-4">
           <DateDeck event={event} variant="pane" />
           {stage !== "answer" && (
             <button

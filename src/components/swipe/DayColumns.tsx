@@ -69,6 +69,7 @@ export default function DayColumns({
   slotLabel,
   calendar,
   size,
+  fitDay = false,
   corner,
 }: {
   /** The suggested date's local midnight: offset 0 shows the day before, it, and the day after. */
@@ -81,16 +82,33 @@ export default function DayColumns({
   slotLabel: string;
   calendar: MyCalendarDays;
   size: keyof typeof SIZES;
+  /**
+   * The whole day, midnight to midnight, fitted into the height there is
+   * rather than scrolled through: a computer has the room.
+   */
+  fitDay?: boolean;
   /** What sits in the corner above the hours; the week number if nothing. */
   corner?: ReactNode;
 }) {
   const t = useT();
   const { lang } = useLang();
   const reduceMotion = useReducedMotion();
-  const { hourPx, gutter, linePx, twoLinesPx } = SIZES[size];
+  const { gutter, linePx, twoLinesPx } = SIZES[size];
+  const scroller = useRef<HTMLDivElement>(null);
+  // Fitting the day: each hour gets a 24th of the height there is, measured.
+  const [fitHourPx, setFitHourPx] = useState(0);
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!fitDay || !el) return;
+    const measure = () => setFitHourPx(el.clientHeight / 24);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fitDay]);
+  const hourPx = fitDay ? fitHourPx : SIZES[size].hourPx;
   const dayPx = hourPx * 24;
   const compact = size === "compact";
-  const scroller = useRef<HTMLDivElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
 
   // One column's width, measured, so the strip can be moved in pixels.
@@ -127,7 +145,7 @@ export default function DayColumns({
   // whole days (a trip, a holiday) opens on the morning instead.
   useLayoutEffect(() => {
     const el = scroller.current;
-    if (!el) return;
+    if (!el || fitDay) return;
     const span = placeSpan(slot.start, slot.end, home, TZ);
     const target =
       span.height > 0.8 ? 8 * hourPx : (span.top + span.height / 2) * dayPx - el.clientHeight / 2;
@@ -309,7 +327,10 @@ export default function DayColumns({
 
       <div
         ref={scroller}
-        className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
+        className={cn(
+          "relative min-h-0 flex-1 overflow-x-hidden overscroll-contain",
+          fitDay ? "overflow-y-hidden" : "overflow-y-auto",
+        )}
       >
         <div className="relative" style={{ height: dayPx }}>
           {/* An hour line across, labelled in the gutter (not under the time now). */}

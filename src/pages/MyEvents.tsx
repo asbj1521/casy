@@ -124,7 +124,8 @@ function EventPanes({
   return (
     <div className="grid items-start gap-x-8 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
       <EventList events={ordered} selectedId={open.event.id} />
-      <section className="mt-6 min-w-0 rounded-2xl border bg-card/60 p-5 pt-0 sm:p-6 sm:pt-0">
+      {/* Relative and clipped: a vote's calendar opens to fill exactly this box. */}
+      <section className="relative mt-6 min-w-0 overflow-hidden rounded-2xl border bg-card/60 p-5 pt-0 sm:p-6 sm:pt-0">
         {/* Keyed, so a half-asked "decline?" never carries over to the next event. */}
         <EventDetails key={open.event.id} staged={open} />
       </section>

@@ -49,6 +49,7 @@ export default function CalendarSheet({
   marked,
   calendar,
   from,
+  contained = false,
   onClose,
 }: {
   date: { start: string; end: string };
@@ -58,6 +59,11 @@ export default function CalendarSheet({
   calendar: MyCalendarDays;
   /** Where the strip it grows out of is on screen; null for no zoom. */
   from: DOMRect | null;
+  /**
+   * A computer: the calendar fills the box it was opened in (the open
+   * event), not the screen, and fits each whole day into its height.
+   */
+  contained?: boolean;
   onClose: () => void;
 }) {
   const t = useT();
@@ -103,8 +109,13 @@ export default function CalendarSheet({
     // The day columns' top, lined up with the strip's top.
     const top = days.current?.offsetTop ?? 0;
     const below = Math.max(height - top - from.height / scale, 0);
+    // Where the strip is, from the box the calendar fills: the screen, or
+    // on a computer the open event.
+    const host = el.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    const left = from.left - host.left;
+    const stripTop = from.top - host.top;
     zoomedOut.current = {
-      transform: `translate(${from.left}px, ${from.top - top * scale}px) scale(${scale})`,
+      transform: `translate(${left}px, ${stripTop - top * scale}px) scale(${scale})`,
       clipPath: `inset(${top}px 0px ${below}px 0px round ${14 / scale}px)`,
       opacity: 0,
     };
@@ -185,7 +196,12 @@ export default function CalendarSheet({
       role="dialog"
       aria-modal
       aria-label={t.swipe.yourCalendar}
-      className="fixed inset-0 z-[70] flex flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]"
+      className={cn(
+        "flex flex-col overflow-hidden bg-background",
+        contained
+          ? "absolute inset-0 z-30 rounded-2xl"
+          : "fixed inset-0 z-[70] pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]",
+      )}
       style={{ transformOrigin: "0 0" }}
     >
       <header className="flex h-14 shrink-0 items-center justify-between px-3">
@@ -307,6 +323,7 @@ export default function CalendarSheet({
                 slotLabel={slotLabel}
                 calendar={calendar}
                 size="full"
+                fitDay={contained}
               />
             </div>
           </motion.div>

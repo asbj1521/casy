@@ -633,7 +633,7 @@ export const da = {
     previous: "Forrige dato",
     toEvents: "Til Mine aftaler",
     hint: "Swipe til højre, hvis du kan, til venstre, hvis du ikke kan, og op, hvis du kan, men helst ikke.",
-    keysHint: "Træk kortet, eller brug piletasterne: højre kan, venstre kan ikke, op helst ikke.",
+    keysHint: "Brug knapperne eller piletasterne: højre kan, venstre kan ikke, op helst ikke.",
     doneTitle: "Tak, du har svaret",
     settledTitle: "Datoen er fundet",
     seeEvent: "Se aftalen",
