@@ -39,9 +39,9 @@ export function formatDate(iso: string, lang: Lang): string {
   return new Date(iso).toLocaleDateString(LOCALE[lang], DATE_FMT);
 }
 
-/** "16:00" */
-export function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-GB", TIME_FMT);
+/** "16:00", in Danish time unless another zone is asked for (the viewer's own, say). */
+export function formatTime(iso: string, timeZone: string = APP_TIME_ZONE): string {
+  return new Date(iso).toLocaleTimeString("en-GB", { ...TIME_FMT, timeZone });
 }
 
 /** "Tue 23 Jun · 16:00-17:00" */

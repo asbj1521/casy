@@ -14,6 +14,7 @@ import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import { formatDate, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { APP_TIME_ZONE } from "@/lib/zone";
 
 /** "1 Sept 2026" / "1. sep. 2026". */
 function day(iso: string, lang: Lang): string {
@@ -21,6 +22,7 @@ function day(iso: string, lang: Lang): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: APP_TIME_ZONE,
   });
 }
 

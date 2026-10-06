@@ -1,13 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { danishHolidays, easterSunday } from "@/lib/danishHolidays";
+import { localDate, wallTime } from "@/lib/zone";
 
 /**
  * Expected dates come from the published Easter dates and the Danish
  * holiday rules (offsets from Easter Sunday), not from the code under test.
  */
 
-const keys = (year: number) => danishHolidays(year).map((h) => h.key);
-const on = (year: number, name: string) => danishHolidays(year).find((h) => h.name === name)?.key;
+const TZ = "Europe/Copenhagen";
+const keys = (year: number) => danishHolidays(year, TZ).map((h) => h.key);
+const on = (year: number, name: string) =>
+  danishHolidays(year, TZ).find((h) => h.name === name)?.key;
 
 describe("easterSunday", () => {
   it.each([
@@ -23,7 +26,7 @@ describe("easterSunday", () => {
   ])("Easter %i is %s", (year, expected) => {
     const d = easterSunday(year);
     expect(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+      `${year}-${String(d.month + 1).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`,
     ).toBe(expected);
   });
 });
@@ -60,7 +63,7 @@ describe("danishHolidays", () => {
 
   it("has 10 public holidays a year from 2024, plus 3 commonly observed days", () => {
     for (const year of [2024, 2026, 2030]) {
-      const list = danishHolidays(year);
+      const list = danishHolidays(year, TZ);
       expect(list.filter((h) => h.kind === "public")).toHaveLength(10);
       expect(list.filter((h) => h.kind === "observed").map((h) => h.name)).toEqual([
         "Grundlovsdag",
@@ -71,19 +74,28 @@ describe("danishHolidays", () => {
   });
 
   it("marks the observed days as observed and the official ones as public", () => {
-    const list = danishHolidays(2026);
+    const list = danishHolidays(2026, TZ);
     expect(list.find((h) => h.name === "Juleaften")?.kind).toBe("observed");
     expect(list.find((h) => h.name === "Juledag")?.kind).toBe("public");
   });
 
-  it("returns days sorted by date, all inside the year, with local-midnight dates and English names", () => {
-    const list = danishHolidays(2026);
+  it("returns days sorted by date, all inside the year, at midnight in the zone and with English names", () => {
+    const list = danishHolidays(2026, TZ);
     expect(keys(2026)).toEqual([...keys(2026)].sort());
     for (const h of list) {
-      expect(h.date.getFullYear()).toBe(2026);
-      expect(h.date.getHours()).toBe(0);
+      const local = localDate(h.date.getTime(), TZ);
+      expect(local.year).toBe(2026);
+      expect(h.date.getTime()).toBe(wallTime(local.year, local.month, local.day, 0, TZ));
       expect(h.englishName.length).toBeGreaterThan(0);
     }
     expect(new Set(keys(2026)).size).toBe(list.length); // no two on the same day
+  });
+
+  it("puts each day at midnight in the zone asked for, keeping the Danish date", () => {
+    const christmas = (zone: string) =>
+      danishHolidays(2026, zone).find((h) => h.name === "Juledag")!;
+    expect(christmas(TZ).date.toISOString()).toBe("2026-12-24T23:00:00.000Z");
+    expect(christmas("America/New_York").date.toISOString()).toBe("2026-12-25T05:00:00.000Z");
+    expect(christmas("America/New_York").key).toBe("2026-12-25");
   });
 });

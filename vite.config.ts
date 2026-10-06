@@ -67,6 +67,10 @@ export default defineConfig({
     env: {
       VITE_SUPABASE_URL: "https://test-project.supabase.co",
       VITE_SUPABASE_ANON_KEY: "test-publishable-key",
+      // Far from Danish time, on every machine: code that slips back into the
+      // browser's own zone (getHours, new Date(y, m, d)) then fails here, not
+      // only for someone abroad. Everything should name its zone (lib/zone.ts).
+      TZ: "America/New_York",
     },
   },
 });

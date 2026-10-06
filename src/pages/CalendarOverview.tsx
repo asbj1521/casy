@@ -29,6 +29,19 @@ import {
 } from "@/lib/calendarOverview";
 import { readStored, writeStored } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import { APP_TIME_ZONE, localDate, wallTime } from "@/lib/zone";
+
+/**
+ * The zone every day and time on this page is in: Danish time, the same as
+ * the scheduling page, whatever zone the browser is in.
+ */
+const TZ = APP_TIME_ZONE;
+
+/** This month in Danish time, 0-based. */
+function thisMonth(): { year: number; month: number } {
+  const { year, month } = localDate(Date.now(), TZ);
+  return { year, month };
+}
 
 /** A holiday's name in the page's language. */
 function holidayName(holiday: NonNullable<DaySegment["holiday"]>, lang: Lang): string {
@@ -44,6 +57,7 @@ function cellLabel(date: Date, segments: DaySegment[], t: Messages, lang: Lang):
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: TZ,
   });
   return t.calendarView.cellLabel(day, busy, holidays.join(", "));
 }
@@ -82,17 +96,14 @@ export default function CalendarOverview() {
   const t = useT();
   const { lang } = useLang();
   const calendarsHome = useCalendarsHome();
-  const [month, setMonth] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() };
-  });
+  const [month, setMonth] = useState(thisMonth);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [holidaysHidden, setHolidaysHidden] = useState(
     () => readStored(HOLIDAYS_HIDDEN_KEY) === "1",
   );
 
   const layout = useMemo(
-    () => buildMonthLayout(month.year, month.month, LOCALE[lang]),
+    () => buildMonthLayout(month.year, month.month, TZ, LOCALE[lang]),
     [month, lang],
   );
   const gridDays = useMemo(() => layout.weeks.flat(), [layout]);
@@ -137,8 +148,9 @@ export default function CalendarOverview() {
   // range the connected calendars are synced for.
   const holidayCount = useMemo(() => {
     const today = new Date();
-    const yearAhead = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-    return [...holidaySegmentsByDay(today, yearAhead).values()].reduce(
+    const { year, month: m, day } = localDate(today.getTime(), TZ);
+    const yearAhead = new Date(wallTime(year + 1, m, day, 0, TZ));
+    return [...holidaySegmentsByDay(today, yearAhead, TZ).values()].reduce(
       (sum, list) => sum + list.length,
       0,
     );
@@ -172,13 +184,14 @@ export default function CalendarOverview() {
           (data?.blocks ?? []).filter((b) => calendarById.get(b.calendarId)?.included !== false),
           layout.from,
           layout.to,
+          TZ,
         ),
-        holidaysHidden ? new Map() : holidaySegmentsByDay(layout.from, layout.to),
+        holidaysHidden ? new Map() : holidaySegmentsByDay(layout.from, layout.to, TZ),
       ),
     [data, calendarById, layout, holidaysHidden],
   );
 
-  const todayKey = dayKey(new Date());
+  const todayKey = dayKey(new Date(), TZ);
   const inMonthKeys = gridDays.filter((d) => d.inMonth).map((d) => d.key);
   const selected =
     selectedKey && gridDays.some((d) => d.key === selectedKey)
@@ -192,14 +205,14 @@ export default function CalendarOverview() {
   const shiftMonth = (delta: number) => {
     setSelectedKey(null);
     setMonth(({ year, month: m }) => {
-      const d = new Date(year, m + delta, 1);
-      return { year: d.getFullYear(), month: d.getMonth() };
+      // Date.UTC rolls month 12 over into next January, with no clock involved.
+      const d = new Date(Date.UTC(year, m + delta, 1));
+      return { year: d.getUTCFullYear(), month: d.getUTCMonth() };
     });
   };
   const goToday = () => {
-    const now = new Date();
-    setSelectedKey(dayKey(now));
-    setMonth({ year: now.getFullYear(), month: now.getMonth() });
+    setSelectedKey(dayKey(new Date(), TZ));
+    setMonth(thisMonth());
   };
   // Tick or untick any number of calendars at once: one, or a whole brand
   // group. Holidays stay in this browser; everything else is saved.
@@ -327,7 +340,11 @@ export default function CalendarOverview() {
                 // The 1st of a month is labelled with its abbreviation, e.g. "1. okt.".
                 const numberLabel =
                   cell.dayOfMonth === 1
-                    ? cell.date.toLocaleDateString(LOCALE[lang], { day: "numeric", month: "short" })
+                    ? cell.date.toLocaleDateString(LOCALE[lang], {
+                        day: "numeric",
+                        month: "short",
+                        timeZone: TZ,
+                      })
                     : cell.dayOfMonth;
 
                 // Each row starts with its ISO week number, on the left of Monday.
@@ -409,7 +426,7 @@ export default function CalendarOverview() {
                                 ) : (
                                   <>
                                     <span className="font-medium">
-                                      {formatSegmentRange(seg, t.calendarView.allDay)}
+                                      {formatSegmentRange(seg, TZ, t.calendarView.allDay)}
                                     </span>{" "}
                                     {cal?.name}
                                   </>
@@ -443,6 +460,7 @@ export default function CalendarOverview() {
                 day: "numeric",
                 month: "long",
                 year: "numeric",
+                timeZone: TZ,
               })}
             </h3>
             {selectedSegments.length === 0 ? (
@@ -508,7 +526,7 @@ function DayRow({
 
   // A holiday shows its name in the page's language, with the other
   // language's name beside it.
-  const title = holiday ? holidayName(holiday, lang) : formatSegmentRange(seg, words.allDay);
+  const title = holiday ? holidayName(holiday, lang) : formatSegmentRange(seg, TZ, words.allDay);
   const aside = holiday
     ? holidayName(holiday, lang === "da" ? "en" : "da")
     : seg.allDay

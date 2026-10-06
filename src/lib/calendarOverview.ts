@@ -2,16 +2,20 @@
  * Layout logic for My calendar (/calendar-overview): a month grid of the
  * user's own collected busy blocks.
  *
- * Days here are the viewer's own, in the browser's time zone: a block that
- * runs 22:00 to 02:00 belongs partly to each of two days as they live them.
- * The scheduling page works in APP_TIME_ZONE instead, since a whole group has
- * to agree on what "18:00 on Friday" means. Everything here is a pure
- * function over plain data so it can be tested without a browser or a network.
+ * Days and times here are in the zone the page passes (APP_TIME_ZONE, Danish
+ * time), never the browser's own: My calendar has to show a busy block at the
+ * same hour the scheduling page reasons about it, or someone abroad would see
+ * their Friday 18:00 dinner at 12:00 here while the scheduler avoids 18:00.
+ * Every function takes the zone, like the engine (lib/zone.ts). Everything
+ * here is a pure function over plain data so it can be tested without a
+ * browser or a network.
  *
  * Privacy: blocks carry only a time range and the calendar they came from.
  * There is no event title anywhere in this data, by design.
  */
 import { danishHolidays, type Holiday } from "@/lib/danishHolidays";
+import { formatTime } from "@/lib/format";
+import { addDays, localDate, startOfDay, wallTime } from "@/lib/zone";
 import type { CalendarPriority, CalendarProvider, CalendarPurpose } from "@/types";
 
 /** One connected calendar, as returned by the calendar-busy function. */
@@ -59,9 +63,9 @@ export interface OverviewData {
 // ---------------------------------------------------------------------------
 
 export interface MonthDay {
-  /** Local calendar day as "YYYY-MM-DD", used as a stable key. */
+  /** The calendar day as "YYYY-MM-DD", used as a stable key. */
   key: string;
-  /** Local midnight at the start of the day. */
+  /** Midnight at the start of the day. */
   date: Date;
   dayOfMonth: number;
   /** False for the spill-over days that pad the grid from neighbouring months. */
@@ -76,9 +80,9 @@ export interface MonthLayout {
   weeks: MonthDay[][];
   /** ISO 8601 week number for each row of `weeks` (Danish "uge"). */
   weekNumbers: number[];
-  /** Start of the first grid cell (local midnight). */
+  /** Start of the first grid cell (midnight). */
   from: Date;
-  /** Start of the day after the last grid cell (local midnight, exclusive). */
+  /** Start of the day after the last grid cell (midnight, exclusive). */
   to: Date;
 }
 
@@ -95,26 +99,24 @@ function mondayFirstWeekdays(locale: string): string[] {
   );
 }
 
-/** "YYYY-MM-DD" for the local calendar day containing `d`. */
-export function dayKey(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-/** Local midnight at the start of the day containing `d`. */
-function startOfLocalDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+/** "YYYY-MM-DD" for the calendar day containing `d` in `timeZone`. */
+export function dayKey(d: Date, timeZone: string): string {
+  const { year, month, day } = localDate(d.getTime(), timeZone);
+  return `${year}-${pad(month + 1)}-${pad(day)}`;
 }
 
 /**
- * ISO 8601 week number (1 to 53) of the local calendar day containing `date`.
+ * ISO 8601 week number (1 to 53) of the calendar day containing `date` in
+ * `timeZone`.
  * Weeks start on Monday, and week 1 is the week containing the year's first
  * Thursday, which is the numbering Denmark uses. The week number belongs to
  * the year of that Thursday, so 1 January can fall in week 52 or 53 and 31
  * December in week 1.
  */
-export function isoWeekNumber(date: Date): number {
-  // Work in UTC on the local y/m/d so daylight saving can't shift the day.
-  const utc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+export function isoWeekNumber(date: Date, timeZone: string): number {
+  // Work in UTC on the zone's y/m/d so daylight saving can't shift the day.
+  const { year, month, day } = localDate(date.getTime(), timeZone);
+  const utc = Date.UTC(year, month, day);
   const mondayBasedDay = (new Date(utc).getUTCDay() + 6) % 7; // Monday = 0
   const thursday = utc + (3 - mondayBasedDay) * 86_400_000;
   const jan1 = Date.UTC(new Date(thursday).getUTCFullYear(), 0, 1);
@@ -127,35 +129,47 @@ export function isoWeekNumber(date: Date): number {
  *
  * @param monthIndex 0-based (0 = January)
  */
-export function buildMonthLayout(year: number, monthIndex: number, locale = "da-DK"): MonthLayout {
-  const first = new Date(year, monthIndex, 1);
-  const offset = (first.getDay() + 6) % 7; // days since Monday
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+export function buildMonthLayout(
+  year: number,
+  monthIndex: number,
+  timeZone: string,
+  locale = "da-DK",
+): MonthLayout {
+  // The grid is a matter of calendar dates, worked out without any clock;
+  // only each cell's midnight depends on the zone.
+  const offset = (new Date(Date.UTC(year, monthIndex, 1)).getUTCDay() + 6) % 7; // days since Monday
+  const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
   const rows = Math.ceil((offset + daysInMonth) / 7);
+  // wallTime normalises out-of-range days, so this walks across month edges.
+  const midnight = (n: number) => new Date(wallTime(year, monthIndex, 1 - offset + n, 0, timeZone));
 
   const weeks: MonthDay[][] = [];
   for (let r = 0; r < rows; r++) {
     const week: MonthDay[] = [];
     for (let c = 0; c < 7; c++) {
-      // Date() normalises out-of-range days, so this walks across month edges.
-      const date = new Date(year, monthIndex, 1 - offset + r * 7 + c);
+      const date = midnight(r * 7 + c);
+      const local = localDate(date.getTime(), timeZone);
       week.push({
-        key: dayKey(date),
+        key: dayKey(date, timeZone),
         date,
-        dayOfMonth: date.getDate(),
-        inMonth: date.getMonth() === monthIndex,
+        dayOfMonth: local.day,
+        inMonth: local.month === monthIndex,
       });
     }
     weeks.push(week);
   }
 
   return {
-    label: first.toLocaleString(locale, { month: "long", year: "numeric" }),
+    label: new Date(wallTime(year, monthIndex, 1, 12, timeZone)).toLocaleString(locale, {
+      month: "long",
+      year: "numeric",
+      timeZone,
+    }),
     weekdayLabels: mondayFirstWeekdays(locale),
     weeks,
-    weekNumbers: weeks.map((week) => isoWeekNumber(week[0].date)),
+    weekNumbers: weeks.map((week) => isoWeekNumber(week[0].date, timeZone)),
     from: weeks[0][0].date,
-    to: new Date(year, monthIndex, 1 - offset + rows * 7),
+    to: midnight(rows * 7),
   };
 }
 
@@ -163,14 +177,14 @@ export function buildMonthLayout(year: number, monthIndex: number, locale = "da-
 // Blocks -> per-day segments
 // ---------------------------------------------------------------------------
 
-/** The part of one busy block that falls on one local day. */
+/** The part of one busy block that falls on one day. */
 export interface DaySegment {
   calendarId: string;
   /** Clipped to the day. */
   start: Date;
-  /** Clipped to the day; may be the following local midnight. */
+  /** Clipped to the day; may be the following midnight. */
   end: Date;
-  /** Covers the whole local day (an all-day event, or the middle of a long one). */
+  /** Covers the whole day (an all-day event, or the middle of a long one). */
   allDay: boolean;
   /** The block began on an earlier day. */
   continuesBefore: boolean;
@@ -183,13 +197,14 @@ export interface DaySegment {
 const MAX_DAYS_PER_BLOCK = 400; // guard against a malformed, endless block
 
 /**
- * Split blocks at local midnights and group the pieces by day, limited to
- * [from, to). Each day's segments are sorted by start time.
+ * Split blocks at midnight in `timeZone` and group the pieces by day, limited
+ * to [from, to). Each day's segments are sorted by start time.
  */
 export function segmentByDay(
   blocks: OverviewBlock[],
   from: Date,
   to: Date,
+  timeZone: string,
 ): Map<string, DaySegment[]> {
   const byDay = new Map<string, DaySegment[]>();
   for (const b of blocks) {
@@ -198,14 +213,14 @@ export function segmentByDay(
     if (!(be > bs) || be <= from || bs >= to) continue;
 
     const limit = be < to ? be : to;
-    let day = startOfLocalDay(bs > from ? bs : from);
+    let day = new Date(startOfDay((bs > from ? bs : from).getTime(), timeZone));
     for (let n = 0; day < limit && n < MAX_DAYS_PER_BLOCK; n++) {
-      // Built from parts (not +24h) so 23- and 25-hour days at DST changes work.
-      const next = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+      // Stepped by calendar day (not +24h) so 23- and 25-hour days at DST changes work.
+      const next = new Date(addDays(day.getTime(), 1, timeZone));
       const start = bs > day ? bs : day;
       const end = be < next ? be : next;
       if (end > start) {
-        const key = dayKey(day);
+        const key = dayKey(day, timeZone);
         const list = byDay.get(key) ?? [];
         list.push({
           calendarId: b.calendarId,
@@ -251,18 +266,19 @@ export const HOLIDAY_CALENDAR: OverviewCalendar = {
 /** "r, g, b" for holidays. Red, deliberately not used by categories or the palette. */
 const HOLIDAY_RGB = "220, 38, 38";
 
-/** Holidays inside [from, to), as all-day segments keyed by local day. */
-export function holidaySegmentsByDay(from: Date, to: Date): Map<string, DaySegment[]> {
+/** Holidays inside [from, to), as all-day segments keyed by day in `timeZone`. */
+export function holidaySegmentsByDay(
+  from: Date,
+  to: Date,
+  timeZone: string,
+): Map<string, DaySegment[]> {
   const byDay = new Map<string, DaySegment[]>();
-  const lastYear = new Date(to.getTime() - 1).getFullYear(); // a grid can straddle two years
-  for (let year = from.getFullYear(); year <= lastYear; year++) {
-    for (const holiday of danishHolidays(year)) {
+  const firstYear = localDate(from.getTime(), timeZone).year;
+  const lastYear = localDate(to.getTime() - 1, timeZone).year; // a grid can straddle two years
+  for (let year = firstYear; year <= lastYear; year++) {
+    for (const holiday of danishHolidays(year, timeZone)) {
       if (holiday.date < from || holiday.date >= to) continue;
-      const next = new Date(
-        holiday.date.getFullYear(),
-        holiday.date.getMonth(),
-        holiday.date.getDate() + 1,
-      );
+      const next = new Date(addDays(holiday.date.getTime(), 1, timeZone));
       const list = byDay.get(holiday.key) ?? [];
       list.push({
         calendarId: HOLIDAY_CALENDAR_ID,
@@ -293,23 +309,16 @@ export function withHolidays(
 // Formatting
 // ---------------------------------------------------------------------------
 
-const TIME_FORMAT = new Intl.DateTimeFormat("en-GB", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
-
-/** "09:15" in the viewer's local time zone. */
-function formatLocalTime(d: Date): string {
-  return TIME_FORMAT.format(d);
-}
-
-/** "09:15-11:20", "All day", or "22:00-24:00" for a segment ending at midnight. */
-export function formatSegmentRange(seg: DaySegment, allDay = "All day"): string {
+/**
+ * "09:15-11:20", "All day", or "22:00-24:00" for a segment ending at
+ * midnight, in `timeZone`.
+ */
+export function formatSegmentRange(seg: DaySegment, timeZone: string, allDay = "All day"): string {
   if (seg.allDay) return allDay;
   const endsAtMidnight =
-    seg.end.getHours() === 0 && seg.end.getMinutes() === 0 && seg.end > seg.start;
-  return `${formatLocalTime(seg.start)}-${endsAtMidnight ? "24:00" : formatLocalTime(seg.end)}`;
+    seg.end > seg.start && startOfDay(seg.end.getTime(), timeZone) === seg.end.getTime();
+  const time = (d: Date) => formatTime(d.toISOString(), timeZone);
+  return `${time(seg.start)}-${endsAtMidnight ? "24:00" : time(seg.end)}`;
 }
 
 /** "2 h 35 min", "45 min", "3 h"; `hourUnit` is "t" in Danish. */
