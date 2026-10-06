@@ -106,6 +106,10 @@ begin
 
   perform pulse_people(v_people);
   return null;
+-- Telling people is a courtesy: whatever goes wrong here, the write stands.
+exception when others then
+  raise warning 'pulse_on_change on % failed: %', tg_table_name, sqlerrm;
+  return null;
 end;
 $$;
 
