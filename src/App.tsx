@@ -33,6 +33,7 @@ const MyData = lazy(loadPage.myData);
 const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
 const Privacy = lazy(loadPage.privacy);
+const Terms = lazy(loadPage.terms);
 const HowItWorks = lazy(loadPage.howItWorks);
 const ConnectIcloudHelp = lazy(loadPage.connectIcloud);
 const ConnectIcsHelp = lazy(loadPage.connectIcs);
@@ -80,6 +81,7 @@ function App() {
                 <Route path="/plan" element={<FindDate />} />
                 <Route path="/sign-in" element={<SignIn />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/help/connect-icloud" element={<ConnectIcloudHelp />} />
                 <Route path="/help/connect-ics" element={<ConnectIcsHelp />} />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CircleHelp, Database, Lock, MessageSquare, Share } from "lucide-react";
+import { CircleHelp, Database, FileText, Lock, MessageSquare, Share } from "lucide-react";
 
 import CopyField from "@/components/ui/CopyField";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -49,13 +49,14 @@ export function FeedbackShareGroup() {
   );
 }
 
-/** Your data, how Casy works and the privacy policy. */
+/** Your data, how Casy works, the terms and the privacy policy. */
 export function HelpGroup() {
   const t = useT();
   return (
     <ListGroup>
       <ListRow to="/profile/data" icon={Database} label={t.myData.row} />
       <ListRow to="/how-it-works" icon={CircleHelp} label={t.footer.howItWorks} />
+      <ListRow to="/terms" icon={FileText} label={t.footer.terms} />
       <ListRow to="/privacy" icon={Lock} label={t.footer.privacy} />
     </ListGroup>
   );

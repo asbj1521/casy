@@ -101,6 +101,7 @@ export const en: Messages = {
   },
   footer: {
     howItWorks: "How it works",
+    terms: "Terms",
     privacy: "Privacy",
   },
   timeZone: {
@@ -738,6 +739,13 @@ export const en: Messages = {
     intro: "Sign in to connect your calendars and plan with your groups.",
     google: "Continue with Google",
     or: "or",
+    acceptTerms: (terms: ReactNode, privacy: ReactNode) => (
+      <>
+        By signing in, you accept Casy&apos;s {terms} and {privacy}.
+      </>
+    ),
+    termsLink: "terms",
+    privacyLink: "privacy policy",
     linkSent: (email: ReactNode, button: ReactNode) => (
       <>
         Check your inbox. We sent a sign-in link to {email}. Open it in this browser to finish

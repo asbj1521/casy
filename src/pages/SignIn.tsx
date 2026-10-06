@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState, type FormEvent } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound, Loader2, Mail } from "lucide-react";
 
@@ -627,6 +627,19 @@ export default function SignIn() {
             )}
           </div>
         </div>
+
+        {/* Signing in (or creating an account) is accepting the terms. The
+            invite page sends people here too, so this one line covers both. */}
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          {t.signIn.acceptTerms(
+            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
+              {t.signIn.termsLink}
+            </Link>,
+            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+              {t.signIn.privacyLink}
+            </Link>,
+          )}
+        </p>
       </main>
     </div>
   );

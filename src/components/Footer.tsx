@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { useT } from "@/i18n/lang";
 
 /**
- * The bottom of every page: how Casy works, and the privacy link, which has
- * to be reachable from the home page for Google's consent screen.
+ * The bottom of every page: how Casy works, the terms, and the privacy link,
+ * which has to be reachable from the home page for Google's consent screen.
  */
 export default function Footer() {
   const t = useT();
@@ -16,6 +16,9 @@ export default function Footer() {
         <div className="flex items-center gap-5">
           <Link to="/how-it-works" className="transition hover:text-foreground">
             {t.footer.howItWorks}
+          </Link>
+          <Link to="/terms" className="transition hover:text-foreground">
+            {t.footer.terms}
           </Link>
           <Link to="/privacy" className="transition hover:text-foreground">
             {t.footer.privacy}

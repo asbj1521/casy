@@ -1,7 +1,6 @@
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-import TopNav from "@/components/TopNav";
+import LegalPage, { ContactEmail, Term, type LegalCopy } from "@/components/LegalPage";
 import { useLang } from "@/i18n/lang";
 
 /**
@@ -11,16 +10,7 @@ import { useLang } from "@/i18n/lang";
  * one and you change the other. /privacy?lang=en always opens the English one.
  */
 
-const CONTACT_EMAIL = "asbjornbay@gmail.com";
-
-const mail = (
-  <a
-    href={`mailto:${CONTACT_EMAIL}`}
-    className="font-medium text-foreground underline underline-offset-2"
-  >
-    {CONTACT_EMAIL}
-  </a>
-);
+const mail = <ContactEmail />;
 
 const googlePolicyLink = (label: string) => (
   <a
@@ -31,17 +21,7 @@ const googlePolicyLink = (label: string) => (
   </a>
 );
 
-const Term = ({ children }: { children: ReactNode }) => (
-  <span className="font-medium text-foreground">{children}</span>
-);
-
-interface Copy {
-  title: string;
-  updated: string;
-  sections: { title: string; body: ReactNode }[];
-}
-
-const da: Copy = {
+const da: LegalCopy = {
   title: "Privatlivspolitik",
   updated: "Senest opdateret 1. oktober 2026",
   sections: [
@@ -257,7 +237,7 @@ const da: Copy = {
   ],
 };
 
-const en: Copy = {
+const en: LegalCopy = {
   title: "Privacy policy",
   updated: "Last updated 1 October 2026",
   sections: [
@@ -474,24 +454,5 @@ const en: Copy = {
 
 export default function Privacy() {
   const { lang } = useLang();
-  const c = lang === "da" ? da : en;
-
-  return (
-    <div className="min-h-screen bg-background">
-      <TopNav />
-      <main className="mx-auto max-w-2xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{c.title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{c.updated}</p>
-
-        {c.sections.map((section) => (
-          <section key={section.title} className="mt-8">
-            <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
-            <div className="mt-2 space-y-3 text-sm leading-relaxed text-muted-foreground">
-              {section.body}
-            </div>
-          </section>
-        ))}
-      </main>
-    </div>
-  );
+  return <LegalPage copy={lang === "da" ? da : en} />;
 }

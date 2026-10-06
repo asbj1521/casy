@@ -110,6 +110,7 @@ export const da = {
   },
   footer: {
     howItWorks: "Sådan virker det",
+    terms: "Vilkår",
     privacy: "Privatliv",
   },
   /** Shown only to someone whose clock isn't Danish time (lib/viewerTime.ts). */
@@ -757,6 +758,13 @@ export const da = {
     intro: "Log ind for at forbinde dine kalendere og planlægge med dine grupper.",
     google: "Fortsæt med Google",
     or: "eller",
+    acceptTerms: (terms: ReactNode, privacy: ReactNode) => (
+      <>
+        Når du logger ind, accepterer du Casys {terms} og {privacy}.
+      </>
+    ),
+    termsLink: "vilkår",
+    privacyLink: "privatlivspolitik",
     linkSent: (email: ReactNode, button: ReactNode) => (
       <>
         Tjek din indbakke. Vi har sendt et login-link til {email}. Åbn det i denne browser for at
