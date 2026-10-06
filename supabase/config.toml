@@ -296,13 +296,16 @@ max_frequency = "5s"
 # inactivity_timeout = "8h"
 
 # Casy: Auth hands every email to the auth-email Edge Function instead of
-# sending it (see [auth.email] above). The secret is the hook's signing secret
-# from the dashboard (Authentication > Hooks), also set as the function secret
-# SEND_EMAIL_HOOK_SECRET, which the function checks on every call.
-[auth.hook.send_email]
-enabled = true
-uri = "https://lymygsndrhgpdqczkzrv.supabase.co/functions/v1/auth-email"
-secrets = "env(SEND_EMAIL_HOOK_SECRET)"
+# sending it (see [auth.email] above). Switched on in the dashboard
+# (Authentication > Hooks, "Send Email", HTTPS), with the signing secret it
+# generates also set as the function secret SEND_EMAIL_HOOK_SECRET, which the
+# function checks on every call. Recorded here commented out: the CLI checks
+# an enabled hook's secret on every `functions deploy`, and that secret only
+# exists on the server, never in a local environment.
+# [auth.hook.send_email]
+# enabled = true
+# uri = "https://lymygsndrhgpdqczkzrv.supabase.co/functions/v1/auth-email"
+# secrets = "env(SEND_EMAIL_HOOK_SECRET)"
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
