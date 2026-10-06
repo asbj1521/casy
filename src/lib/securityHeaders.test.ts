@@ -1,5 +1,10 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+
+// Read as text through Vite (?raw), like any other import: the app's
+// TypeScript settings have no Node types for node:fs.
+import vercelJson from "../../vercel.json?raw";
+import captchaSource from "@/hooks/useCaptcha.ts?raw";
+import passwordRulesSource from "@/lib/passwordRules.ts?raw";
 
 /**
  * The Content-Security-Policy in vercel.json (#86): only Casy's own scripts
@@ -8,7 +13,7 @@ import { describe, expect, it } from "vitest";
  * evaluated script back in, and every outside place the code really talks to
  * still allowed (or that feature breaks on the live site, and only there).
  */
-const vercel = JSON.parse(readFileSync("vercel.json", "utf8")) as {
+const vercel = JSON.parse(vercelJson) as {
   headers: { headers: { key: string; value: string }[] }[];
 };
 const csp = vercel.headers[0].headers.find((h) => h.key === "Content-Security-Policy")!.value;
@@ -18,7 +23,6 @@ const directive = (name: string) =>
     .map((d) => d.trim().split(/\s+/))
     .find(([n]) => n === name)
     ?.slice(1) ?? [];
-const source = (path: string) => readFileSync(path, "utf8");
 
 describe("Content-Security-Policy", () => {
   it("runs only Casy's own scripts, and Turnstile's", () => {
@@ -30,12 +34,12 @@ describe("Content-Security-Policy", () => {
   });
 
   it("allows Turnstile, which the sign-in page loads", () => {
-    expect(source("src/hooks/useCaptcha.ts")).toContain("https://challenges.cloudflare.com/");
+    expect(captchaSource).toContain("https://challenges.cloudflare.com/");
     expect(directive("frame-src")).toContain("https://challenges.cloudflare.com");
   });
 
   it("allows Have I Been Pwned, which the password check calls", () => {
-    expect(source("src/lib/passwordRules.ts")).toContain("https://api.pwnedpasswords.com/");
+    expect(passwordRulesSource).toContain("https://api.pwnedpasswords.com/");
     expect(directive("connect-src")).toContain("https://api.pwnedpasswords.com");
   });
 
