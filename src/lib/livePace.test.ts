@@ -21,6 +21,11 @@ describe("pollDelay", () => {
     expect(pollDelay(24 * 60 * MIN)).toBe(60_000);
   });
 
+  it("only checks every few minutes while Realtime is live", () => {
+    expect(pollDelay(0, true)).toBe(5 * MIN);
+    expect(pollDelay(60 * MIN, true)).toBe(5 * MIN);
+  });
+
   it("treats a clock that went backwards as fresh activity", () => {
     expect(pollDelay(-5_000)).toBe(5_000);
   });

@@ -5,7 +5,8 @@ import { eventsQueryKey } from "@/api/events";
 import { groupsQueryKey, invitationsQueryKey, pulseQuery, type Group } from "@/api/groups";
 import { useAuth } from "@/context/auth";
 import { membershipKey } from "@/lib/groups";
-import { pollDelay } from "@/lib/livePace";
+import { PUSH_HIDDEN_GRACE_MS, PUSH_SIGNAL_DEBOUNCE_MS, pollDelay } from "@/lib/livePace";
+import { watchPulsePush } from "@/lib/livePush";
 
 /**
  * Keeps every open page up to date with what other people do: watches the
@@ -13,7 +14,10 @@ import { pollDelay } from "@/lib/livePace";
  * and events again. Only what a page shows is fetched now; the rest is
  * marked out of date and fetched when next needed.
  *
- * The pulse is asked often right after something happened and less and less
+ * When to ask the pulse: while the tab is visible it is subscribed to
+ * Realtime (lib/livePush.ts), which says when something changed, and asks on
+ * its own only every few minutes. Without Realtime (still connecting, or it
+ * failed) it asks often right after something happened and less and less
  * while nothing does (lib/livePace.ts): the pulse moving, any of your own
  * changes, and coming back to the tab all count as something happening.
  *
@@ -28,6 +32,7 @@ export function useLiveUpdates() {
   // Set by the first answer, which always counts as activity (see below).
   const lastActive = useRef(0);
   const pacedPulse = useRef<string | undefined>(undefined);
+  const pushLive = useRef(false);
 
   const { data: pulse } = useQuery({
     ...pulseQuery(userId),
@@ -39,7 +44,7 @@ export function useLiveUpdates() {
         pacedPulse.current = query.state.data;
         lastActive.current = Date.now();
       }
-      return pollDelay(Date.now() - lastActive.current);
+      return pollDelay(Date.now() - lastActive.current, pushLive.current);
     },
   });
   const lastSeen = useRef<string | undefined>(undefined);
@@ -55,15 +60,62 @@ export function useLiveUpdates() {
     });
   }, [queryClient, userId]);
 
-  // Back in the tab: React Query asks the pulse at once by itself (it is
+  // Realtime while the tab is visible, and for a minute after it is hidden.
+  // Back in the tab, React Query asks the pulse at once by itself (it is
   // always stale), and the waits after that start short again.
   useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === "visible") lastActive.current = Date.now();
+    if (!userId) return;
+    const askPulse = () =>
+      void queryClient.invalidateQueries({ queryKey: pulseQuery(userId).queryKey });
+
+    let stopPush: (() => void) | null = null;
+    let hiddenTimer: ReturnType<typeof setTimeout> | undefined;
+    let signalTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const setLive = (live: boolean) => {
+      if (live === pushLive.current) return;
+      pushLive.current = live;
+      // Either way the wait under way is the wrong one now, and on (re)joining
+      // anything sent while not subscribed was missed: ask once.
+      if (document.visibilityState === "visible") askPulse();
     };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, []);
+    const startPush = () => {
+      stopPush ??= watchPulsePush(userId, {
+        onSignal: () => {
+          // A hidden tab asks when it comes back; no need to ask for it now.
+          if (document.visibilityState !== "visible") return;
+          lastActive.current = Date.now();
+          clearTimeout(signalTimer);
+          signalTimer = setTimeout(askPulse, PUSH_SIGNAL_DEBOUNCE_MS);
+        },
+        onLive: setLive,
+      });
+    };
+    const stopPushNow = () => {
+      stopPush?.();
+      stopPush = null;
+      pushLive.current = false;
+    };
+
+    const onVisibility = () => {
+      clearTimeout(hiddenTimer);
+      if (document.visibilityState === "visible") {
+        lastActive.current = Date.now();
+        startPush();
+      } else {
+        hiddenTimer = setTimeout(stopPushNow, PUSH_HIDDEN_GRACE_MS);
+      }
+    };
+
+    if (document.visibilityState === "visible") startPush();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearTimeout(hiddenTimer);
+      clearTimeout(signalTimer);
+      stopPushNow();
+    };
+  }, [queryClient, userId]);
 
   useEffect(() => {
     if (!pulse) return;
