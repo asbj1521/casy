@@ -23,7 +23,7 @@ import { useMyCalendarDays, type MyCalendarDays } from "@/hooks/useMyCalendarDay
 import { TODAY } from "@/hooks/useDateSearch";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
-import { dayKey, formatSegmentRange } from "@/lib/calendarOverview";
+import { formatSegmentRange } from "@/lib/calendarOverview";
 import {
   formatEventDate,
   formatHeadline,
@@ -55,8 +55,9 @@ type Exit = EventResponse | "back";
  * A vote's dates as a stack of cards to swipe (#74), one at a time: right
  * for "I can", left for "I can't", up for "I can, but would rather not", or
  * the three buttons under it (and the arrow keys). Your own calendar around
- * each date sits under the card (CalendarStrip), and all of it is a tap away
- * (CalendarSheet). Back steps to the date before, to change an answer.
+ * each date sits under the card (CalendarStrip), drawn like Apple Calendar,
+ * and a tap grows it into the same days on the whole screen (CalendarSheet).
+ * Back steps to the date before, to change an answer.
  *
  * Each answer is saved as it is given, and the next card doesn't wait for
  * it: the answer shows at once, and a failed save takes it back and says so.
@@ -92,7 +93,8 @@ export default function DateDeck({
   });
   const [exit, setExit] = useState<Exit>("accepted");
   const [celebrate, setCelebrate] = useState(false);
-  const [sheetDay, setSheetDay] = useState<Date | null>(null);
+  // The calendar under the card, grown to the whole screen.
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const save = useMutation({
@@ -140,7 +142,7 @@ export default function DateDeck({
   // backspace back. Not while typing somewhere, nor with the calendar open.
   const keys = useRef({ answer, back, open: false });
   useEffect(() => {
-    keys.current = { answer, back, open: sheetDay !== null };
+    keys.current = { answer, back, open: calendarOpen };
   });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -163,7 +165,11 @@ export default function DateDeck({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const marked = useMemo(() => new Set(dates.map((d) => dayKey(new Date(d.start), TZ))), [dates]);
+  const marked = useMemo(
+    () => new Set(dates.map((d) => startOfDay(Date.parse(d.start), TZ))),
+    [dates],
+  );
+  const slotLabel = eventTitle(event.title, t);
   const screen = variant === "screen";
 
   return (
@@ -270,8 +276,11 @@ export default function DateDeck({
                 <CalendarStrip
                   key={current.id}
                   date={current}
+                  slotLabel={slotLabel}
                   calendar={calendar}
-                  onOpenCalendar={setSheetDay}
+                  layoutId={`calendar-${current.id}`}
+                  open={calendarOpen}
+                  onOpen={() => setCalendarOpen(true)}
                 />
               </div>
             </div>
@@ -297,16 +306,17 @@ export default function DateDeck({
         </Notice>
       )}
 
-      <AnimatePresence>
-        {sheetDay && (
-          <CalendarSheet
-            initialDay={sheetDay}
-            marked={marked}
-            calendar={calendar}
-            onClose={() => setSheetDay(null)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Grown out of the strip, and back into it, by their shared layoutId. */}
+      {calendarOpen && current && (
+        <CalendarSheet
+          date={current}
+          slotLabel={slotLabel}
+          marked={marked}
+          calendar={calendar}
+          layoutId={`calendar-${current.id}`}
+          onClose={() => setCalendarOpen(false)}
+        />
+      )}
       {celebrate && <Celebration />}
       {/* Words for screen readers as the cards move. */}
       <p className="sr-only" aria-live="polite">

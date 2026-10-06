@@ -1,184 +1,172 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
+import DayColumns from "@/components/swipe/DayColumns";
+import { MORPH } from "@/components/swipe/morph";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { buildMonthLayout, dayKey, formatSegmentRange } from "@/lib/calendarOverview";
 import { capitalize } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { APP_TIME_ZONE, localDate } from "@/lib/zone";
+import { addDays, APP_TIME_ZONE, localDate, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
 
+/** Whole days from `a` to `b`, both local midnights; rounded for the 23 and 25 hour days. */
+const daysBetween = (a: number, b: number) => Math.round((b - a) / 86_400_000);
+
 /**
- * All of your calendar, without leaving the swipe screen (#74): a month at a
- * time, each day dotted in its calendars' colours, this vote's dates ringed,
- * and the day tapped listed underneath (times and calendar names; Casy
- * stores no event titles). Slides up over the cards and back down on close.
+ * The strip under a swipe card grown to the whole screen (#74): the same
+ * three days, now larger and in full (DayColumns), so opening it shows more
+ * of what you were already looking at rather than something else. Laid out
+ * like Apple Calendar: the month as a back button, the week with the days in
+ * view marked, a sideways swipe a day at a time, and a pill back to the
+ * suggested date once you've moved, where Apple has "I dag".
+ *
+ * It grows out of the strip through their shared `layoutId`, and shrinks
+ * back into it on closing; its contents fade in once it has room.
  */
 export default function CalendarSheet({
-  initialDay,
+  date,
+  slotLabel,
   marked,
   calendar,
+  layoutId,
   onClose,
 }: {
-  initialDay: Date;
-  /** The vote's dates, by day key ("YYYY-MM-DD"), ringed on the grid. */
-  marked: ReadonlySet<string>;
+  date: { start: string; end: string };
+  slotLabel: string;
+  /** The vote's dates, as local midnights, marked in the week row. */
+  marked: ReadonlySet<number>;
   calendar: MyCalendarDays;
+  layoutId: string;
   onClose: () => void;
 }) {
   const t = useT();
   const { lang } = useLang();
   const reduceMotion = useReducedMotion();
-  const [month, setMonth] = useState(() => {
-    const { year, month } = localDate(initialDay.getTime(), TZ);
-    return { year, month };
-  });
-  const [selected, setSelected] = useState(() => dayKey(initialDay, TZ));
-  const layout = buildMonthLayout(month.year, month.month, TZ, LOCALE[lang]);
-  const days = layout.weeks.flat();
-  const selectedDay = days.find((d) => d.key === selected);
-  const segments = selectedDay ? calendar.segmentsOn(selectedDay.date) : [];
-  const todayKey = dayKey(new Date(), TZ);
+  const start = Date.parse(date.start);
+  const end = Date.parse(date.end);
+  const home = startOfDay(start, TZ);
+  // Days moved from the suggested one, and which way the last move went.
+  const [offset, setOffset] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const center = addDays(home, offset, TZ);
+  const days = [-1, 0, 1].map((i) => addDays(center, i, TZ));
+  // Today, for the red circle: fixed for as long as the calendar is open.
+  const [today] = useState(() => startOfDay(Date.now(), TZ));
 
-  const shift = (delta: number) =>
-    setMonth(({ year, month: m }) => {
-      // Date.UTC rolls month 12 over into next January, with no clock involved.
-      const d = new Date(Date.UTC(year, m + delta, 1));
-      return { year: d.getUTCFullYear(), month: d.getUTCMonth() };
-    });
+  const moveTo = (newOffset: number) => {
+    setDirection(Math.sign(newOffset - offset));
+    setOffset(newOffset);
+  };
+
+  // The week the middle day is in, Monday first, as Apple's row shows it.
+  const monday = addDays(center, -((localDate(center, TZ).dow + 6) % 7), TZ);
+  const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i, TZ));
+  const month = capitalize(
+    new Date(center).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
+  );
 
   return (
     <motion.div
+      layoutId={reduceMotion ? undefined : layoutId}
+      transition={MORPH}
       role="dialog"
       aria-modal
       aria-label={t.swipe.yourCalendar}
-      initial={reduceMotion ? { opacity: 0 } : { y: "100%" }}
-      animate={reduceMotion ? { opacity: 1 } : { y: 0 }}
-      exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
-      transition={{ type: "spring", damping: 32, stiffness: 320 }}
-      className="fixed inset-0 z-[70] flex flex-col bg-background pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]"
+      className="fixed inset-0 z-[70] overflow-hidden bg-background"
+      style={{ borderRadius: 0 }}
     >
-      <header className="flex h-12 shrink-0 items-center justify-between px-4">
-        <h2 className="text-[17px] font-semibold text-foreground">{t.swipe.yourCalendar}</h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t.swipe.close}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </header>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
-        <div className="flex items-center justify-between py-2">
+      <motion.div
+        className="flex h-full flex-col pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.14, duration: 0.2 }}
+      >
+        <header className="flex h-14 shrink-0 items-center px-3">
           <button
             type="button"
-            onClick={() => shift(-1)}
-            aria-label={t.swipe.monthBack}
-            className="flex h-9 w-9 items-center justify-center rounded-full border"
+            onClick={onClose}
+            aria-label={t.swipe.closeCalendar}
+            className="flex h-10 items-center gap-1 rounded-full border bg-card pl-2 pr-4 text-[17px] font-medium text-foreground shadow-sm"
           >
             <ChevronLeft className="h-5 w-5" />
+            {month}
           </button>
-          <p className="font-semibold text-foreground">{capitalize(layout.label)}</p>
-          <button
-            type="button"
-            onClick={() => shift(1)}
-            aria-label={t.swipe.monthOn}
-            className="flex h-9 w-9 items-center justify-center rounded-full border"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </div>
+        </header>
 
-        <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase text-muted-foreground">
-          {layout.weekdayLabels.map((w) => (
-            <span key={w}>{w.replace(".", "")}</span>
-          ))}
-        </div>
-        <div className="mt-1 grid grid-cols-7 gap-1">
-          {days.map((d) => {
-            const daySegments = calendar.segmentsOn(d.date);
-            const dots = [...new Set(daySegments.map((s) => s.calendarId))].slice(0, 3);
-            const isSelected = d.key === selected;
+        {/* The week, the days in view on a grey band, today in red. */}
+        <div className="grid shrink-0 grid-cols-7 px-1 pb-2">
+          {week.map((day) => {
+            const { day: n, dow } = localDate(day, TZ);
+            const inView = days.includes(day);
+            const weekend = dow === 0 || dow === 6;
             return (
               <button
-                key={d.key}
+                key={day}
                 type="button"
-                onClick={() => setSelected(d.key)}
-                aria-pressed={isSelected}
-                className={cn(
-                  "flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-sm font-semibold transition",
-                  !d.inMonth && "opacity-35",
-                  isSelected
-                    ? "bg-foreground text-background"
-                    : marked.has(d.key)
-                      ? "bg-primary/10 text-primary ring-2 ring-primary"
-                      : "text-foreground",
-                  d.key === todayKey && !isSelected && "underline underline-offset-4",
-                )}
+                onClick={() => moveTo(daysBetween(home, day))}
+                className="flex flex-col items-center gap-1"
               >
-                {d.dayOfMonth}
-                <span className="flex h-1.5 gap-0.5">
-                  {dots.map((id) => (
-                    <span
-                      key={id}
-                      className="h-1.5 w-1.5 rounded-full"
-                      style={{ background: `rgb(${calendar.colorOf(id)})` }}
-                    />
-                  ))}
+                <span
+                  className={cn(
+                    "text-[12px] font-medium",
+                    weekend ? "text-muted-foreground" : "text-foreground",
+                  )}
+                >
+                  {t.weekdaysShort[dow].charAt(0)}
+                </span>
+                <span
+                  className={cn(
+                    "flex h-10 w-full items-center justify-center",
+                    inView && "bg-secondary",
+                    inView && !days.includes(addDays(day, -1, TZ)) && "rounded-l-full",
+                    inView && !days.includes(addDays(day, 1, TZ)) && "rounded-r-full",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-full text-[19px]",
+                      day === today
+                        ? "bg-red-500 font-semibold text-white"
+                        : marked.has(day)
+                          ? "font-bold text-primary"
+                          : weekend
+                            ? "text-muted-foreground"
+                            : "text-foreground",
+                    )}
+                  >
+                    {n}
+                  </span>
                 </span>
               </button>
             );
           })}
         </div>
 
-        {selectedDay && (
-          <section className="mt-5">
-            <h3 className="flex items-center gap-2 font-semibold text-foreground">
-              {capitalize(
-                selectedDay.date.toLocaleDateString(LOCALE[lang], {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  timeZone: TZ,
-                }),
-              )}
-              {marked.has(selectedDay.key) && (
-                <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
-                  {t.swipe.suggested}
-                </span>
-              )}
-            </h3>
-            {segments.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">{t.calendarView.nothingBusy}</p>
-            ) : (
-              <ul className="mt-2 flex flex-col gap-1.5">
-                {segments.map((s, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-sm"
-                  >
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ background: `rgb(${calendar.colorOf(s.calendarId)})` }}
-                    />
-                    <span className="w-24 shrink-0 tabular-nums text-muted-foreground">
-                      {formatSegmentRange(s, TZ, t.calendarView.allDay)}
-                    </span>
-                    <span className="min-w-0 truncate font-medium text-foreground">
-                      {calendar.labelOf(s)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+        <div className="min-h-0 flex-1 border-t">
+          <DayColumns
+            days={days}
+            slot={{ start, end }}
+            slotLabel={slotLabel}
+            calendar={calendar}
+            size="full"
+            direction={direction}
+            onSwipe={(dir) => moveTo(offset + dir)}
+          />
+        </div>
+
+        {offset !== 0 && (
+          <button
+            type="button"
+            onClick={() => moveTo(0)}
+            className="absolute bottom-[calc(env(safe-area-inset-bottom)+16px)] left-4 z-30 rounded-full border bg-card/90 px-5 py-2.5 text-[17px] font-medium text-foreground shadow-lg backdrop-blur"
+          >
+            {t.swipe.toSuggestion}
+          </button>
         )}
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

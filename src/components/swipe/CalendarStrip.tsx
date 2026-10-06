@@ -1,50 +1,46 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Maximize2 } from "lucide-react";
 
+import DayColumns from "@/components/swipe/DayColumns";
+import { MORPH } from "@/components/swipe/morph";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
-import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { firstHour, placeBlocks, placeSpan, STRIP_LAST_HOUR } from "@/lib/dayStrip";
-import { cn } from "@/lib/utils";
-import { addDays, APP_TIME_ZONE, atHour, startOfDay } from "@/lib/zone";
+import { useT } from "@/i18n/lang";
+import { addDays, APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
 
-/** The time axis's height in pixels: enough to read, small enough to leave the card room. */
-const AXIS_PX = 132;
-/** A block shorter than this many pixels gets no label. */
-const LABEL_MIN_PX = 10;
+/** The strip's height: about seven hours of the day, leaving the card its room. */
+const STRIP_PX = 246;
 
 /**
- * Your own calendar around a suggested date (#74): the day before, the day
- * and the day after, side by side on a time axis, with the suggested time
- * outlined. Arrows step the three days through your calendar, and "Your
- * calendar" opens all of it (CalendarSheet), so checking never means leaving
- * the swipe screen. Calendar names only: Casy stores no event titles.
+ * Your own calendar around a suggested date (#74), under its swipe card: the
+ * day before, the day and the day after, drawn like Apple Calendar
+ * (DayColumns) and opened on the suggested time. A tap grows it into the
+ * same days on the whole screen (CalendarSheet, through the shared
+ * `layoutId`), where you can look further; closing shrinks it back here.
+ * While open, only its room is kept.
  */
 export default function CalendarStrip({
   date,
+  slotLabel,
   calendar,
-  onOpenCalendar,
+  layoutId,
+  open,
+  onOpen,
 }: {
   date: { start: string; end: string };
+  slotLabel: string;
   calendar: MyCalendarDays;
-  /** Open the whole calendar on this day. */
-  onOpenCalendar: (day: Date) => void;
+  layoutId: string;
+  open: boolean;
+  onOpen: () => void;
 }) {
   const t = useT();
-  const { lang } = useLang();
-  // Days stepped away from the suggested one.
-  const [offset, setOffset] = useState(0);
+  const reduceMotion = useReducedMotion();
   const start = Date.parse(date.start);
   const end = Date.parse(date.end);
-  const center = addDays(startOfDay(start, TZ), offset, TZ);
-  const days = [-1, 0, 1].map((i) => {
-    const midnight = addDays(center, i, TZ);
-    return { midnight, segments: calendar.segmentsOn(new Date(midnight)) };
-  });
-  const from = firstHour(days, { start, midnight: startOfDay(start, TZ) }, TZ);
-  const hourMarks = [from, 12, 18].filter((h, i) => i === 0 || h > from + 1);
+  const center = startOfDay(start, TZ);
 
   if (calendar.none) {
     return (
@@ -58,156 +54,46 @@ export default function CalendarStrip({
   }
 
   return (
-    <section aria-label={t.swipe.yourCalendar} className="rounded-xl border bg-card p-2">
-      <div className="flex">
-        {/* The hours, along the left. */}
-        <div className="relative mt-[38px] w-6 shrink-0" style={{ height: AXIS_PX }}>
-          {hourMarks.map((h) => (
-            <span
-              key={h}
-              className="absolute -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground"
-              style={{ top: `${((h - from) / (STRIP_LAST_HOUR - from)) * 100}%` }}
-            >
-              {String(h).padStart(2, "0")}
-            </span>
-          ))}
-        </div>
-
-        <div className="grid min-w-0 flex-1 grid-cols-3 gap-1">
-          {days.map(({ midnight, segments }) => {
-            const day = new Date(midnight);
-            const next = addDays(midnight, 1, TZ);
-            const isEventDay = start < next && end > midnight;
-            const allDay = segments.filter((s) => s.allDay);
-            const blocks = placeBlocks(segments, midnight, from, TZ);
-            const slot = isEventDay && placeSpan(start, end, midnight, from, TZ);
-            return (
-              <div key={midnight} className="min-w-0">
-                <p
-                  className={cn(
-                    "truncate text-center text-[11px] font-semibold",
-                    isEventDay ? "text-primary" : "text-muted-foreground",
-                  )}
-                >
-                  {day.toLocaleDateString(LOCALE[lang], {
-                    weekday: "short",
-                    day: "numeric",
-                    timeZone: TZ,
-                  })}
-                </p>
-                {/* Whole-day entries: holidays, and anything lasting the day. */}
-                <div className="mt-0.5 h-5 overflow-hidden">
-                  {allDay.slice(0, 1).map((s, i) => (
-                    <p
-                      key={i}
-                      className="truncate rounded px-1 text-[10px] font-medium leading-5"
-                      style={{
-                        background: `rgba(${calendar.colorOf(s.calendarId)}, 0.18)`,
-                        color: `rgb(${calendar.colorOf(s.calendarId)})`,
-                      }}
-                    >
-                      {calendar.labelOf(s)}
-                      {allDay.length > 1 && ` +${allDay.length - 1}`}
-                    </p>
-                  ))}
-                </div>
-                <div
-                  className="relative mt-1 overflow-hidden rounded-md bg-secondary/50"
-                  style={{ height: AXIS_PX }}
-                >
-                  {/* Faint lines at the hours marked on the left. */}
-                  {hourMarks.slice(1).map((h) => (
-                    <div
-                      key={h}
-                      aria-hidden
-                      className="absolute inset-x-0 border-t border-border/70"
-                      style={{ top: `${((h - from) / (STRIP_LAST_HOUR - from)) * 100}%` }}
-                    />
-                  ))}
-                  {calendar.loading ? (
-                    <div
-                      aria-hidden
-                      className="absolute inset-1 animate-pulse rounded bg-secondary"
-                    />
-                  ) : (
-                    blocks.map((b, i) => {
-                      const rgb = calendar.colorOf(b.segment.calendarId);
-                      return (
-                        <div
-                          key={i}
-                          className="absolute overflow-hidden rounded-[3px] border-l-2 px-0.5"
-                          style={{
-                            top: `${b.top * 100}%`,
-                            height: `max(${b.height * 100}%, 3px)`,
-                            left: `${(b.lane / b.lanes) * 100}%`,
-                            width: `${100 / b.lanes}%`,
-                            background: `rgba(${rgb}, 0.22)`,
-                            borderColor: `rgb(${rgb})`,
-                          }}
-                        >
-                          {b.height * AXIS_PX >= LABEL_MIN_PX && (
-                            <span
-                              className="block truncate text-[9px] font-medium leading-[10px]"
-                              style={{ color: `rgb(${rgb})` }}
-                            >
-                              {calendar.labelOf(b.segment)}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                  {/* The suggested time, on top of whatever it overlaps. */}
-                  {slot && slot.height > 0 && (
-                    <div
-                      className="pointer-events-none absolute inset-x-0 z-10 rounded-[4px] border-2 border-dashed border-primary bg-primary/10"
-                      style={{ top: `${slot.top * 100}%`, height: `${slot.height * 100}%` }}
-                    />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mt-1.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setOffset((o) => o - 1)}
-            aria-label={t.swipe.dayBack}
-            className="flex h-8 w-8 items-center justify-center rounded-full border bg-background text-foreground"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setOffset((o) => o + 1)}
-            aria-label={t.swipe.dayOn}
-            className="flex h-8 w-8 items-center justify-center rounded-full border bg-background text-foreground"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          {offset !== 0 && (
-            <button
-              type="button"
-              onClick={() => setOffset(0)}
-              className="rounded-full px-2 py-1 text-xs font-medium text-primary"
-            >
-              {t.swipe.backToDate}
-            </button>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={() => onOpenCalendar(new Date(atHour(center, 12, TZ)))}
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold text-primary"
+    <div style={{ height: STRIP_PX }}>
+      {!open && (
+        <motion.div
+          layoutId={reduceMotion ? undefined : layoutId}
+          transition={MORPH}
+          role="button"
+          tabIndex={0}
+          aria-label={t.swipe.openCalendar}
+          onClick={onOpen}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onOpen();
+            }
+          }}
+          className="relative z-30 h-full cursor-pointer overflow-hidden border bg-card shadow-sm"
+          style={{ borderRadius: 14 }}
         >
-          <CalendarDays className="h-4 w-4" />
-          {t.swipe.yourCalendar}
-        </button>
-      </div>
-    </section>
+          <motion.div
+            className="h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.12, duration: 0.18 }}
+          >
+            <DayColumns
+              days={[-1, 0, 1].map((i) => addDays(center, i, TZ))}
+              slot={{ start, end }}
+              slotLabel={slotLabel}
+              calendar={calendar}
+              size="compact"
+              // It opens: said in the corner, where the week number would be.
+              corner={
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                  <Maximize2 className="h-3 w-3" />
+                </span>
+              }
+            />
+          </motion.div>
+        </motion.div>
+      )}
+    </div>
   );
 }
