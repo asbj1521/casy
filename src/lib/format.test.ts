@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatEventDate, formatHeadline, nameList } from "@/lib/format";
+import { formatBlockTime, formatEventDate, formatHeadline, nameList } from "@/lib/format";
 
 // Friday 25 September 2026, 18:00 to 21:00 in Copenhagen.
 const EVENING = { start: "2026-09-25T16:00:00.000Z", end: "2026-09-25T19:00:00.000Z" };
@@ -61,5 +61,33 @@ describe("nameList", () => {
   it("joins names in Danish", () => {
     expect(nameList(["Emilie", "Tessa"], "da")).toBe("Emilie og Tessa");
     expect(nameList(["Emilie", "Tessa", "Simon", "Nora"], "da")).toBe("Emilie, Tessa og 2 andre");
+  });
+});
+
+describe("formatBlockTime", () => {
+  // Friday 9 October 2026, 18:00-20:00 Danish time.
+  const dinner = { start: "2026-10-09T16:00:00.000Z", end: "2026-10-09T18:00:00.000Z" };
+
+  it("is just the times on the event's own day", () => {
+    const block = { start: "2026-10-09T16:30:00.000Z", end: "2026-10-09T17:00:00.000Z" };
+    expect(formatBlockTime(block, dinner, "da", "Hele dagen")).toBe("18:30-19:00");
+  });
+
+  it("says a whole day is a whole day", () => {
+    const day = { start: "2026-10-08T22:00:00.000Z", end: "2026-10-09T22:00:00.000Z" };
+    expect(formatBlockTime(day, dinner, "en", "All day")).toBe("All day");
+  });
+
+  it("puts the date in front during a trip or holiday", () => {
+    const trip = { start: "2026-10-09T15:00:00.000Z", end: "2026-10-11T19:00:00.000Z" };
+    const saturday = { start: "2026-10-09T22:00:00.000Z", end: "2026-10-10T22:00:00.000Z" };
+    expect(formatBlockTime(saturday, trip, "en", "All day")).toBe("Sat 10 Oct · All day");
+  });
+
+  it("gives both ends of a block across midnight", () => {
+    const late = { start: "2026-10-09T19:00:00.000Z", end: "2026-10-09T23:00:00.000Z" };
+    expect(formatBlockTime(late, dinner, "en", "All day")).toBe(
+      "Fri 9 Oct 21:00 to Sat 10 Oct 01:00",
+    );
   });
 });

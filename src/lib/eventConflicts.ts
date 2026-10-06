@@ -14,9 +14,10 @@
  * Only for dates waiting for answers. A scheduled event is added to people's
  * calendars, and would then clash with itself.
  */
+import { isHardBlock, isSkippable } from "@/lib/availability";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import { addDays, startOfDay } from "@/lib/zone";
-import type { Participant } from "@/types";
+import type { BusyInterval, Participant } from "@/types";
 
 /** The profile ids of `participants` who can't make `date` any more; none once it has passed. */
 export function cantMake(
@@ -45,4 +46,24 @@ export function cantMake(
       return !slot || Date.parse(slot.start) !== start || Date.parse(slot.end) !== end;
     })
     .map((p) => p.profileId);
+}
+
+/**
+ * Which of someone's busy blocks make the clash, by the same rules: for a
+ * meeting, anything during it that isn't on a calendar marked skippable; for
+ * a trip or a holiday, whole-day absences during it (work doesn't count, the
+ * date always asked for time off from it). Sorted by start. My events shows
+ * them, with their calendar's name, to the person they belong to only.
+ */
+export function clashingBlocks(
+  busy: BusyInterval[],
+  settings: EventSettings,
+  date: { start: string; end: string },
+): BusyInterval[] {
+  const start = Date.parse(date.start);
+  const end = Date.parse(date.end);
+  return busy
+    .filter((b) => Date.parse(b.start) < end && Date.parse(b.end) > start)
+    .filter((b) => (settings.kind === "single" ? !isSkippable(b) : isHardBlock(b)))
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 }

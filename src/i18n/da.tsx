@@ -531,6 +531,8 @@ export const da = {
     keepIt: "Behold den",
     conflictYou: "Du har noget i din kalender på dette tidspunkt nu.",
     cantMakeAfterAll: "Kan ikke alligevel",
+    // Beside your clash's calendar ("Arbejde · +2"): kept short, so the box keeps its size.
+    moreClashes: (n: number) => `+${n}`,
     // Danish says "har" for one or several; English needs to know (has/have).
     conflictOthers: (_several: boolean, names: string) =>
       `${names} har noget i kalenderen på dette tidspunkt nu.`,

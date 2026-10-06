@@ -5,7 +5,7 @@
  */
 import { LOCALE, type Lang } from "@/i18n/locale";
 import type { EventSettings } from "@/lib/eventSearch";
-import { APP_TIME_ZONE } from "@/lib/zone";
+import { addDays, APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 /** A date that was found or suggested: an instant range, ISO UTC. */
 type DateRange = { start: string; end: string };
@@ -165,6 +165,35 @@ export function formatHeadline(
         time: words.scheduler.timeRange(formatTime(start), formatTime(end)),
       };
   }
+}
+
+/**
+ * When one of your busy blocks is, next to a date it clashes with (My events,
+ * #85): "18:30-19:00" on the event's own day, "Hele dagen" for a whole day,
+ * with the date in front when the event covers several days or the block is
+ * on another; a block across midnight gets both ends.
+ */
+export function formatBlockTime(
+  block: DateRange,
+  event: DateRange,
+  lang: Lang,
+  allDay: string,
+): string {
+  const tz = APP_TIME_ZONE;
+  const start = Date.parse(block.start);
+  const end = Date.parse(block.end);
+  const dayStart = startOfDay(start, tz);
+  const sameDay = dayStart === startOfDay(end - 1, tz);
+  const wholeDay = start === dayStart && end === addDays(dayStart, 1, tz);
+  const eventDays =
+    startOfDay(Date.parse(event.start), tz) !== startOfDay(Date.parse(event.end) - 1, tz);
+  const withDate = eventDays || dayStart !== startOfDay(Date.parse(event.start), tz);
+  const date = withDate ? `${formatDate(block.start, lang)} · ` : "";
+  if (wholeDay) return `${date}${allDay}`;
+  if (!sameDay) {
+    return `${formatDate(block.start, lang)} ${formatTime(block.start)} ${TO[lang]} ${formatDate(block.end, lang)} ${formatTime(block.end)}`;
+  }
+  return `${date}${formatTime(block.start)}-${formatTime(block.end)}`;
 }
 
 const AND: Record<Lang, string> = { da: "og", en: "and" };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cantMake } from "@/lib/eventConflicts";
+import { cantMake, clashingBlocks } from "@/lib/eventConflicts";
 import type { EventSettings } from "@/lib/eventSearch";
 import type { BusyInterval, Participant } from "@/types";
 
@@ -110,5 +110,31 @@ describe("cantMake: whole days", () => {
     expect(cantMake([dinnerOut], weekend, trip, TZ, NOW)).toEqual([]);
     const away = person("cy", [block("2026-10-09T22:00:00Z", "2026-10-10T22:00:00Z")]);
     expect(cantMake([away], weekend, trip, TZ, NOW)).toEqual(["cy"]);
+  });
+});
+
+describe("clashingBlocks", () => {
+  const dinner: EventSettings = { kind: "single", startHour: 18, durationMinutes: 120 };
+  const date = { start: "2026-10-09T16:00:00.000Z", end: "2026-10-09T18:00:00.000Z" };
+
+  it("picks what overlaps a meeting, in time order, leaving out skippable and touching blocks", () => {
+    const busy = [
+      block("2026-10-09T17:30:00Z", "2026-10-09T19:00:00Z", { title: "Hjem" }),
+      block("2026-10-09T16:30:00Z", "2026-10-09T17:00:00Z", { title: "Arbejde" }),
+      block("2026-10-09T16:00:00Z", "2026-10-09T17:00:00Z", { priority: "skip" }),
+      block("2026-10-09T14:00:00Z", "2026-10-09T16:00:00Z"),
+    ];
+    expect(clashingBlocks(busy, dinner, date).map((b) => b.title)).toEqual(["Arbejde", "Hjem"]);
+  });
+
+  it("picks only whole-day absences during a holiday, not work", () => {
+    const holiday: EventSettings = { kind: "vacation", days: 5 };
+    const week = { start: "2026-10-11T22:00:00.000Z", end: "2026-10-16T22:00:00.000Z" };
+    const busy = [
+      block("2026-10-13T06:00:00Z", "2026-10-13T14:00:00Z", { category: "work" }),
+      block("2026-10-13T22:00:00Z", "2026-10-14T22:00:00Z", { title: "Rejse" }),
+      block("2026-10-12T17:00:00Z", "2026-10-12T19:00:00Z"),
+    ];
+    expect(clashingBlocks(busy, holiday, week).map((b) => b.title)).toEqual(["Rejse"]);
   });
 });

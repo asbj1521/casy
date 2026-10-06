@@ -511,6 +511,7 @@ export const en: Messages = {
     keepIt: "Keep it",
     conflictYou: "You now have something in your calendar at this time.",
     cantMakeAfterAll: "Can't make it after all",
+    moreClashes: (n: number) => `+${n}`,
     conflictOthers: (several: boolean, names: string) =>
       `${names} now ${several ? "have" : "has"} something in their calendar at this time.`,
     accept: "Accept",

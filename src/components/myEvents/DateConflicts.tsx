@@ -2,16 +2,18 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarX, Loader2 } from "lucide-react";
 
+import { calendarBusyQuery } from "@/api/calendars";
 import { declineEvent } from "@/api/events";
 import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useEventChange } from "@/hooks/useEventChange";
 import { useLang, useT } from "@/i18n/lang";
-import { cantMake } from "@/lib/eventConflicts";
+import { cantMake, clashingBlocks } from "@/lib/eventConflicts";
 import { isEventSettings, SEARCH_WINDOW } from "@/lib/eventSearch";
-import { nameList } from "@/lib/format";
+import { formatBlockTime, nameList } from "@/lib/format";
 import type { DatedEvent } from "@/lib/myEvents";
+import { busyFromCalendars } from "@/lib/realCalendar";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
@@ -22,7 +24,13 @@ import { APP_TIME_ZONE } from "@/lib/zone";
  * the next date for everyone, as any decline does); said about others so the
  * group isn't surprised. Built from the group's busy times the card already
  * loads, checked by the event's own rules (lib/eventConflicts.ts).
+ *
+ * Your own clash says when it is and which of your calendars it is in, read
+ * from your own calendar data (the same the badge reads): never what the
+ * appointment is called, since Casy stores no titles, and never for anyone
+ * else, whose calendar names members don't see.
  */
+
 export default function DateConflicts({
   event,
   className,
@@ -42,6 +50,10 @@ export default function DateConflicts({
     ...groupBusyQuery(userId, event.group.id, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
     enabled: pending,
   });
+  const { data: mine } = useQuery({
+    ...calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
+    enabled: pending,
+  });
 
   const group = groups?.find((g) => g.id === event.group.id);
   if (!pending || !group || !busy || !isEventSettings(event.settings)) return null;
@@ -56,52 +68,74 @@ export default function DateConflicts({
   const youClash = clash.has(userId);
   const youSaidYes = event.invitees.some((i) => i.isYou && i.response === "accepted");
   const others = people.filter((p) => p.profileId !== userId && clash.has(p.profileId));
+  const yours =
+    youClash && mine
+      ? clashingBlocks(busyFromCalendars(mine), event.settings, event.currentDate)
+      : [];
+  const first = yours[0];
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {youClash && (
         <Notice tone="warning" icon={CalendarX}>
-          <p>{t.events.conflictYou}</p>
-          {youSaidYes &&
-            (confirming ? (
-              <div className="mt-2">
-                <p>{t.events.cantMake}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p>{t.events.conflictYou}</p>
+              {youSaidYes &&
+                (confirming ? (
+                  <div className="mt-2">
+                    <p>{t.events.cantMake}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        // The event stays, with the next date for everyone to answer.
+                        onClick={() =>
+                          decline.mutate(undefined, { onSuccess: () => setConfirming(false) })
+                        }
+                        disabled={decline.isPending}
+                        className="inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
+                      >
+                        {decline.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {t.events.declineFind}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(false)}
+                        disabled={decline.isPending}
+                        className="rounded-full px-4 py-2 text-sm font-medium transition hover:underline"
+                      >
+                        {t.events.keepIt}
+                      </button>
+                    </div>
+                    {decline.error && <p className="mt-2 text-red-700">{decline.error.message}</p>}
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    // The event stays, with the next date for everyone to answer.
-                    onClick={() =>
-                      decline.mutate(undefined, { onSuccess: () => setConfirming(false) })
-                    }
-                    disabled={decline.isPending}
-                    className="inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
+                    onClick={() => {
+                      decline.reset();
+                      setConfirming(true);
+                    }}
+                    className="mt-1 font-semibold underline underline-offset-2"
                   >
-                    {decline.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {t.events.declineFind}
+                    {t.events.cantMakeAfterAll}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirming(false)}
-                    disabled={decline.isPending}
-                    className="rounded-full px-4 py-2 text-sm font-medium transition hover:underline"
-                  >
-                    {t.events.keepIt}
-                  </button>
-                </div>
-                {decline.error && <p className="mt-2 text-red-700">{decline.error.message}</p>}
+                ))}
+            </div>
+            {first && (
+              // Two lines at most, beside the message, so the box keeps its size:
+              // the first clash's time, then its calendar and how many more.
+              <div className="max-w-[45%] shrink-0 text-right">
+                <span className="block font-semibold tabular-nums">
+                  {formatBlockTime(first, event.currentDate, lang, t.calendarView.allDay)}
+                </span>
+                <span className="block truncate text-xs opacity-80">
+                  {first.title ?? t.calendarView.calendarFallback}
+                  {yours.length > 1 && ` · ${t.events.moreClashes(yours.length - 1)}`}
+                </span>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  decline.reset();
-                  setConfirming(true);
-                }}
-                className="mt-1 font-semibold underline underline-offset-2"
-              >
-                {t.events.cantMakeAfterAll}
-              </button>
-            ))}
+            )}
+          </div>
         </Notice>
       )}
       {others.length > 0 && (
