@@ -907,6 +907,10 @@ export const da = {
     statGroups: "Grupper",
     statAccounts: "Forbundne konti",
     statFailing: "Fejlende synkroniseringer",
+    healthOk: "Kalendersynkroniseringen virker.",
+    healthStale:
+      "Ingen kalender er blevet synkroniseret i over tre timer. Den timevise synkronisering er måske gået i stå.",
+    healthFailing: "Over 30 % af kalenderkontiene fejler, når de synkroniseres.",
     statBusy: "Gemte optagede tidsrum",
     dismiss: "Luk",
     tabGroups: "Grupper",

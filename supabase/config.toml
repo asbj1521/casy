@@ -475,6 +475,11 @@ verify_jwt = false
 # events in groups they are a member of and were invited to.
 verify_jwt = false
 
+[functions.health]
+# Public on purpose: an uptime monitor calls it without a login. It answers
+# only ok, or "stale" / "failing" with a 503 (_shared/health.ts).
+verify_jwt = false
+
 [functions.auth-email]
 # Called by Supabase Auth (the Send Email hook), never by the site, so there is
 # no login to check. Instead every call must carry Auth's signature made with

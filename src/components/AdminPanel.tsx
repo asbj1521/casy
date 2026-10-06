@@ -587,6 +587,17 @@ export default function AdminPanel({ youId }: { youId: string }) {
         </button>
       </div>
 
+      {/* The same answer the uptime monitor gets from the health function (#88). */}
+      {data && (
+        <Notice tone={data.health.ok ? "success" : "error"} className="mt-4">
+          {data.health.ok
+            ? t.admin.healthOk
+            : data.health.reason === "stale"
+              ? t.admin.healthStale
+              : t.admin.healthFailing}
+        </Notice>
+      )}
+
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <StatTile label={t.admin.statUsers} value={stats?.users ?? null} />
         <StatTile label={t.admin.statGroups} value={stats?.groups ?? null} />

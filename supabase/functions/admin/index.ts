@@ -21,6 +21,7 @@ import { isAdminId } from "../_shared/admin.ts";
 import { deleteAccount } from "../_shared/accounts.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
+import { healthOf, readSyncFacts } from "../_shared/health.ts";
 import { HttpError, requireString, serve } from "../_shared/http.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
@@ -124,11 +125,14 @@ async function overview(db: Db) {
       calendarsLinked.set(c.profile_id, (calendarsLinked.get(c.profile_id) ?? 0) + 1);
   }
 
+  const health = healthOf(await readSyncFacts(db));
   const failing = connectionRows.filter(
     (c) => c.status === "connected" && (c.needs_reconnect || c.sync_error),
   ).length;
 
   return {
+    // The same answer the uptime monitor gets from the health function.
+    health,
     stats: {
       users: users.length,
       groups: (groups ?? []).length,
