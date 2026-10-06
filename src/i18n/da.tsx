@@ -530,7 +530,7 @@ export const da = {
     declineFind: "Afslå og find en ny dato",
     keepIt: "Behold den",
     conflictYou: "Du har noget i din kalender på dette tidspunkt nu.",
-    cantMakeAfterAll: "Kan ikke alligevel",
+    cantMakeAfterAll: "Find en ny dato",
     // Beside your clash's calendar ("Arbejde · +2"): kept short, so the box keeps its size.
     moreClashes: (n: number) => `+${n}`,
     // Danish says "har" for one or several; English needs to know (has/have).

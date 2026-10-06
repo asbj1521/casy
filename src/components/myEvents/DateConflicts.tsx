@@ -20,7 +20,7 @@ import { APP_TIME_ZONE } from "@/lib/zone";
 /**
  * A date waiting for answers that someone's calendar now rules out (#85):
  * they added something after it was offered. Said to you about yourself,
- * with "Can't make it after all" if you already said yes (declining finds
+ * with "Find a new date" if you already said yes (declining finds
  * the next date for everyone, as any decline does); said about others so the
  * group isn't surprised. Built from the group's busy times the card already
  * loads, checked by the event's own rules (lib/eventConflicts.ts).
