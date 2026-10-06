@@ -193,6 +193,42 @@ export default function DayColumns({
     if (to === offset) animate(x, -offset * columnPx, SETTLE);
     else onOffset?.(to);
   };
+
+  // A two-finger sideways swipe on a trackpad arrives as horizontal wheel
+  // events: the days follow it, its momentum included, and settle on a
+  // whole day once it stops. Listened to directly, not through React (whose
+  // wheel listeners can't cancel), so the swipe is kept from the browser,
+  // which would otherwise take it as "back a page".
+  const root = useRef<HTMLDivElement>(null);
+  const latest = useRef({ columnPx, settle });
+  useEffect(() => {
+    latest.current = { columnPx, settle };
+  });
+  const swipeable = !!onOffset;
+  useEffect(() => {
+    const el = root.current;
+    if (!el || !swipeable) return;
+    let settleAfter: ReturnType<typeof setTimeout> | undefined;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      if (!latest.current.columnPx) return;
+      // A mouse's sideways wheel counts in lines; a trackpad's in pixels.
+      const dx = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaX * 16 : e.deltaX;
+      x.stop();
+      x.set(x.get() - dx);
+      clearTimeout(settleAfter);
+      settleAfter = setTimeout(() => {
+        const { columnPx: px, settle: settleOn } = latest.current;
+        settleOn(Math.round(-x.get() / px));
+      }, 120);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      clearTimeout(settleAfter);
+    };
+  }, [swipeable, x]);
   const dragHandlers = onOffset && {
     onPointerDown: (e: PointerEvent) => {
       x.stop();
@@ -252,7 +288,11 @@ export default function DayColumns({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div
+      ref={root}
+      className="flex h-full min-h-0 flex-col"
+      style={swipeable ? { overscrollBehaviorX: "contain" } : undefined}
+    >
       {/* The days' names, with the week number in the corner as Apple has it. */}
       <div className={cn("flex shrink-0 items-center border-b", compact ? "h-7" : "h-11")}>
         <span
@@ -336,17 +376,21 @@ export default function DayColumns({
           {/* An hour line across, labelled in the gutter (not under the time now). */}
           {Array.from({ length: 25 }, (_, h) => (
             <div key={h} className="absolute inset-x-0" style={{ top: h * hourPx }}>
-              {h > 0 && h < 24 && !(showsToday && Math.abs(h * hourPx - nowTop) < 12) && (
-                <span
-                  className={cn(
-                    "absolute -translate-y-1/2 pr-1.5 text-right tabular-nums text-muted-foreground",
-                    compact ? "text-[9px]" : "text-[12px]",
-                  )}
-                  style={{ width: gutter }}
-                >
-                  {compact ? String(h).padStart(2, "0") : `${String(h).padStart(2, "0")}:00`}
-                </span>
-              )}
+              {h > 0 &&
+                h < 24 &&
+                // Every other hour when the day is fitted into little height.
+                h % (hourPx < 18 ? 2 : 1) === 0 &&
+                !(showsToday && Math.abs(h * hourPx - nowTop) < 12) && (
+                  <span
+                    className={cn(
+                      "absolute -translate-y-1/2 pr-1.5 text-right tabular-nums text-muted-foreground",
+                      compact ? "text-[9px]" : "text-[12px]",
+                    )}
+                    style={{ width: gutter }}
+                  >
+                    {compact ? String(h).padStart(2, "0") : `${String(h).padStart(2, "0")}:00`}
+                  </span>
+                )}
               <div className="border-t border-border/80" style={{ marginLeft: gutter }} />
             </div>
           ))}

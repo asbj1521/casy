@@ -614,6 +614,8 @@ export const da = {
     openCalendar: "Åbn din kalender",
     done: "Færdig",
     showMonth: (month: string) => `Vis ${month}`,
+    weekBack: "Forrige uge",
+    weekOn: "Næste uge",
     toSuggestion: "Forslaget",
     connect: "Forbind kalender",
     dateOf: (n: number, total: number) => `Dato ${n} af ${total}`,

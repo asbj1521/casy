@@ -10,12 +10,11 @@ import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 const TZ = APP_TIME_ZONE;
 
 /**
- * The strip's height: on a phone about seven hours of the day, leaving the
- * card its room; on a computer, beside the card, the card and its answers'
- * height, with the whole day fitted into it.
+ * The strip's height on a phone: about seven hours of the day, leaving the
+ * card its room. On a computer it is as tall as the card and its answers
+ * beside it, with the whole day fitted in.
  */
 const STRIP_PX = 246;
-const FIT_PX = 446;
 
 /**
  * Your own calendar around a suggested date (#74), under its swipe card: the
@@ -72,7 +71,7 @@ export default function CalendarStrip({
         }
       }}
       className="relative cursor-pointer overflow-hidden rounded-[14px] border bg-card shadow-sm"
-      style={{ height: fit ? FIT_PX : STRIP_PX }}
+      style={{ height: fit ? "100%" : STRIP_PX }}
     >
       <DayColumns
         home={startOfDay(start, TZ)}

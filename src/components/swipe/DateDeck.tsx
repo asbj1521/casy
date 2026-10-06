@@ -201,7 +201,9 @@ export default function DateDeck({
   );
 
   return (
-    <div className={cn("flex flex-col", screen ? "h-full" : "")}>
+    // Both fill the height they're given: a phone's screen, or on a computer
+    // the window's height below the event's header (VoteDetails).
+    <div className="flex h-full min-h-0 flex-col">
       {/* Back to My events (a phone), the event, how far along, and a step back. */}
       <header className={cn("flex items-center gap-2", screen ? "h-12 shrink-0 px-2" : "mb-2")}>
         {screen && (
@@ -305,9 +307,9 @@ export default function DateDeck({
               {hint}
             </>
           ) : (
-            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-start gap-5">
-              <div>
-                <div className="relative h-[330px]">{stack}</div>
+            <div className="mt-3 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-5">
+              <div className="flex min-h-0 flex-col">
+                <div className="relative min-h-[200px] flex-1">{stack}</div>
                 <AnswerButtons onAnswer={answer} screen={false} />
                 {hint}
               </div>
@@ -634,7 +636,7 @@ function DoneView({
   const missing = event.status === "pending" ? stillToAnswer(event) : [];
 
   return (
-    <div className={cn("flex-1 overflow-y-auto", screen ? "px-4 pb-6 pt-5" : "mt-4")}>
+    <div className={cn("min-h-0 flex-1 overflow-y-auto", screen ? "px-4 pb-6 pt-5" : "mt-4")}>
       <div className={cn(screen && "mx-auto max-w-md")}>
         {settled ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5">

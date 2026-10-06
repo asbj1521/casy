@@ -589,6 +589,8 @@ export const en: Messages = {
     openCalendar: "Open your calendar",
     done: "Done",
     showMonth: (month: string) => `Show ${month}`,
+    weekBack: "Previous week",
+    weekOn: "Next week",
     toSuggestion: "Suggested date",
     connect: "Connect a calendar",
     dateOf: (n: number, total: number) => `Date ${n} of ${total}`,

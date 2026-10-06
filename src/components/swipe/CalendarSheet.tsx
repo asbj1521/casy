@@ -1,6 +1,6 @@
-import { useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import DayColumns from "@/components/swipe/DayColumns";
 import MonthView from "@/components/swipe/MonthView";
@@ -163,6 +163,25 @@ export default function CalendarSheet({
     ).finished.then(onClose, onClose);
   };
 
+  // A computer's keys: left and right a day, Escape closes.
+  const keys = useRef({ go, offset, close });
+  useEffect(() => {
+    keys.current = { go, offset, close };
+  });
+  useEffect(() => {
+    if (!contained) return;
+    const onKey = (e: KeyboardEvent) => {
+      const k = keys.current;
+      if (e.key === "ArrowLeft") k.go(k.offset - 1);
+      else if (e.key === "ArrowRight") k.go(k.offset + 1);
+      else if (e.key === "Escape") k.close();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [contained]);
+
   // A sideways swipe on the week row turns the week.
   const swipe = useRef<{ x: number; y: number } | null>(null);
   const weekSwipe = {
@@ -234,84 +253,107 @@ export default function CalendarSheet({
             transition={{ duration: 0.22, ease: "easeOut" }}
           >
             {/* The week: letters fixed, numbers turning a week at a time. */}
-            <div className="mx-1 shrink-0 pb-2">
-              <div className="grid grid-cols-7">
-                {week.map((day) => (
-                  <span
-                    key={day}
-                    className={cn(
-                      "text-center text-[12px] font-medium",
-                      isWeekend(day) ? "text-muted-foreground" : "text-foreground",
-                    )}
-                  >
-                    {t.weekdaysShort[localDate(day, TZ).dow].charAt(0)}
-                  </span>
-                ))}
-              </div>
-              <div
-                className="relative mt-1 h-10 overflow-hidden"
-                style={{ touchAction: "pan-y" }}
-                {...weekSwipe}
-              >
-                <AnimatePresence initial={false} custom={weekTurn}>
-                  <motion.div
-                    key={monday}
-                    custom={weekTurn}
-                    variants={{
-                      enter: (d: number) => ({ x: `${d * 100}%` }),
-                      still: { x: 0 },
-                      leave: (d: number) => ({ x: `${-d * 100}%` }),
-                    }}
-                    initial="enter"
-                    animate="still"
-                    exit="leave"
-                    transition={reduceMotion ? { duration: 0 } : SLIDE}
-                    className="absolute inset-0"
-                  >
-                    {shown.length > 0 && (
-                      <motion.div
-                        aria-hidden
-                        className="absolute inset-y-0 rounded-full bg-secondary"
-                        initial={false}
-                        animate={{
-                          left: `${(shown[0] / 7) * 100}%`,
-                          width: `${(shown.length / 7) * 100}%`,
-                        }}
-                        transition={reduceMotion ? { duration: 0 } : SLIDE}
-                      />
-                    )}
-                    <div className="relative grid h-full grid-cols-7">
-                      {week.map((day) => (
-                        <button
-                          key={day}
-                          type="button"
-                          onClick={() => go(daysBetween(home, day))}
-                          className="flex items-center justify-center"
-                        >
-                          <span
-                            className={cn(
-                              "flex h-9 w-9 items-center justify-center rounded-full text-[19px] transition-colors",
-                              day === center
-                                ? day === today
-                                  ? "bg-red-500 font-semibold text-white"
-                                  : "bg-foreground font-semibold text-background"
-                                : day === today
-                                  ? "font-semibold text-red-500"
-                                  : marked.has(day)
-                                    ? "font-bold text-primary"
-                                    : isWeekend(day)
-                                      ? "text-muted-foreground"
-                                      : "text-foreground",
-                            )}
+            <div className="mx-1 flex shrink-0 items-end gap-1 pb-2">
+              {/* A computer turns the week with arrows; a phone swipes the row. */}
+              {contained && (
+                <button
+                  type="button"
+                  onClick={() => go(offset + -7)}
+                  aria-label={t.swipe.weekBack}
+                  className="mb-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="grid grid-cols-7">
+                  {week.map((day) => (
+                    <span
+                      key={day}
+                      className={cn(
+                        "text-center text-[12px] font-medium",
+                        isWeekend(day) ? "text-muted-foreground" : "text-foreground",
+                      )}
+                    >
+                      {t.weekdaysShort[localDate(day, TZ).dow].charAt(0)}
+                    </span>
+                  ))}
+                </div>
+                <div
+                  className="relative mt-1 h-10 overflow-hidden"
+                  style={{ touchAction: "pan-y" }}
+                  {...weekSwipe}
+                >
+                  <AnimatePresence initial={false} custom={weekTurn}>
+                    <motion.div
+                      key={monday}
+                      custom={weekTurn}
+                      variants={{
+                        enter: (d: number) => ({ x: `${d * 100}%` }),
+                        still: { x: 0 },
+                        leave: (d: number) => ({ x: `${-d * 100}%` }),
+                      }}
+                      initial="enter"
+                      animate="still"
+                      exit="leave"
+                      transition={reduceMotion ? { duration: 0 } : SLIDE}
+                      className="absolute inset-0"
+                    >
+                      {shown.length > 0 && (
+                        <motion.div
+                          aria-hidden
+                          className="absolute inset-y-0 rounded-full bg-secondary"
+                          initial={false}
+                          animate={{
+                            left: `${(shown[0] / 7) * 100}%`,
+                            width: `${(shown.length / 7) * 100}%`,
+                          }}
+                          transition={reduceMotion ? { duration: 0 } : SLIDE}
+                        />
+                      )}
+                      <div className="relative grid h-full grid-cols-7">
+                        {week.map((day) => (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => go(daysBetween(home, day))}
+                            className="flex items-center justify-center"
                           >
-                            {localDate(day, TZ).day}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
+                            <span
+                              className={cn(
+                                "flex h-9 w-9 items-center justify-center rounded-full text-[19px] transition-colors",
+                                day === center
+                                  ? day === today
+                                    ? "bg-red-500 font-semibold text-white"
+                                    : "bg-foreground font-semibold text-background"
+                                  : day === today
+                                    ? "font-semibold text-red-500"
+                                    : marked.has(day)
+                                      ? "font-bold text-primary"
+                                      : isWeekend(day)
+                                        ? "text-muted-foreground"
+                                        : "text-foreground",
+                              )}
+                            >
+                              {localDate(day, TZ).day}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </div>
+              {contained && (
+                <button
+                  type="button"
+                  onClick={() => go(offset + 7)}
+                  aria-label={t.swipe.weekOn}
+                  className="mb-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             <div ref={days} className="min-h-0 flex-1 border-t">
