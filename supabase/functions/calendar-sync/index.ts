@@ -101,6 +101,10 @@ async function runScheduled(db: Db, targets: SyncTarget[], key: string): Promise
   console.log(
     `scheduled sync: ${ok} ok, ${failed} failed, ${targets.length - ok - failed} left for next run`,
   );
+  // Votes past their deadline nobody has looked at since (#74): decided here,
+  // so their calendar entries go in below. A failure only waits an hour.
+  const { error } = await db.rpc("decide_due_votes", { p_profile_id: null });
+  if (error) console.error("deciding due votes failed", error);
   // Busy times first; calendar writes get what is left of the budget.
   await catchUpWrites(db, key, {}, Math.max(10_000, SCHEDULED_BUDGET_MS - (Date.now() - started)));
 }

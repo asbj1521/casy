@@ -13,6 +13,12 @@
  * date attached; this function checks it is a sensible date after the one
  * being declined, and the database swaps it in atomically (respond_to_event).
  *
+ * Events suggested since #74 are votes instead: several dates at once, which
+ * everyone answers (answer: can, rather not, can't) by swiping through them.
+ * The database decides a vote once everyone has answered or its deadline
+ * passes (decide_vote); if every date has a decline, the suggester picks
+ * one (choose). Votes past their deadline are decided on the next list.
+ *
  * What members see of each other here: names, and who has accepted or
  * declined which date. Never an email, a calendar or an event title from
  * anyone's calendar.
@@ -36,8 +42,11 @@ import { buildEventIcs, eventResourceName } from "../_shared/eventIcs.ts";
 import {
   cleanEventTitle,
   currentDate,
+  type EventMode,
   isEventSettings,
+  parseCandidateDates,
   parseEventDate,
+  VOTE_ANSWER_MS,
 } from "../_shared/events.ts";
 import { displayNameFor, requireMember } from "../_shared/groups.ts";
 import { afterResponse, HttpError, requireString, serve } from "../_shared/http.ts";
@@ -55,6 +64,7 @@ type DateRow = {
   declined_by: string | null;
   declined_at: string | null;
   created_at: string;
+  chosen_at: string | null;
 };
 
 type ProposalRow = {
@@ -64,6 +74,8 @@ type ProposalRow = {
   title: string;
   settings: { kind?: string } | null;
   status: string;
+  mode: EventMode;
+  answer_by: string | null;
   created_at: string;
   updated_at: string;
   friend_groups: { name: string } | null;
@@ -85,7 +97,7 @@ type MyCalendar = { state: "added" | "gone" } | { state: "adding"; error: string
  *
  * Four round trips whatever the number of events: the caller's groups, the
  * events with their dates embedded, everyone invited with their answers to
- * each current date, and the names.
+ * each current date (and to every date of a vote), and the names.
  */
 async function listEvents(db: Db, profileId: string, callerName: string, only?: string) {
   const { data: memberships, error: memErr } = await db
@@ -99,9 +111,10 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
   let query = db
     .from("event_proposals")
     .select(
-      "id, group_id, created_by, title, settings, status, created_at, updated_at, " +
-        "friend_groups(name), " +
-        "event_proposal_dates(id, starts_at, ends_at, declined_by, declined_at, created_at), " +
+      "id, group_id, created_by, title, settings, status, mode, answer_by, created_at, " +
+        "updated_at, friend_groups(name), " +
+        "event_proposal_dates(id, starts_at, ends_at, declined_by, declined_at, created_at, " +
+        "chosen_at), " +
         "event_invitees!inner(profile_id)",
     )
     .in("group_id", groupIds)
@@ -117,16 +130,29 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
   if (proposals.length === 0) return [];
 
   const proposalIds = proposals.map((p) => p.id);
-  const current = new Map(proposals.map((p) => [p.id, currentDate(p.event_proposal_dates)]));
-  const currentIds = [...current.values()].filter((d) => d !== null).map((d) => d.id);
+  const current = new Map(
+    proposals.map((p) => [p.id, currentDate(p.event_proposal_dates, p.mode)]),
+  );
+  // The answers wanted: to each current date, and to every date of a vote.
+  const answeredIds = [
+    ...new Set([
+      ...[...current.values()].filter((d) => d !== null).map((d) => d.id),
+      ...proposals
+        .filter((p) => p.mode === "vote")
+        .flatMap((p) => p.event_proposal_dates.map((d) => d.id)),
+    ]),
+  ];
 
   // Everyone invited, their answers to each current date, and whether Casy
   // put each event into the caller's own calendar: none needs another, so
   // all are asked at once. Every accept and decline waits on this list.
   const [invitees, answers, writes] = await Promise.all([
     db.from("event_invitees").select("proposal_id, profile_id").in("proposal_id", proposalIds),
-    currentIds.length > 0
-      ? db.from("event_responses").select("date_id, profile_id, response").in("date_id", currentIds)
+    answeredIds.length > 0
+      ? db
+          .from("event_responses")
+          .select("date_id, profile_id, response")
+          .in("date_id", answeredIds)
       : { data: [], error: null },
     db
       .from("calendar_event_writes")
@@ -166,12 +192,15 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
   return proposals.map((p) => {
     const date = current.get(p.id) ?? null;
     const write = writeOf.get(p.id);
+    const invited = inviteesOf.get(p.id) ?? [];
     return {
       id: p.id,
       group: { id: p.group_id, name: p.friend_groups?.name ?? "A group" },
       title: p.title,
       settings: p.settings,
       status: p.status,
+      mode: p.mode,
+      answerBy: p.answer_by,
       createdBy: {
         id: p.created_by,
         name: nameOf(p.created_by),
@@ -180,7 +209,7 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
       createdAt: p.created_at,
       updatedAt: p.updated_at,
       currentDate: date ? { id: date.id, start: date.starts_at, end: date.ends_at } : null,
-      invitees: (inviteesOf.get(p.id) ?? [])
+      invitees: invited
         .map((id) => ({
           profileId: id,
           name: nameOf(id),
@@ -193,6 +222,24 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
         .filter((d) => d.declined_at !== null)
         .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
         .map((d) => ({ start: d.starts_at, end: d.ends_at, declinedBy: nameOf(d.declined_by) })),
+      // A vote's dates, soonest first, each with the answers of everyone
+      // still invited (by profile id). Empty for a single-date event.
+      candidates:
+        p.mode === "vote"
+          ? [...p.event_proposal_dates]
+              .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))
+              .map((d) => ({
+                id: d.id,
+                start: d.starts_at,
+                end: d.ends_at,
+                answers: Object.fromEntries(
+                  invited.flatMap((id) => {
+                    const answer = answerOf.get(`${d.id}:${id}`);
+                    return answer ? [[id, answer]] : [];
+                  }),
+                ),
+              }))
+          : [],
       myCalendar: myCalendarState(write),
     };
   });
@@ -230,8 +277,15 @@ serve("events", async (req, body) => {
     );
 
   switch (action) {
-    case "list":
+    case "list": {
+      // Votes past their deadline are decided as soon as anyone in them looks.
+      const { data: decided, error } = await db.rpc("decide_due_votes", {
+        p_profile_id: profileId,
+      });
+      if (error) throw error;
+      for (const proposalId of (decided ?? []) as string[]) syncCalendarsLater(proposalId);
       return await list();
+    }
 
     case "suggest": {
       const groupId = requireString(body, "groupId");
@@ -240,6 +294,28 @@ serve("events", async (req, body) => {
       if (!isEventSettings(body.settings)) {
         throw new HttpError(400, "Those event settings aren't valid.");
       }
+
+      // Several dates: a vote (#74). Everyone, the suggester included,
+      // answers them; nothing is scheduled until then.
+      if (body.dates !== undefined) {
+        const dates = parseCandidateDates(body.dates);
+        if (!dates) throw new HttpError(400, "Those dates aren't valid any more. Search again.");
+        await requireMember(db, groupId, profileId);
+        const { data: proposalId, error } = await db.rpc("suggest_vote_event", {
+          p_group_id: groupId,
+          p_created_by: profileId,
+          p_title: title,
+          p_settings: body.settings,
+          p_dates: dates,
+          p_answer_by: new Date(Date.now() + VOTE_ANSWER_MS).toISOString(),
+        });
+        if (error?.code === "23514") throw new HttpError(400, error.message);
+        if (error) throw error;
+        return { createdId: proposalId as string, ...(await list()) };
+      }
+
+      // One date: how the site suggested before #74, still answered for a
+      // page loaded before then.
       const date = parseEventDate(body.date);
       if (!date) throw new HttpError(400, "That date isn't valid any more. Search again.");
       await requireMember(db, groupId, profileId);
@@ -312,6 +388,57 @@ serve("events", async (req, body) => {
       // The last yes schedules it: in go the automatic adds.
       if (outcome === "accepted") syncCalendarsLater(proposalId);
       return { outcome, ...(await list()) };
+    }
+
+    case "answer": {
+      // One date of a vote: accepted (can), maybe (can, rather not), declined.
+      const proposalId = requireString(body, "proposalId");
+      const dateId = requireString(body, "dateId");
+      const response = body.response;
+      if (response !== "accepted" && response !== "maybe" && response !== "declined") {
+        throw new HttpError(400, "response must be accepted, maybe or declined");
+      }
+      const { data: outcome, error } = await db.rpc("respond_to_vote", {
+        p_proposal_id: proposalId,
+        p_date_id: dateId,
+        p_profile_id: profileId,
+        p_response: response,
+      });
+      if (error) throw error;
+      if (outcome === "not_found") throw new HttpError(404, "That event no longer exists.");
+      if (outcome === "not_invited") {
+        throw new HttpError(403, "You weren't asked about that event.");
+      }
+      if (outcome === "not_vote" || outcome === "closed") {
+        throw new HttpError(409, "That event is no longer waiting for answers.");
+      }
+      if (outcome === "past") throw new HttpError(409, "That date has already begun.");
+      // The answer that decides it: in go the automatic adds.
+      if (outcome === "scheduled") syncCalendarsLater(proposalId);
+      return { outcome, ...(await list()) };
+    }
+
+    case "choose": {
+      // The suggester picks a vote's date: when every date has a decline, or
+      // without waiting for the last answers.
+      const proposalId = requireString(body, "proposalId");
+      const dateId = requireString(body, "dateId");
+      const { data: outcome, error } = await db.rpc("choose_vote_date", {
+        p_proposal_id: proposalId,
+        p_date_id: dateId,
+        p_profile_id: profileId,
+      });
+      if (error) throw error;
+      if (outcome === "not_found") throw new HttpError(404, "That event no longer exists.");
+      if (outcome === "not_creator") {
+        throw new HttpError(403, "Only the person who suggested this event can choose its date.");
+      }
+      if (outcome === "not_vote" || outcome === "closed") {
+        throw new HttpError(409, "That event is no longer waiting for answers.");
+      }
+      if (outcome === "past") throw new HttpError(409, "That date has already begun.");
+      syncCalendarsLater(proposalId);
+      return await list();
     }
 
     case "cancel": {

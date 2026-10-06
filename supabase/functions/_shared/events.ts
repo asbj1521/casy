@@ -77,13 +77,46 @@ export function cleanEventTitle(raw: unknown): string | null {
   return cleanText(raw, MAX_EVENT_TITLE_LENGTH);
 }
 
+/** The most dates one vote may offer: what anyone swipes through in one go. */
+export const MAX_CANDIDATES = 10;
+
+/** How long a vote waits for everyone's answers before deciding with what it has. */
+export const VOTE_ANSWER_MS = 3 * 24 * 60 * 60 * 1000;
+
 /**
- * The date on offer: the newest one nobody declined, as the database's
- * event_current_date says. Null once every date was declined.
+ * A vote's candidate dates as sent by a browser, or null if they aren't worth
+ * storing: one to MAX_CANDIDATES dates, each one parseEventDate keeps, none
+ * starting at the same moment as another. Sorted by start.
  */
-export function currentDate<D extends { declined_at: string | null; created_at: string }>(
-  dates: D[],
-): D | null {
+export function parseCandidateDates(
+  raw: unknown,
+  now = Date.now(),
+): { start: string; end: string }[] | null {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_CANDIDATES) return null;
+  const dates: { start: string; end: string }[] = [];
+  for (const item of raw) {
+    const date = parseEventDate(item, now);
+    if (!date || dates.some((d) => d.start === date.start)) return null;
+    dates.push(date);
+  }
+  return dates.sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+}
+
+/** An event's way of offering dates: one at a time, or several to vote on (#74). */
+export type EventMode = "single" | "vote";
+
+/**
+ * The date on offer, as the database's event_current_date says: for a vote,
+ * the date chosen (none until it is decided); otherwise the newest one nobody
+ * declined, null once every date was declined. A chosen date wins either way,
+ * so callers that only see scheduled events need not know the mode.
+ */
+export function currentDate<
+  D extends { declined_at: string | null; created_at: string; chosen_at?: string | null },
+>(dates: D[], mode: EventMode = "single"): D | null {
+  const chosen = dates.find((d) => d.chosen_at);
+  if (chosen) return chosen;
+  if (mode === "vote") return null;
   return dates
     .filter((d) => d.declined_at === null)
     .reduce<D | null>(

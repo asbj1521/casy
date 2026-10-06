@@ -55,6 +55,10 @@ export const DANISH: Record<string, string> = {
   "Those event settings aren't valid.": "Aftalens indstillinger er ikke gyldige.",
   "You weren't asked about that event.": "Du blev ikke spurgt om den aftale.",
   "That event is no longer waiting for answers.": "Aftalen venter ikke længere på svar.",
+  "That date has already begun.": "Den dato er allerede begyndt.",
+  "Those dates aren't valid any more. Search again.": "Datoerne er ikke gyldige længere. Søg igen.",
+  "Only the person who suggested this event can choose its date.":
+    "Kun den, der foreslog aftalen, kan vælge datoen.",
   "That date isn't valid any more. Search again.": "Den dato er ikke gyldig længere. Søg igen.",
   "The replacement date isn't valid.": "Den nye dato er ikke gyldig.",
   "The replacement date must be after the declined one.":

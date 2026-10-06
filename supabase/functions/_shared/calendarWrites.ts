@@ -190,7 +190,7 @@ export async function markGoneEntries(
     .from("calendar_event_writes")
     .select(
       "proposal_id, profile_id, updated_at, calendar_sources!inner(connection_id), " +
-        "event_proposals!inner(status, event_proposal_dates(starts_at, ends_at, declined_at, created_at))",
+        "event_proposals!inner(status, event_proposal_dates(starts_at, ends_at, declined_at, created_at, chosen_at))",
     )
     .eq("added", true)
     .eq("wanted", true)
@@ -208,6 +208,7 @@ export async function markGoneEntries(
         ends_at: string;
         declined_at: string | null;
         created_at: string;
+        chosen_at: string | null;
       }[];
     };
   };
@@ -285,7 +286,7 @@ export async function queueAutoAdds(db: Db, scope: WriteScope, now = Date.now())
   let invited = db
     .from("event_invitees")
     .select(
-      "proposal_id, profile_id, event_proposals!inner(status, event_proposal_dates(ends_at, declined_at, created_at))",
+      "proposal_id, profile_id, event_proposals!inner(status, event_proposal_dates(ends_at, declined_at, created_at, chosen_at))",
     )
     .in("profile_id", [...sourceOf.keys()])
     .eq("event_proposals.status", "scheduled");
@@ -297,10 +298,15 @@ export async function queueAutoAdds(db: Db, scope: WriteScope, now = Date.now())
     proposal_id: string;
     profile_id: string;
     event_proposals: {
-      event_proposal_dates: { ends_at: string; declined_at: string | null; created_at: string }[];
+      event_proposal_dates: {
+        ends_at: string;
+        declined_at: string | null;
+        created_at: string;
+        chosen_at: string | null;
+      }[];
     };
   };
-  // Upcoming only: the current date (newest not declined) hasn't ended.
+  // Upcoming only: the current date (the chosen one, else the newest not declined) hasn't ended.
   const upcoming = ((invites ?? []) as unknown as Invite[]).filter((i) => {
     const current = currentDate(i.event_proposals.event_proposal_dates);
     return !!current && Date.parse(current.ends_at) > now;
@@ -383,7 +389,7 @@ export async function processWrites(
     db
       .from("event_proposals")
       .select(
-        "id, title, status, settings, friend_groups(name), event_proposal_dates(starts_at, ends_at, declined_at, created_at)",
+        "id, title, status, settings, friend_groups(name), event_proposal_dates(starts_at, ends_at, declined_at, created_at, chosen_at)",
       )
       .in("id", proposalIds),
     sourceIds.length > 0
@@ -408,6 +414,7 @@ export async function processWrites(
       ends_at: string;
       declined_at: string | null;
       created_at: string;
+      chosen_at: string | null;
     }[];
   };
   const proposalById = new Map(

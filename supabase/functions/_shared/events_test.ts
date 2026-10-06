@@ -1,6 +1,13 @@
 // Run with: deno test --node-modules-dir=none --allow-all supabase/functions/_shared/
 import { assertEquals } from "jsr:@std/assert@1";
-import { cleanEventTitle, currentDate, isEventSettings, parseEventDate } from "./events.ts";
+import {
+  cleanEventTitle,
+  currentDate,
+  isEventSettings,
+  MAX_CANDIDATES,
+  parseCandidateDates,
+  parseEventDate,
+} from "./events.ts";
 
 Deno.test("settings in each known shape are accepted", () => {
   assertEquals(isEventSettings({ kind: "single", durationMinutes: 180, startHour: 18 }), true);
@@ -80,4 +87,32 @@ Deno.test("the date on offer is the newest one nobody declined", () => {
   assertEquals(currentDate(dates)?.id, "second");
   assertEquals(currentDate(dates.slice(0, 1)), null);
   assertEquals(currentDate([]), null);
+});
+
+Deno.test("a vote's date is the chosen one, and none until it is chosen", () => {
+  const date = (id: string, chosen = false) => ({
+    id,
+    created_at: "2026-09-01T10:00:00Z",
+    declined_at: null,
+    chosen_at: chosen ? "2026-09-02T10:00:00Z" : null,
+  });
+  assertEquals(currentDate([date("a"), date("b")], "vote"), null);
+  assertEquals(currentDate([date("a"), date("b", true)], "vote")?.id, "b");
+  // A chosen date wins even where the mode isn't known (calendarWrites).
+  assertEquals(currentDate([date("a"), date("b", true)])?.id, "b");
+});
+
+Deno.test("a vote's dates are kept sorted, and refused when any is off", () => {
+  const now = Date.parse("2026-09-22T10:00:00.000Z");
+  const on = (day: number) => ({
+    start: `2026-10-${day}T16:00:00.000Z`,
+    end: `2026-10-${day}T19:00:00.000Z`,
+  });
+  assertEquals(parseCandidateDates([on(14), on(12)], now), [on(12), on(14)]);
+  assertEquals(parseCandidateDates([], now), null);
+  assertEquals(parseCandidateDates([on(12), on(12)], now), null); // the same date twice
+  assertEquals(parseCandidateDates([on(12), { start: "soon", end: "later" }], now), null);
+  assertEquals(parseCandidateDates("2026-10-12", now), null);
+  const tooMany = Array.from({ length: MAX_CANDIDATES + 1 }, (_, i) => on(10 + i));
+  assertEquals(parseCandidateDates(tooMany, now), null);
 });
