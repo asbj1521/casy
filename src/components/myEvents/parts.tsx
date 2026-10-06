@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronDown, Clock, Users, X } from "lucide-react";
+import { Check, ChevronDown, Clock, Meh, Users, X } from "lucide-react";
 
 import { cancelEvent, leaveEvent, type EventInvitee, type SuggestedEvent } from "@/api/events";
 import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
@@ -110,6 +110,7 @@ export function People({ invitees }: { invitees: EventInvitee[] }) {
           className={cn(
             "flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 text-xs",
             p.response === "accepted" && "border-emerald-200 bg-emerald-50 text-emerald-800",
+            p.response === "maybe" && "border-amber-200 bg-amber-50 text-amber-800",
             p.response === "declined" && "border-rose-200 bg-rose-50 text-rose-800",
             p.response === null && "bg-background text-muted-foreground",
           )}
@@ -118,6 +119,8 @@ export function People({ invitees }: { invitees: EventInvitee[] }) {
           {p.isYou ? t.events.you : p.name}
           {p.response === "accepted" ? (
             <Check className="h-3 w-3" />
+          ) : p.response === "maybe" ? (
+            <Meh className="h-3 w-3" />
           ) : p.response === "declined" ? (
             <X className="h-3 w-3" />
           ) : (

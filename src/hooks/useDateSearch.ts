@@ -19,6 +19,15 @@ export const TODAY = dayOf(new Date().toISOString(), TZ);
 /** How many later dates the "Også muligt" row offers. */
 const LATER_COUNT = 3;
 
+/** Where a search may look: from `start` (on or after today) to `end`, exclusive. */
+export interface SearchWindow {
+  start: string;
+  end: string;
+}
+
+/** Every search's window unless a period narrows it: today through the year searched. */
+export const WHOLE_YEAR: SearchWindow = { start: TODAY, end: SEARCH_WINDOW.end };
+
 export interface DateSearch {
   /** The first date that works from the step on screen, and what it costs whom. */
   found: MultiDayResult | null;
@@ -38,32 +47,41 @@ export interface DateSearch {
  * after it, and the days it covers. All pure and quick (a few to a few dozen
  * ms), so it simply follows its inputs. `participants` is null while there is
  * nothing to search: a group still loading, failed, or with no calendars,
- * where "everyone" would otherwise be free today.
+ * where "everyone" would otherwise be free today. Every date lies within
+ * `window`: the period picked on the page (#74), or the whole year.
  */
 export function useDateSearch(
   participants: Participant[] | null,
   search: EventSettings,
   step: Step,
+  window: SearchWindow,
 ): DateSearch {
   const { from, day: pickedDay } = step;
 
   const found = useMemo(
-    () => (participants ? findAnswer(participants, search, { from, day: pickedDay }) : null),
-    [participants, search, from, pickedDay],
+    () =>
+      participants ? findAnswer(participants, search, { from, day: pickedDay }, window) : null,
+    [participants, search, from, pickedDay, window],
   );
 
   // "6 days works for everyone if you leave after work Friday" and the like.
   const suggestions = useMemo(() => {
     if (search.kind !== "vacation" || !participants || !found) return [];
     if (found.slot && found.conflicts.length === 0) return [];
-    return findVacationSuggestions(participants, search.days, from ?? TODAY, SEARCH_WINDOW.end, TZ);
-  }, [participants, search, found, from]);
+    return findVacationSuggestions(
+      participants,
+      search.days,
+      startWithin(from, window),
+      window.end,
+      TZ,
+    );
+  }, [participants, search, found, from, window]);
 
   const slot = found?.slot ?? null;
   const later = useMemo(() => {
     if (!participants || !slot || suggestions.length > 0) return [];
-    return laterSlots(participants, search, slot.start, LATER_COUNT, SEARCH_WINDOW.end, TZ);
-  }, [participants, search, slot, suggestions]);
+    return laterSlots(participants, search, slot.start, LATER_COUNT, window.end, TZ);
+  }, [participants, search, slot, suggestions, window]);
 
   const firstDay = slot ? dayOf(slot.start, TZ) : null;
   const spanDays =
@@ -90,18 +108,25 @@ export function findAnswer(
   participants: Participant[],
   search: EventSettings,
   step: Pick<Step, "from" | "day">,
+  window: SearchWindow = WHOLE_YEAR,
 ): MultiDayResult {
-  const { from, day: pickedDay } = step;
+  const { day: pickedDay } = step;
+  const from = startWithin(step.from, window);
   // A picked day is searched on its own first. Searching on from it would
   // pass over a day that needs someone to skip something whenever a clean
   // date follows within a week (findMeetingSlot), so the click would land
   // on that later date instead.
-  if (pickedDay && from && search.kind === "single") {
+  if (pickedDay && step.from && search.kind === "single") {
     const dayEnd = new Date(addDays(Date.parse(from), 1, TZ)).toISOString();
     const onDay = findEventSlot(participants, search, searchStart(search, from), dayEnd, TZ);
     if (onDay.slot) return onDay;
   }
-  return findEventSlot(participants, search, searchStart(search, from), SEARCH_WINDOW.end, TZ);
+  return findEventSlot(participants, search, searchStart(search, from), window.end, TZ);
+}
+
+/** Where a step's search begins: the day stepped to, but never before the window. */
+function startWithin(from: string | null, window: SearchWindow): string {
+  return from && Date.parse(from) > Date.parse(window.start) ? from : window.start;
 }
 
 /**
@@ -110,8 +135,7 @@ export function findAnswer(
  * day's window to the search start, and a window cut short no longer fits
  * the meeting.) Trips and holidays are whole days and keep today.
  */
-function searchStart(search: EventSettings, from: string | null): string {
-  const base = from ?? TODAY;
+function searchStart(search: EventSettings, base: string): string {
   if (search.kind !== "single") return base;
   return new Date(Math.max(Date.parse(base), Date.now())).toISOString();
 }

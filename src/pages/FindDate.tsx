@@ -25,6 +25,7 @@ import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { useAuth } from "@/context/auth";
 import { findAnswer, TODAY, useDateSearch } from "@/hooks/useDateSearch";
 import { useGroupRefresh, type RefreshOutcome } from "@/hooks/useGroupRefresh";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
@@ -38,6 +39,7 @@ import {
   type AnswerSteps,
 } from "@/lib/answerSteps";
 import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
+import { pickCandidates } from "@/lib/candidates";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { monthAvailability } from "@/lib/monthAvailability";
@@ -45,6 +47,7 @@ import {
   answerKey,
   fallbackTitleId,
   MAX_TRIP_DAYS,
+  periodWindow,
   randomDefaultSettings,
   reviewAnswer,
   settingsToSearch,
@@ -56,7 +59,7 @@ import { addDays, APP_TIME_ZONE, dayOf, localDate, startOfMonth } from "@/lib/zo
 /** The zone every search and every day on this page is local to. */
 const TZ = APP_TIME_ZONE;
 
-/** How long "Suggest this date" waits for a calendar sync already running, at most. */
+/** How long "Suggest dates" waits for a calendar sync already running, at most. */
 const SUGGEST_WAIT_MS = 2_000;
 
 /** The months the chart can show: this one, up to the last one searched. */
@@ -105,6 +108,7 @@ export default function FindDate() {
   const userId = user?.id ?? null;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const phone = usePhoneLayout();
 
   // The page as this person left it earlier in this visit, if they did;
   // otherwise it starts fresh, with random settings.
@@ -154,6 +158,10 @@ export default function FindDate() {
   // tapping + a few times in a row never stutters on a slow phone.
   const deferredSched = useDeferredValue(sched);
   const search = useMemo(() => settingsToSearch(deferredSched), [deferredSched]);
+  // The months to search (#74): every date found, and every date suggested,
+  // lies within them. With none picked, the whole year from today.
+  const period = deferredSched.period;
+  const searchWindow = useMemo(() => periodWindow(period, TODAY, SEARCH_WINDOW, TZ), [period]);
 
   // Still fetching the group or its calendars, as opposed to having nothing
   // to search: the page then keeps its full layout with placeholders, so it
@@ -166,6 +174,7 @@ export default function FindDate() {
     participants,
     search,
     currentStep(steps),
+    searchWindow,
   );
   const slot = found?.slot ?? null;
   const review = reviewAnswer(found, search, youProfileId, steps.accepted);
@@ -176,23 +185,29 @@ export default function FindDate() {
   // itself; it only waits a moment for a sync already running.
   const refresh = useGroupRefresh(userId ?? "");
   // The search and step on screen, for checks that finish after a render.
-  const shownSearch = useRef({ search, step: currentStep(steps) });
+  const shownSearch = useRef({ search, step: currentStep(steps), window: searchWindow });
   useEffect(() => {
-    shownSearch.current = { search, step: currentStep(steps) };
+    shownSearch.current = { search, step: currentStep(steps), window: searchWindow };
   });
-  /**
-   * The answer the page would show from `data`, a copy of the group's busy
-   * times: the same search the page runs (findAnswer), from the same group
-   * members, so it can be compared with the one on screen.
-   */
-  function answerFrom(groupId: string, data: GroupBusy | undefined): MultiDayResult | null {
+  /** The group's members as the search sees them, from `data`, a copy of their busy times. */
+  function peopleFrom(groupId: string, data: GroupBusy | undefined) {
     const group = queryClient
       .getQueryData<Group[]>(groupsQueryKey(userId ?? ""))
       ?.find((g) => g.id === groupId);
     if (!group || !data) return null;
     const { participants: people } = participantsFromGroup(group, data, t.common.withYou);
-    if (people.length === 0) return null;
-    return findAnswer(people, shownSearch.current.search, shownSearch.current.step);
+    return people.length > 0 ? people : null;
+  }
+  /**
+   * The answer the page would show from `data`: the same search the page
+   * runs (findAnswer), from the same group members, so it can be compared
+   * with the one on screen.
+   */
+  function answerFrom(groupId: string, data: GroupBusy | undefined): MultiDayResult | null {
+    const people = peopleFrom(groupId, data);
+    if (!people) return null;
+    const { search, step, window: within } = shownSearch.current;
+    return findAnswer(people, search, step, within);
   }
   // The date moved because calendars changed, said in the hint line for as
   // long as that new date is the one on screen.
@@ -253,20 +268,32 @@ export default function FindDate() {
     monthPick && monthPick.anchor === firstDay
       ? monthPick.month
       : Math.min(
-          Math.max(firstDay ? startOfMonth(Date.parse(firstDay), TZ) : FIRST_MONTH, FIRST_MONTH),
+          Math.max(
+            startOfMonth(firstDay ? Date.parse(firstDay) : Date.parse(searchWindow.start), TZ),
+            FIRST_MONTH,
+          ),
           LAST_MONTH,
         );
   // While loading, an empty month gives the chart its frame (DayChart's `loading`).
   const chartMonth = useMemo(() => {
     if (!participants && !loadingGroup) return null;
     const { year, month } = localDate(viewMonth, TZ);
-    return monthAvailability(participants ?? [], search, year, month, {
+    const shown = monthAvailability(participants ?? [], search, year, month, {
       timeZone: TZ,
       todayMs: Date.parse(TODAY),
       windowEndMs: Date.parse(SEARCH_WINDOW.end),
       locale: LOCALE[lang],
     });
-  }, [lang, participants, loadingGroup, viewMonth, search]);
+    if (!period) return shown;
+    // Days outside the months picked read like an unticked weekday: not searched.
+    const [from, to] = [Date.parse(period.from), startOfMonth(Date.parse(period.to), TZ, 1)];
+    return {
+      ...shown,
+      days: shown.days.map((d) =>
+        Date.parse(d.date) < from || Date.parse(d.date) >= to ? { ...d, excluded: true } : d,
+      ),
+    };
+  }, [lang, participants, loadingGroup, viewMonth, search, period]);
 
   /**
    * Any touch of the settings or the answer stops the example carousel, for
@@ -352,11 +379,16 @@ export default function FindDate() {
     setNewGroupOpen(true);
   }
 
-  // Suggesting the date on screen to the group. The answer is the fresh list
-  // of events, which goes straight into the cache the header badge reads.
+  // Suggesting the date on screen and a few more to the group, to swipe
+  // through (#74). The answer is the fresh list of events, which goes
+  // straight into the cache the header badge reads; the suggester then
+  // answers the dates themselves, right away.
   const suggest = useMutation({
     mutationFn: suggestEvent,
-    onSuccess: (data) => queryClient.setQueryData(eventsQueryKey(userId ?? ""), data.events),
+    onSuccess: (data) => {
+      queryClient.setQueryData(eventsQueryKey(userId ?? ""), data.events);
+      navigate(phone ? `/events/${data.createdId}/dates` : `/events/${data.createdId}`);
+    },
   });
   // Waiting for the calendars to be fresh before sending.
   const [checking, setChecking] = useState(false);
@@ -365,25 +397,19 @@ export default function FindDate() {
   const canSuggest =
     !!user && !!activeGroup && !activeGroup.isExample && !!slot && review.tone !== "approve";
   /**
-   * Send the date on screen, checked against the freshest busy times there
-   * are: if a background sync is running, wait for it, but no more than
-   * SUGGEST_WAIT_MS (the button must stay quick); then search those busy times
-   * the way the page does. If the answer is still this date, costing the same
-   * people the same, it goes; if not, it doesn't, and the page shows the new
-   * answer to look at first.
+   * Send the date on screen and the best few after it in the period
+   * (pickCandidates), checked against the freshest busy times there are: if
+   * a background sync is running, wait for it, but no more than
+   * SUGGEST_WAIT_MS (the button must stay quick); then search those busy
+   * times the way the page does. If the answer is still this date, costing
+   * the same people the same, the dates go, picked from those same busy
+   * times; if not, nothing goes, and the page shows the new answer to look
+   * at first.
    */
   async function sendSuggestion() {
-    if (!activeGroup || !slot || !userId) return;
+    if (!activeGroup || !found?.slot || !participants || !userId) return;
     const groupId = activeGroup.id;
     const shown = answerKey(found);
-    const toSend = {
-      groupId,
-      // A name left empty is stored as the matching type's name, which each
-      // reader sees in their own language (eventTitle.ts).
-      title: name.trim() || storedEventTitle(fallbackTitleId(search)),
-      settings: search,
-      date: { start: slot.start, end: slot.end },
-    };
     setMoved(null);
     const running = refresh.running(groupId);
     if (running) {
@@ -392,18 +418,33 @@ export default function FindDate() {
       setChecking(false);
     }
     const busy = groupBusyQuery(userId, groupId, SEARCH_WINDOW.start, SEARCH_WINDOW.end);
+    const fresh = peopleFrom(groupId, queryClient.getQueryData(busy.queryKey));
     const now = answerFrom(groupId, queryClient.getQueryData(busy.queryKey));
     if (now && answerKey(now) !== shown) {
       setMoved({ groupId, start: now.slot?.start ?? null, when: "suggest" });
       return;
     }
-    suggest.mutate(toSend);
+    const first = { slot: found.slot, conflicts: found.conflicts };
+    const dates = pickCandidates(
+      fresh ?? participants,
+      search,
+      { first, end: searchWindow.end },
+      TZ,
+    );
+    suggest.mutate({
+      groupId,
+      // A name left empty is stored as the matching type's name, which each
+      // reader sees in their own language (eventTitle.ts).
+      title: name.trim() || storedEventTitle(fallbackTitleId(search)),
+      settings: search,
+      dates: dates.map((d) => ({ start: d.slot.start, end: d.slot.end })),
+    });
   }
   // How sending went belongs to the exact date it was for: switch group, step
   // to another date or change a setting, and it stops showing.
   const sentFor = suggest.variables;
   const suggestIsForThis =
-    !!sentFor && sentFor.groupId === activeGroup?.id && sentFor.date.start === slot?.start;
+    !!sentFor && sentFor.groupId === activeGroup?.id && sentFor.dates[0]?.start === slot?.start;
   const suggested = suggestIsForThis && suggest.isSuccess;
 
   // Why there is nothing to search yet, if there isn't: said plainly, never

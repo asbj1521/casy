@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 6. oktober 2026",
+  updated: "Senest opdateret 7. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -74,8 +74,8 @@ const da: LegalCopy = {
             </li>
             <li>
               <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
-              aftale det er, de datoer, der er tilbudt, hvem der foreslog den, og hvem der har sagt
-              ja eller nej til hver dato.
+              aftale det er, de datoer, der er tilbudt, hvem der foreslog den, og hvad hver enkelt
+              har svaret på hver dato: kan, kan men helst ikke, eller kan ikke.
             </li>
             <li>
               <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære
@@ -166,9 +166,10 @@ const da: LegalCopy = {
             gruppe igen, men du kan stadig blive medlem med et link.
           </p>
           <p>
-            Når nogen foreslår en aftale, kan alle i gruppen se den, den dato, der er tilbudt, og
-            hvem der har sagt ja eller nej. Siger du nej, kan de andre se, at du ikke kunne den
-            dato, og Casy tilbyder den næste dato, der passer, i stedet.
+            Når nogen foreslår en aftale, kan alle i gruppen se den, de datoer, der er tilbudt, og
+            hvad hver enkelt har svaret på hver dato. Siger du nej til en dato, kan de andre se, at
+            du ikke kunne den. Mens du svarer, viser Casy din egen kalender omkring hver dato, men
+            kun for dig, og kun hvornår du er optaget og i hvilken af dine kalendere.
           </p>
         </>
       ),
@@ -241,7 +242,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 6 October 2026",
+  updated: "Last updated 7 October 2026",
   sections: [
     {
       title: "In short",
@@ -291,7 +292,8 @@ const en: LegalCopy = {
             </li>
             <li>
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
-              is, the dates offered, who suggested it, and who accepted or declined each date.
+              is, the dates offered, who suggested it, and how each person answered each date: can,
+              can but would rather not, or can't.
             </li>
             <li>
               <Term>Events in your calendar:</Term> which events Casy added to your primary
@@ -382,9 +384,10 @@ const en: LegalCopy = {
             though you can still join with a link.
           </p>
           <p>
-            When someone suggests an event, everyone in the group sees it, the date on offer, and
-            who has accepted or declined. If you decline, the others see that you could not make
-            that date, and Casy offers the next date that works instead.
+            When someone suggests an event, everyone in the group sees it, the dates on offer, and
+            how each person answered each date. If you say you can't make a date, the others see
+            that. While you answer, Casy shows your own calendar around each date, to you only, and
+            only when you are busy and in which of your calendars.
           </p>
         </>
       ),

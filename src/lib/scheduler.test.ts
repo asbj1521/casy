@@ -8,6 +8,7 @@ import {
   describeDays,
   fallbackTitleId,
   laterSlots,
+  periodWindow,
   randomDefaultSettings,
   reviewAnswer,
   settingsToSearch,
@@ -23,6 +24,7 @@ const BASE: SchedulerSettings = {
   days: 3,
   startDow: 5,
   anyTime: false,
+  period: null,
 };
 
 describe("settingsToSearch", () => {
@@ -254,5 +256,29 @@ describe("answerKey", () => {
   it("calls no date the same whether nothing was found or nothing searched", () => {
     expect(answerKey(null)).toBe("none");
     expect(answerKey({ slot: null, conflicts: [] })).toBe("none");
+  });
+});
+
+describe("periodWindow", () => {
+  const TZ = "Europe/Copenhagen";
+  const TODAY = "2026-10-06T22:00:00.000Z"; // 7 October, Danish midnight
+  const LIMIT = { start: "2026-09-30T22:00:00.000Z", end: "2027-09-30T22:00:00.000Z" };
+
+  it("covers the whole year from today with no period", () => {
+    expect(periodWindow(null, TODAY, LIMIT, TZ)).toEqual({ start: TODAY, end: LIMIT.end });
+  });
+
+  it("runs from the first month's 1st to the end of the last month", () => {
+    // December to January: 1 December to 1 February, Danish midnights.
+    const period = { from: "2026-11-30T23:00:00.000Z", to: "2026-12-31T23:00:00.000Z" };
+    expect(periodWindow(period, TODAY, LIMIT, TZ)).toEqual({
+      start: "2026-11-30T23:00:00.000Z",
+      end: "2027-01-31T23:00:00.000Z",
+    });
+  });
+
+  it("never starts before today, nor ends after the year searched", () => {
+    const period = { from: "2026-09-30T22:00:00.000Z", to: "2027-09-30T22:00:00.000Z" };
+    expect(periodWindow(period, TODAY, LIMIT, TZ)).toEqual({ start: TODAY, end: LIMIT.end });
   });
 });

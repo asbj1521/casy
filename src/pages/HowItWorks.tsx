@@ -105,8 +105,8 @@ const da: Copy = {
       body: "Øverst står den første dato, hvor alle kan, og den skifter med det samme, når du ændrer noget. Pilene ved siden af viser de næste muligheder. Under den ser du måneden dag for dag: hver søjle viser, hvor mange der er ledige, og gul betyder kun ledig, hvis nogen tager fri eller springer noget over. Tryk på en dag for at prøve den. Casy siger også til, hvis nogen kommer lige fra noget andet eller skal tidligt op dagen efter. Ingen er ledige fra 23. til 26. december eller nytårsaften.",
     },
     {
-      title: "Foreslå datoen",
-      body: "Tryk på Foreslå denne dato, så kan alle i gruppen acceptere eller afslå den under Mine aftaler. Kræver datoen, at du selv tager fri, godkender du det først. Afslår nogen, finder Casy den næste dato, der passer alle, og spørger igen. Den, der foreslog aftalen, kan aflyse den, og alle andre kan forlade den.",
+      title: "Foreslå datoer",
+      body: "Vælg evt. hvornår aftalen skal ligge, fx i december, og tryk på Foreslå datoer. Casy sender datoen og op til fire andre gode datoer i perioden, og alle i gruppen, også dig, swiper sig igennem dem én gang under Mine aftaler: til højre hvis du kan, til venstre hvis du ikke kan, og op hvis du kan, men helst ikke. Under hver dato ser du din egen kalender dagen før, på dagen og dagen efter. Når alle har svaret, eller efter tre dage, vælger Casy den dato, ingen har sagt nej til, med færrest helst ikke. Har alle datoer et nej, vælger den, der foreslog aftalen. Kræver datoen, at du selv tager fri, godkender du det først. Den, der foreslog aftalen, kan aflyse den, og alle andre kan forlade den.",
     },
     {
       title: "Læg den i kalenderen",
@@ -167,8 +167,8 @@ const en: Copy = {
       body: "At the top is the first date everyone is free, and it changes the moment you change anything. The arrows beside it show the next options. Below, you see the month day by day: each bar shows how many people are free, and amber means free only if someone takes time off or skips something. Tap a day to try it. Casy also tells you when someone comes straight from something else or has an early start the next morning. Nobody is free from 23 to 26 December or on New Year's Eve.",
     },
     {
-      title: "Suggest the date",
-      body: "Tap Suggest this date, and everyone in the group can accept or decline it on My events. If the date needs you to take time off, you approve that first. If someone declines, Casy finds the next date that works for everyone and asks again. Whoever suggested the event can cancel it, and anyone else can leave it.",
+      title: "Suggest dates",
+      body: "Optionally pick when the event should be, say in December, and tap Suggest dates. Casy sends the date and up to four more good dates in the period, and everyone in the group, you included, swipes through them once on My events: right if you can, left if you can't, and up if you can but would rather not. Under each date you see your own calendar the day before, on the day and the day after. Once everyone has answered, or after three days, Casy picks the date nobody said no to with the fewest rather nots. If every date has a no, whoever suggested the event chooses. If the date needs you to take time off, you approve that first. Whoever suggested the event can cancel it, and anyone else can leave it.",
     },
     {
       title: "Put it in your calendar",

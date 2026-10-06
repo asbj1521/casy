@@ -7,7 +7,7 @@
 import type { Messages } from "@/i18n/da";
 import type { MultiDayResult, SpanConflict } from "@/lib/availability";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
-import { addDays } from "@/lib/zone";
+import { addDays, startOfMonth } from "@/lib/zone";
 import type { Participant, TimeSlot } from "@/types";
 
 /**
@@ -31,6 +31,15 @@ export const MAX_SPAN_DAYS = 30;
  */
 export const ALL_DOWS = [1, 2, 3, 4, 5, 6, 0];
 
+/**
+ * When the event should happen (#74): the months searched, first to last,
+ * each the local midnight of its 1st ("December", or "November to January").
+ */
+export interface Period {
+  from: string;
+  to: string;
+}
+
 /** Everything the settings bar holds, in both modes. */
 export interface SchedulerSettings {
   /** False: one meeting on a day. True: the Tur / ferie switch, whole days. */
@@ -44,6 +53,8 @@ export interface SchedulerSettings {
   /** Tur / ferie: how many days, and the weekday it starts on (null = any day). */
   days: number;
   startDow: number | null;
+  /** The months to search; null is any time in the year searched. */
+  period: Period | null;
 }
 
 /** A meeting the page may open on: start hour and length. */
@@ -74,7 +85,25 @@ export function randomDefaultSettings(random: () => number = Math.random): Sched
     anyTime: false,
     days: 3,
     startDow: 5,
+    period: null,
   };
+}
+
+/**
+ * The stretch a search covers for `period`: from today or the period's first
+ * month, whichever is later, to the end of its last month, never beyond
+ * `limit` (the year every search covers, SEARCH_WINDOW).
+ */
+export function periodWindow(
+  period: Period | null,
+  today: string,
+  limit: { start: string; end: string },
+  timeZone: string,
+): { start: string; end: string } {
+  if (!period) return { start: today, end: limit.end };
+  const start = Math.max(Date.parse(today), Date.parse(period.from));
+  const end = Math.min(Date.parse(limit.end), startOfMonth(Date.parse(period.to), timeZone, 1));
+  return { start: new Date(start).toISOString(), end: new Date(end).toISOString() };
 }
 
 /**

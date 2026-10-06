@@ -3,6 +3,7 @@ import { ChevronDown, Minus, Plus } from "lucide-react";
 
 import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
+import PeriodPicker from "@/components/PeriodPicker";
 import Popover from "@/components/Popover";
 import Switch from "@/components/ui/Switch";
 import type { Messages } from "@/i18n/da";
@@ -22,8 +23,9 @@ import { cn } from "@/lib/utils";
  * controls: a single labelled bar on a wide screen, and a sentence you fill
  * in on a phone ("fra kl. 18:00 i 3 t på alle dage"). Both edit the same
  * settings and show only what applies: time, length and weekdays for one
- * meeting, or number of days and a start day with the Tur / ferie switch on.
- * The name is only for the group to read; the search never looks at it.
+ * meeting, or number of days and a start day with the Tur / ferie switch on,
+ * and in both modes when (the months searched, #74). The name is only for
+ * the group to read; the search never looks at it.
  */
 
 /** How long a meeting lasts: 30 min to 12 hours, in 30 minute steps. */
@@ -181,10 +183,11 @@ export function SettingsBar({ groupSwitcher, name, onName, settings, onChange }:
   return (
     <section className="hidden items-end gap-4 rounded-2xl border bg-card px-5 py-4 shadow-sm xl:flex">
       <Field label={t.scheduler.group}>
-        <div className="w-72">{groupSwitcher}</div>
+        {/* Narrower below 2xl, where the bar also holds "Hvornår" (#74). */}
+        <div className="w-60 2xl:w-72">{groupSwitcher}</div>
       </Field>
 
-      <label className="flex min-w-[9rem] flex-1 flex-col gap-2">
+      <label className="flex min-w-[7rem] flex-1 flex-col gap-2 2xl:min-w-[9rem]">
         <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
           {t.scheduler.name}
         </span>
@@ -239,7 +242,7 @@ export function SettingsBar({ groupSwitcher, name, onName, settings, onChange }:
             />
           </Field>
           <Field label={t.scheduler.dayLabel}>
-            <div className="w-64 2xl:w-72">
+            <div className="w-56 2xl:w-72">
               <DaySlider
                 size="lg"
                 selected={settings.dows}
@@ -249,6 +252,16 @@ export function SettingsBar({ groupSwitcher, name, onName, settings, onChange }:
           </Field>
         </>
       )}
+
+      <Field label={t.scheduler.when}>
+        <PeriodPicker
+          value={settings.period}
+          onChange={(period) => onChange({ period })}
+          capitalized
+          triggerClassName="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary"
+          suffix={<ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        />
+      </Field>
 
       <div className="w-px self-stretch bg-border" />
       <Field label={t.scheduler.tripToggle}>
@@ -378,6 +391,12 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
             </Popover>
           </>
         )}
+        <PeriodPicker
+          value={settings.period}
+          onChange={(period) => onChange({ period })}
+          triggerClassName={CHIP}
+          suffix={chevron}
+        />
       </div>
     </section>
   );

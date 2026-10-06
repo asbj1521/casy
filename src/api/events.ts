@@ -1,10 +1,14 @@
 /**
  * Suggested events, backed by the `events` Edge Function.
  *
- * Someone finds a date on the scheduling page and suggests it; everyone else
- * in the group accepts or declines it on the My events page. A decline comes
- * with the next date already found (by the decliner's browser, which has the
- * group's calendars), so nobody ever has to suggest the same event twice.
+ * Someone finds a date on the scheduling page and suggests it with a few
+ * more good dates (a vote, #74): everyone in the group, the suggester too,
+ * swipes through them once on My events, and the date that suits everyone
+ * best is chosen (src/lib/vote.ts explains the rule).
+ *
+ * Events suggested before that offer one date at a time ("single"): everyone
+ * accepts or declines it, and a decline comes with the next date already
+ * found (by the decliner's browser, which has the group's calendars).
  */
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
@@ -20,7 +24,21 @@ import { addDays, APP_TIME_ZONE, dayOf } from "@/lib/zone";
 import { currentMessages } from "@/i18n/current";
 
 export type EventStatus = "pending" | "scheduled" | "no_date" | "cancelled";
-export type EventResponse = "accepted" | "declined";
+/** How a date is offered: one at a time, or several to vote on (#74). */
+export type EventMode = "single" | "vote";
+/**
+ * An answer to a date. "maybe" (I can, but would rather not) only exists in
+ * a vote: it counts as a yes, but a date with fewer of them wins.
+ */
+export type EventResponse = "accepted" | "maybe" | "declined";
+
+/** One of a vote's dates, with the answers so far, by profile id. */
+export interface CandidateDate {
+  id: string;
+  start: string;
+  end: string;
+  answers: Record<string, EventResponse>;
+}
 
 export interface EventInvitee {
   profileId: string;
@@ -36,11 +54,19 @@ export interface SuggestedEvent {
   title: string;
   settings: EventSettings;
   status: EventStatus;
+  mode: EventMode;
+  /** A vote's deadline: after it, the dates are decided with the answers there are. */
+  answerBy: string | null;
   createdBy: { id: string | null; name: string; isYou: boolean };
   createdAt: string;
   updatedAt: string;
-  /** The date on offer (or, once scheduled, the date it's on). */
+  /**
+   * The date on offer (or, once scheduled, the date it's on). For a vote,
+   * the date chosen: null until it is decided.
+   */
   currentDate: { id: string; start: string; end: string } | null;
+  /** A vote's dates, soonest first. Empty for a single-date event. */
+  candidates: CandidateDate[];
   invitees: EventInvitee[];
   /** Dates offered earlier and turned down, oldest first. */
   declinedDates: { start: string; end: string; declinedBy: string }[];
@@ -52,6 +78,31 @@ export interface SuggestedEvent {
    */
   myCalendar?:
     { state: "added" } | { state: "adding"; error: string | null } | { state: "gone" } | null;
+}
+
+/**
+ * The list as the site expects it, also from an events function deployed
+ * before votes existed (no mode, no candidates).
+ */
+function withDefaults(events: SuggestedEvent[]): SuggestedEvent[] {
+  return events.map((e) => ({
+    ...e,
+    mode: e.mode ?? "single",
+    answerBy: e.answerBy ?? null,
+    candidates: e.candidates ?? [],
+  }));
+}
+
+/** Every call that changes an event answers with the fresh list, put in shape here. */
+async function eventsCall<T extends object = object>(
+  body: Record<string, unknown>,
+  errorMessage: string,
+): Promise<T & { events: SuggestedEvent[] }> {
+  const answer = await callFunction<T & { events?: SuggestedEvent[] }>("events", {
+    body,
+    errorMessage,
+  });
+  return { ...answer, events: withDefaults(answer.events ?? []) };
 }
 
 export function eventsQueryKey(userId: string) {
@@ -67,59 +118,91 @@ export function eventsQuery(userId: string) {
   return queryOptions({
     queryKey: eventsQueryKey(userId),
     queryFn: async (): Promise<SuggestedEvent[]> => {
-      const body = await callFunction<{ events?: SuggestedEvent[] }>("events", {
-        body: { action: "list" },
-        errorMessage: currentMessages().api.loadEvents,
-      });
-      return body.events ?? [];
+      const { events } = await eventsCall({ action: "list" }, currentMessages().api.loadEvents);
+      return events;
     },
     staleTime: 30_000,
   });
 }
 
-/** True if this event is waiting for your answer on its current date. */
-export function needsYourAnswer(event: SuggestedEvent): boolean {
-  return event.status === "pending" && event.invitees.some((i) => i.isYou && i.response === null);
+/**
+ * True if this event is waiting for your answer: on its current date, or for
+ * a vote on any date still to come.
+ */
+export function needsYourAnswer(event: SuggestedEvent, now = Date.now()): boolean {
+  if (event.status !== "pending") return false;
+  const you = event.invitees.find((i) => i.isYou);
+  if (!you) return false;
+  if (event.mode === "vote") {
+    return event.candidates.some(
+      (c) => Date.parse(c.start) > now && c.answers[you.profileId] === undefined,
+    );
+  }
+  return you.response === null;
 }
 
+/**
+ * Suggest dates to a group, to vote on. Answers with the new event's id, so
+ * the suggester can go straight on to answering the dates themselves.
+ */
 export async function suggestEvent(input: {
   groupId: string;
   title: string;
   settings: EventSettings;
-  date: { start: string; end: string };
-}): Promise<{ events: SuggestedEvent[] }> {
-  return await callFunction("events", {
-    body: { action: "suggest", ...input },
-    errorMessage: currentMessages().api.suggestEvent,
-  });
+  dates: { start: string; end: string }[];
+}): Promise<{ events: SuggestedEvent[]; createdId: string }> {
+  return await eventsCall<{ createdId: string }>(
+    { action: "suggest", ...input },
+    currentMessages().api.suggestEvent,
+  );
+}
+
+/** Your answer to one of a vote's dates (or a changed one). */
+export async function answerDate(
+  proposalId: string,
+  dateId: string,
+  response: EventResponse,
+): Promise<{
+  events: SuggestedEvent[];
+  outcome: "answered" | "scheduled" | "undecided" | "no_date";
+}> {
+  return await eventsCall<{ outcome: "answered" | "scheduled" | "undecided" | "no_date" }>(
+    { action: "answer", proposalId, dateId, response },
+    currentMessages().api.answerDate,
+  );
+}
+
+/** The suggester settles a vote on one of its dates. */
+export async function chooseDate(
+  proposalId: string,
+  dateId: string,
+): Promise<{ events: SuggestedEvent[] }> {
+  return await eventsCall(
+    { action: "choose", proposalId, dateId },
+    currentMessages().api.chooseDate,
+  );
 }
 
 export async function cancelEvent(proposalId: string): Promise<{ events: SuggestedEvent[] }> {
-  return await callFunction("events", {
-    body: { action: "cancel", proposalId },
-    errorMessage: currentMessages().api.cancelEvent,
-  });
+  return await eventsCall({ action: "cancel", proposalId }, currentMessages().api.cancelEvent);
 }
 
 /** Drop out of an event someone else suggested; it carries on without you. */
 export async function leaveEvent(proposalId: string): Promise<{ events: SuggestedEvent[] }> {
-  return await callFunction("events", {
-    body: { action: "leave", proposalId },
-    errorMessage: currentMessages().api.leaveEvent,
-  });
+  return await eventsCall({ action: "leave", proposalId }, currentMessages().api.leaveEvent);
 }
 
 export async function acceptEvent(event: SuggestedEvent): Promise<{ events: SuggestedEvent[] }> {
   if (!event.currentDate) throw new Error(currentMessages().api.noDateToAccept);
-  return await callFunction("events", {
-    body: {
+  return await eventsCall(
+    {
       action: "respond",
       proposalId: event.id,
       dateId: event.currentDate.id,
       response: "accepted",
     },
-    errorMessage: currentMessages().api.acceptEvent,
-  });
+    currentMessages().api.acceptEvent,
+  );
 }
 
 /**
@@ -165,16 +248,16 @@ export async function declineEvent(
     APP_TIME_ZONE,
   );
 
-  return await callFunction("events", {
-    body: {
+  return await eventsCall<{ outcome: string }>(
+    {
       action: "respond",
       proposalId: event.id,
       dateId: event.currentDate.id,
       response: "declined",
       next: slot ? { start: slot.start, end: slot.end } : null,
     },
-    errorMessage: currentMessages().api.declineEvent,
-  });
+    currentMessages().api.declineEvent,
+  );
 }
 
 /**
@@ -183,10 +266,10 @@ export async function declineEvent(
  * keeps trying on its own every hour.
  */
 export async function addToMyCalendar(proposalId: string): Promise<{ events: SuggestedEvent[] }> {
-  return await callFunction("events", {
-    body: { action: "add-to-calendar", proposalId },
-    errorMessage: currentMessages().api.addToCalendar,
-  });
+  return await eventsCall(
+    { action: "add-to-calendar", proposalId },
+    currentMessages().api.addToCalendar,
+  );
 }
 
 /** A scheduled event as a calendar file, for adding by hand. */

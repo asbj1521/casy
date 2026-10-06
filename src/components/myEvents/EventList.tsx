@@ -2,16 +2,32 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate } from "@/lib/format";
-import { STAGES, type EventStage, type StagedEvent } from "@/lib/myEvents";
+import type { EventStage, StagedEvent } from "@/lib/myEvents";
+import { upcomingDates } from "@/lib/vote";
 import { cn } from "@/lib/utils";
 
+/**
+ * The headings the list is grouped under. A vote to answer (#74) sits with
+ * the dates to answer, and one you've answered with those waiting on others.
+ */
+const HEADINGS = ["needsAnswer", "waiting", "scheduled", "closed"] as const;
+type Heading = (typeof HEADINGS)[number];
+const HEADING_OF: Record<EventStage, Heading> = {
+  toSwipe: "needsAnswer",
+  needsAnswer: "needsAnswer",
+  voting: "waiting",
+  waiting: "waiting",
+  scheduled: "scheduled",
+  closed: "closed",
+};
+
 /** Each section's dot, in its card's colour on a phone. */
-const DOT = {
+const DOT: Record<Heading, string> = {
   needsAnswer: "bg-primary",
   waiting: "bg-amber-500",
   scheduled: "bg-emerald-500",
   closed: "bg-muted-foreground/40",
-} as const;
+};
 
 /**
  * The left pane of a computer's My events: the events as a list under the
@@ -27,7 +43,7 @@ export default function EventList({
 }) {
   const t = useT();
   const { lang } = useLang();
-  const titles: Record<EventStage, string> = {
+  const titles: Record<Heading, string> = {
     needsAnswer: t.events.needsAnswer,
     waiting: t.events.waitingForOthers,
     scheduled: t.events.scheduled,
@@ -36,8 +52,8 @@ export default function EventList({
 
   return (
     <div className="min-w-0">
-      {STAGES.map((stage) => {
-        const inStage = events.filter((e) => e.stage === stage);
+      {HEADINGS.map((stage) => {
+        const inStage = events.filter((e) => HEADING_OF[e.stage] === stage);
         if (inStage.length === 0) return null;
         return (
           <ListGroup
@@ -53,20 +69,25 @@ export default function EventList({
               </>
             }
           >
-            {inStage.map(({ event }) => (
-              <ListRow
-                key={event.id}
-                to={`/events/${event.id}`}
-                selected={event.id === selectedId}
-                leading={<span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", DOT[stage])} />}
-                label={eventTitle(event.title, t)}
-                detail={`${event.group.name} · ${
-                  event.currentDate
+            {inStage.map((staged) => {
+              const { event } = staged;
+              const when =
+                staged.stage === "toSwipe" || staged.stage === "voting"
+                  ? t.events.dateCount(upcomingDates(staged.event).length)
+                  : event.currentDate
                     ? formatEventDate(event.settings.kind, event.currentDate, lang)
-                    : t.events.stageNoDate
-                }`}
-              />
-            ))}
+                    : t.events.stageNoDate;
+              return (
+                <ListRow
+                  key={event.id}
+                  to={`/events/${event.id}`}
+                  selected={event.id === selectedId}
+                  leading={<span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", DOT[stage])} />}
+                  label={eventTitle(event.title, t)}
+                  detail={`${event.group.name} · ${when}`}
+                />
+              );
+            })}
           </ListGroup>
         );
       })}

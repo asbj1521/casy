@@ -28,6 +28,7 @@ const Profile = lazy(loadPage.profile);
 const CalendarOverview = lazy(loadPage.calendarOverview);
 const CalendarAccounts = lazy(loadPage.calendarAccounts);
 const MyEvents = lazy(loadPage.myEvents);
+const SwipeDates = lazy(loadPage.swipeDates);
 const Groups = lazy(loadPage.groups);
 const ProfileScreen = lazy(loadPage.profileScreen);
 const MyData = lazy(loadPage.myData);
@@ -118,6 +119,15 @@ function App() {
                   element={
                     <RequireAuth>
                       <MyEvents />
+                    </RequireAuth>
+                  }
+                />
+                {/* Swiping through a vote's dates, the whole screen (a phone). */}
+                <Route
+                  path="/events/:eventId/dates"
+                  element={
+                    <RequireAuth>
+                      <SwipeDates />
                     </RequireAuth>
                   }
                 />

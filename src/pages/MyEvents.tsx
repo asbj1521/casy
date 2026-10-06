@@ -8,6 +8,7 @@ import EventDetails from "@/components/myEvents/EventDetails";
 import EventList from "@/components/myEvents/EventList";
 import NeedsAnswerCard from "@/components/myEvents/NeedsAnswerCard";
 import ScheduledCard from "@/components/myEvents/ScheduledCard";
+import VoteCard from "@/components/myEvents/VoteCard";
 import WaitingCard from "@/components/myEvents/WaitingCard";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
@@ -141,16 +142,22 @@ function EventSections({ events }: { events: SuggestedEvent[] }) {
 
   return (
     <>
-      <Section title={t.events.needsAnswer} count={sections.needsAnswer.length}>
-        {sections.needsAnswer.map((event) => (
-          <NeedsAnswerCard key={event.id} event={event} />
-        ))}
+      {/* Votes to swipe (#74) first: answering them is the most to do. */}
+      <Section
+        title={t.events.needsAnswer}
+        count={sections.toSwipe.length + sections.needsAnswer.length}
+      >
+        {[
+          ...sections.toSwipe.map((event) => <VoteCard key={event.id} event={event} />),
+          ...sections.needsAnswer.map((event) => <NeedsAnswerCard key={event.id} event={event} />),
+        ]}
       </Section>
 
       <Section title={t.events.waitingForOthers}>
-        {sections.waiting.map((event) => (
-          <WaitingCard key={event.id} event={event} />
-        ))}
+        {[
+          ...sections.voting.map((event) => <VoteCard key={event.id} event={event} />),
+          ...sections.waiting.map((event) => <WaitingCard key={event.id} event={event} />),
+        ]}
       </Section>
 
       {/* Two halves need the width: at most two cards side by side. */}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck, CalendarX, Check, Clock, LogOut, Users, X } from "lucide-react";
+import { CalendarCheck, CalendarX, Check, Clock, LogOut, Meh, Users, X } from "lucide-react";
 
 import type { EventInvitee } from "@/api/events";
 import { groupsQuery } from "@/api/groups";
@@ -9,6 +9,7 @@ import AddToCalendar from "@/components/AddToCalendar";
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
 import DateConflicts from "@/components/myEvents/DateConflicts";
 import { EdgeWarnings, ExitConfirm, Origin } from "@/components/myEvents/parts";
+import VoteDetails from "@/components/myEvents/VoteDetails";
 import YourTime from "@/components/time/YourTime";
 import Avatar from "@/components/ui/Avatar";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -34,6 +35,18 @@ const STAGE_TONE = {
  * card instead (NeedsAnswerCard, WaitingCard, ScheduledCard).
  */
 export default function EventDetails({ staged }: { staged: StagedEvent }) {
+  // A vote still being answered has its own view (#74): no date yet, only dates.
+  if (staged.stage === "toSwipe" || staged.stage === "voting") {
+    return <VoteDetails event={staged.event} />;
+  }
+  return <DatedDetails staged={staged} />;
+}
+
+function DatedDetails({
+  staged,
+}: {
+  staged: Exclude<StagedEvent, { stage: "toSwipe" | "voting" }>;
+}) {
   const t = useT();
   const { lang } = useLang();
   const userId = useSignedInUser().id;
@@ -178,6 +191,14 @@ function Answer({ response }: { response: EventInvitee["response"] }) {
       <span className="flex items-center gap-1 text-emerald-700">
         <Check className="h-4 w-4" />
         {t.events.answered.accepted}
+      </span>
+    );
+  }
+  if (response === "maybe") {
+    return (
+      <span className="flex items-center gap-1 text-amber-700">
+        <Meh className="h-4 w-4" />
+        {t.events.answered.maybe}
       </span>
     );
   }

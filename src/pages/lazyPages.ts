@@ -11,6 +11,7 @@ export const loadPage = {
   calendarOverview: () => import("@/pages/CalendarOverview"),
   calendarAccounts: () => import("@/pages/CalendarAccounts"),
   myEvents: () => import("@/pages/MyEvents"),
+  swipeDates: () => import("@/pages/SwipeDates"),
   groups: () => import("@/pages/Groups"),
   profileScreen: () => import("@/pages/ProfileScreen"),
   myData: () => import("@/pages/MyData"),
