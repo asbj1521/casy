@@ -1,16 +1,11 @@
 /**
- * How the calendar strip under a swipe card grows into the whole screen and
- * back (#74), shared by CalendarStrip and CalendarSheet so both ends move
- * alike: iOS's own easing, over a fixed time, so the contents can wait it out.
+ * How the calendar strip under a swipe card zooms into the whole screen and
+ * back (#74): iOS's own easing, a little quicker going back.
  *
- * Only the empty box morphs. Framer Motion morphs by scaling, which would
- * stretch the text inside along with it, so the contents are hidden while
- * the box changes size and fade in once it has its final one (CONTENT_IN).
+ * It is a zoom, not a morph of the box: the whole calendar is scaled down
+ * evenly to the strip's width and clipped to its shape, then grows to the
+ * screen (CalendarSheet). A morph that resizes the box scales its contents
+ * unevenly, which stretched the text, and hiding them meanwhile left them to
+ * pop in afterwards; scaled evenly, they can be shown the whole way.
  */
-export const MORPH = { duration: 0.34, ease: [0.32, 0.72, 0, 1] } as const;
-
-/** The contents fading in once the box has finished its morph. */
-export const CONTENT_IN = { delay: MORPH.duration, duration: 0.16 } as const;
-
-/** The contents fading out before the box morphs back. */
-export const CONTENT_OUT_MS = 110;
+export const ZOOM = { inMs: 380, outMs: 320, easing: "cubic-bezier(0.32, 0.72, 0, 1)" } as const;

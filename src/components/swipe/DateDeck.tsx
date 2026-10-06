@@ -94,9 +94,9 @@ export default function DateDeck({
   const [exit, setExit] = useState<Exit>("accepted");
   const [celebrate, setCelebrate] = useState(false);
   // The calendar under the card, grown to the whole screen.
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  // Just closed: the strip waits for the morph back before showing its days.
-  const [calendarReturning, setCalendarReturning] = useState(false);
+  // The whole calendar, open, zoomed out of the strip's place on screen.
+  const [calendarFrom, setCalendarFrom] = useState<DOMRect | null>(null);
+  const calendarOpen = calendarFrom !== null;
   const [error, setError] = useState<string | null>(null);
 
   const save = useMutation({
@@ -127,7 +127,6 @@ export default function DateDeck({
 
   function answer(response: EventResponse) {
     if (!current) return;
-    setCalendarReturning(false);
     setError(null);
     setExit(response);
     setGiven((g) => ({ ...g, [current.id]: response }));
@@ -137,7 +136,6 @@ export default function DateDeck({
   }
   function back(to = index - 1) {
     if (to < 0) return;
-    setCalendarReturning(false);
     setExit("back");
     setIndex(to);
   }
@@ -282,10 +280,7 @@ export default function DateDeck({
                   date={current}
                   slotLabel={slotLabel}
                   calendar={calendar}
-                  layoutId={`calendar-${current.id}`}
-                  open={calendarOpen}
-                  returning={calendarReturning}
-                  onOpen={() => setCalendarOpen(true)}
+                  onOpen={setCalendarFrom}
                 />
               </div>
             </div>
@@ -311,18 +306,15 @@ export default function DateDeck({
         </Notice>
       )}
 
-      {/* Grown out of the strip, and back into it, by their shared layoutId. */}
+      {/* Zoomed out of the strip, and back into it. */}
       {calendarOpen && current && (
         <CalendarSheet
           date={current}
           slotLabel={slotLabel}
           marked={marked}
           calendar={calendar}
-          layoutId={`calendar-${current.id}`}
-          onClose={() => {
-            setCalendarOpen(false);
-            setCalendarReturning(true);
-          }}
+          from={calendarFrom}
+          onClose={() => setCalendarFrom(null)}
         />
       )}
       {celebrate && <Celebration />}

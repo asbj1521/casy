@@ -14,6 +14,7 @@ import {
   type DaySegment,
 } from "@/lib/calendarOverview";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
+import type { GridItem } from "@/lib/monthGrid";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
@@ -32,6 +33,12 @@ export interface MyCalendarDays {
   colorOf: (calendarId: string) => string;
   /** What to call a segment: its calendar's name, or the holiday's. */
   labelOf: (segment: DaySegment) => string;
+  /**
+   * Everything over the year searched as whole blocks rather than day by
+   * day, named, holidays included: what the month view lays out
+   * (lib/monthGrid.ts), where something lasting days is one bar.
+   */
+  items: GridItem[];
 }
 
 /**
@@ -49,22 +56,41 @@ export function useMyCalendarDays(): MyCalendarDays {
     calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
   );
 
-  const byDay = useMemo(() => {
-    const from = new Date(SEARCH_WINDOW.start);
-    const to = new Date(SEARCH_WINDOW.end);
+  const counted = useMemo(() => {
     const included = new Set(data?.calendars.filter((c) => c.included).map((c) => c.id));
-    return withHolidays(
-      segmentByDay(
-        (data?.blocks ?? []).filter((b) => included.has(b.calendarId)),
-        from,
-        to,
-        TZ,
-      ),
-      holidaySegmentsByDay(from, to, TZ),
-    );
+    return (data?.blocks ?? []).filter((b) => included.has(b.calendarId));
   }, [data]);
+  const holidays = useMemo(
+    () => holidaySegmentsByDay(new Date(SEARCH_WINDOW.start), new Date(SEARCH_WINDOW.end), TZ),
+    [],
+  );
+  const byDay = useMemo(
+    () =>
+      withHolidays(
+        segmentByDay(counted, new Date(SEARCH_WINDOW.start), new Date(SEARCH_WINDOW.end), TZ),
+        holidays,
+      ),
+    [counted, holidays],
+  );
   const palette = useMemo(() => calendarColors(data?.calendars ?? []), [data]);
   const names = useMemo(() => new Map((data?.calendars ?? []).map((c) => [c.id, c.name])), [data]);
+  const items = useMemo(
+    (): GridItem[] => [
+      ...[...holidays.values()].flat().map((s) => ({
+        calendarId: s.calendarId,
+        start: s.start.getTime(),
+        end: s.end.getTime(),
+        label: s.holiday ? (lang === "da" ? s.holiday.name : s.holiday.englishName) : "",
+      })),
+      ...counted.map((b) => ({
+        calendarId: b.calendarId,
+        start: Date.parse(b.start),
+        end: Date.parse(b.end),
+        label: names.get(b.calendarId) ?? "",
+      })),
+    ],
+    [counted, holidays, names, lang],
+  );
 
   return {
     loading: isPending,
@@ -82,5 +108,6 @@ export function useMyCalendarDays(): MyCalendarDays {
             : (names.get(s.calendarId) ?? ""),
       [lang, names, t],
     ),
+    items,
   };
 }

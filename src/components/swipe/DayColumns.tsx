@@ -14,6 +14,7 @@ import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { formatSegmentRange, isoWeekNumber } from "@/lib/calendarOverview";
 import { placeBlocks, placeSpan } from "@/lib/dayStrip";
 import { formatTime } from "@/lib/format";
+import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay } from "@/lib/zone";
 
@@ -35,29 +36,10 @@ const IN_VIEW = 3;
  * Days kept drawn either side of those in view while they can be swiped,
  * so a day slides in already drawn rather than appearing as it arrives.
  */
-const DRAWN_BESIDE = 7;
+const DRAWN_BESIDE = 8;
 
 /** How the days settle after a swipe or a tap on the week: Apple's quick, soft stop. */
 const SETTLE = { type: "spring", damping: 38, stiffness: 380, mass: 0.8 } as const;
-
-/** "r, g, b" darkened, for a block's words on its own tint, as Apple writes them. */
-function shade(rgb: string, k = 0.72): string {
-  return rgb
-    .split(",")
-    .map((c) => Math.round(Number(c) * k))
-    .join(", ");
-}
-
-/**
- * "r, g, b" as a pale tint, solid rather than see-through, so a block
- * indented over another reads cleanly on top of it.
- */
-function tint(rgb: string, amount = 0.16): string {
-  return rgb
-    .split(",")
-    .map((c) => Math.round(255 - (255 - Number(c)) * amount))
-    .join(", ");
-}
 
 /**
  * Your calendar's days side by side, drawn like Apple Calendar's day view
@@ -172,7 +154,9 @@ export default function DayColumns({
   const allDay = new Map(
     drawn.map((k) => [k, calendar.segmentsOn(new Date(dayOf(k))).filter((s) => s.allDay)]),
   );
-  const anyAllDay = [...allDay.values()].some((list) => list.length > 0);
+  // The whole-day row is there when a day in view has something for it, as
+  // Apple's is, not for a day drawn out of sight.
+  const anyAllDay = [offset - 1, offset, offset + 1].some((k) => allDay.get(k)!.length > 0);
   const columnStyle = (k: number) => ({ left: (k + 1) * columnPx, width: columnPx });
 
   // A sideways drag moves the strip under the finger, and settles on whole
