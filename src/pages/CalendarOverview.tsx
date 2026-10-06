@@ -6,6 +6,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight, Info, Loader2 } from "lucide-r
 import { calendarBusyQuery, calendarsChanged, updateCalendar } from "@/api/calendars";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
+import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
@@ -237,6 +238,7 @@ export default function CalendarOverview() {
           {t.calendarView.title}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.calendarView.intro}</p>
+        <DanishTimeNote className="mt-1" />
 
         {error && (
           <Notice tone="error" className="mt-6">

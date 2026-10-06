@@ -34,9 +34,9 @@ export function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** "Tue 23 Jun", or "tirs. 23. jun." in Danish. */
-export function formatDate(iso: string, lang: Lang): string {
-  return new Date(iso).toLocaleDateString(LOCALE[lang], DATE_FMT);
+/** "Tue 23 Jun", or "tirs. 23. jun." in Danish; in Danish time unless another zone is asked for. */
+export function formatDate(iso: string, lang: Lang, timeZone: string = APP_TIME_ZONE): string {
+  return new Date(iso).toLocaleDateString(LOCALE[lang], { ...DATE_FMT, timeZone });
 }
 
 /** "16:00", in Danish time unless another zone is asked for (the viewer's own, say). */

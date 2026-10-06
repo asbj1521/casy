@@ -8,6 +8,7 @@ import { groupsQuery } from "@/api/groups";
 import AddToCalendar from "@/components/AddToCalendar";
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
 import { EdgeWarnings, ExitConfirm, Origin } from "@/components/myEvents/parts";
+import YourTime from "@/components/time/YourTime";
 import Avatar from "@/components/ui/Avatar";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { useSignedInUser } from "@/context/auth";
@@ -84,7 +85,12 @@ export default function EventDetails({ staged }: { staged: StagedEvent }) {
             <p className="mt-1 text-3xl font-extrabold leading-tight tracking-tight text-foreground">
               {headline.lines.join(" ")}
             </p>
-            <p className="text-lg text-foreground">{headline.time}</p>
+            <p className="text-lg text-foreground">
+              {headline.time}
+              {event.currentDate && (
+                <YourTime kind={event.settings.kind} date={event.currentDate} />
+              )}
+            </p>
           </>
         )}
         <Origin event={event} />

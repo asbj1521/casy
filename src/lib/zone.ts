@@ -151,3 +151,26 @@ export function startOfMonth(ms: number, timeZone: string, n = 0): number {
 export function dayOf(iso: string, timeZone: string): string {
   return new Date(startOfDay(Date.parse(iso), timeZone)).toISOString();
 }
+
+/** The zone the browser is in (the person looking at the page), or UTC if it won't say. */
+export function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+/**
+ * Whether two zones keep the same clock all year, judged by their offsets in
+ * mid-winter and mid-summer: Oslo and Copenhagen do, London and Copenhagen
+ * never do, and a southern zone whose summer is our winter shows up in one of
+ * the two. Zones whose clocks change on other dates differ for a few weeks a
+ * year at most, which this treats as the same.
+ */
+export function sameClock(a: string, b: string, year: number): boolean {
+  if (a === b) return true;
+  return [Date.UTC(year, 0, 15, 12), Date.UTC(year, 6, 15, 12)].every(
+    (ms) => offsetAt(ms, a) === offsetAt(ms, b),
+  );
+}

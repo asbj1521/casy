@@ -8,6 +8,7 @@ import {
   GroupName,
   People,
 } from "@/components/myEvents/parts";
+import YourTime from "@/components/time/YourTime";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatHeadline, nameList } from "@/lib/format";
@@ -66,6 +67,7 @@ export default function WaitingCard({ event }: { event: DatedEvent }) {
       </div>
       <p className="relative order-3 px-4 text-lg text-foreground sm:order-none sm:px-5">
         {headline.time}
+        <YourTime kind={event.settings.kind} date={event.currentDate} />
       </p>
       <div className="relative order-6 flex min-w-0 items-baseline justify-end px-4 sm:order-none sm:px-5">
         {!exiting && (

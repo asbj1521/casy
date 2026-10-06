@@ -103,6 +103,10 @@ export const en: Messages = {
     howItWorks: "How it works",
     privacy: "Privacy",
   },
+  timeZone: {
+    note: "All times are Danish time",
+    yours: (time: string) => `${time} your time`,
+  },
   scheduler: {
     group: "Group",
     name: "What are you doing",

@@ -14,6 +14,7 @@ import GroupSwitcher from "@/components/GroupSwitcher";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import { SettingsBar, SettingsSentence } from "@/components/SchedulerSettings";
 import TopNav from "@/components/TopNav";
+import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { useAuth } from "@/context/auth";
 import { TODAY, useDateSearch } from "@/hooks/useDateSearch";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
@@ -373,6 +374,8 @@ export default function FindDate() {
         >
           <SettingsBar {...settingsProps} />
           <SettingsSentence {...settingsProps} />
+          {/* The start time above is Danish time too. */}
+          <DanishTimeNote className="px-1" />
 
           <AnswerCard
             fadeKey={fadeKey}

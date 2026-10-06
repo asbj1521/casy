@@ -10,6 +10,7 @@ import NeedsAnswerCard from "@/components/myEvents/NeedsAnswerCard";
 import ScheduledCard from "@/components/myEvents/ScheduledCard";
 import WaitingCard from "@/components/myEvents/WaitingCard";
 import TopNav from "@/components/TopNav";
+import DanishTimeNote from "@/components/time/DanishTimeNote";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
@@ -42,6 +43,7 @@ export default function MyEvents() {
       <main className="px-4 pb-16 pt-2 sm:px-6 sm:pt-0 lg:px-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.events.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.events.intro}</p>
+        <DanishTimeNote className="mt-1" />
 
         {isPending ? (
           <p className="mt-8 flex items-center gap-2 text-sm text-muted-foreground">

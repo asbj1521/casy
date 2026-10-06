@@ -112,6 +112,11 @@ export const da = {
     howItWorks: "Sådan virker det",
     privacy: "Privatliv",
   },
+  /** Shown only to someone whose clock isn't Danish time (lib/viewerTime.ts). */
+  timeZone: {
+    note: "Alle tider er dansk tid",
+    yours: (time: string) => `${time} din tid`,
+  },
   scheduler: {
     // The settings bar (desktop) and the sentence (phone).
     group: "Gruppe",

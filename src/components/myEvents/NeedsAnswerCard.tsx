@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
 import { EdgeWarnings, ExitConfirm, ExitLink, Origin, People } from "@/components/myEvents/parts";
+import YourTime from "@/components/time/YourTime";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate } from "@/lib/format";
@@ -24,6 +25,7 @@ export default function NeedsAnswerCard({ event }: { event: DatedEvent }) {
       </p>
       <p className="mt-1 text-xl font-bold text-foreground">
         {formatEventDate(event.settings.kind, event.currentDate, lang)}
+        <YourTime kind={event.settings.kind} date={event.currentDate} />
       </p>
       <Origin event={event} />
       <div className="mt-3">

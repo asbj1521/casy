@@ -3,6 +3,7 @@ import { AlertTriangle, Check, Hourglass, Loader2 } from "lucide-react";
 
 import EdgeWarningList from "@/components/EdgeWarningList";
 import FadeSwap from "@/components/FadeSwap";
+import YourTime from "@/components/time/YourTime";
 import Bone from "@/components/ui/Bone";
 import { TODAY } from "@/hooks/useDateSearch";
 import { useLang, useT } from "@/i18n/lang";
@@ -137,6 +138,7 @@ export default function AnswerCard({
                   {answer.time} ·{" "}
                   {t.scheduler.inDays(daysUntil(dayOf(slot.start, APP_TIME_ZONE), TODAY))}
                 </p>
+                <YourTime kind={search.kind} date={slot} className="mt-0.5" />
               </div>
 
               <div className="flex flex-col gap-3 lg:shrink-0 lg:items-end">
