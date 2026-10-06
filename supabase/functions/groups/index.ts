@@ -31,7 +31,7 @@
  */
 import { type Caller, requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
-import { claimStaleConnections, refreshTargets } from "../_shared/groupRefresh.ts";
+import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
 import {
   cleanDisplayName,
   cleanGroupName,
@@ -694,14 +694,15 @@ serve("groups", async (req, body) => {
     }
 
     // Someone is planning for this group: sync the members' calendars that
-    // haven't been for a while, so the search uses busy times minutes old
-    // rather than up to an hour (_shared/groupRefresh.ts). Answers by a
+    // haven't been for `freshForSeconds` (one to ten minutes), so the search
+    // uses busy times minutes old rather than up to an hour
+    // (_shared/groupRefresh.ts). Answers by a
     // deadline; slower syncs finish after it. Says nothing about whose.
     case "refresh": {
       const groupId = requireString(body, "groupId");
       const memberIds = await membersAsMember(db, groupId, profileId);
       const key = encryptionKeyFromEnv();
-      const due = await claimStaleConnections(db, memberIds);
+      const due = await claimStaleConnections(db, memberIds, freshForMs(body.freshForSeconds));
       const { complete, synced, rest } = await refreshTargets(due, (target) =>
         syncConnection(db, target, key),
       );

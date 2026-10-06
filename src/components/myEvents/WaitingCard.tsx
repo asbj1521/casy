@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CalendarClock, Clock } from "lucide-react";
 
+import DateConflicts from "@/components/myEvents/DateConflicts";
 import {
   EdgeWarnings,
   ExitConfirm,
@@ -64,6 +65,7 @@ export default function WaitingCard({ event }: { event: DatedEvent }) {
           <People invitees={event.invitees} />
         </div>
         <EdgeWarnings event={event} className="mt-1.5" />
+        <DateConflicts event={event} className="mt-1.5" />
       </div>
       <p className="relative order-3 px-4 text-lg text-foreground sm:order-none sm:px-5">
         {headline.time}

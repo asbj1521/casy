@@ -529,6 +529,11 @@ export const da = {
     cantMake: "Kan du ikke? Casy finder den næste dato, der passer gruppen, og spørger alle igen.",
     declineFind: "Afslå og find en ny dato",
     keepIt: "Behold den",
+    conflictYou: "Du har noget i din kalender på dette tidspunkt nu.",
+    cantMakeAfterAll: "Kan ikke alligevel",
+    // Danish says "har" for one or several; English needs to know (has/have).
+    conflictOthers: (_several: boolean, names: string) =>
+      `${names} har noget i kalenderen på dette tidspunkt nu.`,
     accept: "Accepter",
     decline: "Afslå",
     waitingForOthers: "Venter på andre",

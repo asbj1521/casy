@@ -1,6 +1,14 @@
 import { assert, assertEquals, assertFalse } from "jsr:@std/assert@1";
 
-import { refreshTargets, REFRESH_PARALLEL, runPooled, within } from "./groupRefresh.ts";
+import {
+  freshForMs,
+  MAX_FRESH_MS,
+  MIN_FRESH_MS,
+  refreshTargets,
+  REFRESH_PARALLEL,
+  runPooled,
+  within,
+} from "./groupRefresh.ts";
 import type { SyncOutcome, SyncTarget } from "./sync.ts";
 
 const targets = (n: number): SyncTarget[] =>
@@ -23,6 +31,15 @@ Deno.test("runs everything, never more than the limit at once", async () => {
   });
   assertEquals(done.sort(), [1, 2, 3, 4, 5, 6, 7]);
   assertEquals(most, 3);
+});
+
+Deno.test("fresh for: what is asked, within a minute and ten minutes", () => {
+  assertEquals(freshForMs(120), 120_000);
+  assertEquals(freshForMs(5), MIN_FRESH_MS);
+  assertEquals(freshForMs(86_400), MAX_FRESH_MS);
+  assertEquals(freshForMs(undefined), MAX_FRESH_MS);
+  assertEquals(freshForMs("60"), MAX_FRESH_MS);
+  assertEquals(freshForMs(Number.NaN), MAX_FRESH_MS);
 });
 
 Deno.test("within: true when the work finishes in time, false when it doesn't", async () => {

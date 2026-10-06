@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, CalendarX, Loader2, Sparkles } from "lucide-react";
@@ -13,6 +13,7 @@ import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { useGroupRefresh } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
@@ -33,6 +34,25 @@ export default function MyEvents() {
   const { eventId } = useParams();
   const phone = usePhoneLayout();
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
+
+  // The groups of dates still waiting for answers get their calendars synced
+  // in the background on opening the page, and on coming back to it, so a
+  // date someone's calendar now rules out is flagged within seconds
+  // (DateConflicts, #85). At most once a minute per group (useGroupRefresh).
+  const refresh = useGroupRefresh(userId);
+  const pendingGroups = [
+    ...new Set(events?.filter((e) => e.status === "pending").map((e) => e.group.id)),
+  ].join(",");
+  useEffect(() => {
+    if (!pendingGroups) return;
+    const freshen = () => {
+      if (document.visibilityState !== "visible") return;
+      for (const groupId of pendingGroups.split(",")) refresh.start(groupId);
+    };
+    freshen();
+    document.addEventListener("visibilitychange", freshen);
+    return () => document.removeEventListener("visibilitychange", freshen);
+  }, [pendingGroups, refresh]);
 
   // A phone has no screen for one event: its cards hold everything.
   if (phone && eventId) return <Navigate to="/events" replace />;

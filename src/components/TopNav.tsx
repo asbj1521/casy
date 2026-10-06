@@ -12,11 +12,11 @@ import {
 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
-import { eventsQuery, needsYourAnswer } from "@/api/events";
 import { groupsQuery, invitationsQuery, whoAmIQuery } from "@/api/groups";
 import LanguageToggle from "@/components/LanguageToggle";
 import PhoneHeader from "@/components/PhoneHeader";
 import { useAuth } from "@/context/auth";
+import { useEventsBadge } from "@/hooks/useEventsBadge";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { flyOnClick } from "@/lib/cardTransition";
@@ -45,7 +45,8 @@ export default function TopNav() {
 
   // What's waiting for your answer, each on the page where it's given:
   // suggested events on My events, group invitations on My groups.
-  const { data: events } = useQuery({ ...eventsQuery(user?.id ?? ""), enabled: !!user });
+  // Answers waiting on you, and dates you said yes to that now clash (useEventsBadge).
+  const eventsBadge = useEventsBadge();
   const { data: invitations } = useQuery({
     ...invitationsQuery(user?.id ?? ""),
     enabled: !!user,
@@ -121,7 +122,7 @@ export default function TopNav() {
       icon: CalendarCheck,
       active: onEvents,
       prefetch: prefetchEvents,
-      badge: events?.filter(needsYourAnswer).length,
+      badge: eventsBadge,
     },
     {
       to: "/groups",

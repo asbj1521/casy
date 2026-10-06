@@ -56,6 +56,9 @@ import { addDays, APP_TIME_ZONE, dayOf, localDate, startOfMonth } from "@/lib/zo
 /** The zone every search and every day on this page is local to. */
 const TZ = APP_TIME_ZONE;
 
+/** How long "Suggest this date" waits for a calendar sync already running, at most. */
+const SUGGEST_WAIT_MS = 2_000;
+
 /** The months the chart can show: this one, up to the last one searched. */
 const FIRST_MONTH = startOfMonth(Date.parse(TODAY), TZ);
 const LAST_MONTH = startOfMonth(Date.parse(SEARCH_WINDOW.end) - 1, TZ);
@@ -168,10 +171,10 @@ export default function FindDate() {
   const review = reviewAnswer(found, search, youProfileId, steps.accepted);
 
   // Fresh busy times while planning (#85): calendars sync hourly, so the
-  // group's are synced again in the background as soon as someone starts
-  // planning for it, and once more (or the same sync waited for) before a
-  // date is sent. See useGroupRefresh.
-  const freshen = useGroupRefresh(userId ?? "");
+  // group's are synced again in the background while someone plans for it,
+  // at most once a minute (useGroupRefresh). The suggest button never syncs
+  // itself; it only waits a moment for a sync already running.
+  const refresh = useGroupRefresh(userId ?? "");
   // The search and step on screen, for checks that finish after a render.
   const shownSearch = useRef({ search, step: currentStep(steps) });
   useEffect(() => {
@@ -211,19 +214,38 @@ export default function FindDate() {
     monthPick !== atOpen.monthPick;
   const planningGroupId =
     planning && userId && activeGroup && !activeGroup.isExample ? activeGroup.id : null;
-  useEffect(() => {
-    if (!planningGroupId) return;
-    void freshen(planningGroupId).then((outcome: RefreshOutcome) => {
+  /**
+   * Sync the group in the background (unless it was within the last minute),
+   * and if the fresh busy times move the answer on screen, say so.
+   */
+  function freshenInBackground(groupId: string) {
+    void refresh.start(groupId)?.then((outcome: RefreshOutcome) => {
       if (!outcome.after || !outcome.before) return;
-      const was = answerFrom(planningGroupId, outcome.before);
-      const now = answerFrom(planningGroupId, outcome.after);
+      const was = answerFrom(groupId, outcome.before);
+      const now = answerFrom(groupId, outcome.after);
       if (answerKey(was) !== answerKey(now)) {
-        setMoved({ groupId: planningGroupId, start: now?.slot?.start ?? null, when: "background" });
+        setMoved({ groupId, start: now?.slot?.start ?? null, when: "background" });
       }
     });
-    // answerFrom reads the latest search through a ref; it isn't a trigger.
+  }
+  // Every change while planning, at most once a minute (useGroupRefresh).
+  useEffect(() => {
+    if (planningGroupId) freshenInBackground(planningGroupId);
+    // freshenInBackground reads the latest search through a ref; only a
+    // change on the page is a trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planningGroupId, freshen]);
+  }, [planningGroupId, sched, steps, monthPick]);
+  // Coming back to the tab, or the app: the usual way a new appointment
+  // happens is switching to the calendar to add it, then switching back.
+  useEffect(() => {
+    if (!planningGroupId) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") freshenInBackground(planningGroupId);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planningGroupId]);
 
   // The chart shows the answer's month unless a month was paged to by hand
   // for this same answer.
@@ -343,12 +365,12 @@ export default function FindDate() {
   const canSuggest =
     !!user && !!activeGroup && !activeGroup.isExample && !!slot && review.tone !== "approve";
   /**
-   * Send the date on screen, once the group's calendars are fresh: wait for
-   * the refresh (usually done already, from the background), then search the
-   * fresh busy times the way the page does. If the answer is still this date,
-   * costing the same people the same, it goes; if not, it doesn't, and the
-   * page shows the new answer to look at first. A refresh that fails sends
-   * with what there is, as before.
+   * Send the date on screen, checked against the freshest busy times there
+   * are: if a background sync is running, wait for it, but no more than
+   * SUGGEST_WAIT_MS (the button must stay quick); then search those busy times
+   * the way the page does. If the answer is still this date, costing the same
+   * people the same, it goes; if not, it doesn't, and the page shows the new
+   * answer to look at first.
    */
   async function sendSuggestion() {
     if (!activeGroup || !slot || !userId) return;
@@ -363,11 +385,14 @@ export default function FindDate() {
       date: { start: slot.start, end: slot.end },
     };
     setMoved(null);
-    setChecking(true);
-    const outcome = await freshen(groupId);
-    setChecking(false);
+    const running = refresh.running(groupId);
+    if (running) {
+      setChecking(true);
+      await Promise.race([running, new Promise((done) => setTimeout(done, SUGGEST_WAIT_MS))]);
+      setChecking(false);
+    }
     const busy = groupBusyQuery(userId, groupId, SEARCH_WINDOW.start, SEARCH_WINDOW.end);
-    const now = answerFrom(groupId, outcome.after ?? queryClient.getQueryData(busy.queryKey));
+    const now = answerFrom(groupId, queryClient.getQueryData(busy.queryKey));
     if (now && answerKey(now) !== shown) {
       setMoved({ groupId, start: now.slot?.start ?? null, when: "suggest" });
       return;

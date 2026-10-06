@@ -7,6 +7,7 @@ import type { EventInvitee } from "@/api/events";
 import { groupsQuery } from "@/api/groups";
 import AddToCalendar from "@/components/AddToCalendar";
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
+import DateConflicts from "@/components/myEvents/DateConflicts";
 import { EdgeWarnings, ExitConfirm, Origin } from "@/components/myEvents/parts";
 import YourTime from "@/components/time/YourTime";
 import Avatar from "@/components/ui/Avatar";
@@ -97,6 +98,7 @@ export default function EventDetails({ staged }: { staged: StagedEvent }) {
       </div>
 
       {stage !== "closed" && <EdgeWarnings event={event} className="mt-3" />}
+      {stage !== "closed" && <DateConflicts event={event} className="mt-3" />}
 
       {stage === "needsAnswer" && <AnswerButtons event={event} />}
       {stage === "waiting" && (

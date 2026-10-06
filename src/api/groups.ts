@@ -123,8 +123,12 @@ export function groupBusyQuery(userId: string, groupId: string | null, from: str
  */
 export async function refreshGroupCalendars(
   groupId: string,
+  /** How recently an account must have synced to be left alone (the server keeps it to 1-10 min). */
+  freshForSeconds: number,
 ): Promise<{ complete: boolean; synced: boolean }> {
-  return await callFunction("groups", { body: { action: "refresh", groupId } });
+  return await callFunction("groups", {
+    body: { action: "refresh", groupId, freshForSeconds },
+  });
 }
 
 /** A new group, with invitations to whoever is named (nobody, if no one is). */

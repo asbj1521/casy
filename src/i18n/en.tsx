@@ -509,6 +509,10 @@ export const en: Messages = {
       "Can't make it? Casy finds the next date that works for the group and asks everyone again.",
     declineFind: "Decline and find a new date",
     keepIt: "Keep it",
+    conflictYou: "You now have something in your calendar at this time.",
+    cantMakeAfterAll: "Can't make it after all",
+    conflictOthers: (several: boolean, names: string) =>
+      `${names} now ${several ? "have" : "has"} something in their calendar at this time.`,
     accept: "Accept",
     decline: "Decline",
     waitingForOthers: "Waiting for others",

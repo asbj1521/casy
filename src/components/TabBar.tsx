@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
-import { eventsQuery, needsYourAnswer } from "@/api/events";
 import { invitationsQuery, whoAmIQuery } from "@/api/groups";
 import { useAuth } from "@/context/auth";
+import { useEventsBadge } from "@/hooks/useEventsBadge";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { loadPage } from "@/pages/lazyPages";
@@ -36,7 +36,8 @@ function PhoneTabBar() {
 
   // Each badge sits on the tab where the answer is given: events waiting on
   // you on Events, invitations on Groups.
-  const { data: events } = useQuery({ ...eventsQuery(user?.id ?? ""), enabled: !!user });
+  // Answers waiting on you, and dates you said yes to that now clash (useEventsBadge).
+  const eventsBadge = useEventsBadge();
   const { data: invitations } = useQuery({
     ...invitationsQuery(user?.id ?? ""),
     enabled: !!user,
@@ -61,7 +62,7 @@ function PhoneTabBar() {
       icon: CalendarCheck,
       active: pathname.startsWith("/events"),
       prefetch: () => void loadPage.myEvents(),
-      badge: events?.filter(needsYourAnswer).length,
+      badge: eventsBadge,
     },
     {
       to: user ? "/" : "/plan",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
+import DateConflicts from "@/components/myEvents/DateConflicts";
 import { EdgeWarnings, ExitConfirm, ExitLink, Origin, People } from "@/components/myEvents/parts";
 import YourTime from "@/components/time/YourTime";
 import { eventTitle } from "@/i18n/eventTitle";
@@ -32,6 +33,7 @@ export default function NeedsAnswerCard({ event }: { event: DatedEvent }) {
         <People invitees={event.invitees} />
       </div>
       <EdgeWarnings event={event} className="mt-3" />
+      <DateConflicts event={event} className="mt-3" />
 
       <AnswerButtons event={event} />
 

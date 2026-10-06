@@ -5,7 +5,8 @@
  * offer a time someone filled since the hourly sync.
  *
  * Bounded three ways, since any member can ask:
- *   - only accounts not tried in the last FRESH_FOR_MS are synced, so asking
+ *   - only accounts not tried for a while are synced (the caller says how
+ *     long counts as fresh, between MIN_FRESH_MS and MAX_FRESH_MS), so asking
  *     again soon syncs nothing and nobody can hammer the providers through it;
  *   - those accounts are claimed in one update first, so two members asking at
  *     once never sync the same account twice;
@@ -18,8 +19,21 @@
 import type { Db } from "./supabaseAdmin.ts";
 import type { SyncOutcome, SyncTarget } from "./sync.ts";
 
-/** An account tried this recently counts as fresh and is left alone. */
-export const FRESH_FOR_MS = 10 * 60_000;
+/**
+ * How recently an account must have been tried to count as fresh and be left
+ * alone: what the caller asks for, within these bounds. A page someone is
+ * actively planning on asks for a minute; anything shorter would let one
+ * member sync everyone's calendars on every click.
+ */
+export const MIN_FRESH_MS = 60_000;
+export const MAX_FRESH_MS = 10 * 60_000;
+
+/** The caller's "fresh for", in seconds, as a bounded number of ms (the longest if unset). */
+export function freshForMs(seconds: unknown): number {
+  const ms =
+    typeof seconds === "number" && Number.isFinite(seconds) ? seconds * 1000 : MAX_FRESH_MS;
+  return Math.min(MAX_FRESH_MS, Math.max(MIN_FRESH_MS, ms));
+}
 /** How long the caller waits for the syncs. */
 export const REFRESH_DEADLINE_MS = 10_000;
 /** At most this many accounts sync at once. */
@@ -33,9 +47,10 @@ export const REFRESH_PARALLEL = 8;
 export async function claimStaleConnections(
   db: Db,
   memberIds: string[],
+  freshFor = MAX_FRESH_MS,
   now = new Date(),
 ): Promise<SyncTarget[]> {
-  const cutoff = new Date(now.getTime() - FRESH_FOR_MS).toISOString();
+  const cutoff = new Date(now.getTime() - freshFor).toISOString();
   const { data, error } = await db
     .from("calendar_connections")
     .update({ last_sync_attempt_at: now.toISOString() })
