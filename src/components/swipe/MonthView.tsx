@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
@@ -31,18 +31,15 @@ export default function MonthView({
   calendar,
   pencil,
   marked,
-  scrollAgain,
   onPickDay,
 }: {
-  /** The day whose month to open on, and to scroll to when it changes. */
+  /** The day whose month to open on. */
   focus: number;
   calendar: MyCalendarDays;
   /** The date being answered, pencilled in dashed. */
   pencil: { start: number; end: number; label: string };
   /** The vote's dates, as local midnights. */
   marked: ReadonlySet<number>;
-  /** Changes to scroll to `focus` again, even if it hasn't moved. */
-  scrollAgain: number;
   onPickDay: (day: number) => void;
 }) {
   const t = useT();
@@ -62,22 +59,13 @@ export default function MonthView({
   const [today] = useState(() => startOfDay(Date.now(), TZ));
   const thisYear = localDate(today, TZ).year;
 
-  // Open on the focused month; later changes (the "Forslaget" pill) scroll there.
-  const focusMonth = startOfMonth(focus, TZ);
-  const opened = useRef(false);
+  // Open on the focused month.
   useLayoutEffect(() => {
-    const el = monthEls.current.get(focusMonth);
-    if (!el || !scroller.current) return;
-    if (!opened.current) {
-      scroller.current.scrollTop = el.offsetTop - 28;
-      opened.current = true;
-    }
-  }, [focusMonth]);
-  useEffect(() => {
-    if (!opened.current) return;
-    const el = monthEls.current.get(focusMonth);
-    scroller.current?.scrollTo({ top: (el?.offsetTop ?? 0) - 28, behavior: "smooth" });
-  }, [focus, focusMonth, scrollAgain]);
+    const el = monthEls.current.get(startOfMonth(focus, TZ));
+    if (el && scroller.current) scroller.current.scrollTop = el.offsetTop - 28;
+    // Only on opening: the view is opened afresh each time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div ref={scroller} className="relative h-full overflow-y-auto overscroll-contain">

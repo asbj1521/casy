@@ -40,7 +40,8 @@ const WEEK_SWIPE_AT = 40;
  * into it: the whole calendar, scaled down evenly to the strip's width and
  * clipped to its shape, grows to the screen, so nothing inside is ever
  * stretched and nothing has to appear afterwards (morph.ts). "Færdig" closes
- * it; the pill bottom left goes back to the suggested date.
+ * it; the pill bottom left goes back to the suggested date's day, from
+ * either view.
  */
 export default function CalendarSheet({
   date,
@@ -70,8 +71,6 @@ export default function CalendarSheet({
     () => ({ start: Date.parse(date.start), end: Date.parse(date.end), label: slotLabel }),
     [date.start, date.end, slotLabel],
   );
-  // Asks the month view to scroll back to the suggested date's month.
-  const [backToSuggestion, setBackToSuggestion] = useState(0);
   // Days moved from the suggested one: the day view shows the day before
   // the middle one, it, and the day after.
   const [offset, setOffset] = useState(0);
@@ -324,7 +323,6 @@ export default function CalendarSheet({
               focus={center}
               calendar={calendar}
               pencil={pencil}
-              scrollAgain={backToSuggestion}
               marked={marked}
               onPickDay={(day) => {
                 go(daysBetween(home, day));
@@ -339,8 +337,9 @@ export default function CalendarSheet({
         <button
           type="button"
           onClick={() => {
+            // Always the suggested date's own day, from the month view too.
             go(0);
-            if (view === "month") setBackToSuggestion((n) => n + 1);
+            setView("day");
           }}
           className="absolute bottom-[calc(env(safe-area-inset-bottom)+16px)] left-4 z-30 rounded-full border bg-card/90 px-5 py-2.5 text-[17px] font-medium text-foreground shadow-lg backdrop-blur"
         >
