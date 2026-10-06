@@ -41,7 +41,8 @@ export async function claimStaleConnections(
     .update({ last_sync_attempt_at: now.toISOString() })
     .in("profile_id", memberIds)
     .eq("status", "connected")
-    .or(`last_sync_attempt_at.is.null,last_sync_attempt_at.lt.${cutoff}`)
+    // Quoted: a timestamp's ":" and "." are reserved inside PostgREST's or().
+    .or(`last_sync_attempt_at.is.null,last_sync_attempt_at.lt."${cutoff}"`)
     .select("id, provider");
   if (error) throw error;
   return data as SyncTarget[];
