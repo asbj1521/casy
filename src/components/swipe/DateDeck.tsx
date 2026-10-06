@@ -95,6 +95,8 @@ export default function DateDeck({
   const [celebrate, setCelebrate] = useState(false);
   // The calendar under the card, grown to the whole screen.
   const [calendarOpen, setCalendarOpen] = useState(false);
+  // Just closed: the strip waits for the morph back before showing its days.
+  const [calendarReturning, setCalendarReturning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const save = useMutation({
@@ -125,6 +127,7 @@ export default function DateDeck({
 
   function answer(response: EventResponse) {
     if (!current) return;
+    setCalendarReturning(false);
     setError(null);
     setExit(response);
     setGiven((g) => ({ ...g, [current.id]: response }));
@@ -134,6 +137,7 @@ export default function DateDeck({
   }
   function back(to = index - 1) {
     if (to < 0) return;
+    setCalendarReturning(false);
     setExit("back");
     setIndex(to);
   }
@@ -280,6 +284,7 @@ export default function DateDeck({
                   calendar={calendar}
                   layoutId={`calendar-${current.id}`}
                   open={calendarOpen}
+                  returning={calendarReturning}
                   onOpen={() => setCalendarOpen(true)}
                 />
               </div>
@@ -314,7 +319,10 @@ export default function DateDeck({
           marked={marked}
           calendar={calendar}
           layoutId={`calendar-${current.id}`}
-          onClose={() => setCalendarOpen(false)}
+          onClose={() => {
+            setCalendarOpen(false);
+            setCalendarReturning(true);
+          }}
         />
       )}
       {celebrate && <Celebration />}

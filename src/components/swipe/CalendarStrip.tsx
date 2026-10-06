@@ -3,10 +3,10 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Maximize2 } from "lucide-react";
 
 import DayColumns from "@/components/swipe/DayColumns";
-import { MORPH } from "@/components/swipe/morph";
+import { CONTENT_IN, MORPH } from "@/components/swipe/morph";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { useT } from "@/i18n/lang";
-import { addDays, APP_TIME_ZONE, startOfDay } from "@/lib/zone";
+import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
 
@@ -18,8 +18,9 @@ const STRIP_PX = 246;
  * day before, the day and the day after, drawn like Apple Calendar
  * (DayColumns) and opened on the suggested time. A tap grows it into the
  * same days on the whole screen (CalendarSheet, through the shared
- * `layoutId`), where you can look further; closing shrinks it back here.
- * While open, only its room is kept.
+ * `layoutId`), where you can look further; closing shrinks it back here
+ * (`returning`), its contents fading in once it has its size again (see
+ * morph.ts). While open, only its room is kept.
  */
 export default function CalendarStrip({
   date,
@@ -27,6 +28,7 @@ export default function CalendarStrip({
   calendar,
   layoutId,
   open,
+  returning,
   onOpen,
 }: {
   date: { start: string; end: string };
@@ -34,13 +36,14 @@ export default function CalendarStrip({
   calendar: MyCalendarDays;
   layoutId: string;
   open: boolean;
+  /** Shrinking back from the whole screen just now: the contents wait for the morph. */
+  returning: boolean;
   onOpen: () => void;
 }) {
   const t = useT();
   const reduceMotion = useReducedMotion();
   const start = Date.parse(date.start);
   const end = Date.parse(date.end);
-  const center = startOfDay(start, TZ);
 
   if (calendar.none) {
     return (
@@ -74,12 +77,12 @@ export default function CalendarStrip({
         >
           <motion.div
             className="h-full"
-            initial={{ opacity: 0 }}
+            initial={returning && !reduceMotion ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.12, duration: 0.18 }}
+            transition={CONTENT_IN}
           >
             <DayColumns
-              days={[-1, 0, 1].map((i) => addDays(center, i, TZ))}
+              home={startOfDay(start, TZ)}
               slot={{ start, end }}
               slotLabel={slotLabel}
               calendar={calendar}
