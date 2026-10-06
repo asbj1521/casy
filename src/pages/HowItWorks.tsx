@@ -94,7 +94,7 @@ const da: Copy = {
     },
     {
       title: "Lav en gruppe, og invitér folk",
-      body: "Giv gruppen et navn, og invitér folk, du allerede er i en gruppe med, eller skriv en e-mailadresse. De får en invitation under Mine aftaler og bliver først medlemmer, når de siger ja. Alle andre kan du sende gruppens link, som virker i syv dage. En gruppe kan have op til 20 medlemmer. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet. Medlemmer, der ikke har forbundet en kalender endnu, bliver nævnt og holdt uden for i stedet for at blive talt som ledige. Indtil du har en gruppe, kan du se, hvordan det virker, på eksempelgrupper med din egen kalender.",
+      body: "Giv gruppen et navn, og invitér folk, du allerede er i en gruppe med, eller skriv en e-mailadresse. De får en invitation under Mine aftaler og bliver først medlemmer, når de siger ja. Alle andre kan du sende gruppens link, som virker i syv dage. En gruppe kan have op til 20 medlemmer. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet. Man kan være med uden en kalender: Casy nævner dem, der ikke har forbundet en, og de tjekker selv de datoer, der bliver foreslået, og svarer under Mine aftaler. Har ingen i gruppen en kalender, foreslår Casy bare den første dato, der passer jeres indstillinger. Indtil du har en gruppe, kan du se, hvordan det virker, på eksempelgrupper med din egen kalender.",
     },
     {
       title: "Sig, hvad I skal",
@@ -156,7 +156,7 @@ const en: Copy = {
     },
     {
       title: "Make a group and invite people",
-      body: "Name a group, and invite people you already share a group with, or type an email address. They get an invitation on My events and only join once they say yes. Anyone else you can send the group's link, which works for seven days. A group can have up to 20 members. Everyone in the group sees each other's names and busy times, and nothing more. Members who have not linked a calendar yet are named and left out, rather than counted as free. Until you have a group, example groups with your own calendar show how it works.",
+      body: "Name a group, and invite people you already share a group with, or type an email address. They get an invitation on My events and only join once they say yes. Anyone else you can send the group's link, which works for seven days. A group can have up to 20 members. Everyone in the group sees each other's names and busy times, and nothing more. You can take part without a calendar: Casy names the members who haven't linked one, and they check suggested dates themselves and answer on My events. If nobody in the group has a calendar, Casy simply suggests the first date that fits your settings. Until you have a group, example groups with your own calendar show how it works.",
     },
     {
       title: "Say what you're doing",

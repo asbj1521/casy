@@ -419,6 +419,15 @@ export default function FindDate() {
     search.kind === "single" && slot && participants
       ? edgeWarnings(participants, slot, TZ, youProfileId, lang, t)
       : [];
+  // Members with no calendar check suggested dates themselves (#82): the
+  // answer says who, and doesn't claim to work for "everyone" without them.
+  const checkers =
+    activeGroup && !activeGroup.isExample && !loadingGroup && activeGroup.waitingFor.length > 0
+      ? {
+          names: activeGroup.waitingFor.map((m) => (m.isYou ? t.common.withYou(m.name) : m.name)),
+          everyone: activeGroup.waitingFor.length === activeGroup.memberCount,
+        }
+      : null;
   // What the boxes below fade on: a different group's numbers.
   const fadeKey = activeGroupId ?? "none";
 
@@ -506,6 +515,7 @@ export default function FindDate() {
             search={search}
             slot={slot}
             name={name}
+            checkers={checkers}
             edge={edge}
             actions={actions}
             hint={hint}

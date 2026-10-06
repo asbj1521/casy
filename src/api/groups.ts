@@ -306,10 +306,16 @@ export async function deleteGroup(
  * A real group in the shape the scheduling engine wants: participants each
  * carrying their own busy blocks.
  *
- * A member who has linked no calendar comes back with no blocks, which would
- * read as "free all year" and quietly make the whole group look available.
- * They are dropped from the participant list instead, and the page says who
- * is missing rather than counting them as free.
+ * A member who has linked no calendar has no blocks, so nothing is known about
+ * their time. They aren't searched (which finds the same dates as counting
+ * them free, without the chart's "everyone can" claiming them) and are named
+ * in `waitingFor`: they check suggested dates themselves and answer on My
+ * events, and an event only goes ahead once they say yes (#82).
+ *
+ * If nobody in the group has a calendar, everyone is searched as free, so the
+ * group still gets dates to answer by hand, and a decline still finds the
+ * next one, rather than no date at all. While the busy times are still
+ * loading (`data` undefined) nobody is searched.
  */
 export function participantsFromGroup(
   group: Group,
@@ -318,19 +324,20 @@ export function participantsFromGroup(
   markYou: (name: string) => string = (name) => name,
 ) {
   const connected = group.members.filter((m) => data?.connected[m.profileId]);
+  const searched = connected.length > 0 || !data ? connected : group.members;
   return {
     // With Christmas and New Year blocked for everyone (holidayBlocks.ts):
     // every search of a real group starts here, the scheduler's and a
     // decline's alike.
     participants: withHolidayBlocks(
-      connected.map((m) => ({
+      searched.map((m) => ({
         profileId: m.profileId,
         name: m.isYou ? markYou(m.name) : m.name,
         busy: (data?.busy[m.profileId] ?? []) as BusyInterval[],
       })),
       APP_TIME_ZONE,
     ),
-    /** Members left out because they have not linked a calendar yet. */
+    /** Members with no calendar linked, who check suggested dates themselves. */
     waitingFor: group.members.filter((m) => !data?.connected[m.profileId]),
   };
 }

@@ -131,8 +131,19 @@ export const en: Messages = {
     sentenceFrom: "starting",
     sentenceAnyDay: "any day",
     dayList: { all: "every day", weekdays: "weekdays", weekends: "weekends" },
-    kickerAll: (name: string) =>
-      name ? `${name}: first date everyone can make` : "First date everyone can make",
+    kickerAll: (name: string, who: "all" | "withCalendar" | "nobody") => {
+      const what =
+        who === "all"
+          ? "first date everyone can make"
+          : who === "withCalendar"
+            ? "first date for everyone with a calendar"
+            : "first possible date";
+      return name ? `${name}: ${what}` : what.charAt(0).toUpperCase() + what.slice(1);
+    },
+    checkThemselves: (names: string) =>
+      `${names} ${names.includes(" and ") ? "have" : "has"} no calendar in Casy and will check the date themselves when it is suggested.`,
+    nobodyHasCalendar:
+      "Nobody in the group has a calendar in Casy yet, so everyone checks the date themselves when it is suggested.",
     inDays: (n: number) => (n <= 0 ? "today" : n === 1 ? "tomorrow" : `in ${days(n)}`),
     timeRange: (start: string, end: string) => `${start} to ${end}`,
     tripTimes: (start: string, end: string) => `Leave ${start}, home ${end}`,
@@ -240,12 +251,12 @@ export const en: Messages = {
     whatMembersSee: "What members can see",
     whatMembersSeeBody:
       "Everyone in a group can see each other's name and when they are busy. Nobody sees your email address, your calendars' names, or what any of your events are called. Casy never stores event titles at all.",
-    noCalendarYet: "no calendar yet",
+    noCalendarYet: "checks themselves",
     waitingOne: (name: string) =>
-      `${name} has not linked a calendar yet, so they are left out of the search.`,
+      `${name} has no calendar in Casy and checks the dates suggested themselves.`,
     waitingMany: (n: number) =>
-      `${n} members have not linked a calendar yet, so they are left out of the search.`,
-    waitingWhy: "Counting them as free would make every date look better than it is.",
+      `${n} members have no calendar in Casy and check the dates suggested themselves.`,
+    waitingWhy: "With a calendar, they are counted automatically.",
     invite: "Invite people",
     lastMember: (name: string) => `You are the last member. Leaving deletes "${name}" for good.`,
     leaveConfirm: (name: string) =>

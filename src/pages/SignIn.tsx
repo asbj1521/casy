@@ -178,7 +178,10 @@ export default function SignIn() {
     // immediately on again to the connect-a-calendar step.
     if (calendarStatus.isLoading) return <div className="min-h-screen bg-background" />;
     const hasCalendar = (calendarStatus.data?.length ?? 0) > 0;
-    if (!hasCalendar && !hasSeenCalendarOnboarding(user.id)) {
+    // Someone on their way somewhere (an invite link, an event) goes there:
+    // taking part needs no calendar (#82), and the connect step can wait for
+    // a sign-in with nowhere else to be.
+    if (!next && !hasCalendar && !hasSeenCalendarOnboarding(user.id)) {
       return <Navigate to={`${CALENDAR_ACCOUNTS_PATH}?onboarding=1`} replace />;
     }
     // No destination in the link (the header's or landing page's "Log ind"):

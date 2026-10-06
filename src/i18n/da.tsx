@@ -143,8 +143,21 @@ export const da = {
     sentenceAnyDay: "hvilken som helst dag",
     dayList: { all: "alle dage", weekdays: "hverdage", weekends: "weekender" },
     // The answer on top, and the day by day chart under it.
-    kickerAll: (name: string) =>
-      name ? `${name}: første dato hvor alle kan` : "Første dato hvor alle kan",
+    // Who the date is known to work for: everyone, everyone with a calendar
+    // (the others check it themselves), or nobody has one (#82).
+    kickerAll: (name: string, who: "all" | "withCalendar" | "nobody") => {
+      const what =
+        who === "all"
+          ? "første dato hvor alle kan"
+          : who === "withCalendar"
+            ? "første dato for alle med kalender"
+            : "første mulige dato";
+      return name ? `${name}: ${what}` : what.charAt(0).toUpperCase() + what.slice(1);
+    },
+    checkThemselves: (names: string) =>
+      `${names} har ingen kalender i Casy og tjekker selv datoen, når den bliver foreslået.`,
+    nobodyHasCalendar:
+      "Ingen i gruppen har en kalender i Casy endnu, så alle tjekker selv datoen, når den bliver foreslået.",
     inDays: (n: number) => (n <= 0 ? "i dag" : n === 1 ? "i morgen" : `om ${days(n)}`),
     timeRange: (start: string, end: string) => `${start} til ${end}`,
     tripTimes: (start: string, end: string) => `Afgang ${start}, hjem ${end}`,
@@ -263,12 +276,12 @@ export const da = {
     whatMembersSee: "Hvad medlemmer kan se",
     whatMembersSeeBody:
       "Alle i en gruppe kan se hinandens navne, og hvornår de er optaget. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder. Casy gemmer slet ikke titler på aftaler.",
-    noCalendarYet: "ingen kalender endnu",
+    noCalendarYet: "tjekker selv",
     waitingOne: (name: string) =>
-      `${name} har ikke forbundet en kalender endnu og er derfor ikke med i søgningen.`,
+      `${name} har ingen kalender i Casy og tjekker selv de datoer, der bliver foreslået.`,
     waitingMany: (n: number) =>
-      `${n} medlemmer har ikke forbundet en kalender endnu og er derfor ikke med i søgningen.`,
-    waitingWhy: "Hvis de blev talt som ledige, ville alle datoer se bedre ud, end de er.",
+      `${n} medlemmer har ingen kalender i Casy og tjekker selv de datoer, der bliver foreslået.`,
+    waitingWhy: "Med en kalender bliver de talt med automatisk.",
     invite: "Invitér folk",
     lastMember: (name: string) =>
       `Du er det sidste medlem. Hvis du forlader "${name}", bliver gruppen slettet for altid.`,

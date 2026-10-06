@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AlertTriangle, Check, Hourglass, Loader2 } from "lucide-react";
+import { AlertTriangle, CalendarOff, Check, Hourglass, Loader2 } from "lucide-react";
 
 import EdgeWarningList from "@/components/EdgeWarningList";
 import FadeSwap from "@/components/FadeSwap";
@@ -30,6 +30,7 @@ export default function AnswerCard({
   search,
   slot,
   name,
+  checkers,
   edge,
   actions,
   hint,
@@ -43,6 +44,12 @@ export default function AnswerCard({
   slot: TimeSlot | null;
   /** The event's name as typed, for "Alle kan til ...". */
   name: string;
+  /**
+   * Members with no calendar, who check the date themselves (#82), and
+   * whether that is everyone: the headline then promises less, and a note
+   * names them.
+   */
+  checkers: { names: string[]; everyone: boolean } | null;
   edge: EdgeWarning[];
   /** AnswerActions, or nothing when there is nothing to step through. */
   actions: ReactNode;
@@ -124,7 +131,10 @@ export default function AnswerCard({
                         ? t.scheduler.underReview
                         : tone === "skip"
                           ? t.scheduler.worksIfSkipping
-                          : t.scheduler.kickerAll(name.trim())}
+                          : t.scheduler.kickerAll(
+                              name.trim(),
+                              !checkers ? "all" : checkers.everyone ? "nobody" : "withCalendar",
+                            )}
                   </span>
                 </p>
                 <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
@@ -182,6 +192,14 @@ export default function AnswerCard({
                 </p>
               )}
               <EdgeWarningList warnings={edge} className="mt-3" />
+              {checkers && (
+                <p className="mt-3 flex items-start gap-1.5 text-sm text-muted-foreground">
+                  <CalendarOff className="mt-0.5 h-4 w-4 shrink-0" />
+                  {checkers.everyone
+                    ? t.scheduler.nobodyHasCalendar
+                    : t.scheduler.checkThemselves(nameList(checkers.names, lang))}
+                </p>
+              )}
               {tone === "clean" && accepted && (
                 <p className="mt-3 text-sm text-muted-foreground">{t.scheduler.youApprovedDates}</p>
               )}
