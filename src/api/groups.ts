@@ -161,14 +161,11 @@ export function invitationsQuery(userId: string) {
   });
 }
 
-/** How often an open page asks whether anything changed for you. */
-export const LIVE_POLL_MS = 5_000;
-
 /**
  * A short fingerprint of everything that can change for you (groups,
  * invitations, events and answers): different whenever any of it changed.
- * Asked every few seconds while the page is visible, and at once when you
- * come back to the tab; React Query pauses it while the tab is hidden.
+ * How often it is asked is up to useLiveUpdates (lib/livePace.ts); it is
+ * asked at once when you come back to the tab, never while the tab is hidden.
  */
 export function pulseQuery(userId: string) {
   return queryOptions({
@@ -178,7 +175,6 @@ export function pulseQuery(userId: string) {
       return body.pulse;
     },
     staleTime: 0,
-    refetchInterval: LIVE_POLL_MS,
     // A missed beat is simply asked again on the next one.
     retry: false,
   });
