@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { eventsQueryKey, suggestEvent } from "@/api/events";
 import {
@@ -17,9 +17,10 @@ import AnswerCard from "@/components/findDate/AnswerCard";
 import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
 import LaterDates from "@/components/findDate/LaterDates";
+import MoreSettingsScreen from "@/components/findDate/MoreSettingsScreen";
 import GroupSwitcher from "@/components/GroupSwitcher";
 import NewGroupDialog from "@/components/NewGroupDialog";
-import { SettingsBar, SettingsSentence } from "@/components/SchedulerSettings";
+import { SettingsPanel, SettingsSentence } from "@/components/SchedulerSettings";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { useAuth } from "@/context/auth";
@@ -107,6 +108,9 @@ export default function FindDate() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const navigate = useNavigate();
+  // Flere indstillinger (#98), laid over the page while ?settings is set.
+  const location = useLocation();
+  const moreSettings = new URLSearchParams(location.search).has("settings");
   const queryClient = useQueryClient();
   const phone = usePhoneLayout();
 
@@ -544,23 +548,27 @@ export default function FindDate() {
           onFocusCapture={stopCarousel}
           className="flex flex-col gap-2 sm:gap-5"
         >
-          <SettingsBar {...settingsProps} />
-          <SettingsSentence {...settingsProps} />
-          {/* The start time above is Danish time too. */}
+          {/* The settings and the answer: the sentence above the answer on
+              narrower screens, side by side and equally tall on a wide one
+              (#98), where the settings box takes the bar's old place. */}
+          <div className="flex flex-col gap-2 sm:gap-5 xl:grid xl:grid-cols-2 xl:items-stretch">
+            <SettingsSentence {...settingsProps} />
+            <AnswerCard
+              fadeKey={fadeKey}
+              waiting={waiting}
+              review={review}
+              search={search}
+              slot={slot}
+              name={name}
+              checkers={checkers}
+              edge={edge}
+              actions={actions}
+              hint={hint}
+            />
+            <SettingsPanel {...settingsProps} />
+          </div>
+          {/* The start times are Danish time. */}
           <DanishTimeNote className="px-1" />
-
-          <AnswerCard
-            fadeKey={fadeKey}
-            waiting={waiting}
-            review={review}
-            search={search}
-            slot={slot}
-            name={name}
-            checkers={checkers}
-            edge={edge}
-            actions={actions}
-            hint={hint}
-          />
 
           {chartMonth && (
             <DayChart
@@ -621,6 +629,8 @@ export default function FindDate() {
           {actions}
         </div>
       )}
+
+      {moreSettings && <MoreSettingsScreen back={location.pathname} />}
 
       <NewGroupDialog
         open={newGroupOpen}

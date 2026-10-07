@@ -150,9 +150,9 @@ export const en: Messages = {
       return name ? `${name}: ${what}` : what.charAt(0).toUpperCase() + what.slice(1);
     },
     checkThemselves: (names: string) =>
-      `${names} ${names.includes(" and ") ? "have" : "has"} no calendar in Casy and will check the date themselves when it is suggested.`,
+      `${names} ${names.includes(" and ") ? "have" : "has"} no calendar in Casy and will check the date themselves.`,
     nobodyHasCalendar:
-      "Nobody in the group has a calendar in Casy yet, so everyone checks the date themselves when it is suggested.",
+      "Nobody in the group has a calendar in Casy yet, so everyone checks the date themselves.",
     inDays: (n: number) => (n <= 0 ? "today" : n === 1 ? "tomorrow" : `in ${days(n)}`),
     timeRange: (start: string, end: string) => `${start} to ${end}`,
     tripTimes: (start: string, end: string) => `Leave ${start}, home ${end}`,
@@ -176,8 +176,7 @@ export const en: Messages = {
     sentLink: "Follow the answers in My events",
     hintSignIn: "Sign in and make a group to suggest events.",
     hintExample: "Make a group to suggest events to real people.",
-    hintEveryone:
-      "Casy sends this and up to four more good dates, and everyone swipes through them.",
+    hintEveryone: "Casy sends up to five good dates, and everyone swipes through them.",
     hintAccept: "First accept taking the time off.",
     copyLink: "Copy link",
     copiedLink: "Copied!",
@@ -247,6 +246,57 @@ export const en: Messages = {
     busyLoading: "Loading everyone's calendars…",
     realTimes:
       "These times come from every member's own connected calendars. Nobody sees what your events are called.",
+  },
+  settingsPanel: {
+    tabsLabel: "Settings for the event",
+    tabs: {
+      time: "Time",
+      people: "People",
+      place: "Place and note",
+      repeat: "Repeat",
+      vote: "Voting",
+      prefs: "Preferences",
+    },
+    kind: "Kind of event",
+    meeting: "Meeting",
+    trip: "Trip / holiday",
+    comingSoon: "Coming soon",
+    more: "More settings",
+    moreShort: "More",
+    moreIntro:
+      "More ways to describe the event are coming here. You choose the time on the scheduling page.",
+    back: "Plan",
+    people: {
+      intro: "Choose who has to be able to come, who is optional, or that, say, 4 of 6 is enough.",
+      label: "Who has to come",
+      options: ["Everyone", "Pick members", "At least some"],
+    },
+    place: {
+      intro: "Write where you meet and what the others should know. It shows with the dates.",
+      where: "Place",
+      wherePlaceholder: "Such as at Sara's",
+      note: "Note",
+      notePlaceholder: "Such as bring a game",
+    },
+    repeat: {
+      intro: "Find a regular time that suits everyone, again and again.",
+      label: "Repeats",
+      options: ["Once", "Every week", "Every 2 weeks", "Every month"],
+    },
+    vote: {
+      intro: "Decide how long the others have to answer, and how many dates they vote on.",
+      deadline: "Answer by",
+      deadlineValue: "3 days",
+      dates: "Number of dates",
+      datesValue: "Up to 5",
+    },
+    prefs: {
+      intro: "Take more than the calendar into account.",
+      travel: "Travel time before and after",
+      travelValue: "30 min",
+      lateEarly: "Avoid late nights before early mornings",
+      own: "Use members' own preferences",
+    },
   },
   groupSwitcher: {
     select: "Select group",

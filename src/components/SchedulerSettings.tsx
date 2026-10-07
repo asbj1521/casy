@@ -1,8 +1,10 @@
-import { type ReactNode } from "react";
-import { ChevronDown, Minus, Plus } from "lucide-react";
+import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { ChevronDown, Minus, Plus, SlidersHorizontal } from "lucide-react";
 
 import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
+import ComingSoonSettings, { COMING_SOON } from "@/components/findDate/ComingSoonSettings";
 import PeriodPicker from "@/components/PeriodPicker";
 import Popover from "@/components/Popover";
 import Switch from "@/components/ui/Switch";
@@ -20,12 +22,13 @@ import { cn } from "@/lib/utils";
 
 /**
  * What the scheduling page searches for, set in one of two shapes of the same
- * controls: a single labelled bar on a wide screen, and a sentence you fill
- * in on a phone ("fra kl. 18:00 i 3 t på alle dage"). Both edit the same
+ * controls: a box of tabs beside the answer on a wide screen (SettingsPanel,
+ * #98), and a sentence you fill in on narrower ones ("fra kl. 18:00 i 3 t på
+ * alle dage"), with Flere indstillinger a tap away. Both edit the same
  * settings and show only what applies: time, length and weekdays for one
- * meeting, or number of days and a start day with the Tur / ferie switch on,
- * and in both modes when (the months searched, #74). The name is only for
- * the group to read; the search never looks at it.
+ * meeting, or number of days and a start day for a trip or holiday, and in
+ * both modes when (the months searched, #74). The name is only for the group
+ * to read; the search never looks at it.
  */
 
 /** How long a meeting lasts: 30 min to 12 hours, in 30 minute steps. */
@@ -175,104 +178,226 @@ function StartDayPicker({
   );
 }
 
-/** The wide screen version: one labelled line. */
-export function SettingsBar({ groupSwitcher, name, onName, settings, onChange }: Props) {
+/** The settings box's tabs: what there is today, then what is coming (#98). */
+const TABS = ["time", ...COMING_SOON] as const;
+type Tab = (typeof TABS)[number];
+
+/** Meeting or Tur / ferie, as two halves of one control. */
+function KindChoice({
+  multiDay,
+  onChange,
+}: {
+  multiDay: boolean;
+  onChange: (multiDay: boolean) => void;
+}) {
+  const t = useT();
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t.settingsPanel.kind}
+      className="flex h-12 items-center gap-1 rounded-xl border bg-secondary/60 p-1"
+    >
+      {[false, true].map((value) => (
+        <button
+          key={String(value)}
+          type="button"
+          role="radio"
+          aria-checked={multiDay === value}
+          onClick={() => onChange(value)}
+          className={cn(
+            "h-full whitespace-nowrap rounded-lg px-4 text-base font-bold transition-colors",
+            multiDay === value
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {value ? t.settingsPanel.trip : t.settingsPanel.meeting}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** The Tidspunkt tab: the kind of event and when, then its time or its days. */
+function TimeSettings({ settings, onChange }: Pick<Props, "settings" | "onChange">) {
   const t = useT();
   const dayValues = useDayValues(settings);
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end gap-4">
+        <Field label={t.settingsPanel.kind}>
+          <KindChoice
+            multiDay={settings.multiDay}
+            onChange={(multiDay) => onChange({ multiDay })}
+          />
+        </Field>
+        <Field label={t.scheduler.when}>
+          <PeriodPicker
+            value={settings.period}
+            onChange={(period) => onChange({ period })}
+            capitalized
+            triggerClassName="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary"
+            suffix={<ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          />
+        </Field>
+      </div>
+      <div className="flex flex-wrap items-end gap-4">
+        {settings.multiDay ? (
+          <>
+            <Field label={t.scheduler.tripDays}>
+              <Stepper
+                value={settings.days}
+                values={dayValues}
+                format={t.common.days}
+                onChange={(days) => onChange({ days })}
+                lessLabel={t.scheduler.fewerDays}
+                moreLabel={t.scheduler.moreDays}
+              />
+            </Field>
+            <Field label={t.scheduler.tripStarts}>
+              <StartDayPicker
+                value={settings.startDow}
+                onChange={(startDow) => onChange({ startDow })}
+              />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field label={t.scheduler.startsAt}>
+              <Dropdown
+                value={settings.anyTime ? ANY_TIME : settings.startHour}
+                options={startHourOptions(t)}
+                onChange={(value) => pickStartHour(value, onChange)}
+                suffix={<ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                triggerClassName="inline-flex h-12 items-center gap-2 rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary"
+              />
+            </Field>
+            <Field label={t.scheduler.duration}>
+              <Stepper
+                value={settings.durationMinutes}
+                values={DURATION_VALUES}
+                format={t.common.duration}
+                onChange={(durationMinutes) => onChange({ durationMinutes })}
+                lessLabel={t.scheduler.shorter}
+                moreLabel={t.scheduler.longer}
+              />
+            </Field>
+            <Field label={t.scheduler.dayLabel}>
+              <div className="w-56 2xl:w-72">
+                <DaySlider
+                  size="lg"
+                  selected={settings.dows}
+                  onChange={(dows) => onChange({ dows })}
+                />
+              </div>
+            </Field>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The computer's settings box, beside the answer (#98): the group and the
+ * name always in view, everything else in tabs. Every tab is drawn in the
+ * same grid cell, the hidden ones invisible, so the box is always as tall
+ * as its tallest tab: switching tabs never moves the chart below.
+ */
+export function SettingsPanel({
+  groupSwitcher,
+  name,
+  onName,
+  settings,
+  onChange,
+  className,
+}: Props & { className?: string }) {
+  const t = useT();
+  const [tab, setTab] = useState<Tab>("time");
+  const id = useId();
+
+  // Left and right move between tabs, as in any tab list.
+  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (!step) return;
+    e.preventDefault();
+    const next = TABS[(TABS.indexOf(tab) + step + TABS.length) % TABS.length];
+    setTab(next);
+    document.getElementById(`${id}-tab-${next}`)?.focus();
+  }
 
   return (
-    <section className="hidden items-end gap-4 rounded-2xl border bg-card px-5 py-4 shadow-sm xl:flex">
-      <Field label={t.scheduler.group}>
-        {/* Narrower below 2xl, where the bar also holds "Hvornår" (#74). */}
-        <div className="w-60 2xl:w-72">{groupSwitcher}</div>
-      </Field>
+    <section
+      className={cn("hidden flex-col rounded-2xl border bg-card p-5 shadow-sm xl:flex", className)}
+    >
+      <div className="flex items-end gap-4">
+        <Field label={t.scheduler.group}>
+          <div className="w-60 2xl:w-72">{groupSwitcher}</div>
+        </Field>
+        {/* As tall as the group picker (42px), so the two labels line up. */}
+        <label className="flex min-w-0 flex-1 flex-col gap-2">
+          <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            {t.scheduler.name}
+          </span>
+          <input
+            type="text"
+            value={name}
+            maxLength={MAX_NAME_LENGTH}
+            onChange={(e) => onName(e.target.value)}
+            placeholder={t.scheduler.namePlaceholder}
+            className="h-[42px] w-full rounded-lg border bg-card px-3.5 text-base font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </label>
+      </div>
 
-      <label className="flex min-w-[7rem] flex-1 flex-col gap-2 2xl:min-w-[9rem]">
-        <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {t.scheduler.name}
-        </span>
-        <input
-          type="text"
-          value={name}
-          maxLength={MAX_NAME_LENGTH}
-          onChange={(e) => onName(e.target.value)}
-          placeholder={t.scheduler.namePlaceholder}
-          className="h-12 w-full rounded-xl border bg-card px-3.5 text-base font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
-        />
-      </label>
+      <div
+        role="tablist"
+        aria-label={t.settingsPanel.tabsLabel}
+        onKeyDown={onKeyDown}
+        className="mt-3 flex gap-1 overflow-x-auto border-b"
+      >
+        {TABS.map((key) => (
+          <button
+            key={key}
+            id={`${id}-tab-${key}`}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            aria-controls={`${id}-panel-${key}`}
+            tabIndex={tab === key ? 0 : -1}
+            onClick={() => setTab(key)}
+            className={cn(
+              "-mb-px whitespace-nowrap border-b-2 px-2 pb-2 pt-1 text-sm font-semibold transition-colors 2xl:px-3",
+              tab === key
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.settingsPanel.tabs[key]}
+          </button>
+        ))}
+      </div>
 
-      {settings.multiDay ? (
-        <>
-          <Field label={t.scheduler.tripDays}>
-            <Stepper
-              value={settings.days}
-              values={dayValues}
-              format={t.common.days}
-              onChange={(days) => onChange({ days })}
-              lessLabel={t.scheduler.fewerDays}
-              moreLabel={t.scheduler.moreDays}
-            />
-          </Field>
-          <Field label={t.scheduler.tripStarts}>
-            <StartDayPicker
-              value={settings.startDow}
-              onChange={(startDow) => onChange({ startDow })}
-            />
-          </Field>
-        </>
-      ) : (
-        <>
-          <Field label={t.scheduler.startsAt}>
-            <Dropdown
-              value={settings.anyTime ? ANY_TIME : settings.startHour}
-              options={startHourOptions(t)}
-              onChange={(value) => pickStartHour(value, onChange)}
-              suffix={<ChevronDown className="h-4 w-4 text-muted-foreground" />}
-              triggerClassName="inline-flex h-12 items-center gap-2 rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary"
-            />
-          </Field>
-          <Field label={t.scheduler.duration}>
-            <Stepper
-              value={settings.durationMinutes}
-              values={DURATION_VALUES}
-              format={t.common.duration}
-              onChange={(durationMinutes) => onChange({ durationMinutes })}
-              lessLabel={t.scheduler.shorter}
-              moreLabel={t.scheduler.longer}
-            />
-          </Field>
-          <Field label={t.scheduler.dayLabel}>
-            <div className="w-56 2xl:w-72">
-              <DaySlider
-                size="lg"
-                selected={settings.dows}
-                onChange={(dows) => onChange({ dows })}
-              />
-            </div>
-          </Field>
-        </>
-      )}
-
-      <Field label={t.scheduler.when}>
-        <PeriodPicker
-          value={settings.period}
-          onChange={(period) => onChange({ period })}
-          capitalized
-          triggerClassName="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary"
-          suffix={<ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        />
-      </Field>
-
-      <div className="w-px self-stretch bg-border" />
-      <Field label={t.scheduler.tripToggle}>
-        <Switch
-          checked={settings.multiDay}
-          onChange={(multiDay) => onChange({ multiDay })}
-          label={t.scheduler.tripToggleAria}
-          size="lg"
-          className="my-[3px]"
-        />
-      </Field>
+      <div className="mt-3 grid flex-1">
+        {TABS.map((key) => (
+          <div
+            key={key}
+            id={`${id}-panel-${key}`}
+            role="tabpanel"
+            aria-labelledby={`${id}-tab-${key}`}
+            aria-hidden={tab !== key}
+            // inert keeps a hidden tab's controls out of reach; invisible keeps its size.
+            inert={tab !== key}
+            className={cn("[grid-area:1/1]", tab !== key && "invisible")}
+          >
+            {key === "time" ? (
+              <TimeSettings settings={settings} onChange={onChange} />
+            ) : (
+              <ComingSoonSettings section={key} />
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -321,6 +446,21 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
             size="lg"
             className="my-[3px]"
           />
+        </div>
+        {/* Flere indstillinger (#98): on this line, so the sentence's box
+            doesn't grow and push the chart off the first screen. */}
+        <div className="flex shrink-0 flex-col items-center">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            {t.settingsPanel.moreShort}
+          </span>
+          <Link
+            to={{ search: "?settings" }}
+            aria-label={t.settingsPanel.more}
+            title={t.settingsPanel.more}
+            className="my-[3px] flex h-[30px] w-[52px] items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Link>
         </div>
       </div>
 

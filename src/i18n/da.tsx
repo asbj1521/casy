@@ -165,9 +165,8 @@ export const da = {
       return name ? `${name}: ${what}` : what.charAt(0).toUpperCase() + what.slice(1);
     },
     checkThemselves: (names: string) =>
-      `${names} har ingen kalender i Casy og tjekker selv datoen, når den bliver foreslået.`,
-    nobodyHasCalendar:
-      "Ingen i gruppen har en kalender i Casy endnu, så alle tjekker selv datoen, når den bliver foreslået.",
+      `${names} har ingen kalender i Casy og tjekker selv datoen.`,
+    nobodyHasCalendar: "Ingen i gruppen har en kalender i Casy endnu, så alle tjekker selv datoen.",
     inDays: (n: number) => (n <= 0 ? "i dag" : n === 1 ? "i morgen" : `om ${days(n)}`),
     timeRange: (start: string, end: string) => `${start} til ${end}`,
     tripTimes: (start: string, end: string) => `Afgang ${start}, hjem ${end}`,
@@ -191,8 +190,7 @@ export const da = {
     sentLink: "Følg svarene under Mine aftaler",
     hintSignIn: "Log ind og lav en gruppe for at foreslå aftaler.",
     hintExample: "Lav en gruppe for at foreslå aftaler til rigtige mennesker.",
-    hintEveryone:
-      "Casy sender denne og op til fire andre gode datoer, og alle swiper sig igennem dem.",
+    hintEveryone: "Casy sender op til fem gode datoer, som alle swiper sig igennem.",
     hintAccept: "Godkend først, at du skal have fri.",
     copyLink: "Kopiér link",
     copiedLink: "Kopieret!",
@@ -272,6 +270,59 @@ export const da = {
     busyLoading: "Henter alles kalendere…",
     realTimes:
       "Tiderne kommer fra hvert medlems egne kalendere. Ingen kan se, hvad dine aftaler hedder.",
+  },
+  // The scheduling page's settings box on a computer (SettingsPanel), and
+  // Flere indstillinger on a phone. Everything but Tidspunkt is coming soon.
+  settingsPanel: {
+    tabsLabel: "Indstillinger for aftalen",
+    tabs: {
+      time: "Tidspunkt",
+      people: "Deltagere",
+      place: "Sted og note",
+      repeat: "Gentagelse",
+      vote: "Afstemning",
+      prefs: "Hensyn",
+    },
+    kind: "Slags aftale",
+    meeting: "Møde",
+    trip: "Tur / ferie",
+    comingSoon: "Kommer snart",
+    more: "Flere indstillinger",
+    moreShort: "Mere",
+    moreIntro:
+      "Her kommer flere måder at beskrive aftalen på. Tidspunktet vælger du på planlægningssiden.",
+    back: "Planlæg",
+    people: {
+      intro: "Vælg, hvem der skal kunne, hvem der er valgfri, eller at fx 4 af 6 er nok.",
+      label: "Hvem skal med",
+      options: ["Alle", "Vælg medlemmer", "Mindst et antal"],
+    },
+    place: {
+      intro: "Skriv, hvor I mødes, og hvad de andre skal vide. Det vises sammen med datoerne.",
+      where: "Sted",
+      wherePlaceholder: "Fx hos Sara",
+      note: "Note",
+      notePlaceholder: "Fx tag et spil med",
+    },
+    repeat: {
+      intro: "Find en fast tid, der passer alle, igen og igen.",
+      label: "Gentages",
+      options: ["Én gang", "Hver uge", "Hver 2. uge", "Hver måned"],
+    },
+    vote: {
+      intro: "Bestem, hvor længe de andre har til at svare, og hvor mange datoer de stemmer om.",
+      deadline: "Svarfrist",
+      deadlineValue: "3 dage",
+      dates: "Antal datoer",
+      datesValue: "Op til 5",
+    },
+    prefs: {
+      intro: "Tag hensyn til mere end kalenderen.",
+      travel: "Rejsetid før og efter",
+      travelValue: "30 min",
+      lateEarly: "Undgå sene aftener før tidlige morgener",
+      own: "Brug medlemmernes egne præferencer",
+    },
   },
   groupSwitcher: {
     select: "Vælg gruppe",

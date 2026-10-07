@@ -103,6 +103,13 @@ for (const { name, path, world, signedIn } of PAGES) {
   });
 }
 
+test("Flere indstillinger looks as it did", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phones only: a computer has the settings box's tabs");
+  await page.goto("/?settings");
+  await expect(page.getByRole("heading", { name: "Flere indstillinger" })).toBeVisible();
+  await expectPage(page, "more-settings", isMobile);
+});
+
 test("the swipe screen looks as it did", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phones only: a computer answers beside the list (event-vote)");
   await page.goto("/events/ev-boardgames/dates");

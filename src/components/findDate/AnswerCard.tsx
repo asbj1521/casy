@@ -34,6 +34,7 @@ export default function AnswerCard({
   edge,
   actions,
   hint,
+  className,
 }: {
   /** What the content fades on: a different group's answer. */
   fadeKey: string;
@@ -55,6 +56,7 @@ export default function AnswerCard({
   actions: ReactNode;
   /** The line under the actions: what sending does, or how it went. */
   hint: ReactNode;
+  className?: string;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -72,15 +74,18 @@ export default function AnswerCard({
   return (
     <section
       className={cn(
-        "rounded-3xl border p-3 shadow-xl shadow-black/5 transition-colors duration-300 sm:p-8",
+        // Beside the settings on a wide screen (#98): a column as tall as
+        // they are, the date at the top and the buttons at the bottom.
+        "rounded-3xl border p-3 shadow-xl shadow-black/5 transition-colors duration-300 sm:p-8 xl:flex xl:flex-col xl:p-7",
         tone === "none" && "border-rose-200 bg-rose-50",
         (tone === "approve" || tone === "skip") && "border-amber-300 bg-amber-50",
         tone === "review" && "border-sky-200 bg-sky-50",
         (tone === "clean" || tone === "waiting") && "bg-card",
+        className,
       )}
     >
       {/* The box stays; what it says fades to the next group's answer. */}
-      <FadeSwap swapKey={fadeKey}>
+      <FadeSwap swapKey={fadeKey} className="xl:flex xl:flex-1 xl:flex-col">
         {waiting?.loading ? (
           <Placeholder text={waiting.text} />
         ) : waiting ? (
@@ -100,15 +105,17 @@ export default function AnswerCard({
             {actions && <div className="mt-4 hidden items-center gap-2 sm:flex">{actions}</div>}
           </>
         ) : (
-          <div>
+          <div className="xl:flex xl:flex-1 xl:flex-col">
             {/* The date on the left, what to do on the right. The buttons keep
                 their width (shrink-0) and the date wraps to make room: a
                 trip's "Fredag 12. februar til mandag 15. februar" takes two
                 lines rather than pushing the buttons out of the card. The
                 caption under them wraps to the buttons' width (w-0
-                min-w-full) instead of widening the column. */}
-            <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0">
+                min-w-full) instead of widening the column. In the wide
+                screen's column this wrapper steps aside (contents) and the
+                date, the warnings and the buttons stack in that order. */}
+            <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between xl:contents">
+              <div className="min-w-0 xl:order-1">
                 <p
                   className={cn(
                     "flex items-center gap-2 text-xs font-bold uppercase tracking-wider sm:text-sm",
@@ -137,7 +144,7 @@ export default function AnswerCard({
                             )}
                   </span>
                 </p>
-                <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl xl:text-5xl">
                   {answer.lines.map((line) => (
                     <span key={line} className="block">
                       {line}
@@ -151,12 +158,12 @@ export default function AnswerCard({
                 <YourTime kind={search.kind} date={slot} className="mt-0.5" />
               </div>
 
-              <div className="flex flex-col gap-3 lg:shrink-0 lg:items-end">
+              <div className="flex flex-col gap-3 lg:shrink-0 lg:items-end xl:order-3 xl:mt-auto xl:items-start xl:pt-5">
                 {/* On a phone these live in the bar pinned to the bottom of the
                     screen instead, so the card stays short and the chart under
                     it is on the first screen. */}
                 <div className="hidden items-center gap-2 sm:flex">{actions}</div>
-                <p className="text-xs text-muted-foreground sm:text-sm lg:w-0 lg:min-w-full lg:text-right">
+                <p className="text-xs text-muted-foreground sm:text-sm lg:w-0 lg:min-w-full lg:text-right xl:w-auto xl:min-w-0 xl:text-left">
                   {hint}
                 </p>
               </div>
@@ -171,7 +178,7 @@ export default function AnswerCard({
                 several lines anyway and the card is kept short. Flex, so the
                 warnings' top margins stay inside the slot instead of
                 collapsing out above it. */}
-            <div className="flex flex-col sm:min-h-8 sm:flex-row sm:flex-wrap sm:gap-x-8">
+            <div className="flex flex-col sm:min-h-8 sm:flex-row sm:flex-wrap sm:gap-x-8 xl:order-2">
               {tone === "approve" && (
                 <p className="mt-3 text-sm text-amber-900">
                   {yours && t.scheduler.selfConflict(titles(yours, t.scheduler.aCommitment))}
@@ -222,33 +229,36 @@ function titles(conflict: SpanConflict, fallback: string): string {
 /** The answer's own layout, blank until the calendars are in. */
 function Placeholder({ text }: { text: string }) {
   return (
-    <div aria-busy="true">
-      <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
+    <div aria-busy="true" className="xl:flex xl:flex-1 xl:flex-col">
+      <div className="flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-center lg:justify-between xl:contents">
+        <div className="min-w-0 xl:order-1">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
             <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
             <span className="truncate">{text}</span>
           </p>
-          <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl xl:text-5xl">
             <Bone chars={16} />
           </h1>
           <p className="mt-1.5 text-base sm:text-xl">
             <Bone chars={20} />
           </p>
         </div>
-        <div aria-hidden="true" className="flex flex-col gap-3 lg:shrink-0 lg:items-end">
+        <div
+          aria-hidden="true"
+          className="flex flex-col gap-3 lg:shrink-0 lg:items-end xl:order-3 xl:mt-auto xl:items-start xl:pt-5"
+        >
           <div className="hidden items-center gap-2 sm:flex">
             <span className="h-12 w-12 animate-pulse rounded-xl bg-secondary" />
             <span className="h-12 w-40 animate-pulse rounded-xl bg-secondary" />
             <span className="h-12 w-52 animate-pulse rounded-xl bg-secondary" />
           </div>
-          <p className="text-xs sm:text-sm lg:w-0 lg:min-w-full lg:text-right">
+          <p className="text-xs sm:text-sm lg:w-0 lg:min-w-full lg:text-right xl:w-auto xl:min-w-0 xl:text-left">
             <Bone chars={34} />
           </p>
         </div>
       </div>
       {/* The answer's warning strip, held here too. */}
-      <div className="sm:min-h-8" />
+      <div className="sm:min-h-8 xl:order-2" />
     </div>
   );
 }
