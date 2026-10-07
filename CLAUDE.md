@@ -35,7 +35,7 @@ On a phone (below 768px, the website and the iPhone app alike) the same pages ar
 - **Hosting:** Vercel (project `casy`), auto-deploys `main`; `vercel.json` rewrites every path to `index.html` for the SPA and sets the security headers (no framing, nosniff, referrer, permissions, HSTS, and a Content-Security-Policy, #86: scripts only from the site and Cloudflare Turnstile, no inline or eval; connections only to the site, the Supabase project over HTTPS and WebSocket, and Have I Been Pwned; `src/lib/securityHeaders.test.ts` guards it). A new outside service the browser talks to must be added there first, or it is blocked on the live site only; the project's Supabase URL is written into it. The iPhone app serves the build itself, so these headers don't apply there
 - **Backend:** Supabase: Postgres, Auth (Google sign-in + email magic link), Edge Functions (Deno), Realtime (broadcast only), Vault, pg_cron + pg_net
 - **iPhone app:** Capacitor 8 (`capacitor.config.ts`, bundle id `app.casy`): `ios/` is an Xcode project that packages the same Vite build. Swift Package Manager, no CocoaPods. Native touches live in `ios/App/App/MainViewController.swift`; plugins (`@capacitor/share`, `@capacitor/haptics`) are imported dynamically so the website never downloads them; after adding one, `npx cap sync ios` updates the checked-in `ios/App/CapApp-SPM/Package.swift`. Build into Xcode's default DerivedData, never a folder inside the repo: the repo sits in iCloud-synced Desktop, and code signing rejects files carrying iCloud's attributes ("resource fork, Finder information, or similar detritus")
-- **Testing:** Vitest (frontend, `src/**/*.test.ts`) and Deno test (Edge Functions, `supabase/functions/_shared/*_test.ts`)
+- **Testing:** Vitest (frontend, `src/**/*.test.ts`), Deno test (Edge Functions, `supabase/functions/_shared/*_test.ts`) and Playwright (browser tests of the built site, `e2e/`, see `e2e/README.md`): behaviour tests and whole-page screenshot comparisons at 1440 and 390 wide, against a fake backend answering every Edge Function from made-up data typed with `src/api`'s types (a new function or action needs a case in `e2e/backend.ts`). Reference images are made on Linux only (a Mac skips the comparison): a commit message with `[screenshots]` makes CI's "Update screenshots" workflow commit new ones to the branch. A change that moves pixels on purpose comes with new images; the computer's images changing on phone work is the signal that something slipped
 - **Linting and formatting:** ESLint (TypeScript + React Hooks); Prettier at 100 columns with the Tailwind class-order plugin (`.prettierrc.json`); the Prettier commit is listed in `.git-blame-ignore-revs`
 
 ## Common Commands
@@ -45,6 +45,7 @@ npm run dev              # Dev server on port 8080 (the user runs this in their 
 npm run ios              # Build the site and copy it into the iPhone app; then ▶ in Xcode (npx cap open ios)
 npm run build            # Type-check + production build
 npm run test:run         # Frontend tests once
+npm run e2e              # Browser tests (builds into dist-e2e/, serves it on port 4317)
 npm run lint             # ESLint
 npm run format           # Prettier (format:check is what CI runs)
 npx tsc -b               # Type-check only
@@ -71,6 +72,7 @@ src/
 ├── lib/          # Pure logic + clients (see below); tests sit next to the code
 ├── pages/        # Landing (/ signed out), FindDate (/plan, and / signed in), MyEvents (/events), SignIn, Profile, CalendarOverview, JoinGroup (/join/:token), Privacy, Terms, HowItWorks; lazyPages.ts holds the one loader per lazy page (App.tsx and prefetching share it)
 └── types/        # Core data model (BusyInterval, Participant, TimeSlot, ...)
+e2e/              # Browser tests (Playwright): world.ts (made-up data), backend.ts (fake Edge Functions), fixtures.ts, specs, __screenshots__/
 ios/              # The iPhone app's Xcode project (Capacitor); App/App/public is the copied build, not in git
 supabase/
 ├── functions/    # One folder per Edge Function; _shared/ holds what they share: the HTTP shell (http.ts), the caller check (auth.ts), provider adapters and helpers
@@ -194,7 +196,7 @@ Order: migrations before the functions that depend on them. Afterwards, `supabas
 
 ## CI/CD
 
-GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push and PR to `main`, in two jobs: the web app (ESLint, the Prettier check, `npm run build`, which type-checks first, and the Vitest suite) and the Edge Functions (`deno check` and the Deno tests). Run the same locally before handing work over. CI never builds the iPhone app; ESLint and Prettier skip `ios/`.
+GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push to any branch and on PRs to `main`, in three jobs: the web app (ESLint, the Prettier check, `npm run build`, which type-checks first, `e2e/` included, and the Vitest suite), the browser tests (Playwright in its Docker image, whose version must match the pinned `@playwright/test`; on failure the report with screenshot diffs is uploaded as `browser-test-results`), and the Edge Functions (`deno check` and the Deno tests). `.github/workflows/screenshots.yml` makes new reference screenshots on a branch (never `main`). Run the same locally before handing work over (`npm run e2e` covers the behaviour tests). CI never builds the iPhone app; ESLint and Prettier skip `ios/`.
 
 ---
 

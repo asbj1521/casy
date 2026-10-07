@@ -1,8 +1,9 @@
 name: CI
 
+# Every branch, so a feature branch is checked (screenshots included) before
+# it is merged into main, which deploys.
 on:
   push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -22,6 +23,33 @@ jobs:
       # Type-checks (tsc -b) before bundling.
       - run: npm run build
       - run: npm run test:run
+
+  browser:
+    name: Browser tests
+    # A [screenshots] commit asks for new reference images (screenshots.yml),
+    # so it would only fail here against the old ones.
+    if: ${{ !contains(github.event.head_commit.message, '[screenshots]') }}
+    runs-on: ubuntu-latest
+    # Playwright's own image: the browsers and the fonts the reference
+    # screenshots were made with. Its version must match @playwright/test.
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npx playwright test
+        env:
+          # Firefox and WebKit aren't used, but Playwright wants a writable home.
+          HOME: /root
+      # What differed: the report with each screenshot's expected, actual and
+      # diff images, and the traces of failed tests.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
 
   functions:
     name: Edge Functions

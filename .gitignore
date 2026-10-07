@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Browser tests (Playwright): the test build and its results
+dist-e2e
+test-results
+playwright-report

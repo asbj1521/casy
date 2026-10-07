@@ -13,3 +13,9 @@ supabase/templates
 
 # Local, untracked settings
 .claude
+
+# Browser test output
+dist-e2e
+test-results
+playwright-report
+e2e/__screenshots__

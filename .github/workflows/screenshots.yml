@@ -1,0 +1,41 @@
+name: Update screenshots
+
+# New reference images for the screenshot tests (e2e/screenshots.spec.ts),
+# made on Linux in Playwright's image like CI's, and committed to the branch.
+# Start it from the Actions tab on a branch, or push a commit whose message
+# contains [screenshots]. Never on main: changes reach main by merging.
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: Update screenshots
+    if: >-
+      github.ref != 'refs/heads/main' && (github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[screenshots]'))
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      # Rewrites every image that differs, and makes the missing ones.
+      - run: npx playwright test e2e/screenshots.spec.ts --update-snapshots=changed
+      - name: Commit the new images
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/__screenshots__
+          if git diff --cached --quiet; then
+            echo "The screenshots haven't changed."
+          else
+            git commit -m "test: new reference screenshots"
+            git push
+          fi
