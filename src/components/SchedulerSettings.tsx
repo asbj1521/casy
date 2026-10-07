@@ -4,7 +4,8 @@ import { ChevronDown, Minus, Plus, SlidersHorizontal } from "lucide-react";
 
 import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
-import ComingSoonSettings, { COMING_SOON } from "@/components/findDate/ComingSoonSettings";
+import { COMING_SOON } from "@/components/findDate/comingSoon";
+import ComingSoonSettings from "@/components/findDate/ComingSoonSettings";
 import PeriodPicker from "@/components/PeriodPicker";
 import Popover from "@/components/Popover";
 import Switch from "@/components/ui/Switch";

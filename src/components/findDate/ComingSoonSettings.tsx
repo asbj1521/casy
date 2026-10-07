@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 
+import type { ComingSoonSection } from "./comingSoon";
+
 /**
  * Settings the scheduling page will get, shown where they will live and
  * marked "Kommer snart": a tab of the settings box on a computer, a section
@@ -11,16 +13,6 @@ import { cn } from "@/lib/utils";
  * says what it will do. Kept short, so no tab is taller than Tidspunkt (the
  * settings box is as tall as its tallest tab).
  */
-export type ComingSoonSection = "people" | "place" | "repeat" | "vote" | "prefs";
-
-export const COMING_SOON: readonly ComingSoonSection[] = [
-  "people",
-  "place",
-  "repeat",
-  "vote",
-  "prefs",
-];
-
 export function ComingSoonBadge({ className }: { className?: string }) {
   const t = useT();
   return (

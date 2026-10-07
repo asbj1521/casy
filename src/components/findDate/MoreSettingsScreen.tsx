@@ -1,7 +1,8 @@
 import PhoneSubHeader from "@/components/PhoneSubHeader";
 import { useT } from "@/i18n/lang";
 
-import ComingSoonSettings, { COMING_SOON } from "./ComingSoonSettings";
+import { COMING_SOON } from "./comingSoon";
+import ComingSoonSettings from "./ComingSoonSettings";
 
 /**
  * Flere indstillinger (#98), opened from the sentence's "Mere" button on
