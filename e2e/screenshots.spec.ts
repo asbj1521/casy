@@ -8,6 +8,9 @@
  * differently on a Mac. CI runs these in Playwright's Docker image, and the
  * "Update screenshots" workflow makes new reference images (e2e/README.md).
  */
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
@@ -19,12 +22,44 @@ test.skip(
 );
 
 /**
+ * One font for every image, whatever the machine has: the site uses the
+ * system's own (Tailwind's font-sans), and Linux has no San Francisco, nor a
+ * dependable bold. Inter (an npm package, served by the test itself) is
+ * close to Apple's font and has every weight, so a weight change shows.
+ */
+const INTER = readFileSync(
+  createRequire(import.meta.url).resolve(
+    "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
+  ),
+);
+
+test.beforeEach(async ({ page }) => {
+  await page.route("https://fonts.test/inter.woff2", (route) =>
+    route.fulfill({ body: INTER, contentType: "font/woff2" }),
+  );
+});
+
+async function useInter(page: Page) {
+  await page.addStyleTag({
+    content: `
+      @font-face {
+        font-family: "Inter Test";
+        src: url("https://fonts.test/inter.woff2") format("woff2");
+        font-weight: 100 900;
+      }
+      html { font-family: "Inter Test", sans-serif; }`,
+  });
+  await page.evaluate(() => document.fonts.ready);
+}
+
+/**
  * The whole page in one image. A phone's tab bar is pinned to the bottom of
  * the screen, so the screen is made as tall as the page first; otherwise it
  * would be drawn halfway down.
  */
 async function expectPage(page: Page, name: string, isMobile: boolean) {
   await page.waitForLoadState("networkidle");
+  await useInter(page);
   // Placeholders (ui/Bone.tsx) gone: the data has arrived and been drawn.
   await expect(page.locator(".animate-pulse")).toHaveCount(0);
   if (isMobile) {
@@ -73,6 +108,7 @@ test("the swipe screen looks as it did", async ({ page, isMobile }) => {
   await page.goto("/events/ev-boardgames/dates");
   await expect(page.getByText("Dato 1 af 3", { exact: true })).toBeVisible();
   await page.waitForLoadState("networkidle");
+  await useInter(page);
   // This screen fills the phone's screen, as it is meant to: no taller page.
   await expect(page).toHaveScreenshot("swipe.png");
 });
