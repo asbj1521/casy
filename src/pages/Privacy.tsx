@@ -159,11 +159,11 @@ const da: LegalCopy = {
           <p>
             Andre kan også invitere dig til en gruppe inde i Casy: folk, du allerede er i en gruppe
             med, og alle, der kender den e-mailadresse, du bruger til Casy. Du bliver kun medlem,
-            hvis du selv siger ja under Mine aftaler. Den, der inviterer dig med e-mail, får ikke at
+            hvis du selv siger ja under Mine grupper. Den, der inviterer dig med e-mail, får ikke at
             vide, om adressen har en konto hos Casy, og ser ikke dit navn, før du har sagt ja.
             Medlemmer af gruppen, der allerede er i en anden gruppe med dig, kan se, at du er
-            inviteret. Siger du nej tak, får ingen besked, og du kan ikke blive inviteret til den
-            gruppe igen, men du kan stadig blive medlem med et link.
+            inviteret. Siger du nej tak, får ingen besked, og gruppen kan ikke invitere dig igen de
+            næste seks måneder, men du kan stadig blive medlem med et link.
           </p>
           <p>
             Når nogen foreslår en aftale, kan alle i gruppen se den, de datoer, der er tilbudt, og
@@ -208,6 +208,39 @@ const da: LegalCopy = {
           om du har admin-adgang, så siderne åbner med det samme. Kopien slettes, når du logger ud,
           og gemmes aldrig i mere end en uge. Intet om andres kalendere gemmes i din browser.
         </p>
+      ),
+    },
+    {
+      title: "Hvor længe Casy gemmer det",
+      body: (
+        <>
+          <p>
+            Casy gemmer kun dine oplysninger, så længe der er brug for dem. Hver nat sletter Casy:
+          </p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              foreslåede aftaler 12 måneder efter, at deres sidste dato var slut, sammen med
+              datoerne, svarene og hvem der var inviteret;
+            </li>
+            <li>
+              aflyste aftaler og aftaler, der ikke fandt en dato, 30 dage efter de blev lukket (lidt
+              senere, hvis Casy endnu ikke har fået fjernet en aflyst aftale fra nogens kalender);
+            </li>
+            <li>invitationslinks 30 dage efter, at de er holdt op med at virke;</li>
+            <li>notatet om, at du har slået en e-mailadresse op, efter et døgn;</li>
+            <li>forsøg på at forbinde en kalender, der aldrig blev færdige, efter 7 dage;</li>
+            <li>
+              afslåede invitationer til en gruppe 6 måneder efter, at de blev sendt. Derefter kan
+              gruppen invitere dig igen.
+            </li>
+          </ul>
+          <p>
+            Optagede tidsrum bliver erstattet, hver gang Casy opdaterer dine kalendere, og dækker
+            kun fra en uge tilbage til tolv måneder frem. Alt andet, altså din konto, dine
+            kalenderforbindelser og dine grupper, gemmes, indtil du selv sletter det eller sletter
+            din konto.
+          </p>
+        </>
       ),
     },
     {
@@ -377,11 +410,11 @@ const en: LegalCopy = {
           <p>
             People can also invite you to a group from inside Casy: anyone you already share a group
             with, and anyone who knows the email address you use for Casy. You only join if you say
-            yes yourself, on My events. Someone inviting you by email is not told whether the
+            yes yourself, on My groups. Someone inviting you by email is not told whether the
             address has a Casy account, and doesn&apos;t see your name until you say yes. Members of
             that group who already share another group with you can see that you were invited. If
-            you say no thanks, nobody is told, and you can&apos;t be invited to that group again,
-            though you can still join with a link.
+            you say no thanks, nobody is told, and that group can&apos;t invite you again for six
+            months, though you can still join with a link.
           </p>
           <p>
             When someone suggests an event, everyone in the group sees it, the dates on offer, and
@@ -427,6 +460,39 @@ const en: LegalCopy = {
           out and is never kept for more than a week. Nothing about other people&apos;s calendars is
           stored in your browser.
         </p>
+      ),
+    },
+    {
+      title: "How long Casy keeps things",
+      body: (
+        <>
+          <p>
+            Casy keeps your information only as long as it is needed. Every night, Casy deletes:
+          </p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              suggested events 12 months after their last date ended, along with their dates, the
+              answers and who was invited;
+            </li>
+            <li>
+              cancelled events, and events that found no date, 30 days after they closed (a little
+              later if Casy has not yet managed to take a cancelled event out of someone&apos;s
+              calendar);
+            </li>
+            <li>invite links 30 days after they stopped working;</li>
+            <li>the note that you looked up an email address, after a day;</li>
+            <li>attempts to connect a calendar that never finished, after 7 days;</li>
+            <li>
+              declined group invitations 6 months after they were sent. The group can then invite
+              you again.
+            </li>
+          </ul>
+          <p>
+            Busy times are replaced every time Casy updates your calendars, and only ever cover a
+            week back to twelve months ahead. Everything else, meaning your account, your calendar
+            connections and your groups, is kept until you remove it or delete your account.
+          </p>
+        </>
       ),
     },
     {

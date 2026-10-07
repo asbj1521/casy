@@ -11,6 +11,8 @@
     "npm:@capacitor/ios@^8.5.2": "8.5.2_@capacitor+core@8.5.2",
     "npm:@capacitor/share@^8.0.3": "8.0.3_@capacitor+core@8.5.2",
     "npm:@eslint/js@^10.0.1": "10.0.1_eslint@10.11.0",
+    "npm:@fontsource-variable/inter@5.3.0": "5.3.0",
+    "npm:@playwright/test@1.63.0": "1.63.0",
     "npm:@supabase/auth-js@2.116.0": "2.116.0",
     "npm:@supabase/auth-js@^2.116.0": "2.116.0",
     "npm:@supabase/functions-js@2.116.0": "2.116.0",
@@ -455,6 +457,9 @@
         "levn"
       ]
     },
+    "@fontsource-variable/inter@5.3.0": {
+      "integrity": "sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA=="
+    },
     "@humanfs/core@0.19.2": {
       "integrity": "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==",
       "dependencies": [
@@ -619,6 +624,13 @@
         "@nodelib/fs.scandir",
         "fastq"
       ]
+    },
+    "@playwright/test@1.63.0": {
+      "integrity": "sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==",
+      "dependencies": [
+        "playwright"
+      ],
+      "bin": true
     },
     "@rolldown/pluginutils@1.0.0-beta.27": {
       "integrity": "sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA=="
@@ -1896,6 +1908,17 @@
     "pirates@4.0.7": {
       "integrity": "sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA=="
     },
+    "playwright-core@1.63.0": {
+      "integrity": "sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==",
+      "bin": true
+    },
+    "playwright@1.63.0": {
+      "integrity": "sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==",
+      "dependencies": [
+        "playwright-core"
+      ],
+      "bin": true
+    },
     "plist@3.1.1": {
       "integrity": "sha512-ZIfcLJC+7E7FBFnDxm9MPmt7D+DidyQ26lewieO75AdhA2ayMtsJSES0iWzqJQbcVRSrTufQoy0DR94xHue0oA==",
       "dependencies": [
@@ -2496,6 +2519,8 @@
         "npm:@capacitor/ios@^8.5.2",
         "npm:@capacitor/share@^8.0.3",
         "npm:@eslint/js@^10.0.1",
+        "npm:@fontsource-variable/inter@5.3.0",
+        "npm:@playwright/test@1.63.0",
         "npm:@supabase/auth-js@^2.116.0",
         "npm:@supabase/realtime-js@^2.117.2",
         "npm:@tanstack/react-query@^5.101.0",

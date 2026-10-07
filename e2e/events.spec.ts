@@ -94,20 +94,24 @@ test("a phone swipes through a vote's dates", async ({ page, backend, isMobile }
   await page.getByRole("link", { name: "Svar på datoerne" }).click();
   await expect(page).toHaveURL(/\/events\/ev-boardgames\/dates$/);
 
+  const answers = () => backend.calls.filter((c) => c.body.action === "answer");
   for (let i = 1; i <= 3; i++) {
     const card = page.getByText(`Dato ${i} af 3`, { exact: true });
-    await expect(card).toBeVisible();
-    const box = (await card.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + 40);
+    // Measured once it holds still: the card before may still be flying off,
+    // and the new one can be swapped in between a check and a measurement.
+    let box: { x: number; y: number; width: number } | null = null;
+    await expect(async () => {
+      box = await card.boundingBox();
+      expect(box).not.toBeNull();
+    }).toPass();
+    const { x, y, width } = box!;
+    await page.mouse.move(x + width / 2, y + 40);
     await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 + 120, box.y + 40, { steps: 8 });
-    await page.mouse.move(box.x + box.width / 2 + 260, box.y + 40, { steps: 8 });
+    await page.mouse.move(x + width / 2 + 120, y + 40, { steps: 8 });
+    await page.mouse.move(x + width / 2 + 260, y + 40, { steps: 8 });
     await page.mouse.up();
+    // Each swipe is saved before the next card is touched.
+    await expect.poll(() => answers().length).toBe(i);
   }
-  await expect.poll(() => backend.calls.filter((c) => c.body.action === "answer").length).toBe(3);
-  expect(
-    backend.calls
-      .filter((c) => c.body.action === "answer")
-      .every((c) => c.body.response === "accepted"),
-  ).toBe(true);
+  expect(answers().every((c) => c.body.response === "accepted")).toBe(true);
 });

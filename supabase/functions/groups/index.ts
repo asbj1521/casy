@@ -578,8 +578,10 @@ serve("groups", async (req, body) => {
 
     case "decline-invitation": {
       const groupId = requireString(body, "groupId");
-      // Kept as declined, which stops new invitations to this group; the
-      // inviter is not told (their list shows the person as invited still).
+      // Kept as declined, which stops new invitations to this group until
+      // the nightly cleanup deletes it, 6 months after it was sent
+      // (cleanup_old_data); the inviter is not told (their list shows the
+      // person as invited still).
       const { error } = await db
         .from("group_invitations")
         .update({ status: "declined" })
