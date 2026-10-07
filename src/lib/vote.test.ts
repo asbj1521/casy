@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { CandidateDate, EventResponse } from "@/api/events";
 import {
+  allAnswered,
   bestPick,
   firstUnanswered,
   leader,
@@ -109,5 +110,53 @@ describe("voteStage", () => {
       answerBy: "2026-10-07T00:00:00.000Z",
     });
     expect(voteStage(event, NOW)).toBe("choose");
+  });
+});
+
+describe("who decides a vote (#89)", () => {
+  const three = [
+    { profileId: "me", name: "Asbjørn", isYou: true, response: null },
+    { profileId: "tessa", name: "Tessa", isYou: false, response: null },
+    { profileId: "bo", name: "Bo", isYou: false, response: null },
+  ];
+  const single = { kind: "single", durationMinutes: 180, startHour: 18 } as const;
+
+  it("lets an optional member's no pass, and doesn't wait for their answers", () => {
+    const event = vote([date("d20", 20, { me: "accepted", tessa: "accepted", bo: "declined" })], {
+      invitees: three,
+      settings: { ...single, people: { members: ["me", "tessa", "bo"], optional: ["bo"] } },
+    });
+    expect(leader(event, NOW)?.start).toBe("2026-10-20T16:00:00.000Z");
+    expect(
+      allAnswered(
+        { ...event, candidates: [date("d20", 20, { me: "accepted", tessa: "maybe" })] },
+        NOW,
+      ),
+    ).toBe(true);
+    expect(
+      stillToAnswer({ ...event, candidates: [date("d20", 20, { me: "accepted" })] }, NOW),
+    ).toEqual(["Tessa"]);
+  });
+
+  it("with at least N, takes a date enough can make, the one most can, despite a no", () => {
+    const people = { members: ["me", "tessa", "bo"], optional: [], atLeast: 2 };
+    const event = vote(
+      [
+        // Two can, one can't: enough.
+        date("d20", 20, { me: "accepted", tessa: "accepted", bo: "declined" }),
+        // All three can: wins, though later.
+        date("d22", 22, { me: "accepted", tessa: "maybe", bo: "accepted" }),
+        // Only one can: not enough.
+        date("d24", 24, { me: "accepted", tessa: "declined", bo: "declined" }),
+      ],
+      { invitees: three, settings: { ...single, people } },
+    );
+    expect(leader(event, NOW)?.start).toBe("2026-10-22T16:00:00.000Z");
+    // Without enough on any date, there is no leader.
+    const thin = {
+      ...event,
+      candidates: [date("d24", 24, { me: "accepted", tessa: "declined", bo: "declined" })],
+    };
+    expect(leader(thin, NOW)).toBeNull();
   });
 });

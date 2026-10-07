@@ -6,7 +6,7 @@
  */
 import type { Messages } from "@/i18n/da";
 import type { MultiDayResult, SpanConflict } from "@/lib/availability";
-import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
+import { findEventSlot, type EventSettings, type PeopleSettings } from "@/lib/eventSearch";
 import { addDays, startOfMonth } from "@/lib/zone";
 import type { Participant, TimeSlot } from "@/types";
 
@@ -78,6 +78,50 @@ export const DATE_COUNT_VALUES = [2, 3, 4, 5];
 export const MAX_PLACE_LENGTH = 100;
 export const MAX_NOTE_LENGTH = 500;
 
+/**
+ * Who an event is for, as chosen on the scheduling page (#89): each member
+ * Med (required, the default), Valgfri (optional) or Ikke med (out), and
+ * how many must be able to come (null: everyone required).
+ */
+export type MemberState = "required" | "optional" | "out";
+
+export interface PeopleChoice {
+  states: Record<string, MemberState>;
+  atLeast: number | null;
+}
+
+export const NO_PEOPLE_CHOICE: PeopleChoice = { states: {}, atLeast: null };
+
+/**
+ * The search's people settings from a choice, for `members` (the group's,
+ * by profile id) and the kind of event: undefined while everything is at
+ * its default (everyone, all required), so ordinary events stay as they
+ * were. "At least" is for meetings only, and kept within the number
+ * required; asking for all of them is the same as asking for nothing.
+ */
+export function peopleFromChoice(
+  members: string[],
+  choice: PeopleChoice,
+  meeting: boolean,
+): PeopleSettings | undefined {
+  const state = (id: string) => choice.states[id] ?? "required";
+  const invited = members.filter((id) => state(id) !== "out");
+  const optional = invited.filter((id) => state(id) === "optional");
+  const required = invited.length - optional.length;
+  const atLeast =
+    meeting && choice.atLeast !== null && required > 0
+      ? Math.min(Math.max(choice.atLeast, 1), required)
+      : undefined;
+  const people: PeopleSettings = {
+    members: invited,
+    optional,
+    ...(atLeast !== undefined && atLeast < required ? { atLeast } : {}),
+  };
+  const isDefault =
+    invited.length === members.length && optional.length === 0 && people.atLeast === undefined;
+  return isDefault ? undefined : people;
+}
+
 /** A meeting the page may open on: start hour and length. */
 type MeetingPreset = Pick<SchedulerSettings, "startHour" | "durationMinutes">;
 
@@ -132,9 +176,11 @@ export function periodWindow(
  * on a set weekday is a weekly span (leave after work, home in the evening);
  * one that may start on any day is whole days, a holiday.
  */
-export function settingsToSearch(s: SchedulerSettings): EventSettings {
+export function settingsToSearch(s: SchedulerSettings, people?: PeopleSettings): EventSettings {
+  // Who it is for (#89), only when chosen: an ordinary event is stored as before.
+  const who = people ? { people } : {};
   if (s.multiDay) {
-    if (s.startDow === null) return { kind: "vacation", days: s.days };
+    if (s.startDow === null) return { kind: "vacation", days: s.days, ...who };
     return {
       kind: "trip",
       shape: {
@@ -143,6 +189,7 @@ export function settingsToSearch(s: SchedulerSettings): EventSettings {
         startHour: TRIP_START_HOUR,
         endHour: TRIP_END_HOUR,
       },
+      ...who,
     };
   }
   return {
@@ -151,6 +198,7 @@ export function settingsToSearch(s: SchedulerSettings): EventSettings {
     startHour: s.startHour,
     anyTime: s.anyTime,
     allowedDays: s.dows.length < 7 ? s.dows : undefined,
+    ...who,
   };
 }
 
@@ -206,9 +254,15 @@ export function laterSlots(
   let from = afterStart;
   for (let i = 0; i < count; i++) {
     const next = new Date(addDays(Date.parse(from), 1, timeZone)).toISOString();
-    const { slot, conflicts } = findEventSlot(participants, search, next, searchEnd, timeZone);
+    const { slot, conflicts, absent } = findEventSlot(
+      participants,
+      search,
+      next,
+      searchEnd,
+      timeZone,
+    );
     if (!slot) break;
-    out.push({ slot, conflicts });
+    out.push({ slot, conflicts, ...(absent ? { absent } : {}) });
     from = slot.start;
   }
   return out;
@@ -235,6 +289,8 @@ export interface AnswerReview {
   others: SpanConflict[];
   /** You have signed off your time off for this date. */
   accepted: boolean;
+  /** Who can't come, when enough people was all it needed (#89). */
+  absent: { profileId: string; name: string }[];
 }
 
 export function reviewAnswer(
@@ -259,7 +315,7 @@ export function reviewAnswer(
         : others.length > 0
           ? "review"
           : "clean";
-  return { tone, yours, others, accepted };
+  return { tone, yours, others, accepted, absent: (slot && found?.absent) || [] };
 }
 
 /**
@@ -270,5 +326,10 @@ export function reviewAnswer(
  */
 export function answerKey(answer: MultiDayResult | null): string {
   if (!answer?.slot) return "none";
-  return JSON.stringify([answer.slot.start, answer.slot.end, answer.conflicts]);
+  return JSON.stringify([
+    answer.slot.start,
+    answer.slot.end,
+    answer.conflicts,
+    answer.absent ?? [],
+  ]);
 }

@@ -71,9 +71,9 @@ export default function DayChart({
 }) {
   const t = useT();
   const { lang } = useLang();
-  const { days, total } = month;
-  /** The whole group can make it outright: a green bar. */
-  const everyoneOn = (c: DayCell) => !c.excluded && !c.isPast && total > 0 && c.freeCount >= total;
+  const { days, total, enough } = month;
+  /** Enough of the group can make it outright (everyone, unless "at least N"): a green bar. */
+  const everyoneOn = (c: DayCell) => !c.excluded && !c.isPast && total > 0 && c.freeCount >= enough;
 
   // How the chart moves as it changes (nextChartMotion). Kept in state and
   // updated during render (React's pattern for following a changed value), so
@@ -161,7 +161,7 @@ export default function DayChart({
             <div className="hidden flex-wrap items-center gap-4 text-xs text-muted-foreground sm:flex">
               <span className="flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-sm bg-everyone" />
-                {t.scheduler.legendAll}
+                {enough < total ? t.scheduler.legendEnough : t.scheduler.legendAll}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-sm bg-primary/30" />
@@ -205,10 +205,10 @@ export default function DayChart({
                 >
                   {days.map((c, i) => {
                     const dead = c.excluded || c.isPast;
-                    // Only a day the whole group can make (some by skipping or taking
+                    // Only a day enough of the group can make (some by skipping or taking
                     // time off) moves the answer; any other would land on the same one.
                     const pickable =
-                      !loading && !dead && total > 0 && c.freeCount + c.conditionalCount >= total;
+                      !loading && !dead && total > 0 && c.freeCount + c.conditionalCount >= enough;
                     const best = bestDays.has(c.date);
                     const everyone = everyoneOn(c);
                     const freeH = dead ? 0 : c.freeCount / Math.max(total, 1);

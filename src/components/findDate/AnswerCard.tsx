@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AlertTriangle, CalendarOff, Check, Hourglass, Loader2 } from "lucide-react";
+import { AlertTriangle, CalendarOff, Check, Hourglass, Loader2, UserX } from "lucide-react";
 
 import EdgeWarningList from "@/components/EdgeWarningList";
 import FadeSwap from "@/components/FadeSwap";
@@ -138,10 +138,13 @@ export default function AnswerCard({
                         ? t.scheduler.underReview
                         : tone === "skip"
                           ? t.scheduler.worksIfSkipping
-                          : t.scheduler.kickerAll(
-                              name.trim(),
-                              !checkers ? "all" : checkers.everyone ? "nobody" : "withCalendar",
-                            )}
+                          : search.people?.atLeast !== undefined
+                            ? // Enough people was all it needed (#89).
+                              t.scheduler.kickerEnough(name.trim(), search.people.atLeast)
+                            : t.scheduler.kickerAll(
+                                name.trim(),
+                                !checkers ? "all" : checkers.everyone ? "nobody" : "withCalendar",
+                              )}
                   </span>
                 </p>
                 <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl xl:text-5xl">
@@ -196,6 +199,17 @@ export default function AnswerCard({
                   {yours && t.scheduler.youSkip(titles(yours, t.scheduler.aCommitment))}
                   {others.length > 0 && t.scheduler.othersSkip(names(others))}
                   {t.scheduler.skipWhy}
+                </p>
+              )}
+              {review.absent.length > 0 && (
+                <p className="mt-3 flex items-start gap-1.5 text-sm text-muted-foreground">
+                  <UserX className="mt-0.5 h-4 w-4 shrink-0" />
+                  {t.scheduler.absent(
+                    nameList(
+                      review.absent.map((a) => a.name),
+                      lang,
+                    ),
+                  )}
                 </p>
               )}
               <EdgeWarningList warnings={edge} className="mt-3" />

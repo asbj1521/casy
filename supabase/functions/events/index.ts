@@ -71,6 +71,35 @@ type DateRow = {
 };
 
 /**
+ * Who a vote invites (#89): the members its settings name, all in the group
+ * and the suggester among them; null (everyone in the group, as before)
+ * when the settings name nobody.
+ */
+async function invitedMembers(
+  db: Db,
+  groupId: string,
+  profileId: string,
+  settings: unknown,
+): Promise<string[] | null> {
+  const people = (settings as { people?: { members: string[] } }).people;
+  if (!people) return null;
+  const { data, error } = await db
+    .from("group_members")
+    .select("profile_id")
+    .eq("group_id", groupId);
+  if (error) throw error;
+  const inGroup = new Set(data.map((m) => m.profile_id as string));
+  const members = people.members.map((id) => id.toLowerCase());
+  if (!members.every((id) => inGroup.has(id))) {
+    throw new HttpError(400, "Everyone invited must be in the group.");
+  }
+  if (!members.includes(profileId)) {
+    throw new HttpError(400, "You can't leave yourself out of your own event.");
+  }
+  return members;
+}
+
+/**
  * The place and note in a request (#84): each optional, tidied, and capped
  * like the table's checks. Anything that isn't text is refused.
  */
@@ -329,6 +358,7 @@ serve("events", async (req, body) => {
         const answerMs = voteAnswerMs(body.answerDays);
         if (answerMs === null) throw new HttpError(400, "Choose 1 to 7 days to answer in.");
         await requireMember(db, groupId, profileId);
+        const members = await invitedMembers(db, groupId, profileId, body.settings);
         const { data: proposalId, error } = await db.rpc("suggest_vote_event", {
           p_group_id: groupId,
           p_created_by: profileId,
@@ -338,6 +368,7 @@ serve("events", async (req, body) => {
           p_answer_by: new Date(Date.now() + answerMs).toISOString(),
           p_place: details.place,
           p_note: details.note,
+          p_members: members,
         });
         if (error?.code === "23514") throw new HttpError(400, error.message);
         if (error) throw error;

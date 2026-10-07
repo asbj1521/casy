@@ -3,11 +3,14 @@
  * answers by swiping through them. Pure, so the rules are tested rather than
  * trusted to the screens.
  *
- * The database decides a vote (decide_vote, in the swipe_dates migration):
- * once everyone still invited has answered every date still to come, or the
- * deadline passes, the date nobody declined with the fewest "maybe", earliest
- * first, is chosen. `leader` repeats that rule so the screens can say which
- * date is ahead; the database's choice is the one that counts.
+ * The database decides a vote (decide_vote, in the participants migration):
+ * once everyone required has answered every date still to come, or the
+ * deadline passes. Without "at least N" (#89): the date no required member
+ * declined, with the fewest "maybe", earliest first. With it: a date at least
+ * N required members can make (yes or "maybe"), the one most people can make,
+ * then the fewest "maybe", then the earliest. Optional members never block a
+ * date. `leader` repeats that rule so the screens can say which date is
+ * ahead; the database's choice is the one that counts.
  */
 import type { CandidateDate, SuggestedEvent } from "@/api/events";
 
@@ -26,10 +29,23 @@ export interface Tally {
   missing: number;
 }
 
-/** The answers of the people still invited (someone who left no longer counts). */
-export function tally(date: CandidateDate, event: SuggestedEvent): Tally {
+/** True if this invitee is optional (#89): invited, but never deciding. */
+export function isOptional(event: SuggestedEvent, profileId: string): boolean {
+  return event.settings.people?.optional.includes(profileId) ?? false;
+}
+
+/**
+ * The answers of the people still invited (someone who left no longer
+ * counts); `required` only, the members who decide.
+ */
+export function tally(
+  date: CandidateDate,
+  event: SuggestedEvent,
+  { required = false }: { required?: boolean } = {},
+): Tally {
   const counts: Tally = { accepted: 0, maybe: 0, declined: 0, missing: 0 };
   for (const person of event.invitees) {
+    if (required && isOptional(event, person.profileId)) continue;
     const answer = date.answers[person.profileId];
     if (answer) counts[answer]++;
     else counts.missing++;
@@ -53,23 +69,38 @@ export function firstUnanswered(event: VoteEvent, now = Date.now()): number {
   return upcomingDates(event, now).findIndex((c) => !you || c.answers[you] === undefined);
 }
 
-/** True once everyone still invited has answered every date still to come. */
+/** True once everyone required has answered every date still to come. */
 export function allAnswered(event: VoteEvent, now = Date.now()): boolean {
-  return upcomingDates(event, now).every((c) => tally(c, event).missing === 0);
+  return upcomingDates(event, now).every((c) => tally(c, event, { required: true }).missing === 0);
 }
 
 const byStart = (a: CandidateDate, b: CandidateDate) => Date.parse(a.start) - Date.parse(b.start);
 
 /**
- * The date the vote would choose as things stand: nobody declined it, the
- * fewest "maybe", earliest first. Null if every upcoming date has a decline.
+ * The date the vote would choose as things stand (see the top). Null if no
+ * date qualifies: every one has a required "no", or, with "at least N",
+ * none has N required yes or "maybe" yet.
  */
 export function leader(event: VoteEvent, now = Date.now()): CandidateDate | null {
-  const open = upcomingDates(event, now)
-    .map((date) => ({ date, t: tally(date, event) }))
-    .filter(({ t }) => t.declined === 0);
-  open.sort((a, b) => a.t.maybe - b.t.maybe || byStart(a.date, b.date));
-  return open[0]?.date ?? null;
+  const atLeast = event.settings.people?.atLeast;
+  const ranked = upcomingDates(event, now).map((date) => ({
+    date,
+    t: tally(date, event, { required: true }),
+    all: tally(date, event),
+  }));
+  if (atLeast === undefined) {
+    const open = ranked.filter(({ t }) => t.declined === 0);
+    open.sort((a, b) => a.t.maybe - b.t.maybe || byStart(a.date, b.date));
+    return open[0]?.date ?? null;
+  }
+  const enough = ranked.filter(({ t }) => t.accepted + t.maybe >= atLeast);
+  enough.sort(
+    (a, b) =>
+      b.all.accepted + b.all.maybe - (a.all.accepted + a.all.maybe) ||
+      a.t.maybe - b.t.maybe ||
+      byStart(a.date, b.date),
+  );
+  return enough[0]?.date ?? null;
 }
 
 /**
@@ -79,7 +110,7 @@ export function leader(event: VoteEvent, now = Date.now()): CandidateDate | null
  */
 export function bestPick(event: VoteEvent, now = Date.now()): CandidateDate | null {
   const ranked = upcomingDates(event, now)
-    .map((date) => ({ date, t: tally(date, event) }))
+    .map((date) => ({ date, t: tally(date, event, { required: true }) }))
     .sort(
       (a, b) => a.t.declined - b.t.declined || a.t.maybe - b.t.maybe || byStart(a.date, b.date),
     );
@@ -108,10 +139,15 @@ export function voteStage(event: VoteEvent, now = Date.now()): VoteStage {
   return event.createdBy.isYou ? "choose" : "waitingForChoice";
 }
 
-/** The people (never you) who still owe an answer on some date to come. */
+/** The required people (never you) who still owe an answer on some date to come. */
 export function stillToAnswer(event: VoteEvent, now = Date.now()): string[] {
   const dates = upcomingDates(event, now);
   return event.invitees
-    .filter((i) => !i.isYou && dates.some((c) => c.answers[i.profileId] === undefined))
+    .filter(
+      (i) =>
+        !i.isYou &&
+        !isOptional(event, i.profileId) &&
+        dates.some((c) => c.answers[i.profileId] === undefined),
+    )
     .map((i) => i.name);
 }

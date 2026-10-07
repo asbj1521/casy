@@ -78,7 +78,7 @@ test.describe("on a laptop's screen", () => {
     await page.goto("/");
     const before = (await boxOf(settingsBox(page))).height;
     for (const [tab, soon] of [
-      ["Deltagere", true],
+      ["Deltagere", false],
       ["Sted og note", false],
       ["Gentagelse", true],
       ["Afstemning", false],
@@ -160,4 +160,56 @@ test("a suggestion carries its place, note, deadline and number of dates", async
   const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
   expect(sent).toMatchObject({ place: "Hos Sara", note: "Tag snacks med", answerDays: 5 });
   expect((sent.dates as unknown[]).length).toBeLessThanOrEqual(3);
+});
+
+test.describe("who an event is for (#89)", () => {
+  test.use({ viewport: { width: 1440, height: 800 } });
+  test.beforeEach(({ isMobile }) => test.skip(isMobile, "the phone has the same part"));
+
+  test("at least N changes the answer, and travels with the suggestion", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("tab", { name: "Deltagere" }).click();
+    await page.getByRole("radio", { name: "Mindst" }).click();
+    // Four in the group: at least 3 of 4 to start with.
+    await expect(page.getByText("3 af 4")).toBeVisible();
+    await expect(page.getByText("Første dato hvor mindst 3 kan")).toBeVisible();
+
+    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+    await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+    const settings = backend.calls.find((c) => c.body.action === "suggest")!.body.settings;
+    expect(settings).toMatchObject({
+      people: { members: ["p-mia", "p-jonas", "p-sara", "p-emil"], optional: [], atLeast: 3 },
+    });
+  });
+
+  test("optional and left-out members are sent as such, and the chart still fits", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("tab", { name: "Deltagere" }).click();
+    // Sara: Med to Valgfri. Jonas: Med to Valgfri to Ikke med.
+    await page.getByRole("button", { name: /^Sara: Med/ }).click();
+    await page.getByRole("button", { name: /^Jonas: Med/ }).click();
+    await page.getByRole("button", { name: /^Jonas: Valgfri/ }).click();
+    await expect(page.getByRole("button", { name: /^Jonas: Ikke med/ })).toBeVisible();
+    // You can't leave yourself out: yours goes back to Med.
+    await page.getByRole("button", { name: /^Dig: Med/ }).click();
+    await page.getByRole("button", { name: /^Dig: Valgfri/ }).click();
+    await expect(page.getByRole("button", { name: /^Dig: Med/ })).toBeVisible();
+
+    const { y, height } = (await chart(page).boundingBox())!;
+    expect(y + height).toBeLessThanOrEqual(800);
+
+    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+    await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+    expect(backend.calls.find((c) => c.body.action === "suggest")!.body.settings).toMatchObject({
+      people: { members: ["p-mia", "p-sara", "p-emil"], optional: ["p-sara"] },
+    });
+  });
 });

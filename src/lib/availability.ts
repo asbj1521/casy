@@ -260,16 +260,82 @@ export function spanAvailability(
  * take the start of the first gap the meeting fits into.
  */
 export function findEarliestSlot(search: MeetingSearch): TimeSlot | null {
+  return earliestMeeting(search)?.slot ?? null;
+}
+
+/** The earliest slot, and who is free for it (everyone, without a quorum). */
+function earliestMeeting(search: MeetingSearch): { slot: TimeSlot; present: Participant[] } | null {
   const range = parseRange(search.searchStart, search.searchEnd);
   const durationMs = search.durationMinutes * MS_PER_MINUTE;
   if (!range || durationMs <= 0) return null;
+  const windows = buildAllowedWindows(range, search.timeZone, search.constraints);
+  const { quorum, participants } = search;
+  if (quorum !== undefined && quorum < participants.length) {
+    return earliestQuorumMeeting(participants, quorum, windows, range, durationMs);
+  }
 
-  const free = subtractIntervals(
-    buildAllowedWindows(range, search.timeZone, search.constraints),
-    collectBusy(search.participants, range),
-  );
+  const free = subtractIntervals(windows, collectBusy(participants, range));
   const gap = free.find((w) => w.end - w.start >= durationMs);
-  return gap ? { start: iso(gap.start), end: iso(gap.start + durationMs) } : null;
+  return gap
+    ? { slot: { start: iso(gap.start), end: iso(gap.start + durationMs) }, present: participants }
+    : null;
+}
+
+/**
+ * The earliest slot where at least `quorum` participants are free for the
+ * whole meeting, the same ones throughout. Only two kinds of moment can be
+ * the earliest start: an allowed window opening, or someone's busy block
+ * ending (before it, that person was busy, so a later start can only add
+ * people). So those are the only moments tried, each against everyone's own
+ * merged timeline.
+ */
+function earliestQuorumMeeting(
+  participants: Participant[],
+  quorum: number,
+  windows: Interval[],
+  range: Interval,
+  durationMs: number,
+): { slot: TimeSlot; present: Participant[] } | null {
+  const timelines = participants.map((p) => collectBusy([p], range));
+  const ends = [...new Set(timelines.flat().map((iv) => iv.end))].sort((a, b) => a - b);
+  // Free for [start, end): the first block ending after `start` must start at or after `end`.
+  const freeFor = (busy: Interval[], start: number, end: number) => {
+    let lo = 0;
+    let hi = busy.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (busy[mid].end <= start) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo === busy.length || busy[lo].start >= end;
+  };
+
+  for (const w of windows) {
+    const last = w.end - durationMs;
+    if (last < w.start) continue;
+    // The window's opening, then every block end inside it, in order.
+    let i = 0;
+    while (i < ends.length && ends[i] <= w.start) i++;
+    const starts = [w.start];
+    for (; i < ends.length && ends[i] <= last; i++) starts.push(ends[i]);
+
+    for (const start of starts) {
+      const end = start + durationMs;
+      const present = participants.filter((_, k) => freeFor(timelines[k], start, end));
+      if (present.length >= quorum) {
+        return { slot: { start: iso(start), end: iso(end) }, present };
+      }
+    }
+  }
+  return null;
+}
+
+/** Everyone searched who isn't among `present`, for "who can't come". */
+function absentFrom(all: Participant[], present: Participant[]) {
+  const here = new Set(present.map((p) => p.profileId));
+  return all
+    .filter((p) => !here.has(p.profileId))
+    .map(({ profileId, name }) => ({ profileId, name }));
 }
 
 /**
@@ -280,36 +346,44 @@ export function findEarliestSlot(search: MeetingSearch): TimeSlot | null {
  * skip what.
  */
 export function findMeetingSlot(search: MeetingSearch): MultiDayResult {
-  const strict = findEarliestSlot(search);
+  const strict = earliestMeeting(search);
+  // Who can't come, by the people the search left out (none without a quorum).
+  const result = (found: { slot: TimeSlot; present: Participant[] } | null) => {
+    const absent = found ? absentFrom(search.participants, found.present) : [];
+    return absent.length > 0 ? { absent } : {};
+  };
   const anySkippable = search.participants.some((p) => p.busy.some(isSkippable));
-  if (!anySkippable) return { slot: strict, conflicts: [] };
+  if (!anySkippable) return { slot: strict?.slot ?? null, conflicts: [], ...result(strict) };
 
   // The same search with the skippable blocks gone. It can only find the
   // same date or an earlier one.
-  const relaxed = findEarliestSlot({
+  const relaxed = earliestMeeting({
     ...search,
     participants: search.participants.map((p) => ({
       ...p,
       busy: p.busy.filter((b) => !isSkippable(b)),
     })),
   });
-  if (!relaxed) return { slot: strict, conflicts: [] };
+  if (!relaxed) return { slot: strict?.slot ?? null, conflicts: [], ...result(strict) };
 
   // Compared as local days: a clean lunch exactly a week on still wins,
   // whatever the hour.
-  const relaxedStart = Date.parse(relaxed.start);
+  const relaxedStart = Date.parse(relaxed.slot.start);
   const lastPatientDay = addDays(relaxedStart, SKIP_PATIENCE_DAYS, search.timeZone);
-  if (strict && startOfDay(Date.parse(strict.start), search.timeZone) <= lastPatientDay) {
-    return { slot: strict, conflicts: [] };
+  if (strict && startOfDay(Date.parse(strict.slot.start), search.timeZone) <= lastPatientDay) {
+    return { slot: strict.slot, conflicts: [], ...result(strict) };
   }
+  // Only those coming skip anything: the original blocks of the people present.
+  const coming = new Set(relaxed.present.map((p) => p.profileId));
   return {
-    slot: relaxed,
+    slot: relaxed.slot,
     conflicts: collectConflicts(
-      search.participants,
+      search.participants.filter((p) => coming.has(p.profileId)),
       relaxedStart,
-      Date.parse(relaxed.end),
+      Date.parse(relaxed.slot.end),
       isSkippable,
     ),
+    ...result(relaxed),
   };
 }
 
@@ -393,6 +467,11 @@ export interface MultiDayResult {
    * it works outright for everyone.
    */
   conflicts: SpanConflict[];
+  /**
+   * Who can't come, when enough people was all a meeting needed (#89).
+   * Missing or empty: everyone searched can.
+   */
+  absent?: { profileId: string; name: string }[];
 }
 
 /**

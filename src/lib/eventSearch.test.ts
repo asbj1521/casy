@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { findEventSlot, isEventSettings } from "@/lib/eventSearch";
+import { findEventSlot, isEventSettings, peopleForSearch } from "@/lib/eventSearch";
 import type { Participant } from "@/types";
 
 const TZ = "UTC";
@@ -176,5 +176,50 @@ describe("isEventSettings", () => {
     ).toBe(false);
     expect(isEventSettings({ kind: "trip", shape: { anchorDow: 5 } })).toBe(false);
     expect(isEventSettings({ kind: "vacation", days: 0 })).toBe(false);
+  });
+});
+
+describe("who an event is for (#89)", () => {
+  const person = (profileId: string, busy: { start: string; end: string }[] = []) => ({
+    profileId,
+    name: profileId,
+    busy,
+  });
+
+  it("searches only the required members, and lets members without a calendar count as able", () => {
+    const people = { members: ["a", "b", "c", "d"], optional: ["b"], atLeast: 2 };
+    // d has no calendar, so isn't among the participants.
+    const { searched, quorum } = peopleForSearch([person("a"), person("b"), person("c")], people);
+    expect(searched.map((p) => p.profileId)).toEqual(["a", "c"]);
+    // d counts as able, so one more of a and c is enough.
+    expect(quorum).toBe(1);
+  });
+
+  it("leaves the search as before without people settings, or when everyone is needed", () => {
+    expect(peopleForSearch([person("a")], undefined)).toEqual({
+      searched: [person("a")],
+      quorum: undefined,
+    });
+    const all = { members: ["a", "b"], optional: [], atLeast: 2 };
+    expect(peopleForSearch([person("a"), person("b")], all).quorum).toBeUndefined();
+  });
+
+  it("accepts sensible people settings and refuses the rest", () => {
+    const single = { kind: "single", durationMinutes: 60, startHour: 18 };
+    const ok = (people: unknown) => isEventSettings({ ...single, people });
+    expect(ok({ members: ["a", "b"], optional: [] })).toBe(true);
+    expect(ok({ members: ["a", "b", "c"], optional: ["c"], atLeast: 2 })).toBe(true);
+    expect(ok({ members: [], optional: [] })).toBe(false);
+    expect(ok({ members: ["a", "a"], optional: [] })).toBe(false);
+    expect(ok({ members: ["a"], optional: ["b"] })).toBe(false);
+    expect(ok({ members: ["a", "b"], optional: ["b"], atLeast: 2 })).toBe(false);
+    // "At least" is for meetings only.
+    expect(
+      isEventSettings({
+        kind: "vacation",
+        days: 3,
+        people: { members: ["a"], optional: [], atLeast: 1 },
+      }),
+    ).toBe(false);
   });
 });

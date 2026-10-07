@@ -24,6 +24,7 @@ import {
 import {
   ANY_TIME_EARLIEST_HOUR,
   ANY_TIME_LATEST_HOUR,
+  peopleForSearch,
   type EventSettings,
 } from "@/lib/eventSearch";
 import { capitalize } from "@/lib/format";
@@ -56,6 +57,11 @@ export interface MonthAvailability {
   days: DayCell[];
   /** How many participants there are: what freeCount can reach. */
   total: number;
+  /**
+   * How many free make a day work: `total`, or fewer with "at least N" (#89),
+   * counted like the search counts it (members without a calendar as able).
+   */
+  enough: number;
 }
 
 export interface MonthAvailabilityOptions {
@@ -80,13 +86,15 @@ const NOBODY: Counts = { free: 0, conditional: 0 };
  * @param month 0-based month index (0 = January)
  */
 export function monthAvailability(
-  participants: Participant[],
+  allParticipants: Participant[],
   search: EventSettings,
   year: number,
   month: number,
   opts: MonthAvailabilityOptions,
 ): MonthAvailability {
   const { timeZone } = opts;
+  // The same people the search looks at: the required members (#89).
+  const { searched: participants, quorum } = peopleForSearch(allParticipants, search.people);
   const todayMidnight = startOfDay(opts.todayMs, timeZone);
   const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
 
@@ -110,7 +118,12 @@ export function monthAvailability(
     opts.locale ?? "da-DK",
     { month: "long", timeZone },
   );
-  return { label: `${capitalize(monthName)} ${year}`, days, total: participants.length };
+  return {
+    label: `${capitalize(monthName)} ${year}`,
+    days,
+    total: participants.length,
+    enough: quorum ?? participants.length,
+  };
 }
 
 /** Who can make the day starting at `midnight`; null if the day isn't searched. */

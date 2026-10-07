@@ -32,7 +32,7 @@ export default function NeedsAnswerCard({ event }: { event: DatedEvent }) {
       <Origin event={event} />
       <PlaceNote event={event} className="mt-2" />
       <div className="mt-3">
-        <People invitees={event.invitees} />
+        <People invitees={event.invitees} optional={event.settings.people?.optional} />
       </div>
       <EdgeWarnings event={event} className="mt-3" />
       <DateConflicts event={event} className="mt-3" />

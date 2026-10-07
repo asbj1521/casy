@@ -57,6 +57,9 @@ export const DANISH: Record<string, string> = {
   "Only the person who suggested this event can change it.":
     "Kun den, der foreslog aftalen, kan ændre den.",
   "That event has been cancelled.": "Aftalen er aflyst.",
+  "Everyone invited must be in the group.": "Alle inviterede skal være med i gruppen.",
+  "You can't leave yourself out of your own event.":
+    "Du kan ikke lade dig selv være ude af din egen aftale.",
   "Those event settings aren't valid.": "Aftalens indstillinger er ikke gyldige.",
   "You weren't asked about that event.": "Du blev ikke spurgt om den aftale.",
   "That event is no longer waiting for answers.": "Aftalen venter ikke længere på svar.",

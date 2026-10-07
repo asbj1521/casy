@@ -64,7 +64,7 @@ export default function ScheduledCard({ event }: { event: DatedEvent }) {
       </p>
       <div className="relative order-5 min-w-0 px-4 sm:order-none sm:px-5">
         {pending.length > 0 ? (
-          <People invitees={pending} />
+          <People invitees={pending} optional={event.settings.people?.optional} />
         ) : (
           <p className="flex items-center gap-1.5 text-base font-semibold text-emerald-800 sm:text-xl sm:font-bold sm:text-foreground">
             <Check className="h-4 w-4 shrink-0 sm:hidden" />

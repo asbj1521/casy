@@ -7,6 +7,9 @@ import Dropdown from "@/components/Dropdown";
 import type { ComingSoonSection } from "@/components/findDate/comingSoon";
 import ComingSoonSettings from "@/components/findDate/ComingSoonSettings";
 import { PlaceNoteSettings, VoteSettings } from "@/components/findDate/EventExtraSettings";
+import ParticipantSettings, {
+  type ParticipantProps,
+} from "@/components/findDate/ParticipantSettings";
 import PeriodPicker from "@/components/PeriodPicker";
 import Popover from "@/components/Popover";
 import Switch from "@/components/ui/Switch";
@@ -318,11 +321,14 @@ export function SettingsPanel({
   onChange,
   extras,
   onExtras,
+  participants,
   className,
 }: Props & {
   /** The place, note and vote settings (#84, #99). */
   extras: EventExtras;
   onExtras: (patch: Partial<EventExtras>) => void;
+  /** Who the event is for (#89). */
+  participants: ParticipantProps;
   className?: string;
 }) {
   const t = useT();
@@ -405,6 +411,8 @@ export function SettingsPanel({
           >
             {key === "time" ? (
               <TimeSettings settings={settings} onChange={onChange} />
+            ) : key === "people" ? (
+              <ParticipantSettings {...participants} />
             ) : key === "place" ? (
               <PlaceNoteSettings extras={extras} onChange={onExtras} />
             ) : key === "vote" ? (

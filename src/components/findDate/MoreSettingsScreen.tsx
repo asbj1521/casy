@@ -7,6 +7,7 @@ import type { EventExtras } from "@/lib/scheduler";
 import { COMING_SOON } from "./comingSoon";
 import ComingSoonSettings from "./ComingSoonSettings";
 import { PlaceNoteSettings, VoteSettings } from "./EventExtraSettings";
+import ParticipantSettings, { type ParticipantProps } from "./ParticipantSettings";
 
 /**
  * Flere indstillinger (#98), opened from the sentence's "Mere" button on
@@ -20,10 +21,12 @@ export default function MoreSettingsScreen({
   back,
   extras,
   onExtras,
+  participants,
 }: {
   back: string;
   extras: EventExtras;
   onExtras: (patch: Partial<EventExtras>) => void;
+  participants: ParticipantProps;
 }) {
   const t = useT();
   const words = t.settingsPanel;
@@ -32,6 +35,9 @@ export default function MoreSettingsScreen({
       <PhoneSubHeader title={words.more} back={back} backLabel={words.back} />
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pb-8 pt-2">
         <p className="text-sm text-muted-foreground">{words.moreIntro}</p>
+        <Section title={words.tabs.people}>
+          <ParticipantSettings {...participants} />
+        </Section>
         <Section title={words.tabs.place}>
           <PlaceNoteSettings extras={extras} onChange={onExtras} />
         </Section>

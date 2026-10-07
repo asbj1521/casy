@@ -37,11 +37,6 @@ export default function ComingSoonSettings({ section }: { section: ComingSoonSec
         <ComingSoonBadge />
       </div>
       <div aria-hidden="true" className="pointer-events-none flex flex-wrap gap-4 opacity-50">
-        {section === "people" && (
-          <Fake label={words.people.label}>
-            <Choice options={words.people.options} />
-          </Fake>
-        )}
         {section === "repeat" && (
           <Fake label={words.repeat.label}>
             <Choice options={words.repeat.options} />

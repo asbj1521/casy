@@ -42,7 +42,9 @@ export function cantMake(
       : [startOfDay(start, timeZone), addDays(startOfDay(end - 1, timeZone), 1, timeZone)];
   return participants
     .filter((p) => {
-      const { slot } = findEventSlot([p], settings, iso(from), iso(to), timeZone);
+      // Each person alone, whatever the event's people rules (#89): can they make it?
+      const alone = { ...settings, people: undefined };
+      const { slot } = findEventSlot([p], alone, iso(from), iso(to), timeZone);
       return !slot || Date.parse(slot.start) !== start || Date.parse(slot.end) !== end;
     })
     .map((p) => p.profileId);

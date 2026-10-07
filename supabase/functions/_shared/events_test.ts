@@ -5,6 +5,7 @@ import {
   cleanEventTitle,
   currentDate,
   isEventSettings,
+  isPeopleSettings,
   MAX_CANDIDATES,
   MAX_PLACE_LENGTH,
   parseCandidateDates,
@@ -137,4 +138,25 @@ Deno.test("a vote's dates are kept sorted, and refused when any is off", () => {
   assertEquals(parseCandidateDates("2026-10-12", now), null);
   const tooMany = Array.from({ length: MAX_CANDIDATES + 1 }, (_, i) => on(10 + i));
   assertEquals(parseCandidateDates(tooMany, now), null);
+});
+
+Deno.test("people settings: members, optional among them, at least N for meetings only", () => {
+  const a = "11111111-1111-4111-8111-111111111111";
+  const b = "22222222-2222-4222-8222-222222222222";
+  const c = "33333333-3333-4333-8333-333333333333";
+  assertEquals(isPeopleSettings({ members: [a, b], optional: [] }, "single"), true);
+  assertEquals(isPeopleSettings({ members: [a, b, c], optional: [c], atLeast: 1 }, "single"), true);
+  assertEquals(
+    isPeopleSettings({ members: [a, b, c], optional: [c], atLeast: 3 }, "single"),
+    false,
+  );
+  assertEquals(isPeopleSettings({ members: [a, b], optional: [], atLeast: 1 }, "trip"), false);
+  assertEquals(isPeopleSettings({ members: [a, a], optional: [] }, "single"), false);
+  assertEquals(isPeopleSettings({ members: [a], optional: [b] }, "single"), false);
+  assertEquals(isPeopleSettings({ members: ["not-a-uuid"], optional: [] }, "single"), false);
+  assertEquals(isPeopleSettings({ members: [], optional: [] }, "single"), false);
+  // In the settings as a whole.
+  const single = { kind: "single", durationMinutes: 60, startHour: 18 };
+  assertEquals(isEventSettings({ ...single, people: { members: [a], optional: [] } }), true);
+  assertEquals(isEventSettings({ ...single, people: { members: [] } }), false);
 });

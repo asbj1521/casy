@@ -8,6 +8,8 @@ import {
   describeDays,
   fallbackTitleId,
   laterSlots,
+  NO_PEOPLE_CHOICE,
+  peopleFromChoice,
   periodWindow,
   randomDefaultSettings,
   reviewAnswer,
@@ -200,6 +202,7 @@ describe("reviewAnswer", () => {
       yours: null,
       others: [],
       accepted: false,
+      absent: [],
     });
   });
 
@@ -280,5 +283,34 @@ describe("periodWindow", () => {
   it("never starts before today, nor ends after the year searched", () => {
     const period = { from: "2026-09-30T22:00:00.000Z", to: "2027-09-30T22:00:00.000Z" };
     expect(periodWindow(period, TODAY, LIMIT, TZ)).toEqual({ start: TODAY, end: LIMIT.end });
+  });
+});
+
+describe("peopleFromChoice (#89)", () => {
+  const members = ["a", "b", "c", "d"];
+
+  it("is nothing at all while everyone is in and required", () => {
+    expect(peopleFromChoice(members, NO_PEOPLE_CHOICE, true)).toBeUndefined();
+    expect(
+      peopleFromChoice(members, { states: { a: "required" }, atLeast: null }, true),
+    ).toBeUndefined();
+  });
+
+  it("invites who is in, marks the optional, and keeps at least N within the required", () => {
+    const choice = { states: { b: "optional", d: "out" } as const, atLeast: 5 };
+    // a and c required: at least 5 is held to 2, which is everyone required: dropped.
+    expect(peopleFromChoice(members, choice, true)).toEqual({
+      members: ["a", "b", "c"],
+      optional: ["b"],
+    });
+    expect(peopleFromChoice(members, { states: {}, atLeast: 3 }, true)).toEqual({
+      members,
+      optional: [],
+      atLeast: 3,
+    });
+  });
+
+  it("drops at least N for trips and holidays", () => {
+    expect(peopleFromChoice(members, { states: {}, atLeast: 3 }, false)).toBeUndefined();
   });
 });

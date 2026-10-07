@@ -922,3 +922,64 @@ describe("calendar priorities", () => {
     });
   });
 });
+
+describe("enough people (#89)", () => {
+  // 19:00-21:00 every evening of the week, as a fixed-time meeting.
+  const evening = { earliestHour: 19, latestHour: 21 };
+  const busyEvening = (day: string): [string, string] => [
+    `2026-06-${day}T18:00:00.000Z`,
+    `2026-06-${day}T22:00:00.000Z`,
+  ];
+
+  it("takes the first evening enough of them can make, and says who can't", () => {
+    const anna = makeParticipant("Anna", [busyEvening("22")]);
+    const bo = makeParticipant("Bo", [busyEvening("22"), busyEvening("23")]);
+    const carl = makeParticipant("Carl", [busyEvening("23"), busyEvening("24")]);
+    const search = makeSearch({
+      participants: [anna, bo, carl],
+      durationMinutes: 120,
+      constraints: evening,
+      quorum: 2,
+    });
+
+    // Monday: only Carl. Tuesday: only Anna. Wednesday: Anna and Bo.
+    expect(findMeetingSlot(search)).toEqual({
+      slot: { start: "2026-06-24T19:00:00.000Z", end: "2026-06-24T21:00:00.000Z" },
+      conflicts: [],
+      absent: [{ profileId: "carl", name: "Carl" }],
+    });
+    // Everyone: not until Thursday, and nobody is left out.
+    expect(findMeetingSlot({ ...search, quorum: undefined })).toEqual({
+      slot: { start: "2026-06-25T19:00:00.000Z", end: "2026-06-25T21:00:00.000Z" },
+      conflicts: [],
+    });
+  });
+
+  it("needs the same people free for the whole meeting, not just enough at each moment", () => {
+    // Monday 10-12: Anna only in the first hour, Bo only in the second. At
+    // every moment one of them is free, but nobody for both hours, so the
+    // first slot two can make is when Carl, free all day, and one other are.
+    const anna = makeParticipant("Anna", [
+      ["2026-06-22T00:00:00.000Z", "2026-06-22T10:00:00.000Z"],
+      ["2026-06-22T11:00:00.000Z", "2026-06-23T00:00:00.000Z"],
+    ]);
+    const bo = makeParticipant("Bo", [["2026-06-22T00:00:00.000Z", "2026-06-22T11:00:00.000Z"]]);
+    const carl = makeParticipant("Carl", []);
+    const slot = findEarliestSlot(
+      makeSearch({ participants: [anna, bo, carl], durationMinutes: 120, quorum: 2 }),
+    );
+    // Bo is free from 11:00 on, and Carl all along.
+    expect(slot).toEqual({ start: "2026-06-22T11:00:00.000Z", end: "2026-06-22T13:00:00.000Z" });
+  });
+
+  it("asks nothing more of a quorum the whole group meets", () => {
+    const search = makeSearch({
+      participants: [makeParticipant("Anna", []), makeParticipant("Bo", [])],
+      quorum: 2,
+    });
+    expect(findMeetingSlot(search)).toEqual({
+      slot: { start: "2026-06-22T00:00:00.000Z", end: "2026-06-22T01:00:00.000Z" },
+      conflicts: [],
+    });
+  });
+});

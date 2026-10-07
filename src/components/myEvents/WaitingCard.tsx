@@ -63,7 +63,7 @@ export default function WaitingCard({ event }: { event: DatedEvent }) {
           {t.events.waitingFor(nameList(waitingOn(event), lang))}
         </p>
         <div className="mt-2">
-          <People invitees={event.invitees} />
+          <People invitees={event.invitees} optional={event.settings.people?.optional} />
         </div>
         <EdgeWarnings event={event} className="mt-1.5" />
         <DateConflicts event={event} className="mt-1.5" />

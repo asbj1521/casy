@@ -117,7 +117,7 @@ export default function LaterDates({
     // One compact line per date on a phone, three cards side by side on
     // anything wider.
     <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
-      {later.map(({ slot, conflicts }, i) => (
+      {later.map(({ slot, conflicts, absent = [] }, i) => (
         // Keyed by place, not date, so the cards stay and only their dates
         // fade when the group changes.
         <button
@@ -136,7 +136,7 @@ export default function LaterDates({
                 : formatLongSpan(slot.start, slot.end, lang)}
             </span>
             <span className="block shrink-0 text-sm text-muted-foreground sm:mt-0.5">
-              {t.scheduler.countCan(groupSize - conflicts.length, groupSize)}
+              {t.scheduler.countCan(groupSize - conflicts.length - absent.length, groupSize)}
             </span>
           </FadeSwap>
         </button>

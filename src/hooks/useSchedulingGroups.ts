@@ -44,6 +44,8 @@ export interface SchedulingGroup extends FriendGroup {
   isExample: boolean;
   /** Real members left out of the search because they have no calendar yet. */
   waitingFor: GroupMember[];
+  /** Everyone in a real group, for choosing who an event is for (#89); none in an example. */
+  members: GroupMember[];
   /**
    * How many people are in it. Not `participants.length`: only the group on
    * screen has its participants built, so the others would all read as empty.
@@ -137,6 +139,7 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
           participants,
           isExample: false,
           waitingFor,
+          members: g.members,
           memberCount: g.members.length,
         };
       });
@@ -169,6 +172,7 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
         participants: withHolidayBlocks(participants, APP_TIME_ZONE),
         isExample: true,
         waitingFor: [],
+        members: [],
         memberCount: def.members.length,
       };
     });

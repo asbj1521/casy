@@ -42,18 +42,21 @@ import {
 import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
 import { pickCandidates } from "@/lib/candidates";
 import { edgeWarnings } from "@/lib/earlyMorning";
-import { SEARCH_WINDOW } from "@/lib/eventSearch";
+import { peopleForSearch, SEARCH_WINDOW } from "@/lib/eventSearch";
 import { monthAvailability } from "@/lib/monthAvailability";
 import {
   answerKey,
   DEFAULT_EXTRAS,
   fallbackTitleId,
+  NO_PEOPLE_CHOICE,
+  peopleFromChoice,
   MAX_TRIP_DAYS,
   periodWindow,
   randomDefaultSettings,
   reviewAnswer,
   settingsToSearch,
   type EventExtras,
+  type PeopleChoice,
   type SchedulerSettings,
 } from "@/lib/scheduler";
 import { readStored, writeStored } from "@/lib/storage";
@@ -87,6 +90,7 @@ interface PageMemory {
   userId: string | null;
   name: string;
   extras: EventExtras;
+  peopleChoices: Record<string, PeopleChoice>;
   sched: SchedulerSettings;
   selectedGroupId: string | null;
   steps: AnswerSteps;
@@ -127,6 +131,10 @@ export default function FindDate() {
   // suggestion, never searched on.
   const [extras, setExtras] = useState<EventExtras>(left?.extras ?? DEFAULT_EXTRAS);
   const updateExtras = (patch: Partial<EventExtras>) => setExtras((e) => ({ ...e, ...patch }));
+  // Who each group's event is for (#89), per group: members differ.
+  const [peopleChoices, setPeopleChoices] = useState<Record<string, PeopleChoice>>(
+    left?.peopleChoices ?? {},
+  );
   const [sched, setSched] = useState(() => left?.sched ?? randomDefaultSettings());
   const [steps, setSteps] = useState(() => left?.steps ?? restart());
   // Once the answer moves on from the date it was paged from, the chart
@@ -134,8 +142,8 @@ export default function FindDate() {
   const [monthPick, setMonthPick] = useState(left?.monthPick ?? null);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   useEffect(() => {
-    pageMemory = { userId, name, extras, sched, selectedGroupId, steps, monthPick };
-  }, [userId, name, extras, sched, selectedGroupId, steps, monthPick]);
+    pageMemory = { userId, name, extras, peopleChoices, sched, selectedGroupId, steps, monthPick };
+  }, [userId, name, extras, peopleChoices, sched, selectedGroupId, steps, monthPick]);
 
   // The group you last scheduled for, read once your account is known. A
   // group picked on this visit wins; a remembered one that's gone falls back
@@ -168,7 +176,26 @@ export default function FindDate() {
   // The controls show a change at once; the search follows a beat later, so
   // tapping + a few times in a row never stutters on a slow phone.
   const deferredSched = useDeferredValue(sched);
-  const search = useMemo(() => settingsToSearch(deferredSched), [deferredSched]);
+  const peopleChoice = (activeGroupId && peopleChoices[activeGroupId]) || NO_PEOPLE_CHOICE;
+  const deferredChoice = useDeferredValue(peopleChoice);
+  const memberIds = useMemo(
+    () => activeGroup?.members.map((m) => m.profileId) ?? [],
+    [activeGroup?.members],
+  );
+  const search = useMemo(
+    () =>
+      settingsToSearch(
+        deferredSched,
+        peopleFromChoice(memberIds, deferredChoice, !deferredSched.multiDay),
+      ),
+    [deferredSched, memberIds, deferredChoice],
+  );
+  const updatePeople = (choice: PeopleChoice) => {
+    if (!activeGroupId) return;
+    setPeopleChoices((all) => ({ ...all, [activeGroupId]: choice }));
+    // Like any other setting: back to the first date for the new rules.
+    setSteps(restart());
+  };
   // The months to search (#74): every date found, and every date suggested,
   // lies within them. With none picked, the whole year from today.
   const period = deferredSched.period;
@@ -527,6 +554,15 @@ export default function FindDate() {
     t.scheduler.hintEveryone(extras.dateCount)
   );
 
+  // Who the event is for (#89): the active group's members and this group's choice.
+  const participantProps = {
+    members: activeGroup?.members ?? [],
+    choice: peopleChoice,
+    onChange: updatePeople,
+    meeting: !sched.multiDay,
+    example: !activeGroup || activeGroup.isExample,
+  };
+
   const settingsProps = {
     groupSwitcher:
       groups && activeGroupId ? (
@@ -575,7 +611,12 @@ export default function FindDate() {
               actions={actions}
               hint={hint}
             />
-            <SettingsPanel {...settingsProps} extras={extras} onExtras={updateExtras} />
+            <SettingsPanel
+              {...settingsProps}
+              extras={extras}
+              onExtras={updateExtras}
+              participants={participantProps}
+            />
           </div>
           {/* The start times are Danish time. */}
           <DanishTimeNote className="px-1" />
@@ -603,7 +644,7 @@ export default function FindDate() {
             needsTimeOff={!!slot}
             suggestions={suggestions}
             later={later}
-            groupSize={participants?.length ?? 0}
+            groupSize={peopleForSearch(participants ?? [], search.people).searched.length}
             onUseSuggestion={adoptSuggestion}
             onPick={(start) => pickDay(dayOf(start, TZ))}
           />
@@ -641,7 +682,12 @@ export default function FindDate() {
       )}
 
       {moreSettings && (
-        <MoreSettingsScreen back={location.pathname} extras={extras} onExtras={updateExtras} />
+        <MoreSettingsScreen
+          back={location.pathname}
+          extras={extras}
+          onExtras={updateExtras}
+          participants={participantProps}
+        />
       )}
 
       <NewGroupDialog

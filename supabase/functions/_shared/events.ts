@@ -21,9 +21,32 @@ const int = (v: unknown, min: number, max: number): v is number =>
   typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
 
 /** True if `value` is search settings in one of the three known shapes. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Who an event is for (#89), as src/lib/eventSearch.ts's isPeopleSettings
+ * says: 1 to 20 distinct members (profile ids), the optional ones among
+ * them, and "at least" (meetings only) from 1 to the number required. Ids
+ * must be UUIDs here: they are written to the database as such.
+ */
+export function isPeopleSettings(value: unknown, kind: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const p = value as Record<string, unknown>;
+  const ids = (v: unknown): v is string[] =>
+    Array.isArray(v) && v.every((x) => typeof x === "string" && UUID.test(x));
+  if (!ids(p.members) || !ids(p.optional)) return false;
+  const members = new Set(p.members.map((id) => id.toLowerCase()));
+  if (members.size !== p.members.length || members.size < 1 || members.size > 20) return false;
+  if (new Set(p.optional).size !== p.optional.length) return false;
+  if (!p.optional.every((id) => members.has(id.toLowerCase()))) return false;
+  if (p.atLeast === undefined) return true;
+  return kind === "single" && int(p.atLeast, 1, members.size - p.optional.length);
+}
+
 export function isEventSettings(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const s = value as Record<string, unknown>;
+  if (s.people !== undefined && !isPeopleSettings(s.people, s.kind)) return false;
   switch (s.kind) {
     case "single":
       return (

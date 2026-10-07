@@ -95,6 +95,11 @@ export interface FriendGroup {
 /** A single meeting to find a time for: who, how long, and where to look. */
 export interface MeetingSearch {
   participants: Participant[];
+  /**
+   * Enough people (#89): a slot works once this many participants are free
+   * for all of it, the same ones throughout. Undefined: everyone must be.
+   */
+  quorum?: number;
   /** How long the meeting needs to be, in minutes. */
   durationMinutes: number;
   /** The window to search within, as ISO 8601 UTC instants. */

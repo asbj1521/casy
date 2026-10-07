@@ -164,6 +164,10 @@ export const da = {
             : "første mulige dato";
       return name ? `${name}: ${what}` : what.charAt(0).toUpperCase() + what.slice(1);
     },
+    // "At least N" (#89): the date enough can make, and who can't.
+    kickerEnough: (name: string, n: number) =>
+      name ? `${name}: første dato hvor mindst ${n} kan` : `Første dato hvor mindst ${n} kan`,
+    absent: (names: string) => `${names} kan ikke.`,
     checkThemselves: (names: string) =>
       `${names} har ingen kalender i Casy og tjekker selv datoen.`,
     nobodyHasCalendar: "Ingen i gruppen har en kalender i Casy endnu, så alle tjekker selv datoen.",
@@ -176,6 +180,7 @@ export const da = {
     suggestShort: "Foreslå",
     chartTitle: (month: string) => `${month}, dag for dag`,
     legendAll: "Alle kan",
+    legendEnough: "Nok kan",
     legendFree: "Ledige",
     legendOff: "Ikke valgt",
     alsoPossible: "Også muligt",
@@ -292,10 +297,19 @@ export const da = {
     moreShort: "Mere",
     moreIntro: "Flere måder at beskrive aftalen på. Tidspunktet vælger du på planlægningssiden.",
     back: "Planlæg",
+    // Deltagere (#89): who an event is for, and how many must be able to come.
     people: {
-      intro: "Vælg, hvem der skal kunne, hvem der er valgfri, eller at fx 4 af 6 er nok.",
-      label: "Hvem skal med",
-      options: ["Alle", "Vælg medlemmer", "Mindst et antal"],
+      intro: "Tryk på et navn: med, valgfri eller ikke med. Valgfri tæller ikke med i søgningen.",
+      example: "Lav en gruppe for at vælge, hvem der skal med.",
+      states: { required: "Med", optional: "Valgfri", out: "Ikke med" },
+      stateLabel: (name: string, state: string) => `${name}: ${state}. Tryk for at skifte.`,
+      howMany: "Hvor mange skal kunne",
+      all: "Alle",
+      atLeast: "Mindst",
+      ofRequired: (n: number, of: number) => `${n} af ${of}`,
+      fewer: "Færre",
+      more: "Flere",
+      meetingsOnly: "Mindst et antal gælder kun møder.",
     },
     place: {
       intro: "Skriv, hvor I mødes, og hvad de andre skal vide. Det vises sammen med datoerne.",
@@ -639,6 +653,7 @@ export const da = {
     leaveEvent: "Forlad aftale",
     stayIn: "Bliv med",
     you: "Dig",
+    optional: "valgfri",
     youSuggested: "Du foreslog den",
     suggestedBy: (name: string) => `Foreslået af ${name}`,
     newDateBecause: (who: string, date: string) => `. Ny dato, fordi ${who} ikke kunne ${date}`,

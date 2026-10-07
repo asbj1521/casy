@@ -149,6 +149,9 @@ export const en: Messages = {
             : "first possible date";
       return name ? `${name}: ${what}` : what.charAt(0).toUpperCase() + what.slice(1);
     },
+    kickerEnough: (name: string, n: number) =>
+      name ? `${name}: first date at least ${n} can make` : `First date at least ${n} can make`,
+    absent: (names: string) => `${names} can't make it.`,
     checkThemselves: (names: string) =>
       `${names} ${names.includes(" and ") ? "have" : "has"} no calendar in Casy and will check the date themselves.`,
     nobodyHasCalendar:
@@ -162,6 +165,7 @@ export const en: Messages = {
     suggestShort: "Suggest",
     chartTitle: (month: string) => `${month}, day by day`,
     legendAll: "Everyone can",
+    legendEnough: "Enough can",
     legendFree: "Free",
     legendOff: "Not searched",
     alsoPossible: "Also possible",
@@ -267,9 +271,17 @@ export const en: Messages = {
     moreIntro: "More ways to describe the event. You choose the time on the scheduling page.",
     back: "Plan",
     people: {
-      intro: "Choose who has to be able to come, who is optional, or that, say, 4 of 6 is enough.",
-      label: "Who has to come",
-      options: ["Everyone", "Pick members", "At least some"],
+      intro: "Tap a name: in, optional or out. Optional people don't count in the search.",
+      example: "Make a group to choose who comes.",
+      states: { required: "In", optional: "Optional", out: "Out" },
+      stateLabel: (name: string, state: string) => `${name}: ${state}. Tap to change.`,
+      howMany: "How many must be able to come",
+      all: "Everyone",
+      atLeast: "At least",
+      ofRequired: (n: number, of: number) => `${n} of ${of}`,
+      fewer: "Fewer",
+      more: "More",
+      meetingsOnly: "At least a number is for meetings only.",
     },
     place: {
       intro: "Write where you meet and what the others should know. It shows with the dates.",
@@ -612,6 +624,7 @@ export const en: Messages = {
     leaveEvent: "Leave event",
     stayIn: "Stay in",
     you: "You",
+    optional: "optional",
     youSuggested: "You suggested this",
     suggestedBy: (name: string) => `Suggested by ${name}`,
     newDateBecause: (who: string, date: string) =>

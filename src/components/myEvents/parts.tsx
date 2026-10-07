@@ -99,8 +99,17 @@ export function GroupName({
   );
 }
 
-/** Everyone asked, each with where they stand on the current date. */
-export function People({ invitees }: { invitees: EventInvitee[] }) {
+/**
+ * Everyone asked, each with where they stand on the current date; an
+ * optional member (#89) is marked, since their answer decides nothing.
+ */
+export function People({
+  invitees,
+  optional = [],
+}: {
+  invitees: EventInvitee[];
+  optional?: string[];
+}) {
   const t = useT();
   return (
     <ul className="flex flex-wrap gap-1.5">
@@ -117,6 +126,9 @@ export function People({ invitees }: { invitees: EventInvitee[] }) {
         >
           <Avatar name={p.name} index={i} size="xs" />
           {p.isYou ? t.events.you : p.name}
+          {optional.includes(p.profileId) && (
+            <span className="opacity-70">{t.events.optional}</span>
+          )}
           {p.response === "accepted" ? (
             <Check className="h-3 w-3" />
           ) : p.response === "maybe" ? (
