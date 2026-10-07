@@ -14,6 +14,7 @@ import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
 import { cardArrived } from "@/lib/cardTransition";
+import { returnPathAfterSignIn } from "@/lib/signInReturn";
 import { hasSeenCalendarOnboarding } from "@/lib/calendarOnboarding";
 import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/passwordRules";
 import { supabaseAuth } from "@/lib/supabase";
@@ -24,10 +25,13 @@ import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
  * accepted: taking any URL from the query string would let a crafted link
  * bounce someone to a look-alike site straight after they log in.
  * "//evil.com" is a full URL to a browser, so it is refused along with
- * "https://...". Null when there is none; see the redirect below.
+ * "https://...". Never the profile (signInReturn.ts). Null when there is
+ * none; see the redirect below.
  */
 function safeNext(raw: string | null): string | null {
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : null;
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null;
+  // A link made before #97 (an open tab, a bookmark) may still say the profile.
+  return returnPathAfterSignIn(raw);
 }
 
 /**
