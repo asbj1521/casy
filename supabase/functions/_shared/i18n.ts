@@ -52,6 +52,11 @@ export const DANISH: Record<string, string> = {
   // Suggested events
   "That event no longer exists.": "Aftalen findes ikke længere.",
   "Give the event a name.": "Giv aftalen et navn.",
+  "Choose 1 to 7 days to answer in.": "Vælg mellem 1 og 7 dage at svare i.",
+  "The place and note must be text.": "Sted og note skal være tekst.",
+  "Only the person who suggested this event can change it.":
+    "Kun den, der foreslog aftalen, kan ændre den.",
+  "That event has been cancelled.": "Aftalen er aflyst.",
   "Those event settings aren't valid.": "Aftalens indstillinger er ikke gyldige.",
   "You weren't asked about that event.": "Du blev ikke spurgt om den aftale.",
   "That event is no longer waiting for answers.": "Aftalen venter ikke længere på svar.",

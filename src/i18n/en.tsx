@@ -176,7 +176,8 @@ export const en: Messages = {
     sentLink: "Follow the answers in My events",
     hintSignIn: "Sign in and make a group to suggest events.",
     hintExample: "Make a group to suggest events to real people.",
-    hintEveryone: "Casy sends up to five good dates, and everyone swipes through them.",
+    hintEveryone: (n: number) =>
+      `Casy sends up to ${n} good dates, and everyone swipes through them.`,
     hintAccept: "First accept taking the time off.",
     copyLink: "Copy link",
     copiedLink: "Copied!",
@@ -263,8 +264,7 @@ export const en: Messages = {
     comingSoon: "Coming soon",
     more: "More settings",
     moreShort: "More",
-    moreIntro:
-      "More ways to describe the event are coming here. You choose the time on the scheduling page.",
+    moreIntro: "More ways to describe the event. You choose the time on the scheduling page.",
     back: "Plan",
     people: {
       intro: "Choose who has to be able to come, who is optional, or that, say, 4 of 6 is enough.",
@@ -285,10 +285,9 @@ export const en: Messages = {
     },
     vote: {
       intro: "Decide how long the others have to answer, and how many dates they vote on.",
-      deadline: "Answer by",
-      deadlineValue: "3 days",
+      deadline: "Time to answer",
       dates: "Number of dates",
-      datesValue: "Up to 5",
+      upTo: (n: number) => `Up to ${n}`,
     },
     prefs: {
       intro: "Take more than the calendar into account.",
@@ -297,6 +296,15 @@ export const en: Messages = {
       lateEarly: "Avoid late nights before early mornings",
       own: "Use members' own preferences",
     },
+  },
+  eventDetails: {
+    place: "Place",
+    note: "Note",
+    edit: "Edit place and note",
+    add: "Add a place or note",
+    save: "Save",
+    saving: "Saving…",
+    cancel: "Cancel",
   },
   groupSwitcher: {
     select: "Select group",
@@ -979,6 +987,7 @@ export const en: Messages = {
     loadEvents: "Couldn't load your events",
     suggestEvent: "Couldn't suggest the event",
     cancelEvent: "Couldn't cancel the event",
+    editEvent: "Couldn't save the place and note",
     leaveEvent: "Couldn't leave the event",
     acceptEvent: "Couldn't accept the event",
     declineEvent: "Couldn't decline the event",

@@ -346,6 +346,8 @@ function events(): SuggestedEvent[] {
     candidates: [],
     answerBy: null,
     myCalendar: null,
+    place: null,
+    note: null,
   };
   return [
     // A vote waiting for Mia's answers (toSwipe).
@@ -354,6 +356,8 @@ function events(): SuggestedEvent[] {
       id: "ev-boardgames",
       group: { id: "g-friday", name: "Fredagsbar" },
       title: "Brætspilsaften",
+      place: "Hos Jonas, Nørrebrogade 12",
+      note: "Tag dit yndlingsspil med",
       settings: evening,
       status: "pending",
       mode: "vote",
@@ -470,6 +474,7 @@ function events(): SuggestedEvent[] {
       id: "ev-party",
       group: { id: "g-friday", name: "Fredagsbar" },
       title: "Julefrokost",
+      place: "Mikkeller Bar",
       settings: { kind: "single", durationMinutes: 300, startHour: 18 },
       status: "scheduled",
       mode: "single",

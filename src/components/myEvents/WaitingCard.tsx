@@ -14,6 +14,7 @@ import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatHeadline, nameList } from "@/lib/format";
 import { waitingOn, type DatedEvent } from "@/lib/myEvents";
+import PlaceNote from "@/components/myEvents/PlaceNote";
 
 /**
  * A date you've accepted, waiting on the rest of the group: the same two
@@ -66,6 +67,7 @@ export default function WaitingCard({ event }: { event: DatedEvent }) {
         </div>
         <EdgeWarnings event={event} className="mt-1.5" />
         <DateConflicts event={event} className="mt-1.5" />
+        <PlaceNote event={event} className="mt-2" />
       </div>
       <p className="relative order-3 px-4 text-lg text-foreground sm:order-none sm:px-5">
         {headline.time}

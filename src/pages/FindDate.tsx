@@ -46,12 +46,14 @@ import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { monthAvailability } from "@/lib/monthAvailability";
 import {
   answerKey,
+  DEFAULT_EXTRAS,
   fallbackTitleId,
   MAX_TRIP_DAYS,
   periodWindow,
   randomDefaultSettings,
   reviewAnswer,
   settingsToSearch,
+  type EventExtras,
   type SchedulerSettings,
 } from "@/lib/scheduler";
 import { readStored, writeStored } from "@/lib/storage";
@@ -84,6 +86,7 @@ const lastGroupKey = (userId: string) => `casy-last-group:${userId}`;
 interface PageMemory {
   userId: string | null;
   name: string;
+  extras: EventExtras;
   sched: SchedulerSettings;
   selectedGroupId: string | null;
   steps: AnswerSteps;
@@ -120,6 +123,10 @@ export default function FindDate() {
   const [selectedGroupId, setSelectedGroupId] = useState(left?.selectedGroupId ?? null);
   // What the event is called: only for the group to read, never searched on.
   const [name, setName] = useState(left?.name ?? "");
+  // Where, what to know, and how the vote runs (#84, #99): sent with a
+  // suggestion, never searched on.
+  const [extras, setExtras] = useState<EventExtras>(left?.extras ?? DEFAULT_EXTRAS);
+  const updateExtras = (patch: Partial<EventExtras>) => setExtras((e) => ({ ...e, ...patch }));
   const [sched, setSched] = useState(() => left?.sched ?? randomDefaultSettings());
   const [steps, setSteps] = useState(() => left?.steps ?? restart());
   // Once the answer moves on from the date it was paged from, the chart
@@ -127,8 +134,8 @@ export default function FindDate() {
   const [monthPick, setMonthPick] = useState(left?.monthPick ?? null);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   useEffect(() => {
-    pageMemory = { userId, name, sched, selectedGroupId, steps, monthPick };
-  }, [userId, name, sched, selectedGroupId, steps, monthPick]);
+    pageMemory = { userId, name, extras, sched, selectedGroupId, steps, monthPick };
+  }, [userId, name, extras, sched, selectedGroupId, steps, monthPick]);
 
   // The group you last scheduled for, read once your account is known. A
   // group picked on this visit wins; a remembered one that's gone falls back
@@ -432,7 +439,7 @@ export default function FindDate() {
     const dates = pickCandidates(
       fresh ?? participants,
       search,
-      { first, end: searchWindow.end },
+      { first, end: searchWindow.end, count: extras.dateCount },
       TZ,
     );
     suggest.mutate({
@@ -442,6 +449,9 @@ export default function FindDate() {
       title: name.trim() || storedEventTitle(fallbackTitleId(search)),
       settings: search,
       dates: dates.map((d) => ({ start: d.slot.start, end: d.slot.end })),
+      place: extras.place,
+      note: extras.note,
+      answerDays: extras.answerDays,
     });
   }
   // How sending went belongs to the exact date it was for: switch group, step
@@ -514,7 +524,7 @@ export default function FindDate() {
   ) : review.tone === "approve" ? (
     t.scheduler.hintAccept
   ) : (
-    t.scheduler.hintEveryone
+    t.scheduler.hintEveryone(extras.dateCount)
   );
 
   const settingsProps = {
@@ -565,7 +575,7 @@ export default function FindDate() {
               actions={actions}
               hint={hint}
             />
-            <SettingsPanel {...settingsProps} />
+            <SettingsPanel {...settingsProps} extras={extras} onExtras={updateExtras} />
           </div>
           {/* The start times are Danish time. */}
           <DanishTimeNote className="px-1" />
@@ -630,7 +640,9 @@ export default function FindDate() {
         </div>
       )}
 
-      {moreSettings && <MoreSettingsScreen back={location.pathname} />}
+      {moreSettings && (
+        <MoreSettingsScreen back={location.pathname} extras={extras} onExtras={updateExtras} />
+      )}
 
       <NewGroupDialog
         open={newGroupOpen}

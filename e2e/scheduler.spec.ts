@@ -77,10 +77,18 @@ test.describe("on a laptop's screen", () => {
   test("switching tabs never changes the settings box's height", async ({ page }) => {
     await page.goto("/");
     const before = (await boxOf(settingsBox(page))).height;
-    for (const tab of ["Deltagere", "Sted og note", "Gentagelse", "Afstemning", "Hensyn"]) {
+    for (const [tab, soon] of [
+      ["Deltagere", true],
+      ["Sted og note", false],
+      ["Gentagelse", true],
+      ["Afstemning", false],
+      ["Hensyn", true],
+    ] as const) {
       await page.getByRole("tab", { name: tab }).click();
       await expect(page.getByRole("tab", { name: tab })).toHaveAttribute("aria-selected", "true");
-      await expect(page.getByText("Kommer snart").filter({ visible: true })).toHaveCount(1);
+      await expect(page.getByText("Kommer snart").filter({ visible: true })).toHaveCount(
+        soon ? 1 : 0,
+      );
       expect((await boxOf(settingsBox(page))).height).toBe(before);
     }
     await page.getByRole("tab", { name: "Tidspunkt" }).click();
@@ -115,4 +123,41 @@ test("a phone opens Flere indstillinger and goes back", async ({ page, isMobile 
   await page.locator("header").getByRole("link", { name: "Planlæg" }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { name: "Flere indstillinger" })).toBeHidden();
+});
+
+/** Picks `label` on the wheel a settings button opens, and checks it took. */
+async function pickOnWheel(page: Page, current: string, label: string) {
+  const trigger = page
+    .getByRole("button", { name: current, exact: true })
+    .filter({ visible: true });
+  await trigger.click();
+  await page.getByText(label, { exact: true }).filter({ visible: true }).first().click();
+  await expect(page.getByRole("button", { name: label, exact: true }).first()).toBeVisible();
+  await page.keyboard.press("Escape");
+}
+
+test("a suggestion carries its place, note, deadline and number of dates", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  await page.goto("/");
+  await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+  if (isMobile) {
+    await page.getByRole("link", { name: "Flere indstillinger" }).click();
+  } else {
+    await page.getByRole("tab", { name: "Sted og note" }).click();
+  }
+  await page.getByRole("textbox", { name: "Sted" }).fill("Hos Sara");
+  await page.getByRole("textbox", { name: "Note" }).fill("Tag snacks med");
+  if (!isMobile) await page.getByRole("tab", { name: "Afstemning" }).click();
+  await pickOnWheel(page, "3 dage", "5 dage");
+  await pickOnWheel(page, "Op til 5", "Op til 3");
+  if (isMobile) await page.locator("header").getByRole("link", { name: "Planlæg" }).click();
+
+  await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+  await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+  const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
+  expect(sent).toMatchObject({ place: "Hos Sara", note: "Tag snacks med", answerDays: 5 });
+  expect((sent.dates as unknown[]).length).toBeLessThanOrEqual(3);
 });

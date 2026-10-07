@@ -27,6 +27,8 @@ function vote(candidates: CandidateDate[], overrides: Partial<VoteEvent> = {}): 
     id: "v",
     group: { id: "g", name: "Assebasser" },
     title: "Julefrokost",
+    place: null,
+    note: null,
     settings: { kind: "single", durationMinutes: 180, startHour: 18 },
     status: "pending",
     mode: "vote",

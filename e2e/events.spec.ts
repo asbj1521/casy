@@ -115,3 +115,32 @@ test("a phone swipes through a vote's dates", async ({ page, backend, isMobile }
   }
   expect(answers().every((c) => c.body.response === "accepted")).toBe(true);
 });
+
+test("everyone sees an event's place and note; only the suggester edits them", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  test.skip(isMobile, "the phone's cards show the same part");
+  // Jonas suggested this one: Mia sees it, but can't change it.
+  await page.goto("/events/ev-boardgames");
+  await expect(page.getByText("Hos Jonas, Nørrebrogade 12").first()).toBeVisible();
+  await expect(page.getByText("Tag dit yndlingsspil med").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ret sted og note" })).toHaveCount(0);
+
+  // Mia suggested this one.
+  await page.goto("/events/ev-party");
+  await expect(page.getByText("Mikkeller Bar")).toBeVisible();
+  await page.getByRole("button", { name: "Ret sted og note" }).click();
+  await page.getByRole("textbox", { name: "Sted" }).fill("Fermentoren");
+  await page.getByRole("textbox", { name: "Note" }).fill("Bord til 4 er bestilt");
+  await page.getByRole("button", { name: "Gem" }).click();
+
+  await expect(page.getByText("Fermentoren")).toBeVisible();
+  await expect(page.getByText("Bord til 4 er bestilt")).toBeVisible();
+  expect(backend.calls.find((c) => c.body.action === "edit")?.body).toMatchObject({
+    proposalId: "ev-party",
+    place: "Fermentoren",
+    note: "Bord til 4 er bestilt",
+  });
+});

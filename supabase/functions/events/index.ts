@@ -1,7 +1,7 @@
 /**
  * Suggested events: suggest a date to your group, answer one suggested to
- * you, cancel one you suggested, leave one someone else suggested, and list
- * everything you're part of.
+ * you, cancel one you suggested or change its place and note (edit, #84),
+ * leave one someone else suggested, and list everything you're part of.
  *
  * One function with an `action` in the POST body, the same shape as `groups`.
  * Identity always comes from the caller's verified login (_shared/auth.ts);
@@ -40,13 +40,16 @@ import {
 } from "../_shared/calendarWrites.ts";
 import { buildEventIcs, eventResourceName } from "../_shared/eventIcs.ts";
 import {
+  cleanEventDetail,
   cleanEventTitle,
   currentDate,
   type EventMode,
   isEventSettings,
+  MAX_NOTE_LENGTH,
+  MAX_PLACE_LENGTH,
   parseCandidateDates,
   parseEventDate,
-  VOTE_ANSWER_MS,
+  voteAnswerMs,
 } from "../_shared/events.ts";
 import { displayNameFor, requireMember } from "../_shared/groups.ts";
 import { afterResponse, HttpError, requireString, serve } from "../_shared/http.ts";
@@ -67,11 +70,29 @@ type DateRow = {
   chosen_at: string | null;
 };
 
+/**
+ * The place and note in a request (#84): each optional, tidied, and capped
+ * like the table's checks. Anything that isn't text is refused.
+ */
+function eventDetails(body: Record<string, unknown>): {
+  place: string | null;
+  note: string | null;
+} {
+  const place = cleanEventDetail(body.place, MAX_PLACE_LENGTH);
+  const note = cleanEventDetail(body.note, MAX_NOTE_LENGTH);
+  if (place === undefined || note === undefined) {
+    throw new HttpError(400, "The place and note must be text.");
+  }
+  return { place, note };
+}
+
 type ProposalRow = {
   id: string;
   group_id: string;
   created_by: string | null;
   title: string;
+  place: string | null;
+  note: string | null;
   settings: { kind?: string } | null;
   status: string;
   mode: EventMode;
@@ -111,7 +132,8 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
   let query = db
     .from("event_proposals")
     .select(
-      "id, group_id, created_by, title, settings, status, mode, answer_by, created_at, " +
+      "id, group_id, created_by, title, place, note, settings, status, mode, answer_by, " +
+        "created_at, " +
         "updated_at, friend_groups(name), " +
         "event_proposal_dates(id, starts_at, ends_at, declined_by, declined_at, created_at, " +
         "chosen_at), " +
@@ -197,6 +219,8 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
       id: p.id,
       group: { id: p.group_id, name: p.friend_groups?.name ?? "A group" },
       title: p.title,
+      place: p.place,
+      note: p.note,
       settings: p.settings,
       status: p.status,
       mode: p.mode,
@@ -294,12 +318,16 @@ serve("events", async (req, body) => {
       if (!isEventSettings(body.settings)) {
         throw new HttpError(400, "Those event settings aren't valid.");
       }
+      const details = eventDetails(body);
 
       // Several dates: a vote (#74). Everyone, the suggester included,
       // answers them; nothing is scheduled until then.
       if (body.dates !== undefined) {
         const dates = parseCandidateDates(body.dates);
         if (!dates) throw new HttpError(400, "Those dates aren't valid any more. Search again.");
+        // How long everyone has to answer (#99): 1 to 7 days, 3 if not chosen.
+        const answerMs = voteAnswerMs(body.answerDays);
+        if (answerMs === null) throw new HttpError(400, "Choose 1 to 7 days to answer in.");
         await requireMember(db, groupId, profileId);
         const { data: proposalId, error } = await db.rpc("suggest_vote_event", {
           p_group_id: groupId,
@@ -307,7 +335,9 @@ serve("events", async (req, body) => {
           p_title: title,
           p_settings: body.settings,
           p_dates: dates,
-          p_answer_by: new Date(Date.now() + VOTE_ANSWER_MS).toISOString(),
+          p_answer_by: new Date(Date.now() + answerMs).toISOString(),
+          p_place: details.place,
+          p_note: details.note,
         });
         if (error?.code === "23514") throw new HttpError(400, error.message);
         if (error) throw error;
@@ -445,6 +475,27 @@ serve("events", async (req, body) => {
       return await list();
     }
 
+    case "edit": {
+      // The suggester changes the place and the note (#84); empty clears one.
+      // Entries already in people's calendars are rewritten with them.
+      const proposalId = requireString(body, "proposalId");
+      const details = eventDetails(body);
+      const { data: outcome, error } = await db.rpc("edit_event_details", {
+        p_proposal_id: proposalId,
+        p_profile_id: profileId,
+        p_place: details.place,
+        p_note: details.note,
+      });
+      if (error) throw error;
+      if (outcome === "not_found") throw new HttpError(404, "That event no longer exists.");
+      if (outcome === "not_creator") {
+        throw new HttpError(403, "Only the person who suggested this event can change it.");
+      }
+      if (outcome === "closed") throw new HttpError(409, "That event has been cancelled.");
+      syncCalendarsLater(proposalId);
+      return await list();
+    }
+
     case "cancel": {
       const proposalId = requireString(body, "proposalId");
       const { data: proposal, error } = await db
@@ -532,6 +583,8 @@ serve("events", async (req, body) => {
         {
           id: event.id,
           title: event.title,
+          place: event.place,
+          note: event.note,
           groupName: event.group.name,
           others: event.invitees.filter((i) => !i.isYou).map((i) => i.name),
           kind: event.settings?.kind ?? "single",

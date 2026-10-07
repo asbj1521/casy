@@ -15,6 +15,7 @@ import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatHeadline } from "@/lib/format";
 import type { DatedEvent } from "@/lib/myEvents";
+import PlaceNote from "@/components/myEvents/PlaceNote";
 
 /**
  * A date everyone has accepted: the date and time big, who still hasn't said
@@ -71,6 +72,7 @@ export default function ScheduledCard({ event }: { event: DatedEvent }) {
           </p>
         )}
         <EdgeWarnings event={event} className="mt-1.5" />
+        <PlaceNote event={event} className="mt-2" />
       </div>
       <p className="relative order-3 px-4 text-lg text-foreground sm:order-none sm:px-5">
         {headline.time}

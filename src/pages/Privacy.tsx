@@ -74,8 +74,9 @@ const da: LegalCopy = {
             </li>
             <li>
               <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
-              aftale det er, de datoer, der er tilbudt, hvem der foreslog den, og hvad hver enkelt
-              har svaret på hver dato: kan, kan men helst ikke, eller kan ikke.
+              aftale det er, de datoer, der er tilbudt, hvem der foreslog den, et sted og en note,
+              hvis den, der foreslog den, har skrevet dem, og hvad hver enkelt har svaret på hver
+              dato: kan, kan men helst ikke, eller kan ikke.
             </li>
             <li>
               <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære
@@ -166,10 +167,10 @@ const da: LegalCopy = {
             næste seks måneder, men du kan stadig blive medlem med et link.
           </p>
           <p>
-            Når nogen foreslår en aftale, kan alle i gruppen se den, de datoer, der er tilbudt, og
-            hvad hver enkelt har svaret på hver dato. Siger du nej til en dato, kan de andre se, at
-            du ikke kunne den. Mens du svarer, viser Casy din egen kalender omkring hver dato, men
-            kun for dig, og kun hvornår du er optaget og i hvilken af dine kalendere.
+            Når nogen foreslår en aftale, kan alle i gruppen se den, de datoer, der er tilbudt, dens
+            sted og note, og hvad hver enkelt har svaret på hver dato. Siger du nej til en dato, kan
+            de andre se, at du ikke kunne den. Mens du svarer, viser Casy din egen kalender omkring
+            hver dato, men kun for dig, og kun hvornår du er optaget og i hvilken af dine kalendere.
           </p>
         </>
       ),
@@ -325,8 +326,9 @@ const en: LegalCopy = {
             </li>
             <li>
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
-              is, the dates offered, who suggested it, and how each person answered each date: can,
-              can but would rather not, or can't.
+              is, the dates offered, who suggested it, a place and a note if whoever suggested it
+              wrote them, and how each person answered each date: can, can but would rather not, or
+              can't.
             </li>
             <li>
               <Term>Events in your calendar:</Term> which events Casy added to your primary
@@ -417,10 +419,10 @@ const en: LegalCopy = {
             months, though you can still join with a link.
           </p>
           <p>
-            When someone suggests an event, everyone in the group sees it, the dates on offer, and
-            how each person answered each date. If you say you can't make a date, the others see
-            that. While you answer, Casy shows your own calendar around each date, to you only, and
-            only when you are busy and in which of your calendars.
+            When someone suggests an event, everyone in the group sees it, the dates on offer, its
+            place and note, and how each person answered each date. If you say you can't make a
+            date, the others see that. While you answer, Casy shows your own calendar around each
+            date, to you only, and only when you are busy and in which of your calendars.
           </p>
         </>
       ),

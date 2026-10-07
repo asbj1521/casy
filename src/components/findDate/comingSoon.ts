@@ -4,12 +4,6 @@
  * that draw them (ComingSoonSettings.tsx), so that file exports only
  * components, as React's fast refresh needs.
  */
-export type ComingSoonSection = "people" | "place" | "repeat" | "vote" | "prefs";
+export type ComingSoonSection = "people" | "repeat" | "prefs";
 
-export const COMING_SOON: readonly ComingSoonSection[] = [
-  "people",
-  "place",
-  "repeat",
-  "vote",
-  "prefs",
-];
+export const COMING_SOON: readonly ComingSoonSection[] = ["people", "repeat", "prefs"];

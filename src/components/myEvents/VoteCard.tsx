@@ -10,6 +10,7 @@ import { useLang, useT } from "@/i18n/lang";
 import { formatDate, nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { stillToAnswer, upcomingDates, voteStage, type VoteEvent } from "@/lib/vote";
+import PlaceNote from "@/components/myEvents/PlaceNote";
 
 /**
  * A vote on a phone's My events (#74). With dates for you to answer, the
@@ -71,6 +72,7 @@ export default function VoteCard({ event }: { event: VoteEvent }) {
         {" · "}
         {event.createdBy.isYou ? t.events.youSuggested : t.events.suggestedBy(event.createdBy.name)}
       </p>
+      <PlaceNote event={event} className="mt-2" />
 
       {toAnswer ? (
         <Link

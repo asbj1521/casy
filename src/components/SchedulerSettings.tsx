@@ -4,8 +4,9 @@ import { ChevronDown, Minus, Plus, SlidersHorizontal } from "lucide-react";
 
 import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
-import { COMING_SOON } from "@/components/findDate/comingSoon";
+import type { ComingSoonSection } from "@/components/findDate/comingSoon";
 import ComingSoonSettings from "@/components/findDate/ComingSoonSettings";
+import { PlaceNoteSettings, VoteSettings } from "@/components/findDate/EventExtraSettings";
 import PeriodPicker from "@/components/PeriodPicker";
 import Popover from "@/components/Popover";
 import Switch from "@/components/ui/Switch";
@@ -16,6 +17,7 @@ import {
   describeDays,
   MAX_SPAN_DAYS,
   MAX_TRIP_DAYS,
+  type EventExtras,
   type SchedulerSettings,
 } from "@/lib/scheduler";
 import { nameList } from "@/lib/format";
@@ -179,8 +181,11 @@ function StartDayPicker({
   );
 }
 
-/** The settings box's tabs: what there is today, then what is coming (#98). */
-const TABS = ["time", ...COMING_SOON] as const;
+/**
+ * The settings box's tabs, in the order a plan is made: when, who, where,
+ * how often, how the group answers, and what to take into account (#98).
+ */
+const TABS = ["time", "people", "place", "repeat", "vote", "prefs"] as const;
 type Tab = (typeof TABS)[number];
 
 /** Meeting or Tur / ferie, as two halves of one control. */
@@ -311,8 +316,15 @@ export function SettingsPanel({
   onName,
   settings,
   onChange,
+  extras,
+  onExtras,
   className,
-}: Props & { className?: string }) {
+}: Props & {
+  /** The place, note and vote settings (#84, #99). */
+  extras: EventExtras;
+  onExtras: (patch: Partial<EventExtras>) => void;
+  className?: string;
+}) {
   const t = useT();
   const [tab, setTab] = useState<Tab>("time");
   const id = useId();
@@ -393,8 +405,12 @@ export function SettingsPanel({
           >
             {key === "time" ? (
               <TimeSettings settings={settings} onChange={onChange} />
+            ) : key === "place" ? (
+              <PlaceNoteSettings extras={extras} onChange={onExtras} />
+            ) : key === "vote" ? (
+              <VoteSettings extras={extras} onChange={onExtras} />
             ) : (
-              <ComingSoonSettings section={key} />
+              <ComingSoonSettings section={key satisfies ComingSoonSection} />
             )}
           </div>
         ))}

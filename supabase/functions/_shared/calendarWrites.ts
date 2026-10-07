@@ -60,29 +60,35 @@ export interface WriteRow {
   attempts: number;
   /** Taken out because the event moved: once out, the row goes (see the top). */
   requeue: boolean;
+  /** In the calendar, but its place or note changed since (#84): to be replaced. */
+  refresh: boolean;
 }
 
 /**
  * What to do with one row, given the event as it is now:
  *
- * - "put":    add it to the calendar
- * - "delete": take it out of the calendar
+ * - "put":     add it to the calendar
+ * - "replace": write the entry already there again, with its new details
+ * - "settle":  its details changed, but there is nothing to rewrite any more
+ *              (the event is over, or the calendar is gone): drop the flag
+ * - "delete":  take it out of the calendar
  * - "forget": nothing can or should be written any more (the event was
  *             cancelled or is over before it was added, or the calendar is
  *             gone), so the row is closed without touching any calendar
  * - "none":   nothing left to do
  */
 export function nextStep(
-  row: Pick<WriteRow, "wanted" | "added" | "source_id">,
+  row: Pick<WriteRow, "wanted" | "added" | "source_id"> & { refresh?: boolean },
   event: { status: string; end: string | null } | null,
   now: number,
-): "put" | "delete" | "forget" | "none" {
-  if (row.wanted === row.added) return "none";
-  if (row.wanted) {
-    const addable =
-      !!event && event.status === "scheduled" && !!event.end && Date.parse(event.end) > now;
-    return addable && row.source_id ? "put" : "forget";
+): "put" | "replace" | "settle" | "delete" | "forget" | "none" {
+  const addable =
+    !!event && event.status === "scheduled" && !!event.end && Date.parse(event.end) > now;
+  if (row.wanted === row.added) {
+    if (!row.wanted || !row.refresh) return "none";
+    return addable && row.source_id ? "replace" : "settle";
   }
+  if (row.wanted) return addable && row.source_id ? "put" : "forget";
   return row.source_id ? "delete" : "forget";
 }
 
@@ -90,8 +96,11 @@ export function nextStep(
 function todoQuery(db: Db, scope: WriteScope) {
   let q = db
     .from("calendar_event_writes")
-    .select("proposal_id, profile_id, source_id, wanted, added, attempts, requeue")
-    .or("and(wanted.eq.true,added.eq.false),and(wanted.eq.false,added.eq.true)")
+    .select("proposal_id, profile_id, source_id, wanted, added, attempts, requeue, refresh")
+    .or(
+      "and(wanted.eq.true,added.eq.false),and(wanted.eq.false,added.eq.true)," +
+        "and(wanted.eq.true,added.eq.true,refresh.eq.true)",
+    )
     .lt("attempts", MAX_ATTEMPTS)
     .order("updated_at", { ascending: true })
     .limit(BATCH);
@@ -406,7 +415,7 @@ export async function processWrites(
     db
       .from("event_proposals")
       .select(
-        "id, title, status, settings, friend_groups(name), event_proposal_dates(starts_at, ends_at, declined_at, created_at, chosen_at)",
+        "id, title, place, note, status, settings, friend_groups(name), event_proposal_dates(starts_at, ends_at, declined_at, created_at, chosen_at)",
       )
       .in("id", proposalIds),
     sourceIds.length > 0
@@ -423,6 +432,8 @@ export async function processWrites(
   type ProposalRow = {
     id: string;
     title: string;
+    place: string | null;
+    note: string | null;
     status: string;
     settings: { kind?: string } | null;
     friend_groups: { name: string } | null;
@@ -492,6 +503,16 @@ export async function processWrites(
     );
     try {
       if (step === "none") continue;
+      if (step === "settle") {
+        const { error } = await db
+          .from("calendar_event_writes")
+          .update({ refresh: false, updated_at: new Date().toISOString() })
+          .eq("proposal_id", row.proposal_id)
+          .eq("profile_id", row.profile_id);
+        if (error) throw error;
+        done++;
+        continue;
+      }
       if (step === "forget" && row.requeue) {
         // Nothing to take out after all (the calendar is gone): the row goes.
         await forgetMoved(db, row);
@@ -519,7 +540,7 @@ export async function processWrites(
       if (!calendarUrl) throw new CalDavError("That calendar is no longer in the Apple account.");
       const resource = eventResourceName(row.proposal_id);
 
-      if (step === "put") {
+      if (step === "put" || step === "replace") {
         const others = inviteeRows
           .filter((i) => i.proposal_id === row.proposal_id && i.profile_id !== row.profile_id)
           .map((i) => nameById.get(i.profile_id) ?? null)
@@ -528,6 +549,8 @@ export async function processWrites(
         const event: AgreedEvent = {
           id: proposal!.id,
           title: proposal!.title,
+          place: proposal!.place,
+          note: proposal!.note,
           groupName: proposal!.friend_groups?.name ?? "Casy",
           others,
           kind: proposal!.settings?.kind ?? "single",
@@ -539,11 +562,13 @@ export async function processWrites(
           calendarUrl,
           resource,
           buildEventIcs(event, langOf.get(row.profile_id) ?? "da"),
+          { replace: step === "replace" },
         );
         const { error } = await db
           .from("calendar_event_writes")
           .update({
             added: true,
+            refresh: false,
             attempts: 0,
             last_error: null,
             updated_at: new Date().toISOString(),
@@ -560,6 +585,7 @@ export async function processWrites(
           .from("calendar_event_writes")
           .update({
             added: false,
+            refresh: false,
             attempts: 0,
             last_error: null,
             updated_at: new Date().toISOString(),

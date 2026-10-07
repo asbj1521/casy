@@ -30,6 +30,9 @@ export interface AgreedEvent {
   id: string;
   /** As stored: an event type's English name, or whatever was typed. */
   title: string;
+  /** Where and what to know, as the suggester typed them (#84); null if not given. */
+  place?: string | null;
+  note?: string | null;
   groupName: string;
   /** Everyone else invited, by name. */
   others: string[];
@@ -60,12 +63,18 @@ function nameList(names: string[], lang: Lang): string {
   return `${names.slice(0, -1).join(", ")} ${and} ${names[names.length - 1]}`;
 }
 
+/** The suggester's note, if any, then who it was agreed with. */
 export function eventDescription(event: AgreedEvent, lang: Lang): string {
   const who = nameList(event.others, lang);
-  if (lang === "da") {
-    return who ? `Aftalt i Casy med ${who}.` : "Aftalt i Casy.";
-  }
-  return who ? `Agreed in Casy with ${who}.` : "Agreed in Casy.";
+  const agreed =
+    lang === "da"
+      ? who
+        ? `Aftalt i Casy med ${who}.`
+        : "Aftalt i Casy."
+      : who
+        ? `Agreed in Casy with ${who}.`
+        : "Agreed in Casy.";
+  return event.note ? `${event.note}\n\n${agreed}` : agreed;
 }
 
 /** The UID Casy gives an event's calendar entry. */
@@ -150,6 +159,7 @@ export function buildEventIcs(event: AgreedEvent, lang: Lang, now = new Date()):
     allDay ? `DTEND;VALUE=DATE:${localDate(event.end)}` : `DTEND:${utcStamp(event.end)}`,
     `SUMMARY:${escapeText(eventSummary(event, lang))}`,
     `DESCRIPTION:${escapeText(eventDescription(event, lang))}`,
+    ...(event.place ? [`LOCATION:${escapeText(event.place)}`] : []),
     "URL:https://casy.app/events",
     "STATUS:CONFIRMED",
     "TRANSP:OPAQUE",

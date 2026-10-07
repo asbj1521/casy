@@ -36,6 +36,19 @@ Deno.test("an added event that is no longer wanted is removed", () => {
   assertEquals(nextStep(row(false, true), null, NOW), "delete");
 });
 
+Deno.test("an added entry whose details changed is replaced, while there is one to replace", () => {
+  const refreshed = { ...row(true, true), refresh: true };
+  assertEquals(nextStep(refreshed, scheduled, NOW), "replace");
+  // Over, or no calendar any more: only the flag goes.
+  assertEquals(nextStep(refreshed, { ...scheduled, end: "2026-09-01T00:00:00Z" }, NOW), "settle");
+  assertEquals(nextStep({ ...refreshed, source_id: null }, scheduled, NOW), "settle");
+  // A cancel still takes it out, refresh or not.
+  assertEquals(
+    nextStep({ ...row(false, true), refresh: true }, { ...scheduled, status: "cancelled" }, NOW),
+    "delete",
+  );
+});
+
 Deno.test("without its calendar, nothing can be added or removed", () => {
   assertEquals(nextStep(row(true, false, null), scheduled, NOW), "forget");
   assertEquals(nextStep(row(false, true, null), scheduled, NOW), "forget");

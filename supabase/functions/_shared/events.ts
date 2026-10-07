@@ -77,11 +77,37 @@ export function cleanEventTitle(raw: unknown): string | null {
   return cleanText(raw, MAX_EVENT_TITLE_LENGTH);
 }
 
+/** Longest place and note kept (#84), matching the table's check constraints. */
+export const MAX_PLACE_LENGTH = 100;
+export const MAX_NOTE_LENGTH = 500;
+
+/**
+ * An event's place or note as it should be stored: tidied like a title, null
+ * when empty or missing (it is optional). Undefined only when `raw` is
+ * something no browser of ours sends, which the caller refuses.
+ */
+export function cleanEventDetail(raw: unknown, maxLength: number): string | null | undefined {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "string") return undefined;
+  return cleanText(raw, maxLength);
+}
+
 /** The most dates one vote may offer: what anyone swipes through in one go. */
 export const MAX_CANDIDATES = 10;
 
 /** How long a vote waits for everyone's answers before deciding with what it has. */
 export const VOTE_ANSWER_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * The days a vote waits for answers (#99), as the suggester chose them: a
+ * whole number from 1 to 7. Missing means the usual 3 days (a page loaded
+ * before this); anything else is null, refused by the caller.
+ */
+export function voteAnswerMs(raw: unknown): number | null {
+  if (raw === undefined) return VOTE_ANSWER_MS;
+  if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 1 || raw > 7) return null;
+  return raw * 24 * 60 * 60 * 1000;
+}
 
 /**
  * A vote's candidate dates as sent by a browser, or null if they aren't worth

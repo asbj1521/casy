@@ -42,30 +42,10 @@ export default function ComingSoonSettings({ section }: { section: ComingSoonSec
             <Choice options={words.people.options} />
           </Fake>
         )}
-        {section === "place" && (
-          <>
-            <Fake label={words.place.where} grow>
-              <Box placeholder>{words.place.wherePlaceholder}</Box>
-            </Fake>
-            <Fake label={words.place.note} grow>
-              <Box placeholder>{words.place.notePlaceholder}</Box>
-            </Fake>
-          </>
-        )}
         {section === "repeat" && (
           <Fake label={words.repeat.label}>
             <Choice options={words.repeat.options} />
           </Fake>
-        )}
-        {section === "vote" && (
-          <>
-            <Fake label={words.vote.deadline}>
-              <Box>{words.vote.deadlineValue}</Box>
-            </Fake>
-            <Fake label={words.vote.dates}>
-              <Box>{words.vote.datesValue}</Box>
-            </Fake>
-          </>
         )}
         {section === "prefs" && (
           <>

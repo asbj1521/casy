@@ -414,10 +414,16 @@ export async function putEvent(
   calendarUrl: string,
   resourceName: string,
   ics: string,
+  /**
+   * Replace the entry already there (its details changed, #84) rather than
+   * add one: only if it is still there, so an entry deleted by hand stays
+   * deleted. Either way a 412 (there already; gone) counts as done.
+   */
+  { replace = false }: { replace?: boolean } = {},
 ): Promise<void> {
   const res = await send(creds, "PUT", resourceUrl(calendarUrl, resourceName), ics, {
     "Content-Type": "text/calendar; charset=utf-8",
-    "If-None-Match": "*",
+    ...(replace ? { "If-Match": "*" } : { "If-None-Match": "*" }),
   });
   await res.body?.cancel();
   if (res.ok || res.status === 412) return;

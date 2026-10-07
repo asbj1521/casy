@@ -57,6 +57,27 @@ export interface SchedulerSettings {
   period: Period | null;
 }
 
+/**
+ * What a suggestion carries besides its search (#84, #99): where and what to
+ * know, how many days everyone has to answer, and how many dates to vote on.
+ * The search never looks at them.
+ */
+export interface EventExtras {
+  place: string;
+  note: string;
+  answerDays: number;
+  dateCount: number;
+}
+
+export const DEFAULT_EXTRAS: EventExtras = { place: "", note: "", answerDays: 3, dateCount: 5 };
+/** Days to answer in: 1 to 7 (the server's limit too). */
+export const ANSWER_DAY_VALUES = [1, 2, 3, 4, 5, 6, 7];
+/** Dates in a vote: 2 to 5 (CANDIDATE_COUNT is the most). */
+export const DATE_COUNT_VALUES = [2, 3, 4, 5];
+/** The longest place and note the server keeps (MAX_PLACE_LENGTH, MAX_NOTE_LENGTH). */
+export const MAX_PLACE_LENGTH = 100;
+export const MAX_NOTE_LENGTH = 500;
+
 /** A meeting the page may open on: start hour and length. */
 type MeetingPreset = Pick<SchedulerSettings, "startHour" | "durationMinutes">;
 

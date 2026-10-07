@@ -182,6 +182,15 @@ export class FakeBackend {
         w.events = w.events.filter((e) => e !== event);
         this.changed();
         return ok(list());
+      case "edit": {
+        if (!event.createdBy.isYou)
+          return fail(403, "Only the person who suggested this event can change it.");
+        const detail = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+        event.place = detail(body.place);
+        event.note = detail(body.note);
+        this.changed();
+        return ok(list());
+      }
       case "cancel":
         event.status = "cancelled";
         this.changed();
@@ -218,6 +227,8 @@ export class FakeBackend {
       id,
       group: { id: group.id, name: group.name },
       title: String(body.title),
+      place: typeof body.place === "string" && body.place.trim() ? body.place.trim() : null,
+      note: typeof body.note === "string" && body.note.trim() ? body.note.trim() : null,
       settings: body.settings as SuggestedEvent["settings"],
       status: "pending",
       mode: "vote",

@@ -8,6 +8,7 @@ import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate } from "@/lib/format";
 import type { DatedEvent } from "@/lib/myEvents";
+import PlaceNote from "@/components/myEvents/PlaceNote";
 
 /**
  * A date waiting for your answer, the one thing My events is for: accept it,
@@ -29,6 +30,7 @@ export default function NeedsAnswerCard({ event }: { event: DatedEvent }) {
         <YourTime kind={event.settings.kind} date={event.currentDate} />
       </p>
       <Origin event={event} />
+      <PlaceNote event={event} className="mt-2" />
       <div className="mt-3">
         <People invitees={event.invitees} />
       </div>

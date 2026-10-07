@@ -9,6 +9,8 @@ function event(overrides: Partial<SuggestedEvent> & { id: string }): SuggestedEv
   return {
     group: { id: "g1", name: "Assebasser" },
     title: "Evening",
+    place: null,
+    note: null,
     settings: { kind: "single", durationMinutes: 180, startHour: 18 },
     status: "pending",
     mode: "single",

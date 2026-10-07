@@ -52,6 +52,9 @@ export interface SuggestedEvent {
   id: string;
   group: { id: string; name: string };
   title: string;
+  /** Where and what to know (#84), as the suggester typed them; null if not given. */
+  place: string | null;
+  note: string | null;
   settings: EventSettings;
   status: EventStatus;
   mode: EventMode;
@@ -87,6 +90,8 @@ export interface SuggestedEvent {
 function withDefaults(events: SuggestedEvent[]): SuggestedEvent[] {
   return events.map((e) => ({
     ...e,
+    place: e.place ?? null,
+    note: e.note ?? null,
     mode: e.mode ?? "single",
     answerBy: e.answerBy ?? null,
     candidates: e.candidates ?? [],
@@ -150,6 +155,11 @@ export async function suggestEvent(input: {
   title: string;
   settings: EventSettings;
   dates: { start: string; end: string }[];
+  /** Optional (#84); empty is the same as none. */
+  place?: string;
+  note?: string;
+  /** How many days everyone has to answer (#99): 1 to 7. */
+  answerDays?: number;
 }): Promise<{ events: SuggestedEvent[]; createdId: string }> {
   return await eventsCall<{ createdId: string }>(
     { action: "suggest", ...input },
@@ -179,6 +189,17 @@ export async function chooseDate(
   return await eventsCall(
     { action: "choose", proposalId, dateId },
     currentMessages().api.chooseDate,
+  );
+}
+
+/** The suggester changes the place and the note (#84); empty clears one. */
+export async function editEventDetails(
+  proposalId: string,
+  details: { place: string; note: string },
+): Promise<{ events: SuggestedEvent[] }> {
+  return await eventsCall(
+    { action: "edit", proposalId, ...details },
+    currentMessages().api.editEvent,
   );
 }
 

@@ -43,7 +43,7 @@ const da = {
   facts: [
     {
       title: "Kun hvornår du er optaget",
-      body: "Casy gemmer start og slut på dine aftaler. Aldrig titler, steder, noter eller gæster.",
+      body: "Casy gemmer start og slut på aftalerne i din kalender. Aldrig titler, steder, noter eller gæster.",
     },
     {
       title: "Servere i EU",
@@ -84,7 +84,7 @@ const en: typeof da = {
   facts: [
     {
       title: "Only when you are busy",
-      body: "Casy stores the start and end of your events. Never titles, places, notes or guests.",
+      body: "Casy stores the start and end of the events in your calendar. Never titles, places, notes or guests.",
     },
     {
       title: "Servers in the EU",

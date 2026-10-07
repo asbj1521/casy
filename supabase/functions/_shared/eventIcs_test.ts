@@ -46,6 +46,15 @@ Deno.test("the title and description are in the reader's language", () => {
   assert(da.includes("DESCRIPTION:Aftalt i Casy med Anna\\, Bo og Carl."));
 });
 
+Deno.test("a place is the entry's location, and a note leads its description", () => {
+  const event = { ...dinner, place: "Hos Sara, Nørrebro", note: "Tag et spil med" };
+  const da = linesOf(buildEventIcs(event, "da", NOW));
+  assert(da.includes("LOCATION:Hos Sara\\, Nørrebro"));
+  assert(da.includes("DESCRIPTION:Tag et spil med\\n\\nAftalt i Casy med Anna\\, Bo og Carl."));
+  // Without them, no LOCATION line at all.
+  assert(!linesOf(buildEventIcs(dinner, "da", NOW)).some((l) => l.startsWith("LOCATION")));
+});
+
 Deno.test("a typed title is kept as written; old type names still translate", () => {
   assertEquals(localTitle("Board games", "da"), "Board games");
   assertEquals(localTitle("Gaming session", "da"), "Gaming");

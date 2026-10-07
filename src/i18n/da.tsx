@@ -190,7 +190,8 @@ export const da = {
     sentLink: "Følg svarene under Mine aftaler",
     hintSignIn: "Log ind og lav en gruppe for at foreslå aftaler.",
     hintExample: "Lav en gruppe for at foreslå aftaler til rigtige mennesker.",
-    hintEveryone: "Casy sender op til fem gode datoer, som alle swiper sig igennem.",
+    hintEveryone: (n: number) =>
+      `Casy sender op til ${n} gode datoer, som alle swiper sig igennem.`,
     hintAccept: "Godkend først, at du skal have fri.",
     copyLink: "Kopiér link",
     copiedLink: "Kopieret!",
@@ -289,8 +290,7 @@ export const da = {
     comingSoon: "Kommer snart",
     more: "Flere indstillinger",
     moreShort: "Mere",
-    moreIntro:
-      "Her kommer flere måder at beskrive aftalen på. Tidspunktet vælger du på planlægningssiden.",
+    moreIntro: "Flere måder at beskrive aftalen på. Tidspunktet vælger du på planlægningssiden.",
     back: "Planlæg",
     people: {
       intro: "Vælg, hvem der skal kunne, hvem der er valgfri, eller at fx 4 af 6 er nok.",
@@ -312,9 +312,8 @@ export const da = {
     vote: {
       intro: "Bestem, hvor længe de andre har til at svare, og hvor mange datoer de stemmer om.",
       deadline: "Svarfrist",
-      deadlineValue: "3 dage",
       dates: "Antal datoer",
-      datesValue: "Op til 5",
+      upTo: (n: number) => `Op til ${n}`,
     },
     prefs: {
       intro: "Tag hensyn til mere end kalenderen.",
@@ -323,6 +322,16 @@ export const da = {
       lateEarly: "Undgå sene aftener før tidlige morgener",
       own: "Brug medlemmernes egne præferencer",
     },
+  },
+  // An event's place and note (#84), on My events and the swipe card.
+  eventDetails: {
+    place: "Sted",
+    note: "Note",
+    edit: "Ret sted og note",
+    add: "Tilføj sted eller note",
+    save: "Gem",
+    saving: "Gemmer…",
+    cancel: "Annuller",
   },
   groupSwitcher: {
     select: "Vælg gruppe",
@@ -1007,6 +1016,7 @@ export const da = {
     loadEvents: "Kunne ikke hente dine aftaler",
     suggestEvent: "Kunne ikke foreslå aftalen",
     cancelEvent: "Kunne ikke aflyse aftalen",
+    editEvent: "Kunne ikke gemme sted og note",
     leaveEvent: "Kunne ikke forlade aftalen",
     acceptEvent: "Kunne ikke acceptere aftalen",
     declineEvent: "Kunne ikke afslå aftalen",

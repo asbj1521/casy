@@ -53,6 +53,7 @@ import {
   type VoteEvent,
 } from "@/lib/vote";
 import { addDays, APP_TIME_ZONE, dayOf, startOfDay } from "@/lib/zone";
+import PlaceNote from "@/components/myEvents/PlaceNote";
 
 const TZ = APP_TIME_ZONE;
 
@@ -560,6 +561,7 @@ function CardFace({
           {t.swipe.clash(clash.label, clash.when, clash.more)}
         </p>
       )}
+      <PlaceNote event={event} readOnly className="mt-3" />
 
       <div className="mt-auto pt-3">
         {yours && (

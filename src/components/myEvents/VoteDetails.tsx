@@ -10,6 +10,7 @@ import { useLang, useT } from "@/i18n/lang";
 import { nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { stillToAnswer, voteStage, type VoteEvent } from "@/lib/vote";
+import PlaceNote from "@/components/myEvents/PlaceNote";
 
 /**
  * A vote opened beside the list on a computer's My events (#74): the same
@@ -75,6 +76,7 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
         </span>
       </div>
       {exiting && <ExitConfirm event={event} onCancel={() => setExiting(false)} className="mt-3" />}
+      <PlaceNote event={event} row className="mt-2" />
 
       {showDeck ? (
         <DeckBox event={event} />

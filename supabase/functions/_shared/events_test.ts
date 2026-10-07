@@ -1,12 +1,16 @@
 // Run with: deno test --node-modules-dir=none --allow-all supabase/functions/_shared/
 import { assertEquals } from "jsr:@std/assert@1";
 import {
+  cleanEventDetail,
   cleanEventTitle,
   currentDate,
   isEventSettings,
   MAX_CANDIDATES,
+  MAX_PLACE_LENGTH,
   parseCandidateDates,
   parseEventDate,
+  VOTE_ANSWER_MS,
+  voteAnswerMs,
 } from "./events.ts";
 
 Deno.test("settings in each known shape are accepted", () => {
@@ -71,6 +75,24 @@ Deno.test("titles are tidied and never left blank", () => {
   assertEquals(cleanEventTitle("Two\nlines"), "Twolines");
   assertEquals(cleanEventTitle("   "), null);
   assertEquals(cleanEventTitle(3), null);
+});
+
+Deno.test("a place or note is optional, tidied, and capped", () => {
+  assertEquals(cleanEventDetail("  Hos Sara ", MAX_PLACE_LENGTH), "Hos Sara");
+  assertEquals(cleanEventDetail(undefined, MAX_PLACE_LENGTH), null);
+  assertEquals(cleanEventDetail(null, MAX_PLACE_LENGTH), null);
+  assertEquals(cleanEventDetail("   ", MAX_PLACE_LENGTH), null);
+  assertEquals(cleanEventDetail("x".repeat(150), MAX_PLACE_LENGTH)?.length, MAX_PLACE_LENGTH);
+  // Something no page of ours sends.
+  assertEquals(cleanEventDetail(42, MAX_PLACE_LENGTH), undefined);
+});
+
+Deno.test("a vote waits 1 to 7 whole days, 3 when not chosen", () => {
+  const day = 24 * 60 * 60 * 1000;
+  assertEquals(voteAnswerMs(undefined), VOTE_ANSWER_MS);
+  assertEquals(voteAnswerMs(1), day);
+  assertEquals(voteAnswerMs(7), 7 * day);
+  for (const bad of [0, 8, 2.5, "3", null]) assertEquals(voteAnswerMs(bad), null);
 });
 
 Deno.test("the date on offer is the newest one nobody declined", () => {

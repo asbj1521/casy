@@ -409,6 +409,24 @@ Deno.test("an event is PUT once, never overwriting, as text/calendar", async () 
   assert(seen[0].headers.get("content-type")?.startsWith("text/calendar"));
 });
 
+Deno.test("a changed event replaces the entry only if it is still there", async () => {
+  const seen: Request[] = [];
+  await withFetch(
+    (req) => {
+      seen.push(req);
+      return new Response(null, { status: 204 });
+    },
+    () => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x", { replace: true }),
+  );
+  assertEquals(seen[0].headers.get("if-match"), "*");
+  assertEquals(seen[0].headers.get("if-none-match"), null);
+  // Deleted by hand meanwhile: 412, and it isn't put back.
+  await withFetch(
+    () => new Response(null, { status: 412 }),
+    () => putEvent(CREDS, CALENDAR_URL, "casy-abc.ics", "x", { replace: true }),
+  );
+});
+
 Deno.test("a calendar URL without a trailing slash still gets the file inside it", async () => {
   let url = "";
   await withFetch(
