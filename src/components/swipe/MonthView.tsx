@@ -258,6 +258,7 @@ const MonthSection = memo(function MonthSection({
                   <button
                     key={d.key}
                     type="button"
+                    data-day={days[c]}
                     onClick={() => onPickDay(days[c])}
                     aria-label={d.date.toLocaleDateString(LOCALE[lang], {
                       weekday: "long",

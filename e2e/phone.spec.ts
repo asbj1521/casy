@@ -34,12 +34,14 @@ test("My calendar is a month like Apple's: a day opens its busy time, Kalendere 
   page,
 }) => {
   await page.goto("/calendar-overview");
-  await page
-    .getByRole("button", { name: /^\w+dag \d+\. \w+$/ })
-    .first()
-    .click();
-  await expect(page.getByRole("button", { name: "Færdig" })).toBeVisible();
-  await page.getByRole("button", { name: "Færdig" }).click();
+  // A tapped day's busy time slides up with the month still live behind it:
+  // another day can be tapped at once, and a blank part of the month closes it.
+  await page.getByRole("button", { name: "torsdag 1. oktober" }).click();
+  await expect(page.getByRole("region", { name: "Torsdag 1. oktober" })).toBeVisible();
+  await page.getByRole("button", { name: "fredag 2. oktober" }).click();
+  await expect(page.getByRole("region", { name: "Fredag 2. oktober" })).toBeVisible();
+  await page.getByRole("heading", { name: "Oktober", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Fredag 2. oktober" })).toBeHidden();
 
   await page.getByRole("button", { name: "Kalendere" }).click();
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();

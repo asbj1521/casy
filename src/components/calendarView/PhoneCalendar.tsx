@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CalendarPlus, Layers } from "lucide-react";
 
+import DayPanel from "@/components/calendarView/DayPanel";
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
@@ -25,10 +26,10 @@ const TZ = APP_TIME_ZONE;
  * My calendar on a phone: your busy time as Apple Calendar's month view, the
  * same one the swipe screen opens, so it reads as the calendar already on
  * the phone. It fills the screen between the header and the tab bar and
- * scrolls month by month inside itself; a tap on a day lists what is busy on
- * it in a sheet, and "Kalendere" opens the list of calendars (what counts,
- * its category and how much it matters) in another, instead of leaving it
- * under the month.
+ * scrolls month by month inside itself. A tap on a day lists what is busy on
+ * it in a panel along the bottom (DayPanel), the month still live behind it;
+ * "Kalendere" opens the list of calendars (what counts, its category and how
+ * much it matters) in a sheet, instead of leaving it under the month.
  */
 export default function PhoneCalendar() {
   const t = useT();
@@ -48,12 +49,38 @@ export default function PhoneCalendar() {
     else navigate({ search: "" }, { replace: true });
   };
   const [pickedDay, setPickedDay] = useState<number | null>(null);
-  // What the day sheet shows while it slides away, after pickedDay is cleared.
-  const [sheetDay, setSheetDay] = useState(() => startOfDay(Date.now(), TZ));
-  const pickDay = (day: number) => {
-    setSheetDay(day);
-    setPickedDay(day);
+  // What the day panel shows while it slides away, after pickedDay is cleared.
+  const [panelDay, setPanelDay] = useState(() => startOfDay(Date.now(), TZ));
+  // Stable, or every month of the view (memoised) would redraw on each tap.
+  // The day already open closes again.
+  const pickDay = useCallback((day: number) => {
+    setPanelDay(day);
+    setPickedDay((open) => (open === day ? null : day));
+  }, []);
+  const closeDay = useCallback(() => setPickedDay(null), []);
+  // A tap on the month that isn't on a day (a heading, a blank cell, the
+  // weekdays) closes the panel too.
+  const onMonthTap = (e: MouseEvent) => {
+    if (!(e.target as HTMLElement).closest("[data-day]")) closeDay();
   };
+
+  // The tapped day kept clear of the panel: if the panel would cover it,
+  // the months scroll it up above it.
+  const panel = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (pickedDay === null) return;
+    const frame = requestAnimationFrame(() => {
+      const cell = document.querySelector<HTMLElement>(`[data-day="${pickedDay}"]`);
+      const sheet = panel.current;
+      const scroller = cell?.closest<HTMLElement>(".overflow-y-auto");
+      if (!cell || !sheet || !scroller) return;
+      const panelTop =
+        window.innerHeight - parseFloat(getComputedStyle(sheet).bottom) - sheet.offsetHeight;
+      const overlap = cell.getBoundingClientRect().bottom + 8 - panelTop;
+      if (overlap > 0) scroller.scrollBy({ top: overlap, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pickedDay]);
   // The month opens on today; "I dag" opens it afresh there.
   const [focus, setFocus] = useState(() => startOfDay(Date.now(), TZ));
   const [reopened, setReopened] = useState(0);
@@ -95,7 +122,7 @@ export default function PhoneCalendar() {
     setFocus(startOfDay(Date.now(), TZ));
     setReopened((n) => n + 1);
   };
-  const pickedSegments = calendar.segmentsOn(new Date(sheetDay));
+  const pickedSegments = calendar.segmentsOn(new Date(panelDay));
 
   return (
     <div className="min-h-screen bg-background">
@@ -154,7 +181,7 @@ export default function PhoneCalendar() {
           </Notice>
         )}
 
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1" onClick={onMonthTap}>
           <MonthView
             key={reopened}
             focus={focus}
@@ -166,11 +193,12 @@ export default function PhoneCalendar() {
         </div>
       </div>
 
-      <BottomSheet
+      <DayPanel
+        ref={panel}
         open={pickedDay !== null}
-        onClose={() => setPickedDay(null)}
+        onClose={closeDay}
         title={capitalize(
-          new Date(sheetDay).toLocaleDateString(LOCALE[lang], {
+          new Date(panelDay).toLocaleDateString(LOCALE[lang], {
             weekday: "long",
             day: "numeric",
             month: "long",
@@ -193,7 +221,7 @@ export default function PhoneCalendar() {
             ))}
           </ul>
         )}
-      </BottomSheet>
+      </DayPanel>
 
       <BottomSheet
         open={listOpen}
