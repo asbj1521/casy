@@ -12,17 +12,25 @@ export default function Modal({
   open,
   busy = false,
   onClose,
+  placement = "center",
   children,
 }: {
   open: boolean;
   busy?: boolean;
   onClose: () => void;
+  /** "bottom": a sheet rising from the bottom edge, as phone apps have. */
+  placement?: "center" | "bottom";
   children: ReactNode;
 }) {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className={cn(
+            "fixed inset-0 z-50 flex justify-center",
+            placement === "bottom" ? "items-end" : "items-center p-4",
+          )}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

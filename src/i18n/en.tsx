@@ -272,6 +272,7 @@ export const en: Messages = {
     back: "Plan",
     people: {
       intro: "Tap a name: in, optional or out. Optional people don't count in the search.",
+      introRows: "Optional people don't count in the search.",
       example: "Make a group to choose who comes.",
       states: { required: "In", optional: "Optional", out: "Out" },
       stateLabel: (name: string, state: string) => `${name}: ${state}. Tap to change.`,
@@ -317,18 +318,7 @@ export const en: Messages = {
       details: "Details",
       dates: "Dates",
     },
-    titles: {
-      group: "Who's it for?",
-      what: "What, and when?",
-      details: "Details",
-      dates: "The dates you vote on",
-    },
-    intros: {
-      group: "Choose the group the event is for.",
-      what: "Name the event and choose when it can happen.",
-      details: "Everything here is optional. Skip it if you don't need it.",
-      dates: "Tap a day in the chart or one of the dates to start from it.",
-    },
+    groupTitle: "Who's it for?",
     back: "Back",
     next: "Next",
     skip: "Skip",
@@ -341,6 +331,13 @@ export const en: Messages = {
     seeAnswer: "See the dates",
     alsoInVote: "Also in the vote",
     onlyOne: "There are no other good dates in the period, so only this one is sent.",
+    peopleAll: (n: number) => `All ${n}`,
+    peopleSome: (required: number, optional: number) =>
+      `${required} in${optional > 0 ? `, ${optional} optional` : ""}`,
+    peopleAtLeast: (n: number) => `, at least ${n}`,
+    done: "Done",
+    send: "Send dates for voting",
+    sent: "Sent for voting",
   },
   eventDetails: {
     place: "Place",

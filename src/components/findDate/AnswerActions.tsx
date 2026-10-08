@@ -89,13 +89,18 @@ export default function AnswerActions({
           )}
           <span className="truncate">
             {suggested ? (
-              t.scheduler.suggested
+              stepping ? (
+                t.scheduler.suggested
+              ) : (
+                t.schedulerFlow.sent
+              )
             ) : !stepping ? (
-              // The only button in its row: room for the whole label.
+              // The phone flow's last step, where this is the only button:
+              // room to say what it does in so many words.
               checking ? (
                 t.scheduler.checking
               ) : (
-                t.scheduler.suggest
+                t.schedulerFlow.send
               )
             ) : checking ? (
               <>

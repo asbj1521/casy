@@ -8,8 +8,9 @@ import { useLang, useT } from "@/i18n/lang";
 import { nameList } from "@/lib/format";
 
 /**
- * The flow's first step (#101): your groups as a list, a tap on one picks it
- * and moves on, "New group" under them. Someone with no groups yet gets
+ * The flow's first step (#101): your groups as a list to pick one from, the
+ * picked one ticked, "New group" under them; the flow's button moves on, so
+ * a tap on the wrong group costs nothing. Someone with no groups yet gets
  * "New group" first, with a line on why, and the labelled examples under it.
  */
 export default function GroupStep({
@@ -92,7 +93,6 @@ export default function GroupStep({
                   <Check aria-hidden className="h-5 w-5 text-primary" />
                 ) : undefined
               }
-              chevron
               selected={g.id === selectedId}
               onClick={() => onPick(g.id)}
             />

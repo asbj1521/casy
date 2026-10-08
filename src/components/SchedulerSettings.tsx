@@ -96,6 +96,7 @@ function Stepper({
   onChange,
   lessLabel,
   moreLabel,
+  fill = false,
 }: {
   value: number;
   values: number[];
@@ -103,6 +104,8 @@ function Stepper({
   onChange: (v: number) => void;
   lessLabel: string;
   moreLabel: string;
+  /** As wide as its cell, the value centred between the buttons (the phone's flow). */
+  fill?: boolean;
 }) {
   const i = values.indexOf(value);
   const step = (d: number) => {
@@ -110,7 +113,12 @@ function Stepper({
     if (next !== undefined) onChange(next);
   };
   return (
-    <div className="flex h-12 items-center rounded-xl border bg-card">
+    <div
+      className={cn(
+        "flex h-12 items-center rounded-xl border bg-card",
+        fill && "w-full justify-between",
+      )}
+    >
       <button
         type="button"
         onClick={() => step(-1)}
@@ -443,9 +451,22 @@ export function SettingsPanel({
 export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "groupSwitcher">) {
   const t = useT();
   const dayValues = useDayValues(settings);
-  const chevron = <ChevronDown className="h-4 w-4 text-muted-foreground" />;
+  const chevron = <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />;
+  // Every field fills its cell: the whole row, or one of two equal halves.
   const trigger =
-    "inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary";
+    "flex h-12 w-full items-center justify-between gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary";
+  const period = (
+    <Field label={t.scheduler.when}>
+      <PeriodPicker
+        value={settings.period}
+        onChange={(period) => onChange({ period })}
+        capitalized
+        className="block"
+        triggerClassName={trigger}
+        suffix={chevron}
+      />
+    </Field>
+  );
   return (
     <div className="flex flex-col gap-5">
       <label className="flex flex-col gap-2">
@@ -470,9 +491,10 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
       </Field>
       {settings.multiDay ? (
         <>
-          <Field label={t.scheduler.tripDays}>
-            <div className="self-start">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t.scheduler.tripDays}>
               <Stepper
+                fill
                 value={settings.days}
                 values={dayValues}
                 format={t.common.days}
@@ -480,8 +502,9 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
                 lessLabel={t.scheduler.fewerDays}
                 moreLabel={t.scheduler.moreDays}
               />
-            </div>
-          </Field>
+            </Field>
+            {period}
+          </div>
           <Field label={t.scheduler.tripStarts}>
             <StartDayPicker
               fill
@@ -492,12 +515,13 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
         </>
       ) : (
         <>
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <Field label={t.scheduler.startsAt}>
               <Dropdown
                 value={settings.anyTime ? ANY_TIME : settings.startHour}
                 options={startHourOptions(t)}
                 onChange={(value) => pickStartHour(value, onChange)}
+                className="block min-w-0"
                 suffix={chevron}
                 triggerClassName={trigger}
                 menuWidth="w-40"
@@ -505,6 +529,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
             </Field>
             <Field label={t.scheduler.duration}>
               <Stepper
+                fill
                 value={settings.durationMinutes}
                 values={DURATION_VALUES}
                 format={t.common.duration}
@@ -517,19 +542,9 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
           <Field label={t.scheduler.dayLabel}>
             <DaySlider size="lg" selected={settings.dows} onChange={(dows) => onChange({ dows })} />
           </Field>
+          {period}
         </>
       )}
-      <Field label={t.scheduler.when}>
-        <div className="self-start">
-          <PeriodPicker
-            value={settings.period}
-            onChange={(period) => onChange({ period })}
-            capitalized
-            triggerClassName={trigger}
-            suffix={chevron}
-          />
-        </div>
-      </Field>
     </div>
   );
 }

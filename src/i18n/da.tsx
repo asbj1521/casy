@@ -300,6 +300,7 @@ export const da = {
     // Deltagere (#89): who an event is for, and how many must be able to come.
     people: {
       intro: "Tryk på et navn: med, valgfri eller ikke med. Valgfri tæller ikke med i søgningen.",
+      introRows: "Valgfri tæller ikke med i søgningen.",
       example: "Lav en gruppe for at vælge, hvem der skal med.",
       states: { required: "Med", optional: "Valgfri", out: "Ikke med" },
       stateLabel: (name: string, state: string) => `${name}: ${state}. Tryk for at skifte.`,
@@ -346,18 +347,7 @@ export const da = {
       details: "Detaljer",
       dates: "Datoer",
     },
-    titles: {
-      group: "Hvem skal med?",
-      what: "Hvad skal I, og hvornår?",
-      details: "Detaljer",
-      dates: "Datoerne I stemmer om",
-    },
-    intros: {
-      group: "Vælg den gruppe, aftalen er for.",
-      what: "Giv aftalen et navn, og vælg, hvornår den kan ligge.",
-      details: "Alt her er valgfrit. Spring over, hvis I ikke har brug for det.",
-      dates: "Tryk på en dag i grafen eller en af datoerne for at starte fra den.",
-    },
+    groupTitle: "Hvem skal med?",
     back: "Tilbage",
     next: "Næste",
     skip: "Spring over",
@@ -370,6 +360,15 @@ export const da = {
     seeAnswer: "Se datoerne",
     alsoInVote: "Også i afstemningen",
     onlyOne: "Der er ikke flere gode datoer i perioden, så kun denne bliver sendt.",
+    // The details step's Deltagere row, and its sheet.
+    peopleAll: (n: number) => `Alle ${n}`,
+    peopleSome: (required: number, optional: number) =>
+      `${required} med${optional > 0 ? `, ${optional} valgfri` : ""}`,
+    peopleAtLeast: (n: number) => `, mindst ${n}`,
+    done: "Færdig",
+    // The last step's button: what pressing it does, in so many words.
+    send: "Send datoer til afstemning",
+    sent: "Sendt til afstemning",
   },
   // An event's place and note (#84), on My events and the swipe card.
   eventDetails: {

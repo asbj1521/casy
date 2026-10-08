@@ -32,7 +32,10 @@ export default function PeriodPicker({
   triggerClassName,
   suffix,
   capitalized = false,
+  className = "inline-block",
 }: {
+  /** The wrapper's layout: inline by default, `block` to fill a row. */
+  className?: string;
   value: Period | null;
   onChange: (period: Period | null) => void;
   triggerClassName: string;
@@ -55,7 +58,7 @@ export default function PeriodPicker({
 
   return (
     <Popover
-      className="inline-block"
+      className={className}
       triggerClassName={triggerClassName}
       panelClassName="w-72 p-3"
       trigger={() => (

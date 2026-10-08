@@ -10,6 +10,9 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { cph } from "./world";
 
+/** The button that sends the dates: on a computer, and in the phone's flow (#101). */
+const SEND = /^(Foreslå( datoer)?|Send datoer til afstemning)$/;
+
 /** On a phone, from the flow's second or third step on to its dates. */
 async function onToDates(page: Page) {
   if (/step=what/.test(page.url())) {
@@ -24,7 +27,7 @@ test("suggesting sends the date on screen as a vote", async ({ page, backend, is
   await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
   await page.getByRole("textbox", { name: /Hvad skal I/i }).fill("Fredagsbar");
   if (isMobile) await onToDates(page);
-  await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+  await page.getByRole("button", { name: SEND }).click();
 
   await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
   const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
@@ -130,10 +133,12 @@ test.describe("on a phone (#101)", () => {
     await expect(page.getByRole("heading", { name: "Hvem skal med?" })).toBeVisible();
     await expect(page.getByText("Trin 1 af 4")).toBeVisible();
 
-    // A tap on a group picks it and moves on.
+    // A tap on a group picks it; Næste moves on.
     await page.getByRole("button", { name: /Løbeklubben/ }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await page.getByRole("button", { name: "Næste", exact: true }).click();
     await expect(page).toHaveURL(/\?step=what$/);
-    await expect(page.getByRole("heading", { name: "Hvad skal I, og hvornår?" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Hvad og hvornår" })).toBeVisible();
     // The first date, live, above the button.
     await expect(page.getByRole("button", { name: /Første dato/ })).toBeVisible();
 
@@ -155,7 +160,7 @@ test.describe("on a phone (#101)", () => {
     // The dates that go into the vote, listed before they are sent.
     await expect(page.getByText("Også i afstemningen")).toBeVisible();
 
-    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+    await page.getByRole("button", { name: SEND }).click();
     await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
     expect(backend.calls.find((c) => c.body.action === "suggest")!.body).toMatchObject({
       groupId: "g-running",
@@ -167,11 +172,37 @@ test.describe("on a phone (#101)", () => {
     await page.goto("/");
     await page.getByRole("button", { name: /Fredagsbar/ }).click();
     await page.getByRole("button", { name: "Næste", exact: true }).click();
+    await page.getByRole("button", { name: "Næste", exact: true }).click();
     await expect(page).toHaveURL(/\?step=details$/);
     await page.goBack();
     await expect(page).toHaveURL(/\?step=what$/);
     await page.goBack();
     await expect(page.getByRole("heading", { name: "Hvem skal med?" })).toBeVisible();
+  });
+
+  test("Deltagere opens a sheet, and its row sums up the choice", async ({ page, backend }) => {
+    await page.goto("/?step=details");
+    await expect(page.getByRole("button", { name: /Deltagere.*Alle 4/ })).toBeVisible();
+    await page.getByRole("button", { name: /Deltagere/ }).click();
+    const sheet = page.getByRole("dialog", { name: "Deltagere" });
+    await sheet
+      .getByRole("radiogroup", { name: "Sara" })
+      .getByRole("radio", { name: "Valgfri" })
+      .click();
+    // You are always invited.
+    await expect(
+      sheet.getByRole("radiogroup", { name: "Dig" }).getByRole("radio", { name: "Ikke med" }),
+    ).toBeDisabled();
+    await sheet.getByRole("button", { name: "Færdig" }).click();
+    await expect(sheet).toBeHidden();
+    await expect(page.getByRole("button", { name: /3 med, 1 valgfri/ })).toBeVisible();
+
+    await onToDates(page);
+    await page.getByRole("button", { name: SEND }).click();
+    await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+    expect(backend.calls.find((c) => c.body.action === "suggest")!.body.settings).toMatchObject({
+      people: { optional: ["p-sara"] },
+    });
   });
 
   test("the live answer opens the dates", async ({ page }) => {
@@ -207,7 +238,7 @@ test("a suggestion carries its place, note, deadline and number of dates", async
   await pickOnWheel(page, "Op til 5", "Op til 3");
   if (isMobile) await onToDates(page);
 
-  await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+  await page.getByRole("button", { name: SEND }).click();
   await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
   const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
   expect(sent).toMatchObject({ place: "Hos Sara", note: "Tag snacks med", answerDays: 5 });
@@ -230,7 +261,7 @@ test.describe("who an event is for (#89)", () => {
     await expect(page.getByText("3 af 4")).toBeVisible();
     await expect(page.getByText("Første dato hvor mindst 3 kan")).toBeVisible();
 
-    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+    await page.getByRole("button", { name: SEND }).click();
     await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
     const settings = backend.calls.find((c) => c.body.action === "suggest")!.body.settings;
     expect(settings).toMatchObject({
@@ -258,7 +289,7 @@ test.describe("who an event is for (#89)", () => {
     const { y, height } = (await chart(page).boundingBox())!;
     expect(y + height).toBeLessThanOrEqual(800);
 
-    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+    await page.getByRole("button", { name: SEND }).click();
     await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
     expect(backend.calls.find((c) => c.body.action === "suggest")!.body.settings).toMatchObject({
       people: { members: ["p-mia", "p-sara", "p-emil"], optional: ["p-sara"] },

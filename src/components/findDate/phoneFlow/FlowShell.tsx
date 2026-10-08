@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * One screen of the phone's scheduling flow (#101), laid out like a phone
- * app's sheet for making something: the step's title and a line on what it
- * is for, its content, and the way on in a bar pinned above the tab bar.
+ * app's sheet for making something: how far along it is, the step's
+ * content, and the way on in a bar pinned above the tab bar.
  * The first step is a main screen (the app's header with the language
  * switch); the others open from it, with a back button to the step before.
  * The screen is at least as tall as the phone's, so the bar sits at the
@@ -66,12 +66,18 @@ export default function FlowShell({
           </span>
         </div>
 
-        <h2 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
-          {words.titles[step]}
-        </h2>
-        <p className="mt-1 text-[15px] text-muted-foreground">{words.intros[step]}</p>
-
-        <div className="mt-5">{children}</div>
+        {/* The first step's question is its title; the others are named in
+            the header bar above, so their content starts right away. */}
+        {previous ? (
+          <div className="mt-4">{children}</div>
+        ) : (
+          <>
+            <h2 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
+              {words.groupTitle}
+            </h2>
+            <div className="mt-4">{children}</div>
+          </>
+        )}
       </main>
 
       <div className="sticky bottom-[var(--tab-bar-height)] z-30 flex flex-col gap-2 border-t bg-card px-4 pb-2 pt-2 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)]">

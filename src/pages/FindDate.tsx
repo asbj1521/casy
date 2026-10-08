@@ -471,8 +471,6 @@ export default function FindDate() {
       queryClient.setQueryData(groupsQueryKey(userId ?? ""), data.groups);
       selectGroup(data.createdId);
       setNewGroupOpen(false);
-      // The flow's first step is picking a group: a new one is picked.
-      if (phone && flowStep === "group") goToStep("what");
     },
   });
   function openNewGroup() {
@@ -743,10 +741,7 @@ export default function FindDate() {
               groups={groups}
               selectedId={activeGroupId}
               signedIn={!!user}
-              onPick={(id) => {
-                selectGroup(id);
-                goToStep("what");
-              }}
+              onPick={selectGroup}
               onCreate={openNewGroup}
             />
           ) : flowStep === "what" ? (

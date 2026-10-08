@@ -14,9 +14,12 @@ export default function Dropdown({
   options,
   onChange,
   menuWidth = "w-32",
+  className = "inline-block min-w-0",
   triggerClassName,
   suffix,
 }: {
+  /** The wrapper's layout: inline by default, `block` to fill a cell. */
+  className?: string;
   value: number;
   options: { label: string; value: number }[];
   onChange: (value: number) => void;
@@ -31,7 +34,7 @@ export default function Dropdown({
 
   return (
     <Popover
-      className="inline-block min-w-0"
+      className={className}
       triggerClassName={triggerClassName}
       panelClassName={menuWidth}
       trigger={() => (

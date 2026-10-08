@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
  * Med to Valgfri to Ikke med (you are always invited, so yours only goes
  * between the first two), and how many must be able to come. The chips
  * scroll inside a fixed height, so a big group never makes the box taller.
+ * The phone's flow (#101) lays the members out as rows instead (`rows`),
+ * each with its three states side by side, so who is in reads at a glance.
  */
 export interface ParticipantProps {
   members: GroupMember[];
@@ -22,6 +24,8 @@ export interface ParticipantProps {
   /** An example group: nothing to choose from yet. */
   example: boolean;
 }
+
+const STATES: MemberState[] = ["required", "optional", "out"];
 
 const NEXT: Record<MemberState, MemberState> = {
   required: "optional",
@@ -35,7 +39,11 @@ export default function ParticipantSettings({
   onChange,
   meeting,
   example,
-}: ParticipantProps) {
+  rows = false,
+}: ParticipantProps & {
+  /** A row per member with the three states side by side (the phone's flow). */
+  rows?: boolean;
+}) {
   const t = useT();
   const words = t.settingsPanel.people;
   if (example || members.length === 0) {
@@ -48,44 +56,92 @@ export default function ParticipantSettings({
   const canChoose = meeting && required >= 2;
   const atLeast = canChoose && choice.atLeast !== null ? Math.min(choice.atLeast, required) : null;
 
+  const setState = (m: GroupMember, next: MemberState) =>
+    onChange({ ...choice, states: { ...choice.states, [m.profileId]: next } });
   function cycle(m: GroupMember) {
     let next = NEXT[state(m)];
     // You are always invited: yours goes between Med and Valgfri.
     if (m.isYou && next === "out") next = "required";
-    onChange({ ...choice, states: { ...choice.states, [m.profileId]: next } });
+    setState(m, next);
   }
   const setAtLeast = (n: number | null) => onChange({ ...choice, atLeast: n });
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">{words.intro}</p>
-      <ul className="flex max-h-[4.75rem] flex-wrap gap-1.5 overflow-y-auto">
-        {members.map((m, i) => {
-          const s = state(m);
-          const name = m.isYou ? t.events.you : m.name;
-          return (
-            <li key={m.profileId}>
-              <button
-                type="button"
-                onClick={() => cycle(m)}
-                aria-label={words.stateLabel(name, words.states[s])}
-                className={cn(
-                  "flex h-8 items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 text-sm font-medium transition",
-                  s === "required" && "border-emerald-200 bg-emerald-50 text-emerald-900",
-                  s === "optional" && "border-dashed border-amber-300 bg-amber-50 text-amber-900",
-                  s === "out" && "bg-background text-muted-foreground line-through",
-                )}
+      <p className="text-sm text-muted-foreground">{rows ? words.introRows : words.intro}</p>
+      {rows ? (
+        <ul className="overflow-hidden rounded-xl border bg-card">
+          {members.map((m, i) => {
+            const s = state(m);
+            const name = m.isYou ? t.events.you : m.name;
+            return (
+              <li
+                key={m.profileId}
+                className="flex items-center gap-3 border-t px-3 py-2 first:border-t-0"
               >
-                <Avatar name={m.name} index={i} size="xs" />
-                {name}
-                <span className="text-xs font-normal no-underline opacity-75">
-                  {words.states[s]}
+                <Avatar name={m.name} index={i} size="md" />
+                <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-foreground">
+                  {name}
                 </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                <div
+                  role="radiogroup"
+                  aria-label={name}
+                  className="flex h-9 shrink-0 items-center gap-0.5 rounded-lg border bg-secondary/60 p-0.5"
+                >
+                  {STATES.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      role="radio"
+                      aria-checked={s === option}
+                      // You are always invited.
+                      disabled={m.isYou && option === "out"}
+                      onClick={() => setState(m, option)}
+                      className={cn(
+                        "h-full whitespace-nowrap rounded-md px-2 text-xs font-semibold transition-colors disabled:opacity-30",
+                        s !== option && "text-muted-foreground",
+                        s === option && option === "required" && "bg-emerald-600 text-white",
+                        s === option && option === "optional" && "bg-amber-500 text-white",
+                        s === option && option === "out" && "bg-card text-foreground shadow-sm",
+                      )}
+                    >
+                      {words.states[option]}
+                    </button>
+                  ))}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <ul className="flex max-h-[4.75rem] flex-wrap gap-1.5 overflow-y-auto">
+          {members.map((m, i) => {
+            const s = state(m);
+            const name = m.isYou ? t.events.you : m.name;
+            return (
+              <li key={m.profileId}>
+                <button
+                  type="button"
+                  onClick={() => cycle(m)}
+                  aria-label={words.stateLabel(name, words.states[s])}
+                  className={cn(
+                    "flex h-8 items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 text-sm font-medium transition",
+                    s === "required" && "border-emerald-200 bg-emerald-50 text-emerald-900",
+                    s === "optional" && "border-dashed border-amber-300 bg-amber-50 text-amber-900",
+                    s === "out" && "bg-background text-muted-foreground line-through",
+                  )}
+                >
+                  <Avatar name={m.name} index={i} size="xs" />
+                  {name}
+                  <span className="text-xs font-normal no-underline opacity-75">
+                    {words.states[s]}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
           {words.howMany}
