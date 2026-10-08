@@ -770,6 +770,8 @@ export default function FindDate() {
                   <LaterDates {...laterDatesProps} />
                 ) : null
               }
+              extras={extras}
+              onExtras={updateExtras}
               chart={chart}
               search={search}
               voteDates={voteDates}

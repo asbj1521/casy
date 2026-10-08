@@ -4,7 +4,7 @@
  * screen lives in the address (`?step=`), so the phone's back button and the
  * iPhone's back swipe go one step back.
  */
-import { DEFAULT_EXTRAS, type EventExtras, type PeopleChoice } from "@/lib/scheduler";
+import type { EventExtras, PeopleChoice } from "@/lib/scheduler";
 
 export const FLOW_STEPS = ["group", "what", "details", "dates"] as const;
 export type FlowStep = (typeof FLOW_STEPS)[number];
@@ -72,15 +72,14 @@ export function summarizePeople(
 }
 
 /**
- * Whether anything on the optional details step differs from how it starts:
- * its button then reads "See dates" rather than "Skip".
+ * Whether anything on the optional details step (the people, the place and
+ * the note) differs from how it starts: its button then reads "See dates"
+ * rather than "Skip". The vote's settings are on the dates step.
  */
 export function detailsTouched(extras: EventExtras, people: PeopleChoice): boolean {
   return (
     extras.place.trim() !== "" ||
     extras.note.trim() !== "" ||
-    extras.answerDays !== DEFAULT_EXTRAS.answerDays ||
-    extras.dateCount !== DEFAULT_EXTRAS.dateCount ||
     people.atLeast !== null ||
     Object.values(people.states).some((state) => state !== "required")
   );

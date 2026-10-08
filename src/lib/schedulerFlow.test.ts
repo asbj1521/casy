@@ -85,10 +85,14 @@ describe("detailsTouched", () => {
 
   it("notices every setting on the step", () => {
     expect(detailsTouched({ ...DEFAULT_EXTRAS, note: "Snacks" }, NO_PEOPLE_CHOICE)).toBe(true);
-    expect(detailsTouched({ ...DEFAULT_EXTRAS, dateCount: 3 }, NO_PEOPLE_CHOICE)).toBe(true);
-    expect(detailsTouched({ ...DEFAULT_EXTRAS, answerDays: 5 }, NO_PEOPLE_CHOICE)).toBe(true);
     expect(detailsTouched(DEFAULT_EXTRAS, { states: {}, atLeast: 2 })).toBe(true);
     expect(detailsTouched(DEFAULT_EXTRAS, { states: { a: "optional" }, atLeast: null })).toBe(true);
+  });
+
+  it("leaves the vote's settings to the dates step", () => {
+    expect(
+      detailsTouched({ ...DEFAULT_EXTRAS, dateCount: 3, answerDays: 5 }, NO_PEOPLE_CHOICE),
+    ).toBe(false);
   });
 
   it("counts a member set back to Med as untouched", () => {

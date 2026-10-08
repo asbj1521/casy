@@ -1,29 +1,24 @@
-import { useId, useState, type ReactNode } from "react";
-import { CalendarRange, ChevronDown, Hourglass, MapPin, StickyNote, Users } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { useId, useState } from "react";
+import { MapPin, StickyNote, Users } from "lucide-react";
 
-import Dropdown from "@/components/Dropdown";
 import ParticipantSettings, {
   type ParticipantProps,
 } from "@/components/findDate/ParticipantSettings";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Modal, { ModalPanel } from "@/components/ui/Modal";
 import { useT } from "@/i18n/lang";
-import {
-  ANSWER_DAY_VALUES,
-  DATE_COUNT_VALUES,
-  MAX_NOTE_LENGTH,
-  MAX_PLACE_LENGTH,
-  type EventExtras,
-} from "@/lib/scheduler";
+import { MAX_NOTE_LENGTH, MAX_PLACE_LENGTH, type EventExtras } from "@/lib/scheduler";
 import { summarizePeople } from "@/lib/schedulerFlow";
+
+import FieldRow, { ROW_INPUT } from "./FieldRow";
 
 /**
  * The flow's optional step (#101), as a short list to take in at a glance:
  * one row per setting, its name on the left and how it stands on the right.
- * The place and note are typed into their rows, the vote's two numbers open
- * a wheel, and who is coming opens a sheet of its own. The computer has the
- * same settings in its box's tabs; the ones coming soon stay off the phone.
+ * The place and note are typed into their rows, and who is coming opens a
+ * sheet of its own. How the vote runs is set on the dates step, beside the
+ * dates it is about. The computer has the same settings in its box's tabs;
+ * the ones coming soon stay off the phone.
  */
 export default function DetailsStep({
   extras,
@@ -52,9 +47,6 @@ export default function DetailsStep({
         ? t.schedulerFlow.peopleAll(people.total)
         : t.schedulerFlow.peopleSome(people.required, people.optional) +
           (people.atLeast !== null ? t.schedulerFlow.peopleAtLeast(people.atLeast) : "");
-  const chevron = <ChevronDown className="h-4 w-4 shrink-0" />;
-  const pick =
-    "flex items-center gap-1 whitespace-nowrap text-[15px] text-muted-foreground transition hover:text-foreground";
 
   return (
     <>
@@ -76,7 +68,7 @@ export default function DetailsStep({
             maxLength={MAX_PLACE_LENGTH}
             onChange={(e) => onExtras({ place: e.target.value })}
             placeholder={words.place.wherePlaceholder}
-            className={INPUT}
+            className={ROW_INPUT}
           />
         </FieldRow>
         <FieldRow icon={StickyNote} label={words.place.note}>
@@ -86,28 +78,7 @@ export default function DetailsStep({
             maxLength={MAX_NOTE_LENGTH}
             onChange={(e) => onExtras({ note: e.target.value })}
             placeholder={words.place.notePlaceholder}
-            className={INPUT}
-          />
-        </FieldRow>
-      </ListGroup>
-
-      <ListGroup>
-        <FieldRow icon={Hourglass} label={words.vote.deadline} labelled={false}>
-          <Dropdown
-            value={extras.answerDays}
-            options={ANSWER_DAY_VALUES.map((d) => ({ label: t.common.days(d), value: d }))}
-            onChange={(answerDays) => onExtras({ answerDays })}
-            suffix={chevron}
-            triggerClassName={pick}
-          />
-        </FieldRow>
-        <FieldRow icon={CalendarRange} label={words.vote.dates} labelled={false}>
-          <Dropdown
-            value={extras.dateCount}
-            options={DATE_COUNT_VALUES.map((n) => ({ label: words.vote.upTo(n), value: n }))}
-            onChange={(dateCount) => onExtras({ dateCount })}
-            suffix={chevron}
-            triggerClassName={pick}
+            className={ROW_INPUT}
           />
         </FieldRow>
       </ListGroup>
@@ -133,38 +104,5 @@ export default function DetailsStep({
         </ModalPanel>
       </Modal>
     </>
-  );
-}
-
-const INPUT =
-  "min-w-0 flex-1 bg-transparent text-right text-[15px] text-foreground outline-none placeholder:text-muted-foreground";
-
-/**
- * A row like ListRow's, with a control on the right instead of a value. A
- * text field's row is its label, so a tap anywhere on it starts typing; a
- * button names itself, so its row is plain (`labelled={false}`).
- */
-function FieldRow({
-  icon: Icon,
-  label,
-  labelled = true,
-  children,
-}: {
-  icon: LucideIcon;
-  label: string;
-  labelled?: boolean;
-  children: ReactNode;
-}) {
-  const Row = labelled ? "label" : "div";
-  return (
-    <li className="group/row">
-      <Row className="flex w-full items-center gap-3 pl-4">
-        <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
-        <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
-          <span className="shrink-0 text-[15px] font-medium text-foreground">{label}</span>
-          <span className="flex min-w-0 flex-1 justify-end">{children}</span>
-        </span>
-      </Row>
-    </li>
   );
 }

@@ -233,10 +233,11 @@ test("a suggestion carries its place, note, deadline and number of dates", async
   if (!isMobile) await page.getByRole("tab", { name: "Sted og note" }).click();
   await page.getByRole("textbox", { name: "Sted" }).fill("Hos Sara");
   await page.getByRole("textbox", { name: "Note" }).fill("Tag snacks med");
-  if (!isMobile) await page.getByRole("tab", { name: "Afstemning" }).click();
+  // On a phone, the vote's settings are on the dates step, beside the dates.
+  if (isMobile) await onToDates(page);
+  else await page.getByRole("tab", { name: "Afstemning" }).click();
   await pickOnWheel(page, "3 dage", "5 dage");
   await pickOnWheel(page, "Op til 5", "Op til 3");
-  if (isMobile) await onToDates(page);
 
   await page.getByRole("button", { name: SEND }).click();
   await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
