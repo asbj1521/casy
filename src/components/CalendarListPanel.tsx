@@ -51,6 +51,7 @@ export default function CalendarListPanel({
   colorOf,
   onSetVisible,
   visibilityError,
+  introInTip = false,
 }: {
   /** Every calendar, the built-in holidays included, each with its tick and total. */
   calendars: OverviewCalendar[];
@@ -59,6 +60,8 @@ export default function CalendarListPanel({
   onSetVisible: (calendarIds: string[], visible: boolean) => void;
   /** Why the last tick didn't save, if it didn't. */
   visibilityError: string | null;
+  /** The sentence under the title goes into the (i) beside it instead (a phone's sheet). */
+  introInTip?: boolean;
 }) {
   const t = useT();
   const words = t.calendarView;
@@ -88,9 +91,12 @@ export default function CalendarListPanel({
     <aside className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
       <div className="flex items-center gap-1.5">
         <h2 className="font-semibold text-foreground">{words.listTitle}</h2>
-        <InfoTip label={words.priorityHelpLabel}>{words.priorityHelp}</InfoTip>
+        <InfoTip label={words.priorityHelpLabel}>
+          {introInTip && <p className="mb-2">{words.listIntro}</p>}
+          {words.priorityHelp}
+        </InfoTip>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">{words.listIntro}</p>
+      {!introInTip && <p className="mt-1 text-xs text-muted-foreground">{words.listIntro}</p>}
       {showPrimaryLine && (
         <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-foreground">
           <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />

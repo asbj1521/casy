@@ -44,4 +44,10 @@ test("My calendar is a month like Apple's: a day opens its busy time, Kalendere 
   await page.getByRole("button", { name: "Kalendere" }).click();
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Forbundne kalendere/ })).toBeVisible();
+
+  // One step back from "Connected calendars" lands on the sheet, not the bare month.
+  await page.getByRole("link", { name: /Forbundne kalendere/ }).click();
+  await expect(page).toHaveURL(/\/calendar-overview\/accounts$/);
+  await page.getByRole("link", { name: "Kalender" }).first().click();
+  await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
 });

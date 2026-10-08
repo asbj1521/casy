@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
@@ -25,12 +25,19 @@ const MORE_PX = 14;
  * and anything lasting days as one bar across them (lib/monthGrid.ts),
  * today in red, the vote's dates in orange and the one being answered
  * pencilled in. A tap on a day opens it in the day view.
+ *
+ * On My calendar (#104) there is no vote: `selected` is the day tapped, in
+ * orange, and today is a grey circle so the two never look alike
+ * (`todayTone`). Each month is memoised, so a tap redraws only the months
+ * whose selected day changed, not all twelve.
  */
 export default function MonthView({
   focus,
   calendar,
   pencil,
   marked,
+  selected = null,
+  todayTone = "red",
   onPickDay,
 }: {
   /** The day whose month to open on. */
@@ -40,12 +47,18 @@ export default function MonthView({
   pencil?: { start: number; end: number; label: string };
   /** The vote's dates, as local midnights; none on My calendar. */
   marked?: ReadonlySet<number>;
+  /** The day tapped, as a local midnight: ringed in orange. */
+  selected?: number | null;
+  /** How today is drawn: Apple's red circle, or a grey one where orange marks the tapped day. */
+  todayTone?: "red" | "grey";
   onPickDay: (day: number) => void;
 }) {
   const t = useT();
-  const { lang } = useLang();
   const scroller = useRef<HTMLDivElement>(null);
   const monthEls = useRef(new Map<number, HTMLElement>());
+  const register = useCallback((month: number, el: HTMLElement | null) => {
+    if (el) monthEls.current.set(month, el);
+  }, []);
   const months = useMemo(
     () =>
       Array.from({ length: 12 }, (_, i) => startOfMonth(Date.parse(SEARCH_WINDOW.start), TZ, i)),
@@ -58,7 +71,7 @@ export default function MonthView({
         : calendar.items,
     [pencil, calendar.items],
   );
-  // Today, for the red circle: fixed for as long as the view is open.
+  // Today, for its circle: fixed for as long as the view is open.
   const [today] = useState(() => startOfDay(Date.now(), TZ));
   const thisYear = localDate(today, TZ).year;
 
@@ -72,8 +85,10 @@ export default function MonthView({
 
   return (
     <div ref={scroller} className="relative h-full overflow-y-auto overscroll-contain">
-      {/* The weekdays, kept on top while the months scroll under them. */}
-      <div className="sticky top-0 z-20 grid h-7 grid-cols-7 items-center border-b bg-background/95 text-center text-[12px] font-medium backdrop-blur">
+      {/* The weekdays, kept on top while the months scroll under them. Solid,
+          and a pixel above the scroller's edge, so nothing shows through or
+          above it. */}
+      <div className="sticky -top-px z-20 grid h-[29px] grid-cols-7 items-center border-b bg-background pt-px text-center text-[12px] font-medium">
         {[1, 2, 3, 4, 5, 6, 0].map((dow) => (
           <span key={dow} className={dow === 0 || dow === 6 ? "text-muted-foreground" : ""}>
             {t.weekdaysShort[dow].charAt(0)}
@@ -83,126 +98,179 @@ export default function MonthView({
 
       {months.map((month) => {
         const { year, month: m } = localDate(month, TZ);
-        const layout = buildMonthLayout(year, m, TZ, LOCALE[lang]);
-        const name = capitalize(
-          new Date(month).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
-        );
+        const inMonth =
+          selected !== null &&
+          localDate(selected, TZ).month === m &&
+          localDate(selected, TZ).year === year;
         return (
-          <section
+          <MonthSection
             key={month}
-            ref={(el) => {
-              if (el) monthEls.current.set(month, el);
-            }}
-          >
-            <h3 className="px-3 pb-1 pt-5 text-[28px] font-bold tracking-tight text-foreground">
-              {year === thisYear ? name : `${name} ${year}`}
-            </h3>
-            {layout.weeks.map((week, w) => {
-              const days = week.map((d) => d.date.getTime());
-              const inMonth = week.map((d) => d.inMonth);
-              const first = inMonth.indexOf(true);
-              const last = inMonth.lastIndexOf(true);
-              const { placed, hidden } = layoutWeek(items, days, addDays(days[6], 1, TZ), LANES);
-              return (
-                <div key={w} className="relative border-t border-border/70">
-                  <span className="absolute left-1 top-0.5 text-[10px] tabular-nums text-muted-foreground">
-                    {layout.weekNumbers[w]}
-                  </span>
-                  <div className="grid grid-cols-7">
-                    {week.map((d, c) => (
-                      <span key={d.key} className="flex h-10 items-center justify-center">
-                        {d.inMonth && (
-                          <span
-                            className={cn(
-                              "flex h-8 w-8 items-center justify-center rounded-full text-[18px]",
-                              days[c] === today
-                                ? "bg-red-500 font-semibold text-white"
-                                : marked?.has(days[c])
-                                  ? "font-bold text-primary"
-                                  : c >= 5
-                                    ? "text-muted-foreground"
-                                    : "text-foreground",
-                            )}
-                          >
-                            {d.dayOfMonth}
-                          </span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="relative" style={{ height: LANES * LANE_PX + MORE_PX }}>
-                    {placed.map((p, i) => {
-                      // Cut at the month's own days, as Apple leaves the others empty.
-                      const from = Math.max(p.from, first);
-                      const to = Math.min(p.to, last);
-                      if (from > to) return null;
-                      const before = p.continuesBefore || from > p.from;
-                      const after = p.continuesAfter || to < p.to;
-                      const rgb = calendar.colorOf(p.item.calendarId);
-                      return (
-                        <p
-                          key={i}
-                          className={cn(
-                            "pointer-events-none absolute truncate px-1 text-[11px] font-semibold leading-[16px]",
-                            !before && "rounded-l-[4px]",
-                            !after && "rounded-r-[4px]",
-                            p.item.pencil &&
-                              "border border-dashed border-primary bg-primary/10 text-primary",
-                          )}
-                          style={{
-                            top: p.lane * LANE_PX,
-                            height: LANE_PX - 3,
-                            left: `calc(${(from / 7) * 100}% + ${before ? 0 : 2}px)`,
-                            width: `calc(${((to - from + 1) / 7) * 100}% - ${(before ? 0 : 2) + (after ? 0 : 2)}px)`,
-                            ...(p.item.pencil
-                              ? {}
-                              : { background: `rgb(${tint(rgb)})`, color: `rgb(${shade(rgb)})` }),
-                          }}
-                        >
-                          {p.item.label}
-                        </p>
-                      );
-                    })}
-                    {hidden.map(
-                      (n, c) =>
-                        n > 0 &&
-                        inMonth[c] && (
-                          <span
-                            key={c}
-                            className="pointer-events-none absolute bottom-0 text-center text-[10px] text-muted-foreground"
-                            style={{ left: `${(c / 7) * 100}%`, width: `${100 / 7}%` }}
-                          >
-                            +{n}
-                          </span>
-                        ),
-                    )}
-                  </div>
-                  {/* A tap anywhere on a day opens it. */}
-                  <div className="absolute inset-0 grid grid-cols-7">
-                    {week.map((d, c) =>
-                      d.inMonth ? (
-                        <button
-                          key={d.key}
-                          type="button"
-                          onClick={() => onPickDay(days[c])}
-                          aria-label={d.date.toLocaleDateString(LOCALE[lang], {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                            timeZone: TZ,
-                          })}
-                        />
-                      ) : (
-                        <span key={d.key} />
-                      ),
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </section>
+            month={month}
+            showYear={year !== thisYear}
+            items={items}
+            colorOf={calendar.colorOf}
+            today={today}
+            todayTone={todayTone}
+            marked={marked}
+            selected={inMonth ? selected : null}
+            onPickDay={onPickDay}
+            register={register}
+          />
         );
       })}
     </div>
   );
 }
+
+const MonthSection = memo(function MonthSection({
+  month,
+  showYear,
+  items,
+  colorOf,
+  today,
+  todayTone,
+  marked,
+  selected,
+  onPickDay,
+  register,
+}: {
+  month: number;
+  showYear: boolean;
+  items: GridItem[];
+  colorOf: (calendarId: string) => string;
+  today: number;
+  todayTone: "red" | "grey";
+  marked?: ReadonlySet<number>;
+  selected: number | null;
+  onPickDay: (day: number) => void;
+  register: (month: number, el: HTMLElement | null) => void;
+}) {
+  const { lang } = useLang();
+  const { year, month: m } = localDate(month, TZ);
+  const layout = useMemo(() => buildMonthLayout(year, m, TZ, LOCALE[lang]), [year, m, lang]);
+  const name = capitalize(
+    new Date(month).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
+  );
+  // Where each week's items sit: the costly part, so only when the items change.
+  const weeks = useMemo(
+    () =>
+      layout.weeks.map((week) => {
+        const days = week.map((d) => d.date.getTime());
+        return { week, days, ...layoutWeek(items, days, addDays(days[6], 1, TZ), LANES) };
+      }),
+    [layout, items],
+  );
+
+  return (
+    <section ref={(el) => register(month, el)}>
+      <h3 className="px-3 pb-1 pt-5 text-[28px] font-bold tracking-tight text-foreground">
+        {showYear ? `${name} ${year}` : name}
+      </h3>
+      {weeks.map(({ week, days, placed, hidden }, w) => {
+        const inMonth = week.map((d) => d.inMonth);
+        const first = inMonth.indexOf(true);
+        const last = inMonth.lastIndexOf(true);
+        return (
+          <div key={w} className="relative border-t border-border/70">
+            <span className="absolute left-1 top-0.5 text-[10px] tabular-nums text-muted-foreground">
+              {layout.weekNumbers[w]}
+            </span>
+            <div className="grid grid-cols-7">
+              {week.map((d, c) => (
+                <span key={d.key} className="flex h-10 items-center justify-center">
+                  {d.inMonth && (
+                    <span
+                      className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-full text-[18px]",
+                        days[c] === selected
+                          ? "bg-primary font-semibold text-primary-foreground"
+                          : days[c] === today
+                            ? todayTone === "red"
+                              ? "bg-red-500 font-semibold text-white"
+                              : "bg-zinc-200 font-semibold text-foreground"
+                            : marked?.has(days[c])
+                              ? "font-bold text-primary"
+                              : c >= 5
+                                ? "text-muted-foreground"
+                                : "text-foreground",
+                      )}
+                    >
+                      {d.dayOfMonth}
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+            <div className="relative" style={{ height: LANES * LANE_PX + MORE_PX }}>
+              {placed.map((p, i) => {
+                // Cut at the month's own days, as Apple leaves the others empty.
+                const from = Math.max(p.from, first);
+                const to = Math.min(p.to, last);
+                if (from > to) return null;
+                const before = p.continuesBefore || from > p.from;
+                const after = p.continuesAfter || to < p.to;
+                const rgb = colorOf(p.item.calendarId);
+                return (
+                  <p
+                    key={i}
+                    className={cn(
+                      "pointer-events-none absolute truncate px-1 text-[11px] font-semibold leading-[16px]",
+                      !before && "rounded-l-[4px]",
+                      !after && "rounded-r-[4px]",
+                      p.item.pencil &&
+                        "border border-dashed border-primary bg-primary/10 text-primary",
+                    )}
+                    style={{
+                      top: p.lane * LANE_PX,
+                      height: LANE_PX - 3,
+                      left: `calc(${(from / 7) * 100}% + ${before ? 0 : 2}px)`,
+                      width: `calc(${((to - from + 1) / 7) * 100}% - ${(before ? 0 : 2) + (after ? 0 : 2)}px)`,
+                      ...(p.item.pencil
+                        ? {}
+                        : { background: `rgb(${tint(rgb)})`, color: `rgb(${shade(rgb)})` }),
+                    }}
+                  >
+                    {p.item.label}
+                  </p>
+                );
+              })}
+              {hidden.map(
+                (n, c) =>
+                  n > 0 &&
+                  inMonth[c] && (
+                    <span
+                      key={c}
+                      className="pointer-events-none absolute bottom-0 text-center text-[10px] text-muted-foreground"
+                      style={{ left: `${(c / 7) * 100}%`, width: `${100 / 7}%` }}
+                    >
+                      +{n}
+                    </span>
+                  ),
+              )}
+            </div>
+            {/* A tap anywhere on a day opens it. */}
+            <div className="absolute inset-0 grid grid-cols-7">
+              {week.map((d, c) =>
+                d.inMonth ? (
+                  <button
+                    key={d.key}
+                    type="button"
+                    onClick={() => onPickDay(days[c])}
+                    aria-label={d.date.toLocaleDateString(LOCALE[lang], {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      timeZone: TZ,
+                    })}
+                  />
+                ) : (
+                  <span key={d.key} />
+                ),
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+});

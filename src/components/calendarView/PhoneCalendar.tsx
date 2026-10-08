@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CalendarPlus, Layers } from "lucide-react";
 
 import { DayRow } from "@/components/calendarView/DayRow";
@@ -37,8 +37,23 @@ export default function PhoneCalendar() {
   const calendarsHome = useCalendarsHome();
   const mine = useMyCalendarDays();
   const { holidaysHidden, setCalendarsVisible, error: visibilityError } = useCalendarVisibility();
-  const [listOpen, setListOpen] = useState(false);
+  // The calendars sheet is in the address (?calendars), so the back arrow
+  // on "Connected calendars" returns to it, not past it to the bare month.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const listOpen = new URLSearchParams(location.search).has("calendars");
+  const openList = () => navigate({ search: "?calendars" }, { state: { fromMonth: true } });
+  const closeList = () => {
+    if ((location.state as { fromMonth?: boolean } | null)?.fromMonth) navigate(-1);
+    else navigate({ search: "" }, { replace: true });
+  };
   const [pickedDay, setPickedDay] = useState<number | null>(null);
+  // What the day sheet shows while it slides away, after pickedDay is cleared.
+  const [sheetDay, setSheetDay] = useState(() => startOfDay(Date.now(), TZ));
+  const pickDay = (day: number) => {
+    setSheetDay(day);
+    setPickedDay(day);
+  };
   // The month opens on today; "I dag" opens it afresh there.
   const [focus, setFocus] = useState(() => startOfDay(Date.now(), TZ));
   const [reopened, setReopened] = useState(0);
@@ -80,7 +95,7 @@ export default function PhoneCalendar() {
     setFocus(startOfDay(Date.now(), TZ));
     setReopened((n) => n + 1);
   };
-  const pickedSegments = pickedDay === null ? [] : calendar.segmentsOn(new Date(pickedDay));
+  const pickedSegments = calendar.segmentsOn(new Date(sheetDay));
 
   return (
     <div className="min-h-screen bg-background">
@@ -95,7 +110,7 @@ export default function PhoneCalendar() {
         <div className="flex items-center justify-between px-4 pb-1">
           <button
             type="button"
-            onClick={() => setListOpen(true)}
+            onClick={openList}
             className="flex items-center gap-1.5 py-1 text-[17px] text-primary"
           >
             <Layers className="h-5 w-5" />
@@ -140,25 +155,28 @@ export default function PhoneCalendar() {
         )}
 
         <div className="min-h-0 flex-1">
-          <MonthView key={reopened} focus={focus} calendar={calendar} onPickDay={setPickedDay} />
+          <MonthView
+            key={reopened}
+            focus={focus}
+            calendar={calendar}
+            selected={pickedDay}
+            todayTone="grey"
+            onPickDay={pickDay}
+          />
         </div>
       </div>
 
       <BottomSheet
         open={pickedDay !== null}
         onClose={() => setPickedDay(null)}
-        title={
-          pickedDay === null
-            ? ""
-            : capitalize(
-                new Date(pickedDay).toLocaleDateString(LOCALE[lang], {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  timeZone: TZ,
-                }),
-              )
-        }
+        title={capitalize(
+          new Date(sheetDay).toLocaleDateString(LOCALE[lang], {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            timeZone: TZ,
+          }),
+        )}
         doneLabel={t.swipe.done}
       >
         {pickedSegments.length === 0 ? (
@@ -179,7 +197,7 @@ export default function PhoneCalendar() {
 
       <BottomSheet
         open={listOpen}
-        onClose={() => setListOpen(false)}
+        onClose={closeList}
         title={words.calendarsButton}
         doneLabel={t.swipe.done}
       >
@@ -193,6 +211,7 @@ export default function PhoneCalendar() {
           />
         </ListGroup>
         <CalendarListPanel
+          introInTip
           calendars={calendars}
           colorOf={calendar.colorOf}
           onSetVisible={setCalendarsVisible}

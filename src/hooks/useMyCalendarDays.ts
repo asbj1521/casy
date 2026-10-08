@@ -102,26 +102,36 @@ export function useMyCalendarDays(): MyCalendarDays {
     [counted, holidays, names, lang],
   );
 
-  return {
-    loading: isPending,
-    none: !!data && data.calendars.length === 0,
-    segmentsOn: useCallback((date: Date) => byDay.get(dayKey(date, TZ)) ?? [], [byDay]),
-    colorOf: useCallback((id: string) => palette.get(id) ?? FALLBACK_RGB, [palette]),
-    labelOf: useCallback(
-      (s: DaySegment) =>
-        s.holiday
-          ? lang === "da"
-            ? s.holiday.name
-            : s.holiday.englishName
-          : s.calendarId === HOLIDAY_CALENDAR_ID
-            ? t.calendarView.holidayCalendar
-            : (names.get(s.calendarId) ?? ""),
-      [lang, names, t],
-    ),
-    items,
-    calendars: data?.calendars ?? NO_CALENDARS,
-    error,
-    retry: () => void refetch(),
-    truncated: !!data?.truncated,
-  };
+  const segmentsOn = useCallback((date: Date) => byDay.get(dayKey(date, TZ)) ?? [], [byDay]);
+  const colorOf = useCallback((id: string) => palette.get(id) ?? FALLBACK_RGB, [palette]);
+  const labelOf = useCallback(
+    (s: DaySegment) =>
+      s.holiday
+        ? lang === "da"
+          ? s.holiday.name
+          : s.holiday.englishName
+        : s.calendarId === HOLIDAY_CALENDAR_ID
+          ? t.calendarView.holidayCalendar
+          : (names.get(s.calendarId) ?? ""),
+    [lang, names, t],
+  );
+  const retry = useCallback(() => void refetch(), [refetch]);
+
+  // One object that changes only when something in it does, so a screen
+  // drawing a lot from it (the month view) isn't redrawn by every render.
+  return useMemo(
+    () => ({
+      loading: isPending,
+      none: !!data && data.calendars.length === 0,
+      segmentsOn,
+      colorOf,
+      labelOf,
+      items,
+      calendars: data?.calendars ?? NO_CALENDARS,
+      error,
+      retry,
+      truncated: !!data?.truncated,
+    }),
+    [isPending, data, segmentsOn, colorOf, labelOf, items, error, retry],
+  );
 }
