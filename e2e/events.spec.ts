@@ -19,10 +19,9 @@ test("accepting a date moves the event on to waiting for others", async ({
   isMobile,
 }) => {
   await page.goto(isMobile ? "/events" : "/events/ev-dinner");
-  const card = isMobile
-    ? page.locator("article, li, div").filter({ hasText: "Middag hos Sara" }).last()
-    : page;
-  await card.getByRole("button", { name: "Accepter" }).first().click();
+  // A phone's row opens first (#103).
+  if (isMobile) await page.getByRole("button", { name: /Middag hos Sara/ }).click();
+  await page.getByRole("button", { name: "Accepter" }).first().click();
 
   await expect.poll(() => backend.calls.some((c) => c.body.action === "respond")).toBe(true);
   expect(backend.calls.find((c) => c.body.action === "respond")?.body).toMatchObject({
@@ -91,7 +90,8 @@ test("a computer answers a vote's dates with the arrow keys", async ({
 test("a phone swipes through a vote's dates", async ({ page, backend, isMobile }) => {
   test.skip(!isMobile, "phones only");
   await page.goto("/events");
-  await page.getByRole("link", { name: "Svar på datoerne" }).click();
+  // The vote's row goes straight to swiping (#103).
+  await page.getByRole("link", { name: /Brætspilsaften/ }).click();
   await expect(page).toHaveURL(/\/events\/ev-boardgames\/dates$/);
 
   const answers = () => backend.calls.filter((c) => c.body.action === "answer");
@@ -142,5 +142,34 @@ test("everyone sees an event's place and note; only the suggester edits them", a
     proposalId: "ev-party",
     place: "Fermentoren",
     note: "Bord til 4 er bestilt",
+  });
+});
+
+test.describe("a phone's list of events (#103)", () => {
+  test.beforeEach(({ isMobile }) => test.skip(!isMobile, "phones only"));
+
+  test("rows open one at a time, and nobody chooses for the group while it votes", async ({
+    page,
+  }) => {
+    await page.goto("/events");
+    const cinema = page.getByRole("button", { name: /Biograf/ });
+    await expect(cinema).toHaveAttribute("aria-expanded", "false");
+    await cinema.click();
+    await expect(cinema).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("link", { name: "Ret dine svar" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Vælg" })).toHaveCount(0);
+
+    // Opening another closes the first.
+    await page.getByRole("button", { name: /Julefrokost/ }).click();
+    await expect(cinema).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("newest first, with what is over greyed at the bottom", async ({ page }) => {
+    await page.goto("/events");
+    const rows = page.locator("main li");
+    // Biograf was suggested most recently; Hyttetur, with no date left, is over.
+    await expect(rows.first()).toContainText("Biograf");
+    await expect(rows.last()).toContainText("Hyttetur");
+    await expect(page.getByText("Aflyst", { exact: true })).toHaveCount(0);
   });
 });

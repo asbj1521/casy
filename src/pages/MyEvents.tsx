@@ -1,33 +1,28 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck, CalendarX, Loader2, Sparkles } from "lucide-react";
+import { CalendarCheck, Loader2, Sparkles } from "lucide-react";
 
 import { eventsQuery, type SuggestedEvent } from "@/api/events";
 import EventDetails from "@/components/myEvents/EventDetails";
 import EventList from "@/components/myEvents/EventList";
-import NeedsAnswerCard from "@/components/myEvents/NeedsAnswerCard";
-import ScheduledCard from "@/components/myEvents/ScheduledCard";
-import VoteCard from "@/components/myEvents/VoteCard";
-import WaitingCard from "@/components/myEvents/WaitingCard";
+import EventRows from "@/components/myEvents/phone/EventRows";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useGroupRefresh } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
-import { eventTitle } from "@/i18n/eventTitle";
-import { useLang, useT } from "@/i18n/lang";
-import { formatEventDate } from "@/lib/format";
-import { eventsInOrder, sectionEvents } from "@/lib/myEvents";
-import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/lang";
+import { eventsInOrder, phoneEventList, sectionEvents } from "@/lib/myEvents";
 
 /**
  * My events: every date suggested to your groups, sorted by what it needs
  * from you (lib/myEvents.ts): dates to answer first, then the dates waiting
  * on others, the ones everyone accepted, and the past. A phone shows them as
- * cards, section by section; a computer as a list beside the open event
- * (/events/:eventId, else the first), like My groups.
+ * one list of rows, newest first, each opening in place (#103); a computer
+ * as a list beside the open event (/events/:eventId, else the first), like
+ * My groups.
  */
 export default function MyEvents() {
   const userId = useSignedInUser().id;
@@ -63,7 +58,8 @@ export default function MyEvents() {
       <TopNav />
       <main className="px-4 pb-16 pt-2 sm:px-6 sm:pt-0 lg:px-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.events.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t.events.intro}</p>
+        {/* A computer's list explains itself; a phone's rows say it all (#103). */}
+        {!phone && <p className="mt-1 text-sm text-muted-foreground">{t.events.intro}</p>}
         <DanishTimeNote className="mt-1" />
 
         {isPending ? (
@@ -76,7 +72,7 @@ export default function MyEvents() {
             {t.events.loadFailed}
           </Notice>
         ) : phone ? (
-          <EventSections events={events} />
+          <EventRowsPage events={events} />
         ) : (
           <EventPanes events={events} selectedId={eventId} />
         )}
@@ -133,89 +129,13 @@ function EventPanes({
   );
 }
 
-/** A phone's My events: each section's events as cards. */
-function EventSections({ events }: { events: SuggestedEvent[] }) {
+/**
+ * A phone's My events (#103): one list of compact rows, newest first, past
+ * events greyed out at the bottom until they drop off (phoneEventList).
+ */
+function EventRowsPage({ events }: { events: SuggestedEvent[] }) {
   const t = useT();
-  const { lang } = useLang();
-  const sections = sectionEvents(events);
-
-  if (Object.values(sections).every((list) => list.length === 0)) return <NoEvents />;
-
-  return (
-    <>
-      {/* Votes to swipe (#74) first: answering them is the most to do. */}
-      <Section
-        title={t.events.needsAnswer}
-        count={sections.toSwipe.length + sections.needsAnswer.length}
-      >
-        {[
-          ...sections.toSwipe.map((event) => <VoteCard key={event.id} event={event} />),
-          ...sections.needsAnswer.map((event) => <NeedsAnswerCard key={event.id} event={event} />),
-        ]}
-      </Section>
-
-      <Section title={t.events.waitingForOthers}>
-        {[
-          ...sections.voting.map((event) => <VoteCard key={event.id} event={event} />),
-          ...sections.waiting.map((event) => <WaitingCard key={event.id} event={event} />),
-        ]}
-      </Section>
-
-      {/* Two halves need the width: at most two cards side by side. */}
-      <Section title={t.events.scheduled} listClassName="xl:grid-cols-2">
-        {sections.scheduled.map((event) => (
-          <ScheduledCard key={event.id} event={event} />
-        ))}
-      </Section>
-
-      <Section title={t.events.pastClosed} listClassName="gap-2 md:grid-cols-2 2xl:grid-cols-3">
-        {sections.closed.map((event) => (
-          <li key={event.id} className="flex items-start gap-3 rounded-2xl border bg-card p-4">
-            <CalendarX className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <div className="min-w-0 text-sm">
-              <p className="font-medium text-foreground">
-                {event.group.name} · {eventTitle(event.title, t)}
-              </p>
-              <p className="text-muted-foreground">
-                {event.status === "no_date" || !event.currentDate
-                  ? t.events.noDate
-                  : (event.status === "scheduled" ? t.events.happened : t.events.passed)(
-                      formatEventDate(event.settings.kind, event.currentDate, lang),
-                    )}
-              </p>
-            </div>
-          </li>
-        ))}
-      </Section>
-    </>
-  );
-}
-
-/** One heading and its cards; nothing at all when it has none. */
-function Section({
-  title,
-  count,
-  listClassName = "md:grid-cols-2 2xl:grid-cols-3",
-  children,
-}: {
-  title: string;
-  /** A badge beside the title, for what needs doing. */
-  count?: number;
-  listClassName?: string;
-  children: ReactNode[];
-}) {
-  if (children.length === 0) return null;
-  return (
-    <section className="mt-8">
-      <h2 className="text-lg font-semibold text-foreground">
-        {title}
-        {count !== undefined && (
-          <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-            {count}
-          </span>
-        )}
-      </h2>
-      <ul className={cn("mt-3 grid gap-3", listClassName)}>{children}</ul>
-    </section>
-  );
+  const { live, past } = phoneEventList(events);
+  if (live.length === 0 && past.length === 0) return <NoEvents />;
+  return <EventRows live={live} past={past} pastTitle={t.events.pastClosed} />;
 }

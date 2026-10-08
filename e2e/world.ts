@@ -518,7 +518,8 @@ function events(): SuggestedEvent[] {
       mode: "single",
       createdBy: { id: PEOPLE.oliver.id, name: "Oliver", isYou: false },
       createdAt: "2026-09-15T08:00:00.000Z",
-      updatedAt: "2026-09-20T08:00:00.000Z",
+      // Within the week a phone keeps past events on its list (#103).
+      updatedAt: "2026-10-04T08:00:00.000Z",
       currentDate: null,
       invitees: running.map((p) => invitee(p, null)),
     },

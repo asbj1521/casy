@@ -724,6 +724,11 @@ export const da = {
     bestPick: "Passer flest",
     choose: "Vælg",
     chooseEarly: "Du kan vælge en dato nu eller vente, til alle har svaret.",
+    // A phone's list of events (#103): one line under each event's name.
+    answeredOf: (n: number, total: number) => `${n} af ${total} har svaret`,
+    canOnDate: (n: number) => `${n} kan`,
+    cantOnDate: (n: number) => `${n} kan ikke`,
+    answerNow: "Svar",
   },
   /** Swiping through a vote's dates (#74). */
   swipe: {

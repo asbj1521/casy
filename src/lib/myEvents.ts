@@ -103,3 +103,41 @@ export function eventsInOrder(sections: EventSections): StagedEvent[] {
 export function waitingOn(event: SuggestedEvent): string[] {
   return event.invitees.filter((i) => !i.isYou && i.response === null).map((i) => i.name);
 }
+
+/**
+ * How long a past event stays at the bottom of a phone's list, greyed out,
+ * before it drops off (#103). Only the list: the event itself is kept as the
+ * privacy policy says (cleanup_old_data).
+ */
+export const PAST_KEPT_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * When an event became past: its date (or a vote's last date) ended, or,
+ * with no date left, when that was settled.
+ */
+function endedAt(e: SuggestedEvent): number {
+  if (e.status !== "no_date") {
+    if (e.currentDate) return Date.parse(e.currentDate.end);
+    if (e.candidates.length > 0) return Math.max(...e.candidates.map((c) => Date.parse(c.end)));
+  }
+  return Date.parse(e.updatedAt);
+}
+
+/**
+ * A phone's My events as one list (#103): everything still to come, newest
+ * suggestion first, then what is over, most recent first, for PAST_KEPT_MS
+ * after it ended. Each keeps its stage, which says how it is drawn.
+ */
+export function phoneEventList(
+  events: SuggestedEvent[],
+  now = Date.now(),
+): { live: StagedEvent[]; past: StagedEvent[] } {
+  const staged = eventsInOrder(sectionEvents(events, now));
+  const live = staged
+    .filter((s) => s.stage !== "closed")
+    .sort((a, b) => Date.parse(b.event.createdAt) - Date.parse(a.event.createdAt));
+  const past = staged
+    .filter((s) => s.stage === "closed" && now - endedAt(s.event) < PAST_KEPT_MS)
+    .sort((a, b) => endedAt(b.event) - endedAt(a.event));
+  return { live, past };
+}

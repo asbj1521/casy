@@ -692,6 +692,10 @@ export const en: Messages = {
     bestPick: "Suits the most",
     choose: "Choose",
     chooseEarly: "You can choose a date now, or wait until everyone has answered.",
+    answeredOf: (n: number, total: number) => `${n} of ${total} have answered`,
+    canOnDate: (n: number) => `${n} can`,
+    cantOnDate: (n: number) => `${n} can't`,
+    answerNow: "Answer",
   },
   swipe: {
     yourCalendar: "Your calendar",

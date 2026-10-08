@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { SuggestedEvent } from "@/api/events";
-import { eventsInOrder, sectionEvents, waitingOn } from "@/lib/myEvents";
+import { eventsInOrder, phoneEventList, sectionEvents, waitingOn } from "@/lib/myEvents";
 
 const NOW = Date.parse("2026-09-22T12:00:00.000Z");
 
@@ -161,5 +161,49 @@ describe("eventsInOrder", () => {
 
   it("is empty when there is nothing to show", () => {
     expect(eventsInOrder(sectionEvents([], NOW))).toEqual([]);
+  });
+});
+
+describe("phoneEventList", () => {
+  const day = 24 * 60 * 60 * 1000;
+  const at = (ms: number) => new Date(ms).toISOString();
+
+  it("lists what is to come newest first, whatever its stage", () => {
+    const old = event({ id: "old", createdAt: "2026-09-10T10:00:00.000Z" });
+    const agreed = event({
+      id: "agreed",
+      status: "scheduled",
+      createdAt: "2026-09-15T10:00:00.000Z",
+    });
+    const fresh = event({ id: "fresh", createdAt: "2026-09-21T10:00:00.000Z" });
+    const { live } = phoneEventList([old, agreed, fresh], NOW);
+    expect(live.map((s) => s.event.id)).toEqual(["fresh", "agreed", "old"]);
+    expect(live.map((s) => s.stage)).toEqual(["needsAnswer", "scheduled", "needsAnswer"]);
+  });
+
+  it("keeps a past event at the bottom for a week after it ended, then drops it", () => {
+    const ended = (id: string, daysAgo: number) =>
+      event({
+        id,
+        status: "scheduled",
+        currentDate: {
+          id: `d-${id}`,
+          start: at(NOW - daysAgo * day - 3_600_000),
+          end: at(NOW - daysAgo * day),
+        },
+      });
+    const { live, past } = phoneEventList(
+      [ended("week", 8), ended("two", 2), ended("one", 1)],
+      NOW,
+    );
+    expect(live).toEqual([]);
+    expect(past.map((s) => s.event.id)).toEqual(["one", "two"]);
+  });
+
+  it("counts an event with no date left from when that was settled", () => {
+    const noDate = (id: string, daysAgo: number) =>
+      event({ id, status: "no_date", currentDate: null, updatedAt: at(NOW - daysAgo * day) });
+    const { past } = phoneEventList([noDate("recent", 3), noDate("old", 10)], NOW);
+    expect(past.map((s) => s.event.id)).toEqual(["recent"]);
   });
 });
