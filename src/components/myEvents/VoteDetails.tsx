@@ -16,17 +16,15 @@ import PlaceNote from "@/components/myEvents/PlaceNote";
  * A vote opened beside the list on a computer's My events (#74): the same
  * cards as a phone's swipe screen while you have dates to answer, beside
  * your calendar and answered with buttons and the arrow keys, filling the
- * window so it all fits on one screen; then how the dates stand, where the
- * suggester can settle it. "Change your answers" brings the cards back.
+ * window so it all fits on one screen; then how the dates stand, each with
+ * your answer as a tick and a cross to change right there (#103), and where
+ * the suggester settles it only if no date can win.
  */
 export default function VoteDetails({ event }: { event: VoteEvent }) {
   const t = useT();
   const { lang } = useLang();
   const [exiting, setExiting] = useState(false);
   const stage = voteStage(event);
-  // Back to the cards to change answers, after answering them all.
-  const [deck, setDeck] = useState(stage === "answer");
-  const showDeck = deck || stage === "answer";
   const missing = stillToAnswer(event);
   // Everyone has answered: the decided date shows as soon as it exists.
   useDecidingRefresh(event);
@@ -56,15 +54,6 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
             : t.events.suggestedBy(event.createdBy.name)}
         </p>
         <span className="ml-auto flex items-center gap-4">
-          {stage !== "answer" && (
-            <button
-              type="button"
-              onClick={() => setDeck(!showDeck)}
-              className={cn(link, "text-primary hover:opacity-80")}
-            >
-              {showDeck ? t.events.seeTallies : t.events.changeAnswers}
-            </button>
-          )}
           <button
             type="button"
             onClick={() => setExiting(true)}
@@ -78,7 +67,7 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
       {exiting && <ExitConfirm event={event} onCancel={() => setExiting(false)} className="mt-3" />}
       <PlaceNote event={event} row className="mt-2" />
 
-      {showDeck ? (
+      {stage === "answer" ? (
         <DeckBox event={event} />
       ) : (
         <div className="mt-4 max-w-xl pb-2">

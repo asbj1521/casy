@@ -3,18 +3,20 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, CalendarX, Check, Clock, LogOut, Meh, Users, X } from "lucide-react";
 
-import type { EventInvitee } from "@/api/events";
+import { answerDate, type EventInvitee } from "@/api/events";
 import { groupsQuery } from "@/api/groups";
 import AddToCalendar from "@/components/AddToCalendar";
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
 import DateConflicts from "@/components/myEvents/DateConflicts";
 import { EdgeWarnings, ExitConfirm, Origin } from "@/components/myEvents/parts";
-import DeckBox from "@/components/myEvents/DeckBox";
 import VoteDetails from "@/components/myEvents/VoteDetails";
 import YourTime from "@/components/time/YourTime";
 import Avatar from "@/components/ui/Avatar";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
+import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { useEventChange } from "@/hooks/useEventChange";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate, formatHeadline, nameList } from "@/lib/format";
@@ -54,9 +56,14 @@ function DatedDetails({
   const { lang } = useLang();
   const userId = useSignedInUser().id;
   const [exiting, setExiting] = useState(false);
-  // A decided vote's cards, opened again to change an answer (#74).
-  const [changing, setChanging] = useState(false);
   const { stage, event } = staged;
+  // An agreed vote: "can't after all" declines its date, which moves it for
+  // everyone, so it is asked first, as on a phone (#103).
+  const [backingOut, setBackingOut] = useState(false);
+  const backOut = useEventChange(() =>
+    // Only offered with a current date (below).
+    answerDate(event.id, event.currentDate?.id ?? "", "declined"),
+  );
   const { data: groups } = useQuery(groupsQuery(userId));
   // A link to the group while you're still in it.
   const inGroup = groups?.some((g) => g.id === event.group.id) ?? false;
@@ -137,16 +144,34 @@ function DatedDetails({
           <div className="mt-2">
             <AddToCalendar event={event} />
           </div>
-          {isVote(event) && (
-            <button
-              type="button"
-              onClick={() => setChanging((c) => !c)}
-              className="mt-3 text-sm font-medium text-primary transition hover:opacity-80"
-            >
-              {changing ? t.swipe.done : t.events.changeAnswers}
-            </button>
+          {isVote(event) &&
+            event.currentDate &&
+            (backingOut ? (
+              <ConfirmPanel
+                className="mt-3"
+                message={t.swipe.moveConfirm}
+                confirmLabel={t.swipe.moveYes}
+                cancelLabel={t.swipe.moveKeep}
+                busy={backOut.isPending}
+                onConfirm={() =>
+                  backOut.mutate(undefined, { onSettled: () => setBackingOut(false) })
+                }
+                onCancel={() => setBackingOut(false)}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setBackingOut(true)}
+                className="mt-3 text-sm font-medium text-primary transition hover:opacity-80"
+              >
+                {t.events.cantAfterAll}
+              </button>
+            ))}
+          {backOut.error && (
+            <Notice tone="error" bare className="mt-2">
+              {backOut.error.message}
+            </Notice>
           )}
-          {changing && isVote(event) && <DeckBox event={event} />}
         </div>
       )}
       {stage === "closed" && (

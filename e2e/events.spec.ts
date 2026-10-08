@@ -53,17 +53,67 @@ test("an event that isn't there goes back to the list", async ({ page, isMobile 
   await expect(page.getByRole("heading", { name: "Mine aftaler" })).toBeVisible();
 });
 
-test("the suggester can choose a vote's date", async ({ page, backend, isMobile }) => {
-  test.skip(isMobile, "choosing on a phone is the same buttons on the card");
-  await page.goto("/events/ev-cinema");
-  await page.getByRole("button", { name: "Vælg" }).first().click();
+test.describe("a computer's open vote (#103)", () => {
+  test.beforeEach(({ isMobile }) => test.skip(isMobile, "computers only"));
+
+  test("your answers are a tick and a cross, and nobody chooses while it votes", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/events/ev-cinema");
+    await expect(page.getByRole("button", { name: /^Jeg kan ikke: / })).toHaveCount(2);
+    await expect(page.getByRole("button", { name: "Vælg" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Ret dine svar" })).toHaveCount(0);
+
+    const cross = page.getByRole("button", { name: /^Jeg kan ikke: fre\. 23\./ });
+    await cross.click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "answer")?.body)
+      .toMatchObject({ proposalId: "ev-cinema", dateId: "d-cin-2", response: "declined" });
+    await expect(cross).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("the suggester chooses only when no date can win", async ({ page, backend }) => {
+    // Everyone has answered, and both dates have a "can't".
+    const cinema = backend.world.events.find((e) => e.id === "ev-cinema")!;
+    const [first, second] = cinema.candidates;
+    first.answers = { ...first.answers, [cinema.invitees[2].profileId]: "declined" };
+    second.answers = {
+      ...second.answers,
+      [cinema.invitees[1].profileId]: "declined",
+      [cinema.invitees[2].profileId]: "accepted",
+    };
+
+    await page.goto("/events/ev-cinema");
+    await page.getByRole("button", { name: "Vælg" }).first().click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "choose")?.body)
+      .toMatchObject({ proposalId: "ev-cinema", dateId: "d-cin-1" });
+    await expect(page.getByText("Planlagt").first()).toBeVisible();
+  });
+});
+
+test("an agreed vote's \"can't after all\" is asked first, then moves the date", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  test.skip(isMobile, "the phone's is in the screenshots");
+  // Julefrokost, agreed, as a vote that was decided on its date.
+  const party = backend.world.events.find((e) => e.id === "ev-party")!;
+  const date = party.currentDate!;
+  Object.assign(party, {
+    mode: "vote",
+    candidates: [{ ...date, answers: {}, chosenAt: party.updatedAt }],
+  });
+
+  await page.goto("/events/ev-party");
+  await page.getByRole("button", { name: "Kan ikke alligevel" }).click();
+  expect(backend.calls.some((c) => c.body.action === "answer")).toBe(false);
+  await page.getByRole("button", { name: "Jeg kan ikke, find en ny" }).click();
   await expect
-    .poll(() => backend.calls.find((c) => c.body.action === "choose")?.body)
-    .toMatchObject({
-      proposalId: "ev-cinema",
-      dateId: "d-cin-1",
-    });
-  await expect(page.getByText("Planlagt").first()).toBeVisible();
+    .poll(() => backend.calls.find((c) => c.body.action === "answer")?.body)
+    .toMatchObject({ proposalId: "ev-party", dateId: date.id, response: "declined" });
 });
 
 test("a computer answers a vote's dates with the arrow keys", async ({

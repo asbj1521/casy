@@ -718,12 +718,9 @@ export const da = {
     dateCount: (n: number) => (n === 1 ? "1 dato" : `${n} datoer`),
     answerDates: "Svar på datoerne",
     continueAnswering: (done: number, total: number) => `Fortsæt (${done} af ${total} besvaret)`,
-    changeAnswers: "Ret dine svar",
-    seeTallies: "Se, hvordan datoerne står",
     ahead: "Bedst lige nu",
     bestPick: "Passer flest",
     choose: "Vælg",
-    chooseEarly: "Du kan vælge en dato nu eller vente, til alle har svaret.",
     // A phone's list of events (#103): one line under each event's name.
     answeredOf: (n: number, total: number) => `${n} af ${total} har svaret`,
     canOnDate: (n: number) => `${n} kan`,
