@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CalendarPlus, Layers } from "lucide-react";
 
@@ -11,12 +11,10 @@ import MonthView from "@/components/swipe/MonthView";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
-import { useCalendarVisibility } from "@/hooks/useCalendarVisibility";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
-import { useMyCalendarDays } from "@/hooks/useMyCalendarDays";
+import { useMyCalendarView } from "@/hooks/useMyCalendarView";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { HOLIDAY_CALENDAR, HOLIDAY_CALENDAR_ID, holidaysInYearAhead } from "@/lib/calendarOverview";
 import { capitalize } from "@/lib/format";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
@@ -36,8 +34,14 @@ export default function PhoneCalendar() {
   const { lang } = useLang();
   const words = t.calendarView;
   const calendarsHome = useCalendarsHome();
-  const mine = useMyCalendarDays();
-  const { holidaysHidden, setCalendarsVisible, error: visibilityError } = useCalendarVisibility();
+  const {
+    calendar,
+    calendars,
+    calendarById,
+    connectedCount,
+    setCalendarsVisible,
+    visibilityError,
+  } = useMyCalendarView();
   // The calendars sheet is in the address (?calendars), so the back arrow
   // on "Connected calendars" returns to it, not past it to the bare month.
   const location = useLocation();
@@ -85,35 +89,6 @@ export default function PhoneCalendar() {
   const [focus, setFocus] = useState(() => startOfDay(Date.now(), TZ));
   const [reopened, setReopened] = useState(0);
 
-  // The holiday calendar's tick only hides it here, as on a computer.
-  const calendar = useMemo(
-    () => ({
-      ...mine,
-      items: holidaysHidden
-        ? mine.items.filter((i) => i.calendarId !== HOLIDAY_CALENDAR_ID)
-        : mine.items,
-      segmentsOn: (date: Date) =>
-        mine
-          .segmentsOn(date)
-          .filter((s) => !(holidaysHidden && s.calendarId === HOLIDAY_CALENDAR_ID)),
-    }),
-    [mine, holidaysHidden],
-  );
-  const holidayCount = useMemo(() => holidaysInYearAhead(TZ), []);
-  const calendars = useMemo(
-    () => [
-      {
-        ...HOLIDAY_CALENDAR,
-        name: words.holidayCalendar,
-        total: holidayCount,
-        included: !holidaysHidden,
-      },
-      ...mine.calendars,
-    ],
-    [mine.calendars, words.holidayCalendar, holidayCount, holidaysHidden],
-  );
-  const calendarById = useMemo(() => new Map(calendars.map((c) => [c.id, c])), [calendars]);
-
   // The month takes whatever the screen has left under the toolbar.
   const box = useRef<HTMLDivElement>(null);
   const height = useFillViewport(box);
@@ -149,13 +124,13 @@ export default function PhoneCalendar() {
         </div>
         <DanishTimeNote className="px-4 pb-1" />
 
-        {mine.error && (
+        {calendar.error && (
           <Notice tone="error" className="mx-4 mb-2">
             <div className="flex items-start justify-between gap-2">
-              {mine.error.message}
+              {calendar.error.message}
               <button
                 type="button"
-                onClick={mine.retry}
+                onClick={calendar.retry}
                 className="shrink-0 font-medium underline underline-offset-2"
               >
                 {words.tryAgain}
@@ -163,12 +138,12 @@ export default function PhoneCalendar() {
             </div>
           </Notice>
         )}
-        {mine.truncated && (
+        {calendar.truncated && (
           <Notice tone="warning" className="mx-4 mb-2">
             {words.truncated}
           </Notice>
         )}
-        {mine.none && (
+        {calendar.none && (
           <Notice tone="info" className="mx-4 mb-2">
             {words.noCalendars(
               <Link
@@ -235,7 +210,7 @@ export default function PhoneCalendar() {
             icon={CalendarPlus}
             label={t.calendarAccounts.row}
             detail={t.calendarAccounts.rowDetail}
-            value={mine.loading ? null : mine.calendars.length}
+            value={calendar.loading ? null : connectedCount}
           />
         </ListGroup>
         <CalendarListPanel
