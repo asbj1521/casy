@@ -147,7 +147,7 @@ export const da = {
       any: "når som helst",
       one: (month: string) => `i ${month}`,
       range: (from: string, to: string) => `${from} til ${to}`,
-      hint: "Tryk på en måned, og på en senere for en periode.",
+      hint: "Tryk på de måneder, det kan være i. Tryk på en af de yderste igen for at fjerne den.",
       anyButton: "Når som helst",
       done: "Færdig",
     },

@@ -155,6 +155,32 @@ export function randomDefaultSettings(random: () => number = Math.random): Sched
 }
 
 /**
+ * The period after a tap on `month` (the local midnight of its 1st) in the
+ * month picker: an unpicked month stretches the period to reach it, earlier
+ * or later; a tap on either end takes that month off (the only month, and
+ * the period is gone: any time); a tap on a month inside starts over with
+ * just that one, since the period can't have a gap.
+ */
+export function pickPeriodMonth(
+  period: Period | null,
+  month: string,
+  timeZone: string,
+): Period | null {
+  if (!period) return { from: month, to: month };
+  const m = Date.parse(month);
+  const from = Date.parse(period.from);
+  const to = Date.parse(period.to);
+  const shift = (iso: string, by: number) =>
+    new Date(startOfMonth(Date.parse(iso), timeZone, by)).toISOString();
+  if (m < from) return { from: month, to: period.to };
+  if (m > to) return { from: period.from, to: month };
+  if (m === from && m === to) return null;
+  if (m === from) return { from: shift(period.from, 1), to: period.to };
+  if (m === to) return { from: period.from, to: shift(period.to, -1) };
+  return { from: month, to: month };
+}
+
+/**
  * The stretch a search covers for `period`: from today or the period's first
  * month, whichever is later, to the end of its last month, never beyond
  * `limit` (the year every search covers, SEARCH_WINDOW).

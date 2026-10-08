@@ -464,6 +464,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
         className="block"
         triggerClassName={trigger}
         suffix={chevron}
+        sheet={{ title: t.scheduler.when }}
       />
     </Field>
   );
@@ -524,7 +525,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
                 className="block min-w-0"
                 suffix={chevron}
                 triggerClassName={trigger}
-                menuWidth="w-40"
+                sheet={{ title: t.scheduler.startsAt, doneLabel: t.schedulerFlow.done }}
               />
             </Field>
             <Field label={t.scheduler.duration}>

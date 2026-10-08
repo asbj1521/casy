@@ -402,6 +402,7 @@ function Summary({
             onChange={(dateCount) => onExtras({ dateCount })}
             suffix={chevron}
             triggerClassName={ROW_PICK}
+            sheet={{ title: words.dates, doneLabel: t.schedulerFlow.done }}
           />
         </FieldRow>
         <FieldRow icon={Hourglass} label={words.deadline} labelled={false}>
@@ -411,6 +412,7 @@ function Summary({
             onChange={(answerDays) => onExtras({ answerDays })}
             suffix={chevron}
             triggerClassName={ROW_PICK}
+            sheet={{ title: words.deadline, doneLabel: t.schedulerFlow.done }}
           />
         </FieldRow>
       </ListGroup>

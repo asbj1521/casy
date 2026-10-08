@@ -243,8 +243,28 @@ test.describe("on a phone (#101)", () => {
     expect(dates.map((d) => d.start)).not.toContain(cph("2026-10-07", "19:00"));
     expect(dates[0].answer).toBe("maybe");
     expect(dates.slice(1).every((d) => d.answer === "accepted")).toBe(true);
-    // Already answered: the vote's screen says so, with nothing left to swipe.
-    await expect(page.getByText("Tak, du har svaret").first()).toBeVisible();
+    // Already answered: on to My events, not to swiping the same dates again.
+    await expect(page).toHaveURL(/\/events$/);
+  });
+
+  test("Hvornår opens a sheet of months, and a tap stretches or trims the period", async ({
+    page,
+  }) => {
+    await page.goto("/?step=what");
+    await page.getByRole("button", { name: "Når som helst" }).click();
+    const sheet = page.getByRole("dialog", { name: "Hvornår" });
+    await expect(sheet).toBeVisible();
+    const month = (name: RegExp) => sheet.getByRole("button", { name });
+    await month(/^dec/i).click();
+    // An earlier month stretches the period back to it, November included.
+    await month(/^okt/i).click();
+    await expect(month(/^nov/i)).toHaveAttribute("aria-pressed", "true");
+    // A tap on an end takes it off again.
+    await month(/^dec/i).click();
+    await expect(month(/^dec/i)).toHaveAttribute("aria-pressed", "false");
+    await sheet.getByRole("button", { name: "Færdig" }).click();
+    await expect(sheet).toBeHidden();
+    await expect(page.getByRole("button", { name: /^Okt\. til nov\./ })).toBeVisible();
   });
 
   test("the live answer opens the dates", async ({ page }) => {

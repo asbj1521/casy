@@ -11,6 +11,7 @@ import {
   NO_PEOPLE_CHOICE,
   peopleFromChoice,
   periodWindow,
+  pickPeriodMonth,
   randomDefaultSettings,
   reviewAnswer,
   settingsToSearch,
@@ -259,6 +260,34 @@ describe("answerKey", () => {
   it("calls no date the same whether nothing was found or nothing searched", () => {
     expect(answerKey(null)).toBe("none");
     expect(answerKey({ slot: null, conflicts: [] })).toBe("none");
+  });
+});
+
+describe("pickPeriodMonth", () => {
+  const TZ = "Europe/Copenhagen";
+  // The 1st of each month, Danish midnight.
+  const OCT = "2026-09-30T22:00:00.000Z";
+  const NOV = "2026-10-31T23:00:00.000Z";
+  const DEC = "2026-11-30T23:00:00.000Z";
+  const JAN = "2026-12-31T23:00:00.000Z";
+
+  it("picks a first month", () => {
+    expect(pickPeriodMonth(null, DEC, TZ)).toEqual({ from: DEC, to: DEC });
+  });
+
+  it("stretches to an earlier or a later month, the ones between included", () => {
+    expect(pickPeriodMonth({ from: DEC, to: DEC }, OCT, TZ)).toEqual({ from: OCT, to: DEC });
+    expect(pickPeriodMonth({ from: OCT, to: NOV }, JAN, TZ)).toEqual({ from: OCT, to: JAN });
+  });
+
+  it("takes an end month off, and the last one leaves any time", () => {
+    expect(pickPeriodMonth({ from: OCT, to: DEC }, DEC, TZ)).toEqual({ from: OCT, to: NOV });
+    expect(pickPeriodMonth({ from: OCT, to: DEC }, OCT, TZ)).toEqual({ from: NOV, to: DEC });
+    expect(pickPeriodMonth({ from: DEC, to: DEC }, DEC, TZ)).toBeNull();
+  });
+
+  it("starts over from a month in the middle", () => {
+    expect(pickPeriodMonth({ from: OCT, to: JAN }, NOV, TZ)).toEqual({ from: NOV, to: NOV });
   });
 });
 

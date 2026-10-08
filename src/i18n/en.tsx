@@ -135,7 +135,7 @@ export const en: Messages = {
       any: "any time",
       one: (month: string) => `in ${month}`,
       range: (from: string, to: string) => `${from} to ${to}`,
-      hint: "Tap a month, and a later one for a period.",
+      hint: "Tap the months it could be in. Tap one at either end again to take it off.",
       anyButton: "Any time",
       done: "Done",
     },

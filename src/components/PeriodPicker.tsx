@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
 
 import Popover from "@/components/Popover";
+import BottomSheet from "@/components/ui/BottomSheet";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
-import type { Period } from "@/lib/scheduler";
+import { pickPeriodMonth, type Period } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE, localDate, startOfMonth } from "@/lib/zone";
 
@@ -22,9 +23,11 @@ function monthName(iso: string, locale: string, month: "long" | "short"): string
 /**
  * When the event should happen (#74): any time, one month ("i december"), or
  * a run of months ("nov. til jan."). A chip that opens the twelve months
- * searched: a tap picks a month, a tap on a later one stretches it into a
- * period, and the next tap starts again. Shared by the scheduling page's
- * wide bar and its phone sentence, which style the chip their own way.
+ * searched: a tap picks a month, a tap on another stretches the period to
+ * reach it, and a tap on either end takes that month off again
+ * (pickPeriodMonth). Shared by the scheduling page's wide bar, its tablet
+ * sentence and the phone's flow, which style the chip their own way; the
+ * flow opens the months in a sheet from the bottom (`sheet`, #101).
  */
 export default function PeriodPicker({
   value,
@@ -33,7 +36,10 @@ export default function PeriodPicker({
   suffix,
   capitalized = false,
   className = "inline-block",
+  sheet,
 }: {
+  /** Open in a bottom sheet with this title, rather than a menu under the chip. */
+  sheet?: { title: string };
   /** The wrapper's layout: inline by default, `block` to fill a row. */
   className?: string;
   value: Period | null;
@@ -55,6 +61,26 @@ export default function PeriodPicker({
           monthName(value.to, locale, "short"),
         );
   const label = capitalized ? capitalize(text) : text;
+  const [open, setOpen] = useState(false);
+
+  if (sheet) {
+    return (
+      <div className={className}>
+        <button type="button" onClick={() => setOpen(true)} className={triggerClassName}>
+          {label}
+          {suffix}
+        </button>
+        <BottomSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          title={sheet.title}
+          doneLabel={t.scheduler.period.done}
+        >
+          <MonthGrid value={value} onChange={onChange} />
+        </BottomSheet>
+      </div>
+    );
+  }
 
   return (
     <Popover
@@ -80,23 +106,13 @@ function MonthGrid({
 }: {
   value: Period | null;
   onChange: (period: Period | null) => void;
-  onDone: () => void;
+  /** Its own Done button; a sheet has one in its title row instead. */
+  onDone?: () => void;
 }) {
   const t = useT();
   const { lang } = useLang();
   const months = searchedMonths();
-  // The month a period is being stretched from, after a first tap.
-  const [anchor, setAnchor] = useState<string | null>(null);
-
-  function pick(month: string) {
-    if (anchor && Date.parse(month) >= Date.parse(anchor)) {
-      onChange({ from: anchor, to: month });
-      setAnchor(null);
-    } else {
-      onChange({ from: month, to: month });
-      setAnchor(month);
-    }
-  }
+  const pick = (month: string) => onChange(pickPeriodMonth(value, month, TZ));
 
   const inPeriod = (m: string) =>
     !!value && Date.parse(m) >= Date.parse(value.from) && Date.parse(m) <= Date.parse(value.to);
@@ -138,21 +154,20 @@ function MonthGrid({
       <div className="mt-3 flex items-center justify-between gap-2">
         <button
           type="button"
-          onClick={() => {
-            onChange(null);
-            setAnchor(null);
-          }}
+          onClick={() => onChange(null)}
           className="rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           {t.scheduler.period.anyButton}
         </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-        >
-          {t.scheduler.period.done}
-        </button>
+        {onDone && (
+          <button
+            type="button"
+            onClick={onDone}
+            className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          >
+            {t.scheduler.period.done}
+          </button>
+        )}
       </div>
     </div>
   );

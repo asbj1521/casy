@@ -552,13 +552,15 @@ export default function FindDate() {
 
   // Suggesting the date on screen and a few more to the group, to swipe
   // through (#74). The answer is the fresh list of events, which goes
-  // straight into the cache the header badge reads; the suggester then
-  // answers the dates themselves, right away.
+  // straight into the cache the header badge reads; on a computer the
+  // suggester then answers the dates themselves, right away.
   const suggest = useMutation({
     mutationFn: suggestEvent,
     onSuccess: (data) => {
       queryClient.setQueryData(eventsQueryKey(userId ?? ""), data.events);
-      navigate(phone ? `/events/${data.createdId}/dates` : `/events/${data.createdId}`);
+      // A phone's suggester has answered already (#101): on to My events,
+      // where the new vote waits for the others.
+      navigate(phone ? "/events" : `/events/${data.createdId}`);
     },
   });
   // Waiting for the calendars to be fresh before sending.
