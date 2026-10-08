@@ -696,6 +696,7 @@ export const en: Messages = {
     canOnDate: (n: number) => `${n} can`,
     cantOnDate: (n: number) => `${n} can't`,
     answerNow: "Answer",
+    cantAfterAll: "Can't make it after all",
   },
   swipe: {
     yourCalendar: "Your calendar",

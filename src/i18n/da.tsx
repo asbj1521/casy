@@ -729,6 +729,7 @@ export const da = {
     canOnDate: (n: number) => `${n} kan`,
     cantOnDate: (n: number) => `${n} kan ikke`,
     answerNow: "Svar",
+    cantAfterAll: "Kan ikke alligevel",
   },
   /** Swiping through a vote's dates (#74). */
   swipe: {

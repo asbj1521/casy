@@ -156,12 +156,27 @@ test.describe("a phone's list of events (#103)", () => {
     await expect(cinema).toHaveAttribute("aria-expanded", "false");
     await cinema.click();
     await expect(cinema).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByRole("link", { name: "Ret dine svar" })).toBeVisible();
+    // Your answer on each date, a tick and a cross, instead of a way back to swiping.
+    await expect(page.getByRole("button", { name: /^Jeg kan ikke: / })).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "Ret dine svar" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Vælg" })).toHaveCount(0);
 
     // Opening another closes the first.
     await page.getByRole("button", { name: /Julefrokost/ }).click();
     await expect(cinema).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("a tap on a date's cross changes your answer right there", async ({ page, backend }) => {
+    await page.goto("/events");
+    await page.getByRole("button", { name: /Biograf/ }).click();
+    const cross = page.getByRole("button", { name: /^Jeg kan ikke: fre\. 23\./ });
+    await expect(cross).toHaveAttribute("aria-pressed", "false");
+    await cross.click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "answer")?.body)
+      .toMatchObject({ proposalId: "ev-cinema", dateId: "d-cin-2", response: "declined" });
+    await expect(cross).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL(/\/events$/);
   });
 
   test("newest first, with what is over greyed at the bottom", async ({ page }) => {

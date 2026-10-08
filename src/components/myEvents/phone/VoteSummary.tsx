@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 
-import { chooseDate } from "@/api/events";
+import { answerDate, chooseDate, type EventResponse } from "@/api/events";
 import { ExitConfirm, ExitLink } from "@/components/myEvents/parts";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 import Notice from "@/components/ui/Notice";
@@ -24,15 +23,20 @@ import {
  * An opened vote on a phone's My events (#103), once you have answered:
  * where it stands and by when, its place and note, and each date with how
  * many can. The date ahead is only marked once half the group has answered;
- * before that every date is as good as the next. Nobody chooses for the
- * group while it votes: only when no date can win (every one has a "can't")
- * does the suggester get a Choose button on each date.
+ * before that every date is as good as the next. Your own answer to each
+ * date sits on its right, a tick and a cross, changed with a tap right here.
+ * Nobody chooses for the group while it votes: only when no date can win
+ * (every one has a "can't") does the suggester get a Choose button on each.
  */
 export default function VoteSummary({ event }: { event: VoteEvent }) {
   const t = useT();
   const { lang } = useLang();
   const [exiting, setExiting] = useState(false);
   const choose = useEventChange((dateId: string) => chooseDate(event.id, dateId));
+  const answer = useEventChange((v: { dateId: string; response: EventResponse }) =>
+    answerDate(event.id, v.dateId, v.response),
+  );
+  const you = event.invitees.find((i) => i.isYou)?.profileId;
   const stage = voteStage(event);
   const dates = upcomingDates(event);
   const missing = stillToAnswer(event);
@@ -68,6 +72,14 @@ export default function VoteSummary({ event }: { event: VoteEvent }) {
           const n = tally(d, event);
           const can = n.accepted + n.maybe;
           const isMarked = d.id === marked?.id;
+          const label = formatEventDate(event.settings.kind, d, lang);
+          // Shown as given while it saves.
+          const yours =
+            answer.isPending && answer.variables?.dateId === d.id
+              ? answer.variables.response
+              : you
+                ? d.answers[you]
+                : undefined;
           return (
             <li
               key={d.id}
@@ -77,21 +89,28 @@ export default function VoteSummary({ event }: { event: VoteEvent }) {
               )}
             >
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-foreground">
-                  {formatEventDate(event.settings.kind, d, lang)}
+                <span className="block truncate font-medium text-foreground">{label}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {t.events.canOnDate(can)}
+                  {n.declined > 0 && (
+                    <span className="text-rose-700"> · {t.events.cantOnDate(n.declined)}</span>
+                  )}
+                  {isMarked && (
+                    <span className="font-semibold text-primary">
+                      {" · "}
+                      {mustChoose ? t.events.bestPick : t.events.ahead}
+                    </span>
+                  )}
                 </span>
-                {isMarked && (
-                  <span className="block text-xs font-semibold text-primary">
-                    {mustChoose ? t.events.bestPick : t.events.ahead}
-                  </span>
-                )}
               </span>
-              <span className="shrink-0 text-right text-xs text-muted-foreground">
-                {t.events.canOnDate(can)}
-                {n.declined > 0 && (
-                  <span className="block text-rose-700">{t.events.cantOnDate(n.declined)}</span>
-                )}
-              </span>
+              {you && (
+                <YourAnswer
+                  yours={yours}
+                  label={label}
+                  disabled={answer.isPending}
+                  onAnswer={(response) => answer.mutate({ dateId: d.id, response })}
+                />
+              )}
               {canChoose && (
                 <button
                   type="button"
@@ -114,22 +133,76 @@ export default function VoteSummary({ event }: { event: VoteEvent }) {
           );
         })}
       </ul>
-      {choose.error && (
+      {(choose.error ?? answer.error) && (
         <Notice tone="error" bare>
-          {choose.error.message}
+          {(choose.error ?? answer.error)?.message}
         </Notice>
       )}
 
       {exiting ? (
         <ExitConfirm event={event} onCancel={() => setExiting(false)} />
       ) : (
-        <div className="flex items-baseline justify-between gap-4">
-          <Link to={`/events/${event.id}/dates`} className="font-medium text-primary">
-            {t.events.changeAnswers}
-          </Link>
+        <div className="flex justify-end">
           <ExitLink event={event} onClick={() => setExiting(true)} />
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Your answer to one date, as a tick and a cross: filled for the one you
+ * gave. "Can, but rather not" from swiping shows as an amber tick: you can.
+ */
+function YourAnswer({
+  yours,
+  label,
+  disabled,
+  onAnswer,
+}: {
+  yours: EventResponse | undefined;
+  /** The date, for screen readers: "Jeg kan: fre. 16. okt. ..." */
+  label: string;
+  disabled: boolean;
+  onAnswer: (response: EventResponse) => void;
+}) {
+  const t = useT();
+  const base =
+    "flex h-8 w-8 items-center justify-center rounded-full border transition disabled:opacity-60";
+  return (
+    <span className="flex shrink-0 gap-1.5">
+      <button
+        type="button"
+        onClick={() => onAnswer("declined")}
+        disabled={disabled}
+        aria-pressed={yours === "declined"}
+        aria-label={`${t.swipe.answerLong.declined}: ${label}`}
+        className={cn(
+          base,
+          yours === "declined"
+            ? "border-rose-600 bg-rose-600 text-white"
+            : "bg-card text-muted-foreground",
+        )}
+      >
+        <X className="h-4 w-4" strokeWidth={2.5} />
+      </button>
+      <button
+        type="button"
+        onClick={() => onAnswer("accepted")}
+        disabled={disabled}
+        aria-pressed={yours === "accepted" || yours === "maybe"}
+        aria-label={`${t.swipe.answerLong.accepted}: ${label}`}
+        className={cn(
+          base,
+          yours === "accepted"
+            ? "border-emerald-600 bg-emerald-600 text-white"
+            : yours === "maybe"
+              ? "border-amber-400 bg-amber-100 text-amber-700"
+              : "bg-card text-muted-foreground",
+        )}
+      >
+        <Check className="h-4 w-4" strokeWidth={2.5} />
+      </button>
+    </span>
   );
 }
