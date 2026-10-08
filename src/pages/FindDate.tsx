@@ -18,9 +18,14 @@ import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
 import LaterDates from "@/components/findDate/LaterDates";
 import MoreSettingsScreen from "@/components/findDate/MoreSettingsScreen";
+import DatesStep from "@/components/findDate/phoneFlow/DatesStep";
+import DetailsStep from "@/components/findDate/phoneFlow/DetailsStep";
+import FlowShell, { FlowButton } from "@/components/findDate/phoneFlow/FlowShell";
+import GroupStep from "@/components/findDate/phoneFlow/GroupStep";
+import LiveAnswer from "@/components/findDate/phoneFlow/LiveAnswer";
 import GroupSwitcher from "@/components/GroupSwitcher";
 import NewGroupDialog from "@/components/NewGroupDialog";
-import { SettingsPanel, SettingsSentence } from "@/components/SchedulerSettings";
+import { SettingsPanel, SettingsSentence, StepSettings } from "@/components/SchedulerSettings";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { useAuth } from "@/context/auth";
@@ -59,6 +64,13 @@ import {
   type PeopleChoice,
   type SchedulerSettings,
 } from "@/lib/scheduler";
+import {
+  detailsTouched,
+  previousStep,
+  searchForStep,
+  stepFromSearch,
+  type FlowStep,
+} from "@/lib/schedulerFlow";
 import { readStored, writeStored } from "@/lib/storage";
 import { addDays, APP_TIME_ZONE, dayOf, localDate, startOfMonth } from "@/lib/zone";
 
@@ -107,7 +119,8 @@ interface MonthPick {
 /**
  * The scheduling page: the settings on top, the first date everyone can make
  * under them, the month day by day, the next few dates, and the group itself
- * at the bottom.
+ * at the bottom. On a phone the same page is a flow of four steps instead
+ * (#101): the group, what and when, the optional details, and the dates.
  */
 export default function FindDate() {
   const t = useT();
@@ -120,6 +133,32 @@ export default function FindDate() {
   const moreSettings = new URLSearchParams(location.search).has("settings");
   const queryClient = useQueryClient();
   const phone = usePhoneLayout();
+
+  // The phone's flow (#101): the step on screen is in the address, so the
+  // phone's back button and the iPhone's back swipe go a step back. Steps
+  // taken on are marked, so going back returns to that same history entry
+  // rather than adding another; a step opened directly goes back by
+  // replacing it.
+  const flowStep = stepFromSearch(location.search);
+  function goToStep(step: FlowStep) {
+    navigate(
+      { pathname: location.pathname, search: searchForStep(step) },
+      { state: { flowStep: true } },
+    );
+  }
+  function stepBack() {
+    const previous = previousStep(flowStep);
+    if (!previous) return;
+    if ((location.state as { flowStep?: boolean } | null)?.flowStep) {
+      navigate(-1);
+    } else {
+      navigate({ pathname: location.pathname, search: searchForStep(previous) }, { replace: true });
+    }
+  }
+  // Each step starts at its top, as a new screen does.
+  useEffect(() => {
+    if (phone) window.scrollTo(0, 0);
+  }, [phone, flowStep]);
 
   // The page as this person left it earlier in this visit, if they did;
   // otherwise it starts fresh, with random settings.
@@ -164,6 +203,12 @@ export default function FindDate() {
     youProfileId,
     carousel,
   } = useSchedulingGroups(selectedGroupId ?? rememberedGroupId);
+  // The flow lists the examples to pick from, so they hold still there
+  // rather than taking turns on screen.
+  const stopExamples = carousel.stop;
+  useEffect(() => {
+    if (phone) stopExamples();
+  }, [phone, stopExamples]);
   // Remember whichever real group is on screen, however it got there
   // (picked, just made, or the fallback after leaving one).
   const rememberableGroupId = activeGroup && !activeGroup.isExample ? activeGroup.id : null;
@@ -216,6 +261,26 @@ export default function FindDate() {
   );
   const slot = found?.slot ?? null;
   const review = reviewAnswer(found, search, youProfileId, steps.accepted);
+  // The dates a suggestion would send (#101), for the phone flow's last step
+  // to list before they go: picked as sendSuggestion picks them. Only there,
+  // since picking looks at up to 60 dates.
+  const showVoteDates = phone && flowStep === "dates";
+  const voteDates = useMemo(
+    () =>
+      showVoteDates && participants && found?.slot
+        ? pickCandidates(
+            participants,
+            search,
+            {
+              first: { slot: found.slot, conflicts: found.conflicts },
+              end: searchWindow.end,
+              count: extras.dateCount,
+            },
+            TZ,
+          )
+        : null,
+    [showVoteDates, participants, search, found, searchWindow, extras.dateCount],
+  );
 
   // Fresh busy times while planning (#85): calendars sync hourly, so the
   // group's are synced again in the background while someone plans for it,
@@ -406,6 +471,8 @@ export default function FindDate() {
       queryClient.setQueryData(groupsQueryKey(userId ?? ""), data.groups);
       selectGroup(data.createdId);
       setNewGroupOpen(false);
+      // The flow's first step is picking a group: a new one is picked.
+      if (phone && flowStep === "group") goToStep("what");
     },
   });
   function openNewGroup() {
@@ -513,23 +580,22 @@ export default function FindDate() {
   // What the boxes below fade on: a different group's numbers.
   const fadeKey = activeGroupId ?? "none";
 
+  const actionProps = {
+    canStepBack: steps.index > 0,
+    canStepOn: !!slot,
+    onStepBack: () => setSteps(back),
+    onStepOn: stepOn,
+    approving: review.tone === "approve",
+    onAccept: () => slot && setSteps((s) => accept(s, slot.start)),
+    canSuggest,
+    checking,
+    suggesting: suggest.isPending,
+    suggested,
+    onSuggest: () => void sendSuggestion(),
+  };
   // Still there after stepping past the last date, so the way back never
   // disappears.
-  const actions = !waiting && (slot || steps.index > 0) && (
-    <AnswerActions
-      canStepBack={steps.index > 0}
-      canStepOn={!!slot}
-      onStepBack={() => setSteps(back)}
-      onStepOn={stepOn}
-      approving={review.tone === "approve"}
-      onAccept={() => slot && setSteps((s) => accept(s, slot.start))}
-      canSuggest={canSuggest}
-      checking={checking}
-      suggesting={suggest.isPending}
-      suggested={suggested}
-      onSuggest={() => void sendSuggestion()}
-    />
-  );
+  const actions = !waiting && (slot || steps.index > 0) && <AnswerActions {...actionProps} />;
   const showMoved =
     !!moved && moved.groupId === activeGroup?.id && moved.start === (slot?.start ?? null);
   const hint = suggested ? (
@@ -581,6 +647,147 @@ export default function FindDate() {
     onChange: updateSettings,
   };
 
+  // The answer, the chart and the dates after it: the same on a computer's
+  // page and in the phone's flow.
+  const answerCardProps = {
+    fadeKey,
+    waiting,
+    review,
+    search,
+    slot,
+    name,
+    checkers,
+    edge,
+    hint,
+  };
+  const chart = chartMonth && (
+    <DayChart
+      month={chartMonth}
+      bestDays={days}
+      timeZone={TZ}
+      canPrev={viewMonth > FIRST_MONTH}
+      canNext={viewMonth < LAST_MONTH}
+      onPrev={() => pageMonth(-1)}
+      onNext={() => pageMonth(1)}
+      onPickDay={pickDay}
+      conditionalKind={search.kind === "single" ? "skip" : "timeOff"}
+      swapKey={fadeKey}
+      loading={loadingGroup}
+    />
+  );
+  const groupSize = peopleForSearch(participants ?? [], search.people).searched.length;
+  const laterDatesProps = {
+    loading: loadingGroup,
+    fadeKey,
+    search,
+    needsTimeOff: !!slot,
+    suggestions,
+    later,
+    groupSize,
+    onUseSuggestion: adoptSuggestion,
+    onPick: (start: string) => pickDay(dayOf(start, TZ)),
+  };
+  const newGroupDialog = (
+    <NewGroupDialog
+      open={newGroupOpen}
+      submitting={create.isPending}
+      error={create.error?.message ?? null}
+      onSubmit={(group) => create.mutate(group)}
+      onCancel={() => setNewGroupOpen(false)}
+    />
+  );
+
+  if (phone) {
+    const touched = detailsTouched(extras, peopleChoice);
+    const live = (
+      <LiveAnswer
+        waiting={waiting}
+        review={review}
+        search={search}
+        slot={slot}
+        onOpen={() => goToStep("dates")}
+      />
+    );
+    return (
+      <>
+        <FlowShell
+          step={flowStep}
+          pathname={location.pathname}
+          onBack={stepBack}
+          footer={
+            flowStep === "group" ? (
+              <FlowButton onClick={() => goToStep("what")} disabled={!activeGroup}>
+                {t.schedulerFlow.next}
+              </FlowButton>
+            ) : flowStep === "what" ? (
+              <>
+                {live}
+                <FlowButton onClick={() => goToStep("details")}>{t.schedulerFlow.next}</FlowButton>
+              </>
+            ) : flowStep === "details" ? (
+              <>
+                {live}
+                <FlowButton quiet={!touched} onClick={() => goToStep("dates")}>
+                  {touched ? t.schedulerFlow.seeDates : t.schedulerFlow.skip}
+                </FlowButton>
+              </>
+            ) : (
+              <div className="flex gap-2">
+                <AnswerActions stepping={false} {...actionProps} />
+              </div>
+            )
+          }
+        >
+          {flowStep === "group" ? (
+            <GroupStep
+              groups={groups}
+              selectedId={activeGroupId}
+              signedIn={!!user}
+              onPick={(id) => {
+                selectGroup(id);
+                goToStep("what");
+              }}
+              onCreate={openNewGroup}
+            />
+          ) : flowStep === "what" ? (
+            <>
+              <StepSettings
+                name={name}
+                onName={setName}
+                settings={sched}
+                onChange={updateSettings}
+              />
+              {/* The start times are Danish time. */}
+              <DanishTimeNote className="mt-4 px-1" />
+            </>
+          ) : flowStep === "details" ? (
+            <DetailsStep extras={extras} onExtras={updateExtras} participants={participantProps} />
+          ) : (
+            <DatesStep
+              answer={
+                <>
+                  <AnswerCard {...answerCardProps} actions={null} />
+                  <DanishTimeNote className="mt-2 px-1" />
+                </>
+              }
+              workarounds={
+                search.kind === "vacation" && suggestions.length > 0 ? (
+                  <LaterDates {...laterDatesProps} />
+                ) : null
+              }
+              chart={chart}
+              search={search}
+              voteDates={voteDates}
+              groupSize={groupSize}
+              onPick={laterDatesProps.onPick}
+            />
+          )}
+        </FlowShell>
+        {newGroupDialog}
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
@@ -599,18 +806,7 @@ export default function FindDate() {
               (#98), where the settings box takes the bar's old place. */}
           <div className="flex flex-col gap-2 sm:gap-5 xl:grid xl:grid-cols-2 xl:items-stretch">
             <SettingsSentence {...settingsProps} />
-            <AnswerCard
-              fadeKey={fadeKey}
-              waiting={waiting}
-              review={review}
-              search={search}
-              slot={slot}
-              name={name}
-              checkers={checkers}
-              edge={edge}
-              actions={actions}
-              hint={hint}
-            />
+            <AnswerCard {...answerCardProps} actions={actions} />
             <SettingsPanel
               {...settingsProps}
               extras={extras}
@@ -621,33 +817,9 @@ export default function FindDate() {
           {/* The start times are Danish time. */}
           <DanishTimeNote className="px-1" />
 
-          {chartMonth && (
-            <DayChart
-              month={chartMonth}
-              bestDays={days}
-              timeZone={TZ}
-              canPrev={viewMonth > FIRST_MONTH}
-              canNext={viewMonth < LAST_MONTH}
-              onPrev={() => pageMonth(-1)}
-              onNext={() => pageMonth(1)}
-              onPickDay={pickDay}
-              conditionalKind={search.kind === "single" ? "skip" : "timeOff"}
-              swapKey={fadeKey}
-              loading={loadingGroup}
-            />
-          )}
+          {chart}
 
-          <LaterDates
-            loading={loadingGroup}
-            fadeKey={fadeKey}
-            search={search}
-            needsTimeOff={!!slot}
-            suggestions={suggestions}
-            later={later}
-            groupSize={peopleForSearch(participants ?? [], search.people).searched.length}
-            onUseSuggestion={adoptSuggestion}
-            onPick={(start) => pickDay(dayOf(start, TZ))}
-          />
+          <LaterDates {...laterDatesProps} />
         </div>
 
         {activeGroup && !activeGroup.isExample ? (
@@ -672,15 +844,8 @@ export default function FindDate() {
         )}
       </div>
 
-      {/* A phone's actions, pinned above the tab bar (TabBar) while the page
-          scrolls. Sticky rather than fixed, so at the very end it comes to
-          rest above the footer instead of covering it. */}
-      {actions && (
-        <div className="sticky bottom-[var(--tab-bar-height)] z-30 flex gap-2 border-t bg-card px-4 pb-2 pt-2 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)] sm:hidden">
-          {actions}
-        </div>
-      )}
-
+      {/* Tablets only: a phone has the flow above, and a wide screen the
+          settings box's tabs. */}
       {moreSettings && (
         <MoreSettingsScreen
           back={location.pathname}
@@ -690,13 +855,7 @@ export default function FindDate() {
         />
       )}
 
-      <NewGroupDialog
-        open={newGroupOpen}
-        submitting={create.isPending}
-        error={create.error?.message ?? null}
-        onSubmit={(group) => create.mutate(group)}
-        onCancel={() => setNewGroupOpen(false)}
-      />
+      {newGroupDialog}
     </div>
   );
 }

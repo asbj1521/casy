@@ -103,12 +103,15 @@ for (const { name, path, world, signedIn } of PAGES) {
   });
 }
 
-test("Flere indstillinger looks as it did", async ({ page, isMobile }) => {
-  test.skip(!isMobile, "phones only: a computer has the settings box's tabs");
-  await page.goto("/?settings");
-  await expect(page.getByRole("heading", { name: "Flere indstillinger" })).toBeVisible();
-  await expectPage(page, "more-settings", isMobile);
-});
+// The phone's scheduling flow (#101): the first step is "scheduler" above.
+for (const step of ["what", "details", "dates"]) {
+  test(`the scheduling flow's ${step} step looks as it did`, async ({ page, isMobile }) => {
+    test.skip(!isMobile, "phones only: a computer has the whole page at once");
+    await page.goto(`/?step=${step}`);
+    await expect(page.getByText(/^Trin \d af 4$/)).toBeVisible();
+    await expectPage(page, `scheduler-${step}`, isMobile);
+  });
+}
 
 test("the swipe screen looks as it did", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phones only: a computer answers beside the list (event-vote)");

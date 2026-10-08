@@ -27,10 +27,11 @@ import { nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
- * What the scheduling page searches for, set in one of two shapes of the same
- * controls: a box of tabs beside the answer on a wide screen (SettingsPanel,
- * #98), and a sentence you fill in on narrower ones ("fra kl. 18:00 i 3 t på
- * alle dage"), with Flere indstillinger a tap away. Both edit the same
+ * What the scheduling page searches for, set in one of three shapes of the
+ * same controls: a box of tabs beside the answer on a wide screen
+ * (SettingsPanel, #98), a sentence you fill in on tablets ("fra kl. 18:00 i
+ * 3 t på alle dage"), with Flere indstillinger a tap away, and a step of its
+ * own in the phone's flow (StepSettings, #101). All three edit the same
  * settings and show only what applies: time, length and weekdays for one
  * meeting, or number of days and a start day for a trip or holiday, and in
  * both modes when (the months searched, #74). The name is only for the group
@@ -151,9 +152,12 @@ function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
 function StartDayPicker({
   value,
   onChange,
+  fill = false,
 }: {
   value: number | null;
   onChange: (dow: number | null) => void;
+  /** Share the whole width (the phone's flow), rather than fixed-width days. */
+  fill?: boolean;
 }) {
   const t = useT();
   const base = "h-12 rounded-lg text-sm font-bold transition-colors";
@@ -165,7 +169,7 @@ function StartDayPicker({
         type="button"
         onClick={() => onChange(null)}
         aria-pressed={value === null}
-        className={cn(base, "mr-1.5 px-3", value === null ? on : off)}
+        className={cn(base, "mr-1.5 px-3", fill && "shrink-0", value === null ? on : off)}
       >
         {t.scheduler.anyDay}
       </button>
@@ -175,7 +179,7 @@ function StartDayPicker({
           type="button"
           onClick={() => onChange(d)}
           aria-pressed={value === d}
-          className={cn(base, "w-9", value === d ? on : off)}
+          className={cn(base, fill ? "min-w-0 flex-1" : "w-9", value === d ? on : off)}
         >
           {t.weekdaysShort[d].charAt(0)}
         </button>
@@ -195,9 +199,12 @@ type Tab = (typeof TABS)[number];
 function KindChoice({
   multiDay,
   onChange,
+  fill = false,
 }: {
   multiDay: boolean;
   onChange: (multiDay: boolean) => void;
+  /** Two equal halves across the whole width (the phone's flow). */
+  fill?: boolean;
 }) {
   const t = useT();
   return (
@@ -215,6 +222,7 @@ function KindChoice({
           onClick={() => onChange(value)}
           className={cn(
             "h-full whitespace-nowrap rounded-lg px-4 text-base font-bold transition-colors",
+            fill && "flex-1",
             multiDay === value
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
@@ -424,6 +432,105 @@ export function SettingsPanel({
         ))}
       </div>
     </section>
+  );
+}
+
+/**
+ * The phone flow's "Hvad og hvornår" step (#101): the name and the time
+ * settings as a form, one labelled field under another, with the room a
+ * screen of its own gives them. The group is picked a step earlier.
+ */
+export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "groupSwitcher">) {
+  const t = useT();
+  const dayValues = useDayValues(settings);
+  const chevron = <ChevronDown className="h-4 w-4 text-muted-foreground" />;
+  const trigger =
+    "inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary";
+  return (
+    <div className="flex flex-col gap-5">
+      <label className="flex flex-col gap-2">
+        <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          {t.scheduler.name}
+        </span>
+        <input
+          type="text"
+          value={name}
+          maxLength={MAX_NAME_LENGTH}
+          onChange={(e) => onName(e.target.value)}
+          placeholder={t.scheduler.namePlaceholder}
+          className="h-12 w-full rounded-xl border bg-card px-3.5 text-[17px] font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+        />
+      </label>
+      <Field label={t.settingsPanel.kind}>
+        <KindChoice
+          fill
+          multiDay={settings.multiDay}
+          onChange={(multiDay) => onChange({ multiDay })}
+        />
+      </Field>
+      {settings.multiDay ? (
+        <>
+          <Field label={t.scheduler.tripDays}>
+            <div className="self-start">
+              <Stepper
+                value={settings.days}
+                values={dayValues}
+                format={t.common.days}
+                onChange={(days) => onChange({ days })}
+                lessLabel={t.scheduler.fewerDays}
+                moreLabel={t.scheduler.moreDays}
+              />
+            </div>
+          </Field>
+          <Field label={t.scheduler.tripStarts}>
+            <StartDayPicker
+              fill
+              value={settings.startDow}
+              onChange={(startDow) => onChange({ startDow })}
+            />
+          </Field>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-4">
+            <Field label={t.scheduler.startsAt}>
+              <Dropdown
+                value={settings.anyTime ? ANY_TIME : settings.startHour}
+                options={startHourOptions(t)}
+                onChange={(value) => pickStartHour(value, onChange)}
+                suffix={chevron}
+                triggerClassName={trigger}
+                menuWidth="w-40"
+              />
+            </Field>
+            <Field label={t.scheduler.duration}>
+              <Stepper
+                value={settings.durationMinutes}
+                values={DURATION_VALUES}
+                format={t.common.duration}
+                onChange={(durationMinutes) => onChange({ durationMinutes })}
+                lessLabel={t.scheduler.shorter}
+                moreLabel={t.scheduler.longer}
+              />
+            </Field>
+          </div>
+          <Field label={t.scheduler.dayLabel}>
+            <DaySlider size="lg" selected={settings.dows} onChange={(dows) => onChange({ dows })} />
+          </Field>
+        </>
+      )}
+      <Field label={t.scheduler.when}>
+        <div className="self-start">
+          <PeriodPicker
+            value={settings.period}
+            onChange={(period) => onChange({ period })}
+            capitalized
+            triggerClassName={trigger}
+            suffix={chevron}
+          />
+        </div>
+      </Field>
+    </div>
   );
 }
 

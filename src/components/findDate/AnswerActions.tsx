@@ -5,9 +5,12 @@ import { useT } from "@/i18n/lang";
 /**
  * Step back, step on, and send the date to the group (or first sign off the
  * time off it costs you). Drawn in the answer card on wider screens and in
- * the bar pinned to the bottom on a phone, so it is a fragment for either.
+ * the bar pinned to the bottom of the phone's flow, so it is a fragment for
+ * either. The flow lists the dates instead of stepping through them, so it
+ * leaves the stepping out (`stepping`).
  */
 export default function AnswerActions({
+  stepping = true,
   canStepBack,
   canStepOn,
   onStepBack,
@@ -20,6 +23,7 @@ export default function AnswerActions({
   suggested,
   onSuggest,
 }: {
+  stepping?: boolean;
   canStepBack: boolean;
   canStepOn: boolean;
   onStepBack: () => void;
@@ -38,24 +42,28 @@ export default function AnswerActions({
   const t = useT();
   return (
     <>
-      <button
-        type="button"
-        onClick={onStepBack}
-        disabled={!canStepBack}
-        aria-label={t.scheduler.previousTime}
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      <button
-        type="button"
-        onClick={onStepOn}
-        disabled={!canStepOn}
-        className="h-12 min-w-0 flex-1 truncate rounded-xl border bg-card px-3 text-[15px] font-semibold text-foreground transition hover:bg-secondary disabled:opacity-30 sm:flex-none sm:px-4"
-      >
-        <span className="sm:hidden">{t.scheduler.nextShort}</span>
-        <span className="hidden sm:inline">{t.scheduler.nextOption}</span>
-      </button>
+      {stepping && (
+        <>
+          <button
+            type="button"
+            onClick={onStepBack}
+            disabled={!canStepBack}
+            aria-label={t.scheduler.previousTime}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-card text-foreground transition hover:bg-secondary disabled:opacity-30"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={onStepOn}
+            disabled={!canStepOn}
+            className="h-12 min-w-0 flex-1 truncate rounded-xl border bg-card px-3 text-[15px] font-semibold text-foreground transition hover:bg-secondary disabled:opacity-30 sm:flex-none sm:px-4"
+          >
+            <span className="sm:hidden">{t.scheduler.nextShort}</span>
+            <span className="hidden sm:inline">{t.scheduler.nextOption}</span>
+          </button>
+        </>
+      )}
       {approving ? (
         <button
           type="button"
@@ -82,6 +90,13 @@ export default function AnswerActions({
           <span className="truncate">
             {suggested ? (
               t.scheduler.suggested
+            ) : !stepping ? (
+              // The only button in its row: room for the whole label.
+              checking ? (
+                t.scheduler.checking
+              ) : (
+                t.scheduler.suggest
+              )
             ) : checking ? (
               <>
                 <span className="sm:hidden">{t.scheduler.checkingShort}</span>

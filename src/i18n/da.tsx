@@ -337,6 +337,40 @@ export const da = {
       own: "Brug medlemmernes egne præferencer",
     },
   },
+  // The scheduling page on a phone (#101): four steps, one screen each.
+  schedulerFlow: {
+    stepOf: (n: number, total: number) => `Trin ${n} af ${total}`,
+    steps: {
+      group: "Gruppe",
+      what: "Hvad og hvornår",
+      details: "Detaljer",
+      dates: "Datoer",
+    },
+    titles: {
+      group: "Hvem skal med?",
+      what: "Hvad skal I, og hvornår?",
+      details: "Detaljer",
+      dates: "Datoerne I stemmer om",
+    },
+    intros: {
+      group: "Vælg den gruppe, aftalen er for.",
+      what: "Giv aftalen et navn, og vælg, hvornår den kan ligge.",
+      details: "Alt her er valgfrit. Spring over, hvis I ikke har brug for det.",
+      dates: "Tryk på en dag i grafen eller en af datoerne for at starte fra den.",
+    },
+    back: "Tilbage",
+    next: "Næste",
+    skip: "Spring over",
+    seeDates: "Se datoer",
+    newGroup: "Ny gruppe",
+    newGroupDetail: "Inviter folk bagefter",
+    examples: "Eksempler",
+    firstDate: "Første dato",
+    noDate: "Ingen dato passer. Prøv at ændre indstillingerne.",
+    seeAnswer: "Se datoerne",
+    alsoInVote: "Også i afstemningen",
+    onlyOne: "Der er ikke flere gode datoer i perioden, så kun denne bliver sendt.",
+  },
   // An event's place and note (#84), on My events and the swipe card.
   eventDetails: {
     place: "Sted",

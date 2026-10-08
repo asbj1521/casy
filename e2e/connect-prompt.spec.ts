@@ -35,6 +35,7 @@ for (const choice of ["Apple-kalender", "Kalenderlink (ICS)"]) {
 test("a phone isn't asked with a pop-up", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phones only");
   await page.goto("/");
-  await expect(page.getByText("Første dato", { exact: false })).toBeVisible();
+  // The scheduling flow's first step, with the groups in (#101).
+  await expect(page.getByRole("button", { name: /Fredagsbar/ })).toBeVisible();
   await expect(dialog(page)).toBeHidden();
 });
