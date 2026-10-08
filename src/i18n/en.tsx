@@ -797,6 +797,7 @@ export const en: Messages = {
       apple: "Apple",
       ics: "Calendar link",
     } as Record<string, string>,
+    calendarsButton: "Calendars",
     listTitle: "Your calendars",
     listIntro:
       "Only ticked calendars count when Casy finds dates, and show here. Open a group to give each calendar a category and say how much it matters.",

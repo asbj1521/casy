@@ -12,6 +12,7 @@ import {
   segmentByDay,
   withHolidays,
   type DaySegment,
+  type OverviewCalendar,
 } from "@/lib/calendarOverview";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import type { GridItem } from "@/lib/monthGrid";
@@ -21,6 +22,8 @@ const TZ = APP_TIME_ZONE;
 
 /** Grey, for a block whose calendar is somehow missing from the list (as on My calendar). */
 const FALLBACK_RGB = "113, 113, 122";
+
+const NO_CALENDARS: OverviewCalendar[] = [];
 
 export interface MyCalendarDays {
   /** Still fetching your calendars. */
@@ -39,6 +42,13 @@ export interface MyCalendarDays {
    * (lib/monthGrid.ts), where something lasting days is one bar.
    */
   items: GridItem[];
+  /** Every calendar with its tick and settings, for the list of calendars. */
+  calendars: OverviewCalendar[];
+  /** Why they couldn't be fetched, if they couldn't. */
+  error: Error | null;
+  retry: () => void;
+  /** The server stopped early because there was too much busy time. */
+  truncated: boolean;
 }
 
 /**
@@ -52,7 +62,7 @@ export function useMyCalendarDays(): MyCalendarDays {
   const userId = useSignedInUser().id;
   const t = useT();
   const { lang } = useLang();
-  const { data, isPending } = useQuery(
+  const { data, isPending, error, refetch } = useQuery(
     calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
   );
 
@@ -109,5 +119,9 @@ export function useMyCalendarDays(): MyCalendarDays {
       [lang, names, t],
     ),
     items,
+    calendars: data?.calendars ?? NO_CALENDARS,
+    error,
+    retry: () => void refetch(),
+    truncated: !!data?.truncated,
   };
 }

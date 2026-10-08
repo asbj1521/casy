@@ -831,6 +831,7 @@ export const da = {
       apple: "Apple",
       ics: "Kalenderlink",
     } as Record<string, string>,
+    calendarsButton: "Kalendere",
     listTitle: "Dine kalendere",
     listIntro:
       "Kun kalendere med flueben tæller med, når Casy finder datoer, og vises her. Åbn en gruppe for at give hver kalender en kategori, og sige hvor vigtig den er.",

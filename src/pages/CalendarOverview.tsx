@@ -1,36 +1,37 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { CalendarPlus, ChevronLeft, ChevronRight, Info, Loader2 } from "lucide-react";
 
-import { calendarBusyQuery, calendarsChanged, updateCalendar } from "@/api/calendars";
+import { calendarBusyQuery } from "@/api/calendars";
+import { DayRow } from "@/components/calendarView/DayRow";
+import PhoneCalendar from "@/components/calendarView/PhoneCalendar";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { useCalendarVisibility } from "@/hooks/useCalendarVisibility";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import {
   buildMonthLayout,
   calendarColors,
   dayKey,
-  formatDuration,
   formatSegmentRange,
   HOLIDAY_CALENDAR,
-  HOLIDAY_CALENDAR_ID,
+  holidayName,
+  holidaysInYearAhead,
   holidaySegmentsByDay,
   segmentByDay,
   withHolidays,
   type DaySegment,
-  type OverviewCalendar,
-  type OverviewData,
 } from "@/lib/calendarOverview";
-import { readStored, writeStored } from "@/lib/storage";
 import { cn } from "@/lib/utils";
-import { APP_TIME_ZONE, localDate, wallTime } from "@/lib/zone";
+import { APP_TIME_ZONE, localDate } from "@/lib/zone";
 
 /**
  * The zone every day and time on this page is in: Danish time, the same as
@@ -42,11 +43,6 @@ const TZ = APP_TIME_ZONE;
 function thisMonth(): { year: number; month: number } {
   const { year, month } = localDate(Date.now(), TZ);
   return { year, month };
-}
-
-/** A holiday's name in the page's language. */
-function holidayName(holiday: NonNullable<DaySegment["holiday"]>, lang: Lang): string {
-  return lang === "da" ? holiday.name : holiday.englishName;
 }
 
 /** "Tue 22 Sept 2026, 2 busy blocks" plus any holiday names, for screen readers and tests. */
@@ -74,13 +70,6 @@ const GRID_COLUMNS = "grid grid-cols-7 sm:grid-cols-[2.75rem_repeat(7,minmax(0,1
 const MAX_ROWS_PER_CELL = 3;
 
 /**
- * Whether the built-in holiday calendar is ticked. It has no row in the
- * database and never counts when scheduling (a holiday isn't busy time), so
- * its tick is only a view setting, remembered in this browser.
- */
-const HOLIDAYS_HIDDEN_KEY = "casy-hide-holidays";
-
-/**
  * My calendar: the signed-in person's own busy time as a month grid, and the
  * list of their calendars with the settings that decide how each one counts.
  *
@@ -91,17 +80,14 @@ const HOLIDAYS_HIDDEN_KEY = "casy-hide-holidays";
  * events are merged into one busy block when synced, so a run of consecutive
  * lectures appears as a single block.
  */
-export default function CalendarOverview() {
-  const queryClient = useQueryClient();
+function ComputerCalendar() {
   const user = useSignedInUser();
   const t = useT();
   const { lang } = useLang();
   const calendarsHome = useCalendarsHome();
   const [month, setMonth] = useState(thisMonth);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [holidaysHidden, setHolidaysHidden] = useState(
-    () => readStored(HOLIDAYS_HIDDEN_KEY) === "1",
-  );
+  const { holidaysHidden, setCalendarsVisible, error: visibilityError } = useCalendarVisibility();
 
   const layout = useMemo(
     () => buildMonthLayout(month.year, month.month, TZ, LOCALE[lang]),
@@ -114,48 +100,10 @@ export default function CalendarOverview() {
     placeholderData: keepPreviousData, // no flash of emptiness when changing month
   });
 
-  // Tick or untick calendars: whether they count at all, saved on the
-  // server. The tick moves at once (the cached answer is patched before the
-  // call) and moves back if saving fails.
-  const setIncluded = useMutation({
-    mutationFn: async ({ ids, included }: { ids: string[]; included: boolean }) => {
-      await Promise.all(ids.map((calendarId) => updateCalendar(calendarId, { included })));
-    },
-    onMutate: async ({ ids, included }) => {
-      // Both this page and the scheduling page's copy of your calendars.
-      const key = { queryKey: ["calendar-busy"] };
-      await queryClient.cancelQueries(key);
-      const previous = queryClient.getQueriesData<OverviewData>(key);
-      queryClient.setQueriesData<OverviewData>(key, (old) =>
-        old
-          ? {
-              ...old,
-              calendars: old.calendars.map((c) => (ids.includes(c.id) ? { ...c, included } : c)),
-            }
-          : old,
-      );
-      return { previous };
-    },
-    onError: (_err, _v, context) => {
-      for (const [queryKey, old] of context?.previous ?? [])
-        queryClient.setQueryData(queryKey, old);
-    },
-    onSettled: () => calendarsChanged(queryClient),
-  });
-
   const connected = useMemo(() => data?.calendars ?? [], [data]);
   // The built-in holiday calendar is always present, ahead of the connected
-  // ones, named in the page's language. Its total counts the year ahead, the
-  // range the connected calendars are synced for.
-  const holidayCount = useMemo(() => {
-    const today = new Date();
-    const { year, month: m, day } = localDate(today.getTime(), TZ);
-    const yearAhead = new Date(wallTime(year + 1, m, day, 0, TZ));
-    return [...holidaySegmentsByDay(today, yearAhead, TZ).values()].reduce(
-      (sum, list) => sum + list.length,
-      0,
-    );
-  }, []);
+  // ones, named in the page's language.
+  const holidayCount = useMemo(() => holidaysInYearAhead(TZ), []);
   const calendars = useMemo(
     () => [
       {
@@ -215,17 +163,6 @@ export default function CalendarOverview() {
     setSelectedKey(dayKey(new Date(), TZ));
     setMonth(thisMonth());
   };
-  // Tick or untick any number of calendars at once: one, or a whole brand
-  // group. Holidays stay in this browser; everything else is saved.
-  const setCalendarsVisible = (ids: string[], visible: boolean) => {
-    if (ids.includes(HOLIDAY_CALENDAR_ID)) {
-      setHolidaysHidden(!visible);
-      writeStored(HOLIDAYS_HIDDEN_KEY, visible ? null : "1");
-    }
-    const connected = ids.filter((id) => id !== HOLIDAY_CALENDAR_ID);
-    if (connected.length > 0) setIncluded.mutate({ ids: connected, included: visible });
-  };
-
   const noConnectedCalendars = !isLoading && !error && connected.length === 0;
 
   return (
@@ -498,7 +435,7 @@ export default function CalendarOverview() {
               calendars={calendars}
               colorOf={colorOf}
               onSetVisible={setCalendarsVisible}
-              visibilityError={setIncluded.error?.message ?? null}
+              visibilityError={visibilityError}
             />
           </div>
         </div>
@@ -508,75 +445,9 @@ export default function CalendarOverview() {
 }
 
 /**
- * One row in the selected day's list. Holidays and busy blocks differ only in
- * what the two lines of text say and which pill sits on the right, so they
- * share the row rather than duplicating its frame.
+ * My calendar: a phone gets the month drawn like Apple Calendar's
+ * (PhoneCalendar), a computer the grid with its calendar list beside it.
  */
-function DayRow({
-  seg,
-  calendar,
-  rgb,
-}: {
-  seg: DaySegment;
-  calendar: OverviewCalendar | undefined;
-  rgb: string;
-}) {
-  const t = useT();
-  const { lang } = useLang();
-  const holiday = seg.holiday;
-  const words = t.calendarView;
-
-  // A holiday shows its name in the page's language, with the other
-  // language's name beside it.
-  const title = holiday ? holidayName(holiday, lang) : formatSegmentRange(seg, TZ, words.allDay);
-  const aside = holiday
-    ? holidayName(holiday, lang === "da" ? "en" : "da")
-    : seg.allDay
-      ? ""
-      : formatDuration(seg.start, seg.end, words.hourUnit);
-  const source = holiday
-    ? `${holiday.kind === "public" ? words.publicHoliday : words.observedDay} · ${words.denmark}`
-    : [
-        calendar?.name ?? words.calendarFallback,
-        calendar?.account,
-        calendar && words.providerNames[calendar.provider],
-      ]
-        .filter(Boolean)
-        .join(" · ");
-  const pill = holiday
-    ? words.holidayCategory
-    : calendar?.purpose
-      ? t.categories[calendar.purpose]
-      : words.noCategory;
-
-  return (
-    <li className="flex items-start gap-3 py-3 text-sm">
-      <span
-        className="mt-0.5 h-8 w-1 shrink-0 rounded-full"
-        style={{ backgroundColor: `rgb(${rgb})` }}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-foreground">
-          {title}
-          {aside && <span className="ml-2 font-normal text-muted-foreground">{aside}</span>}
-        </p>
-        <p className="text-muted-foreground">{source}</p>
-        {!holiday && (seg.continuesBefore || seg.continuesAfter) && (
-          <p className="text-xs text-muted-foreground">
-            {seg.continuesBefore && seg.continuesAfter
-              ? words.continuesBoth
-              : seg.continuesBefore
-                ? words.continuesBefore
-                : words.continuesAfter}
-          </p>
-        )}
-      </div>
-      <span
-        className="shrink-0 rounded-full px-2 py-0.5 text-xs"
-        style={{ backgroundColor: `rgba(${rgb}, 0.16)`, color: `rgb(${rgb})` }}
-      >
-        {pill}
-      </span>
-    </li>
-  );
+export default function CalendarOverview() {
+  return usePhoneLayout() ? <PhoneCalendar /> : <ComputerCalendar />;
 }

@@ -36,10 +36,10 @@ export default function MonthView({
   /** The day whose month to open on. */
   focus: number;
   calendar: MyCalendarDays;
-  /** The date being answered, pencilled in dashed. */
-  pencil: { start: number; end: number; label: string };
-  /** The vote's dates, as local midnights. */
-  marked: ReadonlySet<number>;
+  /** The date being answered, pencilled in dashed; none on My calendar. */
+  pencil?: { start: number; end: number; label: string };
+  /** The vote's dates, as local midnights; none on My calendar. */
+  marked?: ReadonlySet<number>;
   onPickDay: (day: number) => void;
 }) {
   const t = useT();
@@ -52,7 +52,10 @@ export default function MonthView({
     [],
   );
   const items = useMemo(
-    (): GridItem[] => [{ calendarId: "pencil", ...pencil, pencil: true }, ...calendar.items],
+    (): GridItem[] =>
+      pencil
+        ? [{ calendarId: "pencil", ...pencil, pencil: true }, ...calendar.items]
+        : calendar.items,
     [pencil, calendar.items],
   );
   // Today, for the red circle: fixed for as long as the view is open.
@@ -114,7 +117,7 @@ export default function MonthView({
                               "flex h-8 w-8 items-center justify-center rounded-full text-[18px]",
                               days[c] === today
                                 ? "bg-red-500 font-semibold text-white"
-                                : marked.has(days[c])
+                                : marked?.has(days[c])
                                   ? "font-bold text-primary"
                                   : c >= 5
                                     ? "text-muted-foreground"

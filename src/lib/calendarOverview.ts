@@ -13,6 +13,8 @@
  * Privacy: blocks carry only a time range and the calendar they came from.
  * There is no event title anywhere in this data, by design.
  */
+
+import type { Lang } from "@/i18n/locale";
 import { danishHolidays, type Holiday } from "@/lib/danishHolidays";
 import { formatTime } from "@/lib/format";
 import { addDays, localDate, startOfDay, wallTime } from "@/lib/zone";
@@ -426,4 +428,24 @@ export function groupVisibility(group: CalendarGroup): "all" | "none" | "some" {
   const unticked = group.calendars.filter((c) => !c.included).length;
   if (unticked === 0) return "all";
   return unticked === group.calendars.length ? "none" : "some";
+}
+
+/**
+ * How many holidays fall between today and a year ahead: the count shown
+ * beside the built-in holiday calendar, over the range the connected
+ * calendars are synced for.
+ */
+export function holidaysInYearAhead(timeZone: string): number {
+  const today = new Date();
+  const { year, month, day } = localDate(today.getTime(), timeZone);
+  const yearAhead = new Date(wallTime(year + 1, month, day, 0, timeZone));
+  return [...holidaySegmentsByDay(today, yearAhead, timeZone).values()].reduce(
+    (sum, list) => sum + list.length,
+    0,
+  );
+}
+
+/** A holiday's name in the given language. */
+export function holidayName(holiday: NonNullable<DaySegment["holiday"]>, lang: Lang): string {
+  return lang === "da" ? holiday.name : holiday.englishName;
 }

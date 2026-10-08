@@ -29,3 +29,19 @@ test("the profile's screens open and go back", async ({ page }) => {
     .click();
   await expect(page).toHaveURL(/\/profile$/);
 });
+
+test("My calendar is a month like Apple's: a day opens its busy time, Kalendere the list", async ({
+  page,
+}) => {
+  await page.goto("/calendar-overview");
+  await page
+    .getByRole("button", { name: /^\w+dag \d+\. \w+$/ })
+    .first()
+    .click();
+  await expect(page.getByRole("button", { name: "Færdig" })).toBeVisible();
+  await page.getByRole("button", { name: "Færdig" }).click();
+
+  await page.getByRole("button", { name: "Kalendere" }).click();
+  await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Forbundne kalendere/ })).toBeVisible();
+});
