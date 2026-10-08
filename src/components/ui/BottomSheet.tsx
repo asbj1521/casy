@@ -1,6 +1,22 @@
 import { useEffect, useId, type ReactNode } from "react";
 
-import Modal, { ModalPanel } from "@/components/ui/Modal";
+import { motion } from "framer-motion";
+
+import Modal from "@/components/ui/Modal";
+
+/**
+ * The sheet slides up from below the screen, as iOS sheets do. Animated as
+ * one `transform` string rather than Framer Motion's `y`, so the browser runs
+ * it on the compositor (Web Animations): `y` is stepped from JavaScript every
+ * frame, and on an iPhone busy drawing the page under it (My calendar's
+ * months, #104) it moved in two or three visible jumps.
+ */
+const SHEET_MOTION = {
+  initial: { transform: "translateY(100%)" },
+  animate: { transform: "translateY(0%)" },
+  exit: { transform: "translateY(100%)" },
+  transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] },
+} as const;
 
 /**
  * A sheet rising from the bottom of a phone's screen, over everything, the
@@ -35,9 +51,12 @@ export default function BottomSheet({
 
   return (
     <Modal open={open} placement="bottom" onClose={onClose}>
-      <ModalPanel
-        labelledBy={titleId}
-        className="max-h-[85dvh] rounded-b-none border-x-0 border-b-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+      <motion.div
+        {...SHEET_MOTION}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative z-10 max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border-t bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-xl"
       >
         <div className="mb-3 flex items-center justify-between gap-3">
           <h3 id={titleId} className="text-[17px] font-bold text-foreground">
@@ -52,7 +71,7 @@ export default function BottomSheet({
           </button>
         </div>
         {children}
-      </ModalPanel>
+      </motion.div>
     </Modal>
   );
 }

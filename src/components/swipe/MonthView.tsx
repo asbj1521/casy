@@ -78,17 +78,18 @@ export default function MonthView({
   // Open on the focused month.
   useLayoutEffect(() => {
     const el = monthEls.current.get(startOfMonth(focus, TZ));
-    if (el && scroller.current) scroller.current.scrollTop = el.offsetTop - 28;
+    if (el && scroller.current) scroller.current.scrollTop = el.offsetTop;
     // Only on opening: the view is opened afresh each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div ref={scroller} className="relative h-full overflow-y-auto overscroll-contain">
-      {/* The weekdays, kept on top while the months scroll under them. Solid,
-          and a pixel above the scroller's edge, so nothing shows through or
-          above it. */}
-      <div className="sticky -top-px z-20 grid h-[29px] grid-cols-7 items-center border-b bg-background pt-px text-center text-[12px] font-medium">
+    <div className="flex h-full flex-col">
+      {/* The weekdays, above the months rather than stuck inside their
+          scroller: iOS Safari left a sliver over a sticky row where the
+          months showed as they scrolled under it. Here they are clipped at
+          the scroller's own edge. */}
+      <div className="grid h-7 shrink-0 grid-cols-7 items-center border-b bg-background text-center text-[12px] font-medium">
         {[1, 2, 3, 4, 5, 6, 0].map((dow) => (
           <span key={dow} className={dow === 0 || dow === 6 ? "text-muted-foreground" : ""}>
             {t.weekdaysShort[dow].charAt(0)}
@@ -96,28 +97,30 @@ export default function MonthView({
         ))}
       </div>
 
-      {months.map((month) => {
-        const { year, month: m } = localDate(month, TZ);
-        const inMonth =
-          selected !== null &&
-          localDate(selected, TZ).month === m &&
-          localDate(selected, TZ).year === year;
-        return (
-          <MonthSection
-            key={month}
-            month={month}
-            showYear={year !== thisYear}
-            items={items}
-            colorOf={calendar.colorOf}
-            today={today}
-            todayTone={todayTone}
-            marked={marked}
-            selected={inMonth ? selected : null}
-            onPickDay={onPickDay}
-            register={register}
-          />
-        );
-      })}
+      <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {months.map((month) => {
+          const { year, month: m } = localDate(month, TZ);
+          const inMonth =
+            selected !== null &&
+            localDate(selected, TZ).month === m &&
+            localDate(selected, TZ).year === year;
+          return (
+            <MonthSection
+              key={month}
+              month={month}
+              showYear={year !== thisYear}
+              items={items}
+              colorOf={calendar.colorOf}
+              today={today}
+              todayTone={todayTone}
+              marked={marked}
+              selected={inMonth ? selected : null}
+              onPickDay={onPickDay}
+              register={register}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
