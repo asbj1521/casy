@@ -20,6 +20,17 @@ async function onToDates(page: Page) {
   }
   await page.getByRole("button", { name: /^(Spring over|Se datoer)$/ }).click();
   await expect(page).toHaveURL(/\?step=dates$/);
+  await answerAll(page);
+}
+
+/** On a phone's dates step, "can" to every date still on the cards, then the summary. */
+async function answerAll(page: Page) {
+  const can = page.getByRole("button", { name: "Jeg kan", exact: true });
+  const ready = page.getByRole("heading", { name: /^\d+ datoe?r? klar$/ });
+  // The cards come once the group's calendars are in.
+  await expect(can.or(ready)).toBeVisible();
+  for (let i = 0; i < 12 && (await can.isVisible()); i++) await can.click();
+  await expect(ready).toBeVisible();
 }
 
 test("suggesting sends the date on screen as a vote", async ({ page, backend, isMobile }) => {
@@ -157,8 +168,9 @@ test.describe("on a phone (#101)", () => {
 
     await page.getByRole("button", { name: "Se datoer" }).click();
     await expect(page).toHaveURL(/\?step=dates$/);
-    // The dates that go into the vote, listed before they are sent.
-    await expect(page.getByText("Også i afstemningen")).toBeVisible();
+    // You swipe the dates yourself before they go: a card at a time.
+    await expect(page.getByText(/^Dato 1 af \d$/).first()).toBeVisible();
+    await answerAll(page);
 
     await page.getByRole("button", { name: SEND }).click();
     await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
@@ -203,6 +215,36 @@ test.describe("on a phone (#101)", () => {
     expect(backend.calls.find((c) => c.body.action === "suggest")!.body.settings).toMatchObject({
       people: { optional: ["p-sara"] },
     });
+  });
+
+  test("you swipe before sending: a no takes the date out, your answers go along", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/?step=dates");
+    await expect(page.getByText("Dato 1 af 5", { exact: true }).first()).toBeVisible();
+    // Can't make the first date: out it goes, and another takes its place.
+    await page.getByRole("button", { name: "Jeg kan ikke" }).click();
+    await expect(page.getByText("Dato 1 af 5", { exact: true }).first()).toBeVisible();
+    // Undo puts it back; out again.
+    await page.getByRole("button", { name: "Fortryd" }).click();
+    await page.getByRole("button", { name: "Jeg kan ikke" }).click();
+    await page.getByRole("button", { name: "Jeg kan, men helst ikke" }).click();
+    await answerAll(page);
+    await expect(page.getByRole("heading", { name: "5 datoer klar" })).toBeVisible();
+
+    await page.getByRole("button", { name: SEND }).click();
+    await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+    const dates = backend.calls.find((c) => c.body.action === "suggest")!.body.dates as {
+      start: string;
+      answer: string;
+    }[];
+    expect(dates).toHaveLength(5);
+    expect(dates.map((d) => d.start)).not.toContain(cph("2026-10-07", "19:00"));
+    expect(dates[0].answer).toBe("maybe");
+    expect(dates.slice(1).every((d) => d.answer === "accepted")).toBe(true);
+    // Already answered: the vote's screen says so, with nothing left to swipe.
+    await expect(page.getByText("Tak, du har svaret").first()).toBeVisible();
   });
 
   test("the live answer opens the dates", async ({ page }) => {

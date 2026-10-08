@@ -154,7 +154,11 @@ export async function suggestEvent(input: {
   groupId: string;
   title: string;
   settings: EventSettings;
-  dates: { start: string; end: string }[];
+  /**
+   * The dates to vote on; on a phone each with the suggester's own answer,
+   * given before sending (#101). A computer's suggester answers after.
+   */
+  dates: { start: string; end: string; answer?: "accepted" | "maybe" }[];
   /** Optional (#84); empty is the same as none. */
   place?: string;
   note?: string;

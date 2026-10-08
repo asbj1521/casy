@@ -133,20 +133,38 @@ export function voteAnswerMs(raw: unknown): number | null {
 }
 
 /**
+ * The suggester's own answer to a date, given before sending (#101): only
+ * "can" or "can, but rather not", since a date they can't make isn't sent.
+ */
+export type SuggesterAnswer = "accepted" | "maybe";
+
+/** A vote's date as stored: its times, and the suggester's answer if given. */
+export interface CandidateDateInput {
+  start: string;
+  end: string;
+  answer?: SuggesterAnswer;
+}
+
+/**
  * A vote's candidate dates as sent by a browser, or null if they aren't worth
  * storing: one to MAX_CANDIDATES dates, each one parseEventDate keeps, none
- * starting at the same moment as another. Sorted by start.
+ * starting at the same moment as another, each with no answer or one of the
+ * suggester's two (#101). Sorted by start.
  */
-export function parseCandidateDates(
-  raw: unknown,
-  now = Date.now(),
-): { start: string; end: string }[] | null {
+export function parseCandidateDates(raw: unknown, now = Date.now()): CandidateDateInput[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_CANDIDATES) return null;
-  const dates: { start: string; end: string }[] = [];
+  const dates: CandidateDateInput[] = [];
   for (const item of raw) {
     const date = parseEventDate(item, now);
     if (!date || dates.some((d) => d.start === date.start)) return null;
-    dates.push(date);
+    const answer = (item as { answer?: unknown }).answer;
+    if (answer === undefined) {
+      dates.push(date);
+    } else if (answer === "accepted" || answer === "maybe") {
+      dates.push({ ...date, answer });
+    } else {
+      return null;
+    }
   }
   return dates.sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 }

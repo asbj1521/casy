@@ -350,7 +350,8 @@ serve("events", async (req, body) => {
       const details = eventDetails(body);
 
       // Several dates: a vote (#74). Everyone, the suggester included,
-      // answers them; nothing is scheduled until then.
+      // answers them; nothing is scheduled until then. On a phone the
+      // suggester's answers come with the dates (#101).
       if (body.dates !== undefined) {
         const dates = parseCandidateDates(body.dates);
         if (!dates) throw new HttpError(400, "Those dates aren't valid any more. Search again.");
@@ -372,6 +373,9 @@ serve("events", async (req, body) => {
         });
         if (error?.code === "23514") throw new HttpError(400, error.message);
         if (error) throw error;
+        // With the suggester's answers (#101) it may be settled already: a
+        // vote only they had to answer goes straight into calendars.
+        if (dates.some((d) => d.answer)) syncCalendarsLater(proposalId as string);
         return { createdId: proposalId as string, ...(await list()) };
       }
 

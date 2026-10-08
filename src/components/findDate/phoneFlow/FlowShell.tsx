@@ -20,14 +20,20 @@ export default function FlowShell({
   pathname,
   onBack,
   footer,
+  fill = false,
   children,
 }: {
   step: FlowStep;
   /** The page's own address ("/" or "/plan"), for the back link. */
   pathname: string;
   onBack: () => void;
-  /** The way on: the button, with the live answer above it on some steps. */
+  /** The way on: the button, with the live answer above it on some steps; none while swiping. */
   footer: ReactNode;
+  /**
+   * Exactly the screen's height, the content taking what is left (the dates
+   * step's deck of cards), rather than at least it and scrolling.
+   */
+  fill?: boolean;
   children: ReactNode;
 }) {
   const t = useT();
@@ -36,7 +42,14 @@ export default function FlowShell({
   const previous = previousStep(step);
 
   return (
-    <div className="flex min-h-[calc(100dvh-var(--tab-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col bg-background">
+    <div
+      className={cn(
+        "flex flex-col bg-background",
+        fill
+          ? "h-[calc(100dvh-var(--tab-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]"
+          : "min-h-[calc(100dvh-var(--tab-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]",
+      )}
+    >
       {previous ? (
         <PhoneSubHeader
           title={words.steps[step]}
@@ -48,7 +61,7 @@ export default function FlowShell({
         <TopNav />
       )}
 
-      <main className="flex-1 px-4 pb-6">
+      <main className={cn("flex-1 px-4", fill ? "flex min-h-0 flex-col pb-2" : "pb-6")}>
         <div className="flex items-center gap-3 pt-1">
           <div aria-hidden className="flex flex-1 gap-1.5">
             {FLOW_STEPS.map((s, i) => (
@@ -69,7 +82,7 @@ export default function FlowShell({
         {/* The first step's question is its title; the others are named in
             the header bar above, so their content starts right away. */}
         {previous ? (
-          <div className="mt-4">{children}</div>
+          <div className={cn("mt-4", fill && "flex min-h-0 flex-1 flex-col")}>{children}</div>
         ) : (
           <>
             <h2 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
@@ -80,9 +93,11 @@ export default function FlowShell({
         )}
       </main>
 
-      <div className="sticky bottom-[var(--tab-bar-height)] z-30 flex flex-col gap-2 border-t bg-card px-4 pb-2 pt-2 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)]">
-        {footer}
-      </div>
+      {footer && (
+        <div className="sticky bottom-[var(--tab-bar-height)] z-30 flex flex-col gap-2 border-t bg-card px-4 pb-2 pt-2 shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)]">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

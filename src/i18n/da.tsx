@@ -369,6 +369,17 @@ export const da = {
     // The last step's button: what pressing it does, in so many words.
     send: "Send datoer til afstemning",
     sent: "Sendt til afstemning",
+    // The last step's deck (#101): you swipe the dates before they are sent.
+    deckHint:
+      "Swipe til højre, hvis du kan, og op, hvis du helst ikke vil. Til venstre fjerner datoen, og Casy finder en ny.",
+    undo: "Fortryd",
+    needSkip: (names: string) => `${names} springer noget over`,
+    needTimeOff: (names: string) => `${names} skal have fri`,
+    readyTitle: (n: number) => (n === 1 ? "1 dato klar" : `${n} datoer klar`),
+    readyBody:
+      "Gruppen swiper sig igennem dem på samme måde, og Casy vælger den, der passer alle bedst.",
+    noMore: "Der er ikke flere gode datoer med de indstillinger. Ret dem, eller start forfra.",
+    startOver: "Start forfra",
   },
   // An event's place and note (#84), on My events and the swipe card.
   eventDetails: {

@@ -1,8 +1,9 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CalendarOff } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { eventsQueryKey, suggestEvent } from "@/api/events";
+import { eventsQueryKey, suggestEvent, type EventResponse } from "@/api/events";
 import {
   createGroup,
   groupBusyQuery,
@@ -18,7 +19,7 @@ import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
 import LaterDates from "@/components/findDate/LaterDates";
 import MoreSettingsScreen from "@/components/findDate/MoreSettingsScreen";
-import DatesStep from "@/components/findDate/phoneFlow/DatesStep";
+import DraftDeck, { type DraftAnswer } from "@/components/findDate/phoneFlow/DraftDeck";
 import DetailsStep from "@/components/findDate/phoneFlow/DetailsStep";
 import FlowShell, { FlowButton } from "@/components/findDate/phoneFlow/FlowShell";
 import GroupStep from "@/components/findDate/phoneFlow/GroupStep";
@@ -33,7 +34,7 @@ import { findAnswer, TODAY, useDateSearch } from "@/hooks/useDateSearch";
 import { useGroupRefresh, type RefreshOutcome } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
-import { storedEventTitle } from "@/i18n/eventTitle";
+import { eventTitle, storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import {
   accept,
@@ -46,6 +47,7 @@ import {
 } from "@/lib/answerSteps";
 import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
 import { pickCandidates } from "@/lib/candidates";
+import { nameList } from "@/lib/format";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { peopleForSearch, SEARCH_WINDOW } from "@/lib/eventSearch";
 import { monthAvailability } from "@/lib/monthAvailability";
@@ -109,6 +111,18 @@ interface PageMemory {
   monthPick: MonthPick | null;
 }
 let pageMemory: PageMemory | null = null;
+
+/**
+ * The phone flow's dates before sending (#101), for the search `key` names:
+ * your answers by each date's start, the dates you took out, and the order
+ * you answered in, for taking the last one back.
+ */
+interface Draft {
+  key: string;
+  answers: Record<string, DraftAnswer>;
+  removed: string[];
+  history: string[];
+}
 
 /** A month paged to by hand, for the answer (its first day) it was paged from. */
 interface MonthPick {
@@ -261,26 +275,80 @@ export default function FindDate() {
   );
   const slot = found?.slot ?? null;
   const review = reviewAnswer(found, search, youProfileId, steps.accepted);
-  // The dates a suggestion would send (#101), for the phone flow's last step
-  // to list before they go: picked as sendSuggestion picks them. Only there,
-  // since picking looks at up to 60 dates.
-  const showVoteDates = phone && flowStep === "dates";
-  const voteDates = useMemo(
-    () =>
-      showVoteDates && participants && found?.slot
-        ? pickCandidates(
-            participants,
-            search,
-            {
-              first: { slot: found.slot, conflicts: found.conflicts },
-              end: searchWindow.end,
-              count: extras.dateCount,
-            },
-            TZ,
-          )
-        : null,
-    [showVoteDates, participants, search, found, searchWindow, extras.dateCount],
+  // The phone flow's last step (#101): you swipe the dates before they go.
+  // Your answers and the dates you took out belong to the search they were
+  // given for (the group, the settings, the period); change any of it and
+  // they start afresh.
+  const draftKey = [
+    activeGroupId,
+    JSON.stringify(search),
+    searchWindow.start,
+    searchWindow.end,
+    currentStep(steps).from,
+  ].join("|");
+  const freshDraft = useMemo<Draft>(
+    () => ({ key: draftKey, answers: {}, removed: [], history: [] }),
+    [draftKey],
   );
+  const [draftState, setDraft] = useState<Draft>(freshDraft);
+  const draft = draftState.key === draftKey ? draftState : freshDraft;
+  // The dates the vote would offer, picked as a computer's suggestion picks
+  // them, less the ones you took out: the next good dates take their place.
+  // Only on that step, since picking looks at up to 60 dates.
+  const showVoteDates = phone && flowStep === "dates";
+  const voteDates = useMemo(() => {
+    if (!showVoteDates || !participants || !found?.slot) return null;
+    const removed = new Set(draft.removed);
+    return pickCandidates(
+      participants,
+      search,
+      {
+        first: { slot: found.slot, conflicts: found.conflicts },
+        end: searchWindow.end,
+        count: extras.dateCount + removed.size,
+      },
+      TZ,
+    )
+      .filter((d) => !removed.has(d.slot.start))
+      .slice(0, extras.dateCount);
+  }, [showVoteDates, participants, search, found, searchWindow, extras.dateCount, draft.removed]);
+  const draftReady =
+    !!voteDates && voteDates.length > 0 && voteDates.every((d) => draft.answers[d.slot.start]);
+  /** Your answer to the date at `start`: "can't" takes it out of the vote. */
+  function answerDraft(start: string, response: EventResponse) {
+    const answers = { ...draft.answers };
+    delete answers[start];
+    setDraft({
+      ...draft,
+      answers: response === "declined" ? answers : { ...answers, [start]: response },
+      removed: response === "declined" ? [...draft.removed, start] : draft.removed,
+      history: [...draft.history, start],
+    });
+  }
+  /** Take back the last answer, a date taken out included. */
+  function undoDraft() {
+    const last = draft.history[draft.history.length - 1];
+    if (!last) return;
+    const answers = { ...draft.answers };
+    delete answers[last];
+    setDraft({
+      ...draft,
+      answers,
+      removed: draft.removed.filter((s) => s !== last),
+      history: draft.history.slice(0, -1),
+    });
+  }
+  /** Answer the date at `start` again: it comes back on top of the cards. */
+  function reopenDraft(start: string) {
+    const answers = { ...draft.answers };
+    delete answers[start];
+    setDraft({ ...draft, answers, history: draft.history.filter((s) => s !== start) });
+  }
+  /** Every date taken out, back in. */
+  function restoreDraft() {
+    const removed = new Set(draft.removed);
+    setDraft({ ...draft, removed: [], history: draft.history.filter((s) => !removed.has(s)) });
+  }
 
   // Fresh busy times while planning (#85): calendars sync hourly, so the
   // group's are synced again in the background while someone plans for it,
@@ -509,7 +577,10 @@ export default function FindDate() {
    * times; if not, nothing goes, and the page shows the new answer to look
    * at first.
    */
-  async function sendSuggestion() {
+  async function sendSuggestion(
+    /** The dates to send as they are, with your answers: the phone flow's (#101). */
+    chosen?: { start: string; end: string; answer: DraftAnswer }[],
+  ) {
     if (!activeGroup || !found?.slot || !participants || !userId) return;
     const groupId = activeGroup.id;
     const shown = answerKey(found);
@@ -528,19 +599,21 @@ export default function FindDate() {
       return;
     }
     const first = { slot: found.slot, conflicts: found.conflicts };
-    const dates = pickCandidates(
-      fresh ?? participants,
-      search,
-      { first, end: searchWindow.end, count: extras.dateCount },
-      TZ,
-    );
+    const dates =
+      chosen ??
+      pickCandidates(
+        fresh ?? participants,
+        search,
+        { first, end: searchWindow.end, count: extras.dateCount },
+        TZ,
+      ).map((d) => ({ start: d.slot.start, end: d.slot.end }));
     suggest.mutate({
       groupId,
       // A name left empty is stored as the matching type's name, which each
       // reader sees in their own language (eventTitle.ts).
       title: name.trim() || storedEventTitle(fallbackTitleId(search)),
       settings: search,
-      dates: dates.map((d) => ({ start: d.slot.start, end: d.slot.end })),
+      dates,
       place: extras.place,
       note: extras.note,
       answerDays: extras.answerDays,
@@ -697,6 +770,50 @@ export default function FindDate() {
 
   if (phone) {
     const touched = detailsTouched(extras, peopleChoice);
+    // The last step: swiping while dates are unanswered, then the summary
+    // with the button that sends them.
+    const swiping =
+      flowStep === "dates" && !waiting && !!voteDates && voteDates.length > 0 && !draftReady;
+    const canSend = !!user && !!activeGroup && !activeGroup.isExample && draftReady;
+    const chosen = (voteDates ?? []).map((d) => ({
+      start: d.slot.start,
+      end: d.slot.end,
+      answer: draft.answers[d.slot.start] ?? "accepted",
+    }));
+    // Under the summary: who checks the dates by hand, a holiday's ways of
+    // fitting, why it can't be sent, and how sending went.
+    const notes = [
+      checkers && (
+        <p key="checkers" className="flex items-start gap-1.5 text-muted-foreground">
+          <CalendarOff className="mt-0.5 h-4 w-4 shrink-0" />
+          {checkers.everyone
+            ? t.scheduler.nobodyHasCalendar
+            : t.scheduler.checkThemselves(nameList(checkers.names, lang))}
+        </p>
+      ),
+      search.kind === "vacation" && suggestions.length > 0 && (
+        <LaterDates key="workarounds" {...laterDatesProps} />
+      ),
+      !user ? (
+        <p key="signIn" className="text-muted-foreground">
+          {t.scheduler.hintSignIn}
+        </p>
+      ) : activeGroup?.isExample ? (
+        <p key="example" className="text-muted-foreground">
+          {t.scheduler.hintExample}
+        </p>
+      ) : null,
+      showMoved && (
+        <p key="moved" className="font-medium text-foreground">
+          {moved.when === "suggest" ? t.scheduler.changedBeforeSending : t.scheduler.refreshedDate}
+        </p>
+      ),
+      suggest.isError && (
+        <p key="error" className="text-red-700">
+          {suggest.error.message}
+        </p>
+      ),
+    ].filter(Boolean);
     const live = (
       <LiveAnswer
         waiting={waiting}
@@ -712,6 +829,7 @@ export default function FindDate() {
           step={flowStep}
           pathname={location.pathname}
           onBack={stepBack}
+          fill={swiping}
           footer={
             flowStep === "group" ? (
               <FlowButton onClick={() => goToStep("what")} disabled={!activeGroup}>
@@ -729,11 +847,17 @@ export default function FindDate() {
                   {touched ? t.schedulerFlow.seeDates : t.schedulerFlow.skip}
                 </FlowButton>
               </>
-            ) : (
+            ) : draftReady ? (
               <div className="flex gap-2">
-                <AnswerActions stepping={false} {...actionProps} />
+                <AnswerActions
+                  stepping={false}
+                  {...actionProps}
+                  approving={false}
+                  canSuggest={canSend}
+                  onSuggest={() => void sendSuggestion(chosen)}
+                />
               </div>
-            )
+            ) : null
           }
         >
           {flowStep === "group" ? (
@@ -758,25 +882,28 @@ export default function FindDate() {
           ) : flowStep === "details" ? (
             <DetailsStep extras={extras} onExtras={updateExtras} participants={participantProps} />
           ) : (
-            <DatesStep
-              answer={
-                <>
-                  <AnswerCard {...answerCardProps} actions={null} />
-                  <DanishTimeNote className="mt-2 px-1" />
-                </>
-              }
-              workarounds={
-                search.kind === "vacation" && suggestions.length > 0 ? (
-                  <LaterDates {...laterDatesProps} />
-                ) : null
+            <DraftDeck
+              waiting={waiting}
+              dates={voteDates}
+              answers={draft.answers}
+              onAnswer={answerDraft}
+              onReopen={reopenDraft}
+              onUndo={undoDraft}
+              canUndo={draft.history.length > 0}
+              onStartOver={restoreDraft}
+              anyRemoved={draft.removed.length > 0}
+              search={search}
+              slotLabel={name.trim() || eventTitle(storedEventTitle(fallbackTitleId(search)), t)}
+              place={extras.place}
+              groupSize={groupSize}
+              warningsFor={(date) =>
+                search.kind === "single" && participants
+                  ? edgeWarnings(participants, date, TZ, youProfileId, lang, t)
+                  : []
               }
               extras={extras}
               onExtras={updateExtras}
-              chart={chart}
-              search={search}
-              voteDates={voteDates}
-              groupSize={groupSize}
-              onPick={laterDatesProps.onPick}
+              notes={notes.length > 0 ? notes : null}
             />
           )}
         </FlowShell>

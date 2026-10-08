@@ -221,7 +221,7 @@ export class FakeBackend {
     const w = this.world;
     const group = w.groups.find((g) => g.id === body.groupId);
     if (!group) return fail(404, "Group not found");
-    const dates = body.dates as { start: string; end: string }[];
+    const dates = body.dates as { start: string; end: string; answer?: "accepted" | "maybe" }[];
     const id = `ev-new-${w.events.length}`;
     w.events.push({
       id,
@@ -239,9 +239,15 @@ export class FakeBackend {
       currentDate: null,
       invitees: group.members.map((m) => ({ ...m, response: null })),
       declinedDates: [],
-      candidates: dates.map((d, i) => ({ id: `${id}-d${i}`, ...d, answers: {} })),
+      // The suggester's own answers, given before sending on a phone (#101).
+      candidates: dates.map(({ answer, ...d }, i) => ({
+        id: `${id}-d${i}`,
+        ...d,
+        answers: answer ? { [ME.id]: answer } : {},
+      })),
       myCalendar: null,
     });
+    if (dates.some((d) => d.answer)) this.decideVote(w.events[w.events.length - 1]);
     this.changed();
     return ok({ events: w.events, createdId: id });
   }

@@ -140,6 +140,30 @@ Deno.test("a vote's dates are kept sorted, and refused when any is off", () => {
   assertEquals(parseCandidateDates(tooMany, now), null);
 });
 
+Deno.test("a vote's dates carry the suggester's answer, can or rather not (#101)", () => {
+  const now = Date.parse("2026-09-22T10:00:00.000Z");
+  const on = (day: number) => ({
+    start: `2026-10-${day}T16:00:00.000Z`,
+    end: `2026-10-${day}T19:00:00.000Z`,
+  });
+  assertEquals(
+    parseCandidateDates(
+      [
+        { ...on(14), answer: "maybe" },
+        { ...on(12), answer: "accepted" },
+      ],
+      now,
+    ),
+    [
+      { ...on(12), answer: "accepted" },
+      { ...on(14), answer: "maybe" },
+    ],
+  );
+  // A date the suggester can't make is never sent, so "declined" is refused.
+  assertEquals(parseCandidateDates([{ ...on(12), answer: "declined" }], now), null);
+  assertEquals(parseCandidateDates([{ ...on(12), answer: 1 }], now), null);
+});
+
 Deno.test("people settings: members, optional among them, at least N for meetings only", () => {
   const a = "11111111-1111-4111-8111-111111111111";
   const b = "22222222-2222-4222-8222-222222222222";

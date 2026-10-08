@@ -338,6 +338,16 @@ export const en: Messages = {
     done: "Done",
     send: "Send dates for voting",
     sent: "Sent for voting",
+    deckHint:
+      "Swipe right if you can, and up if you'd rather not. Left removes the date, and Casy finds another.",
+    undo: "Undo",
+    needSkip: (names: string) => `${names} would skip something`,
+    needTimeOff: (names: string) => `${names} would need time off`,
+    readyTitle: (n: number) => (n === 1 ? "1 date ready" : `${n} dates ready`),
+    readyBody:
+      "The group swipes through them the same way, and Casy picks the one that suits everyone best.",
+    noMore: "There are no more good dates with these settings. Change them, or start over.",
+    startOver: "Start over",
   },
   eventDetails: {
     place: "Place",
