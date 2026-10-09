@@ -386,13 +386,6 @@ export const da = {
   aiPlan: {
     backToSettings: "Indstillinger",
     youWrote: "Det du skrev",
-    tryTitle: "Prøv fx",
-    tries: [
-      "Middag en fredag aften i november",
-      "Hyttetur en weekend i foråret",
-      "Kaffe en hverdag, en time",
-      "Fest en lørdag fra 20 til 2 i december",
-    ],
     kinds: { meeting: "Møde", trip: "Tur", holiday: "Ferie" },
     rows: {
       name: "Navn",

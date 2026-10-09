@@ -111,7 +111,7 @@ export default function AiConversation({
         </p>
       ) : !hasPlan || adding ? (
         <Composer
-          tries={hasPlan ? undefined : words.tries}
+          big={!hasPlan}
           placeholder={hasPlan ? words.morePlaceholder : words.placeholder}
           sendLabel={hasPlan ? words.update : words.send}
           onSend={(text) => {
@@ -155,14 +155,14 @@ export default function AiConversation({
 
 /** The box to write (or say) a description or more details in. */
 function Composer({
-  tries,
+  big,
   placeholder,
   sendLabel,
   onSend,
   onCancel,
 }: {
-  /** Examples to start from, put in the box with a tap (a first description only). */
-  tries?: readonly string[];
+  /** The first description: the screen's main thing, so a big box. */
+  big: boolean;
   placeholder: string;
   sendLabel: string;
   onSend: (text: string) => void;
@@ -186,6 +186,7 @@ function Composer({
       <div
         className={cn(
           "rounded-2xl border bg-card transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
+          big && "border-orange-200 shadow-sm",
           speech.listening && "border-primary ring-2 ring-primary/20",
         )}
       >
@@ -199,11 +200,14 @@ function Composer({
               send();
             }
           }}
-          rows={3}
+          rows={big ? 6 : 3}
           maxLength={500}
           placeholder={speech.listening ? words.listening : placeholder}
           aria-label={placeholder}
-          className="block w-full resize-none rounded-2xl bg-transparent px-3.5 pt-3 text-[16px] text-foreground outline-none placeholder:text-muted-foreground"
+          className={cn(
+            "block w-full resize-none rounded-2xl bg-transparent px-3.5 pt-3 text-foreground outline-none placeholder:text-muted-foreground",
+            big ? "text-[17px] leading-relaxed" : "text-[16px]",
+          )}
         />
         <div className="flex items-center justify-between gap-2 px-2 pb-2">
           {speech.supported ? (
@@ -263,25 +267,6 @@ function Composer({
         <p className="text-sm text-red-700">
           {speech.error === "denied" ? words.micDenied : words.micFailed}
         </p>
-      )}
-      {tries && !draft.trim() && (
-        <div className="mt-1">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            {words.tryTitle}
-          </p>
-          <div className="mt-1.5 flex flex-wrap gap-2">
-            {tries.map((example) => (
-              <button
-                key={example}
-                type="button"
-                onClick={() => setDraft(example)}
-                className="rounded-xl border bg-card px-3 py-1.5 text-left text-sm text-foreground transition hover:bg-secondary"
-              >
-                {example}
-              </button>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
