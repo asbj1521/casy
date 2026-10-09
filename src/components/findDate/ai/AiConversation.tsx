@@ -295,6 +295,9 @@ function Composer({
       {speech.error && (
         <p className="text-sm text-red-700">
           {speech.error === "denied" ? words.micDenied : words.micFailed}
+          {speech.errorDetail && (
+            <span className="mt-0.5 block text-xs opacity-80">({speech.errorDetail})</span>
+          )}
         </p>
       )}
     </div>

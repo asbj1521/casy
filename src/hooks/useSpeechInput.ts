@@ -58,6 +58,23 @@ const SPEECH_LANG: Record<Lang, string> = { da: "da-DK", en: "en-GB" };
 
 export type SpeechError = "denied" | "failed";
 
+/** `promise`, or a failure naming `step`: what it said, or that it never answered within `ms`. */
+function within<T>(promise: Promise<T>, ms: number, step: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${step}: no answer in ${ms / 1000} s`)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(new Error(`${step}: ${err instanceof Error ? err.message : String(err)}`));
+      },
+    );
+  });
+}
+
 /** What was heard, tidied: one line, single spaces. */
 const tidy = (text: string) => text.replace(/\s+/g, " ").trim();
 
@@ -74,6 +91,8 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
   const [supported] = useState(() => isNativeApp || recognitionConstructor() !== null);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<SpeechError | null>(null);
+  // In the app: which step failed, and how Apple put it.
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const recognition = useRef<Recognition | null>(null);
   const nativeListeners = useRef<PluginListenerHandle[]>([]);
   const latestOnText = useRef(onText);
@@ -89,59 +108,92 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
     setListening(false);
   }, []);
 
+  /** Which start is the latest: Stop, or leaving, makes an earlier one give up. */
+  const attempt = useRef(0);
+
   const startNative = useCallback(async () => {
+    const run = ++attempt.current;
+    const current = () => attempt.current === run;
     setError(null);
+    setErrorDetail(null);
     setListening(true);
     try {
-      const speech = await nativeSpeech();
-      let permission = await speech.checkPermissions();
+      const speech = await within(nativeSpeech(), 5_000, "load");
+      let permission = await within(speech.checkPermissions(), 5_000, "checkPermissions");
+      if (!current()) return;
       if (permission.speechRecognition !== "granted") {
-        permission = await speech.requestPermissions();
+        // A minute to answer iOS's two questions (microphone, speech recognition).
+        permission = await within(speech.requestPermissions(), 60_000, "requestPermissions");
       }
+      if (!current()) return;
       if (permission.speechRecognition !== "granted") {
         setError("denied");
         setListening(false);
         return;
       }
       const language = SPEECH_LANG[lang];
-      nativeListeners.current = await Promise.all([
-        speech.addListener("partialResults", (event) => {
-          const heard = event.accumulatedText ?? event.matches?.[0];
-          if (heard) latestOnText.current(tidy(heard));
-        }),
-        speech.addListener("listeningState", (event) => {
-          if ((event.state ?? event.status) === "stopped") endNative();
-        }),
-        speech.addListener("error", () => setError("failed")),
-      ]);
+      const handles = await within(
+        Promise.all([
+          speech.addListener("partialResults", (event) => {
+            const heard = event.accumulatedText ?? event.matches?.[0];
+            if (heard) latestOnText.current(tidy(heard));
+          }),
+          speech.addListener("listeningState", (event) => {
+            if ((event.state ?? event.status) === "stopped") endNative();
+          }),
+          speech.addListener("error", (event) => {
+            setError("failed");
+            setErrorDetail(`${event.code}: ${event.message}`);
+          }),
+        ]),
+        5_000,
+        "addListener",
+      );
+      if (!current()) {
+        for (const handle of handles) void handle.remove();
+        return;
+      }
+      nativeListeners.current = handles;
       // Apple's long-standing recognizer, kept on the phone where it can be:
       // the newest one can end a session without a word on some iOS 26 phones.
-      const { available: onDevice } = await speech
-        .isOnDeviceRecognitionAvailable({ language, preferLegacyRecognizer: true })
-        .catch(() => ({ available: false }));
-      await speech.start({
-        language,
-        partialResults: true,
-        addPunctuation: true,
-        preferLegacyRecognizer: true,
-        useOnDeviceRecognition: onDevice,
-      });
+      const { available: onDevice } = await within(
+        speech.isOnDeviceRecognitionAvailable({ language, preferLegacyRecognizer: true }),
+        5_000,
+        "isOnDeviceRecognitionAvailable",
+      ).catch(() => ({ available: false }));
+      if (!current()) return;
+      await within(
+        speech.start({
+          language,
+          partialResults: true,
+          addPunctuation: true,
+          preferLegacyRecognizer: true,
+          useOnDeviceRecognition: onDevice,
+        }),
+        10_000,
+        "start",
+      );
     } catch (err) {
-      // Said under the box; the details go to Safari's Web Inspector.
-      console.error("speech recognition failed to start", err);
+      if (!current()) return;
+      // Said under the box, with the step and Apple's own words, so a phone
+      // that can't do it says why.
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error("speech recognition failed", detail);
       setError("failed");
+      setErrorDetail(detail);
       endNative();
     }
   }, [lang, endNative]);
 
   const stop = useCallback(() => {
     if (isNativeApp) {
-      if (nativeListeners.current.length > 0) {
-        void nativeSpeech()
-          .then((speech) => speech.stop())
-          .catch(() => {})
-          .finally(endNative);
-      }
+      // Whatever the start had got to: it gives up, the phone stops listening,
+      // and the button turns back at once.
+      attempt.current++;
+      void nativeSpeech()
+        .then((speech) => speech.stop())
+        .catch(() => {});
+      endNative();
       return;
     }
     recognition.current?.stop();
@@ -191,6 +243,7 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
   useEffect(
     () => () => {
       recognition.current?.abort();
+      attempt.current++;
       if (nativeListeners.current.length > 0) {
         void nativeSpeech()
           .then((speech) => speech.stop())
@@ -201,5 +254,5 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
     [],
   );
 
-  return { supported, listening, error, start, stop };
+  return { supported, listening, error, errorDetail, start, stop };
 }
