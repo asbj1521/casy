@@ -95,6 +95,15 @@ export const DANISH: Record<string, string> = {
   "Casy can't add events to that calendar.": "Casy kan ikke lægge aftaler i den kalender.",
   "Choose a primary calendar first.": "Vælg en primær kalender først.",
 
+  // Planning with AI
+  "Describe the event in a few words.": "Beskriv aftalen med et par ord.",
+  "AI planning is used up for today. Plan it by hand, or try tomorrow.":
+    "AI-planlægningen er brugt op for i dag. Planlæg selv, eller prøv i morgen.",
+  "AI planning isn't available right now. Plan it by hand, or try again.":
+    "AI-planlægningen virker ikke lige nu. Planlæg selv, eller prøv igen.",
+  "Casy couldn't make an event of that. Try saying it another way.":
+    "Casy kunne ikke få en aftale ud af det. Prøv at sige det på en anden måde.",
+
   // iCloud
   "Enter your Apple account email and your app-specific password.":
     "Skriv e-mailen til din Apple-konto og din app-specifikke adgangskode.",
