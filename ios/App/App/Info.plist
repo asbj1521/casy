@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Casy reads when you are busy in your calendars, so your groups can find dates that suit you. Only start and end times leave your phone, never what the events are called.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Casy reads when you are busy in your calendars, so your groups can find dates that suit you. Only start and end times leave your phone, never what the events are called.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Casy uses the microphone when you tap Speak, so you can say what you are planning instead of typing it.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

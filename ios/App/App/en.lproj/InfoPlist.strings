@@ -1,3 +1,7 @@
 /* The permission prompts for talking instead of typing (#100), in the phone's language. */
 "NSMicrophoneUsageDescription" = "Casy uses the microphone when you tap Speak, so you can say what you are planning instead of typing it.";
 "NSSpeechRecognitionUsageDescription" = "When you tap Speak, Apple's speech recognition turns what you say into text. Casy only gets the text.";
+
+/* The permission prompt for reading the phone's calendars (#63). */
+"NSCalendarsFullAccessUsageDescription" = "Casy reads when you are busy in your calendars, so your groups can find dates that suit you. Only start and end times leave your phone, never what the events are called.";
+"NSCalendarsUsageDescription" = "Casy reads when you are busy in your calendars, so your groups can find dates that suit you. Only start and end times leave your phone, never what the events are called.";

@@ -1,3 +1,7 @@
 /* The permission prompts for talking instead of typing (#100), in the phone's language. */
 "NSMicrophoneUsageDescription" = "Casy bruger mikrofonen, når du trykker på Tal, så du kan sige, hvad I skal, i stedet for at skrive det.";
 "NSSpeechRecognitionUsageDescription" = "Når du trykker på Tal, gør Apples talegenkendelse det, du siger, til tekst. Casy får kun teksten.";
+
+/* The permission prompt for reading the phone's calendars (#63). */
+"NSCalendarsFullAccessUsageDescription" = "Casy læser, hvornår du er optaget i dine kalendere, så dine grupper kan finde datoer, der passer dig. Kun start- og sluttider forlader telefonen, aldrig hvad aftalerne hedder.";
+"NSCalendarsUsageDescription" = "Casy læser, hvornår du er optaget i dine kalendere, så dine grupper kan finde datoer, der passer dig. Kun start- og sluttider forlader telefonen, aldrig hvad aftalerne hedder.";

@@ -6,6 +6,8 @@ import Capacitor
 class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
+        // The app's own plugin (not an npm package), so it is registered here.
+        bridge?.registerPluginInstance(PhoneCalendarPlugin())
         // From iOS 26, a scroll view fades and blurs what scrolls under its top
         // and bottom edges: a grey haze over the page's own header and tab bar.
         // The page draws its own edges, as the apps it is modelled on do.
