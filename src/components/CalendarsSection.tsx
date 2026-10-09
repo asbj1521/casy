@@ -163,6 +163,9 @@ export default function CalendarsSection() {
         </Notice>
       )}
 
+      {/* At the top, where it is seen: the phone's row is far down a phone's screen. */}
+      <PhoneNote outcome={connectPhone.data} error={connectPhone.error?.message ?? null} />
+
       {hasConnected && (
         <AccountList
           accounts={accounts}
@@ -177,13 +180,12 @@ export default function CalendarsSection() {
         offer={offer}
         connections={connections ?? []}
         statusPending={isPending}
+        busy={connectPhone.isPending ? "device" : null}
         chosen={openForm ?? (hasConnected ? null : ready)}
         glow={!isPending && !hasConnected && !ready && !openForm}
         phone={phone}
         onConnect={connect}
       />
-
-      <PhoneNote outcome={connectPhone.data} error={connectPhone.error?.message ?? null} />
 
       {linkAdded && (
         <Notice tone="success" className="mt-3">

@@ -35,6 +35,26 @@ export type PhoneSyncOutcome =
   /** A background read found no calendars at all, which is more likely a hiccup than the truth. */
   | { state: "skipped" };
 
+/** Reading the phone takes a second or two; past this, something is stuck. */
+const READ_LIMIT_MS = 30_000;
+
+/** `promise`, or a failure once `ms` have passed without an answer. */
+function within<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`no answer in ${ms / 1000} s`)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
 /** The run under way, so a tap and a background trigger at once share one send. */
 let running: Promise<PhoneSyncOutcome> | null = null;
 
@@ -65,7 +85,10 @@ async function runSync(
   const window = phoneWindow(Date.now());
   let calendars;
   try {
-    calendars = phoneBusy(await readPhoneCalendars(window.from, window.to), window);
+    calendars = phoneBusy(
+      await within(readPhoneCalendars(window.from, window.to), READ_LIMIT_MS),
+      window,
+    );
   } catch (err) {
     console.warn("reading the phone's calendars failed", err);
     throw new Error(currentMessages().phoneCalendar.couldntRead, { cause: err });

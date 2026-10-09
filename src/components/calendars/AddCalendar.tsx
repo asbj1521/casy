@@ -27,6 +27,7 @@ interface ProviderState {
 function providerStates(
   offer: CalendarProvider[],
   connections: CalendarConnectionStatus[],
+  busy: CalendarProvider | null,
   chosen: CalendarProvider | null,
   t: Messages,
 ): ProviderState[] {
@@ -37,7 +38,7 @@ function providerStates(
     return {
       id,
       connected: attempts.filter((c) => c.status === "connected").length,
-      pending: latest?.status === "pending",
+      pending: latest?.status === "pending" || busy === id,
       failed:
         latest?.status === "error" ? (latest.error_message ?? t.providerCard.unknownError) : null,
       chosen: chosen === id,
@@ -64,6 +65,7 @@ export default function AddCalendar({
   offer,
   connections,
   statusPending,
+  busy,
   chosen,
   glow,
   phone,
@@ -74,6 +76,8 @@ export default function AddCalendar({
   connections: CalendarConnectionStatus[];
   /** calendar-status hasn't answered yet, so nobody knows what is linked. */
   statusPending: boolean;
+  /** Connecting right now, without leaving the page (the phone). */
+  busy: CalendarProvider | null;
   chosen: CalendarProvider | null;
   /** Nothing connected and nothing picked: the tiles take turns glowing. */
   glow: boolean;
@@ -81,7 +85,7 @@ export default function AddCalendar({
   onConnect: (provider: CalendarProvider) => void;
 }) {
   const t = useT();
-  const states = providerStates(offer, connections, chosen, t);
+  const states = providerStates(offer, connections, busy, chosen, t);
   const failures = states.filter((s) => s.failed);
 
   if (phone) {
