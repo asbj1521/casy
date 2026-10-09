@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
 
 import { useT } from "@/i18n/lang";
+import { isNativeApp } from "@/lib/nativeApp";
 
 /**
  * The bottom of every page: how Casy works, the terms, and the privacy link,
  * which has to be reachable from the home page for Google's consent screen.
+ * Not in the iPhone app, whose profile lists all three (HelpGroup).
  */
 export default function Footer() {
   const t = useT();
+  if (isNativeApp) return null;
   return (
     <footer className="border-t bg-background">
       {/* The same edge-to-edge gutter as the nav, so both ends line up with it. */}
