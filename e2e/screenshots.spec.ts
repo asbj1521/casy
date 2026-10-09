@@ -103,6 +103,45 @@ for (const { name, path, world, signedIn } of PAGES) {
   });
 }
 
+// Dark mode (#93), following the system: the main pages again, and the swipe
+// screen, whose calendar blocks are coloured in code (lib/tint.ts).
+const DARK_PAGES = [
+  "landing",
+  "scheduler",
+  "groups",
+  "events",
+  "event-vote",
+  "calendar",
+  "calendars-connected",
+  "profile",
+];
+
+test.describe("dark", () => {
+  test.use({ colorScheme: "dark" });
+
+  for (const { name, path, world, signedIn } of PAGES.filter((p) => DARK_PAGES.includes(p.name))) {
+    test.describe(name, () => {
+      if (world) test.use({ world });
+      if (signedIn === false) test.use({ signedIn: false });
+
+      test(`looks as it did, dark`, async ({ page, isMobile }) => {
+        test.skip(isMobile && name === "event-vote", "a phone has no open event beside the list");
+        await page.goto(path);
+        await expectPage(page, `${name}-dark`, isMobile);
+      });
+    });
+  }
+
+  test("the swipe screen looks as it did, dark", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "phones only: a computer answers beside the list (event-vote)");
+    await page.goto("/events/ev-boardgames/dates");
+    await expect(page.getByText("Dato 1 af 3", { exact: true })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await useInter(page);
+    await expect(page).toHaveScreenshot("swipe-dark.png");
+  });
+});
+
 // The phone's scheduling flow (#101): the first step is "scheduler" above.
 for (const step of ["what", "details", "dates"]) {
   test(`the scheduling flow's ${step} step looks as it did`, async ({ page, isMobile }) => {
