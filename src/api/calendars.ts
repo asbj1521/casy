@@ -176,7 +176,15 @@ export async function addCalendarLink(
 
 /** A push of the phone's calendars, as calendar-phone answers it. */
 export type PhonePushResult =
-  { gone: true } | { gone?: false; connectionId: string; calendars: number; busyBlocks: number };
+  | { gone: true }
+  | {
+      gone?: false;
+      connectionId: string;
+      calendars: number;
+      busyBlocks: number;
+      /** Asked for with `issueToken`: the phone's own token for the background refresh. */
+      deviceToken?: string;
+    };
 
 /**
  * Send the phone's calendars and busy blocks (the iPhone app only; see
@@ -187,6 +195,8 @@ export async function pushPhoneCalendars(body: {
   deviceId: string;
   label: string;
   create: boolean;
+  /** Hand back a new device token (the native side has none). */
+  issueToken: boolean;
   calendars: PhoneCalendarPush[];
 }): Promise<PhonePushResult> {
   return await callFunction<PhonePushResult>("calendar-phone", {

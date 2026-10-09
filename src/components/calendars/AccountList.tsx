@@ -10,7 +10,7 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Messages } from "@/i18n/da";
 import { useT } from "@/i18n/lang";
 import { syncedAgo } from "@/lib/accountSummary";
-import { phoneConnectionId, rememberPhoneConnection } from "@/lib/phoneCalendar";
+import { forgetPhone, phoneConnectionId } from "@/lib/phoneCalendar";
 import { cn } from "@/lib/utils";
 import type { CalendarProvider } from "@/types";
 
@@ -97,7 +97,7 @@ function AccountRow({
   const remove = useMutation({
     mutationFn: async () => {
       await disconnectCalendar(queryClient, account.id);
-      if (phoneConnectionId(user.id) === account.id) rememberPhoneConnection(user.id, null);
+      if (phoneConnectionId(user.id) === account.id) forgetPhone(user.id);
     },
   });
   const brand = PROVIDER_BRANDS[account.provider];

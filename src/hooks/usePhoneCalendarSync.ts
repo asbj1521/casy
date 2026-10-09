@@ -7,14 +7,18 @@ import { currentMessages } from "@/i18n/current";
 import { isNativeApp } from "@/lib/nativeApp";
 import { phoneBusy, phoneWindow } from "@/lib/phoneBusy";
 import {
+  backgroundConfigured,
+  clearPhoneBackground,
   deviceId,
   deviceLabel,
+  forgetPhone,
   onPhoneCalendarChange,
   phoneAccess,
   phoneConnectionId,
   readPhoneCalendars,
   rememberPhoneConnection,
   requestPhoneAccess,
+  setPhoneBackground,
 } from "@/lib/phoneCalendar";
 
 /** Back in the app sooner than this after the last send: nothing new is sent. */
@@ -68,17 +72,26 @@ async function runSync(
   }
   if (!create && calendars.length === 0) return { state: "skipped" };
 
+  // The background refresh needs the phone's own token; asked for only when
+  // the native side has none (a new token replaces the old one).
+  const issueToken = !(await backgroundConfigured().catch(() => true));
   const result = await pushPhoneCalendars({
     deviceId: deviceId(),
     label: deviceLabel(),
     create,
+    issueToken,
     calendars,
   });
   if (result.gone) {
-    rememberPhoneConnection(userId, null);
+    forgetPhone(userId);
     return { state: "gone" };
   }
   rememberPhoneConnection(userId, result.connectionId);
+  if (result.deviceToken) {
+    await setPhoneBackground(result.deviceToken).catch((err) =>
+      console.warn("starting the background refresh failed", err),
+    );
+  }
   await calendarsChanged(queryClient);
   return { state: "synced", calendars: result.calendars, busyBlocks: result.busyBlocks };
 }
@@ -89,11 +102,21 @@ async function runSync(
  * it opens, when it comes back to the front (at most every two minutes), and
  * when the phone's calendars change while it is open. Only once this phone
  * is connected for the account signed in; nothing at all on the website.
+ * Between opens, the app's native side sends them in the background when iOS
+ * allows (PhoneCalendarBackground.swift); signing out stops that.
  */
 export function usePhoneCalendarSync() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const userId = user?.id ?? null;
   const queryClient = useQueryClient();
+
+  // Signed out: the device token belongs to the account that was signed in.
+  useEffect(() => {
+    if (!isNativeApp || loading || userId) return;
+    clearPhoneBackground().catch((err) =>
+      console.warn("clearing the background refresh failed", err),
+    );
+  }, [loading, userId]);
 
   useEffect(() => {
     if (!isNativeApp || !userId) return;

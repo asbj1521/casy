@@ -20,6 +20,15 @@ interface PhoneCalendarPlugin {
   requestAccess(): Promise<{ state: PhoneAccess }>;
   read(options: { from: number; to: number }): Promise<PhoneRead>;
   openSettings(): Promise<void>;
+  backgroundState(): Promise<{ configured: boolean }>;
+  setBackground(options: {
+    url: string;
+    apiKey: string;
+    deviceId: string;
+    label: string;
+    token: string;
+  }): Promise<{ configured: boolean }>;
+  clearBackground(): Promise<void>;
   addListener(event: "change", listener: () => void): Promise<PluginListenerHandle>;
 }
 
@@ -65,6 +74,36 @@ export async function onPhoneCalendarChange(listener: () => void): Promise<() =>
 }
 
 /* ----------------------------------------------------------------------------
+ * The background refresh (PhoneCalendarBackground.swift): iOS wakes the app
+ * now and then and its native side sends the phone's calendars without this
+ * page, with the phone's own device token (calendar-phone).
+ * ------------------------------------------------------------------------- */
+
+/** Whether the native side has a token to send with; false where it can't say. */
+export async function backgroundConfigured(): Promise<boolean> {
+  const { plugin } = await phonePlugin();
+  return (await plugin.backgroundState()).configured;
+}
+
+/** Hand the native side the token calendar-phone issued, with where to send. */
+export async function setPhoneBackground(token: string): Promise<void> {
+  const { plugin } = await phonePlugin();
+  await plugin.setBackground({
+    url: import.meta.env.VITE_SUPABASE_URL,
+    apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    deviceId: deviceId(),
+    label: deviceLabel(),
+    token,
+  });
+}
+
+/** Nothing is sent in the background any more (signed out, or this phone removed). */
+export async function clearPhoneBackground(): Promise<void> {
+  const { plugin } = await phonePlugin();
+  await plugin.clearBackground();
+}
+
+/* ----------------------------------------------------------------------------
  * What this phone remembers: its own random id (which phone a connection is,
  * so a second phone is a second connection), and whether it is connected for
  * the account signed in, with the connection's id.
@@ -94,4 +133,12 @@ export function phoneConnectionId(userId: string): string | null {
 
 export function rememberPhoneConnection(userId: string, connectionId: string | null): void {
   writeStored(connectedKey(userId), connectionId);
+}
+
+/** This phone is no longer connected for `userId`: it stops sending, in the background too. */
+export function forgetPhone(userId: string): void {
+  rememberPhoneConnection(userId, null);
+  clearPhoneBackground().catch((err) =>
+    console.warn("clearing the background refresh failed", err),
+  );
 }

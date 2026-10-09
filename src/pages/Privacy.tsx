@@ -108,8 +108,9 @@ const da: LegalCopy = {
             Optagede tidsrum bruges kun til at vise, hvornår du og dine grupper er ledige, og til at
             foreslå tidspunkter. Casy opdaterer dem cirka en gang i timen, og igen, når nogen i en
             af dine grupper planlægger en aftale med gruppen, så de passer. Telefonens kalendere
-            sender iPhone-appen selv, når du åbner den, og når kalenderne ændrer sig, mens den er
-            åben.
+            sender iPhone-appen selv, når du åbner den, når kalenderne ændrer sig, mens den er åben,
+            og ind imellem i baggrunden, når iPhonen tillader det. Til det får telefonen sin egen
+            nøgle, som kun kan opdatere telefonens optagede tidsrum.
           </p>
           <p>
             Har du valgt en primær kalender, bruger Casy din adgang til den til at lægge aftaler, I
@@ -397,7 +398,9 @@ const en: LegalCopy = {
             Busy times are used only to show when you and your groups are free and to suggest times.
             Casy refreshes them about once an hour, and again when someone in one of your groups
             plans an event with the group, so they stay current. The iPhone app sends the
-            phone&apos;s calendars itself, when you open it and when they change while it is open.
+            phone&apos;s calendars itself, when you open it, when they change while it is open, and
+            now and then in the background, when the iPhone allows it. For that the phone gets a key
+            of its own, which can only update the phone&apos;s busy times.
           </p>
           <p>
             If you chose a primary calendar, Casy uses your access to it to add the events you agree
