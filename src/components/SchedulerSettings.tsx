@@ -23,6 +23,7 @@ import {
   type EventExtras,
   type SchedulerSettings,
 } from "@/lib/scheduler";
+import type { PlanField } from "@/lib/aiPlan";
 import { nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -145,11 +146,30 @@ function Stepper({
 }
 
 /** A label above its control, as every field in the wide bar has. */
-function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
+function Field({
+  label,
+  mark,
+  children,
+}: {
+  label: ReactNode;
+  /** A word after the label, such as "guessed" for a setting Casy's AI guessed (#100). */
+  mark?: string | null;
+  children: ReactNode;
+}) {
   return (
     <div className="flex shrink-0 flex-col gap-2">
-      <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+      <span
+        className={cn(
+          "text-xs font-bold uppercase tracking-wide text-muted-foreground",
+          mark && "flex items-center gap-1.5",
+        )}
+      >
         {label}
+        {mark && (
+          <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold normal-case tracking-normal text-amber-800">
+            {mark}
+          </span>
+        )}
       </span>
       {children}
     </div>
@@ -448,15 +468,25 @@ export function SettingsPanel({
  * settings as a form, one labelled field under another, with the room a
  * screen of its own gives them. The group is picked a step earlier.
  */
-export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "groupSwitcher">) {
+export function StepSettings({
+  name,
+  onName,
+  settings,
+  onChange,
+  guessed = [],
+}: Omit<Props, "groupSwitcher"> & {
+  /** Settings Casy's AI guessed (#100), marked until changed. */
+  guessed?: readonly PlanField[];
+}) {
   const t = useT();
+  const mark = (field: PlanField) => (guessed.includes(field) ? t.aiPlan.guessed : null);
   const dayValues = useDayValues(settings);
   const chevron = <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />;
   // Every field fills its cell: the whole row, or one of two equal halves.
   const trigger =
     "flex h-12 w-full items-center justify-between gap-2 whitespace-nowrap rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary";
   const period = (
-    <Field label={t.scheduler.when}>
+    <Field label={t.scheduler.when} mark={mark("months")}>
       <PeriodPicker
         value={settings.period}
         onChange={(period) => onChange({ period })}
@@ -483,7 +513,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
           className="h-12 w-full rounded-xl border bg-card px-3.5 text-[17px] font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
         />
       </label>
-      <Field label={t.settingsPanel.kind}>
+      <Field label={t.settingsPanel.kind} mark={mark("kind")}>
         <KindChoice
           fill
           multiDay={settings.multiDay}
@@ -493,7 +523,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
       {settings.multiDay ? (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <Field label={t.scheduler.tripDays}>
+            <Field label={t.scheduler.tripDays} mark={mark("days")}>
               <Stepper
                 fill
                 value={settings.days}
@@ -506,7 +536,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
             </Field>
             {period}
           </div>
-          <Field label={t.scheduler.tripStarts}>
+          <Field label={t.scheduler.tripStarts} mark={mark("startWeekday")}>
             <StartDayPicker
               fill
               value={settings.startDow}
@@ -517,7 +547,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <Field label={t.scheduler.startsAt}>
+            <Field label={t.scheduler.startsAt} mark={mark("startHour")}>
               <Dropdown
                 value={settings.anyTime ? ANY_TIME : settings.startHour}
                 options={startHourOptions(t)}
@@ -528,7 +558,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
                 sheet={{ title: t.scheduler.startsAt, doneLabel: t.schedulerFlow.done }}
               />
             </Field>
-            <Field label={t.scheduler.duration}>
+            <Field label={t.scheduler.duration} mark={mark("durationMinutes")}>
               <Stepper
                 fill
                 value={settings.durationMinutes}
@@ -540,7 +570,7 @@ export function StepSettings({ name, onName, settings, onChange }: Omit<Props, "
               />
             </Field>
           </div>
-          <Field label={t.scheduler.dayLabel}>
+          <Field label={t.scheduler.dayLabel} mark={mark("weekdays")}>
             <DaySlider size="lg" selected={settings.dows} onChange={(dows) => onChange({ dows })} />
           </Field>
           {period}

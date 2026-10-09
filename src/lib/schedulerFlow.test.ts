@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_EXTRAS, NO_PEOPLE_CHOICE } from "@/lib/scheduler";
 import {
+  aiFromSearch,
   detailsTouched,
   nextStep,
   previousStep,
@@ -39,6 +40,28 @@ describe("nextStep and previousStep", () => {
     expect(nextStep("dates")).toBeNull();
     expect(previousStep("what")).toBe("group");
     expect(previousStep("group")).toBeNull();
+  });
+});
+
+describe("the AI flow (#100)", () => {
+  it("is the group, the description and the dates", () => {
+    expect(nextStep("group", true)).toBe("describe");
+    expect(nextStep("describe", true)).toBe("dates");
+    expect(previousStep("dates", true)).toBe("describe");
+    expect(previousStep("describe", true)).toBe("group");
+  });
+
+  it("is in the address, and round-trips", () => {
+    expect(searchForStep("describe", true)).toBe("?step=describe");
+    expect(searchForStep("dates", true)).toBe("?step=dates&ai");
+    expect(searchForStep("group", true)).toBe("");
+    for (const step of ["describe", "dates"] as const) {
+      const search = searchForStep(step, true);
+      expect(stepFromSearch(search)).toBe(step);
+      expect(aiFromSearch(search)).toBe(true);
+    }
+    expect(aiFromSearch("?step=dates")).toBe(false);
+    expect(aiFromSearch("")).toBe(false);
   });
 });
 

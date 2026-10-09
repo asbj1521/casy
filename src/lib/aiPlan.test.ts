@@ -10,7 +10,9 @@ import {
   matchNames,
   mentionedNames,
   monthToIso,
+  planFieldsOf,
   type PlanSettings,
+  statedFields,
   toPlanSettings,
 } from "@/lib/aiPlan";
 import { NO_PEOPLE_CHOICE } from "@/lib/scheduler";
@@ -234,5 +236,25 @@ describe("names", () => {
       states: { a: "out" },
       atLeast: 2,
     });
+  });
+});
+
+describe("marks", () => {
+  it("come off the settings a change touches", () => {
+    expect(planFieldsOf({ startHour: 19 })).toEqual(["startHour"]);
+    expect(planFieldsOf({ anyTime: true, durationMinutes: 60 })).toEqual([
+      "startHour",
+      "durationMinutes",
+    ]);
+    expect(planFieldsOf({ startDow: null })).toEqual(["startWeekday", "kind"]);
+    expect(planFieldsOf({ period: null, dows: [5] })).toEqual(["weekdays", "months"]);
+  });
+
+  it("know what a plan states rather than guesses", () => {
+    expect(
+      statedFields({ ...NOTHING, kind: "meeting", startHour: 18, durationMinutes: 180 }, [
+        "durationMinutes",
+      ]),
+    ).toEqual(["kind", "startHour"]);
   });
 });

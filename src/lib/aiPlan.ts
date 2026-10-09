@@ -251,3 +251,28 @@ export function applyPeople(
 export function mentionedNames(plan: AiPlan): string[] {
   return [...new Set([...plan.people.without, ...plan.people.optional, ...plan.people.required])];
 }
+
+/** What a change to the page's settings touches, in the AI's terms: its marks come off. */
+export function planFieldsOf(patch: Partial<SchedulerSettings>): PlanField[] {
+  const fields: PlanField[] = [];
+  if ("multiDay" in patch) fields.push("kind");
+  if ("startHour" in patch || "anyTime" in patch) fields.push("startHour");
+  if ("durationMinutes" in patch) fields.push("durationMinutes");
+  if ("dows" in patch) fields.push("weekdays");
+  if ("days" in patch) fields.push("days");
+  if ("startDow" in patch) fields.push("startWeekday", "kind");
+  if ("period" in patch) fields.push("months");
+  return [...new Set(fields)];
+}
+
+/** The settings a plan (or a question's answer) states outright, rather than guesses. */
+export function statedFields(plan: PlanSettings, assumed: readonly PlanField[] = []): PlanField[] {
+  const fields = Object.keys(plan) as PlanField[];
+  return fields.filter(
+    (field) =>
+      plan[field] !== null &&
+      !assumed.includes(field) &&
+      // "Any time of day" is a start time stated.
+      !(field === "anyTime" && plan.startHour !== null),
+  );
+}

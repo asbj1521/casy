@@ -271,16 +271,10 @@ Deno.test("the settings so far are written the model's way, and read back the sa
     monthsFrom: "2026-12",
     monthsTo: "2027-01",
   });
-  const {
-    title: _t,
-    place: _p,
-    note: _n,
-    people: _pe,
-    atLeast: _a,
-    assumed: _as,
-    questions: _q,
-    ...back
-  } = cleanPlan(wire({ ...toWire(settings) }), MONTHS);
+  const read = cleanPlan(wire({ ...toWire(settings) }), MONTHS);
+  const back = Object.fromEntries(
+    Object.keys(settings).map((k) => [k, read[k as keyof typeof read]]),
+  );
   assertEquals(back, settings);
   assertEquals(toWire({ ...EMPTY_SETTINGS, anyTime: true, months: "any" }).start, "any");
 });

@@ -6,6 +6,8 @@
  * (fixtures.ts), rather than quietly answering nothing.
  */
 import type { EventResponse, SuggestedEvent } from "@/api/events";
+import type { PlanAnswer } from "@/api/planAi";
+import type { AiPlan } from "@/lib/aiPlan";
 import { groupBusy, ME, myData, myOverview, NOW, type World } from "./world";
 
 export interface FunctionCall {
@@ -92,9 +94,63 @@ export class FakeBackend {
       case "admin":
         if (action === "status") return ok({ isAdmin: false });
         return undefined;
+      case "plan-ai":
+        return this.planAi(body);
       default:
         return undefined;
     }
+  }
+
+  /**
+   * Planning with AI (#100), always the same plans: a first description is a
+   * Friday dinner in November without Jonas (and a Peter nobody in the group
+   * is), with a question about the time; more details move it to December.
+   */
+  private planAi(body: Record<string, unknown>): Answer {
+    const nothing: AiPlan = {
+      kind: null,
+      startHour: null,
+      anyTime: null,
+      durationMinutes: null,
+      weekdays: null,
+      days: null,
+      startWeekday: null,
+      months: null,
+      title: null,
+      place: null,
+      note: null,
+      people: { without: [], optional: [], required: [] },
+      atLeast: null,
+      assumed: [],
+      questions: [],
+    };
+    const evening = (startHour: number) => ({ ...nothing, startHour, anyTime: false });
+    const plan: AiPlan =
+      body.current === null
+        ? {
+            ...nothing,
+            kind: "meeting",
+            startHour: 18,
+            anyTime: false,
+            durationMinutes: 180,
+            weekdays: [5],
+            months: { from: "2026-11", to: "2026-11" },
+            title: "Middag",
+            people: { without: ["Jonas", "Peter"], optional: [], required: [] },
+            assumed: ["startHour"],
+            questions: [
+              {
+                question: "Hvornår på aftenen?",
+                options: [
+                  { label: "Kl. 18", patch: evening(18) },
+                  { label: "Kl. 19", patch: evening(19) },
+                ],
+              },
+            ],
+          }
+        : { ...nothing, months: { from: "2026-12", to: "2026-12" } };
+    const answer: PlanAnswer = { plan, left: 41 };
+    return ok(answer);
   }
 
   private groups(action: string, body: Record<string, unknown>): Answer | undefined {

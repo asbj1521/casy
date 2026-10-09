@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import PhoneSubHeader from "@/components/PhoneSubHeader";
 import TopNav from "@/components/TopNav";
 import { useT } from "@/i18n/lang";
-import { FLOW_STEPS, previousStep, searchForStep, type FlowStep } from "@/lib/schedulerFlow";
+import { flowSteps, previousStep, searchForStep, type FlowStep } from "@/lib/schedulerFlow";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,9 +21,12 @@ export default function FlowShell({
   onBack,
   footer,
   fill = false,
+  ai = false,
   children,
 }: {
   step: FlowStep;
+  /** Planning with AI (#100): its three steps rather than the four. */
+  ai?: boolean;
   /** The page's own address ("/" or "/plan"), for the back link. */
   pathname: string;
   onBack: () => void;
@@ -38,8 +41,9 @@ export default function FlowShell({
 }) {
   const t = useT();
   const words = t.schedulerFlow;
-  const index = FLOW_STEPS.indexOf(step);
-  const previous = previousStep(step);
+  const steps = flowSteps(ai);
+  const index = steps.indexOf(step);
+  const previous = previousStep(step, ai);
 
   return (
     <div
@@ -53,7 +57,7 @@ export default function FlowShell({
       {previous ? (
         <PhoneSubHeader
           title={words.steps[step]}
-          back={pathname + searchForStep(previous)}
+          back={pathname + searchForStep(previous, ai)}
           backLabel={words.steps[previous]}
           onBack={onBack}
         />
@@ -64,7 +68,7 @@ export default function FlowShell({
       <main className={cn("flex-1 px-4", fill ? "flex min-h-0 flex-col pb-2" : "pb-6")}>
         <div className="flex items-center gap-3 pt-1">
           <div aria-hidden className="flex flex-1 gap-1.5">
-            {FLOW_STEPS.map((s, i) => (
+            {steps.map((s, i) => (
               <span
                 key={s}
                 className={cn(
@@ -75,7 +79,7 @@ export default function FlowShell({
             ))}
           </div>
           <span className="shrink-0 text-xs font-medium text-muted-foreground">
-            {words.stepOf(index + 1, FLOW_STEPS.length)}
+            {words.stepOf(index + 1, steps.length)}
           </span>
         </div>
 

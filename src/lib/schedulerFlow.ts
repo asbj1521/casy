@@ -7,7 +7,17 @@
 import type { EventExtras, PeopleChoice } from "@/lib/scheduler";
 
 export const FLOW_STEPS = ["group", "what", "details", "dates"] as const;
-export type FlowStep = (typeof FLOW_STEPS)[number];
+/**
+ * Planning with AI (#100): the group, then the event described in words
+ * (the settings it gives are adjusted on the same screen), then the dates.
+ */
+export const AI_FLOW_STEPS = ["group", "describe", "dates"] as const;
+export type FlowStep = (typeof FLOW_STEPS)[number] | (typeof AI_FLOW_STEPS)[number];
+
+/** The steps of the flow, with AI or without. */
+export function flowSteps(ai: boolean): readonly FlowStep[] {
+  return ai ? AI_FLOW_STEPS : FLOW_STEPS;
+}
 
 /**
  * The step a page address asks for. None (or an unknown one) is the first
@@ -16,23 +26,34 @@ export type FlowStep = (typeof FLOW_STEPS)[number];
 export function stepFromSearch(search: string): FlowStep {
   const params = new URLSearchParams(search);
   const step = params.get("step");
-  if (step && (FLOW_STEPS as readonly string[]).includes(step)) return step as FlowStep;
+  if (step && ([...FLOW_STEPS, ...AI_FLOW_STEPS] as string[]).includes(step)) {
+    return step as FlowStep;
+  }
   return params.has("settings") ? "details" : "group";
 }
 
+/** Whether the address is in the AI flow: its own step, or `ai` beside a shared one. */
+export function aiFromSearch(search: string): boolean {
+  const params = new URLSearchParams(search);
+  return params.get("step") === "describe" || params.has("ai");
+}
+
 /** The address part for `step`: the first step is the page's plain address. */
-export function searchForStep(step: FlowStep): string {
-  return step === "group" ? "" : `?step=${step}`;
+export function searchForStep(step: FlowStep, ai = false): string {
+  if (step === "group") return "";
+  return `?step=${step}${ai && step !== "describe" ? "&ai" : ""}`;
 }
 
 /** The step after `step`, or null after the last. */
-export function nextStep(step: FlowStep): FlowStep | null {
-  return FLOW_STEPS[FLOW_STEPS.indexOf(step) + 1] ?? null;
+export function nextStep(step: FlowStep, ai = false): FlowStep | null {
+  const steps = flowSteps(ai);
+  return steps[steps.indexOf(step) + 1] ?? null;
 }
 
 /** The step before `step`, or null before the first. */
-export function previousStep(step: FlowStep): FlowStep | null {
-  return FLOW_STEPS[FLOW_STEPS.indexOf(step) - 1] ?? null;
+export function previousStep(step: FlowStep, ai = false): FlowStep | null {
+  const steps = flowSteps(ai);
+  return steps[steps.indexOf(step) - 1] ?? null;
 }
 
 /** Who an event is for, counted, for the details step's Deltagere row. */

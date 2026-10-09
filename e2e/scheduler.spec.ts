@@ -180,6 +180,65 @@ test.describe("on a phone (#101)", () => {
     });
   });
 
+  test("planning with AI (#100): describe, answer its question, add details, send", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Fredagsbar/ }).click();
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    await expect(page).toHaveURL(/\?step=describe$/);
+    await expect(page.getByText("Trin 2 af 3")).toBeVisible();
+    // Nothing to move on to before there's a plan.
+    await expect(page.getByRole("button", { name: "Se datoer" })).toBeHidden();
+
+    await page
+      .getByRole("textbox", { name: /Fx middag en fredag/ })
+      .fill("Middag en fredag i november uden Jonas og Peter");
+    await page.getByRole("button", { name: "Lav planen" }).click();
+
+    // What it understood, in the page's own settings, its guess marked.
+    await expect(page.getByRole("heading", { name: "Sådan forstod Casy det" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Middag");
+    await expect(page.getByText("gættet", { exact: true })).toHaveCount(1);
+    await expect(page.getByText(/41 AI-svar tilbage i dag/)).toBeVisible();
+    // Jonas is matched in the group and left out; Peter is nobody, so asked about.
+    await expect(page.getByRole("button", { name: /Deltagere.*3 med/ })).toBeVisible();
+    await expect(page.getByText("Ingen i gruppen hedder Peter. Hvem mener du?")).toBeVisible();
+    await page.getByRole("button", { name: "Ingen af dem" }).click();
+
+    // An option is applied at once: no second call.
+    await page.getByRole("button", { name: "Kl. 19" }).click();
+    await expect(page.getByText("gættet", { exact: true })).toHaveCount(0);
+    expect(backend.calls.filter((c) => c.name === "plan-ai")).toHaveLength(1);
+
+    // More details go with the settings so far and what was written before.
+    await page.getByRole("button", { name: "Tilføj detaljer" }).click();
+    await page.getByRole("textbox", { name: /Fx kun i december/ }).fill("kun i december");
+    await page.getByRole("button", { name: "Opdater planen" }).click();
+    await expect.poll(() => backend.calls.filter((c) => c.name === "plan-ai").length).toBe(2);
+    expect(backend.calls.filter((c) => c.name === "plan-ai")[1].body).toMatchObject({
+      text: "kun i december",
+      earlier: ["Middag en fredag i november uden Jonas og Peter"],
+      current: { kind: "meeting", startHour: 19, weekdays: [5], months: { from: "2026-11" } },
+    });
+
+    await page.getByRole("button", { name: "Se datoer" }).click();
+    await expect(page).toHaveURL(/\?step=dates&ai$/);
+    await expect(page.getByText("Trin 3 af 3")).toBeVisible();
+    await answerAll(page);
+    await page.getByRole("button", { name: SEND }).click();
+    await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+    const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
+    expect(sent).toMatchObject({
+      groupId: "g-friday",
+      title: "Middag",
+      settings: { kind: "single", startHour: 19, durationMinutes: 180, allowedDays: [5] },
+    });
+    // December, as the details said: every date sent is in it.
+    for (const d of sent.dates as { start: string }[]) expect(d.start).toMatch(/^2026-12/);
+  });
+
   test("the phone's back button goes a step back", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /Fredagsbar/ }).click();

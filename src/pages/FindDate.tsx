@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarOff } from "lucide-react";
+import { CalendarOff, Sparkles } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { eventsQueryKey, suggestEvent, type EventResponse } from "@/api/events";
@@ -20,6 +20,7 @@ import GroupPanel from "@/components/findDate/GroupPanel";
 import LaterDates from "@/components/findDate/LaterDates";
 import MoreSettingsScreen from "@/components/findDate/MoreSettingsScreen";
 import DraftDeck, { type DraftAnswer } from "@/components/findDate/phoneFlow/DraftDeck";
+import DescribeStep from "@/components/findDate/phoneFlow/DescribeStep";
 import DetailsStep from "@/components/findDate/phoneFlow/DetailsStep";
 import FlowShell, { FlowButton } from "@/components/findDate/phoneFlow/FlowShell";
 import GroupStep from "@/components/findDate/phoneFlow/GroupStep";
@@ -30,6 +31,7 @@ import { SettingsPanel, SettingsSentence, StepSettings } from "@/components/Sche
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { useAuth } from "@/context/auth";
+import { useAiPlanner } from "@/hooks/useAiPlanner";
 import { findAnswer, TODAY, useDateSearch } from "@/hooks/useDateSearch";
 import { useGroupRefresh, type RefreshOutcome } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
@@ -45,6 +47,7 @@ import {
   restart,
   type AnswerSteps,
 } from "@/lib/answerSteps";
+import { planFieldsOf } from "@/lib/aiPlan";
 import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
 import { pickCandidates } from "@/lib/candidates";
 import { nameList } from "@/lib/format";
@@ -67,6 +70,7 @@ import {
   type SchedulerSettings,
 } from "@/lib/scheduler";
 import {
+  aiFromSearch,
   detailsTouched,
   previousStep,
   searchForStep,
@@ -154,19 +158,25 @@ export default function FindDate() {
   // rather than adding another; a step opened directly goes back by
   // replacing it.
   const flowStep = stepFromSearch(location.search);
+  // Planning with AI (#100) is a flow of its own: the group, the event
+  // described, the dates.
+  const aiFlow = aiFromSearch(location.search);
   function goToStep(step: FlowStep) {
     navigate(
-      { pathname: location.pathname, search: searchForStep(step) },
+      { pathname: location.pathname, search: searchForStep(step, aiFlow || step === "describe") },
       { state: { flowStep: true } },
     );
   }
   function stepBack() {
-    const previous = previousStep(flowStep);
+    const previous = previousStep(flowStep, aiFlow);
     if (!previous) return;
     if ((location.state as { flowStep?: boolean } | null)?.flowStep) {
       navigate(-1);
     } else {
-      navigate({ pathname: location.pathname, search: searchForStep(previous) }, { replace: true });
+      navigate(
+        { pathname: location.pathname, search: searchForStep(previous, aiFlow) },
+        { replace: true },
+      );
     }
   }
   // Each step starts at its top, as a new screen does.
@@ -702,6 +712,24 @@ export default function FindDate() {
     example: !activeGroup || activeGroup.isExample,
   };
 
+  // Planning with AI (#100): the conversation, kept here so it outlives the
+  // flow's steps; what it says lands in the same state the controls set.
+  const planner = useAiPlanner({
+    settings: sched,
+    name,
+    members: activeGroup?.members ?? [],
+    peopleChoice,
+    setSettings: (next) => updateSettings(next),
+    setName,
+    setExtras: updateExtras,
+    setPeople: updatePeople,
+  });
+  // A setting changed by hand on the AI's screen is no longer its guess.
+  const updateSettingsByHand = (patch: Partial<SchedulerSettings>) => {
+    updateSettings(patch);
+    planner.edited(planFieldsOf(patch));
+  };
+
   const settingsProps = {
     groupSwitcher:
       groups && activeGroupId ? (
@@ -832,11 +860,32 @@ export default function FindDate() {
           pathname={location.pathname}
           onBack={stepBack}
           fill={swiping}
+          ai={aiFlow}
           footer={
             flowStep === "group" ? (
-              <FlowButton onClick={() => goToStep("what")} disabled={!activeGroup}>
-                {t.schedulerFlow.next}
-              </FlowButton>
+              <div className="flex gap-2">
+                {/* Planning with AI needs a signed-in person: it costs money per use. */}
+                {user && (
+                  <FlowButton quiet onClick={() => goToStep("describe")} disabled={!activeGroup}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      {t.aiPlan.start}
+                    </span>
+                  </FlowButton>
+                )}
+                <FlowButton onClick={() => goToStep("what")} disabled={!activeGroup}>
+                  {t.schedulerFlow.next}
+                </FlowButton>
+              </div>
+            ) : flowStep === "describe" ? (
+              planner.session.plan && (
+                <>
+                  {live}
+                  <FlowButton onClick={() => goToStep("dates")}>
+                    {t.schedulerFlow.seeDates}
+                  </FlowButton>
+                </>
+              )
             ) : flowStep === "what" ? (
               <>
                 {live}
@@ -881,6 +930,18 @@ export default function FindDate() {
               {/* The start times are Danish time. */}
               <DanishTimeNote className="mt-4 px-1" />
             </>
+          ) : flowStep === "describe" ? (
+            <DescribeStep
+              planner={planner}
+              members={activeGroup?.members ?? []}
+              name={name}
+              onName={setName}
+              settings={sched}
+              onChange={updateSettingsByHand}
+              extras={extras}
+              onExtras={updateExtras}
+              participants={participantProps}
+            />
           ) : flowStep === "details" ? (
             <DetailsStep extras={extras} onExtras={updateExtras} participants={participantProps} />
           ) : (
