@@ -242,7 +242,24 @@ test.describe("on a phone (#101)", () => {
     await page.getByRole("button", { name: /Fredagsbar/ }).click();
     await page.getByRole("button", { name: "Planlæg med AI" }).click();
     await expect(page).toHaveURL(/\?step=describe$/);
-    await expect(page.getByText("Trin 2 af 3")).toBeVisible();
+    // A flow of its own: this screen, then the dates.
+    await expect(page.getByText("Trin 1 af 2")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Fortæl Casy, hvad I skal" })).toBeVisible();
+    // The group picked before, changeable right here.
+    const groupRow = page.getByRole("button", { name: /^Gruppe/ });
+    await expect(groupRow).toContainText("Fredagsbar");
+    await groupRow.click();
+    await page
+      .getByRole("dialog", { name: "Gruppe" })
+      .getByRole("button", { name: /Løbeklubben/ })
+      .click();
+    await expect(groupRow).toContainText("Løbeklubben");
+    await groupRow.click();
+    await page
+      .getByRole("dialog", { name: "Gruppe" })
+      .getByRole("button", { name: /Fredagsbar/ })
+      .click();
+    await expect(groupRow).toContainText("Fredagsbar");
     // Nothing to move on to before there's a plan.
     await expect(page.getByRole("button", { name: "Se datoer" })).toBeHidden();
 
@@ -279,7 +296,7 @@ test.describe("on a phone (#101)", () => {
 
     await page.getByRole("button", { name: "Se datoer" }).click();
     await expect(page).toHaveURL(/\?step=dates&ai$/);
-    await expect(page.getByText("Trin 3 af 3")).toBeVisible();
+    await expect(page.getByText("Trin 2 af 2")).toBeVisible();
     await answerAll(page);
     await page.getByRole("button", { name: SEND }).click();
     await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();

@@ -934,6 +934,11 @@ export default function FindDate() {
             </>
           ) : flowStep === "describe" ? (
             <DescribeStep
+              groups={groups}
+              groupId={activeGroupId}
+              signedIn={!!user}
+              onPickGroup={selectGroup}
+              onCreateGroup={openNewGroup}
               planner={planner}
               members={activeGroup?.members ?? []}
               name={name}

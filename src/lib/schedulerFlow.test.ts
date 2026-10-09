@@ -44,9 +44,9 @@ describe("nextStep and previousStep", () => {
 });
 
 describe("the AI flow (#100)", () => {
-  it("is the group, the description and the dates", () => {
-    expect(nextStep("group", true)).toBe("describe");
+  it("is the description and the dates, back to the normal flow's first step", () => {
     expect(nextStep("describe", true)).toBe("dates");
+    expect(nextStep("dates", true)).toBeNull();
     expect(previousStep("dates", true)).toBe("describe");
     expect(previousStep("describe", true)).toBe("group");
   });

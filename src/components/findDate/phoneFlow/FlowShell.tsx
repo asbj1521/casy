@@ -58,7 +58,7 @@ export default function FlowShell({
         <PhoneSubHeader
           title={words.steps[step]}
           back={pathname + searchForStep(previous, ai)}
-          backLabel={words.steps[previous]}
+          backLabel={previous === "group" && ai ? words.back : words.steps[previous]}
           onBack={onBack}
         />
       ) : (

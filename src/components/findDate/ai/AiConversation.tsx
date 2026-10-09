@@ -36,7 +36,17 @@ export default function AiConversation({
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      {!hasPlan && <p className="text-[15px] text-muted-foreground">{words.intro}</p>}
+      {!hasPlan && (
+        <div className="flex items-start gap-3 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 p-3.5 ring-1 ring-orange-100">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card shadow-sm">
+            <Sparkles className="h-5 w-5 text-primary" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-[15px] font-bold text-foreground">{words.introTitle}</h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">{words.intro}</p>
+          </div>
+        </div>
+      )}
 
       {/* What Casy picked up, where there's room for it (a computer); the
           words it came from fold away, since speech recognition often
@@ -211,7 +221,7 @@ function Composer({
                 "inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-[15px] font-bold transition",
                 speech.listening
                   ? "bg-red-600 text-white hover:bg-red-700"
-                  : "text-foreground hover:bg-secondary",
+                  : "bg-orange-50 text-orange-900 hover:bg-orange-100",
               )}
             >
               {speech.listening ? (

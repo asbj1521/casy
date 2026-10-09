@@ -8,10 +8,11 @@ import type { EventExtras, PeopleChoice } from "@/lib/scheduler";
 
 export const FLOW_STEPS = ["group", "what", "details", "dates"] as const;
 /**
- * Planning with AI (#100): the group, then the event described in words
- * (the settings it gives are adjusted on the same screen), then the dates.
+ * Planning with AI (#100), a flow of its own opened from the first step: the
+ * event described in words, the group picked on the same screen (and the
+ * settings it gives adjusted there too), then the dates.
  */
-export const AI_FLOW_STEPS = ["group", "describe", "dates"] as const;
+export const AI_FLOW_STEPS = ["describe", "dates"] as const;
 export type FlowStep = (typeof FLOW_STEPS)[number] | (typeof AI_FLOW_STEPS)[number];
 
 /** The steps of the flow, with AI or without. */
@@ -50,10 +51,13 @@ export function nextStep(step: FlowStep, ai = false): FlowStep | null {
   return steps[steps.indexOf(step) + 1] ?? null;
 }
 
-/** The step before `step`, or null before the first. */
+/**
+ * The step before `step`, or null before the first. The AI flow's first
+ * step goes back to where it was opened from, the normal flow's first.
+ */
 export function previousStep(step: FlowStep, ai = false): FlowStep | null {
   const steps = flowSteps(ai);
-  return steps[steps.indexOf(step) - 1] ?? null;
+  return steps[steps.indexOf(step) - 1] ?? (ai && step === "describe" ? "group" : null);
 }
 
 /** Who an event is for, counted, for the details step's Deltagere row. */
