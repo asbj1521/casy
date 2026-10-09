@@ -206,6 +206,41 @@ export async function pushPhoneCalendars(body: {
 }
 
 /**
+ * The agreed events this phone should put in, change in or take out of its
+ * calendars (#105), and the entries it should check are still there. Built
+ * by the server (phoneWrites.ts) and carried out as-is by the app's native
+ * side, so the page only passes it along.
+ */
+export interface PhoneWork {
+  tasks: unknown[];
+  check: unknown[];
+}
+
+/** How one piece of that went on the phone. */
+export interface PhoneWriteReport {
+  proposalId: string;
+  outcome: "added" | "updated" | "removed" | "gone" | "failed";
+  eventId?: string;
+}
+
+export async function phoneWritesToDo(deviceId: string): Promise<PhoneWork | { gone: true }> {
+  return await callFunction<PhoneWork | { gone: true }>("calendar-phone", {
+    body: { action: "writes", deviceId },
+    errorMessage: currentMessages().phoneCalendar.couldntSave,
+  });
+}
+
+export async function reportPhoneWrites(
+  deviceId: string,
+  reports: PhoneWriteReport[],
+): Promise<void> {
+  await callFunction("calendar-phone", {
+    body: { action: "written", deviceId, reports },
+    errorMessage: currentMessages().phoneCalendar.couldntSave,
+  });
+}
+
+/**
  * Remove one linked account and everything synced from it. Removing the
  * account that holds the primary calendar clears that choice too.
  */

@@ -107,47 +107,75 @@ enum PhoneCalendarBackground {
         Task { task.setTaskCompleted(success: await work.value) }
     }
 
-    /// Read and send; true if the server took it.
+    /// Read and send, then carry out the calendar work the server has for
+    /// this phone (agreed events to add, change or take out, #105); true if
+    /// the server took the calendars.
     static func send() async -> Bool {
         guard let config = loadConfig(), let token = loadToken(),
-            PhoneCalendarReader.accessState() == "granted",
-            let url = URL(string: config.url + "/functions/v1/calendar-phone")
+            PhoneCalendarReader.accessState() == "granted"
         else { return false }
 
         // The server's sync window (phoneWindow in phoneBusy.ts).
         let now = Date().timeIntervalSince1970 * 1000
         let from = now - 7 * dayMs
         let to = now + 360 * dayMs
-        let (calendars, events) = PhoneCalendarReader.read(store: EKEventStore(), from: from, to: to)
+        let store = EKEventStore()
+        let (calendars, events) = PhoneCalendarReader.read(store: store, from: from, to: to)
         // No calendars at all is more likely a hiccup than the truth: send nothing.
         if calendars.isEmpty { return false }
 
+        let pushed = await post(
+            config, token,
+            [
+                "deviceId": config.deviceId,
+                "label": config.label,
+                "calendars": PhoneBusy.push(calendars: calendars, events: events, from: from, to: to),
+            ])
+        guard let pushed else { return false }
+        // The connection was removed (or the token replaced): stop for good.
+        if pushed["gone"] as? Bool == true {
+            clear()
+            return true
+        }
+
+        if Task.isCancelled { return true }
+        if let work = await post(config, token, ["action": "writes", "deviceId": config.deviceId]),
+            work["gone"] as? Bool != true
+        {
+            let tasks = work["tasks"] as? [[String: Any]] ?? []
+            let check = work["check"] as? [[String: Any]] ?? []
+            if !tasks.isEmpty || !check.isEmpty {
+                let reports = PhoneCalendarWriter.apply(store: store, tasks: tasks, check: check)
+                if !reports.isEmpty {
+                    _ = await post(
+                        config, token,
+                        ["action": "written", "deviceId": config.deviceId, "reports": reports])
+                }
+            }
+        }
+        return true
+    }
+
+    /// One call to calendar-phone with the device token; its answer, or nil if it failed.
+    private static func post(_ config: Config, _ token: String, _ body: [String: Any]) async
+        -> [String: Any]?
+    {
+        guard let url = URL(string: config.url + "/functions/v1/calendar-phone"),
+            let data = try? JSONSerialization.data(withJSONObject: body)
+        else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "apikey")
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue(token, forHTTPHeaderField: "x-device-token")
-        let body: [String: Any] = [
-            "deviceId": config.deviceId,
-            "label": config.label,
-            "calendars": PhoneBusy.push(calendars: calendars, events: events, from: from, to: to),
-        ]
-        guard let data = try? JSONSerialization.data(withJSONObject: body) else { return false }
         request.httpBody = data
-
         do {
             let (answer, response) = try await URLSession.shared.data(for: request)
-            guard (response as? HTTPURLResponse)?.statusCode == 200 else { return false }
-            // The connection was removed (or the token replaced): stop for good.
-            if let json = try? JSONSerialization.jsonObject(with: answer) as? [String: Any],
-                json["gone"] as? Bool == true
-            {
-                clear()
-            }
-            return true
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+            return (try? JSONSerialization.jsonObject(with: answer)) as? [String: Any] ?? [:]
         } catch {
-            return false
+            return nil
         }
     }
 }

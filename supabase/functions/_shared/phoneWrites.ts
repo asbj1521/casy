@@ -46,6 +46,18 @@ export interface PhoneEntry {
   endDay?: string;
 }
 
+/**
+ * An entry the phone added, to check it is still there. With its calendar:
+ * if that calendar isn't on the phone right now (an account switched off for
+ * a moment), its entries aren't judged missing.
+ */
+export interface PhoneCheck {
+  proposalId: string;
+  calendarId: string;
+  eventId: string | null;
+  url: string;
+}
+
 export type PhoneTask =
   | { op: "add"; proposalId: string; calendarId: string; url: string; entry: PhoneEntry }
   | {
@@ -210,7 +222,7 @@ export async function phoneWork(
   db: Db,
   connectionId: string,
   now = Date.now(),
-): Promise<{ tasks: PhoneTask[]; check: { proposalId: string; eventId: string | null }[] }> {
+): Promise<{ tasks: PhoneTask[]; check: PhoneCheck[] }> {
   const sources = await phoneSources(db, connectionId);
   if (sources.length === 0) return { tasks: [], check: [] };
   const sourceIds = sources.map((s) => s.id);
@@ -291,12 +303,21 @@ export async function phoneWork(
 
   // Entries that should be there, for an event still to come: the phone says
   // which are missing (deleted by hand).
-  const check = addedRows
-    .filter((row) => {
-      const event = eventOf(row.proposal_id);
-      return event?.status === "scheduled" && !!event.end && Date.parse(event.end) > now;
-    })
-    .map((row) => ({ proposalId: row.proposal_id, eventId: row.device_event_id }));
+  const check = addedRows.flatMap((row): PhoneCheck[] => {
+    const event = eventOf(row.proposal_id);
+    const calendarId = row.source_id ? externalOf.get(row.source_id) : undefined;
+    const upcoming = event?.status === "scheduled" && !!event.end && Date.parse(event.end) > now;
+    return upcoming && calendarId
+      ? [
+          {
+            proposalId: row.proposal_id,
+            calendarId,
+            eventId: row.device_event_id,
+            url: eventUrl(row.proposal_id),
+          },
+        ]
+      : [];
+  });
 
   return { tasks, check };
 }

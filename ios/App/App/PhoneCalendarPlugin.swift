@@ -133,6 +133,7 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "backgroundState", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setBackground", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearBackground", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "applyWrites", returnType: CAPPluginReturnPromise),
     ]
 
     /// One store for the app's life: EventKit only posts change notifications
@@ -234,6 +235,22 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
             config: .init(url: url, apiKey: apiKey, deviceId: deviceId, label: label), token: token)
         if saved { PhoneCalendarBackground.schedule() }
         call.resolve(["configured": saved])
+    }
+
+    /// Carry out the server's calendar work (agreed events to add, change or
+    /// take out) and look over the entries to check; answers the reports.
+    @objc func applyWrites(_ call: CAPPluginCall) {
+        guard PhoneCalendarReader.accessState() == "granted" else {
+            call.reject("Calendar access is not granted", "denied")
+            return
+        }
+        let tasks = call.getArray("tasks", [String: Any].self) ?? []
+        let check = call.getArray("check", [String: Any].self) ?? []
+        DispatchQueue.global(qos: .userInitiated).async { [store] in
+            call.resolve([
+                "reports": PhoneCalendarWriter.apply(store: store, tasks: tasks, check: check)
+            ])
+        }
     }
 
     /// Signed out, or this phone removed: nothing is sent in the background any more.

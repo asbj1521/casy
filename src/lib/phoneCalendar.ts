@@ -10,6 +10,7 @@
  */
 import type { PluginListenerHandle } from "@capacitor/core";
 
+import type { PhoneWork, PhoneWriteReport } from "@/api/calendars";
 import type { PhoneRead } from "@/lib/phoneBusy";
 import { readStored, writeStored } from "@/lib/storage";
 
@@ -29,6 +30,7 @@ interface PhoneCalendarPlugin {
     token: string;
   }): Promise<{ configured: boolean }>;
   clearBackground(): Promise<void>;
+  applyWrites(work: PhoneWork): Promise<{ reports: PhoneWriteReport[] }>;
   addListener(event: "change", listener: () => void): Promise<PluginListenerHandle>;
 }
 
@@ -64,6 +66,15 @@ export async function readPhoneCalendars(from: number, to: number): Promise<Phon
 export async function openPhoneSettings(): Promise<void> {
   const { plugin } = await phonePlugin();
   await plugin.openSettings();
+}
+
+/**
+ * Carry out the server's calendar work on the phone (PhoneCalendarWriter.swift):
+ * agreed events to add, change or take out, and entries to check are still there.
+ */
+export async function applyPhoneWrites(work: PhoneWork): Promise<PhoneWriteReport[]> {
+  const { plugin } = await phonePlugin();
+  return (await plugin.applyWrites(work)).reports;
 }
 
 /** Calls `listener` when the phone's calendars change; returns how to stop. */

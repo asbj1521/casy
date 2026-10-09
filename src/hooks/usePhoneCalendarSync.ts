@@ -1,12 +1,18 @@
 import { useEffect } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 
-import { calendarsChanged, pushPhoneCalendars } from "@/api/calendars";
+import {
+  calendarsChanged,
+  phoneWritesToDo,
+  pushPhoneCalendars,
+  reportPhoneWrites,
+} from "@/api/calendars";
 import { useAuth } from "@/context/auth";
 import { currentMessages } from "@/i18n/current";
 import { isNativeApp } from "@/lib/nativeApp";
 import { phoneBusy, phoneWindow } from "@/lib/phoneBusy";
 import {
+  applyPhoneWrites,
   backgroundConfigured,
   clearPhoneBackground,
   deviceId,
@@ -116,7 +122,26 @@ async function runSync(
     );
   }
   await calendarsChanged(queryClient);
+  // Agreed events for a phone calendar chosen as primary (#105): never at
+  // the cost of the send itself, which has already gone well.
+  await writePhoneCalendar(queryClient).catch((err) =>
+    console.warn("writing to the phone's calendar failed", err),
+  );
   return { state: "synced", calendars: result.calendars, busyBlocks: result.busyBlocks };
+}
+
+/**
+ * The server's calendar work for this phone, carried out (PhoneCalendarWriter
+ * .swift) and reported back; My events is fetched again if anything changed.
+ */
+async function writePhoneCalendar(queryClient: QueryClient): Promise<void> {
+  const id = deviceId();
+  const work = await phoneWritesToDo(id);
+  if ("gone" in work || (work.tasks.length === 0 && work.check.length === 0)) return;
+  const reports = await applyPhoneWrites(work);
+  if (reports.length === 0) return;
+  await reportPhoneWrites(id, reports);
+  await queryClient.invalidateQueries({ queryKey: ["events"] });
 }
 
 /**

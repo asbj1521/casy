@@ -20,6 +20,7 @@
 		CA5E00012F00000000000001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = CA5E00022F00000000000001 /* InfoPlist.strings */; };
 		CA5E00052F00000000000001 /* PhoneCalendarPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00062F00000000000001 /* PhoneCalendarPlugin.swift */; };
 		CA5E00072F00000000000001 /* PhoneCalendarBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00082F00000000000001 /* PhoneCalendarBackground.swift */; };
+		CA5E00092F00000000000001 /* PhoneCalendarWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		CA5E00042F00000000000001 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CA5E00062F00000000000001 /* PhoneCalendarPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCalendarPlugin.swift; sourceTree = "<group>"; };
 		CA5E00082F00000000000001 /* PhoneCalendarBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCalendarBackground.swift; sourceTree = "<group>"; };
+		CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCalendarWriter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +88,7 @@
 				256DA8690E404537ABFFAC41 /* MainViewController.swift */,
 				CA5E00062F00000000000001 /* PhoneCalendarPlugin.swift */,
 				CA5E00082F00000000000001 /* PhoneCalendarBackground.swift */,
+				CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -178,6 +181,7 @@
 				20036DE7DB574595B4E51DBE /* MainViewController.swift in Sources */,
 				CA5E00052F00000000000001 /* PhoneCalendarPlugin.swift in Sources */,
 				CA5E00072F00000000000001 /* PhoneCalendarBackground.swift in Sources */,
+				CA5E00092F00000000000001 /* PhoneCalendarWriter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
