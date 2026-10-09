@@ -1042,6 +1042,7 @@ export const en: Messages = {
     loadStatus: "Couldn't load your calendar connections",
     loadEvents: "Couldn't load your events",
     suggestEvent: "Couldn't suggest the event",
+    planAi: "AI planning didn't answer",
     cancelEvent: "Couldn't cancel the event",
     editEvent: "Couldn't save the place and note",
     leaveEvent: "Couldn't leave the event",

@@ -1078,6 +1078,7 @@ export const da = {
     loadStatus: "Kunne ikke hente dine kalenderforbindelser",
     loadEvents: "Kunne ikke hente dine aftaler",
     suggestEvent: "Kunne ikke foreslå aftalen",
+    planAi: "AI-planlægningen svarede ikke",
     cancelEvent: "Kunne ikke aflyse aftalen",
     editEvent: "Kunne ikke gemme sted og note",
     leaveEvent: "Kunne ikke forlade aftalen",
