@@ -119,7 +119,9 @@ export default function AiConversation({
           compact={compact}
           label={hasPlan ? words.morePlaceholder : words.placeholder}
           placeholder={hasPlan ? words.morePlaceholder : words.placeholder}
-          note={compact ? footnote : undefined}
+          // Once there is a plan the count sits by "What you wrote" above, and
+          // the narrower box beside the summary has no room for it here.
+          note={compact && !hasPlan ? footnote : undefined}
           sendLabel={hasPlan ? words.update : words.send}
           onSend={(text) => {
             planner.describe(text);
@@ -229,7 +231,9 @@ function Composer({
             big && !compact ? "text-[17px] leading-relaxed" : "text-[16px] leading-6",
           )}
         />
-        <div className="flex items-center justify-between gap-2 px-2 pb-2">
+        {/* Wraps where the box is narrow (beside the summary), the buttons
+            moving to a line of their own rather than out of the box. */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-2">
           {speech.supported ? (
             <button
               type="button"
@@ -261,7 +265,7 @@ function Composer({
           {note && (
             <p className="min-w-0 flex-1 text-[11px] leading-tight text-muted-foreground">{note}</p>
           )}
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             {onCancel && (
               <button
                 type="button"
