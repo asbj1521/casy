@@ -44,6 +44,8 @@ export interface SchedulingGroup extends FriendGroup {
   isExample: boolean;
   /** Real members left out of the search because they have no calendar yet. */
   waitingFor: GroupMember[];
+  /** Members whose calendar hasn't been updated for days (ISO `since`): still searched, but said. */
+  outdated: { member: GroupMember; since: string }[];
   /** Everyone in a real group, for choosing who an event is for (#89); none in an example. */
   members: GroupMember[];
   /**
@@ -132,13 +134,14 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
         // Only the active group's calendars are fetched, so the others are
         // listed with no participants until they are selected in turn.
         const data = g.id === activeGroupId ? busyQuery.data : undefined;
-        const { participants, waitingFor } = participantsFromGroup(g, data, markYou);
+        const { participants, waitingFor, outdated } = participantsFromGroup(g, data, markYou);
         return {
           id: g.id,
           name: g.name,
           participants,
           isExample: false,
           waitingFor,
+          outdated,
           members: g.members,
           memberCount: g.members.length,
         };
@@ -172,6 +175,7 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
         participants: withHolidayBlocks(participants, APP_TIME_ZONE),
         isExample: true,
         waitingFor: [],
+        outdated: [],
         members: [],
         memberCount: def.members.length,
       };

@@ -156,6 +156,10 @@ export const en: Messages = {
       `${names} ${names.includes(" and ") ? "have" : "has"} no calendar in Casy and will check the date themselves.`,
     nobodyHasCalendar:
       "Nobody in the group has a calendar in Casy yet, so everyone checks the date themselves.",
+    outdatedOne: (name: string, n: number) =>
+      `${name}'s calendar hasn't been updated for ${days(n)}, so something may have changed.`,
+    outdatedMany: (names: string) =>
+      `The calendars of ${names} haven't been updated for days, so something may have changed.`,
     inDays: (n: number) => (n <= 0 ? "today" : n === 1 ? "tomorrow" : `in ${days(n)}`),
     timeRange: (start: string, end: string) => `${start} to ${end}`,
     tripTimes: (start: string, end: string) => `Leave ${start}, home ${end}`,
@@ -416,7 +420,7 @@ export const en: Messages = {
     members: (n: number) => (n === 1 ? "1 member" : `${n} members`),
     whatMembersSee: "What members can see",
     whatMembersSeeBody:
-      "Everyone in a group can see each other's name and when they are busy. Nobody sees your email address, your calendars' names, or what any of your events are called. Casy never stores event titles at all.",
+      "Everyone in a group can see each other's name, when they are busy, and whether a calendar hasn't been updated for days. Nobody sees your email address, your calendars' names, or what any of your events are called. Casy never stores event titles at all.",
     noCalendarYet: "checks themselves",
     waitingOne: (name: string) =>
       `${name} has no calendar in Casy and checks the dates suggested themselves.`,

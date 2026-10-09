@@ -49,6 +49,17 @@ describe("participantsFromGroup", () => {
     expect(participantsFromGroup(group, undefined).participants).toEqual([]);
   });
 
+  it("names searched members whose calendar is outdated, and still searches them", () => {
+    const data = { ...busy(["anna", "bo"]), outdated: { bo: "2026-09-27T10:00:00.000Z", cy: "x" } };
+    const { participants, outdated } = participantsFromGroup(group, data);
+    expect(ids(participants)).toEqual(["anna", "bo"]);
+    // cy has no calendar, so is waited for rather than outdated.
+    expect(outdated.map((o) => [o.member.profileId, o.since])).toEqual([
+      ["bo", "2026-09-27T10:00:00.000Z"],
+    ]);
+    expect(participantsFromGroup(group, busy(["anna"])).outdated).toEqual([]);
+  });
+
   it("marks you the way it is asked to", () => {
     const { participants } = participantsFromGroup(group, busy(["anna"]), (n) => `${n} (dig)`);
     expect(participants[0].name).toBe("anna (dig)");

@@ -68,6 +68,12 @@ export interface GroupBusy {
   busy: Record<string, { start: string; end: string; category?: EventCategory }[]>;
   /** Whether each member has a working calendar at all. */
   connected: Record<string, boolean>;
+  /**
+   * Members whose calendar hasn't been updated for two days or more, and when
+   * it last was (ISO). Their busy times still count. Missing from answers
+   * cached before it existed.
+   */
+  outdated?: Record<string, string>;
   /** True if the backend stopped early because there were too many blocks. */
   truncated: boolean;
 }
@@ -339,5 +345,10 @@ export function participantsFromGroup(
     ),
     /** Members with no calendar linked, who check suggested dates themselves. */
     waitingFor: group.members.filter((m) => !data?.connected[m.profileId]),
+    /** Members searched with a calendar that hasn't been updated for days, and since when. */
+    outdated: connected.flatMap((m) => {
+      const since = data?.outdated?.[m.profileId];
+      return since ? [{ member: m, since }] : [];
+    }),
   };
 }

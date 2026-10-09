@@ -171,6 +171,10 @@ export const da = {
     checkThemselves: (names: string) =>
       `${names} har ingen kalender i Casy og tjekker selv datoen.`,
     nobodyHasCalendar: "Ingen i gruppen har en kalender i Casy endnu, så alle tjekker selv datoen.",
+    outdatedOne: (name: string, n: number) =>
+      `Kalenderen for ${name} er ikke opdateret i ${days(n)}, så noget kan have ændret sig.`,
+    outdatedMany: (names: string) =>
+      `Kalenderne for ${names} er ikke opdateret i flere dage, så noget kan have ændret sig.`,
     inDays: (n: number) => (n <= 0 ? "i dag" : n === 1 ? "i morgen" : `om ${days(n)}`),
     timeRange: (start: string, end: string) => `${start} til ${end}`,
     tripTimes: (start: string, end: string) => `Afgang ${start}, hjem ${end}`,
@@ -451,7 +455,7 @@ export const da = {
     members: (n: number) => (n === 1 ? "1 medlem" : `${n} medlemmer`),
     whatMembersSee: "Hvad medlemmer kan se",
     whatMembersSeeBody:
-      "Alle i en gruppe kan se hinandens navne, og hvornår de er optaget. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder. Casy gemmer slet ikke titler på aftaler.",
+      "Alle i en gruppe kan se hinandens navne, og hvornår de er optaget, og om en kalender ikke er opdateret i flere dage. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder. Casy gemmer slet ikke titler på aftaler.",
     noCalendarYet: "tjekker selv",
     waitingOne: (name: string) =>
       `${name} har ingen kalender i Casy og tjekker selv de datoer, der bliver foreslået.`,

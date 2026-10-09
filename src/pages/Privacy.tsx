@@ -173,7 +173,8 @@ const da: LegalCopy = {
             uden det. Optagede tidsrum vises som tidsintervaller og om et tidsrum kom fra en
             kalender, du har markeret som arbejde eller skole, eller som en, du kan springe over
             eller aldrig springer over. Det er det, der lader Casy skelne mellem "kunne tage fri" og
-            "ikke muligt".
+            "ikke muligt". Er din kalender ikke blevet opdateret i to dage eller mere, kan de også
+            se, hvornår den sidst blev det, så de ved, at noget kan have ændret sig.
           </p>
           <p>
             Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere (heller ikke dem, du
@@ -460,7 +461,9 @@ const en: LegalCopy = {
             the whole point of a group: Casy cannot find a time that works for everyone without it.
             Busy periods are shown as time ranges, plus whether a range came from a calendar you
             marked as work or school, or as one you can skip or never skip, which is what lets Casy
-            tell "could take time off" apart from "not possible".
+            tell "could take time off" apart from "not possible". If your calendar hasn&apos;t been
+            updated for two days or more, they also see when it last was, so they know something may
+            have changed.
           </p>
           <p>
             Members do not see your email address, the names of your calendars (including names you

@@ -375,10 +375,18 @@ async function findInvite(db: Db, token: unknown) {
  * that calendar is called, stay with their owner. So a member sees when you
  * are busy, never that it was "Work" or "Dentist".
  */
+/**
+ * A member's calendar is called outdated once it hasn't been updated for this
+ * long: a phone whose app hasn't been opened (the only way its calendars
+ * reach Casy), or an account whose sync keeps failing. Their busy times still
+ * count; the page only says so.
+ */
+const OUTDATED_AFTER_MS = 2 * 24 * 60 * 60_000;
+
 async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
   const { data: sources, error: sourcesErr } = await db
     .from("calendar_sources")
-    .select("id, purpose, priority, calendar_connections!inner(profile_id, status)")
+    .select("id, purpose, priority, calendar_connections!inner(profile_id, status, last_synced_at)")
     .in("calendar_connections.profile_id", memberIds)
     .eq("calendar_connections.status", "connected")
     // A calendar its owner unticked on My calendar doesn't count at all.
@@ -389,7 +397,7 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
     id: string;
     purpose: string | null;
     priority: string;
-    calendar_connections: { profile_id: string };
+    calendar_connections: { profile_id: string; last_synced_at: string | null };
   };
   // What each block carries besides its times, from its calendar. Work and
   // school are the "soft" kinds the multi-day rules treat as time you could
@@ -452,9 +460,26 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
   // free all year, which the page must be able to say out loud rather than
   // quietly counting them as available.
   const hasCalendar = new Set([...sourceById.values()].map((s) => s.owner));
+
+  // Whose calendars are outdated, and since when: each member's least
+  // recently updated account among the calendars that count. Only for those
+  // past OUTDATED_AFTER_MS, so how often others open their app isn't shown.
+  const oldest = new Map<string, number>();
+  for (const s of sources as unknown as SourceRow[]) {
+    const at = Date.parse(s.calendar_connections.last_synced_at ?? "") || 0;
+    const owner = s.calendar_connections.profile_id;
+    oldest.set(owner, Math.min(oldest.get(owner) ?? Infinity, at));
+  }
+  const outdatedBefore = Date.now() - OUTDATED_AFTER_MS;
+  const outdated = Object.fromEntries(
+    [...oldest]
+      .filter(([, at]) => at > 0 && at < outdatedBefore)
+      .map(([id, at]) => [id, new Date(at).toISOString()]),
+  );
   return {
     busy: Object.fromEntries(busyByMember),
     connected: Object.fromEntries(memberIds.map((id) => [id, hasCalendar.has(id)])),
+    outdated,
     truncated,
   };
 }

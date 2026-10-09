@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle, CalendarOff, Check, Hourglass, Loader2, UserX } from "lucide-react";
 
 import EdgeWarningList from "@/components/EdgeWarningList";
+import OutdatedNote from "@/components/findDate/OutdatedNote";
 import FadeSwap from "@/components/FadeSwap";
 import YourTime from "@/components/time/YourTime";
 import Bone from "@/components/ui/Bone";
@@ -31,6 +32,7 @@ export default function AnswerCard({
   slot,
   name,
   checkers,
+  outdated,
   edge,
   actions,
   hint,
@@ -51,6 +53,8 @@ export default function AnswerCard({
    * names them.
    */
   checkers: { names: string[]; everyone: boolean } | null;
+  /** Members whose calendar hasn't been updated for days: still counted, but said. */
+  outdated: { name: string; since: string }[];
   edge: EdgeWarning[];
   /** AnswerActions, or nothing when there is nothing to step through. */
   actions: ReactNode;
@@ -221,6 +225,7 @@ export default function AnswerCard({
                     : t.scheduler.checkThemselves(nameList(checkers.names, lang))}
                 </p>
               )}
+              <OutdatedNote outdated={outdated} className="mt-3 text-sm" />
               {tone === "clean" && accepted && (
                 <p className="mt-3 text-sm text-muted-foreground">{t.scheduler.youApprovedDates}</p>
               )}

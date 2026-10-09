@@ -19,6 +19,7 @@ import PlanSummary from "@/components/findDate/ai/PlanSummary";
 import AnswerCard from "@/components/findDate/AnswerCard";
 import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
+import OutdatedNote from "@/components/findDate/OutdatedNote";
 import LaterDates from "@/components/findDate/LaterDates";
 import MoreSettingsScreen from "@/components/findDate/MoreSettingsScreen";
 import DraftDeck, { type DraftAnswer } from "@/components/findDate/phoneFlow/DraftDeck";
@@ -662,6 +663,15 @@ export default function FindDate() {
           everyone: activeGroup.waitingFor.length === activeGroup.memberCount,
         }
       : null;
+  // Members whose calendar hasn't been updated for days: still searched, but
+  // the answer says so, since something newer may not be known.
+  const outdated =
+    activeGroup && !activeGroup.isExample && !loadingGroup
+      ? activeGroup.outdated.map((o) => ({
+          name: o.member.isYou ? t.common.withYou(o.member.name) : o.member.name,
+          since: o.since,
+        }))
+      : [];
   // What the boxes below fade on: a different group's numbers.
   const fadeKey = activeGroupId ?? "none";
 
@@ -760,6 +770,7 @@ export default function FindDate() {
     slot,
     name,
     checkers,
+    outdated,
     edge,
     hint,
   };
@@ -823,6 +834,7 @@ export default function FindDate() {
             : t.scheduler.checkThemselves(nameList(checkers.names, lang))}
         </p>
       ),
+      outdated.length > 0 && <OutdatedNote key="outdated" outdated={outdated} />,
       search.kind === "vacation" && suggestions.length > 0 && (
         <LaterDates key="workarounds" {...laterDatesProps} />
       ),
