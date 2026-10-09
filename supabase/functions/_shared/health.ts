@@ -40,23 +40,30 @@ export function healthOf(facts: SyncFacts, now = Date.now()): Health {
   return { ok: true };
 }
 
-/** The facts, read from calendar_connections in three small queries. */
+/**
+ * The facts, read from calendar_connections in three small queries. Phone
+ * calendars are left out: the phone sends them when its app opens, so one
+ * unopened for hours is normal, not the sync failing.
+ */
 export async function readSyncFacts(db: Db): Promise<SyncFacts> {
   const [connected, failing, newest] = await Promise.all([
     db
       .from("calendar_connections")
       .select("id", { count: "exact", head: true })
-      .eq("status", "connected"),
+      .eq("status", "connected")
+      .neq("provider", "device"),
     db
       .from("calendar_connections")
       .select("id", { count: "exact", head: true })
       .eq("status", "connected")
+      .neq("provider", "device")
       .eq("needs_reconnect", false)
       .not("sync_error", "is", null),
     db
       .from("calendar_connections")
       .select("last_synced_at")
       .eq("status", "connected")
+      .neq("provider", "device")
       .not("last_synced_at", "is", null)
       .order("last_synced_at", { ascending: false })
       .limit(1),

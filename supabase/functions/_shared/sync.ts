@@ -31,7 +31,8 @@ const TOKEN_MARGIN_MS = 2 * 60_000;
 
 const KEEP_PAGE = 1000;
 
-export type Provider = "google" | "outlook" | "apple" | "ics";
+/** "device": the iPhone app's phone calendars, which the phone sends itself (calendar-phone). */
+export type Provider = "google" | "outlook" | "apple" | "ics" | "device";
 
 export interface SyncTarget {
   id: string;
@@ -56,6 +57,7 @@ const PROVIDER_NAMES: Record<Provider, string> = {
   outlook: "Microsoft",
   apple: "Apple",
   ics: "the calendar link",
+  device: "the phone",
 };
 
 /** Sync one connection and record the result on it. Never throws. */
@@ -65,6 +67,16 @@ export async function syncConnection(
   encryptionKey: string,
   now = new Date(),
 ): Promise<SyncOutcome> {
+  // Nothing to fetch: only the phone can send its calendars. Said without
+  // touching the connection, so it never reads as failing.
+  if (target.provider === "device") {
+    return {
+      connectionId: target.id,
+      ok: false,
+      needsReconnect: false,
+      message: "A phone's calendars are sent by the phone itself.",
+    };
+  }
   const attemptedAt = now.toISOString();
   try {
     const busyBlocks = await refreshBusy(db, target, encryptionKey, now);
@@ -274,6 +286,8 @@ async function fetchFresh(
       );
       return { busy: { ics: parsed.intervals } }; // a feed is one calendar, stored as "ics"
     }
+    case "device":
+      throw new Error("A phone's calendars are sent by the phone itself.");
   }
 }
 

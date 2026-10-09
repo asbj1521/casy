@@ -11,7 +11,7 @@
 import type { Caller } from "./auth.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
-export type Provider = "google" | "outlook" | "apple" | "ics";
+export type Provider = "google" | "outlook" | "apple" | "ics" | "device";
 
 /** What is kept so an account stays in sync, by kind; never the value. */
 export type CredentialKind = "oauth" | "password" | "link";

@@ -273,7 +273,8 @@ serve("admin", async (req, body) => {
         .from("calendar_connections")
         .select("id, provider")
         .eq("profile_id", profileId)
-        .eq("status", "connected");
+        .eq("status", "connected")
+        .neq("provider", "device");
       if (error) throw error;
       const key = encryptionKeyFromEnv();
       const { syncConnection } = await import("../_shared/sync.ts");

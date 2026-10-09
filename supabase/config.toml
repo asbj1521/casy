@@ -458,6 +458,11 @@ verify_jwt = false
 # (key: CALDAV_ENCRYPTION_KEY).
 verify_jwt = false
 
+[functions.calendar-phone]
+# Checks the caller's login in code (_shared/auth.ts). The iPhone app's
+# phone calendars: busy start and end only, stored as the caller's.
+verify_jwt = false
+
 [functions.calendar-disconnect]
 # Checks the caller's login in code (_shared/auth.ts); only their own
 # connections can be removed.

@@ -56,6 +56,8 @@ export async function claimStaleConnections(
     .update({ last_sync_attempt_at: now.toISOString() })
     .in("profile_id", memberIds)
     .eq("status", "connected")
+    // Only the phone can send its calendars; it does whenever its app opens.
+    .neq("provider", "device")
     // Quoted: a timestamp's ":" and "." are reserved inside PostgREST's or().
     .or(`last_sync_attempt_at.is.null,last_sync_attempt_at.lt."${cutoff}"`)
     .select("id, provider");

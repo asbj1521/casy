@@ -57,6 +57,8 @@ serve("calendar-sync", async (req) => {
       .from("calendar_connections")
       .select("id, provider")
       .eq("status", "connected")
+      // A phone sends its own calendars (calendar-phone); there is nothing to fetch.
+      .neq("provider", "device")
       .order("last_sync_attempt_at", { ascending: true, nullsFirst: true })
       .limit(SCHEDULED_BATCH);
     if (error) throw error;
@@ -71,7 +73,9 @@ serve("calendar-sync", async (req) => {
     .from("calendar_connections")
     .select("id, provider, last_sync_attempt_at")
     .eq("profile_id", profileId)
-    .eq("status", "connected");
+    .eq("status", "connected")
+    // The app syncs the phone's calendars itself, before calling this.
+    .neq("provider", "device");
   if (error) throw error;
   const cutoff = Date.now() - MANUAL_COOLDOWN_MS;
   const due = data.filter(
