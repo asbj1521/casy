@@ -47,11 +47,14 @@ export default function FlowShell({
 
   return (
     <div
+      // The screen less the clock's strip and the tab bar, which already
+      // includes the home indicator (--tab-bar-height in index.css): taking
+      // that off again left a gap the footer showed through in the app.
       className={cn(
         "flex flex-col bg-background",
         fill
-          ? "h-[calc(100dvh-var(--tab-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]"
-          : "min-h-[calc(100dvh-var(--tab-bar-height)-env(safe-area-inset-top)-env(safe-area-inset-bottom))]",
+          ? "h-[calc(100dvh-var(--tab-bar-height)-env(safe-area-inset-top))]"
+          : "min-h-[calc(100dvh-var(--tab-bar-height)-env(safe-area-inset-top))]",
       )}
     >
       {previous ? (
