@@ -384,6 +384,8 @@ export const da = {
   },
   // Planning with AI (#100): the event described in words or speech.
   aiPlan: {
+    tab: "Med AI",
+    showSettings: "Se indstillingerne",
     start: "Planlæg med AI",
     intro:
       "Skriv eller sig, hvad I skal lave, hvornår og hvem der ikke skal med. Casy finder datoerne.",

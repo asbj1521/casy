@@ -1,6 +1,6 @@
 import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Minus, Plus, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Minus, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 
 import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
@@ -221,7 +221,8 @@ function StartDayPicker({
  * how often, how the group answers, and what to take into account (#98).
  */
 const TABS = ["time", "people", "place", "repeat", "vote", "prefs"] as const;
-type Tab = (typeof TABS)[number];
+/** Planning with AI (#100) comes first, for those who may use it. */
+type Tab = (typeof TABS)[number] | "ai";
 
 /** Meeting or Tur / ferie, as two halves of one control. */
 function KindChoice({
@@ -264,19 +265,24 @@ function KindChoice({
 }
 
 /** The Tidspunkt tab: the kind of event and when, then its time or its days. */
-function TimeSettings({ settings, onChange }: Pick<Props, "settings" | "onChange">) {
+function TimeSettings({
+  settings,
+  onChange,
+  guessed = [],
+}: Pick<Props, "settings" | "onChange"> & { guessed?: readonly PlanField[] }) {
   const t = useT();
   const dayValues = useDayValues(settings);
+  const mark = (field: PlanField) => (guessed.includes(field) ? t.aiPlan.guessed : null);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-4">
-        <Field label={t.settingsPanel.kind}>
+        <Field label={t.settingsPanel.kind} mark={mark("kind")}>
           <KindChoice
             multiDay={settings.multiDay}
             onChange={(multiDay) => onChange({ multiDay })}
           />
         </Field>
-        <Field label={t.scheduler.when}>
+        <Field label={t.scheduler.when} mark={mark("months")}>
           <PeriodPicker
             value={settings.period}
             onChange={(period) => onChange({ period })}
@@ -289,7 +295,7 @@ function TimeSettings({ settings, onChange }: Pick<Props, "settings" | "onChange
       <div className="flex flex-wrap items-end gap-4">
         {settings.multiDay ? (
           <>
-            <Field label={t.scheduler.tripDays}>
+            <Field label={t.scheduler.tripDays} mark={mark("days")}>
               <Stepper
                 value={settings.days}
                 values={dayValues}
@@ -299,7 +305,7 @@ function TimeSettings({ settings, onChange }: Pick<Props, "settings" | "onChange
                 moreLabel={t.scheduler.moreDays}
               />
             </Field>
-            <Field label={t.scheduler.tripStarts}>
+            <Field label={t.scheduler.tripStarts} mark={mark("startWeekday")}>
               <StartDayPicker
                 value={settings.startDow}
                 onChange={(startDow) => onChange({ startDow })}
@@ -308,7 +314,7 @@ function TimeSettings({ settings, onChange }: Pick<Props, "settings" | "onChange
           </>
         ) : (
           <>
-            <Field label={t.scheduler.startsAt}>
+            <Field label={t.scheduler.startsAt} mark={mark("startHour")}>
               <Dropdown
                 value={settings.anyTime ? ANY_TIME : settings.startHour}
                 options={startHourOptions(t)}
@@ -317,7 +323,7 @@ function TimeSettings({ settings, onChange }: Pick<Props, "settings" | "onChange
                 triggerClassName="inline-flex h-12 items-center gap-2 rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary"
               />
             </Field>
-            <Field label={t.scheduler.duration}>
+            <Field label={t.scheduler.duration} mark={mark("durationMinutes")}>
               <Stepper
                 value={settings.durationMinutes}
                 values={DURATION_VALUES}
@@ -327,7 +333,7 @@ function TimeSettings({ settings, onChange }: Pick<Props, "settings" | "onChange
                 moreLabel={t.scheduler.longer}
               />
             </Field>
-            <Field label={t.scheduler.dayLabel}>
+            <Field label={t.scheduler.dayLabel} mark={mark("weekdays")}>
               <div className="w-56 2xl:w-72">
                 <DaySlider
                   size="lg"
@@ -358,6 +364,7 @@ export function SettingsPanel({
   extras,
   onExtras,
   participants,
+  ai,
   className,
 }: Props & {
   /** The place, note and vote settings (#84, #99). */
@@ -365,18 +372,24 @@ export function SettingsPanel({
   onExtras: (patch: Partial<EventExtras>) => void;
   /** Who the event is for (#89). */
   participants: ParticipantProps;
+  /**
+   * Planning with AI (#100), for someone signed in: its tab's content (given
+   * a way to show the settings it filled), and what it guessed, to mark.
+   */
+  ai?: { content: (showSettings: () => void) => ReactNode; guessed: readonly PlanField[] };
   className?: string;
 }) {
   const t = useT();
   const [tab, setTab] = useState<Tab>("time");
   const id = useId();
+  const tabs: readonly Tab[] = ai ? ["ai", ...TABS] : TABS;
 
   // Left and right move between tabs, as in any tab list.
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
     if (!step) return;
     e.preventDefault();
-    const next = TABS[(TABS.indexOf(tab) + step + TABS.length) % TABS.length];
+    const next = tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length];
     setTab(next);
     document.getElementById(`${id}-tab-${next}`)?.focus();
   }
@@ -411,7 +424,7 @@ export function SettingsPanel({
         onKeyDown={onKeyDown}
         className="mt-3 flex gap-1 overflow-x-auto border-b"
       >
-        {TABS.map((key) => (
+        {tabs.map((key) => (
           <button
             key={key}
             id={`${id}-tab-${key}`}
@@ -428,13 +441,20 @@ export function SettingsPanel({
                 : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
-            {t.settingsPanel.tabs[key]}
+            {key === "ai" ? (
+              <span className="inline-flex items-center gap-1">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                {t.aiPlan.tab}
+              </span>
+            ) : (
+              t.settingsPanel.tabs[key]
+            )}
           </button>
         ))}
       </div>
 
       <div className="mt-3 grid flex-1">
-        {TABS.map((key) => (
+        {tabs.map((key) => (
           <div
             key={key}
             id={`${id}-panel-${key}`}
@@ -443,10 +463,20 @@ export function SettingsPanel({
             aria-hidden={tab !== key}
             // inert keeps a hidden tab's controls out of reach; invisible keeps its size.
             inert={tab !== key}
-            className={cn("[grid-area:1/1]", tab !== key && "invisible")}
+            className={cn(
+              "[grid-area:1/1]",
+              tab !== key && "invisible",
+              key === "ai" && "relative",
+            )}
           >
-            {key === "time" ? (
-              <TimeSettings settings={settings} onChange={onChange} />
+            {key === "ai" ? (
+              // The conversation grows as it goes on, so it scrolls in the room
+              // the other tabs make rather than making the box taller.
+              <div className="absolute inset-0 -mr-2 overflow-y-auto pr-2">
+                {ai?.content(() => setTab("time"))}
+              </div>
+            ) : key === "time" ? (
+              <TimeSettings settings={settings} onChange={onChange} guessed={ai?.guessed} />
             ) : key === "people" ? (
               <ParticipantSettings {...participants} />
             ) : key === "place" ? (

@@ -1,5 +1,13 @@
 import { useState, type ReactNode } from "react";
-import { Loader2, Mic, MessageSquarePlus, RotateCcw, Sparkles, Square } from "lucide-react";
+import {
+  Loader2,
+  MessageSquarePlus,
+  Mic,
+  RotateCcw,
+  SlidersHorizontal,
+  Sparkles,
+  Square,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 import type { AiPlanner } from "@/hooks/useAiPlanner";
@@ -18,9 +26,12 @@ import { cn } from "@/lib/utils";
 export default function AiConversation({
   planner,
   members,
+  onShowSettings,
   className,
 }: {
   planner: AiPlanner;
+  /** A computer's box: back to the tabs with the settings it filled. */
+  onShowSettings?: () => void;
   /** The group's members, for the names Casy couldn't place. */
   members: { profileId: string; name: string; isYou: boolean }[];
   className?: string;
@@ -115,6 +126,16 @@ export default function AiConversation({
             <RotateCcw className="h-4 w-4" />
             {words.again}
           </button>
+          {onShowSettings && (
+            <button
+              type="button"
+              onClick={onShowSettings}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-[15px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {words.showSettings}
+            </button>
+          )}
         </div>
       )}
 

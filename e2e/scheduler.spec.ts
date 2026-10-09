@@ -102,6 +102,7 @@ test.describe("on a laptop's screen", () => {
     await page.goto("/");
     const before = (await boxOf(settingsBox(page))).height;
     for (const [tab, soon] of [
+      ["Med AI", false],
       ["Deltagere", false],
       ["Sted og note", false],
       ["Gentagelse", true],
@@ -117,6 +118,43 @@ test.describe("on a laptop's screen", () => {
     }
     await page.getByRole("tab", { name: "Tidspunkt" }).click();
     await expect(page.getByRole("radio", { name: "Møde" })).toBeVisible();
+  });
+
+  test("planning with AI (#100) fills the settings beside the answer, the chart still in view", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("tab", { name: "Med AI" }).click();
+    await page
+      .getByRole("textbox", { name: /Fx middag en fredag/ })
+      .fill("Middag en fredag i november uden Jonas");
+    // Enter sends, as in any chat.
+    await page.getByRole("textbox", { name: /Fx middag en fredag/ }).press("Enter");
+
+    await expect(page.getByText("Hvornår på aftenen?")).toBeVisible();
+    // The answer beside it follows: a Friday in November.
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/fredag.*november/i);
+    await expect(page.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Middag");
+    // As tall as the answer beside it, however long the conversation gets.
+    const answer = await boxOf(answerBox(page));
+    expect(Math.abs((await boxOf(settingsBox(page))).height - answer.height)).toBeLessThanOrEqual(
+      1,
+    );
+    const { y, height } = await boxOf(chart(page));
+    expect(y + height, "the chart's bottom edge is on the first screen").toBeLessThanOrEqual(800);
+
+    // The settings it filled, its guess marked, a tab away.
+    await page.getByRole("button", { name: "Se indstillingerne" }).click();
+    await expect(page.getByRole("tab", { name: "Tidspunkt" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByText("gættet", { exact: true }).filter({ visible: true })).toHaveCount(
+      1,
+    );
+    expect(backend.calls.filter((c) => c.name === "plan-ai")).toHaveLength(1);
   });
 
   test("Tur / ferie swaps the time for a number of days", async ({ page }) => {

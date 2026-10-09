@@ -351,6 +351,8 @@ export const en: Messages = {
     startOver: "Start over",
   },
   aiPlan: {
+    tab: "With AI",
+    showSettings: "See the settings",
     start: "Plan with AI",
     intro: "Write or say what you're planning, when, and who isn't coming. Casy finds the dates.",
     placeholder: "For example: dinner on a Friday evening in November, without Peter",

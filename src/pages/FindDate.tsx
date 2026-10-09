@@ -14,6 +14,7 @@ import {
 } from "@/api/groups";
 import DayChart from "@/components/DayChart";
 import AnswerActions from "@/components/findDate/AnswerActions";
+import AiConversation from "@/components/findDate/ai/AiConversation";
 import AnswerCard from "@/components/findDate/AnswerCard";
 import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
@@ -745,7 +746,7 @@ export default function FindDate() {
     name,
     onName: setName,
     settings: sched,
-    onChange: updateSettings,
+    onChange: updateSettingsByHand,
   };
 
   // The answer, the chart and the dates after it: the same on a computer's
@@ -999,6 +1000,20 @@ export default function FindDate() {
               extras={extras}
               onExtras={updateExtras}
               participants={participantProps}
+              ai={
+                user
+                  ? {
+                      content: (showSettings) => (
+                        <AiConversation
+                          planner={planner}
+                          members={activeGroup?.members ?? []}
+                          onShowSettings={showSettings}
+                        />
+                      ),
+                      guessed: planner.session.guessed,
+                    }
+                  : undefined
+              }
             />
           </div>
           {/* The start times are Danish time. */}
