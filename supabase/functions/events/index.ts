@@ -137,9 +137,12 @@ type WriteRow = {
   added: boolean;
   last_error: string | null;
   gone_at: string | null;
+  on_phone: boolean;
 };
 
-type MyCalendar = { state: "added" | "gone" } | { state: "adding"; error: string | null } | null;
+/** `onPhone`: the calendar is on a phone, whose app adds it when it next runs (#105). */
+type MyCalendar =
+  { state: "added" | "gone" } | { state: "adding"; error: string | null; onPhone: boolean } | null;
 
 /**
  * Every event the caller was invited to, in groups they are still in, or
@@ -207,7 +210,7 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
       : { data: [], error: null },
     db
       .from("calendar_event_writes")
-      .select("proposal_id, wanted, added, last_error, gone_at")
+      .select("proposal_id, wanted, added, last_error, gone_at, on_phone")
       .eq("profile_id", profileId)
       .in("proposal_id", proposalIds),
   ]);
@@ -306,7 +309,9 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
 function myCalendarState(write: WriteRow | undefined): MyCalendar {
   if (!write) return null;
   if (!write.wanted) return write.gone_at && !write.added ? { state: "gone" } : null;
-  return write.added ? { state: "added" } : { state: "adding", error: write.last_error };
+  return write.added
+    ? { state: "added" }
+    : { state: "adding", error: write.last_error, onPhone: write.on_phone };
 }
 
 serve("events", async (req, body) => {
@@ -595,10 +600,11 @@ serve("events", async (req, body) => {
         throw new HttpError(409, "Choose a primary calendar first.");
       }
       // Waited for, unlike the automatic adds: the button says how it went.
+      // A phone calendar can't be waited for: the app adds it when it runs.
       await processWrites(db, encryptionKeyFromEnv(), { proposalId, profileId });
       const { events } = await list();
       const mine = events.find((e) => e.id === proposalId)?.myCalendar;
-      if (mine?.state === "adding") {
+      if (mine?.state === "adding" && !mine.onPhone) {
         throw new HttpError(
           502,
           mine.error ?? "Couldn't reach Apple Calendar. Casy will try again within the hour.",

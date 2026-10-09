@@ -92,15 +92,22 @@ export function nextStep(
   return row.source_id ? "delete" : "forget";
 }
 
-/** The rows a scope covers that still have work to do. */
+/** Rows with work left: to add, to take out, or added but to be rewritten. */
+export const TODO_FILTER =
+  "and(wanted.eq.true,added.eq.false),and(wanted.eq.false,added.eq.true)," +
+  "and(wanted.eq.true,added.eq.true,refresh.eq.true)";
+
+/**
+ * The rows a scope covers that still have work to do, for the server itself:
+ * rows whose calendar is on a phone are the iPhone app's (phoneWrites.ts),
+ * and aren't even fetched, so phones left unopened can't crowd the batch.
+ */
 function todoQuery(db: Db, scope: WriteScope) {
   let q = db
     .from("calendar_event_writes")
     .select("proposal_id, profile_id, source_id, wanted, added, attempts, requeue, refresh")
-    .or(
-      "and(wanted.eq.true,added.eq.false),and(wanted.eq.false,added.eq.true)," +
-        "and(wanted.eq.true,added.eq.true,refresh.eq.true)",
-    )
+    .or(TODO_FILTER)
+    .eq("on_phone", false)
     .lt("attempts", MAX_ATTEMPTS)
     .order("updated_at", { ascending: true })
     .limit(BATCH);
@@ -385,28 +392,17 @@ export async function catchUpWrites(
   }
 }
 
-/** What one account needs to be written to: its login and its calendars. */
-interface Account {
-  creds: CalDavCredentials;
-  calendarUrlById: Map<string, string>;
-}
-
 /**
- * Carry out the rows in `scope` that still have work to do. Never throws for
- * one row: a failure is counted and its reason stored on the row, for the
- * page and the next try. Stops starting new rows after `budgetMs`.
+ * What carrying out `rows` needs to know: each event as it is now (with its
+ * current date), each calendar and its account's provider, each person's
+ * language, and the entry to write for a row (AgreedEvent), named with
+ * everyone else invited. Shared by the server's worker and the phone's
+ * (phoneWrites.ts), so an entry reads the same wherever it is written.
  */
-export async function processWrites(
+export async function loadWriteContext(
   db: Db,
-  key: string,
-  scope: WriteScope,
-  { now = Date.now(), budgetMs = 60_000 }: { now?: number; budgetMs?: number } = {},
-): Promise<{ done: number; failed: number }> {
-  const { data: todo, error: todoErr } = await todoQuery(db, scope);
-  if (todoErr) throw todoErr;
-  const rows = (todo ?? []) as WriteRow[];
-  if (rows.length === 0) return { done: 0, failed: 0 };
-
+  rows: Pick<WriteRow, "proposal_id" | "profile_id" | "source_id">[],
+) {
   const proposalIds = [...new Set(rows.map((r) => r.proposal_id))];
   const sourceIds = [...new Set(rows.map((r) => r.source_id).filter((id): id is string => !!id))];
   const profileIds = [...new Set(rows.map((r) => r.profile_id))];
@@ -473,6 +469,53 @@ export async function processWrites(
   const nameById = new Map(
     (names ?? []).map((n: { id: string; display_name: string | null }) => [n.id, n.display_name]),
   );
+
+  /** The entry for one row: the event, named with everyone else invited. */
+  const agreedEventFor = (row: Pick<WriteRow, "proposal_id" | "profile_id">): AgreedEvent => {
+    const proposal = proposalById.get(row.proposal_id)!;
+    const others = inviteeRows
+      .filter((i) => i.proposal_id === row.proposal_id && i.profile_id !== row.profile_id)
+      .map((i) => nameById.get(i.profile_id) ?? null)
+      .filter((n): n is string => !!n)
+      .sort((a, b) => a.localeCompare(b));
+    return {
+      id: proposal.id,
+      title: proposal.title,
+      place: proposal.place,
+      note: proposal.note,
+      groupName: proposal.friend_groups?.name ?? "Casy",
+      others,
+      kind: proposal.settings?.kind ?? "single",
+      start: proposal.current!.starts_at,
+      end: proposal.current!.ends_at,
+    };
+  };
+  return { proposalById, sourceById, langOf, agreedEventFor };
+}
+
+/** What one account needs to be written to: its login and its calendars. */
+interface Account {
+  creds: CalDavCredentials;
+  calendarUrlById: Map<string, string>;
+}
+
+/**
+ * Carry out the rows in `scope` that still have work to do. Never throws for
+ * one row: a failure is counted and its reason stored on the row, for the
+ * page and the next try. Stops starting new rows after `budgetMs`.
+ */
+export async function processWrites(
+  db: Db,
+  key: string,
+  scope: WriteScope,
+  { now = Date.now(), budgetMs = 60_000 }: { now?: number; budgetMs?: number } = {},
+): Promise<{ done: number; failed: number }> {
+  const { data: todo, error: todoErr } = await todoQuery(db, scope);
+  if (todoErr) throw todoErr;
+  const rows = (todo ?? []) as WriteRow[];
+  if (rows.length === 0) return { done: 0, failed: 0 };
+
+  const { proposalById, sourceById, langOf, agreedEventFor } = await loadWriteContext(db, rows);
 
   // One login and calendar listing per account, however many rows it has.
   const accounts = new Map<string, Promise<Account>>();
@@ -541,27 +584,11 @@ export async function processWrites(
       const resource = eventResourceName(row.proposal_id);
 
       if (step === "put" || step === "replace") {
-        const others = inviteeRows
-          .filter((i) => i.proposal_id === row.proposal_id && i.profile_id !== row.profile_id)
-          .map((i) => nameById.get(i.profile_id) ?? null)
-          .filter((n): n is string => !!n)
-          .sort((a, b) => a.localeCompare(b));
-        const event: AgreedEvent = {
-          id: proposal!.id,
-          title: proposal!.title,
-          place: proposal!.place,
-          note: proposal!.note,
-          groupName: proposal!.friend_groups?.name ?? "Casy",
-          others,
-          kind: proposal!.settings?.kind ?? "single",
-          start: proposal!.current!.starts_at,
-          end: proposal!.current!.ends_at,
-        };
         await putEvent(
           account.creds,
           calendarUrl,
           resource,
-          buildEventIcs(event, langOf.get(row.profile_id) ?? "da"),
+          buildEventIcs(agreedEventFor(row), langOf.get(row.profile_id) ?? "da"),
           { replace: step === "replace" },
         );
         const { error } = await db
@@ -623,7 +650,10 @@ export async function processWrites(
  * new date can be queued like a newly agreed event. Only while it is still
  * that row: a write that changed it meanwhile is left to its next turn.
  */
-async function forgetMoved(db: Db, row: WriteRow): Promise<void> {
+export async function forgetMoved(
+  db: Db,
+  row: Pick<WriteRow, "proposal_id" | "profile_id">,
+): Promise<void> {
   const { error } = await db
     .from("calendar_event_writes")
     .delete()

@@ -127,7 +127,7 @@ function utcStamp(iso: string): string {
 }
 
 /** 20261002: the date in Copenhagen at that instant. */
-function localDate(iso: string): string {
+export function localDate(iso: string): string {
   // en-CA formats as 2026-10-02.
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: APP_TIME_ZONE,

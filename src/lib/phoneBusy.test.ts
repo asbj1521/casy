@@ -27,7 +27,7 @@ const allDay = (startDay: string, endDay: string, extra: Partial<PhoneEvent> = {
   ...extra,
 });
 
-const home = { id: "home", name: "Home", account: "iCloud", subscribed: false };
+const home = { id: "home", name: "Home", account: "iCloud", subscribed: false, writable: true };
 
 describe("busySpan", () => {
   it("keeps a timed event's instants", () => {
@@ -92,7 +92,10 @@ describe("phoneBusy", () => {
   it("keeps calendars apart, and lists a calendar with no events", () => {
     const result = phoneBusy(
       {
-        calendars: [home, { id: "work", name: "Work", account: "Exchange", subscribed: false }],
+        calendars: [
+          home,
+          { id: "work", name: "Work", account: "Exchange", subscribed: false, writable: true },
+        ],
         events: [timed("2026-10-12T08:00:00Z", "2026-10-12T09:00:00Z", { calendarId: "work" })],
       },
       WINDOW,
@@ -115,8 +118,8 @@ describe("phoneBusy", () => {
     const names = phoneBusy(
       {
         calendars: [
-          { id: "a", name: "Calendar", account: "iCloud", subscribed: false },
-          { id: "b", name: "Calendar", account: "me@gmail.com", subscribed: false },
+          { id: "a", name: "Calendar", account: "iCloud", subscribed: false, writable: true },
+          { id: "b", name: "Calendar", account: "me@gmail.com", subscribed: false, writable: true },
           home,
         ],
         events: [],
@@ -130,9 +133,15 @@ describe("phoneBusy", () => {
     const result = phoneBusy(
       {
         calendars: [
-          { id: "holidays", name: "Danish holidays", account: "Other", subscribed: true },
-          { id: "uni", name: "Timetable", account: "Other", subscribed: true },
-          { id: "empty", name: "Empty feed", account: "Other", subscribed: true },
+          {
+            id: "holidays",
+            name: "Danish holidays",
+            account: "Other",
+            subscribed: true,
+            writable: false,
+          },
+          { id: "uni", name: "Timetable", account: "Other", subscribed: true, writable: false },
+          { id: "empty", name: "Empty feed", account: "Other", subscribed: true, writable: false },
         ],
         events: [
           allDay("2026-12-24", "2026-12-25", { calendarId: "holidays" }),

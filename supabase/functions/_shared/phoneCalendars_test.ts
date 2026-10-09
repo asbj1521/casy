@@ -39,6 +39,7 @@ Deno.test("a push is normalised: lower-case id, default label, trimmed names, IS
         id: "cal-1",
         name: "Home",
         hidden: false,
+        writable: false,
         blocks: [block("2026-10-12T08:00:00.000Z", "2026-10-12T09:00:00.000Z")],
       },
     ],

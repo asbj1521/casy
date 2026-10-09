@@ -30,6 +30,8 @@ export interface PhonePush {
     id: string;
     name: string;
     hidden: boolean;
+    /** Casy may add events to it (the phone says so), so it can be primary. */
+    writable: boolean;
     blocks: { start: string; end: string }[];
   }[];
 }
@@ -60,11 +62,17 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
  * blocks reaching into it are kept whole, so an event under way at the push
  * isn't stored as starting then (see syncWindow.ts).
  */
-export function parsePhonePush(body: Body, now = new Date()): PhonePush {
+/** The phone's id from a request body, lower-cased; a 400 without a valid one. */
+export function parseDeviceId(body: Body): string {
   const deviceId = body.deviceId;
   if (typeof deviceId !== "string" || !UUID.test(deviceId)) {
     throw new HttpError(400, "A device id is required");
   }
+  return deviceId.toLowerCase();
+}
+
+export function parsePhonePush(body: Body, now = new Date()): PhonePush {
+  const deviceId = parseDeviceId(body);
   if (!Array.isArray(body.calendars)) throw new HttpError(400, "calendars must be a list");
   if (body.calendars.length > MAX_CALENDARS) throw new HttpError(400, "Too many calendars");
 
@@ -106,12 +114,13 @@ export function parsePhonePush(body: Body, now = new Date()): PhonePush {
       id,
       name: cleanText(raw.name, MAX_NAME_LENGTH) ?? "Calendar",
       hidden: raw.hidden === true,
+      writable: raw.writable === true,
       blocks,
     });
   }
 
   return {
-    deviceId: deviceId.toLowerCase(),
+    deviceId,
     label: cleanText(body.label, MAX_LABEL_LENGTH) ?? "iPhone",
     create: body.create === true,
     calendars,

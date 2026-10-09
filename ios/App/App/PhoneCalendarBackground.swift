@@ -233,6 +233,7 @@ enum PhoneBusy {
                 "id": c.id,
                 "name": name,
                 "hidden": c.subscribed && anyIn.contains(c.id) && !timedIn.contains(c.id),
+                "writable": c.writable,
                 "blocks": blocks,
             ]
         }

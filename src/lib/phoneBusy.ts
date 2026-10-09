@@ -24,6 +24,8 @@ export interface PhoneCalendar {
   account: string;
   /** A subscribed calendar (a feed, Apple's holidays), not one of the person's own. */
   subscribed: boolean;
+  /** The phone lets Casy add events to it, so it can be the primary calendar. */
+  writable: boolean;
 }
 
 /** One event's timing; nothing else about it is read. */
@@ -53,6 +55,7 @@ export interface PhoneCalendarPush {
   name: string;
   /** Only whole days, in a subscription: most likely holidays, which shouldn't block. Unticked when first seen. */
   hidden: boolean;
+  writable: boolean;
   blocks: { start: string; end: string }[];
 }
 
@@ -137,6 +140,8 @@ export function phoneBusy(
     id: c.id,
     name: names.get(c.id) ?? c.name,
     hidden: c.subscribed && anyIn.has(c.id) && !timedIn.has(c.id),
+    // Older app builds don't say: then it can't be written.
+    writable: c.writable === true,
     blocks: merge(spans.get(c.id) ?? []).map((s) => ({
       start: new Date(s.start).toISOString(),
       end: new Date(s.end).toISOString(),

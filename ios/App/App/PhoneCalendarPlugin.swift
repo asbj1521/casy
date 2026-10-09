@@ -8,6 +8,8 @@ struct PhoneCalendarInfo {
     let name: String
     let account: String
     let subscribed: Bool
+    /// The phone lets Casy add events to it (not a subscription or a read-only share).
+    let writable: Bool
 }
 
 /// One event's timing; nothing else about it is read.
@@ -105,7 +107,9 @@ enum PhoneCalendarReader {
                 id: $0.calendarIdentifier,
                 name: $0.title,
                 account: $0.source?.title ?? "",
-                subscribed: $0.type == .subscription)
+                subscribed: $0.type == .subscription,
+                writable: $0.allowsContentModifications && !$0.isImmutable
+                    && $0.type != .subscription)
         }
         return (list, events)
     }
@@ -186,7 +190,10 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
             let (calendars, events) = PhoneCalendarReader.read(store: store, from: from, to: to)
             call.resolve([
                 "calendars": calendars.map {
-                    ["id": $0.id, "name": $0.name, "account": $0.account, "subscribed": $0.subscribed]
+                    [
+                        "id": $0.id, "name": $0.name, "account": $0.account,
+                        "subscribed": $0.subscribed, "writable": $0.writable,
+                    ]
                 },
                 "events": events.map { e -> [String: Any] in
                     var item: [String: Any] = [
