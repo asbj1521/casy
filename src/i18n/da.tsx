@@ -645,6 +645,8 @@ export const da = {
     openSettings: "Åbn Indstillinger",
     couldntRead: "Kunne ikke læse telefonens kalendere. Prøv igen.",
     couldntSave: "Kunne ikke gemme telefonens kalendere.",
+    updatesInApp: (synced: string | null) =>
+      `Telefonens kalendere opdateres, når du åbner Casy-appen på telefonen.${synced ? ` ${synced}.` : ""}`,
   },
   appleForm: {
     email: "Apple-konto (e-mail)",

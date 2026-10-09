@@ -612,6 +612,8 @@ export const en: Messages = {
     openSettings: "Open Settings",
     couldntRead: "Couldn't read the phone's calendars. Try again.",
     couldntSave: "Couldn't save the phone's calendars.",
+    updatesInApp: (synced: string | null) =>
+      `The phone's calendars update when you open the Casy app on the phone.${synced ? ` ${synced}.` : ""}`,
   },
   appleForm: {
     email: "Apple Account email",

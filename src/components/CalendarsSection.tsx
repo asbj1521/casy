@@ -22,6 +22,7 @@ import { useSignedInUser } from "@/context/auth";
 import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { syncedAgo } from "@/lib/accountSummary";
 import { CONNECT_PARAM, readyProvider } from "@/lib/calendarPrompt";
 import { isNativeApp } from "@/lib/nativeApp";
 import { openPhoneSettings, phoneConnectionId } from "@/lib/phoneCalendar";
@@ -130,6 +131,14 @@ export default function CalendarsSection() {
 
   const synced = sync.data;
   const failedSyncs = synced?.filter((r) => !r.ok).length ?? 0;
+  // On the website a phone's calendars can't be synced from here: only its
+  // app sends them, so the note says that rather than "everything is fresh".
+  const phoneAccount = isNativeApp ? undefined : accounts.find((a) => a.provider === "device");
+  const phoneNote = phoneAccount
+    ? t.phoneCalendar.updatesInApp(
+        syncedAgo(phoneAccount.last_synced_at, sync.submittedAt, t.synced),
+      )
+    : null;
   const syncNote = sync.isError
     ? { tone: "error" as const, text: sync.error.message }
     : synced
@@ -137,10 +146,15 @@ export default function CalendarsSection() {
           tone: failedSyncs === 0 ? ("success" as const) : ("error" as const),
           text:
             synced.length === 0
-              ? t.profile.syncAllFresh
-              : failedSyncs === 0
-                ? t.profile.syncedAccounts(synced.length)
-                : t.profile.syncSomeFailed(failedSyncs, synced.length),
+              ? (phoneNote ?? t.profile.syncAllFresh)
+              : [
+                  failedSyncs === 0
+                    ? t.profile.syncedAccounts(synced.length)
+                    : t.profile.syncSomeFailed(failedSyncs, synced.length),
+                  phoneNote,
+                ]
+                  .filter(Boolean)
+                  .join(" "),
         }
       : null;
 
