@@ -15,6 +15,7 @@ import {
 import DayChart from "@/components/DayChart";
 import AnswerActions from "@/components/findDate/AnswerActions";
 import AiConversation from "@/components/findDate/ai/AiConversation";
+import PlanSummary from "@/components/findDate/ai/PlanSummary";
 import AnswerCard from "@/components/findDate/AnswerCard";
 import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
@@ -1008,6 +1009,16 @@ export default function FindDate() {
                           planner={planner}
                           members={activeGroup?.members ?? []}
                           onShowSettings={showSettings}
+                          summary={
+                            <PlanSummary
+                              name={name}
+                              settings={sched}
+                              extras={extras}
+                              members={activeGroup?.members ?? []}
+                              choice={peopleChoice}
+                              guessed={planner.session.guessed}
+                            />
+                          }
                         />
                       ),
                       guessed: planner.session.guessed,

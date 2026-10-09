@@ -134,6 +134,16 @@ test.describe("on a laptop's screen", () => {
     await page.getByRole("textbox", { name: /Fx middag en fredag/ }).press("Enter");
 
     await expect(page.getByText("Hvornår på aftenen?")).toBeVisible();
+    // What it picked up, as settings rather than the words: the time marked as a guess.
+    const summary = page.locator("dl").filter({ hasText: "Tidspunkt" });
+    await expect(summary).toContainText("18:00 til 21:00 (3 t)");
+    await expect(summary).toContainText("Fredag");
+    await expect(summary).toContainText("I november");
+    await expect(summary).toContainText("3 med, uden Jonas");
+    await expect(summary.getByText("gættet")).toHaveCount(1);
+    // The words themselves are folded away.
+    await expect(page.getByText("Det du skrev")).toBeVisible();
+    await expect(page.getByText("Middag en fredag i november uden Jonas")).toBeHidden();
     // The answer beside it follows: a Friday in November.
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/fredag.*november/i);
     await expect(page.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Middag");

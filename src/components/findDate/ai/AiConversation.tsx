@@ -27,9 +27,12 @@ export default function AiConversation({
   planner,
   members,
   onShowSettings,
+  summary,
   className,
 }: {
   planner: AiPlanner;
+  /** What Casy picked up, shown once there is a plan (a computer's PlanSummary). */
+  summary?: ReactNode;
   /** A computer's box: back to the tabs with the settings it filled. */
   onShowSettings?: () => void;
   /** The group's members, for the names Casy couldn't place. */
@@ -46,17 +49,26 @@ export default function AiConversation({
     <div className={cn("flex flex-col gap-3", className)}>
       {!hasPlan && <p className="text-[15px] text-muted-foreground">{words.intro}</p>}
 
+      {/* What Casy picked up, where there's room for it (a computer); the
+          words it came from fold away, since speech recognition often
+          mishears and the settings are what count. */}
+      {hasPlan && summary}
       {session.texts.length > 0 && (
-        <ul className="flex flex-col items-end gap-1.5">
-          {session.texts.map((text, i) => (
-            <li
-              key={i}
-              className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-orange-50 px-3.5 py-2 text-[15px] text-orange-950"
-            >
-              {text}
-            </li>
-          ))}
-        </ul>
+        <details className="group text-sm text-muted-foreground">
+          <summary className="w-fit cursor-pointer select-none font-medium hover:text-foreground">
+            {words.youWrote}
+          </summary>
+          <ul className="mt-1.5 flex flex-col gap-1.5">
+            {session.texts.map((text, i) => (
+              <li
+                key={i}
+                className="whitespace-pre-wrap rounded-xl bg-secondary/60 px-3 py-2 text-foreground"
+              >
+                {text}
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       {session.questions.map(({ question, picked }, qi) => (

@@ -386,6 +386,20 @@ export const da = {
   aiPlan: {
     tab: "Med AI",
     showSettings: "Se indstillingerne",
+    youWrote: "Det du skrev",
+    kinds: { meeting: "Møde", trip: "Tur", holiday: "Ferie" },
+    rows: {
+      name: "Navn",
+      kind: "Slags",
+      time: "Tidspunkt",
+      days: "Dage",
+      when: "Hvornår",
+      place: "Sted",
+      note: "Note",
+      people: "Deltagere",
+    },
+    tripFrom: (days: string, weekday: string) => `${days} fra ${weekday}`,
+    without: (names: string) => `uden ${names}`,
     start: "Planlæg med AI",
     intro:
       "Skriv eller sig, hvad I skal lave, hvornår og hvem der ikke skal med. Casy finder datoerne.",

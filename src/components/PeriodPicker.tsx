@@ -4,6 +4,7 @@ import Popover from "@/components/Popover";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
+import { monthName, periodText } from "@/lib/periodText";
 import { pickPeriodMonth, type Period } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE, localDate, startOfMonth } from "@/lib/zone";
@@ -14,10 +15,6 @@ const TZ = APP_TIME_ZONE;
 function searchedMonths(): string[] {
   const first = startOfMonth(Date.now(), TZ);
   return Array.from({ length: 12 }, (_, i) => new Date(startOfMonth(first, TZ, i)).toISOString());
-}
-
-function monthName(iso: string, locale: string, month: "long" | "short"): string {
-  return new Date(iso).toLocaleDateString(locale, { month, timeZone: TZ });
 }
 
 /**
@@ -51,15 +48,7 @@ export default function PeriodPicker({
 }) {
   const t = useT();
   const { lang } = useLang();
-  const locale = LOCALE[lang];
-  const text = !value
-    ? t.scheduler.period.any
-    : value.from === value.to
-      ? t.scheduler.period.one(monthName(value.from, locale, "long"))
-      : t.scheduler.period.range(
-          monthName(value.from, locale, "short"),
-          monthName(value.to, locale, "short"),
-        );
+  const text = periodText(value, LOCALE[lang], t);
   const label = capitalized ? capitalize(text) : text;
   const [open, setOpen] = useState(false);
 
