@@ -12,6 +12,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
 
+    /// Leaving the app: ask iOS to wake it later to send the phone's calendars.
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        PhoneCalendarBackground.schedule()
+    }
+
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         SceneDelegateProxy.shared.scene(scene, openURLContexts: URLContexts)
     }
