@@ -80,7 +80,11 @@ export interface SuggestedEvent {
    * the last sync found). Null or missing: Casy hasn't been asked to.
    */
   myCalendar?:
-    { state: "added" } | { state: "adding"; error: string | null } | { state: "gone" } | null;
+    | { state: "added" }
+    /** `onPhone`: the calendar is on a phone, whose app adds it when it runs (#105). */
+    | { state: "adding"; error: string | null; onPhone?: boolean }
+    | { state: "gone" }
+    | null;
 }
 
 /**

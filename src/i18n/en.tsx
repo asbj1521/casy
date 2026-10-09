@@ -982,6 +982,9 @@ export const en: Messages = {
     adding: "Casy is adding it to your calendar.",
     notYet: "Casy couldn't add it to your calendar yet and will try again within the hour.",
     tryAgain: "Try again now",
+    onPhone: "Casy adds it to your phone's calendar next time you open the Casy app there.",
+    notYetPhone:
+      "Casy couldn't add it to the phone's calendar yet, and tries again next time the app opens.",
     gone: "It's no longer in your calendar.",
     addAgain: "Add it again",
     chooseTitle: "Which calendar should Casy add events to?",
@@ -994,7 +997,7 @@ export const en: Messages = {
     intro:
       "Casy adds the events you agree on to this calendar: when you ask it to, or on its own if Add automatically is on.",
     noWritable:
-      "Connect an Apple calendar above and Casy can add your agreed events straight to it. Google and Outlook are coming later.",
+      "Connect an Apple calendar above, or your phone in the Casy app, and Casy can add your agreed events straight to it. Google and Outlook are coming later.",
     waitingForSync:
       "Casy is checking which of your Apple calendars it may add events to. Press Sync now, or wait up to an hour.",
     selectLabel: "Choose primary calendar",

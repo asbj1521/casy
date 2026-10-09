@@ -1017,6 +1017,9 @@ export const da = {
     adding: "Casy lægger den i din kalender.",
     notYet: "Casy kunne ikke lægge den i din kalender endnu og prøver igen inden for en time.",
     tryAgain: "Prøv igen nu",
+    onPhone: "Casy lægger den i kalenderen på din telefon, næste gang du åbner Casy-appen der.",
+    notYetPhone:
+      "Casy kunne ikke lægge den i telefonens kalender endnu og prøver igen, næste gang appen åbnes.",
     gone: "Den er ikke i din kalender længere.",
     addAgain: "Tilføj igen",
     chooseTitle: "Hvilken kalender skal Casy lægge aftaler i?",
@@ -1029,7 +1032,7 @@ export const da = {
     intro:
       "Casy lægger de aftaler, I bliver enige om, i denne kalender: når du beder om det, eller af sig selv, hvis Tilføj automatisk er slået til.",
     noWritable:
-      "Forbind en Apple-kalender ovenfor, så kan Casy lægge jeres aftaler direkte i den. Google og Outlook kommer senere.",
+      "Forbind en Apple-kalender ovenfor, eller din telefon i Casy-appen, så kan Casy lægge jeres aftaler direkte i den. Google og Outlook kommer senere.",
     waitingForSync:
       "Casy tjekker, hvilke af dine Apple-kalendere den må lægge aftaler i. Tryk Synkronisér nu, eller vent op til en time.",
     selectLabel: "Vælg primær kalender",

@@ -12,7 +12,10 @@ import {
 import Notice from "@/components/ui/Notice";
 import { cn } from "@/lib/utils";
 import { useSignedInUser } from "@/context/auth";
+import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { useT } from "@/i18n/lang";
+import { isNativeApp } from "@/lib/nativeApp";
+import { phoneConnectionId } from "@/lib/phoneCalendar";
 import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
 
 /** Hand the browser a file to save (or, on a phone, to open in Calendar). */
@@ -63,10 +66,19 @@ export default function AddToCalendar({
     mutationFn: async (calendarId: string | null) => {
       // A first choice from here becomes the primary calendar.
       if (calendarId) await updatePrimaryCalendar(queryClient, user.id, { calendarId });
-      return await addToMyCalendar(event.id);
+      const data = await addToMyCalendar(event.id);
+      // A phone calendar is written by the app: in the app, right away (the
+      // send writes it, and fetches My events again once it is in).
+      const mine = data.events.find((e) => e.id === event.id)?.myCalendar;
+      const onThisPhone =
+        isNativeApp && mine?.state === "adding" && !!mine.onPhone && !!phoneConnectionId(user.id);
+      if (onThisPhone) await syncPhone(queryClient, user.id, { create: false }).catch(() => null);
+      return { ...data, onThisPhone };
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(eventsQueryKey(user.id), data.events);
+      // Written on the phone: the answer above is from before, so the list
+      // fetched since is kept rather than replaced by it.
+      if (!data.onThisPhone) queryClient.setQueryData(eventsQueryKey(user.id), data.events);
       setChoosing(false);
     },
     // A failure still changed something (the event is now waiting to be
@@ -104,10 +116,16 @@ export default function AddToCalendar({
         {primaryLabel ? words.added(primaryLabel) : words.addedFallback}
       </p>
     );
+  } else if (event.myCalendar?.state === "adding" && event.myCalendar.onPhone && !isNativeApp) {
+    // On the website: only the phone's app can put it in.
+    body = <p className="text-sm text-emerald-900">{words.onPhone}</p>;
   } else if (event.myCalendar?.state === "adding" && !add.isPending) {
+    const onPhone = !!event.myCalendar.onPhone;
     body = (
       <div className="text-sm text-emerald-900">
-        <p>{event.myCalendar.error ? words.notYet : words.adding}</p>
+        <p>
+          {event.myCalendar.error ? (onPhone ? words.notYetPhone : words.notYet) : words.adding}
+        </p>
         <button
           type="button"
           onClick={() => add.mutate(null)}

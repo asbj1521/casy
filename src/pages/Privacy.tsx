@@ -117,8 +117,10 @@ const da: LegalCopy = {
             er blevet enige om, i den: når du trykker Tilføj til min kalender, eller af sig selv,
             hvis du har slået Tilføj automatisk til. Aftalen får aftalens navn, gruppens navn og
             navnene på de andre, der er med. Bliver aftalen aflyst, fjerner Casy den igen. Casy
-            ændrer eller sletter aldrig andre aftaler i din kalender. Indtil videre kan det kun lade
-            sig gøre med Apple-kalendere.
+            ændrer eller sletter aldrig andre aftaler i din kalender. Indtil videre kan det lade sig
+            gøre med Apple-kalendere og med kalenderne på din telefon i iPhone-appen. Dem lægger
+            appen selv aftalerne i, når den er åben eller arbejder i baggrunden, og hver aftale får
+            et link tilbage til aftalen i Casy.
           </p>
           <p>
             Når du vælger en adgangskode, eller logger ind med en, tjekker din browser den mod Have
@@ -408,7 +410,9 @@ const en: LegalCopy = {
             automatically. The entry holds the event&apos;s name, the group&apos;s name and the
             names of the others taking part. If the event is cancelled, Casy takes it out again.
             Casy never changes or deletes any other event in your calendar. For now this works with
-            Apple calendars only.
+            Apple calendars, and with the calendars on your phone in the iPhone app. The app adds
+            those entries itself, while it is open or working in the background, and each entry
+            carries a link back to the event in Casy.
           </p>
           <p>
             When you choose a password, or sign in with one, your browser checks it against Have I
