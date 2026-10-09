@@ -52,14 +52,6 @@ create unique index if not exists calendar_connections_device_idx
 comment on column calendar_connections.device_id is
   'provider = device only: the random id the iPhone app made for itself, so each phone is one connection.';
 
--- The phone's own token for sending in the background, when iOS wakes the
--- app without its web page (and so without the person's login). It can only
--- update this one connection's busy times; only its SHA-256 is stored, and it
--- goes with the connection.
-alter table calendar_connections add column if not exists device_token_hash text;
-
-comment on column calendar_connections.device_token_hash is
-  'provider = device only: SHA-256 (hex) of the token the phone sends its calendars with in the background (calendar-phone).';
 
 -- One push from the phone, in one transaction: its calendars (new ones added,
 -- renamed ones renamed, ones gone from the phone removed) and every busy

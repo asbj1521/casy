@@ -60,14 +60,17 @@ serve("calendar-phone", async (req, body) => {
   if (result.gone) return { gone: true };
 
   // A new token replaces any earlier one: only the latest phone copy works.
+  // The calendars are saved by now, so a failure here only means no
+  // background refresh until the next try, not a failed connect.
   let issued: string | undefined;
   if (!deviceToken && body.issueToken === true) {
-    issued = newDeviceToken();
+    const token = newDeviceToken();
     const { error: tokenErr } = await db
       .from("calendar_connections")
-      .update({ device_token_hash: await hashDeviceToken(issued) })
+      .update({ device_token_hash: await hashDeviceToken(token) })
       .eq("id", result.connection_id);
-    if (tokenErr) throw tokenErr;
+    if (tokenErr) console.error("calendar-phone: storing the device token failed", tokenErr);
+    else issued = token;
   }
 
   return {
