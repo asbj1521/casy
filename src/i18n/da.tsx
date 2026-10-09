@@ -1148,6 +1148,8 @@ export const da = {
     statAccounts: "Forbundne konti",
     statFailing: "Fejlende synkroniseringer",
     healthOk: "Kalendersynkroniseringen virker.",
+    aiToday: (used: number, limit: number) =>
+      `Planlægning med AI i dag: ${used} af ${limit} svar brugt.`,
     healthStale:
       "Ingen kalender er blevet synkroniseret i over tre timer. Den timevise synkronisering er måske gået i stå.",
     healthFailing: "Over 30 % af kalenderkontiene fejler, når de synkroniseres.",

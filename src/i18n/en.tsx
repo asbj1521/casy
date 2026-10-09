@@ -1110,6 +1110,8 @@ export const en: Messages = {
     statAccounts: "Connected accounts",
     statFailing: "Failing syncs",
     healthOk: "Calendar syncing works.",
+    aiToday: (used: number, limit: number) =>
+      `Planning with AI today: ${used} of ${limit} answers used.`,
     healthStale: "No calendar has synced for over three hours. The hourly sync may have stopped.",
     healthFailing: "Over 30% of calendar accounts are failing to sync.",
     statBusy: "Busy blocks stored",

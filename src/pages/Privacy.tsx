@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 7. oktober 2026",
+  updated: "Senest opdateret 9. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -131,6 +131,35 @@ const da: LegalCopy = {
       ),
     },
     {
+      title: "Planlægning med AI",
+      body: (
+        <>
+          <p>
+            Vælger du Planlæg med AI, sendes det, du skriver eller siger om aftalen, til Anthropic,
+            som laver AI-modellen Claude. Med det følger dagens dato, de måneder, der kan planlægges
+            i, og det sprog, du bruger Casy på. Når du tilføjer detaljer, følger også det, du skrev
+            før, og de indstillinger, aftalen har nu. Intet andet: ikke dine kalendere, ikke hvornår
+            nogen er optaget, og ikke navnene på din gruppe eller dens medlemmer. Nævner du selv et
+            navn, sendes det, som du skrev det, og Casy finder personen i gruppen i din browser.
+          </p>
+          <p>
+            Anthropic svarer med indstillinger til aftalen, som du ser og kan rette, før noget
+            bliver sendt til gruppen. Anthropic bruger ikke det, Casy sender, til at træne sine
+            modeller, og sletter det normalt inden for 30 dage. Anthropic ligger i USA, så det, du
+            skriver her, bliver behandlet uden for EU. Casy gemmer ikke selv teksten. Casy noterer
+            kun, at et svar blev hentet, og hvor stort det var, uden at notere hvem der hentede det,
+            så der kan sættes en grænse for, hvor mange svar der hentes om dagen. Notatet slettes
+            efter 30 dage.
+          </p>
+          <p>
+            Trykker du på Tal, er det din browser, der gør din tale til tekst: Chrome sender lyden
+            til Google, Edge til Microsoft, og Safari til Apple eller gør det på din enhed. Casy får
+            kun teksten. Vil du ikke det, kan du skrive i stedet.
+          </p>
+        </>
+      ),
+    },
+    {
       title: "Det kan de andre i dine grupper se",
       body: (
         <>
@@ -203,11 +232,12 @@ const da: LegalCopy = {
           Login-e-mails sendes af Resend, som får din e-mailadresse for at kunne sende dem. Alle tre
           fører almindelige tekniske logfiler for at drive deres tjenester. Login-siden bruger
           Cloudflare Turnstile til at tjekke, at du ikke er en robot, og Cloudflare ser tekniske
-          oplysninger som din IP-adresse og browser for at gøre det. Casy bruger ingen analyse-
-          eller reklamesporing. Din browser gemmer din login-session, så du forbliver logget ind,
-          det sprog, du har valgt, og en kopi af din egen gruppeliste, dine kalenderforbindelser og
-          om du har admin-adgang, så siderne åbner med det samme. Kopien slettes, når du logger ud,
-          og gemmes aldrig i mere end en uge. Intet om andres kalendere gemmes i din browser.
+          oplysninger som din IP-adresse og browser for at gøre det. Planlægning med AI går gennem
+          Anthropic, som beskrevet ovenfor. Casy bruger ingen analyse- eller reklamesporing. Din
+          browser gemmer din login-session, så du forbliver logget ind, det sprog, du har valgt, og
+          en kopi af din egen gruppeliste, dine kalenderforbindelser og om du har admin-adgang, så
+          siderne åbner med det samme. Kopien slettes, når du logger ud, og gemmes aldrig i mere end
+          en uge. Intet om andres kalendere gemmes i din browser.
         </p>
       ),
     },
@@ -276,7 +306,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 7 October 2026",
+  updated: "Last updated 9 October 2026",
   sections: [
     {
       title: "In short",
@@ -383,6 +413,35 @@ const en: LegalCopy = {
       ),
     },
     {
+      title: "Planning with AI",
+      body: (
+        <>
+          <p>
+            If you choose Plan with AI, what you write or say about the event is sent to Anthropic,
+            the maker of the AI model Claude. With it go today&apos;s date, the months that can be
+            planned in, and the language you use Casy in. When you add details, what you wrote
+            before and the event&apos;s settings so far go too. Nothing else: not your calendars,
+            not when anyone is busy, and not the names of your group or its members. If you name
+            someone yourself, the name is sent as you wrote it, and Casy finds the person in the
+            group in your browser.
+          </p>
+          <p>
+            Anthropic answers with settings for the event, which you see and can change before
+            anything is sent to the group. Anthropic does not use what Casy sends to train its
+            models, and normally deletes it within 30 days. Anthropic is in the United States, so
+            what you write here is processed outside the EU. Casy itself does not keep the text. It
+            only notes that an answer was fetched and how large it was, without noting who fetched
+            it, so the number of answers a day can be limited. The note is deleted after 30 days.
+          </p>
+          <p>
+            If you press Speak, your browser turns your speech into text: Chrome sends the sound to
+            Google, Edge to Microsoft, and Safari to Apple or does it on your device. Casy only gets
+            the text. If you would rather not, you can type instead.
+          </p>
+        </>
+      ),
+    },
+    {
       title: "What other people in your groups can see",
       body: (
         <>
@@ -455,12 +514,13 @@ const en: LegalCopy = {
           Vercel. Sign-in emails are delivered by Resend, which receives your email address in order
           to send them. All three keep standard technical logs to run their services. The sign-in
           page uses Cloudflare Turnstile to check that you are not a robot, and Cloudflare sees
-          technical details such as your IP address and browser to do so. Casy uses no analytics or
-          advertising trackers. Your browser keeps your login session so you stay signed in, the
-          language you picked, and a copy of your own group list, your calendar connections and
-          whether you have admin access, so pages open instantly. That copy is deleted when you sign
-          out and is never kept for more than a week. Nothing about other people&apos;s calendars is
-          stored in your browser.
+          technical details such as your IP address and browser to do so. Planning with AI goes
+          through Anthropic, as described above. Casy uses no analytics or advertising trackers.
+          Your browser keeps your login session so you stay signed in, the language you picked, and
+          a copy of your own group list, your calendar connections and whether you have admin
+          access, so pages open instantly. That copy is deleted when you sign out and is never kept
+          for more than a week. Nothing about other people&apos;s calendars is stored in your
+          browser.
         </p>
       ),
     },

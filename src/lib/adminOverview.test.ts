@@ -40,6 +40,7 @@ const connection = (
 // Ann and Bo share "Both"; Bo is alone in "Solo"; Bo's account is failing.
 const OVERVIEW: AdminOverview = {
   health: { ok: true },
+  ai: null,
   stats: { users: 2, groups: 2, connectedAccounts: 2, failingSyncs: 1, busyBlocks: 500 },
   groups: [
     {

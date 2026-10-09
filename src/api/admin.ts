@@ -55,6 +55,8 @@ export interface AdminConnection {
 export interface AdminOverview {
   /** Whether calendar syncing works, as the health function tells the uptime monitor. */
   health: { ok: true } | { ok: false; reason: "stale" | "failing" };
+  /** Planning with AI (#100): answers fetched today, of the day's cap; null if unknown. */
+  ai: { today: number; limit: number } | null;
   stats: AdminStats;
   groups: AdminGroup[];
   users: AdminUser[];

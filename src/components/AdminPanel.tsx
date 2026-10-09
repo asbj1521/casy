@@ -609,6 +609,11 @@ export default function AdminPanel({ youId }: { youId: string }) {
         />
         <StatTile label={t.admin.statBusy} value={stats?.busyBlocks ?? null} />
       </div>
+      {data?.ai && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t.admin.aiToday(data.ai.today, data.ai.limit)}
+        </p>
+      )}
 
       {isError && (
         <Notice tone="error" className="mt-4">
