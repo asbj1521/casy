@@ -39,6 +39,15 @@
     }
   }
 
+  /* The site's footer (Footer.tsx: 1.5rem above and below a 1.25rem line, and
+     its border), for pages sized to the screen below; none in the app. */
+  :root {
+    --footer-height: calc(4.25rem + 1px);
+  }
+  html.native-app {
+    --footer-height: 0px;
+  }
+
   * {
     @apply border-border;
   }
@@ -63,6 +72,20 @@
   @media (max-width: 767.98px) {
     html.native-app body {
       padding-bottom: 0;
+    }
+  }
+
+  /* A phone's pages are at least the screen tall, but the screen less what
+     comes with every page: the tab bar's room, the clock's strip in the app
+     and the footer on the website. Counted as the whole screen, a short page
+     (no groups, few events) could be scrolled into nothing by that much.
+     Computers keep the whole screen, as before. ("html" so it outranks
+     Tailwind's own min-h-screen, which comes later in the stylesheet.) */
+  @media (max-width: 767.98px) {
+    html .min-h-screen {
+      min-height: calc(
+        100dvh - var(--tab-bar-height) - env(safe-area-inset-top) - var(--footer-height)
+      );
     }
   }
 

@@ -53,3 +53,21 @@ test("My calendar is a month like Apple's: a day opens its busy time, Kalendere 
   await page.getByRole("link", { name: "Kalender" }).first().click();
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
 });
+
+test.describe("short pages", () => {
+  test.use({ world: { calendars: "connected", groups: "none" } });
+
+  test("a page with little on it doesn't scroll into nothing", async ({ page }) => {
+    // The tab bar's room and the footer used to come on top of a page a whole
+    // screen tall, so a short page could be scrolled by that much.
+    for (const path of ["/groups", "/events"]) {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      const { scroll, screen } = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollHeight,
+        screen: window.innerHeight,
+      }));
+      expect(scroll, path).toBeLessThanOrEqual(screen);
+    }
+  });
+});
