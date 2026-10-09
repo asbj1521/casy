@@ -68,7 +68,8 @@ const answerBox = (page: Page) =>
     .filter({ has: page.getByRole("heading", { level: 1 }) })
     .first();
 const settingsBox = (page: Page) =>
-  page.locator("section").filter({ has: page.getByRole("tablist") });
+  // A CSS lookup, which finds the tab list even while the AI view covers it.
+  page.locator("section").filter({ has: page.locator('[role="tablist"]') });
 const chart = (page: Page) =>
   page.locator("section").filter({ has: page.getByRole("heading", { name: /dag for dag/ }) });
 
@@ -102,7 +103,6 @@ test.describe("on a laptop's screen", () => {
     await page.goto("/");
     const before = (await boxOf(settingsBox(page))).height;
     for (const [tab, soon] of [
-      ["Med AI", false],
       ["Deltagere", false],
       ["Sted og note", false],
       ["Gentagelse", true],
@@ -126,7 +126,12 @@ test.describe("on a laptop's screen", () => {
   }) => {
     await page.goto("/");
     await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
-    await page.getByRole("tab", { name: "Med AI" }).click();
+    const before = (await boxOf(settingsBox(page))).height;
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    // The AI takes the whole box, which keeps its height.
+    await expect(page.getByRole("heading", { name: "Planlæg med AI" })).toBeVisible();
+    await expect(page.getByRole("tablist")).toBeHidden();
+    expect((await boxOf(settingsBox(page))).height).toBe(before);
     await page
       .getByRole("textbox", { name: /Fx middag en fredag/ })
       .fill("Middag en fredag i november uden Jonas");
@@ -136,6 +141,7 @@ test.describe("on a laptop's screen", () => {
     await expect(page.getByText("Hvornår på aftenen?")).toBeVisible();
     // What it picked up, as settings rather than the words: the time marked as a guess.
     const summary = page.locator("dl").filter({ hasText: "Tidspunkt" });
+    await expect(summary).toContainText("Middag");
     await expect(summary).toContainText("18:00 til 21:00 (3 t)");
     await expect(summary).toContainText("Fredag");
     await expect(summary).toContainText("I november");
@@ -146,7 +152,6 @@ test.describe("on a laptop's screen", () => {
     await expect(page.getByText("Middag en fredag i november uden Jonas")).toBeHidden();
     // The answer beside it follows: a Friday in November.
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/fredag.*november/i);
-    await expect(page.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Middag");
     // As tall as the answer beside it, however long the conversation gets.
     const answer = await boxOf(answerBox(page));
     expect(Math.abs((await boxOf(settingsBox(page))).height - answer.height)).toBeLessThanOrEqual(
@@ -155,8 +160,9 @@ test.describe("on a laptop's screen", () => {
     const { y, height } = await boxOf(chart(page));
     expect(y + height, "the chart's bottom edge is on the first screen").toBeLessThanOrEqual(800);
 
-    // The settings it filled, its guess marked, a tab away.
-    await page.getByRole("button", { name: "Se indstillingerne" }).click();
+    // The settings it filled, its guess marked, one click away.
+    await page.getByRole("button", { name: "Indstillinger", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Middag");
     await expect(page.getByRole("tab", { name: "Tidspunkt" })).toHaveAttribute(
       "aria-selected",
       "true",

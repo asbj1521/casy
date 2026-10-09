@@ -221,8 +221,7 @@ function StartDayPicker({
  * how often, how the group answers, and what to take into account (#98).
  */
 const TABS = ["time", "people", "place", "repeat", "vote", "prefs"] as const;
-/** Planning with AI (#100) comes first, for those who may use it. */
-type Tab = (typeof TABS)[number] | "ai";
+type Tab = (typeof TABS)[number];
 
 /** Meeting or Tur / ferie, as two halves of one control. */
 function KindChoice({
@@ -373,122 +372,166 @@ export function SettingsPanel({
   /** Who the event is for (#89). */
   participants: ParticipantProps;
   /**
-   * Planning with AI (#100), for someone signed in: its tab's content (given
-   * a way to show the settings it filled), and what it guessed, to mark.
+   * Planning with AI (#100), for someone signed in: the view that takes the
+   * whole box (given a way back to the settings), and what Casy guessed, to
+   * mark on Tidspunkt.
    */
-  ai?: { content: (showSettings: () => void) => ReactNode; guessed: readonly PlanField[] };
+  ai?: { view: (close: () => void) => ReactNode; guessed: readonly PlanField[] };
   className?: string;
 }) {
   const t = useT();
   const [tab, setTab] = useState<Tab>("time");
+  const [aiOpen, setAiOpen] = useState(false);
   const id = useId();
-  const tabs: readonly Tab[] = ai ? ["ai", ...TABS] : TABS;
 
   // Left and right move between tabs, as in any tab list.
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
     if (!step) return;
     e.preventDefault();
-    const next = tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length];
+    const next = TABS[(TABS.indexOf(tab) + step + TABS.length) % TABS.length];
     setTab(next);
     document.getElementById(`${id}-tab-${next}`)?.focus();
   }
+  const closeAi = () => {
+    setAiOpen(false);
+    setTab("time");
+  };
+  const group = (
+    <Field label={t.scheduler.group}>
+      <div className="w-60 2xl:w-72">{groupSwitcher}</div>
+    </Field>
+  );
 
   return (
     <section
-      className={cn("hidden flex-col rounded-2xl border bg-card p-5 shadow-sm xl:flex", className)}
+      className={cn(
+        "relative hidden flex-col rounded-2xl border bg-card p-5 shadow-sm xl:flex",
+        className,
+      )}
     >
-      <div className="flex items-end gap-4">
-        <Field label={t.scheduler.group}>
-          <div className="w-60 2xl:w-72">{groupSwitcher}</div>
-        </Field>
-        {/* As tall as the group picker (42px), so the two labels line up. */}
-        <label className="flex min-w-0 flex-1 flex-col gap-2">
-          <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            {t.scheduler.name}
-          </span>
-          <input
-            type="text"
-            value={name}
-            maxLength={MAX_NAME_LENGTH}
-            onChange={(e) => onName(e.target.value)}
-            placeholder={t.scheduler.namePlaceholder}
-            className="h-[42px] w-full rounded-lg border bg-card px-3.5 text-base font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
-          />
-        </label>
-      </div>
-
+      {/* The settings stay drawn under the AI's view, unseen, so the box keeps
+          the height they give it and the chart below never moves. */}
       <div
-        role="tablist"
-        aria-label={t.settingsPanel.tabsLabel}
-        onKeyDown={onKeyDown}
-        className="mt-3 flex gap-1 overflow-x-auto border-b"
+        className={cn("flex flex-1 flex-col", aiOpen && "invisible")}
+        inert={aiOpen}
+        aria-hidden={aiOpen}
       >
-        {tabs.map((key) => (
-          <button
-            key={key}
-            id={`${id}-tab-${key}`}
-            type="button"
-            role="tab"
-            aria-selected={tab === key}
-            aria-controls={`${id}-panel-${key}`}
-            tabIndex={tab === key ? 0 : -1}
-            onClick={() => setTab(key)}
-            className={cn(
-              "-mb-px whitespace-nowrap border-b-2 px-2 pb-2 pt-1 text-sm font-semibold transition-colors 2xl:px-3",
-              tab === key
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {key === "ai" ? (
-              <span className="inline-flex items-center gap-1">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                {t.aiPlan.tab}
-              </span>
-            ) : (
-              t.settingsPanel.tabs[key]
-            )}
-          </button>
-        ))}
+        <div className="flex items-end gap-4">
+          {group}
+          {/* As tall as the group picker (42px), so the two labels line up. */}
+          <label className="flex min-w-0 flex-1 flex-col gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              {t.scheduler.name}
+            </span>
+            <input
+              type="text"
+              value={name}
+              maxLength={MAX_NAME_LENGTH}
+              onChange={(e) => onName(e.target.value)}
+              placeholder={t.scheduler.namePlaceholder}
+              className="h-[42px] w-full rounded-lg border bg-card px-3.5 text-base font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+          </label>
+          {ai && (
+            <button
+              type="button"
+              onClick={() => setAiOpen(true)}
+              className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 text-sm font-bold text-orange-900 transition hover:bg-orange-100"
+            >
+              <Sparkles className="h-4 w-4 text-primary" />
+              {t.aiPlan.start}
+            </button>
+          )}
+        </div>
+
+        <div
+          role="tablist"
+          aria-label={t.settingsPanel.tabsLabel}
+          onKeyDown={onKeyDown}
+          className="mt-3 flex gap-1 overflow-x-auto border-b"
+        >
+          {TABS.map((key) => (
+            <button
+              key={key}
+              id={`${id}-tab-${key}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              aria-controls={`${id}-panel-${key}`}
+              tabIndex={tab === key ? 0 : -1}
+              onClick={() => setTab(key)}
+              className={cn(
+                "-mb-px whitespace-nowrap border-b-2 px-2 pb-2 pt-1 text-sm font-semibold transition-colors 2xl:px-3",
+                tab === key
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t.settingsPanel.tabs[key]}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3 grid flex-1">
+          {TABS.map((key) => (
+            <div
+              key={key}
+              id={`${id}-panel-${key}`}
+              role="tabpanel"
+              aria-labelledby={`${id}-tab-${key}`}
+              aria-hidden={tab !== key}
+              // inert keeps a hidden tab's controls out of reach; invisible keeps its size.
+              inert={tab !== key}
+              className={cn("[grid-area:1/1]", tab !== key && "invisible")}
+            >
+              {key === "time" ? (
+                <TimeSettings settings={settings} onChange={onChange} guessed={ai?.guessed} />
+              ) : key === "people" ? (
+                <ParticipantSettings {...participants} />
+              ) : key === "place" ? (
+                <PlaceNoteSettings extras={extras} onChange={onExtras} />
+              ) : key === "vote" ? (
+                <VoteSettings extras={extras} onChange={onExtras} />
+              ) : (
+                <ComingSoonSettings section={key satisfies ComingSoonSection} />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-3 grid flex-1">
-        {tabs.map((key) => (
-          <div
-            key={key}
-            id={`${id}-panel-${key}`}
-            role="tabpanel"
-            aria-labelledby={`${id}-tab-${key}`}
-            aria-hidden={tab !== key}
-            // inert keeps a hidden tab's controls out of reach; invisible keeps its size.
-            inert={tab !== key}
-            className={cn(
-              "[grid-area:1/1]",
-              tab !== key && "invisible",
-              key === "ai" && "relative",
-            )}
-          >
-            {key === "ai" ? (
-              // The conversation grows as it goes on, so it scrolls in the room
-              // the other tabs make rather than making the box taller.
-              <div className="absolute inset-0 -mr-2 overflow-y-auto pr-2">
-                {ai?.content(() => setTab("time"))}
-              </div>
-            ) : key === "time" ? (
-              <TimeSettings settings={settings} onChange={onChange} guessed={ai?.guessed} />
-            ) : key === "people" ? (
-              <ParticipantSettings {...participants} />
-            ) : key === "place" ? (
-              <PlaceNoteSettings extras={extras} onChange={onExtras} />
-            ) : key === "vote" ? (
-              <VoteSettings extras={extras} onChange={onExtras} />
-            ) : (
-              <ComingSoonSettings section={key satisfies ComingSoonSection} />
-            )}
+      {/* Planning with AI (#100): the whole box, the group still at hand. It
+          needs more room than the box has, so while open it reaches down over
+          the chart, to near the bottom of the window; the answer stays in view
+          beside it, and closing it leaves the page as it was. */}
+      {ai && aiOpen && (
+        <div
+          role="dialog"
+          aria-label={t.aiPlan.start}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") closeAi();
+          }}
+          className="absolute -left-px -right-px -top-px z-20 flex h-[max(calc(100%_+_2px),min(44rem,calc(100dvh_-_8rem)))] flex-col rounded-2xl border bg-card p-5 shadow-xl"
+        >
+          <div className="flex items-end gap-4">
+            {group}
+            <h2 className="flex h-[42px] min-w-0 flex-1 items-center gap-1.5 text-base font-extrabold text-foreground">
+              <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+              <span className="truncate">{t.aiPlan.start}</span>
+            </h2>
+            <button
+              type="button"
+              onClick={closeAi}
+              className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-lg border bg-card px-3 text-sm font-bold text-foreground transition hover:bg-secondary"
+            >
+              <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+              {t.aiPlan.backToSettings}
+            </button>
           </div>
-        ))}
-      </div>
+          <div className="mt-4 min-h-0 flex-1">{ai.view(closeAi)}</div>
+        </div>
+      )}
     </section>
   );
 }

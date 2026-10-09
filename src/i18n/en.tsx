@@ -351,9 +351,15 @@ export const en: Messages = {
     startOver: "Start over",
   },
   aiPlan: {
-    tab: "With AI",
-    showSettings: "See the settings",
+    backToSettings: "Settings",
     youWrote: "What you wrote",
+    tryTitle: "For example",
+    tries: [
+      "Dinner on a Friday evening in November",
+      "A cabin weekend in the spring",
+      "Coffee on a weekday, one hour",
+      "A party on a Saturday from 8 pm to 2 am in December",
+    ],
     kinds: { meeting: "Meeting", trip: "Trip", holiday: "Holiday" },
     rows: {
       name: "Name",

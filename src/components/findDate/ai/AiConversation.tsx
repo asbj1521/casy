@@ -1,13 +1,5 @@
 import { useState, type ReactNode } from "react";
-import {
-  Loader2,
-  MessageSquarePlus,
-  Mic,
-  RotateCcw,
-  SlidersHorizontal,
-  Sparkles,
-  Square,
-} from "lucide-react";
+import { Loader2, MessageSquarePlus, Mic, RotateCcw, Sparkles, Square } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import type { AiPlanner } from "@/hooks/useAiPlanner";
@@ -26,15 +18,12 @@ import { cn } from "@/lib/utils";
 export default function AiConversation({
   planner,
   members,
-  onShowSettings,
   summary,
   className,
 }: {
   planner: AiPlanner;
   /** What Casy picked up, shown once there is a plan (a computer's PlanSummary). */
   summary?: ReactNode;
-  /** A computer's box: back to the tabs with the settings it filled. */
-  onShowSettings?: () => void;
   /** The group's members, for the names Casy couldn't place. */
   members: { profileId: string; name: string; isYou: boolean }[];
   className?: string;
@@ -112,6 +101,7 @@ export default function AiConversation({
         </p>
       ) : !hasPlan || adding ? (
         <Composer
+          tries={hasPlan ? undefined : words.tries}
           placeholder={hasPlan ? words.morePlaceholder : words.placeholder}
           sendLabel={hasPlan ? words.update : words.send}
           onSend={(text) => {
@@ -138,16 +128,6 @@ export default function AiConversation({
             <RotateCcw className="h-4 w-4" />
             {words.again}
           </button>
-          {onShowSettings && (
-            <button
-              type="button"
-              onClick={onShowSettings}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-[15px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              {words.showSettings}
-            </button>
-          )}
         </div>
       )}
 
@@ -165,11 +145,14 @@ export default function AiConversation({
 
 /** The box to write (or say) a description or more details in. */
 function Composer({
+  tries,
   placeholder,
   sendLabel,
   onSend,
   onCancel,
 }: {
+  /** Examples to start from, put in the box with a tap (a first description only). */
+  tries?: readonly string[];
   placeholder: string;
   sendLabel: string;
   onSend: (text: string) => void;
@@ -270,6 +253,25 @@ function Composer({
         <p className="text-sm text-red-700">
           {speech.error === "denied" ? words.micDenied : words.micFailed}
         </p>
+      )}
+      {tries && !draft.trim() && (
+        <div className="mt-1">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            {words.tryTitle}
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {tries.map((example) => (
+              <button
+                key={example}
+                type="button"
+                onClick={() => setDraft(example)}
+                className="rounded-xl border bg-card px-3 py-1.5 text-left text-sm text-foreground transition hover:bg-secondary"
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

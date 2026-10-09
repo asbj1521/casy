@@ -14,7 +14,7 @@ import {
 } from "@/api/groups";
 import DayChart from "@/components/DayChart";
 import AnswerActions from "@/components/findDate/AnswerActions";
-import AiConversation from "@/components/findDate/ai/AiConversation";
+import AiBoxView from "@/components/findDate/ai/AiBoxView";
 import PlanSummary from "@/components/findDate/ai/PlanSummary";
 import AnswerCard from "@/components/findDate/AnswerCard";
 import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
@@ -1004,11 +1004,10 @@ export default function FindDate() {
               ai={
                 user
                   ? {
-                      content: (showSettings) => (
-                        <AiConversation
+                      view: () => (
+                        <AiBoxView
                           planner={planner}
                           members={activeGroup?.members ?? []}
-                          onShowSettings={showSettings}
                           summary={
                             <PlanSummary
                               name={name}
