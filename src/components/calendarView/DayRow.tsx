@@ -6,6 +6,8 @@ import {
   type DaySegment,
   type OverviewCalendar,
 } from "@/lib/calendarOverview";
+import { useIsDark } from "@/hooks/useIsDark";
+import { shade } from "@/lib/tint";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
@@ -24,6 +26,7 @@ export function DayRow({
   calendar: OverviewCalendar | undefined;
   rgb: string;
 }) {
+  const dark = useIsDark();
   const t = useT();
   const { lang } = useLang();
   const holiday = seg.holiday;
@@ -76,7 +79,10 @@ export function DayRow({
       </div>
       <span
         className="shrink-0 rounded-full px-2 py-0.5 text-xs"
-        style={{ backgroundColor: `rgba(${rgb}, 0.16)`, color: `rgb(${rgb})` }}
+        style={{
+          backgroundColor: `rgba(${rgb}, 0.16)`,
+          color: `rgb(${dark ? shade(rgb, true) : rgb})`,
+        }}
       >
         {pill}
       </span>

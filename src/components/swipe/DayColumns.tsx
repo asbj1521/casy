@@ -14,6 +14,7 @@ import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { formatSegmentRange, isoWeekNumber } from "@/lib/calendarOverview";
 import { placeBlocks, placeSpan } from "@/lib/dayStrip";
 import { formatTime } from "@/lib/format";
+import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay } from "@/lib/zone";
@@ -90,6 +91,8 @@ export default function DayColumns({
   /** What sits in the corner above the hours; the week number if nothing. */
   corner?: ReactNode;
 }) {
+  // Calendar colours are worked out in code, so they follow the theme here.
+  const dark = useIsDark();
   const t = useT();
   const { lang } = useLang();
   const reduceMotion = useReducedMotion();
@@ -349,9 +352,9 @@ export default function DayColumns({
                           compact ? "text-[9px] leading-[14px]" : "text-[12px] leading-5",
                         )}
                         style={{
-                          background: `rgb(${tint(rgb)})`,
+                          background: `rgb(${tint(rgb, dark)})`,
                           borderColor: `rgb(${rgb})`,
-                          color: `rgb(${shade(rgb)})`,
+                          color: `rgb(${shade(rgb, dark)})`,
                         }}
                       >
                         {calendar.labelOf(s)}
@@ -439,7 +442,7 @@ export default function DayColumns({
                               height: px - 2,
                               left: `calc(${b.left * 100}% + 2px)`,
                               width: `calc(${b.width * 100}% - 4px)`,
-                              background: `rgb(${tint(rgb)})`,
+                              background: `rgb(${tint(rgb, dark)})`,
                             }}
                           >
                             <span
@@ -449,7 +452,7 @@ export default function DayColumns({
                             />
                             <div
                               className={cn("sticky top-0 pl-2 pr-1", compact ? "pt-px" : "pt-0.5")}
-                              style={{ color: `rgb(${shade(rgb)})` }}
+                              style={{ color: `rgb(${shade(rgb, dark)})` }}
                             >
                               <p
                                 className={cn(

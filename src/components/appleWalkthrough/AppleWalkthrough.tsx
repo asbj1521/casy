@@ -219,8 +219,9 @@ export default function AppleWalkthrough({ device }: { device: Device }) {
       <div
         ref={frameRef}
         aria-hidden="true"
+        // Apple's own pages, drawn as people see them: light in either theme.
         className={cn(
-          "relative w-full overflow-hidden bg-white",
+          "force-light relative w-full overflow-hidden bg-white",
           isPhone
             ? "mx-auto max-w-[300px] rounded-[34px] border-[7px] border-neutral-900 shadow-md"
             : "rounded-xl border shadow-sm",

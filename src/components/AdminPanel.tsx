@@ -312,7 +312,7 @@ function UserRow({
             onChange={(e) => setTyped(e.target.value)}
             autoFocus
             autoComplete="off"
-            className="mt-1 w-full max-w-xs rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-red-300"
+            className="mt-1 w-full max-w-xs rounded-lg border border-red-200 bg-card px-3 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-red-300"
           />
         </ConfirmPanel>
       )}

@@ -290,7 +290,7 @@ function Composer({
               type="button"
               onClick={send}
               disabled={!draft.trim()}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-orange-700 px-3.5 text-[15px] font-bold text-white transition hover:bg-orange-800 disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-cta px-3.5 text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50"
             >
               <Sparkles className="h-4 w-4" />
               {sendLabel}
@@ -364,7 +364,7 @@ function ChoiceCard({
             className={cn(
               OPTION,
               picked === o.key
-                ? "border-orange-700 bg-orange-700 text-white"
+                ? "border-cta bg-cta text-white"
                 : "border-orange-200 bg-orange-50 text-orange-900 hover:bg-orange-100",
             )}
           >
@@ -432,7 +432,7 @@ function QuestionCard({
           <button
             type="submit"
             disabled={disabled || !other.trim()}
-            className="h-10 rounded-xl bg-orange-700 px-3.5 text-[15px] font-bold text-white transition hover:bg-orange-800 disabled:opacity-50"
+            className="h-10 rounded-xl bg-cta px-3.5 text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50"
           >
             {words.answer}
           </button>

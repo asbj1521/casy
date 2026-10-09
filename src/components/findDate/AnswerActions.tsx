@@ -78,7 +78,7 @@ export default function AnswerActions({
           type="button"
           onClick={onSuggest}
           disabled={!canSuggest || checking || suggesting || suggested}
-          className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-orange-700 px-4 text-[15px] font-bold text-white transition hover:bg-orange-800 disabled:opacity-50 sm:flex-none sm:px-5"
+          className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-cta px-4 text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50 sm:flex-none sm:px-5"
         >
           {checking || suggesting ? (
             <Loader2 className="h-5 w-5 shrink-0 animate-spin" />

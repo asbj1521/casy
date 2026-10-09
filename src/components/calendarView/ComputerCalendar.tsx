@@ -33,6 +33,7 @@ import {
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { capitalize, formatTime } from "@/lib/format";
 import { layoutWeek, type GridItem } from "@/lib/monthGrid";
+import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay, startOfMonth } from "@/lib/zone";
@@ -469,6 +470,8 @@ const WeekRow = memo(function WeekRow({
   selected: number | null;
   onPickDay: (day: number) => void;
 }) {
+  // Calendar colours are worked out in code, so they follow the theme here.
+  const dark = useIsDark();
   const t = useT();
   const { lang } = useLang();
   const { placed, hidden } = useMemo(
@@ -504,7 +507,7 @@ const WeekRow = memo(function WeekRow({
                 day === selected
                   ? "bg-primary font-semibold text-primary-foreground"
                   : day === today
-                    ? "bg-zinc-200 font-semibold text-foreground"
+                    ? "bg-zinc-200 font-semibold text-foreground dark:bg-white/20"
                     : !d.inMonth
                       ? "text-muted-foreground/60"
                       : c >= 5
@@ -537,7 +540,11 @@ const WeekRow = memo(function WeekRow({
                 !before && "rounded-l-[4px]",
                 !after && "rounded-r-[4px]",
               )}
-              style={{ ...position, background: `rgb(${tint(rgb)})`, color: `rgb(${shade(rgb)})` }}
+              style={{
+                ...position,
+                background: `rgb(${tint(rgb, dark)})`,
+                color: `rgb(${shade(rgb, dark)})`,
+              }}
             >
               {p.item.label}
             </p>

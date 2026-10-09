@@ -6,6 +6,7 @@ import { buildMonthLayout } from "@/lib/calendarOverview";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { capitalize } from "@/lib/format";
 import { layoutWeek, type GridItem } from "@/lib/monthGrid";
+import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay, startOfMonth } from "@/lib/zone";
@@ -148,6 +149,8 @@ const MonthSection = memo(function MonthSection({
   onPickDay: (day: number) => void;
   register: (month: number, el: HTMLElement | null) => void;
 }) {
+  // Calendar colours are worked out in code, so they follow the theme here.
+  const dark = useIsDark();
   const { lang } = useLang();
   const { year, month: m } = localDate(month, TZ);
   const layout = useMemo(() => buildMonthLayout(year, m, TZ, LOCALE[lang]), [year, m, lang]);
@@ -190,7 +193,7 @@ const MonthSection = memo(function MonthSection({
                           : days[c] === today
                             ? todayTone === "red"
                               ? "bg-red-500 font-semibold text-white"
-                              : "bg-zinc-200 font-semibold text-foreground"
+                              : "bg-zinc-200 font-semibold text-foreground dark:bg-white/20"
                             : marked?.has(days[c])
                               ? "font-bold text-primary"
                               : c >= 5
@@ -230,7 +233,10 @@ const MonthSection = memo(function MonthSection({
                       width: `calc(${((to - from + 1) / 7) * 100}% - ${(before ? 0 : 2) + (after ? 0 : 2)}px)`,
                       ...(p.item.pencil
                         ? {}
-                        : { background: `rgb(${tint(rgb)})`, color: `rgb(${shade(rgb)})` }),
+                        : {
+                            background: `rgb(${tint(rgb, dark)})`,
+                            color: `rgb(${shade(rgb, dark)})`,
+                          }),
                     }}
                   >
                     {p.item.label}

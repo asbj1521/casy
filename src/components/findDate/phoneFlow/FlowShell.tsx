@@ -131,7 +131,7 @@ export function FlowButton({
         "h-12 w-full rounded-xl text-[15px] font-bold transition disabled:opacity-50",
         quiet
           ? "border bg-card text-foreground hover:bg-secondary"
-          : "bg-orange-700 text-white hover:bg-orange-800",
+          : "bg-cta text-white hover:bg-cta-hover",
       )}
     >
       {children}

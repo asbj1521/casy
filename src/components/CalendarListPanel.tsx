@@ -9,6 +9,8 @@ import {
   updatePrimaryCalendar,
   type CalendarChange,
 } from "@/api/calendars";
+import { useIsDark } from "@/hooks/useIsDark";
+import { shade } from "@/lib/tint";
 import InfoTip from "@/components/InfoTip";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import Collapse from "@/components/ui/Collapse";
@@ -293,6 +295,7 @@ function CalendarRow({
   primary: OverviewCalendar | undefined;
   onUntick: () => void;
 }) {
+  const dark = useIsDark();
   const t = useT();
   const words = t.calendarView;
   const user = useSignedInUser();
@@ -400,7 +403,10 @@ function CalendarRow({
           // day off blocks nothing, so there is nothing to pick.
           <span
             className="rounded-full px-2 py-0.5 text-xs"
-            style={{ backgroundColor: `rgba(${color}, 0.16)`, color: `rgb(${color})` }}
+            style={{
+              backgroundColor: `rgba(${color}, 0.16)`,
+              color: `rgb(${dark ? shade(color, true) : color})`,
+            }}
           >
             {words.holidayCategory}
           </span>
