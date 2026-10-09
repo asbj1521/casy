@@ -48,11 +48,13 @@ function recognitionConstructor(): RecognitionConstructor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-/** The app's speech recognition, loaded on first use. */
-async function nativeSpeech() {
-  const { SpeechRecognition } = await import("@capgo/capacitor-speech-recognition");
-  return SpeechRecognition;
-}
+/**
+ * The app's speech recognition plugin's module, loaded on first use. The
+ * module, never the plugin itself, goes through promises: a Capacitor plugin
+ * answers to every property name, `then` included, so a promise resolved
+ * with one waits forever for a native method called "then".
+ */
+const speechModule = () => import("@capgo/capacitor-speech-recognition");
 
 const SPEECH_LANG: Record<Lang, string> = { da: "da-DK", en: "en-GB" };
 
@@ -118,7 +120,7 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
     setErrorDetail(null);
     setListening(true);
     try {
-      const speech = await within(nativeSpeech(), 5_000, "load");
+      const { SpeechRecognition: speech } = await within(speechModule(), 5_000, "load");
       let permission = await within(speech.checkPermissions(), 5_000, "checkPermissions");
       if (!current()) return;
       if (permission.speechRecognition !== "granted") {
@@ -190,8 +192,8 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
       // Whatever the start had got to: it gives up, the phone stops listening,
       // and the button turns back at once.
       attempt.current++;
-      void nativeSpeech()
-        .then((speech) => speech.stop())
+      void speechModule()
+        .then(({ SpeechRecognition }) => SpeechRecognition.stop())
         .catch(() => {});
       endNative();
       return;
@@ -245,8 +247,8 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
       recognition.current?.abort();
       attempt.current++;
       if (nativeListeners.current.length > 0) {
-        void nativeSpeech()
-          .then((speech) => speech.stop())
+        void speechModule()
+          .then(({ SpeechRecognition }) => SpeechRecognition.stop())
           .catch(() => {});
         for (const handle of nativeListeners.current) void handle.remove();
       }
