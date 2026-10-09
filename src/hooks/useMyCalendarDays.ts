@@ -1,8 +1,9 @@
-import { useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { calendarBusyQuery } from "@/api/calendars";
 import { useSignedInUser } from "@/context/auth";
+import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { useLang, useT } from "@/i18n/lang";
 import {
   calendarColors,
@@ -16,6 +17,8 @@ import {
 } from "@/lib/calendarOverview";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import type { GridItem } from "@/lib/monthGrid";
+import { isNativeApp } from "@/lib/nativeApp";
+import { phoneConnectionId } from "@/lib/phoneCalendar";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
@@ -57,9 +60,21 @@ export interface MyCalendarDays {
  * year searched, with the Danish holidays. The same query My events' clash
  * check and badge read, so it is usually cached already. Only busy times and
  * calendar names: Casy stores no event titles.
+ *
+ * In the iPhone app the phone's calendars are sent again as this opens, so
+ * the days under a date you are answering are the phone's as they are now,
+ * not as they were when the app last sent them (the copy is refetched once
+ * the send lands).
  */
 export function useMyCalendarDays(): MyCalendarDays {
   const userId = useSignedInUser().id;
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!isNativeApp || !phoneConnectionId(userId)) return;
+    syncPhone(queryClient, userId, { create: false }).catch((err) =>
+      console.warn("sending the phone's calendars failed", err),
+    );
+  }, [queryClient, userId]);
   const t = useT();
   const { lang } = useLang();
   const { data, isPending, error, refetch } = useQuery(
