@@ -6,6 +6,7 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { adminStatusQuery } from "@/api/admin";
 import { whoAmIQuery } from "@/api/groups";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
+import AppearanceGroup from "@/components/profile/AppearanceGroup";
 import PasswordSection from "@/components/PasswordSection";
 import NameCard from "@/components/profile/NameCard";
 import ProfileHub from "@/components/profile/ProfileHub";
@@ -100,6 +101,7 @@ function DesktopProfile() {
           <div className="mx-auto max-w-2xl">
             <NameCard />
             <PasswordSection name={whoAmI?.name ?? displayName(user)} />
+            <AppearanceGroup />
             <FeedbackShareGroup />
             <HelpGroup />
             <DeleteAccountSection />

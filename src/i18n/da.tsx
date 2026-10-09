@@ -98,6 +98,13 @@ export const da = {
     add: "Tilføj en kalender",
     help: "Hjælp til at forbinde:",
   },
+  appearance: {
+    title: "Udseende",
+    system: "Følg systemet",
+    light: "Lys",
+    dark: "Mørk",
+    chosen: "Valgt",
+  },
   profileHub: {
     admin: "Admin-tilstand",
     security: "Log ind og sikkerhed",

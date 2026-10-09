@@ -89,6 +89,13 @@ export const en: Messages = {
     add: "Add a calendar",
     help: "Help connecting:",
   },
+  appearance: {
+    title: "Appearance",
+    system: "Match system",
+    light: "Light",
+    dark: "Dark",
+    chosen: "Chosen",
+  },
   profileHub: {
     admin: "Admin mode",
     security: "Sign-in and security",
