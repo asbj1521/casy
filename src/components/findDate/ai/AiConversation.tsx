@@ -117,12 +117,15 @@ export default function AiConversation({
           initial={planner.failedText}
           big={!hasPlan}
           compact={compact}
+          // Beside the summary (a computer, once there is a plan): narrow, so
+          // its buttons are drawn small enough to share one line.
+          narrow={compact && hasPlan}
           label={hasPlan ? words.morePlaceholder : words.placeholder}
           placeholder={hasPlan ? words.morePlaceholder : words.placeholder}
           // Once there is a plan the count sits by "What you wrote" above, and
           // the narrower box beside the summary has no room for it here.
           note={compact && !hasPlan ? footnote : undefined}
-          sendLabel={hasPlan ? words.update : words.send}
+          sendLabel={hasPlan ? (compact ? words.updateShort : words.update) : words.send}
           onSend={(text) => {
             planner.describe(text);
             setAdding(false);
@@ -168,6 +171,7 @@ function Composer({
   initial,
   big,
   compact,
+  narrow = false,
   label,
   note,
   placeholder,
@@ -181,6 +185,8 @@ function Composer({
   big: boolean;
   /** Sized for a computer's box rather than a phone's screen. */
   compact: boolean;
+  /** Narrow (beside the summary): the microphone as just its icon. */
+  narrow?: boolean;
   /** What the box is, for screen readers (the placeholder may say more). */
   label: string;
   /** Small print beside the buttons (a computer's box, which has no room under it). */
@@ -245,8 +251,13 @@ function Composer({
                 }
               }}
               aria-pressed={speech.listening}
+              aria-label={
+                narrow ? (speech.listening ? words.stopSpeaking : words.speak) : undefined
+              }
+              title={narrow ? (speech.listening ? words.stopSpeaking : words.speak) : undefined}
               className={cn(
-                "inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-[15px] font-bold transition",
+                "inline-flex h-10 items-center gap-1.5 rounded-xl text-[15px] font-bold transition",
+                narrow ? "px-2.5" : "px-3",
                 speech.listening
                   ? "bg-red-600 text-white hover:bg-red-700"
                   : "bg-orange-50 text-orange-900 hover:bg-orange-100",
@@ -257,7 +268,7 @@ function Composer({
               ) : (
                 <Mic className="h-5 w-5 text-primary" />
               )}
-              {speech.listening ? words.stopSpeaking : words.speak}
+              {!narrow && (speech.listening ? words.stopSpeaking : words.speak)}
             </button>
           ) : (
             <span />

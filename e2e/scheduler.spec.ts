@@ -284,7 +284,7 @@ test.describe("on a phone (#101)", () => {
 
     // More details go with the settings so far and what was written before.
     await page.getByRole("button", { name: "Tilføj detaljer" }).click();
-    await page.getByRole("textbox", { name: /Fx kun i december/ }).fill("kun i december");
+    await page.getByRole("textbox", { name: "Tilføj detaljer" }).fill("kun i december");
     await page.getByRole("button", { name: "Opdater planen" }).click();
     await expect.poll(() => backend.calls.filter((c) => c.name === "plan-ai").length).toBe(2);
     expect(backend.calls.filter((c) => c.name === "plan-ai")[1].body).toMatchObject({
