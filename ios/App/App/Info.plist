@@ -43,6 +43,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Casy uses the microphone when you tap Speak, so you can say what you are planning instead of typing it.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>When you tap Speak, Apple's speech recognition turns what you say into text. Casy only gets the text.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

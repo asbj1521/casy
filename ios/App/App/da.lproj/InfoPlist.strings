@@ -1,0 +1,3 @@
+/* The permission prompts for talking instead of typing (#100), in the phone's language. */
+"NSMicrophoneUsageDescription" = "Casy bruger mikrofonen, når du trykker på Tal, så du kan sige, hvad I skal, i stedet for at skrive det.";
+"NSSpeechRecognitionUsageDescription" = "Når du trykker på Tal, gør Apples talegenkendelse det, du siger, til tekst. Casy får kun teksten.";

@@ -1,15 +1,21 @@
 /**
- * Talking instead of typing (#100), through the browser's own speech
- * recognition: free, and Danish or English as the site is. Chrome sends the
- * sound to Google to be written out, Safari to Apple (or keeps it on the
- * device); the privacy policy says so. Casy itself only ever gets the text.
+ * Talking instead of typing (#100). Danish or English as the site is, and
+ * free: Casy itself only ever gets the text.
  *
- * Not every browser has it: Firefox keeps it behind a setting, and the
- * iPhone app's web view doesn't offer it at all (that needs a native plugin,
- * later). There `supported` is false and the page shows no microphone; the
- * keyboard's own dictation still works in the text box.
+ * On the website, the browser's own speech recognition: Chrome sends the
+ * sound to Google to be written out, Edge to Microsoft, Safari to Apple (or
+ * keeps it on the device). Safari offers it on secure pages only, and
+ * Firefox not at all; there `supported` is false and the page shows no
+ * microphone, while the keyboard's own dictation still works.
+ *
+ * In the iPhone app, whose web view has no speech recognition, Apple's own
+ * through a native plugin (@capgo/capacitor-speech-recognition), loaded only
+ * there so the website never downloads it. It stays on the phone where the
+ * phone can do Danish (or English) by itself, and uses Apple's servers
+ * otherwise. The privacy policy says all of this.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { PluginListenerHandle } from "@capacitor/core";
 
 import type { Lang } from "@/i18n/locale";
 import { isNativeApp } from "@/lib/nativeApp";
@@ -42,27 +48,117 @@ function recognitionConstructor(): RecognitionConstructor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+/** The app's speech recognition, loaded on first use. */
+async function nativeSpeech() {
+  const { SpeechRecognition } = await import("@capgo/capacitor-speech-recognition");
+  return SpeechRecognition;
+}
+
 const SPEECH_LANG: Record<Lang, string> = { da: "da-DK", en: "en-GB" };
 
 export type SpeechError = "denied" | "failed";
 
+/** What was heard, tidied: one line, single spaces. */
+const tidy = (text: string) => text.replace(/\s+/g, " ").trim();
+
 /**
  * Listen and hand over what is said, as it is heard: `onText` gets the whole
- * transcript so far each time (words may still change until `final`).
+ * transcript so far each time (words may still change until it stops).
  */
 export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
-  const [supported] = useState(() => recognitionConstructor() !== null);
+  // The website knows at once; the app asks the phone, and shows the
+  // microphone once it has said yes.
+  const [supported, setSupported] = useState(() => recognitionConstructor() !== null);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<SpeechError | null>(null);
   const recognition = useRef<Recognition | null>(null);
+  const nativeListeners = useRef<PluginListenerHandle[]>([]);
   const latestOnText = useRef(onText);
   useEffect(() => {
     latestOnText.current = onText;
   }, [onText]);
 
-  const stop = useCallback(() => recognition.current?.stop(), []);
+  useEffect(() => {
+    if (!isNativeApp) return;
+    let live = true;
+    nativeSpeech()
+      .then((speech) => speech.available())
+      .then(({ available }) => live && setSupported(available))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  /** The app's session is over: its listeners go, and the button turns back. */
+  const endNative = useCallback(() => {
+    const handles = nativeListeners.current;
+    nativeListeners.current = [];
+    for (const handle of handles) void handle.remove();
+    setListening(false);
+  }, []);
+
+  const startNative = useCallback(async () => {
+    setError(null);
+    setListening(true);
+    try {
+      const speech = await nativeSpeech();
+      let permission = await speech.checkPermissions();
+      if (permission.speechRecognition !== "granted") {
+        permission = await speech.requestPermissions();
+      }
+      if (permission.speechRecognition !== "granted") {
+        setError("denied");
+        setListening(false);
+        return;
+      }
+      const language = SPEECH_LANG[lang];
+      nativeListeners.current = await Promise.all([
+        speech.addListener("partialResults", (event) => {
+          const heard = event.accumulatedText ?? event.matches?.[0];
+          if (heard) latestOnText.current(tidy(heard));
+        }),
+        speech.addListener("listeningState", (event) => {
+          if ((event.state ?? event.status) === "stopped") endNative();
+        }),
+        speech.addListener("error", () => setError("failed")),
+      ]);
+      // Apple's long-standing recognizer, kept on the phone where it can be:
+      // the newest one can end a session without a word on some iOS 26 phones.
+      const { available: onDevice } = await speech
+        .isOnDeviceRecognitionAvailable({ language, preferLegacyRecognizer: true })
+        .catch(() => ({ available: false }));
+      await speech.start({
+        language,
+        partialResults: true,
+        addPunctuation: true,
+        preferLegacyRecognizer: true,
+        useOnDeviceRecognition: onDevice,
+      });
+    } catch {
+      setError("failed");
+      endNative();
+    }
+  }, [lang, endNative]);
+
+  const stop = useCallback(() => {
+    if (isNativeApp) {
+      if (nativeListeners.current.length > 0) {
+        void nativeSpeech()
+          .then((speech) => speech.stop())
+          .catch(() => {})
+          .finally(endNative);
+      }
+      return;
+    }
+    recognition.current?.stop();
+  }, [endNative]);
 
   const start = useCallback(() => {
+    if (isNativeApp) {
+      if (!listening) void startNative();
+      return;
+    }
     const Ctor = recognitionConstructor();
     if (!Ctor || recognition.current) return;
     const r = new Ctor();
@@ -71,7 +167,7 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
     r.interimResults = true;
     r.onresult = (event) => {
       const text = Array.from(event.results, (result) => result[0].transcript).join("");
-      latestOnText.current(text.replace(/\s+/g, " ").trim());
+      latestOnText.current(tidy(text));
     };
     r.onerror = (event) => {
       // Silence or a stop is no failure; the rest are said once.
@@ -96,10 +192,21 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
       setListening(false);
       setError("failed");
     }
-  }, [lang]);
+  }, [lang, listening, startNative]);
 
   // Leaving the page stops the microphone.
-  useEffect(() => () => recognition.current?.abort(), []);
+  useEffect(
+    () => () => {
+      recognition.current?.abort();
+      if (nativeListeners.current.length > 0) {
+        void nativeSpeech()
+          .then((speech) => speech.stop())
+          .catch(() => {});
+        for (const handle of nativeListeners.current) void handle.remove();
+      }
+    },
+    [],
+  );
 
   return { supported, listening, error, start, stop };
 }

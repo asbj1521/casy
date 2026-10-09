@@ -1,0 +1,3 @@
+/* The permission prompts for talking instead of typing (#100), in the phone's language. */
+"NSMicrophoneUsageDescription" = "Casy uses the microphone when you tap Speak, so you can say what you are planning instead of typing it.";
+"NSSpeechRecognitionUsageDescription" = "When you tap Speak, Apple's speech recognition turns what you say into text. Casy only gets the text.";

@@ -153,8 +153,9 @@ const da: LegalCopy = {
           </p>
           <p>
             Trykker du på Tal, er det din browser, der gør din tale til tekst: Chrome sender lyden
-            til Google, Edge til Microsoft, og Safari til Apple eller gør det på din enhed. Casy får
-            kun teksten. Vil du ikke det, kan du skrive i stedet.
+            til Google, Edge til Microsoft, og Safari til Apple eller gør det på din enhed. I
+            Casy-appen til iPhone er det Apples talegenkendelse, som kører på din telefon, hvor den
+            kan, og ellers hos Apple. Casy får kun teksten. Vil du ikke det, kan du skrive i stedet.
           </p>
         </>
       ),
@@ -435,8 +436,10 @@ const en: LegalCopy = {
           </p>
           <p>
             If you press Speak, your browser turns your speech into text: Chrome sends the sound to
-            Google, Edge to Microsoft, and Safari to Apple or does it on your device. Casy only gets
-            the text. If you would rather not, you can type instead.
+            Google, Edge to Microsoft, and Safari to Apple or does it on your device. In the Casy
+            app for iPhone it is Apple's speech recognition, which runs on your phone where it can,
+            and otherwise at Apple. Casy only gets the text. If you would rather not, you can type
+            instead.
           </p>
         </>
       ),
