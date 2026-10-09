@@ -2,7 +2,13 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 
 import { HttpError } from "./http.ts";
-import { MAX_BLOCKS, MAX_CALENDARS, parsePhonePush } from "./phoneCalendars.ts";
+import {
+  hashDeviceToken,
+  MAX_BLOCKS,
+  MAX_CALENDARS,
+  newDeviceToken,
+  parsePhonePush,
+} from "./phoneCalendars.ts";
 
 const NOW = new Date("2026-10-09T10:00:00.000Z");
 const DEVICE = "6F1C2D3E-4A5B-4C6D-8E9F-0A1B2C3D4E5F";
@@ -123,3 +129,18 @@ Deno.test("more busy blocks than the bound are refused", () => {
     "Too many busy times",
   );
 });
+
+Deno.test(
+  "device tokens are long, URL-safe and different each time; their hash is stable hex",
+  async () => {
+    const a = newDeviceToken();
+    const b = newDeviceToken();
+    assertEquals(/^[A-Za-z0-9_-]{43}$/.test(a), true);
+    assertEquals(a === b, false);
+    assertEquals(await hashDeviceToken(a), await hashDeviceToken(a));
+    assertEquals(
+      await hashDeviceToken("abc"),
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    );
+  },
+);

@@ -34,6 +34,24 @@ export interface PhonePush {
   }[];
 }
 
+/**
+ * A new token for a phone to send in the background with (x-device-token):
+ * 32 random bytes, base64url. Handed to the phone once; only its hash is kept.
+ */
+export function newDeviceToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "");
+}
+
+/** What is stored for a token: SHA-256 in hex. A random 256-bit token needs no key or salt. */
+export async function hashDeviceToken(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
