@@ -66,9 +66,12 @@ const tidy = (text: string) => text.replace(/\s+/g, " ").trim();
  * transcript so far each time (words may still change until it stops).
  */
 export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
-  // The website knows at once; the app asks the phone, and shows the
-  // microphone once it has said yes.
-  const [supported, setSupported] = useState(() => recognitionConstructor() !== null);
+  // The app always has it (Apple's, through the plugin); a browser only
+  // where it offers it. In the app the plugin's own availability check isn't
+  // used: without a language it asks about the phone's locale, which Apple
+  // may not recognise ("en_DK"), and would hide the button for no reason. A
+  // real failure shows when the button is tapped.
+  const [supported] = useState(() => isNativeApp || recognitionConstructor() !== null);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<SpeechError | null>(null);
   const recognition = useRef<Recognition | null>(null);
@@ -77,18 +80,6 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
   useEffect(() => {
     latestOnText.current = onText;
   }, [onText]);
-
-  useEffect(() => {
-    if (!isNativeApp) return;
-    let live = true;
-    nativeSpeech()
-      .then((speech) => speech.available())
-      .then(({ available }) => live && setSupported(available))
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, []);
 
   /** The app's session is over: its listeners go, and the button turns back. */
   const endNative = useCallback(() => {
@@ -135,7 +126,9 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
         preferLegacyRecognizer: true,
         useOnDeviceRecognition: onDevice,
       });
-    } catch {
+    } catch (err) {
+      // Said under the box; the details go to Safari's Web Inspector.
+      console.error("speech recognition failed to start", err);
       setError("failed");
       endNative();
     }
