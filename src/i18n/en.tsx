@@ -476,6 +476,7 @@ export const en: Messages = {
   },
   providers: {
     apple: { label: "Apple Calendar", help: "Get help connecting" },
+    device: { label: "This phone", help: "How it works" },
     ics: { label: "Calendar link (ICS)", help: "How to find your link" },
     google: { label: "Google Calendar", help: "How it works" },
     outlook: { label: "Outlook Calendar", help: "How it works" },
@@ -488,6 +489,7 @@ export const en: Messages = {
       apple: "iPhone, iPad and Mac",
       google: "Gmail and Android",
       outlook: "Microsoft 365, Outlook.com and Hotmail",
+      device: "Every calendar on the phone, no password",
       ics: "Other calendars with a link",
     },
     later: "Not now",
@@ -594,6 +596,18 @@ export const en: Messages = {
     notConnected: "Not connected yet.",
     lastFailed: (message: string) => `Last attempt failed: ${message}`,
     unknownError: "unknown error",
+    removeDevice: (label: string | null) =>
+      `Remove ${label ?? "this phone"}? The busy times from the phone are deleted from Casy, and the app stops sending them. Casy's calendar access can also be turned off under Casy in the phone's Settings.`,
+    phoneUpdates: "updated whenever you open the app",
+  },
+  phoneCalendar: {
+    connected: (calendars: string, blocks: string) =>
+      `The phone is connected: ${calendars} with ${blocks}. Casy updates them every time you open the app.`,
+    denied:
+      "Casy can't see the phone's calendars. Turn on Calendars under Casy in Settings, then try again.",
+    openSettings: "Open Settings",
+    couldntRead: "Couldn't read the phone's calendars. Try again.",
+    couldntSave: "Couldn't save the phone's calendars.",
   },
   appleForm: {
     email: "Apple Account email",
@@ -831,6 +845,7 @@ export const en: Messages = {
       outlook: "Outlook",
       apple: "Apple",
       ics: "Special",
+      device: "Phone",
       builtin: "Built in",
     } as Record<string, string>,
     providerNames: {
@@ -839,6 +854,7 @@ export const en: Messages = {
       outlook: "Outlook",
       apple: "Apple",
       ics: "Calendar link",
+      device: "Phone",
     } as Record<string, string>,
     calendarsButton: "Calendars",
     listTitle: "Your calendars",
@@ -1196,6 +1212,7 @@ export const en: Messages = {
       outlook: "Outlook",
       apple: "Apple",
       ics: "Calendar link",
+      device: "Phone",
     } as Record<string, string>,
   },
 };

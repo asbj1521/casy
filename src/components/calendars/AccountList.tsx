@@ -5,10 +5,12 @@ import { RefreshCw, Trash2 } from "lucide-react";
 import { disconnectCalendar, type CalendarConnectionStatus } from "@/api/calendars";
 import { PROVIDER_BRANDS } from "@/components/calendarProviders";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import { useSignedInUser } from "@/context/auth";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Messages } from "@/i18n/da";
 import { useT } from "@/i18n/lang";
 import { syncedAgo } from "@/lib/accountSummary";
+import { phoneConnectionId, rememberPhoneConnection } from "@/lib/phoneCalendar";
 import { cn } from "@/lib/utils";
 import type { CalendarProvider } from "@/types";
 
@@ -68,6 +70,7 @@ export default function AccountList({
 /** What "remove" explains, since each provider revokes access somewhere different. */
 function removeNote(provider: CalendarProvider, label: string | null, t: Messages): string {
   if (provider === "ics") return t.providerCard.removeIcs(label);
+  if (provider === "device") return t.providerCard.removeDevice(label);
   if (provider === "apple") return t.providerCard.removeApple(label);
   return t.providerCard.removeOauth(label, provider === "google" ? "Google" : "Microsoft");
 }
@@ -85,11 +88,18 @@ function AccountRow({
   onReconnect: () => void;
 }) {
   const t = useT();
+  const user = useSignedInUser();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   // On success the account is gone from the list, and this row with it; a
   // failure keeps the panel open so the reason shows and can be retried.
-  const remove = useMutation({ mutationFn: () => disconnectCalendar(queryClient, account.id) });
+  // Removing this phone's own connection also stops it sending.
+  const remove = useMutation({
+    mutationFn: async () => {
+      await disconnectCalendar(queryClient, account.id);
+      if (phoneConnectionId(user.id) === account.id) rememberPhoneConnection(user.id, null);
+    },
+  });
   const brand = PROVIDER_BRANDS[account.provider];
   // The clock is read once, when the row appears: rendering must not depend
   // on the time it happens to run, and minutes-level freshness is plenty.
@@ -124,6 +134,9 @@ function AccountRow({
                   · {t.counts.busyBlocks(account.busyCount)}
                 </span>
                 {synced && <> · {synced}</>}
+                {/* Only the phone can send its calendars, so they are as fresh
+                    as the last time its app was opened. */}
+                {account.provider === "device" && <> · {t.providerCard.phoneUpdates}</>}
                 {/* A temporary failure: the busy times shown are the last good
                     ones and the next run retries, so this stays quiet. */}
                 {account.sync_error && !reconnect && (
@@ -142,7 +155,8 @@ function AccountRow({
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {account.provider !== "ics" && (
+              {/* A link and a phone have nothing to sign in to again. */}
+              {account.provider !== "ics" && account.provider !== "device" && (
                 <button
                   type="button"
                   onClick={onReconnect}

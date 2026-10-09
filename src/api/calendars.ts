@@ -9,6 +9,7 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import { currentMessages } from "@/i18n/current";
 import type { OverviewData } from "@/lib/calendarOverview";
+import type { PhoneCalendarPush } from "@/lib/phoneBusy";
 import { callFunction } from "@/lib/supabaseFunctions";
 import type { CalendarPriority, CalendarProvider, CalendarPurpose } from "@/types";
 
@@ -171,6 +172,27 @@ export async function addCalendarLink(
   });
   await calendarsChanged(queryClient);
   return result;
+}
+
+/** A push of the phone's calendars, as calendar-phone answers it. */
+export type PhonePushResult =
+  { gone: true } | { gone?: false; connectionId: string; calendars: number; busyBlocks: number };
+
+/**
+ * Send the phone's calendars and busy blocks (the iPhone app only; see
+ * usePhoneCalendarSync). `create` makes the connection if there is none;
+ * without it, a connection removed since answers `{ gone: true }`.
+ */
+export async function pushPhoneCalendars(body: {
+  deviceId: string;
+  label: string;
+  create: boolean;
+  calendars: PhoneCalendarPush[];
+}): Promise<PhonePushResult> {
+  return await callFunction<PhonePushResult>("calendar-phone", {
+    body,
+    errorMessage: currentMessages().phoneCalendar.couldntSave,
+  });
 }
 
 /**

@@ -387,6 +387,8 @@ const BRANDS: { provider: OverviewCalendar["provider"]; label: string }[] = [
   { provider: "apple", label: "Apple" },
   // Calendars added by link (a timetable, a shared feed): no brand of their own.
   { provider: "ics", label: "Special" },
+  // The iPhone app's phone calendars (#63).
+  { provider: "device", label: "Phone" },
   { provider: "builtin", label: "Built in" },
 ];
 

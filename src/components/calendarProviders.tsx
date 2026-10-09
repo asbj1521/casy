@@ -1,19 +1,28 @@
 import type { ReactNode } from "react";
-import { Link2 } from "lucide-react";
+import { Link2, Smartphone } from "lucide-react";
 import { FaMicrosoft } from "react-icons/fa6";
 import { SiApple, SiGoogle } from "react-icons/si";
 
+import { isNativeApp } from "@/lib/nativeApp";
 import type { CalendarProvider } from "@/types";
 
 /**
  * How each calendar provider is drawn wherever one is offered (the calendars
  * page's cards, the connect pop-up): its mark, the round badge behind it, and
- * its step-by-step guide. Names come from the language files (t.providers).
+ * its step-by-step guide, if it needs one. Names come from the language files
+ * (t.providers).
  */
 export const PROVIDER_BRANDS: Record<
   CalendarProvider,
-  { icon: ReactNode; badgeClass: string; helpTo: string }
+  { icon: ReactNode; badgeClass: string; helpTo: string | null }
 > = {
+  device: {
+    // The phone itself, whatever accounts it holds: no company's mark.
+    icon: <Smartphone className="h-4 w-4 text-emerald-700" />,
+    badgeClass: "bg-emerald-100",
+    // One tap and iOS's own question: nothing to guide.
+    helpTo: null,
+  },
   apple: {
     icon: <SiApple className="h-4 w-4 text-neutral-800" />,
     badgeClass: "bg-neutral-200",
@@ -41,6 +50,12 @@ export const PROVIDER_BRANDS: Record<
 
 /** The order they are offered in (the connect pop-up, adding a calendar): the most likely first, the link last. */
 export const ADD_ORDER: CalendarProvider[] = ["apple", "google", "outlook", "ics"];
+
+/**
+ * What adding a calendar offers here: in the iPhone app, the phone's own
+ * calendars first (every account on it, no password), then the rest.
+ */
+export const ADD_HERE: CalendarProvider[] = isNativeApp ? ["device", ...ADD_ORDER] : ADD_ORDER;
 
 /** The element id of a provider's tile or row on the calendars page, for scrolling to it. */
 export const addTargetId = (provider: CalendarProvider) => `connect-${provider}`;

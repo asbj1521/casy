@@ -10,6 +10,7 @@ import WeakPasswordNotice from "@/components/WeakPasswordNotice";
 import { useAuth } from "@/context/auth";
 import { useAccountLanguage } from "@/hooks/useAccountLanguage";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
+import { usePhoneCalendarSync } from "@/hooks/usePhoneCalendarSync";
 import AuthProvider from "@/context/AuthProvider";
 import LanguageProvider from "@/i18n/LanguageProvider";
 import { persistQueries } from "@/lib/queryPersistence";
@@ -56,12 +57,14 @@ function Home() {
 }
 
 /**
- * Keeps open pages up to date with what others do (useLiveUpdates), and the
- * account's saved language with the site's, for its emails (useAccountLanguage).
+ * Keeps open pages up to date with what others do (useLiveUpdates), the
+ * account's saved language with the site's, for its emails (useAccountLanguage),
+ * and, in the iPhone app, Casy with the phone's calendars (usePhoneCalendarSync).
  */
 function LiveUpdates() {
   useLiveUpdates();
   useAccountLanguage();
+  usePhoneCalendarSync();
   return null;
 }
 

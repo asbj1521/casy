@@ -10,8 +10,8 @@
  * (see src/lib/zone.ts) and turned into instants before any comparison.
  */
 
-/** Which kind of account a calendar came from. */
-export type CalendarProvider = "google" | "outlook" | "apple" | "ics";
+/** Which kind of account a calendar came from; "device" is the phone's own calendars, sent by the iPhone app (#63). */
+export type CalendarProvider = "google" | "outlook" | "apple" | "ics" | "device";
 
 /**
  * What its owner says a calendar is for, set on My calendar. Work and school

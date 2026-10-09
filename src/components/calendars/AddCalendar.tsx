@@ -25,11 +25,12 @@ interface ProviderState {
 }
 
 function providerStates(
+  offer: CalendarProvider[],
   connections: CalendarConnectionStatus[],
   chosen: CalendarProvider | null,
   t: Messages,
 ): ProviderState[] {
-  return ADD_ORDER.map((id) => {
+  return offer.map((id) => {
     // Newest first, as calendar-status orders them: the first is the latest attempt.
     const attempts = connections.filter((c) => c.provider === id);
     const latest = attempts[0];
@@ -46,18 +47,21 @@ function providerStates(
 
 /** What a provider's button says: connect, add another, try again. */
 function connectLabel(state: ProviderState, t: Messages): string {
+  if (state.id === "device") return t.providerCard.connect;
   if (state.connected > 0) return t.providerCard.addAnother;
   if (state.id === "ics") return t.providerCard.addLink;
   return state.failed ? t.providerCard.tryAgain : t.providerCard.connect;
 }
 
 /**
- * "Add a calendar": the four providers with what each one covers, as tiles
- * on a computer and as list rows on a phone. Choosing Google or Outlook
- * leaves for its consent screen; Apple and the link open their form under
- * this section (the page draws it).
+ * "Add a calendar": the providers on offer (the four, and the phone itself
+ * in the iPhone app) with what each one covers, as tiles on a computer and as
+ * list rows on a phone. Choosing Google or Outlook leaves for its consent
+ * screen; Apple and the link open their form under this section (the page
+ * draws it); the phone asks iOS and sends its calendars.
  */
 export default function AddCalendar({
+  offer,
   connections,
   statusPending,
   chosen,
@@ -65,6 +69,8 @@ export default function AddCalendar({
   phone,
   onConnect,
 }: {
+  /** The providers to offer, in order (ADD_HERE, less this phone once connected). */
+  offer: CalendarProvider[];
   connections: CalendarConnectionStatus[];
   /** calendar-status hasn't answered yet, so nobody knows what is linked. */
   statusPending: boolean;
@@ -75,7 +81,7 @@ export default function AddCalendar({
   onConnect: (provider: CalendarProvider) => void;
 }) {
   const t = useT();
-  const states = providerStates(connections, chosen, t);
+  const states = providerStates(offer, connections, chosen, t);
   const failures = states.filter((s) => s.failed);
 
   if (phone) {
@@ -89,7 +95,10 @@ export default function AddCalendar({
               {ADD_ORDER.map((id, i) => (
                 <Fragment key={id}>
                   {i > 0 && ", "}
-                  <Link to={PROVIDER_BRANDS[id].helpTo} className="underline underline-offset-2">
+                  <Link
+                    to={PROVIDER_BRANDS[id].helpTo ?? "/"}
+                    className="underline underline-offset-2"
+                  >
                     {t.calendarView.providerNames[id]}
                   </Link>
                 </Fragment>
@@ -190,13 +199,15 @@ export default function AddCalendar({
                     {connectLabel(state, t)}
                   </button>
                 )}
-                <Link
-                  to={brand.helpTo}
-                  className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-                >
-                  <HelpCircle className="h-3.5 w-3.5" />
-                  {t.providers[state.id].help}
-                </Link>
+                {brand.helpTo && (
+                  <Link
+                    to={brand.helpTo}
+                    className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    {t.providers[state.id].help}
+                  </Link>
+                )}
               </div>
             </li>
           );

@@ -83,6 +83,10 @@ export class FakeBackend {
           w.primary = null;
         this.changed();
         return ok({});
+      case "calendar-phone":
+        // Only the iPhone app sends the phone's calendars, and these tests run
+        // the website; answered as for a phone whose connection was removed.
+        return ok({ gone: true });
       case "oauth-google-start":
       case "oauth-outlook-start":
         return ok({ url: `https://consent.test/${name}` });

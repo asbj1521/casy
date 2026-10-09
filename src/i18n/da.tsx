@@ -510,6 +510,7 @@ export const da = {
   },
   providers: {
     apple: { label: "Apple-kalender", help: "Få hjælp til at forbinde" },
+    device: { label: "Denne telefon", help: "Sådan virker det" },
     ics: { label: "Kalenderlink (ICS)", help: "Sådan finder du dit link" },
     google: { label: "Google Kalender", help: "Sådan virker det" },
     outlook: { label: "Outlook-kalender", help: "Sådan virker det" },
@@ -522,6 +523,7 @@ export const da = {
       apple: "iPhone, iPad og Mac",
       google: "Gmail og Android",
       outlook: "Microsoft 365, Outlook.com og Hotmail",
+      device: "Alle kalendere på telefonen, uden adgangskode",
       ics: "Andre kalendere med et link",
     },
     later: "Ikke nu",
@@ -627,6 +629,18 @@ export const da = {
     notConnected: "Ikke forbundet endnu.",
     lastFailed: (message: string) => `Sidste forsøg fejlede: ${message}`,
     unknownError: "ukendt fejl",
+    removeDevice: (label: string | null) =>
+      `Fjern ${label ?? "denne telefon"}? De optagede tidsrum fra telefonen slettes fra Casy, og appen holder op med at sende dem. Casys adgang til kalenderen kan også slås fra under Casy i telefonens Indstillinger.`,
+    phoneUpdates: "opdateres, når du åbner appen",
+  },
+  phoneCalendar: {
+    connected: (calendars: string, blocks: string) =>
+      `Telefonen er forbundet: ${calendars} med ${blocks}. Casy opdaterer dem, hver gang du åbner appen.`,
+    denied:
+      "Casy har ikke adgang til telefonens kalendere. Slå Kalendere til under Casy i Indstillinger, og prøv igen.",
+    openSettings: "Åbn Indstillinger",
+    couldntRead: "Kunne ikke læse telefonens kalendere. Prøv igen.",
+    couldntSave: "Kunne ikke gemme telefonens kalendere.",
   },
   appleForm: {
     email: "Apple-konto (e-mail)",
@@ -866,6 +880,7 @@ export const da = {
       outlook: "Outlook",
       apple: "Apple",
       ics: "Særlige",
+      device: "Telefon",
       builtin: "Indbygget",
     } as Record<string, string>,
     providerNames: {
@@ -874,6 +889,7 @@ export const da = {
       outlook: "Outlook",
       apple: "Apple",
       ics: "Kalenderlink",
+      device: "Telefon",
     } as Record<string, string>,
     calendarsButton: "Kalendere",
     listTitle: "Dine kalendere",
@@ -1235,6 +1251,7 @@ export const da = {
       outlook: "Outlook",
       apple: "Apple",
       ics: "Kalenderlink",
+      device: "Telefon",
     } as Record<string, string>,
   },
 };

@@ -13,15 +13,18 @@ import {
 import AppleCredentialsForm from "@/components/AppleCredentialsForm";
 import AccountList from "@/components/calendars/AccountList";
 import AddCalendar from "@/components/calendars/AddCalendar";
-import { ADD_ORDER, addTargetId, PROVIDER_BRANDS } from "@/components/calendarProviders";
+import { ADD_HERE, addTargetId, PROVIDER_BRANDS } from "@/components/calendarProviders";
 import IcsLinkForm from "@/components/IcsLinkForm";
 import PrimaryCalendarCard from "@/components/PrimaryCalendarCard";
 import Collapse from "@/components/ui/Collapse";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { CONNECT_PARAM, readyProvider } from "@/lib/calendarPrompt";
+import { isNativeApp } from "@/lib/nativeApp";
+import { openPhoneSettings, phoneConnectionId } from "@/lib/phoneCalendar";
 import { cn } from "@/lib/utils";
 import type { CalendarProvider } from "@/types";
 
@@ -32,10 +35,12 @@ import type { CalendarProvider } from "@/types";
  *
  * - Your accounts: one list of every connected account, whatever the
  *   provider, ending in "Sync now" (AccountList). Absent until there is one.
- * - Add a calendar: the four providers (AddCalendar). Google and Outlook
- *   connect through their consent screens (the browser goes there and comes
- *   back); iCloud and an ICS link have none, so their forms open under the
- *   providers, send straight to an Edge Function and show the outcome here.
+ * - Add a calendar: the four providers (AddCalendar), and in the iPhone app
+ *   the phone itself first. Google and Outlook connect through their consent
+ *   screens (the browser goes there and comes back); iCloud and an ICS link
+ *   have none, so their forms open under the providers, send straight to an
+ *   Edge Function and show the outcome here. The phone asks iOS for access
+ *   and sends its calendars (usePhoneCalendarSync), with no form at all.
  * - The primary calendar, once there is anything to choose it from.
  *
  * Until a first calendar is linked, the page opens with a note saying it is
@@ -52,8 +57,12 @@ export default function CalendarsSection() {
   const accounts = (connections ?? [])
     .filter((c) => c.status === "connected")
     // Grouped by provider, in the order they are offered; newest first within one.
-    .sort((a, b) => ADD_ORDER.indexOf(a.provider) - ADD_ORDER.indexOf(b.provider));
+    .sort((a, b) => SORT_ORDER.indexOf(a.provider) - SORT_ORDER.indexOf(b.provider));
   const hasConnected = accounts.length > 0;
+  // This phone, connected already, isn't offered again; another phone of
+  // yours (an iPad) doesn't count.
+  const thisPhone = isNativeApp ? phoneConnectionId(user.id) : null;
+  const offer = ADD_HERE.filter((p) => p !== "device" || !accounts.some((a) => a.id === thisPhone));
 
   // The provider picked before arriving, read once; the address is then
   // cleaned so a refresh doesn't open its form again.
@@ -77,7 +86,22 @@ export default function CalendarsSection() {
   // What the last link or iCloud account added was, for the line above the forms.
   const [linkAdded, setLinkAdded] = useState<{ label: string; busyBlocks: number } | null>(null);
   const [appleAdded, setAppleAdded] = useState<AppleConnectResult | null>(null);
-  const sync = useMutation({ mutationFn: () => syncMyCalendars(queryClient) });
+  // In the app the phone's calendars go first: the server can't fetch them.
+  const sync = useMutation({
+    mutationFn: async () => {
+      const phone =
+        isNativeApp && phoneConnectionId(user.id)
+          ? await syncPhone(queryClient, user.id, { create: false }).then(
+              (outcome) => [{ ok: outcome.state === "synced" }],
+              () => [{ ok: false }],
+            )
+          : [];
+      return [...phone, ...(await syncMyCalendars(queryClient))];
+    },
+  });
+  const connectPhone = useMutation({
+    mutationFn: () => syncPhone(queryClient, user.id, { create: true }),
+  });
   const consent = useMutation({
     mutationFn: consentScreenUrl,
     onSuccess: (url) => window.location.assign(url),
@@ -96,6 +120,7 @@ export default function CalendarsSection() {
 
   function connect(provider: CalendarProvider) {
     if (provider === "google" || provider === "outlook") return consent.mutate(provider);
+    if (provider === "device") return connectPhone.mutate();
     addLink.reset();
     addApple.reset();
     setLinkAdded(null);
@@ -149,6 +174,7 @@ export default function CalendarsSection() {
       )}
 
       <AddCalendar
+        offer={offer}
         connections={connections ?? []}
         statusPending={isPending}
         chosen={openForm ?? (hasConnected ? null : ready)}
@@ -156,6 +182,8 @@ export default function CalendarsSection() {
         phone={phone}
         onConnect={connect}
       />
+
+      <PhoneNote outcome={connectPhone.data} error={connectPhone.error?.message ?? null} />
 
       {linkAdded && (
         <Notice tone="success" className="mt-3">
@@ -226,6 +254,52 @@ export default function CalendarsSection() {
       {hasConnected && <PrimaryCalendarCard connections={connections} />}
     </>
   );
+}
+
+/** Accounts are listed in this order: the phone first, then as the providers are offered. */
+const SORT_ORDER: CalendarProvider[] = ["device", "apple", "google", "outlook", "ics"];
+
+/** How connecting the phone went: what was sent, or why nothing could be. */
+function PhoneNote({
+  outcome,
+  error,
+}: {
+  outcome: Awaited<ReturnType<typeof syncPhone>> | undefined;
+  error: string | null;
+}) {
+  const t = useT();
+  if (error) {
+    return (
+      <Notice tone="error" className="mt-3">
+        {error}
+      </Notice>
+    );
+  }
+  if (outcome?.state === "denied") {
+    return (
+      <Notice tone="error" className="mt-3">
+        {t.phoneCalendar.denied}{" "}
+        <button
+          type="button"
+          onClick={() => void openPhoneSettings()}
+          className="font-semibold underline underline-offset-2"
+        >
+          {t.phoneCalendar.openSettings}
+        </button>
+      </Notice>
+    );
+  }
+  if (outcome?.state === "synced") {
+    return (
+      <Notice tone="success" className="mt-3">
+        {t.phoneCalendar.connected(
+          t.counts.calendars(outcome.calendars),
+          t.counts.busyBlocks(outcome.busyBlocks),
+        )}
+      </Notice>
+    );
+  }
+  return null;
 }
 
 /** The open form for iCloud or a link, under its provider's mark and name. */

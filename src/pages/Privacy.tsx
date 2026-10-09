@@ -61,7 +61,8 @@ const da: LegalCopy = {
               cirka de næste tolv måneder. Aftaler, der overlapper, bliver slået sammen til ét
               tidsrum. Titler, beskrivelser, steder og deltagere bliver aldrig gemt. Google og
               Microsoft bliver aldrig spurgt om dem. Apple og kalenderlinks sender altid hele
-              aftaler, så de oplysninger fjernes, før noget gemmes.
+              aftaler, så de oplysninger fjernes, før noget gemmes. I iPhone-appen læser Casy kun
+              tidspunkterne i telefonens kalendere, og kun de tidspunkter forlader telefonen.
             </li>
             <li>
               <Term>Grupper:</Term> navnet på hver gruppe, du er med i, hvem der ellers er med, hvem
@@ -106,7 +107,9 @@ const da: LegalCopy = {
           <p>
             Optagede tidsrum bruges kun til at vise, hvornår du og dine grupper er ledige, og til at
             foreslå tidspunkter. Casy opdaterer dem cirka en gang i timen, og igen, når nogen i en
-            af dine grupper planlægger en aftale med gruppen, så de passer.
+            af dine grupper planlægger en aftale med gruppen, så de passer. Telefonens kalendere
+            sender iPhone-appen selv, når du åbner den, og når kalenderne ændrer sig, mens den er
+            åben.
           </p>
           <p>
             Har du valgt en primær kalender, bruger Casy din adgang til den til at lægge aftaler, I
@@ -283,7 +286,9 @@ const da: LegalCopy = {
             Fjerner du en kalenderkonto under Forbundne kalendere, slettes dens optagede tidsrum og
             adgangsoplysninger fra Casy med det samme. For også at stoppe det hos udbyderen skal du
             fjerne Casys adgang i indstillingerne for din Google- eller Microsoft-konto eller slette
-            den app-specifikke adgangskode på account.apple.com/account/manage.
+            den app-specifikke adgangskode på account.apple.com/account/manage. Telefonens kalendere
+            holder appen op med at læse, når du fjerner telefonen, eller når du slår adgang til
+            Kalendere fra under Casy i telefonens Indstillinger.
           </p>
           <p>
             Forlader du en gruppe, bliver du fjernet med det samme, og de andre medlemmer holder op
@@ -345,7 +350,8 @@ const en: LegalCopy = {
               twelve months. Overlapping events are merged into one period. Event titles,
               descriptions, locations and attendees are never stored. Google and Microsoft are never
               asked for them. Apple and calendar links always send whole events, so those details
-              are removed before anything is saved.
+              are removed before anything is saved. In the iPhone app, Casy reads only the times in
+              the phone&apos;s calendars, and only those times leave the phone.
             </li>
             <li>
               <Term>Groups:</Term> the name of each group you are in, who else is in it, who made
@@ -389,7 +395,8 @@ const en: LegalCopy = {
           <p>
             Busy times are used only to show when you and your groups are free and to suggest times.
             Casy refreshes them about once an hour, and again when someone in one of your groups
-            plans an event with the group, so they stay current.
+            plans an event with the group, so they stay current. The iPhone app sends the
+            phone&apos;s calendars itself, when you open it and when they change while it is open.
           </p>
           <p>
             If you chose a primary calendar, Casy uses your access to it to add the events you agree
@@ -568,7 +575,9 @@ const en: LegalCopy = {
             Removing a calendar account under Connected calendars deletes its busy times and
             credentials from Casy immediately. To stop the provider&apos;s side as well, remove
             Casy&apos;s access in your Google or Microsoft account settings, or delete the
-            app-specific password at account.apple.com/account/manage.
+            app-specific password at account.apple.com/account/manage. The app stops reading the
+            phone&apos;s calendars when you remove the phone, or when you turn off Calendars under
+            Casy in the phone&apos;s Settings.
           </p>
           <p>
             Leaving a group removes you from it straight away, and the other members stop seeing
