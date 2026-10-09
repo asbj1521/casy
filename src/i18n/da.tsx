@@ -411,9 +411,6 @@ export const da = {
     tripFrom: (days: string, weekday: string) => `${days} fra ${weekday}`,
     without: (names: string) => `uden ${names}`,
     start: "Planlæg med AI",
-    introTitle: "Fortæl Casy, hvad I skal",
-    intro:
-      "Skriv, eller tryk på Tal og sig det med dine egne ord: hvad, hvornår og hvem der ikke skal med. Casy laver planen, og du kan rette den bagefter.",
     placeholder: "Fx middag en fredag aften i november, uden Peter",
     morePlaceholder: "Fx kun i december, eller Anna må gerne komme",
     send: "Lav planen",
@@ -437,7 +434,6 @@ export const da = {
     noOneNamed: (name: string) => `Ingen i gruppen hedder ${name}. Hvem mener du?`,
     noneOfThem: "Ingen af dem",
     left: (n: number) => (n === 1 ? "1 AI-svar tilbage i dag" : `${n} AI-svar tilbage i dag`),
-    privacy: "Kun det, du skriver eller siger, sendes til Anthropics AI. Aldrig dine kalendere.",
   },
   // An event's place and note (#84), on My events and the swipe card.
   eventDetails: {

@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
 import { Check, Loader2, MessageSquarePlus, Mic, RotateCcw, Sparkles, Square } from "lucide-react";
-import { Link } from "react-router-dom";
 
 import type { AiPlanner } from "@/hooks/useAiPlanner";
 import { useSpeechInput } from "@/hooks/useSpeechInput";
@@ -36,14 +35,9 @@ export default function AiConversation({
   const { session, pending, error } = planner;
   const [adding, setAdding] = useState(false);
   const hasPlan = session.plan !== null;
-  const footnote = (
-    <>
-      {session.left !== null && <>{words.left(session.left)}. </>}
-      <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
-        {words.privacy}
-      </Link>
-    </>
-  );
+  // Only how many tries are left today, when the server says; what is sent
+  // where is the privacy policy's to say, not the box's.
+  const footnote = session.left !== null ? <>{words.left(session.left)}.</> : null;
 
   return (
     <div className={cn("flex flex-col", compact ? "gap-2.5" : "gap-3", className)}>
@@ -124,13 +118,7 @@ export default function AiConversation({
           big={!hasPlan}
           compact={compact}
           label={hasPlan ? words.morePlaceholder : words.placeholder}
-          placeholder={
-            hasPlan
-              ? words.morePlaceholder
-              : compact
-                ? `${words.introTitle}. ${words.intro}\n\n${words.placeholder}`
-                : words.placeholder
-          }
+          placeholder={hasPlan ? words.morePlaceholder : words.placeholder}
           note={compact ? footnote : undefined}
           sendLabel={hasPlan ? words.update : words.send}
           onSend={(text) => {
@@ -168,7 +156,7 @@ export default function AiConversation({
 
       {error && <p className="text-[15px] text-red-700">{error}</p>}
 
-      {!compact ? <p className="text-xs text-muted-foreground">{footnote}</p> : null}
+      {!compact && footnote ? <p className="text-xs text-muted-foreground">{footnote}</p> : null}
     </div>
   );
 }

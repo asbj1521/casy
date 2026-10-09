@@ -378,9 +378,6 @@ export const en: Messages = {
     tripFrom: (days: string, weekday: string) => `${days} from ${weekday}`,
     without: (names: string) => `without ${names}`,
     start: "Plan with AI",
-    introTitle: "Tell Casy what you're planning",
-    intro:
-      "Type, or tap Speak and say it in your own words: what, when, and who isn't coming. Casy makes the plan, and you can change it afterwards.",
     placeholder: "For example: dinner on a Friday evening in November, without Peter",
     morePlaceholder: "For example: only in December, or Anna is welcome too",
     send: "Make the plan",
@@ -404,7 +401,6 @@ export const en: Messages = {
     noOneNamed: (name: string) => `No one in the group is called ${name}. Who do you mean?`,
     noneOfThem: "None of them",
     left: (n: number) => (n === 1 ? "1 AI answer left today" : `${n} AI answers left today`),
-    privacy: "Only what you write or say is sent to Anthropic's AI. Never your calendars.",
   },
   eventDetails: {
     place: "Place",
