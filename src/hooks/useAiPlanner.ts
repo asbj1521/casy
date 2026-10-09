@@ -224,6 +224,8 @@ export function useAiPlanner(page: AiPlannerPage) {
     reset,
     pending: ask.isPending,
     error: ask.error?.message ?? null,
+    /** What was sent when the answer failed, to put back in the box to fix and resend. */
+    failedText: ask.isError ? (ask.variables?.text ?? "") : "",
   };
 }
 

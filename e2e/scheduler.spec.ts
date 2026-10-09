@@ -309,6 +309,17 @@ test.describe("on a phone (#101)", () => {
     for (const d of sent.dates as { start: string }[]) expect(d.start).toMatch(/^2026-12/);
   });
 
+  test("a failed AI answer keeps what was written, to fix and send again (#100)", async ({
+    page,
+  }) => {
+    await page.goto("/?step=describe");
+    const box = page.getByRole("textbox", { name: /Fx middag en fredag/ });
+    await box.fill("bare noget vrøvl");
+    await page.getByRole("button", { name: "Lav planen" }).click();
+    await expect(page.getByText(/Casy kunne ikke få en aftale ud af det/)).toBeVisible();
+    await expect(box).toHaveValue("bare noget vrøvl");
+  });
+
   test("the phone's back button goes a step back", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /Fredagsbar/ }).click();

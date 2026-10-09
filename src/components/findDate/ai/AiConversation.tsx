@@ -118,6 +118,9 @@ export default function AiConversation({
         </p>
       ) : !hasPlan || adding ? (
         <Composer
+          // A failed answer brings back what was sent, to fix and send again.
+          key={planner.failedText}
+          initial={planner.failedText}
           big={!hasPlan}
           compact={compact}
           label={hasPlan ? words.morePlaceholder : words.placeholder}
@@ -172,6 +175,7 @@ export default function AiConversation({
 
 /** The box to write (or say) a description or more details in. */
 function Composer({
+  initial,
   big,
   compact,
   label,
@@ -181,6 +185,8 @@ function Composer({
   onSend,
   onCancel,
 }: {
+  /** What the box starts with: the text whose answer failed, or nothing. */
+  initial: string;
   /** The first description: the screen's main thing, so a big box. */
   big: boolean;
   /** Sized for a computer's box rather than a phone's screen. */
@@ -197,7 +203,7 @@ function Composer({
   const t = useT();
   const words = t.aiPlan;
   const { lang } = useLang();
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initial);
   // What was typed before the microphone went on; speech is added after it.
   const [before, setBefore] = useState("");
   const speech = useSpeechInput(lang, (heard) => setDraft(before ? `${before} ${heard}` : heard));
