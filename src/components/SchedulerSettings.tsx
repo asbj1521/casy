@@ -1,4 +1,4 @@
-import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Minus, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 
@@ -382,6 +382,20 @@ export function SettingsPanel({
   const t = useT();
   const [tab, setTab] = useState<Tab>("time");
   const [aiOpen, setAiOpen] = useState(false);
+  // Whether the AI's panel has grown past the box, to lift it with a shadow.
+  const [grown, setGrown] = useState(false);
+  const boxRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const panel = panelRef.current;
+    const box = boxRef.current;
+    if (!aiOpen || !panel || !box) return;
+    // Called once on observing, and again on every change of either size.
+    const observer = new ResizeObserver(() => setGrown(panel.offsetHeight > box.offsetHeight + 4));
+    observer.observe(panel);
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [aiOpen]);
   const id = useId();
 
   // Left and right move between tabs, as in any tab list.
@@ -405,6 +419,7 @@ export function SettingsPanel({
 
   return (
     <section
+      ref={boxRef}
       className={cn(
         "relative hidden flex-col rounded-2xl border bg-card p-5 shadow-sm xl:flex",
         className,
@@ -502,20 +517,25 @@ export function SettingsPanel({
       </div>
 
       {/* Planning with AI (#100): the whole box, the group still at hand. It
-          needs more room than the box has, so while open it reaches down over
-          the chart, to near the bottom of the window; the answer stays in view
-          beside it, and closing it leaves the page as it was. */}
+          is as tall as the box, and when Casy's questions need more room it
+          reaches down over the chart, as far as it needs and no further than
+          near the bottom of the window (then it scrolls); the answer stays in
+          view beside it, and closing it leaves the page as it was. */}
       {ai && aiOpen && (
         <div
+          ref={panelRef}
           role="dialog"
           aria-label={t.aiPlan.start}
           onKeyDown={(e) => {
             if (e.key === "Escape") closeAi();
           }}
-          className="absolute -left-px -right-px -top-px z-20 flex h-[max(calc(100%_+_2px),min(44rem,calc(100dvh_-_8rem)))] flex-col rounded-2xl border bg-card p-5 shadow-xl"
+          className={cn(
+            "absolute -left-px -right-px -top-px z-20 flex max-h-[min(44rem,calc(100dvh_-_8rem))] min-h-[calc(100%_+_2px)] flex-col rounded-2xl border bg-card p-5 transition-shadow",
+            grown ? "shadow-xl" : "shadow-sm",
+          )}
         >
-          <div className="flex items-end gap-4">
-            {group}
+          <div className="flex items-center gap-3">
+            <div className="w-56 shrink-0 2xl:w-64">{groupSwitcher}</div>
             <h2 className="flex h-[42px] min-w-0 flex-1 items-center gap-1.5 text-base font-extrabold text-foreground">
               <Sparkles className="h-4 w-4 shrink-0 text-primary" />
               <span className="truncate">{t.aiPlan.start}</span>
@@ -529,7 +549,7 @@ export function SettingsPanel({
               {t.aiPlan.backToSettings}
             </button>
           </div>
-          <div className="mt-4 min-h-0 flex-1">{ai.view(closeAi)}</div>
+          <div className="mt-3 min-h-0 overflow-y-auto">{ai.view(closeAi)}</div>
         </div>
       )}
     </section>

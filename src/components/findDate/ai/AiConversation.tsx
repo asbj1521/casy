@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Loader2, MessageSquarePlus, Mic, RotateCcw, Sparkles, Square } from "lucide-react";
+import { Check, Loader2, MessageSquarePlus, Mic, RotateCcw, Sparkles, Square } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import type { AiPlanner } from "@/hooks/useAiPlanner";
@@ -19,8 +19,11 @@ export default function AiConversation({
   planner,
   members,
   summary,
+  compact = false,
   className,
 }: {
+  /** A computer's box: tighter, so it fits the box's height where it can. */
+  compact?: boolean;
   planner: AiPlanner;
   /** What Casy picked up, shown once there is a plan (a computer's PlanSummary). */
   summary?: ReactNode;
@@ -33,41 +36,45 @@ export default function AiConversation({
   const { session, pending, error } = planner;
   const [adding, setAdding] = useState(false);
   const hasPlan = session.plan !== null;
+  const footnote = (
+    <>
+      {session.left !== null && <>{words.left(session.left)}. </>}
+      <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+        {words.privacy}
+      </Link>
+    </>
+  );
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      {!hasPlan && (
-        <div className="flex items-start gap-3 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 p-3.5 ring-1 ring-orange-100">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card shadow-sm">
-            <Sparkles className="h-5 w-5 text-primary" />
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-[15px] font-bold text-foreground">{words.introTitle}</h3>
-            <p className="mt-0.5 text-sm text-muted-foreground">{words.intro}</p>
-          </div>
-        </div>
-      )}
-
+    <div className={cn("flex flex-col", compact ? "gap-2.5" : "gap-3", className)}>
       {/* What Casy picked up, where there's room for it (a computer); the
           words it came from fold away, since speech recognition often
           mishears and the settings are what count. */}
       {hasPlan && summary}
       {session.texts.length > 0 && (
-        <details className="group text-sm text-muted-foreground">
-          <summary className="w-fit cursor-pointer select-none font-medium hover:text-foreground">
-            {words.youWrote}
-          </summary>
-          <ul className="mt-1.5 flex flex-col gap-1.5">
-            {session.texts.map((text, i) => (
-              <li
-                key={i}
-                className="whitespace-pre-wrap rounded-xl bg-secondary/60 px-3 py-2 text-foreground"
-              >
-                {text}
-              </li>
-            ))}
-          </ul>
-        </details>
+        <div className="flex items-start justify-between gap-3">
+          <details className="group text-sm text-muted-foreground">
+            <summary className="w-fit cursor-pointer select-none font-medium hover:text-foreground">
+              {words.youWrote}
+            </summary>
+            <ul className="mt-1.5 flex flex-col gap-1.5">
+              {session.texts.map((text, i) => (
+                <li
+                  key={i}
+                  className="whitespace-pre-wrap rounded-xl bg-secondary/60 px-3 py-2 text-foreground"
+                >
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </details>
+          {/* A computer's box has no line to spare for the count. */}
+          {compact && hasPlan && session.left !== null && (
+            <span className="shrink-0 pt-px text-xs text-muted-foreground">
+              {words.left(session.left)}
+            </span>
+          )}
+        </div>
       )}
 
       {session.questions.map(({ question, picked }, qi) => (
@@ -112,7 +119,16 @@ export default function AiConversation({
       ) : !hasPlan || adding ? (
         <Composer
           big={!hasPlan}
-          placeholder={hasPlan ? words.morePlaceholder : words.placeholder}
+          compact={compact}
+          label={hasPlan ? words.morePlaceholder : words.placeholder}
+          placeholder={
+            hasPlan
+              ? words.morePlaceholder
+              : compact
+                ? `${words.introTitle}. ${words.intro}\n\n${words.placeholder}`
+                : words.placeholder
+          }
+          note={compact ? footnote : undefined}
           sendLabel={hasPlan ? words.update : words.send}
           onSend={(text) => {
             planner.describe(text);
@@ -121,11 +137,14 @@ export default function AiConversation({
           onCancel={hasPlan ? () => setAdding(false) : undefined}
         />
       ) : (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={cn("flex flex-wrap items-center", compact ? "gap-1" : "gap-2")}>
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border bg-card px-3.5 text-[15px] font-bold text-foreground transition hover:bg-secondary"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-xl border bg-card font-bold text-foreground transition hover:bg-secondary",
+              compact ? "h-9 px-2.5 text-sm" : "h-10 px-3.5 text-[15px]",
+            )}
           >
             <MessageSquarePlus className="h-4 w-4 text-primary" />
             {words.addDetails}
@@ -133,7 +152,10 @@ export default function AiConversation({
           <button
             type="button"
             onClick={planner.reset}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-[15px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-xl font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground",
+              compact ? "h-9 px-2 text-sm" : "h-10 px-3 text-[15px]",
+            )}
           >
             <RotateCcw className="h-4 w-4" />
             {words.again}
@@ -143,12 +165,7 @@ export default function AiConversation({
 
       {error && <p className="text-[15px] text-red-700">{error}</p>}
 
-      <p className="text-xs text-muted-foreground">
-        {session.left !== null && <>{words.left(session.left)}. </>}
-        <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
-          {words.privacy}
-        </Link>
-      </p>
+      {!compact ? <p className="text-xs text-muted-foreground">{footnote}</p> : null}
     </div>
   );
 }
@@ -156,6 +173,9 @@ export default function AiConversation({
 /** The box to write (or say) a description or more details in. */
 function Composer({
   big,
+  compact,
+  label,
+  note,
   placeholder,
   sendLabel,
   onSend,
@@ -163,6 +183,12 @@ function Composer({
 }: {
   /** The first description: the screen's main thing, so a big box. */
   big: boolean;
+  /** Sized for a computer's box rather than a phone's screen. */
+  compact: boolean;
+  /** What the box is, for screen readers (the placeholder may say more). */
+  label: string;
+  /** Small print beside the buttons (a computer's box, which has no room under it). */
+  note?: ReactNode;
   placeholder: string;
   sendLabel: string;
   onSend: (text: string) => void;
@@ -200,13 +226,13 @@ function Composer({
               send();
             }
           }}
-          rows={big ? 6 : 3}
+          rows={big ? 6 : compact ? 2 : 3}
           maxLength={500}
           placeholder={speech.listening ? words.listening : placeholder}
-          aria-label={placeholder}
+          aria-label={label}
           className={cn(
             "block w-full resize-none rounded-2xl bg-transparent px-3.5 pt-3 text-foreground outline-none placeholder:text-muted-foreground",
-            big ? "text-[17px] leading-relaxed" : "text-[16px]",
+            big && !compact ? "text-[17px] leading-relaxed" : "text-[16px] leading-6",
           )}
         />
         <div className="flex items-center justify-between gap-2 px-2 pb-2">
@@ -238,7 +264,10 @@ function Composer({
           ) : (
             <span />
           )}
-          <div className="flex items-center gap-1">
+          {note && (
+            <p className="min-w-0 flex-1 text-[11px] leading-tight text-muted-foreground">{note}</p>
+          )}
+          <div className="flex shrink-0 items-center gap-1">
             {onCancel && (
               <button
                 type="button"
@@ -291,6 +320,21 @@ function ChoiceCard({
   onPick: (key: string) => void;
   children?: ReactNode;
 }) {
+  const [reopened, setReopened] = useState(false);
+  const answer = options.find((o) => o.key === picked)?.label;
+  if (answer && !reopened) {
+    return (
+      <button
+        type="button"
+        onClick={() => setReopened(true)}
+        className="flex w-full items-center gap-2 rounded-2xl border bg-card px-3.5 py-2.5 text-left text-[15px] transition hover:bg-secondary"
+      >
+        <Check className="h-4 w-4 shrink-0 text-green-600" />
+        <span className="min-w-0 flex-1 truncate text-muted-foreground">{question}</span>
+        <span className="shrink-0 font-bold text-foreground">{answer}</span>
+      </button>
+    );
+  }
   return (
     <div className="rounded-2xl border bg-card p-3.5">
       <p className="flex items-start gap-2 text-[15px] font-bold text-foreground">
@@ -303,7 +347,10 @@ function ChoiceCard({
             key={o.key}
             type="button"
             disabled={disabled}
-            onClick={() => onPick(o.key)}
+            onClick={() => {
+              onPick(o.key);
+              setReopened(false);
+            }}
             aria-pressed={picked === o.key}
             className={cn(
               OPTION,

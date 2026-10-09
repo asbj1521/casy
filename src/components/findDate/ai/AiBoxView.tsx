@@ -7,8 +7,8 @@ import { useT } from "@/i18n/lang";
 /**
  * Planning with AI (#100) on a computer, filling the settings box: the
  * conversation, and once Casy has answered, what it picked up beside it, so
- * its questions and their effect are seen together. Each side scrolls on its
- * own within the box, which keeps the height the settings give it.
+ * its questions and their effect are seen together. Both take the height
+ * they need; the box's panel grows to fit them (SettingsPanel).
  */
 export default function AiBoxView({
   planner,
@@ -21,15 +21,13 @@ export default function AiBoxView({
   summary: ReactNode;
 }) {
   const t = useT();
-  const conversation = <AiConversation planner={planner} members={members} />;
+  const conversation = <AiConversation planner={planner} members={members} compact />;
 
-  if (!planner.session.plan) {
-    return <div className="h-full overflow-y-auto pr-1">{conversation}</div>;
-  }
+  if (!planner.session.plan) return conversation;
   return (
-    <div className="grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-5">
-      <div className="min-h-0 overflow-y-auto pr-1">{conversation}</div>
-      <div className="min-h-0 overflow-y-auto">
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-5">
+      <div className="min-w-0">{conversation}</div>
+      <div className="min-w-0">
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
           {t.aiPlan.understood}
         </h3>

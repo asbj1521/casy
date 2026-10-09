@@ -244,7 +244,6 @@ test.describe("on a phone (#101)", () => {
     await expect(page).toHaveURL(/\?step=describe$/);
     // A flow of its own: this screen, then the dates.
     await expect(page.getByText("Trin 1 af 2")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Fortæl Casy, hvad I skal" })).toBeVisible();
     // The group picked before, changeable right here.
     const groupRow = page.getByRole("button", { name: /^Gruppe/ });
     await expect(groupRow).toContainText("Fredagsbar");
