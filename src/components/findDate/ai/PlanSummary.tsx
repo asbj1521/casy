@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Sparkles } from "lucide-react";
 
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import type { PlanField } from "@/lib/aiPlan";
@@ -31,7 +32,7 @@ function clock(minutes: number): string {
  * What Casy picked up (#100), on a computer's AI tab: the event as settings,
  * in a few short lines, rather than the words it came from. Read from the
  * page's own state, so a change made by hand shows here too; what Casy
- * guessed is marked.
+ * guessed is marked with a sparkle (the heading above says what it means).
  */
 export default function PlanSummary({
   name,
@@ -123,15 +124,19 @@ export default function PlanSummary({
   }
 
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rounded-2xl border bg-secondary/40 px-3.5 py-3 text-[15px]">
+    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-2xl border bg-secondary/40 px-3.5 py-2.5 text-sm">
       {rows.map((row) => (
         <div key={row.label} className="contents">
           <dt className="text-muted-foreground">{row.label}</dt>
-          <dd className="flex min-w-0 flex-wrap items-center gap-1.5 font-semibold text-foreground">
-            <span className="min-w-0 break-words">{row.value}</span>
+          <dd className="min-w-0 break-words font-semibold text-foreground">
+            {row.value}
+            {/* Casy's guess: the sparkle the calendar list marks its guesses
+                with (#118), in the line, so it never takes a line of its own
+                and pushes the box past the answer beside it. */}
             {row.guess && (
-              <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-800">
-                {words.guessed}
+              <span title={words.guessed} className="ml-1 inline-flex align-[-1px]">
+                <Sparkles aria-hidden className="h-3.5 w-3.5 text-amber-500" />
+                <span className="sr-only">{words.guessed}</span>
               </span>
             )}
           </dd>

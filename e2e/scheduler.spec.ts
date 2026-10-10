@@ -173,6 +173,27 @@ test.describe("on a laptop's screen", () => {
     expect(backend.calls.filter((c) => c.name === "plan-ai")).toHaveLength(1);
   });
 
+  test("once its questions are answered, what Casy picked up fits beside the answer", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    const text = page.getByRole("textbox", { name: /Fx middag en fredag/ });
+    await text.fill("Middag en fredag i november uden Jonas");
+    await text.press("Enter");
+    await page.getByRole("button", { name: "Kl. 18" }).click();
+    await page.getByRole("button", { name: "Ingen af dem" }).click();
+    // Answered, a question folds to one line (still there to change).
+    await expect(page.getByRole("button", { name: "Jonas", exact: true })).toBeHidden();
+    // Six rows of settings, none open: the AI's panel ends with the answer
+    // beside it rather than growing over the chart (a guess is a sparkle in
+    // the line, never a pill that wraps onto a line of its own).
+    const panel = await boxOf(page.getByRole("dialog", { name: "Planlæg med AI" }));
+    const answer = await boxOf(answerBox(page));
+    expect(panel.y + panel.height).toBeLessThanOrEqual(answer.y + answer.height + 1);
+  });
+
   test("Tur / ferie swaps the time for a number of days", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("Varighed", { exact: true })).toBeVisible();

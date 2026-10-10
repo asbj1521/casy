@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Sparkles } from "lucide-react";
 
 import AiConversation from "@/components/findDate/ai/AiConversation";
 import type { AiPlanner } from "@/hooks/useAiPlanner";
@@ -28,9 +29,18 @@ export default function AiBoxView({
     <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-5">
       <div className="min-w-0">{conversation}</div>
       <div className="min-w-0">
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {t.aiPlan.understood}
-        </h3>
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            {t.aiPlan.understood}
+          </h3>
+          {/* What the summary's sparkles mean, on the heading's own line. */}
+          {planner.session.guessed.length > 0 && (
+            <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+              <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />
+              {t.aiPlan.guessed}
+            </span>
+          )}
+        </div>
         {summary}
       </div>
     </div>
