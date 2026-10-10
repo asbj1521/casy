@@ -37,6 +37,7 @@ import { useAuth } from "@/context/auth";
 import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useAiPlanner } from "@/hooks/useAiPlanner";
 import { findAnswer, TODAY, useDateSearch } from "@/hooks/useDateSearch";
+import { useEventProfile } from "@/hooks/useEventProfile";
 import { useGroupRefresh, type RefreshOutcome } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
@@ -56,6 +57,7 @@ import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
 import { pickCandidates } from "@/lib/candidates";
 import { nameList } from "@/lib/format";
 import { edgeWarnings } from "@/lib/earlyMorning";
+import { profileInput } from "@/lib/eventImpact";
 import { peopleForSearch, SEARCH_WINDOW } from "@/lib/eventSearch";
 import { monthAvailability } from "@/lib/monthAvailability";
 import {
@@ -568,6 +570,18 @@ export default function FindDate() {
   // through (#74). The answer is the fresh list of events, which goes
   // straight into the cache the header badge reads; on a computer the
   // suggester then answers the dates themselves, right away.
+  // What the event is called when sent: the name typed, or the matching
+  // type's name, which each reader sees in their own language (eventTitle.ts).
+  const sentTitle = name.trim() || storedEventTitle(fallbackTitleId(search));
+  // What the event is likely to cause (#113): asked in the background while
+  // it is set up, for a real group only, and sent with the dates.
+  const profile = useEventProfile(
+    user && activeGroup && !activeGroup.isExample
+      ? profileInput(search, sentTitle, extras.place, extras.note)
+      : null,
+  );
+  // Waiting (briefly) for that profile before sending.
+  const [preparing, setPreparing] = useState(false);
   const suggest = useMutation({
     mutationFn: suggestEvent,
     onSuccess: (data) => {
@@ -623,16 +637,20 @@ export default function FindDate() {
         { first, end: searchWindow.end, count: extras.dateCount },
         TZ,
       ).map((d) => ({ start: d.slot.start, end: d.slot.end }));
+    // Usually here already; never waited for long (PROFILE_WAIT_MS), and
+    // the event goes without one rather than not at all.
+    setPreparing(true);
+    const impact = await profile.forSend();
+    setPreparing(false);
     suggest.mutate({
       groupId,
-      // A name left empty is stored as the matching type's name, which each
-      // reader sees in their own language (eventTitle.ts).
-      title: name.trim() || storedEventTitle(fallbackTitleId(search)),
+      title: sentTitle,
       settings: search,
       dates,
       place: extras.place,
       note: extras.note,
       answerDays: extras.answerDays,
+      impact,
     });
   }
   // How sending went belongs to the exact date it was for: switch group, step
@@ -685,7 +703,7 @@ export default function FindDate() {
     onAccept: () => slot && setSteps((s) => accept(s, slot.start)),
     canSuggest,
     checking,
-    suggesting: suggest.isPending,
+    suggesting: suggest.isPending || preparing,
     suggested,
     onSuggest: () => void sendSuggestion(),
   };

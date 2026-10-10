@@ -17,7 +17,7 @@ import { addDays, atHour, startOfDay } from "@/lib/zone";
 import type { Participant } from "@/types";
 
 /** A meeting ending at this local hour or later counts as late. */
-const LATE_FROM_HOUR = 23;
+export const LATE_FROM_HOUR = 23;
 /** Something starting at this local hour or earlier the next morning counts as early. */
 const EARLY_UNTIL_HOUR = 10;
 

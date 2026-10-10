@@ -98,6 +98,22 @@ export class FakeBackend {
         if (categorized.length > 0) this.changed();
         return ok({ categorized });
       }
+      case "event-profile":
+        // As the real one, without the AI: every event an evening out.
+        return ok({
+          profile: {
+            v: 1,
+            effects: ["alcohol"],
+            runsLate: true,
+            strain: "moderate",
+            recoveryDays: 0,
+            outdoors: false,
+            daylight: false,
+            confidence: "medium",
+            reason: "",
+          },
+          left: 39,
+        });
       case "calendar-label": {
         // Only the iPhone app labels events, which the browser tests can't
         // be; answered as the real one would, every event an ordinary one.
@@ -355,6 +371,7 @@ export class FakeBackend {
       title: String(body.title),
       place: typeof body.place === "string" && body.place.trim() ? body.place.trim() : null,
       note: typeof body.note === "string" && body.note.trim() ? body.note.trim() : null,
+      impact: (body.impact as SuggestedEvent["impact"]) ?? null,
       settings: body.settings as SuggestedEvent["settings"],
       status: "pending",
       mode: "vote",

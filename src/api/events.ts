@@ -12,6 +12,7 @@
  */
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
+import type { EventImpact } from "@/api/eventProfile";
 import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
 import {
   findEventSlot,
@@ -60,6 +61,12 @@ export interface SuggestedEvent {
   mode: EventMode;
   /** A vote's deadline: after it, the dates are decided with the answers there are. */
   answerBy: string | null;
+  /**
+   * What the event is likely to cause for the people going (#113), whatever
+   * the date; read it through impactOn (eventImpact.ts). Null or missing
+   * when none came with it.
+   */
+  impact?: EventImpact | null;
   createdBy: { id: string | null; name: string; isYou: boolean };
   createdAt: string;
   updatedAt: string;
@@ -168,6 +175,8 @@ export async function suggestEvent(input: {
   note?: string;
   /** How many days everyone has to answer (#99): 1 to 7. */
   answerDays?: number;
+  /** What the event is likely to cause (#113), when the AI answered in time. */
+  impact?: EventImpact;
 }): Promise<{ events: SuggestedEvent[]; createdId: string }> {
   return await eventsCall<{ createdId: string }>(
     { action: "suggest", ...input },

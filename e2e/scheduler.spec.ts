@@ -450,6 +450,10 @@ test("a suggestion carries its place, note, deadline and number of dates", async
   const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
   expect(sent).toMatchObject({ place: "Hos Sara", note: "Tag snacks med", answerDays: 5 });
   expect((sent.dates as unknown[]).length).toBeLessThanOrEqual(3);
+  // What the event is likely to cause (#113) goes with it, asked from what was typed.
+  expect(sent.impact).toMatchObject({ effects: ["alcohol"], runsLate: true });
+  const asked = backend.calls.filter((c) => c.name === "event-profile").at(-1)?.body;
+  expect(asked).toMatchObject({ event: { place: "Hos Sara", note: "Tag snacks med" } });
 });
 
 test.describe("who an event is for (#89)", () => {
