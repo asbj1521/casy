@@ -5,6 +5,7 @@ import AddToCalendar from "@/components/AddToCalendar";
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
 import DateConflicts from "@/components/myEvents/DateConflicts";
 import { EdgeWarnings, ExitConfirm, ExitLink, People } from "@/components/myEvents/parts";
+import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
@@ -60,6 +61,7 @@ export default function DatedSummary({
       <EdgeWarnings event={event} />
       {pending && <DateConflicts event={event} />}
       <PlaceNote event={event} />
+      <EventImpactDetails event={event} />
 
       {stage === "needsAnswer" && <AnswerButtons event={event} />}
       {stage === "scheduled" && <AddToCalendar event={event} wide />}

@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 
 import { answerDate, chooseDate, type EventResponse } from "@/api/events";
 import { ExitConfirm, ExitLink } from "@/components/myEvents/parts";
+import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 import YourAnswer from "@/components/myEvents/YourAnswer";
 import Notice from "@/components/ui/Notice";
@@ -67,6 +68,7 @@ export default function VoteSummary({ event }: { event: VoteEvent }) {
       </div>
 
       <PlaceNote event={event} />
+      <EventImpactDetails event={event} />
 
       <ul className="overflow-hidden rounded-xl border bg-card">
         {dates.map((d) => {

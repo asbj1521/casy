@@ -23,6 +23,7 @@ import { formatEventDate, formatHeadline, nameList } from "@/lib/format";
 import { waitingOn, type StagedEvent } from "@/lib/myEvents";
 import { isVote } from "@/lib/vote";
 import { cn } from "@/lib/utils";
+import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 
 /** Each stage's colour, as its card has it on a phone. */
@@ -121,6 +122,7 @@ function DatedDetails({
         )}
         <Origin event={event} />
         <PlaceNote event={event} className="mt-2" />
+        <EventImpactDetails event={event} className="mt-2" />
       </div>
 
       {stage !== "closed" && <EdgeWarnings event={event} className="mt-3" />}

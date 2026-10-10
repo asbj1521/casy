@@ -851,6 +851,20 @@ export const da = {
     moved: (date: string) => `Datoen er flyttet til ${date}.`,
     yourAnswers: "Dine svar",
   },
+  /** What Casy's AI expects a planned event to involve (#113), for admins while it is tested. */
+  eventImpact: {
+    toggle: "Casys vurdering",
+    effects: {
+      lateNight: "Sen aften",
+      alcohol: "Alkohol",
+      travel: "Lang rejse",
+      exercise: "Hård træning",
+    },
+    runsLate: "Trækker tit ud",
+    outdoors: "Udendørs",
+    daylight: "Kræver dagslys",
+    adminOnly: "Kun administratorer ser dette, mens det testes.",
+  },
   /** What Casy's AI made of one of your events (#112), under it in the day's list. */
   eventLabel: {
     toggle: "Casys vurdering",

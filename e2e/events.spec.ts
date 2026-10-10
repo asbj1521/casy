@@ -238,3 +238,34 @@ test.describe("a phone's list of events (#103)", () => {
     await expect(page.getByText("Aflyst", { exact: true })).toHaveCount(0);
   });
 });
+
+test("an admin sees what Casy expects an event to involve (#113); nobody else does", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  test.skip(isMobile, "the phone shows the same part under the place and note");
+  const run = backend.world.events.find((e) => e.id === "ev-run")!;
+  run.impact = {
+    v: 1,
+    effects: ["exercise"],
+    runsLate: false,
+    strain: "moderate",
+    recoveryDays: 0,
+    outdoors: true,
+    daylight: true,
+    confidence: "high",
+    reason: "En løbetur udenfor.",
+  };
+  await page.goto("/events/ev-run");
+  await expect(page.getByText("Foreslået af Freja")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Casys vurdering" })).toHaveCount(0);
+
+  backend.world.admin = "current";
+  await page.reload();
+  await page.getByRole("button", { name: "Casys vurdering" }).click();
+  await expect(page.getByText("Lidt krævende · Sikker")).toBeVisible();
+  await expect(page.getByText("Hård træning")).toBeVisible();
+  await expect(page.getByText("Kræver dagslys")).toBeVisible();
+  await expect(page.getByText("En løbetur udenfor.")).toBeVisible();
+});

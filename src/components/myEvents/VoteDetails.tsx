@@ -10,6 +10,7 @@ import { useLang, useT } from "@/i18n/lang";
 import { nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { stillToAnswer, voteStage, type VoteEvent } from "@/lib/vote";
+import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 
 /**
@@ -66,6 +67,7 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
       </div>
       {exiting && <ExitConfirm event={event} onCancel={() => setExiting(false)} className="mt-3" />}
       <PlaceNote event={event} row className="mt-2" />
+      <EventImpactDetails event={event} className="mt-2" />
 
       {stage === "answer" ? (
         <DeckBox event={event} />

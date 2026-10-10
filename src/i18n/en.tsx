@@ -816,6 +816,19 @@ export const en: Messages = {
     moved: (date: string) => `The date has moved to ${date}.`,
     yourAnswers: "Your answers",
   },
+  eventImpact: {
+    toggle: "Casy's read",
+    effects: {
+      lateNight: "Late night",
+      alcohol: "Alcohol",
+      travel: "Long journey",
+      exercise: "Hard exercise",
+    },
+    runsLate: "Often runs late",
+    outdoors: "Outdoors",
+    daylight: "Needs daylight",
+    adminOnly: "Only admins see this while it's tested.",
+  },
   eventLabel: {
     toggle: "Casy's read",
     kinds: {
