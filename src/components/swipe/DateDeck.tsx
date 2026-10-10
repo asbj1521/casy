@@ -27,7 +27,7 @@ import {
   nameList,
 } from "@/lib/format";
 import { impactOn } from "@/lib/eventImpact";
-import { importantClashes, type ImportantClash } from "@/lib/eventWarnings";
+import { clashKey, importantClashes, type ImportantClash } from "@/lib/eventWarnings";
 import { haptic } from "@/lib/haptics";
 import { daysUntil } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
@@ -144,6 +144,8 @@ export default function DateDeck({
   // A yes to a date that gets in the way of something critical of yours
   // (#114) is asked once: the answer waiting for that, or null.
   const [confirmClash, setConfirmClash] = useState<EventResponse | null>(null);
+  // The warning whose event is shown ("Vis mig"): the strip below goes to it.
+  const [shownClash, setShownClash] = useState<ImportantClash | null>(null);
 
   function answer(response: EventResponse, confirmed = false) {
     if (!current) return;
@@ -163,6 +165,7 @@ export default function DateDeck({
       return;
     }
     setConfirmMove(false);
+    setShownClash(null);
     setError(null);
     setExit(response);
     setGiven((g) => ({ ...g, [current.id]: response }));
@@ -174,6 +177,7 @@ export default function DateDeck({
     if (to < 0) return;
     setConfirmMove(false);
     setConfirmClash(null);
+    setShownClash(null);
     setExit("back");
     setIndex(to);
   }
@@ -316,6 +320,8 @@ export default function DateDeck({
                     yours={answerOf(current)}
                     calendar={calendar}
                     clashes={clashesFor(current)}
+                    shownClash={shownClash ? clashKey(shownClash) : null}
+                    onShowClash={setShownClash}
                   />
                 </SwipeCard>
               </AnimatePresence>
@@ -329,6 +335,7 @@ export default function DateDeck({
               calendar={calendar}
               onOpen={setCalendarFrom}
               fit={!screen}
+              focus={shownClash && { start: shownClash.event.start, end: shownClash.event.end }}
             />
           );
           const hint = index === 0 && !Object.keys(given).length && (
@@ -432,6 +439,8 @@ function CardFace({
   yours,
   calendar,
   clashes,
+  shownClash,
+  onShowClash,
 }: {
   event: VoteEvent;
   date: CandidateDate;
@@ -441,6 +450,9 @@ function CardFace({
   calendar: MyCalendarDays;
   /** What the date gets in the way of among your important events (#114). */
   clashes: ImportantClash[];
+  /** The warning whose event is shown below (the card on top only). */
+  shownClash?: string | null;
+  onShowClash?: (clash: ImportantClash | null) => void;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -468,7 +480,12 @@ function CardFace({
           {t.swipe.clash(clash.label, clash.when, clash.more)}
         </p>
       )}
-      <ImportantClashes clashes={clashes} className="mt-2" />
+      <ImportantClashes
+        clashes={clashes}
+        shown={shownClash}
+        onShow={onShowClash}
+        className="mt-2"
+      />
       <PlaceNote event={event} readOnly className="mt-3" />
 
       <div className="mt-auto pt-3">

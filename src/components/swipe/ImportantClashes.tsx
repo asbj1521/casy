@@ -1,27 +1,38 @@
 import { TriangleAlert } from "lucide-react";
 
-import { useT } from "@/i18n/lang";
-import type { ImportantClash } from "@/lib/eventWarnings";
+import Collapse from "@/components/ui/Collapse";
+import { LOCALE, useLang, useT } from "@/i18n/lang";
+import { clashKey, type ImportantClash } from "@/lib/eventWarnings";
 import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { APP_TIME_ZONE } from "@/lib/zone";
 
 /** Shown at most, the strongest first: a card has little room. */
 const SHOWN = 2;
 
 /**
- * What a date runs into among your important events (#114), said in plain
- * words on the card: "Eksamen dagen efter kl. 12:00: hold aftenen før fri
- * for sen aften og alkohol". Critical in red, the rest in amber. Your own
- * event's title, read on this phone; nothing for anyone else to see.
+ * What a date runs into among your important events (#114), said vaguely on
+ * the card ("Det ligner, at du har en eksamen dagen efter: hold aftenen før
+ * fri for sen aften og alkohol"), critical in red, the rest in amber. "Vis
+ * mig" says which event, and when, and has your calendar under the card go
+ * to it (`onShow`, the deck's to do). Your own event, read on this phone;
+ * nothing anyone else sees.
  */
 export default function ImportantClashes({
   clashes,
+  shown,
+  onShow,
   className,
 }: {
   clashes: ImportantClash[];
+  /** The warning shown (clashKey), or null. */
+  shown?: string | null;
+  /** Show this warning's event, or none (null). Without it, no "Vis mig". */
+  onShow?: (clash: ImportantClash | null) => void;
   className?: string;
 }) {
   const t = useT();
+  const { lang } = useLang();
   const words = t.importantClash;
   if (clashes.length === 0) return null;
 
@@ -31,28 +42,62 @@ export default function ImportantClashes({
       : `${items.slice(0, -1).join(", ")} ${words.and} ${items[items.length - 1]}`;
 
   return (
-    <ul className={cn("space-y-1", className)}>
+    <ul className={cn("space-y-1.5", className)}>
       {clashes.slice(0, SHOWN).map((c) => {
-        const time = c.event.allDay ? "" : formatTime(new Date(c.event.start).toISOString());
-        const when = words.when(c.daysAfter, time);
+        const key = clashKey(c);
+        const open = shown === key;
+        const what = words.kinds[c.event.label.kind];
+        const when = words.when(c.daysAfter);
         const text =
           c.kind === "nightBefore"
-            ? words.nightBefore(c.event.title, when, list(c.avoid.map((a) => words.avoid[a])))
+            ? words.nightBefore(what, when, list(c.avoid.map((a) => words.avoid[a])))
             : c.kind === "prepDayBefore"
-              ? words.prepDayBefore(c.event.title, when)
+              ? words.prepDayBefore(what, when)
               : c.kind === "prep"
-                ? words.prep(c.event.title, when)
-                : words.recovery(c.event.title, when);
+                ? words.prep(what, when)
+                : words.recovery(what, when);
+        const iso = new Date(c.event.start).toISOString();
+        const day = new Date(c.event.start).toLocaleDateString(LOCALE[lang], {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          timeZone: APP_TIME_ZONE,
+        });
         return (
           <li
-            key={`${c.event.title}-${c.event.start}`}
+            key={key}
             className={cn(
-              "flex items-start gap-1.5 text-sm font-medium",
+              "text-sm font-medium",
               c.severity === "critical" ? "text-red-700" : "text-amber-800",
             )}
           >
-            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>{text}</span>
+            <p className="flex items-start gap-1.5">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>
+                {text}
+                {onShow && (
+                  <>
+                    {" "}
+                    <button
+                      type="button"
+                      // The card is dragged by its whole face: a tap here
+                      // mustn't start a swipe.
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => onShow(open ? null : c)}
+                      aria-expanded={open}
+                      className="whitespace-nowrap font-semibold underline underline-offset-2"
+                    >
+                      {open ? words.hide : words.show}
+                    </button>
+                  </>
+                )}
+              </span>
+            </p>
+            <Collapse open={open}>
+              <p className="pl-[22px] pt-0.5 font-normal text-foreground">
+                {words.detail(c.event.title, day, c.event.allDay ? "" : formatTime(iso))}
+              </p>
+            </Collapse>
           </li>
         );
       })}

@@ -82,6 +82,9 @@ export interface ImportantClash {
   avoid: Effect[];
 }
 
+/** Which warning is shown, by its event: the same event is the same warning. */
+export const clashKey = (c: ImportantClash) => `${c.event.start}-${c.event.title}`;
+
 /** Whole local days from `a`'s day to `b`'s (DST days are 23 or 25 hours, hence round). */
 function daysBetween(a: number, b: number, timeZone: string): number {
   return Math.round((startOfDay(b, timeZone) - startOfDay(a, timeZone)) / (24 * HOUR_MS));

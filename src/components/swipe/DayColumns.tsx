@@ -72,6 +72,7 @@ export default function DayColumns({
   size,
   fitDay = false,
   corner,
+  focus,
 }: {
   /** The suggested date's local midnight: offset 0 shows the day before, it, and the day after. */
   home: number;
@@ -90,6 +91,12 @@ export default function DayColumns({
   fitDay?: boolean;
   /** What sits in the corner above the hours; the week number if nothing. */
   corner?: ReactNode;
+  /**
+   * One of your events to show (a warning's "Vis mig", #114): scrolled to,
+   * smoothly, and ringed. Its day is brought into view by `offset`. Given at
+   * all (even null), the days either side are drawn, so moving there slides.
+   */
+  focus?: { start: number; end: number } | null;
 }) {
   // Calendar colours are worked out in code, so they follow the theme here.
   const dark = useIsDark();
@@ -157,6 +164,28 @@ export default function DayColumns({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Shown an event (a warning's "Vis mig"): its time, in the middle of the
+  // view, scrolled to smoothly; shown none again, back to the suggested time.
+  // Not on opening (the effect above), and not when the whole day fits.
+  const focusStart = focus?.start ?? null;
+  const focusEnd = focus?.end ?? null;
+  const focused = useRef(false);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || fitDay) return;
+    if (focusStart === null && !focused.current) return;
+    focused.current = focusStart !== null;
+    const span =
+      focusStart !== null && focusEnd !== null
+        ? placeSpan(focusStart, focusEnd, startOfDay(focusStart, TZ), TZ)
+        : placeSpan(slot.start, slot.end, home, TZ);
+    const target =
+      span.height > 0.8 ? 8 * hourPx : (span.top + span.height / 2) * dayPx - el.clientHeight / 2;
+    el.scrollTo({ top: Math.max(0, target), behavior: reduceMotion ? "auto" : "smooth" });
+    // Only when what is shown changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusStart, focusEnd]);
+
   // The red line moves with the clock.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -167,7 +196,7 @@ export default function DayColumns({
   const nowTop = placeSpan(now, now + 1, today, TZ).top * dayPx;
 
   // The days drawn: those in view, and some either side to swipe into.
-  const beside = onOffset ? DRAWN_BESIDE : 0;
+  const beside = onOffset || focus !== undefined ? DRAWN_BESIDE : 0;
   const drawn = Array.from({ length: IN_VIEW + 2 * beside }, (_, i) => offset - 1 - beside + i);
   const dayOf = (k: number) => addDays(home, k, TZ);
   const inView = [offset - 1, offset, offset + 1].map(dayOf);
@@ -433,10 +462,18 @@ export default function DayColumns({
                       {blocks.map((b, i) => {
                         const rgb = calendar.colorOf(b.segment.calendarId);
                         const px = b.height * dayPx;
+                        const ringed =
+                          focusStart !== null &&
+                          focusEnd !== null &&
+                          b.segment.start.getTime() < focusEnd &&
+                          b.segment.end.getTime() > focusStart;
                         return (
                           <div
                             key={i}
-                            className="absolute overflow-clip rounded-[5px] ring-1 ring-card"
+                            className={cn(
+                              "absolute overflow-clip rounded-[5px] transition-shadow",
+                              ringed ? "z-[5] ring-2 ring-red-500" : "ring-1 ring-card",
+                            )}
                             style={{
                               top: b.top * dayPx + 1,
                               height: px - 2,

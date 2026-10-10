@@ -29,6 +29,7 @@ export default function CalendarStrip({
   calendar,
   onOpen,
   fit = false,
+  focus,
 }: {
   date: { start: string; end: string };
   slotLabel: string;
@@ -37,11 +38,26 @@ export default function CalendarStrip({
   onOpen: (from: DOMRect) => void;
   /** A computer: taller, beside the card, the whole day without scrolling. */
   fit?: boolean;
+  /**
+   * One of your events a warning is about ("Vis mig", #114): the days slide
+   * to it, the date kept in view beside it when it is a day or two away, and
+   * it is scrolled to and ringed. Null: back to the date.
+   */
+  focus?: { start: number; end: number } | null;
 }) {
   const t = useT();
   const box = useRef<HTMLDivElement>(null);
   const start = Date.parse(date.start);
   const end = Date.parse(date.end);
+  const home = startOfDay(start, TZ);
+  // Offset 0 shows the day before, the date and the day after: an event one
+  // or two days on stays beside the date, one further off takes the middle.
+  const gap = focus ? Math.round((startOfDay(focus.start, TZ) - home) / 86_400_000) : 0;
+  const offset = !focus
+    ? 0
+    : Math.abs(gap) <= 2
+      ? Math.sign(gap) * Math.max(0, Math.abs(gap) - 1)
+      : gap;
   const open = () => {
     if (box.current) onOpen(box.current.getBoundingClientRect());
   };
@@ -74,7 +90,9 @@ export default function CalendarStrip({
       style={{ height: fit ? "100%" : STRIP_PX }}
     >
       <DayColumns
-        home={startOfDay(start, TZ)}
+        home={home}
+        offset={offset}
+        focus={focus ?? null}
         slot={{ start, end }}
         slotLabel={slotLabel}
         calendar={calendar}

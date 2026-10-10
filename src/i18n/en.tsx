@@ -817,16 +817,54 @@ export const en: Messages = {
     yourAnswers: "Your answers",
   },
   importantClash: {
-    when: (daysAfter: number, time: string) =>
-      `${daysAfter <= 0 ? "the same day" : daysAfter === 1 ? "the day after" : `${daysAfter} days after`}${time ? ` at ${time}` : ""}`,
-    nightBefore: (title: string, when: string, avoid: string) =>
-      `${title} ${when}: keep the evening before free of ${avoid}`,
-    prepDayBefore: (title: string, when: string) =>
-      `${title} ${when}: the day before should be free`,
-    prep: (title: string, when: string) =>
-      `${title} ${when}: you'll likely need the days before to prepare`,
-    recovery: (title: string, when: string) =>
-      `${title} ${when}, and you'll likely need that day to recover`,
+    when: (daysAfter: number) =>
+      daysAfter <= 0
+        ? "the same day"
+        : daysAfter === 1
+          ? "the day after"
+          : `${daysAfter} days after`,
+    nightBefore: (what: string, when: string, avoid: string) =>
+      `Looks like you have ${what} ${when}: keep the evening before free of ${avoid}`,
+    prepDayBefore: (what: string, when: string) =>
+      `Looks like you have ${what} ${when}: the day before should be free`,
+    prep: (what: string, when: string) =>
+      `Looks like you have ${what} ${when}: you'll likely need the days before to prepare`,
+    recovery: (what: string, when: string) =>
+      `Looks like you have ${what} ${when}, and you'll likely need that day to recover`,
+    kinds: {
+      exam: "an exam",
+      deadline: "a deadline",
+      presentation: "a presentation",
+      interview: "a job interview",
+      lecture: "a class",
+      study: "study time",
+      work: "work",
+      shift: "a shift",
+      meeting: "a meeting",
+      appointment: "an appointment",
+      flight: "a flight",
+      travel: "a trip",
+      stay: "a stay away",
+      wedding: "a wedding",
+      funeral: "a funeral",
+      birthday: "a birthday",
+      party: "a party",
+      dinner: "a dinner",
+      social: "plans",
+      sport: "training",
+      competition: "a competition",
+      show: "an outing",
+      vacation: "a holiday",
+      family: "family plans",
+      chores: "an errand",
+      reminder: "something",
+      other: "something important",
+      unclear: "something important",
+    },
+    show: "Show me",
+    hide: "Hide",
+    detail: (title: string, day: string, time: string) =>
+      `${title}, ${day}${time ? ` at ${time}` : ""}`,
     avoid: {
       lateNight: "a late night",
       alcohol: "alcohol",

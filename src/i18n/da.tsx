@@ -853,15 +853,52 @@ export const da = {
   },
   /** Warnings on a date against your own important events (#114). */
   importantClash: {
-    when: (daysAfter: number, time: string) =>
-      `${daysAfter <= 0 ? "samme dag" : daysAfter === 1 ? "dagen efter" : `${daysAfter} dage efter`}${time ? ` kl. ${time}` : ""}`,
-    nightBefore: (title: string, when: string, avoid: string) =>
-      `${title} ${when}: hold aftenen før fri for ${avoid}`,
-    prepDayBefore: (title: string, when: string) => `${title} ${when}: dagen før bør være fri`,
-    prep: (title: string, when: string) =>
-      `${title} ${when}: du skal nok bruge dagene før på at forberede dig`,
-    recovery: (title: string, when: string) =>
-      `${title} ${when}, og du skal nok bruge den dag på at komme dig`,
+    when: (daysAfter: number) =>
+      daysAfter <= 0 ? "samme dag" : daysAfter === 1 ? "dagen efter" : `${daysAfter} dage efter`,
+    nightBefore: (what: string, when: string, avoid: string) =>
+      `Det ligner, at du har ${what} ${when}: hold aftenen før fri for ${avoid}`,
+    prepDayBefore: (what: string, when: string) =>
+      `Det ligner, at du har ${what} ${when}: dagen før bør være fri`,
+    prep: (what: string, when: string) =>
+      `Det ligner, at du har ${what} ${when}: du skal nok bruge dagene før på at forberede dig`,
+    recovery: (what: string, when: string) =>
+      `Det ligner, at du har ${what} ${when}, og du skal nok bruge den dag på at komme dig`,
+    /** What kind of event it is, said vaguely; the name is behind "Vis mig". */
+    kinds: {
+      exam: "en eksamen",
+      deadline: "en aflevering",
+      presentation: "en fremlæggelse",
+      interview: "en jobsamtale",
+      lecture: "undervisning",
+      study: "læsning",
+      work: "arbejde",
+      shift: "en vagt",
+      meeting: "et møde",
+      appointment: "en aftale",
+      flight: "et fly",
+      travel: "en rejse",
+      stay: "en overnatning",
+      wedding: "et bryllup",
+      funeral: "en begravelse",
+      birthday: "en fødselsdag",
+      party: "en fest",
+      dinner: "en middag",
+      social: "en aftale",
+      sport: "træning",
+      competition: "en konkurrence",
+      show: "en oplevelse",
+      vacation: "ferie",
+      family: "noget med familien",
+      chores: "et gøremål",
+      reminder: "noget",
+      other: "noget vigtigt",
+      unclear: "noget vigtigt",
+    },
+    show: "Vis mig",
+    hide: "Skjul",
+    /** "Corporate Finance eksamen, tirsdag 19. januar kl. 09:00" */
+    detail: (title: string, day: string, time: string) =>
+      `${title}, ${day}${time ? ` kl. ${time}` : ""}`,
     avoid: {
       lateNight: "sen aften",
       alcohol: "alkohol",

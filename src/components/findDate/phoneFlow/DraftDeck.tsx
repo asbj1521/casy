@@ -25,7 +25,7 @@ import { useLang, useT } from "@/i18n/lang";
 import type { EdgeWarning } from "@/lib/earlyMorning";
 import { impactOn } from "@/lib/eventImpact";
 import type { EventSettings } from "@/lib/eventSearch";
-import { importantClashes, type ImportantClash } from "@/lib/eventWarnings";
+import { clashKey, importantClashes, type ImportantClash } from "@/lib/eventWarnings";
 import { formatHeadline, nameList } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import {
@@ -125,6 +125,8 @@ export default function DraftDeck({
     importantClashes(impactOn(profile, date.slot, search, TZ), mine, TZ);
   // A yes to a date with a critical clash is asked once: the answer waiting, or null.
   const [confirmClash, setConfirmClash] = useState<EventResponse | null>(null);
+  // The warning whose event is shown ("Vis mig"): the strip below goes to it.
+  const [shownClash, setShownClash] = useState<ImportantClash | null>(null);
   const [exit, setExit] = useState<Exit>("accepted");
   const [calendarFrom, setCalendarFrom] = useState<DOMRect | null>(null);
   const marked = useMemo(
@@ -183,12 +185,13 @@ export default function DraftDeck({
       return;
     }
     setConfirmClash(null);
+    setShownClash(null);
     setExit(response);
     haptic("answer");
     onAnswer(current.slot.start, response);
   }
   const next = dates.slice(index + 1).find((d) => !answers[d.slot.start]);
-  const face = (date: FoundDate, position: number) => (
+  const face = (date: FoundDate, position: number, top = false) => (
     <DraftCard
       date={date}
       position={position}
@@ -198,6 +201,8 @@ export default function DraftDeck({
       groupSize={groupSize}
       warnings={warningsFor(date.slot)}
       clashes={clashesFor(date)}
+      shownClash={top && shownClash ? clashKey(shownClash) : null}
+      onShowClash={top ? setShownClash : undefined}
       calendar={calendar}
     />
   );
@@ -231,6 +236,7 @@ export default function DraftDeck({
           onClick={() => {
             setExit("back");
             setConfirmClash(null);
+            setShownClash(null);
             onUndo();
           }}
           disabled={!canUndo}
@@ -249,7 +255,7 @@ export default function DraftDeck({
         )}
         <AnimatePresence custom={exit} initial={false}>
           <SwipeCard key={current.slot.start} exitTo={exit} onAnswer={answer} draggable>
-            {face(current, index + 1)}
+            {face(current, index + 1, true)}
           </SwipeCard>
         </AnimatePresence>
       </div>
@@ -261,6 +267,7 @@ export default function DraftDeck({
           slotLabel={slotLabel}
           calendar={calendar}
           onOpen={setCalendarFrom}
+          focus={shownClash && { start: shownClash.event.start, end: shownClash.event.end }}
         />
       </div>
       {confirmClash ? (
@@ -311,6 +318,8 @@ function DraftCard({
   groupSize,
   warnings,
   clashes,
+  shownClash,
+  onShowClash,
   calendar,
 }: {
   date: FoundDate;
@@ -322,6 +331,9 @@ function DraftCard({
   warnings: EdgeWarning[];
   /** What the date gets in the way of among your important events (#114). */
   clashes: ImportantClash[];
+  /** The warning whose event is shown below (the card on top only). */
+  shownClash?: string | null;
+  onShowClash?: (clash: ImportantClash | null) => void;
   calendar: MyCalendarDays;
 }) {
   const t = useT();
@@ -355,7 +367,12 @@ function DraftCard({
           {t.swipe.clash(clash.label, clash.when, clash.more)}
         </p>
       )}
-      <ImportantClashes clashes={clashes} className="mt-2" />
+      <ImportantClashes
+        clashes={clashes}
+        shown={shownClash}
+        onShow={onShowClash}
+        className="mt-2"
+      />
       <EdgeWarningList warnings={warnings} className="mt-2" />
       {place.trim() && (
         <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
