@@ -71,7 +71,8 @@ describe("importantClashes", () => {
     expect(clash).toMatchObject({
       kind: "nightBefore",
       severity: "critical",
-      daysAfter: 0,
+      // Until 02:00 is still the evening before.
+      daysAfter: 1,
       avoid: ["lateNight", "alcohol"],
     });
     expect(clash.event.title).toBe("Eksamen");

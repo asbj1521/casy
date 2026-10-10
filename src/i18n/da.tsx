@@ -851,6 +851,28 @@ export const da = {
     moved: (date: string) => `Datoen er flyttet til ${date}.`,
     yourAnswers: "Dine svar",
   },
+  /** Warnings on a date against your own important events (#114). */
+  importantClash: {
+    when: (daysAfter: number, time: string) =>
+      `${daysAfter <= 0 ? "samme dag" : daysAfter === 1 ? "dagen efter" : `${daysAfter} dage efter`}${time ? ` kl. ${time}` : ""}`,
+    nightBefore: (title: string, when: string, avoid: string) =>
+      `${title} ${when}: hold aftenen før fri for ${avoid}`,
+    prepDayBefore: (title: string, when: string) => `${title} ${when}: dagen før bør være fri`,
+    prep: (title: string, when: string) =>
+      `${title} ${when}: du skal nok bruge dagene før på at forberede dig`,
+    recovery: (title: string, when: string) =>
+      `${title} ${when}, og du skal nok bruge den dag på at komme dig`,
+    avoid: {
+      lateNight: "sen aften",
+      alcohol: "alkohol",
+      travel: "lang rejse",
+      exercise: "hård træning",
+    },
+    and: "og",
+    confirm: "Datoen går ud over noget vigtigt for dig. Vil du svare ja alligevel?",
+    confirmYes: "Ja alligevel",
+    confirmNo: "Tilbage",
+  },
   /** What Casy's AI expects a planned event to involve (#113), for admins while it is tested. */
   eventImpact: {
     toggle: "Casys vurdering",

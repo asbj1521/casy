@@ -14,6 +14,7 @@ import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useDecidingRefresh } from "@/hooks/useDecidingRefresh";
+import { useLabelledEvents } from "@/hooks/useEventLabels";
 import { useMyCalendarDays, type MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { TODAY } from "@/hooks/useDateSearch";
 import { eventTitle } from "@/i18n/eventTitle";
@@ -25,6 +26,8 @@ import {
   formatTime,
   nameList,
 } from "@/lib/format";
+import { impactOn } from "@/lib/eventImpact";
+import { importantClashes, type ImportantClash } from "@/lib/eventWarnings";
 import { haptic } from "@/lib/haptics";
 import { daysUntil } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
@@ -38,6 +41,7 @@ import {
 import { APP_TIME_ZONE, dayOf, startOfDay } from "@/lib/zone";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 import { clashesOn } from "@/components/swipe/clash";
+import ImportantClashes from "@/components/swipe/ImportantClashes";
 import { AnswerButtons, AnswerIcon, SwipeCard, type Exit } from "@/components/swipe/SwipeCard";
 
 const TZ = APP_TIME_ZONE;
@@ -69,6 +73,10 @@ export default function DateDeck({
   const userId = useSignedInUser().id;
   const queryClient = useQueryClient();
   const calendar = useMyCalendarDays();
+  // Your important events, to warn about on each date (#114; the app only).
+  const mine = useLabelledEvents();
+  const clashesFor = (d: CandidateDate) =>
+    importantClashes(impactOn(event.impact, d, event.settings, TZ), mine, TZ);
   // One "now" for the whole visit, so a date beginning mid-swipe doesn't
   // reshuffle the stack under the thumb.
   const [now] = useState(() => Date.now());
@@ -133,9 +141,19 @@ export default function DateDeck({
   // asked first; and once moved, the new date is said.
   const [confirmMove, setConfirmMove] = useState(false);
   const [moved, setMoved] = useState<string | null>(null);
+  // A yes to a date that gets in the way of something critical of yours
+  // (#114) is asked once: the answer waiting for that, or null.
+  const [confirmClash, setConfirmClash] = useState<EventResponse | null>(null);
 
   function answer(response: EventResponse, confirmed = false) {
     if (!current) return;
+    const risky =
+      response !== "declined" && clashesFor(current).some((c) => c.severity === "critical");
+    if (risky && !confirmed) {
+      setConfirmClash(response);
+      return;
+    }
+    setConfirmClash(null);
     const movesDate =
       event.status === "scheduled" &&
       event.currentDate?.id === current.id &&
@@ -155,6 +173,7 @@ export default function DateDeck({
   function back(to = index - 1) {
     if (to < 0) return;
     setConfirmMove(false);
+    setConfirmClash(null);
     setExit("back");
     setIndex(to);
   }
@@ -283,6 +302,7 @@ export default function DateDeck({
                     total={dates.length}
                     yours={answerOf(dates[index + 1])}
                     calendar={calendar}
+                    clashes={clashesFor(dates[index + 1])}
                   />
                 </div>
               )}
@@ -295,6 +315,7 @@ export default function DateDeck({
                     total={dates.length}
                     yours={answerOf(current)}
                     calendar={calendar}
+                    clashes={clashesFor(current)}
                   />
                 </SwipeCard>
               </AnimatePresence>
@@ -335,6 +356,12 @@ export default function DateDeck({
                   onCancel={() => setConfirmMove(false)}
                   className="mx-4 my-3"
                 />
+              ) : confirmClash ? (
+                <ClashConfirm
+                  onConfirm={() => answer(confirmClash, true)}
+                  onCancel={() => setConfirmClash(null)}
+                  className="mx-4 my-3"
+                />
               ) : (
                 <AnswerButtons onAnswer={answer} screen />
               )}
@@ -348,6 +375,12 @@ export default function DateDeck({
                   <MoveConfirm
                     onConfirm={() => answer("declined", true)}
                     onCancel={() => setConfirmMove(false)}
+                    className="mt-3"
+                  />
+                ) : confirmClash ? (
+                  <ClashConfirm
+                    onConfirm={() => answer(confirmClash, true)}
+                    onCancel={() => setConfirmClash(null)}
                     className="mt-3"
                   />
                 ) : (
@@ -398,6 +431,7 @@ function CardFace({
   total,
   yours,
   calendar,
+  clashes,
 }: {
   event: VoteEvent;
   date: CandidateDate;
@@ -405,6 +439,8 @@ function CardFace({
   total: number;
   yours: EventResponse | undefined;
   calendar: MyCalendarDays;
+  /** What the date gets in the way of among your important events (#114). */
+  clashes: ImportantClash[];
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -432,6 +468,7 @@ function CardFace({
           {t.swipe.clash(clash.label, clash.when, clash.more)}
         </p>
       )}
+      <ImportantClashes clashes={clashes} className="mt-2" />
       <PlaceNote event={event} readOnly className="mt-3" />
 
       <div className="mt-auto pt-3">
@@ -615,6 +652,30 @@ function DoneView({
  * Asked before "I can't" on a vote's decided date, which moves it for
  * everyone: Casy then decides again from everyone's answers.
  */
+/** "Answer yes anyway?" before a yes to a date with a critical clash (#114). */
+function ClashConfirm({
+  onConfirm,
+  onCancel,
+  className,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  className?: string;
+}) {
+  const t = useT();
+  return (
+    <ConfirmPanel
+      className={className}
+      message={t.importantClash.confirm}
+      confirmLabel={t.importantClash.confirmYes}
+      cancelLabel={t.importantClash.confirmNo}
+      busy={false}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
+  );
+}
+
 function MoveConfirm({
   onConfirm,
   onCancel,

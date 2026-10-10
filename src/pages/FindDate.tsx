@@ -575,11 +575,11 @@ export default function FindDate() {
   const sentTitle = name.trim() || storedEventTitle(fallbackTitleId(search));
   // What the event is likely to cause (#113): asked in the background while
   // it is set up, for a real group only, and sent with the dates.
-  const profile = useEventProfile(
+  const profileFor =
     user && activeGroup && !activeGroup.isExample
       ? profileInput(search, sentTitle, extras.place, extras.note)
-      : null,
-  );
+      : null;
+  const profile = useEventProfile(profileFor);
   // Waiting (briefly) for that profile before sending.
   const [preparing, setPreparing] = useState(false);
   const suggest = useMutation({
@@ -1006,6 +1006,7 @@ export default function FindDate() {
               extras={extras}
               onExtras={updateExtras}
               notes={notes.length > 0 ? notes : null}
+              profileInput={profileFor}
             />
           )}
         </FlowShell>

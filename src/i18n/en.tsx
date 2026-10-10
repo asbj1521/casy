@@ -816,6 +816,28 @@ export const en: Messages = {
     moved: (date: string) => `The date has moved to ${date}.`,
     yourAnswers: "Your answers",
   },
+  importantClash: {
+    when: (daysAfter: number, time: string) =>
+      `${daysAfter <= 0 ? "the same day" : daysAfter === 1 ? "the day after" : `${daysAfter} days after`}${time ? ` at ${time}` : ""}`,
+    nightBefore: (title: string, when: string, avoid: string) =>
+      `${title} ${when}: keep the evening before free of ${avoid}`,
+    prepDayBefore: (title: string, when: string) =>
+      `${title} ${when}: the day before should be free`,
+    prep: (title: string, when: string) =>
+      `${title} ${when}: you'll likely need the days before to prepare`,
+    recovery: (title: string, when: string) =>
+      `${title} ${when}, and you'll likely need that day to recover`,
+    avoid: {
+      lateNight: "a late night",
+      alcohol: "alcohol",
+      travel: "a long journey",
+      exercise: "hard exercise",
+    },
+    and: "and",
+    confirm: "This date gets in the way of something important to you. Answer yes anyway?",
+    confirmYes: "Yes, anyway",
+    confirmNo: "Back",
+  },
   eventImpact: {
     toggle: "Casy's read",
     effects: {

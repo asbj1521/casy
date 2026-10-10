@@ -1,21 +1,31 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 import { CalendarRange, ChevronDown, Hourglass, Loader2, MapPin, RotateCcw } from "lucide-react";
 
 import type { EventResponse } from "@/api/events";
+import type { EventToProfile } from "@/api/eventProfile";
 import Dropdown from "@/components/Dropdown";
 import EdgeWarningList from "@/components/EdgeWarningList";
 import CalendarSheet from "@/components/swipe/CalendarSheet";
 import CalendarStrip from "@/components/swipe/CalendarStrip";
 import { clashesOn } from "@/components/swipe/clash";
+import ImportantClashes from "@/components/swipe/ImportantClashes";
 import { AnswerButtons, AnswerIcon, SwipeCard, type Exit } from "@/components/swipe/SwipeCard";
 import YourTime from "@/components/time/YourTime";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
+import { useAuth } from "@/context/auth";
+import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { TODAY } from "@/hooks/useDateSearch";
+import { useLabelledEvents } from "@/hooks/useEventLabels";
+import { eventProfileQuery } from "@/hooks/useEventProfile";
 import { useMyCalendarDays, type MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { useLang, useT } from "@/i18n/lang";
 import type { EdgeWarning } from "@/lib/earlyMorning";
+import { impactOn } from "@/lib/eventImpact";
 import type { EventSettings } from "@/lib/eventSearch";
+import { importantClashes, type ImportantClash } from "@/lib/eventWarnings";
 import { formatHeadline, nameList } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import {
@@ -32,6 +42,8 @@ import type { TimeSlot } from "@/types";
 import FieldRow, { ROW_PICK } from "./FieldRow";
 
 const TZ = APP_TIME_ZONE;
+/** The query key's stand-in while there is no event to ask about (the query is off then). */
+const NO_INPUT = {} as EventToProfile;
 
 /** Your answer to a date before it is sent: "can't" removes it instead. */
 export type DraftAnswer = "accepted" | "maybe";
@@ -64,6 +76,7 @@ export default function DraftDeck({
   extras,
   onExtras,
   notes,
+  profileInput,
 }: {
   /** Why there is nothing to swipe yet: calendars loading, or none to search. */
   waiting: { text: string; loading: boolean } | null;
@@ -92,10 +105,26 @@ export default function DraftDeck({
   onExtras: (patch: Partial<EventExtras>) => void;
   /** What else to say under the summary: who checks dates by hand, how sending went. */
   notes: ReactNode;
+  /** What the event's profile is asked from (#113), or null: not a real event yet. */
+  profileInput: EventToProfile | null;
 }) {
   const t = useT();
   const words = t.schedulerFlow;
   const calendar = useMyCalendarDays();
+  // The event's profile, as the scheduler asked for it (#113): usually
+  // waiting in the cache by now. With your important events, what each date
+  // gets in the way of (#114; the app only).
+  const { user } = useAuth();
+  const aiOn = useAiAllowed();
+  const { data: profile } = useQuery({
+    ...eventProfileQuery(user?.id ?? "", profileInput ?? NO_INPUT),
+    enabled: aiOn && !!user && !!profileInput,
+  });
+  const mine = useLabelledEvents();
+  const clashesFor = (date: FoundDate) =>
+    importantClashes(impactOn(profile, date.slot, search, TZ), mine, TZ);
+  // A yes to a date with a critical clash is asked once: the answer waiting, or null.
+  const [confirmClash, setConfirmClash] = useState<EventResponse | null>(null);
   const [exit, setExit] = useState<Exit>("accepted");
   const [calendarFrom, setCalendarFrom] = useState<DOMRect | null>(null);
   const marked = useMemo(
@@ -145,8 +174,15 @@ export default function DraftDeck({
     );
   }
 
-  function answer(response: EventResponse) {
+  function answer(response: EventResponse, confirmed = false) {
     if (!current) return;
+    const risky =
+      response !== "declined" && clashesFor(current).some((c) => c.severity === "critical");
+    if (risky && !confirmed) {
+      setConfirmClash(response);
+      return;
+    }
+    setConfirmClash(null);
     setExit(response);
     haptic("answer");
     onAnswer(current.slot.start, response);
@@ -161,6 +197,7 @@ export default function DraftDeck({
       place={place}
       groupSize={groupSize}
       warnings={warningsFor(date.slot)}
+      clashes={clashesFor(date)}
       calendar={calendar}
     />
   );
@@ -193,6 +230,7 @@ export default function DraftDeck({
           type="button"
           onClick={() => {
             setExit("back");
+            setConfirmClash(null);
             onUndo();
           }}
           disabled={!canUndo}
@@ -225,7 +263,19 @@ export default function DraftDeck({
           onOpen={setCalendarFrom}
         />
       </div>
-      <AnswerButtons onAnswer={answer} screen />
+      {confirmClash ? (
+        <ConfirmPanel
+          className="my-3"
+          message={t.importantClash.confirm}
+          confirmLabel={t.importantClash.confirmYes}
+          cancelLabel={t.importantClash.confirmNo}
+          busy={false}
+          onConfirm={() => answer(confirmClash, true)}
+          onCancel={() => setConfirmClash(null)}
+        />
+      ) : (
+        <AnswerButtons onAnswer={answer} screen />
+      )}
       {Object.keys(answers).length === 0 && !anyRemoved && (
         <p className="px-2 text-center text-xs text-muted-foreground">{words.deckHint}</p>
       )}
@@ -260,6 +310,7 @@ function DraftCard({
   place,
   groupSize,
   warnings,
+  clashes,
   calendar,
 }: {
   date: FoundDate;
@@ -269,6 +320,8 @@ function DraftCard({
   place: string;
   groupSize: number;
   warnings: EdgeWarning[];
+  /** What the date gets in the way of among your important events (#114). */
+  clashes: ImportantClash[];
   calendar: MyCalendarDays;
 }) {
   const t = useT();
@@ -302,6 +355,7 @@ function DraftCard({
           {t.swipe.clash(clash.label, clash.when, clash.more)}
         </p>
       )}
+      <ImportantClashes clashes={clashes} className="mt-2" />
       <EdgeWarningList warnings={warnings} className="mt-2" />
       {place.trim() && (
         <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">

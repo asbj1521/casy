@@ -31,6 +31,11 @@ import { startOfDay } from "@/lib/zone";
 const HOUR_MS = 3_600_000;
 /** How close before one of your events counts as its night before. */
 export const NIGHT_BEFORE_MS = 36 * HOUR_MS;
+/**
+ * A night out ending before this hour belongs to the evening it began: a
+ * julefrokost until 02:00 is the evening before the exam, not "the same day".
+ */
+export const NIGHT_ENDS_HOUR = 6;
 /** At most this long, and light, is small enough for the day before a critical event. */
 export const SMALL_MS = 2 * HOUR_MS;
 /** From this long, an event without a profile counts as big. */
@@ -68,7 +73,10 @@ export interface ImportantClash {
   /** Critical: worth asking before a yes. A warning: said, not asked. */
   severity: "critical" | "warning";
   event: LabelledEvent;
-  /** Calendar days from the planned event's last day to your event's day. */
+  /**
+   * Calendar days from the planned event's last day to your event's day; a
+   * night ending before NIGHT_ENDS_HOUR counts as the day it began.
+   */
   daysAfter: number;
   /** For the night before: what to keep clear of. */
   avoid: Effect[];
@@ -104,7 +112,7 @@ export function importantClashes(
   mine: LabelledEvent[],
   timeZone: string,
 ): ImportantClash[] {
-  const lastDay = impact.end - 1;
+  const lastDay = impact.end - 1 - NIGHT_ENDS_HOUR * HOUR_MS;
   const clashes: ImportantClash[] = [];
   for (const event of mine) {
     const { label } = event;

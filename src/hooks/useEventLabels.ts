@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { calendarBusyQuery } from "@/api/calendars";
@@ -23,11 +23,12 @@ import {
   type LabelBook,
   type StoredLabel,
 } from "@/lib/eventLabels";
+import { labelledEvents, type LabelledEvent } from "@/lib/eventWarnings";
 import { isNativeApp } from "@/lib/nativeApp";
 import { phoneConnectionId, phoneEventDetailsQuery } from "@/lib/phoneCalendar";
 
 /** The labels kept on this phone, read once and then kept up to date in the cache. */
-function labelBookQuery(userId: string) {
+export function labelBookQuery(userId: string) {
   return queryOptions({
     queryKey: ["event-labels", userId],
     queryFn: () => readLabelBook(userId),
@@ -188,4 +189,28 @@ export function useRelabel(calendarExternalId: string, event: EventToLabel) {
       queryClient.setQueryData(labelBookQuery(userId).queryKey, book);
     },
   });
+}
+
+const NONE: LabelledEvent[] = [];
+
+/**
+ * Your own events with their labels, for the common-sense warnings (#114):
+ * this phone's events, read on the phone, paired with the labels kept on it.
+ * Empty on the website, without a phone connection, and for anyone who
+ * isn't an admin or AI tester; never sent anywhere.
+ */
+export function useLabelledEvents(): LabelledEvent[] {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+  const tester = useAiTester();
+  const on = isNativeApp && !!userId && tester && !!phoneConnectionId(userId);
+  const { data: events } = useQuery({
+    ...phoneEventDetailsQuery(userId, SEARCH_WINDOW),
+    enabled: on,
+  });
+  const { data: book } = useQuery({ ...labelBookQuery(userId), enabled: on });
+  return useMemo(
+    () => (on && events && book ? labelledEvents(events, book) : NONE),
+    [on, events, book],
+  );
 }
