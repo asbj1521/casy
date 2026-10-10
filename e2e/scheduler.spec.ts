@@ -420,7 +420,11 @@ async function pickOnWheel(page: Page, current: string, label: string) {
     .getByRole("button", { name: current, exact: true })
     .filter({ visible: true });
   await trigger.click();
-  await page.getByText(label, { exact: true }).filter({ visible: true }).first().click();
+  // The wheel repeats its options 15 times and opens on the middle repeat
+  // (WheelPicker). Click the copy there, beside the current value: the first
+  // copy is far above, and scrolling to it makes the wheel recentre itself,
+  // which on a busy machine can take the click away.
+  await page.getByText(label, { exact: true }).filter({ visible: true }).nth(7).click();
   await expect(page.getByRole("button", { name: label, exact: true }).first()).toBeVisible();
   await page.keyboard.press("Escape");
 }
