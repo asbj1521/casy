@@ -1,0 +1,25 @@
+{
+  "now": "2026-10-10T12:00:00+02:00",
+  "phrasings": [
+    {
+      "id": "julefrokost",
+      "lang": "da",
+      "text": "julefrokost med holdet og så videre i byen bagefter",
+      "expect": {
+        "durationMinutes": {
+          "oneOf": [480, 510, 540, 570, 600, 630, 660, 690, 720]
+        }
+      }
+    },
+    {
+      "id": "fredagsbar",
+      "lang": "da",
+      "text": "skal vi tage en fredagsøl efter arbejde"
+    },
+    {
+      "id": "hygge",
+      "lang": "da",
+      "text": "lidt hygge snart?"
+    }
+  ]
+}

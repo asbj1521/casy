@@ -6,7 +6,7 @@
  * every run costs a little (cents) and needs the API key.
  *
  *   ANTHROPIC_API_KEY=... deno run --node-modules-dir=none --allow-net --allow-env --allow-read \
- *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile]
+ *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile | occasions]
  *
  * The cases are invented: the repo is public, so no real calendar names,
  * titles or descriptions belong in them. An expected value may be
@@ -46,8 +46,11 @@ import {
   PLAN_SCHEMA,
   PLAN_SYSTEM_PROMPT,
   planFromAnswer,
+  searchMonths,
   type AiPlan,
 } from "../functions/_shared/planAi.ts";
+import { STRAIN, type Strain } from "../functions/_shared/eventVocabulary.ts";
+import { type Occasion, usableOccasions } from "../functions/_shared/occasions.ts";
 
 const client = new Anthropic();
 const here = new URL(".", import.meta.url);
@@ -381,12 +384,153 @@ async function eventProfile(): Promise<Result[]> {
 }
 
 // ---------------------------------------------------------------------------
+// The occasions glossary (#123): every checked occasion asked of each skill
+// by its usual name, plus the phrasings in occasions.json, each expected to
+// come out as the glossary says (within a step, where a value is a judgement).
+
+const near = (n: number, step: number) => ({ oneOf: [n - step, n, n + step] });
+const nearStrain = (s: Strain) => ({
+  oneOf: STRAIN.filter((_, i) => Math.abs(i - STRAIN.indexOf(s)) <= 1),
+});
+
+/** The next run of an occasion's months among the months searched. */
+function monthsFor(o: Occasion, nowMs: number): { from: string; to: string } | null {
+  const keys = searchMonths(nowMs).map((m) => m.key);
+  const inSeason = (k: string) => o.inMonths!.includes(Number(k.slice(5)));
+  const first = keys.findIndex(inSeason);
+  if (first < 0) return null;
+  let last = first;
+  while (last + 1 < keys.length && inSeason(keys[last + 1])) last++;
+  return { from: keys[first], to: keys[last] };
+}
+
+/** What Planlæg med AI should make of an occasion. */
+function planExpect(o: Occasion, nowMs: number): PlanCase["expect"] {
+  if (o.vague) return { asks: true };
+  const expect: PlanCase["expect"] = { kind: o.plan };
+  if (o.plan === "meeting") {
+    if (o.start === "any") expect.anyTime = true;
+    else if (o.start !== undefined) expect.startHour = near(o.start, 1);
+    if (o.minutes) expect.durationMinutes = near(o.minutes, 30);
+    if (o.onWeekdays) expect.weekdays = o.onWeekdays;
+  } else {
+    if (o.days) expect.days = near(o.days, 1);
+    if (o.startWeekday !== undefined) expect.startWeekday = o.startWeekday;
+  }
+  if (o.inMonths) expect.months = monthsFor(o, nowMs);
+  return expect;
+}
+
+function planFailures(plan: AiPlan | null, expect: PlanCase["expect"], stop: unknown): string[] {
+  if (!plan) return [`no plan (stop_reason ${stop})`];
+  const failures: string[] = [];
+  for (const [field, expected] of Object.entries(expect)) {
+    const actual = field === "asks" ? plan.questions.length > 0 : plan[field as keyof AiPlan];
+    if (!matches(actual, expected)) {
+      failures.push(
+        `${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+      );
+    }
+  }
+  return failures;
+}
+
+async function occasions(): Promise<Result[]> {
+  const { now, phrasings } = (await load("occasions.json")) as {
+    now: string;
+    /** How people actually say an occasion, checked like its name, with `expect` overriding fields. */
+    phrasings: { id: string; lang: "da" | "en"; text: string; expect?: PlanCase["expect"] }[];
+  };
+  const nowMs = Date.parse(now);
+  const checked = usableOccasions();
+  const byId = new Map(checked.map((o) => [o.id, o]));
+  const unknown = phrasings.filter((p) => !byId.has(p.id)).map((p) => p.id);
+  if (unknown.length > 0) throw new Error(`occasions.json names unknown or draft ids: ${unknown}`);
+
+  const asPlan = [
+    ...checked.map((o) => ({ o, lang: "da" as const, text: o.da[0], expect: {} })),
+    ...phrasings.map((p) => ({
+      o: byId.get(p.id)!,
+      lang: p.lang,
+      text: p.text,
+      expect: p.expect ?? {},
+    })),
+  ];
+  const plans = await pool(asPlan, 4, async ({ o, lang, text, expect }) => {
+    const { stop, text: answer } = await ask(
+      skillRequest({
+        system: PLAN_SYSTEM_PROMPT,
+        message: buildPlanMessage({ text, earlier: [], current: null }, lang, nowMs),
+        schema: PLAN_SCHEMA,
+      }),
+    );
+    const plan = planFromAnswer(stop, answer, nowMs);
+    return {
+      name: `plan: ${text} [${o.id}]`,
+      failures: planFailures(plan, { ...planExpect(o, nowMs), ...expect }, stop),
+    };
+  });
+
+  const profiles = await pool(checked, 4, async (o) => {
+    const event = readProfileRequest({
+      title: o.da[0],
+      kind: o.plan,
+      startMinute: typeof o.start === "number" ? o.start * 60 : -1,
+      minutes: o.minutes ?? 120,
+      days: o.days ?? 1,
+    })!;
+    const { stop, text } = await ask(
+      skillRequest({
+        system: PROFILE_SYSTEM_PROMPT,
+        message: buildProfileMessage(event, "da"),
+        schema: PROFILE_SCHEMA,
+        maxTokens: 2000,
+      }),
+    );
+    const profile = profileFromAnswer(stop, text);
+    const name = `profile: ${o.da[0]} [${o.id}]`;
+    if (!profile) return { name, failures: [`no profile (stop_reason ${stop})`] };
+    const failures = profileFailures(
+      profile,
+      o.vague
+        ? { noEffects: true, confidence: "low" }
+        : {
+            effectsIncludes: o.effects,
+            ...(o.effects.length === 0 ? { noEffects: true } : {}),
+            runsLate: o.runsLate,
+            strain: nearStrain(o.strain),
+          },
+    );
+    if (failures.length > 0) failures.push(`reason: ${profile.reason}`);
+    return { name, failures };
+  });
+
+  const labels = await labelCases(
+    "da",
+    checked.map((o) => ({
+      event: {
+        title: o.da[0],
+        calendar: "Kalender",
+        startMinute: typeof o.start === "number" ? o.start * 60 : 18 * 60,
+        minutes: o.minutes ?? 120,
+        ...(o.plan === "meeting" ? {} : { allDay: true, days: o.days ?? 1 }),
+      },
+      expect: o.vague ? { confidence: "low" } : { kind: o.label },
+    })),
+    [],
+    "",
+  );
+  return [...plans, ...profiles, ...labels.map((r) => ({ ...r, name: `label: ${r.name}` }))];
+}
+
+// ---------------------------------------------------------------------------
 
 const SETS: Record<string, () => Promise<Result[]>> = {
   "plan-ai": planAi,
   "calendar-categorize": calendarCategorize,
   "event-label": eventLabel,
   "event-profile": eventProfile,
+  occasions,
 };
 const wanted = Deno.args[0] ? [Deno.args[0]] : Object.keys(SETS);
 for (const name of wanted) {

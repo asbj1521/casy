@@ -27,6 +27,7 @@ import {
   STRAIN,
   type Strain,
 } from "./eventVocabulary.ts";
+import { occasionsBlock } from "./occasions.ts";
 import { cleanText } from "./text.ts";
 
 export const MAX_TITLE_LENGTH = 100;
@@ -103,7 +104,11 @@ Describe:
 - confidence: high when the name, place or note say plainly what it is, medium for a reasonable reading, low when you are guessing. A vague name ("Hygge", "Ses", "Møde", initials) is low, with nothing in effects.
 - reason: one short line (at most ${MAX_REASON_LENGTH} characters), in the language asked for, saying what the event is likely to involve, from what you were given and nothing more. Don't repeat the name, and don't name people.
 
-Never make anything up. Use only the name, the place, the note and the timing. When in doubt, describe less: no effects, light strain, 0 days, low confidence. Never infer or mention health, religion, politics or sexuality.`;
+Never make anything up. Use only the name, the place, the note and the timing. When in doubt, describe less: no effects, light strain, 0 days, low confidence. Never infer or mention health, religion, politics or sexuality.
+
+When the name is an occasion in the list below, start from its effects, runs late, strain, recovery, outdoors and daylight, and change them only where the place, note or timing say otherwise (a fest that ends at 21 is no late night). An occasion the list calls vague gets low confidence and no effects.
+
+${occasionsBlock()}`;
 
 const LANGUAGE_NAMES = { da: "Danish", en: "English" } as const;
 

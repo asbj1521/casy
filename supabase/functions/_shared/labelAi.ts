@@ -26,6 +26,7 @@ import {
   STRAIN,
   type Strain,
 } from "./eventVocabulary.ts";
+import { occasionsBlock } from "./occasions.ts";
 import { cleanText } from "./text.ts";
 
 /** Events labelled in one call; the app sends more in further calls. */
@@ -146,7 +147,11 @@ Never infer or mention health. A doctor's, dentist's, psychologist's, physiother
 
 An event that occurs many times (a weekly lecture, a daily work block) is routine: rarely high, never critical, unless the title says otherwise (an exam is an exam however often it appears).
 
-Answer every event listed, once each, by its ref.`;
+Answer every event listed, once each, by its ref.
+
+When a title is an occasion in the list below, use its label as the kind, and its strain and recovery as a starting point. Importance, prep days and what to avoid before it still follow the rules above: the list says what an occasion is, not how much it matters to this person. An occasion the list calls vague is labelled as its list says, with low confidence.
+
+${occasionsBlock()}`;
 
 /** "all day", "all day, 3 days", or "09:00, 2 h 30 min". */
 export function describeTiming(event: EventToLabel): string {

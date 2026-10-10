@@ -12,6 +12,7 @@
  * picked before describing, and names the person mentions come back as
  * written, to be matched against the group's members in the browser.
  */
+import { occasionsBlock } from "./occasions.ts";
 import { cleanText } from "./text.ts";
 import { DEFAULT_ZONE } from "./timezones.ts";
 import type { Lang } from "./i18n.ts";
@@ -163,12 +164,12 @@ The text is often spoken and written out by speech recognition, so it can be ram
 The settings. A setting nothing was said about is left empty: "" for text, 0 for durationMinutes, days and atLeast, -1 for startWeekday, [] for lists.
 - kind: "meeting" for something on one day at a time of day (dinner, coffee, lunch, a game night, a film, a party). "trip" for several days that start on a set weekday (a weekend trip, a cabin weekend). "holiday" for several days that may start on any day (a holiday, a week in a summer house).
 - title: a short name for the event in the person's own language, at most 60 characters, such as "Middag" or "Hyttetur til Skagen".
-- start (meeting): the hour it starts, "0" to "23", Danish time, or "any" when the time of day doesn't matter and Casy may pick it. Typical when only a part of the day is named: morning (formiddag) "10", lunch (frokost) "12", afternoon (eftermiddag) "14", evening (aften) "18". Things that happen in the evening get an evening hour even when no time is said: dinner (middag) "18", a movie night or game night (filmaften, spilleaften) "19", a party (fest) "19", a julefrokost "17". A julefrokost is a Christmas party despite the name (frokost means lunch): it runs from the afternoon or evening into the night, never a lunch at 12, and "Christmas lunch" in English from a Dane means the same. Use "any" only for things that fit any time of day, such as coffee or a walk.
-- durationMinutes (meeting): 30 to 720, in steps of 30. When the person says when it ends, it is the time from start to end, past midnight when the end is earlier than the start: from 18 until 2 at night is 480. When an evening has several parts (dinner and then going out, a film and then a bar), it is one meeting from the first start to the last end. Typical when nothing is said: coffee 60, lunch 90, a film 150, dinner 180, a party 300, a julefrokost 420. Going out afterwards (i byen, bytur, videre i byen, going out, a night out) means it goes on past midnight: at least until 2 at night, so 480 or more from a 17 or 18 start.
-- weekdays (meeting): the days of the week it may fall on, 0 = Sunday, 1 = Monday ... 6 = Saturday. A weekend (weekend) is [6, 0], weekdays (hverdage) [1, 2, 3, 4, 5]. Empty when any day will do.
+- start (meeting): the hour it starts, "0" to "23", Danish time, or "any" when the time of day doesn't matter and Casy may pick it. Typical when only a part of the day is named: morning (formiddag) "10", lunch (frokost) "12", afternoon (eftermiddag) "14", evening (aften) "18". A named occasion starts at its usual hour from the occasions list below, "any" where the list says any time, even when no time is said. Use "any" only for things that fit any time of day, such as coffee or a walk.
+- durationMinutes (meeting): 30 to 720, in steps of 30. When the person says when it ends, it is the time from start to end, past midnight when the end is earlier than the start: from 18 until 2 at night is 480. When an evening has several parts (dinner and then going out, a film and then a bar), it is one meeting from the first start to the last end. Typical when nothing is said: the occasion's usual length from the list below. Going out afterwards (i byen, bytur, videre i byen, going out, a night out) means it goes on past midnight: at least until 2 at night, so 480 or more from a 17 or 18 start.
+- weekdays (meeting): the days of the week it may fall on, 0 = Sunday, 1 = Monday ... 6 = Saturday. A weekend (weekend) is [6, 0], weekdays (hverdage) [1, 2, 3, 4, 5]. An occasion whose days the list names (a fredagsbar is on a Friday) gets those days, listed in assumed. Empty when any day will do.
 - days (trip or holiday): how many days. A weekend trip is 2 or 3 days. A trip is at most 7 days, a holiday at most 30.
 - startWeekday (trip): the weekday it starts, 0 = Sunday ... 6 = Saturday. A weekend trip starts on Friday, 5.
-- monthsFrom and monthsTo: the first and last month to plan within, "YYYY-MM", only months from the list in the message. A season or a single date means its months: "in December" is 2026-12 to 2026-12 when that is in the list; "before Christmas" runs to December; "this summer" June to August. monthsFrom "any" only when the person says in words that any time of year will do; when they say nothing about when, leave both empty.
+- monthsFrom and monthsTo: the first and last month to plan within, "YYYY-MM", only months from the list in the message. A season or a single date means its months: "in December" is 2026-12 to 2026-12 when that is in the list; "before Christmas" runs to December; "this summer" June to August. An occasion whose months the list names (a julefrokost, Nov-Dec) gets the next run of those months from the list in the message, listed in assumed, unless the person says when. monthsFrom "any" only when the person says in words that any time of year will do; when they say nothing about when, leave both empty.
 - place and note: only what the person said about where, or what others should know that isn't already in the title, the place or the other settings (never the times, days or months again). Usually empty. Never made up.
 - people: names exactly as the person wrote them. without: people not to invite ("uden Peter", "not Anna"). optional: people welcome but not needed ("Peter må gerne komme"). required: people who must be there after all ("Peter skal alligevel med"). Never names that weren't written.
 - atLeast (meeting): how many must be able to come, when the person says so ("mindst 4", "at least 4").
@@ -178,9 +179,13 @@ How to answer:
 - Fill in what was said, and the typical value where a kind of event has an obvious one (and list it in assumed). Leave everything else empty.
 - When the message gives the settings so far, the person is adding to them or correcting them: return only what the new text changes, and leave everything it doesn't touch empty.
 - Ask a question only when the answer would change the dates a lot and no typical value is a safe guess, such as whether a weekend means one evening or a trip away. Never ask about something you can assume; assume it and list it. Never ask about the place, the note or people. At most 3 questions, each with 2 to 4 options. Each option's patch holds exactly the settings that option means, with the rest left empty.
-- When the text is clearly about meeting up but says nothing about what or how long ("vi skal ses snart", "let's hang out"), ask what kind of plan it is, with options such as an evening, a day trip or a weekend away.
+- When the text is clearly about meeting up but says nothing about what or how long ("vi skal ses snart", "let's hang out", or an occasion the list calls vague), ask what kind of plan it is, with options such as an evening, a day trip or a weekend away.
 - Write the title in the language the person wrote in. Write questions and option labels in the language the message names. Keep all of them short and plain. No emojis, and no dashes (– or —); use a comma or "to" instead.
-- If the text isn't about planning something, leave every setting empty and ask no questions.`;
+- If the text isn't about planning something, leave every setting empty and ask no questions.
+
+Use the occasions list for the kind of plan (meeting, trip or holiday), its usual start, length or days, and the weekdays and months that are part of it. Everything you take from it rather than from the text goes in assumed.
+
+${occasionsBlock()}`;
 
 // ---------------------------------------------------------------------------
 // The message: today, the months that can be planned, the language, and what
