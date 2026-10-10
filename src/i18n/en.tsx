@@ -1229,6 +1229,7 @@ export const en: Messages = {
       "calendar-categorize": "Sorting calendars",
       "event-label": "Labelling events",
       "event-relabel": "Corrected labels",
+      "event-profile": "Profiling planned events",
       earlier: "Before budgets per person",
     },
     healthStale: "No calendar has synced for over three hours. The hourly sync may have stopped.",

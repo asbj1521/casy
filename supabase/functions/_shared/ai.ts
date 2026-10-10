@@ -28,7 +28,8 @@ export const AI_MODEL = "claude-haiku-5-5";
 /** Every call together, per day in Danish time: the ceiling over all budgets. */
 export const GLOBAL_DAILY_AI_CALLS = 500;
 
-export type Skill = "plan-ai" | "calendar-categorize" | "event-label" | "event-relabel";
+export type Skill =
+  "plan-ai" | "calendar-categorize" | "event-label" | "event-relabel" | "event-profile";
 
 /**
  * Each skill's budget, and whether someone is waiting on the page (one quick
@@ -42,6 +43,8 @@ export const SKILLS: Record<Skill, { perPersonPerDay: number; waiting: boolean }
   "event-label": { perPersonPerDay: 20, waiting: false },
   // One event the person said was labelled wrong, with what they wrote.
   "event-relabel": { perPersonPerDay: 20, waiting: true },
+  // Once per event set up (cached per name, place, note and timing).
+  "event-profile": { perPersonPerDay: 40, waiting: true },
 };
 
 /**

@@ -517,6 +517,11 @@ verify_jwt = false
 # while #120 is open. Checks the caller's access token in code, like the rest.
 verify_jwt = false
 
+[functions.event-profile]
+# Profiles an event being planned with AI (#113), for anyone AI is on for.
+# Checks the caller's access token in code, like the rest.
+verify_jwt = false
+
 [functions.calendar-sync]
 # Two callers, both checked in code: the hourly pg_cron job by a shared secret
 # (x-sync-secret), and a signed-in person's "Sync now" by their login

@@ -1270,6 +1270,7 @@ export const da = {
       "calendar-categorize": "Sortering af kalendere",
       "event-label": "Vurdering af aftaler",
       "event-relabel": "Rettede vurderinger",
+      "event-profile": "Profil af planlagte aftaler",
       earlier: "Før budgetter pr. person",
     } as Record<string, string>,
     healthStale:
