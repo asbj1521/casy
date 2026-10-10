@@ -17,6 +17,15 @@
  * allowed values, and anything that can't be is dropped (labelsFromAnswer).
  */
 import { safeName } from "./categorizeAi.ts";
+import {
+  CONFIDENCE,
+  type Confidence,
+  EFFECTS,
+  type Effect,
+  MAX_RECOVERY_DAYS,
+  STRAIN,
+  type Strain,
+} from "./eventVocabulary.ts";
 import { cleanText } from "./text.ts";
 
 /** Events labelled in one call; the app sends more in further calls. */
@@ -58,27 +67,22 @@ export const KINDS = [
 export type Kind = (typeof KINDS)[number];
 
 export const IMPORTANCE = ["low", "normal", "high", "critical"] as const;
-export const STRAIN = ["none", "light", "moderate", "heavy"] as const;
-export const CONFIDENCE = ["low", "medium", "high"] as const;
-/** What shouldn't happen the evening or day before. */
-export const AVOID = ["lateNight", "alcohol", "travel", "exercise"] as const;
 
 export const MAX_PREP_DAYS = 14;
-export const MAX_RECOVERY_DAYS = 3;
 
 export interface EventLabel {
   kind: Kind;
   importance: (typeof IMPORTANCE)[number];
   /** Days before it that are needed to prepare (study, pack, rehearse). */
   prepDays: number;
-  /** What shouldn't happen the evening or day before it. */
-  avoidBefore: (typeof AVOID)[number][];
+  /** What shouldn't happen the evening or day before it (the shared vocabulary). */
+  avoidBefore: Effect[];
   /** Days after it that are likely needed to recover. */
   recoveryDays: number;
   /** How tiring the event itself is. */
-  strain: (typeof STRAIN)[number];
+  strain: Strain;
   /** How sure the label is: low whenever the title doesn't say. */
-  confidence: (typeof CONFIDENCE)[number];
+  confidence: Confidence;
   /** One line for the person, in their language: what to keep in mind. */
   reason: string;
 }
@@ -113,7 +117,7 @@ export const LABEL_SCHEMA = closed({
       kind: { type: "string", enum: [...KINDS] },
       importance: { type: "string", enum: [...IMPORTANCE] },
       prepDays: { type: "integer" },
-      avoidBefore: { type: "array", items: { type: "string", enum: [...AVOID] } },
+      avoidBefore: { type: "array", items: { type: "string", enum: [...EFFECTS] } },
       recoveryDays: { type: "integer" },
       strain: { type: "string", enum: [...STRAIN] },
       confidence: { type: "string", enum: [...CONFIDENCE] },
@@ -317,7 +321,7 @@ export function cleanLabel(raw: unknown): EventLabel | null {
     kind,
     importance: oneOf(IMPORTANCE, l.importance, "normal"),
     prepDays: int(l.prepDays, 0, MAX_PREP_DAYS, 0),
-    avoidBefore: AVOID.filter((a) => avoid.includes(a)),
+    avoidBefore: EFFECTS.filter((a) => avoid.includes(a)),
     recoveryDays: int(l.recoveryDays, 0, MAX_RECOVERY_DAYS, 0),
     strain: oneOf(STRAIN, l.strain, "light"),
     // Unclear is never more than a guess, whatever the model said.

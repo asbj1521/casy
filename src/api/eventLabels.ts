@@ -7,6 +7,7 @@
  * The types mirror supabase/functions/_shared/labelAi.ts.
  */
 import { currentMessages } from "@/i18n/current";
+import type { Confidence, Effect, Strain } from "@/lib/eventVocabulary";
 import { callFunction } from "@/lib/supabaseFunctions";
 
 export type LabelKind =
@@ -39,7 +40,8 @@ export type LabelKind =
   | "other"
   | "unclear";
 
-export type LabelAvoid = "lateNight" | "alcohol" | "travel" | "exercise";
+/** What shouldn't happen the day before (the shared vocabulary, #113). */
+export type LabelAvoid = Effect;
 
 export interface EventLabel {
   kind: LabelKind;
@@ -50,8 +52,8 @@ export interface EventLabel {
   avoidBefore: LabelAvoid[];
   /** Days after it likely needed to recover. */
   recoveryDays: number;
-  strain: "none" | "light" | "moderate" | "heavy";
-  confidence: "low" | "medium" | "high";
+  strain: Strain;
+  confidence: Confidence;
   /** One line, in the language Casy was used in when it was labelled. */
   reason: string;
 }
