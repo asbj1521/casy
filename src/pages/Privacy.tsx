@@ -79,7 +79,8 @@ const da: LegalCopy = {
               <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
               aftale det er, de datoer, der er tilbudt, hvem der foreslog den, et sted og en note,
               hvis den, der foreslog den, har skrevet dem, og hvad hver enkelt har svaret på hver
-              dato: kan, kan men helst ikke, eller kan ikke.
+              dato: kan, kan men helst ikke, eller kan ikke. Er AI slået til for den, der foreslog
+              den, også hvad Casys AI forventer, at aftalen indebærer (se Planlægning med AI).
             </li>
             <li>
               <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære
@@ -166,6 +167,15 @@ const da: LegalCopy = {
             e-mailadresser og links, og hvilken slags konto den ligger i: ikke hvornår du er
             optaget, og ikke dine aftaler. Casy gemmer kun kategorien, markeret som gættet, til du
             selv vælger en. En kategori, du selv har valgt eller fjernet, bliver aldrig ændret.
+          </p>
+          <p>
+            Foreslår du en aftale, beder Casy også Anthropic om at vurdere, hvad den typisk
+            indebærer for dem, der kommer: en sen aften, alkohol, en lang rejse eller hård træning,
+            hvor krævende den er, og om den er udendørs. Med det sendes aftalens navn, sted og note,
+            som du skrev dem, og hvornår på dagen den er, og hvor længe den varer: ikke datoerne,
+            ikke dine kalendere og ikke gruppen. Vurderingen gemmes med aftalen, så Casy kan advare
+            de inviterede, hvis en dato ville gå ud over noget vigtigt for dem, og den slettes
+            sammen med aftalen.
           </p>
           <p>
             Trykker du på Tal, er det din browser, der gør din tale til tekst: Chrome sender lyden
@@ -381,7 +391,8 @@ const en: LegalCopy = {
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
               is, the dates offered, who suggested it, a place and a note if whoever suggested it
               wrote them, and how each person answered each date: can, can but would rather not, or
-              can't.
+              can't. If AI is on for whoever suggested it, also what Casy's AI expects the event to
+              involve (see Planning with AI).
             </li>
             <li>
               <Term>Events in your calendar:</Term> which events Casy added to your primary
@@ -469,6 +480,15 @@ const en: LegalCopy = {
             addresses and links taken out, and the kind of account it is in: not when you are busy,
             and not your events. Casy keeps only the category, marked as guessed until you pick one
             yourself. A category you picked or removed yourself is never changed.
+          </p>
+          <p>
+            When you suggest an event, Casy also asks Anthropic what it usually involves for the
+            people going: a late night, alcohol, a long journey or hard exercise, how tiring it is,
+            and whether it is outdoors. Only the event&apos;s name, place and note as you wrote them
+            go with it, and the time of day and how long it lasts: not the dates, not your calendars
+            and not the group. The answer is kept with the event, so Casy can warn the people
+            invited when a date would get in the way of something important to them, and it is
+            deleted with the event.
           </p>
           <p>
             If you press Speak, your browser turns your speech into text: Chrome sends the sound to
