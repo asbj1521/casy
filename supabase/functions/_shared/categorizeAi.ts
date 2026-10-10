@@ -14,7 +14,6 @@
  */
 import { cleanText } from "./text.ts";
 
-export const CATEGORIZE_MODEL = "claude-haiku-5-5";
 /** Calendars sorted in one call; more wait for the next. */
 export const MAX_CALENDARS = 40;
 /** Sample titles per calendar, and how long each may be. */

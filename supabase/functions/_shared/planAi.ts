@@ -16,9 +16,6 @@ import { cleanText } from "./text.ts";
 import { DEFAULT_ZONE } from "./timezones.ts";
 import type { Lang } from "./i18n.ts";
 
-export const PLAN_MODEL = "claude-haiku-5-5";
-/** All calls together, per day in Danish time (claim_ai_call in the ai_calls migration). */
-export const DAILY_AI_CALLS = 50;
 /** The longest description, and the most earlier ones, one call takes. */
 export const MAX_DESCRIPTION_LENGTH = 500;
 export const MAX_EARLIER = 4;

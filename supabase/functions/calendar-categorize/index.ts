@@ -15,15 +15,14 @@
  *
  * Sample event titles are only used for the admin's own calendars while this
  * is tested (#120 decides it for everyone); anyone else's are ignored. Takes
- * one of the day's AI calls when there is something to sort.
+ * one of the person's daily calls for this skill (runSkill) when there is
+ * something to sort.
  */
-import Anthropic from "npm:@anthropic-ai/sdk@0.132.1";
-
 import { isAdminId } from "../_shared/admin.ts";
+import { runSkill } from "../_shared/ai.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import {
   buildCategorizeMessage,
-  CATEGORIZE_MODEL,
   CATEGORIZE_SCHEMA,
   CATEGORIZE_SYSTEM_PROMPT,
   categoriesFromAnswer,
@@ -31,9 +30,7 @@ import {
   readTitles,
   type CalendarToSort,
 } from "../_shared/categorizeAi.ts";
-import { requireEnv } from "../_shared/env.ts";
-import { HttpError, serve } from "../_shared/http.ts";
-import { DAILY_AI_CALLS } from "../_shared/planAi.ts";
+import { serve } from "../_shared/http.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 
 interface SourceRow {
@@ -71,54 +68,21 @@ serve("calendar-categorize", async (req, body) => {
     titles: titles.get(r.id) ?? [],
   }));
 
-  const { data: callId, error: claimError } = await db.rpc("claim_ai_call", {
-    p_daily_limit: DAILY_AI_CALLS,
+  const ids = calendars.map((c) => c.id);
+  const { result: categories } = await runSkill(db, caller.id, {
+    skill: "calendar-categorize",
+    system: CATEGORIZE_SYSTEM_PROMPT,
+    message: buildCategorizeMessage(calendars),
+    schema: CATEGORIZE_SCHEMA,
+    read: (stopReason, text) => categoriesFromAnswer(stopReason, text, ids),
+    // Never shown: the page sorts in the background and only logs a failure.
+    messages: {
+      usedUp: "Sorting calendars is used up for today.",
+      allUsedUp: "AI is used up for today.",
+      unavailable: "Sorting calendars isn't available right now.",
+      unreadable: "Sorting calendars didn't work this time.",
+    },
   });
-  if (claimError) throw claimError;
-  if (callId === null) throw new HttpError(429, "AI is used up for today.");
-
-  const client = new Anthropic({
-    apiKey: requireEnv("ANTHROPIC_API_KEY"),
-    // Nobody is waiting on it: the page sorts in the background.
-    maxRetries: 2,
-    timeout: 30_000,
-  });
-  let answer: Anthropic.Message;
-  try {
-    answer = await client.messages.create({
-      model: CATEGORIZE_MODEL,
-      max_tokens: 4000,
-      output_config: {
-        effort: "low",
-        format: { type: "json_schema", schema: CATEGORIZE_SCHEMA },
-      },
-      system: CATEGORIZE_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildCategorizeMessage(calendars) }],
-    });
-  } catch (err) {
-    console.error("calendar-categorize: Anthropic call failed", err);
-    throw new HttpError(503, "Sorting calendars isn't available right now.");
-  }
-
-  const { error: usageError } = await db
-    .from("ai_calls")
-    .update({
-      input_tokens: answer.usage.input_tokens,
-      output_tokens: answer.usage.output_tokens,
-    })
-    .eq("id", callId);
-  if (usageError) console.error("calendar-categorize: couldn't record usage", usageError);
-
-  const text = answer.content.find((block) => block.type === "text")?.text;
-  const categories = categoriesFromAnswer(
-    answer.stop_reason,
-    text,
-    calendars.map((c) => c.id),
-  );
-  if (!categories) {
-    console.warn(`calendar-categorize: no answer (stop_reason ${answer.stop_reason})`);
-    throw new HttpError(502, "Sorting calendars didn't work this time.");
-  }
 
   // One update per calendar, each only if nobody has set it meanwhile.
   const categorized: { calendarId: string; purpose: string | null }[] = [];

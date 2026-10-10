@@ -10,7 +10,7 @@ import { callFunction } from "@/lib/supabaseFunctions";
 
 export interface PlanAnswer {
   plan: AiPlan;
-  /** AI calls left today, for everyone together. */
+  /** Your AI planning calls left today (a budget per person, #111). */
   left: number;
 }
 
