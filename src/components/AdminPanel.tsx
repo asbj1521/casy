@@ -7,6 +7,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  Sparkles,
   Trash2,
   X,
   XCircle,
@@ -18,6 +19,7 @@ import {
   adminOverviewKey,
   adminOverviewQuery,
   adminRemoveMember,
+  adminSetAiAccess,
   adminSyncConnection,
   adminSyncUser,
   type AdminConnection,
@@ -234,6 +236,7 @@ function UserRow({
             {t.admin.joined(formatDate(user.createdAt, lang))}
             {user.lastSignInAt && t.admin.lastSignIn(formatDate(user.lastSignInAt, lang))}
           </p>
+          <AiAccess user={user} />
           {syncResult && (
             <p
               className={cn(
@@ -318,6 +321,58 @@ function UserRow({
         </ConfirmPanel>
       )}
     </li>
+  );
+}
+
+/**
+ * One person's AI switch (#111): admins always have it; anyone else gets it
+ * once switched on here, and loses it again with a second tap. Saves at once
+ * and refetches the overview.
+ */
+function AiAccess({ user }: { user: AdminUser }) {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const toggle = useMutation({
+    mutationFn: (allowed: boolean) => adminSetAiAccess(user.id, allowed),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
+  });
+  const pill =
+    "mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
+
+  if (user.ai === "admin") {
+    return (
+      <span className={cn(pill, "bg-secondary text-muted-foreground")}>
+        <Sparkles className="h-3 w-3" aria-hidden />
+        {t.admin.aiAdmin}
+      </span>
+    );
+  }
+  const on = user.ai === "allowed";
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => toggle.mutate(!on)}
+        disabled={toggle.isPending}
+        aria-pressed={on}
+        title={on ? t.admin.aiTurnOff(user.name) : t.admin.aiTurnOn(user.name)}
+        className={cn(
+          pill,
+          "border transition disabled:opacity-50",
+          on
+            ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+            : "bg-background text-muted-foreground hover:bg-secondary hover:text-foreground",
+        )}
+      >
+        {toggle.isPending ? (
+          <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+        ) : (
+          <Sparkles className="h-3 w-3" aria-hidden />
+        )}
+        {on ? t.admin.aiAllowed : t.admin.aiOff}
+      </button>
+      {toggle.isError && <span className="text-[11px] text-red-700">{toggle.error.message}</span>}
+    </span>
   );
 }
 

@@ -8,6 +8,7 @@
  * stored comes from the provider and whether a calendar_secrets row exists,
  * selecting nothing but its key.
  */
+import { aiAllowed } from "./aiAccess.ts";
 import type { Caller } from "./auth.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
@@ -63,6 +64,8 @@ export interface MyData {
   emailLookups: number;
   events: { invitedTo: number; suggested: number; answers: number; declined: number };
   calendarEntries: { added: number; deletedByYou: number };
+  /** Whether the AI features are on for you (#111), and your AI calls recorded (30 days). */
+  ai: { allowed: boolean; calls: number };
 }
 
 /** The full copy: everything above, and every stored busy time. */
@@ -228,6 +231,8 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     declinedDates,
     added,
     deleted,
+    aiCalls,
+    aiOn,
   ] = await Promise.all([
     sourceIds.length
       ? count(db.from("calendar_busy_cache").select("id", head).in("source_id", sourceIds))
@@ -281,6 +286,8 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
         .eq("profile_id", me)
         .not("gone_at", "is", null),
     ),
+    count(db.from("ai_calls").select("id", head).eq("profile_id", me)),
+    aiAllowed(db, me),
   ]);
   for (const r of [first, last, next]) if (r?.error) throw r.error;
 
@@ -327,6 +334,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     emailLookups: lookups,
     events: { invitedTo, suggested, answers, declined: declinedDates },
     calendarEntries: { added, deletedByYou: deleted },
+    ai: { allowed: aiOn, calls: aiCalls },
   };
 }
 

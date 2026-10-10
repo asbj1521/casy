@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminStatusQuery } from "@/api/admin";
 import { calendarsChanged, calendarStatusQuery, categorizeCalendars } from "@/api/calendars";
 import { useAuth } from "@/context/auth";
+import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { phoneSourceIds, sampleTitles, uncategorised } from "@/lib/autoCategorize";
 import { isNativeApp } from "@/lib/nativeApp";
 import { phoneConnectionId, readPhoneEventDetails } from "@/lib/phoneCalendar";
@@ -36,12 +37,14 @@ export function useAutoCategorize() {
     ...adminStatusQuery(userId),
     enabled: !!userId && isNativeApp,
   });
+  // Only for those the AI is on for (#111); the server refuses the rest anyway.
+  const aiOn = useAiAllowed();
   const asked = useRef(new Set<string>());
 
   useEffect(() => {
     // In the app, wait for whether titles may go along (remembered across
     // reloads, so usually known at once): asked once, a calendar isn't again.
-    if (!userId || !connections || (isNativeApp && adminPending)) return;
+    if (!userId || !aiOn || !connections || (isNativeApp && adminPending)) return;
     const pending = uncategorised(connections).filter((id) => !asked.current.has(id));
     if (pending.length === 0) return;
     for (const id of pending) asked.current.add(id);
@@ -62,5 +65,5 @@ export function useAutoCategorize() {
       const categorized = await categorizeCalendars(titles);
       if (categorized.length > 0) await calendarsChanged(queryClient);
     })().catch((err) => console.warn("sorting calendars failed", err));
-  }, [connections, isAdmin, adminPending, queryClient, userId]);
+  }, [connections, isAdmin, adminPending, aiOn, queryClient, userId]);
 }

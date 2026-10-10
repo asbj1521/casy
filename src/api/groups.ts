@@ -221,6 +221,13 @@ export async function declineInvitation(groupId: string): Promise<{ invitations:
   });
 }
 
+/** The signed-in person: what to call them, and whether AI is on for them (#111). */
+export interface WhoAmI {
+  name: string;
+  /** Missing in answers from before #111 (a remembered copy): read as off. */
+  aiAllowed?: boolean;
+}
+
 /** The cache key for the signed-in person's resolved display name. */
 export function whoAmIQueryKey(userId: string) {
   return ["whoami", userId] as const;
@@ -234,8 +241,8 @@ export function whoAmIQueryKey(userId: string) {
 export function whoAmIQuery(userId: string) {
   return queryOptions({
     queryKey: whoAmIQueryKey(userId),
-    queryFn: async (): Promise<{ name: string }> =>
-      await callFunction<{ name: string }>("groups", {
+    queryFn: async (): Promise<WhoAmI> =>
+      await callFunction<WhoAmI>("groups", {
         body: { action: "whoami" },
         errorMessage: currentMessages().api.loadProfile,
       }),

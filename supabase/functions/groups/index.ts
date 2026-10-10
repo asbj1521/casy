@@ -29,6 +29,7 @@
  * old, while someone plans for the group, so the search doesn't offer a time
  * filled since the hourly sync (_shared/groupRefresh.ts).
  */
+import { aiAllowed } from "../_shared/aiAccess.ts";
 import { type Caller, requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
@@ -523,7 +524,15 @@ serve("groups", async (req, body) => {
       return await list();
 
     case "whoami":
-      return { name: await resolveOwnName(db, profileId, callerName) };
+      return {
+        name: await resolveOwnName(db, profileId, callerName),
+        // Whether the AI features are on for you while they are tested (#111).
+        // A failure (the migration not yet applied) is "not yet", never a broken page.
+        aiAllowed: await aiAllowed(db, profileId).catch((err) => {
+          console.error("whoami: couldn't check AI access", err);
+          return false;
+        }),
+      };
 
     case "set-name": {
       const name = cleanDisplayName(body.name);

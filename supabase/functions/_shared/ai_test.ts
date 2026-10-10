@@ -1,7 +1,9 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 
 import {
+  aiAllowed,
   estimateCost,
+  NOT_ALLOWED,
   GLOBAL_DAILY_AI_CALLS,
   runSkill,
   SKILLS,
@@ -12,8 +14,11 @@ import {
 import { HttpError } from "./http.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
-/** A database that answers the claim with `claim` and remembers the usage written. */
-function fakeDb(claim: unknown) {
+/**
+ * A database that answers the claim with `claim`, says whether the person has
+ * been allowed AI, and remembers the claim and the usage written.
+ */
+function fakeDb(claim: unknown, allowed = true) {
   const calls: { rpc?: Record<string, unknown>; usage?: Record<string, unknown>; id?: unknown } =
     {};
   const db = {
@@ -22,6 +27,12 @@ function fakeDb(claim: unknown) {
       return Promise.resolve({ data: claim, error: null });
     },
     from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: () =>
+            Promise.resolve({ data: allowed ? { profile_id: "u" } : null, error: null }),
+        }),
+      }),
       update: (values: Record<string, unknown>) => ({
         eq: (_column: string, id: unknown) => {
           calls.usage = values;
@@ -156,4 +167,30 @@ Deno.test("the usage summary adds up today's calls and prices each skill", () =>
   assertEquals(usage.limit, GLOBAL_DAILY_AI_CALLS);
   assertEquals(usage.skills[0].costToday, (1000 * 0.1 + 200 * 0.5) / 1_000_000);
   assertEquals(usage.skills[1].cost30Days, 0.1);
+});
+
+Deno.test("someone not allowed AI is refused before anything is claimed or asked", async () => {
+  let asked = false;
+  const create: CreateMessage = (params, options) => {
+    asked = true;
+    return answering("ok")(params, options);
+  };
+  const { db, calls } = fakeDb({ id: 1, userLeft: 1 }, false);
+  const err = await assertRejects(() => runSkill(db, "someone", call, create), HttpError);
+  assertEquals([err.status, err.message], [403, NOT_ALLOWED]);
+  assertEquals([asked, calls.rpc], [false, undefined]);
+});
+
+Deno.test("admins may always use AI, with no row of their own", async () => {
+  const admin = "11111111-1111-4111-8111-111111111111";
+  const before = Deno.env.get("ADMIN_USER_IDS");
+  Deno.env.set("ADMIN_USER_IDS", admin);
+  try {
+    assertEquals(await aiAllowed(fakeDb(null, false).db, admin), true);
+    assertEquals(await aiAllowed(fakeDb(null, false).db, "someone-else"), false);
+    assertEquals(await aiAllowed(fakeDb(null, true).db, "someone-else"), true);
+  } finally {
+    if (before === undefined) Deno.env.delete("ADMIN_USER_IDS");
+    else Deno.env.set("ADMIN_USER_IDS", before);
+  }
 });

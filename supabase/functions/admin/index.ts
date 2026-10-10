@@ -64,6 +64,7 @@ async function overview(db: Db) {
     { data: members, error: membersErr },
     { data: connections, error: connectionsErr },
     { count: busyBlocks, error: busyErr },
+    { data: aiAccess, error: aiAccessErr },
   ] = await Promise.all([
     allUsers(db),
     db.from("profiles").select("id, display_name"),
@@ -82,12 +83,17 @@ async function overview(db: Db) {
       )
       .order("created_at", { ascending: false }),
     db.from("calendar_busy_cache").select("id", { count: "exact", head: true }),
+    db.from("ai_access").select("profile_id"),
   ]);
   if (profilesErr) throw profilesErr;
   if (groupsErr) throw groupsErr;
   if (membersErr) throw membersErr;
   if (connectionsErr) throw connectionsErr;
   if (busyErr) throw busyErr;
+  // Before the migration that adds it, nobody but admins has AI: said as such.
+  if (aiAccessErr) console.error("admin: couldn't read who has AI", aiAccessErr);
+  const allowedAi = new Set((aiAccess ?? []).map((r: { profile_id: string }) => r.profile_id));
+  const adminIds = Deno.env.get("ADMIN_USER_IDS");
 
   // The name people chose shows in groups (profiles); anyone who never used
   // groups falls back to the same rule that fills profiles in the first place.
@@ -171,6 +177,8 @@ async function overview(db: Db) {
         lastSignInAt: u.last_sign_in_at ?? null,
         groups: groupsJoined.get(u.id) ?? 0,
         calendars: calendarsLinked.get(u.id) ?? 0,
+        // AI while it is tested (#111): admins always, others once allowed here.
+        ai: isAdminId(u.id, adminIds) ? "admin" : allowedAi.has(u.id) ? "allowed" : "off",
       }))
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)),
     usersTruncated: truncated,
@@ -247,6 +255,26 @@ serve("admin", async (req, body) => {
         `admin ${caller.id} deleted user ${profileId}; left ${leftGroups} groups, ${deletedGroups} deleted as empty`,
       );
       return { outcome: "deleted", leftGroups, deletedGroups };
+    }
+
+    case "setAiAccess": {
+      // Switch the AI features on or off for someone (#111). Admins always
+      // have them, so there is nothing to switch for one.
+      const profileId = requireString(body, "profileId");
+      if (typeof body.allowed !== "boolean")
+        throw new HttpError(400, "allowed must be true or false");
+      if (isAdminId(profileId, Deno.env.get("ADMIN_USER_IDS"))) {
+        throw new HttpError(400, "Admins always have AI.");
+      }
+      const { data: found, error } = await db.auth.admin.getUserById(profileId);
+      if (error || !found.user) throw new HttpError(404, "That account no longer exists.");
+      const write = body.allowed
+        ? db.from("ai_access").upsert({ profile_id: profileId }, { onConflict: "profile_id" })
+        : db.from("ai_access").delete().eq("profile_id", profileId);
+      const { error: writeError } = await write;
+      if (writeError) throw writeError;
+      console.log(`admin ${caller.id} turned AI ${body.allowed ? "on" : "off"} for ${profileId}`);
+      return { ai: body.allowed ? "allowed" : "off" };
     }
 
     case "syncConnection": {

@@ -984,6 +984,13 @@ export const da = {
     entries: "Aftaler i din kalender",
     entriesAdded: "Lagt i din kalender af Casy",
     entriesDeleted: "Slettet af dig bagefter",
+    ai: "AI",
+    aiAllowed: "AI-funktioner",
+    aiOn: "Slået til",
+    aiOff: "Ikke slået til endnu",
+    aiCalls: "Dine AI-kald de sidste 30 dage",
+    aiNote:
+      "Casy noterer hvornår og hvor meget, aldrig hvad du skrev. Notatet slettes efter 30 dage.",
     credentials: "Adgangsoplysninger",
     credentialKinds: {
       oauth: "Adgangsnøgle",
@@ -1168,6 +1175,7 @@ export const da = {
     adminRemoveMember: "Kunne ikke fjerne personen fra gruppen",
     adminDeleteAccount: "Kunne ikke slette kontoen",
     adminSync: "Kunne ikke synkronisere kontoen",
+    adminAiAccess: "Kunne ikke ændre AI-adgangen",
     loadPrimaryCalendar: "Kunne ikke hente din primære kalender",
     deleteAccount: "Kunne ikke slette din konto",
     loadMyData: "Kunne ikke hente dine data",
@@ -1257,6 +1265,11 @@ export const da = {
       `Synkroniseret: ${n === 1 ? "1 optaget tidsrum" : `${n} optagede tidsrum`}.`,
     syncFailed: "Synkroniseringen fejlede.",
     syncUserTitle: (name: string) => `Synkronisér alle kalendere for ${name}`,
+    aiAdmin: "AI: admin",
+    aiAllowed: "AI slået til",
+    aiOff: "Tillad AI",
+    aiTurnOff: (name: string) => `Slå AI fra for ${name}`,
+    aiTurnOn: (name: string) => `Slå AI til for ${name}`,
     syncedUser: (ok: number, failed: number, blocks: number) =>
       failed === 0
         ? `Synkroniseret: ${ok === 1 ? "1 konto" : `${ok} konti`}, ${blocks === 1 ? "1 optaget tidsrum" : `${blocks} optagede tidsrum`}.`

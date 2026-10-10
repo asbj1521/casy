@@ -36,6 +36,8 @@ export interface AdminUser {
   lastSignInAt: string | null;
   groups: number;
   calendars: number;
+  /** AI while it is tested (#111): admins always, others once switched on here. */
+  ai: "admin" | "allowed" | "off";
 }
 
 export interface AdminConnection {
@@ -141,6 +143,17 @@ export async function adminDeleteUser(
   return await callFunction("admin", {
     body: { action: "deleteUser", profileId },
     errorMessage: currentMessages().api.adminDeleteAccount,
+  });
+}
+
+/** Switch the AI features on or off for someone who isn't an admin (#111). */
+export async function adminSetAiAccess(
+  profileId: string,
+  allowed: boolean,
+): Promise<{ ai: "allowed" | "off" }> {
+  return await callFunction("admin", {
+    body: { action: "setAiAccess", profileId, allowed },
+    errorMessage: currentMessages().api.adminAiAccess,
   });
 }
 

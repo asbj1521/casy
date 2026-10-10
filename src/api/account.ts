@@ -66,6 +66,8 @@ export interface MyData {
   emailLookups: number;
   events: { invitedTo: number; suggested: number; answers: number; declined: number };
   calendarEntries: { added: number; deletedByYou: number };
+  /** Whether the AI features are on for you (#111), and your AI calls recorded (30 days). */
+  ai: { allowed: boolean; calls: number };
 }
 
 /**

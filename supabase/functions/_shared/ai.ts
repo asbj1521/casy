@@ -16,9 +16,12 @@
  */
 import Anthropic from "npm:@anthropic-ai/sdk@0.132.1";
 
+import { aiAllowed, NOT_ALLOWED } from "./aiAccess.ts";
 import { requireEnv } from "./env.ts";
 import { HttpError } from "./http.ts";
 import type { Db } from "./supabaseAdmin.ts";
+
+export { aiAllowed, NOT_ALLOWED };
 
 export const AI_MODEL = "claude-haiku-5-5";
 
@@ -95,11 +98,28 @@ export type CreateMessage = (
 const anthropic: CreateMessage = (params, options) =>
   new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY"), ...options }).messages.create(params);
 
+/**
+ * What a skill asks the model, exactly: shared by runSkill and the eval sets
+ * (supabase/evals), so what is measured is what runs.
+ */
+export function skillRequest(
+  call: Pick<SkillCall<unknown>, "system" | "message" | "schema" | "maxTokens">,
+): Anthropic.MessageCreateParamsNonStreaming {
+  return {
+    model: AI_MODEL,
+    max_tokens: call.maxTokens ?? 4000,
+    // Thinking is billed as output: a short think is plenty for these.
+    output_config: { effort: "low", format: { type: "json_schema", schema: call.schema } },
+    system: call.system,
+    messages: [{ role: "user", content: call.message }],
+  };
+}
+
 type Claim = { id: number; userLeft: number } | { exhausted: "user" | "global" };
 
 /**
- * Run one skill for `profileId`: claim a call, ask the model, record what
- * it used, and read the answer. Throws an HttpError with the skill's words
+ * Run one skill for `profileId`: check they may use AI, claim a call, ask
+ * the model, record what it used, and read the answer. Throws an HttpError with the skill's words
  * for every way it can fail; `userLeft` is how many of the skill's calls the
  * person has left today.
  */
@@ -109,6 +129,7 @@ export async function runSkill<T>(
   call: SkillCall<T>,
   create: CreateMessage = anthropic,
 ): Promise<{ result: T; userLeft: number }> {
+  if (!(await aiAllowed(db, profileId))) throw new HttpError(403, NOT_ALLOWED);
   const budget = SKILLS[call.skill];
   const { data, error } = await db.rpc("claim_ai_skill_call", {
     p_skill: call.skill,
@@ -128,14 +149,7 @@ export async function runSkill<T>(
   let answer: Anthropic.Message;
   try {
     answer = await create(
-      {
-        model: AI_MODEL,
-        max_tokens: call.maxTokens ?? 4000,
-        // Thinking is billed as output: a short think is plenty for these.
-        output_config: { effort: "low", format: { type: "json_schema", schema: call.schema } },
-        system: call.system,
-        messages: [{ role: "user", content: call.message }],
-      },
+      skillRequest(call),
       budget.waiting ? { maxRetries: 1, timeout: 20_000 } : { maxRetries: 2, timeout: 30_000 },
     );
   } catch (err) {

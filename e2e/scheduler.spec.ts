@@ -503,3 +503,19 @@ test.describe("who an event is for (#89)", () => {
     });
   });
 });
+
+test("without AI switched on, the scheduler offers no planning with AI (#111)", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  backend.world.aiAllowed = false;
+  await page.goto("/");
+  // On a phone, the button would sit beside Next on the group step.
+  if (isMobile) await expect(page.getByRole("button", { name: "Næste" })).toBeVisible();
+  else await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Planlæg med AI" })).toHaveCount(0);
+  expect(backend.calls.some((c) => c.name === "calendar-categorize" || c.name === "plan-ai")).toBe(
+    false,
+  );
+});

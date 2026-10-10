@@ -34,6 +34,7 @@ import { SettingsPanel, SettingsSentence, StepSettings } from "@/components/Sche
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { useAuth } from "@/context/auth";
+import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useAiPlanner } from "@/hooks/useAiPlanner";
 import { findAnswer, TODAY, useDateSearch } from "@/hooks/useDateSearch";
 import { useGroupRefresh, type RefreshOutcome } from "@/hooks/useGroupRefresh";
@@ -726,6 +727,7 @@ export default function FindDate() {
 
   // Planning with AI (#100): the conversation, kept here so it outlives the
   // flow's steps; what it says lands in the same state the controls set.
+  const aiOn = useAiAllowed();
   const planner = useAiPlanner({
     settings: sched,
     name,
@@ -878,8 +880,8 @@ export default function FindDate() {
           footer={
             flowStep === "group" ? (
               <div className="flex gap-2">
-                {/* Planning with AI needs a signed-in person: it costs money per use. */}
-                {user && (
+                {/* Planning with AI costs money per use: only for those it is on for (#111). */}
+                {aiOn && (
                   <FlowButton quiet onClick={() => goToStep("describe")} disabled={!activeGroup}>
                     <span className="inline-flex items-center gap-1.5">
                       <Sparkles className="h-4 w-4 text-primary" />
@@ -1019,7 +1021,7 @@ export default function FindDate() {
               onExtras={updateExtras}
               participants={participantProps}
               ai={
-                user
+                aiOn
                   ? {
                       view: () => (
                         <AiBoxView

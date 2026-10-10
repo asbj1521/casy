@@ -118,6 +118,17 @@ as $$
   order by a.skill;
 $$;
 
+-- Who may use the AI features while they are tested (#111): admins always
+-- (ADMIN_USER_IDS, checked in code), everyone else only once an admin has
+-- switched it on for them in admin mode. A row is the switch: there when on.
+create table if not exists ai_access (
+  profile_id uuid primary key references auth.users (id) on delete cascade,
+  granted_at timestamptz not null default now()
+);
+comment on table ai_access is
+  'People an admin has allowed to use the AI features (admins always may). Deleted with the account.';
+alter table ai_access enable row level security;
+
 revoke execute on function claim_ai_skill_call(text, uuid, int, int) from public, anon, authenticated;
 grant execute on function claim_ai_skill_call(text, uuid, int, int) to service_role;
 revoke execute on function ai_usage() from public, anon, authenticated;

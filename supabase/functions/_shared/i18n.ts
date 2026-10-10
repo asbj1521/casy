@@ -97,6 +97,8 @@ export const DANISH: Record<string, string> = {
 
   // Planning with AI
   "Describe the event in a few words.": "Beskriv aftalen med et par ord.",
+  "AI features aren't switched on for your account yet.":
+    "AI-funktionerne er ikke slået til for din konto endnu.",
   "You've used all your AI planning for today. Plan it by hand, or try tomorrow.":
     "Du har brugt al din AI-planlægning for i dag. Planlæg selv, eller prøv i morgen.",
   "AI planning is used up for today. Plan it by hand, or try tomorrow.":

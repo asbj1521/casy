@@ -307,6 +307,10 @@ function EventsPart({ data }: { data: MyData }) {
         <Fact label={w.entriesAdded} value={data.calendarEntries.added} />
         <Fact label={w.entriesDeleted} value={data.calendarEntries.deletedByYou} />
       </ListGroup>
+      <ListGroup title={w.ai} footnote={w.aiNote}>
+        <Fact label={w.aiAllowed} value={data.ai.allowed ? w.aiOn : w.aiOff} />
+        <Fact label={w.aiCalls} value={data.ai.calls} />
+      </ListGroup>
     </>
   );
 }

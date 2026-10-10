@@ -10,6 +10,7 @@ const user = (id: string, groups: number, calendars = 0) => ({
   lastSignInAt: null,
   groups,
   calendars,
+  ai: "off" as const,
 });
 
 const member = (profileId: string) => ({

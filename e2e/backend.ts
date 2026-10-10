@@ -204,7 +204,7 @@ export class FakeBackend {
       case "pulse":
         return ok({ pulse: `v${w.version}` });
       case "whoami":
-        return ok({ name: w.name });
+        return ok({ name: w.name, aiAllowed: w.aiAllowed });
       case "set-name":
         w.name = String(body.name);
         return ok({ name: w.name });

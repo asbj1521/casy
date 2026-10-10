@@ -948,6 +948,13 @@ export const en: Messages = {
     entries: "Events in your calendar",
     entriesAdded: "Put in your calendar by Casy",
     entriesDeleted: "Deleted by you afterwards",
+    ai: "AI",
+    aiAllowed: "AI features",
+    aiOn: "On",
+    aiOff: "Not switched on yet",
+    aiCalls: "Your AI calls in the last 30 days",
+    aiNote:
+      "Casy notes when and how much, never what you wrote. The note is deleted after 30 days.",
     credentials: "Access credentials",
     credentialKinds: {
       oauth: "Access key",
@@ -1130,6 +1137,7 @@ export const en: Messages = {
     adminRemoveMember: "Couldn't remove them from the group",
     adminDeleteAccount: "Couldn't delete the account",
     adminSync: "Couldn't sync that account",
+    adminAiAccess: "Couldn't change AI access",
     loadPrimaryCalendar: "Couldn't load your primary calendar",
     deleteAccount: "Couldn't delete your account",
     loadMyData: "Couldn't load your data",
@@ -1217,6 +1225,11 @@ export const en: Messages = {
     syncedBlocks: (n: number) => `Synced: ${n === 1 ? "1 busy block" : `${n} busy blocks`}.`,
     syncFailed: "Sync failed.",
     syncUserTitle: (name: string) => `Sync all calendars for ${name}`,
+    aiAdmin: "AI: admin",
+    aiAllowed: "AI on",
+    aiOff: "Allow AI",
+    aiTurnOff: (name: string) => `Turn AI off for ${name}`,
+    aiTurnOn: (name: string) => `Turn AI on for ${name}`,
     syncedUser: (ok: number, failed: number, blocks: number) =>
       failed === 0
         ? `Synced: ${ok === 1 ? "1 account" : `${ok} accounts`}, ${blocks === 1 ? "1 busy block" : `${blocks} busy blocks`}.`

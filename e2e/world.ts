@@ -568,6 +568,8 @@ export const DEFAULT_WORLD: WorldOptions = { calendars: "connected", groups: "so
 
 export interface World {
   name: string;
+  /** The AI features are on for Mia (#111); a test switches them off. */
+  aiAllowed: boolean;
   connections: CalendarConnectionStatus[];
   primary: { calendarId: string; autoAdd: boolean } | null;
   groups: Group[];
@@ -582,6 +584,7 @@ export function makeWorld(options: WorldOptions): World {
   const withGroups = options.groups === "some";
   return {
     name: ME.name,
+    aiAllowed: true,
     connections: connected ? connections() : [],
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
     groups: withGroups ? groups() : [],
@@ -669,5 +672,6 @@ export function myData(world: World): MyData {
     emailLookups: 0,
     events: { invitedTo: world.events.length, suggested: 2, answers: 9, declined: 1 },
     calendarEntries: { added: 1, deletedByYou: 0 },
+    ai: { allowed: true, calls: 2 },
   };
 }
