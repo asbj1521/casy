@@ -6,7 +6,7 @@
  * every run costs a little (cents) and needs the API key.
  *
  *   ANTHROPIC_API_KEY=... deno run --node-modules-dir=none --allow-net --allow-env --allow-read \
- *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label]
+ *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile]
  *
  * The cases are invented: the repo is public, so no real calendar names,
  * titles or descriptions belong in them. An expected value may be
@@ -33,6 +33,14 @@ import {
   type EventLabel,
   type EventToLabel,
 } from "../functions/_shared/labelAi.ts";
+import {
+  buildProfileMessage,
+  type EventImpact,
+  PROFILE_SCHEMA,
+  PROFILE_SYSTEM_PROMPT,
+  profileFromAnswer,
+  readProfileRequest,
+} from "../functions/_shared/profileAi.ts";
 import {
   buildPlanMessage,
   PLAN_SCHEMA,
@@ -301,11 +309,84 @@ async function eventLabel(): Promise<Result[]> {
 }
 
 // ---------------------------------------------------------------------------
+// The profile of a planned event: one call per event, as the scheduler asks.
+
+interface ProfileCase {
+  event: Record<string, unknown>;
+  /** Profile fields to check (others aren't), and the special keys below. */
+  expect: Record<string, Expected> & {
+    /** These must be among effects. */
+    effectsIncludes?: string[];
+    /** None of these may be among effects. */
+    effectsExcludes?: string[];
+    /** effects must be empty. */
+    noEffects?: boolean;
+    /** The reason must contain none of these (case-insensitive). */
+    reasonExcludes?: string[];
+  };
+}
+
+function profileFailures(profile: EventImpact, expect: ProfileCase["expect"]): string[] {
+  const failures: string[] = [];
+  const { effectsIncludes, effectsExcludes, noEffects, reasonExcludes, ...fields } = expect;
+  for (const [field, expected] of Object.entries(fields)) {
+    const actual = profile[field as keyof EventImpact];
+    if (!matches(actual, expected)) {
+      failures.push(
+        `${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+      );
+    }
+  }
+  const effects = profile.effects as string[];
+  for (const e of effectsIncludes ?? []) {
+    if (!effects.includes(e)) failures.push(`effects: expected ${e} in ${JSON.stringify(effects)}`);
+  }
+  for (const e of effectsExcludes ?? []) {
+    if (effects.includes(e))
+      failures.push(`effects: expected no ${e}, got ${JSON.stringify(effects)}`);
+  }
+  if (noEffects && effects.length > 0) {
+    failures.push(`effects: expected none, got ${JSON.stringify(effects)}`);
+  }
+  for (const word of reasonExcludes ?? []) {
+    if (profile.reason.toLowerCase().includes(word)) {
+      failures.push(`reason mentions "${word}": ${JSON.stringify(profile.reason)}`);
+    }
+  }
+  return failures;
+}
+
+async function eventProfile(): Promise<Result[]> {
+  const { lang, cases } = (await load("event-profile.json")) as {
+    lang: "da" | "en";
+    cases: ProfileCase[];
+  };
+  return await pool(cases, 4, async (c) => {
+    const event = readProfileRequest(c.event)!;
+    const name = `${event.title} (${event.kind})`;
+    const { stop, text } = await ask(
+      skillRequest({
+        system: PROFILE_SYSTEM_PROMPT,
+        message: buildProfileMessage(event, lang),
+        schema: PROFILE_SCHEMA,
+        maxTokens: 2000,
+      }),
+    );
+    const profile = profileFromAnswer(stop, text);
+    if (!profile) return { name, failures: [`no profile (stop_reason ${stop})`] };
+    const failures = profileFailures(profile, c.expect);
+    if (failures.length > 0) failures.push(`reason: ${profile.reason}`);
+    return { name, failures };
+  });
+}
+
+// ---------------------------------------------------------------------------
 
 const SETS: Record<string, () => Promise<Result[]>> = {
   "plan-ai": planAi,
   "calendar-categorize": calendarCategorize,
   "event-label": eventLabel,
+  "event-profile": eventProfile,
 };
 const wanted = Deno.args[0] ? [Deno.args[0]] : Object.keys(SETS);
 for (const name of wanted) {
