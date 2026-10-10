@@ -37,7 +37,8 @@ export interface AdminUser {
   groups: number;
   calendars: number;
   /** AI while it is tested (#111): admins always, others once switched on here. */
-  ai: "admin" | "allowed" | "off";
+  /** Missing from a function deployed before #111. */
+  ai?: "admin" | "allowed" | "off";
 }
 
 export interface AdminConnection {
@@ -57,12 +58,12 @@ export interface AdminConnection {
 export interface AdminOverview {
   /** Whether calendar syncing works, as the health function tells the uptime monitor. */
   health: { ok: true } | { ok: false; reason: "stale" | "failing" };
-  /** Planning with AI (#100): answers fetched today, of the day's cap; null if unknown. */
   /** The AI's use per skill, and today's total against the ceiling (#111). */
   ai: {
     today: number;
     limit: number;
-    skills: {
+    /** Missing from a function deployed before #111. */
+    skills?: {
       skill: string;
       today: number;
       last30Days: number;

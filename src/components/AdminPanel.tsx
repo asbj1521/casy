@@ -339,6 +339,8 @@ function AiAccess({ user }: { user: AdminUser }) {
   const pill =
     "mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
 
+  // Older functions don't say (before #111): nothing to show or switch yet.
+  if (!user.ai) return null;
   if (user.ai === "admin") {
     return (
       <span className={cn(pill, "bg-secondary text-muted-foreground")}>
@@ -356,6 +358,7 @@ function AiAccess({ user }: { user: AdminUser }) {
         disabled={toggle.isPending}
         aria-pressed={on}
         title={on ? t.admin.aiTurnOff(user.name) : t.admin.aiTurnOn(user.name)}
+        aria-label={on ? t.admin.aiTurnOff(user.name) : t.admin.aiTurnOn(user.name)}
         className={cn(
           pill,
           "border transition disabled:opacity-50",
@@ -675,7 +678,8 @@ export default function AdminPanel({ youId }: { youId: string }) {
         <div className="mt-2 text-sm text-muted-foreground">
           <p>{t.admin.aiToday(data.ai.today, data.ai.limit)}</p>
           {/* Each skill's calls and estimated cost (#111): counts only, never who. */}
-          {data.ai.skills.length > 0 && (
+          {/* `skills` is missing in answers from a function older than #111. */}
+          {!!data.ai.skills?.length && (
             <ul className="mt-1 text-xs">
               {data.ai.skills.map((s) => (
                 <li key={s.skill}>

@@ -8,7 +8,7 @@
 import type { EventResponse, SuggestedEvent } from "@/api/events";
 import type { PlanAnswer } from "@/api/planAi";
 import type { AiPlan } from "@/lib/aiPlan";
-import { groupBusy, ME, myData, myOverview, NOW, type World } from "./world";
+import { adminOverview, groupBusy, ME, myData, myOverview, NOW, type World } from "./world";
 
 export interface FunctionCall {
   name: string;
@@ -121,7 +121,15 @@ export class FakeBackend {
         if (action === "delete") return ok({});
         return undefined;
       case "admin":
-        if (action === "status") return ok({ isAdmin: false });
+        if (action === "status") return ok({ isAdmin: w.admin !== false });
+        if (!w.admin) return fail(403, "Kun for administratorer.");
+        if (action === "overview") return ok(adminOverview(w));
+        if (action === "setAiAccess") {
+          const id = String(body.profileId);
+          if (body.allowed) w.aiAccess.add(id);
+          else w.aiAccess.delete(id);
+          return ok({ ai: body.allowed ? "allowed" : "off" });
+        }
         return undefined;
       case "plan-ai":
         return this.planAi(body);

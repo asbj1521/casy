@@ -9,6 +9,7 @@
  * tests never test the real server; #77 covers that side.
  */
 import type { MyData } from "@/api/account";
+import type { AdminOverview } from "@/api/admin";
 import type { CalendarConnectionStatus } from "@/api/calendars";
 import type { EventResponse, SuggestedEvent } from "@/api/events";
 import type { Group, GroupBusy, Invitation } from "@/api/groups";
@@ -570,6 +571,13 @@ export interface World {
   name: string;
   /** The AI features are on for Mia (#111); a test switches them off. */
   aiAllowed: boolean;
+  /**
+   * Mia is an admin, and how the admin function answers: as now, or as one
+   * deployed before #111 (no AI per skill, no AI switch per user).
+   */
+  admin: false | "current" | "beforeAi";
+  /** Who has AI switched on in admin mode, besides admins. */
+  aiAccess: Set<string>;
   connections: CalendarConnectionStatus[];
   primary: { calendarId: string; autoAdd: boolean } | null;
   groups: Group[];
@@ -585,6 +593,8 @@ export function makeWorld(options: WorldOptions): World {
   return {
     name: ME.name,
     aiAllowed: true,
+    admin: false,
+    aiAccess: new Set(),
     connections: connected ? connections() : [],
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
     groups: withGroups ? groups() : [],
@@ -673,5 +683,42 @@ export function myData(world: World): MyData {
     events: { invitedTo: world.events.length, suggested: 2, answers: 9, declined: 1 },
     calendarEntries: { added: 1, deletedByYou: 0 },
     ai: { allowed: true, calls: 2 },
+  };
+}
+
+/** Admin mode's overview of the made-up world: Mia (an admin) and Sara. */
+export function adminOverview(world: World): AdminOverview {
+  const current = world.admin === "current";
+  const user = (id: string, name: string, admin: boolean) => ({
+    id,
+    name,
+    createdAt: "2026-09-01T10:00:00.000Z",
+    lastSignInAt: NOW,
+    groups: 1,
+    calendars: 1,
+    ...(current && {
+      ai: admin
+        ? ("admin" as const)
+        : world.aiAccess.has(id)
+          ? ("allowed" as const)
+          : ("off" as const),
+    }),
+  });
+  return {
+    health: { ok: true },
+    ai: current
+      ? {
+          today: 3,
+          limit: 500,
+          skills: [
+            { skill: "plan-ai", today: 3, last30Days: 40, costToday: 0.002, cost30Days: 0.03 },
+          ],
+        }
+      : { today: 3, limit: 50 },
+    stats: { users: 2, groups: 0, connectedAccounts: 0, failingSyncs: 0, busyBlocks: 0 },
+    groups: [],
+    users: [user(ME.id, ME.name, true), user(PEOPLE.sara.id, PEOPLE.sara.name, false)],
+    usersTruncated: false,
+    connections: [],
   };
 }
