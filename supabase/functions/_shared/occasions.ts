@@ -98,7 +98,7 @@ export function occasionLine(o: Occasion, view: OccasionView = "full"): string {
   const when: string[] = [];
   if (o.plan === "meeting") {
     const from =
-      o.start === undefined ? "" : o.start === "any" ? " at any time" : ` from ${o.start}`;
+      o.start === undefined ? "" : o.start === "any" ? " at no set time" : ` from ${o.start}`;
     when.push(`meeting${from}${o.minutes ? ` for ${length(o.minutes)}` : ""}`);
   } else {
     const start = o.startWeekday === undefined ? "" : ` from ${WEEKDAY[o.startWeekday]}`;
@@ -2028,9 +2028,8 @@ export const OCCASIONS: Occasion[] = [
     id: "ski-holiday",
     da: ["skiferie", "skiferien", "skitur", "på ski", "stå på ski", "skiløb"],
     en: ["ski holiday", "ski trip", "skiing holiday"],
-    plan: "trip",
+    plan: "holiday",
     days: 7,
-    startWeekday: 6,
     inMonths: [12, 1, 2, 3, 4],
     effects: ["travel", "exercise"],
     runsLate: false,
@@ -2040,7 +2039,7 @@ export const OCCASIONS: Occasion[] = [
     daylight: false,
     label: "vacation",
     vague: false,
-    note: "Denmark has no ski slopes, so skiing means a trip abroad, usually Saturday to Saturday.",
+    note: "Denmark has no ski slopes, so skiing means a holiday abroad, often a week.",
     status: "agreed",
   },
   {
