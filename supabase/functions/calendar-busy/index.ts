@@ -5,7 +5,8 @@
  * your own calendar takes the "you" slot).
  *
  * Only what the app actually stores comes back: block timestamps, the
- * calendar's own name, its account, provider and category. There are no event
+ * calendar's own name, its account, provider and category, and for a phone
+ * calendar its EventKit id. There are no event
  * titles anywhere in this data by design (see the calendar_integrations
  * migration and each adapter), so none can leak from here. Never touches
  * calendar_secrets.
@@ -17,6 +18,7 @@ import { supabaseAdmin, type Db } from "../_shared/supabaseAdmin.ts";
 /** A calendar_sources row joined to its connection, as selected below. */
 interface SourceRow {
   id: string;
+  external_calendar_id: string;
   display_name: string | null;
   custom_name: string | null;
   writable: boolean;
@@ -47,7 +49,7 @@ serve(
       db
         .from("calendar_sources")
         .select(
-          "id, display_name, custom_name, writable, purpose, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label)",
+          "id, external_calendar_id, display_name, custom_name, writable, purpose, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label)",
         )
         .eq("calendar_connections.profile_id", profileId)
         .eq("calendar_connections.status", "connected"),
@@ -78,6 +80,10 @@ serve(
         provider: s.calendar_connections.provider,
         account: s.calendar_connections.account_label,
         connectionId: s.calendar_connections.id,
+        // A phone calendar's EventKit id, so the app on that phone can show
+        // its own events' titles in place of these blocks without sending
+        // them anywhere. Other providers' ids aren't needed by the page.
+        externalId: s.calendar_connections.provider === "device" ? s.external_calendar_id : null,
       }))
       // By the provider's name, not the owner's: calendars without a category
       // are coloured in this order, so renaming one must not recolour the rest.

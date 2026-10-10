@@ -23,18 +23,19 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 9. oktober 2026",
+  updated: "Senest opdateret 10. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
       body: (
         <p>
           Casy (en forkortelse af Calendar Syncing) hjælper en gruppe med at finde et tidspunkt, der
-          passer alle. For at gøre det læser Casy, hvornår du er optaget, og intet andet: aldrig
-          titler, steder, noter eller gæster i dine aftaler. Casy skriver kun i din kalender, når du
-          beder om det: så lægger den aftaler, din gruppe er blevet enige om, i den kalender, du har
-          valgt som primær. Dine data bliver ikke solgt, ikke brugt til reklamer og ikke delt med
-          nogen uden for tjenesten.
+          passer alle. For at gøre det gemmer Casy kun, hvornår du er optaget: aldrig titler,
+          steder, noter eller gæster i dine aftaler. I iPhone-appen kan du selv se dem i din
+          kalender, men de bliver på telefonen. Casy skriver kun i din kalender, når du beder om
+          det: så lægger den aftaler, din gruppe er blevet enige om, i den kalender, du har valgt
+          som primær. Dine data bliver ikke solgt, ikke brugt til reklamer og ikke delt med nogen
+          uden for tjenesten.
         </p>
       ),
     },
@@ -61,8 +62,9 @@ const da: LegalCopy = {
               cirka de næste tolv måneder. Aftaler, der overlapper, bliver slået sammen til ét
               tidsrum. Titler, beskrivelser, steder og deltagere bliver aldrig gemt. Google og
               Microsoft bliver aldrig spurgt om dem. Apple og kalenderlinks sender altid hele
-              aftaler, så de oplysninger fjernes, før noget gemmes. I iPhone-appen læser Casy kun
-              tidspunkterne i telefonens kalendere, og kun de tidspunkter forlader telefonen.
+              aftaler, så de oplysninger fjernes, før noget gemmes. I iPhone-appen viser Casy dine
+              egne aftalers titler, steder og noter i din kalender, læst direkte fra telefonen. Kun
+              tidspunkterne forlader telefonen.
             </li>
             <li>
               <Term>Grupper:</Term> navnet på hver gruppe, du er med i, hvem der ellers er med, hvem
@@ -316,18 +318,18 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 9 October 2026",
+  updated: "Last updated 10 October 2026",
   sections: [
     {
       title: "In short",
       body: (
         <p>
           Casy (short for Calendar Syncing) helps a group find a time that works for everyone. To do
-          that it reads when you are busy, and nothing else: never the titles, places, notes or
-          guests of your events. Casy only writes to your calendar when you ask it to: it then adds
-          events your group has agreed on to the calendar you chose as your primary calendar. Your
-          data is not sold, not used for advertising, and not shared with anyone outside the
-          service.
+          that it stores only when you are busy: never the titles, places, notes or guests of your
+          events. In the iPhone app you can see them yourself in your calendar, but they stay on the
+          phone. Casy only writes to your calendar when you ask it to: it then adds events your
+          group has agreed on to the calendar you chose as your primary calendar. Your data is not
+          sold, not used for advertising, and not shared with anyone outside the service.
         </p>
       ),
     },
@@ -354,8 +356,9 @@ const en: LegalCopy = {
               twelve months. Overlapping events are merged into one period. Event titles,
               descriptions, locations and attendees are never stored. Google and Microsoft are never
               asked for them. Apple and calendar links always send whole events, so those details
-              are removed before anything is saved. In the iPhone app, Casy reads only the times in
-              the phone&apos;s calendars, and only those times leave the phone.
+              are removed before anything is saved. In the iPhone app, Casy shows your own
+              events&apos; titles, places and notes in your calendar, read straight from the phone.
+              Only the times leave the phone.
             </li>
             <li>
               <Term>Groups:</Term> the name of each group you are in, who else is in it, who made

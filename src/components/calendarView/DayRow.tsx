@@ -1,3 +1,5 @@
+import { MapPin } from "lucide-react";
+
 import { useLang, useT } from "@/i18n/lang";
 import {
   formatDuration,
@@ -31,24 +33,35 @@ export function DayRow({
   const { lang } = useLang();
   const holiday = seg.holiday;
   const words = t.calendarView;
+  // An event this phone read itself (the iPhone app, #110): named by its own
+  // title, with the time and calendar under it, then its place and notes.
+  const details = holiday ? undefined : seg.details;
+  const range = formatSegmentRange(seg, TZ, words.allDay);
+  const duration = seg.allDay ? "" : formatDuration(seg.start, seg.end, words.hourUnit);
 
   // A holiday shows its name in the page's language, with the other
   // language's name beside it.
-  const title = holiday ? holidayName(holiday, lang) : formatSegmentRange(seg, TZ, words.allDay);
+  const title = holiday
+    ? holidayName(holiday, lang)
+    : details
+      ? details.title || (calendar?.name ?? words.calendarFallback)
+      : range;
   const aside = holiday
     ? holidayName(holiday, lang === "da" ? "en" : "da")
-    : seg.allDay
+    : details
       ? ""
-      : formatDuration(seg.start, seg.end, words.hourUnit);
+      : duration;
   const source = holiday
     ? `${holiday.kind === "public" ? words.publicHoliday : words.observedDay} · ${words.denmark}`
-    : [
-        calendar?.name ?? words.calendarFallback,
-        calendar?.account,
-        calendar && words.providerNames[calendar.provider],
-      ]
-        .filter(Boolean)
-        .join(" · ");
+    : details
+      ? [[range, duration].filter(Boolean).join(" "), calendar?.name].filter(Boolean).join(" · ")
+      : [
+          calendar?.name ?? words.calendarFallback,
+          calendar?.account,
+          calendar && words.providerNames[calendar.provider],
+        ]
+          .filter(Boolean)
+          .join(" · ");
   const pill = holiday
     ? words.holidayCategory
     : calendar?.purpose
@@ -67,6 +80,17 @@ export function DayRow({
           {aside && <span className="ml-2 font-normal text-muted-foreground">{aside}</span>}
         </p>
         <p className="text-muted-foreground">{source}</p>
+        {details?.location && (
+          <p className="mt-0.5 flex items-start gap-1 text-muted-foreground">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span className="min-w-0 break-words">{details.location}</span>
+          </p>
+        )}
+        {details?.notes && (
+          <p className="mt-1 line-clamp-4 whitespace-pre-line break-words text-xs text-muted-foreground">
+            {details.notes}
+          </p>
+        )}
         {!holiday && (seg.continuesBefore || seg.continuesAfter) && (
           <p className="text-xs text-muted-foreground">
             {seg.continuesBefore && seg.continuesAfter

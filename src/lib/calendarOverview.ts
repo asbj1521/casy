@@ -44,6 +44,21 @@ export interface OverviewCalendar {
   /** The account it belongs to (an email, or a link's name). */
   account: string | null;
   connectionId: string;
+  /**
+   * A phone calendar's EventKit id (calendar-busy sends it for phone
+   * calendars only), which lets the app on that phone match its own events.
+   */
+  externalId?: string | null;
+}
+
+/**
+ * What an event is, as the iPhone app reads it from the phone itself
+ * (lib/phoneEvents.ts). Shown on that phone only: Casy's server never has it.
+ */
+export interface EventDetails {
+  title: string;
+  location: string;
+  notes: string;
 }
 
 /** A busy block. `start` inclusive, `end` exclusive, ISO 8601 UTC. */
@@ -51,6 +66,8 @@ export interface OverviewBlock {
   calendarId: string;
   start: string;
   end: string;
+  /** In the iPhone app, for an event on this phone: what it is. */
+  details?: EventDetails;
 }
 
 export interface OverviewData {
@@ -194,6 +211,8 @@ export interface DaySegment {
   continuesAfter: boolean;
   /** Set for a built-in holiday entry; these are days, not busy time. */
   holiday?: Holiday;
+  /** The event's own title, place and notes, when this phone has them (OverviewBlock). */
+  details?: EventDetails;
 }
 
 const MAX_DAYS_PER_BLOCK = 400; // guard against a malformed, endless block
@@ -231,6 +250,7 @@ export function segmentByDay(
           allDay: start.getTime() === day.getTime() && end.getTime() === next.getTime(),
           continuesBefore: bs < day,
           continuesAfter: be > next,
+          ...(b.details && { details: b.details }),
         });
         byDay.set(key, list);
       }

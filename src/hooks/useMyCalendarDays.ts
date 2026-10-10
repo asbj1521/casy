@@ -18,7 +18,12 @@ import {
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import type { GridItem } from "@/lib/monthGrid";
 import { isNativeApp } from "@/lib/nativeApp";
-import { phoneConnectionId } from "@/lib/phoneCalendar";
+import {
+  onPhoneCalendarChange,
+  phoneConnectionId,
+  readPhoneEventDetails,
+} from "@/lib/phoneCalendar";
+import { phoneCalendarIds, withPhoneEvents } from "@/lib/phoneEvents";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
@@ -61,6 +66,10 @@ export interface MyCalendarDays {
  * check and badge read, so it is usually cached already. Only busy times and
  * calendar names: Casy stores no event titles.
  *
+ * In the iPhone app, this phone's own calendars are drawn from the phone
+ * instead (#110): each event on its own, named by its title, with its place
+ * and notes (phoneEvents.ts). They are read here and never leave the phone.
+ *
  * In the iPhone app the phone's calendars are sent again as this opens, so
  * the days under a date you are answering are the phone's as they are now,
  * not as they were when the app last sent them (the copy is refetched once
@@ -81,10 +90,47 @@ export function useMyCalendarDays(): MyCalendarDays {
     calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
   );
 
+  // This phone's events with their titles, read on the phone (the app only).
+  // Not in the persisted queries (queryPersistence.ts), so never written to
+  // storage either; read again whenever the phone's calendars change.
+  const phoneConnection = isNativeApp ? phoneConnectionId(userId) : null;
+  const { data: phoneEvents } = useQuery({
+    queryKey: ["phone-event-details", userId],
+    queryFn: () =>
+      readPhoneEventDetails(Date.parse(SEARCH_WINDOW.start), Date.parse(SEARCH_WINDOW.end)),
+    enabled: !!phoneConnection,
+    staleTime: 30_000,
+    // An app build without readDetails: the blocks as the server has them.
+    retry: false,
+  });
+  useEffect(() => {
+    if (!phoneConnection) return;
+    let stop: (() => void) | undefined;
+    let gone = false;
+    onPhoneCalendarChange(
+      () => void queryClient.invalidateQueries({ queryKey: ["phone-event-details", userId] }),
+    )
+      .then((remove) => (gone ? remove() : (stop = remove)))
+      .catch((err) => console.warn("watching the phone's calendars failed", err));
+    return () => {
+      gone = true;
+      stop?.();
+    };
+  }, [phoneConnection, queryClient, userId]);
+
   const counted = useMemo(() => {
     const included = new Set(data?.calendars.filter((c) => c.included).map((c) => c.id));
-    return (data?.blocks ?? []).filter((b) => included.has(b.calendarId));
-  }, [data]);
+    const blocks =
+      data && phoneConnection && phoneEvents
+        ? withPhoneEvents(
+            data.blocks,
+            phoneEvents,
+            phoneCalendarIds(data.calendars, phoneConnection),
+            { from: Date.parse(SEARCH_WINDOW.start), to: Date.parse(SEARCH_WINDOW.end) },
+          )
+        : (data?.blocks ?? []);
+    return blocks.filter((b) => included.has(b.calendarId));
+  }, [data, phoneConnection, phoneEvents]);
   const holidays = useMemo(
     () => holidaySegmentsByDay(new Date(SEARCH_WINDOW.start), new Date(SEARCH_WINDOW.end), TZ),
     [],
@@ -111,7 +157,7 @@ export function useMyCalendarDays(): MyCalendarDays {
         calendarId: b.calendarId,
         start: Date.parse(b.start),
         end: Date.parse(b.end),
-        label: names.get(b.calendarId) ?? "",
+        label: b.details?.title || (names.get(b.calendarId) ?? ""),
       })),
     ],
     [counted, holidays, names, lang],
@@ -127,7 +173,7 @@ export function useMyCalendarDays(): MyCalendarDays {
           : s.holiday.englishName
         : s.calendarId === HOLIDAY_CALENDAR_ID
           ? t.calendarView.holidayCalendar
-          : (names.get(s.calendarId) ?? ""),
+          : s.details?.title || (names.get(s.calendarId) ?? ""),
     [lang, names, t],
   );
   const retry = useCallback(() => void refetch(), [refetch]);

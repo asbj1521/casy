@@ -12,6 +12,7 @@ import type { PluginListenerHandle } from "@capacitor/core";
 
 import type { PhoneWork, PhoneWriteReport } from "@/api/calendars";
 import type { PhoneRead } from "@/lib/phoneBusy";
+import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
 import { readStored, writeStored } from "@/lib/storage";
 
 export type PhoneAccess = "granted" | "prompt" | "denied";
@@ -20,6 +21,7 @@ interface PhoneCalendarPlugin {
   access(): Promise<{ state: PhoneAccess }>;
   requestAccess(): Promise<{ state: PhoneAccess }>;
   read(options: { from: number; to: number }): Promise<PhoneRead>;
+  readDetails(options: { from: number; to: number }): Promise<{ events: PhoneEventWithDetails[] }>;
   openSettings(): Promise<void>;
   backgroundState(): Promise<{ configured: boolean }>;
   setBackground(options: {
@@ -61,6 +63,19 @@ export async function requestPhoneAccess(): Promise<PhoneAccess> {
 export async function readPhoneCalendars(from: number, to: number): Promise<PhoneRead> {
   const { plugin } = await phonePlugin();
   return await plugin.read({ from, to });
+}
+
+/**
+ * The phone's events with their titles, places and notes, for this phone's
+ * own views only (phoneEvents.ts). Never sent: the push is built from
+ * readPhoneCalendars.
+ */
+export async function readPhoneEventDetails(
+  from: number,
+  to: number,
+): Promise<PhoneEventWithDetails[]> {
+  const { plugin } = await phonePlugin();
+  return (await plugin.readDetails({ from, to })).events;
 }
 
 export async function openPhoneSettings(): Promise<void> {

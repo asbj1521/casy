@@ -12,7 +12,7 @@ struct PhoneCalendarInfo {
     let writable: Bool
 }
 
-/// One event's timing; nothing else about it is read.
+/// One event's timing: all that is sent to the server.
 struct PhoneEventInfo {
     let calendarId: String
     let allDay: Bool
@@ -27,12 +27,24 @@ struct PhoneEventInfo {
     let endDay: String?
 }
 
+/// What the app's own calendar views show about an event, beside its timing.
+/// Read only by `readDetails`, for the page on this phone: never part of what
+/// `read` returns, which is what is sent to Casy's server.
+struct PhoneEventDetails {
+    let timing: PhoneEventInfo
+    let title: String
+    let location: String
+    let notes: String
+}
+
 /// Reading the phone's calendars with EventKit, for the page (the plugin
 /// below) and for the background refresh (PhoneCalendarBackground) alike.
 ///
-/// Only timing leaves here: when an event starts and ends, whether it is
+/// `read` returns only timing: when an event starts and ends, whether it is
 /// all-day, marked free, cancelled or declined, and which calendar it is in.
-/// Titles, notes, places and attendees are never read into what is returned.
+/// That is what the page and the background refresh send to the server.
+/// `readDetails` adds the title, place and notes, for the app's own views on
+/// this phone; attendees are never read.
 enum PhoneCalendarReader {
     /// "granted", "prompt" (never asked) or "denied" (refused, restricted by a
     /// parent or a company, or only allowed to add events, which can't read).
@@ -50,58 +62,7 @@ enum PhoneCalendarReader {
     static func read(store: EKEventStore, from: Double, to: Double)
         -> (calendars: [PhoneCalendarInfo], events: [PhoneEventInfo])
     {
-        // Birthdays are whole days every year; they would block everyone's
-        // birthday for the person, and aren't plans.
-        let calendars = store.calendars(for: .event).filter { $0.type != .birthday }
-        let predicate = store.predicateForEvents(
-            withStart: Date(timeIntervalSince1970: from / 1000),
-            end: Date(timeIntervalSince1970: to / 1000),
-            calendars: calendars)
-
-        // All-day events are dates, not instants: sent as the phone's own
-        // calendar dates (placed in Danish time afterwards, as the server does
-        // for dates in other calendars).
-        let days = Calendar.current
-        let dayFormat = DateFormatter()
-        dayFormat.calendar = Calendar(identifier: .gregorian)
-        dayFormat.locale = Locale(identifier: "en_US_POSIX")
-        dayFormat.timeZone = days.timeZone
-        dayFormat.dateFormat = "yyyy-MM-dd"
-
-        var events: [PhoneEventInfo] = []
-        for event in calendars.isEmpty ? [] : store.events(matching: predicate) {
-            guard let start = event.startDate, let end = event.endDate,
-                let calendarId = event.calendar?.calendarIdentifier
-            else { continue }
-            let declined =
-                event.attendees?.contains {
-                    $0.isCurrentUser && $0.participantStatus == .declined
-                } ?? false
-            var startDay: String?
-            var endDay: String?
-            if event.isAllDay {
-                // EventKit ends an all-day event at 23:59:59 on its last day;
-                // the day after is the exclusive end expected.
-                let first = days.startOfDay(for: start)
-                var after = days.startOfDay(for: end)
-                if end > after { after = days.date(byAdding: .day, value: 1, to: after) ?? after }
-                if after <= first { after = days.date(byAdding: .day, value: 1, to: first) ?? first }
-                startDay = dayFormat.string(from: first)
-                endDay = dayFormat.string(from: after)
-            }
-            events.append(
-                PhoneEventInfo(
-                    calendarId: calendarId,
-                    allDay: event.isAllDay,
-                    free: event.availability == .free,
-                    cancelled: event.status == .canceled,
-                    declined: declined,
-                    start: event.isAllDay ? nil : start.timeIntervalSince1970 * 1000,
-                    end: event.isAllDay ? nil : end.timeIntervalSince1970 * 1000,
-                    startDay: startDay,
-                    endDay: endDay))
-        }
-
+        let calendars = readable(store)
         let list = calendars.map {
             PhoneCalendarInfo(
                 id: $0.calendarIdentifier,
@@ -111,7 +72,111 @@ enum PhoneCalendarReader {
                 writable: $0.allowsContentModifications && !$0.isImmutable
                     && $0.type != .subscription)
         }
+        let dates = DayDates()
+        let events = occurrences(store: store, calendars: calendars, from: from, to: to)
+            .compactMap { timing(of: $0, dates: dates) }
         return (list, events)
+    }
+
+    /// The same events with what they are: title, place and notes (notes cut
+    /// at `notesLimit` characters; invitations can carry pages of dial-in
+    /// text). For this phone's own views only.
+    static func readDetails(store: EKEventStore, from: Double, to: Double) -> [PhoneEventDetails] {
+        let dates = DayDates()
+        return occurrences(store: store, calendars: readable(store), from: from, to: to)
+            .compactMap { event in
+                guard let timing = timing(of: event, dates: dates) else { return nil }
+                return PhoneEventDetails(
+                    timing: timing,
+                    title: event.title ?? "",
+                    location: event.location ?? "",
+                    notes: String((event.notes ?? "").prefix(notesLimit)))
+            }
+    }
+
+    static let notesLimit = 1000
+
+    /// Birthdays are whole days every year; they would block everyone's
+    /// birthday for the person, and aren't plans.
+    private static func readable(_ store: EKEventStore) -> [EKCalendar] {
+        store.calendars(for: .event).filter { $0.type != .birthday }
+    }
+
+    private static func occurrences(
+        store: EKEventStore, calendars: [EKCalendar], from: Double, to: Double
+    ) -> [EKEvent] {
+        if calendars.isEmpty { return [] }
+        let predicate = store.predicateForEvents(
+            withStart: Date(timeIntervalSince1970: from / 1000),
+            end: Date(timeIntervalSince1970: to / 1000),
+            calendars: calendars)
+        return store.events(matching: predicate)
+    }
+
+    /// All-day events are dates, not instants: sent as the phone's own
+    /// calendar dates (placed in Danish time afterwards, as the server does
+    /// for dates in other calendars).
+    private struct DayDates {
+        let days = Calendar.current
+        let format: DateFormatter
+
+        init() {
+            format = DateFormatter()
+            format.calendar = Calendar(identifier: .gregorian)
+            format.locale = Locale(identifier: "en_US_POSIX")
+            format.timeZone = Calendar.current.timeZone
+            format.dateFormat = "yyyy-MM-dd"
+        }
+    }
+
+    private static func timing(of event: EKEvent, dates: DayDates) -> PhoneEventInfo? {
+        guard let start = event.startDate, let end = event.endDate,
+            let calendarId = event.calendar?.calendarIdentifier
+        else { return nil }
+        let declined =
+            event.attendees?.contains {
+                $0.isCurrentUser && $0.participantStatus == .declined
+            } ?? false
+        var startDay: String?
+        var endDay: String?
+        if event.isAllDay {
+            // EventKit ends an all-day event at 23:59:59 on its last day;
+            // the day after is the exclusive end expected.
+            let days = dates.days
+            let first = days.startOfDay(for: start)
+            var after = days.startOfDay(for: end)
+            if end > after { after = days.date(byAdding: .day, value: 1, to: after) ?? after }
+            if after <= first { after = days.date(byAdding: .day, value: 1, to: first) ?? first }
+            startDay = dates.format.string(from: first)
+            endDay = dates.format.string(from: after)
+        }
+        return PhoneEventInfo(
+            calendarId: calendarId,
+            allDay: event.isAllDay,
+            free: event.availability == .free,
+            cancelled: event.status == .canceled,
+            declined: declined,
+            start: event.isAllDay ? nil : start.timeIntervalSince1970 * 1000,
+            end: event.isAllDay ? nil : end.timeIntervalSince1970 * 1000,
+            startDay: startDay,
+            endDay: endDay)
+    }
+
+    /// An event's timing as the page reads it.
+    static func dictionary(_ e: PhoneEventInfo) -> [String: Any] {
+        var item: [String: Any] = [
+            "calendarId": e.calendarId, "allDay": e.allDay, "free": e.free,
+            "cancelled": e.cancelled, "declined": e.declined,
+        ]
+        if let start = e.start, let end = e.end {
+            item["start"] = start
+            item["end"] = end
+        }
+        if let startDay = e.startDay, let endDay = e.endDay {
+            item["startDay"] = startDay
+            item["endDay"] = endDay
+        }
+        return item
     }
 }
 
@@ -129,6 +194,7 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "access", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "requestAccess", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "read", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readDetails", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "backgroundState", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setBackground", returnType: CAPPluginReturnPromise),
@@ -196,21 +262,33 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
                         "subscribed": $0.subscribed, "writable": $0.writable,
                     ]
                 },
+                "events": events.map(PhoneCalendarReader.dictionary),
+            ])
+        }
+    }
+
+    /// Every event with its title, place and notes, for the app's own
+    /// calendar views on this phone (src/lib/phoneEvents.ts). What `read`
+    /// returns is what goes to the server; this never does.
+    @objc func readDetails(_ call: CAPPluginCall) {
+        guard let from = call.getDouble("from"), let to = call.getDouble("to"), from < to else {
+            call.reject("from and to are required")
+            return
+        }
+        guard PhoneCalendarReader.accessState() == "granted" else {
+            call.reject("Calendar access is not granted", "denied")
+            return
+        }
+        DispatchQueue.global(qos: .userInitiated).async { [store] in
+            let events = PhoneCalendarReader.readDetails(store: store, from: from, to: to)
+            call.resolve([
                 "events": events.map { e -> [String: Any] in
-                    var item: [String: Any] = [
-                        "calendarId": e.calendarId, "allDay": e.allDay, "free": e.free,
-                        "cancelled": e.cancelled, "declined": e.declined,
-                    ]
-                    if let start = e.start, let end = e.end {
-                        item["start"] = start
-                        item["end"] = end
-                    }
-                    if let startDay = e.startDay, let endDay = e.endDay {
-                        item["startDay"] = startDay
-                        item["endDay"] = endDay
-                    }
+                    var item = PhoneCalendarReader.dictionary(e.timing)
+                    item["title"] = e.title
+                    item["location"] = e.location
+                    item["notes"] = e.notes
                     return item
-                },
+                }
             ])
         }
     }
