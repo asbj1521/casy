@@ -1,20 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Loader2, Pencil, Star } from "lucide-react";
+import { ChevronDown, Loader2, Pencil, Sparkles, Star } from "lucide-react";
 
 import {
   calendarsChanged,
+  calendarStatusQuery,
   primaryCalendarQuery,
   updateCalendar,
-  updatePrimaryCalendar,
   type CalendarChange,
 } from "@/api/calendars";
 import { useIsDark } from "@/hooks/useIsDark";
 import { shade } from "@/lib/tint";
 import InfoTip from "@/components/InfoTip";
 import InlineTextEdit from "@/components/InlineTextEdit";
+import PrimaryCalendarPicker from "@/components/PrimaryCalendarPicker";
+import FitSelect from "@/components/ui/FitSelect";
 import Collapse from "@/components/ui/Collapse";
-import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
@@ -44,8 +45,8 @@ const MAX_HEADER_DOTS = 6;
  * on the server). It then moves out of its group into a folded "not counted"
  * section at the bottom, and ticking it there moves it back.
  *
- * The primary calendar (where Casy adds agreed events) is named at the top
- * and badged in its row. Nothing is disconnected or deleted here; that lives
+ * The primary calendar (where Casy adds agreed events) is picked at the top
+ * (PrimaryCalendarPicker) and badged in its row. Nothing is disconnected or deleted here; that lives
  * on the profile page.
  */
 export default function CalendarListPanel({
@@ -73,6 +74,8 @@ export default function CalendarListPanel({
   const [uncountedOpen, setUncountedOpen] = useState(false);
 
   const { data: primarySetting } = useQuery(primaryCalendarQuery(user.id));
+  // The picker lists calendars by account, from the calendar status.
+  const { data: connections } = useQuery(calendarStatusQuery(user.id));
   const primary = calendars.find((c) => c.id === primarySetting?.calendarId);
   // Only worth a line when a primary calendar exists or could be chosen.
   const showPrimaryLine = !!primary || calendars.some((c) => c.writable);
@@ -100,12 +103,17 @@ export default function CalendarListPanel({
       </div>
       {!introInTip && <p className="mt-1 text-xs text-muted-foreground">{words.listIntro}</p>}
       {showPrimaryLine && (
-        <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-foreground">
-          <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />
-          <span className="truncate">
-            {primary ? t.primaryCalendar.current(primary.name) : t.primaryCalendar.noneYet}
-          </span>
-        </p>
+        <PrimaryCalendarPicker
+          connections={connections}
+          compact
+          className="mt-2"
+          label={
+            <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-foreground">
+              <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />
+              {t.primaryCalendar.title}
+            </span>
+          }
+        />
       )}
 
       <ul className="mt-3 divide-y">
@@ -277,8 +285,8 @@ function GroupCheckbox({
 /**
  * One ticked calendar: its name (the pencil renames it; a renamed calendar
  * shows its original name underneath, so it can still be found in Apple,
- * Google or Outlook), its category and priority, and, for a calendar Casy may
- * write to, "make primary" after a second "yes". Each saves on its own.
+ * Google or Outlook), its category and priority, each saved on its own. The
+ * primary calendar is badged; it is picked at the top of the list.
  */
 function CalendarRow({
   calendar: c,
@@ -298,10 +306,8 @@ function CalendarRow({
   const dark = useIsDark();
   const t = useT();
   const words = t.calendarView;
-  const user = useSignedInUser();
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
-  const [askingPrimary, setAskingPrimary] = useState(false);
 
   const labels = useMutation({
     mutationFn: (change: CalendarChange) => updateCalendar(c.id, change),
@@ -314,10 +320,6 @@ function CalendarRow({
       await calendarsChanged(queryClient);
       setRenaming(false);
     },
-  });
-  const makePrimary = useMutation({
-    mutationFn: () => updatePrimaryCalendar(queryClient, user.id, { calendarId: c.id }),
-    onSuccess: () => setAskingPrimary(false),
   });
 
   const isBuiltIn = c.provider === "builtin";
@@ -412,84 +414,50 @@ function CalendarRow({
           </span>
         ) : (
           <>
-            <select
+            {/* Each as wide as its choice, so the two fit side by side. A
+                category Casy's AI guessed (#118) carries a small sparkle until
+                its owner picks one; it says so to screen readers and on hover. */}
+            <FitSelect
               value={c.purpose ?? ""}
-              disabled={labels.isPending}
-              onChange={(e) =>
-                labels.mutate({ purpose: (e.target.value || null) as CalendarPurpose | null })
+              options={[
+                { value: "", label: words.noCategory },
+                ...CATEGORIES.map((category) => ({
+                  value: category,
+                  label: t.categories[category],
+                })),
+              ]}
+              onChange={(value) =>
+                labels.mutate({ purpose: (value || null) as CalendarPurpose | null })
               }
-              aria-label={words.categoryFor(c.name)}
-              className="rounded-lg border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-            >
-              <option value="">{words.noCategory}</option>
-              {CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {t.categories[category]}
-                </option>
-              ))}
-            </select>
-            {/* Casy's AI picked it (#118): marked until its owner picks one. */}
-            {c.purposeGuessed && (
-              <span
-                title={words.guessedCategory}
-                className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-800"
-              >
-                {t.aiPlan.guessed}
-              </span>
-            )}
-            <select
-              value={c.priority}
               disabled={labels.isPending}
-              onChange={(e) => labels.mutate({ priority: e.target.value as CalendarPriority })}
-              aria-label={words.priorityFor(c.name)}
-              className="rounded-lg border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-            >
-              {PRIORITIES.map((priority) => (
-                <option key={priority} value={priority}>
-                  {words.priorities[priority]}
-                </option>
-              ))}
-            </select>
+              label={
+                c.purposeGuessed
+                  ? `${words.categoryFor(c.name)}, ${t.aiPlan.guessed}`
+                  : words.categoryFor(c.name)
+              }
+              title={c.purposeGuessed ? words.guessedCategory : undefined}
+              leading={
+                c.purposeGuessed && <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />
+              }
+            />
+            <FitSelect
+              value={c.priority}
+              options={PRIORITIES.map((priority) => ({
+                value: priority,
+                label: words.priorities[priority],
+              }))}
+              onChange={(priority) => labels.mutate({ priority })}
+              disabled={labels.isPending}
+              label={words.priorityFor(c.name)}
+            />
           </>
         )}
         {labels.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-        {c.writable && !isPrimary && !askingPrimary && (
-          <button
-            type="button"
-            onClick={() => {
-              makePrimary.reset();
-              setAskingPrimary(true);
-            }}
-            className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium text-foreground transition hover:bg-secondary"
-          >
-            <Star className="h-3 w-3" />
-            {t.primaryCalendar.makePrimary}
-          </button>
-        )}
       </div>
       {labels.isError && (
         <Notice tone="error" bare className="pl-[2.375rem] text-xs">
           {labels.error.message}
         </Notice>
-      )}
-
-      {askingPrimary && (
-        <div className="pl-[2.375rem]">
-          <ConfirmPanel
-            tone="neutral"
-            className="mt-3"
-            message={
-              primary
-                ? t.primaryCalendar.confirmChange(c.name, primary.name)
-                : t.primaryCalendar.confirmFirst(c.name)
-            }
-            confirmLabel={primary ? t.primaryCalendar.yesChange : t.primaryCalendar.yesChoose}
-            busy={makePrimary.isPending}
-            error={makePrimary.error?.message}
-            onConfirm={() => makePrimary.mutate()}
-            onCancel={() => setAskingPrimary(false)}
-          />
-        </div>
       )}
     </li>
   );

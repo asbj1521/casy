@@ -1044,23 +1044,17 @@ export const da = {
     selectLabel: "Vælg primær kalender",
     choose: "Vælg en kalender",
     noneOption: "Ingen (Casy lægger intet i dine kalendere)",
-    confirmFirst: (name: string) =>
-      `Gør ${name} til din primære kalender? Casy lægger kun aftaler i den, når du beder om det, eller når Tilføj automatisk er slået til.`,
     confirmChange: (name: string, current: string) =>
       `Gør ${name} til din primære kalender? Nye aftaler lægges i ${name}. Aftaler, der allerede er lagt i ${current}, bliver, hvor de er.`,
     confirmClear: (current: string) =>
       `Stop med at bruge ${current} som primær kalender? Så lægger Casy ingen aftaler i dine kalendere. Aftaler, der allerede er lagt der, bliver.`,
     yesChange: "Ja, skift",
-    yesChoose: "Ja, brug den",
     yesStop: "Ja, stop",
     autoAdd: "Tilføj automatisk",
     autoAddHelp:
       "Når alle har sagt ja til en aftale, lægger Casy den i din primære kalender med det samme.",
     autoAddNeedsPrimary: "Vælg en primær kalender først.",
     badge: "Primær",
-    makePrimary: "Gør til primær kalender",
-    current: (name: string) => `Primær kalender: ${name}`,
-    noneYet: "Ingen primær kalender valgt endnu.",
   },
   signIn: {
     title: "Log ind",

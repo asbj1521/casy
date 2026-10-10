@@ -1008,23 +1008,17 @@ export const en: Messages = {
     selectLabel: "Choose primary calendar",
     choose: "Choose a calendar",
     noneOption: "None (Casy adds nothing to your calendars)",
-    confirmFirst: (name: string) =>
-      `Make ${name} your primary calendar? Casy only adds events to it when you ask, or when Add automatically is on.`,
     confirmChange: (name: string, current: string) =>
       `Make ${name} your primary calendar? New events go into ${name}. Events already added to ${current} stay where they are.`,
     confirmClear: (current: string) =>
       `Stop using ${current} as your primary calendar? Casy then adds no events to your calendars. Events already added stay.`,
     yesChange: "Yes, change",
-    yesChoose: "Yes, use it",
     yesStop: "Yes, stop",
     autoAdd: "Add automatically",
     autoAddHelp:
       "When everyone has accepted an event, Casy adds it to your primary calendar straight away.",
     autoAddNeedsPrimary: "Choose a primary calendar first.",
     badge: "Primary",
-    makePrimary: "Make primary calendar",
-    current: (name: string) => `Primary calendar: ${name}`,
-    noneYet: "No primary calendar chosen yet.",
   },
   signIn: {
     title: "Sign in",

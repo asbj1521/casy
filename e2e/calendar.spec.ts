@@ -39,11 +39,11 @@ test("a calendar nobody has sorted gets a category by AI, marked until one is pi
   await page.getByRole("button", { name: /^Apple · mia@icloud\.com/ }).click();
   const category = page.getByRole("combobox", { name: /Kategori for Familie/ });
   await expect(category).toHaveValue("school");
-  await expect(page.getByText("gættet", { exact: true })).toBeVisible();
+  await expect(category).toHaveAccessibleName("Kategori for Familie, gættet");
 
   // Picked by hand: the mark goes, and the AI is never asked about it again.
   await category.selectOption("personal");
-  await expect(page.getByText("gættet", { exact: true })).toBeHidden();
+  await expect(category).toHaveAccessibleName("Kategori for Familie");
   expect(family).toMatchObject({ purpose: "personal", purpose_source: "user" });
   expect(backend.calls.filter((c) => c.name === "calendar-categorize")).toHaveLength(1);
 });

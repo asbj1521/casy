@@ -245,7 +245,7 @@ export default function ComputerCalendar() {
         <h1 className="sr-only">{words.title}</h1>
         <div
           ref={box}
-          className="grid gap-x-8 gap-y-6 lg:h-[var(--fill)] lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]"
+          className="grid gap-x-8 gap-y-6 lg:h-[var(--fill)] lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]"
           style={{ "--fill": height === null ? "auto" : `${height}px` } as CSSProperties}
         >
           {/* The calendars, as a Mac's sidebar lists them. Under the month

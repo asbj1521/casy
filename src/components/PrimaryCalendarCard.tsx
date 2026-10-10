@@ -1,26 +1,22 @@
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Star } from "lucide-react";
+import { Star } from "lucide-react";
 
 import {
   primaryCalendarQuery,
   updatePrimaryCalendar,
   type CalendarConnectionStatus,
 } from "@/api/calendars";
-import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import PrimaryCalendarPicker from "@/components/PrimaryCalendarPicker";
 import Notice from "@/components/ui/Notice";
 import Switch from "@/components/ui/Switch";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
-import { primaryName, primaryOptions } from "@/lib/primaryCalendar";
+import { primaryOptions } from "@/lib/primaryCalendar";
 
 /**
  * The profile page's primary calendar setting: which calendar Casy adds
- * agreed events to, and whether it does so automatically.
- *
- * Choosing the first calendar is one step. Changing it afterwards (or
- * choosing none) asks first, the same way My calendar does, because events
- * already added stay behind in the old calendar.
+ * agreed events to (PrimaryCalendarPicker, as on My calendar), and whether
+ * it does so automatically.
  */
 export default function PrimaryCalendarCard({
   connections,
@@ -32,33 +28,15 @@ export default function PrimaryCalendarCard({
   const words = t.primaryCalendar;
   const user = useSignedInUser();
   const queryClient = useQueryClient();
-  const { data: primary, isPending } = useQuery(primaryCalendarQuery(user.id));
-  // The choice waiting for a yes: a calendar id, or null for "none".
-  const [asking, setAsking] = useState<{ calendarId: string | null } | null>(null);
+  const { data: primary } = useQuery(primaryCalendarQuery(user.id));
 
-  const save = useMutation({
-    mutationFn: (change: { calendarId: string | null } | { autoAdd: boolean }) =>
-      updatePrimaryCalendar(queryClient, user.id, change),
-    onSuccess: () => setAsking(null),
+  const autoAdd = useMutation({
+    mutationFn: (on: boolean) => updatePrimaryCalendar(queryClient, user.id, { autoAdd: on }),
   });
 
   const list = connections ?? [];
-  const primaryId = primary?.calendarId ?? null;
-  const groups = primaryOptions(list, primaryId);
-  const currentName = primaryName(list, primaryId);
-  const nameOf = (id: string) => primaryName(list, id) ?? id;
+  const groups = primaryOptions(list, primary?.calendarId ?? null);
   const hasApple = list.some((c) => c.provider === "apple" && c.status === "connected");
-  const busy = save.isPending;
-  const error = save.error?.message ?? null;
-
-  function choose(value: string) {
-    const calendarId = value || null;
-    if (calendarId === primaryId) return;
-    save.reset();
-    // A first choice needs no second step; anything that replaces one does.
-    if (!primaryId && calendarId) save.mutate({ calendarId });
-    else setAsking({ calendarId });
-  }
 
   return (
     <div className="mt-4 rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
@@ -74,54 +52,17 @@ export default function PrimaryCalendarCard({
         </p>
       ) : (
         <>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <select
-              value={asking ? (asking.calendarId ?? "") : (primaryId ?? "")}
-              disabled={!connections || isPending || busy}
-              onChange={(e) => choose(e.target.value)}
-              aria-label={words.selectLabel}
-              className="max-w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-            >
-              <option value="">{primaryId || asking ? words.noneOption : words.choose}</option>
-              {groups.map((group) => (
-                <optgroup key={group.account} label={group.account}>
-                  {group.calendars.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            {busy && !asking && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-          </div>
-
-          {asking && (
-            <ConfirmPanel
-              tone="neutral"
-              className="mt-3"
-              message={
-                asking.calendarId
-                  ? words.confirmChange(nameOf(asking.calendarId), currentName ?? "")
-                  : words.confirmClear(currentName ?? "")
-              }
-              confirmLabel={asking.calendarId ? words.yesChange : words.yesStop}
-              busy={busy}
-              error={error}
-              onConfirm={() => save.mutate({ calendarId: asking.calendarId })}
-              onCancel={() => setAsking(null)}
-            />
-          )}
+          <PrimaryCalendarPicker connections={connections} className="mt-4" />
 
           <div className="mt-4 flex items-start gap-3 border-t pt-4">
             <Switch
               checked={!!primary?.autoAdd}
-              onChange={(autoAdd) => {
-                save.reset();
-                save.mutate({ autoAdd });
+              onChange={(on) => {
+                autoAdd.reset();
+                autoAdd.mutate(on);
               }}
               label={words.autoAdd}
-              disabled={!primary || busy}
+              disabled={!primary || autoAdd.isPending}
               className="mt-0.5"
             />
             <div className="min-w-0">
@@ -132,9 +73,9 @@ export default function PrimaryCalendarCard({
             </div>
           </div>
 
-          {error && !asking && (
+          {autoAdd.error && (
             <Notice tone="error" bare className="mt-3">
-              {error}
+              {autoAdd.error.message}
             </Notice>
           )}
         </>
