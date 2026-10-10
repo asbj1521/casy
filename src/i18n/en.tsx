@@ -1295,6 +1295,11 @@ export const en: Messages = {
     aiOff: "Allow AI",
     aiTurnOff: (name: string) => `Turn AI off for ${name}`,
     aiTurnOn: (name: string) => `Turn AI on for ${name}`,
+    labelsOn: "Event labels on",
+    labelsOff: "Allow event labels",
+    labelsTurnOff: (name: string) => `Turn event labels off for ${name}`,
+    labelsTurnOn: (name: string) =>
+      `Turn event labels on for ${name}: their phone sends event titles to AI`,
     syncedUser: (ok: number, failed: number, blocks: number) =>
       failed === 0
         ? `Synced: ${ok === 1 ? "1 account" : `${ok} accounts`}, ${blocks === 1 ? "1 busy block" : `${blocks} busy blocks`}.`

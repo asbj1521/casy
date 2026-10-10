@@ -83,7 +83,7 @@ async function overview(db: Db) {
       )
       .order("created_at", { ascending: false }),
     db.from("calendar_busy_cache").select("id", { count: "exact", head: true }),
-    db.from("ai_access").select("profile_id"),
+    db.from("ai_access").select("profile_id, event_labels"),
   ]);
   if (profilesErr) throw profilesErr;
   if (groupsErr) throw groupsErr;
@@ -92,7 +92,10 @@ async function overview(db: Db) {
   if (busyErr) throw busyErr;
   // Before the migration that adds it, nobody but admins has AI: said as such.
   if (aiAccessErr) console.error("admin: couldn't read who has AI", aiAccessErr);
-  const allowedAi = new Set((aiAccess ?? []).map((r: { profile_id: string }) => r.profile_id));
+  type AccessRow = { profile_id: string; event_labels: boolean };
+  const accessRows = (aiAccess ?? []) as AccessRow[];
+  const allowedAi = new Set(accessRows.map((r) => r.profile_id));
+  const labelsOn = new Set(accessRows.filter((r) => r.event_labels).map((r) => r.profile_id));
   const adminIds = Deno.env.get("ADMIN_USER_IDS");
 
   // The name people chose shows in groups (profiles); anyone who never used
@@ -179,6 +182,8 @@ async function overview(db: Db) {
         calendars: calendarsLinked.get(u.id) ?? 0,
         // AI while it is tested (#111): admins always, others once allowed here.
         ai: isAdminId(u.id, adminIds) ? "admin" : allowedAi.has(u.id) ? "allowed" : "off",
+        // Event labels (#112), switched on separately on top of AI.
+        labels: isAdminId(u.id, adminIds) || labelsOn.has(u.id),
       }))
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)),
     usersTruncated: truncated,
@@ -275,6 +280,29 @@ serve("admin", async (req, body) => {
       if (writeError) throw writeError;
       console.log(`admin ${caller.id} turned AI ${body.allowed ? "on" : "off"} for ${profileId}`);
       return { ai: body.allowed ? "allowed" : "off" };
+    }
+
+    case "setEventLabels": {
+      // Switch event labels on or off for someone who has AI on (#112):
+      // their phone then sends event titles to be labelled. Admins always may.
+      const profileId = requireString(body, "profileId");
+      if (typeof body.allowed !== "boolean")
+        throw new HttpError(400, "allowed must be true or false");
+      if (isAdminId(profileId, Deno.env.get("ADMIN_USER_IDS"))) {
+        throw new HttpError(400, "Admins always have AI.");
+      }
+      const { data: updated, error } = await db
+        .from("ai_access")
+        .update({ event_labels: body.allowed })
+        .eq("profile_id", profileId)
+        .select("profile_id");
+      if (error) throw error;
+      if (!updated || updated.length === 0)
+        throw new HttpError(400, "Switch AI on for them first.");
+      console.log(
+        `admin ${caller.id} turned event labels ${body.allowed ? "on" : "off"} for ${profileId}`,
+      );
+      return { labels: body.allowed };
     }
 
     case "syncConnection": {

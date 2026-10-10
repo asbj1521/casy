@@ -20,6 +20,7 @@ import {
   adminOverviewQuery,
   adminRemoveMember,
   adminSetAiAccess,
+  adminSetEventLabels,
   adminSyncConnection,
   adminSyncUser,
   type AdminConnection,
@@ -336,6 +337,10 @@ function AiAccess({ user }: { user: AdminUser }) {
     mutationFn: (allowed: boolean) => adminSetAiAccess(user.id, allowed),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
   });
+  const labels = useMutation({
+    mutationFn: (allowed: boolean) => adminSetEventLabels(user.id, allowed),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
+  });
   const pill =
     "mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
 
@@ -374,7 +379,31 @@ function AiAccess({ user }: { user: AdminUser }) {
         )}
         {on ? t.admin.aiAllowed : t.admin.aiOff}
       </button>
+      {/* Event labels (#112): a switch of its own, only once AI is on. */}
+      {on && user.labels !== undefined && (
+        <button
+          type="button"
+          onClick={() => labels.mutate(!user.labels)}
+          disabled={labels.isPending}
+          aria-pressed={user.labels}
+          title={user.labels ? t.admin.labelsTurnOff(user.name) : t.admin.labelsTurnOn(user.name)}
+          aria-label={
+            user.labels ? t.admin.labelsTurnOff(user.name) : t.admin.labelsTurnOn(user.name)
+          }
+          className={cn(
+            pill,
+            "border transition disabled:opacity-50",
+            user.labels
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+              : "bg-background text-muted-foreground hover:bg-secondary hover:text-foreground",
+          )}
+        >
+          {labels.isPending && <Loader2 className="h-3 w-3 animate-spin" aria-hidden />}
+          {user.labels ? t.admin.labelsOn : t.admin.labelsOff}
+        </button>
+      )}
       {toggle.isError && <span className="text-[11px] text-red-700">{toggle.error.message}</span>}
+      {labels.isError && <span className="text-[11px] text-red-700">{labels.error.message}</span>}
     </span>
   );
 }

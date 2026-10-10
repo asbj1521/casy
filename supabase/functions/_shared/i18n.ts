@@ -109,6 +109,9 @@ export const DANISH: Record<string, string> = {
     "Casy kunne ikke få en aftale ud af det. Prøv at sige det på en anden måde.",
 
   // Event labels, corrected by hand
+  "Event labels aren't switched on for your account.":
+    "Vurdering af aftaler er ikke slået til for din konto.",
+  "Switch AI on for them first.": "Slå AI til for personen først.",
   "Write what is wrong with the label.": "Skriv, hvad der er forkert.",
   "You've corrected labels as many times as you can today. Try again tomorrow.":
     "Du har rettet så mange vurderinger, som du kan i dag. Prøv igen i morgen.",

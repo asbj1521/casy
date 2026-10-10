@@ -578,6 +578,8 @@ export interface World {
   admin: false | "current" | "beforeAi";
   /** Who has AI switched on in admin mode, besides admins. */
   aiAccess: Set<string>;
+  /** Who has event labels switched on in admin mode (#112), among those with AI. */
+  labelsAccess: Set<string>;
   connections: CalendarConnectionStatus[];
   primary: { calendarId: string; autoAdd: boolean } | null;
   groups: Group[];
@@ -595,6 +597,7 @@ export function makeWorld(options: WorldOptions): World {
     aiAllowed: true,
     admin: false,
     aiAccess: new Set(),
+    labelsAccess: new Set(),
     connections: connected ? connections() : [],
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
     groups: withGroups ? groups() : [],
@@ -702,6 +705,7 @@ export function adminOverview(world: World): AdminOverview {
         : world.aiAccess.has(id)
           ? ("allowed" as const)
           : ("off" as const),
+      labels: admin || world.labelsAccess.has(id),
     }),
   });
   return {

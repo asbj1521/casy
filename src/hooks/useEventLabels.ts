@@ -1,11 +1,10 @@
 import { useEffect, useRef } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { adminStatusQuery } from "@/api/admin";
 import { calendarBusyQuery } from "@/api/calendars";
 import { labelEvents, relabelEvent, type EventLabel, type EventToLabel } from "@/api/eventLabels";
 import { useAuth } from "@/context/auth";
-import { useAiAllowed } from "@/hooks/useAiAllowed";
+import { useEventLabelsAllowed } from "@/hooks/useAiAllowed";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import {
   batchesToLabel,
@@ -36,8 +35,9 @@ function labelBookQuery(userId: string) {
  * batches, soonest first, and the labels are kept on the phone. Nothing shows
  * unless someone opens an event (EventLabelDetails).
  *
- * Only in the iPhone app (titles are only on the phone), only for admins
- * while #120 is open, and only once AI is on for them. Each title is asked
+ * Only in the iPhone app (titles are only on the phone), and only for
+ * admins and people an admin switched labels on for while #120 is open
+ * (useEventLabelsAllowed). Each title is asked
  * about at most once per app launch, so a failing call (the day's budget
  * used up, Anthropic down) isn't repeated in a loop; what is left is tried
  * on the next launch, or when the phone's calendars change.
@@ -47,12 +47,8 @@ export function useAutoLabel() {
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
   const phone = isNativeApp && userId ? phoneConnectionId(userId) : null;
-  const aiOn = useAiAllowed();
-  const { data: isAdmin } = useQuery({
-    ...adminStatusQuery(userId),
-    enabled: !!phone,
-  });
-  const on = !!phone && aiOn && isAdmin === true;
+  const labelsAllowed = useEventLabelsAllowed();
+  const on = !!phone && labelsAllowed;
   const { data: busy } = useQuery({
     ...calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
     enabled: on,

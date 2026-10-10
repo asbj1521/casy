@@ -1,4 +1,4 @@
-/** Admin mode (computers): the overview, and switching AI on for someone (#111). */
+/** Admin mode (computers): the overview, and switching AI (#111) and event labels (#112) on for someone. */
 import { expect, test } from "./fixtures";
 
 test.beforeEach(({ isMobile }) => test.skip(isMobile, "computers only"));
@@ -21,6 +21,27 @@ test("admin mode shows the AI's use, and switches AI on for someone", async ({ p
     "aria-pressed",
     "true",
   );
+});
+
+test("event labels are switched on separately, once AI is on (#112)", async ({ page, backend }) => {
+  backend.world.admin = "current";
+  await page.goto("/profile?mode=admin");
+  await page.getByRole("button", { name: /^Brugere/ }).click();
+  // No labels switch until AI is on.
+  await expect(page.getByRole("button", { name: /vurdering af aftaler til for Sara/ })).toHaveCount(
+    0,
+  );
+  await page.getByRole("button", { name: "Slå AI til for Sara" }).click();
+
+  const labels = page.getByRole("button", { name: /vurdering af aftaler til for Sara/ });
+  await expect(labels).toHaveAttribute("aria-pressed", "false");
+  await labels.click();
+  await expect
+    .poll(() => backend.calls.find((c) => c.body.action === "setEventLabels")?.body)
+    .toMatchObject({ profileId: "p-sara", allowed: true });
+  await expect(
+    page.getByRole("button", { name: "Slå vurdering af aftaler fra for Sara" }),
+  ).toHaveAttribute("aria-pressed", "true");
 });
 
 test("admin mode still opens while the admin function is older than the page", async ({

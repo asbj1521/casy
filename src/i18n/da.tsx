@@ -1338,6 +1338,11 @@ export const da = {
     aiOff: "Tillad AI",
     aiTurnOff: (name: string) => `Slå AI fra for ${name}`,
     aiTurnOn: (name: string) => `Slå AI til for ${name}`,
+    labelsOn: "Vurdering af aftaler slået til",
+    labelsOff: "Tillad vurdering af aftaler",
+    labelsTurnOff: (name: string) => `Slå vurdering af aftaler fra for ${name}`,
+    labelsTurnOn: (name: string) =>
+      `Slå vurdering af aftaler til for ${name}: telefonen sender titlerne på aftaler til AI`,
     syncedUser: (ok: number, failed: number, blocks: number) =>
       failed === 0
         ? `Synkroniseret: ${ok === 1 ? "1 konto" : `${ok} konti`}, ${blocks === 1 ? "1 optaget tidsrum" : `${blocks} optagede tidsrum`}.`

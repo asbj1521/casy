@@ -14,3 +14,14 @@ export function useAiAllowed(): boolean {
   const { data } = useQuery({ ...whoAmIQuery(user?.id ?? ""), enabled: !!user });
   return !!user && data?.aiAllowed === true;
 }
+
+/**
+ * Whether this person's phone labels their events (#112): admins, and
+ * people an admin switched labels on for, on top of AI. The server checks
+ * it again (calendar-label).
+ */
+export function useEventLabelsAllowed(): boolean {
+  const { user } = useAuth();
+  const { data } = useQuery({ ...whoAmIQuery(user?.id ?? ""), enabled: !!user });
+  return !!user && data?.aiAllowed === true && data?.eventLabels === true;
+}

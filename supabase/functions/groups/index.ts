@@ -29,7 +29,7 @@
  * old, while someone plans for the group, so the search doesn't offer a time
  * filled since the hourly sync (_shared/groupRefresh.ts).
  */
-import { aiAllowed } from "../_shared/aiAccess.ts";
+import { aiAllowed, eventLabelsAllowed } from "../_shared/aiAccess.ts";
 import { type Caller, requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
@@ -530,6 +530,11 @@ serve("groups", async (req, body) => {
         // A failure (the migration not yet applied) is "not yet", never a broken page.
         aiAllowed: await aiAllowed(db, profileId).catch((err) => {
           console.error("whoami: couldn't check AI access", err);
+          return false;
+        }),
+        // Whether this person's phone labels their events (#112).
+        eventLabels: await eventLabelsAllowed(db, profileId).catch((err) => {
+          console.error("whoami: couldn't check event labels", err);
           return false;
         }),
       };

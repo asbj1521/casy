@@ -226,6 +226,8 @@ export interface WhoAmI {
   name: string;
   /** Missing in answers from before #111 (a remembered copy): read as off. */
   aiAllowed?: boolean;
+  /** Whether this person's phone labels their events (#112); missing reads as off. */
+  eventLabels?: boolean;
 }
 
 /** The cache key for the signed-in person's resolved display name. */
