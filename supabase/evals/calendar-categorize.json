@@ -1,0 +1,39 @@
+{
+  "cases": [
+    { "name": "Arbejde", "provider": "icloud", "expect": "work" },
+    { "name": "Vagtplan Netto", "provider": "ics", "expect": "work" },
+    { "name": "DTU skema", "provider": "ics", "expect": "school" },
+    { "name": "Universitet - Eksamen", "provider": "icloud", "expect": "school" },
+    { "name": "Studiegruppe", "provider": "google", "expect": "school" },
+    { "name": "Privat", "provider": "icloud", "expect": "personal" },
+    { "name": "Familie", "provider": "icloud", "expect": "personal" },
+    { "name": "mia@example.com", "provider": "google", "expect": "personal" },
+    { "name": "Calendar", "provider": "icloud", "expect": "personal" },
+    { "name": "Kor", "provider": "icloud", "expect": "personal" },
+    { "name": "Løbeklub", "provider": "google", "expect": { "oneOf": ["personal", "other"] } },
+    { "name": "Helligdage i Danmark", "provider": "ics", "expect": "other" },
+    { "name": "FCK kampe", "provider": "ics", "expect": "other" },
+    { "name": "Vejret", "provider": "ics", "expect": "other" },
+    { "name": "Fødselsdage", "provider": "icloud", "expect": { "oneOf": ["other", "personal"] } },
+    {
+      "name": "Kalender",
+      "provider": "device",
+      "titles": ["Statistik forelæsning", "Mikroøkonomi øvelser", "Eksamen: Finansiering"],
+      "expect": "school"
+    },
+    {
+      "name": "Kalender",
+      "provider": "device",
+      "titles": ["Møde med kunde", "Standup", "1:1 med chef", "Kvartalsplanlægning"],
+      "expect": "work"
+    },
+    {
+      "name": "Kalender",
+      "provider": "device",
+      "titles": ["Middag hos mor", "Tandlæge", "Fødselsdag Sara", "Yoga"],
+      "expect": "personal"
+    },
+    { "name": "Projekt X", "provider": "outlook", "expect": { "oneOf": ["work", "school", null] } },
+    { "name": "asdf", "provider": "icloud", "expect": { "oneOf": [null, "personal", "other"] } }
+  ]
+}
