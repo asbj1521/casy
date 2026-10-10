@@ -1,13 +1,13 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { CalendarCheck, CalendarX, ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { CalendarCheck, CalendarX, ChevronDown, ChevronRight, Clock, Users } from "lucide-react";
 
 import Collapse from "@/components/ui/Collapse";
 import { useDecidingRefresh } from "@/hooks/useDecidingRefresh";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
-import { formatEventDate, nameList } from "@/lib/format";
-import { waitingOn, type StagedEvent } from "@/lib/myEvents";
+import { formatEventDate } from "@/lib/format";
+import type { StagedEvent } from "@/lib/myEvents";
 import { cn } from "@/lib/utils";
 import { stillToAnswer, upcomingDates, voteStage, type VoteEvent } from "@/lib/vote";
 
@@ -15,8 +15,10 @@ import DatedSummary from "./DatedSummary";
 import VoteSummary from "./VoteSummary";
 
 /**
- * A phone's My events (#103): every event as one compact row, newest first,
- * coloured by where it stands: yellow with a clock while it waits for
+ * A phone's My events (#103): every event as one compact row, newest first:
+ * its name, its group (with an icon, so it is found at a glance), and its
+ * date and time or where its vote stands; opening it never repeats them.
+ * Coloured by where it stands: yellow with a clock while it waits for
  * answers, green once everyone agreed, grey once it is over (at the bottom,
  * and gone a week later, phoneEventList). A tap opens a row to its summary,
  * one at a time; a vote waiting for your answers goes straight to swiping.
@@ -108,14 +110,23 @@ function EventRow({
       <span className="min-w-0 flex-1">
         <span
           className={cn(
-            "block truncate text-[15px] font-semibold",
+            "block truncate text-base font-semibold",
             stage === "closed" ? "text-muted-foreground" : "text-foreground",
           )}
         >
           {eventTitle(event.title, t)}
         </span>
-        <span className="block truncate text-[13px] text-muted-foreground">
-          {event.group.name} · <StatusLine staged={staged} />
+        <span
+          className={cn(
+            "flex items-center gap-1 text-[13px] font-medium",
+            stage === "closed" ? "text-muted-foreground" : "text-foreground/80",
+          )}
+        >
+          <Users className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span className="truncate">{event.group.name}</span>
+        </span>
+        <span className="block truncate text-sm text-muted-foreground">
+          <StatusLine staged={staged} />
         </span>
       </span>
       {yourTurn || choosing ? (
@@ -178,7 +189,7 @@ function Summary({ staged }: { staged: StagedEvent }): ReactNode {
   }
 }
 
-/** Where an event stands, in the few words after its group's name. */
+/** Where an event stands, on the row's last line: its date and time, or its vote. */
 function StatusLine({ staged }: { staged: StagedEvent }) {
   const t = useT();
   const { lang } = useLang();
@@ -197,11 +208,11 @@ function StatusLine({ staged }: { staged: StagedEvent }) {
       const total = event.invitees.length;
       return <>{t.events.answeredOf(total - stillToAnswer(event).length, total)}</>;
     }
+    // Who it waits for is in the opened row (its answers), not here.
     case "needsAnswer":
+    case "waiting":
     case "scheduled":
       return <>{formatEventDate(event.settings.kind, event.currentDate, lang)}</>;
-    case "waiting":
-      return <>{t.events.waitingFor(nameList(waitingOn(event), lang))}</>;
     case "closed":
       return (
         <>

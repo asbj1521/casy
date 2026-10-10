@@ -10,15 +10,14 @@ import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
 import { useEventChange } from "@/hooks/useEventChange";
 import YourTime from "@/components/time/YourTime";
-import { useLang, useT } from "@/i18n/lang";
-import { formatHeadline } from "@/lib/format";
+import { useT } from "@/i18n/lang";
 import type { DatedEvent } from "@/lib/myEvents";
 
 /**
  * An opened event with a date on a phone's My events (#103): agreed
  * ("scheduled"), or one of the dates suggested before votes (#74), still
- * waiting for your answer or for the others'. The date and time, who
- * suggested it, who hasn't said yes, its place and note, and what you can do:
+ * waiting for your answer or for the others'. Its date and time are on the
+ * row above, so not repeated here: who suggested it, who hasn't said yes, its place and note, and what you can do:
  * put it in your calendar, answer, cancel or leave, and for an agreed vote
  * say you can't make it after all, which moves it for everyone (asked
  * first, as on the swipe screen, #74).
@@ -31,25 +30,18 @@ export default function DatedSummary({
   stage: "needsAnswer" | "waiting" | "scheduled";
 }) {
   const t = useT();
-  const { lang } = useLang();
   const [exiting, setExiting] = useState(false);
   const [backingOut, setBackingOut] = useState(false);
   const backOut = useEventChange(() => answerDate(event.id, event.currentDate.id, "declined"));
   const canBackOut = stage === "scheduled" && event.mode === "vote";
-  const headline = formatHeadline(event.settings, event.currentDate, lang, t);
   const notYes = event.invitees.filter((i) => i.response !== "accepted");
   const pending = stage !== "scheduled";
 
   return (
     <div className="flex flex-col gap-3 text-sm">
       <div>
-        <p className="text-lg font-bold leading-tight text-foreground">
-          {headline.lines.join(" ")}
-        </p>
-        <p className="text-foreground">
-          {headline.time}
-          <YourTime kind={event.settings.kind} date={event.currentDate} />
-        </p>
+        {/* The time in the viewer's own clock, where it isn't Danish time. */}
+        <YourTime kind={event.settings.kind} date={event.currentDate} />
         <p className="text-muted-foreground">
           {event.createdBy.isYou
             ? t.events.youSuggested
