@@ -9,6 +9,7 @@
  * one waits forever (as in useSpeechInput.ts).
  */
 import type { PluginListenerHandle } from "@capacitor/core";
+import { queryOptions } from "@tanstack/react-query";
 
 import type { PhoneWork, PhoneWriteReport } from "@/api/calendars";
 import type { PhoneRead } from "@/lib/phoneBusy";
@@ -76,6 +77,22 @@ export async function readPhoneEventDetails(
 ): Promise<PhoneEventWithDetails[]> {
   const { plugin } = await phonePlugin();
   return (await plugin.readDetails({ from, to })).events;
+}
+
+/**
+ * This phone's events with their details over `window`, as one cached query
+ * shared by My calendar (useMyCalendarDays) and the labels (useEventLabels),
+ * so the phone is read once for both. Not in the persisted queries
+ * (queryPersistence.ts), so never written to storage.
+ */
+export function phoneEventDetailsQuery(userId: string, window: { start: string; end: string }) {
+  return queryOptions({
+    queryKey: ["phone-event-details", userId],
+    queryFn: () => readPhoneEventDetails(Date.parse(window.start), Date.parse(window.end)),
+    staleTime: 30_000,
+    // An app build without readDetails: the blocks as the server has them.
+    retry: false,
+  });
 }
 
 export async function openPhoneSettings(): Promise<void> {

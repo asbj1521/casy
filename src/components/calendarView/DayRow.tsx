@@ -1,5 +1,7 @@
 import { MapPin } from "lucide-react";
 
+import EventLabelDetails from "@/components/calendarView/EventLabelDetails";
+import { useEventLabel } from "@/hooks/useEventLabels";
 import { useLang, useT } from "@/i18n/lang";
 import {
   formatDuration,
@@ -9,6 +11,7 @@ import {
   type OverviewCalendar,
 } from "@/lib/calendarOverview";
 import { useIsDark } from "@/hooks/useIsDark";
+import { clockMinute } from "@/lib/eventLabels";
 import { shade } from "@/lib/tint";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
@@ -62,6 +65,9 @@ export function DayRow({
         ]
           .filter(Boolean)
           .join(" · ");
+  // What Casy's AI made of it (#112): only this phone's events have one.
+  const externalId = details ? calendar?.externalId : null;
+  const label = useEventLabel(externalId, details?.title);
   const pill = holiday
     ? words.holidayCategory
     : calendar?.purpose
@@ -99,6 +105,23 @@ export function DayRow({
                 ? words.continuesBefore
                 : words.continuesAfter}
           </p>
+        )}
+        {label && externalId && details && (
+          <EventLabelDetails
+            label={label}
+            calendarExternalId={externalId}
+            event={{
+              title: details.title,
+              calendar: calendar?.name ?? "",
+              allDay: seg.allDay,
+              startMinute: seg.allDay ? 0 : clockMinute(seg.start.getTime()),
+              minutes: seg.allDay
+                ? 0
+                : Math.round((seg.end.getTime() - seg.start.getTime()) / 60_000),
+              days: 1,
+              count: label.count,
+            }}
+          />
         )}
       </div>
       <span

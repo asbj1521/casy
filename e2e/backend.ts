@@ -98,6 +98,22 @@ export class FakeBackend {
         if (categorized.length > 0) this.changed();
         return ok({ categorized });
       }
+      case "calendar-label": {
+        // Only the iPhone app labels events, which the browser tests can't
+        // be; answered as the real one would, every event an ordinary one.
+        const events = Array.isArray(body.events) ? body.events : [];
+        const labels = events.map(() => ({
+          kind: "other",
+          importance: "normal",
+          prepDays: 0,
+          avoidBefore: [],
+          recoveryDays: 0,
+          strain: "light",
+          confidence: "low",
+          reason: "",
+        }));
+        return ok({ labels, left: 19 });
+      }
       case "calendar-sync":
         return ok({ results: w.connections.map(() => ({ ok: true })) });
       case "calendar-disconnect":

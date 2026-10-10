@@ -21,7 +21,7 @@ import { isNativeApp } from "@/lib/nativeApp";
 import {
   onPhoneCalendarChange,
   phoneConnectionId,
-  readPhoneEventDetails,
+  phoneEventDetailsQuery,
 } from "@/lib/phoneCalendar";
 import { phoneCalendarIds, withPhoneEvents } from "@/lib/phoneEvents";
 import { APP_TIME_ZONE } from "@/lib/zone";
@@ -95,13 +95,8 @@ export function useMyCalendarDays(): MyCalendarDays {
   // storage either; read again whenever the phone's calendars change.
   const phoneConnection = isNativeApp ? phoneConnectionId(userId) : null;
   const { data: phoneEvents } = useQuery({
-    queryKey: ["phone-event-details", userId],
-    queryFn: () =>
-      readPhoneEventDetails(Date.parse(SEARCH_WINDOW.start), Date.parse(SEARCH_WINDOW.end)),
+    ...phoneEventDetailsQuery(userId, SEARCH_WINDOW),
     enabled: !!phoneConnection,
-    staleTime: 30_000,
-    // An app build without readDetails: the blocks as the server has them.
-    retry: false,
   });
   useEffect(() => {
     if (!phoneConnection) return;

@@ -6,7 +6,7 @@
  * every run costs a little (cents) and needs the API key.
  *
  *   ANTHROPIC_API_KEY=... deno run --node-modules-dir=none --allow-net --allow-env --allow-read \
- *     supabase/evals/run.ts [plan-ai | calendar-categorize]
+ *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label]
  *
  * The cases are invented: the repo is public, so no real calendar names,
  * titles or descriptions belong in them. An expected value may be
@@ -21,6 +21,16 @@ import {
   CATEGORIZE_SYSTEM_PROMPT,
   categoriesFromAnswer,
 } from "../functions/_shared/categorizeAi.ts";
+import {
+  buildLabelMessage,
+  LABEL_SCHEMA,
+  LABEL_SYSTEM_PROMPT,
+  labelsFromAnswer,
+  MAX_EVENTS,
+  readEvent,
+  type EventLabel,
+  type EventToLabel,
+} from "../functions/_shared/labelAi.ts";
 import {
   buildPlanMessage,
   PLAN_SCHEMA,
@@ -177,10 +187,101 @@ async function calendarCategorize(): Promise<Result[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Event labels: the cases in batches, as the app sends them.
+
+interface LabelCase {
+  event: Partial<EventToLabel> & { title: string };
+  /** Label fields to check (others aren't), and the special keys below. */
+  expect: Record<string, Expected> & {
+    prepAtLeast?: number;
+    recoveryAtLeast?: number;
+    /** These must be among avoidBefore. */
+    avoidIncludes?: string[];
+    /** avoidBefore must be empty. */
+    noAvoid?: boolean;
+    /** The reason must contain none of these (case-insensitive). */
+    reasonExcludes?: string[];
+  };
+}
+
+function labelFailures(label: EventLabel, expect: LabelCase["expect"]): string[] {
+  const failures: string[] = [];
+  const { prepAtLeast, recoveryAtLeast, avoidIncludes, noAvoid, reasonExcludes, ...fields } =
+    expect;
+  for (const [field, expected] of Object.entries(fields)) {
+    const actual = label[field as keyof EventLabel];
+    if (!matches(actual, expected)) {
+      failures.push(
+        `${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+      );
+    }
+  }
+  if (prepAtLeast !== undefined && label.prepDays < prepAtLeast) {
+    failures.push(`prepDays: expected at least ${prepAtLeast}, got ${label.prepDays}`);
+  }
+  if (recoveryAtLeast !== undefined && label.recoveryDays < recoveryAtLeast) {
+    failures.push(`recoveryDays: expected at least ${recoveryAtLeast}, got ${label.recoveryDays}`);
+  }
+  for (const a of avoidIncludes ?? []) {
+    if (!label.avoidBefore.includes(a as never)) {
+      failures.push(`avoidBefore: expected ${a} in ${JSON.stringify(label.avoidBefore)}`);
+    }
+  }
+  if (noAvoid && label.avoidBefore.length > 0) {
+    failures.push(`avoidBefore: expected none, got ${JSON.stringify(label.avoidBefore)}`);
+  }
+  for (const word of reasonExcludes ?? []) {
+    if (label.reason.toLowerCase().includes(word)) {
+      failures.push(`reason mentions "${word}": ${JSON.stringify(label.reason)}`);
+    }
+  }
+  return failures;
+}
+
+async function eventLabel(): Promise<Result[]> {
+  const { lang, cases } = (await load("event-label.json")) as {
+    lang: "da" | "en";
+    cases: LabelCase[];
+  };
+  const events = cases.map((c) => readEvent(c.event)!);
+  const batches: number[][] = [];
+  for (let i = 0; i < cases.length; i += MAX_EVENTS) {
+    batches.push(cases.slice(i, i + MAX_EVENTS).map((_, j) => i + j));
+  }
+  const answers = await pool(batches, 2, async (indexes) => {
+    const { stop, text } = await ask(
+      skillRequest({
+        system: LABEL_SYSTEM_PROMPT,
+        message: buildLabelMessage(
+          indexes.map((i) => events[i]),
+          lang,
+        ),
+        schema: LABEL_SCHEMA,
+        maxTokens: 12_000,
+      }),
+    );
+    return { stop, labels: labelsFromAnswer(stop, text, indexes.length) };
+  });
+  return cases.map((c, i) => {
+    const batch = Math.floor(i / MAX_EVENTS);
+    const { stop, labels } = answers[batch];
+    const name = `${c.event.title} (${c.event.calendar ?? ""})`;
+    if (!labels) return { name, failures: [`no answer (stop_reason ${stop})`] };
+    const label = labels[i % MAX_EVENTS];
+    if (!label) return { name, failures: ["not answered"] };
+    const failures = labelFailures(label, c.expect);
+    // The reason, so a run can be read for tone as well as checked.
+    if (failures.length > 0) failures.push(`reason: ${label.reason}`);
+    return { name, failures };
+  });
+}
+
+// ---------------------------------------------------------------------------
 
 const SETS: Record<string, () => Promise<Result[]>> = {
   "plan-ai": planAi,
   "calendar-categorize": calendarCategorize,
+  "event-label": eventLabel,
 };
 const wanted = Deno.args[0] ? [Deno.args[0]] : Object.keys(SETS);
 for (const name of wanted) {

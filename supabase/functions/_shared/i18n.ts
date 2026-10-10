@@ -108,6 +108,16 @@ export const DANISH: Record<string, string> = {
   "Casy couldn't make an event of that. Try saying it another way.":
     "Casy kunne ikke få en aftale ud af det. Prøv at sige det på en anden måde.",
 
+  // Event labels, corrected by hand
+  "Write what is wrong with the label.": "Skriv, hvad der er forkert.",
+  "You've corrected labels as many times as you can today. Try again tomorrow.":
+    "Du har rettet så mange vurderinger, som du kan i dag. Prøv igen i morgen.",
+  "AI is used up for today. Try again tomorrow.": "AI er brugt op for i dag. Prøv igen i morgen.",
+  "Casy couldn't label it again right now. Try again.":
+    "Casy kunne ikke vurdere den igen lige nu. Prøv igen.",
+  "Casy couldn't label it again this time. Try saying it another way.":
+    "Casy kunne ikke vurdere den igen denne gang. Prøv at sige det på en anden måde.",
+
   // iCloud
   "Enter your Apple account email and your app-specific password.":
     "Skriv e-mailen til din Apple-konto og din app-specifikke adgangskode.",
