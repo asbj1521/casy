@@ -32,6 +32,7 @@ import Notice from "@/components/ui/Notice";
 import { withoutGroup, withoutMember, withoutUser } from "@/lib/adminOverview";
 import { syncedAgo } from "@/lib/accountSummary";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
+import type { Lang } from "@/i18n/locale";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -402,6 +403,12 @@ function ConnectionRow({
  * server decides who may see this and checks again on every action; see the
  * `admin` Edge Function.
  */
+/** "0,03 US$", or "< 0,01 US$" for less: an estimate, so two decimals is plenty. */
+function dollars(amount: number, lang: Lang): string {
+  const format = new Intl.NumberFormat(LOCALE[lang], { style: "currency", currency: "USD" });
+  return amount > 0 && amount < 0.01 ? `< ${format.format(0.01)}` : format.format(amount);
+}
+
 export default function AdminPanel({ youId }: { youId: string }) {
   const t = useT();
   const { lang } = useLang();
@@ -610,9 +617,24 @@ export default function AdminPanel({ youId }: { youId: string }) {
         <StatTile label={t.admin.statBusy} value={stats?.busyBlocks ?? null} />
       </div>
       {data?.ai && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t.admin.aiToday(data.ai.today, data.ai.limit)}
-        </p>
+        <div className="mt-2 text-sm text-muted-foreground">
+          <p>{t.admin.aiToday(data.ai.today, data.ai.limit)}</p>
+          {/* Each skill's calls and estimated cost (#111): counts only, never who. */}
+          {data.ai.skills.length > 0 && (
+            <ul className="mt-1 text-xs">
+              {data.ai.skills.map((s) => (
+                <li key={s.skill}>
+                  {t.admin.aiSkill(
+                    t.admin.aiSkills[s.skill] ?? s.skill,
+                    s.today,
+                    s.last30Days,
+                    dollars(s.cost30Days, lang),
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {isError && (

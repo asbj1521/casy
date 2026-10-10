@@ -5,6 +5,7 @@ import {
   GLOBAL_DAILY_AI_CALLS,
   runSkill,
   SKILLS,
+  usageSummary,
   type CreateMessage,
   type SkillCall,
 } from "./ai.ts";
@@ -20,7 +21,7 @@ function fakeDb(claim: unknown) {
       calls.rpc = args;
       return Promise.resolve({ data: claim, error: null });
     },
-    from: (_table: string) => ({
+    from: () => ({
       update: (values: Record<string, unknown>) => ({
         eq: (_column: string, id: unknown) => {
           calls.usage = values;
@@ -128,4 +129,31 @@ Deno.test("the cost estimate follows the list price", () => {
   // A million in and a million out: $0.10 + $0.50.
   assertEquals(estimateCost({ input: 1_000_000, output: 1_000_000 }), 0.6);
   assertEquals(estimateCost({ input: 0, output: 0, cacheRead: 1_000_000 }), 0.01);
+});
+
+Deno.test("the usage summary adds up today's calls and prices each skill", () => {
+  const usage = usageSummary([
+    {
+      skill: "calendar-categorize",
+      calls_today: 1,
+      calls_30d: 4,
+      input_tokens_today: 1000,
+      output_tokens_today: 200,
+      input_tokens_30d: 4000,
+      output_tokens_30d: 800,
+    },
+    {
+      skill: "plan-ai",
+      calls_today: 3,
+      calls_30d: 10,
+      input_tokens_today: 0,
+      output_tokens_today: 0,
+      input_tokens_30d: 1_000_000,
+      output_tokens_30d: 0,
+    },
+  ]);
+  assertEquals(usage.today, 4);
+  assertEquals(usage.limit, GLOBAL_DAILY_AI_CALLS);
+  assertEquals(usage.skills[0].costToday, (1000 * 0.1 + 200 * 0.5) / 1_000_000);
+  assertEquals(usage.skills[1].cost30Days, 0.1);
 });

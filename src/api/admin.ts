@@ -56,7 +56,19 @@ export interface AdminOverview {
   /** Whether calendar syncing works, as the health function tells the uptime monitor. */
   health: { ok: true } | { ok: false; reason: "stale" | "failing" };
   /** Planning with AI (#100): answers fetched today, of the day's cap; null if unknown. */
-  ai: { today: number; limit: number } | null;
+  /** The AI's use per skill, and today's total against the ceiling (#111). */
+  ai: {
+    today: number;
+    limit: number;
+    skills: {
+      skill: string;
+      today: number;
+      last30Days: number;
+      /** Estimated from list prices, in dollars. */
+      costToday: number;
+      cost30Days: number;
+    }[];
+  } | null;
   stats: AdminStats;
   groups: AdminGroup[];
   users: AdminUser[];

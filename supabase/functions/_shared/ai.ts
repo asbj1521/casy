@@ -163,3 +163,48 @@ export async function runSkill<T>(
   }
   return { result, userLeft: claim.userLeft };
 }
+
+/** One row of ai_usage(): a skill's calls and tokens today and over 30 days. */
+export interface UsageRow {
+  skill: string;
+  calls_today: number;
+  calls_30d: number;
+  input_tokens_today: number;
+  output_tokens_today: number;
+  input_tokens_30d: number;
+  output_tokens_30d: number;
+}
+
+/** Admin mode's view of the AI's use: per skill, with what it cost, and today's total. */
+export interface AiUsage {
+  today: number;
+  limit: number;
+  skills: {
+    skill: string;
+    today: number;
+    last30Days: number;
+    costToday: number;
+    cost30Days: number;
+  }[];
+}
+
+export function usageSummary(rows: UsageRow[]): AiUsage {
+  const skills = rows.map((r) => ({
+    skill: r.skill,
+    today: Number(r.calls_today),
+    last30Days: Number(r.calls_30d),
+    costToday: estimateCost({
+      input: Number(r.input_tokens_today),
+      output: Number(r.output_tokens_today),
+    }),
+    cost30Days: estimateCost({
+      input: Number(r.input_tokens_30d),
+      output: Number(r.output_tokens_30d),
+    }),
+  }));
+  return {
+    today: skills.reduce((sum, s) => sum + s.today, 0),
+    limit: GLOBAL_DAILY_AI_CALLS,
+    skills,
+  };
+}

@@ -1149,8 +1149,14 @@ export const en: Messages = {
     statAccounts: "Connected accounts",
     statFailing: "Failing syncs",
     healthOk: "Calendar syncing works.",
-    aiToday: (used: number, limit: number) =>
-      `Planning with AI today: ${used} of ${limit} answers used.`,
+    aiToday: (used: number, limit: number) => `AI today: ${used} of ${limit} calls used.`,
+    aiSkill: (name: string, today: number, month: number, cost: string) =>
+      `${name}: ${today} today, ${month} in 30 days, about ${cost}`,
+    aiSkills: {
+      "plan-ai": "Planning with AI",
+      "calendar-categorize": "Sorting calendars",
+      earlier: "Before budgets per person",
+    },
     healthStale: "No calendar has synced for over three hours. The hourly sync may have stopped.",
     healthFailing: "Over 30% of calendar accounts are failing to sync.",
     statBusy: "Busy blocks stored",

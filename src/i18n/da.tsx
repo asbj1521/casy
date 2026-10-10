@@ -1187,8 +1187,14 @@ export const da = {
     statAccounts: "Forbundne konti",
     statFailing: "Fejlende synkroniseringer",
     healthOk: "Kalendersynkroniseringen virker.",
-    aiToday: (used: number, limit: number) =>
-      `Planlægning med AI i dag: ${used} af ${limit} svar brugt.`,
+    aiToday: (used: number, limit: number) => `AI i dag: ${used} af ${limit} kald brugt.`,
+    aiSkill: (name: string, today: number, month: number, cost: string) =>
+      `${name}: ${today} i dag, ${month} på 30 dage, cirka ${cost}`,
+    aiSkills: {
+      "plan-ai": "Planlæg med AI",
+      "calendar-categorize": "Sortering af kalendere",
+      earlier: "Før budgetter pr. person",
+    } as Record<string, string>,
     healthStale:
       "Ingen kalender er blevet synkroniseret i over tre timer. Den timevise synkronisering er måske gået i stå.",
     healthFailing: "Over 30 % af kalenderkontiene fejler, når de synkroniseres.",
