@@ -19,10 +19,18 @@ export default function AiConversation({
   members,
   summary,
   compact = false,
+  adding: addingOutside,
+  onAdding,
   className,
 }: {
   /** A computer's box: tighter, so it fits the box's height where it can. */
   compact?: boolean;
+  /**
+   * Whether more details are being written, when the page keeps it: it then
+   * draws "Add details" and "Start over" itself (AiActions), elsewhere.
+   */
+  adding?: boolean;
+  onAdding?: (adding: boolean) => void;
   planner: AiPlanner;
   /** What Casy picked up, shown once there is a plan (a computer's PlanSummary). */
   summary?: ReactNode;
@@ -33,7 +41,10 @@ export default function AiConversation({
   const t = useT();
   const words = t.aiPlan;
   const { session, pending, error } = planner;
-  const [adding, setAdding] = useState(false);
+  const [addingHere, setAddingHere] = useState(false);
+  const outside = onAdding !== undefined;
+  const adding = outside ? !!addingOutside : addingHere;
+  const setAdding = outside ? onAdding : setAddingHere;
   const hasPlan = session.plan !== null;
   // Only how many tries are left today, when the server says; what is sent
   // where is the privacy policy's to say, not the box's.
@@ -76,6 +87,7 @@ export default function AiConversation({
           key={`${session.texts.length}-${qi}`}
           question={question.question}
           options={question.options.map((o) => o.label)}
+          compact={compact}
           picked={picked}
           disabled={pending}
           onPick={(oi) => planner.answer(qi, oi)}
@@ -100,6 +112,7 @@ export default function AiConversation({
               { key: "none", label: words.noneOfThem },
             ]}
             picked={n.picked}
+            compact={compact}
             onPick={(key) => planner.pickName(ni, key)}
           />
         );
@@ -132,36 +145,66 @@ export default function AiConversation({
           }}
           onCancel={hasPlan ? () => setAdding(false) : undefined}
         />
-      ) : (
-        <div className={cn("flex flex-wrap items-center", compact ? "gap-1" : "gap-2")}>
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-xl border bg-card font-bold text-foreground transition hover:bg-secondary",
-              compact ? "h-9 px-2.5 text-sm" : "h-10 px-3.5 text-[15px]",
-            )}
-          >
-            <MessageSquarePlus className="h-4 w-4 text-primary" />
-            {words.addDetails}
-          </button>
-          <button
-            type="button"
-            onClick={planner.reset}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-xl font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground",
-              compact ? "h-9 px-2 text-sm" : "h-10 px-3 text-[15px]",
-            )}
-          >
-            <RotateCcw className="h-4 w-4" />
-            {words.again}
-          </button>
-        </div>
+      ) : outside ? null : (
+        <AiActions compact={compact} onAdd={() => setAdding(true)} onReset={planner.reset} />
       )}
 
       {error && <p className="text-[15px] text-red-700">{error}</p>}
 
       {!compact && footnote ? <p className="text-xs text-muted-foreground">{footnote}</p> : null}
+    </div>
+  );
+}
+
+/**
+ * "Add details" and "Start over", once there is a plan. In a computer's top
+ * row (`inRow`) they share one line with the group and the settings button:
+ * "Start over" is its icon, and "Add details" too on the narrowest computers.
+ */
+export function AiActions({
+  compact,
+  inRow = false,
+  onAdd,
+  onReset,
+}: {
+  compact: boolean;
+  inRow?: boolean;
+  onAdd: () => void;
+  onReset: () => void;
+}) {
+  const words = useT().aiPlan;
+  return (
+    <div
+      className={cn(
+        "flex items-center",
+        inRow ? "gap-1" : "flex-wrap",
+        compact ? "gap-1" : "gap-2",
+      )}
+    >
+      <button
+        type="button"
+        onClick={onAdd}
+        title={inRow ? words.addDetails : undefined}
+        className={cn(
+          "inline-flex shrink-0 items-center gap-1.5 rounded-xl border bg-card font-bold text-foreground transition hover:bg-secondary",
+          compact ? "h-9 px-2.5 text-sm" : "h-10 px-3.5 text-[15px]",
+        )}
+      >
+        <MessageSquarePlus className="h-4 w-4 text-primary" />
+        <span className={cn(inRow && "max-[1359px]:sr-only")}>{words.addDetails}</span>
+      </button>
+      <button
+        type="button"
+        onClick={onReset}
+        title={inRow ? words.again : undefined}
+        className={cn(
+          "inline-flex shrink-0 items-center gap-1.5 rounded-xl font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground",
+          compact ? "h-9 px-2 text-sm" : "h-10 px-3 text-[15px]",
+        )}
+      >
+        <RotateCcw className="h-4 w-4" />
+        <span className={cn(inRow && "sr-only")}>{words.again}</span>
+      </button>
     </div>
   );
 }
@@ -314,7 +357,10 @@ function Composer({
 }
 
 const OPTION =
-  "inline-flex min-h-10 items-center rounded-xl border px-3 text-[15px] font-bold transition disabled:opacity-50";
+  "inline-flex items-center rounded-xl border font-bold transition disabled:opacity-50";
+/** An option's size: a computer's box is tighter, so two options share a line. */
+const optionSize = (compact: boolean) =>
+  compact ? "min-h-9 px-2.5 text-sm" : "min-h-10 px-3 text-[15px]";
 
 /** A question with its options as buttons, the picked one filled. */
 function ChoiceCard({
@@ -322,6 +368,7 @@ function ChoiceCard({
   options,
   picked,
   disabled = false,
+  compact = false,
   onPick,
   children,
 }: {
@@ -329,6 +376,7 @@ function ChoiceCard({
   options: { key: string; label: string }[];
   picked: string | null;
   disabled?: boolean;
+  compact?: boolean;
   onPick: (key: string) => void;
   children?: ReactNode;
 }) {
@@ -348,12 +396,12 @@ function ChoiceCard({
     );
   }
   return (
-    <div className="rounded-2xl border bg-card p-3.5">
+    <div className={cn("rounded-2xl border bg-card", compact ? "p-3" : "p-3.5")}>
       <p className="flex items-start gap-2 text-[15px] font-bold text-foreground">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
         {question}
       </p>
-      <div className="mt-2.5 flex flex-wrap gap-2">
+      <div className={cn("flex flex-wrap", compact ? "mt-2 gap-1.5" : "mt-2.5 gap-2")}>
         {options.map((o) => (
           <button
             key={o.key}
@@ -366,6 +414,7 @@ function ChoiceCard({
             aria-pressed={picked === o.key}
             className={cn(
               OPTION,
+              optionSize(compact),
               picked === o.key
                 ? "border-cta bg-cta text-white"
                 : "border-orange-200 bg-orange-50 text-orange-900 hover:bg-orange-100",
@@ -386,6 +435,7 @@ function QuestionCard({
   options,
   picked,
   disabled,
+  compact,
   onPick,
   onOther,
 }: {
@@ -393,6 +443,7 @@ function QuestionCard({
   options: string[];
   picked: number | null;
   disabled: boolean;
+  compact: boolean;
   onPick: (index: number) => void;
   onOther: (text: string) => void;
 }) {
@@ -405,6 +456,7 @@ function QuestionCard({
       options={options.map((label, i) => ({ key: String(i), label }))}
       picked={picked === null ? null : String(picked)}
       disabled={disabled}
+      compact={compact}
       onPick={(key) => onPick(Number(key))}
     >
       {other === null ? (
@@ -412,7 +464,11 @@ function QuestionCard({
           type="button"
           disabled={disabled}
           onClick={() => setOther("")}
-          className={cn(OPTION, "border-dashed bg-card text-muted-foreground hover:bg-secondary")}
+          className={cn(
+            OPTION,
+            optionSize(compact),
+            "border-dashed bg-card text-muted-foreground hover:bg-secondary",
+          )}
         >
           {words.other}
         </button>

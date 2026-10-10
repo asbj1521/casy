@@ -211,6 +211,39 @@ export class FakeBackend {
       questions: [],
     };
     const evening = (startHour: number) => ({ ...nothing, startHour, anyTime: false });
+    // A question whose options are long enough to wrap: what the box must
+    // still fit beside the answer (#124).
+    if (body.text === "te hos mormor og morfar") {
+      const meeting = (startHour: number, durationMinutes: number) => ({
+        ...nothing,
+        kind: "meeting" as const,
+        startHour,
+        anyTime: false,
+        durationMinutes,
+      });
+      const answer: PlanAnswer = {
+        plan: {
+          ...meeting(15, 90),
+          title: "Te hos mormor og morfar",
+          assumed: ["startHour", "durationMinutes"],
+          questions: [
+            {
+              question: "Hvad for en plan er det?",
+              options: [
+                { label: "Te og kage en eftermiddag", patch: meeting(15, 90) },
+                { label: "En hyggeaften", patch: meeting(18, 180) },
+                {
+                  label: "En hel weekend der",
+                  patch: { ...nothing, kind: "trip", days: 2, startWeekday: 6 },
+                },
+              ],
+            },
+          ],
+        },
+        left: 21,
+      };
+      return ok(answer);
+    }
     const plan: AiPlan =
       body.current === null
         ? {

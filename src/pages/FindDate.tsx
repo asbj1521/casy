@@ -15,6 +15,7 @@ import {
 import DayChart from "@/components/DayChart";
 import AnswerActions from "@/components/findDate/AnswerActions";
 import AiBoxView from "@/components/findDate/ai/AiBoxView";
+import { AiActions } from "@/components/findDate/ai/AiConversation";
 import PlanSummary from "@/components/findDate/ai/PlanSummary";
 import AnswerCard from "@/components/findDate/AnswerCard";
 import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
@@ -52,6 +53,7 @@ import {
   restart,
   type AnswerSteps,
 } from "@/lib/answerSteps";
+import { cn } from "@/lib/utils";
 import { planFieldsOf } from "@/lib/aiPlan";
 import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
 import { pickCandidates } from "@/lib/candidates";
@@ -199,6 +201,10 @@ export default function FindDate() {
   // Where, what to know, and how the vote runs (#84, #99): sent with a
   // suggestion, never searched on.
   const [extras, setExtras] = useState<EventExtras>(left?.extras ?? DEFAULT_EXTRAS);
+  // Whether Planlæg med AI's panel reaches down over the chart, and whether
+  // more details are being written in it (a computer's box, #124).
+  const [aiOverChart, setAiOverChart] = useState(false);
+  const [aiAdding, setAiAdding] = useState(false);
   const updateExtras = (patch: Partial<EventExtras>) => setExtras((e) => ({ ...e, ...patch }));
   // Who each group's event is for (#89), per group: members differ.
   const [peopleChoices, setPeopleChoices] = useState<Record<string, PeopleChoice>>(
@@ -1039,6 +1045,7 @@ export default function FindDate() {
               extras={extras}
               onExtras={updateExtras}
               participants={participantProps}
+              onOverChart={setAiOverChart}
               ai={
                 aiOn
                   ? {
@@ -1046,6 +1053,8 @@ export default function FindDate() {
                         <AiBoxView
                           planner={planner}
                           members={activeGroup?.members ?? []}
+                          adding={aiAdding}
+                          onAdding={setAiAdding}
                           summary={
                             <PlanSummary
                               name={name}
@@ -1059,6 +1068,17 @@ export default function FindDate() {
                         />
                       ),
                       guessed: planner.session.guessed,
+                      actions: planner.session.plan && !aiAdding && !planner.pending && (
+                        <AiActions
+                          compact
+                          inRow
+                          onAdd={() => setAiAdding(true)}
+                          onReset={() => {
+                            setAiAdding(false);
+                            planner.reset();
+                          }}
+                        />
+                      ),
                     }
                   : undefined
               }
@@ -1067,7 +1087,16 @@ export default function FindDate() {
           {/* The start times are Danish time. */}
           <DanishTimeNote className="px-1" />
 
-          {chart}
+          {/* Faded while the AI's panel reaches down over it (#124): the panel
+              is then plainly in front, and the chart about to change anyway. */}
+          {chart && (
+            <div
+              className={cn("transition-opacity duration-200", aiOverChart && "opacity-40")}
+              inert={aiOverChart}
+            >
+              {chart}
+            </div>
+          )}
 
           <LaterDates {...laterDatesProps} />
         </div>

@@ -194,6 +194,40 @@ test.describe("on a laptop's screen", () => {
     expect(panel.y + panel.height).toBeLessThanOrEqual(answer.y + answer.height + 1);
   });
 
+  test("a question with long options fits beside the answer, the chart left as it is", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    const text = page.getByRole("textbox", { name: /Fx middag en fredag/ });
+    await text.fill("te hos mormor og morfar");
+    await text.press("Enter");
+    await expect(page.getByRole("button", { name: "En hyggeaften" })).toBeVisible();
+    // "Tilføj detaljer" and "Beskriv på ny" share the box's top row (#124).
+    await expect(page.getByRole("button", { name: "Tilføj detaljer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Beskriv på ny" })).toBeVisible();
+    const panel = await boxOf(page.getByRole("dialog", { name: "Planlæg med AI" }));
+    const answer = await boxOf(answerBox(page));
+    expect(panel.y + panel.height).toBeLessThanOrEqual(answer.y + answer.height + 1);
+    await expect(chart(page).locator("..")).not.toHaveAttribute("inert");
+  });
+
+  test("on a narrower computer the panel reaches over a faded chart", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    const text = page.getByRole("textbox", { name: /Fx middag en fredag/ });
+    await text.fill("te hos mormor og morfar");
+    await text.press("Enter");
+    await expect(page.getByRole("button", { name: "En hyggeaften" })).toBeVisible();
+    // Faded and out of reach while the panel is over it, back when it closes.
+    await expect(chart(page).locator("..")).toHaveAttribute("inert");
+    await page.getByRole("button", { name: "Indstillinger" }).click();
+    await expect(chart(page).locator("..")).not.toHaveAttribute("inert");
+  });
+
   test("Tur / ferie swaps the time for a number of days", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("Varighed", { exact: true })).toBeVisible();

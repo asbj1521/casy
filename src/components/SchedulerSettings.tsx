@@ -364,6 +364,7 @@ export function SettingsPanel({
   onExtras,
   participants,
   ai,
+  onOverChart,
   className,
 }: Props & {
   /** The place, note and vote settings (#84, #99). */
@@ -376,7 +377,14 @@ export function SettingsPanel({
    * whole box (given a way back to the settings), and what Casy guessed, to
    * mark on Tidspunkt.
    */
-  ai?: { view: (close: () => void) => ReactNode; guessed: readonly PlanField[] };
+  ai?: {
+    view: (close: () => void) => ReactNode;
+    guessed: readonly PlanField[];
+    /** Once Casy has answered: "Add details" and "Start over", in the top row (#124). */
+    actions?: ReactNode;
+  };
+  /** Whether the AI's panel reaches down over the chart, for the page to fade it (#124). */
+  onOverChart?: (over: boolean) => void;
   className?: string;
 }) {
   const t = useT();
@@ -394,8 +402,12 @@ export function SettingsPanel({
     const observer = new ResizeObserver(() => setGrown(panel.offsetHeight > box.offsetHeight + 4));
     observer.observe(panel);
     observer.observe(box);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      setGrown(false);
+    };
   }, [aiOpen]);
+  useEffect(() => onOverChart?.(grown), [grown, onOverChart]);
   const id = useId();
 
   // Left and right move between tabs, as in any tab list.
@@ -530,10 +542,18 @@ export function SettingsPanel({
         >
           <div className="flex items-center gap-4">
             {group}
-            <h2 className="flex h-[42px] min-w-0 flex-1 items-center gap-1.5 text-base font-extrabold text-foreground">
+            {/* Once Casy has answered, the row's room goes to what can be
+                done next; the heading stays for screen readers. */}
+            <h2
+              className={cn(
+                "h-[42px] min-w-0 flex-1 items-center gap-1.5 text-base font-extrabold text-foreground",
+                ai.actions ? "sr-only" : "flex",
+              )}
+            >
               <Sparkles className="h-4 w-4 shrink-0 text-primary" />
               <span className="truncate">{t.aiPlan.start}</span>
             </h2>
+            {ai.actions && <div className="min-w-0 flex-1">{ai.actions}</div>}
             <button
               type="button"
               onClick={closeAi}
