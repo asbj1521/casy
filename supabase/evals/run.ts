@@ -411,8 +411,8 @@ function planExpect(o: Occasion, nowMs: number): PlanCase["expect"] {
   if (o.vague) return { asks: true };
   const expect: PlanCase["expect"] = { kind: o.plan };
   if (o.plan === "meeting") {
-    if (o.start === "any") expect.anyTime = true;
-    else if (o.start !== undefined) expect.startHour = near(o.start, 1);
+    // No set time: "any time" and a sensible hour are both right.
+    if (typeof o.start === "number") expect.startHour = near(o.start, 1);
     if (o.minutes) expect.durationMinutes = near(o.minutes, 30);
     if (o.onWeekdays) expect.weekdays = o.onWeekdays;
   } else {
