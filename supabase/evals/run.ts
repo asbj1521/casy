@@ -43,6 +43,7 @@ import {
 } from "../functions/_shared/profileAi.ts";
 import {
   buildPlanMessage,
+  PLAN_MAX_TOKENS,
   PLAN_SCHEMA,
   PLAN_SYSTEM_PROMPT,
   planFromAnswer,
@@ -128,6 +129,7 @@ async function planAi(): Promise<Result[]> {
         system: PLAN_SYSTEM_PROMPT,
         message: buildPlanMessage({ text: c.text, earlier: [], current: null }, c.lang, nowMs),
         schema: PLAN_SCHEMA,
+        maxTokens: PLAN_MAX_TOKENS,
       }),
     );
     const plan = planFromAnswer(stop, text, nowMs);
@@ -462,6 +464,7 @@ async function occasions(): Promise<Result[]> {
         system: PLAN_SYSTEM_PROMPT,
         message: buildPlanMessage({ text, earlier: [], current: null }, lang, nowMs),
         schema: PLAN_SCHEMA,
+        maxTokens: PLAN_MAX_TOKENS,
       }),
     );
     const plan = planFromAnswer(stop, answer, nowMs);

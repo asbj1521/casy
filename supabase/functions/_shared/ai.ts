@@ -94,6 +94,13 @@ export interface SkillCall<T> {
   read: (stopReason: string | null, text: string | undefined) => T | null;
   messages: SkillMessages;
   maxTokens?: number;
+  /**
+   * Ask once more when the answer is cut off at maxTokens. For skills whose
+   * answers are short, where running out of room means the model went in a
+   * loop (it repeats itself inside the JSON now and then), not that the
+   * answer was long.
+   */
+  retryIfCutOff?: boolean;
 }
 
 /** What the model is asked, so a test can stand in for Anthropic. */
@@ -153,25 +160,38 @@ export async function runSkill<T>(
     );
   }
 
-  let answer: Anthropic.Message;
-  try {
-    answer = await create(
-      skillRequest(call),
-      budget.waiting ? { maxRetries: 1, timeout: 20_000 } : { maxRetries: 2, timeout: 30_000 },
-    );
-  } catch (err) {
-    console.error(`${call.skill}: Anthropic call failed`, err);
-    throw new HttpError(503, call.messages.unavailable);
+  const ask = async () => {
+    try {
+      return await create(
+        skillRequest(call),
+        budget.waiting ? { maxRetries: 1, timeout: 20_000 } : { maxRetries: 2, timeout: 30_000 },
+      );
+    } catch (err) {
+      console.error(`${call.skill}: Anthropic call failed`, err);
+      throw new HttpError(503, call.messages.unavailable);
+    }
+  };
+  const answers = [await ask()];
+  if (call.retryIfCutOff && answers[0].stop_reason === "max_tokens") {
+    console.warn(`${call.skill}: answer cut off, asking once more`);
+    answers.push(await ask());
   }
+  const answer = answers[answers.length - 1];
 
-  // What the call used, for the cost. Not worth failing the answer over.
+  // What the call used (both asks, when it took two), for the cost. Not
+  // worth failing the answer over.
+  const total = (pick: (u: Anthropic.Usage) => number | null | undefined) =>
+    answers.reduce<number | null>((sum, a) => {
+      const n = pick(a.usage);
+      return n === null || n === undefined ? sum : (sum ?? 0) + n;
+    }, null);
   const { error: usageError } = await db
     .from("ai_calls")
     .update({
-      input_tokens: answer.usage.input_tokens,
-      output_tokens: answer.usage.output_tokens,
-      cache_read_tokens: answer.usage.cache_read_input_tokens ?? null,
-      cache_write_tokens: answer.usage.cache_creation_input_tokens ?? null,
+      input_tokens: total((u) => u.input_tokens),
+      output_tokens: total((u) => u.output_tokens),
+      cache_read_tokens: total((u) => u.cache_read_input_tokens),
+      cache_write_tokens: total((u) => u.cache_creation_input_tokens),
     })
     .eq("id", claim.id);
   if (usageError) console.error(`${call.skill}: couldn't record usage`, usageError);

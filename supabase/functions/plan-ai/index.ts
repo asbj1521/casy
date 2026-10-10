@@ -15,6 +15,7 @@ import { HttpError, serve } from "../_shared/http.ts";
 import { langOf } from "../_shared/i18n.ts";
 import {
   buildPlanMessage,
+  PLAN_MAX_TOKENS,
   PLAN_SCHEMA,
   PLAN_SYSTEM_PROMPT,
   planFromAnswer,
@@ -36,6 +37,8 @@ serve("plan-ai", async (req, body) => {
     message: buildPlanMessage(request, langOf(req), now),
     schema: PLAN_SCHEMA,
     read: (stopReason, text) => planFromAnswer(stopReason, text, now),
+    maxTokens: PLAN_MAX_TOKENS,
+    retryIfCutOff: true,
     messages: {
       usedUp: "You've used all your AI planning for today. Plan it by hand, or try tomorrow.",
       allUsedUp: "AI planning is used up for today. Plan it by hand, or try tomorrow.",

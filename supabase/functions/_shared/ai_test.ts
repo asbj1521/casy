@@ -194,3 +194,43 @@ Deno.test("admins may always use AI, with no row of their own", async () => {
     else Deno.env.set("ADMIN_USER_IDS", before);
   }
 });
+
+Deno.test(
+  "an answer cut off is asked once more when the skill says so, and both are counted",
+  async () => {
+    const replies = [answering("loop", "max_tokens"), answering("ok")];
+    let asked = 0;
+    const create: CreateMessage = (params, options) => replies[asked++](params, options);
+    const { db, calls } = fakeDb({ id: 7, userLeft: 12 });
+    const answer = await runSkill(db, "user-1", { ...call, retryIfCutOff: true }, create);
+    assertEquals(answer, { result: "ok", userLeft: 12 });
+    assertEquals(asked, 2);
+    assertEquals(calls.usage?.output_tokens, 60);
+
+    // Without it, or when the second is cut off too, the skill's words.
+    asked = 0;
+    await assertRejects(
+      () => runSkill(fakeDb({ id: 8, userLeft: 3 }).db, "user-1", call, create),
+      HttpError,
+      "huh",
+    );
+    assertEquals(asked, 1);
+    asked = 0;
+    const twice: CreateMessage = (params, options) => {
+      asked++;
+      return answering("loop", "max_tokens")(params, options);
+    };
+    await assertRejects(
+      () =>
+        runSkill(
+          fakeDb({ id: 9, userLeft: 3 }).db,
+          "user-1",
+          { ...call, retryIfCutOff: true },
+          twice,
+        ),
+      HttpError,
+      "huh",
+    );
+    assertEquals(asked, 2);
+  },
+);

@@ -92,3 +92,12 @@ Deno.test("an occasion's line says what the skills need", () => {
   const cabin = occasionLine(OCCASIONS.find((o) => o.id === "cabin-weekend")!);
   assertStringIncludes(cabin, "trip of 3 days from Fri");
 });
+
+Deno.test("the plan view keeps the timing and leaves out effects and labels", () => {
+  const julefrokost = OCCASIONS.find((o) => o.id === "julefrokost")!;
+  const line = occasionLine(julefrokost, "plan");
+  assertStringIncludes(line, "meeting from 17 for 7 h, Nov-Dec.");
+  assertStringIncludes(line, "never a lunch at 12");
+  assert(!line.includes("alcohol") && !line.includes("label"));
+  assert(occasionsBlock("plan").length < occasionsBlock().length * 0.75);
+});

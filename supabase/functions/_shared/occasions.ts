@@ -76,15 +76,24 @@ function length(minutes: number): string {
 }
 
 /**
+ * What a skill reads of each occasion: "plan" only the kind, timing and
+ * season (Planlæg med AI, whose answer nests settings inside questions and
+ * goes astray more often the longer its prompt), "full" everything.
+ */
+export type OccasionView = "plan" | "full";
+
+/**
  * One occasion as a prompt line: names, then what it usually is.
  *   julefrokost (julefrokost, julefrokosten | Christmas party): meeting from 17
  *   for 7 h, Nov-Dec; alcohol, lateNight, runs late; strain heavy, recovery 1;
  *   label party. A Christmas party despite the name, never a lunch at 12.
  */
-export function occasionLine(o: Occasion): string {
+export function occasionLine(o: Occasion, view: OccasionView = "full"): string {
   const names = `${o.da.join(", ")}${o.en.length > 0 ? ` | ${o.en.join(", ")}` : ""}`;
+  const note = o.note ? ` ${o.note}` : "";
   if (o.vague) {
-    return `- ${o.id} (${names}): vague, says too little to plan from; label ${o.label}.${o.note ? ` ${o.note}` : ""}`;
+    const label = view === "full" ? `; label ${o.label}` : "";
+    return `- ${o.id} (${names}): vague, too little to plan from, so ask what kind of plan it is${label}.${note}`;
   }
   const when: string[] = [];
   if (o.plan === "meeting") {
@@ -97,6 +106,7 @@ export function occasionLine(o: Occasion): string {
   }
   if (o.onWeekdays?.length) when.push(`on ${o.onWeekdays.map((d) => WEEKDAY[d]).join("/")}`);
   if (o.inMonths?.length) when.push(monthsText(o.inMonths));
+  if (view === "plan") return `- ${o.id} (${names}): ${when.join(", ")}.${note}`;
   const causes = [...o.effects, ...(o.runsLate ? ["runs late"] : [])];
   const body = [
     when.join(", "),
@@ -104,7 +114,7 @@ export function occasionLine(o: Occasion): string {
     `strain ${o.strain}${o.recoveryDays > 0 ? `, recovery ${o.recoveryDays}` : ""}${o.outdoors ? ", outdoors" : ""}${o.daylight ? ", daylight" : ""}`,
     `label ${o.label}`,
   ];
-  return `- ${o.id} (${names}): ${body.join("; ")}.${o.note ? ` ${o.note}` : ""}`;
+  return `- ${o.id} (${names}): ${body.join("; ")}.${note}`;
 }
 
 /** "Nov-Dec", "Jun", or "Mar/Apr" for months that aren't a run. */
@@ -124,11 +134,11 @@ export const usableOccasions = (): Occasion[] => OCCASIONS.filter((o) => o.statu
  * The glossary as a block of a system prompt. Each skill puts its own
  * sentence before it saying which parts to use.
  */
-export function occasionsBlock(): string {
+export function occasionsBlock(view: OccasionView = "full"): string {
   return [
     "<occasions>",
     "Common occasions and what they usually are. Names may come inflected, misspelt or as near variants (julefrokosten, julefrokst, firmajulefrokost); read them as the occasion. These are typical values only: whatever the person says wins. Hours are Danish time; weekdays and months are listed only when they are part of what the occasion is.",
-    ...usableOccasions().map(occasionLine),
+    ...usableOccasions().map((o) => occasionLine(o, view)),
     "</occasions>",
   ].join("\n");
 }
@@ -917,7 +927,7 @@ export const OCCASIONS: Occasion[] = [
     plan: "meeting",
     start: 20,
     minutes: 360,
-    inMonths: [10, 11],
+    inMonths: [10],
     effects: ["alcohol", "lateNight"],
     runsLate: true,
     strain: "heavy",
@@ -936,7 +946,7 @@ export const OCCASIONS: Occasion[] = [
     plan: "meeting",
     start: 14,
     minutes: 180,
-    inMonths: [12, 1],
+    inMonths: [12],
     effects: [],
     runsLate: false,
     strain: "moderate",
@@ -1028,7 +1038,6 @@ export const OCCASIONS: Occasion[] = [
     plan: "meeting",
     start: 20,
     minutes: 360,
-    inMonths: [8, 9],
     effects: ["alcohol", "lateNight"],
     runsLate: true,
     strain: "heavy",
@@ -1274,7 +1283,7 @@ export const OCCASIONS: Occasion[] = [
     daylight: false,
     label: "party",
     vague: false,
-    note: "Starts after midnight, after something else.",
+    note: "The later part of a wedding, confirmation or birthday that more guests join from about 21 or 22.",
     status: "agreed",
   },
   {
@@ -1464,7 +1473,7 @@ export const OCCASIONS: Occasion[] = [
     daylight: false,
     label: "funeral",
     vague: false,
-    note: "Usually a weekday around 11 to 13, followed by a gathering with coffee.",
+    note: "Usually a weekday around 11 to 13, followed by a gathering with coffee. Hard to move, and it matters.",
     status: "agreed",
   },
   {
@@ -1731,7 +1740,6 @@ export const OCCASIONS: Occasion[] = [
     plan: "meeting",
     start: "any",
     minutes: 60,
-    inMonths: [10, 11, 12, 1, 2, 3, 4],
     effects: [],
     runsLate: false,
     strain: "light",
@@ -2054,7 +2062,7 @@ export const OCCASIONS: Occasion[] = [
   },
   {
     id: "festival-day",
-    da: ["musikfestival", "festivaldag"],
+    da: ["festivaldag"],
     en: ["festival day", "music festival"],
     plan: "meeting",
     start: 14,
@@ -2519,7 +2527,7 @@ export const OCCASIONS: Occasion[] = [
     plan: "trip",
     days: 7,
     startWeekday: 6,
-    effects: [],
+    effects: ["travel"],
     runsLate: false,
     strain: "light",
     recoveryDays: 0,
