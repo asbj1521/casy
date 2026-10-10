@@ -213,15 +213,14 @@ test.describe("on a laptop's screen", () => {
     await expect(chart(page).locator("..")).not.toHaveAttribute("inert");
   });
 
-  test("on a narrower computer the panel reaches over a faded chart", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
+  test("when it needs more room, the panel reaches over a faded chart", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
     await page.getByRole("button", { name: "Planlæg med AI" }).click();
     const text = page.getByRole("textbox", { name: /Fx middag en fredag/ });
-    await text.fill("te hos mormor og morfar");
+    await text.fill("mange spørgsmål");
     await text.press("Enter");
-    await expect(page.getByRole("button", { name: "En hyggeaften" })).toBeVisible();
+    await expect(page.getByText("Hvornår ellers?")).toBeVisible();
     // Faded and out of reach while the panel is over it, back when it closes.
     await expect(chart(page).locator("..")).toHaveAttribute("inert");
     await page.getByRole("button", { name: "Indstillinger" }).click();

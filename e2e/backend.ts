@@ -211,6 +211,35 @@ export class FakeBackend {
       questions: [],
     };
     const evening = (startHour: number) => ({ ...nothing, startHour, anyTime: false });
+    // Three questions at once: more than any box has room for, so the panel
+    // must reach over the chart whatever the fonts measure (#124).
+    if (body.text === "mange spørgsmål") {
+      const meeting = (startHour: number) => ({
+        ...nothing,
+        kind: "meeting" as const,
+        startHour,
+        anyTime: false,
+        durationMinutes: 120,
+      });
+      const ask = (question: string) => ({
+        question,
+        options: [
+          { label: "Om eftermiddagen", patch: meeting(15) },
+          { label: "Om aftenen", patch: meeting(19) },
+          { label: "Sent om aftenen", patch: meeting(21) },
+        ],
+      });
+      const answer: PlanAnswer = {
+        plan: {
+          ...meeting(15),
+          title: "Noget",
+          assumed: ["startHour"],
+          questions: [ask("Hvornår?"), ask("Hvornår helst?"), ask("Hvornår ellers?")],
+        },
+        left: 21,
+      };
+      return ok(answer);
+    }
     // A question whose options are long enough to wrap: what the box must
     // still fit beside the answer (#124).
     if (body.text === "te hos mormor og morfar") {
