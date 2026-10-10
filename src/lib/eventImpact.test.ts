@@ -59,8 +59,16 @@ describe("profileInput", () => {
 });
 
 describe("impactOn", () => {
-  it("claims nothing without a profile", () => {
-    expect(impactOn(null, { start: dk(9, 18), end: dk(9, 21) }, meeting, TZ)).toBeNull();
+  it("without a profile, knows only what the timing says", () => {
+    expect(impactOn(null, { start: dk(9, 18), end: dk(9, 21) }, meeting, TZ)).toMatchObject({
+      profiled: false,
+      effects: [],
+      strain: null,
+      recoveryDays: 0,
+    });
+    expect(impactOn(null, { start: dk(9, 20), end: dk(10, 1) }, meeting, TZ).effects).toEqual([
+      "lateNight",
+    ]);
   });
 
   it("passes the profile on for the date", () => {
@@ -82,7 +90,7 @@ describe("impactOn", () => {
 
   it("makes a meeting ending at 23:00 or later (or past midnight) a late night", () => {
     const late = (start: string, end: string) =>
-      impactOn(profile(), { start, end }, meeting, TZ)!.effects.includes("lateNight");
+      impactOn(profile(), { start, end }, meeting, TZ).effects.includes("lateNight");
     expect(late(dk(9, 20), dk(9, 22, 59))).toBe(false);
     expect(late(dk(9, 20), dk(9, 23))).toBe(true);
     expect(late(dk(9, 22), dk(10, 1))).toBe(true);
@@ -90,14 +98,14 @@ describe("impactOn", () => {
 
   it("makes one that usually runs late a late night when planned to end at 21:00 or later", () => {
     const late = (end: string) =>
-      impactOn(profile({ runsLate: true }), { start: dk(9, 17), end }, meeting, TZ)!.effects;
+      impactOn(profile({ runsLate: true }), { start: dk(9, 17), end }, meeting, TZ).effects;
     expect(late(dk(9, 20, 30))).toEqual([]);
     expect(late(dk(9, 21))).toEqual(["lateNight"]);
   });
 
   it("leaves a trip's nights to the profile", () => {
     const date = { start: dk(9, 16), end: dk(11, 18) };
-    expect(impactOn(profile({ runsLate: true }), date, trip, TZ)!.effects).toEqual([]);
-    expect(impactOn(profile({ effects: ["travel"] }), date, trip, TZ)!.effects).toEqual(["travel"]);
+    expect(impactOn(profile({ runsLate: true }), date, trip, TZ).effects).toEqual([]);
+    expect(impactOn(profile({ effects: ["travel"] }), date, trip, TZ).effects).toEqual(["travel"]);
   });
 });

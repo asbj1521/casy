@@ -52,9 +52,12 @@ export function profileInput(
 
 /** What one date of the event does to the people going. */
 export interface DateImpact {
+  /** False when there was no profile: only what the date's timing says is known. */
+  profiled: boolean;
   /** What it causes, the date's own late night included. */
   effects: Effect[];
-  strain: Strain;
+  /** How tiring it is; null when not known (no profile). */
+  strain: Strain | null;
   recoveryDays: number;
   outdoors: boolean;
   daylight: boolean;
@@ -69,29 +72,31 @@ export interface DateImpact {
  * later (or past midnight), or when it usually runs late and is planned to
  * end at RUNS_LATE_FROM_HOUR or later. Trips and holidays take the profile's
  * word: their timing is whole days, which says nothing about the nights.
- * Null without a profile: nothing is known, so nothing is claimed.
+ * Without a profile only the timing is known: a late ending is still a late
+ * night, and nothing else is claimed (`profiled` false, strain unknown).
  */
 export function impactOn(
   profile: EventImpact | null | undefined,
   date: { start: string; end: string },
   settings: EventSettings,
   timeZone: string,
-): DateImpact | null {
-  if (!profile) return null;
+): DateImpact {
   const start = Date.parse(date.start);
   const end = Date.parse(date.end);
-  const effects = new Set<Effect>(profile.effects);
+  const effects = new Set<Effect>(profile?.effects ?? []);
   if (settings.kind === "single") {
     const endsLate = end >= atHour(start, LATE_FROM_HOUR, timeZone);
-    const runsIntoNight = profile.runsLate && end >= atHour(start, RUNS_LATE_FROM_HOUR, timeZone);
+    const runsIntoNight =
+      !!profile?.runsLate && end >= atHour(start, RUNS_LATE_FROM_HOUR, timeZone);
     if (endsLate || runsIntoNight) effects.add("lateNight");
   }
   return {
+    profiled: !!profile,
     effects: EFFECTS.filter((e) => effects.has(e)),
-    strain: profile.strain,
-    recoveryDays: profile.recoveryDays,
-    outdoors: profile.outdoors,
-    daylight: profile.daylight,
+    strain: profile?.strain ?? null,
+    recoveryDays: profile?.recoveryDays ?? 0,
+    outdoors: profile?.outdoors ?? false,
+    daylight: profile?.daylight ?? false,
     start,
     end,
   };
