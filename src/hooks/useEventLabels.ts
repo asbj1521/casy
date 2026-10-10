@@ -4,7 +4,7 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/r
 import { calendarBusyQuery } from "@/api/calendars";
 import { labelEvents, relabelEvent, type EventLabel, type EventToLabel } from "@/api/eventLabels";
 import { useAuth } from "@/context/auth";
-import { useEventLabelsAllowed } from "@/hooks/useAiAllowed";
+import { useAiTester } from "@/hooks/useAiAllowed";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import {
   addCorrection,
@@ -50,8 +50,7 @@ const askedThisLaunch = new Set<string>();
  * the phone. Nothing shows unless someone opens an event (EventLabelDetails).
  *
  * Only in the iPhone app (titles are only on the phone), and only for
- * admins and people an admin switched labels on for while #120 is open
- * (useEventLabelsAllowed). What a failing call left is tried on the next
+ * admins and AI testers while #120 is open (useAiTester). What a failing call left is tried on the next
  * launch, or when the phone's calendars change.
  */
 export function useAutoLabel() {
@@ -59,7 +58,7 @@ export function useAutoLabel() {
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
   const phone = isNativeApp && userId ? phoneConnectionId(userId) : null;
-  const labelsAllowed = useEventLabelsAllowed();
+  const labelsAllowed = useAiTester();
   const on = !!phone && labelsAllowed;
   const { data: busy } = useQuery({
     ...calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),

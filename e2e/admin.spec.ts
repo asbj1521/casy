@@ -1,4 +1,4 @@
-/** Admin mode (computers): the overview, and switching AI (#111) and event labels (#112) on for someone. */
+/** Admin mode (computers): the overview, and switching AI (#111) on for someone, and making them an AI tester. */
 import { expect, test } from "./fixtures";
 
 test.beforeEach(({ isMobile }) => test.skip(isMobile, "computers only"));
@@ -23,24 +23,25 @@ test("admin mode shows the AI's use, and switches AI on for someone", async ({ p
   );
 });
 
-test("event labels are switched on separately, once AI is on (#112)", async ({ page, backend }) => {
+test("someone with AI on can be made an AI tester, for the admin-only AI features", async ({
+  page,
+  backend,
+}) => {
   backend.world.admin = "current";
   await page.goto("/profile?mode=admin");
   await page.getByRole("button", { name: /^Brugere/ }).click();
-  // No labels switch until AI is on.
-  await expect(page.getByRole("button", { name: /vurdering af aftaler til for Sara/ })).toHaveCount(
-    0,
-  );
+  // No tester switch until AI is on.
+  await expect(page.getByRole("button", { name: /Gør Sara til AI-tester/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Slå AI til for Sara" }).click();
 
-  const labels = page.getByRole("button", { name: /vurdering af aftaler til for Sara/ });
-  await expect(labels).toHaveAttribute("aria-pressed", "false");
-  await labels.click();
+  const tester = page.getByRole("button", { name: /Gør Sara til AI-tester/ });
+  await expect(tester).toHaveAttribute("aria-pressed", "false");
+  await tester.click();
   await expect
-    .poll(() => backend.calls.find((c) => c.body.action === "setEventLabels")?.body)
+    .poll(() => backend.calls.find((c) => c.body.action === "setAiTester")?.body)
     .toMatchObject({ profileId: "p-sara", allowed: true });
   await expect(
-    page.getByRole("button", { name: "Slå vurdering af aftaler fra for Sara" }),
+    page.getByRole("button", { name: "Sara skal ikke længere være AI-tester" }),
   ).toHaveAttribute("aria-pressed", "true");
 });
 

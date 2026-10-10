@@ -16,12 +16,14 @@ export function useAiAllowed(): boolean {
 }
 
 /**
- * Whether this person's phone labels their events (#112): admins, and
- * people an admin switched labels on for, on top of AI. The server checks
- * it again (calendar-label).
+ * Whether this person gets the AI features that are admin-only while they
+ * are tested: admins, and people an admin marked as AI testers, on top of
+ * AI. Every such feature checks this, never admin status alone, so a
+ * tester's account gets each of them; the server checks again
+ * (aiTesterAllowed).
  */
-export function useEventLabelsAllowed(): boolean {
+export function useAiTester(): boolean {
   const { user } = useAuth();
   const { data } = useQuery({ ...whoAmIQuery(user?.id ?? ""), enabled: !!user });
-  return !!user && data?.aiAllowed === true && data?.eventLabels === true;
+  return !!user && data?.aiAllowed === true && (data?.aiTester ?? data?.eventLabels) === true;
 }

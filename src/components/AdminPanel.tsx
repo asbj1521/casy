@@ -20,7 +20,7 @@ import {
   adminOverviewQuery,
   adminRemoveMember,
   adminSetAiAccess,
-  adminSetEventLabels,
+  adminSetAiTester,
   adminSyncConnection,
   adminSyncUser,
   type AdminConnection,
@@ -338,7 +338,7 @@ function AiAccess({ user }: { user: AdminUser }) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
   });
   const labels = useMutation({
-    mutationFn: (allowed: boolean) => adminSetEventLabels(user.id, allowed),
+    mutationFn: (allowed: boolean) => adminSetAiTester(user.id, allowed),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
   });
   const pill =
@@ -379,27 +379,27 @@ function AiAccess({ user }: { user: AdminUser }) {
         )}
         {on ? t.admin.aiAllowed : t.admin.aiOff}
       </button>
-      {/* Event labels (#112): a switch of its own, only once AI is on. */}
-      {on && user.labels !== undefined && (
+      {/* An AI tester (every admin-only AI feature): a switch of its own, once AI is on. */}
+      {on && user.tester !== undefined && (
         <button
           type="button"
-          onClick={() => labels.mutate(!user.labels)}
+          onClick={() => labels.mutate(!user.tester)}
           disabled={labels.isPending}
-          aria-pressed={user.labels}
-          title={user.labels ? t.admin.labelsTurnOff(user.name) : t.admin.labelsTurnOn(user.name)}
+          aria-pressed={user.tester}
+          title={user.tester ? t.admin.testerTurnOff(user.name) : t.admin.testerTurnOn(user.name)}
           aria-label={
-            user.labels ? t.admin.labelsTurnOff(user.name) : t.admin.labelsTurnOn(user.name)
+            user.tester ? t.admin.testerTurnOff(user.name) : t.admin.testerTurnOn(user.name)
           }
           className={cn(
             pill,
             "border transition disabled:opacity-50",
-            user.labels
+            user.tester
               ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
               : "bg-background text-muted-foreground hover:bg-secondary hover:text-foreground",
           )}
         >
           {labels.isPending && <Loader2 className="h-3 w-3 animate-spin" aria-hidden />}
-          {user.labels ? t.admin.labelsOn : t.admin.labelsOff}
+          {user.tester ? t.admin.testerOn : t.admin.testerOff}
         </button>
       )}
       {toggle.isError && <span className="text-[11px] text-red-700">{toggle.error.message}</span>}

@@ -1,17 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-
-import { adminStatusQuery } from "@/api/admin";
 import type { SuggestedEvent } from "@/api/events";
 import AiReadout from "@/components/ui/AiReadout";
-import { useAuth } from "@/context/auth";
+import { useAiTester } from "@/hooks/useAiAllowed";
 import { useT } from "@/i18n/lang";
 
 /**
  * What Casy's AI expects an event to involve for the people going (#113):
  * a late night, alcohol, a long journey, hard exercise, how tiring it is.
- * Only for admins while it is tested, to judge the profiles before the
- * warnings (#114) are built on them; nothing for anyone else, or for an
- * event that came without a profile.
+ * Only for admins and AI testers while it is tested (useAiTester), to judge
+ * the profiles before the warnings (#114) are built on them; nothing for
+ * anyone else, or for an event that came without a profile.
  */
 export default function EventImpactDetails({
   event,
@@ -21,13 +18,9 @@ export default function EventImpactDetails({
   className?: string;
 }) {
   const t = useT();
-  const { user } = useAuth();
+  const tester = useAiTester();
   const impact = event.impact;
-  const { data: isAdmin } = useQuery({
-    ...adminStatusQuery(user?.id ?? ""),
-    enabled: !!user && !!impact,
-  });
-  if (!impact || isAdmin !== true) return null;
+  if (!impact || !tester) return null;
 
   const words = t.eventImpact;
   const facts = [
@@ -45,7 +38,7 @@ export default function EventImpactDetails({
       headline={`${t.eventLabel.strain[impact.strain]} · ${t.eventLabel.confidence[impact.confidence]}`}
       facts={facts}
       reason={impact.reason}
-      footer={<p className="text-muted-foreground">{words.adminOnly}</p>}
+      footer={<p className="text-muted-foreground">{words.testersOnly}</p>}
     />
   );
 }

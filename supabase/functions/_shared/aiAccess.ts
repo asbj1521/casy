@@ -25,24 +25,23 @@ export async function aiAllowed(db: Pick<Db, "from">, profileId: string): Promis
 export const NOT_ALLOWED = "AI features aren't switched on for your account yet.";
 
 /**
- * Whether this person's phone may send event titles to be labelled (#112):
- * admins always, everyone else only once an admin switched labels on for
- * them (ai_access.event_labels), on top of the AI features. Titles are more
- * than what people type into Casy, so this is a switch of its own until
- * #120's consent exists.
+ * Whether this person gets the AI features that are admin-only while they
+ * are tested: admins always, everyone else only once an admin marked them as
+ * an AI tester (ai_access.tester), on top of the AI features. Every such
+ * feature checks this, never admin status alone, so a tester's account (the
+ * operator's own test account, for one) gets each of them. Event labels
+ * (#112) are one: they send event titles, which needs #120's consent before
+ * anyone else.
  */
-export async function eventLabelsAllowed(
-  db: Pick<Db, "from">,
-  profileId: string,
-): Promise<boolean> {
+export async function aiTesterAllowed(db: Pick<Db, "from">, profileId: string): Promise<boolean> {
   if (isAdminId(profileId, Deno.env.get("ADMIN_USER_IDS"))) return true;
   const { data, error } = await db
     .from("ai_access")
-    .select("event_labels")
+    .select("tester")
     .eq("profile_id", profileId)
     .maybeSingle();
   if (error) throw error;
-  return (data as { event_labels?: boolean } | null)?.event_labels === true;
+  return (data as { tester?: boolean } | null)?.tester === true;
 }
 
 export const LABELS_NOT_ALLOWED = "Event labels aren't switched on for your account.";

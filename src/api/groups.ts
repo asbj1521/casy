@@ -226,7 +226,12 @@ export interface WhoAmI {
   name: string;
   /** Missing in answers from before #111 (a remembered copy): read as off. */
   aiAllowed?: boolean;
-  /** Whether this person's phone labels their events (#112); missing reads as off. */
+  /**
+   * Whether this person gets the AI features that are admin-only while they
+   * are tested: admins and AI testers. Missing reads as off.
+   */
+  aiTester?: boolean;
+  /** The same, by its name before testers; read when aiTester is missing. */
   eventLabels?: boolean;
 }
 

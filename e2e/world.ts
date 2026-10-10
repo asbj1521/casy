@@ -571,6 +571,8 @@ export interface World {
   name: string;
   /** The AI features are on for Mia (#111); a test switches them off. */
   aiAllowed: boolean;
+  /** Mia gets the admin-only AI features as an AI tester; off unless a test turns it on. */
+  aiTester: boolean;
   /**
    * Mia is an admin, and how the admin function answers: as now, or as one
    * deployed before #111 (no AI per skill, no AI switch per user).
@@ -578,8 +580,8 @@ export interface World {
   admin: false | "current" | "beforeAi";
   /** Who has AI switched on in admin mode, besides admins. */
   aiAccess: Set<string>;
-  /** Who has event labels switched on in admin mode (#112), among those with AI. */
-  labelsAccess: Set<string>;
+  /** Who an admin marked as an AI tester, among those with AI. */
+  testers: Set<string>;
   connections: CalendarConnectionStatus[];
   primary: { calendarId: string; autoAdd: boolean } | null;
   groups: Group[];
@@ -595,9 +597,10 @@ export function makeWorld(options: WorldOptions): World {
   return {
     name: ME.name,
     aiAllowed: true,
+    aiTester: false,
     admin: false,
     aiAccess: new Set(),
-    labelsAccess: new Set(),
+    testers: new Set(),
     connections: connected ? connections() : [],
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
     groups: withGroups ? groups() : [],
@@ -705,7 +708,7 @@ export function adminOverview(world: World): AdminOverview {
         : world.aiAccess.has(id)
           ? ("allowed" as const)
           : ("off" as const),
-      labels: admin || world.labelsAccess.has(id),
+      tester: admin || world.testers.has(id),
     }),
   });
   return {

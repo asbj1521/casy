@@ -2,7 +2,7 @@
  * Event labels (#112), backed by the `calendar-label` Edge Function: this
  * phone's event titles in, a label per event out. The titles go to
  * Anthropic and nowhere else; the server keeps nothing, and the labels are
- * kept on the phone (src/lib/eventLabels.ts). Admins only while #120 is open.
+ * kept on the phone (src/lib/eventLabels.ts). Admins and AI testers only while #120 is open.
  *
  * The types mirror supabase/functions/_shared/labelAi.ts.
  */

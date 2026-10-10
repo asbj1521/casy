@@ -863,7 +863,7 @@ export const da = {
     runsLate: "Trækker tit ud",
     outdoors: "Udendørs",
     daylight: "Kræver dagslys",
-    adminOnly: "Kun administratorer ser dette, mens det testes.",
+    testersOnly: "Kun administratorer og AI-testere ser dette, mens det testes.",
   },
   /** What Casy's AI made of one of your events (#112), under it in the day's list. */
   eventLabel: {
@@ -1354,11 +1354,11 @@ export const da = {
     aiOff: "Tillad AI",
     aiTurnOff: (name: string) => `Slå AI fra for ${name}`,
     aiTurnOn: (name: string) => `Slå AI til for ${name}`,
-    labelsOn: "Vurdering af aftaler slået til",
-    labelsOff: "Tillad vurdering af aftaler",
-    labelsTurnOff: (name: string) => `Slå vurdering af aftaler fra for ${name}`,
-    labelsTurnOn: (name: string) =>
-      `Slå vurdering af aftaler til for ${name}: telefonen sender titlerne på aftaler til AI`,
+    testerOn: "AI-tester",
+    testerOff: "Gør til AI-tester",
+    testerTurnOff: (name: string) => `${name} skal ikke længere være AI-tester`,
+    testerTurnOn: (name: string) =>
+      `Gør ${name} til AI-tester: får alle AI-funktioner, der ellers kun er for administratorer, også vurdering af aftaler, som sender titlerne på aftaler til AI`,
     syncedUser: (ok: number, failed: number, blocks: number) =>
       failed === 0
         ? `Synkroniseret: ${ok === 1 ? "1 konto" : `${ok} konti`}, ${blocks === 1 ? "1 optaget tidsrum" : `${blocks} optagede tidsrum`}.`

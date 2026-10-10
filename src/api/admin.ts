@@ -39,8 +39,8 @@ export interface AdminUser {
   /** AI while it is tested (#111): admins always, others once switched on here. */
   /** Missing from a function deployed before #111. */
   ai?: "admin" | "allowed" | "off";
-  /** Event labels (#112) are on for them: always for admins, else switched on here. */
-  labels?: boolean;
+  /** An AI tester: every admin-only AI feature. Always for admins, else switched on here. */
+  tester?: boolean;
 }
 
 export interface AdminConnection {
@@ -160,13 +160,13 @@ export async function adminSetAiAccess(
   });
 }
 
-/** Switch event labels (#112) on or off for someone who has AI on. */
-export async function adminSetEventLabels(
+/** Mark someone who has AI on as an AI tester, or not. */
+export async function adminSetAiTester(
   profileId: string,
   allowed: boolean,
-): Promise<{ labels: boolean }> {
+): Promise<{ tester: boolean }> {
   return await callFunction("admin", {
-    body: { action: "setEventLabels", profileId, allowed },
+    body: { action: "setAiTester", profileId, allowed },
     errorMessage: currentMessages().api.adminAiAccess,
   });
 }

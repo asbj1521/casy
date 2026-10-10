@@ -29,7 +29,7 @@
  * old, while someone plans for the group, so the search doesn't offer a time
  * filled since the hourly sync (_shared/groupRefresh.ts).
  */
-import { aiAllowed, eventLabelsAllowed } from "../_shared/aiAccess.ts";
+import { aiAllowed, aiTesterAllowed } from "../_shared/aiAccess.ts";
 import { type Caller, requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
@@ -532,11 +532,15 @@ serve("groups", async (req, body) => {
           console.error("whoami: couldn't check AI access", err);
           return false;
         }),
-        // Whether this person's phone labels their events (#112).
-        eventLabels: await eventLabelsAllowed(db, profileId).catch((err) => {
-          console.error("whoami: couldn't check event labels", err);
-          return false;
-        }),
+        // Whether this person gets the admin-only AI features being tested:
+        // admins and AI testers. Also as eventLabels, the name app builds
+        // from before testers read it by.
+        ...(await aiTesterAllowed(db, profileId)
+          .then((tester) => ({ aiTester: tester, eventLabels: tester }))
+          .catch((err) => {
+            console.error("whoami: couldn't check AI testers", err);
+            return { aiTester: false, eventLabels: false };
+          })),
       };
 
     case "set-name": {

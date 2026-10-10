@@ -161,16 +161,16 @@ export class FakeBackend {
           if (body.allowed) w.aiAccess.add(id);
           else {
             w.aiAccess.delete(id);
-            w.labelsAccess.delete(id);
+            w.testers.delete(id);
           }
           return ok({ ai: body.allowed ? "allowed" : "off" });
         }
-        if (action === "setEventLabels") {
+        if (action === "setAiTester") {
           const id = String(body.profileId);
           if (!w.aiAccess.has(id)) return fail(400, "Slå AI til for personen først.");
-          if (body.allowed) w.labelsAccess.add(id);
-          else w.labelsAccess.delete(id);
-          return ok({ labels: body.allowed === true });
+          if (body.allowed) w.testers.add(id);
+          else w.testers.delete(id);
+          return ok({ tester: body.allowed === true });
         }
         return undefined;
       case "plan-ai":
@@ -254,7 +254,11 @@ export class FakeBackend {
       case "pulse":
         return ok({ pulse: `v${w.version}` });
       case "whoami":
-        return ok({ name: w.name, aiAllowed: w.aiAllowed, eventLabels: false });
+        return ok({
+          name: w.name,
+          aiAllowed: w.aiAllowed,
+          aiTester: w.aiTester || w.admin !== false,
+        });
       case "set-name":
         w.name = String(body.name);
         return ok({ name: w.name });

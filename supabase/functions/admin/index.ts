@@ -83,7 +83,7 @@ async function overview(db: Db) {
       )
       .order("created_at", { ascending: false }),
     db.from("calendar_busy_cache").select("id", { count: "exact", head: true }),
-    db.from("ai_access").select("profile_id, event_labels"),
+    db.from("ai_access").select("profile_id, tester"),
   ]);
   if (profilesErr) throw profilesErr;
   if (groupsErr) throw groupsErr;
@@ -92,10 +92,10 @@ async function overview(db: Db) {
   if (busyErr) throw busyErr;
   // Before the migration that adds it, nobody but admins has AI: said as such.
   if (aiAccessErr) console.error("admin: couldn't read who has AI", aiAccessErr);
-  type AccessRow = { profile_id: string; event_labels: boolean };
+  type AccessRow = { profile_id: string; tester: boolean };
   const accessRows = (aiAccess ?? []) as AccessRow[];
   const allowedAi = new Set(accessRows.map((r) => r.profile_id));
-  const labelsOn = new Set(accessRows.filter((r) => r.event_labels).map((r) => r.profile_id));
+  const testers = new Set(accessRows.filter((r) => r.tester).map((r) => r.profile_id));
   const adminIds = Deno.env.get("ADMIN_USER_IDS");
 
   // The name people chose shows in groups (profiles); anyone who never used
@@ -182,8 +182,8 @@ async function overview(db: Db) {
         calendars: calendarsLinked.get(u.id) ?? 0,
         // AI while it is tested (#111): admins always, others once allowed here.
         ai: isAdminId(u.id, adminIds) ? "admin" : allowedAi.has(u.id) ? "allowed" : "off",
-        // Event labels (#112), switched on separately on top of AI.
-        labels: isAdminId(u.id, adminIds) || labelsOn.has(u.id),
+        // An AI tester: every admin-only AI feature, on top of AI.
+        tester: isAdminId(u.id, adminIds) || testers.has(u.id),
       }))
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)),
     usersTruncated: truncated,
@@ -282,9 +282,10 @@ serve("admin", async (req, body) => {
       return { ai: body.allowed ? "allowed" : "off" };
     }
 
-    case "setEventLabels": {
-      // Switch event labels on or off for someone who has AI on (#112):
-      // their phone then sends event titles to be labelled. Admins always may.
+    case "setAiTester": {
+      // Mark someone with AI on as an AI tester, or not: a tester gets every
+      // AI feature that is admin-only while it is tested (event labels, #112,
+      // which send their event titles, among them). Admins always do.
       const profileId = requireString(body, "profileId");
       if (typeof body.allowed !== "boolean")
         throw new HttpError(400, "allowed must be true or false");
@@ -293,16 +294,16 @@ serve("admin", async (req, body) => {
       }
       const { data: updated, error } = await db
         .from("ai_access")
-        .update({ event_labels: body.allowed })
+        .update({ tester: body.allowed })
         .eq("profile_id", profileId)
         .select("profile_id");
       if (error) throw error;
       if (!updated || updated.length === 0)
         throw new HttpError(400, "Switch AI on for them first.");
       console.log(
-        `admin ${caller.id} turned event labels ${body.allowed ? "on" : "off"} for ${profileId}`,
+        `admin ${caller.id} made ${profileId} ${body.allowed ? "an" : "no longer an"} AI tester`,
       );
-      return { labels: body.allowed };
+      return { tester: body.allowed };
     }
 
     case "syncConnection": {
