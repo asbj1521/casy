@@ -12,6 +12,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "e2e": "playwright test",
+    "finish": "bash scripts/finish.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

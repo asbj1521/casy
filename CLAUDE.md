@@ -206,7 +206,7 @@ Order: migrations before the functions that depend on them. Afterwards, `supabas
 
 ## CI/CD
 
-GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push to any branch and on PRs to `main`, in three jobs: the web app (ESLint, the Prettier check, `npm run build`, which type-checks first, `e2e/` included, and the Vitest suite), the browser tests (Playwright in its Docker image, whose version must match the pinned `@playwright/test`; on failure the report with screenshot diffs is uploaded as `browser-test-results`), and the Edge Functions (`deno check` and the Deno tests). `.github/workflows/screenshots.yml` makes new reference screenshots on a branch (never `main`). Run the same locally before handing work over (`npm run e2e` covers the behaviour tests). CI never builds the iPhone app; ESLint and Prettier skip `ios/`.
+GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push to any branch and on PRs to `main`, in three jobs: the web app (ESLint, the Prettier check, `npm run build`, which type-checks first, `e2e/` included, and the Vitest suite), the browser tests (Playwright in its Docker image, whose version must match the pinned `@playwright/test`; on failure the report with screenshot diffs is uploaded as `browser-test-results`), and the Edge Functions (`deno check` and the Deno tests). `.github/workflows/screenshots.yml` makes new reference screenshots on a branch (never `main`), running the whole browser suite: it is where a `[screenshots]` commit's browser tests run, since CI's browser job skips that commit and the bot's commit starts no CI. Playwright uses every core on CI (`workers` in `playwright.config.ts`). Run the same locally before handing work over (`npm run e2e` covers the behaviour tests). CI never builds the iPhone app; ESLint and Prettier skip `ios/`.
 
 ---
 
@@ -327,29 +327,15 @@ mutation { addProjectV2ItemById(input: { projectId: "PVT_kwHOD5fAM84BbNZz" conte
 
 ### Step 8 — Wrap Up (only when the user explicitly says so, e.g. "finish the workflow")
 
-1. **Update the issue body** — append a `## What was done` section (3–5 bullet points) to the original description:
+All the waiting is CI's (about two minutes); never block the session on it.
+
+1. **Start the merge in the background:** `npm run finish` with `run_in_background: true`, from the feature branch with everything committed and the local checks passing. `scripts/finish.sh` pushes the branch, waits for every Actions run on that commit (`gh run watch`), takes the screenshot bot's commit if there is one, then fast-forwards `main`, pushes it and deletes the branch. It stops before touching `main` if a check fails, if `main` has moved on (rebase on `origin/main` and run it again), or if the branch on GitHub holds commits CI didn't check. Never wait by hand with `sleep` loops; you are told when it exits.
+2. **Meanwhile, update the issue body:** append a `## What was done` section (3–5 bullet points) to the original description:
    ```bash
    PATCH https://api.github.com/repos/asbj1521/casy/issues/<NUMBER>
    { "body": "<original body>\n\n---\n\n## What was done\n\n- ..." }
    ```
-2. **Move card to Done:**
-   ```
-   value: { singleSelectOptionId: "98236657" }
-   ```
-3. **Close the issue:**
-   ```bash
-   PATCH https://api.github.com/repos/asbj1521/casy/issues/<NUMBER>
-   { "state": "closed" }
-   ```
-4. **Merge to main:**
-   ```bash
-   git checkout main
-   git pull origin main
-   git merge feature/[task-name]
-   git push origin main
-   git branch -d feature/[task-name]
-   git push origin --delete feature/[task-name]   # only if the branch was ever pushed
-   ```
+3. **Once `finish` has succeeded,** move the card to Done (`value: { singleSelectOptionId: "98236657" }`) and close the issue (`PATCH .../issues/<NUMBER>` with `{ "state": "closed" }`), in one command. If it failed, say why (the run's link is in its output), fix it on the branch and run it again.
 
 ### Project IDs Reference
 

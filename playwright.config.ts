@@ -20,6 +20,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // Every core of CI's runner (Playwright's default is half); a Mac keeps the default.
+  workers: process.env.CI ? "100%" : undefined,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   expect: {
     toHaveScreenshot: { animations: "disabled", caret: "hide", maxDiffPixelRatio: 0.001 },

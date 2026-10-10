@@ -25,8 +25,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci
-      # Rewrites every image that differs, and makes the missing ones.
-      - run: npx playwright test e2e/screenshots.spec.ts --update-snapshots=changed
+      # The whole suite, behaviour tests too: this workflow's commit starts no
+      # CI run, and CI's browser job skips a [screenshots] commit, so this is
+      # where the branch's browser tests run. Rewrites every image that
+      # differs, and makes the missing ones.
+      - run: npx playwright test --update-snapshots=changed
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
       - name: Commit the new images
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
