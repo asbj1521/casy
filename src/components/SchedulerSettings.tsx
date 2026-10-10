@@ -411,11 +411,8 @@ export function SettingsPanel({
     setAiOpen(false);
     setTab("time");
   };
-  const group = (
-    <Field label={t.scheduler.group}>
-      <div className="w-60 2xl:w-72">{groupSwitcher}</div>
-    </Field>
-  );
+  // The same width and place in the AI view below, so the picker never moves.
+  const group = <div className="w-60 shrink-0 2xl:w-72">{groupSwitcher}</div>;
 
   return (
     <section
@@ -432,15 +429,12 @@ export function SettingsPanel({
         inert={aiOpen}
         aria-hidden={aiOpen}
       >
-        <div className="flex items-end gap-4">
+        <div className="flex items-center gap-4">
           {group}
-          {/* As tall as the group picker (42px), so the two labels line up. */}
-          <label className="flex min-w-0 flex-1 flex-col gap-2">
-            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              {t.scheduler.name}
-            </span>
+          <label className="min-w-0 flex-1">
             <input
               type="text"
+              aria-label={t.scheduler.name}
               value={name}
               maxLength={MAX_NAME_LENGTH}
               onChange={(e) => onName(e.target.value)}
@@ -534,8 +528,8 @@ export function SettingsPanel({
             grown ? "shadow-xl" : "shadow-sm",
           )}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-56 shrink-0 2xl:w-64">{groupSwitcher}</div>
+          <div className="flex items-center gap-4">
+            {group}
             <h2 className="flex h-[42px] min-w-0 flex-1 items-center gap-1.5 text-base font-extrabold text-foreground">
               <Sparkles className="h-4 w-4 shrink-0 text-primary" />
               <span className="truncate">{t.aiPlan.start}</span>
