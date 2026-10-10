@@ -155,9 +155,10 @@ const da: LegalCopy = {
             bliver sendt til gruppen. Anthropic bruger ikke det, Casy sender, til at træne sine
             modeller, og sletter det normalt inden for 30 dage. Anthropic ligger i USA, så det, du
             skriver her, bliver behandlet uden for EU. Casy gemmer ikke selv teksten. Casy noterer
-            kun, at et svar blev hentet, og hvor stort det var, uden at notere hvem der hentede det,
-            så der kan sættes en grænse for, hvor mange svar der hentes om dagen. Notatet slettes
-            efter 30 dage.
+            kun, at et svar blev hentet, til hvem og til hvad (for eksempel Planlæg med AI), og hvor
+            stort det var, så der kan sættes en grænse for, hvor mange svar hver person henter om
+            dagen. Notatet slettes efter 30 dage, eller når du sletter din konto, og du kan se dit
+            antal under Dine data.
           </p>
           <p>
             Har en af dine kalendere ingen kategori, beder Casy også Anthropic om at gætte den
@@ -276,6 +277,7 @@ const da: LegalCopy = {
             </li>
             <li>invitationslinks 30 dage efter, at de er holdt op med at virke;</li>
             <li>notatet om, at du har slået en e-mailadresse op, efter et døgn;</li>
+            <li>notatet om dine AI-svar efter 30 dage;</li>
             <li>forsøg på at forbinde en kalender, der aldrig blev færdige, efter 7 dage;</li>
             <li>
               afslåede invitationer til en gruppe 6 måneder efter, at de blev sendt. Derefter kan
@@ -456,8 +458,10 @@ const en: LegalCopy = {
             anything is sent to the group. Anthropic does not use what Casy sends to train its
             models, and normally deletes it within 30 days. Anthropic is in the United States, so
             what you write here is processed outside the EU. Casy itself does not keep the text. It
-            only notes that an answer was fetched and how large it was, without noting who fetched
-            it, so the number of answers a day can be limited. The note is deleted after 30 days.
+            only notes that an answer was fetched, for whom and for what (such as Planning with AI),
+            and how large it was, so the number of answers each person fetches a day can be limited.
+            The note is deleted after 30 days, or when you delete your account, and you can see your
+            count under Your data.
           </p>
           <p>
             If one of your calendars has no category, Casy also asks Anthropic to guess it (work,
@@ -580,6 +584,7 @@ const en: LegalCopy = {
             </li>
             <li>invite links 30 days after they stopped working;</li>
             <li>the note that you looked up an email address, after a day;</li>
+            <li>the note about your AI answers after 30 days;</li>
             <li>attempts to connect a calendar that never finished, after 7 days;</li>
             <li>
               declined group invitations 6 months after they were sent. The group can then invite
