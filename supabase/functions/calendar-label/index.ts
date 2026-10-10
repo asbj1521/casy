@@ -6,6 +6,8 @@
  * POST { events: EventToLabel[] } -> { labels: (EventLabel | null)[], left }
  * POST { events: [one], correction: { note, previous } } -> the same, for one
  *   event the person said was labelled wrong ("Forkert?"), with what they wrote.
+ * Either may carry `corrections`: the person's earlier ones, kept on their
+ * phone, so what they said about their own life carries over to events like it.
  *
  * Nothing is stored or logged: the titles go to Anthropic and the labels
  * straight back to the phone, which keeps them. Until #120 (the consent and
@@ -26,6 +28,7 @@ import {
   LABEL_SYSTEM_PROMPT,
   labelsFromAnswer,
   MAX_NOTE_LENGTH,
+  readCorrections,
   readEvents,
 } from "../_shared/labelAi.ts";
 import { cleanText } from "../_shared/text.ts";
@@ -39,6 +42,8 @@ serve("calendar-label", async (req, body) => {
   const events = readEvents(body.events);
   if (!events) throw new HttpError(400, "events must be 1 to 50 events with titles");
   const lang = langOf(req);
+  // The person's earlier corrections, kept on their phone (#112).
+  const corrections = readCorrections(body.corrections);
 
   if (body.correction !== undefined) {
     const correction = body.correction as { note?: unknown; previous?: unknown } | null;
@@ -51,7 +56,7 @@ serve("calendar-label", async (req, body) => {
     const { result: labels, userLeft } = await runSkill(db, caller.id, {
       skill: "event-relabel",
       system: LABEL_SYSTEM_PROMPT,
-      message: buildRelabelMessage(events[0], previous, note, lang),
+      message: buildRelabelMessage(events[0], previous, note, lang, corrections),
       schema: LABEL_SCHEMA,
       read: (stopReason, text) => {
         const answer = labelsFromAnswer(stopReason, text, 1);
@@ -70,7 +75,7 @@ serve("calendar-label", async (req, body) => {
   const { result: labels, userLeft } = await runSkill(db, caller.id, {
     skill: "event-label",
     system: LABEL_SYSTEM_PROMPT,
-    message: buildLabelMessage(events, lang),
+    message: buildLabelMessage(events, lang, corrections),
     schema: LABEL_SCHEMA,
     read: (stopReason, text) => labelsFromAnswer(stopReason, text, events.length),
     // A batch of 50 labels is a few thousand tokens of answer.

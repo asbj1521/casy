@@ -9,8 +9,10 @@ import {
   type EventToLabel,
   LABEL_SCHEMA,
   labelsFromAnswer,
+  MAX_CORRECTIONS,
   MAX_EVENTS,
   MAX_PREP_DAYS,
+  readCorrections,
   readEvent,
   readEvents,
 } from "./labelAi.ts";
@@ -67,6 +69,48 @@ Deno.test("the correction message carries the old label and the note as data", (
   assertStringIncludes(message, '"ref":"e1"');
   assertStringIncludes(message, '"kind":"exam"');
   assertStringIncludes(message, '"Det er en \\"prøveeksamen\\""');
+});
+
+Deno.test("corrections go before the events, as data, without emails", () => {
+  const message = buildLabelMessage([event({ title: "KRING" })], "da", [
+    {
+      title: "KRING",
+      calendar: "mia@example.com",
+      note: "Det er mit studiejob",
+      label: label({ kind: "work", importance: "high" }),
+    },
+  ]);
+  assertStringIncludes(message, "The person has corrected earlier labels");
+  assertStringIncludes(message, '"theyWrote":"Det er mit studiejob"');
+  assertStringIncludes(message, '"correctLabel":{"kind":"work","importance":"high"');
+  assert(message.indexOf("theyWrote") < message.indexOf('"ref":"e1"'));
+  assertEquals(message.includes("example.com"), false);
+  // Without any, no block at all.
+  assertEquals(buildLabelMessage([event()], "da").includes("corrected earlier"), false);
+});
+
+Deno.test("readCorrections keeps only complete ones, cleaned and capped", () => {
+  const good = { title: " KRING ", calendar: "Arbejde", note: " Mit job ", label: label() };
+  assertEquals(readCorrections("x"), []);
+  assertEquals(readCorrections([good])[0], {
+    title: "KRING",
+    calendar: "Arbejde",
+    note: "Mit job",
+    label: label({ reason: "Eksamen: hold aftenen før fri." }),
+  });
+  assertEquals(
+    readCorrections([
+      { ...good, note: "" },
+      { ...good, title: 42 },
+      { ...good, label: { kind: "illness" } },
+      ["not", "an", "object"],
+    ]),
+    [],
+  );
+  assertEquals(
+    readCorrections(Array.from({ length: MAX_CORRECTIONS + 5 }, () => good)).length,
+    MAX_CORRECTIONS,
+  );
 });
 
 Deno.test("readEvent cleans the request and keeps numbers in range", () => {

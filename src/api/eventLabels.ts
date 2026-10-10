@@ -77,9 +77,20 @@ interface LabelAnswer {
   left: number;
 }
 
-/** Label up to 50 events, in the background. */
-export async function labelEvents(events: EventToLabel[]): Promise<LabelAnswer> {
-  return await callFunction<LabelAnswer>("calendar-label", { body: { events } });
+/** One of the person's earlier corrections, sent so it carries over to events like it. */
+export interface SentCorrection {
+  title: string;
+  calendar: string;
+  note: string;
+  label: EventLabel;
+}
+
+/** Label up to 50 events, in the background, with the person's corrections in hand. */
+export async function labelEvents(
+  events: EventToLabel[],
+  corrections: SentCorrection[],
+): Promise<LabelAnswer> {
+  return await callFunction<LabelAnswer>("calendar-label", { body: { events, corrections } });
 }
 
 /** Label one event again, from the person's note on what was wrong ("Forkert?"). */
@@ -87,9 +98,10 @@ export async function relabelEvent(
   event: EventToLabel,
   previous: EventLabel,
   note: string,
+  corrections: SentCorrection[],
 ): Promise<EventLabel> {
   const { labels } = await callFunction<LabelAnswer>("calendar-label", {
-    body: { events: [event], correction: { note, previous } },
+    body: { events: [event], correction: { note, previous }, corrections },
     errorMessage: currentMessages().api.relabel,
   });
   const label = labels[0];

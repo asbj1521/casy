@@ -870,9 +870,10 @@ export const en: Messages = {
     },
     recovery: (days: number) => (days === 1 ? "1 day to recover" : `${days} days to recover`),
     corrected: "Corrected by you",
-    onlyYou: "Only you see this. It stays on your phone.",
+    onlyYou: "Only you see this. It and your corrections stay on your phone.",
     wrong: "Wrong?",
-    wrongPrompt: "What's wrong? Casy labels the event again from what you write.",
+    wrongPrompt:
+      "What's wrong? Casy labels the event again from what you write, and remembers it for events like it.",
     wrongPlaceholder: "E.g. It's only a mock exam, it doesn't matter much",
     send: "Label again",
     sending: "Labelling…",

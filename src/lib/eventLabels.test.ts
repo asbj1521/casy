@@ -2,14 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import type { EventLabel } from "@/api/eventLabels";
 import {
+  addCorrection,
   BATCH_SIZE,
   batchesToLabel,
   clockMinute,
+  correctionsToSend,
   labelCandidates,
   labelKey,
+  markCalendarStale,
+  MAX_CORRECTIONS,
   MAX_PER_RUN,
   presentKeys,
+  tidyBook,
   updateBook,
+  type LabelCorrection,
   type StoredLabel,
 } from "@/lib/eventLabels";
 import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
@@ -198,6 +204,80 @@ describe("updateBook", () => {
     const kept = labelKey("ek-uni", "Eksamen");
     const book = updateBook({ [kept]: label(), gone: label() }, [], present);
     expect(Object.keys(book)).toEqual([kept]);
+  });
+});
+
+describe("corrections reaching their neighbours", () => {
+  it("relabels stale labels, as it does missing ones", () => {
+    const candidates = labelCandidates(
+      [timed("Eksamen", NOW + DAY), timed("Forelæsning", NOW + 2 * DAY)],
+      names,
+      NOW,
+    );
+    const book = {
+      [candidates[0].key]: label({ stale: true }),
+      [candidates[1].key]: label(),
+    };
+    expect(
+      batchesToLabel(candidates, book, new Set())
+        .flat()
+        .map((c) => c.key),
+    ).toEqual([candidates[0].key]);
+  });
+
+  it("marks the rest of the calendar stale, never a correction or another calendar", () => {
+    const book = {
+      a: label({ calendarId: "ek-uni" }),
+      b: label({ calendarId: "ek-uni", corrected: true }),
+      c: label({ calendarId: "ek-home" }),
+      d: label(),
+    };
+    const { book: next, keys } = markCalendarStale(book, "ek-uni");
+    expect(keys).toEqual(["a"]);
+    expect(next.a.stale).toBe(true);
+    expect(next.b.stale).toBeUndefined();
+    expect(next.c.stale).toBeUndefined();
+    // A fresh label replaces a stale one, and isn't stale.
+    expect(updateBook(next, [{ key: "a", label: label() }]).a.stale).toBeUndefined();
+  });
+
+  it("tidies only when something changed, filling in calendars", () => {
+    const events = [timed("Eksamen", NOW + DAY)];
+    const candidates = labelCandidates(events, names, NOW);
+    const key = candidates[0].key;
+    const present = presentKeys(events);
+    const old = { [key]: label() };
+    expect(tidyBook(old, present, candidates)[key].calendarId).toBe("ek-uni");
+    const tidy = { [key]: label({ calendarId: "ek-uni" }) };
+    expect(tidyBook(tidy, present, candidates)).toBe(tidy);
+    expect(tidyBook({ ...tidy, gone: label() }, present, candidates)).toEqual(tidy);
+  });
+
+  it("keeps the most recent corrections, one per event, as the server takes them", () => {
+    const correction = (key: string, at: number) => ({
+      key,
+      calendarId: "ek-uni",
+      title: `Title ${key}`,
+      calendar: "Uni",
+      note: "Mit job",
+      label: label(),
+      at,
+    });
+    let list: LabelCorrection[] = [correction("a", 1), correction("b", 2)];
+    list = addCorrection(list, correction("a", 3));
+    expect(list.map((c) => [c.key, c.at])).toEqual([
+      ["a", 3],
+      ["b", 2],
+    ]);
+    for (let i = 0; i < MAX_CORRECTIONS + 5; i++)
+      list = addCorrection(list, correction(`k${i}`, i));
+    expect(list).toHaveLength(MAX_CORRECTIONS);
+    expect(Object.keys(correctionsToSend(list)[0]).sort()).toEqual([
+      "calendar",
+      "label",
+      "note",
+      "title",
+    ]);
   });
 });
 

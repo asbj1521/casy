@@ -908,9 +908,10 @@ export const da = {
     recovery: (days: number) =>
       days === 1 ? "1 dag til at komme sig efter" : `${days} dage til at komme sig efter`,
     corrected: "Rettet af dig",
-    onlyYou: "Kun du ser vurderingen. Den bliver på din telefon.",
+    onlyYou: "Kun du ser vurderingen. Den og dine rettelser bliver på din telefon.",
     wrong: "Forkert?",
-    wrongPrompt: "Hvad er forkert? Casy vurderer aftalen igen ud fra det, du skriver.",
+    wrongPrompt:
+      "Hvad er forkert? Casy vurderer aftalen igen ud fra det, du skriver, og husker det til lignende aftaler.",
     wrongPlaceholder: "Fx: Det er kun en prøveeksamen, den betyder ikke så meget",
     send: "Vurder igen",
     sending: "Vurderer…",

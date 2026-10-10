@@ -27,7 +27,9 @@ import {
   LABEL_SYSTEM_PROMPT,
   labelsFromAnswer,
   MAX_EVENTS,
+  readCorrections,
   readEvent,
+  type Correction,
   type EventLabel,
   type EventToLabel,
 } from "../functions/_shared/labelAi.ts";
@@ -238,11 +240,16 @@ function labelFailures(label: EventLabel, expect: LabelCase["expect"]): string[]
   return failures;
 }
 
-async function eventLabel(): Promise<Result[]> {
-  const { lang, cases } = (await load("event-label.json")) as {
-    lang: "da" | "en";
-    cases: LabelCase[];
-  };
+/**
+ * The cases in batches, each with `corrections` sent along; results named
+ * with `suffix`, so a set with corrections reads apart from one without.
+ */
+async function labelCases(
+  lang: "da" | "en",
+  cases: LabelCase[],
+  corrections: Correction[],
+  suffix: string,
+): Promise<Result[]> {
   const events = cases.map((c) => readEvent(c.event)!);
   const batches: number[][] = [];
   for (let i = 0; i < cases.length; i += MAX_EVENTS) {
@@ -255,6 +262,7 @@ async function eventLabel(): Promise<Result[]> {
         message: buildLabelMessage(
           indexes.map((i) => events[i]),
           lang,
+          corrections,
         ),
         schema: LABEL_SCHEMA,
         maxTokens: 12_000,
@@ -265,7 +273,7 @@ async function eventLabel(): Promise<Result[]> {
   return cases.map((c, i) => {
     const batch = Math.floor(i / MAX_EVENTS);
     const { stop, labels } = answers[batch];
-    const name = `${c.event.title} (${c.event.calendar ?? ""})`;
+    const name = `${c.event.title} (${c.event.calendar ?? ""})${suffix}`;
     if (!labels) return { name, failures: [`no answer (stop_reason ${stop})`] };
     const label = labels[i % MAX_EVENTS];
     if (!label) return { name, failures: ["not answered"] };
@@ -274,6 +282,22 @@ async function eventLabel(): Promise<Result[]> {
     if (failures.length > 0) failures.push(`reason: ${label.reason}`);
     return { name, failures };
   });
+}
+
+async function eventLabel(): Promise<Result[]> {
+  const { lang, cases, withCorrections } = (await load("event-label.json")) as {
+    lang: "da" | "en";
+    cases: LabelCase[];
+    /** Corrections the person made earlier, and cases they should (or shouldn't) reach. */
+    withCorrections?: { corrections: unknown[]; cases: LabelCase[] };
+  };
+  const results = await labelCases(lang, cases, [], "");
+  if (!withCorrections) return results;
+  const corrections = readCorrections(withCorrections.corrections);
+  return [
+    ...results,
+    ...(await labelCases(lang, withCorrections.cases, corrections, " [with corrections]")),
+  ];
 }
 
 // ---------------------------------------------------------------------------

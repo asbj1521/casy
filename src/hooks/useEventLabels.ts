@@ -7,12 +7,18 @@ import { useAuth } from "@/context/auth";
 import { useEventLabelsAllowed } from "@/hooks/useAiAllowed";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import {
+  addCorrection,
   batchesToLabel,
+  correctionsToSend,
   labelCandidates,
   labelKey,
+  markCalendarStale,
   presentKeys,
+  readCorrections,
   readLabelBook,
+  tidyBook,
   updateBook,
+  writeCorrections,
   writeLabelBook,
   type LabelBook,
   type StoredLabel,
@@ -30,17 +36,23 @@ function labelBookQuery(userId: string) {
 }
 
 /**
+ * Titles asked about since the app was opened: each at most once, so a
+ * failing call isn't repeated in a loop. A correction takes its calendar's
+ * titles out again, so they are labelled anew with it (useRelabel).
+ */
+const askedThisLaunch = new Set<string>();
+
+/**
  * Labels this phone's events with AI in the background (#112), mounted once
- * in App.tsx: each distinct title not labelled yet goes to calendar-label in
- * batches, soonest first, and the labels are kept on the phone. Nothing shows
- * unless someone opens an event (EventLabelDetails).
+ * in App.tsx: each distinct title not labelled yet (or marked stale by a
+ * correction in its calendar) goes to calendar-label in batches, soonest
+ * first, with the person's corrections in hand, and the labels are kept on
+ * the phone. Nothing shows unless someone opens an event (EventLabelDetails).
  *
  * Only in the iPhone app (titles are only on the phone), and only for
  * admins and people an admin switched labels on for while #120 is open
- * (useEventLabelsAllowed). Each title is asked
- * about at most once per app launch, so a failing call (the day's budget
- * used up, Anthropic down) isn't repeated in a loop; what is left is tried
- * on the next launch, or when the phone's calendars change.
+ * (useEventLabelsAllowed). What a failing call left is tried on the next
+ * launch, or when the phone's calendars change.
  */
 export function useAutoLabel() {
   const { user } = useAuth();
@@ -57,47 +69,65 @@ export function useAutoLabel() {
     ...phoneEventDetailsQuery(userId, SEARCH_WINDOW),
     enabled: on,
   });
-  const asked = useRef(new Set<string>());
+  // Watched so a correction (which marks labels stale) starts a run at once.
+  const { data: book } = useQuery({ ...labelBookQuery(userId), enabled: on });
   const running = useRef(false);
 
   useEffect(() => {
-    if (!on || !phone || !busy || !events || running.current) return;
+    if (!on || !phone || !busy || !events || !book || running.current) return;
     // This phone's calendars that count, by EventKit id, with their names.
     const names = new Map(
       busy.calendars
         .filter((c) => c.connectionId === phone && c.externalId && c.included)
         .map((c) => [c.externalId!, c.name]),
     );
-    const save = (book: LabelBook) => {
-      writeLabelBook(userId, book);
-      queryClient.setQueryData(labelBookQuery(userId).queryKey, book);
+    const save = (next: LabelBook) => {
+      writeLabelBook(userId, next);
+      queryClient.setQueryData(labelBookQuery(userId).queryKey, next);
     };
-    // Labels for events no longer on the phone go first.
-    let book = updateBook(readLabelBook(userId), [], presentKeys(events));
-    save(book);
-    const batches = batchesToLabel(labelCandidates(events, names, Date.now()), book, asked.current);
+    const candidates = labelCandidates(events, names, Date.now());
+    // Saved only when it changed: saving starts this effect again.
+    const tidy = tidyBook(book, presentKeys(events), candidates);
+    if (tidy !== book) {
+      save(tidy);
+      return;
+    }
+    const batches = batchesToLabel(candidates, book, askedThisLaunch);
     if (batches.length === 0) return;
-    for (const batch of batches) for (const c of batch) asked.current.add(c.key);
+    for (const batch of batches) for (const c of batch) askedThisLaunch.add(c.key);
 
     running.current = true;
     void (async () => {
       try {
         for (const batch of batches) {
-          const { labels } = await labelEvents(batch.map((c) => c.event));
+          // Read afresh each time: a correction may have come in meanwhile.
+          const corrections = correctionsToSend(readCorrections(userId));
+          const { labels } = await labelEvents(
+            batch.map((c) => c.event),
+            corrections,
+          );
           const added = batch.flatMap((c, i) => {
             const label = labels[i];
-            return label ? [{ key: c.key, label: { ...label, count: c.event.count } }] : [];
+            return label
+              ? [
+                  {
+                    key: c.key,
+                    label: { ...label, count: c.event.count, calendarId: c.calendarId },
+                  },
+                ]
+              : [];
           });
-          book = updateBook(readLabelBook(userId), added);
-          save(book);
+          save(updateBook(readLabelBook(userId), added));
         }
       } catch (err) {
         console.warn("labelling events failed", err);
       } finally {
         running.current = false;
+        // Whatever came in while this ran (a correction) gets its own run.
+        void queryClient.invalidateQueries({ queryKey: labelBookQuery(userId).queryKey });
       }
     })();
-  }, [on, phone, busy, events, queryClient, userId]);
+  }, [on, phone, busy, events, book, queryClient, userId]);
 }
 
 /**
@@ -122,6 +152,9 @@ export function useEventLabel(
 /**
  * "Forkert?": label one event again from what its owner wrote, and keep the
  * result as theirs (corrected), so background labelling never replaces it.
+ * The correction is remembered on the phone and sent with every later call,
+ * and the other labels in the same calendar are marked stale, so the
+ * background labels them again with it in hand.
  */
 export function useRelabel(calendarExternalId: string, event: EventToLabel) {
   const { user } = useAuth();
@@ -129,12 +162,29 @@ export function useRelabel(calendarExternalId: string, event: EventToLabel) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ previous, note }: { previous: EventLabel; note: string }) =>
-      relabelEvent(event, previous, note),
-    onSuccess: (label) => {
+      relabelEvent(event, previous, note, correctionsToSend(readCorrections(userId))),
+    onSuccess: (label, { note }) => {
       const key = labelKey(calendarExternalId, event.title);
-      const book = updateBook(readLabelBook(userId), [
-        { key, label: { ...label, count: event.count, corrected: true } },
+      writeCorrections(
+        userId,
+        addCorrection(readCorrections(userId), {
+          key,
+          calendarId: calendarExternalId,
+          title: event.title,
+          calendar: event.calendar,
+          note,
+          label,
+          at: Date.now(),
+        }),
+      );
+      const corrected = updateBook(readLabelBook(userId), [
+        {
+          key,
+          label: { ...label, count: event.count, corrected: true, calendarId: calendarExternalId },
+        },
       ]);
+      const { book, keys } = markCalendarStale(corrected, calendarExternalId);
+      for (const k of keys) askedThisLaunch.delete(k);
       writeLabelBook(userId, book);
       queryClient.setQueryData(labelBookQuery(userId).queryKey, book);
     },

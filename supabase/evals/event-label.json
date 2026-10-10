@@ -10,7 +10,9 @@
       },
       "expect": {
         "kind": "exam",
-        "importance": { "oneOf": ["critical", "high"] },
+        "importance": {
+          "oneOf": ["critical", "high"]
+        },
         "prepAtLeast": 1,
         "avoidIncludes": ["lateNight"],
         "confidence": "high"
@@ -25,14 +27,25 @@
       },
       "expect": {
         "kind": "exam",
-        "importance": { "oneOf": ["critical", "high"] },
+        "importance": {
+          "oneOf": ["critical", "high"]
+        },
         "prepAtLeast": 1,
         "avoidIncludes": ["lateNight"]
       }
     },
     {
-      "event": { "title": "Aflevering opgave 3", "calendar": "Uni", "allDay": true },
-      "expect": { "kind": "deadline", "importance": { "oneOf": ["high", "normal"] } }
+      "event": {
+        "title": "Aflevering opgave 3",
+        "calendar": "Uni",
+        "allDay": true
+      },
+      "expect": {
+        "kind": "deadline",
+        "importance": {
+          "oneOf": ["high", "normal"]
+        }
+      }
     },
     {
       "event": {
@@ -43,7 +56,9 @@
       },
       "expect": {
         "kind": "interview",
-        "importance": { "oneOf": ["high", "critical"] },
+        "importance": {
+          "oneOf": ["high", "critical"]
+        },
         "avoidIncludes": ["lateNight"]
       }
     },
@@ -57,7 +72,9 @@
       },
       "expect": {
         "kind": "lecture",
-        "importance": { "oneOf": ["normal", "low"] },
+        "importance": {
+          "oneOf": ["normal", "low"]
+        },
         "prepDays": 0,
         "noAvoid": true
       }
@@ -70,7 +87,13 @@
         "minutes": 480,
         "count": 200
       },
-      "expect": { "kind": { "oneOf": ["work", "shift"] }, "importance": "normal", "noAvoid": true }
+      "expect": {
+        "kind": {
+          "oneOf": ["work", "shift"]
+        },
+        "importance": "normal",
+        "noAvoid": true
+      }
     },
     {
       "event": {
@@ -80,7 +103,11 @@
         "minutes": 540,
         "count": 8
       },
-      "expect": { "kind": "shift", "recoveryAtLeast": 1, "strain": "heavy" }
+      "expect": {
+        "kind": "shift",
+        "recoveryAtLeast": 1,
+        "strain": "heavy"
+      }
     },
     {
       "event": {
@@ -89,11 +116,25 @@
         "startMinute": 420,
         "minutes": 540
       },
-      "expect": { "kind": "flight", "importance": { "oneOf": ["high", "critical"] } }
+      "expect": {
+        "kind": "flight",
+        "importance": {
+          "oneOf": ["high", "critical"]
+        }
+      }
     },
     {
-      "event": { "title": "Hotel Lissabon", "calendar": "Rejser", "allDay": true, "days": 4 },
-      "expect": { "kind": { "oneOf": ["stay", "vacation"] } }
+      "event": {
+        "title": "Hotel Lissabon",
+        "calendar": "Rejser",
+        "allDay": true,
+        "days": 4
+      },
+      "expect": {
+        "kind": {
+          "oneOf": ["stay", "vacation"]
+        }
+      }
     },
     {
       "event": {
@@ -104,7 +145,9 @@
       },
       "expect": {
         "kind": "wedding",
-        "importance": { "oneOf": ["high", "critical"] },
+        "importance": {
+          "oneOf": ["high", "critical"]
+        },
         "strain": "heavy"
       }
     },
@@ -115,7 +158,12 @@
         "startMinute": 660,
         "minutes": 120
       },
-      "expect": { "kind": "funeral", "importance": { "oneOf": ["high", "critical"] } }
+      "expect": {
+        "kind": "funeral",
+        "importance": {
+          "oneOf": ["high", "critical"]
+        }
+      }
     },
     {
       "event": {
@@ -125,7 +173,13 @@
         "minutes": 480,
         "count": 10
       },
-      "expect": { "kind": "party", "importance": { "oneOf": ["low", "normal"] }, "prepDays": 0 }
+      "expect": {
+        "kind": "party",
+        "importance": {
+          "oneOf": ["low", "normal"]
+        },
+        "prepDays": 0
+      }
     },
     {
       "event": {
@@ -134,11 +188,23 @@
         "startMinute": 1080,
         "minutes": 420
       },
-      "expect": { "kind": "party", "prepDays": 0 }
+      "expect": {
+        "kind": "party",
+        "prepDays": 0
+      }
     },
     {
-      "event": { "title": "Tandlæge", "calendar": "Privat", "startMinute": 600, "minutes": 45 },
-      "expect": { "kind": "appointment", "importance": "normal", "noAvoid": true }
+      "event": {
+        "title": "Tandlæge",
+        "calendar": "Privat",
+        "startMinute": 600,
+        "minutes": 45
+      },
+      "expect": {
+        "kind": "appointment",
+        "importance": "normal",
+        "noAvoid": true
+      }
     },
     {
       "event": {
@@ -155,15 +221,31 @@
       }
     },
     {
-      "event": { "title": "Kemo", "calendar": "Privat", "startMinute": 540, "minutes": 180 },
+      "event": {
+        "title": "Kemo",
+        "calendar": "Privat",
+        "startMinute": 540,
+        "minutes": 180
+      },
       "expect": {
-        "kind": { "oneOf": ["appointment", "unclear"] },
+        "kind": {
+          "oneOf": ["appointment", "unclear"]
+        },
         "reasonExcludes": ["kræft", "cancer", "kemo", "behandling", "sygdom", "helbred"]
       }
     },
     {
-      "event": { "title": "Halvmaraton", "calendar": "Løb", "startMinute": 600, "minutes": 150 },
-      "expect": { "kind": "competition", "avoidIncludes": ["alcohol"], "strain": "heavy" }
+      "event": {
+        "title": "Halvmaraton",
+        "calendar": "Løb",
+        "startMinute": 600,
+        "minutes": 150
+      },
+      "expect": {
+        "kind": "competition",
+        "avoidIncludes": ["alcohol"],
+        "strain": "heavy"
+      }
     },
     {
       "event": {
@@ -173,7 +255,13 @@
         "minutes": 60,
         "count": 40
       },
-      "expect": { "kind": "sport", "importance": { "oneOf": ["low", "normal"] }, "prepDays": 0 }
+      "expect": {
+        "kind": "sport",
+        "importance": {
+          "oneOf": ["low", "normal"]
+        },
+        "prepDays": 0
+      }
     },
     {
       "event": {
@@ -182,19 +270,36 @@
         "startMinute": 1200,
         "minutes": 180
       },
-      "expect": { "kind": "show", "prepDays": 0 }
+      "expect": {
+        "kind": "show",
+        "prepDays": 0
+      }
     },
     {
-      "event": { "title": "Møde", "calendar": "Kalender", "startMinute": 780, "minutes": 60 },
+      "event": {
+        "title": "Møde",
+        "calendar": "Kalender",
+        "startMinute": 780,
+        "minutes": 60
+      },
       "expect": {
-        "kind": { "oneOf": ["meeting", "unclear"] },
+        "kind": {
+          "oneOf": ["meeting", "unclear"]
+        },
         "importance": "normal",
-        "confidence": { "oneOf": ["low", "medium"] },
+        "confidence": {
+          "oneOf": ["low", "medium"]
+        },
         "noAvoid": true
       }
     },
     {
-      "event": { "title": "MJ", "calendar": "Kalender", "startMinute": 1080, "minutes": 120 },
+      "event": {
+        "title": "MJ",
+        "calendar": "Kalender",
+        "startMinute": 1080,
+        "minutes": 120
+      },
       "expect": {
         "kind": "unclear",
         "importance": "normal",
@@ -204,16 +309,40 @@
       }
     },
     {
-      "event": { "title": "Ting", "calendar": "Kalender", "allDay": true },
-      "expect": { "kind": "unclear", "confidence": "low", "noAvoid": true }
+      "event": {
+        "title": "Ting",
+        "calendar": "Kalender",
+        "allDay": true
+      },
+      "expect": {
+        "kind": "unclear",
+        "confidence": "low",
+        "noAvoid": true
+      }
     },
     {
-      "event": { "title": "Betal husleje", "calendar": "Påmindelser", "allDay": true, "count": 12 },
-      "expect": { "kind": "reminder", "strain": "none", "noAvoid": true }
+      "event": {
+        "title": "Betal husleje",
+        "calendar": "Påmindelser",
+        "allDay": true,
+        "count": 12
+      },
+      "expect": {
+        "kind": "reminder",
+        "strain": "none",
+        "noAvoid": true
+      }
     },
     {
-      "event": { "title": "Mormors fødselsdag", "calendar": "Fødselsdage", "allDay": true },
-      "expect": { "kind": "birthday", "prepDays": 0 }
+      "event": {
+        "title": "Mormors fødselsdag",
+        "calendar": "Fødselsdage",
+        "allDay": true
+      },
+      "expect": {
+        "kind": "birthday",
+        "prepDays": 0
+      }
     },
     {
       "event": {
@@ -223,7 +352,10 @@
         "minutes": 30,
         "count": 80
       },
-      "expect": { "kind": "family", "noAvoid": true }
+      "expect": {
+        "kind": "family",
+        "noAvoid": true
+      }
     },
     {
       "event": {
@@ -233,8 +365,12 @@
         "minutes": 60
       },
       "expect": {
-        "kind": { "oneOf": ["unclear", "other"] },
-        "importance": { "oneOf": ["normal", "low"] },
+        "kind": {
+          "oneOf": ["unclear", "other"]
+        },
+        "importance": {
+          "oneOf": ["normal", "low"]
+        },
         "prepDays": 0
       }
     },
@@ -246,15 +382,158 @@
         "minutes": 90
       },
       "expect": {
-        "kind": { "oneOf": ["exam", "presentation"] },
+        "kind": {
+          "oneOf": ["exam", "presentation"]
+        },
         "importance": "critical",
         "prepAtLeast": 1,
         "avoidIncludes": ["lateNight", "alcohol"]
       }
     },
     {
-      "event": { "title": "Flytning", "calendar": "Kalender", "allDay": true, "days": 2 },
-      "expect": { "kind": "chores", "strain": { "oneOf": ["heavy", "moderate"] } }
+      "event": {
+        "title": "Flytning",
+        "calendar": "Kalender",
+        "allDay": true,
+        "days": 2
+      },
+      "expect": {
+        "kind": "chores",
+        "strain": {
+          "oneOf": ["heavy", "moderate"]
+        }
+      }
     }
-  ]
+  ],
+  "withCorrections": {
+    "_about": "Made-up corrections, sent with every event below: each should carry over to events it fits and leave the rest alone.",
+    "corrections": [
+      {
+        "title": "KRING",
+        "calendar": "Arbejde og projekter",
+        "note": "KRING er mit studiejob i et konsulenthus. Det er vigtigt for mig, og jeg kan ikke bare springe over.",
+        "label": {
+          "kind": "work",
+          "importance": "high",
+          "prepDays": 0,
+          "avoidBefore": [],
+          "recoveryDays": 0,
+          "strain": "moderate",
+          "confidence": "high",
+          "reason": ""
+        }
+      },
+      {
+        "title": "Kor",
+        "calendar": "Fritid",
+        "note": "Kor er bare hygge, det betyder ikke så meget om jeg kommer.",
+        "label": {
+          "kind": "social",
+          "importance": "low",
+          "prepDays": 0,
+          "avoidBefore": [],
+          "recoveryDays": 0,
+          "strain": "light",
+          "confidence": "high",
+          "reason": ""
+        }
+      },
+      {
+        "title": "Otto",
+        "calendar": "Venner og familie",
+        "note": "Otto er min lillebror, det er familietid.",
+        "label": {
+          "kind": "family",
+          "importance": "normal",
+          "prepDays": 0,
+          "avoidBefore": [],
+          "recoveryDays": 0,
+          "strain": "light",
+          "confidence": "high",
+          "reason": ""
+        }
+      }
+    ],
+    "cases": [
+      {
+        "event": {
+          "title": "KRING workshop",
+          "calendar": "Arbejde og projekter",
+          "startMinute": 540,
+          "minutes": 360
+        },
+        "expect": {
+          "kind": {
+            "oneOf": ["work", "meeting"]
+          },
+          "importance": {
+            "oneOf": ["high", "critical"]
+          }
+        }
+      },
+      {
+        "event": {
+          "title": "KRING julefrokost",
+          "calendar": "Arbejde og projekter",
+          "startMinute": 1080,
+          "minutes": 360
+        },
+        "expect": {
+          "kind": "party"
+        }
+      },
+      {
+        "event": {
+          "title": "Korkoncert",
+          "calendar": "Fritid",
+          "startMinute": 1140,
+          "minutes": 120
+        },
+        "expect": {
+          "importance": {
+            "oneOf": ["low", "normal"]
+          }
+        }
+      },
+      {
+        "event": {
+          "title": "Otto fødselsdag",
+          "calendar": "Venner og familie",
+          "allDay": true
+        },
+        "expect": {
+          "kind": {
+            "oneOf": ["birthday", "family"]
+          }
+        }
+      },
+      {
+        "event": {
+          "title": "Eksamen: Statistik 1",
+          "calendar": "Uni",
+          "startMinute": 540,
+          "minutes": 240
+        },
+        "expect": {
+          "kind": "exam",
+          "importance": {
+            "oneOf": ["critical", "high"]
+          },
+          "avoidIncludes": ["lateNight"]
+        }
+      },
+      {
+        "event": {
+          "title": "MJ",
+          "calendar": "Kalender",
+          "startMinute": 1080,
+          "minutes": 120
+        },
+        "expect": {
+          "kind": "unclear",
+          "confidence": "low"
+        }
+      }
+    ]
+  }
 }
