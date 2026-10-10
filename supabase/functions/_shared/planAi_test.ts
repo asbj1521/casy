@@ -329,6 +329,23 @@ Deno.test("an occasion with a season gets it when nothing is said about when", (
     { from: "2027-02", to: "2027-02" },
   );
 
+  // Months the model guessed itself outside the season give way to it (the
+  // whole year, say); within it they stay, since the model marks months the
+  // person named as guessed now and then.
+  const guessing = (from: string, to: string) =>
+    JSON.stringify(
+      wire({ kind: "holiday", days: 7, monthsFrom: from, monthsTo: to, assumed: ["monthsFrom"] }),
+    );
+  const skiferie = { text: "skiferie i februar", earlier: [], current: null };
+  assertEquals(planFromAnswer("end_turn", guessing("2026-10", "2027-09"), NOW, skiferie)?.months, {
+    from: "2026-12",
+    to: "2027-04",
+  });
+  assertEquals(planFromAnswer("end_turn", guessing("2027-02", "2027-02"), NOW, skiferie)?.months, {
+    from: "2027-02",
+    to: "2027-02",
+  });
+
   // Adding details to a plan that already has months never moves them.
   const current = {
     ...cleanPlan(JSON.parse(trip), MONTHS),

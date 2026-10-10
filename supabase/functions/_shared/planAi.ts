@@ -498,12 +498,16 @@ export function seasonMonths(
  * Common sense the model applies only now and then, made sure of (#123): an
  * occasion with a season of its own (skiferie, julefrokost, sankthans) named
  * in what the person wrote, and nothing said about when, gets that season,
- * marked as guessed. Never over what the person said, nor over months already
- * set when they are adding details; and when the text names occasions of
- * different seasons, nothing is guessed.
+ * marked as guessed: in place of no months, or of months the model guessed
+ * itself (it lists them in assumed) outside the season, such as a whole year
+ * for a studenterfest. Months within the season stay: the model marks months
+ * the person named (skiferie i februar) as guessed now and then, and those
+ * must never move. Nor do months already set when they are adding details;
+ * and when the text names occasions of different seasons, nothing is guessed.
  */
 export function withSeason(plan: AiPlan, request: PlanRequest, monthKeys: string[]): AiPlan {
-  if (plan.months !== null || request.current?.months) return plan;
+  if (request.current?.months || plan.months === "any") return plan;
+  if (plan.months && !plan.assumed.includes("months")) return plan;
   const text = [...request.earlier, request.text].join("\n");
   const seasons = new Map<string, { from: string; to: string }>();
   for (const o of occasionsIn(text)) {
@@ -512,6 +516,8 @@ export function withSeason(plan: AiPlan, request: PlanRequest, monthKeys: string
   }
   if (seasons.size !== 1) return plan;
   const [months] = seasons.values();
+  const within = (m: { from: string; to: string }) => m.from >= months.from && m.to <= months.to;
+  if (plan.months && within(plan.months)) return plan;
   return {
     ...plan,
     months,

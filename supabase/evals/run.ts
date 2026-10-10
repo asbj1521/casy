@@ -410,7 +410,7 @@ function planExpect(o: Occasion, nowMs: number): PlanCase["expect"] {
     if (o.startWeekday !== undefined) expect.startWeekday = o.startWeekday;
   }
   if (o.inMonths) {
-    expect.months = seasonMonths(
+    expect.monthsWithin = seasonMonths(
       o,
       searchMonths(nowMs).map((m) => m.key),
     );
@@ -422,6 +422,20 @@ function planFailures(plan: AiPlan | null, expect: PlanCase["expect"], stop: unk
   if (!plan) return [`no plan (stop_reason ${stop})`];
   const failures: string[] = [];
   for (const [field, expected] of Object.entries(expect)) {
+    if (field === "monthsWithin") {
+      // An occasion's season: the months must lie within it (any part of it).
+      const season = expected as { from: string; to: string } | null;
+      const m = plan.months;
+      const ok =
+        season === null
+          ? m === null
+          : m !== null && m !== "any" && m.from >= season.from && m.to <= season.to;
+      if (!ok)
+        failures.push(
+          `months: expected within ${JSON.stringify(season)}, got ${JSON.stringify(m)}`,
+        );
+      continue;
+    }
     const actual = field === "asks" ? plan.questions.length > 0 : plan[field as keyof AiPlan];
     if (!matches(actual, expected)) {
       failures.push(
