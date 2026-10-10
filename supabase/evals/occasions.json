@@ -5,15 +5,33 @@
       "id": "julefrokost",
       "lang": "da",
       "text": "julefrokost med holdet og så videre i byen bagefter",
-      "expect": { "durationMinutes": { "oneOf": [480, 510, 540, 570, 600, 630, 660, 690, 720] } }
+      "expect": {
+        "durationMinutes": {
+          "oneOf": [480, 510, 540, 570, 600, 630, 660, 690, 720]
+        }
+      }
     },
-    { "id": "fredagsbar", "lang": "da", "text": "skal vi tage en fredagsøl efter arbejde" },
-    { "id": "hygge", "lang": "da", "text": "lidt hygge snart?" },
+    {
+      "id": "fredagsbar",
+      "lang": "da",
+      "text": "skal vi tage en fredagsøl efter arbejde"
+    },
+    {
+      "id": "hygge",
+      "lang": "da",
+      "text": "lidt hygge snart?"
+    },
     {
       "id": "julefrokost",
       "lang": "da",
       "text": "julefrokost den 28 november klokken 180 hos mig",
-      "expect": { "startHour": 18, "months": { "from": "2026-11", "to": "2026-11" } }
+      "expect": {
+        "startHour": 18,
+        "months": {
+          "from": "2026-11",
+          "to": "2026-11"
+        }
+      }
     },
     {
       "id": "dinner",
@@ -24,176 +42,414 @@
       "id": "dinner",
       "lang": "da",
       "text": "spise middag sammen og så videre i byen bagefter",
-      "expect": { "durationMinutes": { "oneOf": [480, 510, 540, 570, 600, 630, 660, 690, 720] } }
+      "expect": {
+        "durationMinutes": {
+          "oneOf": [480, 510, 540, 570, 600, 630, 660, 690, 720]
+        }
+      }
     },
     {
       "id": "coffee",
       "lang": "da",
       "text": "kaffeaftale lørdag klokken 10",
-      "expect": { "anyTime": false, "startHour": 10, "weekdays": [6] }
+      "expect": {
+        "anyTime": false,
+        "startHour": 10,
+        "weekdays": [6]
+      }
     },
     {
       "id": "brunch",
       "lang": "da",
       "text": "skal vi bruche på søndag",
-      "expect": { "weekdays": [0] }
+      "expect": {
+        "weekdays": [0]
+      }
     },
-    { "id": "sunday-brunch", "lang": "da", "text": "søndagsbrunchen hos mette igen" },
-    { "id": "film-night", "lang": "da", "text": "filmaften med popcorn og dyner" },
+    {
+      "id": "sunday-brunch",
+      "lang": "da",
+      "text": "søndagsbrunchen hos mette igen"
+    },
+    {
+      "id": "film-night",
+      "lang": "da",
+      "text": "filmaften med popcorn og dyner"
+    },
     {
       "id": "game-night",
       "lang": "da",
       "text": "brætspils aften hos mig på fredag",
-      "expect": { "weekdays": [5] }
+      "expect": {
+        "weekdays": [5]
+      }
     },
     {
       "id": "party",
       "lang": "da",
       "text": "festen hos os på lørdag, bare kom",
-      "expect": { "weekdays": [6] }
+      "expect": {
+        "weekdays": [6]
+      }
     },
     {
       "id": "fredagsbar",
       "lang": "da",
       "text": "fredagsbar fra fire til otte",
-      "expect": { "startHour": 16, "durationMinutes": 240 }
+      "expect": {
+        "startHour": 16,
+        "durationMinutes": 240
+      }
     },
-    { "id": "night-out", "lang": "da", "text": "byen på lørdag!!", "expect": { "weekdays": [6] } },
-    { "id": "padel", "lang": "da", "text": "padelkamp i næste uge? jeg booker bane" },
-    { "id": "football-watch", "lang": "da", "text": "se landskampen sammen" },
+    {
+      "id": "night-out",
+      "lang": "da",
+      "text": "byen på lørdag!!",
+      "expect": {
+        "weekdays": [6]
+      }
+    },
+    {
+      "id": "padel",
+      "lang": "da",
+      "text": "padelkamp i næste uge? jeg booker bane"
+    },
+    {
+      "id": "football-watch",
+      "lang": "da",
+      "text": "se landskampen sammen"
+    },
     {
       "id": "cabin-weekend",
       "lang": "da",
       "text": "hyttetur i november!!",
-      "expect": { "months": { "from": "2026-11", "to": "2026-11" } }
+      "expect": {
+        "months": {
+          "from": "2026-11",
+          "to": "2026-11"
+        }
+      }
     },
     {
       "id": "breakfast",
       "lang": "da",
       "text": "morgenmadsaftale på lørdag",
-      "expect": { "weekdays": [6] }
+      "expect": {
+        "weekdays": [6]
+      }
     },
     {
       "id": "coffee-and-cake",
       "lang": "da",
       "text": "kaffe og kage hos mormor søndag",
-      "expect": { "weekdays": [0] }
+      "expect": {
+        "weekdays": [0]
+      }
     },
     {
       "id": "barbecue",
       "lang": "da",
       "text": "grill fra 17 til midnat",
-      "expect": { "startHour": 17, "durationMinutes": 420 }
+      "expect": {
+        "startHour": 17,
+        "durationMinutes": 420
+      }
     },
     {
       "id": "pizza-night",
       "lang": "da",
       "text": "pizzaaften fredag",
-      "expect": { "weekdays": [5] }
+      "expect": {
+        "weekdays": [5]
+      }
     },
     {
       "id": "restaurant",
       "lang": "da",
       "text": "ud at spise på restaurant for at fejre at jeg har fået nyt job"
     },
-    { "id": "dinner-party", "lang": "da", "text": "middagsselskab hos os med tre retter og vin" },
+    {
+      "id": "dinner-party",
+      "lang": "da",
+      "text": "middagsselskab hos os med tre retter og vin"
+    },
     {
       "id": "cook-together",
       "lang": "da",
       "text": "madklub igen på torsdag",
-      "expect": { "weekdays": [4] }
+      "expect": {
+        "weekdays": [4]
+      }
     },
     {
       "id": "drinks",
       "lang": "da",
       "text": "tage en øl på torsdag",
-      "expect": { "weekdays": [4] }
+      "expect": {
+        "weekdays": [4]
+      }
     },
     {
       "id": "gloegg",
       "lang": "da",
       "text": "gløgg og æbleskiver i december",
-      "expect": { "months": { "from": "2026-12", "to": "2026-12" } }
+      "expect": {
+        "months": {
+          "from": "2026-12",
+          "to": "2026-12"
+        }
+      }
     },
-    { "id": "j-dag", "lang": "da", "text": "jdagen i år skal vi ud" },
-    { "id": "halloween", "lang": "da", "text": "halloweenfest med udklædning" },
-    { "id": "sankthans", "lang": "da", "text": "sankthansaften hos mine forældre" },
-    { "id": "paaskefrokost", "lang": "da", "text": "påskefrokosten med familien" },
-    { "id": "housewarming", "lang": "da", "text": "indflytterfest i den nye lejlighd" },
-    { "id": "polterabend", "lang": "da", "text": "polterabend for jonas" },
+    {
+      "id": "j-dag",
+      "lang": "da",
+      "text": "jdagen i år skal vi ud"
+    },
+    {
+      "id": "halloween",
+      "lang": "da",
+      "text": "halloweenfest med udklædning"
+    },
+    {
+      "id": "sankthans",
+      "lang": "da",
+      "text": "sankthansaften hos mine forældre"
+    },
+    {
+      "id": "paaskefrokost",
+      "lang": "da",
+      "text": "påskefrokosten med familien"
+    },
+    {
+      "id": "housewarming",
+      "lang": "da",
+      "text": "indflytterfest i den nye lejlighd"
+    },
+    {
+      "id": "polterabend",
+      "lang": "da",
+      "text": "polterabend for jonas"
+    },
     {
       "id": "pre-drinks",
       "lang": "da",
       "text": "forfest hos mig inden vi tager i byen",
       "expect": {
-        "durationMinutes": { "oneOf": [420, 450, 480, 510, 540, 570, 600, 630, 660, 690, 720] }
+        "durationMinutes": {
+          "oneOf": [420, 450, 480, 510, 540, 570, 600, 630, 660, 690, 720]
+        }
       }
     },
-    { "id": "run", "lang": "da", "text": "løbetur samen?" },
-    { "id": "gym", "lang": "da", "text": "skal vi træne sammen i fitness" },
-    { "id": "winter-bathing", "lang": "da", "text": "vinterbade og sauna" },
-    { "id": "climbing", "lang": "da", "text": "bouldering tirsdag", "expect": { "weekdays": [2] } },
+    {
+      "id": "run",
+      "lang": "da",
+      "text": "løbetur samen?"
+    },
+    {
+      "id": "gym",
+      "lang": "da",
+      "text": "skal vi træne sammen i fitness"
+    },
+    {
+      "id": "winter-bathing",
+      "lang": "da",
+      "text": "vinterbade og sauna"
+    },
+    {
+      "id": "climbing",
+      "lang": "da",
+      "text": "bouldering tirsdag",
+      "expect": {
+        "weekdays": [2]
+      }
+    },
     {
       "id": "ski-holiday",
       "lang": "da",
       "text": "skiferie i vinterferien",
-      "expect": { "months": { "from": "2027-02", "to": "2027-02" } }
+      "expect": {
+        "months": {
+          "from": "2027-02",
+          "to": "2027-02"
+        }
+      }
     },
-    { "id": "cinema", "lang": "da", "text": "biffen på fredag", "expect": { "weekdays": [5] } },
+    {
+      "id": "cinema",
+      "lang": "da",
+      "text": "biffen på fredag",
+      "expect": {
+        "weekdays": [5]
+      }
+    },
     {
       "id": "theatre",
       "lang": "da",
       "text": "teateret i januar",
-      "expect": { "months": { "from": "2027-01", "to": "2027-01" } }
+      "expect": {
+        "months": {
+          "from": "2027-01",
+          "to": "2027-01"
+        }
+      }
     },
-    { "id": "city-break", "lang": "da", "text": "storbyferie til berlin" },
+    {
+      "id": "city-break",
+      "lang": "da",
+      "text": "storbyferie til berlin"
+    },
     {
       "id": "holiday-abroad",
       "lang": "da",
       "text": "ferie sammen til sommer, et sted med sol",
-      "expect": { "months": { "from": "2027-06", "to": "2027-08" } }
+      "expect": {
+        "months": {
+          "from": "2027-06",
+          "to": "2027-08"
+        }
+      }
     },
-    { "id": "summer-house-week", "lang": "da", "text": "en uge i sommerhus" },
+    {
+      "id": "summer-house-week",
+      "lang": "da",
+      "text": "en uge i sommerhus"
+    },
     {
       "id": "help-moving",
       "lang": "da",
       "text": "flyttedag d. 1 november, kan i hjælpe? jeg giver pizza",
-      "expect": { "months": { "from": "2026-11", "to": "2026-11" } }
+      "expect": {
+        "months": {
+          "from": "2026-11",
+          "to": "2026-11"
+        }
+      }
     },
-    { "id": "shopping", "lang": "da", "text": "shoppetur i byen" },
-    { "id": "date", "lang": "da", "text": "datenight med kæresten" },
-    { "id": "study-group", "lang": "da", "text": "læsegruppe inden eksamen" },
-    { "id": "see-each-other", "lang": "da", "text": "vi skal ses snart!!" },
-    { "id": "something", "lang": "da", "text": "skal vi finde på noget snart" },
-    { "id": "drop-by", "lang": "da", "text": "kom forbi en dag" },
-    { "id": "an-evening", "lang": "da", "text": "en aften sammen snart?" },
-    { "id": "a-weekend", "lang": "da", "text": "en weekend sammen" },
-    { "id": "birthday", "lang": "da", "text": "fejre min fødselsdag" },
-    { "id": "milestone-birthday", "lang": "da", "text": "mors runde fødselsdag" },
-    { "id": "julefrokost", "lang": "en", "text": "julefrokost at my place this year" },
-    { "id": "fredagsbar", "lang": "en", "text": "friday beers after work" },
-    { "id": "dinner", "lang": "en", "text": "dinner at mine, i'll cook" },
+    {
+      "id": "shopping",
+      "lang": "da",
+      "text": "shoppetur i byen"
+    },
+    {
+      "id": "date",
+      "lang": "da",
+      "text": "datenight med kæresten"
+    },
+    {
+      "id": "study-group",
+      "lang": "da",
+      "text": "læsegruppe inden eksamen"
+    },
+    {
+      "id": "see-each-other",
+      "lang": "da",
+      "text": "vi skal ses snart!!"
+    },
+    {
+      "id": "something",
+      "lang": "da",
+      "text": "skal vi finde på noget snart"
+    },
+    {
+      "id": "drop-by",
+      "lang": "da",
+      "text": "kom forbi en dag"
+    },
+    {
+      "id": "an-evening",
+      "lang": "da",
+      "text": "en aften sammen snart?"
+    },
+    {
+      "id": "a-weekend",
+      "lang": "da",
+      "text": "en weekend sammen"
+    },
+    {
+      "id": "birthday",
+      "lang": "da",
+      "text": "fejre min fødselsdag"
+    },
+    {
+      "id": "milestone-birthday",
+      "lang": "da",
+      "text": "mors runde fødselsdag"
+    },
+    {
+      "id": "julefrokost",
+      "lang": "en",
+      "text": "julefrokost at my place this year"
+    },
+    {
+      "id": "fredagsbar",
+      "lang": "en",
+      "text": "friday beers after work"
+    },
+    {
+      "id": "dinner",
+      "lang": "en",
+      "text": "dinner at mine, i'll cook"
+    },
     {
       "id": "night-out",
       "lang": "en",
       "text": "night out on saturday",
-      "expect": { "weekdays": [6] }
+      "expect": {
+        "weekdays": [6]
+      }
     },
-    { "id": "cabin-weekend", "lang": "en", "text": "cabin weekend in the woods" },
+    {
+      "id": "cabin-weekend",
+      "lang": "en",
+      "text": "cabin weekend in the woods"
+    },
     {
       "id": "ski-holiday",
       "lang": "en",
       "text": "ski trip in february",
-      "expect": { "months": { "from": "2027-02", "to": "2027-02" } }
+      "expect": {
+        "months": {
+          "from": "2027-02",
+          "to": "2027-02"
+        }
+      }
     },
-    { "id": "brunch", "lang": "en", "text": "brunch sunday?", "expect": { "weekdays": [0] } },
-    { "id": "pub-quiz", "lang": "en", "text": "pub quiz thursday", "expect": { "weekdays": [4] } },
+    {
+      "id": "brunch",
+      "lang": "en",
+      "text": "brunch sunday?",
+      "expect": {
+        "weekdays": [0]
+      }
+    },
+    {
+      "id": "pub-quiz",
+      "lang": "en",
+      "text": "pub quiz thursday",
+      "expect": {
+        "weekdays": [4]
+      }
+    },
     {
       "id": "gloegg",
       "lang": "en",
       "text": "gløgg evening in december",
-      "expect": { "months": { "from": "2026-12", "to": "2026-12" } }
+      "expect": {
+        "months": {
+          "from": "2026-12",
+          "to": "2026-12"
+        }
+      }
     },
-    { "id": "hygge", "lang": "en", "text": "let's hang out soon" }
+    {
+      "id": "hygge",
+      "lang": "en",
+      "text": "let's hang out soon"
+    },
+    {
+      "id": "coffee-and-cake",
+      "lang": "da",
+      "text": "te hos mormor og morfar"
+    }
   ]
 }

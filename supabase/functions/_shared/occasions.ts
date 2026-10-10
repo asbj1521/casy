@@ -487,8 +487,8 @@ export const OCCASIONS: Occasion[] = [
   },
   {
     id: "coffee-and-cake",
-    da: ["kaffe og kage", "eftermiddagskaffe"],
-    en: ["coffee and cake", "afternoon coffee"],
+    da: ["kaffe og kage", "eftermiddagskaffe", "te og kage", "eftermiddagste", "en kop te", "te"],
+    en: ["coffee and cake", "afternoon coffee", "afternoon tea", "tea"],
     plan: "meeting",
     start: 15,
     minutes: 90,
@@ -500,7 +500,8 @@ export const OCCASIONS: Occasion[] = [
     daylight: false,
     label: "social",
     vague: false,
-    status: "agreed",
+    note: "Tea at someone's home (te hos mormor) is this, in the afternoon, not an evening.",
+    status: "reviewed",
   },
   {
     id: "barbecue",
