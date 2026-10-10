@@ -8,8 +8,13 @@
       "expect": {
         "kind": "meeting",
         "weekdays": [5],
-        "startHour": { "oneOf": [17, 18, 19] },
-        "months": { "from": "2026-11", "to": "2026-11" }
+        "startHour": {
+          "oneOf": [17, 18, 19]
+        },
+        "months": {
+          "from": "2026-11",
+          "to": "2026-11"
+        }
       }
     },
     {
@@ -20,7 +25,9 @@
         "kind": "meeting",
         "weekdays": [0],
         "durationMinutes": 180,
-        "startHour": { "oneOf": [9, 10, 11] }
+        "startHour": {
+          "oneOf": [9, 10, 11]
+        }
       }
     },
     {
@@ -31,7 +38,10 @@
         "kind": "trip",
         "startWeekday": 5,
         "days": 3,
-        "months": { "from": "2027-03", "to": "2027-03" }
+        "months": {
+          "from": "2027-03",
+          "to": "2027-03"
+        }
       }
     },
     {
@@ -39,16 +49,26 @@
       "lang": "da",
       "text": "En uges skiferie i februar",
       "expect": {
-        "kind": { "oneOf": ["holiday", "trip"] },
+        "kind": {
+          "oneOf": ["holiday", "trip"]
+        },
         "days": 7,
-        "months": { "from": "2027-02", "to": "2027-02" }
+        "months": {
+          "from": "2027-02",
+          "to": "2027-02"
+        }
       }
     },
     {
       "name": "football Wednesday from 19 to 21",
       "lang": "da",
       "text": "Fodbold onsdag kl 19 til 21",
-      "expect": { "kind": "meeting", "weekdays": [3], "startHour": 19, "durationMinutes": 120 }
+      "expect": {
+        "kind": "meeting",
+        "weekdays": [3],
+        "startHour": 19,
+        "durationMinutes": 120
+      }
     },
     {
       "name": "lunch on a weekday next month",
@@ -57,33 +77,50 @@
       "expect": {
         "kind": "meeting",
         "weekdays": [1, 2, 3, 4, 5],
-        "startHour": { "oneOf": [11, 12] },
-        "months": { "from": "2026-11", "to": "2026-11" }
+        "startHour": {
+          "oneOf": [11, 12]
+        },
+        "months": {
+          "from": "2026-11",
+          "to": "2026-11"
+        }
       }
     },
     {
       "name": "cinema one evening without Peter",
       "lang": "da",
       "text": "Biograf en aften uden Peter",
-      "expect": { "kind": "meeting", "without": ["Peter"] }
+      "expect": {
+        "kind": "meeting",
+        "without": ["Peter"]
+      }
     },
     {
       "name": "vague: meet up soon",
       "lang": "da",
       "text": "Vi skal ses snart",
-      "expect": { "asks": true }
+      "expect": {
+        "asks": true
+      }
     },
     {
       "name": "not about planning",
       "lang": "da",
       "text": "Hvad bliver vejret i morgen?",
-      "expect": { "noPlan": true }
+      "expect": {
+        "noPlan": true
+      }
     },
     {
       "name": "party Saturday from 20 to 2 at night",
       "lang": "da",
       "text": "Fest lørdag fra 20 til 2 om natten",
-      "expect": { "kind": "meeting", "weekdays": [6], "startHour": 20, "durationMinutes": 360 }
+      "expect": {
+        "kind": "meeting",
+        "weekdays": [6],
+        "startHour": 20,
+        "durationMinutes": 360
+      }
     },
     {
       "name": "dictated: dinner at eighteen o'clock on Thursday in December",
@@ -93,7 +130,10 @@
         "kind": "meeting",
         "weekdays": [4],
         "startHour": 18,
-        "months": { "from": "2026-12", "to": "2026-12" }
+        "months": {
+          "from": "2026-12",
+          "to": "2026-12"
+        }
       }
     },
     {
@@ -101,16 +141,25 @@
       "lang": "da",
       "text": "Sommerhus i juli i fire dage",
       "expect": {
-        "kind": { "oneOf": ["holiday", "trip"] },
+        "kind": {
+          "oneOf": ["holiday", "trip"]
+        },
         "days": 4,
-        "months": { "from": "2027-07", "to": "2027-07" }
+        "months": {
+          "from": "2027-07",
+          "to": "2027-07"
+        }
       }
     },
     {
       "name": "board games Tuesday or Thursday evening, at least three of us",
       "lang": "da",
       "text": "Brætspil tirsdag eller torsdag aften, mindst 3 af os",
-      "expect": { "kind": "meeting", "weekdays": [2, 4], "atLeast": 3 }
+      "expect": {
+        "kind": "meeting",
+        "weekdays": [2, 4],
+        "atLeast": 3
+      }
     },
     {
       "name": "coffee on a weekday from 8 to 9 in the morning",
@@ -130,7 +179,10 @@
       "expect": {
         "kind": "meeting",
         "weekdays": [5, 6],
-        "months": { "from": "2026-12", "to": "2026-12" }
+        "months": {
+          "from": "2026-12",
+          "to": "2026-12"
+        }
       }
     },
     {
@@ -141,14 +193,19 @@
         "kind": "meeting",
         "weekdays": [0],
         "durationMinutes": 60,
-        "startHour": { "oneOf": [7, 8, 9, 10] }
+        "startHour": {
+          "oneOf": [7, 8, 9, 10]
+        }
       }
     },
     {
       "name": "dinner, Emil comes if he likes",
       "lang": "da",
       "text": "Middag med Sara og Jonas, Emil kan komme hvis han vil",
-      "expect": { "kind": "meeting", "optional": ["Emil"] }
+      "expect": {
+        "kind": "meeting",
+        "optional": ["Emil"]
+      }
     },
     {
       "name": "padel for an hour and a half on a weekday evening",
@@ -158,7 +215,9 @@
         "kind": "meeting",
         "weekdays": [1, 2, 3, 4, 5],
         "durationMinutes": 90,
-        "startHour": { "oneOf": [17, 18, 19, 20] }
+        "startHour": {
+          "oneOf": [17, 18, 19, 20]
+        }
       }
     },
     {
@@ -167,16 +226,73 @@
       "text": "A weekend in London in May",
       "expect": {
         "kind": "trip",
-        "days": { "oneOf": [2, 3] },
-        "startWeekday": { "oneOf": [5, 6] },
-        "months": { "from": "2027-05", "to": "2027-05" }
+        "days": {
+          "oneOf": [2, 3]
+        },
+        "startWeekday": {
+          "oneOf": [5, 6]
+        },
+        "months": {
+          "from": "2027-05",
+          "to": "2027-05"
+        }
       }
     },
     {
       "name": "dictated with an aside: dinner on Friday, eh, no, Saturday",
       "lang": "da",
       "text": "Middag på fredag øh nej lørdag klokken syv om aftenen",
-      "expect": { "kind": "meeting", "weekdays": [6], "startHour": 19 }
+      "expect": {
+        "kind": "meeting",
+        "weekdays": [6],
+        "startHour": 19
+      }
+    },
+    {
+      "name": "julefrokost and going out after (a party into the night, not a lunch)",
+      "lang": "da",
+      "text": "Julefrokost med gutterne og så i byen bagefter",
+      "expect": {
+        "kind": "meeting",
+        "startHour": {
+          "oneOf": [15, 16, 17, 18, 19]
+        },
+        "durationMinutes": {
+          "oneOf": [480, 510, 540, 570, 600, 630, 660, 690, 720]
+        }
+      }
+    },
+    {
+      "name": "julefrokost alone (an afternoon or evening party)",
+      "lang": "da",
+      "text": "Julefrokost med holdet i december",
+      "expect": {
+        "kind": "meeting",
+        "startHour": {
+          "oneOf": [12, 13, 14, 15, 16, 17, 18, 19]
+        },
+        "durationMinutes": {
+          "oneOf": [300, 330, 360, 390, 420, 450, 480, 510, 540, 570, 600, 630, 660, 690, 720]
+        },
+        "months": {
+          "from": "2026-12",
+          "to": "2026-12"
+        }
+      }
+    },
+    {
+      "name": "Christmas lunch and a night out, in English",
+      "lang": "en",
+      "text": "Christmas lunch with the team and then going out",
+      "expect": {
+        "kind": "meeting",
+        "startHour": {
+          "oneOf": [15, 16, 17, 18, 19]
+        },
+        "durationMinutes": {
+          "oneOf": [480, 510, 540, 570, 600, 630, 660, 690, 720]
+        }
+      }
     }
   ]
 }
