@@ -36,7 +36,7 @@ serve("plan-ai", async (req, body) => {
     system: PLAN_SYSTEM_PROMPT,
     message: buildPlanMessage(request, langOf(req), now),
     schema: PLAN_SCHEMA,
-    read: (stopReason, text) => planFromAnswer(stopReason, text, now),
+    read: (stopReason, text) => planFromAnswer(stopReason, text, now, request),
     maxTokens: PLAN_MAX_TOKENS,
     retryIfCutOff: true,
     messages: {

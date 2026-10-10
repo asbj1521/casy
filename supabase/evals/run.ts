@@ -48,6 +48,7 @@ import {
   PLAN_SYSTEM_PROMPT,
   planFromAnswer,
   searchMonths,
+  seasonMonths,
   type AiPlan,
 } from "../functions/_shared/planAi.ts";
 import { STRAIN, type Strain } from "../functions/_shared/eventVocabulary.ts";
@@ -132,7 +133,7 @@ async function planAi(): Promise<Result[]> {
         maxTokens: PLAN_MAX_TOKENS,
       }),
     );
-    const plan = planFromAnswer(stop, text, nowMs);
+    const plan = planFromAnswer(stop, text, nowMs, { text: c.text, earlier: [], current: null });
     const failures: string[] = [];
     if (c.expect.noPlan) {
       if (plan) failures.push("expected no plan, got one");
@@ -395,17 +396,6 @@ const nearStrain = (s: Strain) => ({
   oneOf: STRAIN.filter((_, i) => Math.abs(i - STRAIN.indexOf(s)) <= 1),
 });
 
-/** The next run of an occasion's months among the months searched. */
-function monthsFor(o: Occasion, nowMs: number): { from: string; to: string } | null {
-  const keys = searchMonths(nowMs).map((m) => m.key);
-  const inSeason = (k: string) => o.inMonths!.includes(Number(k.slice(5)));
-  const first = keys.findIndex(inSeason);
-  if (first < 0) return null;
-  let last = first;
-  while (last + 1 < keys.length && inSeason(keys[last + 1])) last++;
-  return { from: keys[first], to: keys[last] };
-}
-
 /** What Planlæg med AI should make of an occasion. */
 function planExpect(o: Occasion, nowMs: number): PlanCase["expect"] {
   if (o.vague) return { asks: true };
@@ -419,7 +409,12 @@ function planExpect(o: Occasion, nowMs: number): PlanCase["expect"] {
     if (o.days) expect.days = near(o.days, 1);
     if (o.startWeekday !== undefined) expect.startWeekday = o.startWeekday;
   }
-  if (o.inMonths) expect.months = monthsFor(o, nowMs);
+  if (o.inMonths) {
+    expect.months = seasonMonths(
+      o,
+      searchMonths(nowMs).map((m) => m.key),
+    );
+  }
   return expect;
 }
 
@@ -467,7 +462,7 @@ async function occasions(): Promise<Result[]> {
         maxTokens: PLAN_MAX_TOKENS,
       }),
     );
-    const plan = planFromAnswer(stop, answer, nowMs);
+    const plan = planFromAnswer(stop, answer, nowMs, { text, earlier: [], current: null });
     return {
       name: `plan: ${text} [${o.id}]`,
       failures: planFailures(plan, { ...planExpect(o, nowMs), ...expect }, stop),

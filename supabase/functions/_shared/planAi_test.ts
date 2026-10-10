@@ -5,6 +5,7 @@ import {
   cleanPlan,
   PLAN_SCHEMA,
   planFromAnswer,
+  type PlanRequest,
   readPlanRequest,
   searchMonths,
   toWire,
@@ -303,4 +304,41 @@ Deno.test("the message holds the date, the months, the language and what was wri
     buildPlanMessage({ text: "Kaffe", earlier: [], current: null }, "en", NOW),
     "The description:\n<description>Kaffe</description>",
   );
+});
+
+Deno.test("an occasion with a season gets it when nothing is said about when", () => {
+  const trip = JSON.stringify(wire({ kind: "holiday", days: 7 }));
+  const ask = (text: string, extra: Partial<PlanRequest> = {}) =>
+    planFromAnswer("end_turn", trip, NOW, { text, earlier: [], current: null, ...extra });
+
+  // Skiing is winter: the next run of its months, marked as guessed.
+  const ski = ask("skiferie med drengene");
+  assertEquals(ski?.months, { from: "2026-12", to: "2027-04" });
+  assert(ski?.assumed.includes("months"));
+
+  // What the person said wins: the model's months stay.
+  const february = JSON.stringify(
+    wire({ kind: "holiday", days: 7, monthsFrom: "2027-02", monthsTo: "2027-02" }),
+  );
+  assertEquals(
+    planFromAnswer("end_turn", february, NOW, {
+      text: "skiferie i februar",
+      earlier: [],
+      current: null,
+    })?.months,
+    { from: "2027-02", to: "2027-02" },
+  );
+
+  // Adding details to a plan that already has months never moves them.
+  const current = {
+    ...cleanPlan(JSON.parse(trip), MONTHS),
+    months: { from: "2027-01", to: "2027-01" },
+  };
+  assertEquals(ask("vi tager bilen", { earlier: ["skiferie"], current })?.months, null);
+
+  // A whole name only, and no guess between two seasons.
+  assertEquals(ask("vi skal på skibet")?.months, null);
+  assertEquals(ask("julefrokost og så sankthans")?.months, null);
+  // Without the request (as before), nothing is added.
+  assertEquals(planFromAnswer("end_turn", trip, NOW)?.months, null);
 });

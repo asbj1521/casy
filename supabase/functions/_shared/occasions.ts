@@ -143,6 +143,19 @@ export function occasionsBlock(view: OccasionView = "full"): string {
   ].join("\n");
 }
 
+/**
+ * The checked occasions named in `text`, each by a whole name (julefrokosten
+ * is its own name in the list, so inflections need no guessing here).
+ */
+export function occasionsIn(text: string): Occasion[] {
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return usableOccasions().filter((o) =>
+    occasionNames(o).some((name) =>
+      new RegExp(`(?<![\\p{L}\\p{N}])${escape(name)}(?![\\p{L}\\p{N}])`, "iu").test(text),
+    ),
+  );
+}
+
 /** Every name of an occasion, lowercased, for the evals and the test that names are unique. */
 export const occasionNames = (o: Occasion): string[] =>
   [...o.da, ...o.en].map((n) => n.toLowerCase());

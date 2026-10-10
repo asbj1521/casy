@@ -12,7 +12,7 @@
  * picked before describing, and names the person mentions come back as
  * written, to be matched against the group's members in the browser.
  */
-import { occasionsBlock } from "./occasions.ts";
+import { type Occasion, occasionsBlock, occasionsIn } from "./occasions.ts";
 import { cleanText } from "./text.ts";
 import { DEFAULT_ZONE } from "./timezones.ts";
 import type { Lang } from "./i18n.ts";
@@ -480,15 +480,56 @@ export function isBlankPlan(plan: AiPlan): boolean {
   );
 }
 
+/** The next run of an occasion's season among the months searched ("YYYY-MM"). */
+export function seasonMonths(
+  o: Pick<Occasion, "inMonths">,
+  monthKeys: string[],
+): { from: string; to: string } | null {
+  if (!o.inMonths?.length) return null;
+  const inSeason = (key: string) => o.inMonths!.includes(Number(key.slice(5)));
+  const first = monthKeys.findIndex(inSeason);
+  if (first < 0) return null;
+  let last = first;
+  while (last + 1 < monthKeys.length && inSeason(monthKeys[last + 1])) last++;
+  return { from: monthKeys[first], to: monthKeys[last] };
+}
+
+/**
+ * Common sense the model applies only now and then, made sure of (#123): an
+ * occasion with a season of its own (skiferie, julefrokost, sankthans) named
+ * in what the person wrote, and nothing said about when, gets that season,
+ * marked as guessed. Never over what the person said, nor over months already
+ * set when they are adding details; and when the text names occasions of
+ * different seasons, nothing is guessed.
+ */
+export function withSeason(plan: AiPlan, request: PlanRequest, monthKeys: string[]): AiPlan {
+  if (plan.months !== null || request.current?.months) return plan;
+  const text = [...request.earlier, request.text].join("\n");
+  const seasons = new Map<string, { from: string; to: string }>();
+  for (const o of occasionsIn(text)) {
+    const months = seasonMonths(o, monthKeys);
+    if (months) seasons.set(`${months.from}/${months.to}`, months);
+  }
+  if (seasons.size !== 1) return plan;
+  const [months] = seasons.values();
+  return {
+    ...plan,
+    months,
+    assumed: plan.assumed.includes("months") ? plan.assumed : [...plan.assumed, "months"],
+  };
+}
+
 /**
  * The plan in a finished answer, or null when there is none to use: the model
  * declined, ran out of room, found no event in the text, or (which structured
- * outputs should prevent) sent something that isn't JSON.
+ * outputs should prevent) sent something that isn't JSON. With the request,
+ * an occasion's season is filled in where the model left it out (withSeason).
  */
 export function planFromAnswer(
   stopReason: string | null,
   text: string | undefined,
   nowMs: number,
+  request?: PlanRequest,
 ): AiPlan | null {
   if (stopReason !== "end_turn" || !text) return null;
   let raw: unknown;
@@ -497,9 +538,8 @@ export function planFromAnswer(
   } catch {
     return null;
   }
-  const plan = cleanPlan(
-    raw,
-    searchMonths(nowMs).map((m) => m.key),
-  );
-  return isBlankPlan(plan) ? null : plan;
+  const monthKeys = searchMonths(nowMs).map((m) => m.key);
+  const plan = cleanPlan(raw, monthKeys);
+  if (isBlankPlan(plan)) return null;
+  return request ? withSeason(plan, request, monthKeys) : plan;
 }
