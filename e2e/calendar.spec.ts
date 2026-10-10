@@ -25,3 +25,25 @@ test("a day opens in a popover beside it, and the month turns", async ({ page })
   await expect(page.getByRole("heading", { name: "Oktober 2026" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Forrige måned" })).toBeDisabled();
 });
+
+test("a calendar nobody has sorted gets a category by AI, marked until one is picked (#118)", async ({
+  page,
+  backend,
+}) => {
+  const family = backend.world.connections
+    .flatMap((c) => c.calendar_sources)
+    .find((s) => s.id === "cal-family")!;
+  family.purpose_source = null;
+
+  await page.goto("/calendar-overview");
+  await page.getByRole("button", { name: /^Apple · mia@icloud\.com/ }).click();
+  const category = page.getByRole("combobox", { name: /Kategori for Familie/ });
+  await expect(category).toHaveValue("school");
+  await expect(page.getByText("gættet", { exact: true })).toBeVisible();
+
+  // Picked by hand: the mark goes, and the AI is never asked about it again.
+  await category.selectOption("personal");
+  await expect(page.getByText("gættet", { exact: true })).toBeHidden();
+  expect(family).toMatchObject({ purpose: "personal", purpose_source: "user" });
+  expect(backend.calls.filter((c) => c.name === "calendar-categorize")).toHaveLength(1);
+});

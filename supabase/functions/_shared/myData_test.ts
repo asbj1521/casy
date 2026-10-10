@@ -39,6 +39,7 @@ const connection = (overrides: Partial<ConnectionRow> = {}): ConnectionRow => ({
       display_name: "Home",
       custom_name: null,
       purpose: "personal",
+      purpose_source: "ai",
       priority: "normal",
       included: true,
       calendar_busy_cache: [{ count: 12 }],
@@ -48,6 +49,7 @@ const connection = (overrides: Partial<ConnectionRow> = {}): ConnectionRow => ({
       display_name: "Work",
       custom_name: "Job",
       purpose: "work",
+      purpose_source: "user",
       priority: "never",
       included: false,
       calendar_busy_cache: [],
@@ -61,10 +63,10 @@ Deno.test("calendars carry their own busy counts and the credential's kind", () 
   assertEquals(account.credential, "password");
   assertEquals(account.label, "me@icloud.com");
   assertEquals(
-    account.calendars.map((c) => [c.name, c.customName, c.included, c.busyCount]),
+    account.calendars.map((c) => [c.name, c.customName, c.included, c.busyCount, c.purposeGuessed]),
     [
-      ["Home", null, true, 12],
-      ["Work", "Job", false, 0],
+      ["Home", null, true, 12, true],
+      ["Work", "Job", false, 0, false],
     ],
   );
 });

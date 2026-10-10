@@ -42,6 +42,8 @@ export interface MyData {
       /** The name you gave it, if you did. */
       customName: string | null;
       purpose: string | null;
+      /** The category is Casy's AI's guess (#118), not one you picked. */
+      purposeGuessed: boolean;
       priority: string;
       included: boolean;
       busyCount: number;
@@ -93,6 +95,7 @@ interface SourceRow {
   display_name: string | null;
   custom_name: string | null;
   purpose: string | null;
+  purpose_source: string | null;
   priority: string;
   included: boolean;
   calendar_busy_cache: { count: number }[];
@@ -124,6 +127,7 @@ export function shapeCalendars(rows: ConnectionRow[]): MyData["calendars"] {
         name: s.display_name,
         customName: s.custom_name,
         purpose: s.purpose,
+        purposeGuessed: s.purpose_source === "ai" && s.purpose !== null,
         priority: s.priority,
         included: s.included,
         busyCount: s.calendar_busy_cache[0]?.count ?? 0,
@@ -178,7 +182,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       .select(
         "id, provider, account_label, status, created_at, last_synced_at, " +
           "calendar_secrets(connection_id), " +
-          "calendar_sources(id, display_name, custom_name, purpose, priority, included, calendar_busy_cache(count))",
+          "calendar_sources(id, display_name, custom_name, purpose, purpose_source, priority, included, calendar_busy_cache(count))",
       )
       .eq("profile_id", me)
       .order("created_at", { ascending: true }),

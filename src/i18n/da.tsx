@@ -880,6 +880,8 @@ export const da = {
     denmark: "Danmark",
     calendarFallback: "Kalender",
     noCategory: "Ingen kategori",
+    /** Beside a category Casy's AI picked (#118). */
+    guessedCategory: "Casy har gættet kategorien. Ret den, hvis den ikke passer.",
     holidayCategory: "Helligdag",
     holidayCalendar: "Danske helligdage",
     continuesBoth: "Fortsætter fra dagen før og ind i den næste",

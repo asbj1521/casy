@@ -9,6 +9,7 @@ import TabBar from "@/components/TabBar";
 import WeakPasswordNotice from "@/components/WeakPasswordNotice";
 import { useAuth } from "@/context/auth";
 import { useAccountLanguage } from "@/hooks/useAccountLanguage";
+import { useAutoCategorize } from "@/hooks/useAutoCategorize";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { usePhoneCalendarSync } from "@/hooks/usePhoneCalendarSync";
 import AuthProvider from "@/context/AuthProvider";
@@ -59,12 +60,14 @@ function Home() {
 /**
  * Keeps open pages up to date with what others do (useLiveUpdates), the
  * account's saved language with the site's, for its emails (useAccountLanguage),
- * and, in the iPhone app, Casy with the phone's calendars (usePhoneCalendarSync).
+ * in the iPhone app, Casy with the phone's calendars (usePhoneCalendarSync),
+ * and new calendars given a category by AI in the background (useAutoCategorize).
  */
 function LiveUpdates() {
   useLiveUpdates();
   useAccountLanguage();
   usePhoneCalendarSync();
+  useAutoCategorize();
   return null;
 }
 

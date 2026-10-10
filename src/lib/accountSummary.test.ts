@@ -23,6 +23,8 @@ const account = (label: string | null, names: (string | null)[]): CalendarConnec
     purpose: null,
     priority: "normal",
     writable: false,
+    purpose_source: null,
+    external_id: null,
   })),
   busyCount: 0,
 });

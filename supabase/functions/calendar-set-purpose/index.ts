@@ -70,7 +70,8 @@ serve("calendar-set-purpose", async (req, body) => {
   const { data: updated, error: updateErr } = await db
     .from("calendar_sources")
     .update({
-      ...(purpose !== undefined ? { purpose } : {}),
+      // Picked or cleared by hand: Casy's AI never touches it again (#118).
+      ...(purpose !== undefined ? { purpose, purpose_source: "user" } : {}),
       ...(priority !== undefined ? { priority } : {}),
       ...(included !== undefined ? { included } : {}),
       ...(name !== undefined ? { custom_name: customName } : {}),

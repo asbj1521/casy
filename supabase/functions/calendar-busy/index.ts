@@ -23,6 +23,7 @@ interface SourceRow {
   custom_name: string | null;
   writable: boolean;
   purpose: string | null;
+  purpose_source: "user" | "ai" | null;
   priority: string;
   included: boolean;
   /** Every block stored for it (the embedded count below). */
@@ -49,7 +50,7 @@ serve(
       db
         .from("calendar_sources")
         .select(
-          "id, external_calendar_id, display_name, custom_name, writable, purpose, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label)",
+          "id, external_calendar_id, display_name, custom_name, writable, purpose, purpose_source, priority, included, calendar_busy_cache(count), calendar_connections!inner(id, provider, account_label)",
         )
         .eq("calendar_connections.profile_id", profileId)
         .eq("calendar_connections.status", "connected"),
@@ -70,6 +71,8 @@ serve(
         // Whether it can be made the primary calendar (Casy may add events to it).
         writable: s.writable,
         purpose: s.purpose,
+        // A category Casy's AI guessed (#118), marked as such until its owner picks one.
+        purposeGuessed: s.purpose_source === "ai" && s.purpose !== null,
         priority: s.priority,
         // Unticked calendars still come back, blocks and all: the page lists
         // them unticked, and the scheduling page leaves them out itself.

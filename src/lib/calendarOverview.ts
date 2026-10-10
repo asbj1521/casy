@@ -33,6 +33,8 @@ export interface OverviewCalendar {
   writable: boolean;
   /** The category the user gave this calendar, or null if unset. */
   purpose: CalendarPurpose | null;
+  /** The category is Casy's AI's guess (#118), shown as such until its owner picks one. */
+  purposeGuessed?: boolean;
   /** How much it matters to its owner when scheduling. */
   priority: CalendarPriority;
   /** False once its owner unticked it on My calendar: it then counts nowhere. */

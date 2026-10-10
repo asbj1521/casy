@@ -160,6 +160,13 @@ const da: LegalCopy = {
             efter 30 dage.
           </p>
           <p>
+            Har en af dine kalendere ingen kategori, beder Casy også Anthropic om at gætte den
+            (arbejde, skole, privat eller andet). Med det sendes kun kalenderens navn, uden
+            e-mailadresser og links, og hvilken slags konto den ligger i: ikke hvornår du er
+            optaget, og ikke dine aftaler. Casy gemmer kun kategorien, markeret som gættet, til du
+            selv vælger en. En kategori, du selv har valgt eller fjernet, bliver aldrig ændret.
+          </p>
+          <p>
             Trykker du på Tal, er det din browser, der gør din tale til tekst: Chrome sender lyden
             til Google, Edge til Microsoft, og Safari til Apple eller gør det på din enhed. I
             Casy-appen til iPhone er det Apples talegenkendelse, som kører på din telefon, hvor den
@@ -451,6 +458,13 @@ const en: LegalCopy = {
             what you write here is processed outside the EU. Casy itself does not keep the text. It
             only notes that an answer was fetched and how large it was, without noting who fetched
             it, so the number of answers a day can be limited. The note is deleted after 30 days.
+          </p>
+          <p>
+            If one of your calendars has no category, Casy also asks Anthropic to guess it (work,
+            school, personal or other). Only the calendar&apos;s name is sent, with any email
+            addresses and links taken out, and the kind of account it is in: not when you are busy,
+            and not your events. Casy keeps only the category, marked as guessed until you pick one
+            yourself. A category you picked or removed yourself is never changed.
           </p>
           <p>
             If you press Speak, your browser turns your speech into text: Chrome sends the sound to

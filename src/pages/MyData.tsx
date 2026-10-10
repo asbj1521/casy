@@ -221,7 +221,9 @@ function CalendarsPart({ data }: { data: MyData }) {
                 key={j}
                 label={c.customName ? `${c.customName} (${c.name ?? ""})` : (c.name ?? "-")}
                 detail={[
-                  c.purpose ? t.categories[c.purpose] : null,
+                  c.purpose
+                    ? `${t.categories[c.purpose]}${c.purposeGuessed ? ` (${t.aiPlan.guessed})` : ""}`
+                    : null,
                   t.calendarView.priorities[c.priority],
                   c.included ? null : w.notCounted,
                 ]

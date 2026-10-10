@@ -13,8 +13,10 @@ const source = (
   display_name: name,
   custom_name: custom ?? null,
   purpose: null,
+  purpose_source: null,
   priority: "normal",
   writable,
+  external_id: null,
 });
 
 const connection = (

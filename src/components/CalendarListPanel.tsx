@@ -428,6 +428,15 @@ function CalendarRow({
                 </option>
               ))}
             </select>
+            {/* Casy's AI picked it (#118): marked until its owner picks one. */}
+            {c.purposeGuessed && (
+              <span
+                title={words.guessedCategory}
+                className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-800"
+              >
+                {t.aiPlan.guessed}
+              </span>
+            )}
             <select
               value={c.priority}
               disabled={labels.isPending}

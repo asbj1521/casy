@@ -507,6 +507,11 @@ verify_jwt = false
 # day's AI calls (claim_ai_call) before asking Anthropic with ANTHROPIC_API_KEY.
 verify_jwt = false
 
+[functions.calendar-categorize]
+# Sorts the caller's uncategorised calendars with AI (#118), in the
+# background. Checks the caller's access token in code, like the rest.
+verify_jwt = false
+
 [functions.calendar-sync]
 # Two callers, both checked in code: the hourly pg_cron job by a shared secret
 # (x-sync-secret), and a signed-in person's "Sync now" by their login

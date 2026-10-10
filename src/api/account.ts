@@ -46,6 +46,8 @@ export interface MyData {
       name: string | null;
       customName: string | null;
       purpose: CalendarPurpose | null;
+      /** Casy's AI guessed the category (#118). */
+      purposeGuessed: boolean;
       priority: CalendarPriority;
       included: boolean;
       busyCount: number;

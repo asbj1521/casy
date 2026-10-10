@@ -21,9 +21,13 @@ export interface CalendarSourceStatus {
   /** The name its owner gave it on My calendar. */
   custom_name: string | null;
   purpose: CalendarPurpose | null;
+  /** Who set the category: its owner, Casy's AI (#118), or nobody yet. */
+  purpose_source: "user" | "ai" | null;
   priority: CalendarPriority;
   /** Casy may add events to it, so it can be the primary calendar. */
   writable: boolean;
+  /** A phone calendar's EventKit id; null for every other provider. */
+  external_id: string | null;
 }
 
 /** A linked account's real, persisted state: what calendar-status returns. */
@@ -114,6 +118,24 @@ export async function updateCalendar(calendarId: string, change: CalendarChange)
             ? words.couldntSaveIncluded
             : words.couldntSaveName,
   });
+}
+
+/**
+ * Sort the calendars nobody has given a category yet, with AI (#118), in the
+ * background (useAutoCategorize). `titles` are sample event titles per
+ * calendar id, sent only from the admin's own phone while this is tested;
+ * the server ignores them from anyone else.
+ */
+export async function categorizeCalendars(
+  titles?: Record<string, string[]>,
+): Promise<{ calendarId: string; purpose: CalendarPurpose | null }[]> {
+  const { categorized } = await callFunction<{
+    categorized: { calendarId: string; purpose: CalendarPurpose | null }[];
+  }>("calendar-categorize", {
+    body: titles ? { titles } : {},
+    errorMessage: currentMessages().calendarView.couldntSaveCategory,
+  });
+  return categorized;
 }
 
 /**

@@ -71,8 +71,33 @@ export class FakeBackend {
           return ok({ primary: w.primary });
         }
         return undefined;
-      case "calendar-set-purpose":
+      case "calendar-set-purpose": {
+        // A category picked or cleared by hand is the owner's for good (#118).
+        const source = w.connections
+          .flatMap((c) => c.calendar_sources)
+          .find((s) => s.id === body.calendarId);
+        if (source && "purpose" in body) {
+          source.purpose = body.purpose as typeof source.purpose;
+          source.purpose_source = "user";
+          this.changed();
+        }
         return ok({});
+      }
+      case "calendar-categorize": {
+        // As the real one, without the AI: every untouched calendar in a
+        // connected account becomes "school", guessed.
+        const categorized = w.connections
+          .filter((c) => c.status === "connected")
+          .flatMap((c) => c.calendar_sources)
+          .filter((s) => s.purpose === null && s.purpose_source === null)
+          .map((s) => {
+            s.purpose = "school";
+            s.purpose_source = "ai";
+            return { calendarId: s.id, purpose: s.purpose };
+          });
+        if (categorized.length > 0) this.changed();
+        return ok({ categorized });
+      }
       case "calendar-sync":
         return ok({ results: w.connections.map(() => ({ ok: true })) });
       case "calendar-disconnect":

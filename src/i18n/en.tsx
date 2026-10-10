@@ -845,6 +845,7 @@ export const en: Messages = {
     denmark: "Denmark",
     calendarFallback: "Calendar",
     noCategory: "No category",
+    guessedCategory: "Casy guessed this category. Change it if it's wrong.",
     holidayCategory: "Holiday",
     holidayCalendar: "Danish public holidays",
     continuesBoth: "Continues from the previous day and into the next",
