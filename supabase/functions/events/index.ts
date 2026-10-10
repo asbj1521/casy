@@ -54,6 +54,7 @@ import {
 import { displayNameFor, requireMember } from "../_shared/groups.ts";
 import { afterResponse, HttpError, requireString, serve } from "../_shared/http.ts";
 import { langOf } from "../_shared/i18n.ts";
+import { cleanProfile } from "../_shared/profileAi.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 
@@ -126,6 +127,8 @@ type ProposalRow = {
   status: string;
   mode: EventMode;
   answer_by: string | null;
+  /** What the event is likely to cause (#113); null when none came with it. */
+  impact: unknown;
   created_at: string;
   updated_at: string;
   friend_groups: { name: string } | null;
@@ -164,7 +167,7 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
   let query = db
     .from("event_proposals")
     .select(
-      "id, group_id, created_by, title, place, note, settings, status, mode, answer_by, " +
+      "id, group_id, created_by, title, place, note, settings, status, mode, answer_by, impact, " +
         "created_at, " +
         "updated_at, friend_groups(name), " +
         "event_proposal_dates(id, starts_at, ends_at, declined_by, declined_at, created_at, " +
@@ -257,6 +260,9 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
       status: p.status,
       mode: p.mode,
       answerBy: p.answer_by,
+      // Read through the same cleaner as when it came in, so a profile
+      // stored by an older version answers in today's shape.
+      impact: p.impact ? cleanProfile(p.impact) : null,
       createdBy: {
         id: p.created_by,
         name: nameOf(p.created_by),
@@ -378,6 +384,17 @@ serve("events", async (req, body) => {
         });
         if (error?.code === "23514") throw new HttpError(400, error.message);
         if (error) throw error;
+        // What the event is likely to cause (#113), as the scheduler fetched
+        // it: kept with the event for everyone's own warnings. Never worth
+        // failing the suggestion over.
+        const impact = body.impact === undefined ? null : cleanProfile(body.impact);
+        if (impact) {
+          const { error: impactError } = await db
+            .from("event_proposals")
+            .update({ impact })
+            .eq("id", proposalId as string);
+          if (impactError) console.error("events: couldn't store the event's profile", impactError);
+        }
         // With the suggester's answers (#101) it may be settled already: a
         // vote only they had to answer goes straight into calendars.
         if (dates.some((d) => d.answer)) syncCalendarsLater(proposalId as string);
