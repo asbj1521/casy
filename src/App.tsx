@@ -11,6 +11,7 @@ import { useAuth } from "@/context/auth";
 import { useAccountLanguage } from "@/hooks/useAccountLanguage";
 import { useAutoCategorize } from "@/hooks/useAutoCategorize";
 import { useAutoLabel } from "@/hooks/useEventLabels";
+import { useDayFactsSync } from "@/hooks/useDayFactsSync";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { usePhoneCalendarSync } from "@/hooks/usePhoneCalendarSync";
 import AuthProvider from "@/context/AuthProvider";
@@ -67,7 +68,8 @@ function Home() {
  * account's saved language with the site's, for its emails (useAccountLanguage),
  * in the iPhone app, Casy with the phone's calendars (usePhoneCalendarSync),
  * new calendars given a category by AI in the background (useAutoCategorize),
- * and, in the app, the phone's events labelled by AI (useAutoLabel).
+ * and, in the app, the phone's events labelled by AI (useAutoLabel) and what
+ * ranks a vote's dates shared with the server (useDayFactsSync).
  */
 function LiveUpdates() {
   useLiveUpdates();
@@ -75,6 +77,7 @@ function LiveUpdates() {
   usePhoneCalendarSync();
   useAutoCategorize();
   useAutoLabel();
+  useDayFactsSync();
   return null;
 }
 

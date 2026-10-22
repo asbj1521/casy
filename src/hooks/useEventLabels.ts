@@ -207,6 +207,14 @@ const NONE: LabelledEvent[] = [];
  * or AI tester; never sent anywhere.
  */
 export function useLabelledEvents(): LabelledEvent[] {
+  return useLabelledEventsState().events;
+}
+
+/**
+ * useLabelledEvents, and whether the events and labels have been read yet:
+ * an empty list is a real one only once they have (#119 sends it as such).
+ */
+export function useLabelledEventsState(): { ready: boolean; events: LabelledEvent[] } {
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const allowed = useAiContent();
@@ -217,7 +225,10 @@ export function useLabelledEvents(): LabelledEvent[] {
   });
   const { data: book } = useQuery({ ...labelBookQuery(userId), enabled: on });
   return useMemo(
-    () => (on && events && book ? labelledEvents(events, book) : NONE),
+    () =>
+      on && events && book
+        ? { ready: true, events: labelledEvents(events, book) }
+        : { ready: false, events: NONE },
     [on, events, book],
   );
 }
