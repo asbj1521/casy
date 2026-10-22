@@ -1192,6 +1192,8 @@ export const en: Messages = {
     captchaWait: "One moment: we're checking you're not a robot. Try again in a few seconds.",
     captchaFailed:
       "We couldn't check that you're not a robot. Reload the page, turn off any ad blocker for this site, or sign in with Google.",
+    captchaFailedApp:
+      "We couldn't check that you're not a robot. Close the app completely, open it again and try once more.",
     email: "Email",
     emailPlaceholder: "you@example.com",
     sendingLink: "Sending link",

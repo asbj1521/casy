@@ -14,6 +14,7 @@ import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
 import { cardArrived } from "@/lib/cardTransition";
+import { isNativeApp } from "@/lib/nativeApp";
 import { returnPathAfterSignIn } from "@/lib/signInReturn";
 import { hasSeenCalendarOnboarding } from "@/lib/calendarOnboarding";
 import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/passwordRules";
@@ -128,7 +129,8 @@ export default function SignIn() {
   /** Why a call can't go yet (no bot-check token), or null when it can. */
   function captchaProblem(): string | null {
     if (!captchaEnabled || captchaValue) return null;
-    return captchaFailed ? t.signIn.captchaFailed : t.signIn.captchaWait;
+    if (!captchaFailed) return t.signIn.captchaWait;
+    return isNativeApp ? t.signIn.captchaFailedApp : t.signIn.captchaFailed;
   }
   // Sent with every call; undefined while bot protection isn't set up.
   const captchaToken = captchaValue ?? undefined;
@@ -417,22 +419,30 @@ export default function SignIn() {
             contents fade in once it has. */}
         <div className="vt-card mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
           <div className="vt-card-content">
-            <button
-              type="button"
-              onClick={() => void handleGoogle()}
-              className="flex w-full items-center justify-center gap-2 rounded-full border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary"
-            >
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                G
-              </span>
-              {t.signIn.google}
-            </button>
+            {/* Not in the iPhone app (#91): with a Google button, App Store
+                guideline 4.8 asks for Sign in with Apple or the like beside it,
+                and Google refuses sign-in inside an app's web view anyway.
+                Without it the app signs in only with Casy's own accounts. */}
+            {!isNativeApp && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleGoogle()}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                    G
+                  </span>
+                  {t.signIn.google}
+                </button>
 
-            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              {t.signIn.or}
-              <span className="h-px flex-1 bg-border" />
-            </div>
+                <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  {t.signIn.or}
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              </>
+            )}
 
             {mode === "link" ? (
               sentTo ? (

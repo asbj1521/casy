@@ -1233,6 +1233,9 @@ export const da = {
       "Et øjeblik: vi tjekker lige, at du ikke er en robot. Prøv igen om et par sekunder.",
     captchaFailed:
       "Vi kunne ikke tjekke, at du ikke er en robot. Genindlæs siden, slå en eventuel reklameblokering fra her, eller log ind med Google.",
+    // The iPhone app has no Google button (#91).
+    captchaFailedApp:
+      "Vi kunne ikke tjekke, at du ikke er en robot. Luk appen helt, åbn den igen og prøv på ny.",
     email: "E-mail",
     emailPlaceholder: "dig@eksempel.dk",
     sendingLink: "Sender link",
