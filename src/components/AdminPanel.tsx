@@ -34,6 +34,7 @@ import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
 import { withoutGroup, withoutMember, withoutUser } from "@/lib/adminOverview";
 import { syncedAgo } from "@/lib/accountSummary";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import type { Lang } from "@/i18n/locale";
 import { formatDate } from "@/lib/format";
@@ -205,6 +206,7 @@ function UserRow({
 }) {
   const { lang } = useLang();
   const t = useT();
+  const phone = usePhoneLayout();
   const [typed, setTyped] = useState("");
   const inputId = useId();
   // Typing the name is the guard against deleting the wrong row: the button
@@ -220,82 +222,116 @@ function UserRow({
         : t.admin.impactGroups(impact.groups),
   ];
 
+  const joined = (
+    <>
+      {t.admin.joined(formatDate(user.createdAt, lang))}
+      {user.lastSignInAt && t.admin.lastSignIn(formatDate(user.lastSignInAt, lang))}
+    </>
+  );
+  const nameLine = (
+    <p className="flex items-center gap-2 truncate text-sm font-medium text-foreground">
+      {user.name}
+      {isYou && (
+        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+          {t.admin.you}
+        </span>
+      )}
+    </p>
+  );
+  const syncNote = syncResult && (
+    <p className={cn("mt-0.5 text-xs", syncResult.ok ? "text-emerald-700" : "text-amber-700")}>
+      {syncResult.text}
+    </p>
+  );
+  const counts = (
+    <div className="flex shrink-0 gap-4 text-right text-xs text-muted-foreground">
+      <span>
+        <span className="block text-sm font-semibold tabular-nums text-foreground">
+          {user.groups}
+        </span>
+        {t.admin.groupsLabel}
+      </span>
+      <span>
+        <span
+          className={cn(
+            "block text-sm font-semibold tabular-nums",
+            user.calendars === 0 ? "text-amber-700" : "text-foreground",
+          )}
+        >
+          {user.calendars}
+        </span>
+        {t.admin.calendarsLabel}
+      </span>
+    </div>
+  );
+  // Every account they've linked, synced now; nothing to do without one.
+  const syncButton = (
+    <button
+      type="button"
+      onClick={onSync}
+      disabled={syncing || user.calendars === 0}
+      title={t.admin.syncUserTitle(user.name)}
+      aria-label={t.admin.syncUserTitle(user.name)}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+    >
+      <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+    </button>
+  );
+  // Never on your own row: the server refuses it too.
+  const deleteButton = isYou ? (
+    <span className="h-8 w-8 shrink-0" />
+  ) : (
+    <button
+      type="button"
+      onClick={() => {
+        setTyped("");
+        onAsk();
+      }}
+      title={t.admin.deleteUserTitle(user.name)}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-red-50 hover:text-red-700"
+    >
+      <Trash2 className="h-3.5 w-3.5" />
+    </button>
+  );
+
   return (
     <li className="py-3">
-      <div className="flex items-center gap-3">
-        <Avatar name={user.name} index={index} size="md" />
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 truncate text-sm font-medium text-foreground">
-            {user.name}
-            {isYou && (
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                {t.admin.you}
-              </span>
-            )}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {t.admin.joined(formatDate(user.createdAt, lang))}
-            {user.lastSignInAt && t.admin.lastSignIn(formatDate(user.lastSignInAt, lang))}
-          </p>
-          <AiAccess user={user} />
-          {syncResult && (
-            <p
-              className={cn(
-                "mt-0.5 text-xs",
-                syncResult.ok ? "text-emerald-700" : "text-amber-700",
-              )}
-            >
-              {syncResult.text}
-            </p>
-          )}
+      {phone ? (
+        // A phone has no room for it all on one line, which squeezed the name
+        // and the dates into a sliver: the name, the dates across the full
+        // width, then the numbers and buttons, then the AI switches.
+        <>
+          <div className="flex items-center gap-3">
+            <Avatar name={user.name} index={index} size="md" />
+            <div className="min-w-0 flex-1">{nameLine}</div>
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">{joined}</p>
+          <div className="mt-2 flex items-center gap-4">
+            {counts}
+            <div className="ml-auto flex gap-2">
+              {syncButton}
+              {deleteButton}
+            </div>
+          </div>
+          <div className="mt-1">
+            <AiAccess user={user} />
+          </div>
+          {syncNote}
+        </>
+      ) : (
+        <div className="flex items-center gap-3">
+          <Avatar name={user.name} index={index} size="md" />
+          <div className="min-w-0 flex-1">
+            {nameLine}
+            <p className="text-xs text-muted-foreground">{joined}</p>
+            <AiAccess user={user} />
+            {syncNote}
+          </div>
+          {counts}
+          {syncButton}
+          {deleteButton}
         </div>
-        <div className="flex shrink-0 gap-4 text-right text-xs text-muted-foreground">
-          <span>
-            <span className="block text-sm font-semibold tabular-nums text-foreground">
-              {user.groups}
-            </span>
-            {t.admin.groupsLabel}
-          </span>
-          <span>
-            <span
-              className={cn(
-                "block text-sm font-semibold tabular-nums",
-                user.calendars === 0 ? "text-amber-700" : "text-foreground",
-              )}
-            >
-              {user.calendars}
-            </span>
-            {t.admin.calendarsLabel}
-          </span>
-        </div>
-        {/* Every account they've linked, synced now; nothing to do without one. */}
-        <button
-          type="button"
-          onClick={onSync}
-          disabled={syncing || user.calendars === 0}
-          title={t.admin.syncUserTitle(user.name)}
-          aria-label={t.admin.syncUserTitle(user.name)}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-        </button>
-        {/* Never on your own row: the server refuses it too. */}
-        {isYou ? (
-          <span className="h-8 w-8 shrink-0" />
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setTyped("");
-              onAsk();
-            }}
-            title={t.admin.deleteUserTitle(user.name)}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-red-50 hover:text-red-700"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+      )}
 
       {confirming && (
         <ConfirmPanel
@@ -499,6 +535,7 @@ function dollars(amount: number, lang: Lang): string {
 export default function AdminPanel({ youId }: { youId: string }) {
   const t = useT();
   const { lang } = useLang();
+  const phone = usePhoneLayout();
   const queryClient = useQueryClient();
   const { data, isPending, isError, error, refetch, isFetching } = useQuery(
     adminOverviewQuery(youId),
@@ -701,7 +738,11 @@ export default function AdminPanel({ youId }: { youId: string }) {
           value={stats?.failingSyncs ?? null}
           alert={!!stats?.failingSyncs}
         />
-        <StatTile label={t.admin.statBusy} value={stats?.busyBlocks ?? null} />
+        <StatTile
+          label={t.admin.statBusy}
+          value={stats?.busyBlocks ?? null}
+          className={phone ? "col-span-2" : undefined}
+        />
       </div>
       {data?.ai && (
         <div className="mt-2 text-sm text-muted-foreground">
@@ -748,9 +789,9 @@ export default function AdminPanel({ youId }: { youId: string }) {
         </Notice>
       )}
 
-      <div className="mt-6 rounded-2xl border bg-card p-5 shadow-sm">
+      <div className={cn("mt-6 rounded-2xl border bg-card shadow-sm", phone ? "p-3" : "p-5")}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex rounded-full bg-secondary p-1">
+          <div className={cn("flex rounded-full bg-secondary p-1", phone && "w-full")}>
             {tabs.map((item) => (
               <button
                 key={item.id}
@@ -763,6 +804,8 @@ export default function AdminPanel({ youId }: { youId: string }) {
                 }}
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition",
+                  // Three tabs side by side must fit a phone, even in Danish.
+                  phone && "flex-auto justify-center whitespace-nowrap px-1.5 text-[13px]",
                   tab === item.id
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
@@ -775,7 +818,7 @@ export default function AdminPanel({ youId }: { youId: string }) {
               </button>
             ))}
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className={cn("flex flex-wrap items-center gap-3", phone && "w-full")}>
             {tab !== "groups" && (
               <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input
@@ -787,14 +830,17 @@ export default function AdminPanel({ youId }: { youId: string }) {
                 {problemsLabel}
               </label>
             )}
-            <div className="relative">
+            <div className={cn("relative", phone && "w-full")}>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t.admin.search}
-                className="w-48 rounded-full border bg-background py-1.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                className={cn(
+                  "rounded-full border bg-background py-1.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/30",
+                  phone ? "w-full" : "w-48",
+                )}
               />
             </div>
           </div>

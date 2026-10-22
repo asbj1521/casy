@@ -10,16 +10,20 @@ export default function StatTile({
   label,
   value,
   alert = false,
+  className,
 }: {
   label: string;
   value: number | null;
   alert?: boolean;
+  /** Placement, e.g. spanning both columns of a grid. */
+  className?: string;
 }) {
   return (
     <div
       className={cn(
         "rounded-xl p-3 text-center sm:text-left",
         alert ? "bg-red-50 text-red-800" : "bg-secondary",
+        className,
       )}
     >
       <p
