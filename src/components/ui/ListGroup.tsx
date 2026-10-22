@@ -52,7 +52,8 @@ export function ListRow({
   to,
   onClick,
   tone = "default",
-  chevron = !!to,
+  expanded,
+  chevron = !!to || expanded !== undefined,
   selected = false,
 }: {
   /** The row's element id, so a page can scroll to it. */
@@ -69,6 +70,8 @@ export function ListRow({
   chevron?: boolean;
   /** The row whose content is open beside the list (a computer's groups page). */
   selected?: boolean;
+  /** A row that opens and closes more rows: whether they are open (the chevron turns down). */
+  expanded?: boolean;
 }) {
   const color = {
     default: "text-foreground",
@@ -92,7 +95,14 @@ export function ListRow({
           )}
         </span>
         {value != null && <span className="shrink-0 text-sm text-muted-foreground">{value}</span>}
-        {chevron && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />}
+        {chevron && (
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform",
+              expanded && "rotate-90",
+            )}
+          />
+        )}
       </span>
     </>
   );
@@ -106,7 +116,7 @@ export function ListRow({
           {inner}
         </Link>
       ) : onClick ? (
-        <button type="button" onClick={onClick} className={pressable}>
+        <button type="button" onClick={onClick} aria-expanded={expanded} className={pressable}>
           {inner}
         </button>
       ) : (

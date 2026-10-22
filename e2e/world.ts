@@ -695,7 +695,7 @@ export function myData(world: World): MyData {
     events: { invitedTo: world.events.length, suggested: 2, answers: 9, declined: 1 },
     calendarEntries: { added: 1, deletedByYou: 0 },
     ai: {
-      allowed: true,
+      allowed: world.aiAllowed,
       calls: 2,
       consent: world.aiConsent ? { givenAt: "2026-10-01T09:00:00.000Z", current: true } : null,
     },

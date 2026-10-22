@@ -1,15 +1,17 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 
 import { downloadMyData, myDataQuery, type MyData } from "@/api/account";
 import { PROVIDER_BRANDS } from "@/components/calendarProviders";
+import { AiConsentConfirm, AiConsentFootnote, AiConsentRow } from "@/components/profile/AiConsent";
 import PhoneSubHeader from "@/components/PhoneSubHeader";
 import TopNav from "@/components/TopNav";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { useAiConsentControl, type AiConsentControl } from "@/hooks/useAiConsentSetting";
 import { labelBookQuery } from "@/hooks/useEventLabels";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
@@ -95,6 +97,8 @@ function DataLists() {
   const userId = useSignedInUser().id;
   const { data, isPending, isError } = useQuery(myDataQuery(userId));
   const download = useMutation({ mutationFn: downloadMyData });
+  // The AI consent switch: at the top while it is off, in the AI list once on.
+  const consent = useAiConsentControl();
 
   if (isPending) {
     return (
@@ -114,11 +118,19 @@ function DataLists() {
 
   return (
     <>
+      {data.ai.allowed && !consent.consented && (
+        <ListGroup title={t.aiConsent.group} footnote={<AiConsentFootnote control={consent} />}>
+          <AiConsentRow
+            control={consent}
+            detail={data.ai.consent ? t.myData.aiConsentAgain : t.aiConsent.rowOff}
+          />
+        </ListGroup>
+      )}
       <AccountPart data={data} />
       <CalendarsPart data={data} />
       <BusyPart data={data} />
       <GroupsPart data={data} />
-      <EventsPart data={data} />
+      <EventsPart data={data} consent={consent} />
       <CredentialsPart data={data} />
 
       <ListGroup>
@@ -141,6 +153,36 @@ function DataLists() {
           {download.error.message}
         </Notice>
       )}
+    </>
+  );
+}
+
+/**
+ * A list of this many rows or more is folded away behind one row that opens
+ * it, so the page stays short (Your data lists every account, calendar and
+ * group, which can run long).
+ */
+const FOLD_FROM = 5;
+
+/**
+ * Rows inside a list: shown as they are while there are few, behind a row
+ * that opens them from FOLD_FROM on. `summary` says what is in them.
+ */
+function FoldedRows({
+  count,
+  summary,
+  children,
+}: {
+  count: number;
+  summary: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  if (count < FOLD_FROM) return <>{children}</>;
+  return (
+    <>
+      <ListRow label={summary} expanded={open} onClick={() => setOpen(!open)} />
+      {open && children}
     </>
   );
 }
@@ -187,6 +229,7 @@ function CalendarsPart({ data }: { data: MyData }) {
   const t = useT();
   const { lang } = useLang();
   const w = t.myData;
+  const [open, setOpen] = useState(false);
   if (data.calendars.length === 0) {
     return (
       <ListGroup title={w.calendars}>
@@ -194,49 +237,62 @@ function CalendarsPart({ data }: { data: MyData }) {
       </ListGroup>
     );
   }
+  // Every account and every calendar is a row: a long list folds away.
+  const calendarCount = data.calendars.reduce((n, a) => n + a.calendars.length, 0);
+  const folded = data.calendars.length + calendarCount >= FOLD_FROM;
   return (
     <>
-      {data.calendars.map((account, i) => {
-        const brand = PROVIDER_BRANDS[account.provider];
-        return (
-          <ListGroup
-            key={i}
-            title={i === 0 ? w.calendars : undefined}
-            className={i === 0 ? undefined : "mt-3"}
-          >
-            <ListRow
-              leading={
-                <span
-                  className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                    brand.badgeClass,
-                  )}
-                >
-                  {brand.icon}
-                </span>
-              }
-              label={account.label ?? t.providers[account.provider].label}
-              detail={`${t.providers[account.provider].label} · ${w.connectedOn(day(account.connectedAt, lang))}`}
-            />
-            {account.calendars.map((c, j) => (
+      {folded && (
+        <ListGroup title={w.calendars}>
+          <ListRow
+            label={`${w.accountsCount(data.calendars.length)}, ${t.counts.calendars(calendarCount)}`}
+            expanded={open}
+            onClick={() => setOpen(!open)}
+          />
+        </ListGroup>
+      )}
+      {(!folded || open) &&
+        data.calendars.map((account, i) => {
+          const brand = PROVIDER_BRANDS[account.provider];
+          return (
+            <ListGroup
+              key={i}
+              title={!folded && i === 0 ? w.calendars : undefined}
+              className={!folded || i > 0 ? "mt-3" : undefined}
+            >
               <ListRow
-                key={j}
-                label={c.customName ? `${c.customName} (${c.name ?? ""})` : (c.name ?? "-")}
-                detail={[
-                  c.purpose
-                    ? `${t.categories[c.purpose]}${c.purposeGuessed ? ` (${t.aiPlan.guessed})` : ""}`
-                    : null,
-                  t.calendarView.priorities[c.priority],
-                  c.included ? null : w.notCounted,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-                value={t.counts.busyBlocks(c.busyCount)}
+                leading={
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                      brand.badgeClass,
+                    )}
+                  >
+                    {brand.icon}
+                  </span>
+                }
+                label={account.label ?? t.providers[account.provider].label}
+                detail={`${t.providers[account.provider].label} · ${w.connectedOn(day(account.connectedAt, lang))}`}
               />
-            ))}
-          </ListGroup>
-        );
-      })}
+              {account.calendars.map((c, j) => (
+                <ListRow
+                  key={j}
+                  label={c.customName ? `${c.customName} (${c.name ?? ""})` : (c.name ?? "-")}
+                  detail={[
+                    c.purpose
+                      ? `${t.categories[c.purpose]}${c.purposeGuessed ? ` (${t.aiPlan.guessed})` : ""}`
+                      : null,
+                    t.calendarView.priorities[c.priority],
+                    c.included ? null : w.notCounted,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  value={t.counts.busyBlocks(c.busyCount)}
+                />
+              ))}
+            </ListGroup>
+          );
+        })}
       <ListGroup className="mt-3">
         <Fact label={w.primary} value={data.primary?.calendar ?? w.primaryNone} />
         <Fact label={w.autoAdd} value={data.primary?.autoAdd ? w.on : w.off} />
@@ -274,13 +330,15 @@ function GroupsPart({ data }: { data: MyData }) {
   return (
     <ListGroup title={w.groups}>
       {data.groups.length === 0 && <ListRow label={w.noGroups} />}
-      {data.groups.map((g, i) => (
-        <ListRow
-          key={i}
-          label={g.name}
-          detail={w.groupDetail(t.counts.members(g.members), g.createdByYou)}
-        />
-      ))}
+      <FoldedRows count={data.groups.length} summary={w.groupsCount(data.groups.length)}>
+        {data.groups.map((g, i) => (
+          <ListRow
+            key={i}
+            label={g.name}
+            detail={w.groupDetail(t.counts.members(g.members), g.createdByYou)}
+          />
+        ))}
+      </FoldedRows>
       <Fact
         label={w.inviteLinks}
         value={w.inviteLinksValue(data.inviteLinks.made, data.inviteLinks.active)}
@@ -303,15 +361,13 @@ function LabelsOnPhone() {
   return <Fact label={w.labels} value={book ? Object.keys(book).length : 0} />;
 }
 
-function EventsPart({ data }: { data: MyData }) {
+function EventsPart({ data, consent }: { data: MyData; consent: AiConsentControl }) {
   const { lang } = useLang();
-  const w = useT().myData;
-  const consent = data.ai.consent;
-  const consentText = !consent
-    ? w.aiConsentOff
-    : consent.current
-      ? w.aiConsentOn(day(consent.givenAt, lang))
-      : w.aiConsentAgain;
+  const t = useT();
+  const w = t.myData;
+  const given = data.ai.consent;
+  // Once on, the switch is a row here; while off it is at the top of the page.
+  const consentRow = data.ai.allowed && consent.consented;
   return (
     <>
       <ListGroup title={w.events}>
@@ -326,10 +382,16 @@ function EventsPart({ data }: { data: MyData }) {
       </ListGroup>
       <ListGroup title={w.ai} footnote={isNativeApp ? `${w.aiNote} ${w.labelsNote}` : w.aiNote}>
         <Fact label={w.aiAllowed} value={data.ai.allowed ? w.aiOn : w.aiOff} />
-        <Fact label={w.aiConsent} value={consentText} />
+        {consentRow && (
+          <AiConsentRow
+            control={consent}
+            detail={given?.current ? w.aiConsentOn(day(given.givenAt, lang)) : t.aiConsent.rowOn}
+          />
+        )}
         {isNativeApp && <LabelsOnPhone />}
         <Fact label={w.aiCalls} value={data.ai.calls} />
       </ListGroup>
+      {consentRow && <AiConsentConfirm control={consent} />}
     </>
   );
 }
@@ -340,13 +402,15 @@ function CredentialsPart({ data }: { data: MyData }) {
   if (data.calendars.length === 0) return null;
   return (
     <ListGroup title={w.credentials} footnote={w.credentialsNote}>
-      {data.calendars.map((account, i) => (
-        <ListRow
-          key={i}
-          label={account.label ?? t.providers[account.provider].label}
-          detail={account.credential ? w.credentialKinds[account.credential] : w.credentialNone}
-        />
-      ))}
+      <FoldedRows count={data.calendars.length} summary={w.accountsCount(data.calendars.length)}>
+        {data.calendars.map((account, i) => (
+          <ListRow
+            key={i}
+            label={account.label ?? t.providers[account.provider].label}
+            detail={account.credential ? w.credentialKinds[account.credential] : w.credentialNone}
+          />
+        ))}
+      </FoldedRows>
     </ListGroup>
   );
 }

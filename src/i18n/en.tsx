@@ -1076,6 +1076,8 @@ export const en: Messages = {
     created: "Created",
     calendars: "Connected calendars",
     noCalendars: "No calendars connected.",
+    accountsCount: (n: number) => (n === 1 ? "1 account" : `${n} accounts`),
+    groupsCount: (n: number) => (n === 1 ? "1 group" : `${n} groups`),
     connectedOn: (date: string) => `Connected ${date}`,
     notCounted: "Not counted",
     primary: "Primary calendar",

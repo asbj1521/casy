@@ -1116,6 +1116,8 @@ export const da = {
     created: "Oprettet",
     calendars: "Forbundne kalendere",
     noCalendars: "Ingen kalendere forbundet.",
+    accountsCount: (n: number) => (n === 1 ? "1 konto" : `${n} konti`),
+    groupsCount: (n: number) => (n === 1 ? "1 gruppe" : `${n} grupper`),
     connectedOn: (date: string) => `Forbundet ${date}`,
     notCounted: "Tæller ikke med",
     primary: "Primær kalender",
