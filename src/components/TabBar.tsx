@@ -104,7 +104,8 @@ function PhoneTabBar() {
                   tab.active && "text-primary",
                 )}
               >
-                <span className="relative">
+                {/* data-tab-icon: where Planlæg's sent dates fly to (#102). */}
+                <span className="relative" data-tab-icon={tab.to}>
                   <tab.icon className="h-6 w-6" strokeWidth={tab.active ? 2.25 : 1.75} />
                   {!!tab.badge && (
                     <span

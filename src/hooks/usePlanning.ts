@@ -450,13 +450,19 @@ export function usePlanning() {
   const profile = useEventProfile(profileFor);
   // Waiting (briefly) for that profile before sending.
   const [preparing, setPreparing] = useState(false);
+  // Something to do between "sent" and leaving for My events: the dates
+  // flying into the Events tab (#102). It is handed the way on and takes it
+  // when it is done; without one the way is taken at once.
+  const beforeLeaving = useRef<((go: () => void) => void) | null>(null);
   const suggest = useMutation({
     mutationFn: suggestEvent,
     onSuccess: (data) => {
       queryClient.setQueryData(eventsQueryKey(userId ?? ""), data.events);
       // A phone's suggester has answered already (#101): on to My events,
       // where the new vote waits for the others.
-      navigate(phone ? "/events" : `/events/${data.createdId}`);
+      const go = () => navigate(phone ? "/events" : `/events/${data.createdId}`);
+      if (beforeLeaving.current) beforeLeaving.current(go);
+      else go();
     },
   });
   // Waiting for the calendars to be fresh before sending.
@@ -707,6 +713,10 @@ export function usePlanning() {
     suggestIsForThis,
     movedNote,
     sendSuggestion,
+    /** Run something once the send is confirmed, before leaving for My events; null to stop. */
+    setBeforeLeaving: (run: ((go: () => void) => void) | null) => {
+      beforeLeaving.current = run;
+    },
   };
 }
 

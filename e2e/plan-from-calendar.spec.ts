@@ -136,4 +136,31 @@ test.describe("with motion", () => {
     });
     await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
   });
+
+  test("sent, the dates not offered swipe away and the five fly into the Events tab (#102)", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    await page.goto("/calendar-overview");
+    await page.getByRole("button", { name: "Planlæg" }).click();
+    await page.getByRole("button", { name: "Find dato" }).click();
+    const send = page.getByRole("button", { name: "Foreslå top 5 datoer" });
+    await expect(send).toBeEnabled({ timeout: 25_000 });
+    await expect(page.locator('[data-send-row="yes"]')).toHaveCount(5);
+    const rows = await page.locator("[data-send-row]").count();
+
+    await send.click();
+    // The server has confirmed: copies of every row move over the page, and
+    // My events does not open until they have arrived.
+    const flight = page.locator("[data-send-flight]");
+    await expect(flight).toBeAttached();
+    expect(await flight.locator("> *").count()).toBe(rows);
+    await expect
+      .poll(() => page.evaluate(() => document.getAnimations().length))
+      .toBeGreaterThan(0);
+    await expect(page).not.toHaveURL(/\/events$/);
+
+    await expect(page).toHaveURL(/\/events$/, { timeout: 10_000 });
+    await expect(page.locator("[data-send-flight]")).toHaveCount(0);
+  });
 });

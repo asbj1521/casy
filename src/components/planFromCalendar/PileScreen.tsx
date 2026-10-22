@@ -50,6 +50,7 @@ import {
   type RankedFacts,
 } from "@/lib/paperPile";
 import type { FoundDate } from "@/lib/scheduler";
+import { playSendFlight } from "@/lib/sendFlightPlay";
 import { cn } from "@/lib/utils";
 import { addDays, dayOf, localDate, startOfMonth, wallTime } from "@/lib/zone";
 
@@ -466,6 +467,25 @@ export default function PileScreen({
     [pile, taken],
   );
   const alpha = layerAlpha(others);
+  // The send confirmed (#102): the dates not sent swipe off to the right and
+  // the ones sent fly down into the Events tab, copies of the rows moving
+  // over the page, while the real rows are hidden; then My events opens.
+  // Reduced motion goes straight there.
+  const [flying, setFlying] = useState(false);
+  const listBox = useRef<HTMLDivElement>(null);
+  const { setBeforeLeaving } = planning;
+  useEffect(() => {
+    if (reduceMotion) return;
+    setBeforeLeaving((go) => {
+      const rows = [...(listBox.current?.querySelectorAll<HTMLElement>("[data-send-row]") ?? [])];
+      void playSendFlight(
+        rows.map((el) => ({ el, offered: el.dataset.sendRow === "yes" })),
+        document.querySelector<HTMLElement>('[data-tab-icon="/events"]'),
+        () => setFlying(true),
+      ).finally(go);
+    });
+    return () => setBeforeLeaving(null);
+  }, [reduceMotion, setBeforeLeaving]);
   const send = () =>
     dates &&
     void sendSuggestion(
@@ -551,7 +571,10 @@ export default function PileScreen({
         type="button"
         aria-label={words.close}
         onClick={onClose}
-        className="glass fixed right-3 top-[calc(env(safe-area-inset-top)+0.5rem)] z-50 rounded-full p-2 text-foreground"
+        className={cn(
+          "glass fixed right-3 top-[calc(env(safe-area-inset-top)+0.5rem)] z-50 rounded-full p-2 text-foreground",
+          flying && "opacity-0",
+        )}
       >
         <X className="h-5 w-5" />
       </button>
@@ -562,7 +585,10 @@ export default function PileScreen({
         // calendar scrolls by in plain view; once they all have, it softens
         // behind the list so the list reads.
         <div
-          className="fixed inset-x-0 top-0 z-50 flex flex-col pt-[calc(env(safe-area-inset-top)+3.5rem)]"
+          className={cn(
+            "fixed inset-x-0 top-0 z-50 flex flex-col pt-[calc(env(safe-area-inset-top)+3.5rem)]",
+            flying && "pointer-events-none",
+          )}
           style={{ bottom: "var(--tab-bar-height)" }}
         >
           <motion.div
@@ -572,7 +598,10 @@ export default function PileScreen({
             animate={{ opacity: atLeast(phase, "ranking") || failed ? 1 : 0 }}
             transition={{ duration: 0.4 }}
           />
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+          <div
+            ref={listBox}
+            className={cn("min-h-0 flex-1 overflow-y-auto px-3 pb-3", flying && "opacity-0")}
+          >
             {failed ? (
               <p className="glass rounded-[22px] p-4 text-[15px] text-foreground">
                 {waiting?.text}
@@ -619,7 +648,8 @@ export default function PileScreen({
             <motion.div
               className="glass mx-3 mb-3 flex flex-col gap-2 rounded-[26px] p-3"
               initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ opacity: flying ? 0 : 1, y: 0 }}
+              transition={{ duration: flying ? 0.15 : undefined }}
             >
               {movedNote === "suggest" && (
                 <p className="text-sm font-medium text-foreground">
@@ -1031,6 +1061,8 @@ function DateList({
           <motion.div
             // Mounted afresh once measured, so the flight starts from the circle.
             key={`${key}-${flight ? "in" : "waiting"}`}
+            // Which rows the send flight moves, and which way (sendFlightPlay.ts).
+            data-send-row={item.chosen ? "yes" : "no"}
             ref={(el) => {
               if (el) rows.current.set(key, el);
             }}
