@@ -52,15 +52,16 @@ export function pickCandidates(
 
 /**
  * pickCandidates, with every date it looked at (`pool`: the first, then the
- * rest soonest first) beside the ones it chose: the paper pile (#126) lays
- * the pool out and lifts the chosen ones from it.
+ * rest soonest first) beside the ones it chose, soonest first (`chosen`) and
+ * in the order it chose them (`byPick`: best first, by the rules above). The
+ * paper pile (#126) lists the pool and ranks it by that order.
  */
 export function rankCandidates(
   participants: Participant[],
   search: EventSettings,
   options: CandidateOptions,
   timeZone: string,
-): { pool: FoundDate[]; chosen: FoundDate[] } {
+): { pool: FoundDate[]; chosen: FoundDate[]; byPick: FoundDate[] } {
   const { first, end, count = CANDIDATE_COUNT } = options;
 
   // Everything the search would offer after the first date, in order.
@@ -112,6 +113,7 @@ export function rankCandidates(
 
   return {
     pool: [first, ...found],
+    byPick: [...chosen],
     chosen: chosen.sort((a, b) => Date.parse(a.slot.start) - Date.parse(b.slot.start)),
   };
 }

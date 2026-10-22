@@ -9,9 +9,11 @@ import {
   PILE_OPACITY,
   PILE_TIMING,
   pileTimeline,
+  rankOrder,
   sheetTilt,
   throwSide,
   type PileOptions,
+  type RankedFacts,
 } from "@/lib/paperPile";
 import { wallTime } from "@/lib/zone";
 import type { BusyInterval, Participant } from "@/types";
@@ -133,7 +135,6 @@ describe("pileTimeline", () => {
       expect(durations[i]).toBeLessThanOrEqual(durations[i - 1]);
     }
     expect(Math.min(...durations)).toBe(PILE_TIMING.fastestLand);
-    expect(lands[1].at).toBeCloseTo(lands[0].at + lands[0].duration);
   });
 
   it("presses only once the last calendar has hit and settled", () => {
@@ -146,9 +147,14 @@ describe("pileTimeline", () => {
     expect(t.rankAt).toBeGreaterThan(t.liftAt);
   });
 
-  it("checks every date in the list one after another", () => {
+  it("checks every date in the list one after another, then sorts it", () => {
     const t = pileTimeline(3, 6);
-    expect(t.doneAt).toBeCloseTo(t.rankAt + 6 * PILE_TIMING.checkEach);
+    expect(t.doneAt).toBeCloseTo(t.rankAt + 6 * PILE_TIMING.checkEach + PILE_TIMING.sort);
+  });
+
+  it("leaves a beat between one throw landing and the next", () => {
+    const { lands } = pileTimeline(3);
+    expect(lands[1].at).toBeCloseTo(lands[0].at + lands[0].duration + PILE_TIMING.gap);
   });
 
   it("takes about 8 to 14 seconds with a list to check, from a group of two to the largest", () => {
@@ -202,5 +208,35 @@ describe("layerAlpha", () => {
     expect(layerAlpha(2)).toBeLessThan(layerAlpha(1));
     expect(layerAlpha(10)).toBeLessThan(layerAlpha(2));
     expect(layerAlpha(0)).toBe(0);
+  });
+});
+
+describe("rankOrder", () => {
+  const date = (over: Partial<RankedFacts>): RankedFacts => ({
+    pickedAt: null,
+    conflicts: 0,
+    warnings: 0,
+    start: 0,
+    ...over,
+  });
+
+  it("puts the dates a vote offers first, in the order they were chosen", () => {
+    const dates = [
+      date({ pickedAt: 2, start: 1 }),
+      date({ start: 2 }),
+      date({ pickedAt: 0, start: 3 }),
+      date({ pickedAt: 1, start: 4 }),
+    ];
+    expect(rankOrder(dates)).toEqual([2, 3, 0, 1]);
+  });
+
+  it("ranks the rest by fewest giving something up, then fewest notes, then soonest", () => {
+    const dates = [
+      date({ conflicts: 1, start: 1 }),
+      date({ warnings: 1, start: 2 }),
+      date({ start: 4 }),
+      date({ start: 3 }),
+    ];
+    expect(rankOrder(dates)).toEqual([3, 2, 1, 0]);
   });
 });

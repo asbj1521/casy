@@ -98,4 +98,15 @@ describe("rankCandidates", () => {
     for (const d of chosen) expect(pool).toContain(d);
     expect(chosen).toEqual(pickCandidates(group, EVENING, { first, end: END }, TZ));
   });
+
+  it("hands back the chosen in the order chosen too: the date on screen first", () => {
+    const group = [person("a"), person("b")];
+    const first = firstFrom(group, EVENING);
+    const { chosen, byPick } = rankCandidates(group, EVENING, { first, end: END }, TZ);
+
+    expect(byPick[0]).toBe(first);
+    expect([...byPick].sort((x, y) => Date.parse(x.slot.start) - Date.parse(y.slot.start))).toEqual(
+      chosen,
+    );
+  });
 });

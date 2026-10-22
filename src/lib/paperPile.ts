@@ -154,14 +154,16 @@ function throughDays(
 export const PILE_TIMING = {
   /** My calendar scrolling to the month. */
   yours: 0.6,
-  /** The first friend's calendar in the air. */
-  firstLand: 0.9,
+  /** The first friend's calendar in the air: a quick toss, not a glide. */
+  firstLand: 0.42,
   /** Each throw after takes this share of the one before... */
-  speedUp: 0.75,
+  speedUp: 0.85,
   /** ...but never less than this. */
-  fastestLand: 0.14,
-  /** The hit after a throw: skid, a hop, settling. Overlaps the next throw. */
-  impact: 0.45,
+  fastestLand: 0.16,
+  /** Between the first throw landing and the next leaving the hand; shorter as they quicken. */
+  gap: 0.18,
+  /** The hit after a throw: a small skid, a hop, settling. Overlaps the next throw. */
+  impact: 0.4,
   /** The pile lying still before the press. */
   settle: 0.4,
   /** The press, from the middle out, the layers settling into line. */
@@ -171,7 +173,9 @@ export const PILE_TIMING = {
   /** Those days flying up into the list. */
   fly: 0.9,
   /** Each date in the list being checked, one after another. */
-  checkEach: 0.6,
+  checkEach: 0.5,
+  /** The checked list sorting itself, best first. */
+  sort: 1.0,
 } as const;
 
 export interface PileTimeline {
@@ -197,14 +201,49 @@ export function pileTimeline(others: number, dates = 0): PileTimeline {
   for (let i = 0; i < others; i++) {
     const duration = Math.max(T.fastestLand, T.firstLand * T.speedUp ** i);
     lands.push({ at, duration });
-    at += duration;
+    // The beat before the next throw quickens with the throws.
+    at += duration + (i < others - 1 ? (T.gap * duration) / T.firstLand : 0);
   }
   const lastHit = others > 0 ? at + T.impact : at;
   const pressAt = lastHit + T.settle;
   const revealAt = pressAt + T.press;
   const liftAt = revealAt + T.reveal;
   const rankAt = liftAt + T.fly;
-  return { lands, pressAt, revealAt, liftAt, rankAt, doneAt: rankAt + dates * T.checkEach };
+  const doneAt = rankAt + (dates > 0 ? dates * T.checkEach + T.sort : 0);
+  return { lands, pressAt, revealAt, liftAt, rankAt, doneAt };
+}
+
+/** What ranks a date in the list, from what Casy found when checking it. */
+export interface RankedFacts {
+  /** Where pickCandidates chose it (0 first), or null if it wasn't. */
+  pickedAt: number | null;
+  /** How many would have to skip something or take time off. */
+  conflicts: number;
+  /** How many notes about the evening before or the morning after. */
+  warnings: number;
+  /** When it starts, epoch ms. */
+  start: number;
+}
+
+/**
+ * The list best first (#126), as indexes into `dates`. Until #119 scores
+ * dates by what they cost everyone, "best" is Casy's own order of choice:
+ * the dates a vote offers first, in the order pickCandidates chose them
+ * (the date on screen, then the ones spreading the vote over the week);
+ * then the rest by fewest giving something up, fewest notes about the
+ * evening before or morning after, and soonest.
+ */
+export function rankOrder(dates: RankedFacts[]): number[] {
+  return dates
+    .map((d, i) => ({ d, i }))
+    .sort(
+      ({ d: a }, { d: b }) =>
+        (a.pickedAt ?? Infinity) - (b.pickedAt ?? Infinity) ||
+        a.conflicts - b.conflicts ||
+        a.warnings - b.warnings ||
+        a.start - b.start,
+    )
+    .map(({ i }) => i);
 }
 
 /** Which side calendar `k` (0 the first friend's) is thrown from: left, then right, and so on. */

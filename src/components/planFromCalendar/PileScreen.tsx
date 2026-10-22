@@ -36,8 +36,10 @@ import {
   PILE_TIMING,
   pileTimeline,
   sheetTilt,
+  rankOrder,
   throwSide,
   type PileOptions,
+  type RankedFacts,
 } from "@/lib/paperPile";
 import type { FoundDate } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
@@ -71,6 +73,7 @@ interface Frame {
   top: number;
   left: number;
   width: number;
+  height: number;
 }
 
 /** One date in the list, with what Casy checked about it. */
@@ -79,8 +82,10 @@ interface CheckedDate {
   /** Its local day, for the green circle it flies up out of. */
   day: number;
   chosen: boolean;
-  /** What Casy checks, and what it found, in order. */
-  checks: { doing: string; found: string; notable: boolean }[];
+  /** What Casy checked and found, in order; `notable` when it counts against the date. */
+  checks: { found: string; notable: boolean }[];
+  /** What ranks it (rankOrder). */
+  facts: RankedFacts;
 }
 
 /**
@@ -141,7 +146,7 @@ export default function PileScreen({
   // Casy checks about each.
   const dates = useMemo(() => {
     if (!participants || !found?.slot) return null;
-    const { pool, chosen } = rankCandidates(
+    const { pool, chosen, byPick } = rankCandidates(
       participants,
       search,
       {
@@ -173,15 +178,12 @@ export default function PileScreen({
         chosen: isChosen,
         checks: [
           {
-            doing: words.checking(groupSize),
-            found:
-              absent.length > 0 ? t.schedulerFlow.needSkip(names(absent)) : words.allCan(groupSize),
+            found: absent.length > 0 ? words.cant(names(absent)) : words.allCan(groupSize),
             notable: absent.length > 0,
           },
           ...(warnings
             ? [
                 {
-                  doing: words.checkEdges,
                   found:
                     warnings.length > 0 ? warnings.map((w) => w.text).join(" ") : words.edgesClear,
                   notable: warnings.length > 0,
@@ -189,7 +191,6 @@ export default function PileScreen({
               ]
             : []),
           {
-            doing: words.checkSkips,
             found:
               date.conflicts.length === 0
                 ? words.noSkips
@@ -198,12 +199,14 @@ export default function PileScreen({
                   : t.schedulerFlow.needTimeOff(names(date.conflicts)),
             notable: date.conflicts.length > 0,
           },
-          {
-            doing: words.checkSpread,
-            found: isChosen ? words.picked : words.notPicked,
-            notable: false,
-          },
+          { found: isChosen ? words.picked : words.notPicked, notable: false },
         ],
+        facts: {
+          pickedAt: byPick.includes(date) ? byPick.indexOf(date) : null,
+          conflicts: date.conflicts.length + absent.length,
+          warnings: warnings?.length ?? 0,
+          start: Date.parse(date.slot.start),
+        },
       };
     });
     return { chosen, checked };
@@ -277,8 +280,8 @@ export default function PileScreen({
         const r = el?.getBoundingClientRect();
         setFrame(
           r
-            ? { top: r.top, left: r.left, width: r.width }
-            : { top: 96, left: 0, width: window.innerWidth },
+            ? { top: r.top, left: r.left, width: r.width, height: r.height }
+            : { top: 96, left: 0, width: window.innerWidth, height: 600 },
         );
       },
       scroller ? 450 : 0,
@@ -483,12 +486,16 @@ export default function PileScreen({
 }
 
 /**
- * One friend's calendar, thrown onto the pile from the side (`throwSide`):
- * in the air for `land.duration`, then the hit (PILE_TIMING.impact): a skid
- * past where it ends up, a hop, and settling crooked. Every calendar landing
- * on it after knocks it a little (`jostle`, on a layer of its own so a knock
- * never restarts the throw). Pressed, it settles straight without a bounce;
- * revealed, its glass clears and its bars fade back.
+ * One friend's calendar, tossed onto the pile like a sheet thrown onto a
+ * table (`throwSide`): it starts high above and to the side (big, close to
+ * you), falls faster and faster for `land.duration`, then the hit
+ * (PILE_TIMING.impact): squashed flat for an instant, a small skid past
+ * where it ends up, a hop, and settling crooked. Its shadow stays on the
+ * table, faint and wide while it is high, closing in and darkening as it
+ * comes down. Every calendar landing on it after knocks it a little
+ * (`jostle`, on a layer of its own so a knock never restarts the throw).
+ * Pressed, it settles straight without a bounce; revealed, its glass clears
+ * and its bars fade back.
  */
 const ThrownLayer = memo(function ThrownLayer({
   k,
@@ -513,69 +520,96 @@ const ThrownLayer = memo(function ThrownLayer({
   color: string;
   children: ReactNode;
 }) {
-  const throwIn = useMemo((): {
+  const toss = useMemo((): {
     initial: TargetAndTransition;
     animate: TargetAndTransition;
+    shadowFrom: TargetAndTransition;
+    shadow: TargetAndTransition;
     transition: Transition;
   } => {
     const tilt = sheetTilt(k + 1);
     const side = throwSide(k);
+    const from = side * frame.width * 0.55;
     const hit = land.duration / (land.duration + PILE_TIMING.impact);
     return {
-      initial: { x: side * (frame.width + 80), y: -70, rotate: side * -22, scale: 1.05 },
+      initial: { x: from, y: -150, rotate: side * -14, scale: 1.6, opacity: 0 },
       animate: {
-        // Flies in, slides past where it ends up (in the direction it was
-        // thrown), hops, and comes back to rest.
-        x: [side * (frame.width + 80), tilt.x - side * 12, tilt.x + side * 3, tilt.x],
-        y: [-70, tilt.y + 4, tilt.y - 12, tilt.y],
-        rotate: [side * -22, tilt.rotate - side * 2.5, tilt.rotate + side * 1, tilt.rotate],
-        scale: [1.05, 0.985, 1.01, 1],
+        x: [from, tilt.x - side * 7, tilt.x + side * 2, tilt.x],
+        y: [-150, tilt.y + 3, tilt.y - 8, tilt.y],
+        rotate: [side * -14, tilt.rotate - side * 1.5, tilt.rotate + side * 0.6, tilt.rotate],
+        scale: [1.6, 0.975, 1.012, 1],
+        opacity: [0, 1, 1, 1],
+      },
+      shadowFrom: { x: from * 0.4, y: 50, scale: 1.3, opacity: 0 },
+      shadow: {
+        x: [from * 0.4, tilt.x - side * 7, tilt.x + side * 2, tilt.x],
+        y: [50, tilt.y + 12, tilt.y + 14, tilt.y + 12],
+        scale: [1.3, 0.99, 1.01, 1],
+        rotate: [side * -6, tilt.rotate, tilt.rotate, tilt.rotate],
+        opacity: [0, 0.38, 0.3, 0.28],
       },
       transition: {
         delay: land.at,
         duration: land.duration + PILE_TIMING.impact,
-        times: [0, hit, hit + (1 - hit) * 0.45, 1],
-        ease: [[0.4, 0.05, 0.7, 1], "easeOut", "easeInOut"],
+        times: [0, hit, hit + (1 - hit) * 0.4, 1],
+        // Falling: faster and faster into the hit; then the hop out and back.
+        ease: [[0.55, 0, 1, 0.45], "easeOut", "easeInOut"],
       },
     };
   }, [k, frame.width, land.at, land.duration]);
   const knock = jostle(k, landed);
+  const place = { top: frame.top, left: frame.left, width: frame.width };
+  const settle: Transition = { type: "spring", stiffness: 170, damping: 26 };
 
   return (
-    <motion.div
-      className="absolute"
-      style={{ top: frame.top, left: frame.left, width: frame.width, transformOrigin: "50% 35%" }}
-      initial={throwIn.initial}
-      animate={pressed ? { x: 0, y: 0, rotate: 0, scale: 1 } : throwIn.animate}
-      transition={pressed ? { type: "spring", stiffness: 170, damping: 26 } : throwIn.transition}
-    >
+    <>
+      {/* The shadow on the table, under the calendar coming down. */}
       <motion.div
-        animate={pressed ? { x: 0, rotate: 0 } : knock}
-        transition={{ type: "spring", stiffness: 520, damping: pressed ? 40 : 16 }}
+        className="absolute rounded-[28px] bg-black blur-2xl"
+        style={{ ...place, height: frame.height }}
+        initial={toss.shadowFrom}
+        animate={
+          revealed
+            ? { x: 0, y: 12, rotate: 0, scale: 1, opacity: 0 }
+            : pressed
+              ? { x: 0, y: 12, rotate: 0, scale: 1, opacity: 0.28 }
+              : toss.shadow
+        }
+        transition={revealed || pressed ? settle : toss.transition}
+      />
+      <motion.div
+        className="absolute"
+        style={{ ...place, transformOrigin: "50% 35%" }}
+        initial={toss.initial}
+        animate={pressed ? { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 } : toss.animate}
+        transition={pressed ? settle : toss.transition}
       >
-        <div
-          className="relative rounded-[28px] border transition-[background-color,box-shadow,border-color] duration-700"
-          style={{
-            backgroundColor: `rgb(var(--glass-tint) / ${revealed ? 0 : alpha})`,
-            borderColor: revealed ? "transparent" : "rgb(var(--glass-edge))",
-            boxShadow: revealed
-              ? "none"
-              : "inset 0 1px 0 rgb(var(--glass-edge)), 0 18px 40px -18px rgb(0 0 0 / 0.45)",
-          }}
+        <motion.div
+          animate={pressed ? { x: 0, rotate: 0 } : knock}
+          transition={{ type: "spring", stiffness: 520, damping: pressed ? 40 : 16 }}
         >
-          <motion.div animate={{ opacity: revealed ? 0.3 : 1 }} transition={{ duration: 0.7 }}>
-            {children}
-          </motion.div>
-          <motion.span
-            className="glass absolute right-3 top-4 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-foreground"
-            animate={{ opacity: revealed ? 0 : 1 }}
+          <div
+            className="relative rounded-[28px] border transition-[background-color,box-shadow,border-color] duration-700"
+            style={{
+              backgroundColor: `rgb(var(--glass-tint) / ${revealed ? 0 : alpha})`,
+              borderColor: revealed ? "transparent" : "rgb(var(--glass-edge))",
+              boxShadow: revealed ? "none" : "inset 0 1px 0 rgb(var(--glass-edge))",
+            }}
           >
-            <span className="h-2 w-2 rounded-full" style={{ background: `rgb(${color})` }} />
-            {name}
-          </motion.span>
-        </div>
+            <motion.div animate={{ opacity: revealed ? 0.3 : 1 }} transition={{ duration: 0.7 }}>
+              {children}
+            </motion.div>
+            <motion.span
+              className="glass absolute right-3 top-4 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-foreground"
+              animate={{ opacity: revealed ? 0 : 1 }}
+            >
+              <span className="h-2 w-2 rounded-full" style={{ background: `rgb(${color})` }} />
+              {name}
+            </motion.span>
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </>
   );
 });
 
@@ -593,9 +627,11 @@ interface Flight {
  * The dates as a list over the calendar. Each one flies up out of its green
  * circle and stretches into a row (measured, then animated from the circle
  * to the row: a FLIP); dates in other months rise from below. Then they are
- * checked one at a time, a spinner on the row and what Casy is checking
- * above the list, and each gets a tick (offered in the vote) or a cross.
- * Once done, a row opens to its details.
+ * checked one at a time, under one line that stays put ("Gennemgår
+ * kalenderne"): a spinner on the row, then a tick (offered in the vote) or
+ * a cross. Once all are checked the list sorts itself best first
+ * (rankOrder), the good ones rising and the rest sinking, each numbered.
+ * Then a row opens to what Casy found about it.
  */
 function DateList({
   items,
@@ -619,6 +655,7 @@ function DateList({
   const [flights, setFlights] = useState<Record<string, Flight> | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const done = phase === "done";
+  const ranking = phase === "ranking";
 
   // Where each row will be, against its circle: measured before they show.
   useLayoutEffect(() => {
@@ -649,71 +686,56 @@ function DateList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The checks: two beats per date, what Casy is checking, then what it
-  // found, and on to the next. Over when every date has had its turn.
-  const [beat, setBeat] = useState(instant ? items.length * 2 : 0);
-  const ranking = phase === "ranking";
+  // One date checked per beat; once all are, the list sorts itself, and a
+  // moment later it is done.
+  const [checked, setChecked] = useState(instant ? items.length : 0);
   useEffect(() => {
     if (!ranking || instant) return;
-    const id = window.setInterval(() => setBeat((b) => b + 1), (PILE_TIMING.checkEach * 1000) / 2);
+    const id = window.setInterval(() => setChecked((n) => n + 1), PILE_TIMING.checkEach * 1000);
     return () => window.clearInterval(id);
   }, [ranking, instant]);
-  const current = Math.floor(beat / 2);
+  const sorted = checked >= items.length;
   useEffect(() => {
-    if (ranking && current >= items.length) onRanked();
-  }, [ranking, current, items.length, onRanked]);
-  const shown = items[current];
-  // The most telling check for this date: something found, else each check in turn.
-  const thought =
-    ranking && shown
-      ? (shown.checks.find((c) => c.notable) ?? shown.checks[current % shown.checks.length])
-      : null;
+    if (!ranking || !sorted) return;
+    haptic("answer");
+    const id = window.setTimeout(onRanked, PILE_TIMING.sort * 1000);
+    return () => window.clearTimeout(id);
+  }, [ranking, sorted, onRanked]);
+
+  const order = useMemo(() => rankOrder(items.map((i) => i.facts)), [items]);
+  const shown = sorted ? order.map((i) => items[i]) : items;
 
   return (
     <div className="flex flex-col gap-2">
-      {/* What Casy is doing, or, once done, what came of it. */}
+      {/* One line that stays put while the dates are checked. */}
       <div className="flex min-h-9 items-center px-1">
-        <AnimatePresence mode="wait">
-          {thought ? (
-            <motion.p
-              key={`${current}-${beat % 2}`}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
-              className="glass flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium text-foreground"
-            >
-              {beat % 2 === 0 ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                  {thought.doing}
-                </>
-              ) : (
-                thought.found
-              )}
-            </motion.p>
-          ) : done ? (
-            <motion.h2
-              key="done"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-lg font-extrabold tracking-tight text-foreground"
-            >
-              {words.ranked(items.filter((i) => i.chosen).length)}
-            </motion.h2>
-          ) : null}
-        </AnimatePresence>
+        {done ? (
+          <motion.h2
+            initial={instant ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-lg font-extrabold tracking-tight text-foreground"
+          >
+            {words.ranked(items.filter((i) => i.chosen).length)}
+          </motion.h2>
+        ) : (
+          <p className="glass flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium text-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            {words.reviewing}
+          </p>
+        )}
       </div>
 
-      {items.map((item, i) => {
+      {shown.map((item) => {
         const key = item.date.slot.start;
+        const at = items.indexOf(item);
+        const rank = order.indexOf(at) + 1;
         const flight = flights?.[key];
         const status =
-          done || i < current
+          at < checked
             ? item.chosen
               ? "yes"
               : "no"
-            : ranking && i === current
+            : ranking && at === checked
               ? "checking"
               : "waiting";
         const start = new Date(item.date.slot.start);
@@ -733,7 +755,8 @@ function DateList({
             ref={(el) => {
               if (el) rows.current.set(key, el);
             }}
-            layout={done}
+            // Moves to its place when the list sorts, and makes room when a row opens.
+            layout={ranking || done ? "position" : false}
             style={{ transformOrigin: "0 0", opacity: flights || instant ? undefined : 0 }}
             initial={
               flight && !instant
@@ -747,7 +770,12 @@ function DateList({
                 : false
             }
             animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
-            transition={{ duration: 0.55, delay: instant ? 0 : i * 0.07, ease: [0.3, 0.9, 0.3, 1] }}
+            transition={{
+              duration: 0.55,
+              delay: instant || sorted ? 0 : at * 0.07,
+              ease: [0.3, 0.9, 0.3, 1],
+              layout: { type: "spring", stiffness: 260, damping: 28 },
+            }}
             className={cn(
               "glass relative overflow-hidden rounded-[22px]",
               status === "yes" && "ring-2 ring-emerald-500/70",
@@ -760,7 +788,7 @@ function DateList({
                 className="absolute inset-0 bg-emerald-500"
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 0 }}
-                transition={{ delay: i * 0.07 + 0.3, duration: 0.35 }}
+                transition={{ delay: at * 0.07 + 0.3, duration: 0.35 }}
               />
             )}
             <motion.button
@@ -772,8 +800,25 @@ function DateList({
               className="relative flex w-full items-center gap-3 px-4 py-3 text-left"
               initial={flight && !instant ? { opacity: 0 } : false}
               animate={{ opacity: 1 }}
-              transition={{ delay: instant ? 0 : i * 0.07 + 0.35, duration: 0.25 }}
+              transition={{ delay: instant ? 0 : at * 0.07 + 0.35, duration: 0.25 }}
             >
+              {/* Its place, once the list is sorted. */}
+              <AnimatePresence initial={false}>
+                {sorted && (
+                  <motion.span
+                    initial={instant ? false : { opacity: 0, scale: 0.5, width: 0 }}
+                    animate={{ opacity: 1, scale: 1, width: 24 }}
+                    className={cn(
+                      "flex h-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold",
+                      item.chosen
+                        ? "bg-emerald-500 text-white"
+                        : "bg-secondary text-muted-foreground",
+                    )}
+                  >
+                    {rank}
+                  </motion.span>
+                )}
+              </AnimatePresence>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[16px] font-bold text-foreground">{label}</p>
                 {meeting && (
