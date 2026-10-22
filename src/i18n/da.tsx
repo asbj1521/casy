@@ -508,7 +508,8 @@ export const da = {
       <>
         Slået til sender Casy navnene på dine kalendere og titlerne på dine aftaler til Anthropic,
         som laver AI-modellen Claude, så Casy kan sortere dine kalendere og vurdere, hvad dine
-        aftaler betyder for dig. Du kan slå det fra når som helst. Læs mere i {privacy}.
+        aftaler betyder for dig. Casy deler også, uden titler, hvornår noget vigtigt starter, så
+        datoer kan rangeres for gruppen. Du kan slå det fra når som helst. Læs mere i {privacy}.
       </>
     ),
     privacyLink: "privatlivspolitikken",
@@ -516,7 +517,9 @@ export const da = {
     intro:
       "Så kan Casy sortere dine kalendere og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
     sent: "Navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen) sendes til Anthropic i USA, som laver AI'en. Aldrig noter, steder, gæster eller datoer.",
-    safe: "Casy gemmer dem ikke, Anthropic træner ikke på dem, og du kan slå det fra når som helst under Profil.",
+    shared:
+      "Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for gruppen. De andre ser kun en score for hver dato.",
+    safe: "Casy gemmer ikke navne eller titler, Anthropic træner ikke på dem, og du kan slå det fra når som helst under Dine data.",
     privateNote: "Titler kan være private, så sig kun ja, hvis du er tryg ved det.",
     readMore: "Læs mere i",
     allow: "Tillad",
@@ -524,7 +527,7 @@ export const da = {
     saving: "Gemmer",
     failed: "Det lykkedes ikke. Prøv igen.",
     turnOffMessage:
-      "Casys AI holder op med at læse i din kalender, og de mærkater, der er gemt på denne telefon, slettes.",
+      "Casys AI holder op med at læse i din kalender, og de mærkater, der er gemt på denne telefon, og det, du har delt om vigtige aftaler, slettes.",
     turnOff: "Slå fra",
   },
   connectPrompt: {

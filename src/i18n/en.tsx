@@ -475,7 +475,9 @@ export const en: Messages = {
       <>
         When it is on, Casy sends the names of your calendars and the titles of your events to
         Anthropic, which makes the AI model Claude, so Casy can sort your calendars and judge what
-        your events mean for you. You can turn it off at any time. Read more in the {privacy}.
+        your events mean for you. Casy also shares, without titles, when something important starts,
+        so dates can be ranked for the group. You can turn it off at any time. Read more in the{" "}
+        {privacy}.
       </>
     ),
     privacyLink: "privacy policy",
@@ -483,7 +485,9 @@ export const en: Messages = {
     intro:
       "Then Casy can sort your calendars and understand what your events mean, for example that an exam is important.",
     sent: "The names of your calendars and the titles of your events (in the iPhone app) are sent to Anthropic in the United States, which makes the AI. Never notes, places, guests or dates.",
-    safe: "Casy does not store them, Anthropic does not train on them, and you can turn it off at any time under Profile.",
+    shared:
+      "Casy also shares, without titles, when something important starts, so dates can be ranked for the group. The others only see a score for each date.",
+    safe: "Casy does not store names or titles, Anthropic does not train on them, and you can turn it off at any time under Your data.",
     privateNote: "Titles can be private, so only say yes if you are comfortable with it.",
     readMore: "Read more in the",
     allow: "Allow",
@@ -491,7 +495,7 @@ export const en: Messages = {
     saving: "Saving",
     failed: "That didn't work. Try again.",
     turnOffMessage:
-      "Casy's AI stops reading your calendar, and the labels kept on this phone are deleted.",
+      "Casy's AI stops reading your calendar, and the labels kept on this phone and what you shared about important events are deleted.",
     turnOff: "Turn off",
   },
   connectPrompt: {

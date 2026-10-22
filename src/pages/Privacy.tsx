@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 22. oktober 2026",
+  updated: "Senest opdateret 23. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -37,7 +37,8 @@ const da: LegalCopy = {
           som primær. Dine data bliver ikke solgt, ikke brugt til reklamer og ikke delt med nogen
           uden for tjenesten. Med dit ja kan Casys AI læse navnene på dine kalendere og, i
           iPhone-appen, titlerne på dine aftaler: de sendes til Anthropic, men gemmes ikke hos Casy
-          (se AI i Casy).
+          (se AI i Casy). Casy gemmer kun, hvornår dine vigtige aftaler starter, og hvor vigtige de
+          er, uden titel, så datoer kan rangeres for din gruppe.
         </p>
       ),
     },
@@ -91,7 +92,9 @@ const da: LegalCopy = {
             <li>
               <Term>Dit ja til AI:</Term> om du har sagt ja til, at Casys AI må læse i din kalender,
               hvornår, og hvilken version af teksten (se AI i Casy). Mærkater, som AI&apos;en laver
-              af dine aftaler, gemmes kun på din telefon.
+              af dine aftaler, gemmes kun på din telefon. Hvornår dine vigtige aftaler starter og
+              hvor vigtige de er, uden titel, gemmes hos Casy, så datoer kan rangeres for din
+              gruppe.
             </li>
             <li>
               <Term>Adgangsoplysninger:</Term> det, der skal til for at holde dine kalendere
@@ -180,7 +183,7 @@ const da: LegalCopy = {
           <p>
             <Term>Med dit ja: Casys AI læser i din kalender.</Term> Det er slået fra, indtil du selv
             slår det til. Casy spørger én gang på Min kalender, og du kan altid ændre det under
-            Profil, AI og din kalender. Er det slået til, sendes:
+            Profil, Dine data. Er det slået til, sendes:
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
@@ -197,7 +200,13 @@ const da: LegalCopy = {
               vigtig den er, og hvad den ikke skal ligge lige efter, for eksempel at en eksamen er
               vigtig. Skriver du, at en vurdering er forkert, følger din forklaring med, og dine
               tidligere rettelser (aftalens titel, kalenderens navn, din forklaring og den nye
-              vurdering) følger med de næste gange.
+              vurdering) følger med de næste gange;
+            </li>
+            <li>
+              i iPhone-appen, for hver af dine vigtige aftaler: hvornår den starter, hvor vigtig den
+              er, hvad du ikke skal gøre aftenen før, og hvor mange dage den kræver forberedelse.
+              Uden titel, art eller begrundelse. Det gemmes hos Casy, så datoer i en afstemning kan
+              rangeres for hele din gruppe.
             </li>
           </ul>
           <p className="mt-3">
@@ -215,6 +224,14 @@ const da: LegalCopy = {
             den kopi, du kan hente. Under Dine data kan du se, hvor mange mærkater telefonen har.
             Casy gemmer, at du har sagt ja, hvornår, og hvilken version af denne tekst du sagde ja
             til. Får Casys AI lov til mere med din kalender, spørger Casy dig igen.
+          </p>
+          <p>
+            Det, der deles om dine vigtige aftaler, erstattes, hver gang appen sender det, så det,
+            telefonen ikke længere nævner, forsvinder med det samme. Det slettes, når du trækker dit
+            ja tilbage, når du sletter din konto, og 30 dage efter, at det sidst blev sendt. Casy
+            bruger det kun til at give datoerne i en afstemning en score ud fra gruppens vigtige
+            aftaler. De andre i gruppen ser kun scoren for hver dato, aldrig hvem eller hvad der
+            påvirkede den; i en lille gruppe kan en lav score dog pege på en af dem.
           </p>
 
           <p>
@@ -255,6 +272,12 @@ const da: LegalCopy = {
             logget ind med din e-mail og ikke valgt et navn på din profil, er det navn, medlemmer
             ser, delen af din e-mailadresse før @ (for eksempel "anna.jensen" for
             anna.jensen@example.com). Resten af adressen vises aldrig.
+          </p>
+          <p>
+            Har du sagt ja til, at Casys AI læser i din kalender, tæller dine vigtige aftaler med,
+            når datoerne i en afstemning får en score. De andre i gruppen ser kun scoren for hver
+            dato, aldrig dine aftaler eller hvem der påvirkede den. I en lille gruppe kan en lav
+            score alligevel pege på en af medlemmerne.
           </p>
           <p>
             Alle, der har en gruppes invitationslink, kan se gruppens navn, og hvor mange medlemmer
@@ -337,6 +360,7 @@ const da: LegalCopy = {
             <li>invitationslinks 30 dage efter, at de er holdt op med at virke;</li>
             <li>notatet om, at du har slået en e-mailadresse op, efter et døgn;</li>
             <li>notatet om dine AI-svar efter 30 dage;</li>
+            <li>oplysningerne om dine vigtige aftaler 30 dage efter, at de sidst blev sendt;</li>
             <li>forsøg på at forbinde en kalender, der aldrig blev færdige, efter 7 dage;</li>
             <li>
               afslåede invitationer til en gruppe 6 måneder efter, at de blev sendt. Derefter kan
@@ -391,7 +415,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 22 October 2026",
+  updated: "Last updated 23 October 2026",
   sections: [
     {
       title: "In short",
@@ -405,7 +429,8 @@ const en: LegalCopy = {
           sold, not used for advertising, and not shared with anyone outside the service. With your
           yes, Casy&apos;s AI can read the names of your calendars and, in the iPhone app, the
           titles of your events: they are sent to Anthropic, but not stored by Casy (see AI in
-          Casy).
+          Casy). Casy stores only when your important events start and how important they are,
+          without titles, so dates can be ranked for your group.
         </p>
       ),
     },
@@ -458,7 +483,9 @@ const en: LegalCopy = {
             <li>
               <Term>Your yes to AI:</Term> whether you said yes to Casy&apos;s AI reading your
               calendar, when, and which version of the text (see AI in Casy). Labels the AI makes of
-              your events are kept only on your phone.
+              your events are kept only on your phone. When your important events start and how
+              important they are, without titles, is stored by Casy, so dates can be ranked for your
+              group.
             </li>
             <li>
               <Term>Access credentials:</Term> what is needed to keep your calendars up to date:
@@ -547,7 +574,7 @@ const en: LegalCopy = {
           <p>
             <Term>With your yes: Casy&apos;s AI reads your calendar.</Term> It is off until you
             switch it on yourself. Casy asks once on My calendar, and you can always change it under
-            Profile, AI and your calendar. When it is on, this is sent:
+            Profile, Your data. When it is on, this is sent:
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
@@ -564,7 +591,13 @@ const en: LegalCopy = {
               how important it is and what should not come right before it, for example that an exam
               is important. If you write that a judgement is wrong, your explanation goes along, and
               your earlier corrections (the event&apos;s title, the calendar&apos;s name, your
-              explanation and the new judgement) go along with later ones.
+              explanation and the new judgement) go along with later ones;
+            </li>
+            <li>
+              in the iPhone app, for each of your important events: when it starts, how important it
+              is, what you should not do the evening before, and how many days it needs to prepare.
+              Without title, kind or reason. It is stored by Casy, so a vote&apos;s dates can be
+              ranked for your whole group.
             </li>
           </ul>
           <p className="mt-3">
@@ -582,6 +615,14 @@ const en: LegalCopy = {
             copy you can download. Under Your data you can see how many labels the phone holds. Casy
             stores that you said yes, when, and which version of this text you said yes to. If
             Casy&apos;s AI is allowed to do more with your calendar, Casy asks you again.
+          </p>
+          <p>
+            What is shared about your important events is replaced every time the app sends it, so
+            what the phone no longer lists disappears at once. It is deleted when you withdraw your
+            yes, when you delete your account, and 30 days after it was last sent. Casy uses it only
+            to give the dates of a vote a score from the group&apos;s important events. The others
+            in the group see only the score for each date, never who or what affected it; in a small
+            group, though, a low score can point at one of them.
           </p>
 
           <p>
@@ -624,6 +665,12 @@ const en: LegalCopy = {
             profile, the name members see is the part of your email address before the @ (for
             example "anna.jensen" for anna.jensen@example.com). The rest of the address is never
             shown.
+          </p>
+          <p>
+            If you said yes to Casy&apos;s AI reading your calendar, your important events count
+            when the dates of a vote get a score. The others in the group see only the score for
+            each date, never your events or who affected it. In a small group a low score can still
+            point at one of the members.
           </p>
           <p>
             Anyone holding a group&apos;s invite link can see the group&apos;s name and how many
@@ -707,6 +754,7 @@ const en: LegalCopy = {
             <li>invite links 30 days after they stopped working;</li>
             <li>the note that you looked up an email address, after a day;</li>
             <li>the note about your AI answers after 30 days;</li>
+            <li>the information about your important events 30 days after it was last sent;</li>
             <li>attempts to connect a calendar that never finished, after 7 days;</li>
             <li>
               declined group invitations 6 months after they were sent. The group can then invite
