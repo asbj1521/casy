@@ -177,7 +177,7 @@ export default function PhoneCalendar() {
       </div>
 
       {/* Planning starts from the calendar (#126); out of the way while a day is open. */}
-      {pickedDay === null && (
+      {pickedDay === null && !planOpen && (
         <button
           type="button"
           onClick={openPlan}

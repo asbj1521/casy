@@ -40,18 +40,50 @@ test("back closes the sheet, and Ret planen goes from the dates back to it", asy
   await expect(page.getByRole("dialog", { name: "Planlæg" })).toBeVisible();
 });
 
+test("Planlæg med AI takes over the sheet, then hands the settings back filled in", async ({
+  page,
+}) => {
+  await page.goto("/calendar-overview");
+  await page.getByRole("button", { name: "Planlæg" }).click();
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  // By hand first; the AI is one button above.
+  await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toBeVisible();
+  await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
+  await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toBeHidden();
+  await expect(sheet.getByRole("button", { name: "Find dato" })).toBeHidden();
+
+  await sheet
+    .getByRole("textbox", { name: /Fx middag en fredag/ })
+    .fill("Middag en fredag i november uden Jonas og Peter");
+  await sheet.getByRole("button", { name: "Lav planen" }).click();
+  await sheet.getByRole("button", { name: "Kl. 18", exact: true }).click();
+  for (let i = 0; i < 2; i++) {
+    await sheet.getByRole("button", { name: "Ingen af dem", exact: true }).first().click();
+  }
+
+  // Every question answered: the settings come back with Casy's answer in
+  // them, and the AI only starts over from here.
+  await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Middag");
+  await expect(sheet.getByRole("button", { name: "Beskriv på ny" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Tilføj detaljer" })).toHaveCount(0);
+  await expect(sheet.getByRole("button", { name: "Find dato" })).toBeVisible();
+});
+
 test.describe("with motion", () => {
   test.use({ reducedMotion: "no-preference" });
 
-  test("the pile plays, and a tap skips straight to the dates", async ({ page }) => {
+  test("the calendars pile up, and the dates come only once they have all been through", async ({
+    page,
+  }) => {
     await page.goto("/calendar-overview");
     await page.getByRole("button", { name: "Planlæg" }).click();
     await page.getByRole("button", { name: "Find dato" }).click();
-    await expect(page.getByText("Lægger alles kalendere oven på din")).toBeVisible();
+    // No way past it, and nothing to send until the pile is done.
+    await page.waitForTimeout(1500);
     await expect(page.getByRole("button", { name: "Foreslå top 5 datoer" })).toHaveCount(0);
-
-    await page.getByText("Tryk for at springe over").click();
+    await expect(page.getByRole("button", { name: "Foreslå top 5 datoer" })).toBeEnabled({
+      timeout: 15_000,
+    });
     await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Foreslå top 5 datoer" })).toBeEnabled();
   });
 });

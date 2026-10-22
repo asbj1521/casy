@@ -576,3 +576,31 @@
   --c-zinc-900: 24 24 27;
   --c-zinc-950: 9 9 11;
 }
+
+/*
+ * Glass (#126): the Planlæg sheet and the paper pile are drawn like Apple's
+ * Liquid Glass, as far as a web view allows: a frosted, see-through fill with
+ * a bright edge and a sheen (WKWebView can't bend the light behind it, which
+ * the real thing does). The fill is a colour and how much of it shows, so a
+ * pile of glass layers can work out how see-through each one is.
+ */
+:root {
+  --glass-tint: 255 255 255;
+  --glass-alpha: 0.6;
+  --glass-edge: 255 255 255 / 0.7;
+  --glass-shine: 255 255 255 / 0.45;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light) {
+    --glass-tint: 32 32 36;
+    --glass-alpha: 0.55;
+    --glass-edge: 255 255 255 / 0.16;
+    --glass-shine: 255 255 255 / 0.08;
+  }
+}
+:root.theme-dark {
+  --glass-tint: 32 32 36;
+  --glass-alpha: 0.55;
+  --glass-edge: 255 255 255 / 0.16;
+  --glass-shine: 255 255 255 / 0.08;
+}

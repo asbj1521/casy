@@ -1,4 +1,12 @@
-import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
@@ -126,6 +134,50 @@ export default function MonthView({
   );
 }
 
+const NOOP = () => {};
+
+/**
+ * One month of the view on its own, for anyone's busy time: a layer of the
+ * paper pile (#126), drawn exactly like My calendar's month under it so the
+ * two line up. Nothing on it can be tapped.
+ */
+export function MonthLayer({
+  month,
+  items,
+  colorOf,
+  shine,
+  wrapRow,
+}: {
+  /** The month's first local midnight. */
+  month: number;
+  items: GridItem[];
+  colorOf: (calendarId: string) => string;
+  /** Days lit up in green: the ones free for everyone. */
+  shine?: ReadonlySet<number>;
+  /** Wraps each week's row (`w` of `count`), for animating the rows on their own. */
+  wrapRow?: (w: number, count: number, row: ReactNode) => ReactNode;
+}) {
+  const [today] = useState(() => startOfDay(Date.now(), TZ));
+  return (
+    // A picture of a month, not a calendar to use: out of reach of taps and screen readers.
+    <div inert className="pointer-events-none">
+      <MonthSection
+        month={month}
+        showYear={localDate(month, TZ).year !== localDate(today, TZ).year}
+        items={items}
+        colorOf={colorOf}
+        today={today}
+        todayTone="grey"
+        selected={null}
+        onPickDay={NOOP}
+        register={NOOP}
+        shine={shine}
+        wrapRow={wrapRow}
+      />
+    </div>
+  );
+}
+
 const MonthSection = memo(function MonthSection({
   month,
   showYear,
@@ -137,6 +189,8 @@ const MonthSection = memo(function MonthSection({
   selected,
   onPickDay,
   register,
+  shine,
+  wrapRow,
 }: {
   month: number;
   showYear: boolean;
@@ -148,6 +202,8 @@ const MonthSection = memo(function MonthSection({
   selected: number | null;
   onPickDay: (day: number) => void;
   register: (month: number, el: HTMLElement | null) => void;
+  shine?: ReadonlySet<number>;
+  wrapRow?: (w: number, count: number, row: ReactNode) => ReactNode;
 }) {
   // Calendar colours are worked out in code, so they follow the theme here.
   const dark = useIsDark();
@@ -168,7 +224,8 @@ const MonthSection = memo(function MonthSection({
   );
 
   return (
-    <section ref={(el) => register(month, el)}>
+    // data-month: the paper pile (#126) finds the month here to line up with it.
+    <section ref={(el) => register(month, el)} data-month={month}>
       <h3 className="px-3 pb-1 pt-5 text-[28px] font-bold tracking-tight text-foreground">
         {showYear ? `${name} ${year}` : name}
       </h3>
@@ -176,7 +233,7 @@ const MonthSection = memo(function MonthSection({
         const inMonth = week.map((d) => d.inMonth);
         const first = inMonth.indexOf(true);
         const last = inMonth.lastIndexOf(true);
-        return (
+        const row = (
           <div key={w} className="relative border-t border-border/70">
             <span className="absolute left-1 top-0.5 text-[10px] tabular-nums text-muted-foreground">
               {layout.weekNumbers[w]}
@@ -188,17 +245,19 @@ const MonthSection = memo(function MonthSection({
                     <span
                       className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-full text-[18px]",
-                        days[c] === selected
-                          ? "bg-primary font-semibold text-primary-foreground"
-                          : days[c] === today
-                            ? todayTone === "red"
-                              ? "bg-red-500 font-semibold text-white"
-                              : "bg-zinc-200 font-semibold text-foreground dark:bg-white/20"
-                            : marked?.has(days[c])
-                              ? "font-bold text-primary"
-                              : c >= 5
-                                ? "text-muted-foreground"
-                                : "text-foreground",
+                        shine?.has(days[c])
+                          ? "bg-emerald-500 font-semibold text-white shadow-[0_0_14px_rgba(16,185,129,0.7)]"
+                          : days[c] === selected
+                            ? "bg-primary font-semibold text-primary-foreground"
+                            : days[c] === today
+                              ? todayTone === "red"
+                                ? "bg-red-500 font-semibold text-white"
+                                : "bg-zinc-200 font-semibold text-foreground dark:bg-white/20"
+                              : marked?.has(days[c])
+                                ? "font-bold text-primary"
+                                : c >= 5
+                                  ? "text-muted-foreground"
+                                  : "text-foreground",
                       )}
                     >
                       {d.dayOfMonth}
@@ -280,6 +339,7 @@ const MonthSection = memo(function MonthSection({
             </div>
           </div>
         );
+        return wrapRow ? wrapRow(w, weeks.length, row) : row;
       })}
     </section>
   );

@@ -4,6 +4,8 @@ import type { EventSettings } from "@/lib/eventSearch";
 import {
   buildPile,
   candidateMonth,
+  layerAlpha,
+  PILE_OPACITY,
   PILE_TIMING,
   pileTimeline,
   sheetTilt,
@@ -162,5 +164,20 @@ describe("sheetTilt", () => {
 
   it("is the same every time", () => {
     expect(sheetTilt(5)).toEqual(sheetTilt(5));
+  });
+});
+
+describe("layerAlpha", () => {
+  it("makes any number of layers together just as opaque", () => {
+    for (const n of [1, 2, 5, 19]) {
+      const through = (1 - layerAlpha(n)) ** n;
+      expect(1 - through).toBeCloseTo(PILE_OPACITY);
+    }
+  });
+
+  it("makes each layer lighter the more layers there are", () => {
+    expect(layerAlpha(2)).toBeLessThan(layerAlpha(1));
+    expect(layerAlpha(10)).toBeLessThan(layerAlpha(2));
+    expect(layerAlpha(0)).toBe(0);
   });
 });

@@ -161,13 +161,14 @@ export const PILE_TIMING = {
   fastestLand: 0.14,
   /** The pile lying still before the press. */
   settle: 0.5,
-  press: 1.1,
+  /** The press: a wave out from the middle, the layers springing into line. */
+  press: 1.4,
   /** The days free for everyone shining through. */
   reveal: 0.9,
   /** Those days lifting out into a grid. */
   lift: 0.8,
   /** The ranking pass over the grid. */
-  rank: 1.8,
+  rank: 1.5,
 } as const;
 
 export interface PileTimeline {
@@ -195,6 +196,20 @@ export function pileTimeline(others: number): PileTimeline {
   const liftAt = revealAt + T.reveal;
   const rankAt = liftAt + T.lift;
   return { lands, pressAt, revealAt, liftAt, rankAt, doneAt: rankAt + T.rank };
+}
+
+/** How opaque the whole pile gets: by the last layer you can't see through it. */
+export const PILE_OPACITY = 0.92;
+
+/**
+ * How opaque each of `layers` glass layers is, so that together they reach
+ * PILE_OPACITY: each layer lets through (1 - a) of what is under it, so n of
+ * them let through (1 - a)^n. A group of two builds up to the same murk as a
+ * group of twenty, each layer adding less the more there are.
+ */
+export function layerAlpha(layers: number): number {
+  if (layers <= 0) return 0;
+  return 1 - (1 - PILE_OPACITY) ** (1 / layers);
 }
 
 /**

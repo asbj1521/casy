@@ -3,6 +3,7 @@ import { useEffect, useId, type ReactNode } from "react";
 import { motion } from "framer-motion";
 
 import Modal from "@/components/ui/Modal";
+import { cn } from "@/lib/utils";
 
 /**
  * The sheet slides up from below the screen, as iOS sheets do. Animated as
@@ -32,6 +33,7 @@ export default function BottomSheet({
   title,
   doneLabel,
   footer,
+  glass = false,
   children,
 }: {
   open: boolean;
@@ -43,6 +45,8 @@ export default function BottomSheet({
    * (My calendar's Planlæg sheet, #126). Without one, the whole sheet scrolls.
    */
   footer?: ReactNode;
+  /** Glass, the page behind showing through (#126; the `glass` class in index.css). */
+  glass?: boolean;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -71,20 +75,28 @@ export default function BottomSheet({
   );
 
   return (
-    <Modal open={open} placement="bottom" onClose={onClose}>
+    <Modal open={open} placement="bottom" lightBackdrop={glass} onClose={onClose}>
       {footer ? (
         <motion.div
           {...SHEET_MOTION}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          className="relative z-10 flex max-h-[85dvh] w-full flex-col rounded-t-2xl border-t bg-card shadow-xl"
+          className={cn(
+            "relative z-10 flex max-h-[85dvh] w-full flex-col rounded-t-[28px] shadow-xl",
+            glass ? "glass" : "border-t bg-card",
+          )}
         >
           <div className="px-4 pt-4">{header}</div>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
             {children}
           </div>
-          <div className="border-t px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+          <div
+            className={cn(
+              "px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3",
+              !glass && "border-t",
+            )}
+          >
             {footer}
           </div>
         </motion.div>

@@ -19,6 +19,7 @@ export default function Modal({
   busy = false,
   onClose,
   placement = "center",
+  lightBackdrop = false,
   children,
 }: {
   open: boolean;
@@ -26,6 +27,8 @@ export default function Modal({
   onClose: () => void;
   /** "bottom": a sheet rising from the bottom edge, as phone apps have. */
   placement?: "center" | "bottom";
+  /** Barely dimmed, for a glass sheet whose point is the page showing through (#126). */
+  lightBackdrop?: boolean;
   children: ReactNode;
 }) {
   return createPortal(
@@ -41,7 +44,7 @@ export default function Modal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40"
+            className={cn("absolute inset-0", lightBackdrop ? "bg-black/10" : "bg-black/40")}
             onClick={busy ? undefined : onClose}
           />
           {children}
