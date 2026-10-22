@@ -25,6 +25,7 @@ import {
   type StoredLabel,
 } from "@/lib/eventLabels";
 import { labelledEvents, type LabelledEvent } from "@/lib/eventWarnings";
+import { setLabelStatus } from "@/lib/labelStatus";
 import { isNativeApp } from "@/lib/nativeApp";
 import { phoneConnectionId, phoneEventDetailsQuery } from "@/lib/phoneCalendar";
 
@@ -81,7 +82,16 @@ export function useAutoLabel() {
   const running = useRef(false);
 
   useEffect(() => {
-    if (!on || !phone || !busy || !events || !book || running.current) return;
+    // One line for testers in Your data: which condition holds, which doesn't.
+    const flag = (v: unknown) => (v ? "yes" : "NO");
+    if (!on || !phone || !busy || !events || !book || running.current) {
+      setLabelStatus(
+        `waiting: app=${flag(isNativeApp)} allowed=${flag(labelsAllowed)} phone=${flag(phone)} ` +
+          `calendars=${flag(busy)} events=${events ? events.length : "NO"} book=${flag(book)} ` +
+          `running=${running.current ? "yes" : "no"}`,
+      );
+      return;
+    }
     // This phone's calendars that count, by EventKit id, with their names.
     const names = new Map(
       busy.calendars
@@ -93,6 +103,10 @@ export function useAutoLabel() {
       queryClient.setQueryData(labelBookQuery(userId).queryKey, next);
     };
     const candidates = labelCandidates(events, names, Date.now());
+    setLabelStatus(
+      `ready: phone calendars=${names.size} events=${events.length} titles=${candidates.length} ` +
+        `labelled=${Object.keys(book).length}`,
+    );
     // Saved only when it changed: saving starts this effect again.
     const tidy = tidyBook(book, presentKeys(events), candidates);
     if (tidy !== book) {
@@ -100,10 +114,17 @@ export function useAutoLabel() {
       return;
     }
     const batches = batchesToLabel(candidates, book, askedThisLaunch);
-    if (batches.length === 0) return;
+    if (batches.length === 0) {
+      setLabelStatus(
+        `idle: titles=${candidates.length} labelled=${Object.keys(book).length} ` +
+          `already asked this launch=${askedThisLaunch.size}`,
+      );
+      return;
+    }
     for (const batch of batches) for (const c of batch) askedThisLaunch.add(c.key);
 
     running.current = true;
+    setLabelStatus(`asking: ${batches.flat().length} titles in ${batches.length} calls`);
     void (async () => {
       try {
         for (const batch of batches) {
@@ -125,16 +146,18 @@ export function useAutoLabel() {
               : [];
           });
           save(updateBook(readLabelBook(userId), added));
+          setLabelStatus(`answered: ${labels.filter(Boolean).length} of ${batch.length} labelled`);
         }
       } catch (err) {
         console.warn("labelling events failed", err);
+        setLabelStatus(`FAILED: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         running.current = false;
         // Whatever came in while this ran (a correction) gets its own run.
         void queryClient.invalidateQueries({ queryKey: labelBookQuery(userId).queryKey });
       }
     })();
-  }, [on, phone, busy, events, book, queryClient, userId]);
+  }, [on, phone, busy, events, book, queryClient, userId, labelsAllowed]);
 }
 
 /**

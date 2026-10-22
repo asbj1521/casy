@@ -17,10 +17,12 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useAiConsentControl, type AiConsentControl } from "@/hooks/useAiConsentSetting";
+import { useAiTester } from "@/hooks/useAiAllowed";
 import { labelBookQuery } from "@/hooks/useEventLabels";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import { formatDate, formatTime } from "@/lib/format";
+import { useLabelStatus } from "@/lib/labelStatus";
 import { isNativeApp } from "@/lib/nativeApp";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE } from "@/lib/zone";
@@ -363,7 +365,18 @@ function LabelsOnPhone() {
   const w = useT().myData;
   const user = useSignedInUser();
   const { data: book } = useQuery(labelBookQuery(user.id));
-  return <Fact label={w.labels} value={book ? Object.keys(book).length : 0} />;
+  // Why labelling is or isn't running (labelStatus.ts): for testers and admins,
+  // and in a development build, where it is what a developer needs to see.
+  const status = useLabelStatus();
+  const tester = useAiTester();
+  return (
+    <>
+      <Fact label={w.labels} value={book ? Object.keys(book).length : 0} />
+      {(tester || import.meta.env.DEV) && (
+        <li className="break-words px-4 py-3 text-xs text-muted-foreground">labelling: {status}</li>
+      )}
+    </>
+  );
 }
 
 function EventsPart({ data, consent }: { data: MyData; consent: AiConsentControl }) {
