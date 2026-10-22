@@ -32,7 +32,7 @@ export const BATCH_SIZE = 50;
 /** Labelled per run at most, soonest first; the rest wait for the next. */
 export const MAX_PER_RUN = 300;
 /** Events that ended longer ago than this aren't labelled. */
-const LOOK_BACK_MS = 7 * 86_400_000;
+export const LOOK_BACK_MS = 7 * 86_400_000;
 
 /** A label as this phone keeps it. */
 export interface StoredLabel extends EventLabel {

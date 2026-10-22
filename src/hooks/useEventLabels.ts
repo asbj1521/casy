@@ -13,6 +13,7 @@ import {
   correctionsToSend,
   labelCandidates,
   labelKey,
+  LOOK_BACK_MS,
   markCalendarStale,
   presentKeys,
   readCorrections,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/eventLabels";
 import { labelledEvents, type LabelledEvent } from "@/lib/eventWarnings";
 import { setLabelStatus } from "@/lib/labelStatus";
+import { busySpan } from "@/lib/phoneBusy";
 import { isNativeApp } from "@/lib/nativeApp";
 import { phoneConnectionId, phoneEventDetailsQuery } from "@/lib/phoneCalendar";
 
@@ -115,9 +117,16 @@ export function useAutoLabel() {
     }
     const batches = batchesToLabel(candidates, book, askedThisLaunch);
     if (batches.length === 0) {
+      // Where the phone's events drop out on the way to a title worth labelling.
+      const inCalendars = events.filter((e) => names.has(e.calendarId));
+      const titled = inCalendars.filter((e) => e.title?.trim());
+      const counted = titled.filter((e) => busySpan(e));
+      const recent = counted.filter((e) => busySpan(e)!.end >= Date.now() - LOOK_BACK_MS);
       setLabelStatus(
-        `idle: titles=${candidates.length} labelled=${Object.keys(book).length} ` +
-          `already asked this launch=${askedThisLaunch.size}`,
+        `idle: events=${events.length} in counted calendars=${inCalendars.length} ` +
+          `with a title=${titled.length} counting as busy=${counted.length} ` +
+          `not over a week ago=${recent.length} titles=${candidates.length} ` +
+          `labelled=${Object.keys(book).length} asked this launch=${askedThisLaunch.size}`,
       );
       return;
     }
