@@ -122,8 +122,15 @@ export function useAutoLabel() {
       const titled = inCalendars.filter((e) => e.title?.trim());
       const counted = titled.filter((e) => busySpan(e));
       const recent = counted.filter((e) => busySpan(e)!.end >= Date.now() - LOOK_BACK_MS);
+      // Whether the phone's calendars the server lists are the ones its events are in.
+      const mine = busy.calendars.filter((c) => c.connectionId === phone);
+      const serverIds = new Set(mine.map((c) => c.externalId));
+      const eventCalendars = new Set(events.map((e) => e.calendarId));
+      const known = [...eventCalendars].filter((id) => serverIds.has(id)).length;
       setLabelStatus(
-        `idle: events=${events.length} in counted calendars=${inCalendars.length} ` +
+        `idle: server lists ${mine.length} phone calendars (${mine.filter((c) => c.included).length} counted), ` +
+          `events are in ${eventCalendars.size} calendars of which the server knows ${known}; ` +
+          `events=${events.length} in counted calendars=${inCalendars.length} ` +
           `with a title=${titled.length} counting as busy=${counted.length} ` +
           `not over a week ago=${recent.length} titles=${candidates.length} ` +
           `labelled=${Object.keys(book).length} asked this launch=${askedThisLaunch.size}`,
