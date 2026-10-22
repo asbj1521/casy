@@ -2,7 +2,7 @@ import { TriangleAlert } from "lucide-react";
 
 import Collapse from "@/components/ui/Collapse";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { clashKey, type ImportantClash } from "@/lib/eventWarnings";
+import { clashKey, clashSentence, type ImportantClash } from "@/lib/eventWarnings";
 import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE } from "@/lib/zone";
@@ -36,26 +36,12 @@ export default function ImportantClashes({
   const words = t.importantClash;
   if (clashes.length === 0) return null;
 
-  const list = (items: string[]) =>
-    items.length <= 1
-      ? (items[0] ?? "")
-      : `${items.slice(0, -1).join(", ")} ${words.and} ${items[items.length - 1]}`;
-
   return (
     <ul className={cn("space-y-1.5", className)}>
       {clashes.slice(0, SHOWN).map((c) => {
         const key = clashKey(c);
         const open = shown === key;
-        const what = words.kinds[c.event.label.kind];
-        const when = words.when(c.daysAfter);
-        const text =
-          c.kind === "nightBefore"
-            ? words.nightBefore(what, when, list(c.avoid.map((a) => words.avoid[a])))
-            : c.kind === "prepDayBefore"
-              ? words.prepDayBefore(what, when)
-              : c.kind === "prep"
-                ? words.prep(what, when)
-                : words.recovery(what, when);
+        const text = clashSentence(c, words);
         const iso = new Date(c.event.start).toISOString();
         const day = new Date(c.event.start).toLocaleDateString(LOCALE[lang], {
           weekday: "long",

@@ -25,6 +25,8 @@ export default function PlanFromCalendar({ onClose }: { onClose: () => void }) {
   const planning = usePlanning();
   const [stage, setStage] = useState<"setup" | "pile">("setup");
   const [aiMode, setAiMode] = useState(false);
+  // A new pile each time it starts over (a shorter holiday picked at its end).
+  const [run, setRun] = useState(0);
 
   // Casy has answered and nothing is left to ask: the settings come back,
   // filled in, a moment after the last question is answered.
@@ -65,7 +67,13 @@ export default function PlanFromCalendar({ onClose }: { onClose: () => void }) {
       </BottomSheet>
 
       {stage === "pile" && (
-        <PileScreen planning={planning} onChange={() => setStage("setup")} onClose={onClose} />
+        <PileScreen
+          key={run}
+          planning={planning}
+          onChange={() => setStage("setup")}
+          onRestart={() => setRun((n) => n + 1)}
+          onClose={onClose}
+        />
       )}
 
       <NewGroupDialog

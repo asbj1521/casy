@@ -1017,6 +1017,7 @@ export const en: Messages = {
     cant: (names: string) => `${names} can't make it`,
     reviewing: "Going through the calendars",
     allCan: (n: number) => (n === 1 ? "You can make it" : `All ${n} can make it`),
+    allCanWithCalendar: (n: number) => `All ${n} with a calendar can make it`,
     edgesClear: "Nothing right before or early the next morning",
     noSkips: "Nobody has to give anything up",
     picked: "In the suggestion",

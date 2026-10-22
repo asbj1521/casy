@@ -20,6 +20,7 @@
  * Your events with their titles are this phone's (the labels live on the
  * phone), so the warnings appear in the app only, and never leave it.
  */
+import type { Messages } from "@/i18n/da";
 import type { EventLabel } from "@/api/eventLabels";
 import type { DateImpact } from "@/lib/eventImpact";
 import { labelKey, type LabelBook } from "@/lib/eventLabels";
@@ -160,4 +161,25 @@ export function importantClashes(
       (a.severity === "critical" ? 0 : 1) - (b.severity === "critical" ? 0 : 1) ||
       a.event.start - b.event.start,
   );
+}
+
+/**
+ * A warning in words, vague about the event ("Det ligner, at du har en
+ * eksamen dagen efter: ..."): the card's line, and a check in Planlæg's
+ * list (#127).
+ */
+export function clashSentence(c: ImportantClash, words: Messages["importantClash"]): string {
+  const list = (items: string[]) =>
+    items.length <= 1
+      ? (items[0] ?? "")
+      : `${items.slice(0, -1).join(", ")} ${words.and} ${items[items.length - 1]}`;
+  const what = words.kinds[c.event.label.kind];
+  const when = words.when(c.daysAfter);
+  return c.kind === "nightBefore"
+    ? words.nightBefore(what, when, list(c.avoid.map((a) => words.avoid[a])))
+    : c.kind === "prepDayBefore"
+      ? words.prepDayBefore(what, when)
+      : c.kind === "prep"
+        ? words.prep(what, when)
+        : words.recovery(what, when);
 }

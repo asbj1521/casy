@@ -11,15 +11,22 @@ import {
   type TargetAndTransition,
   type Transition,
 } from "framer-motion";
-import { Check, ChevronDown, Loader2, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Check, ChevronDown, Loader2, TriangleAlert, X } from "lucide-react";
 
+import type { EventToProfile } from "@/api/eventProfile";
+import LaterDates from "@/components/findDate/LaterDates";
 import FlowButton from "@/components/ui/FlowButton";
 import { MonthLayer } from "@/components/swipe/MonthView";
 import { TODAY } from "@/hooks/useDateSearch";
+import { useLabelledEvents } from "@/hooks/useEventLabels";
+import { eventProfileQuery } from "@/hooks/useEventProfile";
 import { TZ, type Planning } from "@/hooks/usePlanning";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { rankCandidates } from "@/lib/candidates";
 import { edgeWarnings } from "@/lib/earlyMorning";
+import { impactOn } from "@/lib/eventImpact";
+import { clashSentence, importantClashes } from "@/lib/eventWarnings";
 import { SEARCH_WINDOW, type EventSettings } from "@/lib/eventSearch";
 import { capitalize, formatEventDate, formatTime, nameList } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
@@ -64,6 +71,8 @@ const SCROLL_PX_PER_S = 900;
 const SCROLL_MIN_S = 0.25;
 const SCROLL_MAX_S = 1.1;
 const ARRIVAL_PAUSE_MS = 320;
+/** How far the calendar scrolls between two light ticks under the thumb. */
+const SCROLL_TICK_PX = 70;
 
 /** A colour per friend, Apple Calendar's own, in the group's order. */
 const FRIEND_COLORS = [
@@ -98,7 +107,15 @@ interface CheckedDate {
   checks: { found: string; notable: boolean }[];
   /** What ranks it (rankOrder). */
   facts: RankedFacts;
+  /**
+   * The first of your own important events it runs into (#114), in words:
+   * shown on the row as it is checked. App only, admins and AI testers.
+   */
+  yours: string | null;
 }
+
+/** No event to profile yet: the query stays off. */
+const NO_INPUT = {} as EventToProfile;
 
 /**
  * The paper pile (#126), over My calendar itself: your calendar scrolls to
@@ -124,11 +141,14 @@ interface CheckedDate {
 export default function PileScreen({
   planning,
   onChange,
+  onRestart,
   onClose,
 }: {
   planning: Planning;
   /** Back to the Planlæg sheet. */
   onChange: () => void;
+  /** Start the pile over: the plan changed from here (a shorter holiday). */
+  onRestart: () => void;
   onClose: () => void;
 }) {
   const t = useT();
@@ -152,7 +172,24 @@ export default function PileScreen({
     movedNote,
     sendSuggestion,
     groupSize,
+    checkers,
+    suggestions,
+    adoptSuggestion,
+    aiOn,
+    profileFor,
+    user,
   } = planning;
+  // Your own important events (#114, labelled on this phone; app only, for
+  // admins and AI testers), and what the planned event is likely to cause
+  // (#113), asked while it was set up: together, what a date runs into for
+  // you. Real, from your own calendar; never anyone else's.
+  const mine = useLabelledEvents();
+  // A yes or no, so the dates below aren't worked out afresh on every render.
+  const someCheckByHand = !!checkers;
+  const { data: profile } = useQuery({
+    ...eventProfileQuery(user?.id ?? "", profileFor ?? NO_INPUT),
+    enabled: aiOn && !!user && !!profileFor,
+  });
 
   // The dates: the ones a vote offers, and others that work, with what
   // Casy checks about each.
@@ -184,13 +221,22 @@ export default function PileScreen({
           ? edgeWarnings(participants, date.slot, TZ, youProfileId, lang, t)
           : null;
       const absent = date.absent ?? [];
+      const yours = importantClashes(impactOn(profile, date.slot, search, TZ), mine, TZ)
+        .slice(0, 2)
+        .map((c) => clashSentence(c, t.importantClash));
       return {
         date,
         day: Date.parse(dayOf(date.slot.start, TZ)),
         chosen: isChosen,
         checks: [
           {
-            found: absent.length > 0 ? words.cant(names(absent)) : words.allCan(groupSize),
+            found:
+              absent.length > 0
+                ? words.cant(names(absent))
+                : // Never more than Casy knows: members without a calendar check by hand.
+                  someCheckByHand
+                  ? words.allCanWithCalendar(groupSize)
+                  : words.allCan(groupSize),
             notable: absent.length > 0,
           },
           ...(warnings
@@ -202,6 +248,7 @@ export default function PileScreen({
                 },
               ]
             : []),
+          ...yours.map((found) => ({ found, notable: true })),
           {
             found:
               date.conflicts.length === 0
@@ -216,9 +263,10 @@ export default function PileScreen({
         facts: {
           pickedAt: byPick.includes(date) ? byPick.indexOf(date) : null,
           conflicts: date.conflicts.length + absent.length,
-          warnings: warnings?.length ?? 0,
+          warnings: (warnings?.length ?? 0) + yours.length,
           start: Date.parse(date.slot.start),
         },
+        yours: yours[0] ?? null,
       };
     });
     return { chosen, checked };
@@ -233,6 +281,9 @@ export default function PileScreen({
     words,
     youProfileId,
     groupSize,
+    someCheckByHand,
+    profile,
+    mine,
   ]);
 
   // The month in the pile, the first date's: whose calendars land on it,
@@ -328,12 +379,12 @@ export default function PileScreen({
     timeline.lands.forEach((land, k) =>
       at(land.at + land.duration, () => {
         setLanded(k + 1);
-        haptic("tick");
+        haptic("thud");
       }),
     );
     at(timeline.pressAt, () => {
       setPhase("pressed");
-      haptic("answer");
+      haptic("thud");
     });
     at(timeline.revealAt, () => setPhase("revealed"));
     at(timeline.liftAt, () => setPhase("lifted"));
@@ -343,7 +394,8 @@ export default function PileScreen({
   const pressed = atLeast(phase, "pressed");
   const revealed = atLeast(phase, "revealed");
   const lifted = atLeast(phase, "lifted");
-  const done = phase === "done";
+  // With no date at all, there is no list to run: done once it would start.
+  const done = phase === "done" || (lifted && !dates);
   const failed = !participants && waiting && !waiting.loading;
   const ranked = useCallback(() => {
     setPhase("done");
@@ -484,9 +536,26 @@ export default function PileScreen({
               />
             ) : (
               done && (
-                <p className="glass rounded-[22px] p-4 text-[15px] text-foreground">
-                  {words.noneThrough}
-                </p>
+                <div className="flex flex-col gap-2">
+                  <p className="glass rounded-[22px] p-4 text-[15px] text-foreground">
+                    {words.noneThrough}
+                  </p>
+                  {/* A holiday too long for the period: the shorter stays that fit. */}
+                  <LaterDates
+                    loading={false}
+                    fadeKey="pile"
+                    search={search}
+                    needsTimeOff={false}
+                    suggestions={suggestions}
+                    later={[]}
+                    groupSize={groupSize}
+                    onUseSuggestion={(s) => {
+                      adoptSuggestion(s);
+                      onRestart();
+                    }}
+                    onPick={() => {}}
+                  />
+                </div>
               )
             )}
           </div>
@@ -776,6 +845,15 @@ function DateList({
     const wait = (ms: number) => new Promise((done) => window.setTimeout(done, ms));
     const circleOf = (day: number) =>
       document.querySelector(`[data-shared] [data-shine="${day}"]`)?.getBoundingClientRect();
+    // A light tick for every stretch the calendar scrolls, like a wheel's detents.
+    let detent = Math.floor(scroll.get() / SCROLL_TICK_PX);
+    const unsubscribe = scroll.on("change", (v) => {
+      const now = Math.floor(v / SCROLL_TICK_PX);
+      if (now !== detent) {
+        detent = now;
+        haptic("tick");
+      }
+    });
     void (async () => {
       await wait(SCROLL_START_MS);
       for (const item of items) {
@@ -809,7 +887,7 @@ function DateList({
               : { x: 0, y: 24, scaleX: 1, scaleY: 1, circle: false },
         }));
         onTaken(item.day);
-        haptic("tick");
+        haptic("answer");
         await wait(ARRIVAL_PAUSE_MS);
       }
       if (!stopped) onArrived();
@@ -817,6 +895,7 @@ function DateList({
     return () => {
       stopped = true;
       running?.stop();
+      unsubscribe();
     };
     // Runs once, as the dates start to come out.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -980,6 +1059,17 @@ function DateList({
                   <p className="text-[13px] text-muted-foreground">
                     {formatTime(item.date.slot.start)}-{formatTime(item.date.slot.end)}
                   </p>
+                )}
+                {/* Your own important event, found as the date is checked. */}
+                {item.yours && at < checked && (
+                  <motion.p
+                    initial={instant ? false : { opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="mt-0.5 flex items-start gap-1 text-[12px] font-medium text-amber-800"
+                  >
+                    <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span className="line-clamp-2">{item.yours}</span>
+                  </motion.p>
                 )}
               </div>
               <StatusMark status={status} instant={instant} />

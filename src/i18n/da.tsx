@@ -1057,6 +1057,7 @@ export const da = {
     cant: (names: string) => `${names} kan ikke`,
     reviewing: "Gennemgår kalenderne",
     allCan: (n: number) => (n === 1 ? "Du kan" : `Alle ${n} kan`),
+    allCanWithCalendar: (n: number) => `Alle ${n} med kalender kan`,
     edgesClear: "Intet lige før eller tidligt morgenen efter",
     noSkips: "Ingen skal give noget op",
     picked: "Med i forslaget",
