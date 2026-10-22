@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  CalendarDays,
   CheckCircle2,
   Loader2,
   RefreshCw,
@@ -9,6 +10,7 @@ import {
   ShieldCheck,
   Sparkles,
   Trash2,
+  Users,
   X,
   XCircle,
 } from "lucide-react";
@@ -264,6 +266,33 @@ function UserRow({
       </span>
     </div>
   );
+  // The same two numbers as a small icon and the number, for a phone's one line.
+  const compactCounts = (
+    <div className="flex shrink-0 items-center gap-2.5 text-sm font-semibold tabular-nums text-foreground">
+      <span
+        className="flex items-center gap-1"
+        title={`${user.groups} ${t.admin.groupsLabel}`}
+        aria-label={`${user.groups} ${t.admin.groupsLabel}`}
+      >
+        <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+        {user.groups}
+      </span>
+      <span
+        className={cn("flex items-center gap-1", user.calendars === 0 && "text-amber-700")}
+        title={`${user.calendars} ${t.admin.calendarsLabel}`}
+        aria-label={`${user.calendars} ${t.admin.calendarsLabel}`}
+      >
+        <CalendarDays
+          className={cn(
+            "h-3.5 w-3.5",
+            user.calendars === 0 ? "text-amber-700" : "text-muted-foreground",
+          )}
+          aria-hidden
+        />
+        {user.calendars}
+      </span>
+    </div>
+  );
   // Every account they've linked, synced now; nothing to do without one.
   const syncButton = (
     <button
@@ -272,14 +301,17 @@ function UserRow({
       disabled={syncing || user.calendars === 0}
       title={t.admin.syncUserTitle(user.name)}
       aria-label={t.admin.syncUserTitle(user.name)}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40",
+        phone ? "h-7 w-7" : "h-8 w-8",
+      )}
     >
       <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
     </button>
   );
   // Never on your own row: the server refuses it too.
   const deleteButton = isYou ? (
-    <span className="h-8 w-8 shrink-0" />
+    <span className={cn("shrink-0", phone ? "h-7 w-7" : "h-8 w-8")} />
   ) : (
     <button
       type="button"
@@ -288,7 +320,10 @@ function UserRow({
         onAsk();
       }}
       title={t.admin.deleteUserTitle(user.name)}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-red-50 hover:text-red-700"
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground transition hover:bg-red-50 hover:text-red-700",
+        phone ? "h-7 w-7" : "h-8 w-8",
+      )}
     >
       <Trash2 className="h-3.5 w-3.5" />
     </button>
@@ -299,22 +334,21 @@ function UserRow({
       {phone ? (
         // A phone has no room for it all on one line, which squeezed the name
         // and the dates into a sliver: the name, the dates across the full
-        // width, then the numbers and buttons, then the AI switches.
+        // width, then the AI switches and the numbers and buttons on one line.
         <>
           <div className="flex items-center gap-3">
             <Avatar name={user.name} index={index} size="md" />
             <div className="min-w-0 flex-1">{nameLine}</div>
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground">{joined}</p>
-          <div className="mt-2 flex items-center gap-4">
-            {counts}
-            <div className="ml-auto flex gap-2">
+          {/* One line: the AI switches from the left, the numbers and buttons from the right. */}
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+            <AiAccess user={user} inline />
+            <div className="ml-auto flex items-center gap-2">
+              {compactCounts}
               {syncButton}
               {deleteButton}
             </div>
-          </div>
-          <div className="mt-1">
-            <AiAccess user={user} />
           </div>
           {syncNote}
         </>
@@ -366,7 +400,7 @@ function UserRow({
  * once switched on here, and loses it again with a second tap. Saves at once
  * and refetches the overview.
  */
-function AiAccess({ user }: { user: AdminUser }) {
+function AiAccess({ user, inline = false }: { user: AdminUser; inline?: boolean }) {
   const t = useT();
   const queryClient = useQueryClient();
   const toggle = useMutation({
@@ -377,15 +411,18 @@ function AiAccess({ user }: { user: AdminUser }) {
     mutationFn: (allowed: boolean) => adminSetAiTester(user.id, allowed),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
   });
-  const pill =
-    "mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
+  // `inline`: on a line of its own with other things, so no space above it.
+  const pill = cn(
+    "inline-flex items-center gap-1 rounded-full py-0.5 text-[11px] font-medium",
+    inline ? "px-1.5" : "mt-1 px-2",
+  );
 
   // Older functions don't say (before #111): nothing to show or switch yet.
   if (!user.ai) return null;
   if (user.ai === "admin") {
     return (
       <span className={cn(pill, "bg-secondary text-muted-foreground")}>
-        <Sparkles className="h-3 w-3" aria-hidden />
+        {!inline && <Sparkles className="h-3 w-3" aria-hidden />}
         {t.admin.aiAdmin}
       </span>
     );
@@ -411,7 +448,7 @@ function AiAccess({ user }: { user: AdminUser }) {
         {toggle.isPending ? (
           <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
         ) : (
-          <Sparkles className="h-3 w-3" aria-hidden />
+          !inline && <Sparkles className="h-3 w-3" aria-hidden />
         )}
         {on ? t.admin.aiAllowed : t.admin.aiOff}
       </button>
