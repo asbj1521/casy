@@ -47,13 +47,19 @@ export async function aiTesterAllowed(db: Pick<Db, "from">, profileId: string): 
 /**
  * The wording of the yes people give to Casy's AI using content from their
  * calendar (#120): the names of their calendars and the titles of their
- * events. Raised whenever the AI may do more with it (day scores shared for
- * ranking, #119), which asks everyone again: a yes under an older number
- * counts as none. Keep it in step with the privacy policy's AI section.
+ * events. Raised whenever the AI may do more with it, which asks everyone
+ * again: a yes under an older number counts as none. 2 (#119): the phone also
+ * shares, for each important event, when it starts and how much it matters
+ * (never its title), so a vote's dates can be ranked for the whole group. Keep
+ * it in step with the privacy policy's AI section.
  */
-export const CONSENT_VERSION = 1;
+export const CONSENT_VERSION = 2;
 
-/** Say yes under the current wording, or take the yes back (the row goes). */
+/**
+ * Say yes under the current wording, or take the yes back: the row goes, and
+ * so do the facts the person's phone shared for ranking dates (#119), which
+ * were only shared under the yes.
+ */
 export async function setAiConsent(
   db: Pick<Db, "from">,
   profileId: string,
@@ -68,6 +74,13 @@ export async function setAiConsent(
         )
     : await db.from("ai_consent").delete().eq("profile_id", profileId);
   if (error) throw error;
+  if (!on) {
+    const { error: factsError } = await db
+      .from("ai_day_facts")
+      .delete()
+      .eq("profile_id", profileId);
+    if (factsError) throw factsError;
+  }
 }
 
 /** Whether this person has said yes, under the current wording. */

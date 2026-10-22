@@ -54,6 +54,7 @@ import {
 import { displayNameFor, requireMember } from "../_shared/groups.ts";
 import { afterResponse, HttpError, requireString, serve } from "../_shared/http.ts";
 import { langOf } from "../_shared/i18n.ts";
+import { groupMemberIds, MAX_RANKED_DATES, scoreDates } from "../_shared/rankDates.ts";
 import { cleanProfile } from "../_shared/profileAi.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
@@ -69,6 +70,8 @@ type DateRow = {
   declined_at: string | null;
   created_at: string;
   chosen_at: string | null;
+  /** How well the date suits the group by their important events, 0 to 100 (#119). */
+  match_score: number | null;
 };
 
 /**
@@ -171,7 +174,7 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
         "created_at, " +
         "updated_at, friend_groups(name), " +
         "event_proposal_dates(id, starts_at, ends_at, declined_by, declined_at, created_at, " +
-        "chosen_at), " +
+        "chosen_at, match_score), " +
         "event_invitees!inner(profile_id)",
     )
     .in("group_id", groupIds)
@@ -294,6 +297,8 @@ async function listEvents(db: Db, profileId: string, callerName: string, only?: 
                 id: d.id,
                 start: d.starts_at,
                 end: d.ends_at,
+                // How well it suits the group by their important events (#119).
+                matchScore: d.match_score,
                 answers: Object.fromEntries(
                   invited.flatMap((id) => {
                     const answer = answerOf.get(`${d.id}:${id}`);
@@ -318,6 +323,39 @@ function myCalendarState(write: WriteRow | undefined): MyCalendar {
   return write.added
     ? { state: "added" }
     : { state: "adding", error: write.last_error, onPhone: write.on_phone };
+}
+
+/**
+ * Gives each date of a new vote the score it earns now (#119): stored on the
+ * date so every member's card shows the same number. No profile (none came
+ * with the event) scores on the timing alone.
+ */
+async function storeMatchScores(
+  db: Db,
+  proposalId: string,
+  members: string[],
+  impact: ReturnType<typeof cleanProfile>,
+  settings: unknown,
+) {
+  const { data, error } = await db
+    .from("event_proposal_dates")
+    .select("id, starts_at, ends_at")
+    .eq("proposal_id", proposalId);
+  if (error) throw error;
+  const dates = (data ?? []) as { id: string; starts_at: string; ends_at: string }[];
+  const scores = await scoreDates(db, {
+    members,
+    profile: impact,
+    single: (settings as { kind?: string }).kind === "single",
+    dates: dates.map((d) => ({ start: d.starts_at, end: d.ends_at })),
+  });
+  for (const [i, date] of dates.entries()) {
+    const { error: updateError } = await db
+      .from("event_proposal_dates")
+      .update({ match_score: scores[i] })
+      .eq("id", date.id);
+    if (updateError) throw updateError;
+  }
 }
 
 serve("events", async (req, body) => {
@@ -395,6 +433,20 @@ serve("events", async (req, body) => {
             .eq("id", proposalId as string);
           if (impactError) console.error("events: couldn't store the event's profile", impactError);
         }
+        // How well each date suits the group by their important events (#119),
+        // kept with it so everyone sees the same number. Never worth failing
+        // the suggestion over either.
+        try {
+          await storeMatchScores(
+            db,
+            proposalId as string,
+            members ?? (await groupMemberIds(db, groupId)),
+            impact,
+            body.settings,
+          );
+        } catch (scoreError) {
+          console.error("events: couldn't score the vote's dates", scoreError);
+        }
         // With the suggester's answers (#101) it may be settled already: a
         // vote only they had to answer goes straight into calendars.
         if (dates.some((d) => d.answer)) syncCalendarsLater(proposalId as string);
@@ -422,6 +474,35 @@ serve("events", async (req, body) => {
       // A group of one is scheduled the moment it is suggested.
       syncCalendarsLater(proposalId);
       return await list();
+    }
+
+    // How well each of these dates would suit the group by the members'
+    // important events (#119): one score per date, in order, never whose
+    // facts cost what. The scheduler asks before it picks a vote's dates.
+    case "rank-dates": {
+      const groupId = requireString(body, "groupId");
+      if (!isEventSettings(body.settings)) {
+        throw new HttpError(400, "Those event settings aren't valid.");
+      }
+      if (!Array.isArray(body.dates) || body.dates.length > MAX_RANKED_DATES) {
+        throw new HttpError(400, "Those dates aren't valid any more. Search again.");
+      }
+      const dates = body.dates.map((d) => parseEventDate(d));
+      if (dates.some((d) => d === null)) {
+        throw new HttpError(400, "Those dates aren't valid any more. Search again.");
+      }
+      await requireMember(db, groupId, profileId);
+      const members =
+        (await invitedMembers(db, groupId, profileId, body.settings)) ??
+        (await groupMemberIds(db, groupId));
+      const profile = body.profile == null ? null : cleanProfile(body.profile);
+      const scores = await scoreDates(db, {
+        members,
+        profile,
+        single: (body.settings as { kind?: string }).kind === "single",
+        dates: dates as { start: string; end: string }[],
+      });
+      return { scores };
     }
 
     case "respond": {

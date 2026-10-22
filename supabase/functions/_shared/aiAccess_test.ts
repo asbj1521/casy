@@ -14,7 +14,10 @@ interface World {
 
 /** Answers ai_access and ai_consent from `world`, and records what is written to consent. */
 function fakeDb(world: World) {
-  const written: { upsert?: Record<string, unknown>; deletedFor?: unknown } = {};
+  const written: { upsert?: Record<string, unknown>; deletedFor?: unknown; deletedFrom: string[] } =
+    {
+      deletedFrom: [],
+    };
   const db = {
     from: (table: string) => ({
       select: () => ({
@@ -38,6 +41,7 @@ function fakeDb(world: World) {
       delete: () => ({
         eq: (_column: string, id: unknown) => {
           written.deletedFor = id;
+          written.deletedFrom.push(table);
           return Promise.resolve({ error: null });
         },
       }),
@@ -101,5 +105,8 @@ Deno.test("saying yes records the wording; taking it back deletes the row", asyn
   const no = fakeDb({});
   await setAiConsent(no.db, "u", false);
   assertEquals(no.written.deletedFor, "u");
+  // The facts shared for ranking dates (#119) go with the yes.
+  assertEquals(no.written.deletedFrom, ["ai_consent", "ai_day_facts"]);
   assertEquals(no.written.upsert, undefined);
+  assertEquals(yes.written.deletedFrom, []);
 });
