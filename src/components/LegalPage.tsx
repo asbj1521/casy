@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 
 import TopNav from "@/components/TopNav";
 
@@ -28,10 +29,16 @@ export const Term = ({ children }: { children: ReactNode }) => (
 export interface LegalCopy {
   title: string;
   updated: string;
-  sections: { title: string; body: ReactNode }[];
+  /** `id` makes a section linkable (/privacy#ai); the page scrolls to it when it opens. */
+  sections: { id?: string; title: string; body: ReactNode }[];
 }
 
 export default function LegalPage({ copy }: { copy: LegalCopy }) {
+  // The router doesn't scroll to a #section by itself, and this page loads lazily.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, [hash]);
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
@@ -41,7 +48,7 @@ export default function LegalPage({ copy }: { copy: LegalCopy }) {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{copy.updated}</p>
         {copy.sections.map((section) => (
-          <section key={section.title} className="mt-8">
+          <section key={section.title} id={section.id} className="mt-8 scroll-mt-20">
             <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
             <div className="mt-2 space-y-3 text-sm leading-relaxed text-muted-foreground">
               {section.body}

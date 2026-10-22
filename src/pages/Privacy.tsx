@@ -147,6 +147,7 @@ const da: LegalCopy = {
       ),
     },
     {
+      id: "ai",
       title: "AI i Casy",
       body: (
         <>
@@ -513,6 +514,7 @@ const en: LegalCopy = {
       ),
     },
     {
+      id: "ai",
       title: "AI in Casy",
       body: (
         <>

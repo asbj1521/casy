@@ -31,7 +31,7 @@ export default function AiConsentGroup() {
         footnote={
           <>
             {t.footnote(
-              <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+              <Link to="/privacy#ai" className="underline underline-offset-2 hover:text-foreground">
                 {t.privacyLink}
               </Link>,
             )}

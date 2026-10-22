@@ -481,17 +481,11 @@ export const en: Messages = {
     privacyLink: "privacy policy",
     title: "Let Casy's AI read your calendar?",
     intro:
-      "Then Casy can sort your calendars and understand what your events mean, for example that an exam is important. That means something from your calendar is read by an AI.",
-    sentTitle: "What is sent to Anthropic:",
-    sent: [
-      "The names of your calendars, without email addresses and links.",
-      "The titles of your events, read on your phone in the iPhone app, with the time of day they usually are.",
-    ],
-    never:
-      "Never notes, places, guests or dates, and nothing about the others in your groups. Event titles can be private, so only say yes if you are comfortable with it.",
-    how: "Anthropic is in the United States, does not use it to train its models and normally deletes it within 30 days.",
-    withdraw:
-      "You can always turn it off under Profile. The labels kept on your phone are then deleted.",
+      "Then Casy can sort your calendars and understand what your events mean, for example that an exam is important.",
+    sent: "The names of your calendars and the titles of your events (in the iPhone app) are sent to Anthropic in the United States, which makes the AI. Never notes, places, guests or dates.",
+    safe: "Casy does not store them, Anthropic does not train on them, and you can turn it off at any time under Profile.",
+    privateNote: "Titles can be private, so only say yes if you are comfortable with it.",
+    readMore: "Read more in the",
     allow: "Allow",
     notNow: "Not now",
     saving: "Saving",

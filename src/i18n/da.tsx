@@ -514,17 +514,11 @@ export const da = {
     privacyLink: "privatlivspolitikken",
     title: "Lad Casys AI læse i din kalender?",
     intro:
-      "Så kan Casy sortere dine kalendere og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig. Det kræver, at noget fra din kalender bliver læst af en AI.",
-    sentTitle: "Det sendes til Anthropic:",
-    sent: [
-      "Navnene på dine kalendere, uden e-mailadresser og links.",
-      "Titlerne på dine aftaler, læst på din telefon i iPhone-appen, med hvornår på dagen de plejer at ligge.",
-    ],
-    never:
-      "Aldrig noter, steder, deltagere eller datoer, og intet om de andre i dine grupper. Aftalers titler kan være private, så sig kun ja, hvis du er tryg ved det.",
-    how: "Anthropic ligger i USA, bruger det ikke til at træne sine modeller og sletter det normalt inden for 30 dage.",
-    withdraw:
-      "Du kan altid slå det fra under Profil. Så slettes de mærkater, der er gemt på telefonen.",
+      "Så kan Casy sortere dine kalendere og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
+    sent: "Navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen) sendes til Anthropic i USA, som laver AI'en. Aldrig noter, steder, gæster eller datoer.",
+    safe: "Casy gemmer dem ikke, Anthropic træner ikke på dem, og du kan slå det fra når som helst under Profil.",
+    privateNote: "Titler kan være private, så sig kun ja, hvis du er tryg ved det.",
+    readMore: "Læs mere i",
     allow: "Tillad",
     notNow: "Ikke nu",
     saving: "Gemmer",

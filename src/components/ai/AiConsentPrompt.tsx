@@ -77,18 +77,11 @@ function Prompt({ userId }: { userId: string }) {
           {t.title}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">{t.intro}</p>
-
-        <h3 className="mt-4 text-sm font-semibold text-foreground">{t.sentTitle}</h3>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-          {t.sent.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-        <p className="mt-3 text-sm text-muted-foreground">{t.never}</p>
-        <p className="mt-3 text-sm text-muted-foreground">{t.how}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t.sent}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t.safe}</p>
         <p className="mt-3 text-sm text-muted-foreground">
-          {t.withdraw}{" "}
-          <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+          {t.privateNote} {t.readMore}{" "}
+          <Link to="/privacy#ai" className="underline underline-offset-2 hover:text-foreground">
             {t.privacyLink}
           </Link>
           .
