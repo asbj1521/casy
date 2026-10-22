@@ -89,7 +89,7 @@ test.describe("with motion", () => {
     await page.waitForTimeout(1500);
     await expect(page.getByRole("button", { name: "Foreslå top 5 datoer" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Foreslå top 5 datoer" })).toBeEnabled({
-      timeout: 15_000,
+      timeout: 25_000,
     });
     await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
   });

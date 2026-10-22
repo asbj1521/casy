@@ -1,17 +1,13 @@
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  memo,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import {
+  animate,
   AnimatePresence,
   motion,
+  useMotionValue,
   useReducedMotion,
+  useTransform,
+  type AnimationPlaybackControls,
+  type MotionValue,
   type TargetAndTransition,
   type Transition,
 } from "framer-motion";
@@ -36,16 +32,18 @@ import {
   layerAlpha,
   liveOrder,
   PILE_TIMING,
+  PILE_OPACITY,
   pileTimeline,
   sheetTilt,
   rankOrder,
   throwSide,
   type PileOptions,
+  type PileSheet,
   type RankedFacts,
 } from "@/lib/paperPile";
 import type { FoundDate } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
-import { addDays, dayOf, wallTime } from "@/lib/zone";
+import { addDays, dayOf, localDate, startOfMonth, wallTime } from "@/lib/zone";
 
 /** The pile's stages, in order. */
 const PHASES = ["landing", "pressed", "revealed", "lifted", "ranking", "done"] as const;
@@ -54,6 +52,18 @@ const atLeast = (phase: Phase, than: Phase) => PHASES.indexOf(phase) >= PHASES.i
 
 /** The most dates in the list: the chosen ones, and others that work, up to this. */
 const LIST_MAX = 8;
+
+/**
+ * Lifting the dates into the list: a moment before the calendar starts to
+ * scroll, its speed between dates (kept within a range, so a long way is
+ * brisk and a short one still reads), and the stop as each date turns into
+ * its row.
+ */
+const SCROLL_START_MS = 250;
+const SCROLL_PX_PER_S = 900;
+const SCROLL_MIN_S = 0.25;
+const SCROLL_MAX_S = 1.1;
+const ARRIVAL_PAUSE_MS = 320;
 
 /** A colour per friend, Apple Calendar's own, in the group's order. */
 const FRIEND_COLORS = [
@@ -225,8 +235,10 @@ export default function PileScreen({
     groupSize,
   ]);
 
-  // The month in the pile, the one most of those dates are in: whose
-  // calendars land on it, and the days free for everyone.
+  // The month in the pile, the first date's: whose calendars land on it,
+  // and the days free for everyone. The months after it, up to the last
+  // date in the list, are what the shared calendar scrolls through as the
+  // dates are lifted into the list.
   const pile = useMemo(() => {
     if (!participants) return null;
     const opts: PileOptions = {
@@ -236,18 +248,27 @@ export default function PileScreen({
       locale: LOCALE[lang],
       window: searchWindow,
     };
-    const starts = dates?.chosen.map((d) => d.slot.start) ?? [];
-    const { year, month } = candidateMonth(starts, searchWindow.start, TZ);
-    const built = buildPile(participants, search, youProfileId, year, month, opts);
+    const listed = dates?.checked.map((d) => d.date.slot.start) ?? [];
+    const { year, month } = candidateMonth(listed.slice(0, 1), searchWindow.start, TZ);
     const first = wallTime(year, month, 1, 0, TZ);
-    const shine = new Set(
-      built.through.flatMap((free, i) => (free ? [addDays(first, i, TZ)] : [])),
-    );
-    // Each friend's busy time in that month (and the week either side, which
-    // its first and last rows show), as bars with no words.
+    const last =
+      listed.length > 0 ? startOfMonth(Date.parse(listed[listed.length - 1]), TZ) : first;
+    const months: number[] = [];
+    for (let m = first; m <= last; m = startOfMonth(m, TZ, 1)) months.push(m);
+    // The days free for everyone in each of those months.
+    const shine = new Set<number>();
+    let sheets: PileSheet[] = [];
+    for (const m of months) {
+      const { year: y, month: mo } = localDate(m, TZ);
+      const built = buildPile(participants, search, youProfileId, y, mo, opts);
+      if (m === first) sheets = built.sheets;
+      built.through.forEach((free, i) => free && shine.add(addDays(m, i, TZ)));
+    }
+    // Each friend's busy time over those months (and the week either side,
+    // which the first and last rows show), as bars with no words.
     const from = addDays(first, -7, TZ);
-    const to = addDays(wallTime(year, month + 1, 1, 0, TZ), 7, TZ);
-    const friends = built.sheets
+    const to = addDays(startOfMonth(last, TZ, 1), 7, TZ);
+    const friends = sheets
       .filter((s) => !s.isYou)
       .map((s, k) => {
         const busy = participants.find((p) => p.profileId === s.profileId)?.busy ?? [];
@@ -262,7 +283,7 @@ export default function PileScreen({
           .filter((b) => b.end > from && b.start < to);
         return { ...s, items, color: FRIEND_COLORS[k % FRIEND_COLORS.length] };
       });
-    return { month: first, shine, friends };
+    return { month: first, months, shine, friends };
   }, [participants, dates, search, searchWindow, youProfileId, lang]);
 
   // Your month on screen: My calendar scrolls to it, and the layers land on
@@ -291,8 +312,9 @@ export default function PileScreen({
     return () => window.clearTimeout(id);
   }, [month, reduceMotion]);
 
-  // The clock, from the moment the month is in place. The list's checks
-  // end it (onRanked), each date taking its turn.
+  // The clock, from the moment the month is in place, up to the dates being
+  // lifted out; from there the list runs it: the scroll that lifts each date
+  // into it (onArrived), then the checks (onRanked).
   const [phase, setPhase] = useState<Phase>(reduceMotion ? "done" : "landing");
   const [landed, setLanded] = useState(0);
   const others = pile?.friends.length ?? 0;
@@ -315,7 +337,6 @@ export default function PileScreen({
     });
     at(timeline.revealAt, () => setPhase("revealed"));
     at(timeline.liftAt, () => setPhase("lifted"));
-    at(timeline.rankAt, () => setPhase("ranking"));
     return () => timers.forEach((id) => window.clearTimeout(id));
   }, [ready, reduceMotion, timeline]);
 
@@ -328,6 +349,15 @@ export default function PileScreen({
     setPhase("done");
     haptic("success");
   }, []);
+  const arrived = useCallback(() => setPhase("ranking"), []);
+  // The shared calendar's scroll, and the days already lifted into the list.
+  const scroll = useMotionValue(0);
+  const [taken, setTaken] = useState<ReadonlySet<number>>(new Set());
+  const take = useCallback((day: number) => setTaken((t) => new Set(t).add(day)), []);
+  const stillShining = useMemo(
+    () => new Set([...(pile?.shine ?? [])].filter((d) => !taken.has(d))),
+    [pile, taken],
+  );
   const alpha = layerAlpha(others);
   const send = () =>
     dates &&
@@ -352,9 +382,9 @@ export default function PileScreen({
 
   return (
     <>
-      {/* The layers, over My calendar's month and clear of the tab bar. They
-          stay once clear: for now this is everyone's calendar together. */}
-      {frame && pile && !reduceMotion && (
+      {/* The layers, over My calendar's month and clear of the tab bar,
+          until the dates are lifted out: then the shared calendar below. */}
+      {frame && pile && !reduceMotion && !lifted && (
         <div
           data-pile
           aria-hidden
@@ -389,14 +419,25 @@ export default function PileScreen({
               className="absolute"
               style={{ top: frame.top, left: frame.left, width: frame.width }}
               initial={{ opacity: 0, scale: 0.98 }}
-              // Gone the moment the dates fly up out of it.
-              animate={{ opacity: lifted ? 0 : 1, scale: 1 }}
-              transition={{ duration: lifted ? 0.15 : 0.5, ease: "easeOut" }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
             >
               <MonthLayer month={pile.month} items={[]} colorOf={() => ""} shine={pile.shine} />
             </motion.div>
           )}
         </div>
+      )}
+
+      {/* The pile, now one shared calendar over every month the dates are
+          in, scrolled by the list as it lifts each date out. */}
+      {frame && pile && !reduceMotion && lifted && (
+        <SharedCalendar
+          frame={frame}
+          months={pile.months}
+          friends={pile.friends}
+          shine={stillShining}
+          scroll={scroll}
+        />
       )}
 
       <button
@@ -410,15 +451,20 @@ export default function PileScreen({
 
       {/* The dates, flown up into a list over the calendar, checked one by one. */}
       {(lifted || failed) && (
-        // Over everything down to the tab bar; the calendar stays in view
-        // behind it, softened so the list reads.
-        <motion.div
-          className="fixed inset-x-0 top-0 z-50 flex flex-col bg-background/50 pt-[calc(env(safe-area-inset-top)+3.5rem)] backdrop-blur-[3px]"
+        // Over everything down to the tab bar. While the dates arrive the
+        // calendar scrolls by in plain view; once they all have, it softens
+        // behind the list so the list reads.
+        <div
+          className="fixed inset-x-0 top-0 z-50 flex flex-col pt-[calc(env(safe-area-inset-top)+3.5rem)]"
           style={{ bottom: "var(--tab-bar-height)" }}
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
         >
+          <motion.div
+            aria-hidden
+            className="absolute inset-0 -z-10 bg-background/50 backdrop-blur-[3px]"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: atLeast(phase, "ranking") || failed ? 1 : 0 }}
+            transition={{ duration: 0.4 }}
+          />
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
             {failed ? (
               <p className="glass rounded-[22px] p-4 text-[15px] text-foreground">
@@ -431,6 +477,9 @@ export default function PileScreen({
                 kind={search.kind}
                 phase={phase}
                 instant={reduceMotion}
+                scroll={scroll}
+                onTaken={take}
+                onArrived={arrived}
                 onRanked={ranked}
               />
             ) : (
@@ -481,9 +530,54 @@ export default function PileScreen({
               )}
             </motion.div>
           )}
-        </motion.div>
+        </div>
       )}
     </>
+  );
+}
+
+/**
+ * The pile once pressed, as one calendar: everyone's busy time together over
+ * every month the listed dates are in, on the same glass, the free days lit.
+ * Drawn in place of the stacked layers once they lie aligned (lighter on a
+ * phone than a layer per person per month), and moved by `scroll` alone
+ * (never scrolled by hand): the list scrolls it to lift each date out.
+ */
+function SharedCalendar({
+  frame,
+  months,
+  friends,
+  shine,
+  scroll,
+}: {
+  frame: Frame;
+  months: number[];
+  friends: { profileId: string; items: GridItem[]; color: string }[];
+  shine: ReadonlySet<number>;
+  scroll: MotionValue<number>;
+}) {
+  const y = useTransform(scroll, (v) => -v);
+  const items = useMemo(() => friends.flatMap((f) => f.items), [friends]);
+  const colors = useMemo(() => new Map(friends.map((f) => [f.profileId, f.color])), [friends]);
+  const colorOf = useCallback((id: string) => colors.get(id) ?? "", [colors]);
+  return (
+    <div
+      data-shared
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 z-40 overflow-hidden rounded-t-[28px] border border-b-0"
+      style={{
+        top: frame.top,
+        bottom: "var(--tab-bar-height)",
+        backgroundColor: `rgb(var(--glass-tint) / ${PILE_OPACITY})`,
+        borderColor: "rgb(var(--glass-edge))",
+      }}
+    >
+      <motion.div style={{ y, marginLeft: frame.left, width: frame.width }}>
+        {months.map((m) => (
+          <MonthLayer key={m} month={m} items={items} colorOf={colorOf} shine={shine} />
+        ))}
+      </motion.div>
+    </div>
   );
 }
 
@@ -642,6 +736,9 @@ function DateList({
   kind,
   phase,
   instant,
+  scroll,
+  onTaken,
+  onArrived,
   onRanked,
 }: {
   items: CheckedDate[];
@@ -649,45 +746,81 @@ function DateList({
   kind: EventSettings["kind"];
   phase: Phase;
   instant: boolean;
+  /** The shared calendar's scroll, which this list drives to lift each date out. */
+  scroll: MotionValue<number>;
+  /** A date's green circle has turned into its row: the calendar stops showing it. */
+  onTaken: (day: number) => void;
+  /** Every date is in the list. */
+  onArrived: () => void;
   onRanked: () => void;
 }) {
   const t = useT();
   const words = t.planFromCalendar;
   const { lang } = useLang();
   const rows = useRef(new Map<string, HTMLElement>());
-  const [flights, setFlights] = useState<Record<string, Flight> | null>(null);
+  const [flights, setFlights] = useState<Record<string, Flight>>({});
   const [open, setOpen] = useState<string | null>(null);
   const done = phase === "done";
   const ranking = phase === "ranking";
 
-  // Where each row will be, against its circle: measured before they show.
-  useLayoutEffect(() => {
-    if (instant) return;
-    const frameId = requestAnimationFrame(() => {
-      const out: Record<string, Flight> = {};
+  // The dates arriving, in their order: the shared calendar scrolls up
+  // until the next date's green circle is level with its empty row, stops,
+  // the circle turns into the row, and on to the next. A date already level
+  // or past (two in one week) turns into its row at once; one without a
+  // circle (someone gives something up for it) just appears. Measured live
+  // each time, so the scroll and the rows can never disagree.
+  useEffect(() => {
+    if (phase !== "lifted" || instant) return;
+    let stopped = false;
+    let running: AnimationPlaybackControls | null = null;
+    const wait = (ms: number) => new Promise((done) => window.setTimeout(done, ms));
+    const circleOf = (day: number) =>
+      document.querySelector(`[data-shared] [data-shine="${day}"]`)?.getBoundingClientRect();
+    void (async () => {
+      await wait(SCROLL_START_MS);
       for (const item of items) {
+        if (stopped) return;
         const key = item.date.slot.start;
         const row = rows.current.get(key)?.getBoundingClientRect();
-        const circle = document
-          .querySelector(`[data-pile] [data-shine="${item.day}"]`)
-          ?.getBoundingClientRect();
-        if (!row) continue;
-        out[key] = circle
-          ? {
-              x: circle.left - row.left,
-              y: circle.top - row.top,
-              scaleX: circle.width / row.width,
-              scaleY: circle.height / row.height,
-              circle: true,
-            }
-          : { x: 0, y: 60, scaleX: 1, scaleY: 1, circle: false };
+        let circle = circleOf(item.day);
+        if (row && circle) {
+          const gap = circle.top + circle.height / 2 - (row.top + row.height / 2);
+          if (gap > 1) {
+            running = animate(scroll, scroll.get() + gap, {
+              duration: Math.min(SCROLL_MAX_S, Math.max(SCROLL_MIN_S, gap / SCROLL_PX_PER_S)),
+              ease: "easeInOut",
+            });
+            await running;
+            if (stopped) return;
+            circle = circleOf(item.day);
+          }
+        }
+        setFlights((all) => ({
+          ...all,
+          [key]:
+            row && circle
+              ? {
+                  x: circle.left - row.left,
+                  y: circle.top - row.top,
+                  scaleX: circle.width / row.width,
+                  scaleY: circle.height / row.height,
+                  circle: true,
+                }
+              : { x: 0, y: 24, scaleX: 1, scaleY: 1, circle: false },
+        }));
+        onTaken(item.day);
+        haptic("tick");
+        await wait(ARRIVAL_PAUSE_MS);
       }
-      setFlights(out);
-    });
-    return () => cancelAnimationFrame(frameId);
-    // Measured once, when the list first appears.
+      if (!stopped) onArrived();
+    })();
+    return () => {
+      stopped = true;
+      running?.stop();
+    };
+    // Runs once, as the dates start to come out.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [phase === "lifted", instant]);
 
   // The dates checked one after another, quicker and quicker (checkTimes);
   // each moves to its place the moment it is checked. Once the last has
@@ -763,7 +896,7 @@ function DateList({
         return (
           <motion.div
             // Mounted afresh once measured, so the flight starts from the circle.
-            key={`${key}-${flights ? "fly" : "wait"}`}
+            key={`${key}-${flight ? "in" : "waiting"}`}
             ref={(el) => {
               if (el) rows.current.set(key, el);
             }}
@@ -773,7 +906,6 @@ function DateList({
             layout={ranking || done ? "position" : false}
             style={{
               transformOrigin: "0 0",
-              opacity: flights || instant ? undefined : 0,
               zIndex: ranking && at === checked - 1 ? 10 : undefined,
             }}
             initial={
@@ -787,10 +919,11 @@ function DateList({
                   }
                 : false
             }
-            animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
+            // Holds its place, unseen, until its date arrives.
+            animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: flight || instant ? 1 : 0 }}
             transition={{
               duration: 0.55,
-              delay: instant || ranking || done ? 0 : at * 0.07,
+              delay: 0,
               ease: [0.3, 0.9, 0.3, 1],
               layout: { type: "spring", stiffness: 380, damping: 26 },
             }}
@@ -806,7 +939,7 @@ function DateList({
                 className="absolute inset-0 bg-emerald-500"
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 0 }}
-                transition={{ delay: at * 0.07 + 0.3, duration: 0.35 }}
+                transition={{ delay: 0.25, duration: 0.35 }}
               />
             )}
             <motion.button
@@ -818,7 +951,7 @@ function DateList({
               className="relative flex w-full items-center gap-3 px-4 py-3 text-left"
               initial={flight && !instant ? { opacity: 0 } : false}
               animate={{ opacity: 1 }}
-              transition={{ delay: instant ? 0 : at * 0.07 + 0.35, duration: 0.25 }}
+              transition={{ delay: instant ? 0 : 0.3, duration: 0.25 }}
             >
               {/* Its place: an empty ring until it is checked, so nothing shifts. */}
               <span className="relative flex h-6 w-6 shrink-0 items-center justify-center">
