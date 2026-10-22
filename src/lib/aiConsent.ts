@@ -10,7 +10,7 @@ import { readStored, writeStored } from "@/lib/storage";
  * do more with calendar content; a "not now" is remembered per version, so a
  * wider ask is put to everyone again.
  */
-export const AI_CONSENT_VERSION = 2;
+export const AI_CONSENT_VERSION = 3;
 
 const key = (userId: string) => `casy-ai-consent-asked:${userId}`;
 

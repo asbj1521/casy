@@ -92,11 +92,7 @@ test("turning it off asks first, then the switch goes back to the top", async ({
 
   // Off asks first: it deletes the labels kept on the phone.
   await row.click();
-  await expect(
-    page.getByText(
-      /mærkater, der er gemt på denne telefon, og det, du har delt om vigtige aftaler, slettes/,
-    ),
-  ).toBeVisible();
+  await expect(page.getByText(/mærkater, der er gemt på denne telefon/)).toBeVisible();
   expect(backend.world.aiConsent).toBe(true);
   await page.getByRole("button", { name: "Slå fra" }).click();
   await expect(row).toHaveAttribute("aria-checked", "false");

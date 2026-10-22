@@ -1,3 +1,4 @@
+import { Loader2, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
@@ -5,6 +6,7 @@ import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { ListRow } from "@/components/ui/ListGroup";
 import Switch from "@/components/ui/Switch";
 import type { AiConsentControl } from "@/hooks/useAiConsentSetting";
+import { useAiShareSetting } from "@/hooks/useAiShareSetting";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 
@@ -75,5 +77,49 @@ export function AiConsentConfirm({ control }: { control: AiConsentControl }) {
       }}
       onCancel={() => control.setConfirming(false)}
     />
+  );
+}
+
+/**
+ * The corrections you write to the AI and whether they go to Casy for review
+ * (#122): a switch of its own, apart from the yes it comes with, and the
+ * corrections already sent, with a delete. Rows of the AI list in Your data,
+ * shown while the yes is given.
+ */
+export function AiShareRows({ kept, sharing }: { kept: number; sharing: boolean }) {
+  const t = useT();
+  const phone = usePhoneLayout();
+  const { setSharing, removeSent, saving, removing, error } = useAiShareSetting();
+  return (
+    <>
+      <ListRow
+        label={t.myData.shareCorrections}
+        detail={error ?? (sharing ? t.myData.shareOn : t.myData.shareOff)}
+        value={
+          <Switch
+            checked={sharing}
+            disabled={saving}
+            size={phone ? "lg" : "md"}
+            label={t.myData.shareCorrections}
+            onChange={setSharing}
+          />
+        }
+      />
+      <ListRow label={t.myData.correctionsKept} value={kept} />
+      {kept > 0 && (
+        <ListRow
+          leading={
+            removing ? (
+              <Loader2 className="h-5 w-5 shrink-0 animate-spin text-red-600" />
+            ) : (
+              <Trash2 className="h-5 w-5 shrink-0 text-red-600" />
+            )
+          }
+          tone="danger"
+          label={t.myData.correctionsDelete}
+          onClick={removing ? undefined : removeSent}
+        />
+      )}
+    </>
   );
 }

@@ -517,6 +517,8 @@ export const da = {
     intro:
       "Så kan Casy sortere dine kalendere og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
     sent: "Navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen) sendes til Anthropic i USA, som laver AI'en. Aldrig noter, steder, gæster eller datoer.",
+    corrections:
+      "Casy modtager også de rettelser, du skriver til AI'ens vurderinger, med aftalens titel, så AI'en kan lære af dem. Du kan slå det fra under Dine data.",
     shared:
       "Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for gruppen. De andre ser kun en score for hver dato.",
     safe: "Casy gemmer ikke navne eller titler, Anthropic træner ikke på dem, og du kan slå det fra når som helst under Dine data.",
@@ -527,7 +529,7 @@ export const da = {
     saving: "Gemmer",
     failed: "Det lykkedes ikke. Prøv igen.",
     turnOffMessage:
-      "Casys AI holder op med at læse i din kalender, og de mærkater, der er gemt på denne telefon, og det, du har delt om vigtige aftaler, slettes.",
+      "Casys AI holder op med at læse i din kalender, og de mærkater, der er gemt på denne telefon, og det, du har delt om vigtige aftaler og dine sendte rettelser, slettes.",
     turnOff: "Slå fra",
   },
   connectPrompt: {
@@ -992,6 +994,9 @@ export const da = {
       days === 1 ? "1 dag til at komme sig efter" : `${days} dage til at komme sig efter`,
     corrected: "Rettet af dig",
     onlyYou: "Kun du ser vurderingen. Den og dine rettelser bliver på din telefon.",
+    // With sharing on (#122), a correction also goes to Casy.
+    onlyYouShared:
+      "Kun du ser vurderingen, og den bliver på din telefon. Din rettelse sendes også til Casy, så AI'en kan blive bedre. Du kan slå det fra under Dine data.",
     wrong: "Forkert?",
     wrongPrompt:
       "Hvad er forkert? Casy vurderer aftalen igen ud fra det, du skriver, og husker det til lignende aftaler.",
@@ -1170,6 +1175,12 @@ export const da = {
     aiConsentAgain: "Ja, men du skal sige ja igen",
     aiConsentOff: "Nej",
     labels: "Mærkater på denne telefon",
+    shareCorrections: "Send mine rettelser til Casy",
+    shareOn: "Casy får dine rettelser af AI'en, så den kan blive bedre",
+    shareOff: "Slået fra",
+    correctionsKept: "Rettelser sendt til Casy",
+    correctionsDelete: "Slet mine sendte rettelser",
+    correctionsDeleted: "Slettet",
     labelsNote:
       "Mærkater er AI'ens vurdering af dine aftaler. De gemmes kun på telefonen og kommer ikke med i din hentede kopi. Slår du AI og din kalender fra under Profil, slettes de.",
     aiNote:
@@ -1398,6 +1409,16 @@ export const da = {
     healthFailing: "Over 30 % af kalenderkontiene fejler, når de synkroniseres.",
     statBusy: "Gemte optagede tidsrum",
     dismiss: "Luk",
+    correctionsTitle: "Rettelser til AI'en",
+    correctionsIntro:
+      "Det, folk har sendt, når AI'en tog fejl: aftalens titel, hvad AI'en sagde, hvad de skrev, og hvad der kom ud af det. Aldrig hvem. Gør et gentaget fejlskøn til en skarpere regel og en ny, opfundet testsag, og markér rettelsen som håndteret, så den slettes.",
+    correctionsNone: "Ingen rettelser endnu.",
+    correctionLabel: "Vurdering af en aftale",
+    correctionPlan: "Planlæg med AI",
+    correctionBefore: "AI'en sagde",
+    correctionAfter: "Efter rettelsen",
+    correctionNote: "Skrev",
+    correctionHandled: "Håndteret",
     tabGroups: "Grupper",
     tabUsers: "Brugere",
     tabCalendars: "Kalendersundhed",

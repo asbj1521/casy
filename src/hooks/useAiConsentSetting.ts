@@ -24,8 +24,11 @@ export function useAiConsentSetting() {
     mutationFn: setAiConsent,
     onSuccess: (_done, on) => {
       queryClient.setQueryData<WhoAmI>(whoAmIQueryKey(userId), (old) =>
-        old ? { ...old, aiConsent: on } : old,
+        old ? { ...old, aiConsent: on, aiShare: on ? old.aiShare : false } : old,
       );
+      // Whether corrections are shared comes with the yes (on unless the
+      // person switched it off before): the server knows.
+      if (on) void queryClient.invalidateQueries({ queryKey: whoAmIQueryKey(userId) });
       if (!on) {
         clearLabelsFor(userId);
         forgetAskedTitles();

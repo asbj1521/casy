@@ -584,6 +584,10 @@ export interface World {
    * given. Empty by default: nobody has shared anything, so no scores.
    */
   dateScores: Record<string, number>;
+  /** Corrections of the AI go to Casy for review (#122): on with the yes, a switch in Your data. */
+  aiShare: boolean;
+  /** The corrections sent to Casy, as admin mode lists them (#122). */
+  corrections: { id: string; kind: "label" | "plan"; data: unknown; createdAt: string }[];
   /**
    * Mia is an admin, and how the admin function answers: as now, or as one
    * deployed before #111 (no AI per skill, no AI switch per user).
@@ -611,6 +615,8 @@ export function makeWorld(options: WorldOptions): World {
     aiTester: false,
     aiConsent: true,
     dateScores: {},
+    aiShare: true,
+    corrections: [],
     admin: false,
     aiAccess: new Set(),
     testers: new Set(),
@@ -705,6 +711,7 @@ export function myData(world: World): MyData {
       allowed: world.aiAllowed,
       calls: 2,
       consent: world.aiConsent ? { givenAt: "2026-10-01T09:00:00.000Z", current: true } : null,
+      corrections: { kept: world.corrections.length, sharing: world.aiConsent && world.aiShare },
     },
   };
 }

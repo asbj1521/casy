@@ -152,13 +152,39 @@ export class FakeBackend {
         if (action === "export") return ok({ ...myData(w), busyTimes: [] });
         if (action === "ai-consent") {
           w.aiConsent = body.on === true;
+          // Withdrawing takes the corrections sent for review with it (#122).
+          if (!w.aiConsent) w.corrections = [];
           return ok({ outcome: w.aiConsent ? "given" : "withdrawn" });
+        }
+        if (action === "ai-share") {
+          if (!w.aiConsent) return fail(400, "Say yes to the AI using your calendar first.");
+          w.aiShare = body.on === true;
+          return ok({ outcome: w.aiShare ? "sharing" : "not sharing" });
+        }
+        if (action === "corrections-delete") {
+          w.corrections = [];
+          return ok({ outcome: "deleted" });
         }
         if (action === "delete") return ok({});
         return undefined;
+      case "ai-feedback":
+        // As the real one: only from someone who said yes and shares (#122).
+        if (!w.aiConsent || !w.aiShare) return fail(403, "Sharing is switched off.");
+        w.corrections.unshift({
+          id: `corr-${w.corrections.length + 1}`,
+          kind: body.kind as "label" | "plan",
+          data: body.data,
+          createdAt: NOW,
+        });
+        return ok({ stored: true });
       case "admin":
         if (action === "status") return ok({ isAdmin: w.admin !== false });
         if (!w.admin) return fail(403, "Kun for administratorer.");
+        if (action === "corrections") return ok({ corrections: w.corrections });
+        if (action === "correctionHandled") {
+          w.corrections = w.corrections.filter((c) => c.id !== body.id);
+          return ok({ outcome: "handled" });
+        }
         if (action === "overview") return ok(adminOverview(w));
         if (action === "setAiAccess") {
           const id = String(body.profileId);
@@ -325,6 +351,7 @@ export class FakeBackend {
           aiAllowed: w.aiAllowed,
           aiTester: w.aiTester || w.admin !== false,
           aiConsent: w.aiConsent,
+          aiShare: w.aiConsent && w.aiShare,
         });
       case "set-name":
         w.name = String(body.name);

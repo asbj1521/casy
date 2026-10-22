@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { calendarBusyQuery } from "@/api/calendars";
+import { sendLabelCorrection } from "@/api/aiFeedback";
 import { labelEvents, relabelEvent, type EventLabel, type EventToLabel } from "@/api/eventLabels";
 import { useAuth } from "@/context/auth";
-import { useAiContent } from "@/hooks/useAiAllowed";
+import { useAiContent, useAiShare } from "@/hooks/useAiAllowed";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import {
   addCorrection,
@@ -166,10 +167,22 @@ export function useRelabel(calendarExternalId: string, event: EventToLabel) {
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
+  const shares = useAiShare();
   return useMutation({
     mutationFn: ({ previous, note }: { previous: EventLabel; note: string }) =>
       relabelEvent(event, previous, note, correctionsToSend(readCorrections(userId))),
-    onSuccess: (label, { note }) => {
+    onSuccess: (label, { note, previous }) => {
+      // With the person's yes, the correction also goes to Casy for review
+      // (#122), in the background: it is never worth failing the correction over.
+      if (shares) {
+        void sendLabelCorrection({
+          title: event.title,
+          calendar: event.calendar,
+          previous,
+          note,
+          label,
+        }).catch((err) => console.warn("sending the correction failed", err));
+      }
       const key = labelKey(calendarExternalId, event.title);
       writeCorrections(
         userId,

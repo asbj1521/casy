@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 23. oktober 2026",
+  updated: "Senest opdateret 24. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -38,7 +38,8 @@ const da: LegalCopy = {
           uden for tjenesten. Med dit ja kan Casys AI læse navnene på dine kalendere og, i
           iPhone-appen, titlerne på dine aftaler: de sendes til Anthropic, men gemmes ikke hos Casy
           (se AI i Casy). Casy gemmer kun, hvornår dine vigtige aftaler starter, og hvor vigtige de
-          er, uden titel, så datoer kan rangeres for din gruppe.
+          er, uden titel, så datoer kan rangeres for din gruppe. En rettelse, du skriver til AI'en,
+          sendes til Casy til gennemsyn, medmindre du slår det fra.
         </p>
       ),
     },
@@ -94,7 +95,8 @@ const da: LegalCopy = {
               hvornår, og hvilken version af teksten (se AI i Casy). Mærkater, som AI&apos;en laver
               af dine aftaler, gemmes kun på din telefon. Hvornår dine vigtige aftaler starter og
               hvor vigtige de er, uden titel, gemmes hos Casy, så datoer kan rangeres for din
-              gruppe.
+              gruppe. Det gør de rettelser af AI'en, du har sendt til gennemsyn, og om du sender dem
+              (se AI i Casy).
             </li>
             <li>
               <Term>Adgangsoplysninger:</Term> det, der skal til for at holde dine kalendere
@@ -235,13 +237,27 @@ const da: LegalCopy = {
           </p>
 
           <p>
+            <Term>Rettelser, du sender til Casy.</Term> Skriver du, at AI&apos;ens vurdering af en
+            aftale er forkert, sendes din rettelse også til Casy: aftalens titel, kalenderens navn
+            (uden e-mailadresser og links), vurderingen AI&apos;en gav, det, du skrev, og den nye
+            vurdering. Aldrig datoer, steder eller andre aftaler. Det er slået til, når du siger ja,
+            og du kan slå det fra under Dine data uden at tage dit ja tilbage. Casy gemmer
+            rettelsen, så den, der driver Casy, kan gøre en gentaget fejl til en skarpere regel i
+            AI&apos;ens opgave og en ny, opfundet testsag; ingen model trænes. Vedkommende ser kun
+            rettelsen, aldrig hvem der sendte den. Den slettes, når den er gennemgået, efter 90
+            dage, når du sletter dine rettelser under Dine data, når du trækker dit ja tilbage,
+            eller når du sletter din konto.
+          </p>
+
+          <p>
             <Term>Hos Anthropic og hos Casy.</Term> Anthropic bruger ikke det, Casy sender, til at
             træne sine modeller, og sletter det normalt inden for 30 dage. Anthropic ligger i USA,
             så det bliver behandlet uden for EU. Casy gemmer ikke selv teksten, titlerne eller
-            svarene. Casy noterer kun, at et svar blev hentet, til hvem og til hvad (for eksempel
-            Planlæg med AI), og hvor stort det var, så der kan sættes en grænse for, hvor mange svar
-            hver person henter om dagen. Notatet slettes efter 30 dage, eller når du sletter din
-            konto, og du kan se dit antal under Dine data.
+            svarene, bortset fra de rettelser, du sender til gennemsyn (se ovenfor). Casy noterer
+            kun, at et svar blev hentet, til hvem og til hvad (for eksempel Planlæg med AI), og hvor
+            stort det var, så der kan sættes en grænse for, hvor mange svar hver person henter om
+            dagen. Notatet slettes efter 30 dage, eller når du sletter din konto, og du kan se dit
+            antal under Dine data.
           </p>
           <p>
             Trykker du på Tal, er det din browser, der gør din tale til tekst: Chrome sender lyden
@@ -313,7 +329,9 @@ const da: LegalCopy = {
             hjælpe folk, der tager kontakt. Den viser alles navne, hvornår de oprettede sig og sidst
             loggede ind, hvor mange grupper og kalendere de har, alle grupper med deres medlemmer,
             og hvilke kalendertjenester hver person har forbundet, og om de synkroniserer. Den viser
-            ikke e-mailadresser, optagede tidsrum eller noget om dine aftaler.
+            ikke e-mailadresser, optagede tidsrum eller noget om dine aftaler. Dertil kommer de
+            rettelser af AI'en, folk har sendt til gennemsyn (se AI i Casy): vedkommende ser dem,
+            men aldrig, hvem der sendte dem.
           </p>
           <p>
             Derfra kan vedkommende slette en gruppe, fjerne nogen fra en gruppe, slette en konto
@@ -360,6 +378,7 @@ const da: LegalCopy = {
             <li>invitationslinks 30 dage efter, at de er holdt op med at virke;</li>
             <li>notatet om, at du har slået en e-mailadresse op, efter et døgn;</li>
             <li>notatet om dine AI-svar efter 30 dage;</li>
+            <li>rettelser af AI'en, du har sendt til gennemsyn, efter 90 dage;</li>
             <li>oplysningerne om dine vigtige aftaler 30 dage efter, at de sidst blev sendt;</li>
             <li>forsøg på at forbinde en kalender, der aldrig blev færdige, efter 7 dage;</li>
             <li>
@@ -415,7 +434,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 23 October 2026",
+  updated: "Last updated 24 October 2026",
   sections: [
     {
       title: "In short",
@@ -430,7 +449,8 @@ const en: LegalCopy = {
           yes, Casy&apos;s AI can read the names of your calendars and, in the iPhone app, the
           titles of your events: they are sent to Anthropic, but not stored by Casy (see AI in
           Casy). Casy stores only when your important events start and how important they are,
-          without titles, so dates can be ranked for your group.
+          without titles, so dates can be ranked for your group. A correction you write to the AI is
+          sent to Casy for review unless you switch that off.
         </p>
       ),
     },
@@ -485,7 +505,8 @@ const en: LegalCopy = {
               calendar, when, and which version of the text (see AI in Casy). Labels the AI makes of
               your events are kept only on your phone. When your important events start and how
               important they are, without titles, is stored by Casy, so dates can be ranked for your
-              group.
+              group. So are the corrections of the AI you sent for review, and whether you send them
+              (see AI in Casy).
             </li>
             <li>
               <Term>Access credentials:</Term> what is needed to keep your calendars up to date:
@@ -626,13 +647,27 @@ const en: LegalCopy = {
           </p>
 
           <p>
+            <Term>Corrections you send to Casy.</Term> If you write that the AI&apos;s judgement of
+            an event is wrong, your correction is also sent to Casy: the event&apos;s title, the
+            calendar&apos;s name (without email addresses and links), the judgement the AI gave,
+            what you wrote and the new judgement. Never dates, places or other events. It is on when
+            you say yes, and you can turn it off under Your data without withdrawing your yes. Casy
+            stores the correction so whoever runs Casy can turn a repeated mistake into a sharper
+            rule in the AI&apos;s task and a new, made-up test case; no model is trained. They see
+            only the correction, never who sent it. It is deleted once it has been reviewed, after
+            90 days, when you delete your corrections under Your data, when you withdraw your yes,
+            or when you delete your account.
+          </p>
+
+          <p>
             <Term>At Anthropic and at Casy.</Term> Anthropic does not use what Casy sends to train
             its models, and normally deletes it within 30 days. Anthropic is in the United States,
             so it is processed outside the EU. Casy itself does not keep the text, the titles or the
-            answers. It only notes that an answer was fetched, for whom and for what (such as Plan
-            with AI), and how large it was, so the number of answers each person fetches a day can
-            be limited. The note is deleted after 30 days, or when you delete your account, and you
-            can see your count under Your data.
+            answers, apart from the corrections you send for review (see above). It only notes that
+            an answer was fetched, for whom and for what (such as Plan with AI), and how large it
+            was, so the number of answers each person fetches a day can be limited. The note is
+            deleted after 30 days, or when you delete your account, and you can see your count under
+            Your data.
           </p>
           <p>
             If you press Speak, your browser turns your speech into text: Chrome sends the sound to
@@ -706,7 +741,9 @@ const en: LegalCopy = {
             people who get in touch. It shows everyone&apos;s name, when they signed up and last
             signed in, how many groups and calendars they have, every group with its members, and
             which calendar services each person connected and whether they are syncing. It does not
-            show email addresses, busy times or anything about your events.
+            show email addresses, busy times or anything about your events. In addition there are
+            the corrections of the AI people sent for review (see AI in Casy): they see them, but
+            never who sent them.
           </p>
           <p>
             From that view they can delete a group, remove someone from a group, delete an account,
@@ -754,6 +791,7 @@ const en: LegalCopy = {
             <li>invite links 30 days after they stopped working;</li>
             <li>the note that you looked up an email address, after a day;</li>
             <li>the note about your AI answers after 30 days;</li>
+            <li>corrections of the AI you sent for review after 90 days;</li>
             <li>the information about your important events 30 days after it was last sent;</li>
             <li>attempts to connect a calendar that never finished, after 7 days;</li>
             <li>

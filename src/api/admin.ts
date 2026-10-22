@@ -8,6 +8,7 @@
  */
 import { queryOptions } from "@tanstack/react-query";
 
+import type { EventLabel } from "@/api/eventLabels";
 import { callFunction } from "@/lib/supabaseFunctions";
 import type { CalendarProvider } from "@/types";
 import { currentMessages } from "@/i18n/current";
@@ -156,6 +157,54 @@ export async function adminSetAiAccess(
 ): Promise<{ ai: "allowed" | "off" }> {
   return await callFunction("admin", {
     body: { action: "setAiAccess", profileId, allowed },
+    errorMessage: currentMessages().api.adminAiAccess,
+  });
+}
+
+/**
+ * A correction of the AI someone sent to Casy for review (#122): what it says,
+ * never whose it is. `data` is checked on the server (_shared/feedback.ts); a
+ * "label" one is a label correction: the event's title and calendar, the
+ * label the AI gave, what the person wrote, and the label that came of it.
+ */
+export interface AdminCorrection {
+  id: string;
+  kind: "label" | "plan";
+  data: unknown;
+  createdAt: string;
+}
+
+export interface LabelCorrectionView {
+  title: string;
+  calendar: string;
+  previous: EventLabel;
+  note: string;
+  label: EventLabel;
+}
+
+export function adminCorrectionsKey(userId: string) {
+  return ["admin-corrections", userId] as const;
+}
+
+/** The corrections of the AI sent for review, newest first (#122). */
+export function adminCorrectionsQuery(userId: string) {
+  return queryOptions({
+    queryKey: adminCorrectionsKey(userId),
+    queryFn: async () =>
+      (
+        await callFunction<{ corrections: AdminCorrection[] }>("admin", {
+          body: { action: "corrections" },
+          errorMessage: currentMessages().api.loadAdmin,
+        })
+      ).corrections,
+    staleTime: 30_000,
+  });
+}
+
+/** One reviewed: its lesson is in the prompt or the evals now, so it is deleted (#122). */
+export async function adminCorrectionHandled(id: string): Promise<{ outcome: "handled" }> {
+  return await callFunction("admin", {
+    body: { action: "correctionHandled", id },
     errorMessage: currentMessages().api.adminAiAccess,
   });
 }

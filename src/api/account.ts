@@ -33,6 +33,25 @@ export async function setAiConsent(on: boolean): Promise<void> {
 }
 
 /**
+ * Switch the sending of your corrections of the AI to Casy for review (#122)
+ * on or off, without taking back your yes to the AI using your calendar.
+ */
+export async function setAiShare(on: boolean): Promise<void> {
+  await callFunction("account", {
+    body: { action: "ai-share", on },
+    errorMessage: currentMessages().aiConsent.failed,
+  });
+}
+
+/** Delete every correction you sent to Casy (#122). */
+export async function deleteMyCorrections(): Promise<void> {
+  await callFunction("account", {
+    body: { action: "corrections-delete" },
+    errorMessage: currentMessages().aiConsent.failed,
+  });
+}
+
+/**
  * Everything Casy holds about you, as the account function's `data` answers
  * it (supabase/functions/_shared/myData.ts, which this mirrors). Credentials
  * appear only by kind; their values never leave the server.
@@ -87,6 +106,8 @@ export interface MyData {
     allowed: boolean;
     calls: number;
     consent: { givenAt: string; current: boolean } | null;
+    /** Corrections of the AI you sent to Casy for review (#122): how many are kept, and whether they are sent. */
+    corrections: { kept: number; sharing: boolean };
   };
 }
 

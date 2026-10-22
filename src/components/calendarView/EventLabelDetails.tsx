@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { EventToLabel } from "@/api/eventLabels";
 import AiReadout from "@/components/ui/AiReadout";
 import Notice from "@/components/ui/Notice";
+import { useAiShare } from "@/hooks/useAiAllowed";
 import { useRelabel } from "@/hooks/useEventLabels";
 import { useT } from "@/i18n/lang";
 import type { StoredLabel } from "@/lib/eventLabels";
@@ -38,6 +39,8 @@ export default function EventLabelDetails({
   const [fixing, setFixing] = useState(false);
   const [note, setNote] = useState("");
   const relabel = useRelabel(calendarExternalId, event);
+  // With the person's yes a correction also goes to Casy for review (#122).
+  const shares = useAiShare();
 
   const facts = [
     label.prepDays > 0 && words.prep(label.prepDays),
@@ -108,7 +111,9 @@ export default function EventLabelDetails({
           </div>
         ) : (
           <div className="flex items-center justify-between gap-2 pt-0.5">
-            <span className="text-muted-foreground">{words.onlyYou}</span>
+            <span className="text-muted-foreground">
+              {shares ? words.onlyYouShared : words.onlyYou}
+            </span>
             <button
               type="button"
               onClick={() => setFixing(true)}

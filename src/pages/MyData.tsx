@@ -5,7 +5,12 @@ import { ArrowLeft, Download, Loader2 } from "lucide-react";
 
 import { downloadMyData, myDataQuery, type MyData } from "@/api/account";
 import { PROVIDER_BRANDS } from "@/components/calendarProviders";
-import { AiConsentConfirm, AiConsentFootnote, AiConsentRow } from "@/components/profile/AiConsent";
+import {
+  AiConsentConfirm,
+  AiConsentFootnote,
+  AiConsentRow,
+  AiShareRows,
+} from "@/components/profile/AiConsent";
 import PhoneSubHeader from "@/components/PhoneSubHeader";
 import TopNav from "@/components/TopNav";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -387,6 +392,9 @@ function EventsPart({ data, consent }: { data: MyData; consent: AiConsentControl
             control={consent}
             detail={given?.current ? w.aiConsentOn(day(given.givenAt, lang)) : t.aiConsent.rowOn}
           />
+        )}
+        {consentRow && (
+          <AiShareRows kept={data.ai.corrections.kept} sharing={data.ai.corrections.sharing} />
         )}
         {isNativeApp && <LabelsOnPhone />}
         <Fact label={w.aiCalls} value={data.ai.calls} />

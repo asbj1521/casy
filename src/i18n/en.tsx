@@ -485,6 +485,8 @@ export const en: Messages = {
     intro:
       "Then Casy can sort your calendars and understand what your events mean, for example that an exam is important.",
     sent: "The names of your calendars and the titles of your events (in the iPhone app) are sent to Anthropic in the United States, which makes the AI. Never notes, places, guests or dates.",
+    corrections:
+      "Casy also receives the corrections you write to the AI's judgements, with the event's title, so the AI can learn from them. You can turn that off under Your data.",
     shared:
       "Casy also shares, without titles, when something important starts, so dates can be ranked for the group. The others only see a score for each date.",
     safe: "Casy does not store names or titles, Anthropic does not train on them, and you can turn it off at any time under Your data.",
@@ -495,7 +497,7 @@ export const en: Messages = {
     saving: "Saving",
     failed: "That didn't work. Try again.",
     turnOffMessage:
-      "Casy's AI stops reading your calendar, and the labels kept on this phone and what you shared about important events are deleted.",
+      "Casy's AI stops reading your calendar, and the labels kept on this phone and what you shared about important events and your sent corrections are deleted.",
     turnOff: "Turn off",
   },
   connectPrompt: {
@@ -956,6 +958,9 @@ export const en: Messages = {
     recovery: (days: number) => (days === 1 ? "1 day to recover" : `${days} days to recover`),
     corrected: "Corrected by you",
     onlyYou: "Only you see this. It and your corrections stay on your phone.",
+    // With sharing on (#122), a correction also goes to Casy.
+    onlyYouShared:
+      "Only you see this, and it stays on your phone. Your correction is also sent to Casy, so the AI can get better. You can turn that off under Your data.",
     wrong: "Wrong?",
     wrongPrompt:
       "What's wrong? Casy labels the event again from what you write, and remembers it for events like it.",
@@ -1131,6 +1136,12 @@ export const en: Messages = {
     aiConsentAgain: "Yes, but you need to say yes again",
     aiConsentOff: "No",
     labels: "Labels on this phone",
+    shareCorrections: "Send my corrections to Casy",
+    shareOn: "Casy gets your corrections of the AI, so it can get better",
+    shareOff: "Off",
+    correctionsKept: "Corrections sent to Casy",
+    correctionsDelete: "Delete my sent corrections",
+    correctionsDeleted: "Deleted",
     labelsNote:
       "Labels are the AI's judgement of your events. They are kept only on the phone and are not part of the copy you download. Turning off AI and your calendar under Profile deletes them.",
     aiNote:
@@ -1355,6 +1366,16 @@ export const en: Messages = {
     healthFailing: "Over 30% of calendar accounts are failing to sync.",
     statBusy: "Busy blocks stored",
     dismiss: "Dismiss",
+    correctionsTitle: "Corrections of the AI",
+    correctionsIntro:
+      "What people sent when the AI got it wrong: the event's title, what the AI said, what they wrote, and what came of it. Never who. Turn a repeated mistake into a sharper rule and a new, made-up test case, then mark the correction handled and it is deleted.",
+    correctionsNone: "No corrections yet.",
+    correctionLabel: "Judgement of an event",
+    correctionPlan: "Plan with AI",
+    correctionBefore: "The AI said",
+    correctionAfter: "After the correction",
+    correctionNote: "Wrote",
+    correctionHandled: "Handled",
     tabGroups: "Groups",
     tabUsers: "Users",
     tabCalendars: "Calendar health",

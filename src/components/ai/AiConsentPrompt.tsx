@@ -79,6 +79,7 @@ function Prompt({ userId }: { userId: string }) {
         <p className="mt-2 text-sm text-muted-foreground">{t.intro}</p>
         <p className="mt-3 text-sm text-muted-foreground">{t.sent}</p>
         <p className="mt-3 text-sm text-muted-foreground">{t.shared}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t.corrections}</p>
         <p className="mt-3 text-sm text-muted-foreground">{t.safe}</p>
         <p className="mt-3 text-sm text-muted-foreground">
           {t.privateNote} {t.readMore}{" "}

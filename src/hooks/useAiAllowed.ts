@@ -22,6 +22,13 @@ export function useAiConsent(): boolean {
   return !!user && data?.aiConsent === true;
 }
 
+/** Whether this person's corrections of the AI are sent to Casy for review (#122). */
+export function useAiShare(): boolean {
+  const { user } = useAuth();
+  const { data } = useQuery({ ...whoAmIQuery(user?.id ?? ""), enabled: !!user });
+  return !!user && data?.aiConsent === true && data?.aiShare === true;
+}
+
 /**
  * Whether Casy's AI may read content from this person's calendar (calendar
  * names, event titles): the AI is on for them, and they said yes or are an

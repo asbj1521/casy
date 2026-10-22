@@ -238,6 +238,11 @@ export interface WhoAmI {
    * from their calendar (#120). Missing reads as no.
    */
   aiConsent?: boolean;
+  /**
+   * Whether their corrections of the AI are sent to Casy for review (#122):
+   * on with the yes, switched off in Your data. Missing reads as no.
+   */
+  aiShare?: boolean;
 }
 
 /** The cache key for the signed-in person's resolved display name. */
