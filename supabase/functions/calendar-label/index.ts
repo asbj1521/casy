@@ -10,13 +10,13 @@
  * phone, so what they said about their own life carries over to events like it.
  *
  * Nothing is stored or logged: the titles go to Anthropic and the labels
- * straight back to the phone, which keeps them. Until #120 (the consent and
- * privacy policy for sending titles) is done: admins, and people an admin
- * marked as AI testers (aiTesterAllowed). Each call takes one of the
- * person's daily calls for its skill (runSkill), which also checks AI is on.
+ * straight back to the phone, which keeps them. Only for people who said yes
+ * to the AI using their calendar (#120), and admins and AI testers while it
+ * is tested (aiContentAllowed). Each call takes one of the person's daily
+ * calls for its skill (runSkill), which also checks AI is on.
  */
 import { runSkill } from "../_shared/ai.ts";
-import { aiTesterAllowed, LABELS_NOT_ALLOWED } from "../_shared/aiAccess.ts";
+import { aiContentAllowed, CONTENT_NOT_ALLOWED } from "../_shared/aiAccess.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import { HttpError, serve } from "../_shared/http.ts";
 import { langOf } from "../_shared/i18n.ts";
@@ -37,7 +37,7 @@ import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 serve("calendar-label", async (req, body) => {
   const db = supabaseAdmin();
   const caller = await requireCaller(req, db);
-  if (!(await aiTesterAllowed(db, caller.id))) throw new HttpError(403, LABELS_NOT_ALLOWED);
+  if (!(await aiContentAllowed(db, caller.id))) throw new HttpError(403, CONTENT_NOT_ALLOWED);
 
   const events = readEvents(body.events);
   if (!events) throw new HttpError(400, "events must be 1 to 50 events with titles");

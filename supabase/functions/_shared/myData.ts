@@ -8,7 +8,7 @@
  * stored comes from the provider and whether a calendar_secrets row exists,
  * selecting nothing but its key.
  */
-import { aiAllowed } from "./aiAccess.ts";
+import { aiAllowed, CONSENT_VERSION } from "./aiAccess.ts";
 import type { Caller } from "./auth.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
@@ -64,8 +64,16 @@ export interface MyData {
   emailLookups: number;
   events: { invitedTo: number; suggested: number; answers: number; declined: number };
   calendarEntries: { added: number; deletedByYou: number };
-  /** Whether the AI features are on for you (#111), and your AI calls recorded (30 days). */
-  ai: { allowed: boolean; calls: number };
+  /**
+   * Whether the AI features are on for you (#111), your AI calls recorded (30
+   * days), and your yes to the AI using content from your calendar (#120):
+   * when you gave it, and whether it is under today's wording (else you are asked again).
+   */
+  ai: {
+    allowed: boolean;
+    calls: number;
+    consent: { givenAt: string; current: boolean } | null;
+  };
 }
 
 /** The full copy: everything above, and every stored busy time. */
@@ -233,6 +241,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     deleted,
     aiCalls,
     aiOn,
+    consent,
   ] = await Promise.all([
     sourceIds.length
       ? count(db.from("calendar_busy_cache").select("id", head).in("source_id", sourceIds))
@@ -288,8 +297,10 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     ),
     count(db.from("ai_calls").select("id", head).eq("profile_id", me)),
     aiAllowed(db, me),
+    db.from("ai_consent").select("version, given_at").eq("profile_id", me).maybeSingle(),
   ]);
-  for (const r of [first, last, next]) if (r?.error) throw r.error;
+  for (const r of [first, last, next, consent]) if (r?.error) throw r.error;
+  const consentRow = consent.data as { version: number; given_at: string } | null;
 
   const primaryRow = primary.data as unknown as {
     auto_add: boolean;
@@ -334,7 +345,13 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     emailLookups: lookups,
     events: { invitedTo, suggested, answers, declined: declinedDates },
     calendarEntries: { added, deletedByYou: deleted },
-    ai: { allowed: aiOn, calls: aiCalls },
+    ai: {
+      allowed: aiOn,
+      calls: aiCalls,
+      consent: consentRow
+        ? { givenAt: consentRow.given_at, current: consentRow.version >= CONSENT_VERSION }
+        : null,
+    },
   };
 }
 

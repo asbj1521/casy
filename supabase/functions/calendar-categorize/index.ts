@@ -13,13 +13,14 @@
  * 'ai', an "unsure" too (with no category), so no calendar is asked about
  * twice; picking or clearing one by hand makes it 'user' for good.
  *
- * Sample event titles are only used for the admin's own calendars while this
- * is tested (#120 decides it for everyone); anyone else's are ignored. Takes
- * one of the person's daily calls for this skill (runSkill) when there is
+ * A calendar's name, and a few of its event titles when the iPhone app sends
+ * them, go to the AI, so this is only for people who said yes to that (#120),
+ * and admins and AI testers while it is tested (aiContentAllowed). Takes one
+ * of the person's daily calls for this skill (runSkill) when there is
  * something to sort.
  */
-import { isAdminId } from "../_shared/admin.ts";
 import { runSkill } from "../_shared/ai.ts";
+import { aiContentAllowed, CONTENT_NOT_ALLOWED } from "../_shared/aiAccess.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import {
   buildCategorizeMessage,
@@ -30,7 +31,7 @@ import {
   readTitles,
   type CalendarToSort,
 } from "../_shared/categorizeAi.ts";
-import { serve } from "../_shared/http.ts";
+import { HttpError, serve } from "../_shared/http.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 
 interface SourceRow {
@@ -43,6 +44,7 @@ interface SourceRow {
 serve("calendar-categorize", async (req, body) => {
   const db = supabaseAdmin();
   const caller = await requireCaller(req, db);
+  if (!(await aiContentAllowed(db, caller.id))) throw new HttpError(403, CONTENT_NOT_ALLOWED);
 
   const { data, error } = await db
     .from("calendar_sources")
@@ -58,9 +60,7 @@ serve("calendar-categorize", async (req, body) => {
   const rows = (data ?? []) as unknown as SourceRow[];
   if (rows.length === 0) return { categorized: [] };
 
-  const titles = isAdminId(caller.id, Deno.env.get("ADMIN_USER_IDS"))
-    ? readTitles(body.titles, new Set(rows.map((r) => r.id)))
-    : new Map<string, string[]>();
+  const titles = readTitles(body.titles, new Set(rows.map((r) => r.id)));
   const calendars: CalendarToSort[] = rows.map((r) => ({
     id: r.id,
     name: r.custom_name ?? r.display_name ?? "",
