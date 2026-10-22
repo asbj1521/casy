@@ -118,3 +118,33 @@ test("without AI switched on for them there is no way in", async ({ page, backen
   await expect(page.getByRole("button", { name: /Kalendere|Forrige måned/ }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: OPEN })).toHaveCount(0);
 });
+
+test("the speak button is a sound wave, and says Stop while listening (#106)", async ({ page }) => {
+  await page.addInitScript(() => {
+    // A browser that can listen, and does nothing when asked to.
+    class Listener {
+      start() {}
+      stop() {}
+      abort() {}
+    }
+    (window as unknown as Record<string, unknown>).webkitSpeechRecognition = Listener;
+  });
+  await page.goto("/calendar-overview");
+  await page.getByRole("button", { name: OPEN }).click();
+  const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
+
+  const speak = sheet.getByRole("button", { name: "Tal" });
+  await expect(speak).toHaveAttribute("aria-pressed", "false");
+  // Five bars, drawn for the eye only: the button's name is its label.
+  await expect(speak.locator(".sound-wave-bar")).toHaveCount(5);
+
+  await speak.click();
+  const stop = sheet.getByRole("button", { name: "Stop" });
+  await expect(stop).toHaveAttribute("aria-pressed", "true");
+  await expect(sheet.getByRole("textbox", { name: PLACEHOLDER })).toHaveAttribute(
+    "placeholder",
+    "Lytter…",
+  );
+  await stop.click();
+  await expect(sheet.getByRole("button", { name: "Tal" })).toBeVisible();
+});

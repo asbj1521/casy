@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from "react";
-import { Check, Loader2, MessageSquarePlus, Mic, RotateCcw, Sparkles, Square } from "lucide-react";
+import { Check, Loader2, MessageSquarePlus, RotateCcw, Sparkles } from "lucide-react";
 
 import type { AiPlanner } from "@/hooks/useAiPlanner";
 import { useSpeechInput } from "@/hooks/useSpeechInput";
+import SoundWave from "@/components/ui/SoundWave";
 import { useLang, useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 
@@ -130,9 +131,6 @@ export default function AiConversation({
           initial={planner.failedText}
           big={!hasPlan}
           compact={compact}
-          // Beside the summary (a computer, once there is a plan): narrow, so
-          // its buttons are drawn small enough to share one line.
-          narrow={compact && hasPlan}
           label={hasPlan ? words.morePlaceholder : words.placeholder}
           placeholder={hasPlan ? words.morePlaceholder : words.placeholder}
           // Once there is a plan the count sits by "What you wrote" above, and
@@ -217,7 +215,6 @@ export function Composer({
   initial,
   big,
   compact,
-  narrow = false,
   label,
   note,
   placeholder,
@@ -231,8 +228,6 @@ export function Composer({
   big: boolean;
   /** Sized for a computer's box rather than a phone's screen. */
   compact: boolean;
-  /** Narrow (beside the summary): the microphone as just its icon. */
-  narrow?: boolean;
   /** What the box is, for screen readers (the placeholder may say more). */
   label: string;
   /** Small print beside the buttons (a computer's box, which has no room under it). */
@@ -287,6 +282,8 @@ export function Composer({
             moving to a line of their own rather than out of the box. */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-2">
           {speech.supported ? (
+            // The waveform people know from voice assistants (#106): it says
+            // "talk to me" at a glance, and moves faster while listening.
             <button
               type="button"
               onClick={() => {
@@ -297,24 +294,23 @@ export function Composer({
                 }
               }}
               aria-pressed={speech.listening}
-              aria-label={
-                narrow ? (speech.listening ? words.stopSpeaking : words.speak) : undefined
-              }
-              title={narrow ? (speech.listening ? words.stopSpeaking : words.speak) : undefined}
+              aria-label={speech.listening ? words.stopSpeaking : words.speak}
+              title={speech.listening ? words.stopSpeaking : words.speak}
               className={cn(
-                "inline-flex h-10 items-center gap-1.5 rounded-xl text-[15px] font-bold transition",
-                narrow ? "px-2.5" : "px-3",
+                "relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95",
                 speech.listening
                   ? "bg-red-600 text-white hover:bg-red-700"
-                  : "bg-orange-50 text-orange-900 hover:bg-orange-100",
+                  : "bg-orange-50 text-primary hover:bg-orange-100",
               )}
             >
-              {speech.listening ? (
-                <Square className="h-4 w-4 fill-current" />
-              ) : (
-                <Mic className="h-5 w-5 text-primary" />
-              )}
-              {!narrow && (speech.listening ? words.stopSpeaking : words.speak)}
+              <span
+                aria-hidden
+                className={cn(
+                  "animate-sound-ring pointer-events-none absolute inset-0 rounded-full",
+                  speech.listening ? "bg-red-600/40" : "bg-primary/30",
+                )}
+              />
+              <SoundWave listening={speech.listening} className="relative" />
             </button>
           ) : (
             <span />

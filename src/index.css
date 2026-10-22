@@ -149,10 +149,46 @@
     animation: ai-shimmer 3.5s linear infinite;
   }
 
+  /* The speak button's waveform (#106, SoundWave.tsx): each bar breathes
+     between two heights (set per bar, resting or listening), a little behind
+     the one before it so a wave runs through them; a ring spreads behind the
+     resting button. */
+  @keyframes sound-wave {
+    0%,
+    100% {
+      transform: scaleY(var(--wave-low));
+    }
+    50% {
+      transform: scaleY(var(--wave-high));
+    }
+  }
+  .sound-wave-bar {
+    transform: scaleY(var(--wave-rest));
+    animation: sound-wave var(--wave-speed) ease-in-out var(--wave-delay) infinite;
+  }
+  @keyframes sound-ring {
+    from {
+      transform: scale(1);
+      opacity: 0.45;
+    }
+    to {
+      transform: scale(1.55);
+      opacity: 0;
+    }
+  }
+  .animate-sound-ring {
+    animation: sound-ring 2.6s ease-out infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-connect-highlight,
-    .animate-ai-shimmer {
+    .animate-ai-shimmer,
+    .animate-sound-ring,
+    .sound-wave-bar {
       animation: none;
+    }
+    .animate-sound-ring {
+      opacity: 0;
     }
   }
 }
