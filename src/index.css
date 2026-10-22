@@ -44,7 +44,8 @@
   :root {
     --footer-height: calc(4.25rem + 1px);
   }
-  html.native-app {
+  html.native-app,
+  html.no-footer {
     --footer-height: 0px;
   }
 

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { CalendarPlus, CalendarSearch, Layers, MessageCircleMore } from "lucide-react";
+import { CalendarPlus, CalendarSearch, Layers, Plus } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
 import { DayRow } from "@/components/calendarView/DayRow";
@@ -132,19 +132,23 @@ export default function PhoneCalendar() {
             <Layers className="h-5 w-5" />
             {words.calendarsButton}
           </button>
-          {aiAllowed && (
-            <button
-              type="button"
-              onClick={() => setTellOpen(true)}
-              className="flex items-center gap-1.5 py-1 text-[17px] text-primary"
-            >
-              <MessageCircleMore className="h-5 w-5" />
-              {t.tellCasy.button}
+          <div className="flex items-center gap-4">
+            {/* Tell Casy (#116): the plus, left of "I dag". */}
+            {aiAllowed && (
+              <button
+                type="button"
+                onClick={() => setTellOpen(true)}
+                aria-label={t.tellCasy.button}
+                title={t.tellCasy.button}
+                className="-my-0.5 flex h-8 w-8 items-center justify-center rounded-full text-primary"
+              >
+                <Plus className="h-6 w-6" strokeWidth={2.25} />
+              </button>
+            )}
+            <button type="button" onClick={goToday} className="py-1 text-[17px] text-primary">
+              {words.today}
             </button>
-          )}
-          <button type="button" onClick={goToday} className="py-1 text-[17px] text-primary">
-            {words.today}
-          </button>
+          </div>
         </div>
         <DanishTimeNote className="px-4 pb-1" />
 

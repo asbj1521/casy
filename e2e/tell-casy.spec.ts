@@ -18,7 +18,7 @@ test("a description becomes entries, which are kept only when saved", async ({
   const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
 
   await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("Jeg rejser 12. til 19. oktober");
-  await sheet.getByRole("button", { name: "Find tiderne" }).click();
+  await sheet.getByRole("button", { name: "Tilføj til kalender" }).click();
 
   // Casy's reading is shown for checking; nothing is saved yet.
   await expect(sheet.getByText("Sådan forstod Casy det")).toBeVisible();
@@ -56,7 +56,7 @@ test("more details change the proposal, and a left out entry is not saved", asyn
   await page.getByRole("button", { name: OPEN }).click();
   const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
   await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("Jeg rejser 12. til 19. oktober");
-  await sheet.getByRole("button", { name: "Find tiderne" }).click();
+  await sheet.getByRole("button", { name: "Tilføj til kalender" }).click();
   await expect(sheet.getByText("Rejse")).toBeVisible();
 
   await sheet.getByRole("button", { name: "Tilføj detaljer" }).click();
@@ -107,7 +107,7 @@ test("text Casy can't use is said so, and the words come back to fix", async ({ 
   await page.getByRole("button", { name: OPEN }).click();
   const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
   await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("bare noget vrøvl");
-  await sheet.getByRole("button", { name: "Find tiderne" }).click();
+  await sheet.getByRole("button", { name: "Tilføj til kalender" }).click();
   await expect(sheet.getByText(/Casy kunne ikke få en kalenderpost ud af det/)).toBeVisible();
   await expect(sheet.getByRole("textbox", { name: PLACEHOLDER })).toHaveValue("bare noget vrøvl");
 });

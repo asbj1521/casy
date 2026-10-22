@@ -421,7 +421,7 @@ export const da = {
       "Skriv eller sig, hvornår du er væk eller optaget, og som ikke står i en kalender. Fx at du er hjemme hos dine forældre hele december.",
     placeholder: "Fx jeg rejser fra den 12. til den 19. oktober",
     morePlaceholder: "Tilføj detaljer, eller ret noget",
-    send: "Find tiderne",
+    send: "Tilføj til kalender",
     update: "Opdater",
     thinking: "Casy læser…",
     understood: "Sådan forstod Casy det",

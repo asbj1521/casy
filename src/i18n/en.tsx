@@ -389,7 +389,7 @@ export const en: Messages = {
       "Write or say when you are away or busy and it isn't in a calendar. For example that you are home at your parents' all of December.",
     placeholder: "For example I'm travelling from 12 to 19 October",
     morePlaceholder: "Add details, or correct something",
-    send: "Find the times",
+    send: "Add to your calendar",
     update: "Update",
     thinking: "Casy is reading…",
     understood: "What Casy made of it",
