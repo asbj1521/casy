@@ -44,6 +44,10 @@ const ConnectIcloudHelp = lazy(loadPage.connectIcloud);
 const ConnectIcsHelp = lazy(loadPage.connectIcs);
 const ConnectGoogleHelp = lazy(loadPage.connectGoogle);
 const ConnectOutlookHelp = lazy(loadPage.connectOutlook);
+// Dev only: `import.meta.env.DEV` is false in a build, so the page and its route vanish.
+const MotionPlayground = import.meta.env.DEV
+  ? lazy(() => import("@/pages/dev/MotionPlayground"))
+  : null;
 
 /**
  * casy.app itself: the landing page for signed-out visitors, the scheduler
@@ -95,6 +99,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/plan" element={<FindDate />} />
                 <Route path="/sign-in" element={<SignIn />} />
+                {MotionPlayground && <Route path="/dev/motion" element={<MotionPlayground />} />}
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />

@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "ios": "npm run build && cap sync ios",
+    "ios:live": "bash scripts/ios-live.sh",
     "test": "vitest",
     "test:run": "vitest run",
     "e2e": "playwright test",
