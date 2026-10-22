@@ -91,7 +91,7 @@ function PhoneTabBar() {
       {/* Holds the end of every page clear of the bar, which floats over it. */}
       <div aria-hidden className="h-[var(--tab-bar-height)]" />
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card pb-[env(safe-area-inset-bottom)]">
-        <ul className="grid h-14 grid-cols-5">
+        <ul className="grid h-14 grid-cols-4">
           {tabs.map((tab) => (
             <li key={tab.to}>
               <Link
