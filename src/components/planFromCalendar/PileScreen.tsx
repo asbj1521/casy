@@ -31,8 +31,10 @@ import type { GridItem } from "@/lib/monthGrid";
 import {
   buildPile,
   candidateMonth,
+  checkTimes,
   jostle,
   layerAlpha,
+  liveOrder,
   PILE_TIMING,
   pileTimeline,
   sheetTilt,
@@ -94,8 +96,8 @@ interface CheckedDate {
  * view on glass, from the left, then the right, faster each time, hitting
  * with a skid and a hop that knocks the ones under it; the pile grows more
  * opaque until it can't be seen through. Then it is pressed down from the
- * middle out, the layers settle into line and turn clear, and the days free
- * for everyone light up. Those fly up into a list over the calendar, and
+ * middle out, the layers settle into line into the group's calendar
+ * together, and the days free for everyone light up on it. Those fly up into a list over the calendar, and
  * each date is checked in turn, with what Casy is looking at and what it
  * found shown as it goes; the ones a vote offers get a tick. Tap a date for
  * its details. Slower than the search on purpose, and not skippable:
@@ -494,8 +496,9 @@ export default function PileScreen({
  * table, faint and wide while it is high, closing in and darkening as it
  * comes down. Every calendar landing on it after knocks it a little
  * (`jostle`, on a layer of its own so a knock never restarts the throw).
- * Pressed, it settles straight without a bounce; revealed, its glass clears
- * and its bars fade back.
+ * Pressed, it settles straight without a bounce, and stays: the pile is now
+ * the group's calendar together, where the free days light up. Revealed,
+ * only its name and its shadow go.
  */
 const ThrownLayer = memo(function ThrownLayer({
   k,
@@ -589,16 +592,14 @@ const ThrownLayer = memo(function ThrownLayer({
           transition={{ type: "spring", stiffness: 520, damping: pressed ? 40 : 16 }}
         >
           <div
-            className="relative rounded-[28px] border transition-[background-color,box-shadow,border-color] duration-700"
+            className="relative rounded-[28px] border"
             style={{
-              backgroundColor: `rgb(var(--glass-tint) / ${revealed ? 0 : alpha})`,
-              borderColor: revealed ? "transparent" : "rgb(var(--glass-edge))",
-              boxShadow: revealed ? "none" : "inset 0 1px 0 rgb(var(--glass-edge))",
+              backgroundColor: `rgb(var(--glass-tint) / ${alpha})`,
+              borderColor: "rgb(var(--glass-edge))",
+              boxShadow: "inset 0 1px 0 rgb(var(--glass-edge))",
             }}
           >
-            <motion.div animate={{ opacity: revealed ? 0.3 : 1 }} transition={{ duration: 0.7 }}>
-              {children}
-            </motion.div>
+            {children}
             <motion.span
               className="glass absolute right-3 top-4 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-foreground"
               animate={{ opacity: revealed ? 0 : 1 }}
@@ -629,9 +630,11 @@ interface Flight {
  * to the row: a FLIP); dates in other months rise from below. Then they are
  * checked one at a time, under one line that stays put ("Gennemgår
  * kalenderne"): a spinner on the row, then a tick (offered in the vote) or
- * a cross. Once all are checked the list sorts itself best first
- * (rankOrder), the good ones rising and the rest sinking, each numbered.
- * Then a row opens to what Casy found about it.
+ * a cross, and at once it moves to its place (liveOrder): a good one rises
+ * among the best, the others slide down through the list to the bottom,
+ * quicker and quicker until dates fly past each other. When the last has
+ * settled the list is the ranking (rankOrder), numbered, and a row opens
+ * to what Casy found about it.
  */
 function DateList({
   items,
@@ -686,24 +689,33 @@ function DateList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // One date checked per beat; once all are, the list sorts itself, and a
-  // moment later it is done.
+  // The dates checked one after another, quicker and quicker (checkTimes);
+  // each moves to its place the moment it is checked. Once the last has
+  // settled the list is done.
   const [checked, setChecked] = useState(instant ? items.length : 0);
   useEffect(() => {
     if (!ranking || instant) return;
-    const id = window.setInterval(() => setChecked((n) => n + 1), PILE_TIMING.checkEach * 1000);
-    return () => window.clearInterval(id);
-  }, [ranking, instant]);
-  const sorted = checked >= items.length;
+    const timers = checkTimes(items.length).map((at, i) =>
+      window.setTimeout(() => {
+        setChecked(i + 1);
+        haptic("tick");
+      }, at * 1000),
+    );
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, [ranking, instant, items.length]);
+  const allChecked = checked >= items.length;
   useEffect(() => {
-    if (!ranking || !sorted) return;
-    haptic("answer");
-    const id = window.setTimeout(onRanked, PILE_TIMING.sort * 1000);
+    if (!ranking || !allChecked) return;
+    const id = window.setTimeout(onRanked, PILE_TIMING.ranked * 1000);
     return () => window.clearTimeout(id);
-  }, [ranking, sorted, onRanked]);
+  }, [ranking, allChecked, onRanked]);
 
   const order = useMemo(() => rankOrder(items.map((i) => i.facts)), [items]);
-  const shown = sorted ? order.map((i) => items[i]) : items;
+  const shown = liveOrder(
+    order,
+    checked,
+    items.map((i) => i.chosen),
+  ).map((i) => items[i]);
 
   return (
     <div className="flex flex-col gap-2">
@@ -755,9 +767,15 @@ function DateList({
             ref={(el) => {
               if (el) rows.current.set(key, el);
             }}
-            // Moves to its place when the list sorts, and makes room when a row opens.
+            // Slides to its place when checked (the others giving way), and
+            // makes room when a row opens. The one just checked passes over
+            // the rest.
             layout={ranking || done ? "position" : false}
-            style={{ transformOrigin: "0 0", opacity: flights || instant ? undefined : 0 }}
+            style={{
+              transformOrigin: "0 0",
+              opacity: flights || instant ? undefined : 0,
+              zIndex: ranking && at === checked - 1 ? 10 : undefined,
+            }}
             initial={
               flight && !instant
                 ? {
@@ -772,9 +790,9 @@ function DateList({
             animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
             transition={{
               duration: 0.55,
-              delay: instant || sorted ? 0 : at * 0.07,
+              delay: instant || ranking || done ? 0 : at * 0.07,
               ease: [0.3, 0.9, 0.3, 1],
-              layout: { type: "spring", stiffness: 260, damping: 28 },
+              layout: { type: "spring", stiffness: 380, damping: 26 },
             }}
             className={cn(
               "glass relative overflow-hidden rounded-[22px]",
@@ -802,14 +820,16 @@ function DateList({
               animate={{ opacity: 1 }}
               transition={{ delay: instant ? 0 : at * 0.07 + 0.35, duration: 0.25 }}
             >
-              {/* Its place, once the list is sorted. */}
-              <AnimatePresence initial={false}>
-                {sorted && (
+              {/* Its place: an empty ring until it is checked, so nothing shifts. */}
+              <span className="relative flex h-6 w-6 shrink-0 items-center justify-center">
+                {at < checked ? (
                   <motion.span
-                    initial={instant ? false : { opacity: 0, scale: 0.5, width: 0 }}
-                    animate={{ opacity: 1, scale: 1, width: 24 }}
+                    key="rank"
+                    initial={instant ? false : { scale: 0.4, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 22 }}
                     className={cn(
-                      "flex h-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold",
+                      "flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-bold",
                       item.chosen
                         ? "bg-emerald-500 text-white"
                         : "bg-secondary text-muted-foreground",
@@ -817,8 +837,10 @@ function DateList({
                   >
                     {rank}
                   </motion.span>
+                ) : (
+                  <span className="h-6 w-6 rounded-full border-2 border-dashed border-muted-foreground/25" />
                 )}
-              </AnimatePresence>
+              </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[16px] font-bold text-foreground">{label}</p>
                 {meeting && (
@@ -828,14 +850,15 @@ function DateList({
                 )}
               </div>
               <StatusMark status={status} instant={instant} />
-              {done && (
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-                    isOpen && "rotate-180",
-                  )}
-                />
-              )}
+              {/* There from the start, so the marks never move; shown once a row can open. */}
+              <ChevronDown
+                aria-hidden
+                className={cn(
+                  "h-4 w-4 shrink-0 text-muted-foreground transition-[transform,opacity] duration-300",
+                  done ? "opacity-100" : "opacity-0",
+                  isOpen && "rotate-180",
+                )}
+              />
             </motion.button>
             <AnimatePresence initial={false}>
               {isOpen && (

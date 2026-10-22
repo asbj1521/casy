@@ -4,8 +4,10 @@ import type { EventSettings } from "@/lib/eventSearch";
 import {
   buildPile,
   candidateMonth,
+  checkTimes,
   jostle,
   layerAlpha,
+  liveOrder,
   PILE_OPACITY,
   PILE_TIMING,
   pileTimeline,
@@ -147,9 +149,13 @@ describe("pileTimeline", () => {
     expect(t.rankAt).toBeGreaterThan(t.liftAt);
   });
 
-  it("checks every date in the list one after another, then sorts it", () => {
-    const t = pileTimeline(3, 6);
-    expect(t.doneAt).toBeCloseTo(t.rankAt + 6 * PILE_TIMING.checkEach + PILE_TIMING.sort);
+  it("checks the dates quicker and quicker, then lets the last settle", () => {
+    const times = checkTimes(8);
+    const gaps = times.map((at, i) => at - (times[i - 1] ?? 0));
+    for (let i = 1; i < gaps.length; i++) expect(gaps[i]).toBeLessThanOrEqual(gaps[i - 1]);
+    expect(Math.min(...gaps)).toBeCloseTo(PILE_TIMING.checkFastest);
+    const t = pileTimeline(3, 8);
+    expect(t.doneAt).toBeCloseTo(t.rankAt + times[7] + PILE_TIMING.ranked);
   });
 
   it("leaves a beat between one throw landing and the next", () => {
@@ -157,10 +163,10 @@ describe("pileTimeline", () => {
     expect(lands[1].at).toBeCloseTo(lands[0].at + lands[0].duration + PILE_TIMING.gap);
   });
 
-  it("takes about 8 to 14 seconds with a list to check, from a group of two to the largest", () => {
+  it("takes about 7 to 14 seconds with a list to check, from a group of two to the largest", () => {
     for (const others of [1, 3, 8, 19]) {
       const { doneAt } = pileTimeline(others, 6);
-      expect(doneAt).toBeGreaterThanOrEqual(8);
+      expect(doneAt).toBeGreaterThanOrEqual(7);
       expect(doneAt).toBeLessThanOrEqual(14);
     }
   });
@@ -238,5 +244,25 @@ describe("rankOrder", () => {
       date({ start: 3 }),
     ];
     expect(rankOrder(dates)).toEqual([3, 2, 1, 0]);
+  });
+});
+
+describe("liveOrder", () => {
+  // Five dates; best first they are 3, 0, 4, 1, 2; 3, 0 and 4 are offered.
+  const ranked = [3, 0, 4, 1, 2];
+  const offered = [true, false, false, true, true];
+
+  it("is the dates' own order before any is checked", () => {
+    expect(liveOrder(ranked, 0, offered)).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it("lifts a checked good date to the top and sinks a checked other to the bottom", () => {
+    expect(liveOrder(ranked, 1, offered)).toEqual([0, 1, 2, 3, 4]);
+    expect(liveOrder(ranked, 2, offered)).toEqual([0, 2, 3, 4, 1]);
+    expect(liveOrder(ranked, 4, offered)).toEqual([3, 0, 4, 1, 2]);
+  });
+
+  it("ends as the ranking itself", () => {
+    expect(liveOrder(ranked, 5, offered)).toEqual(ranked);
   });
 });

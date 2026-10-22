@@ -172,11 +172,31 @@ export const PILE_TIMING = {
   reveal: 1.0,
   /** Those days flying up into the list. */
   fly: 0.9,
-  /** Each date in the list being checked, one after another. */
-  checkEach: 0.5,
-  /** The checked list sorting itself, best first. */
-  sort: 1.0,
+  /** The first date in the list being checked... */
+  checkFirst: 0.55,
+  /** ...each after it quicker, by this share... */
+  checkSpeedUp: 0.8,
+  /** ...but never quicker than this. */
+  checkFastest: 0.2,
+  /** The last date sliding into place before the list is done. */
+  ranked: 0.5,
 } as const;
+
+/**
+ * When each of `dates` dates in the list gets its result, from the start of
+ * the checks: quicker and quicker, so by the end dates are flying past each
+ * other into place.
+ */
+export function checkTimes(dates: number): number[] {
+  const T = PILE_TIMING;
+  const times: number[] = [];
+  let at = 0;
+  for (let i = 0; i < dates; i++) {
+    at += Math.max(T.checkFastest, T.checkFirst * T.checkSpeedUp ** i);
+    times.push(at);
+  }
+  return times;
+}
 
 export interface PileTimeline {
   /** When each friend's calendar is thrown, and how long it is in the air. */
@@ -209,7 +229,7 @@ export function pileTimeline(others: number, dates = 0): PileTimeline {
   const revealAt = pressAt + T.press;
   const liftAt = revealAt + T.reveal;
   const rankAt = liftAt + T.fly;
-  const doneAt = rankAt + (dates > 0 ? dates * T.checkEach + T.sort : 0);
+  const doneAt = rankAt + (dates > 0 ? checkTimes(dates)[dates - 1] + T.ranked : 0);
   return { lands, pressAt, revealAt, liftAt, rankAt, doneAt };
 }
 
@@ -223,6 +243,24 @@ export interface RankedFacts {
   warnings: number;
   /** When it starts, epoch ms. */
   start: number;
+}
+
+/**
+ * The list as it stands with the first `checked` dates (in `dates` order)
+ * checked (#126): the offered ones that are checked at the top in their
+ * place (`ranked`, from rankOrder), the ones still to check in their own
+ * order, and the checked ones not offered sunk to the bottom, also in their
+ * place. Each check moves one date: a good one rises, the others sink.
+ * With every date checked it is `ranked` itself.
+ */
+export function liveOrder(ranked: number[], checked: number, offered: boolean[]): number[] {
+  const done = (i: number) => i < checked;
+  const waiting = offered.map((_, i) => i).filter((i) => !done(i));
+  return [
+    ...ranked.filter((i) => done(i) && offered[i]),
+    ...waiting,
+    ...ranked.filter((i) => done(i) && !offered[i]),
+  ];
 }
 
 /**
