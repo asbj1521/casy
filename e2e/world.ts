@@ -574,6 +574,11 @@ export interface World {
   /** Mia gets the admin-only AI features as an AI tester; off unless a test turns it on. */
   aiTester: boolean;
   /**
+   * Mia said yes to the AI using content from her calendar (#120). On by
+   * default, so the box asking for it only shows in the tests about it.
+   */
+  aiConsent: boolean;
+  /**
    * Mia is an admin, and how the admin function answers: as now, or as one
    * deployed before #111 (no AI per skill, no AI switch per user).
    */
@@ -598,6 +603,7 @@ export function makeWorld(options: WorldOptions): World {
     name: ME.name,
     aiAllowed: true,
     aiTester: false,
+    aiConsent: true,
     admin: false,
     aiAccess: new Set(),
     testers: new Set(),
@@ -688,7 +694,11 @@ export function myData(world: World): MyData {
     emailLookups: 0,
     events: { invitedTo: world.events.length, suggested: 2, answers: 9, declined: 1 },
     calendarEntries: { added: 1, deletedByYou: 0 },
-    ai: { allowed: true, calls: 2 },
+    ai: {
+      allowed: true,
+      calls: 2,
+      consent: world.aiConsent ? { givenAt: "2026-10-01T09:00:00.000Z", current: true } : null,
+    },
   };
 }
 

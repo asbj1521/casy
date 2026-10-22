@@ -1,10 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { adminStatusQuery } from "@/api/admin";
 import { calendarsChanged, calendarStatusQuery, categorizeCalendars } from "@/api/calendars";
 import { useAuth } from "@/context/auth";
-import { useAiAllowed } from "@/hooks/useAiAllowed";
+import { useAiContent } from "@/hooks/useAiAllowed";
 import { phoneSourceIds, sampleTitles, uncategorised } from "@/lib/autoCategorize";
 import { isNativeApp } from "@/lib/nativeApp";
 import { phoneConnectionId, readPhoneEventDetails } from "@/lib/phoneCalendar";
@@ -21,9 +20,10 @@ const TITLES_AHEAD_MS = 120 * 86_400_000;
  * hand: the server only fills untouched ones, and checks again as it writes.
  *
  * Each calendar is asked about at most once per page load, so a failing call
- * (the day's AI calls used up, Anthropic down) is not repeated in a loop. On
- * the admin's own phone, a few event titles per calendar go along while this
- * is tested; nowhere else are titles read for it.
+ * (the day's AI calls used up, Anthropic down) is not repeated in a loop. A
+ * calendar's name goes to the AI, so this waits for the person's yes to the AI
+ * using their calendar (#120); in the app, a few event titles per calendar go
+ * along too.
  */
 export function useAutoCategorize() {
   const { user } = useAuth();
@@ -33,25 +33,20 @@ export function useAutoCategorize() {
     ...calendarStatusQuery(userId),
     enabled: !!userId,
   });
-  const { data: isAdmin, isPending: adminPending } = useQuery({
-    ...adminStatusQuery(userId),
-    enabled: !!userId && isNativeApp,
-  });
-  // Only for those the AI is on for (#111); the server refuses the rest anyway.
-  const aiOn = useAiAllowed();
+  // Only for those the AI is on for (#111) and who said yes (#120); the server
+  // refuses the rest anyway.
+  const allowed = useAiContent();
   const asked = useRef(new Set<string>());
 
   useEffect(() => {
-    // In the app, wait for whether titles may go along (remembered across
-    // reloads, so usually known at once): asked once, a calendar isn't again.
-    if (!userId || !aiOn || !connections || (isNativeApp && adminPending)) return;
+    if (!userId || !allowed || !connections) return;
     const pending = uncategorised(connections).filter((id) => !asked.current.has(id));
     if (pending.length === 0) return;
     for (const id of pending) asked.current.add(id);
 
     void (async () => {
       let titles: Record<string, string[]> | undefined;
-      const phone = isNativeApp && isAdmin ? phoneConnectionId(userId) : null;
+      const phone = isNativeApp ? phoneConnectionId(userId) : null;
       if (phone) {
         try {
           const now = Date.now();
@@ -65,5 +60,5 @@ export function useAutoCategorize() {
       const categorized = await categorizeCalendars(titles);
       if (categorized.length > 0) await calendarsChanged(queryClient);
     })().catch((err) => console.warn("sorting calendars failed", err));
-  }, [connections, isAdmin, adminPending, aiOn, queryClient, userId]);
+  }, [connections, allowed, queryClient, userId]);
 }

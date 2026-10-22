@@ -465,6 +465,41 @@ export const en: Messages = {
     google: { label: "Google Calendar", help: "How it works" },
     outlook: { label: "Outlook Calendar", help: "How it works" },
   },
+  aiConsent: {
+    // The profile's row, and the box asked once on My calendar (#120).
+    group: "AI and your calendar",
+    row: "Let Casy's AI read your calendar",
+    rowOn: "On",
+    rowOff: "Off",
+    footnote: (privacy: ReactNode) => (
+      <>
+        When it is on, Casy sends the names of your calendars and the titles of your events to
+        Anthropic, which makes the AI model Claude, so Casy can sort your calendars and judge what
+        your events mean for you. You can turn it off at any time. Read more in the {privacy}.
+      </>
+    ),
+    privacyLink: "privacy policy",
+    title: "Let Casy's AI read your calendar?",
+    intro:
+      "Then Casy can sort your calendars and understand what your events mean, for example that an exam is important. That means something from your calendar is read by an AI.",
+    sentTitle: "What is sent to Anthropic:",
+    sent: [
+      "The names of your calendars, without email addresses and links.",
+      "The titles of your events, read on your phone in the iPhone app, with the time of day they usually are.",
+    ],
+    never:
+      "Never notes, places, guests or dates, and nothing about the others in your groups. Event titles can be private, so only say yes if you are comfortable with it.",
+    how: "Anthropic is in the United States, does not use it to train its models and normally deletes it within 30 days.",
+    withdraw:
+      "You can always turn it off under Profile. The labels kept on your phone are then deleted.",
+    allow: "Allow",
+    notNow: "Not now",
+    saving: "Saving",
+    failed: "That didn't work. Try again.",
+    turnOffMessage:
+      "Casy's AI stops reading your calendar, and the labels kept on this phone are deleted.",
+    turnOff: "Turn off",
+  },
   connectPrompt: {
     title: "Connect your calendar",
     body: "Until you do, Casy can't see when you're busy, so it finds dates without you. Where does your calendar live?",
@@ -1086,6 +1121,13 @@ export const en: Messages = {
     aiOn: "On",
     aiOff: "Not switched on yet",
     aiCalls: "Your AI calls in the last 30 days",
+    aiConsent: "AI may read your calendar",
+    aiConsentOn: (date: string) => `Yes, since ${date}`,
+    aiConsentAgain: "Yes, but you need to say yes again",
+    aiConsentOff: "No",
+    labels: "Labels on this phone",
+    labelsNote:
+      "Labels are the AI's judgement of your events. They are kept only on the phone and are not part of the copy you download. Turning off AI and your calendar under Profile deletes them.",
     aiNote:
       "Casy notes when and how much, never what you wrote. The note is deleted after 30 days.",
     credentials: "Access credentials",

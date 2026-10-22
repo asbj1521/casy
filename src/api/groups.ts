@@ -233,6 +233,11 @@ export interface WhoAmI {
   aiTester?: boolean;
   /** The same, by its name before testers; read when aiTester is missing. */
   eventLabels?: boolean;
+  /**
+   * Whether they said yes, under today's wording, to Casy's AI using content
+   * from their calendar (#120). Missing reads as no.
+   */
+  aiConsent?: boolean;
 }
 
 /** The cache key for the signed-in person's resolved display name. */

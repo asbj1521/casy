@@ -1,15 +1,16 @@
 /**
  * Sorting calendars with AI (#118): each calendar nobody has given a category
  * yet gets one of work, school, personal or other from Claude Haiku, guessed
- * from its name (and, for the admin's own phone calendars while this is
- * tested, a few event titles). Run in the background by the page; the owner
+ * from its name (and, in the iPhone app, a few of its event titles). Only for
+ * people who said yes to the AI using their calendar (#120), and admins and
+ * AI testers while it is tested. Run in the background by the page; the owner
  * can change any guess, and never-touched calendars are the only ones it
  * fills (calendar-categorize).
  *
  * What is sent: each calendar's name as its owner sees it, with anything that
  * looks like an email address or a link taken out, and which kind of account
- * it is in. Never busy times, never account emails, and titles only where
- * the function lets them through. The answer is treated as untrusted input:
+ * it is in, and the sample titles when the app sends them. Never busy times,
+ * never account emails. The answer is treated as untrusted input:
  * only the four categories, for the calendars asked about, come out.
  */
 import { cleanText } from "./text.ts";
@@ -94,9 +95,10 @@ export function buildCategorizeMessage(calendars: CalendarToSort[]): string {
 }
 
 /**
- * Sample titles from the request, for the calendars allowed (the admin's
- * own): at most MAX_TITLES each, cleaned, duplicates dropped. Anything else
- * in the request is ignored.
+ * Sample titles from the request, for the calendars asked about (the
+ * function has already checked the caller said yes to this): at most
+ * MAX_TITLES each, cleaned, duplicates dropped. Anything else in the request
+ * is ignored.
  */
 export function readTitles(raw: unknown, allowed: Set<string>): Map<string, string[]> {
   const titles = new Map<string, string[]>();

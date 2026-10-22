@@ -10,9 +10,11 @@ import TopNav from "@/components/TopNav";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { labelBookQuery } from "@/hooks/useEventLabels";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import { formatDate, formatTime } from "@/lib/format";
+import { isNativeApp } from "@/lib/nativeApp";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
@@ -293,8 +295,23 @@ function GroupsPart({ data }: { data: MyData }) {
   );
 }
 
-function EventsPart({ data }: { data: MyData }) {
+/** How many events this phone has labels for (#112): kept on the phone, so counted there. */
+function LabelsOnPhone() {
   const w = useT().myData;
+  const user = useSignedInUser();
+  const { data: book } = useQuery(labelBookQuery(user.id));
+  return <Fact label={w.labels} value={book ? Object.keys(book).length : 0} />;
+}
+
+function EventsPart({ data }: { data: MyData }) {
+  const { lang } = useLang();
+  const w = useT().myData;
+  const consent = data.ai.consent;
+  const consentText = !consent
+    ? w.aiConsentOff
+    : consent.current
+      ? w.aiConsentOn(day(consent.givenAt, lang))
+      : w.aiConsentAgain;
   return (
     <>
       <ListGroup title={w.events}>
@@ -307,8 +324,10 @@ function EventsPart({ data }: { data: MyData }) {
         <Fact label={w.entriesAdded} value={data.calendarEntries.added} />
         <Fact label={w.entriesDeleted} value={data.calendarEntries.deletedByYou} />
       </ListGroup>
-      <ListGroup title={w.ai} footnote={w.aiNote}>
+      <ListGroup title={w.ai} footnote={isNativeApp ? `${w.aiNote} ${w.labelsNote}` : w.aiNote}>
         <Fact label={w.aiAllowed} value={data.ai.allowed ? w.aiOn : w.aiOff} />
+        <Fact label={w.aiConsent} value={consentText} />
+        {isNativeApp && <LabelsOnPhone />}
         <Fact label={w.aiCalls} value={data.ai.calls} />
       </ListGroup>
     </>

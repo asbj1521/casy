@@ -21,6 +21,18 @@ export async function deleteMyAccount(): Promise<void> {
 }
 
 /**
+ * Say yes (or take the yes back) to Casy's AI using content from your calendar
+ * (#120): the names of your calendars and the titles of your events. The
+ * server refuses the AI features that read them without it.
+ */
+export async function setAiConsent(on: boolean): Promise<void> {
+  await callFunction("account", {
+    body: { action: "ai-consent", on },
+    errorMessage: currentMessages().aiConsent.failed,
+  });
+}
+
+/**
  * Everything Casy holds about you, as the account function's `data` answers
  * it (supabase/functions/_shared/myData.ts, which this mirrors). Credentials
  * appear only by kind; their values never leave the server.
@@ -66,8 +78,16 @@ export interface MyData {
   emailLookups: number;
   events: { invitedTo: number; suggested: number; answers: number; declined: number };
   calendarEntries: { added: number; deletedByYou: number };
-  /** Whether the AI features are on for you (#111), and your AI calls recorded (30 days). */
-  ai: { allowed: boolean; calls: number };
+  /**
+   * Whether the AI features are on for you (#111), your AI calls recorded (30
+   * days), and your yes to the AI using content from your calendar (#120):
+   * when you gave it, and whether it is under today's wording.
+   */
+  ai: {
+    allowed: boolean;
+    calls: number;
+    consent: { givenAt: string; current: boolean } | null;
+  };
 }
 
 /**

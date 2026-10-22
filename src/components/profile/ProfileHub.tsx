@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { KeyRound, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
+import AiConsentGroup from "@/components/profile/AiConsentGroup";
 import AppearanceGroup from "@/components/profile/AppearanceGroup";
 import NameCard from "@/components/profile/NameCard";
 import { BuildLine, FeedbackShareGroup, HelpGroup } from "@/components/profile/ProfileLinks";
@@ -52,6 +53,7 @@ export default function ProfileHub() {
           {isAdmin && <ListRow to="/profile/admin" icon={ShieldCheck} label={t.profileHub.admin} />}
         </ListGroup>
 
+        <AiConsentGroup />
         <AppearanceGroup />
         <FeedbackShareGroup />
         <HelpGroup />

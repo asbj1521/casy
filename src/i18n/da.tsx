@@ -498,6 +498,41 @@ export const da = {
     google: { label: "Google Kalender", help: "Sådan virker det" },
     outlook: { label: "Outlook-kalender", help: "Sådan virker det" },
   },
+  aiConsent: {
+    // The profile's row, and the box asked once on My calendar (#120).
+    group: "AI og din kalender",
+    row: "Lad Casys AI læse i din kalender",
+    rowOn: "Slået til",
+    rowOff: "Slået fra",
+    footnote: (privacy: ReactNode) => (
+      <>
+        Slået til sender Casy navnene på dine kalendere og titlerne på dine aftaler til Anthropic,
+        som laver AI-modellen Claude, så Casy kan sortere dine kalendere og vurdere, hvad dine
+        aftaler betyder for dig. Du kan slå det fra når som helst. Læs mere i {privacy}.
+      </>
+    ),
+    privacyLink: "privatlivspolitikken",
+    title: "Lad Casys AI læse i din kalender?",
+    intro:
+      "Så kan Casy sortere dine kalendere og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig. Det kræver, at noget fra din kalender bliver læst af en AI.",
+    sentTitle: "Det sendes til Anthropic:",
+    sent: [
+      "Navnene på dine kalendere, uden e-mailadresser og links.",
+      "Titlerne på dine aftaler, læst på din telefon i iPhone-appen, med hvornår på dagen de plejer at ligge.",
+    ],
+    never:
+      "Aldrig noter, steder, deltagere eller datoer, og intet om de andre i dine grupper. Aftalers titler kan være private, så sig kun ja, hvis du er tryg ved det.",
+    how: "Anthropic ligger i USA, bruger det ikke til at træne sine modeller og sletter det normalt inden for 30 dage.",
+    withdraw:
+      "Du kan altid slå det fra under Profil. Så slettes de mærkater, der er gemt på telefonen.",
+    allow: "Tillad",
+    notNow: "Ikke nu",
+    saving: "Gemmer",
+    failed: "Det lykkedes ikke. Prøv igen.",
+    turnOffMessage:
+      "Casys AI holder op med at læse i din kalender, og de mærkater, der er gemt på denne telefon, slettes.",
+    turnOff: "Slå fra",
+  },
   connectPrompt: {
     title: "Forbind din kalender",
     body: "Indtil da kan Casy ikke se, hvornår du er optaget, så den finder datoer uden dig. Hvor ligger din kalender?",
@@ -1126,6 +1161,13 @@ export const da = {
     aiOn: "Slået til",
     aiOff: "Ikke slået til endnu",
     aiCalls: "Dine AI-kald de sidste 30 dage",
+    aiConsent: "AI må læse i din kalender",
+    aiConsentOn: (date: string) => `Ja, siden ${date}`,
+    aiConsentAgain: "Ja, men du skal sige ja igen",
+    aiConsentOff: "Nej",
+    labels: "Mærkater på denne telefon",
+    labelsNote:
+      "Mærkater er AI'ens vurdering af dine aftaler. De gemmes kun på telefonen og kommer ikke med i din hentede kopi. Slår du AI og din kalender fra under Profil, slettes de.",
     aiNote:
       "Casy noterer hvornår og hvor meget, aldrig hvad du skrev. Notatet slettes efter 30 dage.",
     credentials: "Adgangsoplysninger",

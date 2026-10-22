@@ -150,6 +150,10 @@ export class FakeBackend {
       case "account":
         if (action === "data") return ok(myData(w));
         if (action === "export") return ok({ ...myData(w), busyTimes: [] });
+        if (action === "ai-consent") {
+          w.aiConsent = body.on === true;
+          return ok({ outcome: w.aiConsent ? "given" : "withdrawn" });
+        }
         if (action === "delete") return ok({});
         return undefined;
       case "admin":
@@ -320,6 +324,7 @@ export class FakeBackend {
           name: w.name,
           aiAllowed: w.aiAllowed,
           aiTester: w.aiTester || w.admin !== false,
+          aiConsent: w.aiConsent,
         });
       case "set-name":
         w.name = String(body.name);

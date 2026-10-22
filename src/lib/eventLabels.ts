@@ -310,6 +310,12 @@ export function writeCorrections(userId: string, corrections: LabelCorrection[])
   writeStored(CORRECTIONS_PREFIX + userId, JSON.stringify({ v: 1, corrections }));
 }
 
+/** One account's labels and corrections on this phone: withdrawing the AI's consent (#120). */
+export function clearLabelsFor(userId: string): void {
+  writeStored(STORAGE_PREFIX + userId, null);
+  writeStored(CORRECTIONS_PREFIX + userId, null);
+}
+
 /** Every account's labels and corrections on this phone, on sign-out. */
 export function clearLabelBooks(): void {
   try {

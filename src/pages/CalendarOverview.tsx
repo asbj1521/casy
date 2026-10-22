@@ -1,3 +1,4 @@
+import AiConsentPrompt from "@/components/ai/AiConsentPrompt";
 import ComputerCalendar from "@/components/calendarView/ComputerCalendar";
 import PhoneCalendar from "@/components/calendarView/PhoneCalendar";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
@@ -9,5 +10,12 @@ import { usePhoneLayout } from "@/hooks/usePhoneLayout";
  * each counts beside it or in a sheet.
  */
 export default function CalendarOverview() {
-  return usePhoneLayout() ? <PhoneCalendar /> : <ComputerCalendar />;
+  const phone = usePhoneLayout();
+  return (
+    <>
+      {phone ? <PhoneCalendar /> : <ComputerCalendar />}
+      {/* Asked once, before Casy's AI reads anything from a calendar (#120). */}
+      <AiConsentPrompt />
+    </>
+  );
 }

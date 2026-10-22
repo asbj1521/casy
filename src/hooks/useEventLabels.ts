@@ -4,7 +4,7 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/r
 import { calendarBusyQuery } from "@/api/calendars";
 import { labelEvents, relabelEvent, type EventLabel, type EventToLabel } from "@/api/eventLabels";
 import { useAuth } from "@/context/auth";
-import { useAiTester } from "@/hooks/useAiAllowed";
+import { useAiContent } from "@/hooks/useAiAllowed";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import {
   addCorrection,
@@ -43,6 +43,11 @@ export function labelBookQuery(userId: string) {
  */
 const askedThisLaunch = new Set<string>();
 
+/** Start asking afresh, after the labels were deleted (the AI's consent withdrawn, #120). */
+export function forgetAskedTitles(): void {
+  askedThisLaunch.clear();
+}
+
 /**
  * Labels this phone's events with AI in the background (#112), mounted once
  * in App.tsx: each distinct title not labelled yet (or marked stale by a
@@ -50,16 +55,17 @@ const askedThisLaunch = new Set<string>();
  * first, with the person's corrections in hand, and the labels are kept on
  * the phone. Nothing shows unless someone opens an event (EventLabelDetails).
  *
- * Only in the iPhone app (titles are only on the phone), and only for
- * admins and AI testers while #120 is open (useAiTester). What a failing call left is tried on the next
- * launch, or when the phone's calendars change.
+ * Only in the iPhone app (titles are only on the phone), and only for those
+ * who said yes to the AI using their calendar (#120), and admins and AI
+ * testers while it is tested (useAiContent). What a failing call left is
+ * tried on the next launch, or when the phone's calendars change.
  */
 export function useAutoLabel() {
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
   const phone = isNativeApp && userId ? phoneConnectionId(userId) : null;
-  const labelsAllowed = useAiTester();
+  const labelsAllowed = useAiContent();
   const on = !!phone && labelsAllowed;
   const { data: busy } = useQuery({
     ...calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
@@ -197,13 +203,14 @@ const NONE: LabelledEvent[] = [];
  * Your own events with their labels, for the common-sense warnings (#114):
  * this phone's events, read on the phone, paired with the labels kept on it.
  * Empty on the website, without a phone connection, and for anyone who
- * isn't an admin or AI tester; never sent anywhere.
+ * hasn't said yes to the AI using their calendar (#120) and isn't an admin
+ * or AI tester; never sent anywhere.
  */
 export function useLabelledEvents(): LabelledEvent[] {
   const { user } = useAuth();
   const userId = user?.id ?? "";
-  const tester = useAiTester();
-  const on = isNativeApp && !!userId && tester && !!phoneConnectionId(userId);
+  const allowed = useAiContent();
+  const on = isNativeApp && !!userId && allowed && !!phoneConnectionId(userId);
   const { data: events } = useQuery({
     ...phoneEventDetailsQuery(userId, SEARCH_WINDOW),
     enabled: on,

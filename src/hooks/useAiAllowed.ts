@@ -15,6 +15,26 @@ export function useAiAllowed(): boolean {
   return !!user && data?.aiAllowed === true;
 }
 
+/** Whether this person has said yes to Casy's AI using content from their calendar (#120). */
+export function useAiConsent(): boolean {
+  const { user } = useAuth();
+  const { data } = useQuery({ ...whoAmIQuery(user?.id ?? ""), enabled: !!user });
+  return !!user && data?.aiConsent === true;
+}
+
+/**
+ * Whether Casy's AI may read content from this person's calendar (calendar
+ * names, event titles): the AI is on for them, and they said yes or are an
+ * admin or AI tester while it is tested (#120). The server asks the same
+ * (aiContentAllowed), so this only spares people work that would be refused.
+ */
+export function useAiContent(): boolean {
+  const { user } = useAuth();
+  const { data } = useQuery({ ...whoAmIQuery(user?.id ?? ""), enabled: !!user });
+  const tester = (data?.aiTester ?? data?.eventLabels) === true;
+  return !!user && data?.aiAllowed === true && (tester || data?.aiConsent === true);
+}
+
 /**
  * Whether this person gets the AI features that are admin-only while they
  * are tested: admins, and people an admin marked as AI testers, on top of
