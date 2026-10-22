@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
+import { sendPlanFeedback } from "@/api/aiFeedback";
 import { eventsQueryKey, rankDates, suggestEvent } from "@/api/events";
 import type { EventImpact } from "@/api/eventProfile";
 import {
@@ -13,7 +14,7 @@ import {
   type GroupBusy,
 } from "@/api/groups";
 import { useAuth } from "@/context/auth";
-import { useAiAllowed } from "@/hooks/useAiAllowed";
+import { useAiAllowed, useAiShare } from "@/hooks/useAiAllowed";
 import { useAiPlanner } from "@/hooks/useAiPlanner";
 import { findAnswer, TODAY, useDateSearch } from "@/hooks/useDateSearch";
 import { useEventProfile } from "@/hooks/useEventProfile";
@@ -22,7 +23,7 @@ import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { planFieldsOf } from "@/lib/aiPlan";
+import { planFeedback, planFieldsOf, type AiPlan } from "@/lib/aiPlan";
 import {
   accept,
   back,
@@ -540,6 +541,25 @@ export function usePlanning() {
       }));
     }
     setPreparing(false);
+    // A plan Planlæg med AI made, sent to the group with whatever the person
+    // changed by hand: with their yes, Casy learns from it (#122). Once per
+    // plan, in the background, never worth holding the event back for.
+    const aiSession = planner.session;
+    if (shares && aiSession.plan && planSent.current !== aiSession.plan) {
+      const feedback = planFeedback(
+        aiSession.texts,
+        aiSession.plan,
+        aiSession.overridden,
+        sched,
+        TZ,
+      );
+      if (feedback) {
+        planSent.current = aiSession.plan;
+        void sendPlanFeedback(feedback).catch((err) =>
+          console.warn("sending the plan to Casy failed", err),
+        );
+      }
+    }
     suggest.mutate({
       groupId,
       title: sentTitle,
@@ -601,6 +621,10 @@ export function usePlanning() {
   // Planning with AI (#100): the conversation, kept here so it outlives the
   // flow's steps; what it says lands in the same state the controls set.
   const aiOn = useAiAllowed();
+  // Whether what the AI got wrong goes to Casy to learn from (#122), and the
+  // plan last sent, so one plan is sent once however many votes it makes.
+  const shares = useAiShare();
+  const planSent = useRef<AiPlan | null>(null);
   const planner = useAiPlanner({
     settings: sched,
     name,

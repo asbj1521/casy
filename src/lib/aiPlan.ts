@@ -178,6 +178,59 @@ export function guessedFields(plan: AiPlan, first: boolean): PlanField[] {
   return [...guessed];
 }
 
+/** What a plan sent to the group tells Casy about where the AI was right (#122). */
+export interface PlanFeedback {
+  /** What the person wrote or said, oldest first. */
+  texts: string[];
+  /** What the AI made of it: its settings, title, place, note and what it assumed. */
+  plan: PlanSettings & {
+    title: string | null;
+    place: string | null;
+    note: string | null;
+    assumed: PlanField[];
+  };
+  /** The AI's guesses the person changed by hand. */
+  overridden: PlanField[];
+  /** The settings it was sent with. */
+  final: PlanSettings;
+}
+
+/**
+ * A plan Planlæg med AI made, set against what it was sent as, for Casy to
+ * learn from (#122): the descriptions, the AI's settings, which guesses were
+ * changed by hand and the settings in the end. A plan sent as it was counts as
+ * right. Never the group or its members: the people the AI named, and its
+ * questions, are left out. Null before any description.
+ */
+export function planFeedback(
+  texts: string[],
+  plan: AiPlan | null,
+  overridden: PlanField[],
+  current: SchedulerSettings,
+  timeZone: string,
+): PlanFeedback | null {
+  if (!plan || texts.length === 0) return null;
+  return {
+    texts,
+    plan: {
+      kind: plan.kind,
+      startHour: plan.startHour,
+      anyTime: plan.anyTime,
+      durationMinutes: plan.durationMinutes,
+      weekdays: plan.weekdays,
+      days: plan.days,
+      startWeekday: plan.startWeekday,
+      months: plan.months,
+      title: plan.title,
+      place: plan.place,
+      note: plan.note,
+      assumed: plan.assumed,
+    },
+    overridden,
+    final: toPlanSettings(current, timeZone),
+  };
+}
+
 /**
  * Lowercase, without accents (Søren and Soren alike), spaces squashed. Ø and
  * Æ are letters of their own to Unicode, so they're spelled out first; Å

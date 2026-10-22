@@ -8,6 +8,7 @@
  * The shape mirrors supabase/functions/_shared/feedback.ts.
  */
 import type { EventLabel } from "@/api/eventLabels";
+import type { PlanFeedback } from "@/lib/aiPlan";
 import { currentMessages } from "@/i18n/current";
 import { callFunction } from "@/lib/supabaseFunctions";
 
@@ -23,6 +24,14 @@ export interface LabelCorrectionData {
 export async function sendLabelCorrection(data: LabelCorrectionData): Promise<void> {
   await callFunction("ai-feedback", {
     body: { kind: "label", data },
+    errorMessage: currentMessages().aiConsent.failed,
+  });
+}
+
+/** A plan Planlæg med AI made, and what became of it, sent when it goes to the group. */
+export async function sendPlanFeedback(data: PlanFeedback): Promise<void> {
+  await callFunction("ai-feedback", {
+    body: { kind: "plan", data },
     errorMessage: currentMessages().aiConsent.failed,
   });
 }

@@ -518,7 +518,7 @@ export const da = {
       "Så kan Casy sortere dine kalendere og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
     sent: "Navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen) sendes til Anthropic i USA, som laver AI'en. Aldrig noter, steder, gæster eller datoer.",
     corrections:
-      "Casy modtager også de rettelser, du skriver til AI'ens vurderinger, med aftalens titel, så AI'en kan lære af dem. Du kan slå det fra under Dine data.",
+      "Casy modtager også de rettelser, du skriver til AI'ens vurderinger, med aftalens titel, og de planer, du laver med AI, med det du skrev og det du ændrede, så AI'en kan lære af dem. Du kan slå det fra under Dine data.",
     shared:
       "Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for gruppen. De andre ser kun en score for hver dato.",
     safe: "Casy gemmer ikke navne eller titler, Anthropic træner ikke på dem, og du kan slå det fra når som helst under Dine data.",
@@ -1415,6 +1415,8 @@ export const da = {
     correctionsNone: "Ingen rettelser endnu.",
     correctionLabel: "Vurdering af en aftale",
     correctionPlan: "Planlæg med AI",
+    correctionPlanUnchanged: "Sendt, som AI'en lavede den",
+    correctionPlanChanged: "Ændret af personen",
     correctionBefore: "AI'en sagde",
     correctionAfter: "Efter rettelsen",
     correctionNote: "Skrev",

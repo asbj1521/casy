@@ -4,6 +4,8 @@
  * data, the sent ones listed there with a delete, and admin mode's list that
  * says what was sent and never by whom.
  */
+import type { Page } from "@playwright/test";
+
 import { expect, test } from "./fixtures";
 import { NOW } from "./world";
 
@@ -104,3 +106,69 @@ test.describe("admin mode", () => {
 });
 
 const ME_NAME = "Mia Jensen";
+
+/** Picks `label` on the wheel a settings button opens, and checks it took. */
+async function pickOnWheel(page: Page, current: string, label: string) {
+  await page.getByRole("button", { name: current, exact: true }).filter({ visible: true }).click();
+  await page.getByText(label, { exact: true }).filter({ visible: true }).nth(7).click();
+  await expect(page.getByRole("button", { name: label, exact: true }).first()).toBeVisible();
+  await page.keyboard.press("Escape");
+}
+
+test.describe("Planlæg med AI (computers)", () => {
+  test.beforeEach(({ isMobile }) => test.skip(isMobile, "a phone plans from My calendar (#127)"));
+
+  /** Describes a dinner; the AI answers with a guessed 18:00 and a question about the time. */
+  async function describe(page: Page) {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    const box = page.getByRole("textbox", { name: /Fx middag en fredag/ });
+    await box.fill("Middag en fredag i november uden Jonas");
+    await box.press("Enter");
+    await expect(page.getByText("Hvornår på aftenen?")).toBeVisible();
+  }
+
+  test("a plan sent as it was counts as right: nothing overridden", async ({ page, backend }) => {
+    await describe(page);
+    await page.getByRole("button", { name: "Indstillinger", exact: true }).click();
+    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+
+    await expect.poll(() => backend.world.corrections.length).toBe(1);
+    const [sentPlan] = backend.world.corrections;
+    expect(sentPlan.kind).toBe("plan");
+    expect(sentPlan.data).toMatchObject({
+      texts: ["Middag en fredag i november uden Jonas"],
+      overridden: [],
+      plan: { kind: "meeting", startHour: 18, assumed: ["startHour"] },
+      final: { kind: "meeting", startHour: 18 },
+    });
+    // The people the AI named, and its questions, never go along: only the person's own words.
+    expect((sentPlan.data as { plan: object }).plan).not.toHaveProperty("people");
+  });
+
+  test("a guess the person changed by hand is what Casy learns from", async ({ page, backend }) => {
+    await describe(page);
+    await page.getByRole("button", { name: "Indstillinger", exact: true }).click();
+    await page.getByRole("tab", { name: "Tidspunkt" }).click();
+    await pickOnWheel(page, "18:00", "19:00");
+    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+
+    await expect.poll(() => backend.world.corrections.length).toBe(1);
+    expect(backend.world.corrections[0].data).toMatchObject({
+      overridden: ["startHour"],
+      plan: { startHour: 18 },
+      final: { startHour: 19 },
+    });
+  });
+
+  test("with sharing switched off nothing is sent", async ({ page, backend }) => {
+    backend.world.aiShare = false;
+    await describe(page);
+    await page.getByRole("button", { name: "Indstillinger", exact: true }).click();
+    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+    await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+    expect(backend.calls.filter((c) => c.name === "ai-feedback")).toHaveLength(0);
+    expect(backend.world.corrections).toEqual([]);
+  });
+});

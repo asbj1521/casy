@@ -39,7 +39,7 @@ const da: LegalCopy = {
           iPhone-appen, titlerne på dine aftaler: de sendes til Anthropic, men gemmes ikke hos Casy
           (se AI i Casy). Casy gemmer kun, hvornår dine vigtige aftaler starter, og hvor vigtige de
           er, uden titel, så datoer kan rangeres for din gruppe. En rettelse, du skriver til AI'en,
-          sendes til Casy til gennemsyn, medmindre du slår det fra.
+          og de planer, du laver med AI, sendes til Casy til gennemsyn, medmindre du slår det fra.
         </p>
       ),
     },
@@ -240,13 +240,16 @@ const da: LegalCopy = {
             <Term>Rettelser, du sender til Casy.</Term> Skriver du, at AI&apos;ens vurdering af en
             aftale er forkert, sendes din rettelse også til Casy: aftalens titel, kalenderens navn
             (uden e-mailadresser og links), vurderingen AI&apos;en gav, det, du skrev, og den nye
-            vurdering. Aldrig datoer, steder eller andre aftaler. Det er slået til, når du siger ja,
-            og du kan slå det fra under Dine data uden at tage dit ja tilbage. Casy gemmer
-            rettelsen, så den, der driver Casy, kan gøre en gentaget fejl til en skarpere regel i
-            AI&apos;ens opgave og en ny, opfundet testsag; ingen model trænes. Vedkommende ser kun
-            rettelsen, aldrig hvem der sendte den. Den slettes, når den er gennemgået, efter 90
-            dage, når du sletter dine rettelser under Dine data, når du trækker dit ja tilbage,
-            eller når du sletter din konto.
+            vurdering. Aldrig datoer, steder eller andre aftaler. Laver du en aftale med Planlæg med
+            AI, sendes også det, du skrev eller sagde, det AI&apos;en gjorde ud af det, hvad du
+            ændrede af dens gæt, og hvordan det endte, når aftalen sendes til gruppen; en plan, du
+            sender, som AI&apos;en lavede den, tæller som rigtig. Aldrig gruppen eller dens
+            medlemmer. Det er slået til, når du siger ja, og du kan slå det fra under Dine data uden
+            at tage dit ja tilbage. Casy gemmer det, så den, der driver Casy, kan gøre en gentaget
+            fejl til en skarpere regel i AI&apos;ens opgave og en ny, opfundet testsag; ingen model
+            trænes. Vedkommende ser kun det, der er sendt, aldrig hvem der sendte det. Det slettes,
+            når det er gennemgået, efter 90 dage, når du sletter dine rettelser under Dine data, når
+            du trækker dit ja tilbage, eller når du sletter din konto.
           </p>
 
           <p>
@@ -449,8 +452,8 @@ const en: LegalCopy = {
           yes, Casy&apos;s AI can read the names of your calendars and, in the iPhone app, the
           titles of your events: they are sent to Anthropic, but not stored by Casy (see AI in
           Casy). Casy stores only when your important events start and how important they are,
-          without titles, so dates can be ranked for your group. A correction you write to the AI is
-          sent to Casy for review unless you switch that off.
+          without titles, so dates can be ranked for your group. A correction you write to the AI,
+          and the plans you make with AI, are sent to Casy for review unless you switch that off.
         </p>
       ),
     },
@@ -650,13 +653,16 @@ const en: LegalCopy = {
             <Term>Corrections you send to Casy.</Term> If you write that the AI&apos;s judgement of
             an event is wrong, your correction is also sent to Casy: the event&apos;s title, the
             calendar&apos;s name (without email addresses and links), the judgement the AI gave,
-            what you wrote and the new judgement. Never dates, places or other events. It is on when
-            you say yes, and you can turn it off under Your data without withdrawing your yes. Casy
-            stores the correction so whoever runs Casy can turn a repeated mistake into a sharper
+            what you wrote and the new judgement. Never dates, places or other events. If you make
+            an event with Plan with AI, what you wrote or said, what the AI made of it, what you
+            changed of its guesses and how it ended up when the event is sent to the group are sent
+            too; a plan you send as the AI made it counts as right. Never the group or its members.
+            It is on when you say yes, and you can turn it off under Your data without withdrawing
+            your yes. Casy stores it so whoever runs Casy can turn a repeated mistake into a sharper
             rule in the AI&apos;s task and a new, made-up test case; no model is trained. They see
-            only the correction, never who sent it. It is deleted once it has been reviewed, after
-            90 days, when you delete your corrections under Your data, when you withdraw your yes,
-            or when you delete your account.
+            only what was sent, never who sent it. It is deleted once it has been reviewed, after 90
+            days, when you delete your corrections under Your data, when you withdraw your yes, or
+            when you delete your account.
           </p>
 
           <p>

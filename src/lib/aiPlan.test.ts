@@ -10,12 +10,14 @@ import {
   matchNames,
   mentionedNames,
   monthToIso,
+  planFeedback,
   planFieldsOf,
   type PlanSettings,
   statedFields,
   toPlanSettings,
 } from "@/lib/aiPlan";
-import { NO_PEOPLE_CHOICE } from "@/lib/scheduler";
+import { NO_PEOPLE_CHOICE, type SchedulerSettings } from "@/lib/scheduler";
+import { wallTime } from "@/lib/zone";
 
 const TZ = "Europe/Copenhagen";
 
@@ -256,5 +258,62 @@ describe("marks", () => {
         "durationMinutes",
       ]),
     ).toEqual(["kind", "startHour"]);
+  });
+});
+
+describe("planFeedback (#122)", () => {
+  const plan: AiPlan = {
+    kind: "meeting",
+    startHour: 18,
+    anyTime: false,
+    durationMinutes: 180,
+    weekdays: [5],
+    days: null,
+    startWeekday: null,
+    months: { from: "2026-11", to: "2026-11" },
+    title: "Middag",
+    place: null,
+    note: null,
+    people: { without: ["Jonas"], optional: [], required: [] },
+    atLeast: null,
+    assumed: ["startHour"],
+    questions: [{ question: "Hvornår på aftenen?", options: [] }],
+  };
+  const sent: SchedulerSettings = {
+    ...AI_BASE_SETTINGS,
+    startHour: 19,
+    durationMinutes: 180,
+    dows: [5],
+    period: {
+      from: new Date(wallTime(2026, 10, 1, 0, TZ)).toISOString(),
+      to: new Date(wallTime(2026, 11, 1, 0, TZ)).toISOString(),
+    },
+  };
+
+  it("has the descriptions, the AI's settings, what was changed by hand and where it ended", () => {
+    const feedback = planFeedback(
+      ["Middag en fredag i november uden Jonas"],
+      plan,
+      ["startHour"],
+      sent,
+      TZ,
+    )!;
+    expect(feedback.texts).toEqual(["Middag en fredag i november uden Jonas"]);
+    expect(feedback.plan).toMatchObject({ kind: "meeting", startHour: 18, assumed: ["startHour"] });
+    expect(feedback.overridden).toEqual(["startHour"]);
+    expect(feedback.final).toMatchObject({ kind: "meeting", startHour: 19, weekdays: [5] });
+  });
+
+  it("leaves out the people the AI named and its questions", () => {
+    const feedback = planFeedback(["x"], plan, [], sent, TZ)!;
+    expect(feedback.plan).not.toHaveProperty("people");
+    expect(feedback.plan).not.toHaveProperty("questions");
+    expect(feedback.plan).not.toHaveProperty("atLeast");
+    expect(JSON.stringify(feedback)).not.toContain("Jonas");
+  });
+
+  it("says nothing before a description or a plan", () => {
+    expect(planFeedback([], plan, [], sent, TZ)).toBeNull();
+    expect(planFeedback(["x"], null, [], sent, TZ)).toBeNull();
   });
 });

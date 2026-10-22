@@ -10,6 +10,7 @@ import {
   type LabelCorrectionView,
 } from "@/api/admin";
 import type { EventLabel } from "@/api/eventLabels";
+import type { PlanFeedback } from "@/lib/aiPlan";
 import Notice from "@/components/ui/Notice";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,10 @@ export default function AdminCorrections({ youId }: { youId: string }) {
   const { lang } = useLang();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const { data, isPending, isError, error } = useQuery(adminCorrectionsQuery(youId));
+  const { data: all, isPending, isError, error } = useQuery(adminCorrectionsQuery(youId));
+  // Where the AI was wrong first: corrected plans and label corrections, then
+  // plans that were sent as they were (right), each newest first.
+  const data = all && [...all].sort((a, b) => Number(isRight(a)) - Number(isRight(b)));
 
   const handled = useMutation({
     mutationFn: adminCorrectionHandled,
@@ -128,12 +132,35 @@ function Correction({ correction }: { correction: AdminCorrection }) {
       </>
     );
   }
+  const d = correction.data as PlanFeedback;
+  const show = (v: unknown) => (v === null || v === undefined ? "-" : JSON.stringify(v));
   return (
     <>
       <p className="font-medium text-foreground">{t.admin.correctionPlan}</p>
-      <p className="mt-0.5 break-words text-xs text-muted-foreground">
-        {JSON.stringify(correction.data)}
-      </p>
+      {d.texts.map((text, i) => (
+        <p key={i} className="mt-0.5 text-xs text-foreground">
+          {t.admin.correctionNote}: &ldquo;{text}&rdquo;
+        </p>
+      ))}
+      {d.overridden.length === 0 ? (
+        <p className="mt-0.5 text-xs text-muted-foreground">{t.admin.correctionPlanUnchanged}</p>
+      ) : (
+        <>
+          <p className="mt-0.5 text-xs text-muted-foreground">{t.admin.correctionPlanChanged}:</p>
+          <ul className="text-xs text-muted-foreground">
+            {d.overridden.map((field) => (
+              <li key={field}>
+                {field}: {show(d.plan[field])} &rarr; {show(d.final[field])}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </>
   );
+}
+
+/** A plan sent as the AI made it counts as right: it has no lesson in it, only a case that works. */
+function isRight(c: AdminCorrection): boolean {
+  return c.kind === "plan" && (c.data as PlanFeedback).overridden.length === 0;
 }

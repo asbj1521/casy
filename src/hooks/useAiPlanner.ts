@@ -54,6 +54,8 @@ export interface AiSession {
   plan: AiPlan | null;
   /** Settings Casy guessed, marked until the person changes them. */
   guessed: PlanField[];
+  /** Guesses the person changed by hand: what #122 learns from when the plan is sent. */
+  overridden: PlanField[];
   questions: { question: PlanQuestion; picked: number | null }[];
   names: NameQuestion[];
   /** AI answers left today, for everyone together. */
@@ -64,6 +66,7 @@ const FRESH: AiSession = {
   texts: [],
   plan: null,
   guessed: [],
+  overridden: [],
   questions: [],
   names: [],
   left: null,
@@ -135,6 +138,8 @@ export function useAiPlanner(page: AiPlannerPage) {
                   ...guessedFields(plan, false),
                 ]),
               ],
+          // A first description is a fresh plan: nothing of it has been changed yet.
+          overridden: first ? [] : s.overridden,
           questions: plan.questions.map((question) => ({ question, picked: null })),
           names: matches
             .filter((m) => m.candidates.length !== 1)
@@ -202,8 +207,14 @@ export function useAiPlanner(page: AiPlannerPage) {
 
   /** The person changed these settings by hand: no longer Casy's guesses. */
   function edited(fields: PlanField[]) {
-    if (fields.some((f) => session.guessed.includes(f))) {
-      setSession((s) => ({ ...s, guessed: s.guessed.filter((f) => !fields.includes(f)) }));
+    const overridden = fields.filter((f) => session.guessed.includes(f));
+    if (overridden.length > 0) {
+      setSession((s) => ({
+        ...s,
+        guessed: s.guessed.filter((f) => !fields.includes(f)),
+        // Kept for #122: a guess changed by hand says where the AI is wrong.
+        overridden: [...new Set([...s.overridden, ...overridden])],
+      }));
     }
   }
 

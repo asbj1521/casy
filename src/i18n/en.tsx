@@ -486,7 +486,7 @@ export const en: Messages = {
       "Then Casy can sort your calendars and understand what your events mean, for example that an exam is important.",
     sent: "The names of your calendars and the titles of your events (in the iPhone app) are sent to Anthropic in the United States, which makes the AI. Never notes, places, guests or dates.",
     corrections:
-      "Casy also receives the corrections you write to the AI's judgements, with the event's title, so the AI can learn from them. You can turn that off under Your data.",
+      "Casy also receives the corrections you write to the AI's judgements, with the event's title, and the plans you make with AI, with what you wrote and what you changed, so the AI can learn from them. You can turn that off under Your data.",
     shared:
       "Casy also shares, without titles, when something important starts, so dates can be ranked for the group. The others only see a score for each date.",
     safe: "Casy does not store names or titles, Anthropic does not train on them, and you can turn it off at any time under Your data.",
@@ -1372,6 +1372,8 @@ export const en: Messages = {
     correctionsNone: "No corrections yet.",
     correctionLabel: "Judgement of an event",
     correctionPlan: "Plan with AI",
+    correctionPlanUnchanged: "Sent as the AI made it",
+    correctionPlanChanged: "Changed by the person",
     correctionBefore: "The AI said",
     correctionAfter: "After the correction",
     correctionNote: "Wrote",
