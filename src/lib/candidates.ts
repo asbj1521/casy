@@ -33,18 +33,34 @@ const MEETING_GAP_DAYS = 2;
 /** How many dates are looked at before choosing: plenty to spread over, and quick. */
 const MAX_LOOKED_AT = 60;
 
+export interface CandidateOptions {
+  /** The date on screen: always offered, first. Later dates are searched from after it. */
+  first: FoundDate;
+  /** Where the period searched ends (exclusive). */
+  end: string;
+  count?: number;
+}
+
 export function pickCandidates(
   participants: Participant[],
   search: EventSettings,
-  options: {
-    /** The date on screen: always offered, first. Later dates are searched from after it. */
-    first: FoundDate;
-    /** Where the period searched ends (exclusive). */
-    end: string;
-    count?: number;
-  },
+  options: CandidateOptions,
   timeZone: string,
 ): FoundDate[] {
+  return rankCandidates(participants, search, options, timeZone).chosen;
+}
+
+/**
+ * pickCandidates, with every date it looked at (`pool`: the first, then the
+ * rest soonest first) beside the ones it chose: the paper pile (#126) lays
+ * the pool out and lifts the chosen ones from it.
+ */
+export function rankCandidates(
+  participants: Participant[],
+  search: EventSettings,
+  options: CandidateOptions,
+  timeZone: string,
+): { pool: FoundDate[]; chosen: FoundDate[] } {
   const { first, end, count = CANDIDATE_COUNT } = options;
 
   // Everything the search would offer after the first date, in order.
@@ -94,7 +110,10 @@ export function pickCandidates(
   take(clean, { gap: 1 });
   take(costly, { gap: 1 });
 
-  return chosen.sort((a, b) => Date.parse(a.slot.start) - Date.parse(b.slot.start));
+  return {
+    pool: [first, ...found],
+    chosen: chosen.sort((a, b) => Date.parse(a.slot.start) - Date.parse(b.slot.start)),
+  };
 }
 
 /**

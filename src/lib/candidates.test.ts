@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { pickCandidates } from "@/lib/candidates";
+import { pickCandidates, rankCandidates } from "@/lib/candidates";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import type { FoundDate } from "@/lib/scheduler";
 import { localDate, wallTime } from "@/lib/zone";
@@ -84,5 +84,18 @@ describe("pickCandidates", () => {
     const first = firstFrom(group, EVENING);
     const end = new Date(wallTime(2026, 9, 13, 0, TZ)).toISOString();
     expect(pickCandidates(group, EVENING, { first, end }, TZ)).toEqual([first]);
+  });
+});
+
+describe("rankCandidates", () => {
+  it("hands back every date looked at, the first first, the chosen among them", () => {
+    const group = [person("a"), person("b")];
+    const first = firstFrom(group, EVENING);
+    const { pool, chosen } = rankCandidates(group, EVENING, { first, end: END }, TZ);
+
+    expect(pool[0]).toBe(first);
+    expect(pool.length).toBeGreaterThan(chosen.length);
+    for (const d of chosen) expect(pool).toContain(d);
+    expect(chosen).toEqual(pickCandidates(group, EVENING, { first, end: END }, TZ));
   });
 });
