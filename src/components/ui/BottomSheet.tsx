@@ -31,12 +31,18 @@ export default function BottomSheet({
   onClose,
   title,
   doneLabel,
+  footer,
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   doneLabel: string;
+  /**
+   * The sheet's way on, pinned along its bottom while the rest scrolls
+   * (My calendar's Planlæg sheet, #126). Without one, the whole sheet scrolls.
+   */
+  footer?: ReactNode;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -49,29 +55,51 @@ export default function BottomSheet({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  const header = (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h3 id={titleId} className="text-[17px] font-bold text-foreground">
+        {title}
+      </h3>
+      <button
+        type="button"
+        onClick={onClose}
+        className="rounded-lg px-2 py-1 text-[15px] font-semibold text-primary"
+      >
+        {doneLabel}
+      </button>
+    </div>
+  );
+
   return (
     <Modal open={open} placement="bottom" onClose={onClose}>
-      <motion.div
-        {...SHEET_MOTION}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className="relative z-10 max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border-t bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-xl"
-      >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 id={titleId} className="text-[17px] font-bold text-foreground">
-            {title}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-2 py-1 text-[15px] font-semibold text-primary"
-          >
-            {doneLabel}
-          </button>
-        </div>
-        {children}
-      </motion.div>
+      {footer ? (
+        <motion.div
+          {...SHEET_MOTION}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className="relative z-10 flex max-h-[85dvh] w-full flex-col rounded-t-2xl border-t bg-card shadow-xl"
+        >
+          <div className="px-4 pt-4">{header}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+            {children}
+          </div>
+          <div className="border-t px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+            {footer}
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          {...SHEET_MOTION}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className="relative z-10 max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border-t bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-xl"
+        >
+          {header}
+          {children}
+        </motion.div>
+      )}
     </Modal>
   );
 }

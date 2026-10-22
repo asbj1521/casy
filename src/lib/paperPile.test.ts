@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { EventSettings } from "@/lib/eventSearch";
 import {
   buildPile,
-  busiestMonth,
+  candidateMonth,
   PILE_TIMING,
   pileTimeline,
   sheetTilt,
@@ -97,15 +97,27 @@ describe("buildPile", () => {
   });
 });
 
-describe("busiestMonth", () => {
-  it("picks the month with the most days free for everyone", () => {
-    // Busy every October evening but one: November has more free days.
-    const october = evenings(...Array.from({ length: 30 }, (_, i) => i + 1));
-    expect(busiestMonth([person("me", october)], EVENING, OPTS)).toEqual({ year: 2026, month: 10 });
+describe("candidateMonth", () => {
+  const FALLBACK = iso(2026, 9, 1);
+
+  it("picks the month most of the dates offered are in", () => {
+    const starts = [iso(2026, 9, 30, 19), iso(2026, 10, 3, 19), iso(2026, 10, 5, 19)];
+    expect(candidateMonth(starts, FALLBACK, TZ)).toEqual({ year: 2026, month: 10 });
   });
 
-  it("takes the earlier month on a tie", () => {
-    expect(busiestMonth([person("me")], EVENING, OPTS)).toEqual({ year: 2026, month: 9 });
+  it("takes the earlier month on a tie, in whatever order the dates come", () => {
+    const starts = [iso(2026, 10, 3, 19), iso(2026, 9, 30, 19)];
+    expect(candidateMonth(starts, FALLBACK, TZ)).toEqual({ year: 2026, month: 9 });
+  });
+
+  it("counts a date by its Danish day: Danish midnight on 1 November is November", () => {
+    // 23:00 on 31 October in UTC.
+    const starts = [iso(2026, 10, 1, 0), iso(2026, 10, 2, 19)];
+    expect(candidateMonth(starts, FALLBACK, TZ)).toEqual({ year: 2026, month: 10 });
+  });
+
+  it("falls back to the period's first month with no dates", () => {
+    expect(candidateMonth([], iso(2027, 1, 10), TZ)).toEqual({ year: 2027, month: 1 });
   });
 });
 

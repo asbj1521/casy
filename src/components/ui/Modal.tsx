@@ -1,4 +1,5 @@
 import type { FormEvent, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -7,6 +8,11 @@ import { cn } from "@/lib/utils";
  * A dialog's backdrop and centring. Children render only while open, so a
  * form inside starts fresh every time. Clicking the backdrop closes it,
  * except while `busy`, so a request in flight can't be abandoned halfway.
+ *
+ * Drawn at the end of <body> (a portal), not where it is written: inside a
+ * sheet that slid up with a transform (BottomSheet), `fixed` would otherwise
+ * be measured from that sheet rather than the screen, so a picker opened
+ * from a sheet (#126) would land inside it.
  */
 export default function Modal({
   open,
@@ -22,7 +28,7 @@ export default function Modal({
   placement?: "center" | "bottom";
   children: ReactNode;
 }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <div
@@ -41,7 +47,8 @@ export default function Modal({
           {children}
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 

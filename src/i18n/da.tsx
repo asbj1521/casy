@@ -1067,6 +1067,25 @@ export const da = {
     useOriginalName: (name: string) => `Brug det oprindelige navn (${name})`,
     couldntSaveName: "Kunne ikke gemme navnet",
   },
+  // Planning from My calendar (#126): the Planlæg sheet, the paper pile and
+  // the dates it finds.
+  planFromCalendar: {
+    button: "Planlæg",
+    findDate: "Find dato",
+    you: "Dig",
+    // What the pile is doing, under it and for screen readers.
+    waiting: "Henter gruppens kalendere",
+    gathering: "Lægger alles kalendere oven på din",
+    pressing: "Trykker dem sammen",
+    through: (n: number) => (n === 1 ? "1 dag passer alle" : `${n} dage passer alle`),
+    ranking: "Finder de bedste",
+    ranked: (n: number) => (n === 1 ? "Den bedste dato" : `De ${n} bedste datoer`),
+    noneThrough: "Ingen dag i perioden passer alle. Prøv at ændre planen.",
+    skipHint: "Tryk for at springe over",
+    suggest: (n: number) => (n === 1 ? "Foreslå datoen" : `Foreslå top ${n} datoer`),
+    change: "Ret planen",
+    close: "Luk",
+  },
   myData: {
     title: "Dine data",
     row: "Dine data",

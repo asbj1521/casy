@@ -50,7 +50,9 @@ test("My calendar is a month like Apple's: a day opens its busy time, Kalendere 
   // One step back from "Connected calendars" lands on the sheet, not the bare month.
   await page.getByRole("link", { name: /Forbundne kalendere/ }).click();
   await expect(page).toHaveURL(/\/calendar-overview\/accounts$/);
-  await page.getByRole("link", { name: "Kalender" }).first().click();
+  // The page's own back link, in its header: until the page has loaded, the
+  // tab bar's Kalender (the bare month) is the only one there.
+  await page.getByRole("banner").getByRole("link", { name: "Kalender" }).click();
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
 });
 

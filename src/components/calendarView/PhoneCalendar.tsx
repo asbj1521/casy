@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { CalendarPlus, Layers } from "lucide-react";
+import { CalendarPlus, CalendarSearch, Layers } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
 import { DayRow } from "@/components/calendarView/DayRow";
@@ -19,6 +19,9 @@ import { capitalize } from "@/lib/format";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
+
+// Planning from here (#126) brings the whole scheduler with it: loaded on the first press.
+const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFromCalendar"));
 
 /**
  * My calendar on a phone: your busy time as Apple Calendar's month view, the
@@ -46,12 +49,17 @@ export default function PhoneCalendar() {
   // on "Connected calendars" returns to it, not past it to the bare month.
   const location = useLocation();
   const navigate = useNavigate();
-  const listOpen = new URLSearchParams(location.search).has("calendars");
+  const params = new URLSearchParams(location.search);
+  const listOpen = params.has("calendars");
   const openList = () => navigate({ search: "?calendars" }, { state: { fromMonth: true } });
-  const closeList = () => {
+  // Back to the bare month: a step back if this page opened it, else in place.
+  const closeOverlay = () => {
     if ((location.state as { fromMonth?: boolean } | null)?.fromMonth) navigate(-1);
     else navigate({ search: "" }, { replace: true });
   };
+  // Planlæg (#126), in the address too, so the phone's back closes it.
+  const planOpen = params.has("plan");
+  const openPlan = () => navigate({ search: "?plan" }, { state: { fromMonth: true } });
   const [pickedDay, setPickedDay] = useState<number | null>(null);
   // What the day panel shows while it slides away, after pickedDay is cleared.
   const [panelDay, setPanelDay] = useState(() => startOfDay(Date.now(), TZ));
@@ -168,6 +176,23 @@ export default function PhoneCalendar() {
         </div>
       </div>
 
+      {/* Planning starts from the calendar (#126); out of the way while a day is open. */}
+      {pickedDay === null && (
+        <button
+          type="button"
+          onClick={openPlan}
+          className="fixed bottom-[calc(var(--tab-bar-height)+0.75rem)] left-1/2 z-20 flex h-12 -translate-x-1/2 items-center gap-2 rounded-full bg-cta px-6 text-[15px] font-bold text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] transition hover:bg-cta-hover"
+        >
+          <CalendarSearch className="h-5 w-5" />
+          {t.planFromCalendar.button}
+        </button>
+      )}
+      {planOpen && (
+        <Suspense fallback={null}>
+          <PlanFromCalendar onClose={closeOverlay} />
+        </Suspense>
+      )}
+
       <DayPanel
         ref={panel}
         open={pickedDay !== null}
@@ -200,7 +225,7 @@ export default function PhoneCalendar() {
 
       <BottomSheet
         open={listOpen}
-        onClose={closeList}
+        onClose={closeOverlay}
         title={words.calendarsButton}
         doneLabel={t.swipe.done}
       >

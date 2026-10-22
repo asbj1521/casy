@@ -95,31 +95,29 @@ export function buildPile(
 }
 
 /**
- * The month in the period with the most days free for everyone: the one the
- * pile shows (#126). The earliest wins a tie; with none free anywhere, the
- * period's first month.
+ * The month the pile shows (#126): the one holding most of the dates about
+ * to be offered, so they lift out of the month just watched. Not the month
+ * with the most free days: that is a far one nobody has planned yet, all
+ * green on every sheet, where the pile would knock nothing out. The earliest
+ * wins a tie; with no dates, the month `fallback` (the period's start) is in.
  */
-export function busiestMonth(
-  participants: Participant[],
-  search: EventSettings,
-  opts: PileOptions,
+export function candidateMonth(
+  starts: string[],
+  fallback: string,
+  timeZone: string,
 ): { year: number; month: number } {
-  const { timeZone, window } = opts;
-  const end = Date.parse(window.end);
-  let best = { ...localDate(Date.parse(window.start), timeZone), count: -1 };
-  for (
-    let month = startOfMonth(Date.parse(window.start), timeZone);
-    month < end;
-    month = startOfMonth(month, timeZone, 1)
-  ) {
-    const { year, month: m } = localDate(month, timeZone);
-    const count = throughDays(
-      monthAvailability(participants, search, year, m, opts),
-      window,
-    ).filter(Boolean).length;
-    if (count > best.count) best = { ...localDate(month, timeZone), count };
+  const counts = new Map<number, number>();
+  for (const start of starts) {
+    const month = startOfMonth(Date.parse(start), timeZone);
+    counts.set(month, (counts.get(month) ?? 0) + 1);
   }
-  return { year: best.year, month: best.month };
+  let best = startOfMonth(Date.parse(fallback), timeZone);
+  let most = 0;
+  for (const [month, count] of counts) {
+    if (count > most || (count === most && month < best)) [best, most] = [month, count];
+  }
+  const { year, month } = localDate(best, timeZone);
+  return { year, month };
 }
 
 function sheetDay(day: DayCell, searched: boolean): SheetDay {
@@ -211,7 +209,7 @@ export function sheetTilt(index: number): { rotate: number; x: number; y: number
   const side = index % 2 === 0 ? 1 : -1;
   return {
     rotate: round(side * (2 + 5 * spread(0.618034))),
-    x: round((spread(0.414214) * 2 - 1) * 14),
+    x: round((spread(0.414214) * 2 - 1) * 8),
     y: round((spread(0.732051) * 2 - 1) * 10),
   };
 }
