@@ -6,12 +6,14 @@
  *
  * Only what the app actually stores comes back: block timestamps, the
  * calendar's own name, its account, provider and category, and for a phone
- * calendar its EventKit id. There are no event
+ * calendar its EventKit id, plus the entries the person made themselves
+ * (Tell Casy, #116). There are no event
  * titles anywhere in this data by design (see the calendar_integrations
  * migration and each adapter), so none can leak from here. Never touches
  * calendar_secrets.
  */
 import { requireCaller } from "../_shared/auth.ts";
+import { ENTRY_COLUMNS, type EntryRow, storedFrom } from "../_shared/entries.ts";
 import { readRange, serve } from "../_shared/http.ts";
 import { supabaseAdmin, type Db } from "../_shared/supabaseAdmin.ts";
 
@@ -46,7 +48,7 @@ serve(
     const db = supabaseAdmin();
     const { id: profileId } = await requireCaller(req, db);
 
-    const [sources, blocks] = await Promise.all([
+    const [sources, blocks, entries] = await Promise.all([
       db
         .from("calendar_sources")
         .select(
@@ -55,8 +57,18 @@ serve(
         .eq("calendar_connections.profile_id", profileId)
         .eq("calendar_connections.status", "connected"),
       fetchBlocks(db, profileId, from, to),
+      // What they told Casy that is in no calendar (#116), for My calendar's
+      // built-in Casy calendar. Their labels are their own words.
+      db
+        .from("casy_entries")
+        .select(ENTRY_COLUMNS)
+        .eq("profile_id", profileId)
+        .lt("start_at", to.toISOString())
+        .gt("end_at", from.toISOString())
+        .order("start_at", { ascending: true }),
     ]);
     if (sources.error) throw sources.error;
+    if (entries.error) throw entries.error;
 
     // `!inner` on a to-one join returns one connection, not the array the
     // untyped client assumes; hence the cast, as in the groups function.
@@ -96,7 +108,7 @@ serve(
           (a.originalName ?? a.name).localeCompare(b.originalName ?? b.name),
       );
 
-    return { calendars, ...blocks };
+    return { calendars, ...blocks, entries: (entries.data as EntryRow[]).map(storedFrom) };
   },
   "GET",
 );

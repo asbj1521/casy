@@ -1,0 +1,172 @@
+{
+  "now": "2026-10-10T12:00:00+02:00",
+  "cases": [
+    {
+      "name": "a trip between two dates",
+      "lang": "da",
+      "text": "Jeg rejser fra den 12. til den 19. november",
+      "expect": {
+        "count": 1,
+        "entries": [
+          {
+            "kind": "away",
+            "startDate": "2026-11-12",
+            "endDate": "2026-11-19",
+            "startTime": "",
+            "endTime": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "all of a month at the parents",
+      "lang": "da",
+      "text": "Jeg er hjemme hos mine forældre hele december",
+      "expect": {
+        "count": 1,
+        "entries": [
+          {
+            "kind": "away",
+            "startDate": "2026-12-01",
+            "endDate": "2026-12-31",
+            "startTime": "",
+            "endTime": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "next week, in English",
+      "lang": "en",
+      "text": "I'm away next week",
+      "expect": {
+        "count": 1,
+        "entries": [
+          {
+            "kind": "away",
+            "startDate": "2026-10-12",
+            "endDate": { "oneOf": ["2026-10-16", "2026-10-18"] }
+          }
+        ]
+      }
+    },
+    {
+      "name": "a course on a weekday evening",
+      "lang": "da",
+      "text": "Jeg har kursus torsdag aften fra 18 til 21",
+      "expect": {
+        "count": 1,
+        "entries": [
+          { "kind": "busy", "startDate": "2026-10-15", "startTime": "18:00", "endTime": "21:00" }
+        ]
+      }
+    },
+    {
+      "name": "a day with no end date is a single day",
+      "lang": "da",
+      "text": "Jeg er til bryllup lørdag den 24. oktober, hele dagen",
+      "expect": {
+        "count": 1,
+        "entries": [
+          {
+            "kind": "busy",
+            "startDate": "2026-10-24",
+            "endDate": { "oneOf": ["", "2026-10-24"] },
+            "startTime": "",
+            "endTime": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "something that repeats becomes one entry for each time",
+      "lang": "da",
+      "text": "Jeg har fodbold hver torsdag aften fra 18 til 20 i november",
+      "expect": {
+        "count": 4,
+        "entries": [
+          { "kind": "busy", "startDate": "2026-11-05", "startTime": "18:00", "endTime": "20:00" },
+          { "kind": "busy", "startDate": "2026-11-12" },
+          { "kind": "busy", "startDate": "2026-11-19" },
+          { "kind": "busy", "startDate": "2026-11-26" }
+        ]
+      }
+    },
+    {
+      "name": "no dates at all asks when",
+      "lang": "da",
+      "text": "Jeg er væk i nogle dage",
+      "expect": { "count": 0, "message": "some" }
+    },
+    {
+      "name": "being free is not something Casy can note yet",
+      "lang": "en",
+      "text": "I can do Fridays in November even though work is booked",
+      "expect": { "count": 0, "message": "some" }
+    },
+    {
+      "name": "the past is no entry",
+      "lang": "da",
+      "text": "Jeg var på ferie i august",
+      "expect": { "count": 0 }
+    },
+    {
+      "name": "text that isn't about time",
+      "lang": "da",
+      "text": "Jeg elsker pizza med ananas",
+      "expect": { "count": 0, "message": "none" }
+    },
+    {
+      "name": "dictation with a misheard number",
+      "lang": "da",
+      "text": "øh jeg skal altså være i København fra den tolvte til den, nej, den femtende november",
+      "expect": {
+        "count": 1,
+        "entries": [{ "kind": "away", "startDate": "2026-11-12", "endDate": "2026-11-15" }]
+      }
+    },
+    {
+      "name": "more details change the end of the trip",
+      "lang": "da",
+      "text": "Nej, jeg kommer først hjem den 21.",
+      "earlier": ["Jeg rejser fra den 12. til den 19. november"],
+      "current": [
+        {
+          "kind": "away",
+          "label": "Rejse",
+          "startDate": "2026-11-12",
+          "startTime": "",
+          "endDate": "2026-11-19",
+          "endTime": ""
+        }
+      ],
+      "expect": {
+        "count": 1,
+        "entries": [{ "kind": "away", "startDate": "2026-11-12", "endDate": "2026-11-21" }]
+      }
+    },
+    {
+      "name": "more details add an entry and keep the old one",
+      "lang": "en",
+      "text": "Also a dentist appointment on 3 November from 14:00 to 15:00",
+      "earlier": ["I'm away 12 to 19 November"],
+      "current": [
+        {
+          "kind": "away",
+          "label": "Trip",
+          "startDate": "2026-11-12",
+          "startTime": "",
+          "endDate": "2026-11-19",
+          "endTime": ""
+        }
+      ],
+      "expect": {
+        "count": 2,
+        "entries": [
+          { "kind": "busy", "startDate": "2026-11-03", "startTime": "14:00", "endTime": "15:00" },
+          { "kind": "away", "startDate": "2026-11-12", "endDate": "2026-11-19" }
+        ]
+      }
+    }
+  ]
+}

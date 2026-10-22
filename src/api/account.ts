@@ -97,6 +97,8 @@ export interface MyData {
   emailLookups: number;
   events: { invitedTo: number; suggested: number; answers: number; declined: number };
   calendarEntries: { added: number; deletedByYou: number };
+  /** Time you told Casy that is in no calendar (#116): how many entries are kept. */
+  toldCasy: { count: number };
   /**
    * Whether the AI features are on for you (#111), your AI calls recorded (30
    * days), and your yes to the AI using content from your calendar (#120):

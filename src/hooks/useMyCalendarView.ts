@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useCalendarVisibility } from "@/hooks/useCalendarVisibility";
 import { useMyCalendarDays, type MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { useT } from "@/i18n/lang";
+import { CASY_CALENDAR_ID } from "@/lib/casyEntries";
 import {
   HOLIDAY_CALENDAR,
   HOLIDAY_CALENDAR_ID,
@@ -50,12 +51,35 @@ export function useMyCalendarView() {
     ],
     [mine.calendars, t, holidayCount, holidaysHidden],
   );
-  const calendarById = useMemo(() => new Map(calendars.map((c) => [c.id, c])), [calendars]);
+  // What you told Casy (#116) is drawn as a calendar of its own but is not in
+  // the list: it has no tick, an entry is deleted where it was made.
+  const hasEntries = mine.entries.length > 0;
+  const calendarById = useMemo(() => {
+    const byId = new Map(calendars.map((c) => [c.id, c]));
+    if (hasEntries) {
+      byId.set(CASY_CALENDAR_ID, {
+        id: CASY_CALENDAR_ID,
+        name: t.calendarView.casyCalendar,
+        originalName: null,
+        renamed: false,
+        writable: false,
+        purpose: null,
+        priority: "never",
+        included: true,
+        total: mine.entries.length,
+        provider: "builtin",
+        account: null,
+        connectionId: CASY_CALENDAR_ID,
+      });
+    }
+    return byId;
+  }, [calendars, hasEntries, mine.entries.length, t]);
 
   return {
     calendar,
     calendars,
     calendarById,
+    entries: mine.entries,
     /** Only the connected ones, without the built-in holidays. */
     connectedCount: mine.calendars.length,
     setCalendarsVisible,

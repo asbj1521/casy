@@ -273,7 +273,7 @@ describe("calendarColors", () => {
   it("reuses the palette instead of failing when there are many uncategorised calendars", () => {
     const many = Array.from({ length: 12 }, (_, i) => cal(`x${i}`, null));
     const colors = calendarColors(many);
-    expect(colors.size).toBe(13); // 12 calendars plus the built-in holiday calendar
+    expect(colors.size).toBe(14); // 12 calendars plus the built-in holidays and Casy calendars
     expect(colors.get("x0")).toBe(colors.get("x7")); // palette has 7 colours
   });
 });

@@ -13,6 +13,7 @@
  * get every member's blocks, categories included, from the groups function.
  */
 import type { OverviewData } from "@/lib/calendarOverview";
+import { entryBusy } from "@/lib/casyEntries";
 import type { BusyInterval, EventCategory, Participant } from "@/types";
 
 /**
@@ -33,6 +34,8 @@ const CATEGORY_FOR_PURPOSE: Partial<Record<string, EventCategory>> = {
  * title, since none are stored. Its priority comes along too, left out when
  * normal, the same as the groups function sends it. A calendar its owner
  * unticked on My calendar is left out entirely, as the groups function does.
+ * What the person told Casy (#116) is busy time of their own, as the groups
+ * function adds it for a real group.
  */
 export function busyFromCalendars(data: OverviewData): BusyInterval[] {
   const byId = new Map(data.calendars.map((c) => [c.id, c]));
@@ -49,7 +52,7 @@ export function busyFromCalendars(data: OverviewData): BusyInterval[] {
       ...(cal.priority === "skip" || cal.priority === "never" ? { priority: cal.priority } : {}),
     });
   }
-  return busy;
+  return [...busy, ...entryBusy(data.entries ?? [])];
 }
 
 /**

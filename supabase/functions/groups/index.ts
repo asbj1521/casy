@@ -462,10 +462,35 @@ async function groupBusy(db: Db, memberIds: string[], from: Date, to: Date) {
     }
   }
 
+  // What members told Casy that is in no calendar (#116): their own busy
+  // time. A stretch away is never skipped, trips included, like a calendar
+  // set to "never"; busy time at set hours is an ordinary block. Like a
+  // calendar's blocks, only the times cross over, never the label.
+  const entryOwners = new Set<string>();
+  const { data: entries, error: entriesErr } = await db
+    .from("casy_entries")
+    .select("profile_id, kind, start_at, end_at")
+    .in("profile_id", memberIds)
+    .lt("start_at", to.toISOString())
+    .gt("end_at", from.toISOString())
+    .limit(PAGE_SIZE);
+  if (entriesErr) throw entriesErr;
+  for (const e of entries) {
+    entryOwners.add(e.profile_id);
+    busyByMember.get(e.profile_id)?.push({
+      start: e.start_at,
+      end: e.end_at,
+      ...(e.kind === "away" ? { priority: "never" } : {}),
+    });
+  }
+
   // Who has actually linked something: a member with no calendar reads as
   // free all year, which the page must be able to say out loud rather than
-  // quietly counting them as available.
-  const hasCalendar = new Set([...sourceById.values()].map((s) => s.owner));
+  // quietly counting them as available. Someone who has told Casy their own
+  // time has told it what it knows, so they are searched too.
+  const hasCalendar = new Set(
+    [...sourceById.values()].map((s) => s.owner).concat([...entryOwners]),
+  );
 
   // Whose calendars are outdated, and since when: each member's least
   // recently updated account among the calendars that count. Only for those

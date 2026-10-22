@@ -14,6 +14,7 @@ import type { CalendarConnectionStatus } from "@/api/calendars";
 import type { EventResponse, SuggestedEvent } from "@/api/events";
 import type { Group, GroupBusy, Invitation } from "@/api/groups";
 import type { OverviewBlock, OverviewCalendar } from "@/lib/calendarOverview";
+import type { StoredEntry } from "@/lib/casyEntries";
 import type { EventCategory } from "@/types";
 
 /** The frozen "now": Wednesday 7 October 2026, 10:00 Danish time. */
@@ -599,6 +600,8 @@ export interface World {
   testers: Set<string>;
   connections: CalendarConnectionStatus[];
   primary: { calendarId: string; autoAdd: boolean } | null;
+  /** What Mia told Casy that is in no calendar (#116); none until a test saves some. */
+  entries: StoredEntry[];
   groups: Group[];
   invitations: Invitation[];
   events: SuggestedEvent[];
@@ -622,6 +625,7 @@ export function makeWorld(options: WorldOptions): World {
     testers: new Set(),
     connections: connected ? connections() : [],
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
+    entries: [],
     groups: withGroups ? groups() : [],
     invitations: invitations(),
     events: withGroups ? events() : [],
@@ -638,7 +642,8 @@ export function myOverview(world: World, from: string, to: string) {
     .filter((b) => b.calendarId && calendarIds.has(b.calendarId))
     .filter((b) => b.end > from && b.start < to)
     .map((b) => ({ calendarId: b.calendarId as string, start: b.start, end: b.end }));
-  return { calendars: overviewCalendars(world.connections), blocks, truncated: false };
+  const entries = world.entries.filter((e) => e.end > from && e.start < to);
+  return { calendars: overviewCalendars(world.connections), blocks, truncated: false, entries };
 }
 
 /** Everyone's busy time in one group, as the groups function's `busy` answers it. */
@@ -707,6 +712,7 @@ export function myData(world: World): MyData {
     emailLookups: 0,
     events: { invitedTo: world.events.length, suggested: 2, answers: 9, declined: 1 },
     calendarEntries: { added: 1, deletedByYou: 0 },
+    toldCasy: { count: world.entries.length },
     ai: {
       allowed: world.aiAllowed,
       calls: 2,

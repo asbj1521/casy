@@ -29,7 +29,12 @@ export const AI_MODEL = "claude-haiku-5-5";
 export const GLOBAL_DAILY_AI_CALLS = 500;
 
 export type Skill =
-  "plan-ai" | "calendar-categorize" | "event-label" | "event-relabel" | "event-profile";
+  | "plan-ai"
+  | "calendar-categorize"
+  | "event-label"
+  | "event-relabel"
+  | "event-profile"
+  | "entries-ai";
 
 /**
  * Each skill's budget, and whether someone is waiting on the page (one quick
@@ -45,6 +50,8 @@ export const SKILLS: Record<Skill, { perPersonPerDay: number; waiting: boolean }
   "event-relabel": { perPersonPerDay: 20, waiting: true },
   // Once per event set up (cached per name, place, note and timing).
   "event-profile": { perPersonPerDay: 40, waiting: true },
+  // Tell Casy (#116): a go at saying when you're away or busy, and each correction of it.
+  "entries-ai": { perPersonPerDay: 30, waiting: true },
 };
 
 /**

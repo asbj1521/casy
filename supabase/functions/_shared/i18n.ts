@@ -110,6 +110,19 @@ export const DANISH: Record<string, string> = {
   "Casy couldn't make an event of that. Try saying it another way.":
     "Casy kunne ikke få en aftale ud af det. Prøv at sige det på en anden måde.",
 
+  // Tell Casy: entries in your own calendar
+  "Say when you're away or busy in a few words.":
+    "Sig med et par ord, hvornår du er væk eller optaget.",
+  "You've told Casy as much as you can today. Try again tomorrow.":
+    "Du har fortalt Casy så meget, du kan i dag. Prøv igen i morgen.",
+  "Casy couldn't read that right now. Try again.": "Casy kunne ikke læse det lige nu. Prøv igen.",
+  "Casy couldn't make a calendar entry of that. Try saying it another way.":
+    "Casy kunne ikke få en kalenderpost ud af det. Prøv at sige det på en anden måde.",
+  "Those entries aren't valid.": "Posterne er ikke gyldige.",
+  "That entry doesn't exist.": "Posten findes ikke.",
+  "You can keep at most 100 entries. Delete some first.":
+    "Du kan højst have 100 poster. Slet nogle først.",
+
   // Event labels, corrected by hand
   "Switch AI on for them first.": "Slå AI til for personen først.",
   "Write what is wrong with the label.": "Skriv, hvad der er forkert.",

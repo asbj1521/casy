@@ -5,6 +5,7 @@ import { calendarBusyQuery } from "@/api/calendars";
 import { useSignedInUser } from "@/context/auth";
 import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { useLang, useT } from "@/i18n/lang";
+import { entryBlocks, type StoredEntry } from "@/lib/casyEntries";
 import {
   calendarColors,
   dayKey,
@@ -32,6 +33,7 @@ const TZ = APP_TIME_ZONE;
 const FALLBACK_RGB = "113, 113, 122";
 
 const NO_CALENDARS: OverviewCalendar[] = [];
+const NO_ENTRIES: StoredEntry[] = [];
 
 export interface MyCalendarDays {
   /** Still fetching your calendars. */
@@ -52,6 +54,8 @@ export interface MyCalendarDays {
   items: GridItem[];
   /** Every calendar with its tick and settings, for the list of calendars. */
   calendars: OverviewCalendar[];
+  /** What you told Casy that is in no calendar (#116), drawn as its built-in calendar. */
+  entries: StoredEntry[];
   /** Why they couldn't be fetched, if they couldn't. */
   error: Error | null;
   retry: () => void;
@@ -124,7 +128,11 @@ export function useMyCalendarDays(): MyCalendarDays {
             { from: Date.parse(SEARCH_WINDOW.start), to: Date.parse(SEARCH_WINDOW.end) },
           )
         : (data?.blocks ?? []);
-    return blocks.filter((b) => included.has(b.calendarId));
+    // What you told Casy has no tick: it always counts, so it is always drawn.
+    return [
+      ...blocks.filter((b) => included.has(b.calendarId)),
+      ...entryBlocks(data?.entries ?? NO_ENTRIES),
+    ];
   }, [data, phoneConnection, phoneEvents]);
   const holidays = useMemo(
     () => holidaySegmentsByDay(new Date(SEARCH_WINDOW.start), new Date(SEARCH_WINDOW.end), TZ),
@@ -184,6 +192,7 @@ export function useMyCalendarDays(): MyCalendarDays {
       labelOf,
       items,
       calendars: data?.calendars ?? NO_CALENDARS,
+      entries: data?.entries ?? NO_ENTRIES,
       error,
       retry,
       truncated: !!data?.truncated,

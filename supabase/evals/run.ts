@@ -6,7 +6,7 @@
  * every run costs a little (cents) and needs the API key.
  *
  *   ANTHROPIC_API_KEY=... deno run --node-modules-dir=none --allow-net --allow-env --allow-read \
- *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile | occasions]
+ *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile | entries-ai | occasions]
  *
  * The cases are invented: the repo is public, so no real calendar names,
  * titles or descriptions belong in them. An expected value may be
@@ -51,6 +51,16 @@ import {
   seasonMonths,
   type AiPlan,
 } from "../functions/_shared/planAi.ts";
+import {
+  buildEntriesMessage,
+  type CasyEntry,
+  cleanEntries,
+  ENTRIES_MAX_TOKENS,
+  ENTRIES_SCHEMA,
+  ENTRIES_SYSTEM_PROMPT,
+  entriesFromAnswer,
+  toWire,
+} from "../functions/_shared/entries.ts";
 import { STRAIN, type Strain } from "../functions/_shared/eventVocabulary.ts";
 import { type Occasion, usableOccasions } from "../functions/_shared/occasions.ts";
 
@@ -152,6 +162,79 @@ async function planAi(): Promise<Result[]> {
           `${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
         );
       }
+    }
+    return { name: c.name, failures };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Tell Casy (#116): one call per description, the answer read back as the
+// dates and clock times the model wrote (toWire), since those are what a
+// reader checks.
+
+interface EntriesCase {
+  name: string;
+  lang: "da" | "en";
+  text: string;
+  earlier?: string[];
+  /** The proposal on screen, as the model writes entries (cleaned into instants here). */
+  current?: Record<string, unknown>[];
+  expect: {
+    /** How many entries come back. */
+    count?: number;
+    /** The entries in order, each a subset of the fields toWire() gives. */
+    entries?: Record<string, Expected>[];
+    /** "some": a question or remark; "none": nothing said. */
+    message?: "some" | "none";
+  };
+}
+
+async function entriesAi(): Promise<Result[]> {
+  const { now, cases } = (await load("entries-ai.json")) as { now: string; cases: EntriesCase[] };
+  const nowMs = Date.parse(now);
+  return await pool(cases, 4, async (c) => {
+    const current: CasyEntry[] | null = c.current
+      ? cleanEntries({ entries: c.current }, nowMs).entries
+      : null;
+    const { stop, text } = await ask(
+      skillRequest({
+        system: ENTRIES_SYSTEM_PROMPT,
+        message: buildEntriesMessage(
+          { text: c.text, earlier: c.earlier ?? [], current },
+          c.lang,
+          nowMs,
+        ),
+        schema: ENTRIES_SCHEMA,
+        maxTokens: ENTRIES_MAX_TOKENS,
+      }),
+    );
+    const answer = entriesFromAnswer(stop, text, nowMs);
+    const failures: string[] = [];
+    // Nothing usable is the right answer for text that holds no entry and no remark.
+    if (!answer) {
+      if (c.expect.count !== 0 || c.expect.message === "some") {
+        failures.push(`no answer (stop_reason ${stop})`);
+      }
+      return { name: c.name, failures };
+    }
+    if (c.expect.count !== undefined && answer.entries.length !== c.expect.count) {
+      failures.push(`count: expected ${c.expect.count}, got ${answer.entries.length}`);
+    }
+    c.expect.entries?.forEach((expected, i) => {
+      const actual = answer.entries[i] ? toWire(answer.entries[i]) : null;
+      if (!actual) return failures.push(`entry ${i}: missing`);
+      for (const [field, value] of Object.entries(expected)) {
+        const got = actual[field as keyof typeof actual];
+        if (!matches(got, value)) {
+          failures.push(
+            `entry ${i} ${field}: expected ${JSON.stringify(value)}, got ${JSON.stringify(got)}`,
+          );
+        }
+      }
+    });
+    if (c.expect.message === "some" && !answer.message) failures.push("expected a message");
+    if (c.expect.message === "none" && answer.message) {
+      failures.push(`expected no message, got ${JSON.stringify(answer.message)}`);
     }
     return { name: c.name, failures };
   });
@@ -542,6 +625,7 @@ const SETS: Record<string, () => Promise<Result[]>> = {
   "calendar-categorize": calendarCategorize,
   "event-label": eventLabel,
   "event-profile": eventProfile,
+  "entries-ai": entriesAi,
   occasions,
 };
 const wanted = Deno.args[0] ? [Deno.args[0]] : Object.keys(SETS);

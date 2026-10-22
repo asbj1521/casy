@@ -7,7 +7,9 @@
  */
 import type { EventResponse, SuggestedEvent } from "@/api/events";
 import type { PlanAnswer } from "@/api/planAi";
+import type { EntriesProposal } from "@/api/entries";
 import type { AiPlan } from "@/lib/aiPlan";
+import type { CasyEntry } from "@/lib/casyEntries";
 import { adminOverview, groupBusy, ME, myData, myOverview, NOW, type World } from "./world";
 
 export interface FunctionCall {
@@ -205,9 +207,68 @@ export class FakeBackend {
         return undefined;
       case "plan-ai":
         return this.planAi(body);
+      case "entries-ai":
+        return this.entriesAi(body);
+      case "calendar-entries":
+        return this.calendarEntries(action, body);
       default:
         return undefined;
     }
+  }
+
+  /**
+   * Tell Casy (#116), always the same proposals: a first description is a
+   * week away in October (whole days); more details add a course one evening.
+   */
+  private entriesAi(body: Record<string, unknown>): Answer {
+    if (body.text === "bare noget vrøvl") {
+      return fail(
+        422,
+        "Casy kunne ikke få en kalenderpost ud af det. Prøv at sige det på en anden måde.",
+      );
+    }
+    const trip: CasyEntry = {
+      kind: "away",
+      label: "Rejse",
+      start: "2026-10-11T22:00:00.000Z", // Monday 12 October 00:00, Danish time
+      end: "2026-10-19T22:00:00.000Z", // Tuesday 20 October 00:00
+      allDay: true,
+    };
+    const course: CasyEntry = {
+      kind: "busy",
+      label: "Kursus",
+      start: "2026-10-22T16:00:00.000Z", // Thursday 22 October 18:00
+      end: "2026-10-22T20:00:00.000Z", // 22:00
+      allDay: false,
+    };
+    const current = Array.isArray(body.current) ? (body.current as CasyEntry[]) : null;
+    const proposal: EntriesProposal = {
+      entries: current ? [...current, course] : [trip],
+      message: null,
+      left: 29,
+    };
+    return ok(proposal);
+  }
+
+  /** Entries kept and deleted again, as calendar-entries does. */
+  private calendarEntries(action: string, body: Record<string, unknown>): Answer | undefined {
+    const w = this.world;
+    if (action === "add") {
+      const saved = (body.entries as CasyEntry[]).map((e, i) => ({
+        ...e,
+        id: `entry-${w.entries.length + i + 1}`,
+      }));
+      w.entries.push(...saved);
+      this.changed();
+      return ok({ entries: saved });
+    }
+    if (action === "delete") {
+      const before = w.entries.length;
+      w.entries = w.entries.filter((e) => e.id !== body.id);
+      this.changed();
+      return ok({ deleted: w.entries.length < before });
+    }
+    return undefined;
   }
 
   /**

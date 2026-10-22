@@ -10,6 +10,7 @@
  */
 import { aiAllowed, CONSENT_VERSION } from "./aiAccess.ts";
 import type { Caller } from "./auth.ts";
+import { ENTRY_COLUMNS, type EntryRow, type StoredEntry, storedFrom } from "./entries.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
 export type Provider = "google" | "outlook" | "apple" | "ics" | "device";
@@ -64,6 +65,8 @@ export interface MyData {
   emailLookups: number;
   events: { invitedTo: number; suggested: number; answers: number; declined: number };
   calendarEntries: { added: number; deletedByYou: number };
+  /** Time you told Casy that is in no calendar (#116): how many entries are kept. */
+  toldCasy: { count: number };
   /**
    * Whether the AI features are on for you (#111), your AI calls recorded (30
    * days), and your yes to the AI using content from your calendar (#120):
@@ -82,6 +85,8 @@ export interface MyData {
 export interface MyDataExport extends MyData {
   exportedAt: string;
   busyTimes: { calendar: string | null; start: string; end: string }[];
+  /** Every entry you told Casy (#116), with the label you checked before it was saved. */
+  toldCasyEntries: StoredEntry[];
 }
 
 export function credentialKind(provider: Provider, hasSecret: boolean): CredentialKind | null {
@@ -245,6 +250,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     aiOn,
     consent,
     corrections,
+    toldCasy,
   ] = await Promise.all([
     sourceIds.length
       ? count(db.from("calendar_busy_cache").select("id", head).in("source_id", sourceIds))
@@ -306,6 +312,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       .eq("profile_id", me)
       .maybeSingle(),
     count(db.from("ai_corrections").select("id", head).eq("profile_id", me)),
+    count(db.from("casy_entries").select("id", head).eq("profile_id", me)),
   ]);
   for (const r of [first, last, next, consent]) if (r?.error) throw r.error;
   const consentRow = consent.data as {
@@ -357,6 +364,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     emailLookups: lookups,
     events: { invitedTo, suggested, answers, declined: declinedDates },
     calendarEntries: { added, deletedByYou: deleted },
+    toldCasy: { count: toldCasy },
     ai: {
       allowed: aiOn,
       calls: aiCalls,
@@ -415,5 +423,18 @@ export async function exportMyData(
       if (rows.length < PAGE) break;
     }
   }
-  return { ...data, exportedAt: now.toISOString(), busyTimes };
+
+  // What they told Casy (#116): at most 100, so one read.
+  const { data: told, error: toldError } = await db
+    .from("casy_entries")
+    .select(ENTRY_COLUMNS)
+    .eq("profile_id", caller.id)
+    .order("start_at", { ascending: true });
+  if (toldError) throw toldError;
+  return {
+    ...data,
+    exportedAt: now.toISOString(),
+    busyTimes,
+    toldCasyEntries: (told as EntryRow[]).map(storedFrom),
+  };
 }

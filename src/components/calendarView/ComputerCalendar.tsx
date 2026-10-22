@@ -10,14 +10,23 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarPlus, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import {
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  MessageCircleMore,
+  X,
+} from "lucide-react";
 
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
+import TellCasySheet from "@/components/tellCasy/TellCasySheet";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
+import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
@@ -85,10 +94,14 @@ export default function ComputerCalendar() {
     calendar,
     calendars,
     calendarById,
+    entries,
     connectedCount,
     setCalendarsVisible,
     visibilityError,
   } = useMyCalendarView();
+  // Tell Casy (#116): what is in no calendar, for people AI is on for.
+  const aiAllowed = useAiAllowed();
+  const [tellOpen, setTellOpen] = useState(false);
 
   const [today] = useState(() => startOfDay(Date.now(), TZ));
   const firstMonth = useMemo(() => startOfMonth(Date.parse(SEARCH_WINDOW.start), TZ), []);
@@ -259,7 +272,19 @@ export default function ComputerCalendar() {
                 detail={t.calendarAccounts.rowDetail}
                 value={calendar.loading ? null : connectedCount}
               />
+              {aiAllowed && (
+                <ListRow
+                  onClick={() => setTellOpen(true)}
+                  icon={MessageCircleMore}
+                  label={t.tellCasy.button}
+                  detail={t.tellCasy.rowDetail}
+                  value={entries.length > 0 ? entries.length : null}
+                />
+              )}
             </ListGroup>
+            {aiAllowed && (
+              <TellCasySheet open={tellOpen} onClose={() => setTellOpen(false)} kept={entries} />
+            )}
             <CalendarListPanel
               introInTip
               calendars={calendars}

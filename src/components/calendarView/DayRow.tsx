@@ -3,6 +3,7 @@ import { MapPin } from "lucide-react";
 import EventLabelDetails from "@/components/calendarView/EventLabelDetails";
 import { useEventLabel } from "@/hooks/useEventLabels";
 import { useLang, useT } from "@/i18n/lang";
+import { CASY_CALENDAR_ID } from "@/lib/casyEntries";
 import {
   formatDuration,
   formatSegmentRange,
@@ -70,9 +71,11 @@ export function DayRow({
   const label = useEventLabel(externalId, details?.title);
   const pill = holiday
     ? words.holidayCategory
-    : calendar?.purpose
-      ? t.categories[calendar.purpose]
-      : words.noCategory;
+    : calendar?.id === CASY_CALENDAR_ID
+      ? words.casyPill
+      : calendar?.purpose
+        ? t.categories[calendar.purpose]
+        : words.noCategory;
 
   return (
     <li className="flex items-start gap-3 py-3 text-sm">

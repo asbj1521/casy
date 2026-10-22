@@ -1,16 +1,18 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { CalendarPlus, CalendarSearch, Layers } from "lucide-react";
+import { CalendarPlus, CalendarSearch, Layers, MessageCircleMore } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
+import TellCasySheet from "@/components/tellCasy/TellCasySheet";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import MonthView from "@/components/swipe/MonthView";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
+import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
@@ -41,10 +43,14 @@ export default function PhoneCalendar() {
     calendar,
     calendars,
     calendarById,
+    entries,
     connectedCount,
     setCalendarsVisible,
     visibilityError,
   } = useMyCalendarView();
+  // Tell Casy (#116): what is in no calendar, for people AI is on for.
+  const aiAllowed = useAiAllowed();
+  const [tellOpen, setTellOpen] = useState(false);
   // The calendars sheet is in the address (?calendars), so the back arrow
   // on "Connected calendars" returns to it, not past it to the bare month.
   const location = useLocation();
@@ -126,6 +132,16 @@ export default function PhoneCalendar() {
             <Layers className="h-5 w-5" />
             {words.calendarsButton}
           </button>
+          {aiAllowed && (
+            <button
+              type="button"
+              onClick={() => setTellOpen(true)}
+              className="flex items-center gap-1.5 py-1 text-[17px] text-primary"
+            >
+              <MessageCircleMore className="h-5 w-5" />
+              {t.tellCasy.button}
+            </button>
+          )}
           <button type="button" onClick={goToday} className="py-1 text-[17px] text-primary">
             {words.today}
           </button>
@@ -191,6 +207,10 @@ export default function PhoneCalendar() {
         <Suspense fallback={null}>
           <PlanFromCalendar onClose={closeOverlay} />
         </Suspense>
+      )}
+
+      {aiAllowed && (
+        <TellCasySheet open={tellOpen} onClose={() => setTellOpen(false)} kept={entries} />
       )}
 
       <DayPanel

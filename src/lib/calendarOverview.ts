@@ -15,6 +15,7 @@
  */
 
 import type { Lang } from "@/i18n/locale";
+import { CASY_CALENDAR_ID, CASY_RGB, type StoredEntry } from "@/lib/casyEntries";
 import { danishHolidays, type Holiday } from "@/lib/danishHolidays";
 import { formatTime } from "@/lib/format";
 import { addDays, localDate, startOfDay, wallTime } from "@/lib/zone";
@@ -77,6 +78,8 @@ export interface OverviewData {
   blocks: OverviewBlock[];
   /** True if the backend stopped early because there were too many blocks. */
   truncated: boolean;
+  /** What the person told Casy that is in no calendar (#116), over the same range. */
+  entries?: StoredEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -385,7 +388,10 @@ const UNCATEGORISED_PALETTE = [
  * next colour from a palette so uncategorised calendars stay distinguishable.
  */
 export function calendarColors(calendars: OverviewCalendar[]): Map<string, string> {
-  const colors = new Map<string, string>([[HOLIDAY_CALENDAR_ID, HOLIDAY_RGB]]);
+  const colors = new Map<string, string>([
+    [HOLIDAY_CALENDAR_ID, HOLIDAY_RGB],
+    [CASY_CALENDAR_ID, CASY_RGB],
+  ]);
   let uncategorised = 0;
   for (const c of calendars) {
     if (c.purpose) {

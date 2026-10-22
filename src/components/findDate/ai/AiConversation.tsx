@@ -209,8 +209,11 @@ export function AiActions({
   );
 }
 
-/** The box to write (or say) a description or more details in. */
-function Composer({
+/**
+ * The box to write (or say) a description or more details in. Also Tell
+ * Casy's (#116): the same box, with its own words passed in.
+ */
+export function Composer({
   initial,
   big,
   compact,

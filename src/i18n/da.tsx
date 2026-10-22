@@ -411,6 +411,35 @@ export const da = {
     noneOfThem: "Ingen af dem",
     left: (n: number) => (n === 1 ? "1 AI-svar tilbage i dag" : `${n} AI-svar tilbage i dag`),
   },
+  // Tell Casy (#116): what is in no calendar, said or written and checked before it is kept.
+  tellCasy: {
+    title: "Fortæl Casy",
+    button: "Fortæl Casy",
+    rowDetail: "Rejser og andet, der ikke står i en kalender",
+    done: "Færdig",
+    intro:
+      "Skriv eller sig, hvornår du er væk eller optaget, og som ikke står i en kalender. Fx at du er hjemme hos dine forældre hele december.",
+    placeholder: "Fx jeg rejser fra den 12. til den 19. oktober",
+    morePlaceholder: "Tilføj detaljer, eller ret noget",
+    send: "Find tiderne",
+    update: "Opdater",
+    thinking: "Casy læser…",
+    understood: "Sådan forstod Casy det",
+    kinds: { away: "Væk", busy: "Optaget" },
+    nothingFound: "Casy fandt ingen tider i det, du skrev. Prøv at sige det på en anden måde.",
+    save: (n: number) => (n === 1 ? "Gem 1 post" : `Gem ${n} poster`),
+    saving: "Gemmer…",
+    addDetails: "Tilføj detaljer",
+    again: "Start forfra",
+    leaveOut: (label: string) => `Drop ${label}`,
+    kept: "Det har du fortalt Casy",
+    keptNote:
+      "Det tæller med, når dine grupper finder en dato, og vises i din kalender. De andre ser kun, at du ikke kan, aldrig hvad du skrev eller sagde.",
+    remove: (label: string) => `Slet ${label}`,
+    failed: "Casy kunne ikke læse det lige nu. Prøv igen.",
+    saveFailed: "Posterne blev ikke gemt. Prøv igen.",
+    deleteFailed: "Posten blev ikke slettet. Prøv igen.",
+  },
   // An event's place and note (#84), on My events and the swipe card.
   eventDetails: {
     place: "Sted",
@@ -434,7 +463,7 @@ export const da = {
     members: (n: number) => (n === 1 ? "1 medlem" : `${n} medlemmer`),
     whatMembersSee: "Hvad medlemmer kan se",
     whatMembersSeeBody:
-      "Alle i en gruppe kan se hinandens navne, og hvornår de er optaget, og om en kalender ikke er opdateret i flere dage. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder. Casy gemmer slet ikke titler på aftaler.",
+      "Alle i en gruppe kan se hinandens navne, og hvornår de er optaget, og om en kalender ikke er opdateret i flere dage. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder. Casy gemmer slet ikke titler på aftaler i dine kalendere.",
     noCalendarYet: "tjekker selv",
     waitingOne: (name: string) =>
       `${name} har ingen kalender i Casy og tjekker selv de datoer, der bliver foreslået.`,
@@ -1038,6 +1067,9 @@ export const da = {
     guessedCategory: "Casy har gættet kategorien. Ret den, hvis den ikke passer.",
     holidayCategory: "Helligdag",
     holidayCalendar: "Danske helligdage",
+    // What you told Casy (#116), drawn as a calendar of its own.
+    casyCalendar: "Casy",
+    casyPill: "Fortalt",
     continuesBoth: "Fortsætter fra dagen før og ind i den næste",
     continuesBefore: "Fortsætter fra dagen før",
     continuesAfter: "Fortsætter ind i den næste dag",
@@ -1139,6 +1171,7 @@ export const da = {
     on: "Til",
     off: "Fra",
     busy: "Optagede tidsrum",
+    toldCasy: "Det, du har fortalt Casy",
     busyCount: "Antal gemt",
     busyFrom: "Det tidligste",
     busyTo: "Det seneste",
@@ -1402,6 +1435,7 @@ export const da = {
       "event-label": "Vurdering af aftaler",
       "event-relabel": "Rettede vurderinger",
       "event-profile": "Profil af planlagte aftaler",
+      "entries-ai": "Fortæl Casy",
       earlier: "Før budgetter pr. person",
     } as Record<string, string>,
     healthStale:

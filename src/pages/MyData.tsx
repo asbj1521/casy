@@ -317,6 +317,7 @@ function BusyPart({ data }: { data: MyData }) {
     <>
       <ListGroup title={w.busy}>
         <Fact label={w.busyCount} value={busy.count} />
+        <Fact label={w.toldCasy} value={data.toldCasy.count} />
         {busy.first && <Fact label={w.busyFrom} value={day(busy.first, lang)} />}
         {busy.last && <Fact label={w.busyTo} value={day(busy.last, lang)} />}
       </ListGroup>

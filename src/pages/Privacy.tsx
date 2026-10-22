@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 24. oktober 2026",
+  updated: "Senest opdateret 25. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -89,6 +89,13 @@ const da: LegalCopy = {
             <li>
               <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære
               kalender, så den kan fjerne dem igen, hvis en aftale bliver aflyst.
+            </li>
+            <li>
+              <Term>Det, du har fortalt Casy:</Term> tider, hvor du er væk eller optaget, som ikke
+              står i en kalender, og som du har skrevet eller sagt til Casy: en kort overskrift,
+              hvornår det starter og slutter, og om du er væk eller optaget. Den sætning, du skrev
+              eller sagde, gemmes ikke (se AI i Casy). Dine grupper kan se, at du ikke kan i de
+              tidsrum, men aldrig overskriften.
             </li>
             <li>
               <Term>Dit ja til AI:</Term> om du har sagt ja til, at Casys AI må læse i din kalender,
@@ -171,6 +178,16 @@ const da: LegalCopy = {
             medlemmer. Nævner du selv et navn, sendes det, som du skrev det, og Casy finder personen
             i gruppen i din browser. Anthropic svarer med indstillinger til aftalen, som du ser og
             kan rette, før noget bliver sendt til gruppen.
+          </p>
+          <p>
+            <Term>Fortæl Casy.</Term> Vælger du Fortæl Casy, sendes det, du skriver eller siger om,
+            hvornår du er væk eller optaget, til Anthropic. Med det følger dagens dato og det sprog,
+            du bruger Casy på, og når du tilføjer detaljer, også det, du skrev før, og de tider, du
+            ser på skærmen. Intet andet: ikke dine kalendere og ikke navne. Anthropic svarer med
+            tider, som du ser og kan rette, før noget bliver gemt. Først når du trykker Gem, gemmer
+            Casy tiderne (se Det gemmer Casy), og aldrig den sætning, du skrev eller sagde. Det
+            kræver ikke dit ja til, at AI&apos;en må læse i din kalender, for den læser intet fra
+            den.
           </p>
           <p>
             Foreslår du en aftale, beder Casy også Anthropic om at vurdere, hvad den typisk
@@ -287,9 +304,9 @@ const da: LegalCopy = {
           <p>
             Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere (heller ikke dem, du
             selv har givet dem), hvilke konti du har forbundet eller hvad dine aftaler hedder. Casy
-            gemmer slet ikke titler på aftaler, så der er intet at afsløre. Én undtagelse: har du
-            logget ind med din e-mail og ikke valgt et navn på din profil, er det navn, medlemmer
-            ser, delen af din e-mailadresse før @ (for eksempel "anna.jensen" for
+            gemmer slet ikke titler på aftaler i dine kalendere, så der er intet at afsløre. Én
+            undtagelse: har du logget ind med din e-mail og ikke valgt et navn på din profil, er det
+            navn, medlemmer ser, delen af din e-mailadresse før @ (for eksempel "anna.jensen" for
             anna.jensen@example.com). Resten af adressen vises aldrig.
           </p>
           <p>
@@ -381,6 +398,7 @@ const da: LegalCopy = {
             <li>invitationslinks 30 dage efter, at de er holdt op med at virke;</li>
             <li>notatet om, at du har slået en e-mailadresse op, efter et døgn;</li>
             <li>notatet om dine AI-svar efter 30 dage;</li>
+            <li>tider, du har fortalt Casy, 30 dage efter, at de er slut;</li>
             <li>rettelser af AI'en, du har sendt til gennemsyn, efter 90 dage;</li>
             <li>oplysningerne om dine vigtige aftaler 30 dage efter, at de sidst blev sendt;</li>
             <li>forsøg på at forbinde en kalender, der aldrig blev færdige, efter 7 dage;</li>
@@ -437,7 +455,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 24 October 2026",
+  updated: "Last updated 25 October 2026",
   sections: [
     {
       title: "In short",
@@ -502,6 +520,13 @@ const en: LegalCopy = {
             <li>
               <Term>Events in your calendar:</Term> which events Casy added to your primary
               calendar, so it can take them out again if an event is cancelled.
+            </li>
+            <li>
+              <Term>What you have told Casy:</Term> times when you are away or busy that are not in
+              a calendar, which you wrote or said to Casy: a short heading, when it starts and ends,
+              and whether you are away or busy. The sentence you wrote or said is not kept (see AI
+              in Casy). Your groups can see that you can&apos;t make those times, but never the
+              heading.
             </li>
             <li>
               <Term>Your yes to AI:</Term> whether you said yes to Casy&apos;s AI reading your
@@ -584,6 +609,15 @@ const en: LegalCopy = {
             you name someone yourself, the name is sent as you wrote it, and Casy finds the person
             in the group in your browser. Anthropic answers with settings for the event, which you
             see and can change before anything is sent to the group.
+          </p>
+          <p>
+            <Term>Tell Casy.</Term> If you choose Tell Casy, what you write or say about when you
+            are away or busy is sent to Anthropic. With it go today&apos;s date and the language you
+            use Casy in, and when you add details, what you wrote before and the times you see on
+            screen. Nothing else: not your calendars and not names. Anthropic answers with times,
+            which you see and can change before anything is kept. Only when you press Save does Casy
+            keep the times (see What Casy stores), and never the sentence you wrote or said. It does
+            not need your yes to the AI reading your calendar, since it reads nothing from it.
           </p>
           <p>
             When you suggest an event, Casy also asks Anthropic what it usually involves for the
@@ -701,11 +735,11 @@ const en: LegalCopy = {
           <p>
             Members do not see your email address, the names of your calendars (including names you
             gave them), which accounts you connected, or what any of your events are called. Casy
-            never stores event titles at all, so there is nothing there to reveal. One exception to
-            keep in mind: if you signed in with your email and have not chosen a name on your
-            profile, the name members see is the part of your email address before the @ (for
-            example "anna.jensen" for anna.jensen@example.com). The rest of the address is never
-            shown.
+            never stores the titles of events in your calendars at all, so there is nothing there to
+            reveal. One exception to keep in mind: if you signed in with your email and have not
+            chosen a name on your profile, the name members see is the part of your email address
+            before the @ (for example "anna.jensen" for anna.jensen@example.com). The rest of the
+            address is never shown.
           </p>
           <p>
             If you said yes to Casy&apos;s AI reading your calendar, your important events count
@@ -797,6 +831,7 @@ const en: LegalCopy = {
             <li>invite links 30 days after they stopped working;</li>
             <li>the note that you looked up an email address, after a day;</li>
             <li>the note about your AI answers after 30 days;</li>
+            <li>times you told Casy, 30 days after they end;</li>
             <li>corrections of the AI you sent for review after 90 days;</li>
             <li>the information about your important events 30 days after it was last sent;</li>
             <li>attempts to connect a calendar that never finished, after 7 days;</li>
