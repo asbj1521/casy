@@ -8,7 +8,7 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { useT } from "@/i18n/lang";
 import { MAX_NOTE_LENGTH, MAX_PLACE_LENGTH, type EventExtras } from "@/lib/scheduler";
-import { summarizePeople } from "@/lib/schedulerFlow";
+import { summarizePeople } from "@/lib/peopleSummary";
 
 import FieldRow, { ROW_INPUT } from "./FieldRow";
 

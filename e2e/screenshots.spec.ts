@@ -97,6 +97,7 @@ for (const { name, path, world, signedIn } of PAGES) {
 
     test(`looks as it did`, async ({ page, isMobile }) => {
       test.skip(isMobile && name === "event-vote", "a phone has no open event beside the list");
+      test.skip(isMobile && name.startsWith("scheduler"), "a phone plans from My calendar (#127)");
       await page.goto(path);
       await expectPage(page, name, isMobile);
     });
@@ -126,6 +127,10 @@ test.describe("dark", () => {
 
       test(`looks as it did, dark`, async ({ page, isMobile }) => {
         test.skip(isMobile && name === "event-vote", "a phone has no open event beside the list");
+        test.skip(
+          isMobile && name.startsWith("scheduler"),
+          "a phone plans from My calendar (#127)",
+        );
         await page.goto(path);
         await expectPage(page, `${name}-dark`, isMobile);
       });
@@ -141,16 +146,6 @@ test.describe("dark", () => {
     await expect(page).toHaveScreenshot("swipe-dark.png");
   });
 });
-
-// The phone's scheduling flow (#101): the first step is "scheduler" above.
-for (const step of ["what", "details", "dates"]) {
-  test(`the scheduling flow's ${step} step looks as it did`, async ({ page, isMobile }) => {
-    test.skip(!isMobile, "phones only: a computer has the whole page at once");
-    await page.goto(`/?step=${step}`);
-    await expect(page.getByText(/^Trin \d af 4$/)).toBeVisible();
-    await expectPage(page, `scheduler-${step}`, isMobile);
-  });
-}
 
 test("the swipe screen looks as it did", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phones only: a computer answers beside the list (event-vote)");

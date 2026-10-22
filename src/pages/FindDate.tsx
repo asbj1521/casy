@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { CalendarOff, Sparkles } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, Navigate, useLocation } from "react-router-dom";
 
-import type { EventResponse } from "@/api/events";
 import DayChart from "@/components/DayChart";
 import AnswerActions from "@/components/findDate/AnswerActions";
 import AiBoxView from "@/components/findDate/ai/AiBoxView";
@@ -11,99 +9,48 @@ import PlanSummary from "@/components/findDate/ai/PlanSummary";
 import AnswerCard from "@/components/findDate/AnswerCard";
 import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
-import OutdatedNote from "@/components/findDate/OutdatedNote";
 import LaterDates from "@/components/findDate/LaterDates";
 import MoreSettingsScreen from "@/components/findDate/MoreSettingsScreen";
-import DraftDeck, { type DraftAnswer } from "@/components/findDate/phoneFlow/DraftDeck";
-import DescribeStep from "@/components/findDate/phoneFlow/DescribeStep";
-import DetailsStep from "@/components/findDate/phoneFlow/DetailsStep";
-import FlowShell, { FlowButton } from "@/components/findDate/phoneFlow/FlowShell";
-import GroupStep from "@/components/findDate/phoneFlow/GroupStep";
-import LiveAnswer from "@/components/findDate/phoneFlow/LiveAnswer";
 import GroupSwitcher from "@/components/GroupSwitcher";
 import NewGroupDialog from "@/components/NewGroupDialog";
-import { SettingsPanel, SettingsSentence, StepSettings } from "@/components/SchedulerSettings";
+import RequireAuth from "@/components/RequireAuth";
+import { SettingsPanel, SettingsSentence } from "@/components/SchedulerSettings";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { FIRST_MONTH, LAST_MONTH, TZ, usePlanning } from "@/hooks/usePlanning";
-import { eventTitle, storedEventTitle } from "@/i18n/eventTitle";
-import { useLang, useT } from "@/i18n/lang";
-import { currentStep } from "@/lib/answerSteps";
+import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
-import { pickCandidates } from "@/lib/candidates";
-import { nameList } from "@/lib/format";
-import { edgeWarnings } from "@/lib/earlyMorning";
-import { fallbackTitleId } from "@/lib/scheduler";
-import {
-  aiFromSearch,
-  detailsTouched,
-  previousStep,
-  searchForStep,
-  stepFromSearch,
-  type FlowStep,
-} from "@/lib/schedulerFlow";
 import { dayOf } from "@/lib/zone";
 
 /**
- * The phone flow's dates before sending (#101), for the search `key` names:
- * your answers by each date's start, the dates you took out, and the order
- * you answered in, for taking the last one back.
+ * The scheduler's address (`/` signed in, `/plan`). A phone plans from My
+ * calendar's Planlæg (#126, #127), so there it leads to the calendar,
+ * through sign-in for anyone signed out; a computer gets the scheduling page.
  */
-interface Draft {
-  key: string;
-  answers: Record<string, DraftAnswer>;
-  removed: string[];
-  history: string[];
+export default function FindDate() {
+  const phone = usePhoneLayout();
+  if (phone) {
+    return (
+      <RequireAuth>
+        <Navigate to="/calendar-overview" replace />
+      </RequireAuth>
+    );
+  }
+  return <SchedulingPage />;
 }
 
 /**
- * The scheduling page: the settings on top, the first date everyone can make
- * under them, the month day by day, the next few dates, and the group itself
- * at the bottom. On a phone the same page is a flow of four steps instead
- * (#101): the group, what and when, the optional details, and the dates.
- * The planning itself (state, search, sending) is usePlanning's.
+ * The scheduling page (computers and tablets): the settings on top, the
+ * first date everyone can make under them, the month day by day, the next
+ * few dates, and the group itself at the bottom. The planning itself (state,
+ * search, sending) is usePlanning's.
  */
-export default function FindDate() {
+function SchedulingPage() {
   const t = useT();
-  const { lang } = useLang();
-  const navigate = useNavigate();
   // Flere indstillinger (#98), laid over the page while ?settings is set.
   const location = useLocation();
   const moreSettings = new URLSearchParams(location.search).has("settings");
-  const phone = usePhoneLayout();
-
-  // The phone's flow (#101): the step on screen is in the address, so the
-  // phone's back button and the iPhone's back swipe go a step back. Steps
-  // taken on are marked, so going back returns to that same history entry
-  // rather than adding another; a step opened directly goes back by
-  // replacing it.
-  const flowStep = stepFromSearch(location.search);
-  // Planning with AI (#100) is a flow of its own: the group, the event
-  // described, the dates.
-  const aiFlow = aiFromSearch(location.search);
-  function goToStep(step: FlowStep) {
-    navigate(
-      { pathname: location.pathname, search: searchForStep(step, aiFlow || step === "describe") },
-      { state: { flowStep: true } },
-    );
-  }
-  function stepBack() {
-    const previous = previousStep(flowStep, aiFlow);
-    if (!previous) return;
-    if ((location.state as { flowStep?: boolean } | null)?.flowStep) {
-      navigate(-1);
-    } else {
-      navigate(
-        { pathname: location.pathname, search: searchForStep(previous, aiFlow) },
-        { replace: true },
-      );
-    }
-  }
-  // Each step starts at its top, as a new screen does.
-  useEffect(() => {
-    if (phone) window.scrollTo(0, 0);
-  }, [phone, flowStep]);
 
   const {
     user,
@@ -113,7 +60,6 @@ export default function FindDate() {
     busyLoading,
     busyFailed,
     myCalendarsFailed,
-    youProfileId,
     stopCarousel,
     selectGroup,
     peopleChoice,
@@ -127,15 +73,11 @@ export default function FindDate() {
     extras,
     updateExtras,
     sched,
-    updateSettings,
     updateSettingsByHand,
     aiOn,
     planner,
     search,
-    searchWindow,
     loadingGroup,
-    participants,
-    found,
     suggestions,
     later,
     days,
@@ -156,7 +98,6 @@ export default function FindDate() {
     viewMonth,
     chartMonth,
     pageMonth,
-    profileFor,
     canSuggest,
     checking,
     sending,
@@ -170,81 +111,6 @@ export default function FindDate() {
   // more details are being written in it (a computer's box, #124).
   const [aiOverChart, setAiOverChart] = useState(false);
   const [aiAdding, setAiAdding] = useState(false);
-
-  // The phone flow's last step (#101): you swipe the dates before they go.
-  // Your answers and the dates you took out belong to the search they were
-  // given for (the group, the settings, the period); change any of it and
-  // they start afresh.
-  const draftKey = [
-    activeGroupId,
-    JSON.stringify(search),
-    searchWindow.start,
-    searchWindow.end,
-    currentStep(steps).from,
-  ].join("|");
-  const freshDraft = useMemo<Draft>(
-    () => ({ key: draftKey, answers: {}, removed: [], history: [] }),
-    [draftKey],
-  );
-  const [draftState, setDraft] = useState<Draft>(freshDraft);
-  const draft = draftState.key === draftKey ? draftState : freshDraft;
-  // The dates the vote would offer, picked as a computer's suggestion picks
-  // them, less the ones you took out: the next good dates take their place.
-  // Only on that step, since picking looks at up to 60 dates.
-  const showVoteDates = phone && flowStep === "dates";
-  const voteDates = useMemo(() => {
-    if (!showVoteDates || !participants || !found?.slot) return null;
-    const removed = new Set(draft.removed);
-    return pickCandidates(
-      participants,
-      search,
-      {
-        first: { slot: found.slot, conflicts: found.conflicts },
-        end: searchWindow.end,
-        count: extras.dateCount + removed.size,
-      },
-      TZ,
-    )
-      .filter((d) => !removed.has(d.slot.start))
-      .slice(0, extras.dateCount);
-  }, [showVoteDates, participants, search, found, searchWindow, extras.dateCount, draft.removed]);
-  const draftReady =
-    !!voteDates && voteDates.length > 0 && voteDates.every((d) => draft.answers[d.slot.start]);
-  /** Your answer to the date at `start`: "can't" takes it out of the vote. */
-  function answerDraft(start: string, response: EventResponse) {
-    const answers = { ...draft.answers };
-    delete answers[start];
-    setDraft({
-      ...draft,
-      answers: response === "declined" ? answers : { ...answers, [start]: response },
-      removed: response === "declined" ? [...draft.removed, start] : draft.removed,
-      history: [...draft.history, start],
-    });
-  }
-  /** Take back the last answer, a date taken out included. */
-  function undoDraft() {
-    const last = draft.history[draft.history.length - 1];
-    if (!last) return;
-    const answers = { ...draft.answers };
-    delete answers[last];
-    setDraft({
-      ...draft,
-      answers,
-      removed: draft.removed.filter((s) => s !== last),
-      history: draft.history.slice(0, -1),
-    });
-  }
-  /** Answer the date at `start` again: it comes back on top of the cards. */
-  function reopenDraft(start: string) {
-    const answers = { ...draft.answers };
-    delete answers[start];
-    setDraft({ ...draft, answers, history: draft.history.filter((s) => s !== start) });
-  }
-  /** Every date taken out, back in. */
-  function restoreDraft() {
-    const removed = new Set(draft.removed);
-    setDraft({ ...draft, removed: [], history: draft.history.filter((s) => !removed.has(s)) });
-  }
 
   const actionProps = {
     canStepBack: steps.index > 0,
@@ -311,8 +177,7 @@ export default function FindDate() {
     onChange: updateSettingsByHand,
   };
 
-  // The answer, the chart and the dates after it: the same on a computer's
-  // page and in the phone's flow.
+  // The answer, the chart and the dates after it.
   const answerCardProps = {
     fadeKey,
     waiting,
@@ -360,190 +225,6 @@ export default function FindDate() {
       onCancel={() => setNewGroupOpen(false)}
     />
   );
-
-  if (phone) {
-    const touched = detailsTouched(extras, peopleChoice);
-    // The last step: swiping while dates are unanswered, then the summary
-    // with the button that sends them.
-    const swiping =
-      flowStep === "dates" && !waiting && !!voteDates && voteDates.length > 0 && !draftReady;
-    const canSend = !!user && !!activeGroup && !activeGroup.isExample && draftReady;
-    const chosen = (voteDates ?? []).map((d) => ({
-      start: d.slot.start,
-      end: d.slot.end,
-      answer: draft.answers[d.slot.start] ?? "accepted",
-    }));
-    // Under the summary: who checks the dates by hand, a holiday's ways of
-    // fitting, why it can't be sent, and how sending went.
-    const notes = [
-      checkers && (
-        <p key="checkers" className="flex items-start gap-1.5 text-muted-foreground">
-          <CalendarOff className="mt-0.5 h-4 w-4 shrink-0" />
-          {checkers.everyone
-            ? t.scheduler.nobodyHasCalendar
-            : t.scheduler.checkThemselves(nameList(checkers.names, lang))}
-        </p>
-      ),
-      outdated.length > 0 && <OutdatedNote key="outdated" outdated={outdated} />,
-      search.kind === "vacation" && suggestions.length > 0 && (
-        <LaterDates key="workarounds" {...laterDatesProps} />
-      ),
-      !user ? (
-        <p key="signIn" className="text-muted-foreground">
-          {t.scheduler.hintSignIn}
-        </p>
-      ) : activeGroup?.isExample ? (
-        <p key="example" className="text-muted-foreground">
-          {t.scheduler.hintExample}
-        </p>
-      ) : null,
-      movedNote && (
-        <p key="moved" className="font-medium text-foreground">
-          {movedNote === "suggest" ? t.scheduler.changedBeforeSending : t.scheduler.refreshedDate}
-        </p>
-      ),
-      suggest.isError && (
-        <p key="error" className="text-red-700">
-          {suggest.error.message}
-        </p>
-      ),
-    ].filter(Boolean);
-    const live = (
-      <LiveAnswer
-        waiting={waiting}
-        review={review}
-        search={search}
-        slot={slot}
-        onOpen={() => goToStep("dates")}
-      />
-    );
-    return (
-      <>
-        <FlowShell
-          step={flowStep}
-          pathname={location.pathname}
-          onBack={stepBack}
-          fill={swiping}
-          ai={aiFlow}
-          footer={
-            flowStep === "group" ? (
-              <div className="flex gap-2">
-                {/* Planning with AI costs money per use: only for those it is on for (#111). */}
-                {aiOn && (
-                  <FlowButton quiet onClick={() => goToStep("describe")} disabled={!activeGroup}>
-                    <span className="inline-flex items-center gap-1.5">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      {t.aiPlan.start}
-                    </span>
-                  </FlowButton>
-                )}
-                <FlowButton onClick={() => goToStep("what")} disabled={!activeGroup}>
-                  {t.schedulerFlow.next}
-                </FlowButton>
-              </div>
-            ) : flowStep === "describe" ? (
-              planner.session.plan && (
-                <>
-                  {live}
-                  <FlowButton onClick={() => goToStep("dates")}>
-                    {t.schedulerFlow.seeDates}
-                  </FlowButton>
-                </>
-              )
-            ) : flowStep === "what" ? (
-              <>
-                {live}
-                <FlowButton onClick={() => goToStep("details")}>{t.schedulerFlow.next}</FlowButton>
-              </>
-            ) : flowStep === "details" ? (
-              <>
-                {live}
-                <FlowButton quiet={!touched} onClick={() => goToStep("dates")}>
-                  {touched ? t.schedulerFlow.seeDates : t.schedulerFlow.skip}
-                </FlowButton>
-              </>
-            ) : draftReady ? (
-              <div className="flex gap-2">
-                <AnswerActions
-                  stepping={false}
-                  {...actionProps}
-                  approving={false}
-                  canSuggest={canSend}
-                  onSuggest={() => void sendSuggestion(chosen)}
-                />
-              </div>
-            ) : null
-          }
-        >
-          {flowStep === "group" ? (
-            <GroupStep
-              groups={groups}
-              selectedId={activeGroupId}
-              signedIn={!!user}
-              onPick={selectGroup}
-              onCreate={openNewGroup}
-            />
-          ) : flowStep === "what" ? (
-            <>
-              <StepSettings
-                name={name}
-                onName={setName}
-                settings={sched}
-                onChange={updateSettings}
-              />
-              {/* The start times are Danish time. */}
-              <DanishTimeNote className="mt-4 px-1" />
-            </>
-          ) : flowStep === "describe" ? (
-            <DescribeStep
-              groups={groups}
-              groupId={activeGroupId}
-              signedIn={!!user}
-              onPickGroup={selectGroup}
-              onCreateGroup={openNewGroup}
-              planner={planner}
-              members={activeGroup?.members ?? []}
-              name={name}
-              onName={setName}
-              settings={sched}
-              onChange={updateSettingsByHand}
-              extras={extras}
-              onExtras={updateExtras}
-              participants={participantProps}
-            />
-          ) : flowStep === "details" ? (
-            <DetailsStep extras={extras} onExtras={updateExtras} participants={participantProps} />
-          ) : (
-            <DraftDeck
-              waiting={waiting}
-              dates={voteDates}
-              answers={draft.answers}
-              onAnswer={answerDraft}
-              onReopen={reopenDraft}
-              onUndo={undoDraft}
-              canUndo={draft.history.length > 0}
-              onStartOver={restoreDraft}
-              anyRemoved={draft.removed.length > 0}
-              search={search}
-              slotLabel={name.trim() || eventTitle(storedEventTitle(fallbackTitleId(search)), t)}
-              place={extras.place}
-              groupSize={groupSize}
-              warningsFor={(date) =>
-                search.kind === "single" && participants
-                  ? edgeWarnings(participants, date, TZ, youProfileId, lang, t)
-                  : []
-              }
-              extras={extras}
-              onExtras={updateExtras}
-              notes={notes.length > 0 ? notes : null}
-              profileInput={profileFor}
-            />
-          )}
-        </FlowShell>
-        {newGroupDialog}
-      </>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -647,7 +328,7 @@ export default function FindDate() {
         )}
       </div>
 
-      {/* Tablets only: a phone has the flow above, and a wide screen the
+      {/* Tablets only: a wide screen has the
           settings box's tabs. */}
       {moreSettings && (
         <MoreSettingsScreen

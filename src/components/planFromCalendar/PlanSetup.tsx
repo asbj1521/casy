@@ -3,14 +3,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import { RotateCcw, Sparkles, Users } from "lucide-react";
 
 import AiConversation from "@/components/findDate/ai/AiConversation";
-import DetailsStep from "@/components/findDate/phoneFlow/DetailsStep";
-import GroupStep from "@/components/findDate/phoneFlow/GroupStep";
 import { StepSettings } from "@/components/SchedulerSettings";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
+
+import DetailsStep from "./DetailsStep";
+import GroupStep from "./GroupStep";
 
 /** The two views swap with a short fade and lift. */
 const SWAP = {
@@ -106,7 +107,7 @@ export default function PlanSetup({
               ))}
 
             <h3 className="mb-3 text-lg font-extrabold tracking-tight text-foreground">
-              {t.schedulerFlow.steps.what}
+              {t.schedulerFlow.what}
             </h3>
             <StepSettings
               name={name}

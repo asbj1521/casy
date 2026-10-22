@@ -322,27 +322,11 @@ export const en: Messages = {
     },
   },
   schedulerFlow: {
-    stepOf: (n: number, total: number) => `Step ${n} of ${total}`,
-    steps: {
-      group: "Group",
-      what: "What and when",
-      details: "Details",
-      dates: "Dates",
-      describe: "Plan with AI",
-    },
-    groupTitle: "Who's it for?",
-    back: "Back",
-    next: "Next",
-    skip: "Skip",
-    seeDates: "See dates",
+    // The Planlæg sheet's heading over the settings (#126).
+    what: "What and when",
     newGroup: "New group",
     newGroupDetail: "Invite people afterwards",
     examples: "Examples",
-    firstDate: "First date",
-    noDate: "No date works. Try changing the settings.",
-    seeAnswer: "See the dates",
-    alsoInVote: "Also in the vote",
-    onlyOne: "There are no other good dates in the period, so only this one is sent.",
     peopleAll: (n: number) => `All ${n}`,
     peopleSome: (required: number, optional: number) =>
       `${required} in${optional > 0 ? `, ${optional} optional` : ""}`,
@@ -350,16 +334,8 @@ export const en: Messages = {
     done: "Done",
     send: "Send dates for voting",
     sent: "Sent for voting",
-    deckHint:
-      "Swipe right if you can, and up if you'd rather not. Left removes the date, and Casy finds another.",
-    undo: "Undo",
     needSkip: (names: string) => `${names} would skip something`,
     needTimeOff: (names: string) => `${names} would need time off`,
-    readyTitle: (n: number) => (n === 1 ? "1 date ready" : `${n} dates ready`),
-    readyBody:
-      "The group swipes through them the same way, and Casy picks the one that suits everyone best.",
-    noMore: "There are no more good dates with these settings. Change them, or start over.",
-    startOver: "Start over",
   },
   aiPlan: {
     backToSettings: "Settings",

@@ -11,7 +11,7 @@ import {
   type PeopleChoice,
   type SchedulerSettings,
 } from "@/lib/scheduler";
-import { summarizePeople } from "@/lib/schedulerFlow";
+import { summarizePeople } from "@/lib/peopleSummary";
 
 /** "fredag" / "Friday" for a day of week (0 = Sunday). */
 function weekdayLong(dow: number, locale: string): string {

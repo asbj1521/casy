@@ -13,7 +13,7 @@ import {
 } from "framer-motion";
 import { Check, ChevronDown, Loader2, X } from "lucide-react";
 
-import { FlowButton } from "@/components/findDate/phoneFlow/FlowShell";
+import FlowButton from "@/components/ui/FlowButton";
 import { MonthLayer } from "@/components/swipe/MonthView";
 import { TODAY } from "@/hooks/useDateSearch";
 import { TZ, type Planning } from "@/hooks/usePlanning";

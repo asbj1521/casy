@@ -351,47 +351,22 @@ export const da = {
   },
   // The scheduling page on a phone (#101): four steps, one screen each.
   schedulerFlow: {
-    stepOf: (n: number, total: number) => `Trin ${n} af ${total}`,
-    steps: {
-      group: "Gruppe",
-      what: "Hvad og hvornår",
-      details: "Detaljer",
-      dates: "Datoer",
-      describe: "Planlæg med AI",
-    },
-    groupTitle: "Hvem skal med?",
-    back: "Tilbage",
-    next: "Næste",
-    skip: "Spring over",
-    seeDates: "Se datoer",
+    // The Planlæg sheet's heading over the settings (#126).
+    what: "Hvad og hvornår",
     newGroup: "Ny gruppe",
     newGroupDetail: "Inviter folk bagefter",
     examples: "Eksempler",
-    firstDate: "Første dato",
-    noDate: "Ingen dato passer. Prøv at ændre indstillingerne.",
-    seeAnswer: "Se datoerne",
-    alsoInVote: "Også i afstemningen",
-    onlyOne: "Der er ikke flere gode datoer i perioden, så kun denne bliver sendt.",
     // The details step's Deltagere row, and its sheet.
     peopleAll: (n: number) => `Alle ${n}`,
     peopleSome: (required: number, optional: number) =>
       `${required} med${optional > 0 ? `, ${optional} valgfri` : ""}`,
     peopleAtLeast: (n: number) => `, mindst ${n}`,
     done: "Færdig",
-    // The last step's button: what pressing it does, in so many words.
+    // The suggest button: what pressing it does, in so many words.
     send: "Send datoer til afstemning",
     sent: "Sendt til afstemning",
-    // The last step's deck (#101): you swipe the dates before they are sent.
-    deckHint:
-      "Swipe til højre, hvis du kan, og op, hvis du helst ikke vil. Til venstre fjerner datoen, og Casy finder en ny.",
-    undo: "Fortryd",
     needSkip: (names: string) => `${names} springer noget over`,
     needTimeOff: (names: string) => `${names} skal have fri`,
-    readyTitle: (n: number) => (n === 1 ? "1 dato klar" : `${n} datoer klar`),
-    readyBody:
-      "Gruppen swiper sig igennem dem på samme måde, og Casy vælger den, der passer alle bedst.",
-    noMore: "Der er ikke flere gode datoer med de indstillinger. Ret dem, eller start forfra.",
-    startOver: "Start forfra",
   },
   // Planning with AI (#100): the event described in words or speech.
   aiPlan: {

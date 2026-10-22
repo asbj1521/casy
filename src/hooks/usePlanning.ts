@@ -11,7 +11,6 @@ import {
   type Group,
   type GroupBusy,
 } from "@/api/groups";
-import type { DraftAnswer } from "@/components/findDate/phoneFlow/DraftDeck";
 import { useAuth } from "@/context/auth";
 import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useAiPlanner } from "@/hooks/useAiPlanner";
@@ -100,11 +99,14 @@ interface MonthPick {
   anchor: string | null;
 }
 
-/** A date sent as it is, with your answer: the phone flow's (#101). */
+/** Your own answer to a date you suggest (#101): sent with it. */
+export type SuggesterAnswer = "accepted" | "maybe";
+
+/** A date sent as it is, with your answer (My calendar's Planlæg, #126). */
 export interface ChosenDate {
   start: string;
   end: string;
-  answer: DraftAnswer;
+  answer: SuggesterAnswer;
 }
 
 /**
@@ -469,7 +471,7 @@ export function usePlanning() {
    * at first.
    */
   async function sendSuggestion(
-    /** The dates to send as they are, with your answers: the phone flow's (#101). */
+    /** The dates to send as they are, with your answers (Planlæg, #126). */
     chosen?: ChosenDate[],
   ) {
     if (!activeGroup || !found?.slot || !participants || !userId) return;

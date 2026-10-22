@@ -76,6 +76,49 @@ test("Planlæg med AI takes over the sheet, then hands the settings back filled 
   await expect(sheet.getByRole("button", { name: "Find dato" })).toBeVisible();
 });
 
+test("the sheet's details: Deltagere and Hvornår open sheets, and place and note go along", async ({
+  page,
+  backend,
+}) => {
+  await page.goto("/calendar-overview?plan");
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  await sheet.getByRole("button", { name: /^Deltagere/ }).click();
+  await expect(page.getByRole("dialog", { name: "Deltagere" })).toBeVisible();
+  await page
+    .getByRole("dialog", { name: "Deltagere" })
+    .getByRole("button", { name: "Færdig" })
+    .click();
+  await sheet.getByRole("textbox", { name: "Sted" }).fill("Hos Sara");
+  await sheet.getByRole("textbox", { name: "Note" }).fill("Tag snacks med");
+  await sheet.getByRole("button", { name: "Find dato" }).click();
+  await page.getByRole("button", { name: "Foreslå top 5 datoer" }).click();
+
+  await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+  const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
+  expect(sent).toMatchObject({ place: "Hos Sara", note: "Tag snacks med" });
+});
+
+test("without AI switched on, the sheet offers no planning with AI (#111)", async ({
+  page,
+  backend,
+}) => {
+  backend.world.aiAllowed = false;
+  await page.goto("/calendar-overview?plan");
+  await expect(page.getByRole("button", { name: "Find dato" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Planlæg med AI" })).toHaveCount(0);
+});
+
+test.describe("signed out", () => {
+  test.use({ signedIn: false });
+
+  test("the scheduler's address leads a phone to sign in, not to a scheduler (#127)", async ({
+    page,
+  }) => {
+    await page.goto("/plan");
+    await expect(page).toHaveURL(/\/sign-in/);
+  });
+});
+
 test.describe("with motion", () => {
   test.use({ reducedMotion: "no-preference" });
 

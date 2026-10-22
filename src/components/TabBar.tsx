@@ -1,14 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CalendarCheck,
-  CalendarDays,
-  CalendarSearch,
-  LogIn,
-  User,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { CalendarCheck, CalendarDays, LogIn, User, Users, type LucideIcon } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
 import { invitationsQuery, whoAmIQuery } from "@/api/groups";
@@ -20,7 +12,7 @@ import { loadPage } from "@/pages/lazyPages";
 import { cn } from "@/lib/utils";
 
 /**
- * The phone's main navigation: five tabs along the bottom of the screen,
+ * The phone's main navigation: four tabs along the bottom of the screen,
  * where a thumb already is, as in the apps the phone layout follows. Mounted
  * once in App.tsx; nothing at all on a computer, which keeps TopNav's links.
  */
@@ -46,7 +38,7 @@ function PhoneTabBar() {
   // Signed out, the last tab can only lead to the sign-in page, so it says so.
   const signedOut = !loading && !user;
 
-  // Groups first and the scheduler in the middle, where the thumb rests.
+  // Groups first. No scheduler tab: a phone plans from My calendar (#126, #127).
   const tabs: Tab[] = [
     {
       to: "/groups",
@@ -63,12 +55,6 @@ function PhoneTabBar() {
       active: pathname.startsWith("/events"),
       prefetch: () => void loadPage.myEvents(),
       badge: eventsBadge,
-    },
-    {
-      to: user ? "/" : "/plan",
-      label: t.nav.schedulerShort,
-      icon: CalendarSearch,
-      active: pathname === "/plan" || (pathname === "/" && !!user),
     },
     {
       to: "/calendar-overview",

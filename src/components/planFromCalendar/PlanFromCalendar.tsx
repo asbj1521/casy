@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { FlowButton } from "@/components/findDate/phoneFlow/FlowShell";
+import FlowButton from "@/components/ui/FlowButton";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { usePlanning } from "@/hooks/usePlanning";

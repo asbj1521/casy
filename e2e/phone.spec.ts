@@ -3,20 +3,27 @@ import { expect, test } from "./fixtures";
 
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "phones only"));
 
-test("the tab bar reaches every main page", async ({ page }) => {
+test("the tab bar reaches every main page, and planning lives in the calendar (#127)", async ({
+  page,
+}) => {
+  // Signed in, the home screen is My calendar: a phone plans from there.
   await page.goto("/");
+  await expect(page).toHaveURL(/\/calendar-overview$/);
   const tabs = page.getByRole("navigation").last();
+  // Four tabs (the first two may carry a count).
+  await expect(tabs.getByRole("link")).toHaveText([/Grupper$/, /Aftaler$/, "Kalender", "Profil"]);
   for (const [tab, url] of [
     ["Grupper", /\/groups$/],
     ["Aftaler", /\/events$/],
-    ["Kalender", /\/calendar-overview$/],
     ["Profil", /\/profile$/],
+    ["Kalender", /\/calendar-overview$/],
   ] as const) {
     await tabs.getByRole("link", { name: tab }).click();
     await expect(page).toHaveURL(url);
   }
-  await tabs.getByRole("link", { name: "Planlæg" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  // The scheduler's own address leads there too.
+  await page.goto("/plan");
+  await expect(page).toHaveURL(/\/calendar-overview$/);
 });
 
 test("the profile's screens open and go back", async ({ page }) => {
