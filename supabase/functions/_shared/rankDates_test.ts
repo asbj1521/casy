@@ -52,13 +52,14 @@ Deno.test("each member's facts come back in the order the members were given", a
 
 Deno.test("nobody sharing anything scores every date 100", async () => {
   const { db } = fakeDb([]);
-  const scores = await scoreDates(db, {
+  const answer = await scoreDates(db, {
     members: ["a", "b"],
     profile: null,
     single: true,
     dates: [{ start: "2026-10-09T16:00:00Z", end: "2026-10-09T18:00:00Z" }],
   });
-  assertEquals(scores, [100]);
+  // Nothing was counted, so the 100 says nothing and no score is shown.
+  assertEquals(answer, { scores: [100], counted: 0 });
 });
 
 Deno.test(
@@ -66,7 +67,7 @@ Deno.test(
   async () => {
     // b has a critical exam on Saturday 10 Oct at 09:00 Copenhagen time, keeping clear of late nights.
     const { db } = fakeDb([row("b", "2026-10-10T07:00:00Z", "critical", ["lateNight"])]);
-    const scores = await scoreDates(db, {
+    const { scores, counted } = await scoreDates(db, {
       members: ["a", "b"],
       profile: { effects: [], runsLate: false, strain: "light", recoveryDays: 0 },
       single: true,
@@ -78,5 +79,6 @@ Deno.test(
       ],
     });
     assertEquals(scores, [50, 100]);
+    assertEquals(counted, 1);
   },
 );

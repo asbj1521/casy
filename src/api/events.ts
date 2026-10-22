@@ -38,6 +38,12 @@ export interface CandidateDate {
   id: string;
   start: string;
   end: string;
+  /**
+   * How well the date suits the group by everyone's important events, 0 to
+   * 100 (#119): one number for the whole group, never whose events cost what.
+   * Null or missing when it was not scored.
+   */
+  matchScore?: number | null;
   answers: Record<string, EventResponse>;
 }
 
@@ -182,6 +188,27 @@ export async function suggestEvent(input: {
     { action: "suggest", ...input },
     currentMessages().api.suggestEvent,
   );
+}
+
+/**
+ * How well each of these dates would suit the group by the members'
+ * important events (#119), one score from 0 to 100 per date in the order
+ * given. The server combines what the members' phones shared and answers
+ * only the scores, and how many members had shared anything (`counted`: with
+ * none the scores say nothing); the scheduler asks before it picks a vote's
+ * dates.
+ */
+export async function rankDates(input: {
+  groupId: string;
+  settings: EventSettings;
+  /** What the planned event is likely to cause (#113); none scores on the timing alone. */
+  profile: EventImpact | null;
+  dates: { start: string; end: string }[];
+}): Promise<{ scores: number[]; counted: number }> {
+  return await callFunction<{ scores: number[]; counted: number }>("events", {
+    body: { action: "rank-dates", ...input },
+    errorMessage: currentMessages().api.loadEvents,
+  });
 }
 
 /** Your answer to one of a vote's dates (or a changed one). */

@@ -579,6 +579,12 @@ export interface World {
    */
   aiConsent: boolean;
   /**
+   * How well dates suit the group by everyone's important events (#119), by
+   * a date's start: what rank-dates answers and the dates of a new vote are
+   * given. Empty by default: nobody has shared anything, so no scores.
+   */
+  dateScores: Record<string, number>;
+  /**
    * Mia is an admin, and how the admin function answers: as now, or as one
    * deployed before #111 (no AI per skill, no AI switch per user).
    */
@@ -604,6 +610,7 @@ export function makeWorld(options: WorldOptions): World {
     aiAllowed: true,
     aiTester: false,
     aiConsent: true,
+    dateScores: {},
     admin: false,
     aiAccess: new Set(),
     testers: new Set(),

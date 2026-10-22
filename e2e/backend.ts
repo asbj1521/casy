@@ -363,6 +363,14 @@ export class FakeBackend {
     const list = () => ({ events: w.events });
     if (action === "list") return ok(list());
     if (action === "suggest") return this.suggest(body);
+    if (action === "rank-dates") {
+      // As the real one: a score per date, 100 for any nobody's shared anything about.
+      const dates = body.dates as { start: string }[];
+      return ok({
+        scores: dates.map((d) => w.dateScores[d.start] ?? 100),
+        counted: Object.keys(w.dateScores).length > 0 ? 2 : 0,
+      });
+    }
     const event = w.events.find((e) => e.id === body.proposalId);
     if (!event) return fail(404, "Event not found");
     const me = event.invitees.find((i) => i.isYou);
@@ -457,6 +465,8 @@ export class FakeBackend {
       candidates: dates.map(({ answer, ...d }, i) => ({
         id: `${id}-d${i}`,
         ...d,
+        // Scored only when someone has shared something (#119).
+        matchScore: w.dateScores[d.start] ?? null,
         answers: answer ? { [ME.id]: answer } : {},
       })),
       myCalendar: null,

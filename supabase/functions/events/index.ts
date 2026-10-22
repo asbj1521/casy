@@ -343,12 +343,14 @@ async function storeMatchScores(
     .eq("proposal_id", proposalId);
   if (error) throw error;
   const dates = (data ?? []) as { id: string; starts_at: string; ends_at: string }[];
-  const scores = await scoreDates(db, {
+  const { scores, counted } = await scoreDates(db, {
     members,
     profile: impact,
     single: (settings as { kind?: string }).kind === "single",
     dates: dates.map((d) => ({ start: d.starts_at, end: d.ends_at })),
   });
+  // Nobody sharing anything means no score to show, not a perfect one.
+  if (counted === 0) return;
   for (const [i, date] of dates.entries()) {
     const { error: updateError } = await db
       .from("event_proposal_dates")
@@ -496,13 +498,12 @@ serve("events", async (req, body) => {
         (await invitedMembers(db, groupId, profileId, body.settings)) ??
         (await groupMemberIds(db, groupId));
       const profile = body.profile == null ? null : cleanProfile(body.profile);
-      const scores = await scoreDates(db, {
+      return await scoreDates(db, {
         members,
         profile,
         single: (body.settings as { kind?: string }).kind === "single",
         dates: dates as { start: string; end: string }[],
       });
-      return { scores };
     }
 
     case "respond": {

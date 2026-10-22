@@ -45,7 +45,11 @@ export async function factsOfMembers(db: Db, memberIds: string[]): Promise<DayFa
   return memberIds.map((id) => byMember.get(id) ?? []);
 }
 
-/** One score per date, 0 to 100, for the members the event is for. */
+/**
+ * One score per date, 0 to 100, for the members the event is for, and how
+ * many of them have shared anything (`counted`): with none, the scores are
+ * all 100 and say nothing, and callers show no score.
+ */
 export async function scoreDates(
   db: Db,
   args: {
@@ -54,14 +58,17 @@ export async function scoreDates(
     single: boolean;
     dates: { start: string; end: string }[];
   },
-): Promise<number[]> {
+): Promise<{ scores: number[]; counted: number }> {
   const facts = await factsOfMembers(db, args.members);
-  return args.dates.map((d) =>
-    matchScore(
-      impactOn(args.profile, { start: Date.parse(d.start), end: Date.parse(d.end) }, args.single),
-      facts,
+  return {
+    scores: args.dates.map((d) =>
+      matchScore(
+        impactOn(args.profile, { start: Date.parse(d.start), end: Date.parse(d.end) }, args.single),
+        facts,
+      ),
     ),
-  );
+    counted: facts.filter((f) => f.length > 0).length,
+  };
 }
 
 /** How many dates one ranking may ask about: a search looks at about 60. */

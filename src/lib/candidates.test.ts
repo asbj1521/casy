@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { pickCandidates, rankCandidates } from "@/lib/candidates";
+import { findPool, pickCandidates, rankCandidates } from "@/lib/candidates";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import type { FoundDate } from "@/lib/scheduler";
 import { localDate, wallTime } from "@/lib/zone";
@@ -108,5 +108,53 @@ describe("rankCandidates", () => {
     expect([...byPick].sort((x, y) => Date.parse(x.slot.start) - Date.parse(y.slot.start))).toEqual(
       chosen,
     );
+  });
+});
+
+describe("scores (#119)", () => {
+  const group = [person("a"), person("b")];
+
+  /** A score for each date in the pool, by its day of the month. */
+  const scoresBy = (pool: FoundDate[], byDay: Record<number, number>) =>
+    new Map(pool.map((d) => [d.slot.start, byDay[day(d).day] ?? 100] as const));
+
+  it("takes the best-scoring clean dates, the date on screen still first", () => {
+    const first = firstFrom(group, EVENING);
+    const pool = [first, ...findPool(group, EVENING, { first, end: END }, TZ)];
+    // The 14th, 16th and 18th are bad nights for someone; the 22nd on suit everyone.
+    const scores = scoresBy(pool, { 14: 40, 16: 40, 18: 40, 20: 60 });
+    const { byPick } = rankCandidates(group, EVENING, { first, end: END, scores }, TZ);
+
+    expect(byPick[0]).toBe(first);
+    const days = byPick.slice(1).map((d) => day(d).day);
+    expect(days.every((d) => ![14, 16, 18].includes(d))).toBe(true);
+    // Spacing still holds: no two meetings fewer than two days apart.
+    const all = byPick.map((d) => day(d).day).sort((a, b) => a - b);
+    expect(all.slice(1).every((d, i) => d - all[i] >= 2)).toBe(true);
+  });
+
+  it("changes nothing when every date scores the same, or when there are no scores", () => {
+    const first = firstFrom(group, EVENING);
+    const pool = [first, ...findPool(group, EVENING, { first, end: END }, TZ)];
+    const plain = pickCandidates(group, EVENING, { first, end: END }, TZ);
+    const flat = scoresBy(pool, {});
+    expect(pickCandidates(group, EVENING, { first, end: END, scores: flat }, TZ)).toEqual(plain);
+  });
+
+  it("never lets a score lift a date that costs someone above one that costs nobody", () => {
+    const classes: BusyInterval[] = Array.from({ length: 10 }, (_, i) => ({
+      start: new Date(wallTime(2026, 9, 12 + i, 17, TZ)).toISOString(),
+      end: new Date(wallTime(2026, 9, 12 + i, 22, TZ)).toISOString(),
+      priority: "skip",
+    }));
+    const costly = [person("a"), person("b", classes)];
+    const first = firstFrom(costly, EVENING);
+    const pool = [first, ...findPool(costly, EVENING, { first, end: END }, TZ)];
+    // The dates needing a skip score perfectly, the clean ones poorly: clean still wins.
+    const scores = new Map(
+      pool.map((d) => [d.slot.start, d.conflicts.length > 0 ? 100 : 30] as const),
+    );
+    const picked = pickCandidates(costly, EVENING, { first, end: END, scores }, TZ);
+    expect(picked.slice(1).every((d) => d.conflicts.length === 0)).toBe(true);
   });
 });

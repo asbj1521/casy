@@ -2,7 +2,8 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
-import { eventsQueryKey, suggestEvent } from "@/api/events";
+import { eventsQueryKey, rankDates, suggestEvent } from "@/api/events";
+import type { EventImpact } from "@/api/eventProfile";
 import {
   createGroup,
   groupBusyQuery,
@@ -32,7 +33,7 @@ import {
   type AnswerSteps,
 } from "@/lib/answerSteps";
 import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
-import { pickCandidates } from "@/lib/candidates";
+import { findPool, rankFromPool } from "@/lib/candidates";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { profileInput } from "@/lib/eventImpact";
 import { peopleForSearch, SEARCH_WINDOW } from "@/lib/eventSearch";
@@ -60,6 +61,9 @@ export const TZ = APP_TIME_ZONE;
 
 /** How long "Suggest dates" waits for a calendar sync already running, at most. */
 const SUGGEST_WAIT_MS = 2_000;
+
+/** How long it waits for the dates' scores (#119), at most: it goes without rather than slowly. */
+const SCORE_WAIT_MS = 3_000;
 
 /** The months the chart can show: this one, up to the last one searched. */
 export const FIRST_MONTH = startOfMonth(Date.parse(TODAY), TZ);
@@ -470,6 +474,31 @@ export function usePlanning() {
    * times; if not, nothing goes, and the page shows the new answer to look
    * at first.
    */
+  /** How well each date suits the group (#119), by its start; undefined when it can't be said. */
+  async function scoresFor(
+    groupId: string,
+    impact: EventImpact | undefined,
+    dates: { slot: { start: string; end: string } }[],
+  ): Promise<Map<string, number> | undefined> {
+    try {
+      const { scores } = await Promise.race([
+        rankDates({
+          groupId,
+          settings: search,
+          profile: impact ?? null,
+          dates: dates.map((d) => ({ start: d.slot.start, end: d.slot.end })),
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("slow")), SCORE_WAIT_MS),
+        ),
+      ]);
+      return new Map(dates.map((d, i) => [d.slot.start, scores[i]] as const));
+    } catch (err) {
+      console.warn("couldn't score the dates", err);
+      return undefined;
+    }
+  }
+
   async function sendSuggestion(
     /** The dates to send as they are, with your answers (Planlæg, #126). */
     chosen?: ChosenDate[],
@@ -492,18 +521,24 @@ export function usePlanning() {
       return;
     }
     const first = { slot: found.slot, conflicts: found.conflicts };
-    const dates =
-      chosen ??
-      pickCandidates(
-        fresh ?? participants,
-        search,
-        { first, end: searchWindow.end, count: extras.dateCount },
-        TZ,
-      ).map((d) => ({ start: d.slot.start, end: d.slot.end }));
     // Usually here already; never waited for long (PROFILE_WAIT_MS), and
     // the event goes without one rather than not at all.
     setPreparing(true);
     const impact = await profile.forSend();
+    let dates: { start: string; end: string; answer?: SuggesterAnswer }[] | undefined = chosen;
+    if (!dates) {
+      // The dates a vote offers: the clean ones first, and among them the
+      // best by what everyone's important events say (#119). The scores come
+      // from the server; without them (slow, or failing) the dates are
+      // picked as they always were.
+      const options = { first, end: searchWindow.end, count: extras.dateCount };
+      const pool = findPool(fresh ?? participants, search, options, TZ);
+      const scores = await scoresFor(groupId, impact, [first, ...pool]);
+      dates = rankFromPool(pool, search, { ...options, scores }, TZ).chosen.map((d) => ({
+        start: d.slot.start,
+        end: d.slot.end,
+      }));
+    }
     setPreparing(false);
     suggest.mutate({
       groupId,

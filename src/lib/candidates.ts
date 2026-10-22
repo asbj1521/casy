@@ -15,6 +15,11 @@
  *    days next to each other fill up (never two on one day).
  * 3. Soonest first, within those rules.
  *
+ * With scores (#119: how well each date suits the group by everyone's
+ * important events, from the server), step 3 becomes best score first among
+ * the dates nobody gives something up for: the clean dates are still taken
+ * before any that cost someone, and the spacing rules still hold.
+ *
  * Every date comes from the same search the page and a decline run
  * (findEventSlot), stepped forward a day (a meeting or trip) or past the end
  * (a holiday) at a time, so each is one the page itself could have shown.
@@ -39,6 +44,8 @@ export interface CandidateOptions {
   /** Where the period searched ends (exclusive). */
   end: string;
   count?: number;
+  /** How well each date suits the group (0 to 100), by the start of its slot (#119). */
+  scores?: ReadonlyMap<string, number>;
 }
 
 export function pickCandidates(
@@ -48,6 +55,30 @@ export function pickCandidates(
   timeZone: string,
 ): FoundDate[] {
   return rankCandidates(participants, search, options, timeZone).chosen;
+}
+
+/**
+ * Everything the search offers after the first date, in order: the dates a
+ * vote is picked from. Also what the server is asked to score (#119), so the
+ * scores can be in hand before the picking.
+ */
+export function findPool(
+  participants: Participant[],
+  search: EventSettings,
+  options: CandidateOptions,
+  timeZone: string,
+): FoundDate[] {
+  const { first, end } = options;
+  const found: FoundDate[] = [];
+  let from = nextSearchStart(search, first, timeZone);
+  while (found.length < MAX_LOOKED_AT && Date.parse(from) < Date.parse(end)) {
+    const { slot, conflicts } = findEventSlot(participants, search, from, end, timeZone);
+    if (!slot) break;
+    const date = { slot, conflicts };
+    found.push(date);
+    from = nextSearchStart(search, date, timeZone);
+  }
+  return found;
 }
 
 /**
@@ -62,18 +93,17 @@ export function rankCandidates(
   options: CandidateOptions,
   timeZone: string,
 ): { pool: FoundDate[]; chosen: FoundDate[]; byPick: FoundDate[] } {
-  const { first, end, count = CANDIDATE_COUNT } = options;
+  return rankFromPool(findPool(participants, search, options, timeZone), search, options, timeZone);
+}
 
-  // Everything the search would offer after the first date, in order.
-  const found: FoundDate[] = [];
-  let from = nextSearchStart(search, first, timeZone);
-  while (found.length < MAX_LOOKED_AT && Date.parse(from) < Date.parse(end)) {
-    const { slot, conflicts } = findEventSlot(participants, search, from, end, timeZone);
-    if (!slot) break;
-    const date = { slot, conflicts };
-    found.push(date);
-    from = nextSearchStart(search, date, timeZone);
-  }
+/** rankCandidates over a pool already searched (findPool), so scores can be fetched in between. */
+export function rankFromPool(
+  found: FoundDate[],
+  search: EventSettings,
+  options: CandidateOptions,
+  timeZone: string,
+): { pool: FoundDate[]; chosen: FoundDate[]; byPick: FoundDate[] } {
+  const { first, count = CANDIDATE_COUNT, scores } = options;
 
   const chosen: FoundDate[] = [first];
   const dayNumber = (d: FoundDate) => dayIndex(d.slot.start, timeZone);
@@ -99,7 +129,12 @@ export function rankCandidates(
     }
   };
 
-  const clean = found.filter((d) => d.conflicts.length === 0);
+  // Among the dates nobody gives something up for, the best-scoring first;
+  // the sort is stable, so equal scores stay soonest first.
+  const scoreOf = (d: FoundDate) => scores?.get(d.slot.start) ?? 100;
+  const clean = found
+    .filter((d) => d.conflicts.length === 0)
+    .sort((a, b) => scoreOf(b) - scoreOf(a));
   // Fewest people giving something up first, then soonest.
   const costly = found
     .filter((d) => d.conflicts.length > 0)

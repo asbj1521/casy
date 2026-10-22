@@ -20,10 +20,11 @@ import FlowButton from "@/components/ui/FlowButton";
 import { MonthLayer } from "@/components/swipe/MonthView";
 import { TODAY } from "@/hooks/useDateSearch";
 import { useLabelledEvents } from "@/hooks/useEventLabels";
+import { useDateScores } from "@/hooks/useDateScores";
 import { eventProfileQuery } from "@/hooks/useEventProfile";
 import { TZ, type Planning } from "@/hooks/usePlanning";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { rankCandidates } from "@/lib/candidates";
+import { findPool, rankFromPool } from "@/lib/candidates";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { impactOn } from "@/lib/eventImpact";
 import { clashSentence, importantClashes } from "@/lib/eventWarnings";
@@ -157,6 +158,7 @@ export default function PileScreen({
   const reduceMotion = !!useReducedMotion();
   const {
     participants,
+    activeGroup,
     search,
     searchWindow,
     youProfileId,
@@ -186,22 +188,57 @@ export default function PileScreen({
   const mine = useLabelledEvents();
   // A yes or no, so the dates below aren't worked out afresh on every render.
   const someCheckByHand = !!checkers;
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     ...eventProfileQuery(user?.id ?? "", profileFor ?? NO_INPUT),
     enabled: aiOn && !!user && !!profileFor,
+  });
+
+  // Everything the search offers, the first date first: what is scored (#119)
+  // and what the vote's dates are picked from.
+  const poolFound = useMemo(
+    () =>
+      participants && found?.slot
+        ? findPool(
+            participants,
+            search,
+            {
+              first: { slot: found.slot, conflicts: found.conflicts },
+              end: searchWindow.end,
+              count: extras.dateCount,
+            },
+            TZ,
+          )
+        : null,
+    [participants, found, search, searchWindow, extras.dateCount],
+  );
+  const scoring = useMemo(
+    () => (poolFound && found?.slot ? [{ slot: found.slot }, ...poolFound] : null),
+    [poolFound, found],
+  );
+  // How well each date suits the group by everyone's important events (#119),
+  // asked while the calendars are thrown, so the list can rank by it. Only for
+  // a real group, and after the planned event's profile (it says what the
+  // event does to the night before); never waited for long.
+  const { scores, settled: scoresSettled } = useDateScores({
+    groupId: activeGroup && !activeGroup.isExample ? activeGroup.id : null,
+    settings: search,
+    profile: profile ?? null,
+    dates: scoring,
+    enabled: !profileLoading,
   });
 
   // The dates: the ones a vote offers, and others that work, with what
   // Casy checks about each.
   const dates = useMemo(() => {
-    if (!participants || !found?.slot) return null;
-    const { pool, chosen, byPick } = rankCandidates(
-      participants,
+    if (!participants || !found?.slot || !poolFound) return null;
+    const { pool, chosen, byPick } = rankFromPool(
+      poolFound,
       search,
       {
         first: { slot: found.slot, conflicts: found.conflicts },
         end: searchWindow.end,
         count: extras.dateCount,
+        scores,
       },
       TZ,
     );
@@ -273,6 +310,8 @@ export default function PileScreen({
   }, [
     participants,
     found,
+    poolFound,
+    scores,
     search,
     searchWindow,
     extras.dateCount,
@@ -370,7 +409,8 @@ export default function PileScreen({
   const [landed, setLanded] = useState(0);
   const others = pile?.friends.length ?? 0;
   const timeline = useMemo(() => pileTimeline(others), [others]);
-  const ready = !!frame && !!pile;
+  // Waits (briefly) for the scores, so the list is ranked by them from the start.
+  const ready = !!frame && !!pile && scoresSettled;
   useEffect(() => {
     if (!ready || reduceMotion) return;
     const timers: number[] = [];
