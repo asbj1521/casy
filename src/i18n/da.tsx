@@ -1079,6 +1079,17 @@ export const da = {
     noneThrough: "Ingen dag i perioden passer alle. Prøv at ændre planen.",
     suggest: (n: number) => (n === 1 ? "Foreslå datoen" : `Foreslå top ${n} datoer`),
     change: "Ret planen",
+    // The list's checks (#126): what Casy really looks at for each date, and what it found.
+    checking: (n: number) => (n === 1 ? "Tjekker din kalender" : `Tjekker ${n} kalendere`),
+    allCan: (n: number) => (n === 1 ? "Du kan" : `Alle ${n} kan`),
+    checkEdges: "Tjekker tiden før og morgenen efter",
+    edgesClear: "Intet lige før eller tidligt morgenen efter",
+    checkSkips: "Tjekker, om nogen skal give noget op",
+    noSkips: "Ingen skal give noget op",
+    checkSpread: "Spreder datoerne over ugen",
+    picked: "Med i forslaget",
+    notPicked: "Ikke med: Casy spreder datoerne, så de ikke ligger tæt",
+    details: (date: string) => `Detaljer om ${date}`,
     close: "Luk",
   },
   myData: {

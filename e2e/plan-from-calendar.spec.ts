@@ -16,6 +16,13 @@ test("Planlæg opens over the calendar, and the dates found are sent as they wer
   // Reduced motion (as every test runs): straight to the dates, no pile.
   await sheet.getByRole("button", { name: "Find dato" }).click();
   await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
+  // A date opens to what Casy really checked about it.
+  await page
+    .getByRole("button", { name: /^Detaljer om/ })
+    .first()
+    .click();
+  await expect(page.getByText(/^Alle \d kan$/).first()).toBeVisible();
+  await expect(page.getByText("Med i forslaget").first()).toBeVisible();
   await page.getByRole("button", { name: "Foreslå top 5 datoer" }).click();
 
   await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();

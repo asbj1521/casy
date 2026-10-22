@@ -243,6 +243,8 @@ const MonthSection = memo(function MonthSection({
                 <span key={d.key} className="flex h-10 items-center justify-center">
                   {d.inMonth && (
                     <span
+                      // The paper pile's dates fly up out of their green circle (#126).
+                      data-shine={shine?.has(days[c]) ? days[c] : undefined}
                       className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-full text-[18px]",
                         shine?.has(days[c])

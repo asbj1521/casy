@@ -4,11 +4,13 @@ import type { EventSettings } from "@/lib/eventSearch";
 import {
   buildPile,
   candidateMonth,
+  jostle,
   layerAlpha,
   PILE_OPACITY,
   PILE_TIMING,
   pileTimeline,
   sheetTilt,
+  throwSide,
   type PileOptions,
 } from "@/lib/paperPile";
 import { wallTime } from "@/lib/zone";
@@ -124,7 +126,7 @@ describe("candidateMonth", () => {
 });
 
 describe("pileTimeline", () => {
-  it("lands each sheet faster than the one before, never faster than the floor", () => {
+  it("throws each calendar faster than the one before, never faster than the floor", () => {
     const { lands } = pileTimeline(12);
     const durations = lands.map((l) => l.duration);
     for (let i = 1; i < durations.length; i++) {
@@ -134,20 +136,41 @@ describe("pileTimeline", () => {
     expect(lands[1].at).toBeCloseTo(lands[0].at + lands[0].duration);
   });
 
-  it("takes about 5 to 10 seconds, from a group of two to the largest", () => {
-    for (const others of [0, 1, 3, 8, 19]) {
-      const { doneAt } = pileTimeline(others);
-      expect(doneAt).toBeGreaterThanOrEqual(5);
-      expect(doneAt).toBeLessThanOrEqual(10.5);
-    }
-  });
-
-  it("presses only after the last sheet has landed", () => {
+  it("presses only once the last calendar has hit and settled", () => {
     const t = pileTimeline(3);
     const last = t.lands[2];
-    expect(t.pressAt).toBeCloseTo(last.at + last.duration + PILE_TIMING.settle);
+    expect(t.pressAt).toBeCloseTo(
+      last.at + last.duration + PILE_TIMING.impact + PILE_TIMING.settle,
+    );
     expect(t.revealAt).toBeGreaterThan(t.pressAt);
-    expect(t.doneAt).toBeGreaterThan(t.rankAt);
+    expect(t.rankAt).toBeGreaterThan(t.liftAt);
+  });
+
+  it("checks every date in the list one after another", () => {
+    const t = pileTimeline(3, 6);
+    expect(t.doneAt).toBeCloseTo(t.rankAt + 6 * PILE_TIMING.checkEach);
+  });
+
+  it("takes about 8 to 14 seconds with a list to check, from a group of two to the largest", () => {
+    for (const others of [1, 3, 8, 19]) {
+      const { doneAt } = pileTimeline(others, 6);
+      expect(doneAt).toBeGreaterThanOrEqual(8);
+      expect(doneAt).toBeLessThanOrEqual(14);
+    }
+  });
+});
+
+describe("throwSide and jostle", () => {
+  it("throws from the left first, then the right, and so on", () => {
+    expect([0, 1, 2, 3].map(throwSide)).toEqual([-1, 1, -1, 1]);
+  });
+
+  it("leaves a calendar still until one lands on it, then shoves it away from the thrower", () => {
+    expect(jostle(0, 1)).toEqual({ x: 0, rotate: 0 });
+    // The second calendar comes from the right: the first is pushed left.
+    expect(jostle(0, 2).x).toBeLessThan(0);
+    // The third, from the left, pushes back, but less than the one right on top.
+    expect(jostle(0, 3).x).toBeGreaterThan(jostle(0, 2).x);
   });
 });
 

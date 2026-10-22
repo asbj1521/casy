@@ -147,42 +147,50 @@ function throughDays(
 
 /**
  * The pile's timing, in seconds. Deliberately slow (#126): the search takes
- * milliseconds, but watching every calendar land is what makes the answer
- * believable. The sheets land faster and faster, so a big group still fits.
+ * milliseconds, but watching every calendar land and every date checked is
+ * what makes the answer believable. The calendars are thrown faster and
+ * faster, so a big group still fits.
  */
 export const PILE_TIMING = {
-  /** Your own sheet settling first. */
+  /** My calendar scrolling to the month. */
   yours: 0.6,
-  /** The first member's sheet. */
+  /** The first friend's calendar in the air. */
   firstLand: 0.9,
-  /** Each sheet after takes this share of the one before... */
+  /** Each throw after takes this share of the one before... */
   speedUp: 0.75,
   /** ...but never less than this. */
   fastestLand: 0.14,
+  /** The hit after a throw: skid, a hop, settling. Overlaps the next throw. */
+  impact: 0.45,
   /** The pile lying still before the press. */
-  settle: 0.5,
-  /** The press: a wave out from the middle, the layers springing into line. */
-  press: 1.4,
-  /** The days free for everyone shining through. */
-  reveal: 0.9,
-  /** Those days lifting out into a grid. */
-  lift: 0.8,
-  /** The ranking pass over the grid. */
-  rank: 1.5,
+  settle: 0.4,
+  /** The press, from the middle out, the layers settling into line. */
+  press: 1.0,
+  /** The days free for everyone lighting up. */
+  reveal: 1.0,
+  /** Those days flying up into the list. */
+  fly: 0.9,
+  /** Each date in the list being checked, one after another. */
+  checkEach: 0.6,
 } as const;
 
 export interface PileTimeline {
-  /** When each member's sheet starts to land, and how long it takes. */
+  /** When each friend's calendar is thrown, and how long it is in the air. */
   lands: { at: number; duration: number }[];
   pressAt: number;
   revealAt: number;
+  /** The dates fly up into the list. */
   liftAt: number;
+  /** The list's dates start being checked. */
   rankAt: number;
   doneAt: number;
 }
 
-/** When everything happens, for a pile of `others` sheets on top of yours. */
-export function pileTimeline(others: number): PileTimeline {
+/**
+ * When everything happens, for `others` calendars thrown onto yours and
+ * `dates` dates checked in the list.
+ */
+export function pileTimeline(others: number, dates = 0): PileTimeline {
   const T = PILE_TIMING;
   const lands: PileTimeline["lands"] = [];
   let at = T.yours;
@@ -191,11 +199,32 @@ export function pileTimeline(others: number): PileTimeline {
     lands.push({ at, duration });
     at += duration;
   }
-  const pressAt = at + T.settle;
+  const lastHit = others > 0 ? at + T.impact : at;
+  const pressAt = lastHit + T.settle;
   const revealAt = pressAt + T.press;
   const liftAt = revealAt + T.reveal;
-  const rankAt = liftAt + T.lift;
-  return { lands, pressAt, revealAt, liftAt, rankAt, doneAt: rankAt + T.rank };
+  const rankAt = liftAt + T.fly;
+  return { lands, pressAt, revealAt, liftAt, rankAt, doneAt: rankAt + dates * T.checkEach };
+}
+
+/** Which side calendar `k` (0 the first friend's) is thrown from: left, then right, and so on. */
+export const throwSide = (k: number): -1 | 1 => (k % 2 === 0 ? -1 : 1);
+
+/**
+ * How far the calendars already on the pile have been knocked once `landed`
+ * calendars have landed: each one that lands after calendar `k` shoves it a
+ * little away from the side it came from, less for each one further up.
+ * Pixels and degrees; nothing for a calendar not yet down.
+ */
+export function jostle(k: number, landed: number): { x: number; rotate: number } {
+  let x = 0;
+  let rotate = 0;
+  for (let j = k + 1; j < landed; j++) {
+    const push = -throwSide(j) * 0.7 ** (j - k - 1);
+    x += push * 3;
+    rotate += push * 0.6;
+  }
+  return { x: round(x), rotate: round(rotate) };
 }
 
 /** How opaque the whole pile gets: by the last layer you can't see through it. */
