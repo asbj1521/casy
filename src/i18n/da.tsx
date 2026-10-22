@@ -819,6 +819,9 @@ export const da = {
     toSuggestion: "Forslaget",
     connect: "Forbind kalender",
     dateOf: (n: number, total: number) => `Dato ${n} af ${total}`,
+    // How well the date suits the group by everyone's important events (#119).
+    matchScore: (n: number) => `Passer ${n}%`,
+    matchScoreNote: "Hvor godt datoen passer til gruppens vigtige aftaler",
     can: "Kan",
     cant: "Kan ikke",
     rather: "Helst ikke",
@@ -1092,6 +1095,8 @@ export const da = {
     allCanWithCalendar: (n: number) => `Alle ${n} med kalender kan`,
     edgesClear: "Intet lige før eller tidligt morgenen efter",
     noSkips: "Ingen skal give noget op",
+    matchScore: (n: number) =>
+      `Passer ${n}% for gruppen, ud fra de vigtige aftaler, der er delt med Casy`,
     picked: "Med i forslaget",
     notPicked: "Ikke med: Casy spreder datoerne, så de ikke ligger tæt",
     details: (date: string) => `Detaljer om ${date}`,

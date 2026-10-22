@@ -786,6 +786,9 @@ export const en: Messages = {
     toSuggestion: "Suggested date",
     connect: "Connect a calendar",
     dateOf: (n: number, total: number) => `Date ${n} of ${total}`,
+    // How well the date suits the group by everyone's important events (#119).
+    matchScore: (n: number) => `${n}% match`,
+    matchScoreNote: "How well the date suits the group's important events",
     can: "Can",
     cant: "Can't",
     rather: "Rather not",
@@ -1053,6 +1056,8 @@ export const en: Messages = {
     allCanWithCalendar: (n: number) => `All ${n} with a calendar can make it`,
     edgesClear: "Nothing right before or early the next morning",
     noSkips: "Nobody has to give anything up",
+    matchScore: (n: number) =>
+      `${n}% match for the group, from the important events shared with Casy`,
     picked: "In the suggestion",
     notPicked: "Left out: Casy spreads the dates so they aren't close together",
     details: (date: string) => `Details for ${date}`,

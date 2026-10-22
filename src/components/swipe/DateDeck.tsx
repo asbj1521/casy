@@ -462,9 +462,28 @@ function CardFace({
 
   return (
     <div className="flex h-full select-none flex-col rounded-3xl border bg-card p-5 shadow-xl shadow-black/10">
-      <p className="text-xs font-bold uppercase tracking-wide text-primary">
-        {t.swipe.dateOf(position, total)}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-bold uppercase tracking-wide text-primary">
+          {t.swipe.dateOf(position, total)}
+        </p>
+        {/* How well it suits the group by everyone's important events (#119):
+            one number for the group, there only when anyone shared something. */}
+        {date.matchScore != null && (
+          <span
+            title={t.swipe.matchScoreNote}
+            className={cn(
+              "rounded-full px-2 py-0.5 text-xs font-semibold",
+              date.matchScore >= 85
+                ? "bg-emerald-100 text-emerald-800"
+                : date.matchScore >= 60
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-rose-100 text-rose-800",
+            )}
+          >
+            {t.swipe.matchScore(date.matchScore)}
+          </span>
+        )}
+      </div>
       <p className="mt-2 text-[28px] font-extrabold leading-[1.1] tracking-tight text-foreground">
         {headline.lines.join(" ")}
       </p>

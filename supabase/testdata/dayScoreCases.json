@@ -1,21 +1,191 @@
 {
   "_about": "Cases for the ranking of a vote's dates (#119), run by both the app's rules (src/lib/dayFacts.test.ts: importantClashes, impactOn) and the server's port (supabase/functions/_shared/dayScores_test.ts). October 2026: Friday the 9th, Saturday the 10th, Sunday the 11th, Copenhagen summer time.",
   "impact": [
-    { "name": "a meeting ending at 23:00 is a late night", "profile": null, "single": true, "start": "2026-10-09T19:00:00+02:00", "end": "2026-10-09T23:00:00+02:00", "effects": ["lateNight"] },
-    { "name": "ending at 22:30 is not", "profile": null, "single": true, "start": "2026-10-09T19:00:00+02:00", "end": "2026-10-09T22:30:00+02:00", "effects": [] },
-    { "name": "past midnight is", "profile": null, "single": true, "start": "2026-10-09T20:00:00+02:00", "end": "2026-10-10T01:00:00+02:00", "effects": ["lateNight"] },
-    { "name": "one that usually runs late is, from 21:00", "profile": { "effects": [], "runsLate": true, "strain": "light", "recoveryDays": 0 }, "single": true, "start": "2026-10-09T18:00:00+02:00", "end": "2026-10-09T21:00:00+02:00", "effects": ["lateNight"] },
-    { "name": "a trip takes the profile's word", "profile": { "effects": ["travel"], "runsLate": false, "strain": "moderate", "recoveryDays": 1 }, "single": false, "start": "2026-10-09T08:00:00+02:00", "end": "2026-10-11T23:00:00+02:00", "effects": ["travel"] },
-    { "name": "the profile's effects keep their order", "profile": { "effects": ["alcohol", "lateNight"], "runsLate": false, "strain": "light", "recoveryDays": 0 }, "single": true, "start": "2026-10-09T18:00:00+02:00", "end": "2026-10-09T20:00:00+02:00", "effects": ["lateNight", "alcohol"] }
+    {
+      "name": "a meeting ending at 23:00 is a late night",
+      "profile": null,
+      "single": true,
+      "start": "2026-10-09T19:00:00+02:00",
+      "end": "2026-10-09T23:00:00+02:00",
+      "effects": ["lateNight"]
+    },
+    {
+      "name": "ending at 22:30 is not",
+      "profile": null,
+      "single": true,
+      "start": "2026-10-09T19:00:00+02:00",
+      "end": "2026-10-09T22:30:00+02:00",
+      "effects": []
+    },
+    {
+      "name": "past midnight is",
+      "profile": null,
+      "single": true,
+      "start": "2026-10-09T20:00:00+02:00",
+      "end": "2026-10-10T01:00:00+02:00",
+      "effects": ["lateNight"]
+    },
+    {
+      "name": "one that usually runs late is, from 21:00",
+      "profile": { "effects": [], "runsLate": true, "strain": "light", "recoveryDays": 0 },
+      "single": true,
+      "start": "2026-10-09T18:00:00+02:00",
+      "end": "2026-10-09T21:00:00+02:00",
+      "effects": ["lateNight"]
+    },
+    {
+      "name": "a trip takes the profile's word",
+      "profile": {
+        "effects": ["travel"],
+        "runsLate": false,
+        "strain": "moderate",
+        "recoveryDays": 1
+      },
+      "single": false,
+      "start": "2026-10-09T08:00:00+02:00",
+      "end": "2026-10-11T23:00:00+02:00",
+      "effects": ["travel"]
+    },
+    {
+      "name": "the profile's effects keep their order",
+      "profile": {
+        "effects": ["alcohol", "lateNight"],
+        "runsLate": false,
+        "strain": "light",
+        "recoveryDays": 0
+      },
+      "single": true,
+      "start": "2026-10-09T18:00:00+02:00",
+      "end": "2026-10-09T20:00:00+02:00",
+      "effects": ["lateNight", "alcohol"]
+    }
   ],
   "clash": [
-    { "name": "a julefrokost until 02:00 the night before a critical exam", "planned": { "effects": ["lateNight", "alcohol"], "strain": "moderate", "recoveryDays": 0, "start": "2026-10-09T18:00:00+02:00", "end": "2026-10-10T02:00:00+02:00" }, "fact": { "start": "2026-10-10T09:00:00+02:00", "level": "critical", "avoid": ["alcohol", "lateNight"], "prepDays": 0 }, "expected": "critical" },
-    { "name": "the same before an important, not critical, event warns", "planned": { "effects": ["lateNight", "alcohol"], "strain": "moderate", "recoveryDays": 0, "start": "2026-10-09T18:00:00+02:00", "end": "2026-10-10T02:00:00+02:00" }, "fact": { "start": "2026-10-10T09:00:00+02:00", "level": "high", "avoid": ["alcohol", "lateNight"], "prepDays": 0 }, "expected": "warning" },
-    { "name": "a short coffee the day before is small enough", "planned": { "effects": [], "strain": "light", "recoveryDays": 0, "start": "2026-10-09T14:00:00+02:00", "end": "2026-10-09T15:00:00+02:00" }, "fact": { "start": "2026-10-10T09:00:00+02:00", "level": "critical", "avoid": ["alcohol", "lateNight"], "prepDays": 3 }, "expected": null },
-    { "name": "a long hike the day before a critical event is not", "planned": { "effects": ["exercise"], "strain": "moderate", "recoveryDays": 0, "start": "2026-10-09T10:00:00+02:00", "end": "2026-10-09T15:00:00+02:00" }, "fact": { "start": "2026-10-10T09:00:00+02:00", "level": "critical", "avoid": [], "prepDays": 3 }, "expected": "critical" },
-    { "name": "a big day two days before, within the prep days, warns", "planned": { "effects": [], "strain": "heavy", "recoveryDays": 0, "start": "2026-10-09T10:00:00+02:00", "end": "2026-10-09T16:00:00+02:00" }, "fact": { "start": "2026-10-11T09:00:00+02:00", "level": "high", "avoid": [], "prepDays": 3 }, "expected": "warning" },
-    { "name": "a day to recover from a trip", "planned": { "effects": ["travel"], "strain": "moderate", "recoveryDays": 2, "start": "2026-10-09T08:00:00+02:00", "end": "2026-10-09T22:00:00+02:00" }, "fact": { "start": "2026-10-11T10:00:00+02:00", "level": "high", "avoid": [], "prepDays": 0 }, "expected": "warning" },
-    { "name": "an event that starts before the planned one ends is no clash", "planned": { "effects": ["alcohol"], "strain": "light", "recoveryDays": 0, "start": "2026-10-09T18:00:00+02:00", "end": "2026-10-09T22:00:00+02:00" }, "fact": { "start": "2026-10-09T20:00:00+02:00", "level": "critical", "avoid": ["alcohol"], "prepDays": 0 }, "expected": null },
-    { "name": "more than 36 hours is not the night before", "planned": { "effects": ["lateNight", "alcohol"], "strain": "light", "recoveryDays": 0, "start": "2026-10-09T18:00:00+02:00", "end": "2026-10-10T02:00:00+02:00" }, "fact": { "start": "2026-10-11T18:00:00+02:00", "level": "critical", "avoid": ["alcohol"], "prepDays": 0 }, "expected": null }
+    {
+      "name": "a julefrokost until 02:00 the night before a critical exam",
+      "planned": {
+        "effects": ["lateNight", "alcohol"],
+        "strain": "moderate",
+        "recoveryDays": 0,
+        "start": "2026-10-09T18:00:00+02:00",
+        "end": "2026-10-10T02:00:00+02:00"
+      },
+      "fact": {
+        "start": "2026-10-10T09:00:00+02:00",
+        "level": "critical",
+        "avoid": ["alcohol", "lateNight"],
+        "prepDays": 0
+      },
+      "expected": "critical"
+    },
+    {
+      "name": "the same before an important, not critical, event warns",
+      "planned": {
+        "effects": ["lateNight", "alcohol"],
+        "strain": "moderate",
+        "recoveryDays": 0,
+        "start": "2026-10-09T18:00:00+02:00",
+        "end": "2026-10-10T02:00:00+02:00"
+      },
+      "fact": {
+        "start": "2026-10-10T09:00:00+02:00",
+        "level": "high",
+        "avoid": ["alcohol", "lateNight"],
+        "prepDays": 0
+      },
+      "expected": "warning"
+    },
+    {
+      "name": "a short coffee the day before is small enough",
+      "planned": {
+        "effects": [],
+        "strain": "light",
+        "recoveryDays": 0,
+        "start": "2026-10-09T14:00:00+02:00",
+        "end": "2026-10-09T15:00:00+02:00"
+      },
+      "fact": {
+        "start": "2026-10-10T09:00:00+02:00",
+        "level": "critical",
+        "avoid": ["alcohol", "lateNight"],
+        "prepDays": 3
+      },
+      "expected": null
+    },
+    {
+      "name": "a long hike the day before a critical event is not",
+      "planned": {
+        "effects": ["exercise"],
+        "strain": "moderate",
+        "recoveryDays": 0,
+        "start": "2026-10-09T10:00:00+02:00",
+        "end": "2026-10-09T15:00:00+02:00"
+      },
+      "fact": {
+        "start": "2026-10-10T09:00:00+02:00",
+        "level": "critical",
+        "avoid": [],
+        "prepDays": 3
+      },
+      "expected": "critical"
+    },
+    {
+      "name": "a big day two days before, within the prep days, warns",
+      "planned": {
+        "effects": [],
+        "strain": "heavy",
+        "recoveryDays": 0,
+        "start": "2026-10-09T10:00:00+02:00",
+        "end": "2026-10-09T16:00:00+02:00"
+      },
+      "fact": { "start": "2026-10-11T09:00:00+02:00", "level": "high", "avoid": [], "prepDays": 3 },
+      "expected": "warning"
+    },
+    {
+      "name": "a day to recover from a trip",
+      "planned": {
+        "effects": ["travel"],
+        "strain": "moderate",
+        "recoveryDays": 2,
+        "start": "2026-10-09T08:00:00+02:00",
+        "end": "2026-10-09T22:00:00+02:00"
+      },
+      "fact": { "start": "2026-10-11T10:00:00+02:00", "level": "high", "avoid": [], "prepDays": 0 },
+      "expected": "warning"
+    },
+    {
+      "name": "an event that starts before the planned one ends is no clash",
+      "planned": {
+        "effects": ["alcohol"],
+        "strain": "light",
+        "recoveryDays": 0,
+        "start": "2026-10-09T18:00:00+02:00",
+        "end": "2026-10-09T22:00:00+02:00"
+      },
+      "fact": {
+        "start": "2026-10-09T20:00:00+02:00",
+        "level": "critical",
+        "avoid": ["alcohol"],
+        "prepDays": 0
+      },
+      "expected": null
+    },
+    {
+      "name": "more than 36 hours is not the night before",
+      "planned": {
+        "effects": ["lateNight", "alcohol"],
+        "strain": "light",
+        "recoveryDays": 0,
+        "start": "2026-10-09T18:00:00+02:00",
+        "end": "2026-10-10T02:00:00+02:00"
+      },
+      "fact": {
+        "start": "2026-10-11T18:00:00+02:00",
+        "level": "critical",
+        "avoid": ["alcohol"],
+        "prepDays": 0
+      },
+      "expected": null
+    }
   ]
 }

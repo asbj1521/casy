@@ -219,7 +219,11 @@ export default function PileScreen({
   // asked while the calendars are thrown, so the list can rank by it. Only for
   // a real group, and after the planned event's profile (it says what the
   // event does to the night before); never waited for long.
-  const { scores, settled: scoresSettled } = useDateScores({
+  const {
+    scores,
+    counted,
+    settled: scoresSettled,
+  } = useDateScores({
     groupId: activeGroup && !activeGroup.isExample ? activeGroup.id : null,
     settings: search,
     profile: profile ?? null,
@@ -276,6 +280,16 @@ export default function PileScreen({
                   : words.allCan(groupSize),
             notable: absent.length > 0,
           },
+          // How well it suits the group by everyone's important events (#119),
+          // only when anyone has shared something.
+          ...(counted > 0 && scores?.has(date.slot.start)
+            ? [
+                {
+                  found: words.matchScore(scores.get(date.slot.start)!),
+                  notable: scores.get(date.slot.start)! < 85,
+                },
+              ]
+            : []),
           ...(warnings
             ? [
                 {
@@ -312,6 +326,7 @@ export default function PileScreen({
     found,
     poolFound,
     scores,
+    counted,
     search,
     searchWindow,
     extras.dateCount,
