@@ -1,11 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 
-import {
-  aiConsented,
-  aiContentAllowed,
-  CONSENT_VERSION,
-  setAiConsent,
-} from "./aiAccess.ts";
+import { aiConsented, aiContentAllowed, CONSENT_VERSION, setAiConsent } from "./aiAccess.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
 const ADMIN = "11111111-1111-4111-8111-111111111111";
