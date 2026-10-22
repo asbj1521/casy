@@ -73,6 +73,8 @@ export interface MyData {
     allowed: boolean;
     calls: number;
     consent: { givenAt: string; current: boolean } | null;
+    /** Corrections of the AI you sent to Casy for review (#122): how many are kept, and whether they are sent. */
+    corrections: { kept: number; sharing: boolean };
   };
 }
 
@@ -242,6 +244,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     aiCalls,
     aiOn,
     consent,
+    corrections,
   ] = await Promise.all([
     sourceIds.length
       ? count(db.from("calendar_busy_cache").select("id", head).in("source_id", sourceIds))
@@ -297,10 +300,19 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     ),
     count(db.from("ai_calls").select("id", head).eq("profile_id", me)),
     aiAllowed(db, me),
-    db.from("ai_consent").select("version, given_at").eq("profile_id", me).maybeSingle(),
+    db
+      .from("ai_consent")
+      .select("version, given_at, share_corrections")
+      .eq("profile_id", me)
+      .maybeSingle(),
+    count(db.from("ai_corrections").select("id", head).eq("profile_id", me)),
   ]);
   for (const r of [first, last, next, consent]) if (r?.error) throw r.error;
-  const consentRow = consent.data as { version: number; given_at: string } | null;
+  const consentRow = consent.data as {
+    version: number;
+    given_at: string;
+    share_corrections: boolean;
+  } | null;
 
   const primaryRow = primary.data as unknown as {
     auto_add: boolean;
@@ -351,6 +363,11 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       consent: consentRow
         ? { givenAt: consentRow.given_at, current: consentRow.version >= CONSENT_VERSION }
         : null,
+      corrections: {
+        kept: corrections,
+        sharing:
+          !!consentRow && consentRow.version >= CONSENT_VERSION && consentRow.share_corrections,
+      },
     },
   };
 }

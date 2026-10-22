@@ -6,6 +6,9 @@
  * - export: the same, with every stored busy time, as a file to keep.
  * - ai-consent: says yes (`on: true`) or takes the yes back (`on: false`) to
  *   Casy's AI using content from their calendar (#120); see _shared/aiAccess.ts.
+ * - ai-share: switches the sending of their corrections of the AI to Casy for
+ *   review on or off (#122), without touching the yes.
+ * - corrections-delete: deletes every correction they have sent (#122).
  * - delete: deletes the account and everything it owns, after the page has
  *   asked them to type a word to confirm (sent as `confirm: true`, so a stray
  *   call can't do it). See _shared/accounts.ts for what goes and what stays.
@@ -14,7 +17,7 @@
  * (_shared/auth.ts), never from the request.
  */
 import { deleteAccount } from "../_shared/accounts.ts";
-import { setAiConsent } from "../_shared/aiAccess.ts";
+import { setAiConsent, setAiSharing } from "../_shared/aiAccess.ts";
 import { exportMyData, readMyData } from "../_shared/myData.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import { HttpError, serve } from "../_shared/http.ts";
@@ -34,6 +37,18 @@ serve("account", async (req, body) => {
       if (typeof body.on !== "boolean") throw new HttpError(400, "on must be true or false");
       await setAiConsent(db, profileId, body.on);
       return { outcome: body.on ? "given" : "withdrawn" };
+    }
+    case "ai-share": {
+      if (typeof body.on !== "boolean") throw new HttpError(400, "on must be true or false");
+      if (!(await setAiSharing(db, profileId, body.on))) {
+        throw new HttpError(400, "Say yes to the AI using your calendar first.");
+      }
+      return { outcome: body.on ? "sharing" : "not sharing" };
+    }
+    case "corrections-delete": {
+      const { error } = await db.from("ai_corrections").delete().eq("profile_id", profileId);
+      if (error) throw error;
+      return { outcome: "deleted" };
     }
     case "delete": {
       if (body.confirm !== true) throw new HttpError(400, "confirm must be true");

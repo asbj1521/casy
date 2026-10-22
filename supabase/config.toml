@@ -578,3 +578,9 @@ enabled = true
 # (_shared/auth.ts). The gateway check stays off because the publishable key
 # is not a JWT.
 verify_jwt = false
+
+[functions.ai-feedback]
+# Called by the signed-in app with fetch(); checks the login itself in code
+# (_shared/auth.ts). The gateway check stays off because the publishable key
+# is not a JWT.
+verify_jwt = false

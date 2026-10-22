@@ -216,6 +216,36 @@ serve("admin", async (req, body) => {
     case "overview":
       return await overview(db);
 
+    // The corrections of the AI people sent for review (#122), newest first:
+    // what they say and never whose they are, so a mistake the AI makes for
+    // everyone can become a sharper prompt and a made-up eval case.
+    case "corrections": {
+      const { data, error } = await db
+        .from("ai_corrections")
+        .select("id, kind, data, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return {
+        corrections: (data ?? []).map((r) => ({
+          id: r.id as string,
+          kind: r.kind as string,
+          data: r.data as unknown,
+          createdAt: r.created_at as string,
+        })),
+      };
+    }
+
+    // One reviewed: its lesson is in the prompt or the evals now, so it goes.
+    case "correctionHandled": {
+      const id = requireString(body, "id");
+      const { data, error } = await db.from("ai_corrections").delete().eq("id", id).select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) throw new HttpError(404, "That correction is already gone.");
+      console.log(`admin ${caller.id} handled correction ${id}`);
+      return { outcome: "handled" };
+    }
+
     case "deleteGroup": {
       const groupId = requireString(body, "groupId");
       // Members and invites cascade off the group (friend_groups migration).

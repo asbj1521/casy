@@ -29,7 +29,12 @@
  * old, while someone plans for the group, so the search doesn't offer a time
  * filled since the hourly sync (_shared/groupRefresh.ts).
  */
-import { aiAllowed, aiConsented, aiTesterAllowed } from "../_shared/aiAccess.ts";
+import {
+  aiAllowed,
+  aiConsented,
+  aiSharesCorrections,
+  aiTesterAllowed,
+} from "../_shared/aiAccess.ts";
 import { type Caller, requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
@@ -535,6 +540,11 @@ serve("groups", async (req, body) => {
         // Whether they said yes to the AI using content from their calendar (#120).
         aiConsent: await aiConsented(db, profileId).catch((err) => {
           console.error("whoami: couldn't check AI consent", err);
+          return false;
+        }),
+        // Whether their corrections of the AI go to Casy for review (#122).
+        aiShare: await aiSharesCorrections(db, profileId).catch((err) => {
+          console.error("whoami: couldn't check sharing", err);
           return false;
         }),
         // Whether this person gets the admin-only AI features being tested:

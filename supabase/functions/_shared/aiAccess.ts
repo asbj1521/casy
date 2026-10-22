@@ -50,15 +50,19 @@ export async function aiTesterAllowed(db: Pick<Db, "from">, profileId: string): 
  * events. Raised whenever the AI may do more with it, which asks everyone
  * again: a yes under an older number counts as none. 2 (#119): the phone also
  * shares, for each important event, when it starts and how much it matters
- * (never its title), so a vote's dates can be ranked for the whole group. Keep
- * it in step with the privacy policy's AI section.
+ * (never its title), so a vote's dates can be ranked for the whole group. 3
+ * (#122): corrections of the AI are sent to Casy for review (a label
+ * correction with its title, a plan with its text), unless the person switches
+ * that off in Your data. Keep it in step with the privacy policy's AI section.
  */
-export const CONSENT_VERSION = 2;
+export const CONSENT_VERSION = 3;
 
 /**
  * Say yes under the current wording, or take the yes back: the row goes, and
- * so do the facts the person's phone shared for ranking dates (#119), which
- * were only shared under the yes.
+ * so do the facts the person's phone shared for ranking dates (#119) and the
+ * corrections they sent for review (#122), which were only shared under the
+ * yes. Saying yes again keeps a choice to share no corrections: that switch is
+ * the person's own.
  */
 export async function setAiConsent(
   db: Pick<Db, "from">,
@@ -75,12 +79,49 @@ export async function setAiConsent(
     : await db.from("ai_consent").delete().eq("profile_id", profileId);
   if (error) throw error;
   if (!on) {
-    const { error: factsError } = await db
-      .from("ai_day_facts")
-      .delete()
-      .eq("profile_id", profileId);
-    if (factsError) throw factsError;
+    for (const table of ["ai_day_facts", "ai_corrections"]) {
+      const { error: sharedError } = await db.from(table).delete().eq("profile_id", profileId);
+      if (sharedError) throw sharedError;
+    }
   }
+}
+
+/**
+ * Switch the sending of corrections to Casy for review (#122) on or off,
+ * without touching the yes itself. Only for someone who has said yes: the
+ * switch lives on that row. Returns false when there is none.
+ */
+export async function setAiSharing(
+  db: Pick<Db, "from">,
+  profileId: string,
+  on: boolean,
+): Promise<boolean> {
+  const { data, error } = await db
+    .from("ai_consent")
+    .update({ share_corrections: on })
+    .eq("profile_id", profileId)
+    .select("profile_id");
+  if (error) throw error;
+  return (data ?? []).length > 0;
+}
+
+/**
+ * Whether this person's corrections of the AI may be stored for review
+ * (#122): they said yes under today's wording, and haven't switched sharing
+ * off. Admins and testers need the yes too: sharing is for real use.
+ */
+export async function aiSharesCorrections(
+  db: Pick<Db, "from">,
+  profileId: string,
+): Promise<boolean> {
+  const { data, error } = await db
+    .from("ai_consent")
+    .select("version, share_corrections")
+    .eq("profile_id", profileId)
+    .maybeSingle();
+  if (error) throw error;
+  const row = data as { version?: number; share_corrections?: boolean } | null;
+  return (row?.version ?? 0) >= CONSENT_VERSION && row?.share_corrections === true;
 }
 
 /** Whether this person has said yes, under the current wording. */

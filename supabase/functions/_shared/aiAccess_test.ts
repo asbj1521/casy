@@ -1,6 +1,13 @@
 import { assertEquals } from "jsr:@std/assert@1";
 
-import { aiConsented, aiContentAllowed, CONSENT_VERSION, setAiConsent } from "./aiAccess.ts";
+import {
+  aiConsented,
+  aiContentAllowed,
+  aiSharesCorrections,
+  CONSENT_VERSION,
+  setAiConsent,
+  setAiSharing,
+} from "./aiAccess.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
 const ADMIN = "11111111-1111-4111-8111-111111111111";
@@ -9,15 +16,17 @@ interface World {
   /** ai_access: whether the person has AI, and whether they are a tester. */
   access?: { tester: boolean };
   /** ai_consent: the wording they agreed to. */
-  consent?: { version: number };
+  consent?: { version: number; share_corrections?: boolean };
 }
 
 /** Answers ai_access and ai_consent from `world`, and records what is written to consent. */
 function fakeDb(world: World) {
-  const written: { upsert?: Record<string, unknown>; deletedFor?: unknown; deletedFrom: string[] } =
-    {
-      deletedFrom: [],
-    };
+  const written: {
+    upsert?: Record<string, unknown>;
+    updated?: Record<string, unknown>;
+    deletedFor?: unknown;
+    deletedFrom: string[];
+  } = { deletedFrom: [] };
   const db = {
     from: (table: string) => ({
       select: () => ({
@@ -38,6 +47,17 @@ function fakeDb(world: World) {
         written.upsert = values;
         return Promise.resolve({ error: null });
       },
+      update: (values: Record<string, unknown>) => ({
+        eq: () => ({
+          select: () => {
+            written.updated = values;
+            return Promise.resolve({
+              data: world.consent ? [{ profile_id: "u" }] : [],
+              error: null,
+            });
+          },
+        }),
+      }),
       delete: () => ({
         eq: (_column: string, id: unknown) => {
           written.deletedFor = id;
@@ -106,7 +126,51 @@ Deno.test("saying yes records the wording; taking it back deletes the row", asyn
   await setAiConsent(no.db, "u", false);
   assertEquals(no.written.deletedFor, "u");
   // The facts shared for ranking dates (#119) go with the yes.
-  assertEquals(no.written.deletedFrom, ["ai_consent", "ai_day_facts"]);
+  assertEquals(no.written.deletedFrom, ["ai_consent", "ai_day_facts", "ai_corrections"]);
   assertEquals(no.written.upsert, undefined);
   assertEquals(yes.written.deletedFrom, []);
+});
+
+Deno.test(
+  "saying yes again never switches sharing back on: the row is not rewritten with it",
+  async () => {
+    const again = fakeDb({ consent: { version: CONSENT_VERSION - 1, share_corrections: false } });
+    await setAiConsent(again.db, "u", true);
+    assertEquals("share_corrections" in (again.written.upsert ?? {}), false);
+  },
+);
+
+Deno.test("corrections are stored only under today's wording, with sharing on", async () => {
+  const current = { version: CONSENT_VERSION };
+  assertEquals(await aiSharesCorrections(fakeDb({}).db, "u"), false);
+  assertEquals(
+    await aiSharesCorrections(fakeDb({ consent: { ...current, share_corrections: true } }).db, "u"),
+    true,
+  );
+  // Switched off in Your data.
+  assertEquals(
+    await aiSharesCorrections(
+      fakeDb({ consent: { ...current, share_corrections: false } }).db,
+      "u",
+    ),
+    false,
+  );
+  // A yes to older wording didn't name it.
+  assertEquals(
+    await aiSharesCorrections(
+      fakeDb({ consent: { version: CONSENT_VERSION - 1, share_corrections: true } }).db,
+      "u",
+    ),
+    false,
+  );
+  // Admins and testers need the yes too.
+  assertEquals(await asAdmin(() => aiSharesCorrections(fakeDb({}).db, ADMIN)), false);
+});
+
+Deno.test("the sharing switch needs a yes to sit on", async () => {
+  const none = fakeDb({});
+  assertEquals(await setAiSharing(none.db, "u", false), false);
+  const yes = fakeDb({ consent: { version: CONSENT_VERSION } });
+  assertEquals(await setAiSharing(yes.db, "u", false), true);
+  assertEquals(yes.written.updated, { share_corrections: false });
 });
