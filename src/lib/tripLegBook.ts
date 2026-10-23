@@ -19,8 +19,8 @@ import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
 import { readStored, writeStored } from "@/lib/storage";
 import { cityKey, homeOf, NO_ANSWERS, type Leg, type TripAnswers } from "@/lib/trips";
 
-/** Events sent per call: the server's limit. */
-export const BATCH_SIZE = 50;
+/** Events sent per call: under the server's limit, so an answer never runs long (as labels did). */
+export const BATCH_SIZE = 20;
 /** Read per run at most, soonest first; the rest wait for the next. */
 export const MAX_PER_RUN = 150;
 

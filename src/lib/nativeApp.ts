@@ -10,6 +10,8 @@
  * @capacitor/core, which would add 3 kB to every website visitor's first load.
  */
 export const isNativeApp =
+  // No window at all where tests run without a browser: not the app.
+  typeof window !== "undefined" &&
   (
     window as { Capacitor?: { isNativePlatform?: () => boolean } }
   ).Capacitor?.isNativePlatform?.() === true;

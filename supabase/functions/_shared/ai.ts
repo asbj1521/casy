@@ -183,7 +183,10 @@ export async function runSkill<T>(
     try {
       return await create(
         skillRequest(call),
-        budget.waiting ? { maxRetries: 1, timeout: 20_000 } : { maxRetries: 2, timeout: 30_000 },
+        // In the background a long answer may take its time: a minute, one
+        // retry, two minutes in all, inside the function's own time limit
+        // (30 s, three tries, timed out labelling a batch of 46, #132).
+        budget.waiting ? { maxRetries: 1, timeout: 20_000 } : { maxRetries: 1, timeout: 60_000 },
       );
     } catch (err) {
       console.error(`${call.skill}: Anthropic call failed`, err);

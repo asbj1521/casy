@@ -143,7 +143,7 @@ Deno.test("someone waiting gets one quick retry; the background more patience", 
   );
   assertEquals(seen, [
     { maxRetries: 1, timeout: 20_000 },
-    { maxRetries: 2, timeout: 30_000 },
+    { maxRetries: 1, timeout: 60_000 },
   ]);
 });
 

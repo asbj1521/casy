@@ -27,8 +27,12 @@ import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
 import { readStored, writeStored } from "@/lib/storage";
 import { APP_TIME_ZONE, offsetAt } from "@/lib/zone";
 
-/** Titles sent per call: the server's limit (MAX_EVENTS in labelAi.ts). */
-export const BATCH_SIZE = 50;
+/**
+ * Titles sent per call: well under the server's limit (MAX_EVENTS in
+ * labelAi.ts). Fifty at once is a long answer, which timed out (#132) when a
+ * fresh start labelled everything in one go; fifteen answer in seconds.
+ */
+export const BATCH_SIZE = 15;
 /** Labelled per run at most, soonest first; the rest wait for the next. */
 export const MAX_PER_RUN = 300;
 /** Events that ended longer ago than this aren't labelled. */
