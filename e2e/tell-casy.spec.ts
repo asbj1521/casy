@@ -22,7 +22,7 @@ test("a description becomes entries, which are kept only when saved", async ({
 
   // Casy's reading is shown for checking; nothing is saved yet.
   await expect(sheet.getByText("Sådan forstod Casy det")).toBeVisible();
-  await expect(sheet.getByText("Rejse")).toBeVisible();
+  await expect(sheet.getByText("Rejse", { exact: true })).toBeVisible();
   await expect(sheet.getByText(/12\. okt\. til .*19\. okt\./)).toBeVisible();
   expect(backend.world.entries).toHaveLength(0);
   const asked = backend.calls.find((c) => c.name === "entries-ai")!;
@@ -57,7 +57,7 @@ test("more details change the proposal, and a left out entry is not saved", asyn
   const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
   await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("Jeg rejser 12. til 19. oktober");
   await sheet.getByRole("button", { name: "Tilføj til kalender" }).click();
-  await expect(sheet.getByText("Rejse")).toBeVisible();
+  await expect(sheet.getByText("Rejse", { exact: true })).toBeVisible();
 
   await sheet.getByRole("button", { name: "Tilføj detaljer" }).click();
   await sheet

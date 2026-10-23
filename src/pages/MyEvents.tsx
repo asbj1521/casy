@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck, Loader2, Sparkles } from "lucide-react";
+import { CalendarCheck, CalendarSearch, Loader2, Sparkles } from "lucide-react";
 
 import { eventsQuery, type SuggestedEvent } from "@/api/events";
 import EventDetails from "@/components/myEvents/EventDetails";
@@ -9,6 +9,7 @@ import EventList from "@/components/myEvents/EventList";
 import EventRows from "@/components/myEvents/phone/EventRows";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
+import GlassButton from "@/components/ui/GlassButton";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useGroupRefresh } from "@/hooks/useGroupRefresh";
@@ -86,13 +87,26 @@ function NoEvents() {
   const t = useT();
   // A phone plans from My calendar (#127): straight into its Planlæg sheet.
   const phone = usePhoneLayout();
+  if (phone) {
+    // No card (#153): what it is, one line, and the way to plan, in glass.
+    return (
+      <div className="mt-16 flex flex-col items-center text-center">
+        <CalendarCheck className="h-10 w-10 text-primary" />
+        <p className="mt-3 text-[17px] font-semibold text-foreground">{t.events.emptyTitle}</p>
+        <p className="mt-1 max-w-xs text-[15px] text-muted-foreground">{t.events.emptyBodyPhone}</p>
+        <GlassButton icon={CalendarSearch} to="/calendar-overview?plan" className="mt-5">
+          {t.planFromCalendar.button}
+        </GlassButton>
+      </div>
+    );
+  }
   return (
     <div className="mt-6 flex flex-col items-start rounded-2xl border bg-card p-5 sm:mt-8 sm:p-6">
       <CalendarCheck className="h-8 w-8 text-primary" />
       <p className="mt-3 font-semibold text-foreground">{t.events.emptyTitle}</p>
       <p className="mt-1 text-sm text-muted-foreground">{t.events.emptyBody}</p>
       <Link
-        to={phone ? "/calendar-overview?plan" : "/"}
+        to="/"
         className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
       >
         <Sparkles className="h-4 w-4" />

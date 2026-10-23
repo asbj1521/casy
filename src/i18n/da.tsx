@@ -560,8 +560,6 @@ export const da = {
     button: "Fortæl Casy",
     rowDetail: "Rejser og andet, der ikke står i en kalender",
     done: "Færdig",
-    intro:
-      "Skriv eller sig, hvornår du er væk eller optaget, og som ikke står i en kalender. Fx at du er hjemme hos dine forældre hele december.",
     placeholder: "Fx jeg rejser fra den 12. til den 19. oktober",
     morePlaceholder: "Tilføj detaljer, eller ret noget",
     send: "Tilføj til kalender",
@@ -941,6 +939,8 @@ export const da = {
     emptyTitle: "Ingen aftaler endnu",
     emptyBody:
       "Find en dato på planlægningssiden, og tryk på Foreslå datoer. Datoerne dukker op her, så alle i gruppen kan svare på dem.",
+    emptyBodyPhone:
+      "Planlæg noget fra din kalender, så dukker datoerne op her, og alle i gruppen kan svare.",
     findDate: "Find en dato",
     needsAnswer: "Venter på dit svar",
     cantMake: "Kan du ikke? Casy finder den næste dato, der passer gruppen, og spørger alle igen.",

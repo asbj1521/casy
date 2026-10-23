@@ -82,9 +82,8 @@ test("people picked in the invite get an invitation, and show as invited", async
     .first()
     .click();
   const sheet = page.getByRole("dialog", { name: "Invitér til Løbeklubben" });
-  // A tap on the row picks the person (a tick at its end; a real checkbox inside).
-  await sheet.getByText("Emil", { exact: true }).click();
-  await expect(sheet.getByRole("checkbox", { name: /^Emil/ })).toBeChecked();
+  // A tap on the row picks the person: a tick at its end, a real checkbox over it.
+  await sheet.getByRole("checkbox", { name: /^Emil/ }).check();
   await sheet.getByRole("button", { name: "Send invitation" }).click();
   await expect(sheet.getByText("Invitationerne er sendt.")).toBeVisible();
   expect(backend.calls.find((c) => c.body.action === "invite-members")).toBeTruthy();

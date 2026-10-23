@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Flag, Loader2 } from "lucide-react";
+import { Ban, LogOut } from "lucide-react";
 
 import { groupsQueryKey, leaveGroup } from "@/api/groups";
 import {
@@ -12,9 +12,13 @@ import {
   type ReportReason,
   type ReportTarget,
 } from "@/api/safety";
-import Modal, { ModalForm } from "@/components/ui/Modal";
+import { FIELD_LABEL, TEXTAREA } from "@/components/ui/field";
+import FlowButton from "@/components/ui/FlowButton";
+import { ListGroup, ListPickRow, ListSwitchRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
+import Sheet from "@/components/ui/Sheet";
 import { useSignedInUser } from "@/context/auth";
+import { useOpenRound } from "@/hooks/useOpenRound";
 import { useT } from "@/i18n/lang";
 
 /** One thing the dialog can report: what it says, and who it is when it is a person. */
@@ -44,18 +48,25 @@ export default function ReportDialog({
   /** The group, so it can be left too; none where leaving isn't offered. */
   group?: { id: string; name: string };
 }) {
+  // A new round each time it opens: nothing picked, nothing written.
   return (
-    <Modal open={open} onClose={onClose}>
-      <ReportForm choices={choices} group={group} onClose={onClose} />
-    </Modal>
+    <ReportSheet
+      key={useOpenRound(open)}
+      open={open}
+      onClose={onClose}
+      choices={choices}
+      group={group}
+    />
   );
 }
 
-function ReportForm({
+function ReportSheet({
+  open,
   choices,
   group,
   onClose,
 }: {
+  open: boolean;
   choices: ReportChoice[];
   group?: { id: string; name: string };
   onClose: () => void;
@@ -99,108 +110,97 @@ function ReportForm({
   }
 
   return (
-    <ModalForm onSubmit={handleSubmit} className="max-w-md">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-        <Flag className="h-5 w-5 shrink-0 text-primary" />
-        {words.title}
-      </h2>
-
+    <Sheet
+      open={open}
+      onClose={close}
+      title={words.title}
+      closeLabel={send.isSuccess ? t.invite.close : t.common.cancel}
+      onSubmit={handleSubmit}
+      busy={send.isPending}
+      // Always a footer (switching layouts would slide the sheet in again);
+      // once sent, closing is the top's Luk.
+      footer={
+        <>
+          {!send.isSuccess && (
+            <FlowButton type="submit" disabled={!reason} busy={send.isPending}>
+              {words.send}
+            </FlowButton>
+          )}
+        </>
+      }
+    >
       {send.isSuccess ? (
-        <div className="mt-4">
-          <Notice tone="success">{words.sent}</Notice>
-          <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={close}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-            >
-              {t.invite.close}
-            </button>
-          </div>
-        </div>
+        <Notice tone="success">{words.sent}</Notice>
       ) : (
         <>
-          <p className="mt-1 text-sm text-muted-foreground">{words.intro}</p>
-
           {choices.length > 1 && (
-            <fieldset className="mt-4">
-              <legend className="mb-1.5 text-sm font-medium text-foreground">{words.what}</legend>
-              <div className="space-y-1">
-                {choices.map((c, i) => (
-                  <label key={i} className="flex items-center gap-2 text-sm text-foreground">
-                    <input
-                      type="radio"
-                      name="report-what"
-                      checked={picked === i}
-                      onChange={() => {
-                        setPicked(i);
-                        setBlock(false);
-                      }}
-                      className="accent-[hsl(var(--primary))]"
-                    />
-                    <span className="min-w-0 break-words">{c.label}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          )}
-
-          <fieldset className="mt-4">
-            <legend className="mb-1.5 text-sm font-medium text-foreground">{words.why}</legend>
-            <div className="space-y-1">
-              {REPORT_REASONS.map((r) => (
-                <label key={r} className="flex items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="radio"
-                    name="report-why"
-                    checked={reason === r}
-                    onChange={() => setReason(r)}
-                    className="accent-[hsl(var(--primary))]"
-                  />
-                  {words.reasons[r]}
-                </label>
+            <ListGroup title={words.what} className="mt-0">
+              {choices.map((c, i) => (
+                <ListPickRow
+                  key={i}
+                  type="radio"
+                  name="report-what"
+                  checked={picked === i}
+                  onChange={() => {
+                    setPicked(i);
+                    setBlock(false);
+                  }}
+                  label={c.label}
+                />
               ))}
-            </div>
-          </fieldset>
-
-          <label htmlFor={noteId} className="mt-4 block text-sm font-medium text-foreground">
-            {words.note}
-          </label>
-          <textarea
-            id={noteId}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={500}
-            rows={3}
-            className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-[16px] text-foreground sm:text-sm"
-          />
-
-          {choice.person && (
-            <label className="mt-4 flex items-start gap-2 text-sm text-foreground">
-              <input
-                type="checkbox"
-                checked={block}
-                onChange={(e) => setBlock(e.target.checked)}
-                className="mt-0.5 accent-[hsl(var(--primary))]"
-              />
-              <span>
-                {words.blockToo(choice.person.name)}
-                <span className="block text-xs text-muted-foreground">
-                  {words.blockHelp(choice.person.name)}
-                </span>
-              </span>
-            </label>
+            </ListGroup>
           )}
-          {group && (
-            <label className="mt-3 flex items-center gap-2 text-sm text-foreground">
-              <input
-                type="checkbox"
-                checked={leave}
-                onChange={(e) => setLeave(e.target.checked)}
-                className="accent-[hsl(var(--primary))]"
+
+          <ListGroup title={words.why} className={choices.length > 1 ? undefined : "mt-0"}>
+            {REPORT_REASONS.map((r) => (
+              <ListPickRow
+                key={r}
+                type="radio"
+                name="report-why"
+                checked={reason === r}
+                onChange={() => setReason(r)}
+                label={words.reasons[r]}
               />
-              <span className="min-w-0 break-words">{words.leaveToo(group.name)}</span>
+            ))}
+          </ListGroup>
+
+          <div className="mt-6">
+            <label htmlFor={noteId} className={FIELD_LABEL}>
+              {words.note}
             </label>
+            <textarea
+              id={noteId}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={500}
+              rows={3}
+              className={TEXTAREA}
+            />
+          </div>
+
+          {(choice.person || group) && (
+            <ListGroup footnote={words.intro}>
+              {choice.person && (
+                <ListSwitchRow
+                  icon={Ban}
+                  label={words.blockToo(choice.person.name)}
+                  detail={words.blockHelp(choice.person.name)}
+                  checked={block}
+                  onChange={setBlock}
+                />
+              )}
+              {group && (
+                <ListSwitchRow
+                  icon={LogOut}
+                  label={words.leaveToo(group.name)}
+                  checked={leave}
+                  onChange={setLeave}
+                />
+              )}
+            </ListGroup>
+          )}
+          {!choice.person && !group && (
+            <p className="mt-1.5 px-4 text-xs text-muted-foreground">{words.intro}</p>
           )}
 
           {send.isError && (
@@ -208,26 +208,8 @@ function ReportForm({
               {send.error.message}
             </Notice>
           )}
-          <div className="mt-5 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={send.isPending}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary disabled:opacity-50"
-            >
-              {t.common.cancel}
-            </button>
-            <button
-              type="submit"
-              disabled={send.isPending || !reason}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-            >
-              {send.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {words.send}
-            </button>
-          </div>
         </>
       )}
-    </ModalForm>
+    </Sheet>
   );
 }

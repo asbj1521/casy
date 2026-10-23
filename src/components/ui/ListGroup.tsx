@@ -161,8 +161,8 @@ function RowText({
 
 /**
  * A row that is a choice (CLAUDE.md, Design language): picked, it gets an
- * orange tick at the end. A real checkbox or radio sits inside, out of
- * sight, so screen readers (and tests) find it by the row's label. Disabled,
+ * orange tick at the end. A real checkbox or radio lies over the row,
+ * invisible, so screen readers (and tests) find it by the row's label. Disabled,
  * `value` takes the tick's place ("Inviteret").
  */
 export function ListPickRow({
@@ -193,7 +193,7 @@ export function ListPickRow({
     <li className="group/row">
       <label
         className={cn(
-          // relative: the hidden input is placed inside its own row, not somewhere off screen.
+          // relative: the input lies over its own row.
           "relative flex w-full items-center gap-3 pl-4 text-left transition-colors has-[:focus-visible]:bg-secondary",
           disabled ? "cursor-default" : "cursor-pointer active:bg-secondary",
         )}
@@ -204,7 +204,8 @@ export function ListPickRow({
           checked={checked}
           disabled={disabled}
           onChange={onChange}
-          className="sr-only"
+          // Over the whole row, invisible: a tap anywhere on it is a tap on the input.
+          className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0 disabled:cursor-default"
         />
         {leading ?? (Icon && <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />)}
         <RowText

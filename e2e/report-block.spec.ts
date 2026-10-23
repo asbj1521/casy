@@ -21,7 +21,7 @@ test("a member is reported and blocked from the group, and unblocked in Your dat
   await expect(dialog.getByRole("button", { name: "Send" })).toBeDisabled();
   await dialog.getByRole("radio", { name: "Chikane eller trusler" }).check();
   await dialog.getByLabel("Fortæl mere (valgfrit)").fill("Skriver grimme ting i noterne");
-  await dialog.getByRole("checkbox", { name: /Bloker også Oliver/ }).check();
+  await dialog.getByRole("switch", { name: /Bloker også Oliver/ }).click();
   await dialog.getByRole("button", { name: "Send" }).click();
   await expect(dialog.getByText("Tak. Casy kigger på det.")).toBeVisible();
 

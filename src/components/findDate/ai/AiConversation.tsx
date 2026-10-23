@@ -326,7 +326,7 @@ export function Composer({
                   speech.stop();
                   onCancel();
                 }}
-                className="h-10 rounded-xl px-3 text-[15px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                className="h-10 rounded-full px-3 text-[15px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
               >
                 {words.cancel}
               </button>
@@ -335,7 +335,7 @@ export function Composer({
               type="button"
               onClick={send}
               disabled={!draft.trim()}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-cta px-3.5 text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-full bg-cta px-3.5 text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50"
             >
               <Sparkles className="h-4 w-4" />
               {sendLabel}
