@@ -122,7 +122,7 @@ export const da = {
     feedbackPrompt: "Skriv her, hvad du tænker, eller hvad der ikke virker:",
     share: "Del Casy",
     shareText: "Casy finder den første dag, hvor alle kan. Prøv den her:",
-    version: (build: string) => `Casy · ${build}`,
+    version: (release: string, build: string) => `Casy ${release} · ${build}`,
   },
   footer: {
     howItWorks: "Sådan virker det",

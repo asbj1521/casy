@@ -4,6 +4,7 @@ import { CircleHelp, Database, FileText, Lock, MessageSquare, Share } from "luci
 import CopyField from "@/components/ui/CopyField";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
+import { APP_VERSION } from "@/lib/appVersion";
 import { APP_BUILD, feedbackMailto } from "@/lib/feedback";
 import { isNativeApp } from "@/lib/nativeApp";
 import { shareLink } from "@/lib/share";
@@ -36,7 +37,7 @@ export function FeedbackShareGroup() {
             window.location.href = feedbackMailto({
               subject: t.profileHub.feedbackSubject,
               prompt: t.profileHub.feedbackPrompt,
-              build: APP_BUILD,
+              build: `${APP_VERSION} · ${APP_BUILD}`,
               platform: isNativeApp ? "app" : "web",
               userAgent: navigator.userAgent,
             });
@@ -67,7 +68,7 @@ export function BuildLine() {
   const t = useT();
   return (
     <p className="mt-6 text-center text-xs text-muted-foreground">
-      {t.profileHub.version(APP_BUILD)}
+      {t.profileHub.version(APP_VERSION, APP_BUILD)}
     </p>
   );
 }
