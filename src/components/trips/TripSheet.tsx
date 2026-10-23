@@ -19,9 +19,10 @@ const MODE_ICON = { flight: Plane, train: TrainFront, bus: Bus } as const;
  * What Casy found about a trip (#115), opened by a tap on its bar in My
  * calendar: the journeys it read and the time away they make, with yes or
  * no; or, where the legs don't pair, a question answered with a tap on a day
- * or a city. An answer that settles the trip closes the sheet; saying where
- * home is doesn't, as it only lets Casy ask the real question, which then
- * takes its place.
+ * or a city. Saying no or deleting closes the sheet. Every other answer keeps
+ * it open on the same trip as it now is: where home is leads to the real
+ * question, and a yes or a day picked to the trip accepted, with "Put it in my
+ * calendar" right there.
  */
 export default function TripSheet({
   mark: opened,
@@ -71,7 +72,8 @@ export default function TripSheet({
         <p className="mb-3 text-[15px] text-muted-foreground">{words.found}</p>
         <LegList legs={trip.legs} at={at} />
         <p className="mb-2 mt-4 text-[15px] font-semibold text-foreground">
-          {words.away(at(trip.start), end)}
+          {/* A date ending the sentence may end in its own period ("8. nov."): one is enough. */}
+          {words.away(at(trip.start), end.replace(/\.$/, ""))}
         </p>
         {trip.accepted ? (
           <>
@@ -84,9 +86,7 @@ export default function TripSheet({
         ) : (
           <>
             <p className="mb-4 text-sm text-muted-foreground">{words.acceptNote}</p>
-            <PrimaryButton onClick={() => answer(() => trips.accept(mark.id))}>
-              {words.accept}
-            </PrimaryButton>
+            <PrimaryButton onClick={() => trips.accept(mark.id)}>{words.accept}</PrimaryButton>
             <SecondaryButton onClick={() => answer(() => trips.decline(mark.id))}>
               {words.decline}
             </SecondaryButton>
@@ -128,9 +128,7 @@ export default function TripSheet({
           days={dayOptions(question, now)}
           at={at}
           onPick={(day) =>
-            answer(() =>
-              back ? trips.answerReturn(mark.id, day) : trips.answerOutbound(mark.id, day),
-            )
+            back ? trips.answerReturn(mark.id, day) : trips.answerOutbound(mark.id, day)
           }
           onNotATrip={() => answer(() => trips.decline(mark.id))}
         />
