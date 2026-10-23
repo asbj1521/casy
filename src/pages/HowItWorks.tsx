@@ -13,7 +13,8 @@ import {
   Users,
 } from "lucide-react";
 
-import TopNav from "@/components/TopNav";
+import ProfilePageTop from "@/components/ProfilePageTop";
+import AppBackLink from "@/components/welcome/AppBackLink";
 import { useAuth } from "@/context/auth";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useLang } from "@/i18n/lang";
@@ -192,8 +193,9 @@ export default function HowItWorks() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav />
+      <ProfilePageTop />
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
+        <AppBackLink className="mb-4" />
         <p className="text-sm font-semibold uppercase tracking-wide text-primary">{c.eyebrow}</p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
           {c.title}

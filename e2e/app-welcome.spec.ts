@@ -43,3 +43,12 @@ test("the website keeps its landing page and tab bar", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Kalender" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
 });
+
+test("every page the signed out app can open has a way back", async ({ page }) => {
+  await asTheApp(page);
+  for (const path of ["/how-it-works", "/terms", "/privacy", "/support"]) {
+    await page.goto("/");
+    await page.goto(path);
+    await expect(page.getByRole("button", { name: "Tilbage" })).toBeVisible();
+  }
+});

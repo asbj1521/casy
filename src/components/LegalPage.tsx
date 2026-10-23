@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 
-import TopNav from "@/components/TopNav";
+import ProfilePageTop from "@/components/ProfilePageTop";
 import AppBackLink from "@/components/welcome/AppBackLink";
 
 /**
@@ -42,7 +42,7 @@ export default function LegalPage({ copy }: { copy: LegalCopy }) {
   }, [hash]);
   return (
     <div className="min-h-screen bg-background">
-      <TopNav />
+      <ProfilePageTop />
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
         <AppBackLink className="mb-4" />
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

@@ -13,7 +13,8 @@ export default function PhoneSubHeader({
   backLabel,
   onBack,
 }: {
-  title: string;
+  /** Left out where the page has a big heading of its own right under it. */
+  title?: string;
   back: string;
   backLabel: string;
   /**
@@ -40,7 +41,11 @@ export default function PhoneSubHeader({
         <ChevronLeft className="h-6 w-6 shrink-0" />
         <span className="truncate">{backLabel}</span>
       </Link>
-      <h1 className="max-w-[55vw] truncate text-[15px] font-semibold text-foreground">{title}</h1>
+      {title ? (
+        <h1 className="max-w-[55vw] truncate text-[15px] font-semibold text-foreground">{title}</h1>
+      ) : (
+        <span />
+      )}
       <span />
     </header>
   );

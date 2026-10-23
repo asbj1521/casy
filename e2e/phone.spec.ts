@@ -158,3 +158,18 @@ test("the iPhone app has no logo at the top: the pages start there", async ({ pa
     await expect(page.getByRole("link", { name: "casy" })).toHaveCount(0);
   }
 });
+
+test("the pages the profile's help list opens all have a way back to Profil", async ({ page }) => {
+  for (const [row, path] of [
+    ["Hjælp og kontakt", /\/support$/],
+    ["Sådan virker det", /\/how-it-works$/],
+    ["Vilkår", /\/terms$/],
+    ["Privatliv", /\/privacy$/],
+  ] as const) {
+    await page.goto("/profile");
+    await page.getByRole("link", { name: row }).click();
+    await expect(page).toHaveURL(path);
+    await page.getByRole("link", { name: "Profil" }).first().click();
+    await expect(page).toHaveURL(/\/profile$/);
+  }
+});
