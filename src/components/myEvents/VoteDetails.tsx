@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { stillToAnswer, voteStage, type VoteEvent } from "@/lib/vote";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
+import ReportEventButton from "@/components/safety/ReportEventButton";
 
 /**
  * A vote opened beside the list on a computer's My events (#74): the same
@@ -55,6 +56,7 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
             : t.events.suggestedBy(event.createdBy.name)}
         </p>
         <span className="ml-auto flex items-center gap-4">
+          <ReportEventButton event={event} />
           <button
             type="button"
             onClick={() => setExiting(true)}

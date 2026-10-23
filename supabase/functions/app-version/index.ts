@@ -12,8 +12,6 @@ import { serve } from "../_shared/http.ts";
 serve(
   "app-version",
   () =>
-    Promise.resolve(
-      appVersionInfo(Deno.env.get("MIN_APP_VERSION"), Deno.env.get("APP_STORE_URL")),
-    ),
+    Promise.resolve(appVersionInfo(Deno.env.get("MIN_APP_VERSION"), Deno.env.get("APP_STORE_URL"))),
   "GET",
 );

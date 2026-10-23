@@ -209,6 +209,51 @@ export async function adminCorrectionHandled(id: string): Promise<{ outcome: "ha
   });
 }
 
+/** A report of what someone wrote (#142): what, why and the text as it was, never who sent it. */
+export interface AdminReport {
+  id: string;
+  kind: "group" | "event" | "member";
+  reason: string;
+  note: string | null;
+  content: {
+    groupName?: string;
+    title?: string;
+    place?: string;
+    note?: string;
+    memberName?: string;
+  };
+  /** Null once the group is gone. */
+  groupId: string | null;
+  createdAt: string;
+}
+
+export function adminReportsKey(userId: string) {
+  return ["admin-reports", userId] as const;
+}
+
+/** The reports, newest first (#142). */
+export function adminReportsQuery(userId: string) {
+  return queryOptions({
+    queryKey: adminReportsKey(userId),
+    queryFn: async () =>
+      (
+        await callFunction<{ reports: AdminReport[] }>("admin", {
+          body: { action: "reports" },
+          errorMessage: currentMessages().api.loadReports,
+        })
+      ).reports,
+    staleTime: 30_000,
+  });
+}
+
+/** One dealt with: deleted (#142). */
+export async function adminReportHandled(id: string): Promise<{ outcome: "handled" }> {
+  return await callFunction("admin", {
+    body: { action: "reportHandled", id },
+    errorMessage: currentMessages().api.loadReports,
+  });
+}
+
 /** Mark someone who has AI on as an AI tester, or not. */
 export async function adminSetAiTester(
   profileId: string,

@@ -99,6 +99,8 @@ export interface MyData {
   calendarEntries: { added: number; deletedByYou: number };
   /** Time you told Casy that is in no calendar (#116): how many entries are kept. */
   toldCasy: { count: number };
+  /** Report and block (#142): how many people you blocked, and your reports Casy keeps. */
+  safety: { blocked: number; reportsSent: number };
   /**
    * Whether the AI features are on for you (#111), your AI calls recorded (30
    * days), and your yes to the AI using content from your calendar (#120):

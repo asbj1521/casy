@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { answerDate, chooseDate, type EventResponse } from "@/api/events";
+import ReportEventButton from "@/components/safety/ReportEventButton";
 import { ExitConfirm, ExitLink } from "@/components/myEvents/parts";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
@@ -145,7 +146,8 @@ export default function VoteSummary({ event }: { event: VoteEvent }) {
       {exiting ? (
         <ExitConfirm event={event} onCancel={() => setExiting(false)} />
       ) : (
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-4">
+          <ReportEventButton event={event} />
           <ExitLink event={event} onClick={() => setExiting(true)} />
         </div>
       )}

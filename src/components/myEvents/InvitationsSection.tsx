@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, Users, X } from "lucide-react";
 
@@ -9,6 +10,8 @@ import {
   invitationsQueryKey,
   type Invitation,
 } from "@/api/groups";
+import { blockedQueryKey, blockPerson } from "@/api/safety";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
@@ -62,6 +65,15 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
   });
   // Gone meanwhile (the group was deleted, say): the fresh list drops this card.
   const refresh = () => queryClient.invalidateQueries({ queryKey: invitationsQueryKey(userId) });
+  // Blocking the sender (#142): the invitation is declined, and none come from them again.
+  const [blocking, setBlocking] = useState(false);
+  const block = useMutation({
+    mutationFn: () => blockPerson({ invitationGroupId: invitation.groupId }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(invitationsQueryKey(userId), data.invitations);
+      queryClient.setQueryData(blockedQueryKey(userId), data.blocked);
+    },
+  });
   const busy = accept.isPending || decline.isPending;
   const error = (accept.error ?? decline.error)?.message;
 
@@ -115,6 +127,28 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
           {error}
         </Notice>
       )}
+
+      {invitation.invitedBy &&
+        (blocking ? (
+          <ConfirmPanel
+            className="mt-3"
+            message={t.safety.blockSenderConfirm(invitation.invitedBy)}
+            confirmLabel={t.safety.block}
+            busy={block.isPending}
+            error={block.error?.message}
+            onConfirm={() => block.mutate()}
+            onCancel={() => setBlocking(false)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setBlocking(true)}
+            disabled={busy}
+            className="mt-3 text-xs font-medium text-muted-foreground transition hover:text-red-700 disabled:opacity-60"
+          >
+            {t.safety.blockSender}
+          </button>
+        ))}
     </li>
   );
 }

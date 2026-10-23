@@ -25,6 +25,10 @@
  * group with, or the exact email of an account. Joining always takes the
  * invited person's own yes, and an email never reveals whether it matched.
  *
+ * Report and block (#142, _shared/safety.ts): `report` files a report of a
+ * group, an event in it or a member, `block`/`unblock` stop or allow one
+ * person's invitations, `blocked` lists who you blocked.
+ *
  * `refresh` syncs the members' calendars that are more than a few minutes
  * old, while someone plans for the group, so the search doesn't offer a time
  * filled since the hourly sync (_shared/groupRefresh.ts).
@@ -54,6 +58,13 @@ import {
   requireMember,
 } from "../_shared/groups.ts";
 import { afterResponse, HttpError, readRange, requireString, serve } from "../_shared/http.ts";
+import {
+  blockPerson,
+  fileReport,
+  listBlocked,
+  readReport,
+  unblockPerson,
+} from "../_shared/safety.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
 import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { syncConnection } from "../_shared/sync.ts";
@@ -674,6 +685,24 @@ serve("groups", async (req, body) => {
       if (error) throw error;
       return { invitations: await listInvitations(db, profileId) };
     }
+
+    case "report":
+      await fileReport(db, profileId, readReport(body));
+      return { reported: true };
+
+    case "block":
+      await blockPerson(db, profileId, body);
+      return {
+        blocked: await listBlocked(db, profileId),
+        invitations: await listInvitations(db, profileId),
+      };
+
+    case "unblock":
+      await unblockPerson(db, profileId, requireString(body, "profileId"));
+      return { blocked: await listBlocked(db, profileId) };
+
+    case "blocked":
+      return { blocked: await listBlocked(db, profileId) };
 
     case "rename": {
       const groupId = requireString(body, "groupId");

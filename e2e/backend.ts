@@ -195,6 +195,11 @@ export class FakeBackend {
           w.corrections = w.corrections.filter((c) => c.id !== body.id);
           return ok({ outcome: "handled" });
         }
+        if (action === "reports") return ok({ reports: w.reports });
+        if (action === "reportHandled") {
+          w.reports = w.reports.filter((r) => r.id !== body.id);
+          return ok({ outcome: "handled" });
+        }
         if (action === "overview") return ok(adminOverview(w));
         if (action === "setAiAccess") {
           const id = String(body.profileId);
@@ -508,6 +513,51 @@ export class FakeBackend {
         w.invitations = w.invitations.filter((i) => i.groupId !== body.groupId);
         this.changed();
         return ok({ invitations: w.invitations });
+      case "report": {
+        if (!["spam", "offensive", "harassment", "other"].includes(String(body.reason)))
+          return fail(400, "Vælg en grund.");
+        const group = w.groups.find((g) => g.id === body.groupId);
+        if (!group) return fail(403, "Du er ikke med i den gruppe.");
+        const member = group.members.find((m) => m.profileId === body.memberId);
+        const event = w.events.find((e) => e.id === body.eventId);
+        w.reports.push({
+          id: `r-${w.reports.length + 1}`,
+          kind: body.kind as "group" | "event" | "member",
+          reason: String(body.reason),
+          note: typeof body.note === "string" && body.note.trim() ? body.note.trim() : null,
+          content: {
+            groupName: group.name,
+            ...(member ? { memberName: member.name } : {}),
+            ...(event ? { title: event.title ?? undefined } : {}),
+          },
+          groupId: group.id,
+          createdAt: NOW,
+        });
+        return ok({ reported: true });
+      }
+      case "block": {
+        let id: string;
+        let name: string | null;
+        if (typeof body.invitationGroupId === "string") {
+          const invitation = w.invitations.find((i) => i.groupId === body.invitationGroupId);
+          if (!invitation) return fail(404, "Invitationen er ikke længere åben.");
+          w.invitations = w.invitations.filter((i) => i !== invitation);
+          id = `p-${(invitation.invitedBy ?? "gone").toLowerCase()}`;
+          name = invitation.invitedBy;
+        } else {
+          id = String(body.profileId);
+          name = w.groups.flatMap((g) => g.members).find((m) => m.profileId === id)?.name ?? null;
+        }
+        if (!w.blocked.some((b) => b.profileId === id))
+          w.blocked.unshift({ profileId: id, name, blockedAt: NOW });
+        this.changed();
+        return ok({ blocked: w.blocked, invitations: w.invitations });
+      }
+      case "unblock":
+        w.blocked = w.blocked.filter((b) => b.profileId !== body.profileId);
+        return ok({ blocked: w.blocked });
+      case "blocked":
+        return ok({ blocked: w.blocked });
       case "leave":
         w.groups = w.groups.filter((g) => g.id !== body.groupId);
         this.changed();

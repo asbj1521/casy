@@ -4,6 +4,7 @@ import { answerDate } from "@/api/events";
 import AddToCalendar from "@/components/AddToCalendar";
 import AnswerButtons from "@/components/myEvents/AnswerButtons";
 import DateConflicts from "@/components/myEvents/DateConflicts";
+import ReportEventButton from "@/components/safety/ReportEventButton";
 import { EdgeWarnings, ExitConfirm, ExitLink, People } from "@/components/myEvents/parts";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
@@ -95,7 +96,10 @@ export default function DatedSummary({
           ) : (
             <span />
           )}
-          <ExitLink event={event} onClick={() => setExiting(true)} />
+          <span className="flex items-center gap-4">
+            <ReportEventButton event={event} />
+            <ExitLink event={event} onClick={() => setExiting(true)} />
+          </span>
         </div>
       )}
     </div>

@@ -246,6 +246,39 @@ serve("admin", async (req, body) => {
       return { outcome: "handled" };
     }
 
+    // Reports of what people wrote (#142), newest first: what was reported,
+    // why and the copy kept, never who sent it. The group id lets the admin
+    // delete the group from the report.
+    case "reports": {
+      const { data, error } = await db
+        .from("content_reports")
+        .select("id, kind, reason, note, content, group_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return {
+        reports: (data ?? []).map((r) => ({
+          id: r.id as string,
+          kind: r.kind as string,
+          reason: r.reason as string,
+          note: (r.note as string | null) ?? null,
+          content: r.content as Record<string, unknown>,
+          groupId: (r.group_id as string | null) ?? null,
+          createdAt: r.created_at as string,
+        })),
+      };
+    }
+
+    // One dealt with (or nothing to do): it goes.
+    case "reportHandled": {
+      const id = requireString(body, "id");
+      const { data, error } = await db.from("content_reports").delete().eq("id", id).select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) throw new HttpError(404, "That report is already gone.");
+      console.log(`admin ${caller.id} handled report ${id}`);
+      return { outcome: "handled" };
+    }
+
     case "deleteGroup": {
       const groupId = requireString(body, "groupId");
       // Members and invites cascade off the group (friend_groups migration).

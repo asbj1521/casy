@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LogOut, Pencil, Trash2, UserPlus } from "lucide-react";
+import { Flag, LogOut, Pencil, Trash2, UserPlus } from "lucide-react";
 
 import { deleteGroup, groupsQueryKey, leaveGroup, renameGroup, type Group } from "@/api/groups";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import InviteDialog from "@/components/InviteDialog";
+import ReportDialog from "@/components/safety/ReportDialog";
 import Avatar from "@/components/ui/Avatar";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -40,6 +41,7 @@ export default function GroupDetails({
   const [renaming, setRenaming] = useState(false);
   const location = useLocation();
   const [invitePicked, setInvitePicked] = useState(false);
+  const [reporting, setReporting] = useState(false);
   // Straight from New group with nobody invited yet (#149): the invite comes
   // first. Read from the address, as a computer keeps this pane mounted from
   // one group to the next.
@@ -137,6 +139,15 @@ export default function GroupDetails({
       </ListGroup>
 
       <ListGroup>
+        {/* Report or block (#142): only once there is someone else to report. */}
+        {!soleMember && (
+          <ListRow
+            icon={Flag}
+            label={t.safety.reportOrBlock}
+            detail={t.safety.reportOrBlockDetail}
+            onClick={() => setReporting(true)}
+          />
+        )}
         <ListRow
           icon={LogOut}
           label={soleMember ? t.groupPanel.deleteGroup : t.groupPanel.leaveGroup}
@@ -174,6 +185,24 @@ export default function GroupDetails({
       )}
 
       <InviteDialog group={group} open={inviteOpen} onClose={closeInvite} />
+      <ReportDialog
+        open={reporting}
+        onClose={() => setReporting(false)}
+        group={group}
+        choices={[
+          {
+            label: t.safety.targetGroup(group.name),
+            target: { kind: "group", groupId: group.id },
+          },
+          ...group.members
+            .filter((m) => !m.isYou)
+            .map((m) => ({
+              label: m.name,
+              target: { kind: "member" as const, groupId: group.id, memberId: m.profileId },
+              person: { id: m.profileId, name: m.name },
+            })),
+        ]}
+      />
     </>
   );
 }

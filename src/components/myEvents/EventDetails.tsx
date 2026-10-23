@@ -25,6 +25,7 @@ import { isVote } from "@/lib/vote";
 import { cn } from "@/lib/utils";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
+import ReportEventButton from "@/components/safety/ReportEventButton";
 
 /** Each stage's colour, as its card has it on a phone. */
 const STAGE_TONE = {
@@ -213,6 +214,7 @@ function DatedDetails({
 
       {stage !== "closed" && (
         <ListGroup>
+          <ReportEventButton event={event} as="row" />
           <ListRow
             icon={event.createdBy.isYou ? X : LogOut}
             label={event.createdBy.isYou ? t.events.cancelEvent : t.events.leaveEvent}

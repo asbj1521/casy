@@ -9,10 +9,11 @@
  * tests never test the real server; #77 covers that side.
  */
 import type { MyData } from "@/api/account";
-import type { AdminOverview } from "@/api/admin";
+import type { AdminOverview, AdminReport } from "@/api/admin";
 import type { CalendarConnectionStatus } from "@/api/calendars";
 import type { EventResponse, SuggestedEvent } from "@/api/events";
 import type { Group, GroupBusy, Invitation } from "@/api/groups";
+import type { BlockedPerson } from "@/api/safety";
 import type { OverviewBlock, OverviewCalendar } from "@/lib/calendarOverview";
 import type { StoredEntry } from "@/lib/casyEntries";
 import type { EventCategory } from "@/types";
@@ -609,6 +610,9 @@ export interface World {
   version: number;
   /** The oldest app release Casy still works with (#143); none unless a test sets one. */
   minAppVersion: string | null;
+  /** Who Mia blocked (#142), and the reports sent; none until a test makes some. */
+  blocked: BlockedPerson[];
+  reports: AdminReport[];
 }
 
 export function makeWorld(options: WorldOptions): World {
@@ -619,6 +623,8 @@ export function makeWorld(options: WorldOptions): World {
     aiAllowed: true,
     aiTester: false,
     minAppVersion: null,
+    blocked: [],
+    reports: [],
     aiConsent: true,
     dateScores: {},
     aiShare: true,
@@ -716,6 +722,7 @@ export function myData(world: World): MyData {
     events: { invitedTo: world.events.length, suggested: 2, answers: 9, declined: 1 },
     calendarEntries: { added: 1, deletedByYou: 0 },
     toldCasy: { count: world.entries.length },
+    safety: { blocked: world.blocked.length, reportsSent: world.reports.length },
     ai: {
       allowed: world.aiAllowed,
       calls: 2,

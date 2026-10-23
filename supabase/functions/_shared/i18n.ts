@@ -39,6 +39,14 @@ export const DANISH: Record<string, string> = {
   "That invite link has expired. Ask for a new one.":
     "Invitationslinket er udløbet. Bed om et nyt.",
   "That invitation is no longer open.": "Invitationen er ikke længere åben.",
+
+  // Report and block (#142)
+  "Pick a reason.": "Vælg en grund.",
+  "You have sent a lot of reports today. Try again tomorrow.":
+    "Du har sendt mange rapporter i dag. Prøv igen i morgen.",
+  "You can't block yourself.": "Du kan ikke blokere dig selv.",
+  "You can only block someone you share a group with.":
+    "Du kan kun blokere nogen, du er i en gruppe med.",
   "That is not an email address.": "Det er ikke en e-mailadresse.",
   "That is too many people at once.": "Det er for mange på én gang.",
   "You have sent too many invitations today. Try again tomorrow.":

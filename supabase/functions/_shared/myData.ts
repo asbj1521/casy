@@ -10,6 +10,7 @@
  */
 import { aiAllowed, CONSENT_VERSION } from "./aiAccess.ts";
 import type { Caller } from "./auth.ts";
+import { listBlocked } from "./safety.ts";
 import { ENTRY_COLUMNS, type EntryRow, type StoredEntry, storedFrom } from "./entries.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
@@ -67,6 +68,8 @@ export interface MyData {
   calendarEntries: { added: number; deletedByYou: number };
   /** Time you told Casy that is in no calendar (#116): how many entries are kept. */
   toldCasy: { count: number };
+  /** Report and block (#142): how many people you blocked, and your reports Casy keeps. */
+  safety: { blocked: number; reportsSent: number };
   /**
    * Whether the AI features are on for you (#111), your AI calls recorded (30
    * days), and your yes to the AI using content from your calendar (#120):
@@ -87,6 +90,10 @@ export interface MyDataExport extends MyData {
   busyTimes: { calendar: string | null; start: string; end: string }[];
   /** Every entry you told Casy (#116), with the label you checked before it was saved. */
   toldCasyEntries: StoredEntry[];
+  /** Who you blocked (#142), by the name they go by, and when. */
+  blockedPeople: { name: string | null; since: string }[];
+  /** Your reports Casy keeps (#142): what about, why, your note, when. */
+  reportsSent: { kind: string; reason: string; note: string | null; sentAt: string }[];
 }
 
 export function credentialKind(provider: Provider, hasSecret: boolean): CredentialKind | null {
@@ -251,6 +258,8 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     consent,
     corrections,
     toldCasy,
+    blockedCount,
+    reportsCount,
   ] = await Promise.all([
     sourceIds.length
       ? count(db.from("calendar_busy_cache").select("id", head).in("source_id", sourceIds))
@@ -313,6 +322,8 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       .maybeSingle(),
     count(db.from("ai_corrections").select("id", head).eq("profile_id", me)),
     count(db.from("casy_entries").select("id", head).eq("profile_id", me)),
+    count(db.from("blocked_people").select("blocked_id", head).eq("blocker_id", me)),
+    count(db.from("content_reports").select("id", head).eq("reporter_id", me)),
   ]);
   for (const r of [first, last, next, consent]) if (r?.error) throw r.error;
   const consentRow = consent.data as {
@@ -365,6 +376,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     events: { invitedTo, suggested, answers, declined: declinedDates },
     calendarEntries: { added, deletedByYou: deleted },
     toldCasy: { count: toldCasy },
+    safety: { blocked: blockedCount, reportsSent: reportsCount },
     ai: {
       allowed: aiOn,
       calls: aiCalls,
@@ -431,10 +443,23 @@ export async function exportMyData(
     .eq("profile_id", caller.id)
     .order("start_at", { ascending: true });
   if (toldError) throw toldError;
+
+  // Report and block (#142): small lists, one read each.
+  const blocked = await listBlocked(db, caller.id);
+  const { data: reports, error: reportsError } = await db
+    .from("content_reports")
+    .select("kind, reason, note, created_at")
+    .eq("reporter_id", caller.id)
+    .order("created_at", { ascending: false });
+  if (reportsError) throw reportsError;
   return {
     ...data,
     exportedAt: now.toISOString(),
     busyTimes,
     toldCasyEntries: (told as EntryRow[]).map(storedFrom),
+    blockedPeople: blocked.map((b) => ({ name: b.name, since: b.blockedAt })),
+    reportsSent: (
+      reports as { kind: string; reason: string; note: string | null; created_at: string }[]
+    ).map((r) => ({ kind: r.kind, reason: r.reason, note: r.note, sentAt: r.created_at })),
   };
 }

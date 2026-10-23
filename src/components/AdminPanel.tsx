@@ -31,6 +31,7 @@ import {
   type AdminUser,
 } from "@/api/admin";
 import AdminCorrections from "@/components/AdminCorrections";
+import AdminReports from "@/components/AdminReports";
 import StatTile from "@/components/StatTile";
 import Avatar from "@/components/ui/Avatar";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
@@ -976,6 +977,7 @@ export default function AdminPanel({ youId }: { youId: string }) {
       </div>
 
       {/* What people sent when the AI got it wrong, for review (#122). */}
+      <AdminReports youId={youId} />
       <AdminCorrections youId={youId} />
     </section>
   );

@@ -27,6 +27,7 @@ import { useResetTrips, useTrips } from "@/hooks/useTrips";
 import { isNativeApp } from "@/lib/nativeApp";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE } from "@/lib/zone";
+import BlockedPeople from "@/components/safety/BlockedPeople";
 
 /** "1 Sept 2026" / "1. sep. 2026". */
 function day(iso: string, lang: Lang): string {
@@ -140,6 +141,7 @@ function DataLists() {
       <GroupsPart data={data} />
       <EventsPart data={data} consent={consent} />
       <CredentialsPart data={data} />
+      <BlockedPeople />
 
       <ListGroup>
         <ListRow
@@ -358,6 +360,9 @@ function GroupsPart({ data }: { data: MyData }) {
       />
       <Fact label={w.invitationsSent} value={data.invitations.sent} />
       <Fact label={w.emailLookups} value={data.emailLookups} detail={w.emailLookupsDetail} />
+      {data.safety.reportsSent > 0 && (
+        <Fact label={w.reportsSent} value={data.safety.reportsSent} />
+      )}
     </ListGroup>
   );
 }
