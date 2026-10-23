@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 
@@ -26,13 +27,17 @@ export default function GroupList({
   const t = useT();
   const youId = useSignedInUser().id;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: groups, isPending, isError } = useQuery(groupsQuery(youId));
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const create = useMutation({
     mutationFn: createGroup,
-    onSuccess: (data) => {
+    onSuccess: (data, made) => {
       queryClient.setQueryData(groupsQueryKey(youId), data.groups);
       setNewGroupOpen(false);
+      // To the new group; with nobody invited yet, its invite opens at once (#149).
+      const nobody = !made.invitees?.profileIds.length && !made.invitees?.emails.length;
+      navigate(`/groups/${data.createdId}${nobody ? "?invite" : ""}`);
     },
   });
 
