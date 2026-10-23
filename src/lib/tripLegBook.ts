@@ -13,6 +13,7 @@
  * Pure, apart from the storage at the bottom.
  */
 import { HOME, type EventToRead, type TripLeg } from "@/api/tripLegs";
+import { isCasyTripEntry } from "@/lib/casyTripEntry";
 import { hash, labelKey, LOOK_BACK_MS, normalise, type LabelBook } from "@/lib/eventLabels";
 import { busySpan } from "@/lib/phoneBusy";
 import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
@@ -42,10 +43,13 @@ export function legKey(calendarId: string, title: string, location: string): str
   return hash(`${calendarId}\n${normalise(title)}\n${normalise(location)}`);
 }
 
-/** An event's title and place, and whether the labels call it a journey; null if they don't. */
+/**
+ * An event's title and place, and whether the labels call it a journey; null
+ * if they don't. Never a trip Casy wrote into the calendar itself (#154).
+ */
 function travelOf(e: PhoneEventWithDetails, labels: LabelBook) {
   const title = e.title?.trim();
-  if (!title) return null;
+  if (!title || isCasyTripEntry(e)) return null;
   const label = labels[labelKey(e.calendarId, title)];
   if (!label || !TRAVEL_KINDS.has(label.kind)) return null;
   const location = e.location?.trim() ?? "";
@@ -139,10 +143,13 @@ export function phoneLegs(
 ): Leg[] {
   const occurrences: Occurrence[] = [];
   const counts = new Map<string, number>();
+  // An accepted trip's own entry, whatever its note now says: exactly a kept trip's times.
+  const keptSpans = new Set(Object.values(answers.kept).map((k) => `${k.start}-${k.end}`));
   for (const e of events) {
     if (!calendarNames.has(e.calendarId)) continue;
     const travel = travelOf(e, labels);
     const span = busySpan(e);
+    if (span && keptSpans.has(`${span.start}-${span.end}`)) continue;
     const leg = travel ? book[travel.key] : undefined;
     if (!travel || !span || !leg || leg.mode === "none" || leg.confidence === "low") continue;
     counts.set(travel.key, (counts.get(travel.key) ?? 0) + 1);

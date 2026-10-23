@@ -103,6 +103,11 @@ describe("labelCandidates", () => {
     expect(candidates[0].next).toBe(NOW + DAY - 2 * HOUR);
   });
 
+  it("leaves out a trip Casy wrote into the calendar itself (#154)", () => {
+    const entry = { ...timed("Rejse til Oslo", NOW + 2 * DAY, 2), notes: "Added by Casy." };
+    expect(labelCandidates([entry], names, NOW)).toEqual([]);
+  });
+
   it("leaves out what isn't busy, other phones' calendars, untitled and long-past events", () => {
     const candidates = labelCandidates(
       [

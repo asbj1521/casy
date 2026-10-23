@@ -23,7 +23,8 @@ import {
   writeTripAnswers,
   type LegBook,
 } from "@/lib/tripLegBook";
-import { NO_ANSWERS } from "@/lib/trips";
+import { busySpan } from "@/lib/phoneBusy";
+import { detectTrips, NO_ANSWERS } from "@/lib/trips";
 
 const NOW = Date.parse("2026-10-01T08:00:00Z");
 const HOUR = 3_600_000;
@@ -226,6 +227,53 @@ describe("phoneLegs", () => {
       { ...NO_ANSWERS, home: "copenhagen" },
     );
     expect(legs).toEqual([]);
+  });
+
+  describe("an accepted trip's own entry in the calendar (#154)", () => {
+    // The trip as Casy wrote it: whole days over the flights, its title read as a journey.
+    const entry = event("Rejse til Oslo", 0, {
+      allDay: true,
+      start: undefined,
+      end: undefined,
+      startDay: "2026-10-03",
+      endDay: "2026-10-08",
+      notes: "Lagt ind af Casy.",
+    });
+    const withEntry = labelsFor(
+      ["Fly til Oslo", "flight"],
+      ["Fly hjem", "flight"],
+      ["Rejse til Oslo", "travel"],
+    );
+    const legsOf = (e: PhoneEventWithDetails, answers = NO_ANSWERS) =>
+      phoneLegs(
+        [e, out, back],
+        withEntry,
+        book([
+          [out, leg("Copenhagen", "Oslo")],
+          [back, leg("Oslo", "Copenhagen")],
+          [e, leg("HOME", "Oslo", { mode: "train" })],
+        ]),
+        names,
+        { ...answers, home: "copenhagen" },
+      );
+
+    it("is never read as a journey, whichever language wrote its note", () => {
+      for (const notes of ["Lagt ind af Casy.", "Added by Casy."]) {
+        const legs = legsOf({ ...entry, notes });
+        expect(legs.map((l) => l.names?.from)).toEqual(["Copenhagen", "Oslo"]);
+        // So the flights make one trip and nothing is asked again.
+        expect(detectTrips(legs, { ...NO_ANSWERS, home: "copenhagen" }, NOW).questions).toEqual([]);
+      }
+      expect(travelCandidates([entry], withEntry, names, NOW)).toEqual([]);
+      expect(presentLegKeys([entry], withEntry).size).toBe(0);
+    });
+
+    it("is left out by its times too, if its note was changed", () => {
+      const span = busySpan(entry)!;
+      const kept = { trip: { start: span.start, end: span.end, city: "Oslo" } };
+      const legs = legsOf({ ...entry, notes: "Husk pas" }, { ...NO_ANSWERS, kept });
+      expect(legs).toHaveLength(2);
+    });
   });
 });
 

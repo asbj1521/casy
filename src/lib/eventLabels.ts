@@ -22,6 +22,7 @@
  * Pure, apart from the storage at the bottom.
  */
 import type { EventLabel, EventToLabel } from "@/api/eventLabels";
+import { isCasyTripEntry } from "@/lib/casyTripEntry";
 import { busySpan } from "@/lib/phoneBusy";
 import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
 import { readStored, writeStored } from "@/lib/storage";
@@ -130,6 +131,8 @@ export function labelCandidates(
     const title = e.title?.trim();
     const span = busySpan(e);
     if (name === undefined || !title || !span || span.end < now - LOOK_BACK_MS) continue;
+    // Casy's own trip entry says what it is; no AI call is spent on it (#154).
+    if (isCasyTripEntry(e)) continue;
     const key = labelKey(e.calendarId, title);
     const known = byKey.get(key);
     if (known) {
