@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Flag, LogOut, Pencil, Trash2, UserPlus } from "lucide-react";
 
@@ -39,19 +39,8 @@ export default function GroupDetails({
   const queryClient = useQueryClient();
   const [confirm, setConfirm] = useState<"leave" | "delete" | null>(null);
   const [renaming, setRenaming] = useState(false);
-  const location = useLocation();
-  const [invitePicked, setInvitePicked] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
-  // Straight from New group with nobody invited yet (#149): the invite comes
-  // first. Read from the address, as a computer keeps this pane mounted from
-  // one group to the next.
-  const inviteAsked = new URLSearchParams(location.search).has("invite");
-  const inviteOpen = invitePicked || inviteAsked;
-  const closeInvite = () => {
-    setInvitePicked(false);
-    if (inviteAsked) navigate({ search: "" }, { replace: true });
-  };
-
   // Every change answers with your groups as they now are, straight into the
   // cache. Leaving or deleting goes back to the list.
   const groupsChanged = (data: { groups: Group[] }) =>
@@ -126,7 +115,7 @@ export default function GroupDetails({
         <ListRow
           icon={UserPlus}
           label={t.groupsPage.invitePeople}
-          onClick={() => setInvitePicked(true)}
+          onClick={() => setInviteOpen(true)}
         />
         <ListRow
           icon={Pencil}
@@ -184,7 +173,7 @@ export default function GroupDetails({
         />
       )}
 
-      <InviteDialog group={group} open={inviteOpen} onClose={closeInvite} />
+      <InviteDialog group={group} open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <ReportDialog
         open={reporting}
         onClose={() => setReporting(false)}

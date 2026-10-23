@@ -6,20 +6,13 @@ import AiConversation from "@/components/findDate/ai/AiConversation";
 import { StepSettings } from "@/components/SchedulerSettings";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import BottomSheet from "@/components/ui/BottomSheet";
+import { SWAP } from "@/components/ui/swap";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
 
 import DetailsStep from "./DetailsStep";
 import GroupStep from "./GroupStep";
-
-/** The two views swap with a short fade and lift. */
-const SWAP = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -12 },
-  transition: { duration: 0.22, ease: "easeOut" },
-} as const;
 
 /**
  * What the Planlæg sheet on My calendar holds (#126). The settings by hand

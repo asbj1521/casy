@@ -1,19 +1,22 @@
 import { useId, useState, type KeyboardEvent } from "react";
-import { Check, Mail, X } from "lucide-react";
+import { Mail, Plus, X } from "lucide-react";
 
 import type { Invitees } from "@/api/groups";
 import Avatar from "@/components/ui/Avatar";
+import { FIELD } from "@/components/ui/field";
+import GlassButton from "@/components/ui/GlassButton";
+import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
 import { looksLikeEmail, MAX_EMAILS_PER_INVITE, type KnownPerson } from "@/lib/groups";
-import { cn } from "@/lib/utils";
 
 /** Past this many people, a search box keeps the list usable. */
 const FILTER_FROM = 8;
 
 /**
  * Who to invite: tick people you already share a group with, or add email
- * addresses. Controlled, so the dialog around it decides what happens with
- * the choice. Used for a new group and for inviting more to one you're in.
+ * addresses. Controlled, so the sheet around it decides what happens with
+ * the choice. Rows, as the phone's lists are (#153): a tick at the end of a
+ * picked person, and email as one row that opens its field.
  *
  * An address still in the field when the field loses focus is added too, so
  * typing one and going straight for the button doesn't silently drop it.
@@ -36,11 +39,13 @@ export default function InvitePicker({
   const t = useT();
   const emailId = useId();
   const [filter, setFilter] = useState("");
+  const [emailOpen, setEmailOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftError, setDraftError] = useState<string | null>(null);
   const invitedSet = new Set(invited);
   const needle = filter.trim().toLowerCase();
   const shown = needle ? people.filter((p) => p.name.toLowerCase().includes(needle)) : people;
+  const count = value.profileIds.length + value.emails.length;
 
   function toggle(profileId: string) {
     const picked = value.profileIds.includes(profileId);
@@ -72,7 +77,7 @@ export default function InvitePicker({
     return true;
   }
 
-  // Enter adds the address instead of submitting the dialog's form.
+  // Enter adds the address instead of submitting the sheet's form.
   function onEmailKey(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -81,137 +86,112 @@ export default function InvitePicker({
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="mb-1.5 text-sm font-medium text-foreground">{t.invite.people}</p>
-        {people.length === 0 ? (
-          <p className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">
-            {allInWhenEmpty ? t.invite.allIn : t.invite.peopleEmpty}
-          </p>
-        ) : (
-          <>
-            {people.length > FILTER_FROM && (
-              <input
-                type="search"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
-                placeholder={t.invite.filter}
-                aria-label={t.invite.filter}
-                className="mb-2 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            )}
-            <ul className="max-h-60 space-y-0.5 overflow-y-auto rounded-lg border p-1">
-              {shown.map((p, i) => {
-                const already = invitedSet.has(p.profileId);
-                const picked = value.profileIds.includes(p.profileId);
-                return (
-                  <li key={p.profileId}>
-                    <label
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm",
-                        already ? "cursor-default" : "cursor-pointer hover:bg-secondary",
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={picked}
-                        disabled={already}
-                        onChange={() => toggle(p.profileId)}
-                        className="peer sr-only"
-                      />
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40",
-                          picked
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "bg-background",
-                          already && "opacity-0",
-                        )}
-                      >
-                        {picked && <Check className="h-3 w-3" />}
-                      </span>
-                      <Avatar name={p.name} index={i} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-foreground">{p.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {t.invite.from(p.groupNames.join(", "))}
-                        </span>
-                      </span>
-                      {already && (
-                        <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                          {t.invite.invited}
-                        </span>
-                      )}
-                    </label>
-                  </li>
-                );
-              })}
-              {shown.length === 0 && (
-                <li className="px-2 py-1.5 text-sm text-muted-foreground">{t.invite.noMatch}</li>
-              )}
-            </ul>
-          </>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor={emailId} className="mb-1.5 block text-sm font-medium text-foreground">
-          {t.invite.email}
-        </label>
-        <div className="flex gap-2">
-          <input
-            id={emailId}
-            type="email"
-            inputMode="email"
-            autoComplete="off"
-            value={draft}
-            onChange={(e) => {
-              setDraft(e.target.value);
-              setDraftError(null);
-            }}
-            onKeyDown={onEmailKey}
-            onBlur={() => looksLikeEmail(draft) && addDraft()}
-            placeholder={t.invite.emailPlaceholder}
-            aria-invalid={!!draftError}
-            className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-          />
-          <button
-            type="button"
-            onClick={addDraft}
-            disabled={!draft.trim()}
-            className="shrink-0 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
+    <>
+      {people.length === 0 ? (
+        <p className="mt-6 px-4 text-xs text-muted-foreground">
+          {allInWhenEmpty ? t.invite.allIn : t.invite.peopleEmpty}
+        </p>
+      ) : (
+        <>
+          {people.length > FILTER_FROM && (
+            <input
+              type="search"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+              placeholder={t.invite.filter}
+              aria-label={t.invite.filter}
+              className={`${FIELD} mt-6`}
+            />
+          )}
+          <ListGroup
+            title={t.invite.people}
+            footnote={count > 0 ? t.invite.consent : undefined}
+            className={people.length > FILTER_FROM ? "mt-3" : undefined}
           >
-            {t.invite.addEmail}
-          </button>
-        </div>
-        {draftError && <p className="mt-1.5 text-xs text-red-700">{draftError}</p>}
-        {value.emails.length > 0 && (
-          <ul className="mt-2 flex flex-wrap gap-1.5">
-            {value.emails.map((email) => (
-              <li
-                key={email}
-                className="flex items-center gap-1.5 rounded-full border bg-secondary py-0.5 pl-2.5 pr-1 text-xs text-foreground"
+            {shown.map((p, i) => {
+              const already = invitedSet.has(p.profileId);
+              return (
+                <ListPickRow
+                  key={p.profileId}
+                  type="checkbox"
+                  checked={value.profileIds.includes(p.profileId)}
+                  disabled={already}
+                  onChange={() => toggle(p.profileId)}
+                  leading={<Avatar name={p.name} index={i} size="row" />}
+                  label={p.name}
+                  detail={t.invite.from(p.groupNames.join(", "))}
+                  value={already ? t.invite.invited : undefined}
+                />
+              );
+            })}
+            {shown.length === 0 && <ListRow label={t.invite.noMatch} />}
+          </ListGroup>
+        </>
+      )}
+
+      <ListGroup className={people.length === 0 ? "mt-3" : undefined}>
+        <ListRow
+          icon={Mail}
+          label={t.invite.email}
+          expanded={emailOpen}
+          onClick={() => setEmailOpen(!emailOpen)}
+        />
+        {value.emails.map((email) => (
+          <ListRow
+            key={email}
+            icon={Mail}
+            label={email}
+            trailing={
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({ ...value, emails: value.emails.filter((e) => e !== email) })
+                }
+                aria-label={t.invite.removeEmail(email)}
+                className="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
               >
-                <Mail className="h-3 w-3 text-muted-foreground" />
-                {email}
-                <button
-                  type="button"
-                  onClick={() =>
-                    onChange({ ...value, emails: value.emails.filter((e) => e !== email) })
-                  }
-                  aria-label={t.invite.removeEmail(email)}
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-1.5 text-xs text-muted-foreground">{t.invite.emailHelp}</p>
-      </div>
-    </div>
+                <X className="h-4 w-4" />
+              </button>
+            }
+          />
+        ))}
+      </ListGroup>
+      {emailOpen && (
+        <div className="mt-3">
+          <div className="flex items-center gap-2">
+            <input
+              id={emailId}
+              type="email"
+              inputMode="email"
+              autoComplete="off"
+              autoFocus
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                setDraftError(null);
+              }}
+              onKeyDown={onEmailKey}
+              onBlur={() => looksLikeEmail(draft) && addDraft()}
+              placeholder={t.invite.emailPlaceholder}
+              aria-label={t.invite.email}
+              aria-invalid={!!draftError}
+              className={`${FIELD} min-w-0 flex-1`}
+            />
+            <GlassButton
+              size="sm"
+              icon={Plus}
+              onClick={addDraft}
+              disabled={!draft.trim()}
+              className="h-12 shrink-0"
+            >
+              {t.invite.addEmail}
+            </GlassButton>
+          </div>
+          {draftError && <p className="mt-1.5 px-1 text-xs text-red-700">{draftError}</p>}
+          <p className="mt-1.5 px-4 text-xs text-muted-foreground">{t.invite.emailHelp}</p>
+        </div>
+      )}
+    </>
   );
 }

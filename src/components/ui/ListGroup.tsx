@@ -193,7 +193,8 @@ export function ListPickRow({
     <li className="group/row">
       <label
         className={cn(
-          "flex w-full items-center gap-3 pl-4 text-left transition-colors has-[:focus-visible]:bg-secondary",
+          // relative: the hidden input is placed inside its own row, not somewhere off screen.
+          "relative flex w-full items-center gap-3 pl-4 text-left transition-colors has-[:focus-visible]:bg-secondary",
           disabled ? "cursor-default" : "cursor-pointer active:bg-secondary",
         )}
       >

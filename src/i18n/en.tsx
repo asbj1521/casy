@@ -590,12 +590,9 @@ export const en: Messages = {
   },
   newGroup: {
     title: "New group",
-    body: "Give it a name, and invite people from your groups or by email. Anyone else you can send a link afterwards.",
     nameLabel: "Group name",
+    next: "Next",
     placeholder: "e.g. Board game night",
-    create: "Create group",
-    createAndInvite: (n: number) => `Create and invite ${n}`,
-    createFromContacts: "Create and invite from contacts",
   },
   invite: {
     title: (group: string) => `Invite to ${group}`,
@@ -619,14 +616,12 @@ export const en: Messages = {
     sent: "The invitations are sent.",
     sentWithEmail:
       "The invitations are sent. Any of the addresses with a Casy account gets one too.",
-    inviteMore: "Invite more",
     orLink: "Or share a link",
     linkHelp: (expiry: string) =>
       `Anyone with the link can join without anyone saying yes, so only send it to people you want in. It works for ${expiry}.`,
     makeLink: "Make a link",
     makingLink: "Making a link…",
     fromContacts: "Invite from contacts",
-    fromContactsHelp: "Pick friends in your contacts, and they get the link in a message.",
     message: (group: string) => `Join ${group} on Casy, so we can find a date that suits everyone:`,
     shareTitle: (group: string) => `Join ${group} on Casy`,
     texted: "The message is sent.",

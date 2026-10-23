@@ -52,20 +52,42 @@ test("a group's invite link can be shown as a QR code to scan (#150)", async ({ 
   await expect(page.getByRole("img", { name: /QR-kode/ })).toHaveCount(0);
 });
 
-test("a new group with nobody invited goes straight to inviting (#149)", async ({ page }) => {
+test("a new group is named, then invited to, then opened (#153)", async ({ page, backend }) => {
   await page.goto("/groups");
   await page.getByRole("button", { name: "Lav en gruppe" }).click();
   await page.getByLabel("Gruppenavn").fill("Fredagsfilm");
-  await page.getByRole("button", { name: "Opret gruppe" }).click();
-  await expect(page).toHaveURL(/\/groups\/g-new-\d+\?invite$/);
-  await expect(page.getByRole("heading", { name: "Invitér til Fredagsfilm" })).toBeVisible();
-  // Closed, it is an ordinary group page again: a reload doesn't reopen it.
-  await page
-    .locator("form")
-    .filter({ has: page.getByRole("heading", { name: "Invitér til Fredagsfilm" }) })
-    .getByRole("button", { name: "Annuller" })
-    .click();
+  await page.getByRole("button", { name: "Næste" }).click();
+  // The same sheet goes on to inviting to the group just made.
+  const sheet = page.getByRole("dialog", { name: "Invitér til Fredagsfilm" });
+  await expect(sheet).toBeVisible();
+  expect(backend.calls.find((c) => c.body.action === "create")?.body).toMatchObject({
+    name: "Fredagsfilm",
+  });
+  expect(backend.calls.find((c) => c.body.action === "create")?.body).not.toHaveProperty(
+    "profileIds",
+  );
+  // Nobody picked: no button to send, only Færdig, which opens the group.
+  await expect(sheet.getByRole("button", { name: /^Send/ })).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Færdig" }).click();
   await expect(page).toHaveURL(/\/groups\/g-new-\d+$/);
+});
+
+test("people picked in the invite get an invitation, and show as invited", async ({
+  page,
+  backend,
+}) => {
+  await page.goto("/groups/g-running");
+  await page
+    .getByRole("button", { name: /Invitér folk/ })
+    .first()
+    .click();
+  const sheet = page.getByRole("dialog", { name: "Invitér til Løbeklubben" });
+  // A tap on the row picks the person (a tick at its end; a real checkbox inside).
+  await sheet.getByText("Emil", { exact: true }).click();
+  await expect(sheet.getByRole("checkbox", { name: /^Emil/ })).toBeChecked();
+  await sheet.getByRole("button", { name: "Send invitation" }).click();
+  await expect(sheet.getByText("Invitationerne er sendt.")).toBeVisible();
+  expect(backend.calls.find((c) => c.body.action === "invite-members")).toBeTruthy();
 });
 
 /**
@@ -126,15 +148,13 @@ test.describe("in the app", () => {
     });
   });
 
-  test("a new group can be made and invited to from the contacts in one go (#149)", async ({
-    page,
-  }) => {
+  test("a new group's invite step invites from the contacts (#149, #153)", async ({ page }) => {
     await asTheAppWithContacts(page);
     await page.goto("/groups");
     await page.getByRole("button", { name: "Lav en gruppe" }).click();
     await page.getByLabel("Gruppenavn").fill("Fredagsfilm");
-    await page.getByRole("button", { name: "Opret og invitér fra kontakter" }).click();
-    await expect(page).toHaveURL(/\/groups\/g-new-\d+$/);
+    await page.getByRole("button", { name: "Næste" }).click();
+    await page.getByRole("button", { name: "Invitér fra kontakter" }).click();
     await expect
       .poll(() => texted(page))
       .toEqual({

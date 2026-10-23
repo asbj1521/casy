@@ -59,10 +59,12 @@ function GroupsPage({ selectedId }: { selectedId?: string }) {
             {t.groupsPage.title}
           </h1>
         )}
-        <p className="mt-1 text-sm text-muted-foreground">{t.groupsPage.intro}</p>
+        {/* A phone's screen says what it is by its title alone (#153). */}
+        {!phone && <p className="mt-1 text-sm text-muted-foreground">{t.groupsPage.intro}</p>}
         <InvitationsSection />
         {phone ? (
-          <GroupList />
+          // What members see is said once, on a group's own screen.
+          <GroupList privacyNote={false} />
         ) : (
           <div className="grid items-start gap-x-8 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
             <GroupList selectedId={open?.id} privacyNote={false} />

@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 
-import { createGroup, groupsQuery, groupsQueryKey, type Group, type NewGroup } from "@/api/groups";
+import { groupsQuery, type Group } from "@/api/groups";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import Avatar from "@/components/ui/Avatar";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
-import { inviteFromContacts } from "@/lib/contactInvite";
 
 /**
  * Your groups as an iPhone list: one row each, opening the group
@@ -27,27 +26,9 @@ export default function GroupList({
 }) {
   const t = useT();
   const youId = useSignedInUser().id;
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: groups, isPending, isError } = useQuery(groupsQuery(youId));
   const [newGroupOpen, setNewGroupOpen] = useState(false);
-  const create = useMutation({
-    mutationFn: (group: NewGroup) => createGroup(group),
-    onSuccess: (data, made) => {
-      queryClient.setQueryData(groupsQueryKey(youId), data.groups);
-      setNewGroupOpen(false);
-      // To the new group (#149): straight on to the contacts when that was
-      // asked for, else, with nobody invited yet, its invite opens at once.
-      const nobody = !made.invitees.profileIds.length && !made.invitees.emails.length;
-      navigate(`/groups/${data.createdId}${nobody && !made.contacts ? "?invite" : ""}`);
-      if (made.contacts) {
-        void inviteFromContacts(
-          { id: data.createdId },
-          { message: t.invite.message(made.name), shareTitle: t.invite.shareTitle(made.name) },
-        );
-      }
-    },
-  });
 
   if (isPending) {
     return (
@@ -91,19 +72,16 @@ export default function GroupList({
           icon={Plus}
           tone="primary"
           label={t.groupsSection.makeGroup}
-          onClick={() => {
-            create.reset();
-            setNewGroupOpen(true);
-          }}
+          onClick={() => setNewGroupOpen(true)}
         />
       </ListGroup>
 
+      {/* Made and invited to in its sheet (#153); the group opens once that closes. */}
       <NewGroupDialog
         open={newGroupOpen}
-        submitting={create.isPending}
-        error={create.error?.message ?? null}
-        onSubmit={(group) => create.mutate(group)}
-        onCancel={() => setNewGroupOpen(false)}
+        onClose={() => setNewGroupOpen(false)}
+        onCreated={() => {}}
+        onDone={(id) => navigate(`/groups/${id}`)}
       />
     </>
   );

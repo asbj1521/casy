@@ -52,13 +52,6 @@ export interface Invitees {
   emails: string[];
 }
 
-/** What New group makes: a name, who to invite now, and whether to invite from the contacts after (#149). */
-export interface NewGroup {
-  name: string;
-  invitees: Invitees;
-  contacts: boolean;
-}
-
 /** An invitation waiting for your answer. */
 export interface Invitation {
   groupId: string;
@@ -144,7 +137,10 @@ export async function refreshGroupCalendars(
   });
 }
 
-/** A new group, with invitations to whoever is named (nobody, if no one is). */
+/**
+ * A new group. The server also takes invitations to send with it; the app
+ * invites in a step of its own since #153, so it sends none.
+ */
 export async function createGroup({
   name,
   invitees,

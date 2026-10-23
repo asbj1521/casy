@@ -628,12 +628,9 @@ export const da = {
   },
   newGroup: {
     title: "Ny gruppe",
-    body: "Giv den et navn, og invitér folk fra dine grupper eller med e-mail. Alle andre kan du sende et link bagefter.",
     nameLabel: "Gruppenavn",
+    next: "Næste",
     placeholder: "f.eks. Brætspilsaften",
-    create: "Opret gruppe",
-    createAndInvite: (n: number) => `Opret og invitér ${n}`,
-    createFromContacts: "Opret og invitér fra kontakter",
   },
   invite: {
     title: (group: string) => `Invitér til ${group}`,
@@ -656,14 +653,12 @@ export const da = {
     send: (n: number) => (n <= 1 ? "Send invitation" : `Send ${n} invitationer`),
     sent: "Invitationerne er sendt.",
     sentWithEmail: "Invitationerne er sendt. Har en af adresserne en Casy-konto, får de også en.",
-    inviteMore: "Invitér flere",
     orLink: "Eller del et link",
     linkHelp: (expiry: string) =>
       `Alle med linket kan blive medlem, uden at nogen skal sige ja, så send det kun til dem, du vil have med. Det virker i ${expiry}.`,
     makeLink: "Lav et link",
     makingLink: "Laver et link…",
     fromContacts: "Invitér fra kontakter",
-    fromContactsHelp: "Vælg venner i dine kontakter, så får de linket i en besked.",
     message: (group: string) =>
       `Bliv medlem af ${group} på Casy, så vi kan finde en dato, der passer alle:`,
     shareTitle: (group: string) => `Bliv medlem af ${group} på Casy`,

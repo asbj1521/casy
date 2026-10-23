@@ -34,6 +34,22 @@ test("Planlæg opens over the calendar, and the dates found are sent as they wer
   await expect(page).toHaveURL(/\/events$/);
 });
 
+test("a new group made from the plan is invited to, then picked for the plan (#153)", async ({
+  page,
+}) => {
+  await page.goto("/calendar-overview?plan");
+  const plan = page.getByRole("dialog", { name: "Planlæg" });
+  await plan.getByRole("button", { name: /^Gruppe/ }).click();
+  await page.getByRole("button", { name: /^Ny gruppe/ }).click();
+  await page.getByLabel("Gruppenavn").fill("Fredagsfilm");
+  await page.getByRole("button", { name: "Næste" }).click();
+  const invite = page.getByRole("dialog", { name: "Invitér til Fredagsfilm" });
+  await invite.getByRole("button", { name: "Færdig" }).click();
+  await expect(invite).toHaveCount(0);
+  // Still planning, now for the new group.
+  await expect(plan.getByRole("button", { name: /^Gruppe/ })).toContainText("Fredagsfilm");
+});
+
 test("back closes the sheet, and Ret planen goes from the dates back to it", async ({ page }) => {
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: "Planlæg" }).click();

@@ -77,10 +77,8 @@ export default function PlanFromCalendar({ onClose }: { onClose: () => void }) {
 
       <NewGroupDialog
         open={planning.newGroupOpen}
-        submitting={planning.create.isPending}
-        error={planning.create.error?.message ?? null}
-        onSubmit={(group) => planning.create.mutate(group)}
-        onCancel={() => planning.setNewGroupOpen(false)}
+        onClose={() => planning.setNewGroupOpen(false)}
+        onCreated={planning.groupCreated}
       />
     </>
   );

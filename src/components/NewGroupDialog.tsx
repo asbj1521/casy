@@ -1,148 +1,137 @@
 import { useId, useState, type FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { BookUser, Loader2, Users } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { groupsQuery, type Invitees, type NewGroup } from "@/api/groups";
-import InvitePicker from "@/components/InvitePicker";
-import Modal, { ModalForm } from "@/components/ui/Modal";
+import { createGroup, groupsQueryKey } from "@/api/groups";
+import InviteBody, { SendButton } from "@/components/groups/InviteBody";
+import { FIELD, FIELD_LABEL } from "@/components/ui/field";
+import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
+import Sheet from "@/components/ui/Sheet";
+import { SWAP } from "@/components/ui/swap";
 import { useSignedInUser } from "@/context/auth";
+import { useInvite } from "@/hooks/useInvite";
+import { useOpenRound } from "@/hooks/useOpenRound";
 import { useT } from "@/i18n/lang";
-import { knownPeople, MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
-import { isNativeApp } from "@/lib/nativeApp";
+import { MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
 
 /**
- * "New group": a name, and who to invite straight away, picked from people
- * you already share a group with or by email. Anyone else gets the group's
- * link afterwards. Only opened by someone signed in.
- *
- * The form only exists while the dialog is open, so it starts empty every
- * time by simply being new: a cancelled attempt can't come back half filled.
- *
- * In the iPhone app it also offers "Opret og invitér fra kontakter" (#149):
- * the group is made, then whoever made it runs the contacts invite for it
- * (`contacts: true`; see inviteFromContacts).
+ * "New group" (#153), two steps in one sheet: the name, and "Næste" makes the
+ * group; then the same sheet is that group's Invite (contacts, people from
+ * your groups, email, a link). Making it and inviting to it are kept apart,
+ * as they are everywhere else. `onCreated` tells the page the moment the
+ * group exists (the planner picks it); `onDone` once the sheet is closed
+ * after it (My groups opens it). Only opened by someone signed in.
  */
 export default function NewGroupDialog({
   open,
-  submitting,
-  error,
-  onSubmit,
-  onCancel,
+  onClose,
+  onCreated,
+  onDone,
 }: {
   open: boolean;
-  submitting: boolean;
-  error: string | null;
-  onSubmit: (group: NewGroup) => void;
-  onCancel: () => void;
+  onClose: () => void;
+  onCreated: (groupId: string) => void;
+  onDone?: (groupId: string) => void;
 }) {
+  // A new round each time it opens: an empty name, back on the first step.
   return (
-    <Modal open={open} busy={submitting} onClose={onCancel}>
-      <NewGroupForm submitting={submitting} error={error} onSubmit={onSubmit} onCancel={onCancel} />
-    </Modal>
+    <NewGroupSheet
+      key={useOpenRound(open)}
+      open={open}
+      onClose={onClose}
+      onCreated={onCreated}
+      onDone={onDone}
+    />
   );
 }
 
-function NewGroupForm({
-  submitting,
-  error,
-  onSubmit,
-  onCancel,
+function NewGroupSheet({
+  open,
+  onClose,
+  onCreated,
+  onDone,
 }: {
-  submitting: boolean;
-  error: string | null;
-  onSubmit: (group: NewGroup) => void;
-  onCancel: () => void;
+  open: boolean;
+  onClose: () => void;
+  onCreated: (groupId: string) => void;
+  onDone?: (groupId: string) => void;
 }) {
   const t = useT();
   const userId = useSignedInUser().id;
-  const { data: groups = [] } = useQuery(groupsQuery(userId));
-  const [name, setName] = useState("");
-  const [invitees, setInvitees] = useState<Invitees>({ profileIds: [], emails: [] });
+  const queryClient = useQueryClient();
   const nameId = useId();
-  const count = invitees.profileIds.length + invitees.emails.length;
+  const [name, setName] = useState("");
+  const [made, setMade] = useState<{ id: string; name: string } | null>(null);
+  // Called before the group exists too (hooks can't wait); nothing in it runs until then.
+  const invite = useInvite(made ?? { id: "", name });
 
-  const [viaContacts, setViaContacts] = useState(false);
+  const create = useMutation({
+    mutationFn: (groupName: string) => createGroup({ name: groupName }),
+    onSuccess: (data, groupName) => {
+      queryClient.setQueryData(groupsQueryKey(userId), data.groups);
+      setMade({ id: data.createdId, name: groupName });
+      onCreated(data.createdId);
+    },
+  });
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (name.trim()) onSubmit({ name: name.trim(), invitees, contacts: viaContacts });
+  function close() {
+    if (made) onDone?.(made.id);
+    onClose();
   }
 
-  return (
-    <ModalForm onSubmit={handleSubmit} className="max-w-md">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-        <Users className="h-5 w-5 text-primary" />
-        {t.newGroup.title}
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">{t.newGroup.body}</p>
+  function handleName(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (name.trim() && !create.isPending) create.mutate(name.trim());
+  }
 
-      <label className="mt-4 block text-sm" htmlFor={nameId}>
-        <span className="mb-1 block font-medium text-foreground">{t.newGroup.nameLabel}</span>
-        <input
-          id={nameId}
-          type="text"
-          required
-          autoFocus
-          maxLength={MAX_GROUP_NAME_LENGTH}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={t.newGroup.placeholder}
-          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-        />
+  const nameStep = (
+    <>
+      <label htmlFor={nameId} className={FIELD_LABEL}>
+        {t.newGroup.nameLabel}
       </label>
-
-      <div className="mt-5">
-        <InvitePicker people={knownPeople(groups)} value={invitees} onChange={setInvitees} />
-      </div>
-
-      {count > 0 && <p className="mt-3 text-xs text-muted-foreground">{t.invite.consent}</p>}
-
-      {error && (
+      <input
+        id={nameId}
+        type="text"
+        required
+        autoFocus
+        maxLength={MAX_GROUP_NAME_LENGTH}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder={t.newGroup.placeholder}
+        className={`${FIELD} font-semibold`}
+      />
+      {create.isError && (
         <Notice tone="error" className="mt-3">
-          {error}
+          {create.error.message}
         </Notice>
       )}
+    </>
+  );
 
-      {isNativeApp && (
-        <button
-          type="submit"
-          onClick={() => setViaContacts(true)}
-          disabled={submitting || !name.trim()}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-        >
-          {submitting && viaContacts ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <BookUser className="h-4 w-4" />
-          )}
-          {t.newGroup.createFromContacts}
-        </button>
-      )}
-
-      <div className="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={submitting}
-          className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary disabled:opacity-50"
-        >
-          {t.common.cancel}
-        </button>
-        <button
-          type="submit"
-          onClick={() => setViaContacts(false)}
-          disabled={submitting || !name.trim()}
-          className={
-            isNativeApp
-              ? "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
-              : "inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-          }
-        >
-          {submitting && !viaContacts && <Loader2 className="h-4 w-4 animate-spin" />}
-          {count > 0 ? t.newGroup.createAndInvite(count) : t.newGroup.create}
-        </button>
-      </div>
-    </ModalForm>
+  return (
+    <Sheet
+      open={open}
+      onClose={close}
+      title={made ? t.invite.title(made.name) : t.newGroup.title}
+      closeLabel={made ? t.common.done : t.common.cancel}
+      onSubmit={made ? invite.submit : handleName}
+      busy={create.isPending}
+      footer={
+        made ? (
+          <SendButton invite={invite} />
+        ) : (
+          <FlowButton type="submit" disabled={!name.trim()} busy={create.isPending}>
+            {t.newGroup.next}
+          </FlowButton>
+        )
+      }
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={made ? "invite" : "name"} {...SWAP}>
+          {made ? <InviteBody invite={invite} /> : nameStep}
+        </motion.div>
+      </AnimatePresence>
+    </Sheet>
   );
 }

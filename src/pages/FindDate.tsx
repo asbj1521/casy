@@ -67,7 +67,7 @@ function SchedulingPage() {
     updatePeople,
     newGroupOpen,
     setNewGroupOpen,
-    create,
+    groupCreated,
     openNewGroup,
     name,
     setName,
@@ -222,10 +222,8 @@ function SchedulingPage() {
   const newGroupDialog = (
     <NewGroupDialog
       open={newGroupOpen}
-      submitting={create.isPending}
-      error={create.error?.message ?? null}
-      onSubmit={(group) => create.mutate(group)}
-      onCancel={() => setNewGroupOpen(false)}
+      onClose={() => setNewGroupOpen(false)}
+      onCreated={groupCreated}
     />
   );
 
