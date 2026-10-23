@@ -6,12 +6,15 @@ import { whoAmIQueryKey, type WhoAmI } from "@/api/groups";
 import { useAuth } from "@/context/auth";
 import { useAiConsent } from "@/hooks/useAiAllowed";
 import { forgetAskedTitles, labelBookQuery } from "@/hooks/useEventLabels";
+import { forgetAskedTrips, legBookQuery, tripAnswersQuery } from "@/hooks/useTrips";
 import { clearLabelsFor } from "@/lib/eventLabels";
+import { NO_ANSWERS } from "@/lib/trips";
 
 /**
  * Saying yes, or no again, to Casy's AI using content from your calendar
- * (#120). Taking the yes back also deletes the labels kept on this phone, at
- * once, since they were made from titles the AI is no longer allowed to read.
+ * (#120). Taking the yes back also deletes the labels and trips (#115) kept on
+ * this phone, at once, since they were made from titles the AI is no longer
+ * allowed to read.
  * Shared by the box asked on My calendar and the profile's row.
  */
 export function useAiConsentSetting() {
@@ -32,7 +35,10 @@ export function useAiConsentSetting() {
       if (!on) {
         clearLabelsFor(userId);
         forgetAskedTitles();
+        forgetAskedTrips();
         queryClient.setQueryData(labelBookQuery(userId).queryKey, {});
+        queryClient.setQueryData(legBookQuery(userId).queryKey, {});
+        queryClient.setQueryData(tripAnswersQuery(userId).queryKey, NO_ANSWERS);
       }
       void queryClient.invalidateQueries({ queryKey: ["my-data", userId] });
     },

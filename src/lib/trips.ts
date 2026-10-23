@@ -194,6 +194,22 @@ function homeCandidates(segments: Segment[]): string[] {
     .map(([city]) => city);
 }
 
+/** The legs that can be part of a trip (no routines, nothing going nowhere), in time order. */
+function usable(legs: Leg[]): Leg[] {
+  return legs
+    .filter((l) => l.count < ROUTINE_COUNT && l.end > l.start && l.from !== l.to)
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+}
+
+/**
+ * Home, as the person said or the legs say; null while neither does. The
+ * phone needs it before pairing, to read "the way home" and a way out that
+ * doesn't name where it leaves from.
+ */
+export function homeOf(legs: Leg[], answers: TripAnswers): string | null {
+  return answers.home ?? inferHome(segmentsOf(usable(legs)));
+}
+
 /** Whether a stretch crosses a local midnight: a day trip is not away. */
 function staysOvernight(start: number, end: number): boolean {
   return end > addDays(start, 1, APP_TIME_ZONE);
@@ -204,10 +220,7 @@ function staysOvernight(start: number, end: number): boolean {
  * decides which loose ends are still worth a question.
  */
 export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): Detected {
-  const legs = allLegs
-    .filter((l) => l.count < ROUTINE_COUNT && l.end > l.start && l.from !== l.to)
-    .sort((a, b) => a.start - b.start || a.end - b.end);
-  const segments = segmentsOf(legs);
+  const segments = segmentsOf(usable(allLegs));
   if (segments.length === 0) return { trips: [], questions: [] };
 
   const home = answers.home ?? inferHome(segments);

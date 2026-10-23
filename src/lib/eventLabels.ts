@@ -73,15 +73,16 @@ export interface LabelCandidate {
 }
 
 /** A title as compared: case, spacing and surrounding spaces don't matter. */
-function normalise(title: string): string {
+export function normalise(title: string): string {
   return title.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 /**
  * cyrb53, a small, fast 53-bit string hash: enough to tell a few thousand
  * titles apart without keeping them. Not cryptographic, and needn't be.
+ * Trip detection (#115) keys its legs with it too.
  */
-function hash(text: string): string {
+export function hash(text: string): string {
   let h1 = 0xdeadbeef;
   let h2 = 0x41c6ce57;
   for (let i = 0; i < text.length; i++) {
@@ -277,6 +278,17 @@ export function correctionsToSend(corrections: LabelCorrection[]) {
 
 const STORAGE_PREFIX = "casy-event-labels:";
 const CORRECTIONS_PREFIX = "casy-label-corrections:";
+/**
+ * Everything the AI made of this phone's calendar, per account: the labels,
+ * the corrections, and trip detection's legs and answers (#115,
+ * tripLegBook.ts, which keeps the same names). All go together.
+ */
+const PHONE_AI_PREFIXES = [
+  STORAGE_PREFIX,
+  CORRECTIONS_PREFIX,
+  "casy-trip-legs:",
+  "casy-trip-answers:",
+];
 
 export function readLabelBook(userId: string): LabelBook {
   const raw = readStored(STORAGE_PREFIX + userId);
@@ -310,18 +322,17 @@ export function writeCorrections(userId: string, corrections: LabelCorrection[])
   writeStored(CORRECTIONS_PREFIX + userId, JSON.stringify({ v: 1, corrections }));
 }
 
-/** One account's labels and corrections on this phone: withdrawing the AI's consent (#120). */
+/** One account's labels, corrections and trips on this phone: withdrawing the AI's consent (#120). */
 export function clearLabelsFor(userId: string): void {
-  writeStored(STORAGE_PREFIX + userId, null);
-  writeStored(CORRECTIONS_PREFIX + userId, null);
+  for (const prefix of PHONE_AI_PREFIXES) writeStored(prefix + userId, null);
 }
 
-/** Every account's labels and corrections on this phone, on sign-out. */
+/** Every account's labels, corrections and trips on this phone, on sign-out. */
 export function clearLabelBooks(): void {
   try {
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const name = localStorage.key(i);
-      if (name?.startsWith(STORAGE_PREFIX) || name?.startsWith(CORRECTIONS_PREFIX)) {
+      if (name && PHONE_AI_PREFIXES.some((prefix) => name.startsWith(prefix))) {
         localStorage.removeItem(name);
       }
     }

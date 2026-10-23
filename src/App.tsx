@@ -14,6 +14,7 @@ import { useAutoLabel } from "@/hooks/useEventLabels";
 import { useDayFactsSync } from "@/hooks/useDayFactsSync";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { usePhoneCalendarSync } from "@/hooks/usePhoneCalendarSync";
+import { useAutoTripLegs } from "@/hooks/useTrips";
 import AuthProvider from "@/context/AuthProvider";
 import LanguageProvider from "@/i18n/LanguageProvider";
 import { persistQueries } from "@/lib/queryPersistence";
@@ -68,7 +69,8 @@ function Home() {
  * account's saved language with the site's, for its emails (useAccountLanguage),
  * in the iPhone app, Casy with the phone's calendars (usePhoneCalendarSync),
  * new calendars given a category by AI in the background (useAutoCategorize),
- * and, in the app, the phone's events labelled by AI (useAutoLabel) and what
+ * and, in the app, the phone's events labelled by AI (useAutoLabel), its
+ * flights, trains and buses read for trip detection (useAutoTripLegs) and what
  * ranks a vote's dates shared with the server (useDayFactsSync).
  */
 function LiveUpdates() {
@@ -77,6 +79,7 @@ function LiveUpdates() {
   usePhoneCalendarSync();
   useAutoCategorize();
   useAutoLabel();
+  useAutoTripLegs();
   useDayFactsSync();
   return null;
 }
