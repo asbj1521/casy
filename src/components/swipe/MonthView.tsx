@@ -296,6 +296,9 @@ export function MonthLayer({
   colorOf,
   shine,
   wrapRow,
+  lanes,
+  heading,
+  owner,
 }: {
   /** The month's first local midnight. */
   month: number;
@@ -305,6 +308,12 @@ export function MonthLayer({
   shine?: ReadonlySet<number>;
   /** Wraps each week's row (`w` of `count`), for animating the rows on their own. */
   wrapRow?: (w: number, count: number, row: ReactNode) => ReactNode;
+  /** Rows of bars under each day's number (3 unless a smaller month is wanted, #151). */
+  lanes?: number;
+  /** In place of the short month name over the first day (the welcome screen's own heading). */
+  heading?: ReactNode;
+  /** Shown in the empty days before the 1st, as whose calendar it is (#151). */
+  owner?: ReactNode;
 }) {
   const [today] = useState(() => startOfDay(Date.now(), TZ));
   return (
@@ -323,6 +332,9 @@ export function MonthLayer({
         register={NOOP}
         shine={shine}
         wrapRow={wrapRow}
+        lanes={lanes}
+        heading={heading}
+        owner={owner}
       />
     </div>
   );
@@ -342,6 +354,9 @@ const MonthSection = memo(function MonthSection({
   register,
   shine,
   wrapRow,
+  lanes = LANES,
+  heading,
+  owner,
 }: {
   month: number;
   showYear: boolean;
@@ -357,6 +372,9 @@ const MonthSection = memo(function MonthSection({
   register: (month: number, el: HTMLElement | null) => void;
   shine?: ReadonlySet<number>;
   wrapRow?: (w: number, count: number, row: ReactNode) => ReactNode;
+  lanes?: number;
+  heading?: ReactNode;
+  owner?: ReactNode;
 }) {
   // Calendar colours are worked out in code, so they follow the theme here.
   const dark = useIsDark();
@@ -371,9 +389,9 @@ const MonthSection = memo(function MonthSection({
     () =>
       layout.weeks.map((week) => {
         const days = week.map((d) => d.date.getTime());
-        return { week, days, ...layoutWeek(items, days, addDays(days[6], 1, TZ), LANES) };
+        return { week, days, ...layoutWeek(items, days, addDays(days[6], 1, TZ), lanes) };
       }),
-    [layout, items],
+    [layout, items, lanes],
   );
 
   // Apple's short name ("Nov"), over the column of the month's first day.
@@ -390,7 +408,9 @@ const MonthSection = memo(function MonthSection({
   return (
     // data-month: the paper pile (#126) finds the month here to line up with it.
     <section ref={(el) => register(month, el)} data-month={month}>
-      {compact ? (
+      {heading ? (
+        heading
+      ) : compact ? (
         <div aria-hidden className="relative" style={{ height: MONTH_LABEL_PX }}>
           <span
             className="absolute top-0 truncate text-center text-[17px] font-bold leading-none text-foreground"
@@ -413,6 +433,15 @@ const MonthSection = memo(function MonthSection({
             <span className="absolute left-1 top-0.5 text-[10px] tabular-nums text-muted-foreground">
               {layout.weekNumbers[w]}
             </span>
+            {/* Whose calendar it is, in the empty days before the 1st. */}
+            {owner && w === 0 && first > 0 && (
+              <span
+                className="absolute left-0 top-0 flex h-10 items-center pl-6 pr-1"
+                style={{ width: `${(first / 7) * 100}%` }}
+              >
+                {owner}
+              </span>
+            )}
             <div className="grid grid-cols-7">
               {week.map((d, c) => (
                 <span key={d.key} className="flex h-10 items-center justify-center">
@@ -443,7 +472,7 @@ const MonthSection = memo(function MonthSection({
                 </span>
               ))}
             </div>
-            <div className="relative" style={{ height: LANES * LANE_PX + MORE_PX }}>
+            <div className="relative" style={{ height: lanes * LANE_PX + MORE_PX }}>
               {placed.map((p, i) => {
                 // Cut at the month's own days, as Apple leaves the others empty.
                 const from = Math.max(p.from, first);

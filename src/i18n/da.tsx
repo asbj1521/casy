@@ -70,6 +70,17 @@ export const da = {
     privacy: "Sådan passer Casy på dine data",
     allCan: (n: number) => `Alle ${n} kan`,
     back: "Tilbage",
+    yourCalendar: "Din kalender",
+    calendarOf: (name: string) => `${name}${name.endsWith("s") ? "'" : "s"} kalender`,
+    phoneOf: (name: string) => `${name}${name.endsWith("s") ? "'" : "s"} telefon`,
+    steps: {
+      pile: "Jeres kalendere lægges oven på hinanden",
+      list: "Casy finder de datoer, der passer alle",
+      swipe: "Vennerne swiper ja eller nej",
+    },
+    event: "Brætspilsaften",
+    at: (time: string) => `Kl. ${time}`,
+    agreed: "Aftalt",
   },
   updateRequired: {
     title: "Opdater Casy",

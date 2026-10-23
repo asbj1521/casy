@@ -14,13 +14,14 @@ export default function AppWelcome() {
   const t = useT();
   return (
     <main
-      className="flex flex-col bg-background"
+      className="flex flex-col overflow-hidden bg-background"
       style={{ height: "calc(100dvh - env(safe-area-inset-top))" }}
     >
       <div className="min-h-0 flex-1">
         <WelcomePile />
       </div>
-      <div className="px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4">
+      {/* Up over the calendar's faded bottom edge. */}
+      <div className="relative -mt-6 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <h1 className="text-balance text-[32px] font-bold leading-tight tracking-tight text-foreground">
           {t.welcome.headline}
         </h1>

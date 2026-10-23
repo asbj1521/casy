@@ -65,6 +65,17 @@ export const en: Messages = {
     privacy: "How Casy looks after your data",
     allCan: (n: number) => `All ${n} can make it`,
     back: "Back",
+    yourCalendar: "Your calendar",
+    calendarOf: (name: string) => `${name}'s calendar`,
+    phoneOf: (name: string) => `${name}'s phone`,
+    steps: {
+      pile: "Your calendars are laid on top of each other",
+      list: "Casy finds the dates that suit everyone",
+      swipe: "Friends swipe yes or no",
+    },
+    event: "Board games night",
+    at: (time: string) => `At ${time}`,
+    agreed: "Agreed",
   },
   updateRequired: {
     title: "Update Casy",
