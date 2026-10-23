@@ -30,3 +30,22 @@ test("declining an invitation removes it", async ({ page, backend }) => {
     groupId: "g-badminton",
   });
 });
+
+test("a group's invite link can be shown as a QR code to scan (#150)", async ({ page }) => {
+  await page.goto("/groups/g-running");
+  await page
+    .getByRole("button", { name: /Invitér folk/ })
+    .first()
+    .click();
+  // The code needs a link, so asking for it makes one.
+  await page.getByRole("button", { name: "Vis QR-kode" }).click();
+  await expect(
+    page.getByRole("img", { name: /QR-kode til at blive medlem af Løbeklubben/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox").or(page.getByText("https://casy.app/join/test-invite-token")).first(),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Skjul QR-kode" }).click();
+  await expect(page.getByRole("img", { name: /QR-kode/ })).toHaveCount(0);
+});

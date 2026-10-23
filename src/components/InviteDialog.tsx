@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Loader2, UserPlus } from "lucide-react";
+import { Link2, Loader2, QrCode as QrIcon, UserPlus } from "lucide-react";
 
 import {
   createInvite,
@@ -13,6 +13,7 @@ import InvitePicker from "@/components/InvitePicker";
 import CopyField from "@/components/ui/CopyField";
 import Modal, { ModalForm } from "@/components/ui/Modal";
 import Notice from "@/components/ui/Notice";
+import QrCode from "@/components/ui/QrCode";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { inviteExpiryLabel, knownPeople } from "@/lib/groups";
@@ -21,7 +22,8 @@ import { inviteExpiryLabel, knownPeople } from "@/lib/groups";
  * Bringing more people into a group you're in, three ways: tick people you
  * know from your other groups, type an email, or make a link. The first two
  * send invitations the person answers on My events; a link lets anyone who
- * has it straight in, which the dialog says before handing one out.
+ * has it straight in, which the dialog says before handing one out. The same
+ * link can be shown as a QR code (#150), for people sitting together.
  */
 export default function InviteDialog({
   group,
@@ -59,6 +61,22 @@ function InviteForm({
   // A fresh link every time: only a fingerprint of each is stored (see the
   // groups function), so an earlier one can't be shown again.
   const link = useMutation({ mutationFn: () => createInvite(group.id) });
+  const [showQr, setShowQr] = useState(false);
+  const qrButton = (
+    <button
+      type="button"
+      onClick={() => {
+        setShowQr(!showQr);
+        if (!link.data && !link.isPending) link.mutate();
+      }}
+      disabled={link.isPending}
+      aria-expanded={showQr}
+      className="mt-2 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
+    >
+      <QrIcon className="h-4 w-4" />
+      {showQr ? t.invite.hideQr : t.invite.showQr}
+    </button>
+  );
 
   const people = knownPeople(groups, group.id);
   const invited = groups.find((g) => g.id === group.id)?.invited ?? [];
@@ -146,24 +164,40 @@ function InviteForm({
         {link.data ? (
           <>
             <CopyField value={link.data.url} label={t.groupsSection.inviteLink} className="mt-2" />
+            {showQr && (
+              <figure className="mt-3 flex flex-col items-center gap-2">
+                <QrCode
+                  value={link.data.url}
+                  label={t.invite.qrLabel(group.name)}
+                  className="h-56 w-56 rounded-xl"
+                />
+                <figcaption className="text-center text-xs text-muted-foreground">
+                  {t.invite.qrHelp}
+                </figcaption>
+              </figure>
+            )}
             <p className="mt-2 text-xs text-muted-foreground">
               {t.invite.linkHelp(inviteExpiryLabel(link.data.expiresAt, t.inviteExpiry))}
             </p>
+            {qrButton}
           </>
         ) : (
-          <button
-            type="button"
-            onClick={() => link.mutate()}
-            disabled={link.isPending}
-            className="mt-2 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
-          >
-            {link.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Link2 className="h-4 w-4" />
-            )}
-            {link.isPending ? t.invite.makingLink : t.invite.makeLink}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => link.mutate()}
+              disabled={link.isPending}
+              className="mt-2 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
+            >
+              {link.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              {link.isPending ? t.invite.makingLink : t.invite.makeLink}
+            </button>
+            {qrButton}
+          </div>
         )}
         {link.isError && (
           <Notice tone="error" bare className="mt-2">

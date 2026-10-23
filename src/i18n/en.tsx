@@ -556,6 +556,10 @@ export const en: Messages = {
       `Anyone with the link can join without anyone saying yes, so only send it to people you want in. It works for ${expiry}.`,
     makeLink: "Make a link",
     makingLink: "Making a link…",
+    showQr: "Show QR code",
+    hideQr: "Hide QR code",
+    qrLabel: (group: string) => `QR code to join ${group}`,
+    qrHelp: "Let them scan the code with their phone's camera.",
     close: "Close",
   },
   providers: {

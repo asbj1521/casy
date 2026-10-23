@@ -593,6 +593,10 @@ export const da = {
       `Alle med linket kan blive medlem, uden at nogen skal sige ja, så send det kun til dem, du vil have med. Det virker i ${expiry}.`,
     makeLink: "Lav et link",
     makingLink: "Laver et link…",
+    showQr: "Vis QR-kode",
+    hideQr: "Skjul QR-kode",
+    qrLabel: (group: string) => `QR-kode til at blive medlem af ${group}`,
+    qrHelp: "Lad dem scanne koden med kameraet på deres telefon.",
     close: "Luk",
   },
   providers: {
