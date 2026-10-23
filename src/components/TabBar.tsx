@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarCheck, CalendarDays, LogIn, User, Users, type LucideIcon } from "lucide-react";
+import { CalendarCheck, CalendarDays, LogIn, User, type LucideIcon } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
 import { invitationsQuery, whoAmIQuery } from "@/api/groups";
@@ -12,9 +12,11 @@ import { loadPage } from "@/pages/lazyPages";
 import { cn } from "@/lib/utils";
 
 /**
- * The phone's main navigation: four tabs along the bottom of the screen,
- * where a thumb already is, as in the apps the phone layout follows. Mounted
- * once in App.tsx; nothing at all on a computer, which keeps TopNav's links.
+ * The phone's main navigation: three tabs along the bottom of the screen,
+ * where a thumb already is, as in the apps the phone layout follows: Events on
+ * the left, the calendar in the middle, the profile on the right. Groups are a
+ * row of the profile. Mounted once in App.tsx; nothing at all on a computer,
+ * which keeps TopNav's links.
  */
 export default function TabBar() {
   return usePhoneLayout() ? <PhoneTabBar /> : null;
@@ -26,8 +28,8 @@ function PhoneTabBar() {
   const { user, loading } = useAuth();
   const t = useT();
 
-  // Each badge sits on the tab where the answer is given: events waiting on
-  // you on Events, invitations on Groups.
+  // Each badge sits on the tab that leads to the answer: events waiting on you
+  // on Events, group invitations on the profile (its Groups row says which).
   // Answers waiting on you, and dates you said yes to that now clash (useEventsBadge).
   const eventsBadge = useEventsBadge();
   const { data: invitations } = useQuery({
@@ -38,16 +40,8 @@ function PhoneTabBar() {
   // Signed out, the last tab can only lead to the sign-in page, so it says so.
   const signedOut = !loading && !user;
 
-  // Groups first. No scheduler tab: a phone plans from My calendar (#126, #127).
+  // The calendar in the middle. No scheduler tab: a phone plans from My calendar (#126, #127).
   const tabs: Tab[] = [
-    {
-      to: "/groups",
-      label: t.nav.groupsShort,
-      icon: Users,
-      active: pathname.startsWith("/groups"),
-      prefetch: () => void loadPage.groups(),
-      badge: invitations?.length,
-    },
     {
       to: "/events",
       label: t.nav.eventsShort,
@@ -75,7 +69,8 @@ function PhoneTabBar() {
           to: "/profile",
           label: t.nav.profileShort,
           icon: User,
-          active: pathname.startsWith("/profile"),
+          // Groups are opened from the profile, so they stay under its tab.
+          active: pathname.startsWith("/profile") || pathname.startsWith("/groups"),
           // The page and the two answers it opens by asking for, as TopNav does.
           prefetch: () => {
             if (!user) return;
@@ -83,6 +78,7 @@ function PhoneTabBar() {
             void queryClient.prefetchQuery(whoAmIQuery(user.id));
             void queryClient.prefetchQuery(adminStatusQuery(user.id));
           },
+          badge: invitations?.length,
         },
   ];
 
@@ -91,7 +87,7 @@ function PhoneTabBar() {
       {/* Holds the end of every page clear of the bar, which floats over it. */}
       <div aria-hidden className="h-[var(--tab-bar-height)]" />
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card pb-[env(safe-area-inset-bottom)]">
-        <ul className="grid h-14 grid-cols-4">
+        <ul className="grid h-14 grid-cols-3">
           {tabs.map((tab) => (
             <li key={tab.to}>
               <Link

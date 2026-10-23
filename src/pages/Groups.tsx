@@ -13,8 +13,8 @@ import { useT } from "@/i18n/lang";
 
 /**
  * Your groups, and the invitations waiting for your answer (/groups, and
- * /groups/:groupId for one group). A phone shows the list (its Groups tab)
- * and each group as a screen of its own; a computer shows both side by side,
+ * /groups/:groupId for one group). A phone shows the list (a row of its
+ * profile) and each group as a screen of its own; a computer shows both side by side,
  * the group in the address open on the right, else the first.
  */
 export default function Groups() {
@@ -47,9 +47,18 @@ function GroupsPage({ selectedId }: { selectedId?: string }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav />
+      {/* A phone reaches groups from the profile, so it is a screen with a way back. */}
+      {phone ? (
+        <PhoneSubHeader title={t.groupsPage.title} back="/profile" backLabel={t.nav.profileShort} />
+      ) : (
+        <TopNav />
+      )}
       <main className="px-4 pb-16 pt-2 sm:px-6 sm:pt-0 lg:px-8">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.groupsPage.title}</h1>
+        {!phone && (
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {t.groupsPage.title}
+          </h1>
+        )}
         <p className="mt-1 text-sm text-muted-foreground">{t.groupsPage.intro}</p>
         <InvitationsSection />
         {phone ? (
@@ -69,7 +78,7 @@ function GroupsPage({ selectedId }: { selectedId?: string }) {
   );
 }
 
-/** One group on a phone, opened from the Groups tab, with a way back. */
+/** One group on a phone, opened from the list, with a way back. */
 function PhoneGroupScreen({ groupId }: { groupId: string }) {
   const t = useT();
   const youId = useSignedInUser().id;

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { KeyRound, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
+import GroupsRow from "@/components/profile/GroupsRow";
 import NameCard from "@/components/profile/NameCard";
 import SettingsRow from "@/components/profile/SettingsRow";
 import { BuildLine, FeedbackShareGroup, HelpGroup } from "@/components/profile/ProfileLinks";
@@ -47,7 +48,10 @@ export default function ProfileHub() {
       <main className="px-4 pb-8 pt-2">
         <NameCard />
 
-        <SettingsRow />
+        <ListGroup>
+          <SettingsRow />
+          <GroupsRow />
+        </ListGroup>
 
         <ListGroup>
           <ListRow to="/profile/password" icon={KeyRound} label={t.profileHub.security} />

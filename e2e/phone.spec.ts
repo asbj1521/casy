@@ -10,10 +10,9 @@ test("the tab bar reaches every main page, and planning lives in the calendar (#
   await page.goto("/");
   await expect(page).toHaveURL(/\/calendar-overview$/);
   const tabs = page.getByRole("navigation").last();
-  // Four tabs (the first two may carry a count).
-  await expect(tabs.getByRole("link")).toHaveText([/Grupper$/, /Aftaler$/, "Kalender", "Profil"]);
+  // Three tabs, the calendar in the middle (the outer two may carry a count).
+  await expect(tabs.getByRole("link")).toHaveText([/Aftaler$/, "Kalender", /Profil$/]);
   for (const [tab, url] of [
-    ["Grupper", /\/groups$/],
     ["Aftaler", /\/events$/],
     ["Profil", /\/profile$/],
     ["Kalender", /\/calendar-overview$/],
@@ -24,6 +23,30 @@ test("the tab bar reaches every main page, and planning lives in the calendar (#
   // The scheduler's own address leads there too.
   await page.goto("/plan");
   await expect(page).toHaveURL(/\/calendar-overview$/);
+});
+
+test("groups are a row of the profile, under Settings, and the Profile tab stays lit", async ({
+  page,
+}) => {
+  await page.goto("/profile");
+  const tabs = page.getByRole("navigation").last();
+  // Settings, then Groups, then Sign-in and security, in that order.
+  const rows = page.getByRole("link", { name: /^(Indstillinger|Grupper|Log ind og sikkerhed)/ });
+  await expect(rows).toHaveText([/Indstillinger/, /Grupper/, /Log ind og sikkerhed/]);
+  // The invitation waiting is counted on the row and on the tab that leads to it.
+  await expect(page.getByRole("link", { name: /^Grupper/ })).toContainText("1");
+  await expect(tabs.getByRole("link", { name: /Profil/ })).toContainText("1");
+
+  await page.getByRole("link", { name: /^Grupper/ }).click();
+  await expect(page).toHaveURL(/\/groups$/);
+  await expect(tabs.getByRole("link", { name: /Profil/ })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByText("Badminton")).toBeVisible();
+  // A screen under the profile, with a way back to it.
+  await page
+    .getByRole("link", { name: /Profil/ })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/profile$/);
 });
 
 test("the profile's screens open and go back", async ({ page }) => {
@@ -84,14 +107,14 @@ test.describe("short pages", () => {
 test("the iPhone app has no logo at the top: the pages start there", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phones only");
   // The website's phone keeps its header with the logo.
-  await page.goto("/groups");
+  await page.goto("/events");
   await expect(page.getByRole("link", { name: "casy" })).toBeVisible();
 
   // The bridge the app injects before the page runs (src/lib/nativeApp.ts).
   await page.addInitScript(() => {
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
   });
-  for (const path of ["/groups", "/events", "/calendar-overview", "/profile"]) {
+  for (const path of ["/events", "/calendar-overview", "/profile"]) {
     await page.goto(path);
     await expect(page.getByRole("navigation").last()).toBeVisible();
     await expect(page.getByRole("link", { name: "casy" })).toHaveCount(0);

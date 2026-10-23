@@ -7,6 +7,7 @@ import { adminStatusQuery } from "@/api/admin";
 import { whoAmIQuery } from "@/api/groups";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
 import SettingsRow from "@/components/profile/SettingsRow";
+import { ListGroup } from "@/components/ui/ListGroup";
 import PasswordSection from "@/components/PasswordSection";
 import NameCard from "@/components/profile/NameCard";
 import ProfileHub from "@/components/profile/ProfileHub";
@@ -100,7 +101,9 @@ function DesktopProfile() {
         ) : (
           <div className="mx-auto max-w-2xl">
             <NameCard />
-            <SettingsRow />
+            <ListGroup>
+              <SettingsRow />
+            </ListGroup>
             <FeedbackShareGroup />
             <HelpGroup />
             <PasswordSection name={whoAmI?.name ?? displayName(user)} />

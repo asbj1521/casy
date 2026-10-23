@@ -9,7 +9,7 @@ const SWITCH = { name: "Sprog" };
 
 test.describe("signed in", () => {
   test("the header has no language switch on any page", async ({ page }) => {
-    for (const path of ["/groups", "/events", "/calendar-overview", "/profile"]) {
+    for (const path of ["/events", "/calendar-overview", "/profile"]) {
       await page.goto(path);
       await expect(page.getByRole("link", { name: "casy" }).first()).toBeVisible();
       await expect(page.getByRole("radiogroup", SWITCH)).toHaveCount(0);
