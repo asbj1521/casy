@@ -40,6 +40,20 @@ On a phone (below 768px, the website and the iPhone app alike) the same pages ar
 - **Testing:** Vitest (frontend, `src/**/*.test.ts`), Deno test (Edge Functions, `supabase/functions/_shared/*_test.ts`) and Playwright (browser tests of the built site, `e2e/`, see `e2e/README.md`): behaviour tests and whole-page screenshot comparisons at 1440 and 390 wide, against a fake backend answering every Edge Function from made-up data typed with `src/api`'s types (a new function or action needs a case in `e2e/backend.ts`). Reference images are made on Linux only (a Mac skips the comparison): a commit message with `[screenshots]` makes CI's "Update screenshots" workflow commit new ones to the branch. A change that moves pixels on purpose comes with new images; the computer's images changing on phone work is the signal that something slipped
 - **Linting and formatting:** ESLint (TypeScript + React Hooks); Prettier at 100 columns with the Tailwind class-order plugin (`.prettierrc.json`); the Prettier commit is listed in `.git-blame-ignore-revs`
 
+## Design language (phone and app)
+
+The phone and the iPhone app follow one design language, taken from the newest screens (#126 Planlæg, #136 My calendar's glass header, #115 the trip sheet): Apple's Liquid Glass as far as a web view allows, little text, everything lined up. Older screens are brought into it (#153). Follow these rules for any new or changed phone screen; computers change only on purpose.
+
+1. **Pages and sheets.** A page is the page's background with grouped lists (`ui/ListGroup`). Anything opened on top of a page is a glass sheet from the bottom (`ui/BottomSheet`, or `ui/Sheet` when a computer shows the same content as a centred dialog), never a card in the middle of a phone's screen. A sheet has its title on the left and one text action on the right (Annuller, Færdig).
+2. **One main action per sheet or screen**, a full-width capsule pinned along the sheet's bottom (`ui/FlowButton`: `h-12 rounded-full bg-cta`, white text). Everything else is a glass capsule or orange text.
+3. **Standalone buttons are glass capsules** with orange text and icon (`ui/GlassButton`, the `glass-pill` class), like My calendar's Planlæg button. Glass only shines with something behind it; on a plain page it is a soft capsule with a bright rim, which is fine.
+4. **Orange:** a solid orange fill is always `bg-cta` (its contrast with white text is checked); orange text and icons are `text-primary`. Never `bg-primary` as a button's fill on a phone.
+5. **Choices are list rows.** Picking puts an orange tick at the end of the row (`ListPickRow`, with a real visually hidden checkbox or radio inside, for screen readers and tests); on/off is a switch on the row (`ListSwitchRow`). No checkbox squares, no radio dots, no box that scrolls inside the sheet.
+6. **Fields** are the Planlæg name field: `h-12 rounded-xl`, 17px text, a small uppercase label above (`ui/field.ts`: `FIELD`, `TEXTAREA`, `FIELD_LABEL`).
+7. **Text:** no intro sentence that repeats what the screen shows. A sentence that is a promise (what others see, who is told) stays, once, as a footnote under the section it is about, shown when it matters.
+8. **Order:** what most people do first at the top; leaving and deleting last.
+9. **Shapes and sizes:** buttons are capsules (`rounded-full`), lists and cards `rounded-2xl`, sheets 28px at the top; 17px for sheet titles and main buttons, 15px for rows, 13px for a row's detail, 12px for footnotes.
+
 ## Common Commands
 
 ```bash
