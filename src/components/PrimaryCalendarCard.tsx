@@ -7,9 +7,11 @@ import {
   type CalendarConnectionStatus,
 } from "@/api/calendars";
 import PrimaryCalendarPicker from "@/components/PrimaryCalendarPicker";
+import { ListGroup, ListRow, ListSwitchRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import Switch from "@/components/ui/Switch";
 import { useSignedInUser } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { primaryOptions } from "@/lib/primaryCalendar";
 
@@ -26,6 +28,7 @@ export default function PrimaryCalendarCard({
 }) {
   const t = useT();
   const words = t.primaryCalendar;
+  const phone = usePhoneLayout();
   const user = useSignedInUser();
   const queryClient = useQueryClient();
   const { data: primary } = useQuery(primaryCalendarQuery(user.id));
@@ -37,6 +40,41 @@ export default function PrimaryCalendarCard({
   const list = connections ?? [];
   const groups = primaryOptions(list, primary?.calendarId ?? null);
   const hasApple = list.some((c) => c.provider === "apple" && c.status === "connected");
+
+  // A phone (#153): a grouped list like the rest of the screen, no star,
+  // the explanation as its footnote. A computer's card is as it was.
+  if (phone) {
+    return (
+      <>
+        <ListGroup title={words.title} footnote={words.intro}>
+          {connections && groups.length === 0 ? (
+            <ListRow label={hasApple ? words.waitingForSync : words.noWritable} />
+          ) : (
+            <>
+              <li className="px-4 py-3">
+                <PrimaryCalendarPicker connections={connections} />
+              </li>
+              <ListSwitchRow
+                label={words.autoAdd}
+                detail={primary ? words.autoAddHelp : words.autoAddNeedsPrimary}
+                checked={!!primary?.autoAdd}
+                disabled={!primary || autoAdd.isPending}
+                onChange={(on) => {
+                  autoAdd.reset();
+                  autoAdd.mutate(on);
+                }}
+              />
+            </>
+          )}
+        </ListGroup>
+        {autoAdd.error && (
+          <Notice tone="error" bare className="mt-2">
+            {autoAdd.error.message}
+          </Notice>
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="mt-4 rounded-2xl border bg-card p-5 shadow-sm sm:p-6">

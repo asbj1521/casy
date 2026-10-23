@@ -5,11 +5,14 @@ import { Loader2, Sparkles } from "lucide-react";
 
 import { calendarStatusQuery } from "@/api/calendars";
 import { whoAmIQuery } from "@/api/groups";
+import BottomSheet from "@/components/ui/BottomSheet";
+import FlowButton from "@/components/ui/FlowButton";
 import Modal, { ModalPanel } from "@/components/ui/Modal";
 import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useAiConsentSetting } from "@/hooks/useAiConsentSetting";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { rememberAskedAboutAi, wasAskedAboutAi } from "@/lib/aiConsent";
 import { hasConnectedCalendar } from "@/lib/calendarPrompt";
@@ -39,6 +42,7 @@ function Prompt({ userId }: { userId: string }) {
   const t = useT().aiConsent;
   const titleId = useId();
   const aiOn = useAiAllowed();
+  const phone = usePhoneLayout();
   const { consented, set, saving, error } = useAiConsentSetting();
   const [asked, setAsked] = useState(() => wasAskedAboutAi(userId));
 
@@ -103,6 +107,80 @@ function Prompt({ userId }: { userId: string }) {
   ];
   const last = page === pages.length - 1;
 
+  // What the pages and dots are, on either layout.
+  const content = (
+    <>
+      {/* The pages sit side by side and snap into place, so a swipe or a
+            trackpad turns them; the box is as tall as the longest, so it never
+            jumps. A page out of sight can't be tabbed into. */}
+      <div
+        ref={track}
+        onScroll={onScroll}
+        className="-mx-1 mt-4 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {pages.map((body, i) => (
+          <section
+            key={i}
+            inert={i !== page}
+            aria-label={t.pageDot(i + 1, pages.length)}
+            className="w-full shrink-0 snap-start px-1 text-sm text-muted-foreground"
+          >
+            <h3 className="mb-2 text-[15px] font-semibold text-foreground">{t.pages[i]}</h3>
+            {body}
+          </section>
+        ))}
+      </div>
+
+      <div className="mt-4 flex justify-center gap-2">
+        {pages.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => goTo(i)}
+            aria-label={t.pageDot(i + 1, pages.length)}
+            aria-current={i === page ? "step" : undefined}
+            className="-m-1.5 p-1.5"
+          >
+            <span
+              className={`block h-2 rounded-full transition-all ${
+                i === page ? "w-5 bg-primary" : "w-2 bg-muted-foreground/30"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+
+      {error && (
+        <Notice tone="error" className="mt-4">
+          {error}
+        </Notice>
+      )}
+    </>
+  );
+  const mainButton = last ? (
+    <FlowButton onClick={() => set(true)} busy={saving}>
+      {saving ? t.saving : t.allow}
+    </FlowButton>
+  ) : (
+    <FlowButton onClick={() => goTo(page + 1)}>{t.next}</FlowButton>
+  );
+
+  // A phone: a glass sheet (#153), Ikke nu at the top, the way on pinned below.
+  if (phone) {
+    return (
+      <BottomSheet
+        open={open}
+        onClose={notNow}
+        title={t.title}
+        doneLabel={t.notNow}
+        busy={saving}
+        footer={mainButton}
+      >
+        {content}
+      </BottomSheet>
+    );
+  }
+
   return (
     <Modal open={open} busy={saving} onClose={notNow}>
       <ModalPanel labelledBy={titleId} className="max-w-lg sm:p-6">
@@ -111,51 +189,7 @@ function Prompt({ userId }: { userId: string }) {
           {t.title}
         </h2>
 
-        {/* The pages sit side by side and snap into place, so a swipe or a
-            trackpad turns them; the box is as tall as the longest, so it never
-            jumps. A page out of sight can't be tabbed into. */}
-        <div
-          ref={track}
-          onScroll={onScroll}
-          className="-mx-1 mt-4 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {pages.map((body, i) => (
-            <section
-              key={i}
-              inert={i !== page}
-              aria-label={t.pageDot(i + 1, pages.length)}
-              className="w-full shrink-0 snap-start px-1 text-sm text-muted-foreground"
-            >
-              <h3 className="mb-2 text-[15px] font-semibold text-foreground">{t.pages[i]}</h3>
-              {body}
-            </section>
-          ))}
-        </div>
-
-        <div className="mt-4 flex justify-center gap-2">
-          {pages.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => goTo(i)}
-              aria-label={t.pageDot(i + 1, pages.length)}
-              aria-current={i === page ? "step" : undefined}
-              className="-m-1.5 p-1.5"
-            >
-              <span
-                className={`block h-2 rounded-full transition-all ${
-                  i === page ? "w-5 bg-primary" : "w-2 bg-muted-foreground/30"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-
-        {error && (
-          <Notice tone="error" className="mt-4">
-            {error}
-          </Notice>
-        )}
+        {content}
 
         <div className="mt-5 flex items-center gap-3">
           {last ? (

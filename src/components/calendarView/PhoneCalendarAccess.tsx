@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { CalendarArrowDown, Loader2 } from "lucide-react";
+import { CalendarArrowDown } from "lucide-react";
 
+import FlowButton from "@/components/ui/FlowButton";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import type { usePhoneImport } from "@/hooks/usePhoneImport";
 import { useT } from "@/i18n/lang";
@@ -47,7 +48,7 @@ export default function PhoneCalendarAccess({
   return (
     <div
       role="status"
-      className="fixed inset-x-4 top-[24%] z-30 mx-auto max-w-sm rounded-3xl border bg-card p-5 text-center shadow-xl"
+      className="glass fixed inset-x-4 top-[24%] z-30 mx-auto max-w-sm rounded-[28px] p-5 text-center"
     >
       <CalendarArrowDown className="mx-auto h-8 w-8 text-primary" aria-hidden />
       <h2 className="mt-3 text-lg font-bold text-foreground">
@@ -57,15 +58,15 @@ export default function PhoneCalendarAccess({
         {denied ? words.denied : words.needBody}
         {!denied && access === "prompt" && ` ${words.needAsk}`}
       </p>
-      <button
-        type="button"
-        disabled={importing}
-        onClick={denied ? () => void openPhoneSettings() : phone.importNow}
-        className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-cta text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-70"
-      >
-        {importing && <Loader2 className="h-4 w-4 animate-spin" />}
-        {button}
-      </button>
+      <div className="mt-4">
+        <FlowButton
+          disabled={importing}
+          busy={importing}
+          onClick={denied ? () => void openPhoneSettings() : phone.importNow}
+        >
+          {button}
+        </FlowButton>
+      </div>
       {note && <p className="mt-3 text-sm text-red-600">{note}</p>}
       {onNotNow ? (
         <button

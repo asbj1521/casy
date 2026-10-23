@@ -38,7 +38,7 @@ const DayPanel = forwardRef<
       aria-label={title}
       aria-hidden={!open}
       inert={!open}
-      className="fixed inset-x-0 bottom-[var(--tab-bar-height)] z-30 max-h-[45dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t bg-card px-4 pb-3 pt-4 shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.25)] will-change-transform"
+      className="glass fixed inset-x-0 bottom-[var(--tab-bar-height)] z-30 max-h-[45dvh] overflow-y-auto overscroll-contain rounded-t-[28px] px-4 pb-3 pt-4 will-change-transform"
       style={{
         transform: open ? "translateY(0)" : "translateY(calc(100% + var(--tab-bar-height)))",
         visibility: open ? "visible" : "hidden",

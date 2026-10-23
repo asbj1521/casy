@@ -4,6 +4,7 @@ import { Bus, CalendarCheck, Plane, TrainFront } from "lucide-react";
 
 import DayPicker from "@/components/trips/DayPicker";
 import BottomSheet from "@/components/ui/BottomSheet";
+import FlowButton from "@/components/ui/FlowButton";
 import type { Trips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { formatDate, formatTime } from "@/lib/format";
@@ -257,15 +258,11 @@ function PrimaryButton({
   disabled?: boolean;
   children: ReactNode;
 }) {
+  // The main glass capsule (CLAUDE.md, Design language, #153).
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="h-12 w-full rounded-full bg-cta text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:bg-muted disabled:text-muted-foreground"
-    >
+    <FlowButton onClick={onClick} disabled={disabled}>
       {children}
-    </button>
+    </FlowButton>
   );
 }
 
