@@ -83,18 +83,9 @@ test.describe("on a laptop's screen", () => {
   test("switching tabs never changes the settings box's height", async ({ page }) => {
     await page.goto("/");
     const before = (await boxOf(settingsBox(page))).height;
-    for (const [tab, soon] of [
-      ["Deltagere", false],
-      ["Sted og note", false],
-      ["Gentagelse", true],
-      ["Afstemning", false],
-      ["Hensyn", true],
-    ] as const) {
+    for (const tab of ["Deltagere", "Sted og note", "Afstemning"]) {
       await page.getByRole("tab", { name: tab }).click();
       await expect(page.getByRole("tab", { name: tab })).toHaveAttribute("aria-selected", "true");
-      await expect(page.getByText("Kommer snart").filter({ visible: true })).toHaveCount(
-        soon ? 1 : 0,
-      );
       expect((await boxOf(settingsBox(page))).height).toBe(before);
     }
     await page.getByRole("tab", { name: "Tidspunkt" }).click();

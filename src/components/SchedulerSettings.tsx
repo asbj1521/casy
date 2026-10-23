@@ -4,8 +4,6 @@ import { ChevronDown, Minus, Plus, SlidersHorizontal, Sparkles } from "lucide-re
 
 import DaySlider from "@/components/DaySlider";
 import Dropdown from "@/components/Dropdown";
-import type { ComingSoonSection } from "@/components/findDate/comingSoon";
-import ComingSoonSettings from "@/components/findDate/ComingSoonSettings";
 import { PlaceNoteSettings, VoteSettings } from "@/components/findDate/EventExtraSettings";
 import ParticipantSettings, {
   type ParticipantProps,
@@ -245,9 +243,9 @@ function StartDayPicker({
 
 /**
  * The settings box's tabs, in the order a plan is made: when, who, where,
- * how often, how the group answers, and what to take into account (#98).
+ * and how the group answers (#98).
  */
-const TABS = ["time", "people", "place", "repeat", "vote", "prefs"] as const;
+const TABS = ["time", "people", "place", "vote"] as const;
 type Tab = (typeof TABS)[number];
 
 /** Meeting or Tur / ferie, as two halves of one control. */
@@ -539,10 +537,8 @@ export function SettingsPanel({
                 <ParticipantSettings {...participants} />
               ) : key === "place" ? (
                 <PlaceNoteSettings extras={extras} onChange={onExtras} />
-              ) : key === "vote" ? (
-                <VoteSettings extras={extras} onChange={onExtras} />
               ) : (
-                <ComingSoonSettings section={key satisfies ComingSoonSection} />
+                <VoteSettings extras={extras} onChange={onExtras} />
               )}
             </div>
           ))}

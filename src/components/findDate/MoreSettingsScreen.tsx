@@ -4,8 +4,6 @@ import PhoneSubHeader from "@/components/PhoneSubHeader";
 import { useT } from "@/i18n/lang";
 import type { EventExtras } from "@/lib/scheduler";
 
-import { COMING_SOON } from "./comingSoon";
-import ComingSoonSettings from "./ComingSoonSettings";
 import { PlaceNoteSettings, VoteSettings } from "./EventExtraSettings";
 import ParticipantSettings, { type ParticipantProps } from "./ParticipantSettings";
 
@@ -14,8 +12,7 @@ import ParticipantSettings, { type ParticipantProps } from "./ParticipantSetting
  * narrower screens: the settings the computer's box has in tabs, one section
  * each. Laid over the scheduling page (opened with ?settings, closed by going
  * back) rather than a page of its own, so the page underneath keeps its
- * settings and scroll. Sted og note and Afstemning first, then what is
- * coming; the time is set in the sentence itself.
+ * settings and scroll. The time is set in the sentence itself.
  */
 export default function MoreSettingsScreen({
   back,
@@ -44,11 +41,6 @@ export default function MoreSettingsScreen({
         <Section title={words.tabs.vote}>
           <VoteSettings extras={extras} onChange={onExtras} />
         </Section>
-        {COMING_SOON.map((section) => (
-          <Section key={section} title={words.tabs[section]}>
-            <ComingSoonSettings section={section} />
-          </Section>
-        ))}
       </main>
     </div>
   );

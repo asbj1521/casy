@@ -17,8 +17,7 @@ import FieldRow, { ROW_INPUT } from "./FieldRow";
  * one row per setting, its name on the left and how it stands on the right.
  * The place and note are typed into their rows, and who is coming opens a
  * sheet of its own. How the vote runs is set on the dates step, beside the
- * dates it is about. The computer has the same settings in its box's tabs;
- * the ones coming soon stay off the phone.
+ * dates it is about. The computer has the same settings in its box's tabs.
  */
 export default function DetailsStep({
   extras,

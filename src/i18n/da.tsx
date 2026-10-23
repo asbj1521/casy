@@ -392,21 +392,18 @@ export const da = {
       "Tiderne kommer fra hvert medlems egne kalendere. Ingen kan se, hvad dine aftaler hedder.",
   },
   // The scheduling page's settings box on a computer (SettingsPanel), and
-  // Flere indstillinger on a phone. Everything but Tidspunkt is coming soon.
+  // The settings box's tabs (#98), and Flere indstillinger on a tablet.
   settingsPanel: {
     tabsLabel: "Indstillinger for aftalen",
     tabs: {
       time: "Tidspunkt",
       people: "Deltagere",
       place: "Sted og note",
-      repeat: "Gentagelse",
       vote: "Afstemning",
-      prefs: "Hensyn",
     },
     kind: "Slags aftale",
     meeting: "Møde",
     trip: "Tur / ferie",
-    comingSoon: "Kommer snart",
     more: "Flere indstillinger",
     moreShort: "Mere",
     moreIntro: "Flere måder at beskrive aftalen på. Tidspunktet vælger du på planlægningssiden.",
@@ -433,23 +430,11 @@ export const da = {
       note: "Note",
       notePlaceholder: "Fx tag et spil med",
     },
-    repeat: {
-      intro: "Find en fast tid, der passer alle, igen og igen.",
-      label: "Gentages",
-      options: ["Én gang", "Hver uge", "Hver 2. uge", "Hver måned"],
-    },
     vote: {
       intro: "Bestem, hvor længe de andre har til at svare, og hvor mange datoer de stemmer om.",
       deadline: "Svarfrist",
       dates: "Antal datoer",
       upTo: (n: number) => `Op til ${n}`,
-    },
-    prefs: {
-      intro: "Tag hensyn til mere end kalenderen.",
-      travel: "Rejsetid før og efter",
-      travelValue: "30 min",
-      lateEarly: "Undgå sene aftener før tidlige morgener",
-      own: "Brug medlemmernes egne præferencer",
     },
   },
   // The scheduling page on a phone (#101): four steps, one screen each.
