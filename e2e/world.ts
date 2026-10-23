@@ -607,6 +607,8 @@ export interface World {
   events: SuggestedEvent[];
   /** Bumped on every change, so the live-update pulse moves like the real one. */
   version: number;
+  /** The oldest app release Casy still works with (#143); none unless a test sets one. */
+  minAppVersion: string | null;
 }
 
 export function makeWorld(options: WorldOptions): World {
@@ -616,6 +618,7 @@ export function makeWorld(options: WorldOptions): World {
     name: ME.name,
     aiAllowed: true,
     aiTester: false,
+    minAppVersion: null,
     aiConsent: true,
     dateScores: {},
     aiShare: true,

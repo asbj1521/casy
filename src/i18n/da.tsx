@@ -17,6 +17,11 @@ export const da = {
     switchLabel: "Sprog",
     title: "Sprog",
   },
+  updateRequired: {
+    title: "Opdater Casy",
+    body: "Denne version af Casy er for gammel til at virke sammen med resten af Casy. Hent den nyeste version i App Store for at fortsætte.",
+    button: "Åbn App Store",
+  },
   common: {
     cancel: "Annuller",
     save: "Gem",

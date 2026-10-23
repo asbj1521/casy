@@ -6,6 +6,7 @@ import ConnectCalendarPrompt from "@/components/ConnectCalendarPrompt";
 import Footer from "@/components/Footer";
 import RequireAuth from "@/components/RequireAuth";
 import TabBar from "@/components/TabBar";
+import UpdateRequired from "@/components/UpdateRequired";
 import WeakPasswordNotice from "@/components/WeakPasswordNotice";
 import { useAuth } from "@/context/auth";
 import { useAccountLanguage } from "@/hooks/useAccountLanguage";
@@ -224,6 +225,8 @@ function App() {
             <TabBar />
             {/* Computers only: asks someone with no calendar to connect one. */}
             <ConnectCalendarPrompt />
+            {/* The iPhone app only: an app too old for Casy is asked to update (#143). */}
+            <UpdateRequired />
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>

@@ -132,6 +132,11 @@ export class FakeBackend {
         }));
         return ok({ labels, left: 19 });
       }
+      case "app-version":
+        return ok({
+          minVersion: w.minAppVersion,
+          storeUrl: "https://apps.apple.com/dk/app/casy/id0000000000",
+        });
       case "calendar-sync":
         return ok({ results: w.connections.map(() => ({ ok: true })) });
       case "calendar-disconnect":

@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 /**
  * Which code a build was made from, shown on the phone profile and sent with
@@ -21,6 +22,9 @@ function buildId(): string {
   }
 }
 process.env.VITE_APP_BUILD ??= buildId();
+// The release this build is (package.json's version): the iPhone app compares
+// it with the oldest one Casy still supports (lib/appVersion.ts).
+process.env.VITE_APP_VERSION ??= JSON.parse(readFileSync("package.json", "utf8")).version;
 
 /**
  * Libraries the first page needs, each in a chunk of its own: they change far

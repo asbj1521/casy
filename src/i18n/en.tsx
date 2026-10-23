@@ -12,6 +12,11 @@ export const en: Messages = {
     switchLabel: "Language",
     title: "Language",
   },
+  updateRequired: {
+    title: "Update Casy",
+    body: "This version of Casy is too old to work with the rest of Casy. Get the latest version from the App Store to carry on.",
+    button: "Open the App Store",
+  },
   common: {
     cancel: "Cancel",
     save: "Save",

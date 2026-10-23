@@ -485,6 +485,11 @@ verify_jwt = false
 # only ok, or "stale" / "failing" with a 503 (_shared/health.ts).
 verify_jwt = false
 
+[functions.app-version]
+# Public on purpose: an iPhone app too old to sign in must still be told to
+# update. It answers only MIN_APP_VERSION and APP_STORE_URL (_shared/appVersion.ts).
+verify_jwt = false
+
 [functions.auth-email]
 # Called by Supabase Auth (the Send Email hook), never by the site, so there is
 # no login to check. Instead every call must carry Auth's signature made with
