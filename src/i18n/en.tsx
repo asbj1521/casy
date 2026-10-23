@@ -693,6 +693,11 @@ export const en: Messages = {
     denied:
       "Casy can't see the phone's calendars. Turn on Calendars under Casy in Settings, then try again.",
     openSettings: "Open Settings",
+    needTitle: "Casy needs your calendar",
+    needFailed:
+      "Casy couldn't read the phone's calendars. Casy only stores when you are busy, never the titles.",
+    tryAgain: "Try again",
+    otherCalendar: "Use another calendar",
     couldntRead: "Couldn't read the phone's calendars. Try again.",
     couldntSave: "Couldn't save the phone's calendars.",
     updatesInApp: (synced: string | null) =>

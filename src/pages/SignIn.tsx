@@ -187,13 +187,17 @@ export default function SignIn() {
     // Someone on their way somewhere (an invite link, an event) goes there:
     // taking part needs no calendar (#82), and the connect step can wait for
     // a sign-in with nowhere else to be.
-    if (!next && !hasCalendar && !hasSeenCalendarOnboarding(user.id)) {
+    // The app is the exception (#132): it lands on My calendar, which asks the
+    // phone for its calendar straight away, so there is no connect step.
+    if (!next && !hasCalendar && !hasSeenCalendarOnboarding(user.id) && !isNativeApp) {
       return <Navigate to={`${CALENDAR_ACCOUNTS_PATH}?onboarding=1`} replace />;
     }
     // No destination in the link (the header's or landing page's "Log ind"):
     // the scheduler for anyone with a calendar, the page to connect one
     // otherwise (on a phone; a computer was sent on above).
-    return <Navigate to={next ?? (hasCalendar ? "/" : CALENDAR_ACCOUNTS_PATH)} replace />;
+    return (
+      <Navigate to={next ?? (hasCalendar || isNativeApp ? "/" : CALENDAR_ACCOUNTS_PATH)} replace />
+    );
   }
 
   async function handleGoogle() {

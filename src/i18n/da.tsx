@@ -726,6 +726,11 @@ export const da = {
     denied:
       "Casy har ikke adgang til telefonens kalendere. Slå Kalendere til under Casy i Indstillinger, og prøv igen.",
     openSettings: "Åbn Indstillinger",
+    needTitle: "Casy har brug for din kalender",
+    needFailed:
+      "Casy kunne ikke læse telefonens kalendere. Casy gemmer kun, hvornår du er optaget, aldrig titlerne.",
+    tryAgain: "Prøv igen",
+    otherCalendar: "Brug en anden kalender",
     couldntRead: "Kunne ikke læse telefonens kalendere. Prøv igen.",
     couldntSave: "Kunne ikke gemme telefonens kalendere.",
     updatesInApp: (synced: string | null) =>

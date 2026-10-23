@@ -12,6 +12,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CalendarPlus, CalendarSearch, ChevronRight, Layers, Plane, Plus } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
+import PhoneCalendarAccess from "@/components/calendarView/PhoneCalendarAccess";
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TellCasySheet from "@/components/tellCasy/TellCasySheet";
@@ -26,9 +27,11 @@ import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
+import { useConnectPhoneOnOpen } from "@/hooks/useConnectPhoneOnOpen";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
+import { isNativeApp } from "@/lib/nativeApp";
 import { isPending, markOn, revealDay, tripBars, tripMarks, type TripMark } from "@/lib/tripView";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
@@ -60,6 +63,8 @@ export default function PhoneCalendar() {
     setCalendarsVisible,
     visibilityError,
   } = useMyCalendarView();
+  // The app asks for the phone's calendar as soon as it opens with none (#132).
+  const phoneAccess = useConnectPhoneOnOpen(calendar.none);
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
   const trips = useTrips();
   const marks = useMemo(() => tripMarks(trips.detected, lang), [trips.detected, lang]);
@@ -229,7 +234,8 @@ export default function PhoneCalendar() {
             {words.truncated}
           </Notice>
         )}
-        {calendar.none && (
+        {/* The website has no phone to ask; the app says it over the month (below). */}
+        {calendar.none && !isNativeApp && (
           <Notice tone="info" className="mx-4 mb-2">
             {words.noCalendars(
               <Link
@@ -270,6 +276,10 @@ export default function PhoneCalendar() {
         <Suspense fallback={null}>
           <PlanFromCalendar onClose={closeOverlay} />
         </Suspense>
+      )}
+
+      {(phoneAccess.state === "denied" || phoneAccess.state === "failed") && (
+        <PhoneCalendarAccess state={phoneAccess.state} onRetry={phoneAccess.retry} />
       )}
 
       <TripSheet mark={tripMark} open={tripOpen} onClose={() => setTripOpen(false)} trips={trips} />
