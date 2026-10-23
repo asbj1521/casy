@@ -80,3 +80,20 @@ test.describe("short pages", () => {
     }
   });
 });
+
+test("the iPhone app has no logo at the top: the pages start there", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phones only");
+  // The website's phone keeps its header with the logo.
+  await page.goto("/groups");
+  await expect(page.getByRole("link", { name: "casy" })).toBeVisible();
+
+  // The bridge the app injects before the page runs (src/lib/nativeApp.ts).
+  await page.addInitScript(() => {
+    (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+  });
+  for (const path of ["/groups", "/events", "/calendar-overview", "/profile"]) {
+    await page.goto(path);
+    await expect(page.getByRole("navigation").last()).toBeVisible();
+    await expect(page.getByRole("link", { name: "casy" })).toHaveCount(0);
+  }
+});
