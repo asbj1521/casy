@@ -17,10 +17,21 @@ export type TripMark =
       kind: "question";
       id: string;
       question: Question & { legs: Leg[] };
+      /** Every day the guessing bar may reach: what a tap on the month finds. */
       start: number;
       end: number;
+      /** The journeys themselves, which the bar grows from. */
+      legsStart: number;
+      legsEnd: number;
       city: string;
     };
+
+/**
+ * How many days a question's bar spans, pulse after pulse: Casy doesn't know
+ * when the person is back, and the bar searching through lengths says so.
+ */
+export const GUESS_DAYS = [3, 5, 4, 6, 2, 5];
+const MAX_GUESS_DAYS = Math.max(...GUESS_DAYS);
 
 /** Whether the person still has to answer it: a trip not yet accepted, or a question. */
 export function isPending(mark: TripMark): boolean {
@@ -122,17 +133,41 @@ export function tripMarks(detected: Detected, lang: Lang): TripMark[] {
     const legs = question.legs;
     const first = legs[0];
     const last = legs[legs.length - 1];
+    // A way back grows backwards from its day; anything else onwards from its own.
+    const back = question.kind === "outbound";
+    const reach = guessSpan(first.start, last.end, back, MAX_GUESS_DAYS);
+    const bounded =
+      question.kind === "return" && question.latest !== null
+        ? { start: reach.start, end: Math.min(reach.end, Math.max(last.end, question.latest)) }
+        : question.kind === "outbound" && question.earliest !== null
+          ? {
+              start: Math.max(reach.start, Math.min(first.start, question.earliest)),
+              end: reach.end,
+            }
+          : reach;
     marks.push({
       kind: "question",
       id: question.id,
       question,
-      start: first.start,
-      end: last.end,
+      start: bounded.start,
+      end: bounded.end,
+      legsStart: first.start,
+      legsEnd: last.end,
       // A way back is named by where it comes from; anything else by where it goes.
       city: name(question.kind === "outbound" ? first.from : last.to),
     });
   }
   return marks.sort((a, b) => a.start - b.start);
+}
+
+/**
+ * The span of a guess `days` long: from the journey's day onwards, or for a
+ * way back, backwards to it (the journey's own day counts as one).
+ */
+function guessSpan(start: number, end: number, backwards: boolean, days: number) {
+  return backwards
+    ? { start: Math.min(start, addDays(end, -(days - 1), APP_TIME_ZONE)), end }
+    : { start, end: Math.max(end, addDays(start, days, APP_TIME_ZONE)) };
 }
 
 /** The first mark on a day (a local midnight), if any: what a tap on it opens. */
@@ -152,9 +187,19 @@ export function revealDay(marks: TripMark[]): number | null {
  * waiting for an answer pencilled in and glowing, an accepted trip as an
  * ordinary bar.
  */
-export function tripBars(marks: TripMark[], words: Messages["trips"]): GridItem[] {
+export function tripBars(marks: TripMark[], words: Messages["trips"], step = 0): GridItem[] {
   return marks.map((m) => {
-    const span = { calendarId: CASY_CALENDAR_ID, start: m.start, end: m.end };
+    let span = { calendarId: CASY_CALENDAR_ID, start: m.start, end: m.end };
+    if (m.kind === "question") {
+      // This pulse's guess, kept within what the bar may reach.
+      const days = GUESS_DAYS[step % GUESS_DAYS.length];
+      const guess = guessSpan(m.legsStart, m.legsEnd, m.question.kind === "outbound", days);
+      span = {
+        ...span,
+        start: Math.max(m.start, guess.start),
+        end: Math.min(m.end, guess.end),
+      };
+    }
     if (!isPending(m)) return { ...span, label: words.barAccepted(m.city) };
     const kind = m.kind === "question" ? m.question.kind : "trip";
     const label =
@@ -163,6 +208,6 @@ export function tripBars(marks: TripMark[], words: Messages["trips"]): GridItem[
         : kind === "outbound"
           ? words.barOutbound(m.city)
           : words.barPending(m.city);
-    return { ...span, label, pencil: true, pulse: true };
+    return { ...span, label, pencil: true, pulse: true, grow: m.kind === "question" };
   });
 }

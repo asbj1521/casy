@@ -434,6 +434,10 @@ export const da = {
     outboundIntro:
       "Casy kan se, at du rejser hjem, men ikke hvornår du tog af sted. Måske kørte du derud, eller udrejsen står ikke i din kalender.",
     pickDay: "Vælg dagen",
+    confirmReturn: (day: string) => `Hjemme ${day}`,
+    confirmOutbound: (day: string) => `Af sted ${day}`,
+    previousMonth: "Forrige måned",
+    nextMonth: "Næste måned",
     notATrip: "Det er ikke en rejse",
     homeTitle: "Hvor bor du?",
     homeIntro:

@@ -23,6 +23,7 @@ import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import { formatDate, formatTime } from "@/lib/format";
 import { useLabelStatus } from "@/lib/labelStatus";
+import { useResetTrips, useTrips } from "@/hooks/useTrips";
 import { isNativeApp } from "@/lib/nativeApp";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE } from "@/lib/zone";
@@ -370,11 +371,33 @@ function LabelsOnPhone() {
   // and in a development build, where it is what a developer needs to see.
   const status = useLabelStatus();
   const tester = useAiTester();
+  // Trip detection (#115), for testing: what it found, and a way to be asked again.
+  const { detected } = useTrips();
+  const resetTrips = useResetTrips();
+  const [reset, setReset] = useState(false);
   return (
     <>
       <Fact label={w.labels} value={book ? Object.keys(book).length : 0} />
       {(tester || import.meta.env.DEV) && (
         <li className="break-words px-4 py-3 text-xs text-muted-foreground">labelling: {status}</li>
+      )}
+      {(tester || import.meta.env.DEV) && (
+        <li className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
+          <span className="break-words">
+            trips: {detected.trips.length} found ({detected.trips.filter((x) => x.accepted).length}{" "}
+            accepted), {detected.questions.length} questions
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              resetTrips();
+              setReset(true);
+            }}
+            className="shrink-0 font-semibold text-primary"
+          >
+            {reset ? "reset, ask again" : "reset answers"}
+          </button>
+        </li>
       )}
     </>
   );

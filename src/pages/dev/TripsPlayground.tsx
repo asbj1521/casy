@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import MonthView from "@/components/swipe/MonthView";
 import TripSheet from "@/components/trips/TripSheet";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
-import type { Trips } from "@/hooks/useTrips";
+import { useGuessStep, type Trips } from "@/hooks/useTrips";
 import { useLang, useT } from "@/i18n/lang";
 import { detectTrips, NO_ANSWERS, type Leg, type TripAnswers } from "@/lib/trips";
 import { isPending, markOn, revealDay, tripBars, tripMarks, type TripMark } from "@/lib/tripView";
@@ -41,7 +41,7 @@ function madeUpLegs(): Leg[] {
     count: 1,
     names: { from, to },
   });
-  return [
+  const all = [
     // A clear round trip, waiting for a yes.
     leg("oslo-out", "Copenhagen", "Oslo", day(12, 10)),
     leg("oslo-back", "Oslo", "Copenhagen", day(16, 18)),
@@ -51,6 +51,8 @@ function madeUpLegs(): Leg[] {
     leg("rome-out", "Copenhagen", "Rome", day(45, 7)),
     leg("rome-back", "Rome", "Copenhagen", day(50, 20)),
   ];
+  // ?case=home: one round trip only, so Casy has to ask where home is.
+  return new URLSearchParams(location.search).get("case") === "home" ? all.slice(0, 2) : all;
 }
 
 const NOOP = () => {};
@@ -64,6 +66,7 @@ export default function TripsPlayground() {
   const [run, setRun] = useState(0);
   const detected = useMemo(() => detectTrips(legs, answers, now), [legs, answers, now]);
   const marks = useMemo(() => tripMarks(detected, lang), [detected, lang]);
+  const step = useGuessStep(marks.some((m) => m.kind === "question"));
 
   const calendar = useMemo(
     (): MyCalendarDays => ({
@@ -72,14 +75,14 @@ export default function TripsPlayground() {
       segmentsOn: () => [],
       colorOf: () => "234, 88, 12",
       labelOf: () => "",
-      items: tripBars(marks, t.trips),
+      items: tripBars(marks, t.trips, step),
       calendars: [],
       entries: [],
       error: null,
       retry: NOOP,
       truncated: false,
     }),
-    [marks, t],
+    [marks, t, step],
   );
 
   const change = (update: (a: TripAnswers) => TripAnswers) => setAnswers(update);

@@ -314,6 +314,7 @@ const MonthSection = memo(function MonthSection({
                       p.item.pencil &&
                         "border border-dashed border-primary bg-primary/10 text-primary",
                       p.item.pulse && "animate-trip-pulse",
+                      p.item.grow && "transition-[left,width] duration-700 ease-out",
                     )}
                     style={{
                       top: p.lane * LANE_PX,

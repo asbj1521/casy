@@ -401,6 +401,10 @@ export const en: Messages = {
     outboundIntro:
       "Casy can see you travel home, but not when you left. Maybe you drove there, or the way out isn't in your calendar.",
     pickDay: "Pick the day",
+    confirmReturn: (day: string) => `Back ${day}`,
+    confirmOutbound: (day: string) => `Leaving ${day}`,
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
     notATrip: "It isn't a trip",
     homeTitle: "Where do you live?",
     homeIntro:

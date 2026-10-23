@@ -16,6 +16,8 @@ export interface GridItem {
   pencil?: boolean;
   /** Pencilled in and asking for an answer (a trip Casy found, #115): it glows softly. */
   pulse?: boolean;
+  /** Its length changes as Casy guesses (#115): it glides to each new one. */
+  grow?: boolean;
 }
 
 export interface PlacedItem {

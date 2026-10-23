@@ -26,7 +26,7 @@ import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
-import { useTrips } from "@/hooks/useTrips";
+import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
 import { isPending, markOn, revealDay, tripBars, tripMarks, type TripMark } from "@/lib/tripView";
@@ -36,13 +36,6 @@ const TZ = APP_TIME_ZONE;
 
 // Planning from here (#126) brings the whole scheduler with it: loaded on the first press.
 const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFromCalendar"));
-
-/**
- * Whether My calendar has glided to a trip waiting for an answer (#115) since
- * the app was opened: once per launch, so it asks again next time without
- * pulling the month away on every visit.
- */
-let revealedThisLaunch = false;
 
 /**
  * My calendar on a phone: your busy time as Apple Calendar's month view, the
@@ -70,20 +63,22 @@ export default function PhoneCalendar() {
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
   const trips = useTrips();
   const marks = useMemo(() => tripMarks(trips.detected, lang), [trips.detected, lang]);
+  // Bars of trips Casy is asking about change length with each pulse.
+  const step = useGuessStep(marks.some((m) => m.kind === "question"));
   const month = useMemo(
     () =>
       marks.length === 0
         ? calendar
-        : { ...calendar, items: [...tripBars(marks, t.trips), ...calendar.items] },
-    [calendar, marks, t],
+        : { ...calendar, items: [...tripBars(marks, t.trips, step), ...calendar.items] },
+    [calendar, marks, t, step],
   );
   // The first time My calendar opens with something waiting, it glides there
   // (and on to the next one as each is answered); "I dag" stops it.
-  const [mayReveal] = useState(() => !revealedThisLaunch);
+  const [mayReveal] = useState(() => !tripReveal.done);
   const [todayPressed, setTodayPressed] = useState(false);
   const reveal = mayReveal && !todayPressed ? revealDay(marks) : null;
   useEffect(() => {
-    if (reveal !== null) revealedThisLaunch = true;
+    if (reveal !== null) tripReveal.done = true;
   }, [reveal]);
   const [tripMark, setTripMark] = useState<TripMark | null>(null);
   const [tripOpen, setTripOpen] = useState(false);

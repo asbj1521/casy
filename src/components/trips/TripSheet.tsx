@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { Bus, Plane, TrainFront } from "lucide-react";
 
+import DayPicker from "@/components/trips/DayPicker";
 import BottomSheet from "@/components/ui/BottomSheet";
 import type { Trips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { capitalize, formatDate, formatTime } from "@/lib/format";
+import { formatDate, formatTime } from "@/lib/format";
 import { dayOptions, type Leg } from "@/lib/trips";
 import { cityName, type TripMark } from "@/lib/tripView";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
@@ -88,15 +89,16 @@ export default function TripSheet({
       title = words.homeTitle;
       body = (
         <>
-          <p className="mb-3 text-[15px] text-muted-foreground">{words.homeIntro}</p>
-          <LegList legs={legs} at={at} />
-          <div className="mt-4 flex flex-wrap gap-2">
+          {/* The answer first, then what it is about. */}
+          <div className="mb-4 flex flex-col gap-2">
             {question.cities.map((city) => (
-              <Chip key={city} onClick={() => answer(() => trips.setHome(city))}>
+              <PrimaryButton key={city} onClick={() => answer(() => trips.setHome(city))}>
                 {cityName(city, legs, lang)}
-              </Chip>
+              </PrimaryButton>
             ))}
           </div>
+          <LegList legs={legs} at={at} />
+          <p className="mt-3 text-sm text-muted-foreground">{words.homeIntro}</p>
           <SecondaryButton onClick={() => answer(() => trips.decline(mark.id))}>
             {words.noneOfThem}
           </SecondaryButton>
@@ -105,39 +107,21 @@ export default function TripSheet({
     } else {
       const back = question.kind === "return";
       title = back ? words.returnTitle(mark.city) : words.outboundTitle(mark.city);
-      const days = dayOptions(question, now);
       body = (
-        <>
-          <p className="mb-3 text-[15px] text-muted-foreground">
-            {back ? words.returnIntro : words.outboundIntro}
-          </p>
-          <LegList legs={legs} at={at} />
-          <p className="mb-2 mt-4 text-[15px] font-semibold text-foreground">{words.pickDay}</p>
-          <div className="flex flex-wrap gap-2">
-            {days.map((day) => (
-              <Chip
-                key={day}
-                onClick={() =>
-                  answer(() =>
-                    back ? trips.answerReturn(mark.id, day) : trips.answerOutbound(mark.id, day),
-                  )
-                }
-              >
-                {capitalize(
-                  new Date(day).toLocaleDateString(LOCALE[lang], {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                    timeZone: TZ,
-                  }),
-                )}
-              </Chip>
-            ))}
-          </div>
-          <SecondaryButton onClick={() => answer(() => trips.decline(mark.id))}>
-            {words.notATrip}
-          </SecondaryButton>
-        </>
+        <DayQuestion
+          // A fresh pick for every question.
+          key={mark.id}
+          legs={legs}
+          back={back}
+          days={dayOptions(question, now)}
+          at={at}
+          onPick={(day) =>
+            answer(() =>
+              back ? trips.answerReturn(mark.id, day) : trips.answerOutbound(mark.id, day),
+            )
+          }
+          onNotATrip={() => answer(() => trips.decline(mark.id))}
+        />
       );
     }
   }
@@ -146,6 +130,59 @@ export default function TripSheet({
     <BottomSheet open={open} onClose={onClose} title={title} doneLabel={t.swipe.done}>
       {body}
     </BottomSheet>
+  );
+}
+
+/**
+ * When the person is back (or left): the journey, why Casy asks, a month to
+ * tap the day on, and a button that says the day picked before it is saved.
+ */
+function DayQuestion({
+  legs,
+  back,
+  days,
+  at,
+  onPick,
+  onNotATrip,
+}: {
+  legs: Leg[];
+  /** Asking when they are back; otherwise when they left. */
+  back: boolean;
+  days: number[];
+  at: (ms: number) => string;
+  onPick: (day: number) => void;
+  onNotATrip: () => void;
+}) {
+  const words = useT().trips;
+  const { lang } = useLang();
+  const [picked, setPicked] = useState<number | null>(null);
+  // The journey's own day: where the stretch away starts (or, asked when they left, ends).
+  const journey = startOfDay(back ? legs[0].start : legs[legs.length - 1].start, TZ);
+  const dayName = (day: number) =>
+    new Date(day).toLocaleDateString(LOCALE[lang], {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      timeZone: TZ,
+    });
+  return (
+    <>
+      <LegList legs={legs} at={at} />
+      <p className="mb-4 mt-3 text-sm text-muted-foreground">
+        {back ? words.returnIntro : words.outboundIntro}
+      </p>
+      <DayPicker allowed={days} journey={journey} selected={picked} onSelect={setPicked} />
+      <div className="mt-4">
+        <PrimaryButton disabled={picked === null} onClick={() => picked !== null && onPick(picked)}>
+          {picked === null
+            ? words.pickDay
+            : back
+              ? words.confirmReturn(dayName(picked))
+              : words.confirmOutbound(dayName(picked))}
+        </PrimaryButton>
+      </div>
+      <SecondaryButton onClick={onNotATrip}>{words.notATrip}</SecondaryButton>
+    </>
   );
 }
 
@@ -174,24 +211,21 @@ function LegList({ legs, at }: { legs: Leg[]; at: (ms: number) => string }) {
   );
 }
 
-function Chip({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+function PrimaryButton({
+  onClick,
+  disabled = false,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border bg-background px-3.5 py-2 text-[15px] font-medium text-foreground active:bg-muted"
-    >
-      {children}
-    </button>
-  );
-}
-
-function PrimaryButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="mb-2 h-12 w-full rounded-full bg-cta text-[15px] font-bold text-white transition hover:bg-cta-hover"
+      disabled={disabled}
+      className="h-12 w-full rounded-full bg-cta text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:bg-muted disabled:text-muted-foreground"
     >
       {children}
     </button>

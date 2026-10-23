@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useReducedMotion } from "framer-motion";
 
 import { calendarBusyQuery } from "@/api/calendars";
 import { readTripLegs } from "@/api/tripLegs";
@@ -20,7 +21,7 @@ import {
   writeTripAnswers,
   type LegBook,
 } from "@/lib/tripLegBook";
-import { detectTrips, type Detected, type TripAnswers } from "@/lib/trips";
+import { detectTrips, NO_ANSWERS, type Detected, type TripAnswers } from "@/lib/trips";
 
 /** The legs read from this phone's travel events, kept on the phone. */
 export function legBookQuery(userId: string) {
@@ -39,6 +40,13 @@ export function tripAnswersQuery(userId: string) {
     staleTime: Infinity,
   });
 }
+
+/**
+ * Whether My calendar has glided to a trip waiting for an answer (#115) since
+ * the app was opened: once per launch, so it asks again next time without
+ * pulling the month away on every visit (PhoneCalendar).
+ */
+export const tripReveal = { done: false };
 
 /** Events asked about since the app was opened: each at most once, so a failing call isn't repeated in a loop. */
 const askedThisLaunch = new Set<string>();
@@ -204,4 +212,38 @@ export function useTrips(): Trips {
     }),
     [detected, change],
   );
+}
+
+/** One pulse of a trip's bar: the length of `animate-trip-pulse` in index.css. */
+const PULSE_MS = 1800;
+
+/**
+ * Which guess the bars of trips Casy is asking about show (tripBars), moving
+ * on with each pulse while `active`. Still under reduced motion.
+ */
+export function useGuessStep(active: boolean): number {
+  const still = useReducedMotion();
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    if (!active || still) return;
+    const timer = setInterval(() => setStep((n) => n + 1), PULSE_MS);
+    return () => clearInterval(timer);
+  }, [active, still]);
+  return step;
+}
+
+/**
+ * For testing (#115): forget every answer about trips on this phone (yes, no,
+ * the days picked, home), so each trip is asked about again and My calendar
+ * glides to it on the next visit. Shown to testers and admins in Your data.
+ */
+export function useResetTrips(): () => void {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+  const queryClient = useQueryClient();
+  return useCallback(() => {
+    writeTripAnswers(userId, NO_ANSWERS);
+    queryClient.setQueryData(tripAnswersQuery(userId).queryKey, NO_ANSWERS);
+    tripReveal.done = false;
+  }, [queryClient, userId]);
 }

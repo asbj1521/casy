@@ -107,8 +107,8 @@ export const MAX_TRIP_DAYS = 60;
 export const CONNECTION_MS = 12 * 3_600_000;
 /** A way out with no way back is only asked about while it is recent or to come. */
 const ASK_AFTER_MS = 3 * 86_400_000;
-/** How many days an answer may be offered for. */
-export const ANSWER_DAYS = 21;
+/** How many days an answer may be offered for: as long as a trip may be. */
+export const ANSWER_DAYS = MAX_TRIP_DAYS;
 
 const DAY_MS = 86_400_000;
 
