@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { detectTrips, NO_ANSWERS, type Leg } from "@/lib/trips";
-import { cityName, isPending, markOn, revealDay, tripMarks } from "@/lib/tripView";
+import {
+  cityName,
+  isPending,
+  markOn,
+  revealDay,
+  tripMarks,
+  withoutTripsInCalendar,
+} from "@/lib/tripView";
+import { CASY_CALENDAR_ID } from "@/lib/casyEntries";
 import { APP_TIME_ZONE, wallTime } from "@/lib/zone";
 
 const at = (month: number, day: number, hour = 0) =>
@@ -101,5 +109,31 @@ describe("markOn and revealDay", () => {
   it("glides to the first one still waiting, past accepted ones", () => {
     expect(revealDay(marks)).toBe(at(10, 12));
     expect(revealDay(marks.filter((m) => !isPending(m)))).toBeNull();
+  });
+});
+
+describe("withoutTripsInCalendar", () => {
+  const out = leg("copenhagen", "oslo", at(10, 12, 10), at(10, 12, 11));
+  const back = leg("oslo", "copenhagen", at(10, 19, 18), at(10, 19, 19));
+  const accepted = tripMarks(detectTrips([out, back], { ...home, accepted: [out.id] }, NOW), "da");
+  const pending = tripMarks(detectTrips([out, back], home, NOW), "da");
+  const event = { calendarId: "cal-private", start: out.start, end: back.end };
+
+  it("shows an accepted trip once when the calendar has it as an event", () => {
+    expect(withoutTripsInCalendar(accepted, [event])).toEqual([]);
+  });
+
+  it("shows it again when that event is gone, or at other times", () => {
+    expect(withoutTripsInCalendar(accepted, [])).toHaveLength(1);
+    expect(withoutTripsInCalendar(accepted, [{ ...event, end: back.end + 60_000 }])).toHaveLength(
+      1,
+    );
+  });
+
+  it("never hides a trip still asking, nor counts Casy's own bars", () => {
+    expect(withoutTripsInCalendar(pending, [event])).toHaveLength(1);
+    expect(
+      withoutTripsInCalendar(accepted, [{ ...event, calendarId: CASY_CALENDAR_ID }]),
+    ).toHaveLength(1);
   });
 });

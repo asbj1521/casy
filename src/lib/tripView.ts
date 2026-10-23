@@ -211,3 +211,21 @@ export function tripBars(marks: TripMark[], words: Messages["trips"], step = 0):
     return { ...span, label, pencil: true, pulse: true, grow: m.kind === "question" };
   });
 }
+
+/**
+ * The marks less every accepted trip the calendar already has as an event of
+ * its own, at exactly its times: one put in the phone's calendar ("Put it in
+ * my calendar"), or one the person entered alike. Shown once, as that event;
+ * deleted there, the trip shows again, so it is never lost.
+ */
+export function withoutTripsInCalendar(
+  marks: TripMark[],
+  items: Pick<GridItem, "calendarId" | "start" | "end">[],
+): TripMark[] {
+  const spans = new Set(
+    items.filter((i) => i.calendarId !== CASY_CALENDAR_ID).map((i) => `${i.start}-${i.end}`),
+  );
+  return marks.filter(
+    (m) => !(m.kind === "trip" && m.trip.accepted && spans.has(`${m.start}-${m.end}`)),
+  );
+}

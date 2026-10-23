@@ -32,7 +32,15 @@ import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
 import { isNativeApp } from "@/lib/nativeApp";
-import { isPending, markOn, revealDay, tripBars, tripMarks, type TripMark } from "@/lib/tripView";
+import {
+  isPending,
+  markOn,
+  revealDay,
+  tripBars,
+  tripMarks,
+  withoutTripsInCalendar,
+  type TripMark,
+} from "@/lib/tripView";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
@@ -75,7 +83,11 @@ export default function PhoneCalendar() {
   const [importLater, setImportLater] = useState(() => phoneImportPutAway.done);
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
   const trips = useTrips();
-  const marks = useMemo(() => tripMarks(trips.detected, lang), [trips.detected, lang]);
+  // An accepted trip already in the calendar as an event is shown once, as that event.
+  const marks = useMemo(
+    () => withoutTripsInCalendar(tripMarks(trips.detected, lang), calendar.items),
+    [trips.detected, lang, calendar.items],
+  );
   // Bars of trips Casy is asking about change length with each pulse.
   const step = useGuessStep(marks.some((m) => m.kind === "question"));
   const month = useMemo(
