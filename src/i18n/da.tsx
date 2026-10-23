@@ -73,7 +73,6 @@ export const da = {
     yourCalendar: "Din kalender",
     calendarOf: (name: string) => `${name}${name.endsWith("s") ? "'" : "s"} kalender`,
     you: "Dig",
-    phoneOf: (name: string) => `${name}${name.endsWith("s") ? "'" : "s"} telefon`,
     steps: {
       pile: "Jeres kalendere lægges oven på hinanden",
       list: "Casy finder de datoer, der passer alle",

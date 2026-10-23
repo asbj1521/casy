@@ -8,6 +8,7 @@ import Avatar from "@/components/ui/Avatar";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
 import type { GridItem } from "@/lib/monthGrid";
+import { hideGlass, nativeGlassAvailable, showGlass } from "@/lib/nativeGlass";
 import { layerAlpha, PILE_TIMING, pileTimeline, sheetTilt, throwSide } from "@/lib/paperPile";
 import { daysUntil } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
@@ -80,6 +81,10 @@ const AT = (() => {
   };
 })();
 const CYCLE_MS = Math.round((AT.end + 0.5) * 1000);
+
+/** The step caption: tall enough to fill the room under the list and its send button. */
+const CAPTION_HEIGHT = 124;
+const CAPTION_RADIUS = 28;
 
 /** The moments in a round, in order: the picture changes at each. */
 const STEPS = [
@@ -182,19 +187,19 @@ export default function WelcomePile() {
   const started = step >= FIRST_SWIPE ? Math.min(FREE.length, step - FIRST_SWIPE + 1) : 0;
 
   return (
-    <div aria-hidden className="pointer-events-none flex h-full flex-col">
-      <Caption scene={scene} text={t.welcome.steps[scene]} />
-
+    <div aria-hidden className="pointer-events-none relative h-full">
       <motion.div
         key={round}
-        className="relative min-h-0 flex-1"
+        className="absolute inset-0"
         animate={still ? undefined : { opacity: [1, 1, 0] }}
         transition={{ duration: CYCLE_MS / 1000, times: [0, 0.97, 1] }}
       >
         {/* Scenes 1 and 2: the calendars, fading out at the bottom under the
             text, then dimmed behind the dates. */}
+        {/* Room all round inside the fade, so a calendar landing crooked is
+            never clipped by it at the top or the sides. */}
         <motion.div
-          className="absolute inset-x-3 bottom-0 top-2"
+          className="absolute inset-x-0 bottom-0 top-0 px-4 pt-7"
           style={{
             maskImage: "linear-gradient(to bottom, black calc(100% - 80px), transparent)",
             WebkitMaskImage: "linear-gradient(to bottom, black calc(100% - 80px), transparent)",
@@ -266,14 +271,14 @@ export default function WelcomePile() {
         <AnimatePresence>
           {step >= LIST && step < CARDS && (
             <motion.div
-              className="absolute inset-x-6 top-[42%] -translate-y-1/2"
+              className="absolute inset-x-6 top-[35%] -translate-y-1/2"
               exit={{ x: "-110%", opacity: 0, transition: { duration: PAN, ease: "easeInOut" } }}
             >
               <ul className="space-y-2">
                 {FREE.map((d, i) => (
                   <motion.li
                     key={d}
-                    className="glass flex items-center gap-3 rounded-2xl px-4 py-3"
+                    className="glass flex min-h-[88px] items-center gap-3.5 rounded-3xl px-5 py-3"
                     initial={still ? false : { opacity: 0, y: 28, scale: 0.94 }}
                     animate={
                       step >= SEND
@@ -322,18 +327,11 @@ export default function WelcomePile() {
         {/* Scene 3: the other side, Sara's phone, answering on the real card. */}
         {step >= CARDS && (
           <motion.div
-            className="absolute inset-x-5 bottom-10 top-1 flex flex-col items-center"
+            className="absolute inset-x-5 bottom-40 top-2 flex flex-col items-center justify-center"
             initial={{ x: "110%" }}
             animate={{ x: "0%" }}
             transition={{ duration: PAN, ease: "easeInOut" }}
           >
-            <span className="glass mb-3 flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-semibold text-foreground">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ background: `rgb(${FRIENDS[0].color})` }}
-              />
-              {t.welcome.phoneOf(FRIENDS[0].name)}
-            </span>
             <div
               className="relative min-h-0 w-full max-w-[320px] flex-1"
               style={{ maxHeight: 250 }}
@@ -400,6 +398,9 @@ export default function WelcomePile() {
           </motion.div>
         )}
       </motion.div>
+
+      {/* What is happening, step by step, over the bottom of the picture. */}
+      <Caption scene={scene} text={t.welcome.steps[scene]} />
     </div>
   );
 }
@@ -416,26 +417,76 @@ function demoMonth(now: number): number {
   return startOfMonth(now, TZ, 1);
 }
 
-/** The scene's caption, numbered, swapping as the scenes change. */
+/**
+ * The step under way, numbered, over the bottom of the picture, where there is
+ * room and where the eye already is: big enough to be read at a glance. In the
+ * app on iOS 26 it is Apple's real Liquid Glass (nativeGlass.ts), bending the
+ * animation under it; the page then only keeps its place and says where it is.
+ * Elsewhere the page's own glass.
+ */
 function Caption({ scene, text }: { scene: "pile" | "list" | "swipe" | "added"; text: string }) {
   const n = { pile: 1, list: 2, swipe: 3, added: 4 }[scene];
+  const place = useRef<HTMLDivElement>(null);
+  const accent = useRef<HTMLSpanElement>(null);
+  const [native, setNative] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void nativeGlassAvailable().then((yes) => live && setNative(yes));
+    return () => {
+      live = false;
+    };
+  }, []);
+  // The native card follows the place the page keeps for it, and its words.
+  useEffect(() => {
+    const el = place.current;
+    if (!native || !el) return;
+    const send = () => {
+      const r = el.getBoundingClientRect();
+      const rgb = getComputedStyle(accent.current ?? el).backgroundColor.match(/\d+/g) ?? [];
+      void showGlass({
+        x: r.left,
+        y: r.top,
+        width: r.width,
+        height: r.height,
+        radius: CAPTION_RADIUS,
+        number: String(n),
+        text,
+        accent: [Number(rgb[0] ?? 234), Number(rgb[1] ?? 88), Number(rgb[2] ?? 12)],
+      });
+    };
+    send();
+    const observer = new ResizeObserver(send);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [native, n, text]);
+  useEffect(() => (native ? () => void hideGlass() : undefined), [native]);
+
   return (
-    <div className="flex h-10 shrink-0 items-center justify-center px-4">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={scene}
-          className="glass flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-[13px] font-semibold text-foreground"
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 6 }}
-          transition={{ duration: 0.25 }}
-        >
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[12px] font-bold text-primary-foreground">
-            {n}
-          </span>
-          {text}
-        </motion.span>
-      </AnimatePresence>
+    <div
+      ref={place}
+      className="absolute inset-x-4 bottom-8 z-20"
+      style={{ height: CAPTION_HEIGHT }}
+    >
+      {/* Casy's orange, read here and handed to the native badge. */}
+      <span ref={accent} className="hidden bg-primary" />
+      {!native && (
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={scene}
+            className="glass-caption flex h-full items-center gap-4 px-5"
+            style={{ borderRadius: CAPTION_RADIUS }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-[22px] font-bold text-primary-foreground">
+              {n}
+            </span>
+            <span className="text-[20px] font-semibold leading-snug text-foreground">{text}</span>
+          </motion.div>
+        </AnimatePresence>
+      )}
     </div>
   );
 }

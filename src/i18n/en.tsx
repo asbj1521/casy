@@ -68,7 +68,6 @@ export const en: Messages = {
     yourCalendar: "Your calendar",
     calendarOf: (name: string) => `${name}'s calendar`,
     you: "You",
-    phoneOf: (name: string) => `${name}'s phone`,
     steps: {
       pile: "Your calendars are laid on top of each other",
       list: "Casy finds the dates that suit everyone",

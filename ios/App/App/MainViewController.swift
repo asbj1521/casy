@@ -21,6 +21,8 @@ class MainViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(PhoneCalendarPlugin())
         // Inviting friends from the contacts, by message (#149).
         bridge?.registerPluginInstance(InvitePlugin())
+        // Apple's own Liquid Glass for a card on the page (#151).
+        bridge?.registerPluginInstance(GlassPlugin())
         // From iOS 26, a scroll view fades and blurs what scrolls under its top
         // and bottom edges: a grey haze over the page's own header and tab bar.
         // The page draws its own edges, as the apps it is modelled on do.

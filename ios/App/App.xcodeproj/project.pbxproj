@@ -23,6 +23,7 @@
 		CA5E00072F00000000000001 /* PhoneCalendarBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00082F00000000000001 /* PhoneCalendarBackground.swift */; };
 		CA5E00092F00000000000001 /* PhoneCalendarWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */; };
 		CA5E000B2F00000000000001 /* InvitePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E000C2F00000000000001 /* InvitePlugin.swift */; };
+		CA5E000F2F00000000000001 /* GlassPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00102F00000000000001 /* GlassPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 		CA5E00082F00000000000001 /* PhoneCalendarBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCalendarBackground.swift; sourceTree = "<group>"; };
 		CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCalendarWriter.swift; sourceTree = "<group>"; };
 		CA5E000C2F00000000000001 /* InvitePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvitePlugin.swift; sourceTree = "<group>"; };
+		CA5E00102F00000000000001 /* GlassPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +97,7 @@
 				CA5E00082F00000000000001 /* PhoneCalendarBackground.swift */,
 				CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */,
 				CA5E000C2F00000000000001 /* InvitePlugin.swift */,
+				CA5E00102F00000000000001 /* GlassPlugin.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -190,6 +193,7 @@
 				CA5E00072F00000000000001 /* PhoneCalendarBackground.swift in Sources */,
 				CA5E00092F00000000000001 /* PhoneCalendarWriter.swift in Sources */,
 				CA5E000B2F00000000000001 /* InvitePlugin.swift in Sources */,
+				CA5E000F2F00000000000001 /* GlassPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
