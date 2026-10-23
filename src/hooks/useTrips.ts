@@ -2,17 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReducedMotion } from "framer-motion";
 
-import { calendarBusyQuery } from "@/api/calendars";
+import { calendarBusyQuery, primaryCalendarQuery } from "@/api/calendars";
 import { readTripLegs } from "@/api/tripLegs";
 import { useAuth } from "@/context/auth";
 import { useAiContent } from "@/hooks/useAiAllowed";
 import { labelBookQuery } from "@/hooks/useEventLabels";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
+import { setTripStatus } from "@/lib/labelStatus";
 import { isNativeApp } from "@/lib/nativeApp";
-import { phoneConnectionId, phoneEventDetailsQuery } from "@/lib/phoneCalendar";
+import { addTripToPhone, phoneConnectionId, phoneEventDetailsQuery } from "@/lib/phoneCalendar";
 import {
   legBatches,
   phoneLegs,
+  presentLegKeys,
   readLegBook,
   readTripAnswers,
   tidyLegBook,
@@ -22,6 +24,8 @@ import {
   type LegBook,
 } from "@/lib/tripLegBook";
 import { detectTrips, NO_ANSWERS, type Detected, type TripAnswers } from "@/lib/trips";
+import { tripMarks, type TripMark } from "@/lib/tripView";
+import { useLang, useT } from "@/i18n/lang";
 
 /** The legs read from this phone's travel events, kept on the phone. */
 export function legBookQuery(userId: string) {
@@ -104,23 +108,47 @@ export function useAutoTripLegs() {
   const running = useRef(false);
 
   useEffect(() => {
-    if (!on || !names || !events || !labels || !book || running.current) return;
+    // One line for testers in Your data: which condition holds, which doesn't.
+    const flag = (v: unknown) => (v ? "yes" : "NO");
+    if (!on || !names || !events || !labels || !book || running.current) {
+      setTripStatus(
+        `waiting: phone=${flag(phone)} on=${flag(on)} calendars=${flag(names)} ` +
+          `events=${flag(events)} labels=${flag(labels)} legs=${flag(book)} ` +
+          `running=${running.current ? "yes" : "no"}`,
+      );
+      return;
+    }
     const save = (next: LegBook) => {
       writeLegBook(userId, next);
       queryClient.setQueryData(legBookQuery(userId).queryKey, next);
     };
     const candidates = travelCandidates(events, labels, names, Date.now());
-    // Saved only when it changed: saving starts this effect again.
-    const tidy = tidyLegBook(book, candidates);
+    // Saved only when it changed: saving starts this effect again. Tidied against
+    // the travel events on the phone, never the calendars the server lists (with
+    // the connection removed it lists none); not before any label is read.
+    const tidy =
+      Object.keys(labels).length === 0 ? book : tidyLegBook(book, presentLegKeys(events, labels));
     if (tidy !== book) {
       save(tidy);
       return;
     }
     const batches = legBatches(candidates, book, askedThisLaunch);
-    if (batches.length === 0) return;
+    const travel = Object.values(labels).filter(
+      (l) => l.kind === "flight" || l.kind === "travel",
+    ).length;
+    const read = Object.values(book);
+    const journeys = read.filter((l) => l.mode !== "none" && l.confidence !== "low").length;
+    if (batches.length === 0) {
+      setTripStatus(
+        `idle: labelled as travel=${travel} travel events counted=${candidates.length} ` +
+          `read=${read.length} of which journeys=${journeys} asked this launch=${askedThisLaunch.size}`,
+      );
+      return;
+    }
     for (const batch of batches) for (const c of batch) askedThisLaunch.add(c.key);
 
     running.current = true;
+    setTripStatus(`asking: ${batches.flat().length} travel events in ${batches.length} calls`);
     void (async () => {
       try {
         for (const batch of batches) {
@@ -129,14 +157,16 @@ export function useAutoTripLegs() {
             batch.flatMap((c, i) => (legs[i] ? [[c.key, legs[i]]] : [])),
           );
           save({ ...readLegBook(userId), ...added });
+          setTripStatus(`answered: ${legs.filter(Boolean).length} of ${batch.length} read`);
         }
       } catch (err) {
         console.warn("reading trips failed", err);
+        setTripStatus(`FAILED: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         running.current = false;
       }
     })();
-  }, [on, names, events, labels, book, queryClient, userId]);
+  }, [on, names, events, labels, book, queryClient, userId, phone]);
 }
 
 export interface Trips {
@@ -150,6 +180,12 @@ export interface Trips {
   /** A way back with no way out: the day the person left (a local midnight). */
   answerOutbound: (id: string, day: number) => void;
   setHome: (city: string) => void;
+  /**
+   * Write an accepted trip into the phone's own calendar (Casy's primary when
+   * it is on this phone, else iOS's default for new events); answers the
+   * calendar's name. The trip remembers the event, so it isn't added twice.
+   */
+  addToCalendar: (mark: TripMark) => Promise<string>;
 }
 
 const NOTHING: Detected = { trips: [], questions: [] };
@@ -172,6 +208,13 @@ export function useTrips(): Trips {
   const { data: answers } = useQuery({ ...tripAnswersQuery(userId), enabled: on });
   // Which loose ends are still worth asking about: fixed while the page is open.
   const [now] = useState(() => Date.now());
+  const t = useT();
+  const { lang } = useLang();
+  const { data: primary } = useQuery({ ...primaryCalendarQuery(userId), enabled: on });
+  const { data: busy } = useQuery({
+    ...calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
+    enabled: on,
+  });
 
   const detected = useMemo(
     () =>
@@ -190,9 +233,56 @@ export function useTrips(): Trips {
     [queryClient, userId],
   );
 
+  // Every accepted trip saved as itself, so it stays whatever happens to its
+  // legs (#132: they were once all dropped with the connection removed).
+  // Written only when something changed, as writing runs this again.
+  useEffect(() => {
+    if (!answers) return;
+    const marks = tripMarks(detected, lang).filter(
+      (m) => m.kind === "trip" && m.trip.accepted && m.trip.legs.length > 0,
+    );
+    const changed = marks.filter((m) => {
+      const k = answers.kept[m.id];
+      return !k || k.start !== m.start || k.end !== m.end || k.city !== m.city;
+    });
+    if (changed.length === 0) return;
+    change((a) => {
+      const kept = { ...a.kept };
+      for (const m of changed) {
+        kept[m.id] = { start: m.start, end: m.end, city: m.city, eventId: kept[m.id]?.eventId };
+      }
+      return { ...a, kept };
+    });
+  }, [detected, answers, lang, change]);
+
+  // Casy's primary calendar, when it is one of this phone's: EventKit's id for it.
+  const primaryOnPhone = useMemo(() => {
+    const calendar = busy?.calendars.find((c) => c.id === primary?.calendarId);
+    return calendar && calendar.connectionId === phone
+      ? (calendar.externalId ?? undefined)
+      : undefined;
+  }, [busy, primary, phone]);
+
   return useMemo(
     () => ({
       detected,
+      addToCalendar: async (mark: TripMark) => {
+        const { eventId, calendar } = await addTripToPhone({
+          title: t.trips.barAccepted(mark.city),
+          notes: t.trips.calendarNote,
+          start: mark.start,
+          end: mark.end,
+          calendarId: primaryOnPhone,
+        });
+        change((a) => ({
+          ...a,
+          kept: {
+            ...a.kept,
+            [mark.id]: { start: mark.start, end: mark.end, city: mark.city, eventId },
+          },
+        }));
+        return calendar;
+      },
       accept: (id) =>
         change((a) => ({
           ...a,
@@ -200,17 +290,22 @@ export function useTrips(): Trips {
           dismissed: a.dismissed.filter((x) => x !== id),
         })),
       decline: (id) =>
-        change((a) => ({
-          ...a,
-          accepted: a.accepted.filter((x) => x !== id),
-          dismissed: [...a.dismissed.filter((x) => x !== id), id],
-        })),
+        change((a) => {
+          const kept = { ...a.kept };
+          delete kept[id];
+          return {
+            ...a,
+            kept,
+            accepted: a.accepted.filter((x) => x !== id),
+            dismissed: [...a.dismissed.filter((x) => x !== id), id],
+          };
+        }),
       answerReturn: (id, day) => change((a) => ({ ...a, returns: { ...a.returns, [id]: day } })),
       answerOutbound: (id, day) =>
         change((a) => ({ ...a, outbounds: { ...a.outbounds, [id]: day } })),
       setHome: (city) => change((a) => ({ ...a, home: city })),
     }),
-    [detected, change],
+    [detected, change, t, primaryOnPhone],
   );
 }
 
@@ -234,8 +329,9 @@ export function useGuessStep(active: boolean): number {
 
 /**
  * For testing (#115): forget every answer about trips on this phone (yes, no,
- * the days picked, home), so each trip is asked about again and My calendar
- * glides to it on the next visit. Shown to testers and admins in Your data.
+ * the days picked, home) and the flights read, so they are read again at once,
+ * each trip is asked about again, and My calendar glides to it on the next
+ * visit. Shown to testers and admins in Your data.
  */
 export function useResetTrips(): () => void {
   const { user } = useAuth();
@@ -244,6 +340,10 @@ export function useResetTrips(): () => void {
   return useCallback(() => {
     writeTripAnswers(userId, NO_ANSWERS);
     queryClient.setQueryData(tripAnswersQuery(userId).queryKey, NO_ANSWERS);
+    // The flights are read again at once, as if never read.
+    writeLegBook(userId, {});
+    askedThisLaunch.clear();
+    queryClient.setQueryData(legBookQuery(userId).queryKey, {});
     tripReveal.done = false;
   }, [queryClient, userId]);
 }

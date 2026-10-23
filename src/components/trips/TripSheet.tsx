@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Bus, Plane, TrainFront } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { Bus, CalendarCheck, Plane, TrainFront } from "lucide-react";
 
 import DayPicker from "@/components/trips/DayPicker";
 import BottomSheet from "@/components/ui/BottomSheet";
@@ -75,6 +76,7 @@ export default function TripSheet({
         {trip.accepted ? (
           <>
             <p className="mb-4 text-sm text-muted-foreground">{words.acceptedNote}</p>
+            <AddToPhoneCalendar key={mark.id} mark={mark} trips={trips} />
             <SecondaryButton onClick={() => answer(() => trips.decline(mark.id))}>
               {words.remove}
             </SecondaryButton>
@@ -192,6 +194,33 @@ function DayQuestion({
         </PrimaryButton>
       </div>
       <SecondaryButton onClick={onNotATrip}>{words.notATrip}</SecondaryButton>
+    </>
+  );
+}
+
+/**
+ * "Put it in my calendar" (#115): an accepted trip written into the phone's own
+ * calendar, so it is there for good, in Apple Calendar and in everything Casy
+ * reads from it. Once it is, the button says so instead.
+ */
+function AddToPhoneCalendar({ mark, trips }: { mark: TripMark; trips: Trips }) {
+  const words = useT().trips;
+  const add = useMutation({ mutationFn: () => trips.addToCalendar(mark) });
+  const inCalendar = mark.kind === "trip" && mark.trip.inCalendar;
+  if (inCalendar) {
+    return (
+      <p className="flex h-12 items-center justify-center gap-2 text-[15px] font-semibold text-emerald-600">
+        <CalendarCheck className="h-5 w-5" aria-hidden />
+        {add.data ? words.addedTo(add.data) : words.inCalendar}
+      </p>
+    );
+  }
+  return (
+    <>
+      <PrimaryButton disabled={add.isPending} onClick={() => add.mutate()}>
+        {add.isPending ? words.adding : words.addToCalendar}
+      </PrimaryButton>
+      {add.error && <p className="mt-2 text-center text-sm text-red-600">{add.error.message}</p>}
     </>
   );
 }

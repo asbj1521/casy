@@ -25,6 +25,13 @@ interface PhoneCalendarPlugin {
   readDetails(options: { from: number; to: number }): Promise<{ events: PhoneEventWithDetails[] }>;
   openSettings(): Promise<void>;
   setAppearance(options: { choice: "system" | "light" | "dark" }): Promise<void>;
+  addTrip(options: {
+    title: string;
+    notes: string;
+    start: number;
+    end: number;
+    calendarId?: string;
+  }): Promise<{ eventId: string; calendar: string }>;
   backgroundState(): Promise<{ configured: boolean }>;
   setBackground(options: {
     url: string;
@@ -104,6 +111,22 @@ export function phoneEventDetailsQuery(userId: string, window: { start: string; 
 export async function setNativeAppearance(choice: "system" | "light" | "dark"): Promise<void> {
   const { plugin } = await phonePlugin();
   await plugin.setAppearance({ choice });
+}
+
+/**
+ * Write an accepted trip into the phone's own calendar (#115), on the person's
+ * press: `calendarId` (EventKit's) when Casy's primary calendar is on this
+ * phone, else the calendar iOS uses for new events.
+ */
+export async function addTripToPhone(trip: {
+  title: string;
+  notes: string;
+  start: number;
+  end: number;
+  calendarId?: string;
+}): Promise<{ eventId: string; calendar: string }> {
+  const { plugin } = await phonePlugin();
+  return await plugin.addTrip(trip);
 }
 
 export async function openPhoneSettings(): Promise<void> {

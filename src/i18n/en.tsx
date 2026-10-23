@@ -396,6 +396,11 @@ export const en: Messages = {
     decline: "No, it isn't a trip",
     acceptedNote: "You said yes to this trip, so it shows as time you are away.",
     remove: "Delete the trip",
+    addToCalendar: "Put it in my calendar",
+    adding: "Putting it in your calendar",
+    inCalendar: "In your calendar",
+    addedTo: (calendar: string) => `Put in ${calendar}.`,
+    calendarNote: "Added by Casy.",
     returnTitle: (city: string) => `When are you back from ${city}?`,
     returnIntro:
       "Casy can see you travel out, but not when you come back. Maybe you drive home, or the way back isn't in your calendar.",

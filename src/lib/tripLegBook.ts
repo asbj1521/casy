@@ -93,9 +93,23 @@ export function legBatches(
   return batches;
 }
 
+/**
+ * Every leg key among the phone's travel events, whichever calendar they are in
+ * and whatever the server lists: what may be kept. Not the candidates, which
+ * only count calendars the server lists for this phone's connection: with that
+ * connection removed it lists none, and every leg was dropped (#132).
+ */
+export function presentLegKeys(events: PhoneEventWithDetails[], labels: LabelBook): Set<string> {
+  const keys = new Set<string>();
+  for (const e of events) {
+    const travel = travelOf(e, labels);
+    if (travel) keys.add(travel.key);
+  }
+  return keys;
+}
+
 /** The book with legs whose event is gone dropped; the same book when nothing is. */
-export function tidyLegBook(book: LegBook, candidates: LegCandidate[]): LegBook {
-  const present = new Set(candidates.map((c) => c.key));
+export function tidyLegBook(book: LegBook, present: Set<string>): LegBook {
   const kept = Object.entries(book).filter(([key]) => present.has(key));
   return kept.length === Object.keys(book).length ? book : Object.fromEntries(kept);
 }
@@ -204,6 +218,7 @@ export function readTripAnswers(userId: string): TripAnswers {
       outbounds: a.outbounds && typeof a.outbounds === "object" ? a.outbounds : {},
       accepted: Array.isArray(a.accepted) ? a.accepted : [],
       dismissed: Array.isArray(a.dismissed) ? a.dismissed : [],
+      kept: a.kept && typeof a.kept === "object" ? a.kept : {},
     };
   } catch {
     return NO_ANSWERS;

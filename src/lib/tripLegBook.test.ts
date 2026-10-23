@@ -14,6 +14,7 @@ import {
   legBatches,
   legKey,
   phoneLegs,
+  presentLegKeys,
   readLegBook,
   readTripAnswers,
   tidyLegBook,
@@ -123,10 +124,26 @@ describe("legBatches and tidyLegBook", () => {
   });
 
   it("drops legs whose event is gone, and keeps the same book otherwise", () => {
+    const present = new Set(["k0"]);
     const book: LegBook = { k0: leg("A", "B"), gone: leg("C", "D") };
-    expect(Object.keys(tidyLegBook(book, candidates))).toEqual(["k0"]);
+    expect(Object.keys(tidyLegBook(book, present))).toEqual(["k0"]);
     const kept = { k0: leg("A", "B") };
-    expect(tidyLegBook(kept, candidates)).toBe(kept);
+    expect(tidyLegBook(kept, present)).toBe(kept);
+  });
+});
+
+describe("presentLegKeys", () => {
+  it("counts the phone's travel events whatever calendars the server lists (#132)", () => {
+    // With the phone's connection removed the server lists no calendars for it,
+    // so no candidates: the legs must still be kept, as their events are there.
+    const flight = event("Fly til Oslo", NOW + 2 * DAY, { calendarId: "ek-not-listed" });
+    const labels = {
+      [labelKey("ek-not-listed", "Fly til Oslo")]: label("flight"),
+    };
+    expect(travelCandidates([flight], labels, names, NOW)).toEqual([]);
+    expect(presentLegKeys([flight], labels)).toEqual(
+      new Set([legKey("ek-not-listed", "Fly til Oslo", "")]),
+    );
   });
 });
 

@@ -218,6 +218,7 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "readDetails", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setAppearance", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "addTrip", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "backgroundState", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setBackground", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearBackground", returnType: CAPPluginReturnPromise),
@@ -253,6 +254,45 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
             store.requestFullAccessToEvents(completion: done)
         } else {
             store.requestAccess(to: .event, completion: done)
+        }
+    }
+
+    /// A trip the person accepted (#115), written into their own calendar on
+    /// their press: the calendar asked for (Casy's primary, when it is on this
+    /// phone), else the one iOS uses for new events. Answers the new event's id
+    /// and the calendar's name.
+    @objc func addTrip(_ call: CAPPluginCall) {
+        guard let title = call.getString("title"),
+              let start = call.getDouble("start"),
+              let end = call.getDouble("end"),
+              end > start
+        else {
+            call.reject("A trip needs a title, a start and an end.")
+            return
+        }
+        guard PhoneCalendarReader.accessState() == "granted" else {
+            call.reject("Casy has no access to the phone's calendars.")
+            return
+        }
+        let asked = call.getString("calendarId").flatMap { store.calendar(withIdentifier: $0) }
+        guard let target = asked ?? store.defaultCalendarForNewEvents,
+              target.allowsContentModifications
+        else {
+            call.reject("There is no calendar on the phone Casy can write to.")
+            return
+        }
+        let event = EKEvent(eventStore: store)
+        event.title = title
+        event.notes = call.getString("notes")
+        event.startDate = Date(timeIntervalSince1970: start / 1000)
+        event.endDate = Date(timeIntervalSince1970: end / 1000)
+        event.availability = .busy
+        event.calendar = target
+        do {
+            try store.save(event, span: .thisEvent, commit: true)
+            call.resolve(["eventId": event.eventIdentifier ?? "", "calendar": target.title])
+        } catch {
+            call.reject("Couldn't save the trip: \(error.localizedDescription)")
         }
     }
 

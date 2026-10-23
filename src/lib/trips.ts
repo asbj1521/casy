@@ -57,9 +57,31 @@ export interface TripAnswers {
   accepted: string[];
   /** Ids the person declined, or deleted after accepting: never suggested again. */
   dismissed: string[];
+  /**
+   * Each accepted trip as it was, by id: kept so it stays in the calendar
+   * whatever happens to the legs it came from (re-read, or the calendar
+   * reconnected), and, once it is in the phone's own calendar, that event.
+   */
+  kept: Record<string, KeptTrip>;
 }
 
-export const NO_ANSWERS: TripAnswers = { returns: {}, outbounds: {}, accepted: [], dismissed: [] };
+/** An accepted trip, saved as itself. */
+export interface KeptTrip {
+  start: number;
+  end: number;
+  /** The city it is named by, as shown when it was accepted. */
+  city: string;
+  /** The event it was written as in the phone's calendar, once it was. */
+  eventId?: string;
+}
+
+export const NO_ANSWERS: TripAnswers = {
+  returns: {},
+  outbounds: {},
+  accepted: [],
+  dismissed: [],
+  kept: {},
+};
 
 /** A trip: away from the first departure to the last arrival. */
 export interface Trip {
@@ -72,6 +94,10 @@ export interface Trip {
   answered: boolean;
   /** The person said yes to it (an answered trip is their own word): only this blocks. */
   accepted: boolean;
+  /** Only for a trip kept after its legs were gone: the city it is named by. */
+  city?: string;
+  /** It was written into the phone's own calendar. */
+  inCalendar?: true;
 }
 
 /** What Casy asks when it is in doubt. */
@@ -212,6 +238,28 @@ export function homeOf(legs: Leg[], answers: TripAnswers): string | null {
   return answers.home ?? inferHome(segmentsOf(usable(legs)));
 }
 
+/**
+ * The trips found, plus every accepted trip kept that they no longer include
+ * (its legs gone or not read yet), as it was when accepted. Soonest first.
+ */
+function withKept(trips: Trip[], answers: TripAnswers): Trip[] {
+  const found = new Set(trips.map((t) => t.id));
+  const skipped = new Set(answers.dismissed);
+  const kept = Object.entries(answers.kept)
+    .filter(([id]) => !found.has(id) && !skipped.has(id))
+    .map(([id, k]) => ({
+      id,
+      start: k.start,
+      end: k.end,
+      legs: [],
+      answered: true,
+      accepted: true,
+      city: k.city,
+    }));
+  const all = kept.length === 0 ? trips : [...trips, ...kept].sort((a, b) => a.start - b.start);
+  return all.map((t) => (answers.kept[t.id]?.eventId ? { ...t, inCalendar: true as const } : t));
+}
+
 /** Whether a stretch crosses a local midnight: a day trip is not away. */
 function staysOvernight(start: number, end: number): boolean {
   return end > addDays(start, 1, APP_TIME_ZONE);
@@ -223,14 +271,14 @@ function staysOvernight(start: number, end: number): boolean {
  */
 export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): Detected {
   const segments = segmentsOf(usable(allLegs));
-  if (segments.length === 0) return { trips: [], questions: [] };
+  if (segments.length === 0) return { trips: withKept([], answers), questions: [] };
 
   const home = answers.home ?? inferHome(segments);
   if (!home) {
     // Nothing is asked about journeys that are over.
     const next = segments.find((s) => s.end > now);
     return {
-      trips: [],
+      trips: withKept([], answers),
       questions: next
         ? [{ kind: "home", id: next.id, legs: next.legs, cities: homeCandidates(segments) }]
         : [],
@@ -331,8 +379,7 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
     // From one far place to another, outside any trip: nothing to say about it.
   }
   if (open) unpaired(open, null);
-
-  return { trips, questions };
+  return { trips: withKept(trips, answers), questions };
 }
 
 /**

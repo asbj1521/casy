@@ -22,7 +22,7 @@ import { labelBookQuery } from "@/hooks/useEventLabels";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import { formatDate, formatTime } from "@/lib/format";
-import { useLabelStatus } from "@/lib/labelStatus";
+import { useLabelStatus, useTripStatus } from "@/lib/labelStatus";
 import { useResetTrips, useTrips } from "@/hooks/useTrips";
 import { isNativeApp } from "@/lib/nativeApp";
 import { cn } from "@/lib/utils";
@@ -375,6 +375,7 @@ function LabelsOnPhone() {
   const { detected } = useTrips();
   const resetTrips = useResetTrips();
   const [reset, setReset] = useState(false);
+  const tripStatus = useTripStatus();
   return (
     <>
       <Fact label={w.labels} value={book ? Object.keys(book).length : 0} />
@@ -395,8 +396,13 @@ function LabelsOnPhone() {
             }}
             className="shrink-0 font-semibold text-primary"
           >
-            {reset ? "reset, ask again" : "reset answers"}
+            {reset ? "reset, reading again" : "reset trips"}
           </button>
+        </li>
+      )}
+      {(tester || import.meta.env.DEV) && (
+        <li className="break-words px-4 py-3 text-xs text-muted-foreground">
+          trip reading: {tripStatus}
         </li>
       )}
     </>

@@ -311,3 +311,32 @@ describe("dayOptions", () => {
     expect(days[0]).toBe(addDays(at(10, 19), -1, APP_TIME_ZONE));
   });
 });
+
+describe("an accepted trip kept as itself", () => {
+  const kept = { start: at(10, 12, 10), end: at(10, 19, 20), city: "Oslo" };
+
+  it("stays when its legs are gone", () => {
+    const { trips } = detectTrips([], answers({ accepted: ["t1"], kept: { t1: kept } }), NOW);
+    expect(trips).toEqual([
+      {
+        id: "t1",
+        start: kept.start,
+        end: kept.end,
+        legs: [],
+        answered: true,
+        accepted: true,
+        city: "Oslo",
+      },
+    ]);
+  });
+
+  it("gives way to the trip its legs make, and goes when deleted", () => {
+    const out = leg("copenhagen", "oslo", at(10, 12, 10), at(10, 12, 11));
+    const back = leg("oslo", "copenhagen", at(10, 19, 18), at(10, 19, 19));
+    const both = answers({ accepted: [out.id], kept: { [out.id]: kept } });
+    const found = detectTrips([out, back], both, NOW).trips;
+    expect(found).toHaveLength(1);
+    expect(found[0].legs).toHaveLength(2);
+    expect(detectTrips([], { ...both, dismissed: [out.id] }, NOW).trips).toEqual([]);
+  });
+});

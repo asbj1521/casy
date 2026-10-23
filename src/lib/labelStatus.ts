@@ -25,3 +25,26 @@ export function useLabelStatus(): string {
     () => status,
   );
 }
+
+/**
+ * The same for trip detection (#115): whether the flights are being read, how
+ * many travel events and read legs there are, and how the last call went.
+ */
+let tripStatus = "not started";
+const tripListeners = new Set<() => void>();
+
+export function setTripStatus(next: string): void {
+  if (next === tripStatus) return;
+  tripStatus = next;
+  for (const listener of tripListeners) listener();
+}
+
+export function useTripStatus(): string {
+  return useSyncExternalStore(
+    (listener) => {
+      tripListeners.add(listener);
+      return () => tripListeners.delete(listener);
+    },
+    () => tripStatus,
+  );
+}

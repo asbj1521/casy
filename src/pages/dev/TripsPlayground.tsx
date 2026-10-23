@@ -100,6 +100,18 @@ export default function TripsPlayground() {
     answerReturn: (id, d) => change((a) => ({ ...a, returns: { ...a.returns, [id]: d } })),
     answerOutbound: (id, d) => change((a) => ({ ...a, outbounds: { ...a.outbounds, [id]: d } })),
     setHome: (city) => change((a) => ({ ...a, home: city })),
+    // No phone here: pretend it took a moment and went into "Privat".
+    addToCalendar: async (mark) => {
+      await new Promise((r) => setTimeout(r, 600));
+      change((a) => ({
+        ...a,
+        kept: {
+          ...a.kept,
+          [mark.id]: { start: mark.start, end: mark.end, city: mark.city, eventId: "dev" },
+        },
+      }));
+      return "Privat";
+    },
   };
 
   const [mark, setMark] = useState<TripMark | null>(null);

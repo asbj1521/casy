@@ -429,6 +429,11 @@ export const da = {
     decline: "Nej, det er ikke en rejse",
     acceptedNote: "Du har sagt ja til rejsen, så den står som tid, du er væk.",
     remove: "Slet rejsen",
+    addToCalendar: "Læg i min kalender",
+    adding: "Lægger i kalenderen",
+    inCalendar: "Står i din kalender",
+    addedTo: (calendar: string) => `Lagt i ${calendar}.`,
+    calendarNote: "Lagt ind af Casy.",
     returnTitle: (city: string) => `Hvornår kommer du hjem fra ${city}?`,
     returnIntro:
       "Casy kan se, at du rejser ud, men ikke hvornår du kommer hjem. Måske kører du hjem, eller hjemrejsen står ikke i din kalender.",

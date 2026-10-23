@@ -127,7 +127,7 @@ export function tripMarks(detected: Detected, lang: Lang): TripMark[] {
     trip,
     start: trip.start,
     end: trip.end,
-    city: name(destination(trip.legs)),
+    city: trip.city ?? name(destination(trip.legs)),
   }));
   for (const question of detected.questions) {
     const legs = question.legs;
