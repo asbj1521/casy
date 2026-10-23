@@ -1,6 +1,7 @@
 /**
- * The iPhone app asks for the phone's calendar the moment My calendar opens
- * with none connected (#132). The app's native side is faked: Capacitor reads
+ * The iPhone app, with no calendar connected, says so on My calendar and offers
+ * to import the phone's (#132): a card over the month with one button, whatever
+ * iOS has been told. The app's native side is faked: Capacitor reads
  * the plugin's methods from `PluginHeaders` and hands each call to
  * `nativePromise`, so the page runs as in the app, with iOS's answer chosen
  * per test (`window.__ios`).
@@ -73,46 +74,65 @@ async function asTheApp(
 const asked = (page: Page) =>
   page.evaluate(() => (window as unknown as { __asked: string[] }).__asked);
 
-test("landing on My calendar asks iOS at once, and connects the phone on yes", async ({
+const card = (page: Page) => page.getByRole("status");
+
+test("with iOS not asked yet, the card offers Allow and import, and iOS asks on the press", async ({
   page,
   backend,
 }) => {
   await asTheApp(page, "granted");
   await page.goto("/calendar-overview");
+  await expect(
+    card(page).getByRole("heading", { name: "Casy kan ikke se nogen kalender endnu" }),
+  ).toBeVisible();
+  // Nothing is asked by itself: the person presses.
+  expect(await asked(page)).not.toContain("requestAccess");
+  await card(page).getByRole("button", { name: "Tillad og importér" }).click();
   await expect.poll(() => asked(page)).toContain("requestAccess");
   await expect
     .poll(() => backend.calls.find((c) => c.name === "calendar-phone")?.body)
     .toMatchObject({ create: true });
-  // Nothing was left over the month, and nothing pushed it down.
-  await expect(page.getByRole("status")).toHaveCount(0);
-  await expect(page.getByText("Forbind en kalender")).toHaveCount(0);
 });
 
-test("a refusal puts a card over the month, which can lead to Settings or another calendar", async ({
-  page,
-}) => {
+test("with iOS already allowed, the same card just says Import", async ({ page, backend }) => {
+  await asTheApp(page, "granted", { alreadyAnswered: true });
+  await page.goto("/calendar-overview");
+  await card(page).getByRole("button", { name: "Importér min kalender" }).click();
+  await expect
+    .poll(() => backend.calls.find((c) => c.name === "calendar-phone")?.body)
+    .toMatchObject({ create: true });
+});
+
+test("a refusal leads to Settings, or to another calendar", async ({ page }) => {
   await asTheApp(page, "denied");
   await page.goto("/calendar-overview");
-  const card = page.getByRole("status");
-  await expect(card.getByRole("heading", { name: "Casy har brug for din kalender" })).toBeVisible();
-  await expect(card.getByRole("button", { name: "Åbn Indstillinger" })).toBeVisible();
+  await card(page).getByRole("button", { name: "Tillad og importér" }).click();
+  await expect(card(page).getByRole("button", { name: "Åbn Indstillinger" })).toBeVisible();
   // Over the month, not above it: the month's own toolbar stays where it was.
   await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
-  await card.getByRole("button", { name: "Åbn Indstillinger" }).click();
+  await card(page).getByRole("button", { name: "Åbn Indstillinger" }).click();
   await expect.poll(() => asked(page)).toContain("openSettings");
 
-  await card.getByRole("link", { name: "Brug en anden kalender" }).click();
+  await card(page).getByRole("link", { name: "Brug en anden kalender" }).click();
   await expect(page).toHaveURL(/\/calendar-overview\/accounts$/);
 });
 
-test("it asks once a launch: coming back to My calendar doesn't ask again", async ({ page }) => {
-  await asTheApp(page, "denied");
+test("the card is there even when the app remembers a connection the server has removed", async ({
+  page,
+  backend,
+}) => {
+  // iOS was allowed long ago, and this phone's connection was removed since:
+  // the routine update finds nothing to update, and the import must still work.
+  await asTheApp(page, "granted", { alreadyAnswered: true });
+  await page.addInitScript(
+    (key) => localStorage.setItem(key, "removed-connection"),
+    `casy-phone-calendar:${ME.id}`,
+  );
   await page.goto("/calendar-overview");
-  await expect(page.getByRole("status")).toBeVisible();
-  await page.getByRole("link", { name: /Profil/ }).click();
-  await page.getByRole("link", { name: /Kalender/ }).click();
-  await expect(page).toHaveURL(/\/calendar-overview$/);
-  expect((await asked(page)).filter((m) => m === "requestAccess")).toHaveLength(1);
+  await card(page).getByRole("button", { name: "Importér min kalender" }).click();
+  await expect
+    .poll(() => backend.calls.find((c) => c.name === "calendar-phone" && c.body.create === true))
+    .toBeTruthy();
 });
 
 test("signing in on the app goes straight to My calendar, not a connect page", async ({ page }) => {
@@ -120,23 +140,11 @@ test("signing in on the app goes straight to My calendar, not a connect page", a
   await page.goto("/sign-in");
   // Signed in already (the fixture), with no calendar: the website's phone would be sent on.
   await expect(page).toHaveURL(/\/calendar-overview$/);
+  await expect(card(page)).toBeVisible();
 });
 
-test("it connects even when the app still remembers a connection the server has removed", async ({
-  page,
-  backend,
-}) => {
-  // iOS was allowed long ago, and this phone's connection was removed since:
-  // the routine update (which only updates a connection) finds nothing to
-  // update, and the question to connect must not be answered by that.
-  await asTheApp(page, "granted", { alreadyAnswered: true });
-  await page.addInitScript(
-    (key) => localStorage.setItem(key, "removed-connection"),
-    `casy-phone-calendar:${ME.id}`,
-  );
+test("the website's phone has no phone to import, and keeps its notice", async ({ page }) => {
   await page.goto("/calendar-overview");
-  await expect
-    .poll(() => backend.calls.find((c) => c.name === "calendar-phone" && c.body.create === true))
-    .toBeTruthy();
-  await expect(page.getByRole("status")).toHaveCount(0);
+  await expect(card(page)).toHaveCount(0);
+  await expect(page.getByText("Forbind en kalender")).toBeVisible();
 });

@@ -4,7 +4,6 @@ import type { Session } from "@supabase/auth-js";
 
 import { AuthContext, type AuthState } from "@/context/auth";
 import { clearLabelBooks } from "@/lib/eventLabels";
-import { forgetAskedPhone } from "@/lib/phoneAsk";
 import { clearPersistedQueries } from "@/lib/queryPersistence";
 import { supabaseAuth } from "@/lib/supabase";
 
@@ -38,7 +37,6 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         queryClient.clear();
         clearPersistedQueries();
         clearLabelBooks();
-        forgetAskedPhone();
       }
     });
     return () => data.subscription.unsubscribe();

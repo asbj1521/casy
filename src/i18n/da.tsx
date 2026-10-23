@@ -726,10 +726,14 @@ export const da = {
     denied:
       "Casy har ikke adgang til telefonens kalendere. Slå Kalendere til under Casy i Indstillinger, og prøv igen.",
     openSettings: "Åbn Indstillinger",
-    needTitle: "Casy har brug for din kalender",
-    needFailed:
-      "Casy kunne ikke læse telefonens kalendere. Casy gemmer kun, hvornår du er optaget, aldrig titlerne.",
-    tryAgain: "Prøv igen",
+    needTitle: "Casy kan ikke se nogen kalender endnu",
+    needBody:
+      "Importér telefonens kalender, så Casy kan se, hvornår du er optaget. Casy gemmer kun tidspunkterne, aldrig titlerne.",
+    needAsk: "iPhone spørger dig først, om Casy må se kalenderen.",
+    importCalendar: "Importér min kalender",
+    allowAndImport: "Tillad og importér",
+    importing: "Importerer",
+    nothingOnPhone: "Der var ingen kalendere på telefonen at importere.",
     otherCalendar: "Brug en anden kalender",
     couldntRead: "Kunne ikke læse telefonens kalendere. Prøv igen.",
     couldntSave: "Kunne ikke gemme telefonens kalendere.",

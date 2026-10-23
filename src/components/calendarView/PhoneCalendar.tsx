@@ -27,7 +27,7 @@ import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
-import { useConnectPhoneOnOpen } from "@/hooks/useConnectPhoneOnOpen";
+import { usePhoneImport } from "@/hooks/usePhoneImport";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
@@ -63,8 +63,8 @@ export default function PhoneCalendar() {
     setCalendarsVisible,
     visibilityError,
   } = useMyCalendarView();
-  // The app asks for the phone's calendar as soon as it opens with none (#132).
-  const phoneAccess = useConnectPhoneOnOpen(calendar.none);
+  // The app offers to import the phone's calendar when nothing is connected (#132).
+  const phoneImport = usePhoneImport(calendar.none);
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
   const trips = useTrips();
   const marks = useMemo(() => tripMarks(trips.detected, lang), [trips.detected, lang]);
@@ -278,9 +278,7 @@ export default function PhoneCalendar() {
         </Suspense>
       )}
 
-      {(phoneAccess.state === "denied" || phoneAccess.state === "failed") && (
-        <PhoneCalendarAccess state={phoneAccess.state} onRetry={phoneAccess.retry} />
-      )}
+      {phoneImport.on && <PhoneCalendarAccess phone={phoneImport} />}
 
       <TripSheet mark={tripMark} open={tripOpen} onClose={() => setTripOpen(false)} trips={trips} />
 
