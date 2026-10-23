@@ -47,4 +47,4 @@ Pushing to `main` deploys the site on Vercel. Database migrations and Edge Funct
 
 ## More
 
-[CLAUDE.md](CLAUDE.md) has the full picture: architecture, data model, auth, sync and the conventions the code follows.
+[CLAUDE.md](CLAUDE.md) has the rules and conventions the code follows and a map of the code; [docs/architecture/](docs/architecture/) has each area in detail: scheduling, My calendar, AI, the platform, and the backend with its data model, auth and sync.
