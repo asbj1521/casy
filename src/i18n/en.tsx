@@ -94,6 +94,8 @@ export const en: Messages = {
     accounts: "Your accounts",
     add: "Add a calendar",
     help: "Help connecting:",
+    more: "Other ways to connect",
+    moreDetail: "Apple Calendar or a calendar link",
   },
   appearance: {
     title: "Appearance",

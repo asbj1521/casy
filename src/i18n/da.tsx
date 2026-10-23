@@ -103,6 +103,8 @@ export const da = {
     accounts: "Dine konti",
     add: "Tilføj en kalender",
     help: "Hjælp til at forbinde:",
+    more: "Andre måder at forbinde",
+    moreDetail: "Apple-kalender eller et kalenderlink",
   },
   appearance: {
     title: "Udseende",

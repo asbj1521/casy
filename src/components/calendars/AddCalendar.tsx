@@ -1,13 +1,14 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarPlus, HelpCircle, Loader2 } from "lucide-react";
+import { CalendarPlus, Ellipsis, HelpCircle, Loader2 } from "lucide-react";
 
 import type { CalendarConnectionStatus } from "@/api/calendars";
-import { ADD_ORDER, addTargetId, PROVIDER_BRANDS } from "@/components/calendarProviders";
+import { addTargetId, APP_MORE, PROVIDER_BRANDS } from "@/components/calendarProviders";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import type { Messages } from "@/i18n/da";
 import { useT } from "@/i18n/lang";
+import { isNativeApp } from "@/lib/nativeApp";
 import { cn } from "@/lib/utils";
 import type { CalendarProvider } from "@/types";
 
@@ -60,6 +61,10 @@ function connectLabel(state: ProviderState, t: Messages): string {
  * list rows on a phone. Choosing Google or Outlook leaves for its consent
  * screen; Apple and the link open their form under this section (the page
  * draws it); the phone asks iOS and sends its calendars.
+ *
+ * In the iPhone app (#141) the phone's own calendars come first, and the other
+ * ways (APP_MORE) fold away under one row, open when one of them is picked,
+ * connecting or failed.
  */
 export default function AddCalendar({
   offer,
@@ -87,59 +92,81 @@ export default function AddCalendar({
   const t = useT();
   const states = providerStates(offer, connections, busy, chosen, t);
   const failures = states.filter((s) => s.failed);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   if (phone) {
+    const folded = isNativeApp ? APP_MORE : [];
+    const main = states.filter((s) => !folded.includes(s.id));
+    const more = states.filter((s) => folded.includes(s.id));
+    const showMore =
+      moreOpen || more.some((s) => s.chosen || s.pending || s.failed) || main.length === 0;
+    const shown = showMore ? [...main, ...more] : main;
+    const guides = shown.map((s) => s.id).filter((id) => PROVIDER_BRANDS[id].helpTo);
     return (
       <>
         <ListGroup
           title={t.calendarAccounts.add}
           footnote={
-            <>
-              {t.calendarAccounts.help}{" "}
-              {ADD_ORDER.map((id, i) => (
-                <Fragment key={id}>
-                  {i > 0 && ", "}
-                  <Link
-                    to={PROVIDER_BRANDS[id].helpTo ?? "/"}
-                    className="underline underline-offset-2"
-                  >
-                    {t.calendarView.providerNames[id]}
-                  </Link>
-                </Fragment>
-              ))}
-            </>
+            guides.length > 0 && (
+              <>
+                {t.calendarAccounts.help}{" "}
+                {guides.map((id, i) => (
+                  <Fragment key={id}>
+                    {i > 0 && ", "}
+                    <Link
+                      to={PROVIDER_BRANDS[id].helpTo ?? "/"}
+                      className="underline underline-offset-2"
+                    >
+                      {t.calendarView.providerNames[id]}
+                    </Link>
+                  </Fragment>
+                ))}
+              </>
+            )
           }
         >
-          {states.map((state) => {
-            const brand = PROVIDER_BRANDS[state.id];
-            const waiting = statusPending || state.pending;
-            return (
-              <ListRow
-                key={state.id}
-                id={addTargetId(state.id)}
-                leading={
-                  <span
-                    className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                      brand.badgeClass,
-                    )}
-                  >
-                    {brand.icon}
-                  </span>
-                }
-                label={t.providers[state.id].label}
-                detail={t.connectPrompt.hints[state.id]}
-                value={waiting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                selected={state.chosen}
-                onClick={waiting ? undefined : () => onConnect(state.id)}
-                chevron
-              />
-            );
-          })}
+          {main.map(row)}
+          {more.length > 0 && main.length > 0 && (
+            <ListRow
+              icon={Ellipsis}
+              label={t.calendarAccounts.more}
+              detail={t.calendarAccounts.moreDetail}
+              expanded={showMore}
+              onClick={() => setMoreOpen(!showMore)}
+            />
+          )}
+          {showMore && more.map(row)}
         </ListGroup>
         <Failures failures={failures} />
       </>
     );
+
+    function row(state: ProviderState) {
+      const brand = PROVIDER_BRANDS[state.id];
+      const waiting = statusPending || state.pending;
+      return (
+        <ListRow
+          key={state.id}
+          id={addTargetId(state.id)}
+          leading={
+            <span
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                brand.badgeClass,
+              )}
+            >
+              {brand.icon}
+            </span>
+          }
+          label={t.providers[state.id].label}
+          detail={t.connectPrompt.hints[state.id]}
+          value={waiting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          selected={state.chosen}
+          onClick={waiting ? undefined : () => onConnect(state.id)}
+          chevron
+        />
+      );
+    }
   }
 
   return (

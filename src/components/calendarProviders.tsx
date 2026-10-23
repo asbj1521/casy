@@ -52,10 +52,18 @@ export const PROVIDER_BRANDS: Record<
 export const ADD_ORDER: CalendarProvider[] = ["apple", "google", "outlook", "ics"];
 
 /**
- * What adding a calendar offers here: in the iPhone app, the phone's own
- * calendars first (every account on it, no password), then the rest.
+ * In the iPhone app (#141), the ways besides the phone's own calendars, folded
+ * away under "Andre måder at forbinde". Google and Outlook aren't offered in
+ * the app until their sign-in is verified (v2); the phone's calendars already
+ * hold any Google or Outlook account added to the iPhone.
  */
-export const ADD_HERE: CalendarProvider[] = isNativeApp ? ["device", ...ADD_ORDER] : ADD_ORDER;
+export const APP_MORE: CalendarProvider[] = ["apple", "ics"];
+
+/**
+ * What adding a calendar offers here: in the iPhone app, the phone's own
+ * calendars first (every account on it, no password), then APP_MORE.
+ */
+export const ADD_HERE: CalendarProvider[] = isNativeApp ? ["device", ...APP_MORE] : ADD_ORDER;
 
 /** The element id of a provider's tile or row on the calendars page, for scrolling to it. */
 export const addTargetId = (provider: CalendarProvider) => `connect-${provider}`;

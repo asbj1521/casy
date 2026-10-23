@@ -104,6 +104,26 @@ test("My calendar's month name stays on top and follows the scroll", async ({ pa
   expect(await november.boundingBox()).toEqual(before);
 });
 
+test("in the app, the phone's own calendars come first and Google and Outlook wait (#141)", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+  });
+  await page.goto("/calendar-overview/accounts");
+  const add = page.getByRole("list").filter({ has: page.getByText("Denne telefon") });
+  await expect(add.getByRole("button", { name: /Denne telefon/ })).toBeVisible();
+  await expect(add.getByRole("button", { name: /^Apple-kalender/ })).toHaveCount(0);
+  await expect(add.getByRole("button", { name: /Google Kalender/ })).toHaveCount(0);
+
+  await add.getByRole("button", { name: /Andre måder at forbinde/ }).click();
+  await expect(add.getByRole("button", { name: /^Apple-kalender/ })).toBeVisible();
+  await expect(add.getByRole("button", { name: /^Kalenderlink/ })).toBeVisible();
+  await expect(add.getByRole("button", { name: /Google Kalender|Outlook-kalender/ })).toHaveCount(
+    0,
+  );
+});
+
 test.describe("short pages", () => {
   test.use({ world: { calendars: "connected", groups: "none" } });
 
