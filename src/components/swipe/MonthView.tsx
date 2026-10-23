@@ -15,6 +15,7 @@ import { buildMonthLayout } from "@/lib/calendarOverview";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { capitalize } from "@/lib/format";
 import { layoutWeek, type GridItem } from "@/lib/monthGrid";
+import { MONTH_LABEL_PX, monthScrollTop } from "@/lib/monthScroll";
 import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,6 @@ const LANE_PX = 20;
 const MORE_PX = 14;
 /** How long the month rests on opening before it glides to what it reveals. */
 const REVEAL_DELAY_MS = 450;
-
 /**
  * Your calendar a month at a time, drawn like Apple Calendar's month view
  * (#74), for looking further ahead than three days (a holiday, a trip): the
@@ -42,6 +42,13 @@ const REVEAL_DELAY_MS = 450;
  * orange, and today is a grey circle so the two never look alike
  * (`todayTone`). Each month is memoised, so a tap redraws only the months
  * whose selected day changed, not all twelve.
+ *
+ * With a `header` the months are laid out as Apple's does on a phone: the
+ * header (the toolbar the page gives), the name of the month on screen and the
+ * weekdays stay put on top, translucent, and the months scroll under them and
+ * show through; the title changes as the months pass beneath it, and each month
+ * starts with its short name over the column of its first day instead of a
+ * heading of its own.
  */
 export default function MonthView({
   focus,
@@ -51,8 +58,15 @@ export default function MonthView({
   selected = null,
   todayTone = "red",
   reveal = null,
+  header,
   onPickDay,
 }: {
+  /**
+   * The page's toolbar, drawn over the months in a translucent block with the
+   * month's name and the weekdays under it. Without it the months have their
+   * own headings and the weekdays sit above them, as the swipe screen draws it.
+   */
+  header?: ReactNode;
   /** The day whose month to open on. */
   focus: number;
   calendar: MyCalendarDays;
@@ -73,7 +87,10 @@ export default function MonthView({
   onPickDay: (day: number) => void;
 }) {
   const t = useT();
+  const { lang } = useLang();
+  const floating = header !== undefined;
   const scroller = useRef<HTMLDivElement>(null);
+  const headerEl = useRef<HTMLDivElement>(null);
   const monthEls = useRef(new Map<number, HTMLElement>());
   const register = useCallback((month: number, el: HTMLElement | null) => {
     if (el) monthEls.current.set(month, el);
@@ -94,13 +111,58 @@ export default function MonthView({
   const [today] = useState(() => startOfDay(Date.now(), TZ));
   const thisYear = localDate(today, TZ).year;
 
-  // Open on the focused month.
+  // The floating header's height, which the months leave room for (null until
+  // measured, so the view opens on its month only once it is known).
+  const [pad, setPad] = useState<number | null>(floating ? null : 0);
+  // The month the title names: the one whose first week is under the header.
+  const [titleMonth, setTitleMonth] = useState(() => startOfMonth(focus, TZ));
+
   useLayoutEffect(() => {
-    const el = monthEls.current.get(startOfMonth(focus, TZ));
-    if (el && scroller.current) scroller.current.scrollTop = el.offsetTop;
+    const el = headerEl.current;
+    if (!floating || !el) return;
+    const measure = () => setPad(el.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [floating]);
+
+  const track = useCallback(() => {
+    const box = scroller.current;
+    if (!box || !floating) return;
+    const line = box.scrollTop + (pad ?? 0) + 2;
+    let current = months[0];
+    for (const m of months) {
+      const el = monthEls.current.get(m);
+      if (el && el.offsetTop + MONTH_LABEL_PX <= line) current = m;
+    }
+    // Only a change of month redraws, however fast it scrolls.
+    setTitleMonth(current);
+  }, [floating, pad, months]);
+
+  // Open on the focused month, once the header's height is known.
+  const opened = useRef(false);
+  useLayoutEffect(() => {
+    const box = scroller.current;
+    if (pad === null || !box) return;
+    if (!opened.current) {
+      opened.current = true;
+      const el = monthEls.current.get(startOfMonth(focus, TZ));
+      if (el) box.scrollTop = monthScrollTop(box, el);
+    }
+    track();
     // Only on opening: the view is opened afresh each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pad === null]);
+
+  // A header that changes height (a notice arriving) pushes the months down by
+  // the same amount, so what was on screen stays where it was.
+  const lastPad = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const box = scroller.current;
+    if (pad !== null && lastPad.current !== null && box) box.scrollTop += pad - lastPad.current;
+    lastPad.current = pad;
+  }, [pad]);
 
   useEffect(() => {
     if (reveal === null) return;
@@ -119,6 +181,69 @@ export default function MonthView({
     return () => clearTimeout(timer);
   }, [reveal]);
 
+  const sections = months.map((month) => {
+    const { year, month: m } = localDate(month, TZ);
+    const inMonth =
+      selected !== null &&
+      localDate(selected, TZ).month === m &&
+      localDate(selected, TZ).year === year;
+    return (
+      <MonthSection
+        key={month}
+        month={month}
+        showYear={year !== thisYear}
+        compact={floating}
+        items={items}
+        colorOf={calendar.colorOf}
+        today={today}
+        todayTone={todayTone}
+        marked={marked}
+        selected={inMonth ? selected : null}
+        onPickDay={onPickDay}
+        register={register}
+      />
+    );
+  });
+  const weekdays = [1, 2, 3, 4, 5, 6, 0].map((dow) => (
+    <span key={dow} className={dow === 0 || dow === 6 ? "text-muted-foreground" : ""}>
+      {t.weekdaysShort[dow].charAt(0)}
+    </span>
+  ));
+
+  if (floating) {
+    const { year } = localDate(titleMonth, TZ);
+    const name = capitalize(
+      new Date(titleMonth).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
+    );
+    return (
+      <div className="relative h-full">
+        <div
+          ref={scroller}
+          data-floating-header=""
+          className="relative h-full overflow-y-auto overscroll-contain"
+          style={{ paddingTop: pad ?? 0, scrollPaddingTop: pad ?? 0 }}
+          onScroll={track}
+        >
+          {sections}
+        </div>
+        <div ref={headerEl} className="absolute inset-x-0 top-0 z-10">
+          {/* The blur is a layer of its own: the capsules in the header blur
+              what is behind them, which a backdrop filter's child can't. */}
+          <div aria-hidden className="glass-bar pointer-events-none absolute inset-0" />
+          <div className="relative pb-1.5">
+            {header}
+            <h2 className="px-3 pb-1 pt-1 text-[30px] font-bold leading-tight tracking-tight text-foreground">
+              {year !== thisYear ? `${name} ${year}` : name}
+            </h2>
+            <div className="grid h-6 grid-cols-7 items-center text-center text-[12px] font-medium">
+              {weekdays}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* The weekdays, above the months rather than stuck inside their
@@ -126,36 +251,11 @@ export default function MonthView({
           months showed as they scrolled under it. Here they are clipped at
           the scroller's own edge. */}
       <div className="grid h-7 shrink-0 grid-cols-7 items-center border-b bg-background text-center text-[12px] font-medium">
-        {[1, 2, 3, 4, 5, 6, 0].map((dow) => (
-          <span key={dow} className={dow === 0 || dow === 6 ? "text-muted-foreground" : ""}>
-            {t.weekdaysShort[dow].charAt(0)}
-          </span>
-        ))}
+        {weekdays}
       </div>
 
       <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {months.map((month) => {
-          const { year, month: m } = localDate(month, TZ);
-          const inMonth =
-            selected !== null &&
-            localDate(selected, TZ).month === m &&
-            localDate(selected, TZ).year === year;
-          return (
-            <MonthSection
-              key={month}
-              month={month}
-              showYear={year !== thisYear}
-              items={items}
-              colorOf={calendar.colorOf}
-              today={today}
-              todayTone={todayTone}
-              marked={marked}
-              selected={inMonth ? selected : null}
-              onPickDay={onPickDay}
-              register={register}
-            />
-          );
-        })}
+        {sections}
       </div>
     </div>
   );
@@ -191,6 +291,7 @@ export function MonthLayer({
       <MonthSection
         month={month}
         showYear={localDate(month, TZ).year !== localDate(today, TZ).year}
+        compact
         items={items}
         colorOf={colorOf}
         today={today}
@@ -208,6 +309,7 @@ export function MonthLayer({
 const MonthSection = memo(function MonthSection({
   month,
   showYear,
+  compact,
   items,
   colorOf,
   today,
@@ -221,6 +323,8 @@ const MonthSection = memo(function MonthSection({
 }: {
   month: number;
   showYear: boolean;
+  /** Under a floating header: a short name over the first day, not a heading. */
+  compact: boolean;
   items: GridItem[];
   colorOf: (calendarId: string) => string;
   today: number;
@@ -250,12 +354,34 @@ const MonthSection = memo(function MonthSection({
     [layout, items],
   );
 
+  // Apple's short name ("Nov"), over the column of the month's first day.
+  const firstColumn = Math.max(
+    0,
+    layout.weeks[0].findIndex((d) => d.inMonth),
+  );
+  const shortName = capitalize(
+    new Date(month)
+      .toLocaleDateString(LOCALE[lang], { month: "short", timeZone: TZ })
+      .replace(/\.$/, ""),
+  );
+
   return (
     // data-month: the paper pile (#126) finds the month here to line up with it.
     <section ref={(el) => register(month, el)} data-month={month}>
-      <h3 className="px-3 pb-1 pt-5 text-[28px] font-bold tracking-tight text-foreground">
-        {showYear ? `${name} ${year}` : name}
-      </h3>
+      {compact ? (
+        <div aria-hidden className="relative" style={{ height: MONTH_LABEL_PX }}>
+          <span
+            className="absolute top-[3px] truncate text-center text-[17px] font-bold leading-none text-foreground"
+            style={{ left: `${(firstColumn / 7) * 100}%`, width: `${100 / 7}%` }}
+          >
+            {shortName}
+          </span>
+        </div>
+      ) : (
+        <h3 className="px-3 pb-1 pt-5 text-[28px] font-bold tracking-tight text-foreground">
+          {showYear ? `${name} ${year}` : name}
+        </h3>
+      )}
       {weeks.map(({ week, days, placed, hidden }, w) => {
         const inMonth = week.map((d) => d.inMonth);
         const first = inMonth.indexOf(true);

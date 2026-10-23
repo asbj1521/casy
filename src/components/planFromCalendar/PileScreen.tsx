@@ -33,6 +33,7 @@ import { SEARCH_WINDOW, type EventSettings } from "@/lib/eventSearch";
 import { capitalize, formatEventDate, formatTime, nameList } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import type { GridItem } from "@/lib/monthGrid";
+import { monthScrollTop } from "@/lib/monthScroll";
 import {
   buildPile,
   candidateMonth,
@@ -408,7 +409,8 @@ export default function PileScreen({
       (e) => !e.closest("[data-pile]"),
     );
     const scroller = el?.closest<HTMLElement>(".overflow-y-auto");
-    if (el && scroller) scroller.scrollTo({ top: el.offsetTop, behavior: "smooth" });
+    if (el && scroller)
+      scroller.scrollTo({ top: monthScrollTop(scroller, el), behavior: "smooth" });
     // Measured once the scroll has settled.
     const id = window.setTimeout(
       () => {

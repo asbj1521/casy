@@ -86,6 +86,24 @@ test("My calendar is a month like Apple's: a day opens its busy time, Kalendere 
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
 });
 
+test("My calendar's month name stays on top and follows the scroll", async ({ page }) => {
+  await page.goto("/calendar-overview");
+  const title = page.getByRole("heading", { name: "Oktober", exact: true });
+  await expect(title).toBeVisible();
+  const before = await title.boundingBox();
+
+  // November's first week comes up under the header: the title changes, and stays where it was.
+  await page.locator("[data-floating-header]").evaluate((box) => {
+    const pad = parseFloat((box as HTMLElement).style.scrollPaddingTop);
+    const next = box.querySelector<HTMLElement>("[data-month]:nth-of-type(2)")!;
+    box.scrollTop = next.offsetTop + 28 - pad;
+  });
+  const november = page.getByRole("heading", { name: "November", exact: true });
+  await expect(november).toBeVisible();
+  await expect(title).toHaveCount(0);
+  expect(await november.boundingBox()).toEqual(before);
+});
+
 test.describe("short pages", () => {
   test.use({ world: { calendars: "connected", groups: "none" } });
 

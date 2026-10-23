@@ -26,6 +26,7 @@ import Notice from "@/components/ui/Notice";
 import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
+import { useGlassTop } from "@/hooks/useGlassTop";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
 import { usePhoneImport } from "@/hooks/usePhoneImport";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
@@ -44,6 +45,9 @@ import {
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
+
+/** The little room the app's pages leave under the clock (PhoneHeader's h-2). */
+const APP_TOP_GAP = "0.5rem";
 
 // Planning from here (#126) brings the whole scheduler with it: loaded on the first press.
 const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFromCalendar"));
@@ -65,6 +69,8 @@ export default function PhoneCalendar() {
   const { lang } = useLang();
   const words = t.calendarView;
   const calendarsHome = useCalendarsHome();
+  // In the app the months scroll under the clock too (the header's glass).
+  useGlassTop();
   const {
     calendar,
     calendars,
@@ -199,86 +205,105 @@ export default function PhoneCalendar() {
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
+      {/* The months fill everything under the page's top, the header drawn
+          over them in glass. In the app they reach up behind the clock. */}
       <div
         ref={box}
-        className="flex flex-col"
         style={{
           height: height === null ? undefined : `calc(${height}px - var(--tab-bar-height))`,
+          marginTop: isNativeApp
+            ? `calc(-1 * (env(safe-area-inset-top) + ${APP_TOP_GAP}))`
+            : undefined,
         }}
+        onClick={onMonthTap}
       >
-        <div className="flex items-center justify-between px-4 pb-1">
-          <button
-            type="button"
-            onClick={openList}
-            className="flex items-center gap-1.5 py-1 text-[17px] text-primary"
-          >
-            <Layers className="h-5 w-5" />
-            {words.calendarsButton}
-          </button>
-          <div className="flex items-center gap-4">
-            {/* Tell Casy (#116): the plus, left of "I dag". */}
-            {aiAllowed && (
-              <button
-                type="button"
-                onClick={() => setTellOpen(true)}
-                aria-label={t.tellCasy.button}
-                title={t.tellCasy.button}
-                className="-my-0.5 flex h-8 w-8 items-center justify-center rounded-full text-primary"
+        <MonthView
+          key={reopened}
+          focus={focus}
+          calendar={month}
+          reveal={reveal}
+          selected={pickedDay}
+          todayTone="grey"
+          onPickDay={pickDay}
+          header={
+            <>
+              <div
+                className="flex items-center justify-between px-4 pb-1"
+                style={{
+                  paddingTop: isNativeApp
+                    ? `calc(env(safe-area-inset-top) + ${APP_TOP_GAP})`
+                    : "0.5rem",
+                }}
               >
-                <Plus className="h-6 w-6" strokeWidth={2.25} />
-              </button>
-            )}
-            <button type="button" onClick={goToday} className="py-1 text-[17px] text-primary">
-              {words.today}
-            </button>
-          </div>
-        </div>
-        <DanishTimeNote className="px-4 pb-1" />
+                <button
+                  type="button"
+                  onClick={openList}
+                  className="glass-pill flex h-10 items-center gap-1.5 rounded-full pl-3.5 pr-4 text-[17px] text-primary"
+                >
+                  <Layers className="h-5 w-5" />
+                  {words.calendarsButton}
+                </button>
+                {/* One capsule round everything on the right. */}
+                <div className="glass-pill flex h-10 items-center rounded-full text-primary">
+                  {/* Tell Casy (#116): the plus, left of "I dag". */}
+                  {aiAllowed && (
+                    <button
+                      type="button"
+                      onClick={() => setTellOpen(true)}
+                      aria-label={t.tellCasy.button}
+                      title={t.tellCasy.button}
+                      className="flex h-10 w-11 items-center justify-center rounded-l-full"
+                    >
+                      <Plus className="h-6 w-6" strokeWidth={2.25} />
+                    </button>
+                  )}
+                  {aiAllowed && <span aria-hidden className="h-5 w-px bg-primary/30" />}
+                  <button
+                    type="button"
+                    onClick={goToday}
+                    className="flex h-10 items-center rounded-full px-4 text-[17px]"
+                  >
+                    {words.today}
+                  </button>
+                </div>
+              </div>
+              <DanishTimeNote className="px-4 pb-1" />
 
-        {calendar.error && (
-          <Notice tone="error" className="mx-4 mb-2">
-            <div className="flex items-start justify-between gap-2">
-              {calendar.error.message}
-              <button
-                type="button"
-                onClick={calendar.retry}
-                className="shrink-0 font-medium underline underline-offset-2"
-              >
-                {words.tryAgain}
-              </button>
-            </div>
-          </Notice>
-        )}
-        {calendar.truncated && (
-          <Notice tone="warning" className="mx-4 mb-2">
-            {words.truncated}
-          </Notice>
-        )}
-        {/* The website has no phone to ask; the app says it over the month (below). */}
-        {calendar.none && !isNativeApp && (
-          <Notice tone="info" className="mx-4 mb-2">
-            {words.noCalendars(
-              <Link
-                to={calendarsHome.to}
-                className="font-medium text-foreground underline underline-offset-2"
-              >
-                {words.noCalendarsLink}
-              </Link>,
-            )}
-          </Notice>
-        )}
-
-        <div className="min-h-0 flex-1" onClick={onMonthTap}>
-          <MonthView
-            key={reopened}
-            focus={focus}
-            calendar={month}
-            reveal={reveal}
-            selected={pickedDay}
-            todayTone="grey"
-            onPickDay={pickDay}
-          />
-        </div>
+              {calendar.error && (
+                <Notice tone="error" className="mx-4 mb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    {calendar.error.message}
+                    <button
+                      type="button"
+                      onClick={calendar.retry}
+                      className="shrink-0 font-medium underline underline-offset-2"
+                    >
+                      {words.tryAgain}
+                    </button>
+                  </div>
+                </Notice>
+              )}
+              {calendar.truncated && (
+                <Notice tone="warning" className="mx-4 mb-2">
+                  {words.truncated}
+                </Notice>
+              )}
+              {/* The website has no phone to ask; the app says it over the month (below). */}
+              {calendar.none && !isNativeApp && (
+                <Notice tone="info" className="mx-4 mb-2">
+                  {words.noCalendars(
+                    <Link
+                      to={calendarsHome.to}
+                      className="font-medium text-foreground underline underline-offset-2"
+                    >
+                      {words.noCalendarsLink}
+                    </Link>,
+                  )}
+                </Notice>
+              )}
+            </>
+          }
+        />
       </div>
 
       {/* Planning starts from the calendar (#126); out of the way while a day is open. */}
