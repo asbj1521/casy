@@ -15,6 +15,7 @@ const hours = (n: number) => (n === 1 ? "1 time" : `${n} timer`);
 export const da = {
   language: {
     switchLabel: "Sprog",
+    title: "Sprog",
   },
   common: {
     cancel: "Annuller",
@@ -106,6 +107,7 @@ export const da = {
     chosen: "Valgt",
   },
   profileHub: {
+    settings: "Indstillinger",
     admin: "Admin-tilstand",
     security: "Log ind og sikkerhed",
     feedback: "Send feedback",

@@ -10,6 +10,7 @@ const hours = (n: number) => (n === 1 ? "1 hour" : `${n} hours`);
 export const en: Messages = {
   language: {
     switchLabel: "Language",
+    title: "Language",
   },
   common: {
     cancel: "Cancel",
@@ -97,6 +98,7 @@ export const en: Messages = {
     chosen: "Chosen",
   },
   profileHub: {
+    settings: "Settings",
     admin: "Admin mode",
     security: "Sign-in and security",
     feedback: "Send feedback",

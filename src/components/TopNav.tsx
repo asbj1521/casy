@@ -164,7 +164,7 @@ export default function TopNav() {
   ];
 
   // On a phone the links are in the tab bar (TabBar), so the top is just the
-  // logo and the language switch.
+  // logo and, signed out, the language switch.
   if (phone) return <PhoneHeader />;
 
   return (
@@ -177,7 +177,8 @@ export default function TopNav() {
         <Link to="/" className="flex items-center">
           <span className="text-xl font-bold tracking-tight sm:text-2xl">casy</span>
         </Link>
-        <LanguageToggle />
+        {/* Signed in, language is chosen in Settings (#129). */}
+        {!user && !loading && <LanguageToggle />}
       </div>
       {/* On a phone each link is an icon over a one-word label, which is the
           only way four of them fit beside the logo on a 360px screen. */}
