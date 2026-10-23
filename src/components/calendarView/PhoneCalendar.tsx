@@ -49,6 +49,9 @@ const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFr
  * "Kalendere" opens the list of calendars (what counts, its category and how
  * much it matters) in a sheet, instead of leaving it under the month.
  */
+/** "Not now" on the import card (#132), kept until the app is opened again. */
+const phoneImportPutAway = { done: false };
+
 export default function PhoneCalendar() {
   const t = useT();
   const { lang } = useLang();
@@ -63,8 +66,13 @@ export default function PhoneCalendar() {
     setCalendarsVisible,
     visibilityError,
   } = useMyCalendarView();
-  // The app offers to import the phone's calendar when nothing is connected (#132).
-  const phoneImport = usePhoneImport(calendar.none);
+  // The app offers to import the phone's calendar until this phone is connected (#132).
+  // The server's own list (the holidays the page adds aren't in it).
+  const phoneImport = usePhoneImport(
+    calendar.loading || calendar.error ? null : calendar.calendars,
+  );
+  // "Not now", for someone who has other calendars: until the app is opened again.
+  const [importLater, setImportLater] = useState(() => phoneImportPutAway.done);
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
   const trips = useTrips();
   const marks = useMemo(() => tripMarks(trips.detected, lang), [trips.detected, lang]);
@@ -278,7 +286,19 @@ export default function PhoneCalendar() {
         </Suspense>
       )}
 
-      {phoneImport.on && <PhoneCalendarAccess phone={phoneImport} />}
+      {phoneImport.on && !importLater && (
+        <PhoneCalendarAccess
+          phone={phoneImport}
+          onNotNow={
+            phoneImport.others
+              ? () => {
+                  phoneImportPutAway.done = true;
+                  setImportLater(true);
+                }
+              : undefined
+          }
+        />
+      )}
 
       <TripSheet mark={tripMark} open={tripOpen} onClose={() => setTripOpen(false)} trips={trips} />
 

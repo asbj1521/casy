@@ -14,7 +14,14 @@ type Import = ReturnType<typeof usePhoneImport>;
  * a calendar yet and has one button: import the phone's, which asks iOS first
  * when it hasn't been asked, or leads to Settings when it was refused.
  */
-export default function PhoneCalendarAccess({ phone }: { phone: Import }) {
+export default function PhoneCalendarAccess({
+  phone,
+  onNotNow,
+}: {
+  phone: Import;
+  /** Only for someone with other calendars: put the card away for now. */
+  onNotNow?: () => void;
+}) {
   const t = useT();
   const words = t.phoneCalendar;
   const home = useCalendarsHome();
@@ -43,7 +50,9 @@ export default function PhoneCalendarAccess({ phone }: { phone: Import }) {
       className="fixed inset-x-4 top-[24%] z-30 mx-auto max-w-sm rounded-3xl border bg-card p-5 text-center shadow-xl"
     >
       <CalendarArrowDown className="mx-auto h-8 w-8 text-primary" aria-hidden />
-      <h2 className="mt-3 text-lg font-bold text-foreground">{words.needTitle}</h2>
+      <h2 className="mt-3 text-lg font-bold text-foreground">
+        {phone.others ? words.phoneTitle : words.needTitle}
+      </h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
         {denied ? words.denied : words.needBody}
         {!denied && access === "prompt" && ` ${words.needAsk}`}
@@ -58,9 +67,19 @@ export default function PhoneCalendarAccess({ phone }: { phone: Import }) {
         {button}
       </button>
       {note && <p className="mt-3 text-sm text-red-600">{note}</p>}
-      <Link to={home.to} className="mt-3 block text-sm font-semibold text-primary">
-        {words.otherCalendar}
-      </Link>
+      {onNotNow ? (
+        <button
+          type="button"
+          onClick={onNotNow}
+          className="mt-3 block w-full text-sm font-semibold text-primary"
+        >
+          {words.notNow}
+        </button>
+      ) : (
+        <Link to={home.to} className="mt-3 block text-sm font-semibold text-primary">
+          {words.otherCalendar}
+        </Link>
+      )}
     </div>
   );
 }

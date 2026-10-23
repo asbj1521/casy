@@ -148,3 +148,38 @@ test("the website's phone has no phone to import, and keeps its notice", async (
   await expect(card(page)).toHaveCount(0);
   await expect(page.getByText("Forbind en kalender")).toBeVisible();
 });
+
+test.describe("with other calendars connected, but not this phone", () => {
+  test.use({ world: { calendars: "connected", groups: "some" } });
+
+  test("the card still offers the phone's calendar, and can be put away", async ({
+    page,
+    backend,
+  }) => {
+    await asTheApp(page, "granted", { alreadyAnswered: true });
+    await page.goto("/calendar-overview");
+    await expect(
+      card(page).getByRole("heading", { name: "Telefonens kalender er ikke med endnu" }),
+    ).toBeVisible();
+    await card(page).getByRole("button", { name: "Ikke nu" }).click();
+    await expect(card(page)).toHaveCount(0);
+    // Put away until the app is opened again, not every time the tab is.
+    await page.getByRole("link", { name: /Profil/ }).click();
+    await page.getByRole("link", { name: /Kalender/ }).click();
+    await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
+    await expect(card(page)).toHaveCount(0);
+    expect(backend.calls.some((c) => c.name === "calendar-phone" && c.body.create)).toBe(false);
+  });
+
+  test("once this phone is connected, there is no card", async ({ page }) => {
+    await asTheApp(page, "granted", { alreadyAnswered: true });
+    // The connection the app remembers is one the server lists.
+    await page.addInitScript(
+      (key) => localStorage.setItem(key, "conn-apple"),
+      `casy-phone-calendar:${ME.id}`,
+    );
+    await page.goto("/calendar-overview");
+    await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
+    await expect(card(page)).toHaveCount(0);
+  });
+});

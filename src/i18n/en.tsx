@@ -694,6 +694,8 @@ export const en: Messages = {
       "Casy can't see the phone's calendars. Turn on Calendars under Casy in Settings, then try again.",
     openSettings: "Open Settings",
     needTitle: "Casy can't see a calendar yet",
+    phoneTitle: "The phone's calendar isn't in yet",
+    notNow: "Not now",
     needBody:
       "Import the phone's calendar so Casy can see when you are busy. Casy only stores the times, never the titles.",
     needAsk: "iPhone asks you first whether Casy may see the calendar.",
