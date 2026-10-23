@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Loader2, Pencil, Sparkles, Star } from "lucide-react";
+import { Check, ChevronDown, Loader2, Minus, Pencil, Sparkles, Star } from "lucide-react";
 
 import {
   calendarsChanged,
@@ -10,6 +10,7 @@ import {
   type CalendarChange,
 } from "@/api/calendars";
 import { useIsDark } from "@/hooks/useIsDark";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { shade } from "@/lib/tint";
 import InfoTip from "@/components/InfoTip";
 import InlineTextEdit from "@/components/InlineTextEdit";
@@ -69,6 +70,7 @@ export default function CalendarListPanel({
   const t = useT();
   const words = t.calendarView;
   const user = useSignedInUser();
+  const phone = usePhoneLayout();
   const groups = useMemo(() => groupCalendarsByBrand(calendars), [calendars]);
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const [uncountedOpen, setUncountedOpen] = useState(false);
@@ -219,17 +221,31 @@ export default function CalendarListPanel({
             <ul>
               {uncounted.map(({ calendar: c, brand }) => (
                 <li key={c.id} className="flex items-start gap-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={false}
-                    onChange={() => onSetVisible([c.id], true)}
-                    aria-label={words.show(c.name)}
-                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                  />
-                  <span
-                    className="mt-1 h-3 w-3 shrink-0 rounded-full opacity-40"
-                    style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
-                  />
+                  {phone ? (
+                    <TickCircle color={colorOf(c.id)} state="none" dim>
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        onChange={() => onSetVisible([c.id], true)}
+                        aria-label={words.show(c.name)}
+                        className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
+                      />
+                    </TickCircle>
+                  ) : (
+                    <>
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        onChange={() => onSetVisible([c.id], true)}
+                        aria-label={words.show(c.name)}
+                        className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                      />
+                      <span
+                        className="mt-1 h-3 w-3 shrink-0 rounded-full opacity-40"
+                        style={{ backgroundColor: `rgb(${colorOf(c.id)})` }}
+                      />
+                    </>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-muted-foreground">{c.name}</p>
                     <p className="truncate text-xs text-muted-foreground/80">
@@ -267,18 +283,65 @@ function GroupCheckbox({
   onChange: () => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  const phone = usePhoneLayout();
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = state === "some";
   }, [state]);
-  return (
+  const input = (
     <input
       ref={ref}
       type="checkbox"
       checked={state === "all"}
       onChange={onChange}
       aria-label={label}
-      className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+      className={
+        phone
+          ? "absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
+          : "h-4 w-4 shrink-0 cursor-pointer accent-primary"
+      }
     />
+  );
+  return phone ? (
+    <TickCircle color="hsl(var(--primary))" state={state}>
+      {input}
+    </TickCircle>
+  ) : (
+    input
+  );
+}
+
+/**
+ * A phone's tick (#153), as Apple Calendar's calendar list draws it: a circle
+ * in the calendar's colour, filled with a white tick when it counts, empty
+ * when it doesn't, a dash for a group partly ticked. The real checkbox lies
+ * over it, invisible (`children`), for screen readers and tests.
+ */
+function TickCircle({
+  color,
+  state,
+  dim = false,
+  children,
+}: {
+  /** "r, g, b" (a calendar's colour), or any CSS colour. */
+  color: string;
+  state: "all" | "none" | "some";
+  dim?: boolean;
+  children: ReactNode;
+}) {
+  const css = color.includes("(") ? color : `rgb(${color})`;
+  const filled = state !== "none";
+  return (
+    <span
+      className={cn(
+        "relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40",
+        dim && "opacity-60",
+      )}
+      style={{ borderColor: css, backgroundColor: filled ? css : "transparent" }}
+    >
+      {state === "all" && <Check aria-hidden className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+      {state === "some" && <Minus aria-hidden className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+      {children}
+    </span>
   );
 }
 
@@ -304,6 +367,7 @@ function CalendarRow({
   onUntick: () => void;
 }) {
   const dark = useIsDark();
+  const phone = usePhoneLayout();
   const t = useT();
   const words = t.calendarView;
   const queryClient = useQueryClient();
@@ -333,17 +397,31 @@ function CalendarRow({
   return (
     <li className="flex flex-col gap-1.5 border-t border-dashed py-2 pl-7">
       <div className="flex items-start gap-3">
-        <input
-          type="checkbox"
-          checked
-          onChange={onUntick}
-          aria-label={words.show(c.name)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
-        />
-        <span
-          className="mt-1 h-3 w-3 shrink-0 rounded-full"
-          style={{ backgroundColor: `rgb(${color})` }}
-        />
+        {phone ? (
+          <TickCircle color={color} state="all">
+            <input
+              type="checkbox"
+              checked
+              onChange={onUntick}
+              aria-label={words.show(c.name)}
+              className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
+            />
+          </TickCircle>
+        ) : (
+          <>
+            <input
+              type="checkbox"
+              checked
+              onChange={onUntick}
+              aria-label={words.show(c.name)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+            />
+            <span
+              className="mt-1 h-3 w-3 shrink-0 rounded-full"
+              style={{ backgroundColor: `rgb(${color})` }}
+            />
+          </>
+        )}
         <div className="min-w-0 flex-1">
           {renaming ? (
             <>
