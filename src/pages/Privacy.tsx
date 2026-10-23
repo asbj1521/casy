@@ -222,6 +222,14 @@ const da: LegalCopy = {
               vurdering) følger med de næste gange;
             </li>
             <li>
+              i iPhone-appen, for de aftaler, AI&apos;en har vurderet som et fly eller en rejse:
+              titlen, stedet, kalenderens navn og om aftalen varer hele dagen. AI&apos;en svarer, om
+              det er et fly, et tog eller en bus, og mellem hvilke byer. Telefonen parrer turen ud
+              med turen hjem og spørger dig om hver rejse, den finder, og om det, den ikke kan
+              parre, for eksempel et fly ud uden et fly hjem. En rejse tæller først med, når du har
+              sagt ja til den. Byerne og rejserne gemmes kun på din telefon;
+            </li>
+            <li>
               i iPhone-appen, for hver af dine vigtige aftaler: hvornår den starter, hvor vigtig den
               er, hvad du ikke skal gøre aftenen før, og hvor mange dage den kræver forberedelse.
               Uden titel, art eller begrundelse. Det gemmes hos Casy, så datoer i en afstemning kan
@@ -229,20 +237,22 @@ const da: LegalCopy = {
             </li>
           </ul>
           <p className="mt-3">
-            Aldrig noter, steder, gæster eller datoer, og intet om de andre i dine grupper. Titler
-            på aftaler kan afsløre private ting, for eksempel om helbred. Casy beder AI&apos;en om
-            aldrig at gætte på helbred, men titlen sendes, som du har skrevet den. Derfor er ja
-            frivilligt, og Casy virker også uden. Grundlaget er dit samtykke, og du kan trække det
-            tilbage når som helst; det ændrer ikke det, der allerede er sket.
+            Aldrig noter, gæster eller datoer, steder kun for fly, tog og busser, og intet om de
+            andre i dine grupper. Titler på aftaler kan afsløre private ting, for eksempel om
+            helbred. Casy beder AI&apos;en om aldrig at gætte på helbred, men titlen sendes, som du
+            har skrevet den. Derfor er ja frivilligt, og Casy virker også uden. Grundlaget er dit
+            samtykke, og du kan trække det tilbage når som helst; det ændrer ikke det, der allerede
+            er sket.
           </p>
           <p>
             Vurderingerne (mærkaterne) gemmes kun på din telefon, aldrig hos Casy. Casy bruger dem
             til at advare dig, når en dato ligger lige før noget vigtigt, for eksempel en eksamen.
-            Trækker du dit ja tilbage, slettes mærkaterne og dine rettelser på telefonen med det
-            samme. De slettes også, når du logger ud eller sletter appen, og de kommer ikke med i
-            den kopi, du kan hente. Under Dine data kan du se, hvor mange mærkater telefonen har.
-            Casy gemmer, at du har sagt ja, hvornår, og hvilken version af denne tekst du sagde ja
-            til. Får Casys AI lov til mere med din kalender, spørger Casy dig igen.
+            Det samme gælder rejserne og det, du har svaret om dem. Trækker du dit ja tilbage,
+            slettes mærkaterne, rejserne og dine rettelser på telefonen med det samme. De slettes
+            også, når du logger ud eller sletter appen, og de kommer ikke med i den kopi, du kan
+            hente. Under Dine data kan du se, hvor mange mærkater telefonen har. Casy gemmer, at du
+            har sagt ja, hvornår, og hvilken version af denne tekst du sagde ja til. Får Casys AI
+            lov til mere med din kalender, spørger Casy dig igen.
           </p>
           <p>
             Det, der deles om dine vigtige aftaler, erstattes, hver gang appen sender det, så det,
@@ -652,6 +662,14 @@ const en: LegalCopy = {
               explanation and the new judgement) go along with later ones;
             </li>
             <li>
+              in the iPhone app, for the events the AI judged a flight or a journey: the title, the
+              place, the calendar&apos;s name and whether the event lasts all day. The AI answers
+              whether it is a flight, a train or a bus, and between which cities. The phone pairs
+              the way out with the way home and asks you about every trip it finds, and about what
+              it can&apos;t pair, such as a flight out with no flight home. A trip only counts once
+              you have said yes to it. The cities and trips are kept only on your phone;
+            </li>
+            <li>
               in the iPhone app, for each of your important events: when it starts, how important it
               is, what you should not do the evening before, and how many days it needs to prepare.
               Without title, kind or reason. It is stored by Casy, so a vote&apos;s dates can be
@@ -659,20 +677,22 @@ const en: LegalCopy = {
             </li>
           </ul>
           <p className="mt-3">
-            Never notes, places, guests or dates, and nothing about the others in your groups. Event
-            titles can reveal private things, for example about health. Casy tells the AI never to
-            guess at health, but the title is sent as you wrote it. That is why yes is voluntary,
-            and Casy works without it. The basis is your consent, and you can withdraw it at any
-            time; that does not change what has already happened.
+            Never notes, guests or dates, places only for flights, trains and buses, and nothing
+            about the others in your groups. Event titles can reveal private things, for example
+            about health. Casy tells the AI never to guess at health, but the title is sent as you
+            wrote it. That is why yes is voluntary, and Casy works without it. The basis is your
+            consent, and you can withdraw it at any time; that does not change what has already
+            happened.
           </p>
           <p>
             The judgements (labels) are kept only on your phone, never by Casy. Casy uses them to
-            warn you when a date falls right before something important, such as an exam. If you
-            withdraw your yes, the labels and your corrections on the phone are deleted at once.
-            They are also deleted when you sign out or delete the app, and they are not part of the
-            copy you can download. Under Your data you can see how many labels the phone holds. Casy
-            stores that you said yes, when, and which version of this text you said yes to. If
-            Casy&apos;s AI is allowed to do more with your calendar, Casy asks you again.
+            warn you when a date falls right before something important, such as an exam. The same
+            goes for the trips and what you answered about them. If you withdraw your yes, the
+            labels, the trips and your corrections on the phone are deleted at once. They are also
+            deleted when you sign out or delete the app, and they are not part of the copy you can
+            download. Under Your data you can see how many labels the phone holds. Casy stores that
+            you said yes, when, and which version of this text you said yes to. If Casy&apos;s AI is
+            allowed to do more with your calendar, Casy asks you again.
           </p>
           <p>
             What is shared about your important events is replaced every time the app sends it, so

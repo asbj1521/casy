@@ -537,15 +537,16 @@ export const da = {
       <>
         Slået til sender Casy navnene på dine kalendere og titlerne på dine aftaler til Anthropic,
         som laver AI-modellen Claude, så Casy kan sortere dine kalendere og vurdere, hvad dine
-        aftaler betyder for dig. Casy deler også, uden titler, hvornår noget vigtigt starter, så
-        datoer kan rangeres for gruppen. Du kan slå det fra når som helst. Læs mere i {privacy}.
+        aftaler betyder for dig. For fly, tog og busser følger stedet med, så Casy kan finde dine
+        rejser. Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres
+        for gruppen. Du kan slå det fra når som helst. Læs mere i {privacy}.
       </>
     ),
     privacyLink: "privatlivspolitikken",
     title: "Lad Casys AI læse i din kalender?",
     intro:
       "Så kan Casy sortere dine kalendere og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
-    sent: "Navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen) sendes til Anthropic i USA, som laver AI'en. Aldrig noter, steder, gæster eller datoer.",
+    sent: "Navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen) sendes til Anthropic i USA, som laver AI'en. For fly, tog og busser også stedet, så Casy kan finde dine rejser og spørge dig om dem. Aldrig noter, gæster eller datoer.",
     corrections:
       "Casy modtager også de rettelser, du skriver til AI'ens vurderinger, med aftalens titel, og de planer, du laver med AI, med det du skrev og det du ændrede, så AI'en kan lære af dem. Du kan slå det fra under Dine data.",
     shared:

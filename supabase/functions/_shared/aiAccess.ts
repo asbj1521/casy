@@ -53,9 +53,11 @@ export async function aiTesterAllowed(db: Pick<Db, "from">, profileId: string): 
  * (never its title), so a vote's dates can be ranked for the whole group. 3
  * (#122): corrections of the AI are sent to Casy for review (a label
  * correction with its title, a plan with its text), unless the person switches
- * that off in Your data. Keep it in step with the privacy policy's AI section.
+ * that off in Your data. 4 (#115): for flights, trains and buses the event's
+ * place goes too, so the app can find trips. Keep it in step with the privacy
+ * policy's AI section.
  */
-export const CONSENT_VERSION = 3;
+export const CONSENT_VERSION = 4;
 
 /**
  * Say yes under the current wording, or take the yes back: the row goes, and

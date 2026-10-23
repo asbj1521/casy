@@ -504,16 +504,16 @@ export const en: Messages = {
       <>
         When it is on, Casy sends the names of your calendars and the titles of your events to
         Anthropic, which makes the AI model Claude, so Casy can sort your calendars and judge what
-        your events mean for you. Casy also shares, without titles, when something important starts,
-        so dates can be ranked for the group. You can turn it off at any time. Read more in the{" "}
-        {privacy}.
+        your events mean for you. For flights, trains and buses the place goes too, so Casy can find
+        your trips. Casy also shares, without titles, when something important starts, so dates can
+        be ranked for the group. You can turn it off at any time. Read more in the {privacy}.
       </>
     ),
     privacyLink: "privacy policy",
     title: "Let Casy's AI read your calendar?",
     intro:
       "Then Casy can sort your calendars and understand what your events mean, for example that an exam is important.",
-    sent: "The names of your calendars and the titles of your events (in the iPhone app) are sent to Anthropic in the United States, which makes the AI. Never notes, places, guests or dates.",
+    sent: "The names of your calendars and the titles of your events (in the iPhone app) are sent to Anthropic in the United States, which makes the AI. For flights, trains and buses the place too, so Casy can find your trips and ask you about them. Never notes, guests or dates.",
     corrections:
       "Casy also receives the corrections you write to the AI's judgements, with the event's title, and the plans you make with AI, with what you wrote and what you changed, so the AI can learn from them. You can turn that off under Your data.",
     shared:
