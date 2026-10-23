@@ -16,13 +16,7 @@ import Notice from "@/components/ui/Notice";
 import QrCode from "@/components/ui/QrCode";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
-import {
-  canText,
-  pickContacts,
-  recipientsOf,
-  textInvite,
-  type TextResult,
-} from "@/lib/contactInvite";
+import { inviteFromContacts } from "@/lib/contactInvite";
 import { inviteExpiryLabel, knownPeople } from "@/lib/groups";
 import { isNativeApp } from "@/lib/nativeApp";
 import { shareLink } from "@/lib/share";
@@ -74,16 +68,15 @@ function InviteForm({
   const link = useMutation({ mutationFn: () => createInvite(group.id) });
   const [showQr, setShowQr] = useState(false);
   const message = t.invite.message(group.name);
-  // Contacts picked, a link made if there is none yet, and Messages opened with
-  // them and the link; a phone that can't text gets the share sheet instead.
+  // Contacts picked, the link made here if there is none yet, and Messages
+  // opened with them; a phone that can't text gets the share sheet instead.
   const contacts = useMutation({
-    mutationFn: async (): Promise<TextResult | "shared" | null> => {
-      const to = recipientsOf(await pickContacts());
-      if (to.length === 0) return null;
-      const invite = link.data ?? (await link.mutateAsync());
-      if (await canText()) return await textInvite(to, `${message} ${invite.url}`);
-      await shareLink({ title: t.invite.shareTitle(group.name), text: message, url: invite.url });
-      return "shared";
+    mutationFn: async () => {
+      const url = (link.data ?? (await link.mutateAsync())).url;
+      return await inviteFromContacts(
+        { id: group.id, url },
+        { message, shareTitle: t.invite.shareTitle(group.name) },
+      );
     },
   });
   const canShare = isNativeApp || typeof navigator.share === "function";

@@ -611,6 +611,7 @@ export const da = {
     placeholder: "f.eks. Brætspilsaften",
     create: "Opret gruppe",
     createAndInvite: (n: number) => `Opret og invitér ${n}`,
+    createFromContacts: "Opret og invitér fra kontakter",
   },
   invite: {
     title: (group: string) => `Invitér til ${group}`,

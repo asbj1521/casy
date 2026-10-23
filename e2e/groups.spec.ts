@@ -1,4 +1,6 @@
 /** My groups: the list, one group, and an invitation. */
+import type { Page } from "@playwright/test";
+
 import { expect, test } from "./fixtures";
 
 test("a group opens with its members", async ({ page, isMobile }) => {
@@ -66,42 +68,51 @@ test("a new group with nobody invited goes straight to inviting (#149)", async (
   await expect(page).toHaveURL(/\/groups\/g-new-\d+$/);
 });
 
+/**
+ * The app's Invite plugin, answering for iOS: two people picked, Messages
+ * available, and what Messages was given kept for the test to read.
+ */
+async function asTheAppWithContacts(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>;
+    w.Capacitor = {
+      isNativePlatform: () => true,
+      PluginHeaders: [
+        {
+          name: "Invite",
+          methods: ["pickContacts", "canText", "text"].map((name) => ({
+            name,
+            rtype: "promise",
+          })),
+        },
+      ],
+      nativePromise: async (_plugin: string, method: string, options: unknown) => {
+        if (method === "pickContacts")
+          return {
+            contacts: [
+              { name: "Ida", phones: ["+45 12 34 56 78"], emails: [] },
+              { name: "Karl", phones: [], emails: ["karl@example.com"] },
+            ],
+          };
+        if (method === "canText") return { able: true };
+        if (method === "text") {
+          w.__texted = options;
+          return { result: "sent" };
+        }
+        return {};
+      },
+    };
+  });
+}
+
+const texted = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __texted: unknown }).__texted);
+
 test.describe("in the app", () => {
   test.beforeEach(({ isMobile }) => test.skip(!isMobile, "the app is a phone"));
 
   test("friends picked from the contacts get the link in a message (#149)", async ({ page }) => {
-    // The app's Invite plugin, answering for iOS: two people picked, Messages
-    // available, and what Messages was given kept for the test to read.
-    await page.addInitScript(() => {
-      const w = window as unknown as Record<string, unknown>;
-      w.Capacitor = {
-        isNativePlatform: () => true,
-        PluginHeaders: [
-          {
-            name: "Invite",
-            methods: ["pickContacts", "canText", "text"].map((name) => ({
-              name,
-              rtype: "promise",
-            })),
-          },
-        ],
-        nativePromise: async (_plugin: string, method: string, options: unknown) => {
-          if (method === "pickContacts")
-            return {
-              contacts: [
-                { name: "Ida", phones: ["+45 12 34 56 78"], emails: [] },
-                { name: "Karl", phones: [], emails: ["karl@example.com"] },
-              ],
-            };
-          if (method === "canText") return { able: true };
-          if (method === "text") {
-            w.__texted = options;
-            return { result: "sent" };
-          }
-          return {};
-        },
-      };
-    });
+    await asTheAppWithContacts(page);
     await page.goto("/groups/g-running");
     await page
       .getByRole("button", { name: /Invitér folk/ })
@@ -109,10 +120,26 @@ test.describe("in the app", () => {
       .click();
     await page.getByRole("button", { name: "Invitér fra kontakter" }).click();
     await expect(page.getByText("Beskeden er sendt.")).toBeVisible();
-    const texted = await page.evaluate(() => (window as unknown as { __texted: unknown }).__texted);
-    expect(texted).toEqual({
+    expect(await texted(page)).toEqual({
       recipients: ["+45 12 34 56 78", "karl@example.com"],
       body: "Bliv medlem af Løbeklubben på Casy, så vi kan finde en dato, der passer alle: https://casy.app/join/test-invite-token",
     });
+  });
+
+  test("a new group can be made and invited to from the contacts in one go (#149)", async ({
+    page,
+  }) => {
+    await asTheAppWithContacts(page);
+    await page.goto("/groups");
+    await page.getByRole("button", { name: "Lav en gruppe" }).click();
+    await page.getByLabel("Gruppenavn").fill("Fredagsfilm");
+    await page.getByRole("button", { name: "Opret og invitér fra kontakter" }).click();
+    await expect(page).toHaveURL(/\/groups\/g-new-\d+$/);
+    await expect
+      .poll(() => texted(page))
+      .toEqual({
+        recipients: ["+45 12 34 56 78", "karl@example.com"],
+        body: "Bliv medlem af Fredagsfilm på Casy, så vi kan finde en dato, der passer alle: https://casy.app/join/test-invite-token",
+      });
   });
 });

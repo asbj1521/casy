@@ -52,6 +52,13 @@ export interface Invitees {
   emails: string[];
 }
 
+/** What New group makes: a name, who to invite now, and whether to invite from the contacts after (#149). */
+export interface NewGroup {
+  name: string;
+  invitees: Invitees;
+  contacts: boolean;
+}
+
 /** An invitation waiting for your answer. */
 export interface Invitation {
   groupId: string;

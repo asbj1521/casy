@@ -573,6 +573,7 @@ export const en: Messages = {
     placeholder: "e.g. Board game night",
     create: "Create group",
     createAndInvite: (n: number) => `Create and invite ${n}`,
+    createFromContacts: "Create and invite from contacts",
   },
   invite: {
     title: (group: string) => `Invite to ${group}`,

@@ -1,14 +1,15 @@
 import { useId, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Users } from "lucide-react";
+import { BookUser, Loader2, Users } from "lucide-react";
 
-import { groupsQuery, type Invitees } from "@/api/groups";
+import { groupsQuery, type Invitees, type NewGroup } from "@/api/groups";
 import InvitePicker from "@/components/InvitePicker";
 import Modal, { ModalForm } from "@/components/ui/Modal";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { knownPeople, MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
+import { isNativeApp } from "@/lib/nativeApp";
 
 /**
  * "New group": a name, and who to invite straight away, picked from people
@@ -17,6 +18,10 @@ import { knownPeople, MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
  *
  * The form only exists while the dialog is open, so it starts empty every
  * time by simply being new: a cancelled attempt can't come back half filled.
+ *
+ * In the iPhone app it also offers "Opret og invitér fra kontakter" (#149):
+ * the group is made, then whoever made it runs the contacts invite for it
+ * (`contacts: true`; see inviteFromContacts).
  */
 export default function NewGroupDialog({
   open,
@@ -28,7 +33,7 @@ export default function NewGroupDialog({
   open: boolean;
   submitting: boolean;
   error: string | null;
-  onSubmit: (group: { name: string; invitees: Invitees }) => void;
+  onSubmit: (group: NewGroup) => void;
   onCancel: () => void;
 }) {
   return (
@@ -46,7 +51,7 @@ function NewGroupForm({
 }: {
   submitting: boolean;
   error: string | null;
-  onSubmit: (group: { name: string; invitees: Invitees }) => void;
+  onSubmit: (group: NewGroup) => void;
   onCancel: () => void;
 }) {
   const t = useT();
@@ -57,9 +62,11 @@ function NewGroupForm({
   const nameId = useId();
   const count = invitees.profileIds.length + invitees.emails.length;
 
+  const [viaContacts, setViaContacts] = useState(false);
+
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (name.trim()) onSubmit({ name: name.trim(), invitees });
+    if (name.trim()) onSubmit({ name: name.trim(), invitees, contacts: viaContacts });
   }
 
   return (
@@ -97,6 +104,22 @@ function NewGroupForm({
         </Notice>
       )}
 
+      {isNativeApp && (
+        <button
+          type="submit"
+          onClick={() => setViaContacts(true)}
+          disabled={submitting || !name.trim()}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+        >
+          {submitting && viaContacts ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <BookUser className="h-4 w-4" />
+          )}
+          {t.newGroup.createFromContacts}
+        </button>
+      )}
+
       <div className="mt-5 flex justify-end gap-2">
         <button
           type="button"
@@ -108,10 +131,15 @@ function NewGroupForm({
         </button>
         <button
           type="submit"
+          onClick={() => setViaContacts(false)}
           disabled={submitting || !name.trim()}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+          className={
+            isNativeApp
+              ? "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-secondary disabled:opacity-50"
+              : "inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+          }
         >
-          {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+          {submitting && !viaContacts && <Loader2 className="h-4 w-4 animate-spin" />}
           {count > 0 ? t.newGroup.createAndInvite(count) : t.newGroup.create}
         </button>
       </div>

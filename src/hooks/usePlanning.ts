@@ -12,6 +12,7 @@ import {
   participantsFromGroup,
   type Group,
   type GroupBusy,
+  type NewGroup,
 } from "@/api/groups";
 import { useAuth } from "@/context/auth";
 import { useAiAllowed, useAiShare } from "@/hooks/useAiAllowed";
@@ -25,6 +26,7 @@ import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { planFeedback, planFieldsOf, type AiPlan } from "@/lib/aiPlan";
 import { widenOptions, type WidenOption } from "@/lib/widen";
+import { inviteFromContacts } from "@/lib/contactInvite";
 import {
   accept,
   back,
@@ -438,11 +440,18 @@ export function usePlanning() {
   // "New group" from the switcher. A group with no owner would be nobody's,
   // so anyone signed out is sent to sign in first and comes straight back.
   const create = useMutation({
-    mutationFn: createGroup,
-    onSuccess: (data) => {
+    mutationFn: (group: NewGroup) => createGroup(group),
+    onSuccess: (data, made) => {
       queryClient.setQueryData(groupsQueryKey(userId ?? ""), data.groups);
       selectGroup(data.createdId);
       setNewGroupOpen(false);
+      // "Opret og invitér fra kontakter" (#149): the plan stays open behind it.
+      if (made.contacts) {
+        void inviteFromContacts(
+          { id: data.createdId },
+          { message: t.invite.message(made.name), shareTitle: t.invite.shareTitle(made.name) },
+        );
+      }
     },
   });
   function openNewGroup() {
