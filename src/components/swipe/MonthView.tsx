@@ -24,6 +24,8 @@ import { addDays, APP_TIME_ZONE, localDate, startOfDay, startOfMonth } from "@/l
 const TZ = APP_TIME_ZONE;
 
 /** Rows of chips under a day's number, a row's height, and the "+2" line under them. */
+/** How long the month keeps re-applying its opening position while the layout settles. */
+const OPEN_SETTLE_MS = 350;
 const LANES = 3;
 const LANE_PX = 20;
 const MORE_PX = 14;
@@ -140,17 +142,37 @@ export default function MonthView({
     setTitleMonth(current);
   }, [floating, pad, months]);
 
-  // Open on the focused month, once the header's height is known.
-  const opened = useRef(false);
+  // Open on the focused month, once the header's height is known. In the app
+  // the box can still be getting its height then (a scroller with nothing to
+  // scroll holds its position at 0), so the same position is set again as the
+  // box resizes and on the next frame, until the person touches it or a moment
+  // has passed (before a trip's glide begins).
+  const settleUntil = useRef(0);
   useLayoutEffect(() => {
     const box = scroller.current;
     if (pad === null || !box) return;
-    if (!opened.current) {
-      opened.current = true;
+    const open = () => {
       const el = monthEls.current.get(startOfMonth(focus, TZ));
       if (el) box.scrollTop = monthScrollTop(box, el);
-    }
-    track();
+      track();
+    };
+    open();
+    settleUntil.current = Date.now() + OPEN_SETTLE_MS;
+    const again = () => {
+      if (Date.now() < settleUntil.current) open();
+    };
+    const observer = new ResizeObserver(again);
+    observer.observe(box);
+    const frame = requestAnimationFrame(again);
+    const stop = () => (settleUntil.current = 0);
+    box.addEventListener("touchstart", stop, { passive: true });
+    box.addEventListener("wheel", stop, { passive: true });
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+      box.removeEventListener("touchstart", stop);
+      box.removeEventListener("wheel", stop);
+    };
     // Only on opening: the view is opened afresh each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pad === null]);
@@ -371,7 +393,7 @@ const MonthSection = memo(function MonthSection({
       {compact ? (
         <div aria-hidden className="relative" style={{ height: MONTH_LABEL_PX }}>
           <span
-            className="absolute top-[3px] truncate text-center text-[17px] font-bold leading-none text-foreground"
+            className="absolute top-0 truncate text-center text-[17px] font-bold leading-none text-foreground"
             style={{ left: `${(firstColumn / 7) * 100}%`, width: `${100 / 7}%` }}
           >
             {shortName}

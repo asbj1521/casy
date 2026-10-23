@@ -142,55 +142,44 @@
      line where the months come back. A layer of its own, never the parent
      of the capsules: a backdrop filter inside another one sees nothing. */
   .glass-bar {
-    --bar-alpha: 0.35;
     background-color: hsl(var(--background) / var(--bar-alpha));
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    backdrop-filter: blur(22px) saturate(180%);
     -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 10px), transparent);
     mask-image: linear-gradient(to bottom, black calc(100% - 10px), transparent);
   }
 
-  /* A small glass capsule round header buttons (Apple's): frosted fill, what
-     is behind it blurred and pushed brighter and richer in colour, a bright
-     rim along the top and a faint one underneath, as on thick glass. WebKit's
-     backdrop filter takes no SVG filter, so the real thing's bending of the
-     light is out of reach; this is as far as it goes. The content is
-     Casy's orange. */
+  /* A small glass capsule round header buttons (Apple's): what is behind it
+     blurred and pushed richer in colour and brighter, drawn by its edges (the
+     colours are theme.css's --pill-*). WebKit's backdrop filter takes no SVG
+     filter, so the real thing's bending of the light is out of reach; this is
+     as far as it goes. The content is Casy's orange. */
   .glass-pill {
-    background-color: rgb(var(--glass-tint) / 0.3);
-    background-image: linear-gradient(
-      to bottom,
-      rgb(var(--glass-shine)),
-      transparent 55%,
-      transparent
-    );
-    -webkit-backdrop-filter: blur(14px) saturate(210%) brightness(1.12);
-    backdrop-filter: blur(14px) saturate(210%) brightness(1.12);
-    border: 1px solid rgb(var(--glass-edge));
+    background-color: rgb(var(--pill-fill));
+    background-image: linear-gradient(to bottom, rgb(var(--pill-top)), transparent 55%);
+    -webkit-backdrop-filter: blur(14px) saturate(210%) brightness(var(--pill-bright));
+    backdrop-filter: blur(14px) saturate(210%) brightness(var(--pill-bright));
+    border: 1px solid rgb(var(--pill-border));
     box-shadow:
-      inset 0 1.5px 0 rgb(var(--glass-edge)),
-      inset 0 -1px 0 rgb(255 255 255 / 0.12),
-      0 6px 18px -6px rgb(0 0 0 / 0.35);
+      inset 0 1.5px 0 rgb(var(--pill-rim)),
+      inset 0 -2px 5px rgb(var(--pill-under)),
+      0 6px 18px -8px rgb(var(--pill-drop));
   }
 
-  /* The same glass in Casy's orange, for the button that plans (Planlæg):
-     the calendar shows through it, tinted. White text stays on it, so the
-     tint is kept strong enough to read on any month. */
+  /* The same glass tinted Casy's orange, for the button that plans (Planlæg):
+     the calendar shows through, so the tint is a colour in the glass, not a
+     paint over it. White text, with a faint shadow so it reads on any month. */
   .glass-cta {
-    background-color: rgb(var(--cta) / 0.84);
-    background-image: linear-gradient(
-      to bottom,
-      rgb(255 255 255 / 0.28),
-      transparent 55%,
-      rgb(255 255 255 / 0.12)
-    );
-    -webkit-backdrop-filter: blur(14px) saturate(200%) brightness(1.1);
-    backdrop-filter: blur(14px) saturate(200%) brightness(1.1);
-    border: 1px solid rgb(255 255 255 / 0.4);
+    background-color: rgb(var(--cta) / 0.58);
+    background-image: linear-gradient(to bottom, rgb(255 255 255 / 0.22), transparent 50%);
+    -webkit-backdrop-filter: blur(14px) saturate(200%) brightness(var(--pill-bright));
+    backdrop-filter: blur(14px) saturate(200%) brightness(var(--pill-bright));
+    border: 1px solid rgb(255 255 255 / 0.3);
     box-shadow:
-      inset 0 1.5px 0 rgb(255 255 255 / 0.55),
-      inset 0 -1px 0 rgb(255 255 255 / 0.2),
-      0 10px 26px -10px rgb(0 0 0 / 0.5);
+      inset 0 1.5px 0 rgb(255 255 255 / 0.5),
+      inset 0 -2px 5px rgb(0 0 0 / 0.08),
+      0 8px 22px -10px rgb(0 0 0 / 0.4);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.28);
   }
 
   /* The app's clock strip is solid (above). Where the page scrolls under a

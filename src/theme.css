@@ -604,3 +604,43 @@
   --glass-edge: 255 255 255 / 0.16;
   --glass-shine: 255 255 255 / 0.08;
 }
+
+/*
+ * My calendar's glass header and capsules (#136). Light is its own recipe, not
+ * the dark one turned over: white on a pale page is invisible, so the capsule is
+ * all but clear and is drawn by its edges (a bright inner rim, a faint dark
+ * ring, a little shade at the bottom), and the header lets more through.
+ * --bar-alpha: how much of the page's colour the header lays over the months.
+ */
+:root {
+  --bar-alpha: 0.16;
+  --pill-fill: 255 255 255 / 0.1;
+  --pill-top: 255 255 255 / 0.3;
+  --pill-border: 0 0 0 / 0.1;
+  --pill-rim: 255 255 255 / 0.95;
+  --pill-under: 0 0 0 / 0.07;
+  --pill-drop: 0 0 0 / 0.16;
+  --pill-bright: 1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light) {
+    --bar-alpha: 0.35;
+    --pill-fill: 32 32 36 / 0.3;
+    --pill-top: 255 255 255 / 0.08;
+    --pill-border: 255 255 255 / 0.16;
+    --pill-rim: 255 255 255 / 0.16;
+    --pill-under: 255 255 255 / 0.1;
+    --pill-drop: 0 0 0 / 0.35;
+    --pill-bright: 1.12;
+  }
+}
+:root.theme-dark {
+  --bar-alpha: 0.35;
+  --pill-fill: 32 32 36 / 0.3;
+  --pill-top: 255 255 255 / 0.08;
+  --pill-border: 255 255 255 / 0.16;
+  --pill-rim: 255 255 255 / 0.16;
+  --pill-under: 255 255 255 / 0.1;
+  --pill-drop: 0 0 0 / 0.35;
+  --pill-bright: 1.12;
+}
