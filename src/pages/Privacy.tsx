@@ -106,12 +106,24 @@ const da: LegalCopy = {
               (se AI i Casy).
             </li>
             <li>
+              <Term>Rapporter og blokeringer:</Term> rapporterer du noget, gemmer Casy, hvad det
+              drejer sig om (en gruppe, en aftale eller et medlem), grunden, din note og en kopi af
+              den tekst, du rapporterede, som den stod i Casy. Den, du rapporterer, får ikke at
+              vide, at det var dig. Blokerer du nogen, gemmer Casy hvem og hvornår, så deres
+              invitationer ikke når dig.
+            </li>
+            <li>
               <Term>Adgangsoplysninger:</Term> det, der skal til for at holde dine kalendere
               opdateret: adgangsnøgler fra Google eller Microsoft, en app-specifik adgangskode til
               din Apple-konto eller et kalenderlink. De krypteres, før de gemmes, og nøglen
               opbevares adskilt fra databasen.
             </li>
           </ul>
+          <p className="mt-3">
+            Inviterer du venner fra dine kontakter i iPhone-appen, ser Casy kun de personer, du
+            vælger, og kun på telefonen: beskeden med invitationen sendes fra din egen telefon, og
+            Casy gemmer hverken navne, numre eller e-mails fra dine kontakter.
+          </p>
           <p className="mt-3">
             Er du logget ind, kan du se alt dette om dig selv og hente en kopi under{" "}
             <Link to="/profile/data" className="underline underline-offset-2">
@@ -360,8 +372,9 @@ const da: LegalCopy = {
             loggede ind, hvor mange grupper og kalendere de har, alle grupper med deres medlemmer,
             og hvilke kalendertjenester hver person har forbundet, og om de synkroniserer. Den viser
             ikke e-mailadresser, optagede tidsrum eller noget om dine aftaler. Dertil kommer de
-            rettelser af AI'en, folk har sendt til gennemsyn (se AI i Casy): vedkommende ser dem,
-            men aldrig, hvem der sendte dem.
+            rettelser af AI'en, folk har sendt til gennemsyn (se AI i Casy), og de rapporter, folk
+            har sendt: hvad der blev rapporteret, hvorfor og teksten, som den stod. Vedkommende ser
+            dem, men aldrig, hvem der sendte dem.
           </p>
           <p>
             Derfra kan vedkommende slette en gruppe, fjerne nogen fra en gruppe, slette en konto
@@ -410,6 +423,10 @@ const da: LegalCopy = {
             <li>notatet om dine AI-svar efter 30 dage;</li>
             <li>tider, du har fortalt Casy, 30 dage efter, at de er slut;</li>
             <li>rettelser af AI'en, du har sendt til gennemsyn, efter 90 dage;</li>
+            <li>
+              rapporter 180 dage efter, de blev sendt, eller før, når den, der driver Casy, har
+              behandlet dem;
+            </li>
             <li>oplysningerne om dine vigtige aftaler 30 dage efter, at de sidst blev sendt;</li>
             <li>forsøg på at forbinde en kalender, der aldrig blev færdige, efter 7 dage;</li>
             <li>
@@ -420,8 +437,8 @@ const da: LegalCopy = {
           <p>
             Optagede tidsrum bliver erstattet, hver gang Casy opdaterer dine kalendere, og dækker
             kun fra en uge tilbage til tolv måneder frem. Alt andet, altså din konto, dine
-            kalenderforbindelser og dine grupper, gemmes, indtil du selv sletter det eller sletter
-            din konto.
+            kalenderforbindelser, dine grupper og de personer, du har blokeret, gemmes, indtil du
+            selv sletter det eller sletter din konto.
           </p>
           <p>
             Dit ja til, at Casys AI må læse i din kalender, gemmes, så længe du har kontoen, eller
@@ -547,12 +564,23 @@ const en: LegalCopy = {
               (see AI in Casy).
             </li>
             <li>
+              <Term>Reports and blocks:</Term> if you report something, Casy keeps what it is about
+              (a group, an event or a member), the reason, your note and a copy of the text you
+              reported, as it stood in Casy. Whoever you report is not told it was you. If you block
+              someone, Casy keeps who and when, so their invitations don&apos;t reach you.
+            </li>
+            <li>
               <Term>Access credentials:</Term> what is needed to keep your calendars up to date:
               access tokens from Google or Microsoft, an app-specific password for your Apple
               account, or a calendar link. These are encrypted before they are stored, and the key
               is kept separately from the database.
             </li>
           </ul>
+          <p className="mt-3">
+            If you invite friends from your contacts in the iPhone app, Casy only sees the people
+            you pick, and only on the phone: the message with the invitation is sent from your own
+            phone, and Casy keeps no names, numbers or emails from your contacts.
+          </p>
           <p className="mt-3">
             Signed in, you can see all of this about yourself, and download a copy, under{" "}
             <Link to="/profile/data" className="underline underline-offset-2">
@@ -802,8 +830,9 @@ const en: LegalCopy = {
             signed in, how many groups and calendars they have, every group with its members, and
             which calendar services each person connected and whether they are syncing. It does not
             show email addresses, busy times or anything about your events. In addition there are
-            the corrections of the AI people sent for review (see AI in Casy): they see them, but
-            never who sent them.
+            the corrections of the AI people sent for review (see AI in Casy), and the reports
+            people sent: what was reported, why, and the text as it stood. They see them, but never
+            who sent them.
           </p>
           <p>
             From that view they can delete a group, remove someone from a group, delete an account,
@@ -853,6 +882,10 @@ const en: LegalCopy = {
             <li>the note about your AI answers after 30 days;</li>
             <li>times you told Casy, 30 days after they end;</li>
             <li>corrections of the AI you sent for review after 90 days;</li>
+            <li>
+              reports 180 days after they were sent, or sooner once the operator has dealt with
+              them;
+            </li>
             <li>the information about your important events 30 days after it was last sent;</li>
             <li>attempts to connect a calendar that never finished, after 7 days;</li>
             <li>
@@ -863,7 +896,8 @@ const en: LegalCopy = {
           <p>
             Busy times are replaced every time Casy updates your calendars, and only ever cover a
             week back to twelve months ahead. Everything else, meaning your account, your calendar
-            connections and your groups, is kept until you remove it or delete your account.
+            connections, your groups and the people you blocked, is kept until you remove it or
+            delete your account.
           </p>
           <p>
             Your yes to Casy&apos;s AI reading your calendar is kept as long as you have the

@@ -116,6 +116,12 @@ const da: LegalCopy = {
             <li>bruge automatiske værktøjer til at bruge Casy eller kopiere indhold fra den;</li>
             <li>bryde loven med Casy.</li>
           </ul>
+          <p>
+            Ser du noget i Casy, der ikke er i orden, kan du rapportere det fra gruppen eller
+            aftalen og blokere den, der står bag. Casy kigger på hver rapport, så hurtigt det kan,
+            og kan fjerne indhold, grupper eller konti, der bryder disse vilkår (se Når en konto
+            slutter).
+          </p>
         </>
       ),
     },
@@ -370,6 +376,12 @@ const en: LegalCopy = {
             <li>use automated tools to use Casy or copy content from it;</li>
             <li>break the law with Casy.</li>
           </ul>
+          <p>
+            If you see something in Casy that isn&apos;t right, you can report it from the group or
+            the event and block whoever is behind it. Casy looks at every report as soon as it can,
+            and can remove content, groups or accounts that break these terms (see When an account
+            ends).
+          </p>
         </>
       ),
     },
