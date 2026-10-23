@@ -16,7 +16,7 @@
  */
 import Anthropic from "npm:@anthropic-ai/sdk@0.132.1";
 
-import { aiAllowed, NOT_ALLOWED } from "./aiAccess.ts";
+import { aiAllowed, aiTesterAllowed, NOT_ALLOWED } from "./aiAccess.ts";
 import { requireEnv } from "./env.ts";
 import { HttpError } from "./http.ts";
 import type { Db } from "./supabaseAdmin.ts";
@@ -27,6 +27,14 @@ export const AI_MODEL = "claude-haiku-5-5";
 
 /** Every call together, per day in Danish time: the ceiling over all budgets. */
 export const GLOBAL_DAILY_AI_CALLS = 500;
+
+/**
+ * Admins and AI testers get this many times each skill's daily budget:
+ * testing re-runs everything (a reset, a sign-in again, the consent switched
+ * off and on each label every title afresh), which an ordinary day never
+ * does. The ceiling for everyone together still holds.
+ */
+export const TESTER_BUDGET_FACTOR = 10;
 
 export type Skill =
   | "plan-ai"
@@ -155,10 +163,11 @@ export async function runSkill<T>(
 ): Promise<{ result: T; userLeft: number }> {
   if (!(await aiAllowed(db, profileId))) throw new HttpError(403, NOT_ALLOWED);
   const budget = SKILLS[call.skill];
+  const factor = (await aiTesterAllowed(db, profileId)) ? TESTER_BUDGET_FACTOR : 1;
   const { data, error } = await db.rpc("claim_ai_skill_call", {
     p_skill: call.skill,
     p_profile_id: profileId,
-    p_user_limit: budget.perPersonPerDay,
+    p_user_limit: budget.perPersonPerDay * factor,
     p_global_limit: GLOBAL_DAILY_AI_CALLS,
   });
   if (error) throw error;

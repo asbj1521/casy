@@ -47,6 +47,9 @@ export function labelBookQuery(userId: string) {
  */
 const askedThisLaunch = new Set<string>();
 
+/** How the last labelling call went, kept for the status line after it goes idle. */
+let lastRun = "none yet";
+
 /** Start asking afresh, after the labels were deleted (the AI's consent withdrawn, #120). */
 export function forgetAskedTitles(): void {
   askedThisLaunch.clear();
@@ -133,7 +136,8 @@ export function useAutoLabel() {
           `events=${events.length} in counted calendars=${inCalendars.length} ` +
           `with a title=${titled.length} counting as busy=${counted.length} ` +
           `not over a week ago=${recent.length} titles=${candidates.length} ` +
-          `labelled=${Object.keys(book).length} asked this launch=${askedThisLaunch.size}`,
+          `labelled=${Object.keys(book).length} asked this launch=${askedThisLaunch.size}; ` +
+          `last run: ${lastRun}`,
       );
       return;
     }
@@ -162,11 +166,13 @@ export function useAutoLabel() {
               : [];
           });
           save(updateBook(readLabelBook(userId), added));
+          lastRun = `ok, ${labels.filter(Boolean).length} of ${batch.length} labelled`;
           setLabelStatus(`answered: ${labels.filter(Boolean).length} of ${batch.length} labelled`);
         }
       } catch (err) {
         console.warn("labelling events failed", err);
-        setLabelStatus(`FAILED: ${err instanceof Error ? err.message : String(err)}`);
+        lastRun = `FAILED: ${err instanceof Error ? err.message : String(err)}`;
+        setLabelStatus(lastRun);
       } finally {
         running.current = false;
         // Whatever came in while this ran (a correction) gets its own run.

@@ -7,6 +7,7 @@ import {
   GLOBAL_DAILY_AI_CALLS,
   runSkill,
   SKILLS,
+  TESTER_BUDGET_FACTOR,
   usageSummary,
   type CreateMessage,
   type SkillCall,
@@ -18,7 +19,7 @@ import type { Db } from "./supabaseAdmin.ts";
  * A database that answers the claim with `claim`, says whether the person has
  * been allowed AI, and remembers the claim and the usage written.
  */
-function fakeDb(claim: unknown, allowed = true) {
+function fakeDb(claim: unknown, allowed = true, tester = false) {
   const calls: { rpc?: Record<string, unknown>; usage?: Record<string, unknown>; id?: unknown } =
     {};
   const db = {
@@ -30,7 +31,10 @@ function fakeDb(claim: unknown, allowed = true) {
       select: () => ({
         eq: () => ({
           maybeSingle: () =>
-            Promise.resolve({ data: allowed ? { profile_id: "u" } : null, error: null }),
+            Promise.resolve({
+              data: allowed ? { profile_id: "u", tester } : null,
+              error: null,
+            }),
         }),
       }),
       update: (values: Record<string, unknown>) => ({
@@ -80,6 +84,13 @@ Deno.test("a call claims the skill's budget for the person, under the ceiling", 
     cache_read_tokens: 0,
     cache_write_tokens: null,
   });
+});
+
+Deno.test("an AI tester gets a larger budget per skill, under the same ceiling", async () => {
+  const { db, calls } = fakeDb({ id: 8, userLeft: 199 }, true, true);
+  await runSkill(db, "tester-1", call, answering("ok"));
+  assertEquals(calls.rpc?.p_user_limit, SKILLS["plan-ai"].perPersonPerDay * TESTER_BUDGET_FACTOR);
+  assertEquals(calls.rpc?.p_global_limit, GLOBAL_DAILY_AI_CALLS);
 });
 
 Deno.test("a used-up budget says whose, and never asks the model", async () => {

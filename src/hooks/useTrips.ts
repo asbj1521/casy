@@ -55,6 +55,9 @@ export const tripReveal = { done: false };
 /** Events asked about since the app was opened: each at most once, so a failing call isn't repeated in a loop. */
 const askedThisLaunch = new Set<string>();
 
+/** How the last trip-reading call went, kept for the status line after it goes idle. */
+let lastTripRun = "none yet";
+
 /** Start asking afresh, after the legs were deleted (the AI's consent withdrawn, #120). */
 export function forgetAskedTrips(): void {
   askedThisLaunch.clear();
@@ -141,7 +144,8 @@ export function useAutoTripLegs() {
     if (batches.length === 0) {
       setTripStatus(
         `idle: labelled as travel=${travel} travel events counted=${candidates.length} ` +
-          `read=${read.length} of which journeys=${journeys} asked this launch=${askedThisLaunch.size}`,
+          `read=${read.length} of which journeys=${journeys} asked this launch=${askedThisLaunch.size}; ` +
+          `last run: ${lastTripRun}`,
       );
       return;
     }
@@ -157,11 +161,13 @@ export function useAutoTripLegs() {
             batch.flatMap((c, i) => (legs[i] ? [[c.key, legs[i]]] : [])),
           );
           save({ ...readLegBook(userId), ...added });
-          setTripStatus(`answered: ${legs.filter(Boolean).length} of ${batch.length} read`);
+          lastTripRun = `ok, ${legs.filter(Boolean).length} of ${batch.length} read`;
+          setTripStatus(lastTripRun);
         }
       } catch (err) {
         console.warn("reading trips failed", err);
-        setTripStatus(`FAILED: ${err instanceof Error ? err.message : String(err)}`);
+        lastTripRun = `FAILED: ${err instanceof Error ? err.message : String(err)}`;
+        setTripStatus(lastTripRun);
       } finally {
         running.current = false;
       }
