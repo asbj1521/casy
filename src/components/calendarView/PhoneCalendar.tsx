@@ -311,7 +311,7 @@ export default function PhoneCalendar() {
         <button
           type="button"
           onClick={openPlan}
-          className="fixed bottom-[calc(var(--tab-bar-height)+0.75rem)] left-1/2 z-20 flex h-12 -translate-x-1/2 items-center gap-2 rounded-full bg-cta px-6 text-[15px] font-bold text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] transition hover:bg-cta-hover"
+          className="glass-cta fixed bottom-[calc(var(--tab-bar-height)+0.75rem)] left-1/2 z-20 flex h-12 -translate-x-1/2 items-center gap-2 rounded-full px-6 text-[15px] font-bold text-white transition active:scale-95"
         >
           <CalendarSearch className="h-5 w-5" />
           {t.planFromCalendar.button}
