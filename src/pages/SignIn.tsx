@@ -6,6 +6,7 @@ import { KeyRound, Loader2, Mail } from "lucide-react";
 import { calendarStatusQuery } from "@/api/calendars";
 import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
+import AppBackLink from "@/components/welcome/AppBackLink";
 import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
@@ -407,6 +408,7 @@ export default function SignIn() {
       <TopNav />
 
       <main className="mx-auto max-w-sm px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-10">
+        <AppBackLink className="mb-4" />
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {t.signIn.title}
         </h1>

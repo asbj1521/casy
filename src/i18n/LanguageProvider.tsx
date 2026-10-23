@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { setCurrentLang } from "@/i18n/current";
-import { initialLang, LANG_STORAGE_KEY, LanguageContext, type Lang } from "@/i18n/lang";
+import { initialLang, LANG_STORAGE_KEY, LanguageContext, phoneLang, type Lang } from "@/i18n/lang";
+import { isNativeApp } from "@/lib/nativeApp";
 import { readStored, writeStored } from "@/lib/storage";
 
 export default function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
-    const first = initialLang(window.location.search, readStored(LANG_STORAGE_KEY));
+    // The app starts in the phone's language (#151); the website in Danish.
+    const fallback = isNativeApp ? phoneLang(navigator.languages ?? [navigator.language]) : "da";
+    const first = initialLang(window.location.search, readStored(LANG_STORAGE_KEY), fallback);
     setCurrentLang(first);
     return first;
   });

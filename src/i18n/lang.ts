@@ -16,8 +16,21 @@ function asLang(value: string | null | undefined): Lang | null {
  * Danish unless this visit or an earlier one chose English. `?lang=` wins over
  * the remembered choice, so a link like /privacy?lang=en always opens in English.
  */
-export function initialLang(search: string, stored: string | null): Lang {
-  return asLang(new URLSearchParams(search).get("lang")) ?? asLang(stored) ?? "da";
+/**
+ * The language to start in: `?lang=`, else the one chosen before, else
+ * `fallback` (Danish on the website; the phone's in the app, phoneLang).
+ */
+export function initialLang(search: string, stored: string | null, fallback: Lang = "da"): Lang {
+  return asLang(new URLSearchParams(search).get("lang")) ?? asLang(stored) ?? fallback;
+}
+
+/**
+ * The iPhone app's first language (#151): Danish when the phone lists Danish
+ * among its languages at all, else English. Danes with an English iPhone often
+ * keep Danish as a second language, so Danish wins wherever it appears.
+ */
+export function phoneLang(languages: readonly string[]): Lang {
+  return languages.some((l) => l.toLowerCase().startsWith("da")) ? "da" : "en";
 }
 
 export interface LanguageContextValue {

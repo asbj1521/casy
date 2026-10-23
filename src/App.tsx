@@ -18,6 +18,7 @@ import { usePhoneCalendarSync } from "@/hooks/usePhoneCalendarSync";
 import { useAutoTripLegs } from "@/hooks/useTrips";
 import AuthProvider from "@/context/AuthProvider";
 import LanguageProvider from "@/i18n/LanguageProvider";
+import { isNativeApp } from "@/lib/nativeApp";
 import { persistQueries } from "@/lib/queryPersistence";
 import FindDate from "@/pages/FindDate";
 import Landing from "@/pages/Landing";
@@ -52,6 +53,8 @@ const ConnectOutlookHelp = lazy(loadPage.connectOutlook);
 const MotionPlayground = import.meta.env.DEV
   ? lazy(() => import("@/pages/dev/MotionPlayground"))
   : null;
+// The app's own first screen (#151): never downloaded by the website.
+const AppWelcome = lazy(() => import("@/components/welcome/AppWelcome"));
 const TripsPlayground = import.meta.env.DEV
   ? lazy(() => import("@/pages/dev/TripsPlayground"))
   : null;
@@ -59,14 +62,16 @@ const TripsPlayground = import.meta.env.DEV
 /**
  * casy.app itself: the landing page for signed-out visitors, the scheduler
  * for everyone signed in, so it never stands between a user and their groups.
- * Its "Go to Casy" button leads to /plan, the scheduler for anyone. Until the
+ * Its "Go to Casy" button leads to /plan, the scheduler for anyone. The
+ * iPhone app has a welcome screen of its own instead (#151). Until the
  * stored session is read this is a plain background, or a signed-in person
  * would see the landing page flash first.
  */
 function Home() {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-background" />;
-  return user ? <FindDate /> : <Landing />;
+  if (user) return <FindDate />;
+  return isNativeApp ? <AppWelcome /> : <Landing />;
 }
 
 /**

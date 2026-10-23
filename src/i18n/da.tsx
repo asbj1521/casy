@@ -63,6 +63,14 @@ export const da = {
       kinds: { group: "Gruppe", event: "Aftale", member: "Medlem" } as Record<string, string>,
     },
   },
+  welcome: {
+    headline: "Find dagen, hvor alle kan.",
+    body: "Casy lægger jeres kalendere oven på hinanden og finder de datoer, der passer alle.",
+    start: "Kom i gang",
+    privacy: "Sådan passer Casy på dine data",
+    allCan: (n: number) => `Alle ${n} kan`,
+    back: "Tilbage",
+  },
   updateRequired: {
     title: "Opdater Casy",
     body: "Denne version af Casy er for gammel til at virke sammen med resten af Casy. Hent den nyeste version i App Store for at fortsætte.",

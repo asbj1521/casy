@@ -58,6 +58,14 @@ export const en: Messages = {
       kinds: { group: "Group", event: "Event", member: "Member" } as Record<string, string>,
     },
   },
+  welcome: {
+    headline: "Find the day everyone can make it.",
+    body: "Casy lays your calendars on top of each other and finds the dates that suit everyone.",
+    start: "Get started",
+    privacy: "How Casy looks after your data",
+    allCan: (n: number) => `All ${n} can make it`,
+    back: "Back",
+  },
   updateRequired: {
     title: "Update Casy",
     body: "This version of Casy is too old to work with the rest of Casy. Get the latest version from the App Store to carry on.",

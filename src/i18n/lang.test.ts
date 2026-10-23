@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { initialLang } from "@/i18n/lang";
+import { initialLang, phoneLang } from "@/i18n/lang";
 
 describe("initialLang", () => {
   it("defaults to Danish", () => {
@@ -18,5 +18,19 @@ describe("initialLang", () => {
 
   it("ignores values it doesn't know", () => {
     expect(initialLang("?lang=de", "fr")).toBe("da");
+  });
+});
+
+describe("phoneLang", () => {
+  it("is Danish wherever the phone lists Danish", () => {
+    expect(phoneLang(["da-DK"])).toBe("da");
+    expect(phoneLang(["en-DK", "da-DK"])).toBe("da");
+    expect(phoneLang(["en-GB"])).toBe("en");
+    expect(phoneLang([])).toBe("en");
+  });
+
+  it("is only the fallback: a choice made before wins", () => {
+    expect(initialLang("", "da", phoneLang(["en-US"]))).toBe("da");
+    expect(initialLang("", null, phoneLang(["en-US"]))).toBe("en");
   });
 });

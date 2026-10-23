@@ -8,6 +8,7 @@ import { useAuth } from "@/context/auth";
 import { useEventsBadge } from "@/hooks/useEventsBadge";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { isNativeApp } from "@/lib/nativeApp";
 import { loadPage } from "@/pages/lazyPages";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +82,10 @@ function PhoneTabBar() {
           badge: invitations?.length,
         },
   ];
+
+  // The app has no tab bar until someone signs in (#151): the welcome screen
+  // and sign-in stand on their own, with their own way back (AppBackLink).
+  if (isNativeApp && !user) return null;
 
   return (
     <>

@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 
 import TopNav from "@/components/TopNav";
+import AppBackLink from "@/components/welcome/AppBackLink";
 
 /**
  * The privacy policy's and the terms' shared page: a title, when it last
@@ -43,6 +44,7 @@ export default function LegalPage({ copy }: { copy: LegalCopy }) {
     <div className="min-h-screen bg-background">
       <TopNav />
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
+        <AppBackLink className="mb-4" />
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {copy.title}
         </h1>
