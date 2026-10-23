@@ -1,4 +1,4 @@
-import type { FormEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -53,23 +53,6 @@ export default function Modal({
       )}
     </AnimatePresence>,
     document.body,
-  );
-}
-
-/** The dialog box, as a form: Enter in a field submits it. */
-export function ModalForm({
-  className,
-  onSubmit,
-  children,
-}: {
-  className?: string;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
-  children: ReactNode;
-}) {
-  return (
-    <motion.form {...PANEL_MOTION} onSubmit={onSubmit} className={cn(PANEL_CLASS, className)}>
-      {children}
-    </motion.form>
   );
 }
 

@@ -5,7 +5,7 @@
 import type { PeopleChoice } from "@/lib/scheduler";
 
 /** Who an event is for, counted, for the details step's Deltagere row. */
-export interface PeopleSummary {
+interface PeopleSummary {
   total: number;
   required: number;
   optional: number;

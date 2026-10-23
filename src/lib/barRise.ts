@@ -3,7 +3,7 @@
  * bars grow in left to right. Shared so the two charts keep the same pace.
  */
 
-export interface RiseSpeed {
+interface RiseSpeed {
   /** Seconds between one bar starting and the next. */
   stagger: number;
   /** Seconds one bar takes to rise. */

@@ -28,9 +28,6 @@ export interface EventToRead {
   allDay: boolean;
 }
 
-/** The server's limit per call (MAX_EVENTS in tripLegs.ts). */
-export const MAX_LEG_EVENTS = 50;
-
 export async function readTripLegs(
   events: EventToRead[],
 ): Promise<{ legs: (TripLeg | null)[]; left: number }> {

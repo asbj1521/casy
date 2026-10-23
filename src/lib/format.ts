@@ -134,7 +134,7 @@ export function formatEventDate(kind: EventSettings["kind"], date: DateRange, la
 }
 
 /** The words a headline needs, in the shape of the page's copy: pass `t`. */
-export interface HeadlineWords {
+interface HeadlineWords {
   scheduler: {
     timeRange: (start: string, end: string) => string;
     tripTimes: (start: string, end: string) => string;

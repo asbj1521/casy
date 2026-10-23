@@ -31,14 +31,14 @@ export const FLIGHT_TIMING = {
   after: 0.25,
 } as const;
 
-export interface FlightStep {
+interface FlightStep {
   /** "away": swiped off to the right; "fly": down into the Events tab. */
   move: "away" | "fly";
   delay: number;
   duration: number;
 }
 
-export interface FlightPlan {
+interface FlightPlan {
   /** For each row, in the order they are drawn, top to bottom. */
   steps: FlightStep[];
   /** When the last date has arrived, and My events may open. */

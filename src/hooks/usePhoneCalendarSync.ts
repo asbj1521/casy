@@ -32,7 +32,7 @@ const MIN_GAP_MS = 2 * 60_000;
 /** The phone's calendars changed: wait this long for the rest of the change (an account syncing) before sending. */
 const CHANGE_SETTLE_MS = 10_000;
 
-export type PhoneSyncOutcome =
+type PhoneSyncOutcome =
   | { state: "synced"; calendars: number; busyBlocks: number }
   /** Calendar access was refused, or switched off in Settings since. */
   | { state: "denied" }

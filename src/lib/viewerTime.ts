@@ -14,7 +14,7 @@ import { formatDate, formatTime } from "@/lib/format";
 import { APP_TIME_ZONE, browserTimeZone, sameClock } from "@/lib/zone";
 
 /** The browser's zone, read once: it doesn't change while a page is open. */
-export const VIEWER_TIME_ZONE = browserTimeZone();
+const VIEWER_TIME_ZONE = browserTimeZone();
 
 /** True when the person's clock is not Danish time, so the page should say so. */
 export const VIEWER_ELSEWHERE = !sameClock(

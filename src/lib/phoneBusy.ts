@@ -60,8 +60,8 @@ export interface PhoneCalendarPush {
 }
 
 /** How far back and ahead the phone is read: the server's sync window (_shared/syncWindow.ts). */
-export const PHONE_DAYS_BEHIND = 7;
-export const PHONE_DAYS_AHEAD = 12 * 30;
+const PHONE_DAYS_BEHIND = 7;
+const PHONE_DAYS_AHEAD = 12 * 30;
 const DAY_MS = 86_400_000;
 
 /** The span to read, around `now` (plain milliseconds: a span, not calendar days). */

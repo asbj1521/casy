@@ -24,9 +24,9 @@ import { callFunction } from "@/lib/supabaseFunctions";
 import { addDays, APP_TIME_ZONE, dayOf } from "@/lib/zone";
 import { currentMessages } from "@/i18n/current";
 
-export type EventStatus = "pending" | "scheduled" | "no_date" | "cancelled";
+type EventStatus = "pending" | "scheduled" | "no_date" | "cancelled";
 /** How a date is offered: one at a time, or several to vote on (#74). */
-export type EventMode = "single" | "vote";
+type EventMode = "single" | "vote";
 /**
  * An answer to a date. "maybe" (I can, but would rather not) only exists in
  * a vote: it counts as a yes, but a date with fewer of them wins.

@@ -822,10 +822,8 @@ export const da = {
     connecting: "Forbinder",
     addLink: "Tilføj link",
     addAnother: "Tilføj endnu en",
-    addShort: "Tilføj",
     tryAgain: "Prøv igen",
     connect: "Forbind",
-    notConnected: "Ikke forbundet endnu.",
     lastFailed: (message: string) => `Sidste forsøg fejlede: ${message}`,
     unknownError: "ukendt fejl",
     removeDevice: (label: string | null) =>
@@ -901,8 +899,6 @@ export const da = {
     loadFailed: "Kunne ikke hente dine grupper.",
     made: (date: string) => `lavet ${date}`,
     renameTitle: "Omdøb gruppen",
-    inviteLink: "Invitationslink",
-    leaveTitle: "Forlad gruppen",
     deleteTitle: "Slet gruppen for alle",
     deleteConfirm: (name: string, members: number) =>
       `Slet "${name}" for alle? Alle ${members === 1 ? "1 medlem" : `${members} medlemmer`} mister adgangen med det samme.`,
@@ -989,10 +985,7 @@ export const da = {
     couldntMake: (who: string) => `${who} kunne ikke`,
     // Votes (#74): several dates, swiped through.
     datesToAnswer: (n: number) => (n === 1 ? "1 dato at svare på" : `${n} datoer at svare på`),
-    dateSpan: (from: string, to: string) => `${from} til ${to}`,
     dateCount: (n: number) => (n === 1 ? "1 dato" : `${n} datoer`),
-    answerDates: "Svar på datoerne",
-    continueAnswering: (done: number, total: number) => `Fortsæt (${done} af ${total} besvaret)`,
     ahead: "Bedst lige nu",
     bestPick: "Passer flest",
     choose: "Vælg",
@@ -1213,8 +1206,6 @@ export const da = {
     ),
     noCalendarsLink: "Forbind en kalender",
     today: "I dag",
-    weekHeader: "uge",
-    weekNumber: "Ugenummer",
     week: (n: number) => `Uge ${n}`,
     more: (n: number) => `+${n} mere`,
     nothingBusy: "Intet optaget denne dag i de viste kalendere.",
@@ -1380,7 +1371,6 @@ export const da = {
     shareOff: "Slået fra",
     correctionsKept: "Rettelser sendt til Casy",
     correctionsDelete: "Slet mine sendte rettelser",
-    correctionsDeleted: "Slettet",
     labelsNote:
       "Mærkater er AI'ens vurdering af dine aftaler. De gemmes kun på telefonen og kommer ikke med i din hentede kopi. Slår du AI og din kalender fra under Profil, slettes de.",
     aiNote:
@@ -1618,7 +1608,6 @@ export const da = {
     correctionsIntro:
       "Det, folk har sendt, når AI'en tog fejl: aftalens titel, hvad AI'en sagde, hvad de skrev, og hvad der kom ud af det. Aldrig hvem. Gør et gentaget fejlskøn til en skarpere regel og en ny, opfundet testsag, og markér rettelsen som håndteret, så den slettes.",
     correctionsNone: "Ingen rettelser endnu.",
-    correctionLabel: "Vurdering af en aftale",
     correctionPlan: "Planlæg med AI",
     correctionPlanUnchanged: "Sendt, som AI'en lavede den",
     correctionPlanChanged: "Ændret af personen",

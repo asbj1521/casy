@@ -12,13 +12,13 @@ import { createInvite } from "@/api/groups";
 import { shareLink } from "@/lib/share";
 
 /** One person picked: their name and every number and email they have. */
-export interface PickedContact {
+interface PickedContact {
   name: string;
   phones: string[];
   emails: string[];
 }
 
-export type TextResult = "sent" | "cancelled" | "failed";
+type TextResult = "sent" | "cancelled" | "failed";
 
 interface InvitePlugin {
   pickContacts(): Promise<{ contacts: PickedContact[] }>;
@@ -50,7 +50,7 @@ export async function canText(): Promise<boolean> {
 }
 
 /** Messages with the recipients and text filled in; the person still presses send. */
-export async function textInvite(recipients: string[], body: string): Promise<TextResult> {
+async function textInvite(recipients: string[], body: string): Promise<TextResult> {
   const { plugin } = await invitePlugin();
   return (await plugin.text({ recipients, body })).result;
 }

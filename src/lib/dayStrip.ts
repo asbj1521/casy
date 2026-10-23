@@ -12,7 +12,7 @@ import type { DaySegment } from "@/lib/calendarOverview";
 import { atHour } from "@/lib/zone";
 
 /** A timed block placed on its day's column. */
-export interface PlacedBlock {
+interface PlacedBlock {
   segment: DaySegment;
   /** Distance from midnight, 0 to 1 of the day. */
   top: number;

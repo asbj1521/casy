@@ -106,10 +106,10 @@ interface MonthPick {
 }
 
 /** Your own answer to a date you suggest (#101): sent with it. */
-export type SuggesterAnswer = "accepted" | "maybe";
+type SuggesterAnswer = "accepted" | "maybe";
 
 /** A date sent as it is, with your answer (My calendar's Planlæg, #126). */
-export interface ChosenDate {
+interface ChosenDate {
   start: string;
   end: string;
   answer: SuggesterAnswer;
@@ -331,6 +331,7 @@ export function usePlanning() {
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
+    // As above: freshenInBackground reads the latest through a ref, so only the group is a trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planningGroupId]);
 

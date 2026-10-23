@@ -13,7 +13,7 @@ import { currentMessages } from "@/i18n/current";
 import { callFunction } from "@/lib/supabaseFunctions";
 
 /** What a "Forkert?" correction sends: the event as the AI saw it, and the two labels. */
-export interface LabelCorrectionData {
+interface LabelCorrectionData {
   title: string;
   calendar: string;
   previous: EventLabel;

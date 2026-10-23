@@ -33,7 +33,7 @@ export function phoneLang(languages: readonly string[]): Lang {
   return languages.some((l) => l.toLowerCase().startsWith("da")) ? "da" : "en";
 }
 
-export interface LanguageContextValue {
+interface LanguageContextValue {
   lang: Lang;
   setLang: (lang: Lang) => void;
 }

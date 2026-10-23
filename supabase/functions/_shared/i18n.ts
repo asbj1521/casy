@@ -75,7 +75,6 @@ export const DANISH: Record<string, string> = {
   "Those dates aren't valid any more. Search again.": "Datoerne er ikke gyldige længere. Søg igen.",
   "Only the person who suggested this event can choose its date.":
     "Kun den, der foreslog aftalen, kan vælge datoen.",
-  "That date isn't valid any more. Search again.": "Den dato er ikke gyldig længere. Søg igen.",
   "The replacement date isn't valid.": "Den nye dato er ikke gyldig.",
   "The replacement date must be after the declined one.":
     "Den nye dato skal ligge efter den, der blev afslået.",

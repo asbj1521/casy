@@ -15,7 +15,7 @@ import { isNativeApp } from "@/lib/nativeApp";
  * where the browser has one (Android); iPhone Safari has none, so there it
  * does nothing. Never throws: a missing buzz is not worth an error.
  */
-export type Haptic = "tick" | "answer" | "success" | "thud";
+type Haptic = "tick" | "answer" | "success" | "thud";
 
 export function haptic(kind: Haptic): void {
   if (isNativeApp) {

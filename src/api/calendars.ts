@@ -197,7 +197,7 @@ export async function addCalendarLink(
 }
 
 /** A push of the phone's calendars, as calendar-phone answers it. */
-export type PhonePushResult =
+type PhonePushResult =
   | { gone: true }
   | {
       gone?: false;
@@ -301,7 +301,7 @@ export async function syncMyCalendars(queryClient: QueryClient): Promise<{ ok: b
  * next to calendar-status rather than inside it.
  * ------------------------------------------------------------------------- */
 
-export interface PrimaryCalendar {
+interface PrimaryCalendar {
   /** A calendar_sources id, as calendar-status and calendar-busy list them. */
   calendarId: string;
   /** Add every event as soon as everyone has accepted, without a click. */

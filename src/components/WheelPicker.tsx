@@ -47,6 +47,8 @@ export default function WheelPicker({
       options.findIndex((o) => o.value === value),
     );
     el.scrollTop = (middleStart + optIdx) * ITEM;
+    // Centred on the value only for a new list: scrolling the wheel is what
+    // sets the value, and centring again then would fight the finger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options]);
 

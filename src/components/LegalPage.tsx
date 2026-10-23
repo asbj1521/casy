@@ -11,7 +11,7 @@ import AppBackLink from "@/components/welcome/AppBackLink";
  */
 
 /** Where people write about their data, their account or the terms. */
-export const CONTACT_EMAIL = "asbjornbay@gmail.com";
+const CONTACT_EMAIL = "asbjornbay@gmail.com";
 
 export const ContactEmail = () => (
   <a

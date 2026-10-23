@@ -13,7 +13,7 @@ import type { ComingSoonSection } from "./comingSoon";
  * says what it will do. Kept short, so no tab is taller than Tidspunkt (the
  * settings box is as tall as its tallest tab).
  */
-export function ComingSoonBadge({ className }: { className?: string }) {
+function ComingSoonBadge({ className }: { className?: string }) {
   const t = useT();
   return (
     <span

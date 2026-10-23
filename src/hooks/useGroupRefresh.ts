@@ -35,7 +35,7 @@ interface Started {
 /** Started refreshes, per account and group, for the life of the page. */
 const started = new Map<string, Started>();
 
-export interface GroupRefresh {
+interface GroupRefresh {
   /** Start a refresh unless one started within the last minute: the new one, or null. */
   start: (groupId: string) => Promise<RefreshOutcome> | null;
   /** The refresh running for the group right now, if there is one. */

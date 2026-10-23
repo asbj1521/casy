@@ -20,7 +20,7 @@ import { supabaseAuth } from "@/lib/supabase";
 /** How long to wait before subscribing again after the 1st, 2nd, ... failure. */
 const RETRY_DELAYS_MS = [5_000, 15_000, 60_000, 5 * 60_000];
 
-export interface PushHandlers {
+interface PushHandlers {
   /** Something you can see may have changed: ask the pulse. */
   onSignal: () => void;
   /** Whether messages are arriving now (subscribed) or not (connecting, failed). */

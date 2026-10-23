@@ -38,7 +38,7 @@ const MEETING_GAP_DAYS = 2;
 /** How many dates are looked at before choosing: plenty to spread over, and quick. */
 const MAX_LOOKED_AT = 60;
 
-export interface CandidateOptions {
+interface CandidateOptions {
   /** The date on screen: always offered, first. Later dates are searched from after it. */
   first: FoundDate;
   /** Where the period searched ends (exclusive). */

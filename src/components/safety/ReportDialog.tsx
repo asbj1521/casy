@@ -22,7 +22,7 @@ import { useOpenRound } from "@/hooks/useOpenRound";
 import { useT } from "@/i18n/lang";
 
 /** One thing the dialog can report: what it says, and who it is when it is a person. */
-export interface ReportChoice {
+interface ReportChoice {
   label: string;
   target: ReportTarget;
   /** A member: they can be blocked along with the report. */

@@ -96,7 +96,7 @@ export interface MonthDay {
   inMonth: boolean;
 }
 
-export interface MonthLayout {
+interface MonthLayout {
   /** e.g. "september 2026". */
   label: string;
   /** Column headers, Monday-first, in the page's language. */
@@ -420,7 +420,7 @@ const BRANDS: { provider: OverviewCalendar["provider"]; label: string }[] = [
   { provider: "builtin", label: "Built in" },
 ];
 
-export interface CalendarGroup {
+interface CalendarGroup {
   /** The provider this group holds, which is also its stable key. */
   id: OverviewCalendar["provider"];
   label: string;

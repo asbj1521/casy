@@ -14,21 +14,8 @@ export function calendarSourceName(source: CalendarSourceStatus): string {
   return source.custom_name ?? source.display_name ?? source.id;
 }
 
-const normalise = (text: string | null | undefined) => (text ?? "").trim().toLowerCase();
-
-/**
- * True when listing the calendar names would tell the user something new.
- * A Google account's only calendar is named after the account itself, and a
- * link's single calendar after the link, so showing those names would only
- * repeat the row's title.
- */
-export function hasDistinctCalendarNames(account: CalendarConnectionStatus): boolean {
-  const label = normalise(account.account_label);
-  return calendarNames(account).some((name) => normalise(name) !== label);
-}
-
 /** The words for "Synced 12 min ago" and so on, from the page's dictionary. */
-export interface SyncedWords {
+interface SyncedWords {
   justNow: string;
   minutes: (n: number) => string;
   hours: (n: number) => string;

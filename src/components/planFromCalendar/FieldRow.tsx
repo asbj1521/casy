@@ -5,10 +5,6 @@ import type { LucideIcon } from "lucide-react";
 export const ROW_INPUT =
   "min-w-0 flex-1 bg-transparent text-right text-[15px] text-foreground outline-none placeholder:text-muted-foreground";
 
-/** A value on the right that opens a wheel (Dropdown's trigger). */
-export const ROW_PICK =
-  "flex items-center gap-1 whitespace-nowrap text-[15px] text-muted-foreground transition hover:text-foreground";
-
 /**
  * A row like ListRow's (in a ListGroup), with a control on the right instead
  * of a value: the phone flow's settings (#101). A text field's row is its

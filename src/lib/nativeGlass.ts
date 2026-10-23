@@ -10,7 +10,7 @@
  */
 import { isNativeApp } from "@/lib/nativeApp";
 
-export interface GlassCard {
+interface GlassCard {
   x: number;
   y: number;
   width: number;

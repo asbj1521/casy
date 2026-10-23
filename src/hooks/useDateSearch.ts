@@ -20,15 +20,15 @@ export const TODAY = dayOf(new Date().toISOString(), TZ);
 const LATER_COUNT = 3;
 
 /** Where a search may look: from `start` (on or after today) to `end`, exclusive. */
-export interface SearchWindow {
+interface SearchWindow {
   start: string;
   end: string;
 }
 
 /** Every search's window unless a period narrows it: today through the year searched. */
-export const WHOLE_YEAR: SearchWindow = { start: TODAY, end: SEARCH_WINDOW.end };
+const WHOLE_YEAR: SearchWindow = { start: TODAY, end: SEARCH_WINDOW.end };
 
-export interface DateSearch {
+interface DateSearch {
   /** The first date that works from the step on screen, and what it costs whom. */
   found: MultiDayResult | null;
   /** Ways to make a holiday that doesn't fit cleanly work, such as a shorter stay. */

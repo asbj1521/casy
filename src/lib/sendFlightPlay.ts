@@ -7,7 +7,7 @@ import { haptic } from "@/lib/haptics";
 import { FLIGHT_TIMING as T, flightPlan } from "@/lib/sendFlight";
 
 /** A row to move: its element as drawn now, and whether it is one of the dates sent. */
-export interface FlightRow {
+interface FlightRow {
   el: HTMLElement;
   offered: boolean;
 }

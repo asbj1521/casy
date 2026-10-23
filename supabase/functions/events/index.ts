@@ -400,82 +400,59 @@ serve("events", async (req, body) => {
       }
       const details = eventDetails(body);
 
-      // Several dates: a vote (#74). Everyone, the suggester included,
+      // The dates of a vote (#74); a single `date`, as the site suggested before
+      // #74, is turned away. Everyone, the suggester included,
       // answers them; nothing is scheduled until then. On a phone the
       // suggester's answers come with the dates (#101).
-      if (body.dates !== undefined) {
-        const dates = parseCandidateDates(body.dates);
-        if (!dates) throw new HttpError(400, "Those dates aren't valid any more. Search again.");
-        // How long everyone has to answer (#99): 1 to 7 days, 3 if not chosen.
-        const answerMs = voteAnswerMs(body.answerDays);
-        if (answerMs === null) throw new HttpError(400, "Choose 1 to 7 days to answer in.");
-        await requireMember(db, groupId, profileId);
-        const members = await invitedMembers(db, groupId, profileId, body.settings);
-        const { data: proposalId, error } = await db.rpc("suggest_vote_event", {
-          p_group_id: groupId,
-          p_created_by: profileId,
-          p_title: title,
-          p_settings: body.settings,
-          p_dates: dates,
-          p_answer_by: new Date(Date.now() + answerMs).toISOString(),
-          p_place: details.place,
-          p_note: details.note,
-          p_members: members,
-        });
-        if (error?.code === "23514") throw new HttpError(400, error.message);
-        if (error) throw error;
-        // What the event is likely to cause (#113), as the scheduler fetched
-        // it: kept with the event for everyone's own warnings. Never worth
-        // failing the suggestion over.
-        const impact = body.impact === undefined ? null : cleanProfile(body.impact);
-        if (impact) {
-          const { error: impactError } = await db
-            .from("event_proposals")
-            .update({ impact })
-            .eq("id", proposalId as string);
-          if (impactError) console.error("events: couldn't store the event's profile", impactError);
-        }
-        // How well each date suits the group by their important events (#119),
-        // kept with it so everyone sees the same number. Never worth failing
-        // the suggestion over either.
-        try {
-          await storeMatchScores(
-            db,
-            proposalId as string,
-            members ?? (await groupMemberIds(db, groupId)),
-            impact,
-            body.settings,
-          );
-        } catch (scoreError) {
-          console.error("events: couldn't score the vote's dates", scoreError);
-        }
-        // With the suggester's answers (#101) it may be settled already: a
-        // vote only they had to answer goes straight into calendars.
-        if (dates.some((d) => d.answer)) syncCalendarsLater(proposalId as string);
-        return { createdId: proposalId as string, ...(await list()) };
-      }
-
-      // One date: how the site suggested before #74, still answered for a
-      // page loaded before then.
-      const date = parseEventDate(body.date);
-      if (!date) throw new HttpError(400, "That date isn't valid any more. Search again.");
+      const dates = parseCandidateDates(body.dates);
+      if (!dates) throw new HttpError(400, "Those dates aren't valid any more. Search again.");
+      // How long everyone has to answer (#99): 1 to 7 days, 3 if not chosen.
+      const answerMs = voteAnswerMs(body.answerDays);
+      if (answerMs === null) throw new HttpError(400, "Choose 1 to 7 days to answer in.");
       await requireMember(db, groupId, profileId);
-
-      const { data: proposalId, error } = await db.rpc("suggest_event", {
+      const members = await invitedMembers(db, groupId, profileId, body.settings);
+      const { data: proposalId, error } = await db.rpc("suggest_vote_event", {
         p_group_id: groupId,
         p_created_by: profileId,
         p_title: title,
         p_settings: body.settings,
-        p_starts_at: date.start,
-        p_ends_at: date.end,
+        p_dates: dates,
+        p_answer_by: new Date(Date.now() + answerMs).toISOString(),
+        p_place: details.place,
+        p_note: details.note,
+        p_members: members,
       });
-      // The 20-open-events limit is raised by the database with a message
-      // written for people.
       if (error?.code === "23514") throw new HttpError(400, error.message);
       if (error) throw error;
-      // A group of one is scheduled the moment it is suggested.
-      syncCalendarsLater(proposalId);
-      return await list();
+      // What the event is likely to cause (#113), as the scheduler fetched
+      // it: kept with the event for everyone's own warnings. Never worth
+      // failing the suggestion over.
+      const impact = body.impact === undefined ? null : cleanProfile(body.impact);
+      if (impact) {
+        const { error: impactError } = await db
+          .from("event_proposals")
+          .update({ impact })
+          .eq("id", proposalId as string);
+        if (impactError) console.error("events: couldn't store the event's profile", impactError);
+      }
+      // How well each date suits the group by their important events (#119),
+      // kept with it so everyone sees the same number. Never worth failing
+      // the suggestion over either.
+      try {
+        await storeMatchScores(
+          db,
+          proposalId as string,
+          members ?? (await groupMemberIds(db, groupId)),
+          impact,
+          body.settings,
+        );
+      } catch (scoreError) {
+        console.error("events: couldn't score the vote's dates", scoreError);
+      }
+      // With the suggester's answers (#101) it may be settled already: a
+      // vote only they had to answer goes straight into calendars.
+      if (dates.some((d) => d.answer)) syncCalendarsLater(proposalId as string);
+      return { createdId: proposalId as string, ...(await list()) };
     }
 
     // How well each of these dates would suit the group by the members'

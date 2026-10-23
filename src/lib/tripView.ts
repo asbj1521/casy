@@ -30,7 +30,7 @@ export type TripMark =
  * How many days a question's bar spans, pulse after pulse: Casy doesn't know
  * when the person is back, and the bar searching through lengths says so.
  */
-export const GUESS_DAYS = [3, 5, 4, 6, 2, 5];
+const GUESS_DAYS = [3, 5, 4, 6, 2, 5];
 const MAX_GUESS_DAYS = Math.max(...GUESS_DAYS);
 
 /** Whether the person still has to answer it: a trip not yet accepted, or a question. */

@@ -134,7 +134,7 @@ const PEOPLE: Record<string, string> = {
 };
 
 /** One of the example groups: a name and who is in it. */
-export interface ExampleGroupDef {
+interface ExampleGroupDef {
   id: string;
   name: string;
   /** Person ids (keys of PEOPLE); "you" is the signed-in person's slot. */

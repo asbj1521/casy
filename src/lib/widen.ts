@@ -24,16 +24,16 @@ import { startOfMonth } from "@/lib/zone";
 import type { Participant } from "@/types";
 
 /** The parts of the day a meeting may move to, as start windows, earliest first. */
-export const DAY_PARTS = {
+const DAY_PARTS = {
   morning: { from: 9 * 60, to: 11 * 60 },
   lunch: { from: 11 * 60 + 30, to: 13 * 60 },
   afternoon: { from: 13 * 60, to: 16 * 60 },
   evening: { from: 18 * 60, to: 21 * 60 },
 } as const satisfies Record<string, StartWindow>;
-export type DayPart = keyof typeof DAY_PARTS;
+type DayPart = keyof typeof DAY_PARTS;
 
 /** What a way of widening changes, said the way the box names it. */
-export type Widening =
+type Widening =
   | { kind: "time"; part: DayPart | "any" }
   | { kind: "days" }
   | { kind: "startDay" }
@@ -53,7 +53,7 @@ export interface WidenOption {
 }
 
 /** The most options the box shows: the ones finding the earliest dates. */
-export const MAX_OPTIONS = 4;
+const MAX_OPTIONS = 4;
 
 export interface WidenInput {
   participants: Participant[];

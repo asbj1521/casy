@@ -272,7 +272,7 @@ export function fallbackTitleId(search: EventSettings): keyof Messages["eventTyp
 }
 
 /** How a set of searched weekdays reads: every day, weekdays, weekends, or a list. */
-export type DayListLabel =
+type DayListLabel =
   { kind: "all" } | { kind: "weekdays" } | { kind: "weekends" } | { kind: "list"; dows: number[] };
 
 export function describeDays(dows: number[]): DayListLabel {
@@ -336,7 +336,7 @@ export function laterSlots(
  * - `review`: it costs others time off, so they will be asked.
  * - `none`: no date at all.
  */
-export type AnswerTone = "clean" | "skip" | "approve" | "review" | "none";
+type AnswerTone = "clean" | "skip" | "approve" | "review" | "none";
 
 export interface AnswerReview {
   tone: AnswerTone;

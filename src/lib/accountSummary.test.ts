@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CalendarConnectionStatus } from "@/api/calendars";
 import { da } from "@/i18n/da";
 import { en } from "@/i18n/en";
-import { calendarNames, hasDistinctCalendarNames, syncedAgo } from "@/lib/accountSummary";
+import { calendarNames, syncedAgo } from "@/lib/accountSummary";
 
 const account = (label: string | null, names: (string | null)[]): CalendarConnectionStatus => ({
   id: "conn",
@@ -38,40 +38,6 @@ describe("calendarNames", () => {
     const renamed = account("me@icloud.com", ["Home", "Calendar"]);
     renamed.calendar_sources[1].custom_name = "Football";
     expect(calendarNames(renamed)).toEqual(["Home", "Football"]);
-  });
-});
-
-describe("hasDistinctCalendarNames", () => {
-  it("is false when the only calendar is named after the account (a Google account)", () => {
-    expect(hasDistinctCalendarNames(account("me@gmail.com", ["me@gmail.com"]))).toBe(false);
-  });
-
-  it("ignores case and stray spaces when comparing", () => {
-    expect(hasDistinctCalendarNames(account("Me@Gmail.com", [" me@gmail.com "]))).toBe(false);
-  });
-
-  it("is false for a link whose single calendar is named after the link", () => {
-    expect(hasDistinctCalendarNames(account("CBS timetable", ["CBS timetable"]))).toBe(false);
-  });
-
-  it("is true when calendars have their own names (an Apple account)", () => {
-    expect(hasDistinctCalendarNames(account("me@icloud.com", ["Work", "Family", "CBS"]))).toBe(
-      true,
-    );
-  });
-
-  it("is true if just one of several names is different", () => {
-    expect(hasDistinctCalendarNames(account("me@gmail.com", ["me@gmail.com", "Birthdays"]))).toBe(
-      true,
-    );
-  });
-
-  it("is true for a nameless calendar, since its id is not the account label", () => {
-    expect(hasDistinctCalendarNames(account("me@gmail.com", [null]))).toBe(true);
-  });
-
-  it("is false when there are no calendars at all", () => {
-    expect(hasDistinctCalendarNames(account("me@gmail.com", []))).toBe(false);
   });
 });
 

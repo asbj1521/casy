@@ -195,7 +195,7 @@ const isInt = (v: unknown, min: number, max: number) =>
  * the optional ones among them, and "at least" between 1 and the number
  * required (meetings only). Mirrored by the server (_shared/events.ts).
  */
-export function isPeopleSettings(value: unknown, kind: unknown): value is PeopleSettings {
+function isPeopleSettings(value: unknown, kind: unknown): value is PeopleSettings {
   if (!value || typeof value !== "object") return false;
   const p = value as Record<string, unknown>;
   const ids = (v: unknown): v is string[] =>

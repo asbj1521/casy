@@ -36,7 +36,7 @@ import { APP_TIME_ZONE } from "@/lib/zone";
 /** What the server takes as earlier descriptions, at most (MAX_EARLIER). */
 const MAX_EARLIER = 4;
 
-export interface NameQuestion {
+interface NameQuestion {
   /** The name as written. */
   written: string;
   /** What the plan said about them. */
@@ -47,7 +47,7 @@ export interface NameQuestion {
   picked: string | null;
 }
 
-export interface AiSession {
+interface AiSession {
   /** What the person has written, oldest first. */
   texts: string[];
   /** The latest answer, or null before the first. */
@@ -73,7 +73,7 @@ const FRESH: AiSession = {
 };
 
 /** The page's state the planner reads, and how it changes it. */
-export interface AiPlannerPage {
+interface AiPlannerPage {
   settings: SchedulerSettings;
   name: string;
   members: { profileId: string; name: string; isYou: boolean }[];

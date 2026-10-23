@@ -10,7 +10,7 @@
  */
 import type { Device, SceneId } from "@/components/appleWalkthrough/layout";
 
-export interface Beat {
+interface Beat {
   scene: SceneId;
   /** Which state the scene is drawn in: typed text, scrolled, selected. */
   phase: number;

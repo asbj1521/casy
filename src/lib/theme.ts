@@ -15,7 +15,7 @@ import { readStored, writeStored } from "@/lib/storage";
 
 export type ThemeChoice = "system" | "light" | "dark";
 
-export const THEME_KEY = "casy-theme";
+const THEME_KEY = "casy-theme";
 
 /** The page backgrounds (--background in index.css and theme.css), for the browser's own bars. */
 const BAR_COLOR = { light: "#faf8f5", dark: "#0c0c0e" } as const;
@@ -57,7 +57,7 @@ export function applyTheme(
 }
 
 /** Sent when Settings changes the theme, for what draws colours in code (useIsDark). */
-export const THEME_CHANGE = "casy-theme-change";
+const THEME_CHANGE = "casy-theme-change";
 
 /** Remember a choice made in Settings, and put it into effect. */
 export function chooseTheme(choice: ThemeChoice): void {

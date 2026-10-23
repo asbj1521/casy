@@ -26,7 +26,7 @@
  */
 import { addDays, APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
-export type LegMode = "flight" | "train" | "bus";
+type LegMode = "flight" | "train" | "bus";
 
 /** One flight, train or bus event with the cities it runs between. */
 export interface Leg {
@@ -66,7 +66,7 @@ export interface TripAnswers {
 }
 
 /** An accepted trip, saved as itself. */
-export interface KeptTrip {
+interface KeptTrip {
   start: number;
   end: number;
   /** The city it is named by, as shown when it was accepted. */
@@ -115,22 +115,12 @@ export interface Detected {
   questions: Question[];
 }
 
-/** The trips the person accepted: the ones that block. */
-export function acceptedTrips(detected: Detected): Trip[] {
-  return detected.trips.filter((t) => t.accepted);
-}
-
-/** The trips waiting for the person's accept or decline. */
-export function pendingTrips(detected: Detected): Trip[] {
-  return detected.trips.filter((t) => !t.accepted);
-}
-
 /** From this many occurrences a title is a routine (a weekly train), not a journey. */
 export const ROUTINE_COUNT = 4;
 /** A longer stretch between a way out and a way back isn't taken as one trip. */
 export const MAX_TRIP_DAYS = 60;
 /** Legs this close, one arriving where the next leaves, are one journey (a connection). */
-export const CONNECTION_MS = 12 * 3_600_000;
+const CONNECTION_MS = 12 * 3_600_000;
 /** A way out with no way back is only asked about while it is recent or to come. */
 const ASK_AFTER_MS = 3 * 86_400_000;
 /** How many days an answer may be offered for: as long as a trip may be. */

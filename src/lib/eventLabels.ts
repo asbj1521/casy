@@ -68,7 +68,7 @@ export interface LabelCorrection {
 export type LabelBook = Record<string, StoredLabel>;
 
 /** One distinct title in one calendar, ready to send. */
-export interface LabelCandidate {
+interface LabelCandidate {
   key: string;
   /** Its phone calendar (EventKit id). */
   calendarId: string;

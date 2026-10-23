@@ -22,7 +22,7 @@ export function isVote(event: SuggestedEvent): event is VoteEvent {
 }
 
 /** How one date stands: how many said each answer, and how many have yet to. */
-export interface Tally {
+interface Tally {
   accepted: number;
   maybe: number;
   declined: number;
@@ -30,7 +30,7 @@ export interface Tally {
 }
 
 /** True if this invitee is optional (#89): invited, but never deciding. */
-export function isOptional(event: SuggestedEvent, profileId: string): boolean {
+function isOptional(event: SuggestedEvent, profileId: string): boolean {
   return event.settings.people?.optional.includes(profileId) ?? false;
 }
 
@@ -126,7 +126,7 @@ export function bestPick(event: VoteEvent, now = Date.now()): CandidateDate | nu
  *   has a decline, so the date is yours to choose, as the suggester.
  * - `waitingForChoice`: the same, for everyone else: the suggester chooses.
  */
-export type VoteStage = "answer" | "waiting" | "choose" | "waitingForChoice";
+type VoteStage = "answer" | "waiting" | "choose" | "waitingForChoice";
 
 export function voteStage(event: VoteEvent, now = Date.now()): VoteStage {
   const you = yourId(event);

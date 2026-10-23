@@ -13,7 +13,7 @@ import { callFunction } from "@/lib/supabaseFunctions";
 import type { CalendarProvider } from "@/types";
 import { currentMessages } from "@/i18n/current";
 
-export interface AdminStats {
+interface AdminStats {
   users: number;
   groups: number;
   connectedAccounts: number;

@@ -11,7 +11,7 @@ export type DatedEvent = SuggestedEvent & {
   currentDate: NonNullable<SuggestedEvent["currentDate"]>;
 };
 
-export interface EventSections {
+interface EventSections {
   /** A vote with dates you haven't answered yet (#74): the swiping to do. */
   toSwipe: VoteEvent[];
   /** Pending, and you haven't answered the current date yet. */
@@ -77,7 +77,7 @@ export function sectionEvents(events: SuggestedEvent[], now = Date.now()): Event
 export type EventStage = keyof EventSections;
 
 /** The sections in the order the page shows them. */
-export const STAGES: readonly EventStage[] = [
+const STAGES: readonly EventStage[] = [
   "toSwipe",
   "needsAnswer",
   "voting",
@@ -109,7 +109,7 @@ export function waitingOn(event: SuggestedEvent): string[] {
  * before it drops off (#103). Only the list: the event itself is kept as the
  * privacy policy says (cleanup_old_data).
  */
-export const PAST_KEPT_MS = 7 * 24 * 60 * 60 * 1000;
+const PAST_KEPT_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * When an event became past: its date (or a vote's last date) ended, or,

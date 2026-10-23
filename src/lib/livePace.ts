@@ -15,7 +15,7 @@
  */
 
 /** The steps: from `quietFor` ms after the last activity, ask every `every` ms. */
-export const POLL_STEPS: readonly { quietFor: number; every: number }[] = [
+const POLL_STEPS: readonly { quietFor: number; every: number }[] = [
   { quietFor: 0, every: 5_000 },
   { quietFor: 60_000, every: 15_000 },
   { quietFor: 3 * 60_000, every: 30_000 },
@@ -23,7 +23,7 @@ export const POLL_STEPS: readonly { quietFor: number; every: number }[] = [
 ];
 
 /** While Realtime is telling the page about changes: only a rare check. */
-export const PUSH_SAFETY_POLL_MS = 5 * 60_000;
+const PUSH_SAFETY_POLL_MS = 5 * 60_000;
 
 /**
  * How long a hidden tab stays subscribed. Realtime counts open connections

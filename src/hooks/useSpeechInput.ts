@@ -58,7 +58,7 @@ const speechModule = () => import("@capgo/capacitor-speech-recognition");
 
 const SPEECH_LANG: Record<Lang, string> = { da: "da-DK", en: "en-GB" };
 
-export type SpeechError = "denied" | "failed";
+type SpeechError = "denied" | "failed";
 
 /** `promise`, or a failure naming `step`: what it said, or that it never answered within `ms`. */
 function within<T>(promise: Promise<T>, ms: number, step: string): Promise<T> {

@@ -22,7 +22,7 @@ import { atHour } from "@/lib/zone";
  * A meeting that usually runs late (runsLate) and is planned to end at this
  * hour or later is taken to become a late night (LATE_FROM_HOUR) anyway.
  */
-export const RUNS_LATE_FROM_HOUR = 21;
+const RUNS_LATE_FROM_HOUR = 21;
 
 /** What is asked about: the event as set up, with only what its suggester typed. */
 export function profileInput(

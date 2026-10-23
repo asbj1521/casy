@@ -31,16 +31,16 @@ import { startOfDay } from "@/lib/zone";
 
 const HOUR_MS = 3_600_000;
 /** How close before one of your events counts as its night before. */
-export const NIGHT_BEFORE_MS = 36 * HOUR_MS;
+const NIGHT_BEFORE_MS = 36 * HOUR_MS;
 /**
  * A night out ending before this hour belongs to the evening it began: a
  * julefrokost until 02:00 is the evening before the exam, not "the same day".
  */
-export const NIGHT_ENDS_HOUR = 6;
+const NIGHT_ENDS_HOUR = 6;
 /** At most this long, and light, is small enough for the day before a critical event. */
-export const SMALL_MS = 2 * HOUR_MS;
+const SMALL_MS = 2 * HOUR_MS;
 /** From this long, an event without a profile counts as big. */
-export const BIG_MS = 4 * HOUR_MS;
+const BIG_MS = 4 * HOUR_MS;
 
 /** One of your own events, with what the AI made of it. */
 export interface LabelledEvent {
@@ -67,7 +67,7 @@ export function labelledEvents(events: PhoneEventWithDetails[], book: LabelBook)
   return mine.sort((a, b) => a.start - b.start);
 }
 
-export type ClashKind = "nightBefore" | "prepDayBefore" | "prep" | "recovery";
+type ClashKind = "nightBefore" | "prepDayBefore" | "prep" | "recovery";
 
 export interface ImportantClash {
   kind: ClashKind;

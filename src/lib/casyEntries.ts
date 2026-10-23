@@ -22,7 +22,7 @@ import type { BusyInterval } from "@/types";
  * else for a stretch (blocks meetings and trips alike, like a calendar set to
  * "never skip").
  */
-export type EntryKind = "busy" | "away";
+type EntryKind = "busy" | "away";
 
 /** An entry as the page shows and sends it: instants in UTC. */
 export interface CasyEntry {
@@ -41,9 +41,6 @@ export interface CasyEntry {
 export interface StoredEntry extends CasyEntry {
   id: string;
 }
-
-/** The most entries one answer, or one save, holds (the server's limit). */
-export const MAX_ENTRIES_PER_CALL = 20;
 
 /** The built-in calendar the entries are drawn in: no row in the database. */
 export const CASY_CALENDAR_ID = "builtin:casy-entries";

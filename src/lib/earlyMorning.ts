@@ -24,7 +24,7 @@ const EARLY_UNTIL_HOUR = 10;
 /** At least this long from a local midnight, it's an all-day entry, not an early start. */
 const ALL_DAY_MS = 23 * 60 * 60 * 1000;
 
-export interface EarlyStart {
+interface EarlyStart {
   profileId: string;
   name: string;
   /** When their first thing the next morning starts, ISO UTC. */
@@ -85,7 +85,7 @@ export function earlyMorningStarts(
 }
 
 /** The words earlyMorningNote needs (t.earlyMorning). */
-export interface EarlyMorningWords {
+interface EarlyMorningWords {
   you: string;
   oneYou: (time: string) => string;
   one: (who: string, time: string) => string;
@@ -116,7 +116,7 @@ export function earlyMorningNote(
 }
 
 /** Someone whose previous thing ends exactly when the meeting starts. */
-export interface BackToBack {
+interface BackToBack {
   profileId: string;
   name: string;
 }
@@ -143,7 +143,7 @@ export function backToBackEnds(
 }
 
 /** The words backToBackNote needs (t.backToBack). */
-export interface BackToBackWords {
+interface BackToBackWords {
   you: string;
   oneYou: string;
   one: (who: string) => string;

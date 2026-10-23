@@ -77,7 +77,7 @@ export function looksLikeEmail(text: string): boolean {
 }
 
 /** The words for "7 days", "3 hours" and so on, from the page's dictionary. */
-export interface InviteExpiryWords {
+interface InviteExpiryWords {
   expired: string;
   days: (n: number) => string;
   hours: (n: number) => string;

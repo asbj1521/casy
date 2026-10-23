@@ -5,12 +5,12 @@
 import type { CalendarConnectionStatus } from "@/api/calendars";
 import { calendarSourceName } from "@/lib/accountSummary";
 
-export interface PrimaryOption {
+interface PrimaryOption {
   id: string;
   name: string;
 }
 
-export interface PrimaryOptionGroup {
+interface PrimaryOptionGroup {
   /** The account the calendars belong to (an email), for the list's headings. */
   account: string;
   calendars: PrimaryOption[];

@@ -785,10 +785,8 @@ export const en: Messages = {
     connecting: "Connecting",
     addLink: "Add link",
     addAnother: "Add another",
-    addShort: "Add",
     tryAgain: "Try again",
     connect: "Connect",
-    notConnected: "Not connected yet.",
     lastFailed: (message: string) => `Last attempt failed: ${message}`,
     unknownError: "unknown error",
     removeDevice: (label: string | null) =>
@@ -863,8 +861,6 @@ export const en: Messages = {
     loadFailed: "Couldn't load your groups.",
     made: (date: string) => `made ${date}`,
     renameTitle: "Rename this group",
-    inviteLink: "Invite link",
-    leaveTitle: "Leave this group",
     deleteTitle: "Delete this group for everyone",
     deleteConfirm: (name: string, members: number) =>
       `Delete "${name}" for everyone? All ${members === 1 ? "1 member" : `${members} members`} lose access right away.`,
@@ -952,10 +948,7 @@ export const en: Messages = {
     couldntMake: (who: string) => `${who} couldn't make it`,
     // Votes (#74): several dates, swiped through.
     datesToAnswer: (n: number) => (n === 1 ? "1 date to answer" : `${n} dates to answer`),
-    dateSpan: (from: string, to: string) => `${from} to ${to}`,
     dateCount: (n: number) => (n === 1 ? "1 date" : `${n} dates`),
-    answerDates: "Answer the dates",
-    continueAnswering: (done: number, total: number) => `Continue (${done} of ${total} answered)`,
     ahead: "Best so far",
     bestPick: "Suits the most",
     choose: "Choose",
@@ -1171,8 +1164,6 @@ export const en: Messages = {
     ),
     noCalendarsLink: "Connect a calendar",
     today: "Today",
-    weekHeader: "wk",
-    weekNumber: "Week number",
     week: (n: number) => `Week ${n}`,
     more: (n: number) => `+${n} more`,
     nothingBusy: "Nothing busy on this day in the calendars shown.",
@@ -1334,7 +1325,6 @@ export const en: Messages = {
     shareOff: "Off",
     correctionsKept: "Corrections sent to Casy",
     correctionsDelete: "Delete my sent corrections",
-    correctionsDeleted: "Deleted",
     labelsNote:
       "Labels are the AI's judgement of your events. They are kept only on the phone and are not part of the copy you download. Turning off AI and your calendar under Profile deletes them.",
     aiNote:
@@ -1568,7 +1558,6 @@ export const en: Messages = {
     correctionsIntro:
       "What people sent when the AI got it wrong: the event's title, what the AI said, what they wrote, and what came of it. Never who. Turn a repeated mistake into a sharper rule and a new, made-up test case, then mark the correction handled and it is deleted.",
     correctionsNone: "No corrections yet.",
-    correctionLabel: "Judgement of an event",
     correctionPlan: "Plan with AI",
     correctionPlanUnchanged: "Sent as the AI made it",
     correctionPlanChanged: "Changed by the person",

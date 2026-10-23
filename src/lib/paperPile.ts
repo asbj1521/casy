@@ -25,7 +25,7 @@ import type { Participant } from "@/types";
  * off ("soft"), busy, or not searched at all (past, outside the period, a
  * weekday not picked).
  */
-export type SheetDay = "free" | "soft" | "busy" | "off";
+type SheetDay = "free" | "soft" | "busy" | "off";
 
 export interface PileSheet {
   profileId: string;
@@ -35,7 +35,7 @@ export interface PileSheet {
   days: SheetDay[];
 }
 
-export interface Pile {
+interface Pile {
   year: number;
   /** 0-based, as everywhere in zone.ts. */
   month: number;
@@ -198,7 +198,7 @@ export function checkTimes(dates: number): number[] {
   return times;
 }
 
-export interface PileTimeline {
+interface PileTimeline {
   /** When each friend's calendar is thrown, and how long it is in the air. */
   lands: { at: number; duration: number }[];
   pressAt: number;

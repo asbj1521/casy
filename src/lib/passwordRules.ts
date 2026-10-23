@@ -14,7 +14,7 @@
 /** Matches `minimum_password_length` in supabase/config.toml. */
 export const MIN_PASSWORD_LENGTH = 8;
 
-export interface PasswordChecks {
+interface PasswordChecks {
   length: boolean;
   /** At least one a-z letter and one digit: Supabase's "letters_digits". */
   lettersAndDigits: boolean;

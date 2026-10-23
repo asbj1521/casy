@@ -20,7 +20,7 @@ import {
 import { isStartWindow, type StartWindow } from "@/lib/eventSearch";
 import { localDate, wallTime } from "@/lib/zone";
 
-export type PlanKind = "meeting" | "trip" | "holiday";
+type PlanKind = "meeting" | "trip" | "holiday";
 
 /** The scheduler's settings as the AI speaks them; null is "nothing said". */
 export interface PlanSettings {
@@ -86,7 +86,7 @@ export function monthToIso(month: string, timeZone: string): string | null {
 }
 
 /** "2026-11-05" as its local midnight, the way an exact Period holds it (#134); null if not a day. */
-export function dayToIso(day: string, timeZone: string): string | null {
+function dayToIso(day: string, timeZone: string): string | null {
   const m = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.exec(day);
   if (!m) return null;
   const ms = wallTime(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, timeZone);
@@ -95,7 +95,7 @@ export function dayToIso(day: string, timeZone: string): string | null {
 }
 
 /** An exact Period's day (its local midnight) as "2026-11-05". */
-export function isoToDay(iso: string, timeZone: string): string {
+function isoToDay(iso: string, timeZone: string): string {
   const d = localDate(Date.parse(iso), timeZone);
   return `${isoToMonth(iso, timeZone)}-${String(d.day).padStart(2, "0")}`;
 }
@@ -288,7 +288,7 @@ function normalName(name: string): string {
     .trim();
 }
 
-export interface NameMatch {
+interface NameMatch {
   /** The name as the person wrote it. */
   written: string;
   /** The members it could be, by profile id: one is a match, none or several need asking. */

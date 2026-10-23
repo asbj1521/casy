@@ -52,7 +52,7 @@ function loadTurnstile(): Promise<Turnstile> {
   return loading;
 }
 
-export interface Captcha {
+interface Captcha {
   /** False when no site key is set: no widget, and calls go without a token. */
   enabled: boolean;
   /** The current one-time token, or null while there is none (yet). */

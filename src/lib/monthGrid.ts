@@ -20,7 +20,7 @@ export interface GridItem {
   grow?: boolean;
 }
 
-export interface PlacedItem {
+interface PlacedItem {
   item: GridItem;
   lane: number;
   /** The first and last day (0 = Monday) it covers this week. */

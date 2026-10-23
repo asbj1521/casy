@@ -31,7 +31,7 @@ const TRAVEL_KINDS = new Set(["flight", "travel"]);
 export type LegBook = Record<string, TripLeg>;
 
 /** One distinct travel event in one calendar, ready to send. */
-export interface LegCandidate {
+interface LegCandidate {
   key: string;
   event: EventToRead;
   /** When it next happens (or last did): soonest are read first. */
@@ -192,8 +192,8 @@ export function phoneLegs(
  * (clearLabelsFor and clearLabelBooks in eventLabels.ts take these too).
  * ------------------------------------------------------------------------- */
 
-export const LEGS_PREFIX = "casy-trip-legs:";
-export const ANSWERS_PREFIX = "casy-trip-answers:";
+const LEGS_PREFIX = "casy-trip-legs:";
+const ANSWERS_PREFIX = "casy-trip-answers:";
 
 export function readLegBook(userId: string): LegBook {
   try {

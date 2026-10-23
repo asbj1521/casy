@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  acceptedTrips,
   ANSWER_DAYS,
   cityKey,
   dayOptions,
   detectTrips,
   MAX_TRIP_DAYS,
   NO_ANSWERS,
-  pendingTrips,
   ROUTINE_COUNT,
   type Leg,
   type Question,
@@ -73,13 +71,13 @@ describe("a clear round trip", () => {
   it("is only a suggestion until the person accepts it", () => {
     const found = detectTrips([out, back], answers(), NOW);
     expect(found.trips[0].accepted).toBe(false);
-    expect(acceptedTrips(found)).toEqual([]);
-    expect(pendingTrips(found).map((t) => t.id)).toEqual([out.id]);
+    expect(found.trips.filter((t) => t.accepted)).toEqual([]);
+    expect(found.trips.filter((t) => !t.accepted).map((t) => t.id)).toEqual([out.id]);
 
     const accepted = detectTrips([out, back], answers({ accepted: [out.id] }), NOW);
     expect(accepted.trips[0].accepted).toBe(true);
-    expect(acceptedTrips(accepted).map((t) => t.id)).toEqual([out.id]);
-    expect(pendingTrips(accepted)).toEqual([]);
+    expect(accepted.trips.filter((t) => t.accepted).map((t) => t.id)).toEqual([out.id]);
+    expect(accepted.trips.filter((t) => !t.accepted)).toEqual([]);
   });
 
   it("is not suggested again once declined, even if it was accepted before", () => {

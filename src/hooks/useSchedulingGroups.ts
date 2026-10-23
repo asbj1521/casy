@@ -55,7 +55,7 @@ export interface SchedulingGroup extends FriendGroup {
   memberCount: number;
 }
 
-export interface SchedulingGroups {
+interface SchedulingGroups {
   groups: SchedulingGroup[];
   activeGroup: SchedulingGroup | null;
   activeGroupId: string | null;

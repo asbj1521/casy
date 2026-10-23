@@ -10,7 +10,7 @@ import { currentMessages } from "@/i18n/current";
 import type { Confidence, Effect, Strain } from "@/lib/eventVocabulary";
 import { callFunction } from "@/lib/supabaseFunctions";
 
-export type LabelKind =
+type LabelKind =
   | "exam"
   | "deadline"
   | "presentation"
@@ -41,7 +41,7 @@ export type LabelKind =
   | "unclear";
 
 /** What shouldn't happen the day before (the shared vocabulary, #113). */
-export type LabelAvoid = Effect;
+type LabelAvoid = Effect;
 
 export interface EventLabel {
   kind: LabelKind;
@@ -80,7 +80,7 @@ interface LabelAnswer {
 }
 
 /** One of the person's earlier corrections, sent so it carries over to events like it. */
-export interface SentCorrection {
+interface SentCorrection {
   title: string;
   calendar: string;
   note: string;
