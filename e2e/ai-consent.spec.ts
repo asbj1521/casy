@@ -14,6 +14,16 @@ test("My calendar asks once, and Allow saves the yes", async ({ page, backend })
   await expect(ask).toBeVisible();
   // Nothing is decided for the person: both answers are plain buttons.
   await expect(ask.getByRole("button", { name: "Ikke nu" })).toBeVisible();
+  // A few short pages, not one long list; saying no is there on every one.
+  await expect(ask.getByRole("button", { name: "Tillad" })).toHaveCount(0);
+  for (let i = 0; i < 3; i++) {
+    await expect(ask.getByRole("button", { name: "Ikke nu" })).toBeVisible();
+    await ask.getByRole("button", { name: "Næste" }).click();
+    await expect(ask.getByRole("button", { name: `Side ${i + 2} af 4` })).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+  }
   // The details live in the privacy policy, which opens on its AI section.
   await expect(ask.getByRole("link", { name: "privatlivspolitikken" })).toHaveAttribute(
     "href",

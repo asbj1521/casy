@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Sparkles } from "lucide-react";
@@ -55,6 +55,20 @@ function Prompt({ userId }: { userId: string }) {
     !!connections &&
     hasConnectedCalendar(connections);
 
+  // Which page is showing: read from where the pages have been scrolled to.
+  const track = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(0);
+  const onScroll = () => {
+    const el = track.current;
+    if (el && el.clientWidth > 0) setPage(Math.round(el.scrollLeft / el.clientWidth));
+  };
+  const goTo = (i: number) => {
+    const el = track.current;
+    if (!el) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollTo({ left: i * el.clientWidth, behavior: still ? "auto" : "smooth" });
+  };
+
   const notNow = useCallback(() => {
     rememberAskedAboutAi(userId);
     setAsked(true);
@@ -69,6 +83,26 @@ function Prompt({ userId }: { userId: string }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, saving, notNow]);
 
+  const pages = [
+    <p key="gives">{t.intro}</p>,
+    <p key="sent">{t.sent}</p>,
+    <div key="receives" className="space-y-3">
+      <p>{t.shared}</p>
+      <p>{t.corrections}</p>
+    </div>,
+    <div key="control" className="space-y-3">
+      <p>{t.safe}</p>
+      <p>
+        {t.privateNote} {t.readMore}{" "}
+        <Link to="/privacy#ai" className="underline underline-offset-2 hover:text-foreground">
+          {t.privacyLink}
+        </Link>
+        .
+      </p>
+    </div>,
+  ];
+  const last = page === pages.length - 1;
+
   return (
     <Modal open={open} busy={saving} onClose={notNow}>
       <ModalPanel labelledBy={titleId} className="max-w-lg sm:p-6">
@@ -76,18 +110,46 @@ function Prompt({ userId }: { userId: string }) {
           <Sparkles className="h-5 w-5 shrink-0 text-primary" />
           {t.title}
         </h2>
-        <p className="mt-2 text-sm text-muted-foreground">{t.intro}</p>
-        <p className="mt-3 text-sm text-muted-foreground">{t.sent}</p>
-        <p className="mt-3 text-sm text-muted-foreground">{t.shared}</p>
-        <p className="mt-3 text-sm text-muted-foreground">{t.corrections}</p>
-        <p className="mt-3 text-sm text-muted-foreground">{t.safe}</p>
-        <p className="mt-3 text-sm text-muted-foreground">
-          {t.privateNote} {t.readMore}{" "}
-          <Link to="/privacy#ai" className="underline underline-offset-2 hover:text-foreground">
-            {t.privacyLink}
-          </Link>
-          .
-        </p>
+
+        {/* The pages sit side by side and snap into place, so a swipe or a
+            trackpad turns them; the box is as tall as the longest, so it never
+            jumps. A page out of sight can't be tabbed into. */}
+        <div
+          ref={track}
+          onScroll={onScroll}
+          className="-mx-1 mt-4 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {pages.map((body, i) => (
+            <section
+              key={i}
+              inert={i !== page}
+              aria-label={t.pageDot(i + 1, pages.length)}
+              className="w-full shrink-0 snap-start px-1 text-sm text-muted-foreground"
+            >
+              <h3 className="mb-2 text-[15px] font-semibold text-foreground">{t.pages[i]}</h3>
+              {body}
+            </section>
+          ))}
+        </div>
+
+        <div className="mt-4 flex justify-center gap-2">
+          {pages.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={t.pageDot(i + 1, pages.length)}
+              aria-current={i === page ? "step" : undefined}
+              className="-m-1.5 p-1.5"
+            >
+              <span
+                className={`block h-2 rounded-full transition-all ${
+                  i === page ? "w-5 bg-primary" : "w-2 bg-muted-foreground/30"
+                }`}
+              />
+            </button>
+          ))}
+        </div>
 
         {error && (
           <Notice tone="error" className="mt-4">
@@ -96,15 +158,25 @@ function Prompt({ userId }: { userId: string }) {
         )}
 
         <div className="mt-5 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => set(true)}
-            disabled={saving}
-            className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-          >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {saving ? t.saving : t.allow}
-          </button>
+          {last ? (
+            <button
+              type="button"
+              onClick={() => set(true)}
+              disabled={saving}
+              className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {saving ? t.saving : t.allow}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => goTo(page + 1)}
+              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            >
+              {t.next}
+            </button>
+          )}
           <button
             type="button"
             onClick={notNow}
