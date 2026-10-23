@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Bus, Plane, TrainFront } from "lucide-react";
 
 import DayPicker from "@/components/trips/DayPicker";
@@ -7,7 +7,7 @@ import type { Trips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { formatDate, formatTime } from "@/lib/format";
 import { dayOptions, type Leg } from "@/lib/trips";
-import { cityName, type TripMark } from "@/lib/tripView";
+import { cityName, tripMarks, type TripMark } from "@/lib/tripView";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
@@ -18,10 +18,12 @@ const MODE_ICON = { flight: Plane, train: TrainFront, bus: Bus } as const;
  * What Casy found about a trip (#115), opened by a tap on its bar in My
  * calendar: the journeys it read and the time away they make, with yes or
  * no; or, where the legs don't pair, a question answered with a tap on a day
- * or a city. Every answer closes the sheet; the month redraws from it.
+ * or a city. An answer that settles the trip closes the sheet; saying where
+ * home is doesn't, as it only lets Casy ask the real question, which then
+ * takes its place.
  */
 export default function TripSheet({
-  mark,
+  mark: opened,
   open,
   onClose,
   trips,
@@ -37,6 +39,14 @@ export default function TripSheet({
   const { lang } = useLang();
   // Which days to offer: fixed while the sheet is open.
   const [now] = useState(() => Date.now());
+  // The trip as it is now, by its id: after an answer that doesn't settle it
+  // (home), the same trip comes back as its next question. Once it is gone
+  // (declined), what was opened is shown while the sheet slides away.
+  const live = useMemo(
+    () => (opened ? tripMarks(trips.detected, lang).find((m) => m.id === opened.id) : undefined),
+    [opened, trips.detected, lang],
+  );
+  const mark = live ?? opened;
 
   const at = (ms: number) =>
     words.at(formatDate(new Date(ms).toISOString(), lang), formatTime(new Date(ms).toISOString()));
@@ -92,7 +102,7 @@ export default function TripSheet({
           {/* The answer first, then what it is about. */}
           <div className="mb-4 flex flex-col gap-2">
             {question.cities.map((city) => (
-              <PrimaryButton key={city} onClick={() => answer(() => trips.setHome(city))}>
+              <PrimaryButton key={city} onClick={() => trips.setHome(city)}>
                 {cityName(city, legs, lang)}
               </PrimaryButton>
             ))}

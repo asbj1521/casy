@@ -52,7 +52,9 @@ function madeUpLegs(): Leg[] {
     leg("rome-back", "Rome", "Copenhagen", day(50, 20)),
   ];
   // ?case=home: one round trip only, so Casy has to ask where home is.
-  return new URLSearchParams(location.search).get("case") === "home" ? all.slice(0, 2) : all;
+  // ?case=oneway: one flight out and nothing home: home first, then the day back.
+  const which = new URLSearchParams(location.search).get("case");
+  return which === "home" ? all.slice(0, 2) : which === "oneway" ? all.slice(0, 1) : all;
 }
 
 const NOOP = () => {};
