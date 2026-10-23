@@ -44,6 +44,7 @@ const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
 const Privacy = lazy(loadPage.privacy);
 const Terms = lazy(loadPage.terms);
+const Support = lazy(loadPage.support);
 const HowItWorks = lazy(loadPage.howItWorks);
 const ConnectIcloudHelp = lazy(loadPage.connectIcloud);
 const ConnectIcsHelp = lazy(loadPage.connectIcs);
@@ -119,6 +120,7 @@ function App() {
                 {TripsPlayground && <Route path="/dev/trips" element={<TripsPlayground />} />}
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/support" element={<Support />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/help/connect-icloud" element={<ConnectIcloudHelp />} />
                 <Route path="/help/connect-ics" element={<ConnectIcsHelp />} />

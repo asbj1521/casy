@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CircleHelp, Database, FileText, Lock, MessageSquare, Share } from "lucide-react";
+import { CircleHelp, Database, FileText, LifeBuoy, Lock, MessageSquare, Share } from "lucide-react";
 
 import CopyField from "@/components/ui/CopyField";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -56,6 +56,7 @@ export function HelpGroup() {
   return (
     <ListGroup>
       <ListRow to="/profile/data" icon={Database} label={t.myData.row} />
+      <ListRow to="/support" icon={LifeBuoy} label={t.footer.support} />
       <ListRow to="/how-it-works" icon={CircleHelp} label={t.footer.howItWorks} />
       <ListRow to="/terms" icon={FileText} label={t.footer.terms} />
       <ListRow to="/privacy" icon={Lock} label={t.footer.privacy} />

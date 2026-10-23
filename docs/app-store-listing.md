@@ -21,14 +21,26 @@ the app they come in through the phone's own calendars.
 | Secondary category | Lifestyle |
 | Price | Free |
 | Copyright | 2026 Asbjørn Morris Bay |
-| Support URL | https://casy.app (needs a support page or the contact on it: see below) |
+| Support URL | https://casy.app/support (Hjælp og kontakt, public, both languages) |
 | Marketing URL | https://casy.app |
 | Privacy policy URL | https://casy.app/privacy |
-| Age rating | Answer the questionnaire honestly: users write text others see (group and event names, notes), and an AI reads their typing. Expect 12+ or 17+ rather than 4+ because of user generated content; Apple decides from the answers. |
+| Age rating | Apple works it out from the questionnaire, so the way to the lowest rating is to answer truthfully: there is no violence, mature or gambling content, no web browsing and no purchases; the two answers that can raise it are user generated content (people write group and event names and notes that others see) and the AI feature. Expect the lowest bracket that allows those, around 12+. |
 
-Support URL: Apple needs a page where someone can get help. casy.app has the
-contact email on the terms and privacy pages; a short "Support" section on
-/how-it-works or its own /support page is better. Decide before submitting.
+Support URL: /support is built (#146) and linked from the profile's help list
+("Hjælp og kontakt"); it opens signed out, in Danish or English.
+
+Name: Apple requires it to be unique on the whole store, and says so when the
+app record is made. Try them in this order, in the language of the listing:
+
+1. Danish: "Casy: Find en dato", English: "Casy: Find a Date" (below)
+2. What Casy stands for: "Casy: Calendar Syncing" (22) in English,
+   "Casy: Kalender Sync" (19) in Danish
+3. "Casy: Sync Your Calendar" (24) in English, "Casy: Synk din kalender" (23)
+   in Danish
+
+Calendar syncing says more about the idea than the app does (it finds dates, it
+doesn't copy calendars between apps), so the subtitle, "Find the day everyone
+can", is what keeps the page honest; keep it whichever name wins.
 
 ## Danish (primary)
 

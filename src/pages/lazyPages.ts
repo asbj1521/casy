@@ -20,6 +20,7 @@ export const loadPage = {
   joinGroup: () => import("@/pages/JoinGroup"),
   privacy: () => import("@/pages/Privacy"),
   terms: () => import("@/pages/Terms"),
+  support: () => import("@/pages/Support"),
   howItWorks: () => import("@/pages/HowItWorks"),
   connectIcloud: () => import("@/pages/ConnectIcloudHelp"),
   connectIcs: () => import("@/pages/ConnectIcsHelp"),

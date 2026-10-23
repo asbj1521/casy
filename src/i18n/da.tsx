@@ -192,6 +192,7 @@ export const da = {
   },
   footer: {
     howItWorks: "Sådan virker det",
+    support: "Hjælp og kontakt",
     terms: "Vilkår",
     privacy: "Privatliv",
   },

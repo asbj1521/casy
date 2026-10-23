@@ -183,6 +183,7 @@ export const en: Messages = {
   },
   footer: {
     howItWorks: "How it works",
+    support: "Help and contact",
     terms: "Terms",
     privacy: "Privacy",
   },
