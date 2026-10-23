@@ -46,6 +46,7 @@ import {
   MAX_TRIP_DAYS,
   NO_PEOPLE_CHOICE,
   peopleFromChoice,
+  periodBounds,
   periodWindow,
   randomDefaultSettings,
   reviewAnswer,
@@ -338,8 +339,8 @@ export function usePlanning() {
       locale: LOCALE[lang],
     });
     if (!period) return shown;
-    // Days outside the months picked read like an unticked weekday: not searched.
-    const [from, to] = [Date.parse(period.from), startOfMonth(Date.parse(period.to), TZ, 1)];
+    // Days outside the months (or days) picked read like an unticked weekday: not searched.
+    const { from, to } = periodBounds(period, TZ);
     return {
       ...shown,
       days: shown.days.map((d) =>

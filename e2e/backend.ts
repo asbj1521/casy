@@ -352,6 +352,24 @@ export class FakeBackend {
       };
       return ok(answer);
     }
+    // A date that bounds it: from today until 5 November, exact days (#134).
+    if (body.text === "tivoli før halloween slutter den 5. november") {
+      const answer: PlanAnswer = {
+        plan: {
+          ...nothing,
+          kind: "meeting",
+          startHour: 18,
+          anyTime: false,
+          startWindow: { from: 18 * 60, to: 21 * 60 },
+          durationMinutes: 180,
+          months: { from: "2026-10-07", to: "2026-11-05", days: true },
+          title: "Tivoli",
+          assumed: ["startHour", "startWindow", "durationMinutes"],
+        },
+        left: 41,
+      };
+      return ok(answer);
+    }
     // A question whose options are long enough to wrap: what the box must
     // still fit beside the answer (#124).
     if (body.text === "te hos mormor og morfar") {

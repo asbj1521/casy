@@ -192,6 +192,28 @@ test.describe("Planlæg med AI (computers)", () => {
     expect((suggest?.body.settings as Record<string, unknown>).startWindow).toBeUndefined();
   });
 
+  test("exact days (#134) read as until a day, and a month tapped replaces them", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    const box = page.getByRole("textbox", { name: /Fx middag en fredag/ });
+    await box.fill("tivoli før halloween slutter den 5. november");
+    await box.press("Enter");
+    const summary = page.locator("dl").filter({ hasText: "Tidspunkt" });
+    await expect(summary).toContainText("Til 5. november");
+
+    await page.getByRole("button", { name: "Indstillinger", exact: true }).click();
+    await page.getByRole("tab", { name: "Tidspunkt" }).click();
+    await page.getByRole("button", { name: "Til 5. november" }).filter({ visible: true }).click();
+    await expect(page.getByText(/Casy har sat datoerne: til 5\. november/)).toBeVisible();
+    await page.getByRole("button", { name: "dec", exact: true }).filter({ visible: true }).click();
+    await expect(
+      page.getByRole("button", { name: "I december" }).filter({ visible: true }),
+    ).toBeVisible();
+  });
+
   test("with sharing switched off nothing is sent", async ({ page, backend }) => {
     backend.world.aiShare = false;
     await describe(page);

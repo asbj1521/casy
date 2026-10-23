@@ -37,7 +37,8 @@ export interface PlanSettingsData {
   weekdays: number[] | null;
   days: number | null;
   startWeekday: number | null;
-  months: { from: string; to: string } | "any" | null;
+  /** Months, or with `days` exact days, "YYYY-MM-DD" (#134). */
+  months: { from: string; to: string; days?: true } | "any" | null;
 }
 
 export const PLAN_FIELDS = [
@@ -93,6 +94,7 @@ export function readLabelCorrection(raw: unknown): LabelCorrectionData | null {
 const int = (v: unknown, min: number, max: number): v is number =>
   typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+const DAY = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
 /** The settings, each part checked against what it may be; null if any isn't. */
 function readPlanSettings(raw: unknown): PlanSettingsData | null {
@@ -122,15 +124,15 @@ function readPlanSettings(raw: unknown): PlanSettingsData | null {
   );
   const days = orNull(r.days, (v): v is number => int(v, 1, 31));
   const startWeekday = orNull(r.startWeekday, (v): v is number => int(v, 0, 6));
-  const months = orNull(
-    r.months,
-    (v): v is { from: string; to: string } | "any" =>
-      v === "any" ||
-      (!!v &&
-        typeof v === "object" &&
-        MONTH.test(String((v as { from?: unknown }).from)) &&
-        MONTH.test(String((v as { to?: unknown }).to))),
-  );
+  const months = orNull(r.months, (v): v is { from: string; to: string; days?: true } | "any" => {
+    if (v === "any") return true;
+    if (!v || typeof v !== "object") return false;
+    const { from, to, days } = v as { from?: unknown; to?: unknown; days?: unknown };
+    const shape = days === true ? DAY : MONTH;
+    return (
+      (days === undefined || days === true) && shape.test(String(from)) && shape.test(String(to))
+    );
+  });
   const parts = [
     kind,
     startHour,
@@ -152,7 +154,10 @@ function readPlanSettings(raw: unknown): PlanSettingsData | null {
     weekdays: weekdays!,
     days: days!,
     startWeekday: startWeekday!,
-    months: months === "any" || months === null ? months : { from: months!.from, to: months!.to },
+    months:
+      months === "any" || months === null
+        ? months
+        : { from: months!.from, to: months!.to, ...(months!.days ? { days: true as const } : {}) },
   };
 }
 

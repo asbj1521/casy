@@ -158,6 +158,11 @@ export const da = {
       any: "når som helst",
       one: (month: string) => `i ${month}`,
       range: (from: string, to: string) => `${from} til ${to}`,
+      // Exact days, set by Planlæg med AI (#134).
+      until: (day: string) => `til ${day}`,
+      day: (day: string) => `den ${day}`,
+      daysHint: (period: string) =>
+        `Casy har sat datoerne: ${period}. Tryk på en måned for at vælge måneder selv.`,
       hint: "Tryk på de måneder, det kan være i. Tryk på en af de yderste igen for at fjerne den.",
       anyButton: "Når som helst",
       done: "Færdig",

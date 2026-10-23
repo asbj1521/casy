@@ -150,6 +150,31 @@ describe("applyPlan", () => {
   });
 });
 
+describe("exact days (#134)", () => {
+  // Danish midnights: 23 October and 5 November 2026.
+  const OCT23 = "2026-10-22T22:00:00.000Z";
+  const NOV5 = "2026-11-04T23:00:00.000Z";
+
+  it("become an exact period, and months said later replace them", () => {
+    const days = { from: "2026-10-23", to: "2026-11-05", days: true as const };
+    const next = applyPlan(AI_BASE_SETTINGS, { ...NOTHING, months: days }, TZ);
+    expect(next.period).toEqual({ from: OCT23, to: NOV5, days: true });
+    expect(toPlanSettings(next, TZ).months).toEqual(days);
+    const december = { from: "2026-12", to: "2026-12" };
+    expect(applyPlan(next, { ...NOTHING, months: december }, TZ).period).toEqual({
+      from: "2026-11-30T23:00:00.000Z",
+      to: "2026-11-30T23:00:00.000Z",
+    });
+  });
+
+  it("ignore a day that doesn't exist, or ends before it starts", () => {
+    const bad = (from: string, to: string) =>
+      applyPlan(AI_BASE_SETTINGS, { ...NOTHING, months: { from, to, days: true } }, TZ).period;
+    expect(bad("2026-11-31", "2026-12-02")).toBeNull();
+    expect(bad("2026-11-05", "2026-11-01")).toBeNull();
+  });
+});
+
 describe("start windows (#133)", () => {
   const dinner = { from: 18 * 60, to: 21 * 60 };
 

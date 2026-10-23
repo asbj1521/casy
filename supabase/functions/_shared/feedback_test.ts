@@ -135,6 +135,20 @@ Deno.test("a plan with something out of range, or missing, is refused", () => {
   assertEquals(readPlanFeedback(null), null);
 });
 
+Deno.test("exact days are kept as days, and checked as such (#134)", () => {
+  const days = { from: "2026-10-09", to: "2026-11-05", days: true as const };
+  const read = readPlanFeedback({ ...plan, final: { ...settings, months: days } })!;
+  assertEquals(read.final.months, days);
+  assertEquals(
+    readPlanFeedback({ ...plan, final: { ...settings, months: { ...days, to: "2026-11" } } }),
+    null,
+  );
+  assertEquals(
+    readPlanFeedback({ ...plan, final: { ...settings, months: { ...days, days: "yes" } } }),
+    null,
+  );
+});
+
 Deno.test("long text is cut", () => {
   const read = readPlanFeedback({ ...plan, texts: ["x".repeat(5000)] })!;
   assertEquals(read.texts[0].length <= 600, true);

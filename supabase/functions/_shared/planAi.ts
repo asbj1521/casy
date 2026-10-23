@@ -30,8 +30,11 @@ const SEARCH_MONTHS = 12;
 
 export type PlanKind = "meeting" | "trip" | "holiday";
 
-/** Months to search, first to last, each "YYYY-MM"; "any" clears a period. */
-export type PlanMonths = { from: string; to: string } | "any";
+/**
+ * Months to search, first to last, each "YYYY-MM"; "any" clears a period.
+ * With `days` (#134), exact days instead, "YYYY-MM-DD", both included.
+ */
+export type PlanMonths = { from: string; to: string; days?: true } | "any";
 
 /** A meeting's possible starts, minutes after midnight, from before to (eventSearch.ts). */
 export interface StartWindow {
@@ -187,7 +190,7 @@ The settings. A setting nothing was said about is left empty: "" for text, 0 for
 - weekdays (meeting): the days of the week it may fall on, 0 = Sunday, 1 = Monday ... 6 = Saturday. A weekend (weekend) is [6, 0], weekdays (hverdage) [1, 2, 3, 4, 5]. An occasion whose days the list names (a fredagsbar is on a Friday) gets those days, listed in assumed. Empty when any day will do.
 - days (trip or holiday): how many days. A weekend trip is 2 or 3 days. A trip is at most 7 days, a holiday at most 30.
 - startWeekday (trip): the weekday it starts, 0 = Sunday ... 6 = Saturday. A weekend trip starts on Friday, 5.
-- monthsFrom and monthsTo: the first and last month to plan within, "YYYY-MM", only months from the list in the message. A season or a single date means its months: "in December" is 2026-12 to 2026-12 when that is in the list; "before Christmas" runs to December; "this summer" June to August. An occasion whose months the list names (a julefrokost, Nov-Dec) gets the next run of those months from the list in the message, listed in assumed, unless the person says when. monthsFrom "any" only when the person says in words that any time of year will do; when they say nothing about when, leave both empty.
+- monthsFrom and monthsTo: the first and last month to plan within, "YYYY-MM", only months from the list in the message. When the person names a date that bounds it, a day "YYYY-MM-DD" instead, both included: "before Halloween ends on 5 November" is monthsTo "2026-11-05" with monthsFrom empty (from today), "after the 12th" monthsFrom that day with monthsTo empty, "on 28 November" that day in both. A season means its months: "in December" is 2026-12 to 2026-12 when that is in the list; "before Christmas" runs to December; "this summer" June to August. An occasion whose months the list names (a julefrokost, Nov-Dec) gets the next run of those months from the list in the message, listed in assumed, unless the person says when. monthsFrom "any" only when the person says in words that any time of year will do; when they say nothing about when, leave both empty.
 - place and note: only what the person said about where, or what others should know that isn't already in the title, the place or the other settings (never the times, days or months again). Usually empty. Never made up.
 - people: names exactly as the person wrote them. without: people not to invite ("uden Peter", "not Anna"). optional: people welcome but not needed ("Peter må gerne komme"). required: people who must be there after all ("Peter skal alligevel med"). Never names that weren't written.
 - atLeast (meeting): how many must be able to come, when the person says so ("mindst 4", "at least 4").
@@ -209,6 +212,11 @@ ${occasionsBlock("plan")}`;
 // The message: today, the months that can be planned, the language, and what
 // the person wrote (earlier descriptions and the settings so far, when they
 // are adding details).
+
+/** The day `nowMs` falls on in Danish time, "YYYY-MM-DD". */
+export function danishDay(nowMs: number): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: DEFAULT_ZONE }).format(new Date(nowMs));
+}
 
 /** The months the scheduler searches, from this one in Danish time: "YYYY-MM" and its name. */
 export function searchMonths(nowMs: number): { key: string; name: string }[] {
@@ -317,14 +325,59 @@ function copy(raw: unknown, maxLength: number): string | null {
   return text === null ? null : withoutDashes(text);
 }
 
-function cleanMonths(raw: unknown, monthKeys: string[] | null): PlanMonths | null {
+const MONTH_SHAPE = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+/** True if `v` is a real day, "YYYY-MM-DD" (no 31 November). */
+function isDay(v: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (!m) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.toISOString().slice(0, 10) === v;
+}
+
+/** The last day of a month, "2026-11" to "2026-11-30". */
+function lastDayOf(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  return `${month}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Exact days (#134), when either end is a day: "before 5 November" has no
+ * first day (from today), "after the 12th" no last (to the end of the year
+ * searched); a month at either end stands for its first or last day. Kept
+ * within today and the year searched (`monthKeys`, `today`), or dropped when
+ * nothing of it is left. Settings sent back from the page (no `monthKeys`)
+ * are checked for shape and order only.
+ */
+function cleanDays(
+  from: string,
+  to: string,
+  monthKeys: string[] | null,
+  today: string | null,
+): PlanMonths | null {
+  const end = (v: string, month: (m: string) => string, open: string | null) =>
+    isDay(v) ? v : MONTH_SHAPE.test(v) ? month(v) : v === "" ? open : null;
+  const lastSearched = monthKeys ? lastDayOf(monthKeys[monthKeys.length - 1]) : null;
+  let first = end(from, (m) => `${m}-01`, today);
+  let last = end(to, lastDayOf, lastSearched);
+  if (!first || !last) return null;
+  if (today && first < today) first = today;
+  if (lastSearched && last > lastSearched) last = lastSearched;
+  return first <= last ? { from: first, to: last, days: true } : null;
+}
+
+function cleanMonths(
+  raw: unknown,
+  monthKeys: string[] | null,
+  today: string | null,
+): PlanMonths | null {
   if (raw === "any") return "any";
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const { from, to } = raw as Record<string, unknown>;
-  const shape = /^\d{4}-(0[1-9]|1[0-2])$/;
-  if (typeof from !== "string" || typeof to !== "string" || !shape.test(from) || !shape.test(to)) {
-    return null;
-  }
+  if (typeof from !== "string" || typeof to !== "string") return null;
+  if (isDay(from) || isDay(to)) return cleanDays(from, to, monthKeys, today);
+  const shape = MONTH_SHAPE;
+  if (!shape.test(from) || !shape.test(to)) return null;
   let [first, last] = from <= to ? [from, to] : [to, from];
   // Settings sent back from the page are checked for shape only: the year
   // searched is the server's to judge when the answer comes back.
@@ -360,7 +413,15 @@ function fromWire(raw: Record<string, unknown>): Record<string, unknown> {
     days: positive(raw.days),
     startWeekday:
       typeof raw.startWeekday === "number" && raw.startWeekday >= 0 ? raw.startWeekday : null,
-    months: from === "any" ? "any" : from ? { from, to: to || from } : null,
+    months:
+      from === "any"
+        ? "any"
+        : // A day at either end makes exact days (#134), which may leave one end open.
+          isDay(from) || isDay(to)
+          ? { from, to }
+          : from
+            ? { from, to: to || from }
+            : null,
   };
 }
 
@@ -418,7 +479,11 @@ function cleanWindow(raw: unknown): StartWindow | null {
   return first < last ? { from: first, to: last } : null;
 }
 
-function cleanSettings(raw: Record<string, unknown>, monthKeys: string[] | null): PlanSettings {
+function cleanSettings(
+  raw: Record<string, unknown>,
+  monthKeys: string[] | null,
+  today: string | null = null,
+): PlanSettings {
   const kind =
     raw.kind === "meeting" || raw.kind === "trip" || raw.kind === "holiday" ? raw.kind : null;
   const duration =
@@ -446,7 +511,7 @@ function cleanSettings(raw: Record<string, unknown>, monthKeys: string[] | null)
     weekdays: weekdays.length > 0 ? weekdays : null,
     days,
     startWeekday: int(raw.startWeekday, 0, 6),
-    months: cleanMonths(raw.months, monthKeys),
+    months: cleanMonths(raw.months, monthKeys, today),
   };
 }
 
@@ -458,7 +523,7 @@ function cleanNames(raw: unknown): string[] {
 
 const isEmpty = (s: PlanSettings) => SETTING_FIELDS.every((field) => s[field] === null);
 
-function cleanQuestions(raw: unknown, monthKeys: string[]): PlanQuestion[] {
+function cleanQuestions(raw: unknown, monthKeys: string[], today: string): PlanQuestion[] {
   if (!Array.isArray(raw)) return [];
   const questions: PlanQuestion[] = [];
   for (const item of raw) {
@@ -473,7 +538,7 @@ function cleanQuestions(raw: unknown, monthKeys: string[]): PlanQuestion[] {
         const label = copy(option.label, 60);
         const patch =
           option.patch && typeof option.patch === "object" && !Array.isArray(option.patch)
-            ? cleanSettings(fromWire(option.patch as Record<string, unknown>), monthKeys)
+            ? cleanSettings(fromWire(option.patch as Record<string, unknown>), monthKeys, today)
             : null;
         // An option that changes nothing can't be applied: dropped.
         return label && patch && !isEmpty(patch) ? { label, patch } : null;
@@ -486,8 +551,16 @@ function cleanQuestions(raw: unknown, monthKeys: string[]): PlanQuestion[] {
   return questions;
 }
 
-/** The model's answer within the scheduler's limits, with `monthKeys` the months searched. */
-export function cleanPlan(raw: unknown, monthKeys: string[]): AiPlan {
+/**
+ * The model's answer within the scheduler's limits, with `monthKeys` the
+ * months searched and `today` ("YYYY-MM-DD", Danish time) the first day an
+ * exact period may have.
+ */
+export function cleanPlan(
+  raw: unknown,
+  monthKeys: string[],
+  today: string = `${monthKeys[0]}-01`,
+): AiPlan {
   const r =
     raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const people =
@@ -504,7 +577,7 @@ export function cleanPlan(raw: unknown, monthKeys: string[]): AiPlan {
       ]
     : [];
   return {
-    ...cleanSettings(fromWire(r), monthKeys),
+    ...cleanSettings(fromWire(r), monthKeys, today),
     title: copy(r.title, 60),
     place: copy(r.place, 100),
     note: copy(r.note, 500),
@@ -515,7 +588,7 @@ export function cleanPlan(raw: unknown, monthKeys: string[]): AiPlan {
     },
     atLeast: int(r.atLeast, 1, 20),
     assumed,
-    questions: cleanQuestions(r.questions, monthKeys),
+    questions: cleanQuestions(r.questions, monthKeys, today),
   };
 }
 
@@ -597,7 +670,7 @@ export function planFromAnswer(
     return null;
   }
   const monthKeys = searchMonths(nowMs).map((m) => m.key);
-  const plan = cleanPlan(raw, monthKeys);
+  const plan = cleanPlan(raw, monthKeys, danishDay(nowMs));
   if (isBlankPlan(plan)) return null;
   return request ? withSeason(plan, request, monthKeys) : plan;
 }

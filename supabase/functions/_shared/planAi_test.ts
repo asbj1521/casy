@@ -3,6 +3,7 @@ import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import {
   buildPlanMessage,
   cleanPlan,
+  danishDay,
   PLAN_SCHEMA,
   planFromAnswer,
   type PlanRequest,
@@ -399,3 +400,42 @@ Deno.test(
     });
   },
 );
+
+Deno.test("a day bounds the period as exact days, both included (#134)", () => {
+  const today = danishDay(NOW);
+  assertEquals(today, "2026-10-09");
+  const read = (monthsFrom: string, monthsTo: string) =>
+    cleanPlan(wire({ kind: "meeting", monthsFrom, monthsTo }), MONTHS, today).months;
+  // "Before Halloween ends on 5 November": from today.
+  assertEquals(read("", "2026-11-05"), { from: today, to: "2026-11-05", days: true });
+  // "After the 20th": to the end of the year searched.
+  assertEquals(read("2026-10-20", ""), { from: "2026-10-20", to: "2027-09-30", days: true });
+  assertEquals(read("2026-11-28", "2026-11-28"), {
+    from: "2026-11-28",
+    to: "2026-11-28",
+    days: true,
+  });
+  // A month at the other end stands for its first or last day.
+  assertEquals(read("2026-12", "2027-01-06"), { from: "2026-12-01", to: "2027-01-06", days: true });
+  assertEquals(read("2026-10-20", "2026-11"), { from: "2026-10-20", to: "2026-11-30", days: true });
+  // Kept within today and the year searched, or dropped when nothing is left.
+  assertEquals(read("2026-10-01", "2026-10-15"), { from: today, to: "2026-10-15", days: true });
+  assertEquals(read("2026-09-01", "2026-10-05"), null);
+  assertEquals(read("2026-11-05", "2026-11-01"), null);
+  assertEquals(read("2026-11-31", ""), null);
+  // Months alone are months, as before.
+  assertEquals(read("2026-12", ""), { from: "2026-12", to: "2026-12" });
+});
+
+Deno.test("exact days go back to the model as it wrote them", () => {
+  const settings = {
+    ...EMPTY_SETTINGS,
+    kind: "meeting" as const,
+    months: { from: "2026-10-09", to: "2026-11-05", days: true as const },
+  };
+  const wired = toWire(settings);
+  assertEquals([wired.monthsFrom, wired.monthsTo], ["2026-10-09", "2026-11-05"]);
+  assertEquals(cleanPlan(wire({ ...wired }), MONTHS, "2026-10-09").months, settings.months);
+  // The page's settings so far keep their days.
+  assertEquals(readPlanRequest({ text: "a", current: settings })?.current?.months, settings.months);
+});

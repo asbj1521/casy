@@ -103,13 +103,23 @@ function MonthGrid({
   const months = searchedMonths();
   const pick = (month: string) => onChange(pickPeriodMonth(value, month, TZ));
 
+  // Exact days (#134) shade every month they touch, with no ends to tap off:
+  // a tap on any month replaces them (pickPeriodMonth).
   const inPeriod = (m: string) =>
-    !!value && Date.parse(m) >= Date.parse(value.from) && Date.parse(m) <= Date.parse(value.to);
-  const isEnd = (m: string) => !!value && (m === value.from || m === value.to);
+    !!value &&
+    (value.days
+      ? startOfMonth(Date.parse(value.from), TZ) <= Date.parse(m) &&
+        Date.parse(m) <= Date.parse(value.to)
+      : Date.parse(m) >= Date.parse(value.from) && Date.parse(m) <= Date.parse(value.to));
+  const isEnd = (m: string) => !!value && !value.days && (m === value.from || m === value.to);
 
   return (
     <div>
-      <p className="px-1 text-sm text-muted-foreground">{t.scheduler.period.hint}</p>
+      <p className="px-1 text-sm text-muted-foreground">
+        {value?.days
+          ? t.scheduler.period.daysHint(periodText(value, LOCALE[lang], t))
+          : t.scheduler.period.hint}
+      </p>
       <div className="mt-2 grid grid-cols-3 gap-1.5">
         {months.map((m, i) => {
           const { month } = localDate(Date.parse(m), TZ);

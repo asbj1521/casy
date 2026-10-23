@@ -346,6 +346,63 @@
         "window": false,
         "startHour": 19
       }
+    },
+    {
+      "name": "Tivoli before Halloween ends: an evening, until an exact day (#134)",
+      "lang": "da",
+      "text": "Hurtigste aften vi kan tage i Tivoli inden Halloween slutter den 5. november",
+      "expect": {
+        "kind": "meeting",
+        "window": true,
+        "months": {
+          "oneOf": [
+            {
+              "from": "2026-10-10",
+              "to": "2026-11-05",
+              "days": true
+            },
+            {
+              "from": "2026-10-10",
+              "to": "2026-11-04",
+              "days": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "after a day, to the end of the year searched (#134)",
+      "lang": "en",
+      "text": "Dinner some time after the 20th of November",
+      "expect": {
+        "kind": "meeting",
+        "months": {
+          "oneOf": [
+            {
+              "from": "2026-11-20",
+              "to": "2027-09-30",
+              "days": true
+            },
+            {
+              "from": "2026-11-21",
+              "to": "2027-09-30",
+              "days": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "a whole month stays a month (#134)",
+      "lang": "da",
+      "text": "Brætspilsaften i december",
+      "expect": {
+        "kind": "meeting",
+        "months": {
+          "from": "2026-12",
+          "to": "2026-12"
+        }
+      }
     }
   ]
 }

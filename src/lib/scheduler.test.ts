@@ -320,6 +320,28 @@ describe("periodWindow", () => {
     const period = { from: "2026-09-30T22:00:00.000Z", to: "2027-09-30T22:00:00.000Z" };
     expect(periodWindow(period, TODAY, LIMIT, TZ)).toEqual({ start: TODAY, end: LIMIT.end });
   });
+
+  it("runs through the last of exact days, set by the AI (#134)", () => {
+    // Until 5 November: from today through the 5th, so to midnight on the 6th.
+    const period = { from: TODAY, to: "2026-11-04T23:00:00.000Z", days: true as const };
+    expect(periodWindow(period, TODAY, LIMIT, TZ)).toEqual({
+      start: TODAY,
+      end: "2026-11-05T23:00:00.000Z",
+    });
+  });
+});
+
+describe("exact days in the month picker (#134)", () => {
+  it("give way to the first month tapped", () => {
+    const TZ = "Europe/Copenhagen";
+    const DEC = "2026-11-30T23:00:00.000Z";
+    const days = {
+      from: "2026-10-06T22:00:00.000Z",
+      to: "2026-11-04T23:00:00.000Z",
+      days: true as const,
+    };
+    expect(pickPeriodMonth(days, DEC, TZ)).toEqual({ from: DEC, to: DEC });
+  });
 });
 
 describe("peopleFromChoice (#89)", () => {

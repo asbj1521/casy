@@ -39,10 +39,13 @@ export const ALL_DOWS = [1, 2, 3, 4, 5, 6, 0];
 /**
  * When the event should happen (#74): the months searched, first to last,
  * each the local midnight of its 1st ("December", or "November to January").
+ * With `days` (#134), set only by Planlæg med AI, `from` and `to` are exact
+ * days instead, each its local midnight, both included ("until 5 November").
  */
 export interface Period {
   from: string;
   to: string;
+  days?: true;
 }
 
 /** Everything the settings bar holds, in both modes. */
@@ -177,7 +180,8 @@ export function pickPeriodMonth(
   month: string,
   timeZone: string,
 ): Period | null {
-  if (!period) return { from: month, to: month };
+  // Months picked by hand replace the AI's exact days (#134).
+  if (!period || period.days) return { from: month, to: month };
   const m = Date.parse(month);
   const from = Date.parse(period.from);
   const to = Date.parse(period.to);
@@ -203,9 +207,23 @@ export function periodWindow(
   timeZone: string,
 ): { start: string; end: string } {
   if (!period) return { start: today, end: limit.end };
-  const start = Math.max(Date.parse(today), Date.parse(period.from));
-  const end = Math.min(Date.parse(limit.end), startOfMonth(Date.parse(period.to), timeZone, 1));
+  const bounds = periodBounds(period, timeZone);
+  const start = Math.max(Date.parse(today), bounds.from);
+  const end = Math.min(Date.parse(limit.end), bounds.to);
   return { start: new Date(start).toISOString(), end: new Date(end).toISOString() };
+}
+
+/**
+ * The stretch a period covers, epoch ms, `to` exclusive: from its first
+ * month's 1st to the 1st after its last, or for exact days (#134) from the
+ * first day's midnight to the midnight after the last.
+ */
+export function periodBounds(period: Period, timeZone: string): { from: number; to: number } {
+  const to = Date.parse(period.to);
+  return {
+    from: Date.parse(period.from),
+    to: period.days ? addDays(to, 1, timeZone) : startOfMonth(to, timeZone, 1),
+  };
 }
 
 /**
