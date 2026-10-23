@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 25. oktober 2026",
+  updated: "Senest opdateret 23. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -475,14 +475,19 @@ const da: LegalCopy = {
     },
     {
       title: "Kontakt",
-      body: <p>Spørgsmål om denne politik eller dine data: {mail}.</p>,
+      body: (
+        <p>
+          Casy drives af Asbjørn Morris Bay, en privatperson i Danmark, som er dataansvarlig for
+          dine oplysninger. Spørgsmål om denne politik eller dine data: {mail}.
+        </p>
+      ),
     },
   ],
 };
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 25 October 2026",
+  updated: "Last updated 23 October 2026",
   sections: [
     {
       title: "In short",
@@ -934,7 +939,12 @@ const en: LegalCopy = {
     },
     {
       title: "Contact",
-      body: <p>Questions about this policy or your data: {mail}.</p>,
+      body: (
+        <p>
+          Casy is run by Asbjørn Morris Bay, a private individual in Denmark, who is the data
+          controller for your information. Questions about this policy or your data: {mail}.
+        </p>
+      ),
     },
   ],
 };

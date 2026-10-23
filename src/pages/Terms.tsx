@@ -27,7 +27,7 @@ const link = (to: string, label: string) => (
 
 const da: LegalCopy = {
   title: "Vilkår for brug",
-  updated: "Senest opdateret 6. oktober 2026",
+  updated: "Senest opdateret 23. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -44,8 +44,9 @@ const da: LegalCopy = {
       title: "Hvem står bag",
       body: (
         <p>
-          Casy drives af en privatperson i Danmark. Du kan altid skrive til {mail}. Casy findes som
-          hjemmeside på casy.app og som app, og vilkårene gælder for dem alle.
+          Casy drives af Asbjørn Morris Bay, en privatperson i Danmark. Du kan altid skrive til{" "}
+          {mail}. Casy findes som hjemmeside på casy.app og som app, og vilkårene gælder for dem
+          alle.
         </p>
       ),
     },
@@ -289,7 +290,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Terms of service",
-  updated: "Last updated 6 October 2026",
+  updated: "Last updated 23 October 2026",
   sections: [
     {
       title: "In short",
@@ -306,8 +307,9 @@ const en: LegalCopy = {
       title: "Who runs Casy",
       body: (
         <p>
-          Casy is run by a private person in Denmark. You can always write to {mail}. Casy is
-          available as a website at casy.app and as an app, and these terms cover all of them.
+          Casy is run by Asbjørn Morris Bay, a private person in Denmark. You can always write to{" "}
+          {mail}. Casy is available as a website at casy.app and as an app, and these terms cover
+          all of them.
         </p>
       ),
     },
