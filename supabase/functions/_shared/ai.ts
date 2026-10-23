@@ -34,7 +34,8 @@ export type Skill =
   | "event-label"
   | "event-relabel"
   | "event-profile"
-  | "entries-ai";
+  | "entries-ai"
+  | "trip-legs";
 
 /**
  * Each skill's budget, and whether someone is waiting on the page (one quick
@@ -52,6 +53,8 @@ export const SKILLS: Record<Skill, { perPersonPerDay: number; waiting: boolean }
   "event-profile": { perPersonPerDay: 40, waiting: true },
   // Tell Casy (#116): a go at saying when you're away or busy, and each correction of it.
   "entries-ai": { perPersonPerDay: 30, waiting: true },
+  // Trip detection (#115): only travel events, a batch of 50 each; after the first run only new ones.
+  "trip-legs": { perPersonPerDay: 10, waiting: false },
 };
 
 /**

@@ -517,6 +517,11 @@ verify_jwt = false
 # while #120 is open. Checks the caller's access token in code, like the rest.
 verify_jwt = false
 
+[functions.trip-legs]
+# Reads flights, trains and buses sent by the iPhone app with AI (#115), for
+# trip detection. Checks the caller's access token in code, like the rest.
+verify_jwt = false
+
 [functions.event-profile]
 # Profiles an event being planned with AI (#113), for anyone AI is on for.
 # Checks the caller's access token in code, like the rest.

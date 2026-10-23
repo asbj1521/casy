@@ -1393,6 +1393,7 @@ export const en: Messages = {
       "event-relabel": "Corrected labels",
       "event-profile": "Profiling planned events",
       "entries-ai": "Tell Casy",
+      "trip-legs": "Trips in calendars",
       earlier: "Before budgets per person",
     },
     healthStale: "No calendar has synced for over three hours. The hourly sync may have stopped.",

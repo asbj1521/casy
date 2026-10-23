@@ -1436,6 +1436,7 @@ export const da = {
       "event-relabel": "Rettede vurderinger",
       "event-profile": "Profil af planlagte aftaler",
       "entries-ai": "Fortæl Casy",
+      "trip-legs": "Rejser i kalenderen",
       earlier: "Før budgetter pr. person",
     } as Record<string, string>,
     healthStale:

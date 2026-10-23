@@ -60,7 +60,7 @@ deno check --node-modules-dir=none */index.ts _shared/*.ts
 
 # AI eval sets (#111): real calls, a cent or so per run; never in CI
 ANTHROPIC_API_KEY=$(grep '^ANTHROPIC_API_KEY=' .env.local | cut -d= -f2-) \
-  deno run --node-modules-dir=none --allow-net --allow-env --allow-read supabase/evals/run.ts [skill]   # plan-ai, calendar-categorize, event-label, event-profile, entries-ai, occasions
+  deno run --node-modules-dir=none --allow-net --allow-env --allow-read supabase/evals/run.ts [skill]   # plan-ai, calendar-categorize, event-label, event-profile, entries-ai, trip-legs, occasions
 
 supabase migration list  # Read-only: which migrations are applied remotely
 supabase db push --dry-run

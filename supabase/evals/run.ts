@@ -6,7 +6,7 @@
  * every run costs a little (cents) and needs the API key.
  *
  *   ANTHROPIC_API_KEY=... deno run --node-modules-dir=none --allow-net --allow-env --allow-read \
- *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile | entries-ai | occasions]
+ *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile | entries-ai | trip-legs | occasions]
  *
  * The cases are invented: the repo is public, so no real calendar names,
  * titles or descriptions belong in them. An expected value may be
@@ -62,6 +62,14 @@ import {
   toWire,
 } from "../functions/_shared/entries.ts";
 import { STRAIN, type Strain } from "../functions/_shared/eventVocabulary.ts";
+import {
+  buildLegsMessage,
+  legsFromAnswer,
+  LEGS_SCHEMA,
+  LEGS_SYSTEM_PROMPT,
+  MAX_EVENTS as MAX_LEG_EVENTS,
+  readEvent as readLegEvent,
+} from "../functions/_shared/tripLegs.ts";
 import { type Occasion, usableOccasions } from "../functions/_shared/occasions.ts";
 
 const client = new Anthropic();
@@ -619,6 +627,52 @@ async function occasions(): Promise<Result[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Trip legs (#115): one batch for the whole set, as the app sends them.
+
+interface LegCase {
+  event: Record<string, unknown>;
+  /** Leg fields to check; cities compared without case. */
+  expect: Record<string, Expected>;
+}
+
+async function tripLegs(): Promise<Result[]> {
+  const { cases } = (await load("trip-legs.json")) as { cases: LegCase[] };
+  const events = cases.map((c) => readLegEvent({ calendar: "Kalender", ...c.event })!);
+  const batches: number[][] = [];
+  for (let i = 0; i < cases.length; i += MAX_LEG_EVENTS) {
+    batches.push(cases.slice(i, i + MAX_LEG_EVENTS).map((_, j) => i + j));
+  }
+  const answers = await pool(batches, 2, async (indexes) => {
+    const { stop, text } = await ask(
+      skillRequest({
+        system: LEGS_SYSTEM_PROMPT,
+        message: buildLegsMessage(indexes.map((i) => events[i])),
+        schema: LEGS_SCHEMA,
+        maxTokens: 6_000,
+      }),
+    );
+    return { stop, legs: legsFromAnswer(stop, text, indexes.length) };
+  });
+  return cases.map((c, i) => {
+    const { stop, legs } = answers[Math.floor(i / MAX_LEG_EVENTS)];
+    const name = `${c.event.title} (${c.event.location || "no place"})`;
+    if (!legs) return { name, failures: [`no answer (stop_reason ${stop})`] };
+    const leg = legs[i % MAX_LEG_EVENTS];
+    if (!leg) return { name, failures: ["not answered"] };
+    const failures: string[] = [];
+    for (const [field, expected] of Object.entries(c.expect)) {
+      const actual = leg[field as keyof typeof leg];
+      if (!matches(actual, expected)) {
+        failures.push(
+          `${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+        );
+      }
+    }
+    return { name, failures };
+  });
+}
+
+// ---------------------------------------------------------------------------
 
 const SETS: Record<string, () => Promise<Result[]>> = {
   "plan-ai": planAi,
@@ -626,6 +680,7 @@ const SETS: Record<string, () => Promise<Result[]>> = {
   "event-label": eventLabel,
   "event-profile": eventProfile,
   "entries-ai": entriesAi,
+  "trip-legs": tripLegs,
   occasions,
 };
 const wanted = Deno.args[0] ? [Deno.args[0]] : Object.keys(SETS);
