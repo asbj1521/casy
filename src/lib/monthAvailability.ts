@@ -156,6 +156,17 @@ function dayAvailability(
     case "single": {
       if (search.allowedDays && !search.allowedDays.includes(dow)) return null;
       const durationMs = search.durationMinutes * 60_000;
+      if (search.startWindow) {
+        // Room for the whole meeting starting anywhere in the window (#133):
+        // the window is the AI's reading of "dinner", narrow enough to keep
+        // the chart honest, unlike a whole day.
+        return freeSomewhere(
+          participants,
+          atHour(midnight, search.startWindow.from / 60, timeZone),
+          atHour(midnight, search.startWindow.to / 60, timeZone) + durationMs,
+          durationMs,
+        );
+      }
       if (search.anyTime) {
         return freeSomewhere(
           participants,

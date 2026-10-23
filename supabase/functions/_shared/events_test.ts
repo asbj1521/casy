@@ -26,6 +26,15 @@ Deno.test("settings in each known shape are accepted", () => {
   );
   assertEquals(
     isEventSettings({
+      kind: "single",
+      durationMinutes: 120,
+      startHour: 18,
+      startWindow: { from: 1080, to: 1260 },
+    }),
+    true,
+  );
+  assertEquals(
+    isEventSettings({
       kind: "trip",
       shape: { anchorDow: 5, spanDays: 3, startHour: 17, endHour: 21 },
     }),
@@ -48,6 +57,20 @@ Deno.test("malformed settings are refused", () => {
     isEventSettings({ kind: "single", durationMinutes: 90, startHour: 12, anyTime: "yes" }),
     false,
   );
+  // A start window (#133): whole half hours within one day, from before to.
+  for (const startWindow of [
+    { from: 1080 },
+    { from: 1260, to: 1080 },
+    { from: 1080, to: 1080 },
+    { from: 1085, to: 1260 },
+    { from: 1080, to: 1440 },
+    [1080, 1260],
+  ]) {
+    assertEquals(
+      isEventSettings({ kind: "single", durationMinutes: 90, startHour: 18, startWindow }),
+      false,
+    );
+  }
   assertEquals(isEventSettings({ kind: "trip", shape: { anchorDow: 5 } }), false);
   assertEquals(isEventSettings({ kind: "vacation", days: 31 }), false);
 });

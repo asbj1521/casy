@@ -33,6 +33,12 @@ export type PlanKind = "meeting" | "trip" | "holiday";
 /** Months to search, first to last, each "YYYY-MM"; "any" clears a period. */
 export type PlanMonths = { from: string; to: string } | "any";
 
+/** A meeting's possible starts, minutes after midnight, from before to (eventSearch.ts). */
+export interface StartWindow {
+  from: number;
+  to: number;
+}
+
 /**
  * The scheduler's settings as the AI speaks them. Null is "nothing said":
  * the page keeps what it has (or its default). A question's option carries
@@ -44,6 +50,12 @@ export interface PlanSettings {
   startHour: number | null;
   /** A meeting at whatever time of day suits, rather than at startHour. */
   anyTime: boolean | null;
+  /**
+   * The starts a meeting may have (#133), in minutes after midnight, whole
+   * half hours: dinner with no time said is 18:00 to 21:00, and Casy takes
+   * the earliest that suits. startHour is then the window's first hour.
+   */
+  startWindow: StartWindow | null;
   /** 30 to 720, in steps of 30 (the scheduler's lengths). */
   durationMinutes: number | null;
   /** Days of the week a meeting may fall on, 0 = Sunday ... 6 = Saturday. */
@@ -59,6 +71,7 @@ export const SETTING_FIELDS = [
   "kind",
   "startHour",
   "anyTime",
+  "startWindow",
   "durationMinutes",
   "weekdays",
   "days",
@@ -102,7 +115,7 @@ export interface AiPlan extends PlanSettings {
 /** The settings as the model writes them; see the system prompt for each field. */
 interface WireSettings {
   kind: PlanKind | "";
-  /** "any", an hour "0" to "23" (or "18:00"), or "". */
+  /** "any", an hour "0" to "23" (or "18:00"), a window "18:00-21:00", or "". */
   start: string;
   durationMinutes: number;
   weekdays: number[];
@@ -169,7 +182,7 @@ The text is often spoken and written out by speech recognition, so it can be ram
 The settings. A setting nothing was said about is left empty: "" for text, 0 for durationMinutes, days and atLeast, -1 for startWeekday, [] for lists.
 - kind: "meeting" for something on one day at a time of day (dinner, coffee, lunch, a game night, a film, a party). "trip" for several days that start on a set weekday (a weekend trip, a cabin weekend, a week in a rented summer house, Saturday to Saturday). "holiday" for several days that may start on any day (a holiday, a week or more away). A weekend away is a trip, wherever it goes. A trip or holiday means staying away overnight: a day out (udflugt, fisketur, a day trip) is a meeting.
 - title: a short name for the event in the person's own language, at most 60 characters, such as "Middag" or "Hyttetur til Skagen".
-- start (meeting): the hour it starts, "0" to "23", Danish time, or "any" when the time of day doesn't matter and Casy may pick it. Typical when only a part of the day is named: morning (formiddag) "10", lunch (frokost) "12", afternoon (eftermiddag) "14", evening (aften) "18". A named occasion starts at its usual hour from the occasions list below even when no time is said. "any" only when the list says no set time and the person names no time or part of the day: padel in the evening is "18". Use "any" only for things that fit any time of day, such as coffee or a walk.
+- start (meeting), Danish time: an hour "0" to "23" only for a clock time the person says ("klokken 19", "at 7 pm", "fra 20 til 2"). Otherwise a window "HH:MM-HH:MM", the earliest and latest sensible start on the hour or half hour; Casy picks the earliest start in it that suits everyone ("så tidligt som muligt"). Typical: morning "09:00-11:00", lunch "11:30-13:00", afternoon "13:00-16:00", after work "16:30-18:30", evening or dinner "18:00-21:00", an occasion from the list below its usual hour to two hours later. A window is a guess (list start in assumed) unless they say the start may vary ("vi kan starte mellem 14 og 17"); "mellem 18 og 20" alone is when it runs: start "18", durationMinutes the time between. "any" only when the list says no set time and no time or part of the day is named, such as coffee or a walk.
 - durationMinutes (meeting): 30 to 720, in steps of 30. When the person says when it ends, it is the time from start to end, past midnight when the end is earlier than the start: from 18 until 2 at night is 480. When an evening has several parts (dinner and then going out, a film and then a bar), it is one meeting from the first start to the last end. Typical when nothing is said: the occasion's usual length from the list below. Going out afterwards (i byen, bytur, videre i byen, going out, a night out) means it goes on past midnight: at least until 2 at night, so 480 or more from a 17 or 18 start.
 - weekdays (meeting): the days of the week it may fall on, 0 = Sunday, 1 = Monday ... 6 = Saturday. A weekend (weekend) is [6, 0], weekdays (hverdage) [1, 2, 3, 4, 5]. An occasion whose days the list names (a fredagsbar is on a Friday) gets those days, listed in assumed. Empty when any day will do.
 - days (trip or holiday): how many days. A weekend trip is 2 or 3 days. A trip is at most 7 days, a holiday at most 30.
@@ -329,12 +342,19 @@ function fromWire(raw: Record<string, unknown>): Record<string, unknown> {
   const positive = (v: unknown) => (typeof v === "number" && v > 0 ? v : null);
   const start = typeof raw.start === "string" ? raw.start.trim() : "";
   const hour = start.match(/^(\d{1,2})(?::\d{2})?$/);
+  const window = start.match(
+    /^(\d{1,2})(?:[:.](\d{2}))?\s*(?:-|to|til)\s*(\d{1,2})(?:[:.](\d{2}))?$/,
+  );
+  const minutes = (h: string, m: string | undefined) => Number(h) * 60 + Number(m ?? 0);
   const from = typeof raw.monthsFrom === "string" ? raw.monthsFrom.trim() : "";
   const to = typeof raw.monthsTo === "string" ? raw.monthsTo.trim() : "";
   return {
     kind: raw.kind,
     startHour: hour ? Number(hour[1]) : null,
-    anyTime: start === "any" ? true : hour ? false : null,
+    anyTime: start === "any" ? true : hour || window ? false : null,
+    startWindow: window
+      ? { from: minutes(window[1], window[2]), to: minutes(window[3], window[4]) }
+      : null,
     durationMinutes: positive(raw.durationMinutes),
     weekdays: raw.weekdays,
     days: positive(raw.days),
@@ -348,7 +368,13 @@ function fromWire(raw: Record<string, unknown>): Record<string, unknown> {
 export function toWire(s: PlanSettings): WireSettings {
   return {
     kind: s.kind ?? "",
-    start: s.anyTime ? "any" : s.startHour !== null ? String(s.startHour) : "",
+    start: s.anyTime
+      ? "any"
+      : s.startWindow
+        ? `${clock(s.startWindow.from)}-${clock(s.startWindow.to)}`
+        : s.startHour !== null
+          ? String(s.startHour)
+          : "",
     durationMinutes: s.durationMinutes ?? 0,
     weekdays: s.weekdays ?? [],
     days: s.days ?? 0,
@@ -358,10 +384,14 @@ export function toWire(s: PlanSettings): WireSettings {
   };
 }
 
+/** Minutes after midnight as "18:30". */
+const clock = (minutes: number) =>
+  `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
 /** The settings a model's field name stands for, for "assumed". */
 const WIRE_TO_FIELDS: Record<keyof WireSettings, (typeof SETTING_FIELDS)[number][]> = {
   kind: ["kind"],
-  start: ["startHour"],
+  start: ["startHour", "startWindow"],
   durationMinutes: ["durationMinutes"],
   weekdays: ["weekdays"],
   days: ["days"],
@@ -369,6 +399,24 @@ const WIRE_TO_FIELDS: Record<keyof WireSettings, (typeof SETTING_FIELDS)[number]
   monthsFrom: ["months"],
   monthsTo: ["months"],
 };
+
+/** The latest start a window may have: 23:30, so a meeting still starts on its own day. */
+const LAST_WINDOW_START = 23 * 60 + 30;
+
+/**
+ * A start window within its limits: from rounded up and to rounded down to the
+ * half hour (never earlier or later than said), within one day, from before
+ * to. Null when nothing is left of it, such as "22-01", across midnight.
+ */
+function cleanWindow(raw: unknown): StartWindow | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const { from, to } = raw as Record<string, unknown>;
+  if (typeof from !== "number" || typeof to !== "number") return null;
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from < 0) return null;
+  const first = Math.ceil(from / 30) * 30;
+  const last = Math.min(LAST_WINDOW_START, Math.floor(to / 30) * 30);
+  return first < last ? { from: first, to: last } : null;
+}
 
 function cleanSettings(raw: Record<string, unknown>, monthKeys: string[] | null): PlanSettings {
   const kind =
@@ -386,10 +434,14 @@ function cleanSettings(raw: Record<string, unknown>, monthKeys: string[] | null)
     typeof raw.days === "number" && Number.isInteger(raw.days) && raw.days >= 1
       ? Math.min(raw.days, kind === "trip" ? 7 : 30)
       : null;
+  const startWindow = cleanWindow(raw.startWindow);
   return {
     kind,
-    startHour: int(raw.startHour, 0, 23),
-    anyTime: typeof raw.anyTime === "boolean" ? raw.anyTime : null,
+    // A window's first hour stands as the start too, for anything that reads
+    // only the hour (and the page's own start hour).
+    startHour: startWindow ? Math.floor(startWindow.from / 60) : int(raw.startHour, 0, 23),
+    anyTime: startWindow ? false : typeof raw.anyTime === "boolean" ? raw.anyTime : null,
+    startWindow,
     durationMinutes: duration,
     weekdays: weekdays.length > 0 ? weekdays : null,
     days,

@@ -291,6 +291,7 @@ export class FakeBackend {
       kind: null,
       startHour: null,
       anyTime: null,
+      startWindow: null,
       durationMinutes: null,
       weekdays: null,
       days: null,
@@ -331,6 +332,23 @@ export class FakeBackend {
           questions: [ask("Hvornår?"), ask("Hvornår helst?"), ask("Hvornår ellers?")],
         },
         left: 21,
+      };
+      return ok(answer);
+    }
+    // No time said, so a window of starts, guessed (#133).
+    if (body.text === "middag så tidligt som muligt") {
+      const answer: PlanAnswer = {
+        plan: {
+          ...nothing,
+          kind: "meeting",
+          startHour: 18,
+          anyTime: false,
+          startWindow: { from: 18 * 60, to: 21 * 60 },
+          durationMinutes: 180,
+          title: "Middag",
+          assumed: ["startHour", "startWindow", "durationMinutes"],
+        },
+        left: 41,
       };
       return ok(answer);
     }

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { findEventSlot, isEventSettings, peopleForSearch } from "@/lib/eventSearch";
+import {
+  findEventSlot,
+  isEventSettings,
+  peopleForSearch,
+  type EventSettings,
+} from "@/lib/eventSearch";
 import type { Participant } from "@/types";
 
 const TZ = "UTC";
@@ -142,6 +147,64 @@ describe("findEventSlot", () => {
       start: "2026-06-22T00:00:00.000Z",
       end: "2026-06-25T00:00:00.000Z",
     });
+  });
+});
+
+describe("a start window (#133)", () => {
+  const dinner: EventSettings = {
+    kind: "single",
+    durationMinutes: 180,
+    startHour: 18,
+    startWindow: { from: 18 * 60, to: 21 * 60 },
+  };
+
+  it("takes the earliest start in the window that suits, on the half hour", () => {
+    const { slot } = findEventSlot(
+      [
+        person("Anna", [["2026-06-22T17:00:00.000Z", "2026-06-22T19:10:00.000Z"]]),
+        person("Bo", []),
+      ],
+      dinner,
+      START,
+      END,
+      TZ,
+    );
+    // Not Tuesday at 18:00: Monday works from 19:30.
+    expect(slot).toEqual({ start: "2026-06-22T19:30:00.000Z", end: "2026-06-22T22:30:00.000Z" });
+  });
+
+  it("starts no later than its last start, and runs its full length past it", () => {
+    // Monday free from 21:00 only: a 21:00 start runs to midnight. Tuesday
+    // free from 21:30 only: too late, so Wednesday at 18:00.
+    const { slot } = findEventSlot(
+      [
+        person("Anna", [
+          ["2026-06-22T12:00:00.000Z", "2026-06-22T21:00:00.000Z"],
+          ["2026-06-23T12:00:00.000Z", "2026-06-23T21:30:00.000Z"],
+        ]),
+      ],
+      dinner,
+      "2026-06-22T00:00:00.000Z",
+      END,
+      TZ,
+    );
+    expect(slot).toEqual({ start: "2026-06-22T21:00:00.000Z", end: "2026-06-23T00:00:00.000Z" });
+
+    const tuesday = findEventSlot(
+      [person("Anna", [["2026-06-23T12:00:00.000Z", "2026-06-23T21:30:00.000Z"]])],
+      dinner,
+      "2026-06-23T00:00:00.000Z",
+      END,
+      TZ,
+    );
+    expect(tuesday.slot?.start).toBe("2026-06-24T18:00:00.000Z");
+  });
+
+  it("is checked like the rest of the settings", () => {
+    expect(isEventSettings(dinner)).toBe(true);
+    expect(isEventSettings({ ...dinner, startWindow: { from: 1080, to: 1080 } })).toBe(false);
+    expect(isEventSettings({ ...dinner, startWindow: { from: 1085, to: 1260 } })).toBe(false);
+    expect(isEventSettings({ ...dinner, startWindow: { from: 1260, to: 1440 } })).toBe(false);
   });
 });
 

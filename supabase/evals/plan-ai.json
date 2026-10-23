@@ -14,7 +14,8 @@
         "months": {
           "from": "2026-11",
           "to": "2026-11"
-        }
+        },
+        "window": true
       }
     },
     {
@@ -67,7 +68,8 @@
         "kind": "meeting",
         "weekdays": [3],
         "startHour": 19,
-        "durationMinutes": 120
+        "durationMinutes": 120,
+        "window": false
       }
     },
     {
@@ -83,7 +85,8 @@
         "months": {
           "from": "2026-11",
           "to": "2026-11"
-        }
+        },
+        "window": true
       }
     },
     {
@@ -119,7 +122,8 @@
         "kind": "meeting",
         "weekdays": [6],
         "startHour": 20,
-        "durationMinutes": 360
+        "durationMinutes": 360,
+        "window": false
       }
     },
     {
@@ -133,7 +137,8 @@
         "months": {
           "from": "2026-12",
           "to": "2026-12"
-        }
+        },
+        "window": false
       }
     },
     {
@@ -169,7 +174,8 @@
         "kind": "meeting",
         "weekdays": [1, 2, 3, 4, 5],
         "startHour": 8,
-        "durationMinutes": 60
+        "durationMinutes": 60,
+        "window": false
       }
     },
     {
@@ -245,7 +251,8 @@
       "expect": {
         "kind": "meeting",
         "weekdays": [6],
-        "startHour": 19
+        "startHour": 19,
+        "window": false
       }
     },
     {
@@ -292,6 +299,52 @@
         "durationMinutes": {
           "oneOf": [480, 510, 540, 570, 600, 630, 660, 690, 720]
         }
+      }
+    },
+    {
+      "name": "dinner as early as possible: a window from the evening (#133)",
+      "lang": "da",
+      "text": "Jeg vil gerne ud og spise middag med gruppen så tidligt som muligt",
+      "expect": {
+        "kind": "meeting",
+        "window": true,
+        "startHour": {
+          "oneOf": [17, 18]
+        }
+      }
+    },
+    {
+      "name": "after work drinks: a window from the afternoon (#133)",
+      "lang": "en",
+      "text": "Drinks after work some weekday",
+      "expect": {
+        "kind": "meeting",
+        "window": true,
+        "startHour": {
+          "oneOf": [16, 17]
+        },
+        "weekdays": [1, 2, 3, 4, 5]
+      }
+    },
+    {
+      "name": "a start said to vary is a window, not a guess (#133)",
+      "lang": "da",
+      "text": "Brætspil på lørdag, vi kan starte mellem 14 og 17",
+      "expect": {
+        "kind": "meeting",
+        "window": true,
+        "startHour": 14,
+        "weekdays": [6]
+      }
+    },
+    {
+      "name": "a set time stays one start (#133)",
+      "lang": "en",
+      "text": "Dinner at 7 pm on Friday",
+      "expect": {
+        "kind": "meeting",
+        "window": false,
+        "startHour": 19
       }
     }
   ]

@@ -36,7 +36,13 @@ export function profileInput(
     return {
       ...typed,
       kind: "meeting",
-      startMinute: settings.anyTime ? -1 : Math.round(settings.startHour * 60),
+      // A start window (#133) is asked about at its first start: the
+      // profile is the same for every date, and impactOn reads each date's own.
+      startMinute: settings.startWindow
+        ? settings.startWindow.from
+        : settings.anyTime
+          ? -1
+          : Math.round(settings.startHour * 60),
       minutes: settings.durationMinutes,
       days: 1,
     };

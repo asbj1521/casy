@@ -269,16 +269,34 @@ function earliestMeeting(search: MeetingSearch): { slot: TimeSlot; present: Part
   const durationMs = search.durationMinutes * MS_PER_MINUTE;
   if (!range || durationMs <= 0) return null;
   const windows = buildAllowedWindows(range, search.timeZone, search.constraints);
+  const snap = startSnapper(search.timeZone, search.constraints?.startStepMinutes);
   const { quorum, participants } = search;
   if (quorum !== undefined && quorum < participants.length) {
-    return earliestQuorumMeeting(participants, quorum, windows, range, durationMs);
+    return earliestQuorumMeeting(participants, quorum, windows, range, durationMs, snap);
   }
 
   const free = subtractIntervals(windows, collectBusy(participants, range));
-  const gap = free.find((w) => w.end - w.start >= durationMs);
-  return gap
-    ? { slot: { start: iso(gap.start), end: iso(gap.start + durationMs) }, present: participants }
-    : null;
+  for (const gap of free) {
+    const start = snap(gap.start);
+    if (gap.end - start >= durationMs) {
+      return { slot: { start: iso(start), end: iso(start + durationMs) }, present: participants };
+    }
+  }
+  return null;
+}
+
+/**
+ * The first allowed start at or after an instant: the instant itself, or with
+ * a step, the next whole step from local midnight. Counted from midnight
+ * rather than the epoch, so half hours stay half hours in any zone.
+ */
+function startSnapper(timeZone: string, stepMinutes: number | undefined): (ms: number) => number {
+  if (!stepMinutes || stepMinutes <= 0) return (ms) => ms;
+  const step = stepMinutes * MS_PER_MINUTE;
+  return (ms) => {
+    const midnight = startOfDay(ms, timeZone);
+    return midnight + Math.ceil((ms - midnight) / step) * step;
+  };
 }
 
 /**
@@ -287,7 +305,9 @@ function earliestMeeting(search: MeetingSearch): { slot: TimeSlot; present: Part
  * the earliest start: an allowed window opening, or someone's busy block
  * ending (before it, that person was busy, so a later start can only add
  * people). So those are the only moments tried, each against everyone's own
- * merged timeline.
+ * merged timeline. With a start step, each is moved on to its next step
+ * (`snap`): the earliest step that works is the one after the last such
+ * moment before it, since nobody became free in between.
  */
 function earliestQuorumMeeting(
   participants: Participant[],
@@ -295,6 +315,7 @@ function earliestQuorumMeeting(
   windows: Interval[],
   range: Interval,
   durationMs: number,
+  snap: (ms: number) => number,
 ): { slot: TimeSlot; present: Participant[] } | null {
   const timelines = participants.map((p) => collectBusy([p], range));
   const ends = [...new Set(timelines.flat().map((iv) => iv.end))].sort((a, b) => a - b);
@@ -316,8 +337,9 @@ function earliestQuorumMeeting(
     // The window's opening, then every block end inside it, in order.
     let i = 0;
     while (i < ends.length && ends[i] <= w.start) i++;
-    const starts = [w.start];
-    for (; i < ends.length && ends[i] <= last; i++) starts.push(ends[i]);
+    const moments = [w.start];
+    for (; i < ends.length && ends[i] <= last; i++) moments.push(ends[i]);
+    const starts = [...new Set(moments.map(snap))].filter((s) => s <= last);
 
     for (const start of starts) {
       const end = start + durationMs;

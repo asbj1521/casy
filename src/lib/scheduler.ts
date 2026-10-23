@@ -6,7 +6,12 @@
  */
 import type { Messages } from "@/i18n/da";
 import type { MultiDayResult, SpanConflict } from "@/lib/availability";
-import { findEventSlot, type EventSettings, type PeopleSettings } from "@/lib/eventSearch";
+import {
+  findEventSlot,
+  type EventSettings,
+  type PeopleSettings,
+  type StartWindow,
+} from "@/lib/eventSearch";
 import { addDays, startOfMonth } from "@/lib/zone";
 import type { Participant, TimeSlot } from "@/types";
 
@@ -50,6 +55,11 @@ export interface SchedulerSettings {
   dows: number[];
   /** One meeting: ignore startHour, search the whole day for a free window this long. */
   anyTime: boolean;
+  /**
+   * One meeting: start at the earliest moment in this window instead (#133),
+   * set only by Planlæg med AI. Picking a start time by hand drops it.
+   */
+  startWindow: StartWindow | null;
   /** Tur / ferie: how many days, and the weekday it starts on (null = any day). */
   days: number;
   startDow: number | null;
@@ -148,6 +158,7 @@ export function randomDefaultSettings(random: () => number = Math.random): Sched
     ...preset,
     dows: [...ALL_DOWS],
     anyTime: false,
+    startWindow: null,
     days: 3,
     startDow: 5,
     period: null,
@@ -223,6 +234,8 @@ export function settingsToSearch(s: SchedulerSettings, people?: PeopleSettings):
     durationMinutes: s.durationMinutes,
     startHour: s.startHour,
     anyTime: s.anyTime,
+    // Only when there is one: an ordinary event is stored as before.
+    ...(s.startWindow ? { startWindow: s.startWindow } : {}),
     allowedDays: s.dows.length < 7 ? s.dows : undefined,
     ...who,
   };
@@ -236,7 +249,7 @@ export function settingsToSearch(s: SchedulerSettings, people?: PeopleSettings):
 export function fallbackTitleId(search: EventSettings): keyof Messages["eventTypes"] {
   if (search.kind === "vacation") return "vacation";
   if (search.kind === "trip") return "weekend";
-  if (search.anyTime) return "meeting";
+  if (search.anyTime && !search.startWindow) return "meeting";
   return search.startHour < 16 ? "lunch" : "evening";
 }
 

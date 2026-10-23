@@ -39,6 +39,32 @@ export const ANY_TIME_EARLIEST_HOUR = 10;
 export const ANY_TIME_LATEST_HOUR = 22;
 
 /**
+ * When a meeting may start (#133), in minutes after local midnight, both
+ * ends included: dinner "between 18:00 and 21:00" is { from: 1080, to: 1260 }.
+ * Only Planlæg med AI sets one, from an occasion or a part of the day when no
+ * exact time was said; the earliest start that works wins, on the hour or the
+ * half hour (START_STEP_MINUTES).
+ */
+export interface StartWindow {
+  from: number;
+  to: number;
+}
+
+/** A start window's starts land on the hour or the half hour. */
+export const START_STEP_MINUTES = 30;
+
+/** True if `value` is a start window: whole half hours within one day, `from` before `to`. */
+export function isStartWindow(value: unknown): value is StartWindow {
+  if (!value || typeof value !== "object") return false;
+  const { from, to } = value as Record<string, unknown>;
+  const step = (v: unknown): v is number =>
+    typeof v === "number" &&
+    isInt(v, 0, 24 * 60 - START_STEP_MINUTES) &&
+    v % START_STEP_MINUTES === 0;
+  return step(from) && step(to) && from < to;
+}
+
+/**
  * Who an event is for (#89), when not simply everyone in the group, each as
  * a profile id. Everyone in `members` is invited; those also in `optional`
  * are invited and shown, but their calendars never block a date and their
@@ -63,6 +89,11 @@ export type EventSettings = (
        * everyone must be free at.
        */
       anyTime?: boolean;
+      /**
+       * Start at the earliest moment in this window that suits (#133),
+       * instead of at startHour (which stays the window's first hour).
+       */
+      startWindow?: StartWindow;
       /** Local days of week to search (0 = Sun … 6 = Sat); omitted = every day. */
       allowedDays?: number[];
     }
@@ -120,24 +151,34 @@ export function findEventSlot(
         searchStart,
         searchEnd,
         timeZone,
-        constraints: settings.anyTime
-          ? // Nobody cares what time it starts, but not the middle of the
-            // night: the allowed window is 10:00-22:00, and the engine finds
-            // the earliest free stretch long enough within it.
+        constraints: settings.startWindow
+          ? // Any start within the window: the meeting may begin as late as
+            // its last minute and then runs its full length, past midnight
+            // too, so the allowed window ends one meeting after it.
             {
-              earliestHour: ANY_TIME_EARLIEST_HOUR,
-              latestHour: ANY_TIME_LATEST_HOUR,
+              earliestHour: settings.startWindow.from / 60,
+              latestHour: (settings.startWindow.to + settings.durationMinutes) / 60,
               allowedDays: settings.allowedDays,
+              startStepMinutes: START_STEP_MINUTES,
             }
-          : {
-              // A fixed meeting time: the allowed window is exactly one
-              // meeting long, so only days the whole group is free at that
-              // hour qualify. Not capped at 24, so a night out can run past
-              // midnight.
-              earliestHour: settings.startHour,
-              latestHour: settings.startHour + settings.durationMinutes / 60,
-              allowedDays: settings.allowedDays,
-            },
+          : settings.anyTime
+            ? // Nobody cares what time it starts, but not the middle of the
+              // night: the allowed window is 10:00-22:00, and the engine finds
+              // the earliest free stretch long enough within it.
+              {
+                earliestHour: ANY_TIME_EARLIEST_HOUR,
+                latestHour: ANY_TIME_LATEST_HOUR,
+                allowedDays: settings.allowedDays,
+              }
+            : {
+                // A fixed meeting time: the allowed window is exactly one
+                // meeting long, so only days the whole group is free at that
+                // hour qualify. Not capped at 24, so a night out can run past
+                // midnight.
+                earliestHour: settings.startHour,
+                latestHour: settings.startHour + settings.durationMinutes / 60,
+                allowedDays: settings.allowedDays,
+              },
       });
     case "trip":
       return findWeeklySpan(participants, settings.shape, searchStart, searchEnd, timeZone);
@@ -181,6 +222,7 @@ export function isEventSettings(value: unknown): value is EventSettings {
         int(s.durationMinutes, 1, 24 * 60) &&
         int(s.startHour, 0, 23) &&
         (s.anyTime === undefined || typeof s.anyTime === "boolean") &&
+        (s.startWindow === undefined || isStartWindow(s.startWindow)) &&
         (s.allowedDays === undefined ||
           (Array.isArray(s.allowedDays) && s.allowedDays.every((d) => int(d, 0, 6))))
       );

@@ -31,6 +31,8 @@ export interface PlanSettingsData {
   kind: "meeting" | "trip" | "holiday" | null;
   startHour: number | null;
   anyTime: boolean | null;
+  /** A meeting's possible starts, minutes after midnight (#133). */
+  startWindow: { from: number; to: number } | null;
   durationMinutes: number | null;
   weekdays: number[] | null;
   days: number | null;
@@ -42,6 +44,7 @@ export const PLAN_FIELDS = [
   "kind",
   "startHour",
   "anyTime",
+  "startWindow",
   "durationMinutes",
   "weekdays",
   "days",
@@ -104,6 +107,14 @@ function readPlanSettings(raw: unknown): PlanSettingsData | null {
   );
   const startHour = orNull(r.startHour, (v): v is number => int(v, 0, 23));
   const anyTime = orNull(r.anyTime, (v): v is boolean => typeof v === "boolean");
+  const startWindow = orNull(
+    r.startWindow,
+    (v): v is { from: number; to: number } =>
+      !!v &&
+      typeof v === "object" &&
+      int((v as { from?: unknown }).from, 0, 24 * 60) &&
+      int((v as { to?: unknown }).to, 0, 24 * 60),
+  );
   const durationMinutes = orNull(r.durationMinutes, (v): v is number => int(v, 1, 24 * 60));
   const weekdays = orNull(
     r.weekdays,
@@ -120,12 +131,23 @@ function readPlanSettings(raw: unknown): PlanSettingsData | null {
         MONTH.test(String((v as { from?: unknown }).from)) &&
         MONTH.test(String((v as { to?: unknown }).to))),
   );
-  const parts = [kind, startHour, anyTime, durationMinutes, weekdays, days, startWeekday, months];
+  const parts = [
+    kind,
+    startHour,
+    anyTime,
+    startWindow,
+    durationMinutes,
+    weekdays,
+    days,
+    startWeekday,
+    months,
+  ];
   if (parts.some((p) => p === undefined)) return null;
   return {
     kind: kind!,
     startHour: startHour!,
     anyTime: anyTime!,
+    startWindow: startWindow ? { from: startWindow.from, to: startWindow.to } : null,
     durationMinutes: durationMinutes!,
     weekdays: weekdays!,
     days: days!,

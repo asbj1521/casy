@@ -71,6 +71,7 @@ const settings = {
   kind: "meeting",
   startHour: 19,
   anyTime: false,
+  startWindow: null,
   durationMinutes: 180,
   weekdays: [5],
   days: null,

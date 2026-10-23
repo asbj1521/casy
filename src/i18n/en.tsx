@@ -123,6 +123,7 @@ export const en: Messages = {
     namePlaceholder: "E.g. drinks or board games",
     startsAt: "Starts at",
     anyTime: "Any time",
+    startWindow: (from: string, to: string) => `Between ${from} and ${to}`,
     duration: "Duration",
     dayLabel: "Days",
     tripToggle: "Trip / holiday",
@@ -211,6 +212,8 @@ export const en: Messages = {
       "No week has a free trip window for the whole group in this range. Try changing which days the trip covers.",
     noSingle: (time: string) =>
       `No time works for the whole group at ${time} on the selected days in this range. Try a different start time, duration, or more days.`,
+    noSingleWindow: (from: string, to: string) =>
+      `No day has a start between ${from} and ${to} that works for the whole group, on the selected days. Try a different start time, duration, or more days.`,
     noSingleAnyTime: (duration: string) =>
       `No day has ${duration} free in a row between 10:00 and 22:00 that works for the whole group, on the selected days. Try a different duration or more days.`,
     needsApproval: "Needs your approval",

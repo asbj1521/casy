@@ -44,6 +44,12 @@ export function formatTime(iso: string, timeZone: string = APP_TIME_ZONE): strin
   return new Date(iso).toLocaleTimeString("en-GB", { ...TIME_FMT, timeZone });
 }
 
+/** Minutes after midnight as a clock time, "18:30"; past midnight wraps round ("02:00"). */
+export function formatClockMinutes(minutes: number): string {
+  const m = ((minutes % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
 /** "Tue 23 Jun · 16:00-17:00" */
 function formatSlot(start: string, end: string, lang: Lang): string {
   return `${formatDate(start, lang)} · ${formatTime(start)}-${formatTime(end)}`;

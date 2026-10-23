@@ -42,6 +42,7 @@ const EMPTY_SETTINGS = {
   kind: null,
   startHour: null,
   anyTime: null,
+  startWindow: null,
   durationMinutes: null,
   weekdays: null,
   days: null,
@@ -114,7 +115,7 @@ Deno.test("an empty answer is all nulls, and a full one is read field by field",
   assertEquals(plan.title, "Middag");
   assertEquals(plan.people.without, ["Peter"]);
   assertEquals(plan.atLeast, 4);
-  assertEquals(plan.assumed, ["startHour", "durationMinutes"]);
+  assertEquals(plan.assumed, ["startHour", "startWindow", "durationMinutes"]);
 });
 
 Deno.test("start reads an hour, an hour with minutes, or any time", () => {
@@ -256,6 +257,7 @@ Deno.test("the settings so far are written the model's way, and read back the sa
     kind: "meeting" as const,
     startHour: 18,
     anyTime: false,
+    startWindow: null,
     durationMinutes: 180,
     weekdays: [5],
     days: null,
@@ -359,3 +361,41 @@ Deno.test("an occasion with a season gets it when nothing is said about when", (
   // Without the request (as before), nothing is added.
   assertEquals(planFromAnswer("end_turn", trip, NOW)?.months, null);
 });
+
+Deno.test("a start window is read in half hours, never wider than said (#133)", () => {
+  const read = (start: string) => cleanPlan(wire({ kind: "meeting", start }), MONTHS);
+  const dinner = read("18:00-21:00");
+  assertEquals(dinner.startWindow, { from: 1080, to: 1260 });
+  // Its first hour stands as the start hour too.
+  assertEquals([dinner.startHour, dinner.anyTime], [18, false]);
+  assertEquals(read("11.30 - 13").startWindow, { from: 690, to: 780 });
+  assertEquals(read("18:15-20:45").startWindow, { from: 1110, to: 1230 });
+  assertEquals(read("19 til 21").startWindow, { from: 1140, to: 1260 });
+  // Within one day, and the start before the end.
+  assertEquals(read("22:00-01:00").startWindow, null);
+  assertEquals(read("20:00-20:00").startWindow, null);
+  assertEquals(read("21:00-24:00").startWindow, { from: 1260, to: 1410 });
+  // An hour is an hour, as before.
+  assertEquals(read("18").startWindow, null);
+  assertEquals(read("18").startHour, 18);
+});
+
+Deno.test(
+  "a start window goes back to the model the way it wrote it, and is a guessed start",
+  () => {
+    const settings = { ...EMPTY_SETTINGS, kind: "meeting" as const, startHour: 18, anyTime: false };
+    const window = { ...settings, startWindow: { from: 1080, to: 1290 } };
+    assertEquals(toWire(window).start, "18:00-21:30");
+    assertEquals(cleanPlan(wire({ ...toWire(window) }), MONTHS).startWindow, window.startWindow);
+    const guessed = cleanPlan(
+      wire({ kind: "meeting", start: "18:00-21:00", assumed: ["start"] }),
+      MONTHS,
+    );
+    assertEquals(guessed.assumed, ["startHour", "startWindow"]);
+    // The page's settings so far keep their window.
+    assertEquals(readPlanRequest({ text: "a", current: window })?.current?.startWindow, {
+      from: 1080,
+      to: 1290,
+    });
+  },
+);

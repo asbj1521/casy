@@ -25,6 +25,7 @@ const NOTHING: PlanSettings = {
   kind: null,
   startHour: null,
   anyTime: null,
+  startWindow: null,
   durationMinutes: null,
   weekdays: null,
   days: null,
@@ -149,6 +150,46 @@ describe("applyPlan", () => {
   });
 });
 
+describe("start windows (#133)", () => {
+  const dinner = { from: 18 * 60, to: 21 * 60 };
+
+  it("set the window with its first hour, and any start said later replaces it", () => {
+    const next = applyPlan(
+      AI_BASE_SETTINGS,
+      { ...NOTHING, kind: "meeting", startHour: 18, anyTime: false, startWindow: dinner },
+      TZ,
+    );
+    expect(next).toMatchObject({ startWindow: dinner, startHour: 18, anyTime: false });
+    expect(applyPlan(next, { ...NOTHING, startHour: 19, anyTime: false }, TZ)).toMatchObject({
+      startWindow: null,
+      startHour: 19,
+    });
+    expect(applyPlan(next, { ...NOTHING, anyTime: true }, TZ)).toMatchObject({
+      startWindow: null,
+      anyTime: true,
+    });
+    // Nothing said about the start keeps the window.
+    expect(applyPlan(next, { ...NOTHING, durationMinutes: 180 }, TZ).startWindow).toEqual(dinner);
+  });
+
+  it("ignore a window that isn't one", () => {
+    const bad = { ...NOTHING, startWindow: { from: 1260, to: 1080 } };
+    expect(applyPlan(AI_BASE_SETTINGS, bad, TZ).startWindow).toBeNull();
+  });
+
+  it("go back to the AI with the settings so far", () => {
+    const settings: SchedulerSettings = { ...AI_BASE_SETTINGS, startWindow: dinner };
+    expect(toPlanSettings(settings, TZ)).toMatchObject({ startHour: 18, startWindow: dinner });
+  });
+
+  it("mark the start as said when stated, as guessed when assumed", () => {
+    const window = plan({ kind: "meeting", startHour: 18, anyTime: false, startWindow: dinner });
+    expect(guessedFields(window, true)).toEqual(["durationMinutes"]);
+    const assumed = { ...window, assumed: ["startHour" as const, "startWindow" as const] };
+    expect(guessedFields(assumed, true)).toEqual(["startHour", "startWindow", "durationMinutes"]);
+  });
+});
+
 describe("toPlanSettings", () => {
   it("reads a meeting back, every weekday as none named", () => {
     expect(toPlanSettings(AI_BASE_SETTINGS, TZ)).toEqual({
@@ -243,9 +284,11 @@ describe("names", () => {
 
 describe("marks", () => {
   it("come off the settings a change touches", () => {
-    expect(planFieldsOf({ startHour: 19 })).toEqual(["startHour"]);
+    // A start picked by hand replaces the AI's window too (#133).
+    expect(planFieldsOf({ startHour: 19 })).toEqual(["startHour", "startWindow"]);
     expect(planFieldsOf({ anyTime: true, durationMinutes: 60 })).toEqual([
       "startHour",
+      "startWindow",
       "durationMinutes",
     ]);
     expect(planFieldsOf({ startDow: null })).toEqual(["startWeekday", "kind"]);
@@ -266,6 +309,7 @@ describe("planFeedback (#122)", () => {
     kind: "meeting",
     startHour: 18,
     anyTime: false,
+    startWindow: null,
     durationMinutes: 180,
     weekdays: [5],
     days: null,

@@ -17,6 +17,7 @@ import {
   type PeopleChoice,
   type SchedulerSettings,
 } from "@/lib/scheduler";
+import { isStartWindow, type StartWindow } from "@/lib/eventSearch";
 import { localDate, wallTime } from "@/lib/zone";
 
 export type PlanKind = "meeting" | "trip" | "holiday";
@@ -26,6 +27,8 @@ export interface PlanSettings {
   kind: PlanKind | null;
   startHour: number | null;
   anyTime: boolean | null;
+  /** The starts a meeting may have (#133); startHour is then its first hour. */
+  startWindow: StartWindow | null;
   durationMinutes: number | null;
   /** 0 = Sunday ... 6 = Saturday. */
   weekdays: number[] | null;
@@ -63,6 +66,7 @@ export const AI_BASE_SETTINGS: SchedulerSettings = {
   durationMinutes: 120,
   dows: [...ALL_DOWS],
   anyTime: false,
+  startWindow: null,
   days: 3,
   startDow: 5,
   period: null,
@@ -111,12 +115,23 @@ export function applyPlan(
     next.startDow = plan.startWeekday;
   }
 
+  // A start said in any way replaces the one before: an hour, any time, or
+  // a window (#133), which keeps its first hour as the start hour.
   if (isInt(plan.startHour, 0, 23)) {
     next.startHour = plan.startHour;
     next.anyTime = false;
+    next.startWindow = null;
   }
-  if (plan.anyTime === true) next.anyTime = true;
+  if (plan.anyTime === true) {
+    next.anyTime = true;
+    next.startWindow = null;
+  }
   if (plan.anyTime === false) next.anyTime = false;
+  if (isStartWindow(plan.startWindow)) {
+    next.startWindow = { from: plan.startWindow.from, to: plan.startWindow.to };
+    next.startHour = Math.floor(plan.startWindow.from / 60);
+    next.anyTime = false;
+  }
   if (isInt(plan.durationMinutes, 30, 720) && plan.durationMinutes % 30 === 0) {
     next.durationMinutes = plan.durationMinutes;
   }
@@ -145,6 +160,7 @@ export function toPlanSettings(s: SchedulerSettings, timeZone: string): PlanSett
     kind: meeting ? "meeting" : s.startDow === null ? "holiday" : "trip",
     startHour: meeting && !s.anyTime ? s.startHour : null,
     anyTime: meeting ? s.anyTime : null,
+    startWindow: meeting && !s.anyTime ? s.startWindow : null,
     durationMinutes: meeting ? s.durationMinutes : null,
     weekdays: meeting && s.dows.length < 7 ? [...s.dows] : null,
     days: meeting ? null : s.days,
@@ -216,6 +232,7 @@ export function planFeedback(
       kind: plan.kind,
       startHour: plan.startHour,
       anyTime: plan.anyTime,
+      startWindow: plan.startWindow,
       durationMinutes: plan.durationMinutes,
       weekdays: plan.weekdays,
       days: plan.days,
@@ -309,7 +326,9 @@ export function mentionedNames(plan: AiPlan): string[] {
 export function planFieldsOf(patch: Partial<SchedulerSettings>): PlanField[] {
   const fields: PlanField[] = [];
   if ("multiDay" in patch) fields.push("kind");
-  if ("startHour" in patch || "anyTime" in patch) fields.push("startHour");
+  if ("startHour" in patch || "anyTime" in patch || "startWindow" in patch) {
+    fields.push("startHour", "startWindow");
+  }
   if ("durationMinutes" in patch) fields.push("durationMinutes");
   if ("dows" in patch) fields.push("weekdays");
   if ("days" in patch) fields.push("days");

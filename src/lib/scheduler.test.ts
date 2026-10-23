@@ -27,6 +27,7 @@ const BASE: SchedulerSettings = {
   days: 3,
   startDow: 5,
   anyTime: false,
+  startWindow: null,
   period: null,
 };
 
@@ -40,6 +41,12 @@ describe("settingsToSearch", () => {
       allowedDays: undefined,
     });
     expect(settingsToSearch({ ...BASE, dows: [5, 6] })).toMatchObject({ allowedDays: [5, 6] });
+  });
+
+  it("carries the AI's start window only when there is one (#133)", () => {
+    const startWindow = { from: 1080, to: 1260 };
+    expect(settingsToSearch({ ...BASE, startWindow })).toMatchObject({ startWindow });
+    expect(settingsToSearch(BASE)).not.toHaveProperty("startWindow");
   });
 
   it("carries anyTime through instead of the fixed start hour", () => {

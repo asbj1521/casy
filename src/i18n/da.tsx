@@ -134,6 +134,8 @@ export const da = {
     namePlaceholder: "Fx fredagsbar eller brætspil",
     startsAt: "Fra kl.",
     anyTime: "Når som helst",
+    // Planlæg med AI's start window (#133): "dinner" with no time said.
+    startWindow: (from: string, to: string) => `Mellem ${from} og ${to}`,
     duration: "Varighed",
     dayLabel: "Dage",
     tripToggle: "Tur / ferie",
@@ -226,6 +228,8 @@ export const da = {
       "Ingen uge har et ledigt tidsrum til turen for hele gruppen. Prøv at ændre, hvilke dage turen dækker.",
     noSingle: (time: string) =>
       `Intet tidspunkt kl. ${time} på de valgte dage passer hele gruppen. Prøv et andet starttidspunkt, en anden varighed eller flere dage.`,
+    noSingleWindow: (from: string, to: string) =>
+      `Ingen dag har et starttidspunkt mellem kl. ${from} og ${to}, som passer hele gruppen, på de valgte dage. Prøv et andet starttidspunkt, en anden varighed eller flere dage.`,
     noSingleAnyTime: (duration: string) =>
       `Ingen dag har ${duration} i træk mellem kl. 10 og 22, som passer hele gruppen, på de valgte dage. Prøv en anden varighed eller flere dage.`,
     needsApproval: "Kræver din godkendelse",

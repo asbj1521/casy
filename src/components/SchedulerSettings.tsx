@@ -24,7 +24,7 @@ import {
   type SchedulerSettings,
 } from "@/lib/scheduler";
 import type { PlanField } from "@/lib/aiPlan";
-import { nameList } from "@/lib/format";
+import { formatClockMinutes, nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -55,15 +55,42 @@ const MAX_NAME_LENGTH = 60;
 const ANY_DAY = -1;
 /** Stands for "any time" atop the start-hour dropdown, same trick as ANY_DAY. */
 const ANY_TIME = -1;
+/** Stands for the AI's start window (#133), listed only while there is one. */
+const START_WINDOW = -2;
 
-/** startsAt's options, "any time" first. */
-function startHourOptions(t: Messages) {
-  return [{ label: t.scheduler.anyTime, value: ANY_TIME }, ...START_OPTIONS];
+/** startsAt's options: the AI's window while there is one, "any time", then the hours. */
+function startHourOptions(t: Messages, settings: SchedulerSettings) {
+  const window = settings.startWindow
+    ? [
+        {
+          label: t.scheduler.startWindow(
+            formatClockMinutes(settings.startWindow.from),
+            formatClockMinutes(settings.startWindow.to),
+          ),
+          value: START_WINDOW,
+        },
+      ]
+    : [];
+  return [...window, { label: t.scheduler.anyTime, value: ANY_TIME }, ...START_OPTIONS];
 }
 
-/** Maps a startsAt pick back onto the settings, "any time" included. */
+/** The start dropdown's value: the window, "any time" or the hour. */
+function startValue(settings: SchedulerSettings): number {
+  if (settings.startWindow) return START_WINDOW;
+  return settings.anyTime ? ANY_TIME : settings.startHour;
+}
+
+/**
+ * Maps a startsAt pick back onto the settings, "any time" included. Any
+ * pick by hand drops the AI's window; picking the window itself changes nothing.
+ */
 function pickStartHour(value: number, onChange: (patch: Partial<SchedulerSettings>) => void) {
-  onChange(value === ANY_TIME ? { anyTime: true } : { startHour: value, anyTime: false });
+  if (value === START_WINDOW) return;
+  onChange(
+    value === ANY_TIME
+      ? { anyTime: true, startWindow: null }
+      : { startHour: value, anyTime: false, startWindow: null },
+  );
 }
 
 interface Props {
@@ -315,8 +342,8 @@ function TimeSettings({
           <>
             <Field label={t.scheduler.startsAt} mark={mark("startHour")}>
               <Dropdown
-                value={settings.anyTime ? ANY_TIME : settings.startHour}
-                options={startHourOptions(t)}
+                value={startValue(settings)}
+                options={startHourOptions(t, settings)}
                 onChange={(value) => pickStartHour(value, onChange)}
                 suffix={<ChevronDown className="h-4 w-4 text-muted-foreground" />}
                 triggerClassName="inline-flex h-12 items-center gap-2 rounded-xl border bg-card px-3.5 text-base font-bold text-foreground transition hover:bg-secondary"
@@ -656,8 +683,8 @@ export function StepSettings({
           <div className="grid grid-cols-2 gap-3">
             <Field label={t.scheduler.startsAt} mark={mark("startHour")}>
               <Dropdown
-                value={settings.anyTime ? ANY_TIME : settings.startHour}
-                options={startHourOptions(t)}
+                value={startValue(settings)}
+                options={startHourOptions(t, settings)}
                 onChange={(value) => pickStartHour(value, onChange)}
                 className="block min-w-0"
                 suffix={chevron}
@@ -784,10 +811,10 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
           <>
             {/* "Whenever, for 3h..." reads fine without a leading "at"; a
                 fixed hour still needs it ("at 18:00, for 3h..."). */}
-            {!settings.anyTime && <span>{t.scheduler.sentenceAt}</span>}
+            {!settings.anyTime && !settings.startWindow && <span>{t.scheduler.sentenceAt}</span>}
             <Dropdown
-              value={settings.anyTime ? ANY_TIME : settings.startHour}
-              options={startHourOptions(t)}
+              value={startValue(settings)}
+              options={startHourOptions(t, settings)}
               onChange={(value) => pickStartHour(value, onChange)}
               triggerClassName={CHIP}
               suffix={chevron}

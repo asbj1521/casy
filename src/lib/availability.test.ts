@@ -983,3 +983,71 @@ describe("enough people (#89)", () => {
     });
   });
 });
+
+describe("start steps (#133)", () => {
+  // 18:00 to 21:30 may hold a two hour meeting; starts on the half hour.
+  const dinner = { earliestHour: 18, latestHour: 23.5, startStepMinutes: 30 };
+
+  it("starts on the next half hour after someone is free, not at their minute", () => {
+    const slot = findEarliestSlot(
+      makeSearch({
+        participants: [
+          makeParticipant("Anna", [["2026-06-22T17:00:00.000Z", "2026-06-22T18:47:00.000Z"]]),
+          makeParticipant("Bo", []),
+        ],
+        durationMinutes: 120,
+        constraints: dinner,
+      }),
+    );
+    expect(slot).toEqual({ start: "2026-06-22T19:00:00.000Z", end: "2026-06-22T21:00:00.000Z" });
+  });
+
+  it("skips a gap the step leaves too short", () => {
+    // Free 18:10 to 20:00 Monday: by 18:30 only 90 minutes are left of it.
+    const slot = findEarliestSlot(
+      makeSearch({
+        participants: [
+          makeParticipant("Anna", [
+            ["2026-06-22T17:00:00.000Z", "2026-06-22T18:10:00.000Z"],
+            ["2026-06-22T20:00:00.000Z", "2026-06-23T00:00:00.000Z"],
+          ]),
+        ],
+        durationMinutes: 120,
+        constraints: dinner,
+      }),
+    );
+    expect(slot?.start).toBe("2026-06-23T18:00:00.000Z");
+  });
+
+  it("steps a quorum's starts too", () => {
+    const slot = findEarliestSlot(
+      makeSearch({
+        participants: [
+          makeParticipant("Anna", [["2026-06-22T17:00:00.000Z", "2026-06-22T19:05:00.000Z"]]),
+          makeParticipant("Bo", [["2026-06-22T17:00:00.000Z", "2026-06-22T19:20:00.000Z"]]),
+          makeParticipant("Carl", [["2026-06-22T00:00:00.000Z", "2026-06-23T00:00:00.000Z"]]),
+        ],
+        durationMinutes: 120,
+        constraints: dinner,
+        quorum: 2,
+      }),
+    );
+    expect(slot).toEqual({ start: "2026-06-22T19:30:00.000Z", end: "2026-06-22T21:30:00.000Z" });
+  });
+
+  it("counts the half hours from local midnight", () => {
+    const slot = findEarliestSlot(
+      makeSearch({
+        timeZone: "Europe/Copenhagen",
+        searchStart: "2026-06-21T22:00:00.000Z", // Mon 22 Jun 00:00
+        participants: [
+          // Busy until 18:47 Danish time.
+          makeParticipant("Anna", [["2026-06-22T14:00:00.000Z", "2026-06-22T16:47:00.000Z"]]),
+        ],
+        durationMinutes: 120,
+        constraints: dinner,
+      }),
+    );
+    expect(slot?.start).toBe("2026-06-22T17:00:00.000Z"); // 19:00
+  });
+});

@@ -11,7 +11,7 @@ import { useLang, useT } from "@/i18n/lang";
 import type { SpanConflict } from "@/lib/availability";
 import type { EdgeWarning } from "@/lib/earlyMorning";
 import type { EventSettings } from "@/lib/eventSearch";
-import { formatHeadline, nameList } from "@/lib/format";
+import { formatClockMinutes, formatHeadline, nameList } from "@/lib/format";
 import { daysUntil, type AnswerReview } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE, dayOf } from "@/lib/zone";
@@ -101,9 +101,14 @@ export default function AnswerCard({
                 ? t.scheduler.noVacation(search.days)
                 : search.kind === "trip"
                   ? t.scheduler.noTrip
-                  : search.anyTime
-                    ? t.scheduler.noSingleAnyTime(t.common.duration(search.durationMinutes))
-                    : t.scheduler.noSingle(`${String(search.startHour).padStart(2, "0")}:00`)}
+                  : search.startWindow
+                    ? t.scheduler.noSingleWindow(
+                        formatClockMinutes(search.startWindow.from),
+                        formatClockMinutes(search.startWindow.to),
+                      )
+                    : search.anyTime
+                      ? t.scheduler.noSingleAnyTime(t.common.duration(search.durationMinutes))
+                      : t.scheduler.noSingle(`${String(search.startHour).padStart(2, "0")}:00`)}
             </p>
             {/* Stepped past the last date: the way back stays. */}
             {actions && <div className="mt-4 hidden items-center gap-2 sm:flex">{actions}</div>}

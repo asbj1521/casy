@@ -134,6 +134,8 @@ interface PlanCase {
     asks?: boolean;
     /** No plan at all: the text isn't about planning. */
     noPlan?: boolean;
+    /** Has a start window (true) or none (false), whatever its hours (#133). */
+    window?: boolean;
     without?: string[];
     optional?: string[];
   };
@@ -162,9 +164,11 @@ async function planAi(): Promise<Result[]> {
       const actual =
         field === "asks"
           ? plan.questions.length > 0
-          : field === "without" || field === "optional"
-            ? plan.people[field]
-            : plan[field as keyof AiPlan];
+          : field === "window"
+            ? plan.startWindow !== null
+            : field === "without" || field === "optional"
+              ? plan.people[field]
+              : plan[field as keyof AiPlan];
       if (!matches(actual, expected)) {
         failures.push(
           `${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,

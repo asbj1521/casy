@@ -162,6 +162,36 @@ test.describe("Planlæg med AI (computers)", () => {
     });
   });
 
+  test("a start window (#133) is shown as one, and a time picked by hand replaces it", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    const box = page.getByRole("textbox", { name: /Fx middag en fredag/ });
+    await box.fill("middag så tidligt som muligt");
+    await box.press("Enter");
+    const summary = page.locator("dl").filter({ hasText: "Tidspunkt" });
+    await expect(summary).toContainText("Mellem 18:00 og 21:00, 3 t");
+    await expect(summary.getByText("gættet")).toHaveCount(1);
+
+    await page.getByRole("button", { name: "Indstillinger", exact: true }).click();
+    await page.getByRole("tab", { name: "Tidspunkt" }).click();
+    await pickOnWheel(page, "Mellem 18:00 og 21:00", "19:00");
+    await page.getByRole("button", { name: /^Foreslå( datoer)?$/ }).click();
+
+    await expect.poll(() => backend.world.corrections.length).toBe(1);
+    expect(backend.world.corrections[0].data).toMatchObject({
+      overridden: ["startHour", "startWindow"],
+      plan: { startHour: 18, startWindow: { from: 1080, to: 1260 } },
+      final: { startHour: 19, startWindow: null },
+    });
+    // The event went with the hour, not the window.
+    const suggest = backend.calls.find((c) => c.body.action === "suggest");
+    expect((suggest?.body.settings as Record<string, unknown>).startWindow).toBeUndefined();
+  });
+
   test("with sharing switched off nothing is sent", async ({ page, backend }) => {
     backend.world.aiShare = false;
     await describe(page);

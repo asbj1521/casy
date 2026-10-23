@@ -173,6 +173,32 @@ describe("monthAvailability for a meeting at any time", () => {
   });
 });
 
+describe("monthAvailability for a meeting in a start window (#133)", () => {
+  // Dinner of two hours, starting between 18:00 and 21:00.
+  const dinner: EventSettings = {
+    kind: "single",
+    startHour: 18,
+    durationMinutes: 120,
+    startWindow: { from: 18 * 60, to: 21 * 60 },
+  };
+
+  it("counts someone free for a start anywhere in the window", () => {
+    // Busy until 20:00: 18:00 is out, a 20:00 start isn't.
+    const people = [
+      makeParticipant("Alice", [["2026-06-03T12:00:00.000Z", "2026-06-03T20:00:00.000Z"]]),
+    ];
+    expect(day(june(people, dinner), 3).freeCount).toBe(1);
+    expect(day(june(people), 3).freeCount).toBe(0);
+  });
+
+  it("not someone free only after the window's last start", () => {
+    const people = [
+      makeParticipant("Alice", [["2026-06-03T12:00:00.000Z", "2026-06-03T21:30:00.000Z"]]),
+    ];
+    expect(day(june(people, dinner), 3).freeCount).toBe(0);
+  });
+});
+
 describe("monthAvailability for a holiday", () => {
   const HOLIDAY: EventSettings = { kind: "vacation", days: 3 };
 

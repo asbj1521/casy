@@ -137,6 +137,12 @@ export interface SchedulingConstraints {
    * Omitted = all seven days.
    */
   allowedDays?: number[];
+  /**
+   * Starts land on whole steps of this many minutes from local midnight (30:
+   * on the hour or the half hour), so a meeting free from someone's 18:47
+   * starts at 19:00. Omitted: any minute, as soon as everyone is free.
+   */
+  startStepMinutes?: number;
 }
 
 /** A concrete proposed meeting time. */

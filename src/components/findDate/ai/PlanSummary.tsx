@@ -3,7 +3,7 @@ import { Sparkles } from "lucide-react";
 
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import type { PlanField } from "@/lib/aiPlan";
-import { capitalize, nameList } from "@/lib/format";
+import { capitalize, formatClockMinutes, nameList } from "@/lib/format";
 import { periodText } from "@/lib/periodText";
 import {
   describeDays,
@@ -20,12 +20,6 @@ function weekdayLong(dow: number, locale: string): string {
     weekday: "long",
     timeZone: "UTC",
   });
-}
-
-/** "18:00" for minutes after midnight, wrapping past it (26 h is 02:00). */
-function clock(minutes: number): string {
-  const m = ((minutes % 1440) + 1440) % 1440;
-  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 }
 
 /**
@@ -70,9 +64,11 @@ export default function PlanSummary({
     const start = settings.startHour * 60;
     rows.push({
       label: words.rows.time,
-      value: settings.anyTime
-        ? `${t.scheduler.anyTime}, ${t.common.duration(settings.durationMinutes)}`
-        : `${t.scheduler.timeRange(clock(start), clock(start + settings.durationMinutes))} (${t.common.duration(settings.durationMinutes)})`,
+      value: settings.startWindow
+        ? `${t.scheduler.startWindow(formatClockMinutes(settings.startWindow.from), formatClockMinutes(settings.startWindow.to))}, ${t.common.duration(settings.durationMinutes)}`
+        : settings.anyTime
+          ? `${t.scheduler.anyTime}, ${t.common.duration(settings.durationMinutes)}`
+          : `${t.scheduler.timeRange(formatClockMinutes(start), formatClockMinutes(start + settings.durationMinutes))} (${t.common.duration(settings.durationMinutes)})`,
       guess: guessed.includes("startHour") || guessed.includes("durationMinutes"),
     });
     const days = describeDays(settings.dows);

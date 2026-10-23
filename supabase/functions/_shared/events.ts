@@ -43,6 +43,17 @@ export function isPeopleSettings(value: unknown, kind: unknown): boolean {
   return kind === "single" && int(p.atLeast, 1, members.size - p.optional.length);
 }
 
+/**
+ * A meeting's start window (#133), as src/lib/eventSearch.ts's isStartWindow
+ * says: minutes after midnight, whole half hours within one day, from before to.
+ */
+export function isStartWindow(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const { from, to } = value as Record<string, unknown>;
+  const step = (v: unknown): v is number => int(v, 0, 24 * 60 - 30) && v % 30 === 0;
+  return step(from) && step(to) && from < to;
+}
+
 export function isEventSettings(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const s = value as Record<string, unknown>;
@@ -53,6 +64,7 @@ export function isEventSettings(value: unknown): boolean {
         int(s.durationMinutes, 1, 24 * 60) &&
         int(s.startHour, 0, 23) &&
         (s.anyTime === undefined || typeof s.anyTime === "boolean") &&
+        (s.startWindow === undefined || isStartWindow(s.startWindow)) &&
         (s.allowedDays === undefined ||
           (Array.isArray(s.allowedDays) &&
             s.allowedDays.length <= 7 &&
