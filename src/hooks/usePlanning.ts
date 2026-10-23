@@ -24,6 +24,7 @@ import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { planFeedback, planFieldsOf, type AiPlan } from "@/lib/aiPlan";
+import { widenOptions, type WidenOption } from "@/lib/widen";
 import {
   accept,
   back,
@@ -232,6 +233,24 @@ export function usePlanning() {
   );
   const slot = found?.slot ?? null;
   const review = reviewAnswer(found, search, youProfileId, steps.accepted);
+  // Ways to widen a search that found nothing (#135), each with the first
+  // date it finds: only for the first search (not after stepping past the
+  // last date), and only with calendars to search.
+  const widen = useMemo(
+    () =>
+      participants && found && !found.slot && steps.index === 0
+        ? widenOptions({
+            participants,
+            settings: deferredSched,
+            members: memberIds,
+            choice: deferredChoice,
+            today: TODAY,
+            limit: SEARCH_WINDOW,
+            timeZone: TZ,
+          })
+        : [],
+    [participants, found, steps.index, deferredSched, memberIds, deferredChoice],
+  );
 
   // Fresh busy times while planning (#85): calendars sync hourly, so the
   // group's are synced again in the background while someone plans for it,
@@ -647,6 +666,20 @@ export function usePlanning() {
     updateSettings(patch);
     planner.edited(planFieldsOf(patch));
   };
+  /** A way to widen the search picked (#135): only what it changes, by hand. */
+  function applyWiden(option: WidenOption) {
+    if (option.people) {
+      updatePeople(option.people);
+      return;
+    }
+    const patch = Object.fromEntries(
+      Object.entries(option.settings).filter(
+        ([key, value]) =>
+          JSON.stringify(value) !== JSON.stringify(sched[key as keyof SchedulerSettings]),
+      ),
+    ) as Partial<SchedulerSettings>;
+    updateSettingsByHand(patch);
+  }
 
   return {
     user,
@@ -694,6 +727,8 @@ export function usePlanning() {
     acceptOwnTimeOff,
     pickDay,
     adoptSuggestion,
+    widen,
+    applyWiden,
     waiting,
     edge,
     checkers,

@@ -118,6 +118,22 @@ export const en: Messages = {
     yours: (time: string) => `${time} your time`,
   },
   scheduler: {
+    widen: {
+      title: "No date works. These would:",
+      time: {
+        morning: "In the morning",
+        lunch: "For lunch",
+        afternoon: "In the afternoon",
+        evening: "In the evening",
+        any: "Any time of day",
+      },
+      days: "Every day of the week",
+      startDay: "Start on another day",
+      shorter: (length: string) => `Shorter, ${length}`,
+      months: (period: string) => `A longer period, ${period}`,
+      people: (n: number, of: number) => `At least ${n} of ${of}`,
+      without: (names: string) => `without ${names}`,
+    },
     group: "Group",
     name: "What are you doing",
     namePlaceholder: "E.g. drinks or board games",

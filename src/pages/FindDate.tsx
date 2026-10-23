@@ -11,6 +11,7 @@ import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
 import LaterDates from "@/components/findDate/LaterDates";
 import MoreSettingsScreen from "@/components/findDate/MoreSettingsScreen";
+import WidenSearch from "@/components/findDate/WidenSearch";
 import GroupSwitcher from "@/components/GroupSwitcher";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import RequireAuth from "@/components/RequireAuth";
@@ -89,6 +90,8 @@ function SchedulingPage() {
     acceptOwnTimeOff,
     pickDay,
     adoptSuggestion,
+    widen,
+    applyWiden,
     waiting,
     edge,
     checkers,
@@ -304,6 +307,8 @@ function SchedulingPage() {
           )}
 
           <LaterDates {...laterDatesProps} />
+          {/* No date at all: the ways to widen the search that would find one (#135). */}
+          <WidenSearch options={widen} onPick={applyWiden} />
         </div>
 
         {activeGroup && !activeGroup.isExample ? (

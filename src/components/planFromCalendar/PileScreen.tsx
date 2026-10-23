@@ -16,6 +16,7 @@ import { Check, ChevronDown, Loader2, TriangleAlert, X } from "lucide-react";
 
 import type { EventToProfile } from "@/api/eventProfile";
 import LaterDates from "@/components/findDate/LaterDates";
+import WidenSearch from "@/components/findDate/WidenSearch";
 import FlowButton from "@/components/ui/FlowButton";
 import { MonthLayer } from "@/components/swipe/MonthView";
 import { TODAY } from "@/hooks/useDateSearch";
@@ -52,6 +53,7 @@ import {
 import type { FoundDate } from "@/lib/scheduler";
 import { playSendFlight } from "@/lib/sendFlightPlay";
 import { cn } from "@/lib/utils";
+import type { WidenOption } from "@/lib/widen";
 import { addDays, dayOf, localDate, startOfMonth, wallTime } from "@/lib/zone";
 
 /** The pile's stages, in order. */
@@ -93,6 +95,8 @@ const PRESS_PX = 5;
 
 /** Where your month sits on screen: the layers land exactly on it. */
 interface Frame {
+  /** Which month was measured (its local midnight). */
+  month: number;
   top: number;
   left: number;
   width: number;
@@ -178,6 +182,8 @@ export default function PileScreen({
     checkers,
     suggestions,
     adoptSuggestion,
+    widen,
+    applyWiden,
     aiOn,
     profileFor,
     user,
@@ -409,8 +415,8 @@ export default function PileScreen({
         const r = el?.getBoundingClientRect();
         setFrame(
           r
-            ? { top: r.top, left: r.left, width: r.width, height: r.height }
-            : { top: 96, left: 0, width: window.innerWidth, height: 600 },
+            ? { month, top: r.top, left: r.left, width: r.width, height: r.height }
+            : { month, top: 96, left: 0, width: window.innerWidth, height: 600 },
         );
       },
       scroller ? 450 : 0,
@@ -486,6 +492,32 @@ export default function PileScreen({
     });
     return () => setBeforeLeaving(null);
   }, [reduceMotion, setBeforeLeaving]);
+  // A way to widen the search picked (#135): the plan changes here, and once
+  // its first date is the answer (with its scores, and the calendar scrolled
+  // to its month), the dates are lifted into the list again. The pile isn't
+  // thrown again: every calendar is already in it.
+  const [widenedTo, setWidenedTo] = useState<string | null>(null);
+  const [round, setRound] = useState(0);
+  const pickWiden = (option: WidenOption) => {
+    applyWiden(option);
+    setWidenedTo(option.first.slot.start);
+    setTaken(new Set());
+    scroll.set(0);
+  };
+  // Started while rendering, as the new answer arrives (React's pattern for
+  // following a changed value).
+  if (
+    widenedTo &&
+    found?.slot?.start === widenedTo &&
+    dates &&
+    scoresSettled &&
+    (reduceMotion || frame?.month === month)
+  ) {
+    setWidenedTo(null);
+    setRound((r) => r + 1);
+    setPhase(reduceMotion ? "done" : "lifted");
+  }
+
   const send = () =>
     dates &&
     void sendSuggestion(
@@ -559,6 +591,7 @@ export default function PileScreen({
           in, scrolled by the list as it lifts each date out. */}
       {frame && pile && !reduceMotion && lifted && (
         <SharedCalendar
+          key={round}
           frame={frame}
           months={pile.months}
           friends={pile.friends}
@@ -608,6 +641,7 @@ export default function PileScreen({
               </p>
             ) : dates ? (
               <DateList
+                key={round}
                 items={dates.checked}
                 meeting={search.kind === "single"}
                 kind={search.kind}
@@ -621,9 +655,15 @@ export default function PileScreen({
             ) : (
               done && (
                 <div className="flex flex-col gap-2">
-                  <p className="glass rounded-[22px] p-4 text-[15px] text-foreground">
-                    {words.noneThrough}
-                  </p>
+                  {/* Ways to widen the search that would find a date (#135),
+                      in place of only saying there is none. */}
+                  {widen.length > 0 ? (
+                    <WidenSearch glass options={widen} onPick={pickWiden} />
+                  ) : (
+                    <p className="glass rounded-[22px] p-4 text-[15px] text-foreground">
+                      {words.noneThrough}
+                    </p>
+                  )}
                   {/* A holiday too long for the period: the shorter stays that fit. */}
                   <LaterDates
                     loading={false}

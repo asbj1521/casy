@@ -98,6 +98,30 @@ test("the sheet's details: Deltagere and Hvornår open sheets, and place and not
   expect(sent).toMatchObject({ place: "Hos Sara", note: "Tag snacks med" });
 });
 
+/** Describes a plan that finds no date (weekday mornings in October), and looks for it. */
+async function planNothing(page: import("@playwright/test").Page) {
+  await page.goto("/calendar-overview");
+  await page.getByRole("button", { name: "Planlæg" }).click();
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
+  await sheet
+    .getByRole("textbox", { name: /Fx middag en fredag/ })
+    .fill("møde om formiddagen på hverdage i oktober");
+  await sheet.getByRole("button", { name: "Lav planen" }).click();
+  await sheet.getByRole("button", { name: "Find dato" }).click();
+}
+
+test("with no date, a way to widen the search finds one and lists its dates (#135)", async ({
+  page,
+}) => {
+  await planNothing(page);
+  const widen = page.getByRole("region", { name: "Ingen dato passer. Det her ville virke:" });
+  await expect(widen).toBeVisible();
+  await widen.getByRole("button").first().click();
+  await expect(widen).toBeHidden();
+  await expect(page.getByRole("button", { name: /^Foreslå/ })).toBeEnabled();
+});
+
 test("without AI switched on, the sheet offers no planning with AI (#111)", async ({
   page,
   backend,
@@ -135,6 +159,21 @@ test.describe("with motion", () => {
       timeout: 25_000,
     });
     await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
+  });
+
+  test("a way to widen the search lifts its dates into the list, the pile not thrown again (#135)", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    await planNothing(page);
+    const widen = page.getByRole("region", { name: "Ingen dato passer. Det her ville virke:" });
+    await expect(widen).toBeVisible({ timeout: 25_000 });
+    await widen.getByRole("button").first().click();
+    // The dates are lifted into the list and checked again (the way on waits
+    // until they are), with no layers thrown.
+    await expect(page.getByRole("button", { name: "Ret planen" })).toBeHidden();
+    await expect(page.locator("[data-pile]")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Foreslå/ })).toBeEnabled({ timeout: 15_000 });
   });
 
   test("sent, the dates not offered swipe away and the five fly into the Events tab (#102)", async ({

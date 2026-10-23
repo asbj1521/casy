@@ -352,6 +352,24 @@ export class FakeBackend {
       };
       return ok(answer);
     }
+    // Weekday mornings in October, when everyone works: no date at all, but
+    // an evening or a weekend would do (#135).
+    if (body.text === "møde om formiddagen på hverdage i oktober") {
+      const answer: PlanAnswer = {
+        plan: {
+          ...nothing,
+          kind: "meeting",
+          startHour: 10,
+          anyTime: false,
+          durationMinutes: 120,
+          weekdays: [1, 2, 3, 4, 5],
+          months: { from: "2026-10", to: "2026-10" },
+          title: "Møde",
+        },
+        left: 41,
+      };
+      return ok(answer);
+    }
     // A date that bounds it: from today until 5 November, exact days (#134).
     if (body.text === "tivoli før halloween slutter den 5. november") {
       const answer: PlanAnswer = {

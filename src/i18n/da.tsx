@@ -128,6 +128,23 @@ export const da = {
     yours: (time: string) => `${time} din tid`,
   },
   scheduler: {
+    // When no date is found: ways to widen the search that would (#135).
+    widen: {
+      title: "Ingen dato passer. Det her ville virke:",
+      time: {
+        morning: "Om formiddagen",
+        lunch: "Til frokost",
+        afternoon: "Om eftermiddagen",
+        evening: "Om aftenen",
+        any: "Når som helst på dagen",
+      },
+      days: "Alle ugedage",
+      startDay: "Start en anden dag",
+      shorter: (length: string) => `Kortere, ${length}`,
+      months: (period: string) => `Længere periode, ${period}`,
+      people: (n: number, of: number) => `Mindst ${n} af ${of}`,
+      without: (names: string) => `uden ${names}`,
+    },
     // The settings bar (desktop) and the sentence (phone).
     group: "Gruppe",
     name: "Hvad skal I",

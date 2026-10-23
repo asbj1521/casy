@@ -208,6 +208,26 @@ test.describe("on a laptop's screen", () => {
     await expect(chart(page).locator("..")).not.toHaveAttribute("inert");
   });
 
+  test("with no date, the ways to widen the search that would find one are offered (#135)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
+    await page.getByRole("button", { name: "Planlæg med AI" }).click();
+    const text = page.getByRole("textbox", { name: /Fx middag en fredag/ });
+    await text.fill("møde om formiddagen på hverdage i oktober");
+    await text.press("Enter");
+    const widen = page.getByRole("region", { name: "Ingen dato passer. Det her ville virke:" });
+    await expect(widen).toBeVisible();
+    // Only ways that find a date, each with it: never one leading to nothing.
+    const options = widen.getByRole("button");
+    expect(await options.count()).toBeGreaterThan(0);
+    await expect(options.first()).toContainText(/\d{2}:\d{2}/);
+    await options.first().click();
+    await expect(widen).toBeHidden();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/oktober/i);
+  });
+
   test("Tur / ferie swaps the time for a number of days", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("Varighed", { exact: true })).toBeVisible();
