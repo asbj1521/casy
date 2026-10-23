@@ -37,6 +37,7 @@ const SwipeDates = lazy(loadPage.swipeDates);
 const Groups = lazy(loadPage.groups);
 const ProfileScreen = lazy(loadPage.profileScreen);
 const MyData = lazy(loadPage.myData);
+const Settings = lazy(loadPage.settings);
 const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
 const Privacy = lazy(loadPage.privacy);
@@ -178,6 +179,15 @@ function App() {
                   element={
                     <RequireAuth>
                       <MyData />
+                    </RequireAuth>
+                  }
+                />
+                {/* Language and light or dark, under the profile: every device. */}
+                <Route
+                  path="/profile/settings"
+                  element={
+                    <RequireAuth>
+                      <Settings />
                     </RequireAuth>
                   }
                 />

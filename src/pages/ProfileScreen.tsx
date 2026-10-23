@@ -8,7 +8,6 @@ import { whoAmIQuery } from "@/api/groups";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
 import PasswordSection from "@/components/PasswordSection";
 import PhoneSubHeader from "@/components/PhoneSubHeader";
-import SettingsGroups from "@/components/profile/SettingsGroups";
 import { displayName, useSignedInUser } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
@@ -32,8 +31,6 @@ export default function ProfileScreen() {
   switch (screen) {
     case "calendars": // moved to the Calendar tab; old links still arrive
       return <Navigate to={`${CALENDAR_ACCOUNTS_PATH}${search}`} replace />;
-    case "settings":
-      return <SettingsScreen />;
     case "password":
       return <PasswordScreen />;
     case "account":
@@ -52,15 +49,6 @@ function Screen({ title, children }: { title: string; children: ReactNode }) {
       <PhoneSubHeader title={title} back="/profile" backLabel={t.nav.profileShort} />
       <main className="px-4 pb-8">{children}</main>
     </div>
-  );
-}
-
-function SettingsScreen() {
-  const t = useT();
-  return (
-    <Screen title={t.profileHub.settings}>
-      <SettingsGroups />
-    </Screen>
   );
 }
 

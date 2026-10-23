@@ -3,7 +3,6 @@ import { Check, Monitor, Moon, Sun } from "lucide-react";
 
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
-import { isNativeApp } from "@/lib/nativeApp";
 import { chooseTheme, storedTheme, type ThemeChoice } from "@/lib/theme";
 
 const CHOICES = [
@@ -15,14 +14,13 @@ const CHOICES = [
 /**
  * "Udseende" (#93): follow the system, or always light or dark, on this
  * device, as the iPhone's own settings list it: a check by the one chosen.
- * The same on a phone's website and a computer; the app has none, since it
- * always follows the phone.
+ * The same everywhere: the website, a computer and the iPhone app, where the
+ * choice also reaches iOS itself (chooseTheme).
  */
 export default function AppearanceGroup() {
   const t = useT();
   const words = t.appearance;
-  const [current, setCurrent] = useState<ThemeChoice>(() => storedTheme(isNativeApp));
-  if (isNativeApp) return null;
+  const [current, setCurrent] = useState<ThemeChoice>(storedTheme);
 
   return (
     <ListGroup title={words.title}>

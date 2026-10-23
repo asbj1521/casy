@@ -4,15 +4,10 @@ import { applyTheme, themeClass, themeFrom } from "@/lib/theme";
 
 describe("themeFrom", () => {
   it("follows the system unless light or dark was chosen here", () => {
-    expect(themeFrom(null, false)).toBe("system");
-    expect(themeFrom("dark", false)).toBe("dark");
-    expect(themeFrom("light", false)).toBe("light");
-    expect(themeFrom("purple", false)).toBe("system");
-  });
-
-  it("always follows the phone in the app", () => {
-    expect(themeFrom("light", true)).toBe("system");
-    expect(themeFrom("dark", true)).toBe("system");
+    expect(themeFrom(null)).toBe("system");
+    expect(themeFrom("dark")).toBe("dark");
+    expect(themeFrom("light")).toBe("light");
+    expect(themeFrom("purple")).toBe("system");
   });
 });
 

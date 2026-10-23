@@ -37,6 +37,27 @@ struct PhoneEventDetails {
     let notes: String
 }
 
+/// The theme chosen in Settings (#129): "light", "dark", or "system" to follow
+/// the phone. Applied to the app's whole interface, so the status bar, the
+/// keyboard and the colour behind the page (LaunchBackground) follow it and the
+/// page's own `prefers-color-scheme` says the same, and kept here so the
+/// next launch starts in it, before the page has run.
+enum AppAppearance {
+    static let key = "casy.appearance"
+
+    static func style(_ choice: String?) -> UIUserInterfaceStyle {
+        switch choice {
+        case "light": return .light
+        case "dark": return .dark
+        default: return .unspecified
+        }
+    }
+
+    static func stored() -> UIUserInterfaceStyle {
+        style(UserDefaults.standard.string(forKey: key))
+    }
+}
+
 /// Reading the phone's calendars with EventKit, for the page (the plugin
 /// below) and for the background refresh (PhoneCalendarBackground) alike.
 ///
@@ -196,6 +217,7 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "read", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "readDetails", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setAppearance", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "backgroundState", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setBackground", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearBackground", returnType: CAPPluginReturnPromise),
@@ -231,6 +253,18 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
             store.requestFullAccessToEvents(completion: done)
         } else {
             store.requestAccess(to: .event, completion: done)
+        }
+    }
+
+    /// The theme chosen in Casy's own Settings: "light", "dark" or "system".
+    @objc func setAppearance(_ call: CAPPluginCall) {
+        let choice = call.getString("choice") ?? "system"
+        UserDefaults.standard.set(choice, forKey: AppAppearance.key)
+        DispatchQueue.main.async {
+            let style = AppAppearance.style(choice)
+            self.bridge?.viewController?.overrideUserInterfaceStyle = style
+            self.bridge?.viewController?.view.window?.overrideUserInterfaceStyle = style
+            call.resolve()
         }
     }
 

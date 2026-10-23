@@ -1,7 +1,7 @@
 /**
- * Settings (#129): language and appearance are chosen under the profile, one
- * screen on a phone and a section of the page on a computer. The DA | EN
- * switch in the header is only for someone signed out, who has no profile.
+ * Settings (#129): language and light or dark are chosen under the profile,
+ * the same on a phone, a computer and in the iPhone app. The DA | EN switch in
+ * the header is only for someone signed out, who has no profile.
  */
 import { expect, test } from "./fixtures";
 
@@ -16,32 +16,21 @@ test.describe("signed in", () => {
     }
   });
 
-  test("a computer changes language in the profile, and it sticks", async ({ page, isMobile }) => {
-    test.skip(isMobile, "computers only");
+  test("the profile has a Settings button, and not the choices themselves", async ({ page }) => {
     await page.goto("/profile");
-    await expect(page.getByRole("heading", { name: "Sprog" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Udseende" })).toBeVisible();
-    await page.getByRole("button", { name: "English" }).click();
-    await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Appearance" })).toBeVisible();
-    await page.reload();
-    await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
-  });
-
-  test("a phone opens Settings from the profile, and the way back is the profile", async ({
-    page,
-    isMobile,
-  }) => {
-    test.skip(!isMobile, "phones only");
-    await page.goto("/profile");
-    // The profile itself is short: language and appearance live one step in.
     await expect(page.getByRole("heading", { name: "Udseende" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Sprog" })).toHaveCount(0);
     await page.getByRole("link", { name: /Indstillinger/ }).click();
     await expect(page).toHaveURL(/\/profile\/settings$/);
     await expect(page.getByRole("heading", { name: "Sprog" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Udseende" })).toBeVisible();
+  });
 
+  test("language is changed there, sticks, and the way back is the profile", async ({ page }) => {
+    await page.goto("/profile/settings");
     await page.getByRole("button", { name: "English" }).click();
+    await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+    await page.reload();
     await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
     await page
       .getByRole("link", { name: /Profile/ })
@@ -51,13 +40,26 @@ test.describe("signed in", () => {
     await expect(page.getByRole("link", { name: /Settings/ })).toContainText("English");
   });
 
-  test("a computer sent to the phone's settings address lands on the profile", async ({
-    page,
-    isMobile,
-  }) => {
-    test.skip(isMobile, "computers only");
+  test("dark and light are chosen there too, and the page follows", async ({ page }) => {
     await page.goto("/profile/settings");
-    await expect(page).toHaveURL(/\/profile$/);
+    const html = page.locator("html");
+    await page.getByRole("button", { name: "Mørk" }).click();
+    await expect(html).toHaveClass(/theme-dark/);
+    await page.getByRole("button", { name: "Lys" }).click();
+    await expect(html).toHaveClass(/theme-light/);
+    await page.getByRole("button", { name: "Følg systemet" }).click();
+    await expect(html).not.toHaveClass(/theme-(light|dark)/);
+  });
+
+  test("the iPhone app has the choice too", async ({ page }) => {
+    // The bridge the app injects before the page runs (src/lib/nativeApp.ts).
+    await page.addInitScript(() => {
+      (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+    });
+    await page.goto("/profile/settings");
+    await expect(page.getByRole("heading", { name: "Udseende" })).toBeVisible();
+    await page.getByRole("button", { name: "Mørk" }).click();
+    await expect(page.locator("html")).toHaveClass(/theme-dark/);
   });
 });
 
@@ -70,5 +72,10 @@ test.describe("signed out", () => {
     await expect(group).toBeVisible();
     await group.getByRole("radio", { name: "English" }).click();
     await expect(page.getByRole("radiogroup", { name: "Language" })).toBeVisible();
+  });
+
+  test("Settings needs a login", async ({ page }) => {
+    await page.goto("/profile/settings");
+    await expect(page).not.toHaveURL(/\/profile\/settings$/);
   });
 });

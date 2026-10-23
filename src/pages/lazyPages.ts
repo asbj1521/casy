@@ -15,6 +15,7 @@ export const loadPage = {
   groups: () => import("@/pages/Groups"),
   profileScreen: () => import("@/pages/ProfileScreen"),
   myData: () => import("@/pages/MyData"),
+  settings: () => import("@/pages/Settings"),
   signIn: () => import("@/pages/SignIn"),
   joinGroup: () => import("@/pages/JoinGroup"),
   privacy: () => import("@/pages/Privacy"),

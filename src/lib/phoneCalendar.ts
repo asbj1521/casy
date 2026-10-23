@@ -24,6 +24,7 @@ interface PhoneCalendarPlugin {
   read(options: { from: number; to: number }): Promise<PhoneRead>;
   readDetails(options: { from: number; to: number }): Promise<{ events: PhoneEventWithDetails[] }>;
   openSettings(): Promise<void>;
+  setAppearance(options: { choice: "system" | "light" | "dark" }): Promise<void>;
   backgroundState(): Promise<{ configured: boolean }>;
   setBackground(options: {
     url: string;
@@ -93,6 +94,16 @@ export function phoneEventDetailsQuery(userId: string, window: { start: string; 
     // An app build without readDetails: the blocks as the server has them.
     retry: false,
   });
+}
+
+/**
+ * Tell the app's interface which theme was chosen in Casy's Settings (#129),
+ * so the status bar, keyboard and the colour behind the page follow it, and
+ * the next launch starts in it. The page's own colours follow its class.
+ */
+export async function setNativeAppearance(choice: "system" | "light" | "dark"): Promise<void> {
+  const { plugin } = await phonePlugin();
+  await plugin.setAppearance({ choice });
 }
 
 export async function openPhoneSettings(): Promise<void> {

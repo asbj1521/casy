@@ -6,6 +6,9 @@ import Capacitor
 class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
+        // The theme chosen in Casy's Settings (#129), before anything is drawn;
+        // without one, the phone's own.
+        overrideUserInterfaceStyle = AppAppearance.stored()
         // Casy's page background behind the web view, light or dark as the
         // phone is (the launch screen's colour), so it never flashes white
         // before the page is drawn (#93).

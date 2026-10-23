@@ -1,15 +1,16 @@
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { KeyRound, LogOut, Settings, ShieldCheck, Trash2 } from "lucide-react";
+import { KeyRound, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/admin";
 import NameCard from "@/components/profile/NameCard";
+import SettingsRow from "@/components/profile/SettingsRow";
 import { BuildLine, FeedbackShareGroup, HelpGroup } from "@/components/profile/ProfileLinks";
 import TopNav from "@/components/TopNav";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { useAuth, useSignedInUser } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH, isCalendarArrival } from "@/hooks/useCalendarsHome";
-import { useLang, useT } from "@/i18n/lang";
+import { useT } from "@/i18n/lang";
 
 /**
  * Links into the profile and the phone screen that answers each: back from
@@ -32,7 +33,6 @@ export default function ProfileHub() {
   const user = useSignedInUser();
   const { signOut } = useAuth();
   const t = useT();
-  const { lang } = useLang();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -47,13 +47,9 @@ export default function ProfileHub() {
       <main className="px-4 pb-8 pt-2">
         <NameCard />
 
+        <SettingsRow />
+
         <ListGroup>
-          <ListRow
-            to="/profile/settings"
-            icon={Settings}
-            label={t.profileHub.settings}
-            value={lang === "da" ? "Dansk" : "English"}
-          />
           <ListRow to="/profile/password" icon={KeyRound} label={t.profileHub.security} />
           {isAdmin && <ListRow to="/profile/admin" icon={ShieldCheck} label={t.profileHub.admin} />}
         </ListGroup>
