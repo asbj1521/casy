@@ -41,6 +41,8 @@ export interface Leg {
   end: number;
   /** How often this title occurs in the calendar read: a commute occurs a lot. */
   count: number;
+  /** The cities as written ("Copenhagen"), for showing; `from` and `to` are for comparing. */
+  names?: { from: string; to: string };
 }
 
 /** What the person has told Casy about their trips, kept on the phone. */

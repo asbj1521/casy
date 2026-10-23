@@ -412,6 +412,37 @@ export const da = {
     left: (n: number) => (n === 1 ? "1 AI-svar tilbage i dag" : `${n} AI-svar tilbage i dag`),
   },
   // Tell Casy (#116): what is in no calendar, said or written and checked before it is kept.
+  trips: {
+    // Trip detection (#115): the bars on My calendar and the sheet a tap opens.
+    barPending: (city: string) => `Rejse til ${city}?`,
+    barAccepted: (city: string) => `Rejse til ${city}`,
+    barReturn: (city: string) => `Hjem fra ${city}?`,
+    barOutbound: (city: string) => `Afrejse til ${city}?`,
+    title: (city: string) => `Rejse til ${city}`,
+    found: "Casy fandt en rejse i din kalender:",
+    away: (from: string, to: string) => `Du er væk fra ${from} til ${to}.`,
+    acceptNote:
+      "Siger du ja, står rejsen i din kalender som tid, du er væk. Du kan altid slette den igen.",
+    accept: "Ja, det passer",
+    decline: "Nej, det er ikke en rejse",
+    acceptedNote: "Du har sagt ja til rejsen, så den står som tid, du er væk.",
+    remove: "Slet rejsen",
+    returnTitle: (city: string) => `Hvornår kommer du hjem fra ${city}?`,
+    returnIntro:
+      "Casy kan se, at du rejser ud, men ikke hvornår du kommer hjem. Måske kører du hjem, eller hjemrejsen står ikke i din kalender.",
+    outboundTitle: (city: string) => `Hvornår tager du til ${city}?`,
+    outboundIntro:
+      "Casy kan se, at du rejser hjem, men ikke hvornår du tog af sted. Måske kørte du derud, eller udrejsen står ikke i din kalender.",
+    pickDay: "Vælg dagen",
+    notATrip: "Det er ikke en rejse",
+    homeTitle: "Hvor bor du?",
+    homeIntro:
+      "Casy fandt en rejse, men kan ikke se, hvilken ende der er hjemme. Svar én gang, så kan Casy se, hvornår du er væk.",
+    noneOfThem: "Ingen af dem",
+    route: (from: string, to: string) => `${from} til ${to}`,
+    modes: { flight: "Fly", train: "Tog", bus: "Bus" },
+    at: (date: string, time: string) => `${date} kl. ${time}`,
+  },
   tellCasy: {
     title: "Fortæl Casy",
     button: "Fortæl Casy",

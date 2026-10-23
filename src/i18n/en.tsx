@@ -380,6 +380,36 @@ export const en: Messages = {
     left: (n: number) => (n === 1 ? "1 AI answer left today" : `${n} AI answers left today`),
   },
   // Tell Casy (#116): what is in no calendar, said or written and checked before it is kept.
+  trips: {
+    barPending: (city: string) => `Trip to ${city}?`,
+    barAccepted: (city: string) => `Trip to ${city}`,
+    barReturn: (city: string) => `Home from ${city}?`,
+    barOutbound: (city: string) => `Leaving for ${city}?`,
+    title: (city: string) => `Trip to ${city}`,
+    found: "Casy found a trip in your calendar:",
+    away: (from: string, to: string) => `You are away from ${from} to ${to}.`,
+    acceptNote:
+      "If you say yes, the trip shows in your calendar as time you are away. You can always delete it again.",
+    accept: "Yes, that's right",
+    decline: "No, it isn't a trip",
+    acceptedNote: "You said yes to this trip, so it shows as time you are away.",
+    remove: "Delete the trip",
+    returnTitle: (city: string) => `When are you back from ${city}?`,
+    returnIntro:
+      "Casy can see you travel out, but not when you come back. Maybe you drive home, or the way back isn't in your calendar.",
+    outboundTitle: (city: string) => `When do you leave for ${city}?`,
+    outboundIntro:
+      "Casy can see you travel home, but not when you left. Maybe you drove there, or the way out isn't in your calendar.",
+    pickDay: "Pick the day",
+    notATrip: "It isn't a trip",
+    homeTitle: "Where do you live?",
+    homeIntro:
+      "Casy found a trip but can't tell which end is home. Answer once, and Casy can see when you are away.",
+    noneOfThem: "None of them",
+    route: (from: string, to: string) => `${from} to ${to}`,
+    modes: { flight: "Flight", train: "Train", bus: "Bus" },
+    at: (date: string, time: string) => `${date} at ${time}`,
+  },
   tellCasy: {
     title: "Tell Casy",
     button: "Tell Casy",

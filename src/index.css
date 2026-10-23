@@ -180,7 +180,23 @@
     animation: sound-ring 2.6s ease-out infinite;
   }
 
+  /* A trip Casy found and is asking about (#115): its bar in the month view
+     glows softly in and out, so the eye finds it among the rest. */
+  @keyframes trip-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    }
+    50% {
+      box-shadow: 0 0 0 3px hsl(var(--primary) / 0.35);
+    }
+  }
+  .animate-trip-pulse {
+    animation: trip-pulse 1.8s ease-in-out infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .animate-trip-pulse,
     .animate-connect-highlight,
     .animate-ai-shimmer,
     .animate-sound-ring,

@@ -1,6 +1,7 @@
 import {
   memo,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -25,6 +26,8 @@ const TZ = APP_TIME_ZONE;
 const LANES = 3;
 const LANE_PX = 20;
 const MORE_PX = 14;
+/** How long the month rests on opening before it glides to what it reveals. */
+const REVEAL_DELAY_MS = 450;
 
 /**
  * Your calendar a month at a time, drawn like Apple Calendar's month view
@@ -47,6 +50,7 @@ export default function MonthView({
   marked,
   selected = null,
   todayTone = "red",
+  reveal = null,
   onPickDay,
 }: {
   /** The day whose month to open on. */
@@ -60,6 +64,12 @@ export default function MonthView({
   selected?: number | null;
   /** How today is drawn: Apple's red circle, or a grey one where orange marks the tapped day. */
   todayTone?: "red" | "grey";
+  /**
+   * A day to glide to once it is set (a local midnight): My calendar shows
+   * the person a trip it found (#115). A third of the way down, so the weeks
+   * around it show too.
+   */
+  reveal?: number | null;
   onPickDay: (day: number) => void;
 }) {
   const t = useT();
@@ -91,6 +101,23 @@ export default function MonthView({
     // Only on opening: the view is opened afresh each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (reveal === null) return;
+    const timer = setTimeout(() => {
+      const box = scroller.current;
+      const cell = box?.querySelector<HTMLElement>(`[data-day="${reveal}"]`);
+      if (!box || !cell) return;
+      const top =
+        box.scrollTop +
+        cell.getBoundingClientRect().top -
+        box.getBoundingClientRect().top -
+        box.clientHeight / 3;
+      const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      box.scrollTo({ top: Math.max(0, top), behavior: still ? "auto" : "smooth" });
+    }, REVEAL_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [reveal]);
 
   return (
     <div className="flex h-full flex-col">
@@ -286,6 +313,7 @@ const MonthSection = memo(function MonthSection({
                       !after && "rounded-r-[4px]",
                       p.item.pencil &&
                         "border border-dashed border-primary bg-primary/10 text-primary",
+                      p.item.pulse && "animate-trip-pulse",
                     )}
                     style={{
                       top: p.lane * LANE_PX,

@@ -1,11 +1,21 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { CalendarPlus, CalendarSearch, Layers, Plus } from "lucide-react";
+import { CalendarPlus, CalendarSearch, ChevronRight, Layers, Plane, Plus } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TellCasySheet from "@/components/tellCasy/TellCasySheet";
+import TripSheet from "@/components/trips/TripSheet";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import MonthView from "@/components/swipe/MonthView";
@@ -16,14 +26,23 @@ import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
+import { useTrips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
+import { isPending, markOn, revealDay, tripBars, tripMarks, type TripMark } from "@/lib/tripView";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
 
 // Planning from here (#126) brings the whole scheduler with it: loaded on the first press.
 const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFromCalendar"));
+
+/**
+ * Whether My calendar has glided to a trip waiting for an answer (#115) since
+ * the app was opened: once per launch, so it asks again next time without
+ * pulling the month away on every visit.
+ */
+let revealedThisLaunch = false;
 
 /**
  * My calendar on a phone: your busy time as Apple Calendar's month view, the
@@ -48,6 +67,36 @@ export default function PhoneCalendar() {
     setCalendarsVisible,
     visibilityError,
   } = useMyCalendarView();
+  // Trips Casy found (#115, the app only): bars on the month, asking until answered.
+  const trips = useTrips();
+  const marks = useMemo(() => tripMarks(trips.detected, lang), [trips.detected, lang]);
+  const month = useMemo(
+    () =>
+      marks.length === 0
+        ? calendar
+        : { ...calendar, items: [...tripBars(marks, t.trips), ...calendar.items] },
+    [calendar, marks, t],
+  );
+  // The first time My calendar opens with something waiting, it glides there
+  // (and on to the next one as each is answered); "I dag" stops it.
+  const [mayReveal] = useState(() => !revealedThisLaunch);
+  const [todayPressed, setTodayPressed] = useState(false);
+  const reveal = mayReveal && !todayPressed ? revealDay(marks) : null;
+  useEffect(() => {
+    if (reveal !== null) revealedThisLaunch = true;
+  }, [reveal]);
+  const [tripMark, setTripMark] = useState<TripMark | null>(null);
+  const [tripOpen, setTripOpen] = useState(false);
+  const openTrip = useCallback((mark: TripMark) => {
+    setTripMark(mark);
+    setTripOpen(true);
+  }, []);
+  // pickDay stays stable (see below), so it reads the marks through a ref.
+  const marksNow = useRef(marks);
+  useEffect(() => {
+    marksNow.current = marks;
+  }, [marks]);
+
   // Tell Casy (#116): what is in no calendar, for people AI is on for.
   const aiAllowed = useAiAllowed();
   const [tellOpen, setTellOpen] = useState(false);
@@ -71,10 +120,20 @@ export default function PhoneCalendar() {
   const [panelDay, setPanelDay] = useState(() => startOfDay(Date.now(), TZ));
   // Stable, or every month of the view (memoised) would redraw on each tap.
   // The day already open closes again.
-  const pickDay = useCallback((day: number) => {
-    setPanelDay(day);
-    setPickedDay((open) => (open === day ? null : day));
-  }, []);
+  const pickDay = useCallback(
+    (day: number) => {
+      // A day of a trip waiting for an answer opens the trip, not the day.
+      const mark = markOn(marksNow.current, day);
+      if (mark && isPending(mark)) {
+        setPickedDay(null);
+        openTrip(mark);
+        return;
+      }
+      setPanelDay(day);
+      setPickedDay((open) => (open === day ? null : day));
+    },
+    [openTrip],
+  );
   const closeDay = useCallback(() => setPickedDay(null), []);
   // A tap on the month that isn't on a day (a heading, a blank cell, the
   // weekdays) closes the panel too.
@@ -108,10 +167,14 @@ export default function PhoneCalendar() {
   const height = useFillViewport(box);
 
   const goToday = () => {
+    // Opened afresh on today, not glided back to a trip.
+    setTodayPressed(true);
     setFocus(startOfDay(Date.now(), TZ));
     setReopened((n) => n + 1);
   };
   const pickedSegments = calendar.segmentsOn(new Date(panelDay));
+  // An accepted trip on the open day: a row on top of the day, to see or delete it.
+  const tripToday = markOn(marks, panelDay);
 
   return (
     <div className="min-h-screen bg-background">
@@ -188,7 +251,8 @@ export default function PhoneCalendar() {
           <MonthView
             key={reopened}
             focus={focus}
-            calendar={calendar}
+            calendar={month}
+            reveal={reveal}
             selected={pickedDay}
             todayTone="grey"
             onPickDay={pickDay}
@@ -213,6 +277,8 @@ export default function PhoneCalendar() {
         </Suspense>
       )}
 
+      <TripSheet mark={tripMark} open={tripOpen} onClose={() => setTripOpen(false)} trips={trips} />
+
       {aiAllowed && (
         <TellCasySheet open={tellOpen} onClose={() => setTellOpen(false)} kept={entries} />
       )}
@@ -231,7 +297,20 @@ export default function PhoneCalendar() {
         )}
         doneLabel={t.swipe.done}
       >
-        {pickedSegments.length === 0 ? (
+        {tripToday && !isPending(tripToday) && (
+          <button
+            type="button"
+            onClick={() => openTrip(tripToday)}
+            className="mb-2 flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left"
+          >
+            <Plane className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-foreground">
+              {t.trips.barAccepted(tripToday.city)}
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          </button>
+        )}
+        {pickedSegments.length === 0 && !tripToday ? (
           <p className="pb-2 text-sm text-muted-foreground">{words.nothingBusy}</p>
         ) : (
           <ul className="divide-y">

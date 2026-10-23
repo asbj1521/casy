@@ -14,6 +14,8 @@ export interface GridItem {
   label: string;
   /** The suggested date, pencilled in: always placed first, so it always shows. */
   pencil?: boolean;
+  /** Pencilled in and asking for an answer (a trip Casy found, #115): it glows softly. */
+  pulse?: boolean;
 }
 
 export interface PlacedItem {

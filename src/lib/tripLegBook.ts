@@ -143,6 +143,7 @@ export function phoneLegs(
     start: o.start,
     end: o.end,
     count: counts.get(o.key) ?? 1,
+    names: { from, to },
   });
 
   const complete = occurrences
