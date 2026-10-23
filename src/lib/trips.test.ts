@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  acceptedTrips,
   ANSWER_DAYS,
   cityKey,
   dayOptions,
   detectTrips,
   MAX_TRIP_DAYS,
   NO_ANSWERS,
+  pendingTrips,
   ROUTINE_COUNT,
   type Leg,
   type Question,
@@ -68,10 +70,37 @@ describe("a clear round trip", () => {
     });
   });
 
+  it("is only a suggestion until the person accepts it", () => {
+    const found = detectTrips([out, back], answers(), NOW);
+    expect(found.trips[0].accepted).toBe(false);
+    expect(acceptedTrips(found)).toEqual([]);
+    expect(pendingTrips(found).map((t) => t.id)).toEqual([out.id]);
+
+    const accepted = detectTrips([out, back], answers({ accepted: [out.id] }), NOW);
+    expect(accepted.trips[0].accepted).toBe(true);
+    expect(acceptedTrips(accepted).map((t) => t.id)).toEqual([out.id]);
+    expect(pendingTrips(accepted)).toEqual([]);
+  });
+
+  it("is not suggested again once declined, even if it was accepted before", () => {
+    const { trips } = detectTrips(
+      [out, back],
+      answers({ accepted: [out.id], dismissed: [out.id] }),
+      NOW,
+    );
+    expect(trips).toEqual([]);
+  });
+
   it("asks which city is home when a single round trip can't say", () => {
     const { trips, questions } = detectTrips([out, back], NO_ANSWERS, NOW);
     expect(trips).toEqual([]);
-    expect(questions).toEqual([{ kind: "home", cities: ["copenhagen", "oslo"] }]);
+    expect(questions).toEqual([
+      { kind: "home", id: out.id, legs: [out], cities: ["copenhagen", "oslo"] },
+    ]);
+  });
+
+  it("doesn't ask where home is about journeys that are over", () => {
+    expect(detectTrips([out, back], NO_ANSWERS, at(11, 1))).toEqual({ trips: [], questions: [] });
   });
 
   it("works out home from several trips", () => {
@@ -164,7 +193,14 @@ describe("a way out with no way back", () => {
     );
     expect(questions).toEqual([]);
     expect(trips).toEqual([
-      { id: out.id, start: out.start, end: at(10, 20), legs: [out], answered: true },
+      {
+        id: out.id,
+        start: out.start,
+        end: at(10, 20),
+        legs: [out],
+        answered: true,
+        accepted: true,
+      },
     ]);
   });
 
@@ -217,7 +253,14 @@ describe("a way back with no way out", () => {
   it("is away from the start of the day the person says they left", () => {
     const { trips } = detectTrips([back], answers({ outbounds: { [back.id]: at(10, 14) } }), NOW);
     expect(trips).toEqual([
-      { id: back.id, start: at(10, 14), end: back.end, legs: [back], answered: true },
+      {
+        id: back.id,
+        start: at(10, 14),
+        end: back.end,
+        legs: [back],
+        answered: true,
+        accepted: true,
+      },
     ]);
   });
 

@@ -9,11 +9,14 @@
  * leave the phone. Everything here is plain code over legs, so the same legs
  * give the same trips every time.
  *
- * The rule throughout is that Casy asks when in doubt. A wrong trip silently
- * costs a person dates, so only a clear pair applies by itself:
+ * The rule throughout is that Casy asks. A wrong trip silently costs a person
+ * dates, so nothing blocks until the person accepts it: a detected trip is a
+ * suggestion, drawn in their calendar for them to accept or decline, and only
+ * an accepted one counts. When the legs don't make a pair, Casy asks:
  *  - a way out with no way back (the flight to Norway, the drive home), or a
  *    way back with no way out, becomes a question: when are you back, when did
- *    you leave? The answer, a day, ends or starts the trip;
+ *    you leave? The answer, a day, ends or starts the trip, and is the
+ *    person's own say-so, so that trip needs no further accept;
  *  - which city is home is asked when the legs don't say (a single round trip
  *    looks the same from both ends);
  *  - journeys that are routine (a weekly train), that never cross a midnight
@@ -48,11 +51,13 @@ export interface TripAnswers {
   returns: Record<string, number>;
   /** Leg id of a way back with no way out, to the day the person left (a local midnight). */
   outbounds: Record<string, number>;
-  /** Leg ids the person said are not a trip (also: a trip they deleted). */
+  /** Ids of detected trips the person accepted: only these count. */
+  accepted: string[];
+  /** Ids the person declined, or deleted after accepting: never suggested again. */
   dismissed: string[];
 }
 
-export const NO_ANSWERS: TripAnswers = { returns: {}, outbounds: {}, dismissed: [] };
+export const NO_ANSWERS: TripAnswers = { returns: {}, outbounds: {}, accepted: [], dismissed: [] };
 
 /** A trip: away from the first departure to the last arrival. */
 export interface Trip {
@@ -63,20 +68,33 @@ export interface Trip {
   legs: Leg[];
   /** The person gave one end of it (a day), rather than every leg being in the calendar. */
   answered: boolean;
+  /** The person said yes to it (an answered trip is their own word): only this blocks. */
+  accepted: boolean;
 }
 
 /** What Casy asks when it is in doubt. */
 export type Question =
-  /** Legs don't say where home is: which of these? */
-  | { kind: "home"; cities: string[] }
+  /** Legs don't say where home is: which of these? `legs` are the next journey, to point at. */
+  | { kind: "home"; id: string; legs: Leg[]; cities: string[] }
   /** A way out with no way back: when are you back? */
   | { kind: "return"; id: string; legs: Leg[]; earliest: number; latest: number | null }
   /** A way back with no way out: when did you leave? */
   | { kind: "outbound"; id: string; legs: Leg[]; earliest: number | null; latest: number };
 
 export interface Detected {
+  /** Every trip found, accepted or not. */
   trips: Trip[];
   questions: Question[];
+}
+
+/** The trips the person accepted: the ones that block. */
+export function acceptedTrips(detected: Detected): Trip[] {
+  return detected.trips.filter((t) => t.accepted);
+}
+
+/** The trips waiting for the person's accept or decline. */
+export function pendingTrips(detected: Detected): Trip[] {
+  return detected.trips.filter((t) => !t.accepted);
 }
 
 /** From this many occurrences a title is a routine (a weekly train), not a journey. */
@@ -193,7 +211,16 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
   if (segments.length === 0) return { trips: [], questions: [] };
 
   const home = answers.home ?? inferHome(segments);
-  if (!home) return { trips: [], questions: [{ kind: "home", cities: homeCandidates(segments) }] };
+  if (!home) {
+    // Nothing is asked about journeys that are over.
+    const next = segments.find((s) => s.end > now);
+    return {
+      trips: [],
+      questions: next
+        ? [{ kind: "home", id: next.id, legs: next.legs, cities: homeCandidates(segments) }]
+        : [],
+    };
+  }
 
   const trips: Trip[] = [];
   const questions: Question[] = [];
@@ -215,6 +242,7 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
         end: Math.max(last.end, addDays(day, 1, APP_TIME_ZONE)),
         legs: open.flatMap((s) => s.legs),
         answered: true,
+        accepted: true,
       });
     } else if (last.end > now - ASK_AFTER_MS) {
       questions.push({
@@ -250,6 +278,7 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
               end: seg.end,
               legs: open.flatMap((s) => s.legs),
               answered: false,
+              accepted: answers.accepted.includes(first.id),
             });
           }
           lastHome = seg.end;
@@ -271,6 +300,7 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
           end: seg.end,
           legs: seg.legs,
           answered: true,
+          accepted: true,
         });
       } else if (seg.end > now) {
         questions.push({
