@@ -85,6 +85,7 @@ export const en: Messages = {
   },
   common: {
     cancel: "Cancel",
+    done: "Done",
     save: "Save",
     copy: "Copy",
     copied: "Copied",

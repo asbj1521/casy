@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import { Check, ChevronRight, type LucideIcon } from "lucide-react";
 
+import Switch from "@/components/ui/Switch";
 import { cn } from "@/lib/utils";
 
 /**
@@ -52,6 +53,7 @@ export function ListRow({
   to,
   onClick,
   tone = "default",
+  trailing,
   expanded,
   chevron = !!to || expanded !== undefined,
   selected = false,
@@ -72,6 +74,8 @@ export function ListRow({
   selected?: boolean;
   /** A row that opens and closes more rows: whether they are open (the chevron turns down). */
   expanded?: boolean;
+  /** A button at the end of a plain row (one with neither `to` nor `onClick`), such as a delete. */
+  trailing?: ReactNode;
 }) {
   const color = {
     default: "text-foreground",
@@ -95,6 +99,7 @@ export function ListRow({
           )}
         </span>
         {value != null && <span className="shrink-0 text-sm text-muted-foreground">{value}</span>}
+        {trailing}
         {chevron && (
           <ChevronRight
             className={cn(
@@ -122,6 +127,141 @@ export function ListRow({
       ) : (
         <div className={row}>{inner}</div>
       )}
+    </li>
+  );
+}
+
+/** ListRow's hairline part: a label, a line under it, and what goes at the end. */
+function RowText({
+  label,
+  detail,
+  end,
+  wrap = false,
+}: {
+  label: ReactNode;
+  detail?: ReactNode;
+  end?: ReactNode;
+  /** The line under may run over several lines rather than being cut. */
+  wrap?: boolean;
+}) {
+  return (
+    <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-medium text-foreground">{label}</span>
+        {detail && (
+          <span className={cn("block text-[13px] text-muted-foreground", !wrap && "truncate")}>
+            {detail}
+          </span>
+        )}
+      </span>
+      {end}
+    </span>
+  );
+}
+
+/**
+ * A row that is a choice (CLAUDE.md, Design language): picked, it gets an
+ * orange tick at the end. A real checkbox or radio sits inside, out of
+ * sight, so screen readers (and tests) find it by the row's label. Disabled,
+ * `value` takes the tick's place ("Inviteret").
+ */
+export function ListPickRow({
+  type,
+  name,
+  checked,
+  disabled = false,
+  onChange,
+  icon: Icon,
+  leading,
+  label,
+  detail,
+  value,
+}: {
+  type: "checkbox" | "radio";
+  /** A radio group's name. */
+  name?: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: () => void;
+  icon?: LucideIcon;
+  leading?: ReactNode;
+  label: ReactNode;
+  detail?: ReactNode;
+  value?: ReactNode;
+}) {
+  return (
+    <li className="group/row">
+      <label
+        className={cn(
+          "flex w-full items-center gap-3 pl-4 text-left transition-colors has-[:focus-visible]:bg-secondary",
+          disabled ? "cursor-default" : "cursor-pointer active:bg-secondary",
+        )}
+      >
+        <input
+          type={type}
+          name={name}
+          checked={checked}
+          disabled={disabled}
+          onChange={onChange}
+          className="sr-only"
+        />
+        {leading ?? (Icon && <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />)}
+        <RowText
+          label={label}
+          detail={detail}
+          end={
+            disabled ? (
+              value != null && (
+                <span className="shrink-0 text-sm text-muted-foreground">{value}</span>
+              )
+            ) : (
+              <Check
+                aria-hidden
+                className={cn("h-5 w-5 shrink-0 text-primary", !checked && "invisible")}
+              />
+            )
+          }
+        />
+      </label>
+    </li>
+  );
+}
+
+/** A row with a switch at its end, for something on or off. */
+export function ListSwitchRow({
+  icon: Icon,
+  label,
+  detail,
+  checked,
+  disabled = false,
+  onChange,
+}: {
+  icon?: LucideIcon;
+  label: string;
+  detail?: ReactNode;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <li className="group/row">
+      <div className="flex w-full items-center gap-3 pl-4">
+        {Icon && <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />}
+        <RowText
+          label={label}
+          detail={detail}
+          wrap
+          end={
+            <Switch
+              checked={checked}
+              onChange={onChange}
+              label={label}
+              disabled={disabled}
+              className="shrink-0"
+            />
+          }
+        />
+      </div>
     </li>
   );
 }

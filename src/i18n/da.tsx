@@ -90,6 +90,7 @@ export const da = {
   },
   common: {
     cancel: "Annuller",
+    done: "Færdig",
     save: "Gem",
     copy: "Kopiér",
     copied: "Kopieret",

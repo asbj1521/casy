@@ -2,6 +2,7 @@ import type { FormEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
+import { PANEL_CLASS, PANEL_MOTION } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
 
 /**
@@ -54,16 +55,6 @@ export default function Modal({
     document.body,
   );
 }
-
-const PANEL_MOTION = {
-  initial: { opacity: 0, scale: 0.97, y: 8 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.97, y: 8 },
-};
-
-// Scrolls inside when it's taller than the screen (a long list of people).
-const PANEL_CLASS =
-  "relative z-10 max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-2xl border bg-card p-5 shadow-xl";
 
 /** The dialog box, as a form: Enter in a field submits it. */
 export function ModalForm({

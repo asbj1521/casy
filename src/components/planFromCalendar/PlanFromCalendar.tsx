@@ -46,7 +46,6 @@ export default function PlanFromCalendar({ onClose }: { onClose: () => void }) {
   return (
     <>
       <BottomSheet
-        glass
         open={stage === "setup"}
         onClose={onClose}
         title={t.planFromCalendar.button}
