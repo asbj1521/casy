@@ -40,13 +40,15 @@ const OTHERS_ANSWERED: ("accepted" | "declined" | undefined)[][] = [
  */
 const PILE = pileTimeline(FRIENDS.length);
 const SHINE_HOLD = 1.4;
-const CARD_HOLD = 1.1;
-/** One swipe: the drag across with the stamp showing, then the throw off the screen. */
-const DRAG = 0.7;
-const FLING = 0.35;
-const SWIPE_GAP = 0.7;
-/** Agreed: it stays a while, so it reads as the end, before the round starts over. */
-const AGREED_HOLD = 3.4;
+const CARD_HOLD = 0.8;
+/** One swipe: a confident throw off the screen, the stamp showing at once. */
+const SWIPE_TIME = 0.45;
+const SWIPE_GAP = 0.35;
+/** Agreed, then "Tilføj til min kalender" pressed, then the event landing in everyone's calendar. */
+const AGREED_TO_ADD = 1.8;
+const ADD_TO_LANDED = 1.0;
+/** Landed in everyone's calendar: it stays a while, so it reads as the end. */
+const LANDED_HOLD = 2.4;
 /** From the list appearing to its send button being pressed (the button shows at LIST_BUTTON). */
 const LIST_TO_SEND = 3.0;
 const LIST_BUTTON = 1.3;
@@ -60,14 +62,38 @@ const AT = (() => {
   const list = shine + SHINE_HOLD;
   const send = list + LIST_TO_SEND;
   const cards = send + SEND_TO_PAN;
-  const swipes = [0, 1, 2].map((i) => cards + PAN + CARD_HOLD + i * (DRAG + FLING + SWIPE_GAP));
-  const agreed = swipes[2] + DRAG + FLING + 0.5;
-  return { pressed, shine, list, send, cards, swipes, agreed, end: agreed + AGREED_HOLD };
+  const swipes = [0, 1, 2].map((i) => cards + PAN + CARD_HOLD + i * (SWIPE_TIME + SWIPE_GAP));
+  const agreed = swipes[2] + SWIPE_TIME + 0.35;
+  const add = agreed + AGREED_TO_ADD;
+  const landed = add + ADD_TO_LANDED;
+  return {
+    pressed,
+    shine,
+    list,
+    send,
+    cards,
+    swipes,
+    agreed,
+    add,
+    landed,
+    end: landed + LANDED_HOLD,
+  };
 })();
 const CYCLE_MS = Math.round((AT.end + 0.5) * 1000);
 
 /** The moments in a round, in order: the picture changes at each. */
-const STEPS = [0, AT.pressed, AT.shine, AT.list, AT.send, AT.cards, ...AT.swipes, AT.agreed];
+const STEPS = [
+  0,
+  AT.pressed,
+  AT.shine,
+  AT.list,
+  AT.send,
+  AT.cards,
+  ...AT.swipes,
+  AT.agreed,
+  AT.add,
+  AT.landed,
+];
 const PRESSED = 1;
 const SHINE = 2;
 const LIST = 3;
@@ -75,6 +101,8 @@ const SEND = 4;
 const CARDS = 5;
 const FIRST_SWIPE = 6;
 const AGREED = 9;
+const ADD = 10;
+const LANDED = 11;
 
 /**
  * The app's welcome screen picture (#151): how Casy plans, made up, in three
@@ -146,13 +174,12 @@ export default function WelcomePile() {
       <span className="truncate">{label}</span>
     </motion.span>
   );
-  const scene = step >= CARDS ? "swipe" : step >= LIST ? "list" : "pile";
+  const scene = step >= ADD ? "added" : step >= CARDS ? "swipe" : step >= LIST ? "list" : "pile";
   const alpha = layerAlpha(FRIENDS.length);
   // How many of Sara's swipes have begun: each card leaves as its swipe
   // begins, and the next rises to the top under it, as the real deck does,
   // waiting there for its own swipe.
   const started = step >= FIRST_SWIPE ? Math.min(FREE.length, step - FIRST_SWIPE + 1) : 0;
-  const swiping = step >= FIRST_SWIPE && step < AGREED ? started - 1 : null;
 
   return (
     <div aria-hidden className="pointer-events-none flex h-full flex-col">
@@ -332,8 +359,15 @@ export default function WelcomePile() {
                 <motion.div
                   className="absolute inset-0 flex flex-col items-center justify-center rounded-3xl border bg-card p-5 text-center shadow-xl shadow-black/10"
                   initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 240, damping: 20 }}
+                  // Added: it gives a little as the event leaves it for the calendars below.
+                  animate={
+                    step >= ADD ? { opacity: 1, scale: [1, 0.96, 1] } : { opacity: 1, scale: 1 }
+                  }
+                  transition={
+                    step >= ADD
+                      ? { delay: 0.45, duration: 0.35 }
+                      : { type: "spring", stiffness: 240, damping: 20 }
+                  }
                 >
                   <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white">
                     <Check className="h-7 w-7" strokeWidth={3} />
@@ -348,10 +382,21 @@ export default function WelcomePile() {
                 </motion.div>
               )}
             </div>
-            <DemoButtons
-              pressing={swiping !== null ? ANSWERS[swiping] : null}
-              hidden={step >= AGREED}
-            />
+            {/* Under the card: the answer buttons while Sara answers; once
+                agreed, "Tilføj til min kalender", and everyone's calendars. */}
+            <div className="relative mt-3 h-[112px] w-full max-w-[320px] shrink-0">
+              <DemoButtons hidden={step >= AGREED} />
+              {step >= AGREED && (
+                <AddedToCalendars
+                  pressed={step >= ADD}
+                  landed={step >= LANDED}
+                  button={t.addToCalendar.button}
+                  event={t.welcome.event}
+                  day={new Date(day(FREE[0]))}
+                  people={[t.welcome.you, ...FRIENDS.map((f) => f.name)]}
+                />
+              )}
+            </div>
           </motion.div>
         )}
       </motion.div>
@@ -372,8 +417,8 @@ function demoMonth(now: number): number {
 }
 
 /** The scene's caption, numbered, swapping as the scenes change. */
-function Caption({ scene, text }: { scene: "pile" | "list" | "swipe"; text: string }) {
-  const n = { pile: 1, list: 2, swipe: 3 }[scene];
+function Caption({ scene, text }: { scene: "pile" | "list" | "swipe" | "added"; text: string }) {
+  const n = { pile: 1, list: 2, swipe: 3, added: 4 }[scene];
   return (
     <div className="flex h-10 shrink-0 items-center justify-center px-4">
       <AnimatePresence mode="wait" initial={false}>
@@ -486,8 +531,8 @@ function Thrown({
  * A suggested date on Sara's phone, drawn as the swipe screen's card
  * (DateDeck's CardFace and SwipeCard's stamps): "Dato 1 af 3", the date, the
  * time, how soon, and the others' answers so far. Stacked under the one being
- * answered (`depth`); answered, it is dragged across with its stamp showing,
- * then thrown off the screen, right for can and left for can't.
+ * answered (`depth`); answered, it is stamped and
+ * thrown off the screen in one go, right for can and left for can't.
  */
 function DemoCard({
   depth,
@@ -518,16 +563,12 @@ function DemoCard({
       initial={false}
       animate={
         answer
-          ? {
-              x: [0, dir * 120, dir * 640],
-              rotate: [0, dir * 8, dir * 18],
-              opacity: [1, 1, 0],
-            }
+          ? { x: dir * 640, rotate: dir * 18, opacity: 0 }
           : { x: 0, rotate: 0, y: depth * 10, scale: 1 - depth * 0.04, opacity: depth > 1 ? 0 : 1 }
       }
       transition={
         answer
-          ? { duration: DRAG + FLING, times: [0, DRAG / (DRAG + FLING), 1], ease: "easeInOut" }
+          ? { duration: SWIPE_TIME, ease: [0.3, 0, 0.8, 0.6] }
           : { type: "spring", stiffness: 300, damping: 26 }
       }
     >
@@ -569,7 +610,7 @@ function DemoCard({
           )}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: DRAG * 0.6 }}
+          transition={{ duration: 0.1 }}
         >
           {right ? t.swipe.can : t.swipe.cant}
         </motion.span>
@@ -580,16 +621,9 @@ function DemoCard({
 
 /**
  * The swipe screen's three answer buttons (SwipeCard's AnswerButtons, drawn
- * here without their handlers): the one matching the answer being given
- * presses in as the card goes.
+ * here without their handlers), as Sara's screen shows them while she swipes.
  */
-function DemoButtons({
-  pressing,
-  hidden,
-}: {
-  pressing: "accepted" | "declined" | null;
-  hidden: boolean;
-}) {
+function DemoButtons({ hidden }: { hidden: boolean }) {
   const t = useT();
   const base = "flex items-center justify-center rounded-full border-2 bg-card shadow-md";
   const buttons = [
@@ -599,21 +633,125 @@ function DemoButtons({
   ] as const;
   return (
     <motion.div
-      className="flex shrink-0 items-start justify-center gap-6 pt-3"
+      className="absolute inset-x-0 top-0 flex items-start justify-center gap-6"
       animate={{ opacity: hidden ? 0 : 1 }}
     >
       {buttons.map(([response, Icon, size, iconSize, label]) => (
         <div key={response} className="flex flex-col items-center gap-1">
-          <motion.span
-            className={cn(base, size)}
-            animate={pressing === response ? { scale: [1, 0.86, 1] } : { scale: 1 }}
-            transition={{ duration: 0.35 }}
-          >
+          <span className={cn(base, size)}>
             <Icon className={iconSize} strokeWidth={2.5} />
-          </motion.span>
+          </span>
           <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
         </div>
       ))}
     </motion.div>
+  );
+}
+
+/**
+ * The end: "Tilføj til min kalender" (the real button) pressed, and the
+ * event flying into everyone's calendar at once: a small Apple-style calendar
+ * tile per person (the weekday in red, the day), each bumping and ticked as
+ * it lands, so it reads as planned for everyone, not just you.
+ */
+function AddedToCalendars({
+  pressed,
+  landed,
+  button,
+  event,
+  day,
+  people,
+}: {
+  pressed: boolean;
+  landed: boolean;
+  button: string;
+  event: string;
+  day: Date;
+  people: string[];
+}) {
+  const { lang } = useLang();
+  const weekday = day
+    .toLocaleDateString(LOCALE[lang], { weekday: "short", timeZone: TZ })
+    .replace(/\.$/, "")
+    .toUpperCase();
+  const dayNumber = day
+    .toLocaleDateString(LOCALE[lang], { day: "numeric", timeZone: TZ })
+    .replace(/\.$/, "");
+  return (
+    <>
+      <motion.div
+        className="absolute inset-x-6 top-2 flex h-12 items-center justify-center rounded-full bg-cta text-[15px] font-bold text-white shadow-lg"
+        initial={{ opacity: 0, y: 10 }}
+        animate={
+          pressed
+            ? { opacity: [1, 1, 0], y: 0, scale: [1, 0.92, 1] }
+            : { opacity: 1, y: 0, scale: 1 }
+        }
+        transition={
+          pressed ? { duration: 0.5, times: [0, 0.6, 1] } : { delay: 0.6, duration: 0.35 }
+        }
+      >
+        {button}
+      </motion.div>
+      {pressed && (
+        <div className="absolute inset-0 grid grid-cols-4 items-end">
+          {people.map((name, i) => (
+            <motion.div
+              key={name}
+              className="relative flex flex-col items-center gap-1"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.06, duration: 0.3 }}
+            >
+              {/* The event, flying down from the card into this calendar. */}
+              <motion.span
+                className="absolute left-1/2 top-0 z-10 -translate-x-1/2 truncate rounded-md bg-emerald-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow"
+                initial={{ opacity: 0, y: -150, x: `${(1.5 - i) * 85}%`, scale: 1 }}
+                animate={
+                  landed
+                    ? { opacity: 0, y: 18, x: "0%", scale: 0.5 }
+                    : { opacity: 1, y: -110, x: `${(1.5 - i) * 85}%`, scale: 1 }
+                }
+                transition={
+                  landed
+                    ? { duration: 0.45, delay: i * 0.05, ease: [0.5, 0, 0.9, 0.4] }
+                    : { delay: 0.5, duration: 0.25 }
+                }
+              >
+                {event}
+              </motion.span>
+              <motion.div
+                className="relative flex h-14 w-14 flex-col items-center overflow-visible rounded-xl border bg-card pt-1 shadow-md"
+                animate={landed ? { scale: [1, 1.14, 1] } : { scale: 1 }}
+                transition={{ delay: 0.4 + i * 0.05, duration: 0.35 }}
+              >
+                <span className="text-[9px] font-bold leading-none text-red-500">{weekday}</span>
+                <span className="text-[24px] font-light leading-tight text-foreground">
+                  {dayNumber}
+                </span>
+                {landed && (
+                  <motion.span
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      delay: 0.45 + i * 0.05,
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 18,
+                    }}
+                  >
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  </motion.span>
+                )}
+              </motion.div>
+              <span className="max-w-full truncate text-[11px] font-medium text-muted-foreground">
+                {name}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
