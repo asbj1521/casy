@@ -143,9 +143,12 @@ export class FakeBackend {
         this.changed();
         return ok({});
       case "calendar-phone":
-        // Only the iPhone app sends the phone's calendars, and these tests run
-        // the website; answered as for a phone whose connection was removed.
-        return ok({ gone: true });
+        // Only the iPhone app sends the phone's calendars. A plain update is
+        // answered as for a phone whose connection was removed; connecting
+        // (the app, a test faking it) makes one.
+        return body.create === true
+          ? ok({ connectionId: "c-phone", calendars: 1, busyBlocks: 0 })
+          : ok({ gone: true });
       case "oauth-google-start":
       case "oauth-outlook-start":
         return ok({ url: `https://consent.test/${name}` });

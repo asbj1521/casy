@@ -62,7 +62,7 @@ function within<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /** The run under way, so a tap and a background trigger at once share one send. */
-let running: Promise<PhoneSyncOutcome> | null = null;
+let running: { promise: Promise<PhoneSyncOutcome>; create: boolean } | null = null;
 
 /**
  * Read the phone's calendars and send them. `create` is "Connect this phone":
@@ -74,10 +74,22 @@ export function syncPhone(
   userId: string,
   { create }: { create: boolean },
 ): Promise<PhoneSyncOutcome> {
-  running ??= runSync(queryClient, userId, create).finally(() => {
-    running = null;
+  // Asking to connect never shares the answer of a plain update already under
+  // way (#132): that one only updates a connection that exists, so with the
+  // connection removed it answers "gone", which is no answer to "connect". It
+  // runs after it instead.
+  if (running && (running.create || !create)) return running.promise;
+  const before = running?.promise.catch(() => undefined);
+  const promise = (
+    before
+      ? before.then(() => runSync(queryClient, userId, create))
+      : runSync(queryClient, userId, create)
+  ).finally(() => {
+    if (running === mine) running = null;
   });
-  return running;
+  const mine = { promise, create };
+  running = mine;
+  return promise;
 }
 
 async function runSync(

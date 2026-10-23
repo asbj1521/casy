@@ -8,6 +8,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
+import { ME } from "./world";
 
 test.use({ world: { calendars: "none", groups: "some" } });
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "the app is a phone"));
@@ -26,13 +27,17 @@ const METHODS = [
 ];
 
 /** The app's bridge, answering for iOS: `access` is what the person will say to its question. */
-async function asTheApp(page: Page, access: "granted" | "denied") {
+async function asTheApp(
+  page: Page,
+  access: "granted" | "denied",
+  { alreadyAnswered = false }: { alreadyAnswered?: boolean } = {},
+) {
   await page.addInitScript(
-    ({ methods, answer }) => {
+    ({ methods, answer, already }) => {
       const w = window as unknown as Record<string, unknown>;
       const asked: string[] = [];
       w.__asked = asked;
-      let state = "prompt";
+      let state = already ? answer : "prompt";
       w.Capacitor = {
         isNativePlatform: () => true,
         PluginHeaders: [
@@ -61,7 +66,7 @@ async function asTheApp(page: Page, access: "granted" | "denied") {
         },
       };
     },
-    { methods: METHODS, answer: access },
+    { methods: METHODS, answer: access, already: alreadyAnswered },
   );
 }
 
@@ -115,4 +120,23 @@ test("signing in on the app goes straight to My calendar, not a connect page", a
   await page.goto("/sign-in");
   // Signed in already (the fixture), with no calendar: the website's phone would be sent on.
   await expect(page).toHaveURL(/\/calendar-overview$/);
+});
+
+test("it connects even when the app still remembers a connection the server has removed", async ({
+  page,
+  backend,
+}) => {
+  // iOS was allowed long ago, and this phone's connection was removed since:
+  // the routine update (which only updates a connection) finds nothing to
+  // update, and the question to connect must not be answered by that.
+  await asTheApp(page, "granted", { alreadyAnswered: true });
+  await page.addInitScript(
+    (key) => localStorage.setItem(key, "removed-connection"),
+    `casy-phone-calendar:${ME.id}`,
+  );
+  await page.goto("/calendar-overview");
+  await expect
+    .poll(() => backend.calls.find((c) => c.name === "calendar-phone" && c.body.create === true))
+    .toBeTruthy();
+  await expect(page.getByRole("status")).toHaveCount(0);
 });

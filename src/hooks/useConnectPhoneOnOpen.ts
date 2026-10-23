@@ -4,9 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSignedInUser } from "@/context/auth";
 import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { isNativeApp } from "@/lib/nativeApp";
-
-/** Accounts already asked on this launch: once, so a refusal isn't asked again on every visit. */
-const askedThisLaunch = new Set<string>();
+import { askedAlready } from "@/lib/phoneAsk";
 
 export type PhoneAccessState =
   /** iOS's question is on screen, or the phone is being read. */
@@ -40,8 +38,7 @@ export function useConnectPhoneOnOpen(none: boolean): {
 
   const on = isNativeApp && none;
   useEffect(() => {
-    if (!on || askedThisLaunch.has(userId)) return;
-    askedThisLaunch.add(userId);
+    if (!on || askedAlready(userId)) return;
     mutate();
   }, [on, userId, mutate]);
 
@@ -56,6 +53,9 @@ export function useConnectPhoneOnOpen(none: boolean): {
     return () => document.removeEventListener("visibilitychange", back);
   }, [on, denied, mutate]);
 
+  // Whatever the outcome, an empty calendar is never left unexplained: only a
+  // send that went through (and so filled it in) says nothing.
+  const sent = connect.data?.state === "synced";
   const state: PhoneAccessState = !on
     ? null
     : connect.isPending
@@ -64,6 +64,8 @@ export function useConnectPhoneOnOpen(none: boolean): {
         ? "failed"
         : denied
           ? "denied"
-          : null;
+          : connect.isSuccess && !sent
+            ? "failed"
+            : null;
   return { state, retry: () => mutate() };
 }
