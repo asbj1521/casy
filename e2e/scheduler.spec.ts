@@ -82,6 +82,8 @@ test.describe("on a laptop's screen", () => {
 
   test("switching tabs never changes the settings box's height", async ({ page }) => {
     await page.goto("/");
+    // The box is as tall as the answer beside it: measured once the answer is in.
+    await expect(page.getByText("Onsdag 7. oktober").first()).toBeVisible();
     const before = (await boxOf(settingsBox(page))).height;
     for (const tab of ["Deltagere", "Sted og note", "Afstemning"]) {
       await page.getByRole("tab", { name: tab }).click();
