@@ -39,7 +39,7 @@ npm run format      # Prettier
 deno test --node-modules-dir=none --allow-all _shared/
 ```
 
-CI runs lint, the Prettier check, the build, and both test suites on every push and pull request to `main`.
+CI runs lint, knip (unused code), the Prettier check, the build, and both test suites on every push and pull request to `main`.
 
 ## Deploying
 

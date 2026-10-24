@@ -4,7 +4,7 @@ import type { EventToProfile } from "@/api/eventProfile";
 import { type RankedFacts } from "@/lib/paperPile";
 import type { FoundDate } from "@/lib/scheduler";
 
-export const PHASES = ["landing", "pressed", "revealed", "lifted", "ranking", "done"] as const;
+const PHASES = ["landing", "pressed", "revealed", "lifted", "ranking", "done"] as const;
 export type Phase = (typeof PHASES)[number];
 export const atLeast = (phase: Phase, than: Phase) => PHASES.indexOf(phase) >= PHASES.indexOf(than);
 

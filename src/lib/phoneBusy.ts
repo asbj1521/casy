@@ -16,7 +16,7 @@
 import { APP_TIME_ZONE, wallTime } from "@/lib/zone";
 
 /** One calendar on the phone, as the plugin lists it. */
-export interface PhoneCalendar {
+interface PhoneCalendar {
   /** EventKit's calendarIdentifier: stable while the calendar exists on the phone. */
   id: string;
   name: string;

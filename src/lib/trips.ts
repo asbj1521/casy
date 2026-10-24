@@ -123,8 +123,6 @@ export const MAX_TRIP_DAYS = 60;
 const CONNECTION_MS = 12 * 3_600_000;
 /** A way out with no way back is only asked about while it is recent or to come. */
 const ASK_AFTER_MS = 3 * 86_400_000;
-/** How many days an answer may be offered for: as long as a trip may be. */
-export const ANSWER_DAYS = MAX_TRIP_DAYS;
 
 const DAY_MS = 86_400_000;
 
@@ -375,7 +373,7 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
 /**
  * The days to offer for a question, each a local midnight, soonest first for a
  * way back and latest first for a way out (the day before the way back is the
- * likeliest). At most ANSWER_DAYS, within the question's bounds.
+ * likeliest). At most MAX_TRIP_DAYS (as long as a trip may be), within the question's bounds.
  */
 export function dayOptions(question: Exclude<Question, { kind: "home" }>, now: number): number[] {
   const days: number[] = [];
@@ -384,14 +382,14 @@ export function dayOptions(question: Exclude<Question, { kind: "home" }>, now: n
       startOfDay(question.earliest, APP_TIME_ZONE),
       startOfDay(now, APP_TIME_ZONE),
     );
-    for (let i = 0; i < ANSWER_DAYS; i++) {
+    for (let i = 0; i < MAX_TRIP_DAYS; i++) {
       const day = addDays(first, i, APP_TIME_ZONE);
       if (question.latest !== null && day > startOfDay(question.latest, APP_TIME_ZONE)) break;
       days.push(day);
     }
   } else {
     const last = startOfDay(question.latest, APP_TIME_ZONE);
-    for (let i = 0; i < ANSWER_DAYS; i++) {
+    for (let i = 0; i < MAX_TRIP_DAYS; i++) {
       const day = addDays(last, -i, APP_TIME_ZONE);
       if (question.earliest !== null && day < question.earliest) break;
       days.push(day);

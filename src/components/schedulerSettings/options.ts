@@ -9,7 +9,7 @@ import { formatClockMinutes } from "@/lib/format";
 export const DURATION_VALUES = Array.from({ length: 24 }, (_, i) => (i + 1) * 30);
 
 /** Which hour a meeting starts: any hour of the day. */
-export const START_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
+const START_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
   label: `${String(h).padStart(2, "0")}:00`,
   value: h,
 }));
@@ -20,9 +20,9 @@ export const MAX_NAME_LENGTH = 60;
 /** Stands for "any day" where a start day is picked from numbers. */
 export const ANY_DAY = -1;
 /** Stands for "any time" atop the start-hour dropdown, same trick as ANY_DAY. */
-export const ANY_TIME = -1;
+const ANY_TIME = -1;
 /** Stands for the AI's start window (#133), listed only while there is one. */
-export const START_WINDOW = -2;
+const START_WINDOW = -2;
 
 /** startsAt's options: the AI's window while there is one, "any time", then the hours. */
 export function startHourOptions(t: Messages, settings: SchedulerSettings) {

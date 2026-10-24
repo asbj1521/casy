@@ -8,7 +8,7 @@ import { useAiAllowed } from "@/hooks/useAiAllowed";
 /** How long the name, place and note must rest before they are asked about. */
 const SETTLE_MS = 2000;
 /** How long sending waits for a profile still on its way, at most. */
-export const PROFILE_WAIT_MS = 2000;
+const PROFILE_WAIT_MS = 2000;
 
 /**
  * One profile per exact input, kept for the visit: the same event is never

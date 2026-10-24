@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  ANSWER_DAYS,
   cityKey,
   dayOptions,
   detectTrips,
@@ -274,7 +273,7 @@ describe("dayOptions", () => {
 
   it("offers the days after a way out, soonest first", () => {
     const days = dayOptions(ask([out]), NOW);
-    expect(days).toHaveLength(ANSWER_DAYS);
+    expect(days).toHaveLength(MAX_TRIP_DAYS);
     expect(days[0]).toBe(at(10, 13));
     expect(days[1]).toBe(at(10, 14));
   });
@@ -295,7 +294,7 @@ describe("dayOptions", () => {
     const days = dayOptions(ask([back]), NOW);
     expect(days[0]).toBe(at(10, 18));
     expect(days[1]).toBe(at(10, 17));
-    expect(days).toHaveLength(ANSWER_DAYS);
+    expect(days).toHaveLength(MAX_TRIP_DAYS);
   });
 
   it("goes no further back than the person last got home", () => {

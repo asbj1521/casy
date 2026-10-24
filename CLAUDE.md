@@ -57,11 +57,15 @@ npm run build            # Type-check + production build
 npm run test:run         # Frontend tests once
 npm run e2e              # Browser tests (builds into dist-e2e/, serves it on port 4317)
 npm run lint             # ESLint
+npm run knip             # Unused files, exports and dependencies in src/ and e2e/ (CI runs it; an export used only in its own file loses its `export`)
 npm run format           # Prettier (format:check is what CI runs)
 npx tsc -b               # Type-check only
 
 # Edge Functions (run from supabase/functions/). --node-modules-dir=none stops Deno
-# from using the frontend's node_modules; delete any deno.lock it leaves behind.
+# from using the frontend's node_modules. The tracked root deno.lock pins the functions'
+# jsr versions (without it Deno can pick one too new for its minimum dependency age, here
+# and in CI), so keep it, but Deno also rewrites it to match the web app's package.json:
+# commit it only for a new function dependency, `git checkout deno.lock` otherwise.
 deno test --node-modules-dir=none --allow-all _shared/
 deno check --node-modules-dir=none */index.ts _shared/*.ts
 
@@ -177,7 +181,7 @@ Order: migrations before the functions that depend on them. Afterwards, `supabas
 
 ## CI/CD
 
-GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push to any branch and on PRs to `main`, in three jobs: the web app (ESLint, the Prettier check, `npm run build`, which type-checks first, `e2e/` included, and the Vitest suite), the browser tests (Playwright in its Docker image, whose version must match the pinned `@playwright/test`; on failure the report with screenshot diffs is uploaded as `browser-test-results`), and the Edge Functions (`deno check` and the Deno tests). `.github/workflows/screenshots.yml` makes new reference screenshots on a branch (never `main`), running the whole browser suite: it is where a `[screenshots]` commit's browser tests run, since CI's browser job skips that commit and the bot's commit starts no CI. Run the same locally before handing work over (`npm run e2e` covers the behaviour tests). CI never builds the iPhone app; ESLint and Prettier skip `ios/`.
+GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push to any branch and on PRs to `main`, in three jobs: the web app (ESLint, knip, the Prettier check, `npm run build`, which type-checks first, `e2e/` included, and the Vitest suite), the browser tests (Playwright in its Docker image, whose version must match the pinned `@playwright/test`; on failure the report with screenshot diffs is uploaded as `browser-test-results`), and the Edge Functions (`deno check` and the Deno tests). `.github/workflows/screenshots.yml` makes new reference screenshots on a branch (never `main`), running the whole browser suite: it is where a `[screenshots]` commit's browser tests run, since CI's browser job skips that commit and the bot's commit starts no CI. Run the same locally before handing work over (`npm run e2e` covers the behaviour tests). CI never builds the iPhone app; ESLint and Prettier skip `ios/`.
 
 ---
 

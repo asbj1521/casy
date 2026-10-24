@@ -12,7 +12,7 @@ import { FakeBackend } from "./backend";
 import { DEFAULT_WORLD, makeWorld, ME, NOW, type WorldOptions } from "./world";
 
 /** The project the build talks to (playwright.config.ts sets it). */
-export const SUPABASE_URL = "https://test-project.supabase.co";
+const SUPABASE_URL = "https://test-project.supabase.co";
 /** auth-js's storage key for it (authOptions in src/lib/supabase.ts). */
 const SESSION_KEY = "sb-test-project-auth-token";
 

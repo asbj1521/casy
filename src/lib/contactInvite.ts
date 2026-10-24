@@ -38,13 +38,13 @@ async function invitePlugin(): Promise<{ plugin: InvitePlugin }> {
 }
 
 /** The people picked; none when the picker was closed. */
-export async function pickContacts(): Promise<PickedContact[]> {
+async function pickContacts(): Promise<PickedContact[]> {
   const { plugin } = await invitePlugin();
   return (await plugin.pickContacts()).contacts;
 }
 
 /** Whether this phone can send a message (not the simulator, nor a phone without Messages). */
-export async function canText(): Promise<boolean> {
+async function canText(): Promise<boolean> {
   const { plugin } = await invitePlugin();
   return (await plugin.canText()).able;
 }

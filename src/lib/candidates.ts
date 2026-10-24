@@ -30,7 +30,7 @@ import { addDays, dayOf, localDate } from "@/lib/zone";
 import type { Participant } from "@/types";
 
 /** How many dates a vote offers, when there are that many good ones. */
-export const CANDIDATE_COUNT = 5;
+const CANDIDATE_COUNT = 5;
 
 /** The fewest days between two meetings offered in one vote. */
 const MEETING_GAP_DAYS = 2;

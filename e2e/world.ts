@@ -21,7 +21,7 @@ import type { EventCategory } from "@/types";
 /** The frozen "now": Wednesday 7 October 2026, 10:00 Danish time. */
 export const NOW = "2026-10-07T08:00:00.000Z";
 
-export const TIME_ZONE = "Europe/Copenhagen";
+const TIME_ZONE = "Europe/Copenhagen";
 
 /* ----------------------------------------------------------------------------
  * Danish time, without the site's own helpers (the tests stay independent of
@@ -54,7 +54,7 @@ function offsetAt(utc: number): number {
 }
 
 /** The calendar day `n` days after `day` ("YYYY-MM-DD"). */
-export function plusDays(day: string, n: number): string {
+function plusDays(day: string, n: number): string {
   const [y, m, d] = day.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }

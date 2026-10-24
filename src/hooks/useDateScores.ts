@@ -6,7 +6,7 @@ import type { EventImpact } from "@/api/eventProfile";
 import type { EventSettings } from "@/lib/eventSearch";
 
 /** How long a screen waits for the scores before it goes on without them. */
-export const SCORE_WAIT_MS = 1_500;
+const SCORE_WAIT_MS = 1_500;
 
 /**
  * How well each date of `dates` suits a group by everyone's important events

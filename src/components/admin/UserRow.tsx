@@ -236,7 +236,7 @@ export default function UserRow({
  * once switched on here, and loses it again with a second tap. Saves at once
  * and refetches the overview.
  */
-export function AiAccess({ user, inline = false }: { user: AdminUser; inline?: boolean }) {
+function AiAccess({ user, inline = false }: { user: AdminUser; inline?: boolean }) {
   const t = useT();
   const queryClient = useQueryClient();
   const toggle = useMutation({
