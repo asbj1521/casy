@@ -14,6 +14,7 @@ import {
 } from "@/lib/eventSearch";
 import { addDays, startOfMonth } from "@/lib/zone";
 import type { Participant, TimeSlot } from "@/types";
+import { appRandom } from "@/lib/appRandom";
 
 /**
  * When a trip that starts on a set weekday leaves and comes home. 17:00 is
@@ -154,7 +155,7 @@ export const DEFAULT_PRESETS: readonly MeetingPreset[] = [
 ];
 
 /** What the page opens on: a random preset meeting; a weekend trip if switched. */
-export function randomDefaultSettings(random: () => number = Math.random): SchedulerSettings {
+export function randomDefaultSettings(random: () => number = appRandom): SchedulerSettings {
   const preset = DEFAULT_PRESETS[Math.floor(random() * DEFAULT_PRESETS.length)];
   return {
     multiDay: false,

@@ -10,7 +10,6 @@
  * class on <html>, set before the first render (main.tsx).
  */
 import { isNativeApp } from "@/lib/nativeApp";
-import { setNativeAppearance } from "@/lib/phoneCalendar";
 import { readStored, writeStored } from "@/lib/storage";
 
 export type ThemeChoice = "system" | "light" | "dark";
@@ -94,5 +93,8 @@ export function onThemeChange(onChange: () => void): () => void {
  */
 export function syncNativeTheme(choice: ThemeChoice): void {
   if (!isNativeApp) return;
-  setNativeAppearance(choice).catch((err) => console.warn("telling the app its theme failed", err));
+  // The plugin code loads only in the app (#157).
+  import("@/lib/phoneCalendar")
+    .then((m) => m.setNativeAppearance(choice))
+    .catch((err) => console.warn("telling the app its theme failed", err));
 }

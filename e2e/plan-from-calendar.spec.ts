@@ -1,7 +1,17 @@
 /** Planning from My calendar on a phone (#126): the Planlæg sheet, the paper pile, the dates sent. */
+import type { Page } from "@playwright/test";
+
 import { expect, test } from "./fixtures";
 
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "phones only"));
+
+/** Planlæg starts with a random group; a test that needs one picks it. */
+async function pickGroup(page: Page, name: string) {
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  await sheet.getByRole("button", { name: /^Gruppe/ }).click();
+  await page.getByRole("button", { name: new RegExp(`^${name}`) }).click();
+  await expect(sheet.getByRole("button", { name: /^Gruppe/ })).toContainText(name);
+}
 
 test("Planlæg opens over the calendar, and the dates found are sent as they were shown", async ({
   page,
@@ -11,7 +21,7 @@ test("Planlæg opens over the calendar, and the dates found are sent as they wer
   await page.getByRole("button", { name: "Planlæg" }).click();
   await expect(page).toHaveURL(/\?plan$/);
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
-  await expect(sheet.getByText("Løbeklubben")).toBeVisible();
+  await pickGroup(page, "Løbeklubben");
 
   // Reduced motion (as every test runs): straight to the dates, no pile.
   await sheet.getByRole("button", { name: "Find dato" }).click();
@@ -69,6 +79,8 @@ test("Planlæg med AI takes over the sheet, then hands the settings back filled 
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: "Planlæg" }).click();
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  // Its members are who the names in the text are matched against.
+  await pickGroup(page, "Løbeklubben");
   // By hand first; the AI is one button above.
   await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toBeVisible();
   await sheet.getByRole("button", { name: "Planlæg med AI" }).click();

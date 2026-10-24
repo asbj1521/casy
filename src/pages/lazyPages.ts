@@ -3,10 +3,12 @@
  * page for its route (App.tsx) and warms it early, when a link to it is
  * hovered or a card is about to fly there, so both always fetch one chunk.
  *
- * The scheduler (FindDate) and the landing page are not here: they are what
- * people land on, so they ship in the entry chunk.
+ * The landing page is not here: it is what visitors land on, so it ships in
+ * the entry chunk. The scheduler (FindDate) is (#157): phones and the app
+ * never show it, and on a computer App.tsx starts fetching it at once.
  */
 export const loadPage = {
+  findDate: () => import("@/pages/FindDate"),
   profile: () => import("@/pages/Profile"),
   calendarOverview: () => import("@/pages/CalendarOverview"),
   calendarAccounts: () => import("@/pages/CalendarAccounts"),

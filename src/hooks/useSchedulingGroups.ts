@@ -22,13 +22,13 @@
  * the examples that means nine groups' worth of generated years never happen;
  * for real groups it means one request rather than one per group.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { calendarBusyQuery } from "@/api/calendars";
 import { CURRENT_USER_ID } from "@/api/currentUser";
 import { groupBusyQuery, groupsQuery, participantsFromGroup, type GroupMember } from "@/api/groups";
-import { EXAMPLE_GROUPS, exampleGroup } from "@/api/mockData";
+import { EXAMPLE_GROUPS } from "@/api/exampleGroups";
 import { displayName, useAuth } from "@/context/auth";
 import { useExampleCarousel, type Carousel } from "@/hooks/useExampleCarousel";
 import { useT } from "@/i18n/lang";
@@ -37,6 +37,7 @@ import { withHolidayBlocks } from "@/lib/holidayBlocks";
 import { busyFromCalendars, withRealCalendar } from "@/lib/realCalendar";
 import { APP_TIME_ZONE } from "@/lib/zone";
 import type { FriendGroup } from "@/types";
+import { appRandom, oncePerLoad } from "@/lib/appRandom";
 
 /** What the page shows in the switcher: a group, plus how real it is. */
 export interface SchedulingGroup extends FriendGroup {
@@ -75,6 +76,30 @@ interface SchedulingGroups {
   myCalendarsFailed: boolean;
 }
 
+/**
+ * The examples' generated calendars (mockData.ts), fetched the first time the
+ * examples are shown (#157) and kept for the visit, so the carousel turning
+ * never waits on them again.
+ */
+type ExampleCalendars = typeof import("@/api/mockData");
+let exampleCalendars: ExampleCalendars | null = null;
+
+function useExampleCalendars(wanted: boolean): ExampleCalendars | null {
+  const [loaded, setLoaded] = useState(exampleCalendars);
+  useEffect(() => {
+    if (!wanted || loaded) return;
+    let live = true;
+    void import("@/api/mockData").then((m) => {
+      exampleCalendars = m;
+      if (live) setLoaded(m);
+    });
+    return () => {
+      live = false;
+    };
+  }, [wanted, loaded]);
+  return loaded;
+}
+
 export function useSchedulingGroups(selectedGroupId: string | null): SchedulingGroups {
   const { user } = useAuth();
   const t = useT();
@@ -91,9 +116,10 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
   // already picked (FindDate's pageMemory) starts with it stopped.
   const showingExamples = !realQuery.isLoading && !hasRealGroups;
   const examplePicked = EXAMPLE_GROUPS.some((g) => g.id === selectedGroupId);
+  const generated = useExampleCalendars(showingExamples);
   const carousel = useExampleCarousel(EXAMPLE_GROUPS.length, showingExamples && !examplePicked);
   // Drawn once per mount, so the random real group stays put across renders.
-  const [fallbackSeed] = useState(Math.random);
+  const [fallbackSeed] = useState(() => oncePerLoad("group-seed", appRandom));
 
   // Your own busy time, for the examples only. Real groups get yours from the
   // server along with everyone else's.
@@ -150,7 +176,7 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
     if (!showingExamples) return [];
 
     return EXAMPLE_GROUPS.map((def) => {
-      const base = def.id === activeGroupId ? exampleGroup(def.id) : null;
+      const base = def.id === activeGroupId && generated ? generated.exampleGroup(def.id) : null;
 
       // Your real calendar replaces the "you" slot only once there is one:
       // with nothing connected you would read as free all year, which is less
@@ -191,6 +217,7 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
     markYou,
     exampleNames,
     exampleYou,
+    generated,
   ]);
 
   return {
@@ -199,7 +226,8 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
     activeGroupId,
     youProfileId: hasRealGroups ? (user?.id ?? null) : CURRENT_USER_ID,
     carousel,
-    busyLoading: busyQuery.isLoading && !!busyEnabledId,
+    // An example's calendars still on their way count as loading too.
+    busyLoading: (busyQuery.isLoading && !!busyEnabledId) || (showingExamples && !generated),
     busyFailed: busyQuery.isError,
     myCalendarsFailed: !hasRealGroups && myCalendarsFailed,
   };

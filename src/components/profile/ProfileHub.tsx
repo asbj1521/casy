@@ -2,7 +2,7 @@ import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 
-import { adminStatusQuery } from "@/api/admin";
+import { adminStatusQuery } from "@/api/adminStatus";
 import GroupsRow from "@/components/profile/GroupsRow";
 import NameCard from "@/components/profile/NameCard";
 import SettingsRow from "@/components/profile/SettingsRow";

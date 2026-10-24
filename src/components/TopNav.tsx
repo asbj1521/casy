@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { adminStatusQuery } from "@/api/admin";
+import { adminStatusQuery } from "@/api/adminStatus";
 import { groupsQuery, invitationsQuery, whoAmIQuery } from "@/api/groups";
 import LanguageToggle from "@/components/LanguageToggle";
 import PhoneHeader from "@/components/PhoneHeader";

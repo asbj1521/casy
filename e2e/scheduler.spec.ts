@@ -25,7 +25,7 @@ test("suggesting sends the date on screen as a vote", async ({ page, backend }) 
   const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
   expect(sent).toMatchObject({ groupId: "g-friday", title: "Fredagsbar" });
   const dates = sent.dates as { start: string }[];
-  expect(dates[0].start).toBe(cph("2026-10-07", "19:00"));
+  expect(dates[0].start).toBe(cph("2026-10-07", "17:00"));
   expect(dates.length).toBeGreaterThan(1);
   expect(dates.length).toBeLessThanOrEqual(5);
 });

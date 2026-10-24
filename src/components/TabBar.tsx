@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, CalendarDays, LogIn, User, type LucideIcon } from "lucide-react";
 
-import { adminStatusQuery } from "@/api/admin";
+import { adminStatusQuery } from "@/api/adminStatus";
 import { invitationsQuery, whoAmIQuery } from "@/api/groups";
 import { useAuth } from "@/context/auth";
 import { useEventsBadge } from "@/hooks/useEventsBadge";

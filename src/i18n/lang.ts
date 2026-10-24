@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-import { MESSAGES } from "@/i18n/current";
+import { messagesFor } from "@/i18n/current";
 import type { Messages } from "@/i18n/da";
 import { LOCALE, type Lang } from "@/i18n/locale";
 
@@ -50,5 +50,5 @@ export function useLang() {
 
 /** The current language's copy: `const t = useT(); t.nav.profile`. */
 export function useT(): Messages {
-  return MESSAGES[useContext(LanguageContext).lang];
+  return messagesFor(useContext(LanguageContext).lang);
 }

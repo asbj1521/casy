@@ -1,16 +1,19 @@
+import { lazy, Suspense } from "react";
 import { BookUser, Check, Copy, Link2, Loader2, QrCode as QrIcon, Share } from "lucide-react";
 
 import InvitePicker from "@/components/InvitePicker";
 import FlowButton from "@/components/ui/FlowButton";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
-import QrCode from "@/components/ui/QrCode";
 import { useCopy } from "@/hooks/useCopy";
 import type { Invite } from "@/hooks/useInvite";
 import { useT } from "@/i18n/lang";
 import { inviteExpiryLabel } from "@/lib/groups";
 import { isNativeApp } from "@/lib/nativeApp";
 import { shareLink } from "@/lib/share";
+
+// The QR library is only fetched once a code is asked for (#157).
+const QrCode = lazy(() => import("@/components/ui/QrCode"));
 
 /**
  * What an Invite sheet holds (#153), most used first: the contacts (in the
@@ -122,11 +125,13 @@ export default function InviteBody({ invite }: { invite: Invite }) {
       </ListGroup>
       {showQr && link.data && (
         <figure className="mt-3 flex flex-col items-center gap-2">
-          <QrCode
-            value={link.data.url}
-            label={t.invite.qrLabel(group.name)}
-            className="h-56 w-56 rounded-xl"
-          />
+          <Suspense fallback={<div className="h-56 w-56 rounded-xl bg-white" />}>
+            <QrCode
+              value={link.data.url}
+              label={t.invite.qrLabel(group.name)}
+              className="h-56 w-56 rounded-xl"
+            />
+          </Suspense>
           <figcaption className="text-center text-xs text-muted-foreground">
             {t.invite.qrHelp}
           </figcaption>

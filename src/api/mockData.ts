@@ -23,6 +23,8 @@ import type { BusyInterval, EventCategory, FriendGroup, Participant } from "@/ty
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { APP_TIME_ZONE, localDate, wallTime } from "@/lib/zone";
 
+import { EXAMPLE_GROUPS } from "./exampleGroups";
+
 /** The zone the generated people live in. */
 const TZ = APP_TIME_ZONE;
 
@@ -132,83 +134,6 @@ const PEOPLE: Record<string, string> = {
   amalie: "Amalie",
   gustav: "Gustav",
 };
-
-/** One of the example groups: a name and who is in it. */
-interface ExampleGroupDef {
-  id: string;
-  name: string;
-  /** Person ids (keys of PEOPLE); "you" is the signed-in person's slot. */
-  members: string[];
-}
-
-/**
- * The ten groups the scheduling page rotates through. Sizes are meant to look
- * right for what they are — a basketball squad has ten, a band has four —
- * because an example that doesn't look plausible teaches nothing.
- */
-export const EXAMPLE_GROUPS: ExampleGroupDef[] = [
-  {
-    id: "basketball",
-    name: "Basketball team",
-    members: [
-      "you",
-      "mikkel",
-      "rasmus",
-      "oliver",
-      "emil",
-      "noah",
-      "villads",
-      "august",
-      "malthe",
-      "elias",
-    ],
-  },
-  {
-    id: "highschool",
-    name: "Highschool group",
-    members: ["you", "simon", "kristoffer", "jonas", "thue", "claes", "benjamin"],
-  },
-  {
-    id: "family",
-    name: "Family",
-    members: ["you", "hansove", "anne", "regitze", "aksel"],
-  },
-  {
-    id: "bookclub",
-    name: "Book club",
-    members: ["you", "ida", "sofie", "clara", "johanne", "marie"],
-  },
-  {
-    id: "studygroup",
-    name: "Study group",
-    members: ["you", "freja", "lucas", "alma"],
-  },
-  {
-    id: "work",
-    name: "Work team",
-    members: ["you", "prusse", "thille", "borring", "nico", "schlei", "nora"],
-  },
-  {
-    id: "running",
-    name: "Running club",
-    members: ["you", "katrine", "jeppe", "signe", "anders", "louise"],
-  },
-  {
-    id: "band",
-    name: "The band",
-    members: ["you", "viggo", "karla", "storm"],
-  },
-  {
-    id: "neighbours",
-    name: "Neighbours",
-    members: ["you", "birgitte", "poul", "hanne", "soren", "lene", "kurt"],
-  },
-  {
-    id: "oldfriends",
-    name: "Old friends",
-    members: ["you", "frederik", "laura", "tobias", "amalie", "gustav"],
-  },
-];
 
 /* ----------------------------------------------------------------------------
  * Personalities

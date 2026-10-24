@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, ShieldCheck } from "lucide-react";
 
-import { adminStatusQuery } from "@/api/admin";
+import { adminStatusQuery } from "@/api/adminStatus";
 import { whoAmIQuery } from "@/api/groups";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
 import SettingsRow from "@/components/profile/SettingsRow";

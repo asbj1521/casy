@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/auth-js";
 
 import { AuthContext, type AuthState } from "@/context/auth";
-import { clearLabelBooks } from "@/lib/eventLabels";
 import { clearPersistedQueries } from "@/lib/queryPersistence";
 import { supabaseAuth } from "@/lib/supabase";
 
@@ -36,7 +35,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_OUT") {
         queryClient.clear();
         clearPersistedQueries();
-        clearLabelBooks();
+        // Loaded only now: the labels code isn't part of the first download (#157).
+        void import("@/lib/eventLabels").then((m) => m.clearLabelBooks());
       }
     });
     return () => data.subscription.unsubscribe();

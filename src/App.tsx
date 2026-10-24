@@ -11,26 +11,29 @@ import WeakPasswordNotice from "@/components/WeakPasswordNotice";
 import { useAuth } from "@/context/auth";
 import { useAccountLanguage } from "@/hooks/useAccountLanguage";
 import { useAutoCategorize } from "@/hooks/useAutoCategorize";
-import { useAutoLabel } from "@/hooks/useEventLabels";
-import { useDayFactsSync } from "@/hooks/useDayFactsSync";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
-import { usePhoneCalendarSync } from "@/hooks/usePhoneCalendarSync";
-import { useAutoTripLegs } from "@/hooks/useTrips";
 import AuthProvider from "@/context/AuthProvider";
 import LanguageProvider from "@/i18n/LanguageProvider";
 import { isNativeApp } from "@/lib/nativeApp";
 import { persistQueries } from "@/lib/queryPersistence";
-import FindDate from "@/pages/FindDate";
 import Landing from "@/pages/Landing";
 import { loadPage } from "@/pages/lazyPages";
 
 /**
- * The scheduler and the landing page are what people land on, so they ship
- * in the entry chunk: splitting them out only buys a second round trip before
- * anything renders. Every other page is reached by a deliberate click (or an
- * invite link), and loads on its own, so the landing page never downloads
- * code it has no use for.
+ * The landing page is what visitors land on, so it ships in the entry chunk.
+ * Every other page loads on its own, the scheduler included (#157): a phone
+ * and the app never show it (they plan from My calendar), so they never
+ * download it. On a computer opening / or /plan it is fetched at once,
+ * alongside the session check, so a signed-in person doesn't wait for it.
  */
+if (
+  !isNativeApp &&
+  (window.location.pathname === "/" || window.location.pathname === "/plan") &&
+  window.matchMedia("(min-width: 768px)").matches
+) {
+  void loadPage.findDate();
+}
+const FindDate = lazy(loadPage.findDate);
 const Profile = lazy(loadPage.profile);
 const CalendarOverview = lazy(loadPage.calendarOverview);
 const CalendarAccounts = lazy(loadPage.calendarAccounts);
@@ -78,22 +81,19 @@ function Home() {
 /**
  * Keeps open pages up to date with what others do (useLiveUpdates), the
  * account's saved language with the site's, for its emails (useAccountLanguage),
- * in the iPhone app, Casy with the phone's calendars (usePhoneCalendarSync),
- * new calendars given a category by AI in the background (useAutoCategorize),
- * and, in the app, the phone's events labelled by AI (useAutoLabel), its
- * flights, trains and buses read for trip detection (useAutoTripLegs) and what
- * ranks a vote's dates shared with the server (useDayFactsSync).
+ * and new calendars given a category by AI in the background
+ * (useAutoCategorize). The app's own background work is AppBackground.
  */
 function LiveUpdates() {
   useLiveUpdates();
   useAccountLanguage();
-  usePhoneCalendarSync();
   useAutoCategorize();
-  useAutoLabel();
-  useAutoTripLegs();
-  useDayFactsSync();
   return null;
 }
+
+// The iPhone app's background work (phone calendars, labels, trips, day
+// facts): never downloaded by the website (#157).
+const AppBackground = isNativeApp ? lazy(() => import("@/components/AppBackground")) : null;
 
 const queryClient = new QueryClient();
 // Last known groups, calendar status and admin flag, shown at once on load
@@ -106,6 +106,11 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <LiveUpdates />
+          {AppBackground && (
+            <Suspense fallback={null}>
+              <AppBackground />
+            </Suspense>
+          )}
           <BrowserRouter>
             {/* After signing in with a password that no longer meets the rules. */}
             <WeakPasswordNotice />

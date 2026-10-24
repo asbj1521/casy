@@ -1,11 +1,8 @@
-import { useState } from "react";
+import { lazy, Suspense, useState, type ComponentProps } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 
 import DayChart from "@/components/DayChart";
 import AnswerActions from "@/components/findDate/AnswerActions";
-import AiBoxView from "@/components/findDate/ai/AiBoxView";
-import { AiActions } from "@/components/findDate/ai/AiConversation";
-import PlanSummary from "@/components/findDate/ai/PlanSummary";
 import AnswerCard from "@/components/findDate/AnswerCard";
 import ExampleGroupPanel from "@/components/findDate/ExampleGroupPanel";
 import GroupPanel from "@/components/findDate/GroupPanel";
@@ -13,7 +10,6 @@ import LaterDates from "@/components/findDate/LaterDates";
 import MoreSettingsScreen from "@/components/findDate/MoreSettingsScreen";
 import WidenSearch from "@/components/findDate/WidenSearch";
 import GroupSwitcher from "@/components/GroupSwitcher";
-import NewGroupDialog from "@/components/NewGroupDialog";
 import RequireAuth from "@/components/RequireAuth";
 import { SettingsPanel, SettingsSentence } from "@/components/SchedulerSettings";
 import TopNav from "@/components/TopNav";
@@ -23,6 +19,14 @@ import { FIRST_MONTH, LAST_MONTH, TZ, usePlanning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 import { dayOf } from "@/lib/zone";
+
+// Planlæg med AI's view only loads once it is opened (#157).
+const AiBoxView = lazy(() => import("@/components/findDate/ai/AiBoxView"));
+const PlanSummary = lazy(() => import("@/components/findDate/ai/PlanSummary"));
+const NewGroupDialog = lazy(() => import("@/components/NewGroupDialog"));
+const AiActions = lazy(() =>
+  import("@/components/findDate/ai/AiConversation").then((m) => ({ default: m.AiActions })),
+);
 
 /**
  * The scheduler's address (`/` signed in, `/plan`). A phone plans from My
@@ -220,7 +224,7 @@ function SchedulingPage() {
     onPick: (start: string) => pickDay(dayOf(start, TZ)),
   };
   const newGroupDialog = (
-    <NewGroupDialog
+    <LazyNewGroupDialog
       open={newGroupOpen}
       onClose={() => setNewGroupOpen(false)}
       onCreated={groupCreated}
@@ -256,34 +260,38 @@ function SchedulingPage() {
                 aiOn
                   ? {
                       view: () => (
-                        <AiBoxView
-                          planner={planner}
-                          members={activeGroup?.members ?? []}
-                          adding={aiAdding}
-                          onAdding={setAiAdding}
-                          summary={
-                            <PlanSummary
-                              name={name}
-                              settings={sched}
-                              extras={extras}
-                              members={activeGroup?.members ?? []}
-                              choice={peopleChoice}
-                              guessed={planner.session.guessed}
-                            />
-                          }
-                        />
+                        <Suspense fallback={null}>
+                          <AiBoxView
+                            planner={planner}
+                            members={activeGroup?.members ?? []}
+                            adding={aiAdding}
+                            onAdding={setAiAdding}
+                            summary={
+                              <PlanSummary
+                                name={name}
+                                settings={sched}
+                                extras={extras}
+                                members={activeGroup?.members ?? []}
+                                choice={peopleChoice}
+                                guessed={planner.session.guessed}
+                              />
+                            }
+                          />
+                        </Suspense>
                       ),
                       guessed: planner.session.guessed,
                       actions: planner.session.plan && !aiAdding && !planner.pending && (
-                        <AiActions
-                          compact
-                          inRow
-                          onAdd={() => setAiAdding(true)}
-                          onReset={() => {
-                            setAiAdding(false);
-                            planner.reset();
-                          }}
-                        />
+                        <Suspense fallback={null}>
+                          <AiActions
+                            compact
+                            inRow
+                            onAdd={() => setAiAdding(true)}
+                            onReset={() => {
+                              setAiAdding(false);
+                              planner.reset();
+                            }}
+                          />
+                        </Suspense>
                       ),
                     }
                   : undefined
@@ -344,5 +352,20 @@ function SchedulingPage() {
 
       {newGroupDialog}
     </div>
+  );
+}
+
+/**
+ * New group, fetched the first time it is opened (#157) and kept mounted
+ * after that, so it can slide away when closed.
+ */
+function LazyNewGroupDialog(props: ComponentProps<typeof NewGroupDialog>) {
+  const [wanted, setWanted] = useState(props.open);
+  if (props.open && !wanted) setWanted(true);
+  if (!wanted) return null;
+  return (
+    <Suspense fallback={null}>
+      <NewGroupDialog {...props} />
+    </Suspense>
   );
 }

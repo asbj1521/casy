@@ -295,7 +295,7 @@ function GoButton({ label }: { label: string }) {
   return (
     <Link
       to="/plan"
-      onClick={(e) => flyOnClick(e, () => navigate("/plan"))}
+      onClick={(e) => flyOnClick(e, () => navigate("/plan"), loadPage.findDate)}
       className="flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 sm:px-8 sm:py-4 sm:text-lg"
     >
       {label}

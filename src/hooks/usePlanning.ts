@@ -57,6 +57,7 @@ import {
 } from "@/lib/scheduler";
 import { readStored, writeStored } from "@/lib/storage";
 import { addDays, APP_TIME_ZONE, dayOf, localDate, startOfMonth } from "@/lib/zone";
+import { oncePerLoad } from "@/lib/appRandom";
 
 /** The zone every search and every day planned is local to. */
 export const TZ = APP_TIME_ZONE;
@@ -145,7 +146,9 @@ export function usePlanning() {
   const [peopleChoices, setPeopleChoices] = useState<Record<string, PeopleChoice>>(
     left?.peopleChoices ?? {},
   );
-  const [sched, setSched] = useState(() => left?.sched ?? randomDefaultSettings());
+  const [sched, setSched] = useState(
+    () => left?.sched ?? oncePerLoad("scheduler-settings", () => randomDefaultSettings()),
+  );
   const [steps, setSteps] = useState(() => left?.steps ?? restart());
   // Once the answer moves on from the date it was paged from, the chart
   // follows the answer again.

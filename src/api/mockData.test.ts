@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { CURRENT_USER_ID } from "@/api/currentUser";
-import { EXAMPLE_GROUPS, exampleGroup } from "@/api/mockData";
+import { EXAMPLE_GROUPS } from "@/api/exampleGroups";
+import { exampleGroup } from "@/api/mockData";
 
 describe("example groups", () => {
   it("offers ten of them, each with a distinct id and name", () => {

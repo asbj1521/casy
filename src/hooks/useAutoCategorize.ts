@@ -6,7 +6,6 @@ import { useAuth } from "@/context/auth";
 import { useAiContent } from "@/hooks/useAiAllowed";
 import { phoneSourceIds, sampleTitles, uncategorised } from "@/lib/autoCategorize";
 import { isNativeApp } from "@/lib/nativeApp";
-import { phoneConnectionId, readPhoneEventDetails } from "@/lib/phoneCalendar";
 
 /** How far around today the admin's phone looks for sample titles. */
 const TITLES_BEHIND_MS = 60 * 86_400_000;
@@ -46,11 +45,16 @@ export function useAutoCategorize() {
 
     void (async () => {
       let titles: Record<string, string[]> | undefined;
-      const phone = isNativeApp ? phoneConnectionId(userId) : null;
-      if (phone) {
+      // The phone's code loads only in the app (#157).
+      const phoneCalendar = isNativeApp ? await import("@/lib/phoneCalendar") : null;
+      const phone = phoneCalendar?.phoneConnectionId(userId) ?? null;
+      if (phoneCalendar && phone) {
         try {
           const now = Date.now();
-          const events = await readPhoneEventDetails(now - TITLES_BEHIND_MS, now + TITLES_AHEAD_MS);
+          const events = await phoneCalendar.readPhoneEventDetails(
+            now - TITLES_BEHIND_MS,
+            now + TITLES_AHEAD_MS,
+          );
           titles = sampleTitles(events, phoneSourceIds(connections, phone), new Set(pending), now);
         } catch (err) {
           // Names alone still sort them.

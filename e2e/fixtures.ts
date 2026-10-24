@@ -120,13 +120,20 @@ export const test = base.extend<Options & Fixtures>({
       ({ key, value }) => {
         // The same "random" numbers on every load (the scheduler's starting
         // settings, which example group shows): a small seeded generator.
-        let seed = 20261007;
-        Math.random = () => {
-          seed = (seed + 0x6d2b79f5) | 0;
-          let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        // Two streams: Casy's own choices (src/lib/appRandom.ts) get one of
+        // their own, so what the libraries draw, and in which order the code
+        // loads, never changes them.
+        const seeded = (start: number) => {
+          let seed = start;
+          return () => {
+            seed = (seed + 0x6d2b79f5) | 0;
+            let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
         };
+        Math.random = seeded(20261007);
+        (window as unknown as { __casyRandom: () => number }).__casyRandom = seeded(20261007);
         // Signed in once per tab, so signing out in a test stays signed out.
         if (value && !sessionStorage.getItem("e2e-seeded")) {
           localStorage.setItem(key, value);

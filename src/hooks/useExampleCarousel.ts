@@ -18,6 +18,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useReducedMotion } from "framer-motion";
+import { appRandom, oncePerLoad } from "@/lib/appRandom";
 
 /** How long each example group stays on screen. */
 const CAROUSEL_INTERVAL_MS = 5000;
@@ -34,7 +35,9 @@ export interface Carousel {
 export function useExampleCarousel(count: number, enabled: boolean): Carousel {
   const reduceMotion = useReducedMotion();
   // A random first example, so a reload doesn't always open on the same group.
-  const [index, setIndex] = useState(() => Math.floor(Math.random() * Math.max(count, 1)));
+  const [index, setIndex] = useState(() =>
+    oncePerLoad("example-index", () => Math.floor(appRandom() * Math.max(count, 1))),
+  );
   const [stopped, setStopped] = useState(false);
 
   const running = enabled && !stopped && !reduceMotion && count > 1;
