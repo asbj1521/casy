@@ -47,6 +47,18 @@ test("a group shows what it is for, and any member can change it (#152)", async 
   await expect(page.getByRole("button", { name: "Tilføj en beskrivelse" }).first()).toBeVisible();
 });
 
+test("renaming a group on a phone leaves its name where it was", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "only the phone's group screen is centred");
+  await page.goto("/groups/g-friday");
+  const name = page.locator("main p.text-xl", { hasText: "Fredagsbar" });
+  const before = (await name.boundingBox())!;
+  await page.getByRole("button", { name: "Omdøb gruppen" }).click();
+  const box = (await page.locator("main form input").boundingBox())!;
+  // The same centre, within a few pixels, instead of snapping to the left edge.
+  expect(Math.abs(box.x + box.width / 2 - (before.x + before.width / 2))).toBeLessThan(12);
+  expect(Math.abs(box.y + box.height / 2 - (before.y + before.height / 2))).toBeLessThan(6);
+});
+
 test("an invitation says what the group is for (#152)", async ({ page }) => {
   await page.goto("/groups");
   await expect(page.getByText("Double om torsdagen i Valby")).toBeVisible();

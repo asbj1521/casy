@@ -89,7 +89,11 @@ export default function GroupDetails({
               maxLength={MAX_GROUP_NAME_LENGTH}
               submitting={rename.isPending}
               error={rename.error?.message ?? null}
-              inputClassName="text-lg font-bold"
+              // On the centred phone screen the box stays under the heading and
+              // as tall as the name it replaces, so nothing jumps when it opens.
+              inputClassName={centred ? "text-xl font-bold text-center" : "text-lg font-bold"}
+              className={centred ? "-my-[5px]" : undefined}
+              centered={centred}
               onSubmit={(name) => rename.mutate(name)}
               onCancel={() => setRenaming(false)}
             />
