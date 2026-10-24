@@ -26,8 +26,12 @@ import { AnswerButtons, SwipeCard, type Exit } from "@/components/swipe/SwipeCar
 import CardFace from "./deck/CardFace";
 import DoneView from "./deck/DoneView";
 import { ClashConfirm, MoveConfirm } from "./deck/Confirms";
+import { readStored, writeStored } from "@/lib/storage";
 
 const TZ = APP_TIME_ZONE;
+
+/** Set once this device has answered a date: the swiping hint has done its job. */
+const SWIPE_HINT_SEEN = "casy-swipe-hint-seen";
 
 /**
  * A vote's dates as a stack of cards to swipe (#74), one at a time: right
@@ -68,6 +72,8 @@ export default function DateDeck({
 
   // Answers given here, shown before (and regardless of) the server's reply.
   const [given, setGiven] = useState<Record<string, EventResponse>>({});
+  // How to swipe is said until this device's first answer, then never again (#161).
+  const [hintSeen] = useState(() => readStored(SWIPE_HINT_SEEN) === "1");
   const answerOf = (d: CandidateDate): EventResponse | undefined => given[d.id] ?? d.answers[you];
   const [index, setIndex] = useState(() => {
     const first = firstUnanswered(event, now);
@@ -138,6 +144,7 @@ export default function DateDeck({
       setConfirmClash(response);
       return;
     }
+    writeStored(SWIPE_HINT_SEEN, "1");
     setConfirmClash(null);
     const movesDate =
       event.status === "scheduled" &&
@@ -321,7 +328,7 @@ export default function DateDeck({
               focus={shownClash && { start: shownClash.event.start, end: shownClash.event.end }}
             />
           );
-          const hint = index === 0 && !Object.keys(given).length && (
+          const hint = !hintSeen && index === 0 && !Object.keys(given).length && (
             <p
               className={cn(
                 "text-center text-xs text-muted-foreground",
