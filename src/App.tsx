@@ -95,7 +95,12 @@ function LiveUpdates() {
 // facts): never downloaded by the website (#157).
 const AppBackground = isNativeApp ? lazy(() => import("@/components/AppBackground")) : null;
 
-const queryClient = new QueryClient();
+// Server answers count as fresh for 30 s (#158): moving between pages or
+// tabs within that time reuses them instead of asking again. Older ones are
+// refetched on return to the tab as before; what others change arrives
+// through the live pulse (useLiveUpdates), and mutations update or
+// invalidate what they touch, whatever its age.
+const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } });
 // Last known groups, calendar status and admin flag, shown at once on load
 // and refreshed in the background (see queryPersistence.ts).
 persistQueries(queryClient);
