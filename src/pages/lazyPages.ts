@@ -16,6 +16,9 @@ export const loadPage = {
   phoneCalendar: () => import("@/components/calendarView/PhoneCalendar"),
   calendarAccounts: () => import("@/pages/CalendarAccounts"),
   myEvents: () => import("@/pages/MyEvents"),
+  // My events' two layouts, each fetched only by its own device (#157).
+  eventPanes: () => import("@/components/myEvents/EventPanes"),
+  eventRows: () => import("@/components/myEvents/phone/EventRowsPage"),
   swipeDates: () => import("@/pages/SwipeDates"),
   groups: () => import("@/pages/Groups"),
   profileScreen: () => import("@/pages/ProfileScreen"),

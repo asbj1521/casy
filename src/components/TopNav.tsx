@@ -82,6 +82,7 @@ export default function TopNav() {
   const prefetchEvents = () => {
     if (onEvents || !user) return;
     void loadPage.myEvents();
+    void loadPage.eventPanes();
   };
 
   const prefetchGroups = () => {

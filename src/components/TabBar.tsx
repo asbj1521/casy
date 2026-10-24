@@ -48,7 +48,10 @@ function PhoneTabBar() {
       label: t.nav.eventsShort,
       icon: CalendarCheck,
       active: pathname.startsWith("/events"),
-      prefetch: () => void loadPage.myEvents(),
+      prefetch: () => {
+        void loadPage.myEvents();
+        void loadPage.eventRows();
+      },
       badge: eventsBadge,
     },
     {

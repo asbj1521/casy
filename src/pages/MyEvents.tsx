@@ -12,10 +12,11 @@ import { useGroupRefresh } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { loadPage } from "@/pages/lazyPages";
 
 // Each device fetches only its own layout of the page (#157).
-const EventPanes = lazy(() => import("@/components/myEvents/EventPanes"));
-const EventRowsPage = lazy(() => import("@/components/myEvents/phone/EventRowsPage"));
+const EventPanes = lazy(loadPage.eventPanes);
+const EventRowsPage = lazy(loadPage.eventRows);
 
 /**
  * My events: every date suggested to your groups, sorted by what it needs
