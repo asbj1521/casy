@@ -33,15 +33,34 @@ git push --quiet -u origin "$branch"
 
 # Every push to a branch starts both workflows; the screenshot one skips its
 # job unless the commit asks for [screenshots]. Wait until both are listed.
-runs=""
-for _ in $(seq 1 30); do
-  runs=$(gh run list -R "$REPO" --commit "$sha" --event push --json databaseId -q '.[].databaseId')
-  [ "$(echo "$runs" | grep -c .)" -ge 2 ] && break
-  sleep 2
-done
-[ "$(echo "$runs" | grep -c .)" -ge 2 ] || die "GitHub hasn't started the checks for ${sha:0:7} after a minute; see https://github.com/$REPO/actions"
+runs_for() {
+  local commit=$1 tries=$2 found=""
+  for _ in $(seq 1 "$tries"); do
+    found=$(gh run list -R "$REPO" --commit "$commit" --event push --json databaseId -q '.[].databaseId')
+    [ "$(echo "$found" | grep -c .)" -ge 2 ] && break
+    sleep 2
+  done
+  echo "$found"
+}
+check="$sha"
+# The screenshot bot's own push starts no checks: when the last commit is its
+# and holds only reference images, and has no checks of its own (a person
+# pushing it after a rebase does start them), the checks that count are
+# those of the commit it was made for.
+bot_images_only=false
+if [ "$(git log -1 --format=%an "$sha")" = "github-actions[bot]" ] &&
+  [ -z "$(git diff --name-only "$sha~1" "$sha" | grep -v '^e2e/__screenshots__/' || true)" ]; then
+  bot_images_only=true
+fi
+runs=$(runs_for "$sha" "$([ "$bot_images_only" = true ] && echo 10 || echo 30)")
+if [ "$(echo "$runs" | grep -c .)" -lt 2 ] && [ "$bot_images_only" = true ]; then
+  check=$(git rev-parse "$sha~1")
+  say "the last commit is the screenshot bot's; using the checks of ${check:0:7}, which made it"
+  runs=$(runs_for "$check" 30)
+fi
+[ "$(echo "$runs" | grep -c .)" -ge 2 ] || die "GitHub hasn't started the checks for ${check:0:7} after a minute; see https://github.com/$REPO/actions"
 
-say "waiting for the checks on ${sha:0:7}"
+say "waiting for the checks on ${check:0:7}"
 for id in $runs; do
   gh run watch "$id" -R "$REPO" --interval 5 >/dev/null || true
 done
