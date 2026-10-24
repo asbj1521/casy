@@ -462,6 +462,13 @@ export class FakeBackend {
   private groups(action: string, body: Record<string, unknown>): Answer | undefined {
     const w = this.world;
     const group = w.groups.find((g) => g.id === body.groupId);
+    const whoami = () => ({
+      name: w.name,
+      aiAllowed: w.aiAllowed,
+      aiTester: w.aiTester || w.admin !== false,
+      aiConsent: w.aiConsent,
+      aiShare: w.aiConsent && w.aiShare,
+    });
     switch (action) {
       case "list":
         return ok({ groups: w.groups });
@@ -474,12 +481,14 @@ export class FakeBackend {
       case "pulse":
         return ok({ pulse: `v${w.version}` });
       case "whoami":
+        return ok(whoami());
+      // Everything a page asks for as it opens, in one answer (#158).
+      case "start":
         return ok({
-          name: w.name,
-          aiAllowed: w.aiAllowed,
-          aiTester: w.aiTester || w.admin !== false,
-          aiConsent: w.aiConsent,
-          aiShare: w.aiConsent && w.aiShare,
+          whoami: whoami(),
+          groups: w.groups,
+          invitations: w.invitations,
+          pulse: `v${w.version}`,
         });
       case "set-name":
         w.name = String(body.name);

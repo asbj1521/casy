@@ -1,4 +1,10 @@
 /** The groups function's members, names and group list (#160, split out of index.ts). */
+import {
+  aiAllowed,
+  aiConsented,
+  aiSharesCorrections,
+  aiTesterAllowed,
+} from "../_shared/aiAccess.ts";
 import { type Caller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
 import { HttpError } from "../_shared/http.ts";
@@ -149,4 +155,38 @@ export async function resolveOwnName(
     .maybeSingle();
   if (error) throw error;
   return data?.name_is_custom && data.display_name ? data.display_name : callerName;
+}
+
+/**
+ * Who the caller is, for the page (the `whoami` action): their name and what
+ * of the AI is on for them. The checks don't depend on each other, so they
+ * run side by side (#158). Any of them failing (a migration not yet applied)
+ * is "not yet", never a broken page.
+ */
+export async function whoAmI(db: Db, profileId: string, callerName: string) {
+  const orNo = (what: string) => (err: unknown) => {
+    console.error(`whoami: couldn't check ${what}`, err);
+    return false;
+  };
+  const [name, allowed, consent, share, tester] = await Promise.all([
+    resolveOwnName(db, profileId, callerName),
+    // Whether the AI features are on for you while they are tested (#111).
+    aiAllowed(db, profileId).catch(orNo("AI access")),
+    // Whether they said yes to the AI using content from their calendar (#120).
+    aiConsented(db, profileId).catch(orNo("AI consent")),
+    // Whether their corrections of the AI go to Casy for review (#122).
+    aiSharesCorrections(db, profileId).catch(orNo("sharing")),
+    // Whether this person gets the admin-only AI features being tested:
+    // admins and AI testers. Also as eventLabels, the name app builds from
+    // before testers read it by.
+    aiTesterAllowed(db, profileId).catch(orNo("AI testers")),
+  ]);
+  return {
+    name,
+    aiAllowed: allowed,
+    aiConsent: consent,
+    aiShare: share,
+    aiTester: tester,
+    eventLabels: tester,
+  };
 }

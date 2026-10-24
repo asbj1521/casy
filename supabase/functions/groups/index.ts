@@ -33,12 +33,6 @@
  * old, while someone plans for the group, so the search doesn't offer a time
  * filled since the hourly sync (_shared/groupRefresh.ts).
  */
-import {
-  aiAllowed,
-  aiConsented,
-  aiSharesCorrections,
-  aiTesterAllowed,
-} from "../_shared/aiAccess.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
@@ -64,7 +58,7 @@ import {
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { syncConnection } from "../_shared/sync.ts";
-import { rememberName, membersAsMember, listGroups, resolveOwnName } from "./members.ts";
+import { rememberName, membersAsMember, listGroups, whoAmI } from "./members.ts";
 import { resolveInvitees, sendInvites, listInvitations, findInvite } from "./invitations.ts";
 import { groupBusy } from "./busy.ts";
 
@@ -114,34 +108,23 @@ serve("groups", async (req, body) => {
       return await list();
 
     case "whoami":
-      return {
-        name: await resolveOwnName(db, profileId, callerName),
-        // Whether the AI features are on for you while they are tested (#111).
-        // A failure (the migration not yet applied) is "not yet", never a broken page.
-        aiAllowed: await aiAllowed(db, profileId).catch((err) => {
-          console.error("whoami: couldn't check AI access", err);
-          return false;
+      return await whoAmI(db, profileId, callerName);
+
+    // Everything a page asks for as it opens, in one call (#158): who you are,
+    // your groups, your invitations and the live pulse, worked out side by
+    // side. Each is also its own action, for asking again later.
+    case "start": {
+      const [whoami, groups, invitations, pulse] = await Promise.all([
+        whoAmI(db, profileId, callerName),
+        listGroups(db, profileId, callerName),
+        listInvitations(db, profileId),
+        db.rpc("live_pulse", { p_profile_id: profileId }).then(({ data, error }) => {
+          if (error) throw error;
+          return data as string;
         }),
-        // Whether they said yes to the AI using content from their calendar (#120).
-        aiConsent: await aiConsented(db, profileId).catch((err) => {
-          console.error("whoami: couldn't check AI consent", err);
-          return false;
-        }),
-        // Whether their corrections of the AI go to Casy for review (#122).
-        aiShare: await aiSharesCorrections(db, profileId).catch((err) => {
-          console.error("whoami: couldn't check sharing", err);
-          return false;
-        }),
-        // Whether this person gets the admin-only AI features being tested:
-        // admins and AI testers. Also as eventLabels, the name app builds
-        // from before testers read it by.
-        ...(await aiTesterAllowed(db, profileId)
-          .then((tester) => ({ aiTester: tester, eventLabels: tester }))
-          .catch((err) => {
-            console.error("whoami: couldn't check AI testers", err);
-            return { aiTester: false, eventLabels: false };
-          })),
-      };
+      ]);
+      return { whoami, groups, invitations, pulse };
+    }
 
     case "set-name": {
       const name = cleanDisplayName(body.name);
