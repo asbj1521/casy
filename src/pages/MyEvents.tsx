@@ -1,22 +1,21 @@
-import { useEffect } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { Navigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck, CalendarSearch, Loader2, Sparkles } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-import { eventsQuery, type SuggestedEvent } from "@/api/events";
-import EventDetails from "@/components/myEvents/EventDetails";
-import EventList from "@/components/myEvents/EventList";
-import EventRows from "@/components/myEvents/phone/EventRows";
+import { eventsQuery } from "@/api/events";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
-import GlassButton from "@/components/ui/GlassButton";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useGroupRefresh } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
-import { eventsInOrder, phoneEventList, sectionEvents } from "@/lib/myEvents";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+
+// Each device fetches only its own layout of the page (#157).
+const EventPanes = lazy(() => import("@/components/myEvents/EventPanes"));
+const EventRowsPage = lazy(() => import("@/components/myEvents/phone/EventRowsPage"));
 
 /**
  * My events: every date suggested to your groups, sorted by what it needs
@@ -75,85 +74,15 @@ export default function MyEvents() {
             {t.events.loadFailed}
           </Notice>
         ) : phone ? (
-          <EventRowsPage events={events} />
+          <Suspense fallback={null}>
+            <EventRowsPage events={events} />
+          </Suspense>
         ) : (
-          <EventPanes events={events} selectedId={eventId} />
+          <Suspense fallback={null}>
+            <EventPanes events={events} selectedId={eventId} />
+          </Suspense>
         )}
       </main>
     </div>
   );
-}
-
-/** Nothing to show: cancelled events are in no section, so this can follow a non-empty answer. */
-function NoEvents() {
-  const t = useT();
-  // A phone plans from My calendar (#127): straight into its Planlæg sheet.
-  const phone = usePhoneLayout();
-  if (phone) {
-    // No card (#153): what it is, one line, and the way to plan, in glass.
-    return (
-      <div className="mt-16 flex flex-col items-center text-center">
-        <CalendarCheck className="h-10 w-10 text-primary" />
-        <p className="mt-3 text-[17px] font-semibold text-foreground">{t.events.emptyTitle}</p>
-        <p className="mt-1 max-w-xs text-[15px] text-muted-foreground">{t.events.emptyBodyPhone}</p>
-        <GlassButton icon={CalendarSearch} to="/calendar-overview?plan" className="mt-5">
-          {t.planFromCalendar.button}
-        </GlassButton>
-      </div>
-    );
-  }
-  return (
-    <div className="mt-6 flex flex-col items-start rounded-2xl border bg-card p-5 sm:mt-8 sm:p-6">
-      <CalendarCheck className="h-8 w-8 text-primary" />
-      <p className="mt-3 font-semibold text-foreground">{t.events.emptyTitle}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{t.events.emptyBody}</p>
-      <Link
-        to="/"
-        className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-      >
-        <Sparkles className="h-4 w-4" />
-        {t.events.findDate}
-      </Link>
-    </div>
-  );
-}
-
-/**
- * A computer's My events: the list on the left, the open event on the right,
- * in the same columns as My groups. An event asked for that's gone (cancelled,
- * left, or never yours) sends the page back to the first.
- */
-function EventPanes({
-  events,
-  selectedId,
-}: {
-  events: SuggestedEvent[];
-  selectedId: string | undefined;
-}) {
-  const ordered = eventsInOrder(sectionEvents(events));
-  if (ordered.length === 0) return <NoEvents />;
-  const open = selectedId ? ordered.find((e) => e.event.id === selectedId) : ordered[0];
-  if (!open) return <Navigate to="/events" replace />;
-
-  return (
-    <div className="grid items-start gap-x-8 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-      <EventList events={ordered} selectedId={open.event.id} />
-      {/* Relative and clipped: a vote's calendar opens to fill exactly this box. */}
-      <section className="relative mt-6 min-w-0 overflow-hidden rounded-2xl border bg-card/60 p-5 pt-0 sm:p-6 sm:pt-0">
-        {/* Keyed, so a half-asked "decline?" never carries over to the next event. */}
-        <EventDetails key={open.event.id} staged={open} />
-      </section>
-    </div>
-  );
-}
-
-/**
- * A phone's My events (#103): one list of compact rows, newest first, past
- * events greyed out at the bottom until they drop off (phoneEventList).
- */
-function EventRowsPage({ events }: { events: SuggestedEvent[] }) {
-  const t = useT();
-  const { live, past } = phoneEventList(events);
-  if (live.length === 0 && past.length === 0) return <NoEvents />;
-  return <EventRows live={live} past={past} pastTitle={t.events.pastClosed} />;
 }
