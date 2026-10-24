@@ -259,7 +259,7 @@ async function fetchFresh(
     }
     case "apple": {
       if (!secrets.caldav_username || !secrets.caldav_password) {
-        throw new ReauthRequired("No stored iCloud login.");
+        throw new ReauthRequired("No stored Apple account login.");
       }
       const password = await decryptSecret(secrets.caldav_password, key);
       const { calendars, uids, failedFeeds } = await fetchAppleBusy(
