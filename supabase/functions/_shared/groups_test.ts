@@ -3,12 +3,14 @@ import { assert, assertEquals, assertThrows } from "jsr:@std/assert@1";
 import { HttpError } from "./http.ts";
 import {
   cleanDisplayName,
+  cleanGroupDescription,
   cleanGroupName,
   displayNameFor,
   inviteUrl,
   looksLikeInviteToken,
   MAX_DISPLAY_NAME_LENGTH,
   MAX_EMAILS_PER_REQUEST,
+  MAX_GROUP_DESCRIPTION_LENGTH,
   MAX_GROUP_NAME_LENGTH,
   MAX_PICKED_PER_REQUEST,
   newInviteToken,
@@ -55,6 +57,15 @@ Deno.test("a long name is cut to the limit without a trailing space", () => {
   const name = cleanGroupName(`${"a".repeat(MAX_GROUP_NAME_LENGTH - 1)} bbbb`);
   assertEquals(name, "a".repeat(MAX_GROUP_NAME_LENGTH - 1));
   assertEquals(name!.length <= MAX_GROUP_NAME_LENGTH, true);
+});
+
+Deno.test("a group description is tidied, capped and none when empty (#152)", () => {
+  assertEquals(cleanGroupDescription("  Brætspil hver torsdag  "), "Brætspil hver torsdag");
+  assertEquals(cleanGroupDescription("   "), null);
+  assertEquals(cleanGroupDescription(undefined), null);
+  assertEquals(cleanGroupDescription(7), null);
+  const long = cleanGroupDescription("a".repeat(MAX_GROUP_DESCRIPTION_LENGTH + 50));
+  assertEquals(long!.length, MAX_GROUP_DESCRIPTION_LENGTH);
 });
 
 Deno.test("a chosen display name is tidied, capped and never left blank", () => {

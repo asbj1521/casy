@@ -85,6 +85,11 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
       </p>
       <p className="mt-1 break-words text-xl font-bold text-foreground">{invitation.groupName}</p>
       <p className="text-sm text-muted-foreground">{t.counts.members(invitation.memberCount)}</p>
+      {invitation.groupDescription && (
+        <p className="mt-2 break-words text-[15px] text-foreground">
+          {invitation.groupDescription}
+        </p>
+      )}
       <p className="mt-3 text-sm text-muted-foreground">{t.events.joinMeans}</p>
 
       <div className="mt-4 grid grid-cols-2 gap-2">

@@ -619,6 +619,17 @@ export const da = {
     nameLabel: "Gruppenavn",
     next: "Næste",
     placeholder: "f.eks. Brætspilsaften",
+    descriptionLabel: "Hvad er gruppen til? (valgfrit)",
+    descriptionPlaceholder: "f.eks. Brætspil hver anden torsdag",
+  },
+  groupDescription: {
+    add: "Tilføj en beskrivelse",
+    change: "Ændr beskrivelsen",
+    title: "Beskrivelse",
+    label: "Hvad er gruppen til?",
+    placeholder: "f.eks. Brætspil hver anden torsdag",
+    footnote:
+      "Alle i gruppen kan ændre beskrivelsen. Den vises i invitationer og på invitationslinkets side.",
   },
   invite: {
     title: (group: string) => `Invitér til ${group}`,

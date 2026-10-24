@@ -10,6 +10,9 @@
 /** Longest group name that will be stored. */
 export const MAX_GROUP_NAME_LENGTH = 60;
 
+/** Longest group description that will be stored (#152). */
+export const MAX_GROUP_DESCRIPTION_LENGTH = 200;
+
 /** Longest custom display name that will be stored. */
 export const MAX_DISPLAY_NAME_LENGTH = 40;
 

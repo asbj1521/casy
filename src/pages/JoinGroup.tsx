@@ -14,7 +14,7 @@ import TopNav from "@/components/TopNav";
  * It answers the question anyone following a link from a chat actually has:
  * what am I joining, and who else is in it? That much is shown before signing
  * in, because asking someone to hand over an account to see what they were
- * sent is backwards. Only the name and the number of members are revealed,
+ * sent is backwards. Only the name, what the group is for and the number of members are revealed,
  * and only to whoever already holds the link.
  *
  * Joining itself needs an account, since a member with no account is nobody.
@@ -83,6 +83,11 @@ export default function JoinGroup() {
             <>
               <h1 className="text-lg font-bold text-foreground">{t.join.invitedTo}</h1>
               <p className="mt-1 text-2xl font-bold text-foreground">{invited.name}</p>
+              {invited.description && (
+                <p className="mt-2 break-words text-[15px] text-foreground">
+                  {invited.description}
+                </p>
+              )}
               <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
                 {t.join.membersSoFar(invited.memberCount)}

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Flag, LogOut, Pencil, Trash2, UserPlus } from "lucide-react";
+import { AlignLeft, Flag, LogOut, Pencil, Trash2, UserPlus } from "lucide-react";
 
 import { deleteGroup, groupsQueryKey, leaveGroup, renameGroup, type Group } from "@/api/groups";
 import InlineTextEdit from "@/components/InlineTextEdit";
+import GroupDescriptionSheet from "@/components/groups/GroupDescriptionSheet";
 import InviteDialog from "@/components/InviteDialog";
 import ReportDialog from "@/components/safety/ReportDialog";
 import Avatar from "@/components/ui/Avatar";
@@ -39,6 +40,7 @@ export default function GroupDetails({
   const queryClient = useQueryClient();
   const [confirm, setConfirm] = useState<"leave" | "delete" | null>(null);
   const [renaming, setRenaming] = useState(false);
+  const [describing, setDescribing] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
   // Every change answers with your groups as they now are, straight into the
@@ -98,6 +100,9 @@ export default function GroupDetails({
             {t.counts.members(group.members.length)} ·{" "}
             {t.groupsSection.made(formatMonthYear(group.createdAt, lang))}
           </p>
+          {group.description && (
+            <p className="mt-1 break-words text-[15px] text-foreground">{group.description}</p>
+          )}
         </div>
       </div>
 
@@ -124,6 +129,11 @@ export default function GroupDetails({
             rename.reset();
             setRenaming(true);
           }}
+        />
+        <ListRow
+          icon={AlignLeft}
+          label={group.description ? t.groupDescription.change : t.groupDescription.add}
+          onClick={() => setDescribing(true)}
         />
       </ListGroup>
 
@@ -173,6 +183,12 @@ export default function GroupDetails({
         />
       )}
 
+      <GroupDescriptionSheet
+        group={group}
+        userId={youId}
+        open={describing}
+        onClose={() => setDescribing(false)}
+      />
       <InviteDialog group={group} open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <ReportDialog
         open={reporting}

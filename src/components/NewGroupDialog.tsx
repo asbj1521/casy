@@ -13,11 +13,11 @@ import { useSignedInUser } from "@/context/auth";
 import { useInvite } from "@/hooks/useInvite";
 import { useOpenRound } from "@/hooks/useOpenRound";
 import { useT } from "@/i18n/lang";
-import { MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
+import { MAX_GROUP_DESCRIPTION_LENGTH, MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
 
 /**
- * "New group" (#153), two steps in one sheet: the name, and "Næste" makes the
- * group; then the same sheet is that group's Invite (contacts, people from
+ * "New group" (#153), two steps in one sheet: the name and, if wanted, what the
+ * group is for (#152), and "Næste" makes the group; then the same sheet is that group's Invite (contacts, people from
  * your groups, email, a link). Making it and inviting to it are kept apart,
  * as they are everywhere else. `onCreated` tells the page the moment the
  * group exists (the planner picks it); `onDone` once the sheet is closed
@@ -61,16 +61,18 @@ function NewGroupSheet({
   const userId = useSignedInUser().id;
   const queryClient = useQueryClient();
   const nameId = useId();
+  const descriptionId = useId();
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [made, setMade] = useState<{ id: string; name: string } | null>(null);
   // Called before the group exists too (hooks can't wait); nothing in it runs until then.
   const invite = useInvite(made ?? { id: "", name });
 
   const create = useMutation({
-    mutationFn: (groupName: string) => createGroup({ name: groupName }),
-    onSuccess: (data, groupName) => {
+    mutationFn: (group: { name: string; description?: string }) => createGroup(group),
+    onSuccess: (data, group) => {
       queryClient.setQueryData(groupsQueryKey(userId), data.groups);
-      setMade({ id: data.createdId, name: groupName });
+      setMade({ id: data.createdId, name: group.name });
       onCreated(data.createdId);
     },
   });
@@ -82,7 +84,9 @@ function NewGroupSheet({
 
   function handleName(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (name.trim() && !create.isPending) create.mutate(name.trim());
+    if (name.trim() && !create.isPending) {
+      create.mutate({ name: name.trim(), description: description.trim() || undefined });
+    }
   }
 
   const nameStep = (
@@ -100,6 +104,18 @@ function NewGroupSheet({
         onChange={(e) => setName(e.target.value)}
         placeholder={t.newGroup.placeholder}
         className={`${FIELD} font-semibold`}
+      />
+      <label htmlFor={descriptionId} className={`${FIELD_LABEL} mt-4`}>
+        {t.newGroup.descriptionLabel}
+      </label>
+      <input
+        id={descriptionId}
+        type="text"
+        maxLength={MAX_GROUP_DESCRIPTION_LENGTH}
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder={t.newGroup.descriptionPlaceholder}
+        className={FIELD}
       />
       {create.isError && (
         <Notice tone="error" className="mt-3">

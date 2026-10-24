@@ -198,6 +198,7 @@ export interface AdminReport {
   note: string | null;
   content: {
     groupName?: string;
+    groupDescription?: string | null;
     title?: string;
     place?: string;
     note?: string;

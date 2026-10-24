@@ -91,7 +91,13 @@ export interface MyData {
     last: string | null;
     next: { start: string; end: string }[];
   };
-  groups: { name: string; members: number; createdByYou: boolean; joinedAt: string }[];
+  groups: {
+    name: string;
+    description: string | null;
+    members: number;
+    createdByYou: boolean;
+    joinedAt: string;
+  }[];
   inviteLinks: { made: number; active: number };
   invitations: { pending: number; declined: number; sent: number };
   emailLookups: number;

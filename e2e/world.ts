@@ -715,6 +715,7 @@ export function myData(world: World): MyData {
     },
     groups: world.groups.map((g) => ({
       name: g.name,
+      description: g.description,
       members: g.members.length,
       createdByYou: g.createdBy === ME.id,
       joinedAt: g.members.find((m) => m.isYou)?.joinedAt ?? g.createdAt,

@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 23. oktober 2026",
+  updated: "Senest opdateret 24. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -71,9 +71,10 @@ const da: LegalCopy = {
               tidspunkterne forlader telefonen.
             </li>
             <li>
-              <Term>Grupper:</Term> navnet på hver gruppe, du er med i, hvem der ellers er med, hvem
-              der lavede den, og de invitationslinks, der er lavet til den. Invitationslinks gemmes
-              som et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til
+              <Term>Grupper:</Term> navnet på hver gruppe, du er med i, den korte beskrivelse af,
+              hvad gruppen er til, hvis nogen har skrevet en, hvem der ellers er med, hvem der
+              lavede den, og de invitationslinks, der er lavet til den. Invitationslinks gemmes som
+              et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til
               grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev
               afslået. Slår du en e-mailadresse op for at invitere nogen, noterer Casy kun, at du
               gjorde det, så der kan sættes en grænse for, hvor mange du kan slå op om dagen.
@@ -338,11 +339,11 @@ const da: LegalCopy = {
             score alligevel pege på en af medlemmerne.
           </p>
           <p>
-            Alle, der har en gruppes invitationslink, kan se gruppens navn, og hvor mange medlemmer
-            den har, og kan blive medlem, i de syv dage linket virker. Behandl et invitationslink
-            som en adresse, du kun sender til dem, du vil have med i gruppen. Når du forlader en
-            gruppe, holder de andre medlemmer op med at se noget om dig fra da af. Den, der lavede
-            en gruppe, kan slette den, hvilket fjerner den for alle medlemmer på én gang.
+            Alle, der har en gruppes invitationslink, kan se gruppens navn og beskrivelse, og hvor
+            mange medlemmer den har, og kan blive medlem, i de syv dage linket virker. Behandl et
+            invitationslink som en adresse, du kun sender til dem, du vil have med i gruppen. Når du
+            forlader en gruppe, holder de andre medlemmer op med at se noget om dig fra da af. Den,
+            der lavede en gruppe, kan slette den, hvilket fjerner den for alle medlemmer på én gang.
           </p>
           <p>
             Andre kan også invitere dig til en gruppe inde i Casy: folk, du allerede er i en gruppe
@@ -487,7 +488,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 23 October 2026",
+  updated: "Last updated 24 October 2026",
   sections: [
     {
       title: "In short",
@@ -535,12 +536,13 @@ const en: LegalCopy = {
               Only the times leave the phone.
             </li>
             <li>
-              <Term>Groups:</Term> the name of each group you are in, who else is in it, who made
-              it, and the invite links made for it. Invite links are stored as a fingerprint that
-              cannot be turned back into a working link. Invitations to groups: who invited whom,
-              and whether the invitation is still open or was declined. When you look up an email
-              address to invite someone, Casy only notes that you did, so it can limit how many you
-              can look up in a day. The address is not stored.
+              <Term>Groups:</Term> the name of each group you are in, the short description of what
+              the group is for if anyone wrote one, who else is in it, who made it, and the invite
+              links made for it. Invite links are stored as a fingerprint that cannot be turned back
+              into a working link. Invitations to groups: who invited whom, and whether the
+              invitation is still open or was declined. When you look up an email address to invite
+              someone, Casy only notes that you did, so it can limit how many you can look up in a
+              day. The address is not stored.
             </li>
             <li>
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
@@ -801,11 +803,11 @@ const en: LegalCopy = {
             point at one of the members.
           </p>
           <p>
-            Anyone holding a group&apos;s invite link can see the group&apos;s name and how many
-            members it has, and can join it, for the seven days the link works. Treat an invite link
-            like an address you would only send to people you want in the group. Leaving a group
-            stops the other members seeing anything about you from then on. The person who made a
-            group can delete it, which removes it for every member at once.
+            Anyone holding a group&apos;s invite link can see the group&apos;s name and description
+            and how many members it has, and can join it, for the seven days the link works. Treat
+            an invite link like an address you would only send to people you want in the group.
+            Leaving a group stops the other members seeing anything about you from then on. The
+            person who made a group can delete it, which removes it for every member at once.
           </p>
           <p>
             People can also invite you to a group from inside Casy: anyone you already share a group

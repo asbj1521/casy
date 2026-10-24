@@ -346,7 +346,18 @@ function GroupsPart({ data }: { data: MyData }) {
           <ListRow
             key={i}
             label={g.name}
-            detail={w.groupDetail(t.counts.members(g.members), g.createdByYou)}
+            detail={
+              g.description ? (
+                <>
+                  <span className="block truncate">
+                    {w.groupDetail(t.counts.members(g.members), g.createdByYou)}
+                  </span>
+                  <span className="block truncate">{g.description}</span>
+                </>
+              ) : (
+                w.groupDetail(t.counts.members(g.members), g.createdByYou)
+              )
+            }
           />
         ))}
       </FoldedRows>

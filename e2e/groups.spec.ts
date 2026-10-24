@@ -23,6 +23,35 @@ test("a group opens with its members", async ({ page, isMobile }) => {
   }
 });
 
+test("a group shows what it is for, and any member can change it (#152)", async ({
+  page,
+  backend,
+}) => {
+  await page.goto("/groups/g-friday");
+  await expect(page.getByText("En øl efter arbejde, når det passer de fleste")).toBeVisible();
+
+  await page.getByRole("button", { name: "Ændr beskrivelsen" }).first().click();
+  const sheet = page.getByRole("dialog", { name: "Beskrivelse" });
+  await sheet.getByLabel("Hvad er gruppen til?").fill("Fredagsøl i Nørrebro");
+  await sheet.getByRole("button", { name: "Gem" }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page.getByText("Fredagsøl i Nørrebro")).toBeVisible();
+  expect(backend.calls.find((c) => c.body.action === "describe")?.body).toMatchObject({
+    groupId: "g-friday",
+    description: "Fredagsøl i Nørrebro",
+  });
+
+  // A group with none offers to add one instead.
+  await page.goto("/groups/g-running");
+  await expect(page.getByRole("button", { name: "Ændr beskrivelsen" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Tilføj en beskrivelse" }).first()).toBeVisible();
+});
+
+test("an invitation says what the group is for (#152)", async ({ page }) => {
+  await page.goto("/groups");
+  await expect(page.getByText("Double om torsdagen i Valby")).toBeVisible();
+});
+
 test("declining an invitation removes it", async ({ page, backend }) => {
   await page.goto("/groups");
   await expect(page.getByText("Badminton")).toBeVisible();
@@ -56,12 +85,14 @@ test("a new group is named, then invited to, then opened (#153)", async ({ page,
   await page.goto("/groups");
   await page.getByRole("button", { name: "Lav en gruppe" }).click();
   await page.getByLabel("Gruppenavn").fill("Fredagsfilm");
+  await page.getByLabel(/Hvad er gruppen til/).fill("Film og pizza");
   await page.getByRole("button", { name: "Næste" }).click();
   // The same sheet goes on to inviting to the group just made.
   const sheet = page.getByRole("dialog", { name: "Invitér til Fredagsfilm" });
   await expect(sheet).toBeVisible();
   expect(backend.calls.find((c) => c.body.action === "create")?.body).toMatchObject({
     name: "Fredagsfilm",
+    description: "Film og pizza",
   });
   expect(backend.calls.find((c) => c.body.action === "create")?.body).not.toHaveProperty(
     "profileIds",

@@ -581,6 +581,17 @@ export const en: Messages = {
     nameLabel: "Group name",
     next: "Next",
     placeholder: "e.g. Board game night",
+    descriptionLabel: "What is the group for? (optional)",
+    descriptionPlaceholder: "e.g. Board games every other Thursday",
+  },
+  groupDescription: {
+    add: "Add a description",
+    change: "Change the description",
+    title: "Description",
+    label: "What is the group for?",
+    placeholder: "e.g. Board games every other Thursday",
+    footnote:
+      "Anyone in the group can change the description. It shows in invitations and on the invite link's page.",
   },
   invite: {
     title: (group: string) => `Invite to ${group}`,

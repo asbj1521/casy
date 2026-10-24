@@ -120,6 +120,9 @@ function ReportRow({
             {words.kinds[report.kind] ?? report.kind} · {reason}
           </p>
           {c.groupName && <p className="break-words text-muted-foreground">{c.groupName}</p>}
+          {c.groupDescription && (
+            <p className="break-words text-muted-foreground">{c.groupDescription}</p>
+          )}
           {c.memberName && <p className="break-words text-foreground">{c.memberName}</p>}
           {c.title && <p className="break-words text-foreground">{c.title}</p>}
           {c.place && <p className="break-words text-muted-foreground">{c.place}</p>}
