@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { Check, Languages } from "lucide-react";
 
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
+import { loadMessages } from "@/i18n/current";
 import { useLang, useT, type Lang } from "@/i18n/lang";
 
 /** Each language by its own name, whatever the page is in. */
@@ -17,6 +19,11 @@ const CHOICES: { lang: Lang; name: string }[] = [
 export default function LanguageGroup() {
   const t = useT();
   const { lang, setLang } = useLang();
+  // The other language is fetched as the choice appears (#157), so picking
+  // it switches at once.
+  useEffect(() => {
+    for (const choice of CHOICES) void loadMessages(choice.lang).catch(() => {});
+  }, []);
   return (
     <ListGroup title={t.language.title}>
       {CHOICES.map((choice) => (

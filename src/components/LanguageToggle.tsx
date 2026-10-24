@@ -1,5 +1,6 @@
 import { useLang, useT, type Lang } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
+import { loadMessages } from "@/i18n/current";
 
 const OPTIONS: { lang: Lang; label: string; name: string }[] = [
   { lang: "da", label: "DA", name: "Dansk" },
@@ -28,6 +29,9 @@ export default function LanguageToggle() {
             aria-label={option.name}
             lang={option.lang}
             onClick={() => setLang(option.lang)}
+            // Fetched as the pointer or a finger reaches it (#157), so the switch is instant.
+            onPointerEnter={() => void loadMessages(option.lang).catch(() => {})}
+            onFocus={() => void loadMessages(option.lang).catch(() => {})}
             className={cn(
               "rounded-full px-1.5 py-0.5 transition sm:px-2",
               active
