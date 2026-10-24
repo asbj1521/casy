@@ -83,6 +83,11 @@ export const en: Messages = {
     body: "This version of Casy is too old to work with the rest of Casy. Get the latest version from the App Store to carry on.",
     button: "Open the App Store",
   },
+  // A page that crashed while drawing (CrashScreen).
+  crash: {
+    title: "Something went wrong.",
+    reload: "Reload the page",
+  },
   common: {
     cancel: "Cancel",
     done: "Done",

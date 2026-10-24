@@ -100,6 +100,8 @@ interface Options {
   world: WorldOptions;
   /** Start signed in as Mia (the default), or signed out. */
   signedIn: boolean;
+  /** A test that makes the page crash on purpose (the crash screen's). */
+  expectPageErrors: boolean;
 }
 
 interface Fixtures {
@@ -109,12 +111,13 @@ interface Fixtures {
 export const test = base.extend<Options & Fixtures>({
   world: [DEFAULT_WORLD, { option: true }],
   signedIn: [true, { option: true }],
+  expectPageErrors: [false, { option: true }],
 
   backend: async ({ world }, use) => {
     await use(new FakeBackend(makeWorld(world)));
   },
 
-  page: async ({ page, backend, signedIn }, use) => {
+  page: async ({ page, backend, signedIn, expectPageErrors }, use) => {
     await page.clock.setFixedTime(new Date(NOW));
     await page.addInitScript(
       ({ key, value }) => {
@@ -150,7 +153,7 @@ export const test = base.extend<Options & Fixtures>({
     await use(page);
 
     expect(backend.unknown, "calls the test backend doesn't answer").toEqual([]);
-    expect(errors, "errors thrown in the page").toEqual([]);
+    if (!expectPageErrors) expect(errors, "errors thrown in the page").toEqual([]);
   },
 });
 

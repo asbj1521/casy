@@ -88,6 +88,11 @@ export const da = {
     body: "Denne version af Casy er for gammel til at virke sammen med resten af Casy. Hent den nyeste version i App Store for at fortsætte.",
     button: "Åbn App Store",
   },
+  // A page that crashed while drawing (CrashScreen).
+  crash: {
+    title: "Noget gik galt.",
+    reload: "Indlæs siden igen",
+  },
   common: {
     cancel: "Annuller",
     done: "Færdig",
