@@ -25,12 +25,55 @@ export interface Caller {
   created_at?: string;
 }
 
+/**
+ * How long a login checked with Supabase Auth is trusted again without
+ * asking (#158): a page makes several calls to the same warm function, and
+ * each check is a round trip. Never past the token's own expiry. The price:
+ * a session revoked elsewhere (signed out on all devices, an account
+ * deleted) still passes on a warm instance for at most this long.
+ */
+const TRUSTED_FOR_MS = 60_000;
+/** At most this many logins remembered per function instance. */
+const MAX_TRUSTED = 500;
+
+const trusted = new Map<string, { caller: Caller; until: number }>();
+
+/** When the token itself expires (its `exp`, in ms), or null if it can't be read. */
+function expiresAt(token: string): number | null {
+  try {
+    const part = token.split(".")[1];
+    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
+    const exp = JSON.parse(json).exp;
+    return typeof exp === "number" ? exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+/** For tests: forget every remembered login. */
+export function forgetTrustedCallers(): void {
+  trusted.clear();
+}
+
 /** The signed-in caller; anyone without a valid login is answered 401. */
 export async function requireCaller(req: Request, db: Db): Promise<Caller> {
   const token = req.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   if (token) {
+    const now = Date.now();
+    const known = trusted.get(token);
+    if (known && known.until > now) return known.caller;
+    if (known) trusted.delete(token);
     const { data } = await db.auth.getUser(token);
-    if (data.user) return data.user;
+    if (data.user) {
+      const exp = expiresAt(token);
+      const until = Math.min(now + TRUSTED_FOR_MS, exp ?? now);
+      if (until > now) {
+        // The oldest goes first once the instance has remembered plenty.
+        if (trusted.size >= MAX_TRUSTED) trusted.delete(trusted.keys().next().value!);
+        trusted.set(token, { caller: data.user, until });
+      }
+      return data.user;
+    }
   }
   throw new HttpError(401, "Please sign in again.");
 }
