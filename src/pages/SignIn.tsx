@@ -1,12 +1,14 @@
-import { useLayoutEffect, useState, type FormEvent } from "react";
+import { useLayoutEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { KeyRound, Loader2, Mail } from "lucide-react";
+import { KeyRound, Loader2, Mail, type LucideIcon } from "lucide-react";
 
 import { calendarStatusQuery } from "@/api/calendars";
 import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
 import AppBackLink from "@/components/welcome/AppBackLink";
+import { FIELD, FIELD_LABEL } from "@/components/ui/field";
+import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
@@ -69,6 +71,12 @@ export default function SignIn() {
   const [searchParams] = useSearchParams();
   const next = safeNext(searchParams.get("next"));
   const phone = usePhoneLayout();
+  // The design language's fields on a phone and in the app (#161); a
+  // computer's sign-in stays as it was.
+  const inputClass = phone
+    ? FIELD
+    : "w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30";
+  const labelClass = phone ? FIELD_LABEL : "mb-1 block font-medium text-foreground";
   // Arriving from the landing page's "Sign in", its chart card flies into
   // the box below (cardTransition.ts), which waits for this page to be drawn.
   useLayoutEffect(cardArrived, []);
@@ -467,7 +475,7 @@ export default function SignIn() {
               ) : (
                 <form onSubmit={(e) => void handleEmail(e)} className="flex flex-col gap-3">
                   <label className="text-sm">
-                    <span className="mb-1 block font-medium text-foreground">{t.signIn.email}</span>
+                    <span className={labelClass}>{t.signIn.email}</span>
                     <input
                       type="email"
                       required
@@ -475,21 +483,12 @@ export default function SignIn() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={t.signIn.emailPlaceholder}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      className={inputClass}
                     />
                   </label>
-                  <button
-                    type="submit"
-                    disabled={sending}
-                    className="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-                  >
-                    {sending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Mail className="h-4 w-4" />
-                    )}
+                  <SubmitButton phone={phone} busy={sending} icon={Mail}>
                     {sending ? t.signIn.sendingLink : t.signIn.sendLink}
-                  </button>
+                  </SubmitButton>
                 </form>
               )
             ) : (
@@ -542,9 +541,7 @@ export default function SignIn() {
                   ) : (
                     <form onSubmit={(e) => void handlePassword(e)} className="flex flex-col gap-3">
                       <label className="text-sm">
-                        <span className="mb-1 block font-medium text-foreground">
-                          {t.signIn.email}
-                        </span>
+                        <span className={labelClass}>{t.signIn.email}</span>
                         <input
                           type="email"
                           required
@@ -552,34 +549,23 @@ export default function SignIn() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder={t.signIn.emailPlaceholder}
-                          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                          className={inputClass}
                         />
                       </label>
                       <label className="text-sm">
-                        <span className="mb-1 block font-medium text-foreground">
-                          {t.signIn.password}
-                        </span>
+                        <span className={labelClass}>{t.signIn.password}</span>
                         <input
                           type="password"
                           required
                           autoComplete="current-password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                          className={inputClass}
                         />
                       </label>
-                      <button
-                        type="submit"
-                        disabled={sending}
-                        className="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-                      >
-                        {sending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <KeyRound className="h-4 w-4" />
-                        )}
+                      <SubmitButton phone={phone} busy={sending} icon={KeyRound}>
                         {sending ? t.signIn.signingIn : t.signIn.signInButton}
-                      </button>
+                      </SubmitButton>
                       <button
                         type="button"
                         onClick={() => void handleForgotPassword()}
@@ -609,9 +595,7 @@ export default function SignIn() {
                 ) : (
                   <div className="flex flex-col gap-3">
                     <label className="text-sm">
-                      <span className="mb-1 block font-medium text-foreground">
-                        {t.signIn.email}
-                      </span>
+                      <span className={labelClass}>{t.signIn.email}</span>
                       <input
                         type="email"
                         required
@@ -619,7 +603,7 @@ export default function SignIn() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder={t.signIn.emailPlaceholder}
-                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                        className={inputClass}
                       />
                     </label>
                     <PasswordForm
@@ -671,5 +655,36 @@ export default function SignIn() {
         </p>
       </main>
     </div>
+  );
+}
+
+/** The form's main button: the glass capsule on a phone and in the app (#161), as it was on a computer. */
+function SubmitButton({
+  phone,
+  busy,
+  icon: Icon,
+  children,
+}: {
+  phone: boolean;
+  busy: boolean;
+  icon: LucideIcon;
+  children: ReactNode;
+}) {
+  if (phone) {
+    return (
+      <FlowButton type="submit" busy={busy}>
+        {children}
+      </FlowButton>
+    );
+  }
+  return (
+    <button
+      type="submit"
+      disabled={busy}
+      className="flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+    >
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+      {children}
+    </button>
   );
 }

@@ -1,7 +1,10 @@
 import { useId, useMemo, useState, type FormEvent } from "react";
 import { Check, Circle, Loader2, Lock } from "lucide-react";
 
+import { FIELD, FIELD_LABEL } from "@/components/ui/field";
+import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useLang, useT, LOCALE } from "@/i18n/lang";
 import {
   checkPassword,
@@ -51,6 +54,11 @@ export default function PasswordForm({
   onCancel?: () => void;
 }) {
   const t = useT();
+  // The design language's fields on a phone and in the app (#161).
+  const phone = usePhoneLayout();
+  const inputClass = phone
+    ? FIELD
+    : "w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30";
   const { lang } = useLang();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -96,7 +104,13 @@ export default function PasswordForm({
     <form onSubmit={(e) => void handleSubmit(e)}>
       <div className="flex flex-col gap-3">
         <div className="text-sm">
-          <div className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
+          <div
+            className={
+              phone
+                ? `${FIELD_LABEL} flex items-center gap-1.5`
+                : "mb-1 flex items-center gap-1.5 font-medium text-foreground"
+            }
+          >
             <Lock className="h-3.5 w-3.5" />
             <label htmlFor={passwordId}>{passwordLabel ?? t.passwordForm.newPassword}</label>
           </div>
@@ -111,7 +125,7 @@ export default function PasswordForm({
               setPassword(e.target.value);
               clearLocalError();
             }}
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            className={inputClass}
           />
           {/* The rules, ticked off as they are met. */}
           <ul className="mt-2 flex flex-col gap-1 text-xs">
@@ -134,7 +148,9 @@ export default function PasswordForm({
           </ul>
         </div>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-foreground">{t.passwordForm.confirm}</span>
+          <span className={phone ? FIELD_LABEL : "mb-1 block font-medium text-foreground"}>
+            {t.passwordForm.confirm}
+          </span>
           <input
             id={confirmId}
             type="password"
@@ -146,19 +162,26 @@ export default function PasswordForm({
               setConfirm(e.target.value);
               clearLocalError();
             }}
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            className={inputClass}
           />
         </label>
         {(localError || error) && <Notice tone="error">{localError ?? error}</Notice>}
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={busy}
-            className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-          >
-            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            {checking ? t.passwordForm.checking : submitting ? submittingLabel : submitLabel}
-          </button>
+        <div className={phone ? "flex flex-col items-center gap-3" : "flex items-center gap-3"}>
+          {phone ? (
+            // The glass capsule on a phone and in the app (#161).
+            <FlowButton type="submit" busy={busy}>
+              {checking ? t.passwordForm.checking : submitting ? submittingLabel : submitLabel}
+            </FlowButton>
+          ) : (
+            <button
+              type="submit"
+              disabled={busy}
+              className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              {checking ? t.passwordForm.checking : submitting ? submittingLabel : submitLabel}
+            </button>
+          )}
           {onCancel && (
             <button
               type="button"
