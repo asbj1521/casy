@@ -1,4 +1,5 @@
 /** A group's busy time, as the groups function's `busy` action sends it (#160, split out of index.ts). */
+import { withoutRepeats } from "../_shared/busyBlocks.ts";
 import { type Db } from "../_shared/supabaseAdmin.ts";
 
 export const PAGE_SIZE = 1000; // PostgREST's default row cap per request
@@ -132,7 +133,8 @@ export async function groupBusy(db: Db, memberIds: string[], from: Date, to: Dat
       .map(([id, at]) => [id, new Date(at).toISOString()]),
   );
   return {
-    busy: Object.fromEntries(busyByMember),
+    // An event in two of a member's calendars is sent once (#158).
+    busy: Object.fromEntries([...busyByMember].map(([id, blocks]) => [id, withoutRepeats(blocks)])),
     connected: Object.fromEntries(memberIds.map((id) => [id, hasCalendar.has(id)])),
     outdated,
     truncated,
