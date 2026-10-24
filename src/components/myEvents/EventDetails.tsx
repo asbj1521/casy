@@ -6,8 +6,6 @@ import { CalendarCheck, CalendarX, Check, Clock, LogOut, Meh, Users, X } from "l
 import { answerDate, type EventInvitee } from "@/api/events";
 import { groupsQuery } from "@/api/groups";
 import AddToCalendar from "@/components/AddToCalendar";
-import AnswerButtons from "@/components/myEvents/AnswerButtons";
-import DateConflicts from "@/components/myEvents/DateConflicts";
 import { EdgeWarnings, ExitConfirm, Origin } from "@/components/myEvents/parts";
 import VoteDetails from "@/components/myEvents/VoteDetails";
 import YourTime from "@/components/time/YourTime";
@@ -19,8 +17,8 @@ import { useSignedInUser } from "@/context/auth";
 import { useEventChange } from "@/hooks/useEventChange";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useLang, useT } from "@/i18n/lang";
-import { formatEventDate, formatHeadline, nameList } from "@/lib/format";
-import { waitingOn, type StagedEvent } from "@/lib/myEvents";
+import { formatEventDate, formatHeadline } from "@/lib/format";
+import type { StagedEvent } from "@/lib/myEvents";
 import { isVote } from "@/lib/vote";
 import { cn } from "@/lib/utils";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
@@ -29,8 +27,6 @@ import ReportEventButton from "@/components/safety/ReportEventButton";
 
 /** Each stage's colour, as its card has it on a phone. */
 const STAGE_TONE = {
-  needsAnswer: "bg-primary/10 text-primary",
-  waiting: "bg-amber-100 text-amber-800",
   scheduled: "bg-emerald-100 text-emerald-800",
   closed: "bg-secondary text-muted-foreground",
 } as const;
@@ -39,7 +35,7 @@ const STAGE_TONE = {
  * One event in depth, beside the list on a computer's My events: its date
  * big, where it stands, everyone's answer, the dates offered before it and
  * who couldn't make them, and the way out. The phone shows each event as a
- * card instead (NeedsAnswerCard, WaitingCard, ScheduledCard).
+ * row instead (EventRows).
  */
 export default function EventDetails({ staged }: { staged: StagedEvent }) {
   // A vote still being answered has its own view (#74): no date yet, only dates.
@@ -72,15 +68,11 @@ function DatedDetails({
   const headline = event.currentDate && formatHeadline(event.settings, event.currentDate, lang, t);
 
   const stageLabel =
-    stage === "needsAnswer"
-      ? t.events.needsAnswer
-      : stage === "waiting"
-        ? t.events.waitingForOthers
-        : stage === "scheduled"
-          ? t.events.scheduled
-          : event.status === "no_date" || !event.currentDate
-            ? t.events.stageNoDate
-            : t.events.stagePast;
+    stage === "scheduled"
+      ? t.events.scheduled
+      : event.status === "no_date" || !event.currentDate
+        ? t.events.stageNoDate
+        : t.events.stagePast;
 
   return (
     <>
@@ -127,15 +119,7 @@ function DatedDetails({
       </div>
 
       {stage !== "closed" && <EdgeWarnings event={event} className="mt-3" />}
-      {stage !== "closed" && <DateConflicts event={event} className="mt-3" />}
 
-      {stage === "needsAnswer" && <AnswerButtons event={event} />}
-      {stage === "waiting" && (
-        <p className="mt-4 flex items-center gap-1.5 text-lg font-bold text-foreground">
-          <Clock className="h-5 w-5 shrink-0 text-amber-600" />
-          {t.events.waitingFor(nameList(waitingOn(event), lang))}
-        </p>
-      )}
       {stage === "scheduled" && (
         <div className="mt-4">
           {event.invitees.every((i) => i.response === "accepted") && (

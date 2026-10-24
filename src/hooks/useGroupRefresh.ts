@@ -68,8 +68,8 @@ export function useGroupRefresh(userId: string): GroupRefresh {
             REFRESH_EVERY_MS / 1000,
           );
           if (!synced) return { before, after: undefined };
-          // Your own calendar may be among those synced: the events badge
-          // reads it (useEventsBadge).
+          // Your own calendar may be among those synced: My calendar and the
+          // swipe screen read it.
           void queryClient.invalidateQueries({ queryKey: ["calendar-busy", userId] });
           const after = await queryClient.fetchQuery({ ...busy, staleTime: 0 });
           // Slow syncs (iCloud, usually) finish on the server after its

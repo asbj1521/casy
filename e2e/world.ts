@@ -437,41 +437,14 @@ function events(): SuggestedEvent[] {
         },
       ],
     },
-    // One date at a time, from before votes: waiting for Mia (needsAnswer).
-    {
-      ...base,
-      id: "ev-dinner",
-      group: { id: "g-friday", name: "Fredagsbar" },
-      title: "Middag hos Sara",
-      settings: { kind: "single", durationMinutes: 180, startHour: 18 },
-      status: "pending",
-      mode: "single",
-      createdBy: { id: PEOPLE.sara.id, name: "Sara", isYou: false },
-      createdAt: "2026-10-01T08:00:00.000Z",
-      updatedAt: "2026-10-05T08:00:00.000Z",
-      currentDate: {
-        id: "d-din-2",
-        start: cph("2026-10-18", "18:00"),
-        end: cph("2026-10-18", "21:00"),
-      },
-      invitees: [
-        invitee(ME, null),
-        invitee(PEOPLE.emil, null),
-        invitee(PEOPLE.jonas, "accepted"),
-        invitee(PEOPLE.sara, "accepted"),
-      ],
-      declinedDates: [
-        { start: cph("2026-10-11", "18:00"), end: cph("2026-10-11", "21:00"), declinedBy: "Jonas" },
-      ],
-    },
-    // Mia said yes; Oliver hasn't answered (waiting).
+    // Agreed by all three, in a group where Mia isn't the one who suggested it.
     {
       ...base,
       id: "ev-run",
       group: { id: "g-running", name: "Løbeklubben" },
       title: "Løbetur",
       settings: { kind: "single", durationMinutes: 90, startHour: 9 },
-      status: "pending",
+      status: "scheduled",
       mode: "single",
       createdBy: { id: PEOPLE.freja.id, name: "Freja", isYou: false },
       createdAt: "2026-10-04T08:00:00.000Z",
@@ -481,11 +454,7 @@ function events(): SuggestedEvent[] {
         start: cph("2026-10-11", "09:00"),
         end: cph("2026-10-11", "10:30"),
       },
-      invitees: [
-        invitee(ME, "accepted"),
-        invitee(PEOPLE.freja, "accepted"),
-        invitee(PEOPLE.oliver, null),
-      ],
+      invitees: running.map((p) => invitee(p, "accepted")),
     },
     // Agreed and in Mia's calendar (scheduled).
     {

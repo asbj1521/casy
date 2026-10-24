@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { SuggestedEvent } from "@/api/events";
-import { eventsInOrder, phoneEventList, sectionEvents, waitingOn } from "@/lib/myEvents";
+import { eventsInOrder, phoneEventList, sectionEvents } from "@/lib/myEvents";
 
 const NOW = Date.parse("2026-09-22T12:00:00.000Z");
 
@@ -30,23 +30,11 @@ function event(overrides: Partial<SuggestedEvent> & { id: string }): SuggestedEv
 }
 
 describe("sectionEvents", () => {
-  it("puts an event you haven't answered under needs-your-answer", () => {
-    const s = sectionEvents([event({ id: "a" })], NOW);
-    expect(s.needsAnswer.map((e) => e.id)).toEqual(["a"]);
-    expect(s.waiting).toEqual([]);
-  });
-
-  it("puts one you accepted, still waiting on others, under waiting", () => {
-    const e = event({
-      id: "a",
-      invitees: [
-        { profileId: "me", name: "Asbjørn", isYou: true, response: "accepted" },
-        { profileId: "tessa", name: "Tessa", isYou: false, response: null },
-      ],
-    });
-    const s = sectionEvents([e], NOW);
-    expect(s.waiting.map((x) => x.id)).toEqual(["a"]);
-    expect(waitingOn(e)).toEqual(["Tessa"]);
+  it("calls a pending one-date event from before votes closed: it can't be answered any more (#159)", () => {
+    const s = sectionEvents([event({ id: "old" })], NOW);
+    expect(s.closed.map((e) => e.id)).toEqual(["old"]);
+    expect(s.toSwipe).toEqual([]);
+    expect(s.voting).toEqual([]);
   });
 
   it("files scheduled events by date, and moves past or closed ones aside", () => {
@@ -71,10 +59,8 @@ describe("sectionEvents", () => {
 
   it("drops a cancelled event entirely rather than filing it under closed", () => {
     const s = sectionEvents([event({ id: "gone", status: "cancelled" })], NOW);
-    expect(s.needsAnswer).toEqual([]);
     expect(s.toSwipe).toEqual([]);
     expect(s.voting).toEqual([]);
-    expect(s.waiting).toEqual([]);
     expect(s.scheduled).toEqual([]);
     expect(s.closed).toEqual([]);
   });
@@ -136,24 +122,38 @@ describe("sectionEvents with votes", () => {
   });
 });
 
+/** A vote with one date to come (the 25th), answered or not by you. */
+function openVote(id: string, createdAt: string, answered: boolean) {
+  return event({
+    id,
+    mode: "vote",
+    currentDate: null,
+    createdAt,
+    candidates: [
+      {
+        id: `${id}-d`,
+        start: "2026-09-25T16:00:00.000Z",
+        end: "2026-09-25T19:00:00.000Z",
+        answers: answered ? { me: "accepted" } : {},
+      },
+    ],
+  });
+}
+
 describe("eventsInOrder", () => {
   it("lists the sections in the page's order, each event with its section", () => {
-    const accepted = [
-      { profileId: "me", name: "Asbjørn", isYou: true, response: "accepted" as const },
-      { profileId: "tessa", name: "Tessa", isYou: false, response: null },
-    ];
     const s = sectionEvents(
       [
         event({ id: "closed", currentDate: null, status: "no_date" }),
         event({ id: "scheduled", status: "scheduled" }),
-        event({ id: "waiting", invitees: accepted }),
-        event({ id: "answer" }),
+        openVote("waiting", "2026-09-20T10:00:00.000Z", true),
+        openVote("answer", "2026-09-20T10:00:00.000Z", false),
       ],
       NOW,
     );
     expect(eventsInOrder(s).map(({ stage, event }) => [stage, event.id])).toEqual([
-      ["needsAnswer", "answer"],
-      ["waiting", "waiting"],
+      ["toSwipe", "answer"],
+      ["voting", "waiting"],
       ["scheduled", "scheduled"],
       ["closed", "closed"],
     ]);
@@ -169,16 +169,16 @@ describe("phoneEventList", () => {
   const at = (ms: number) => new Date(ms).toISOString();
 
   it("lists what is to come newest first, whatever its stage", () => {
-    const old = event({ id: "old", createdAt: "2026-09-10T10:00:00.000Z" });
+    const old = openVote("old", "2026-09-10T10:00:00.000Z", true);
     const agreed = event({
       id: "agreed",
       status: "scheduled",
       createdAt: "2026-09-15T10:00:00.000Z",
     });
-    const fresh = event({ id: "fresh", createdAt: "2026-09-21T10:00:00.000Z" });
+    const fresh = openVote("fresh", "2026-09-21T10:00:00.000Z", false);
     const { live } = phoneEventList([old, agreed, fresh], NOW);
     expect(live.map((s) => s.event.id)).toEqual(["fresh", "agreed", "old"]);
-    expect(live.map((s) => s.stage)).toEqual(["needsAnswer", "scheduled", "needsAnswer"]);
+    expect(live.map((s) => s.stage)).toEqual(["toSwipe", "scheduled", "voting"]);
   });
 
   it("keeps a past event at the bottom for a week after it ended, then drops it", () => {

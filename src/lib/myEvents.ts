@@ -14,12 +14,8 @@ export type DatedEvent = SuggestedEvent & {
 interface EventSections {
   /** A vote with dates you haven't answered yet (#74): the swiping to do. */
   toSwipe: VoteEvent[];
-  /** Pending, and you haven't answered the current date yet. */
-  needsAnswer: DatedEvent[];
   /** A vote you've answered: waiting for the others, or for the suggester to choose. */
   voting: VoteEvent[];
-  /** Pending, you've said yes, others haven't answered. */
-  waiting: DatedEvent[];
   /** Everyone accepted, and the date hasn't passed. */
   scheduled: DatedEvent[];
   /** Past, or no date left. Cancelled events aren't kept anywhere. */
@@ -33,9 +29,7 @@ const bySoonest = (a: DatedEvent, b: DatedEvent) =>
 export function sectionEvents(events: SuggestedEvent[], now = Date.now()): EventSections {
   const sections: EventSections = {
     toSwipe: [],
-    needsAnswer: [],
     voting: [],
-    waiting: [],
     scheduled: [],
     closed: [],
   };
@@ -57,17 +51,15 @@ export function sectionEvents(events: SuggestedEvent[], now = Date.now()): Event
     }
     if (!hasDate(e) || Date.parse(e.currentDate.end) <= now) sections.closed.push(e);
     else if (e.status === "scheduled") sections.scheduled.push(e);
-    else if (e.status !== "pending") sections.closed.push(e);
-    else if (e.invitees.some((i) => i.isYou && i.response === null)) sections.needsAnswer.push(e);
-    else sections.waiting.push(e);
+    // Anything else still pending is a one-date event from before votes
+    // (#159), called off by the migration: nothing to answer any more.
+    else sections.closed.push(e);
   }
   // Soonest first where there's a date to act on; most recent first for the rest.
   const byFirstDate = (a: VoteEvent, b: VoteEvent) =>
     (firstDate.get(a.id) ?? 0) - (firstDate.get(b.id) ?? 0);
   sections.toSwipe.sort(byFirstDate);
   sections.voting.sort(byFirstDate);
-  sections.needsAnswer.sort(bySoonest);
-  sections.waiting.sort(bySoonest);
   sections.scheduled.sort(bySoonest);
   sections.closed.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   return sections;
@@ -77,31 +69,19 @@ export function sectionEvents(events: SuggestedEvent[], now = Date.now()): Event
 export type EventStage = keyof EventSections;
 
 /** The sections in the order the page shows them. */
-const STAGES: readonly EventStage[] = [
-  "toSwipe",
-  "needsAnswer",
-  "voting",
-  "waiting",
-  "scheduled",
-  "closed",
-];
+const STAGES: readonly EventStage[] = ["toSwipe", "voting", "scheduled", "closed"];
 
 /** Every event the page shows, section by section, each with its section. */
 export type StagedEvent =
   | { stage: "toSwipe"; event: VoteEvent }
   | { stage: "voting"; event: VoteEvent }
-  | { stage: "needsAnswer" | "waiting" | "scheduled"; event: DatedEvent }
+  | { stage: "scheduled"; event: DatedEvent }
   | { stage: "closed"; event: SuggestedEvent };
 
 export function eventsInOrder(sections: EventSections): StagedEvent[] {
   return STAGES.flatMap((stage) =>
     sections[stage].map((event) => ({ stage, event }) as StagedEvent),
   );
-}
-
-/** The people who haven't answered the current date yet (never you). */
-export function waitingOn(event: SuggestedEvent): string[] {
-  return event.invitees.filter((i) => !i.isYou && i.response === null).map((i) => i.name);
 }
 
 /**

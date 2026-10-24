@@ -618,22 +618,6 @@ export class FakeBackend {
         this.changed();
         return ok({ ...list(), outcome: this.decideVote(event) });
       }
-      case "respond": {
-        if (!event.currentDate || !me)
-          return fail(409, "That event is no longer waiting for answers.");
-        if (body.response === "accepted") {
-          me.response = "accepted";
-          if (event.invitees.every((i) => i.response === "accepted")) event.status = "scheduled";
-        } else {
-          event.declinedDates.push({ ...event.currentDate, declinedBy: ME.name });
-          const next = body.next as { start: string; end: string } | null;
-          event.currentDate = next ? { id: `${event.id}-next`, ...next } : null;
-          if (!next) event.status = "no_date";
-          for (const i of event.invitees) i.response = null;
-        }
-        this.changed();
-        return ok({ ...list(), outcome: event.status === "scheduled" ? "scheduled" : "answered" });
-      }
       case "leave":
         w.events = w.events.filter((e) => e !== event);
         this.changed();

@@ -31,7 +31,7 @@ function PhoneTabBar() {
 
   // Each badge sits on the tab that leads to the answer: events waiting on you
   // on Events, group invitations on the profile (its Groups row says which).
-  // Answers waiting on you, and dates you said yes to that now clash (useEventsBadge).
+  // Votes with dates waiting for your answer (useEventsBadge).
   const eventsBadge = useEventsBadge();
   const { data: invitations } = useQuery({
     ...invitationsQuery(user?.id ?? ""),

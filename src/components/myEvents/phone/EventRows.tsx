@@ -180,10 +180,8 @@ function Summary({ staged }: { staged: StagedEvent }): ReactNode {
   switch (staged.stage) {
     case "voting":
       return <VoteSummary event={staged.event} />;
-    case "needsAnswer":
-    case "waiting":
     case "scheduled":
-      return <DatedSummary event={staged.event} stage={staged.stage} />;
+      return <DatedSummary event={staged.event} />;
     default:
       return null;
   }
@@ -208,9 +206,6 @@ function StatusLine({ staged }: { staged: StagedEvent }) {
       const total = event.invitees.length;
       return <>{t.events.answeredOf(total - stillToAnswer(event).length, total)}</>;
     }
-    // Who it waits for is in the opened row (its answers), not here.
-    case "needsAnswer":
-    case "waiting":
     case "scheduled":
       return <>{formatEventDate(event.settings.kind, event.currentDate, lang)}</>;
     case "closed":

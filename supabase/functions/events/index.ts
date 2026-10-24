@@ -8,13 +8,10 @@
  * a group or event id in the request gets you no further than your own
  * membership already does.
  *
- * The search that finds dates runs in the browser (src/lib/eventSearch.ts),
- * which already has the group's calendars. So a decline arrives with the next
- * date attached; this function checks it is a sensible date after the one
- * being declined, and the database swaps it in atomically (respond_to_event).
- *
- * Events suggested since #74 are votes instead: several dates at once, which
- * everyone answers (answer: can, rather not, can't) by swiping through them.
+ * Events are votes (#74): several dates at once, which everyone answers
+ * (answer: can, rather not, can't) by swiping through them. The older flow of
+ * one date at a time, accepted or declined, was retired in #159: such events
+ * are still listed (scheduled or past) but no longer answered.
  * The database decides a vote once everyone has answered or its deadline
  * passes (decide_vote); if every date has a decline, the suggester picks
  * one (choose). Votes past their deadline are decided on the next list.
@@ -177,59 +174,6 @@ serve("events", async (req, body) => {
         single: (body.settings as { kind?: string }).kind === "single",
         dates: dates as { start: string; end: string }[],
       });
-    }
-
-    case "respond": {
-      const proposalId = requireString(body, "proposalId");
-      const dateId = requireString(body, "dateId");
-      const response = body.response;
-      if (response !== "accepted" && response !== "declined") {
-        throw new HttpError(400, "response must be accepted or declined");
-      }
-
-      // A decline brings the next date, or null when the search found none.
-      let next: { start: string; end: string } | null = null;
-      if (response === "declined" && body.next != null) {
-        next = parseEventDate(body.next);
-        if (!next) throw new HttpError(400, "The replacement date isn't valid.");
-        // It has to come after the date being declined: the search runs
-        // forward from the day after, never back over dates already seen.
-        const { data: declined, error } = await db
-          .from("event_proposal_dates")
-          .select("starts_at")
-          .eq("id", dateId)
-          .eq("proposal_id", proposalId)
-          .maybeSingle();
-        if (error) throw error;
-        if (!declined) throw new HttpError(404, "That event no longer exists.");
-        if (Date.parse(next.start) <= Date.parse(declined.starts_at)) {
-          throw new HttpError(400, "The replacement date must be after the declined one.");
-        }
-      }
-
-      const { data: outcome, error } = await db.rpc("respond_to_event", {
-        p_proposal_id: proposalId,
-        p_date_id: dateId,
-        p_profile_id: profileId,
-        p_response: response,
-        p_next_starts_at: next?.start ?? null,
-        p_next_ends_at: next?.end ?? null,
-      });
-      if (error) throw error;
-      if (outcome === "not_invited")
-        throw new HttpError(403, "You weren't asked about that event.");
-      if (outcome === "closed") {
-        throw new HttpError(409, "That event is no longer waiting for answers.");
-      }
-      if (outcome === "stale") {
-        throw new HttpError(
-          409,
-          "Someone else answered first and the date changed. Have a look at the new one.",
-        );
-      }
-      // The last yes schedules it: in go the automatic adds.
-      if (outcome === "accepted") syncCalendarsLater(proposalId);
-      return { outcome, ...(await list()) };
     }
 
     case "answer": {

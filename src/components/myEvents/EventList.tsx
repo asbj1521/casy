@@ -14,9 +14,7 @@ const HEADINGS = ["needsAnswer", "waiting", "scheduled", "closed"] as const;
 type Heading = (typeof HEADINGS)[number];
 const HEADING_OF: Record<EventStage, Heading> = {
   toSwipe: "needsAnswer",
-  needsAnswer: "needsAnswer",
   voting: "waiting",
-  waiting: "waiting",
   scheduled: "scheduled",
   closed: "closed",
 };

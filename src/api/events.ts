@@ -6,22 +6,14 @@
  * swipes through them once on My events, and the date that suits everyone
  * best is chosen (src/lib/vote.ts explains the rule).
  *
- * Events suggested before that offer one date at a time ("single"): everyone
- * accepts or declines it, and a decline comes with the next date already
- * found (by the decliner's browser, which has the group's calendars).
+ * Events suggested before votes offered one date at a time ("single"); that
+ * flow was retired (#159). Scheduled and past ones are still listed.
  */
-import { queryOptions, type QueryClient } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 
 import type { EventImpact } from "@/api/eventProfile";
-import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
-import {
-  findEventSlot,
-  isEventSettings,
-  SEARCH_WINDOW,
-  type EventSettings,
-} from "@/lib/eventSearch";
+import type { EventSettings } from "@/lib/eventSearch";
 import { callFunction } from "@/lib/supabaseFunctions";
-import { addDays, APP_TIME_ZONE, dayOf } from "@/lib/zone";
 import { currentMessages } from "@/i18n/current";
 
 type EventStatus = "pending" | "scheduled" | "no_date" | "cancelled";
@@ -147,20 +139,14 @@ export function eventsQuery(userId: string) {
   });
 }
 
-/**
- * True if this event is waiting for your answer: on its current date, or for
- * a vote on any date still to come.
- */
+/** True if a vote is waiting for your answer on any date still to come. */
 export function needsYourAnswer(event: SuggestedEvent, now = Date.now()): boolean {
-  if (event.status !== "pending") return false;
+  if (event.status !== "pending" || event.mode !== "vote") return false;
   const you = event.invitees.find((i) => i.isYou);
   if (!you) return false;
-  if (event.mode === "vote") {
-    return event.candidates.some(
-      (c) => Date.parse(c.start) > now && c.answers[you.profileId] === undefined,
-    );
-  }
-  return you.response === null;
+  return event.candidates.some(
+    (c) => Date.parse(c.start) > now && c.answers[you.profileId] === undefined,
+  );
 }
 
 /**
@@ -254,74 +240,6 @@ export async function cancelEvent(proposalId: string): Promise<{ events: Suggest
 /** Drop out of an event someone else suggested; it carries on without you. */
 export async function leaveEvent(proposalId: string): Promise<{ events: SuggestedEvent[] }> {
   return await eventsCall({ action: "leave", proposalId }, currentMessages().api.leaveEvent);
-}
-
-export async function acceptEvent(event: SuggestedEvent): Promise<{ events: SuggestedEvent[] }> {
-  if (!event.currentDate) throw new Error(currentMessages().api.noDateToAccept);
-  return await eventsCall(
-    {
-      action: "respond",
-      proposalId: event.id,
-      dateId: event.currentDate.id,
-      response: "accepted",
-    },
-    currentMessages().api.acceptEvent,
-  );
-}
-
-/**
- * Decline the current date and hand over the next one.
- *
- * The next date comes from the same search that found the first
- * (findEventSlot, with the event's own settings), run over the group's
- * calendars from the day after the declined date. Members with no calendar
- * linked are left out of it, exactly as on the scheduling page.
- */
-export async function declineEvent(
-  queryClient: QueryClient,
-  userId: string,
-  event: SuggestedEvent,
-): Promise<{ events: SuggestedEvent[]; outcome: string }> {
-  if (!event.currentDate) throw new Error(currentMessages().api.noDateToDecline);
-  if (!isEventSettings(event.settings)) throw new Error(currentMessages().api.cantReschedule);
-
-  const [groups, busy] = await Promise.all([
-    queryClient.fetchQuery(groupsQuery(userId)),
-    queryClient.fetchQuery(
-      groupBusyQuery(userId, event.group.id, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
-    ),
-  ]);
-  const group = groups.find((g) => g.id === event.group.id);
-  if (!group) throw new Error(currentMessages().api.notInGroup);
-  const { participants } = participantsFromGroup(group, busy);
-
-  // Where the next search starts. A vacation starts after the declined one
-  // ends: a stay overlapping days you just said you can't make would only be
-  // declined again. Shorter events start from the day after the declined one.
-  const from =
-    event.settings.kind === "vacation"
-      ? event.currentDate.end
-      : new Date(
-          addDays(Date.parse(dayOf(event.currentDate.start, APP_TIME_ZONE)), 1, APP_TIME_ZONE),
-        ).toISOString();
-  const { slot } = findEventSlot(
-    participants,
-    event.settings,
-    from,
-    SEARCH_WINDOW.end,
-    APP_TIME_ZONE,
-  );
-
-  return await eventsCall<{ outcome: string }>(
-    {
-      action: "respond",
-      proposalId: event.id,
-      dateId: event.currentDate.id,
-      response: "declined",
-      next: slot ? { start: slot.start, end: slot.end } : null,
-    },
-    currentMessages().api.declineEvent,
-  );
 }
 
 /**

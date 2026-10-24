@@ -2,8 +2,6 @@ import { useState } from "react";
 
 import { answerDate } from "@/api/events";
 import AddToCalendar from "@/components/AddToCalendar";
-import AnswerButtons from "@/components/myEvents/AnswerButtons";
-import DateConflicts from "@/components/myEvents/DateConflicts";
 import ReportEventButton from "@/components/safety/ReportEventButton";
 import { EdgeWarnings, ExitConfirm, ExitLink, People } from "@/components/myEvents/parts";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
@@ -16,28 +14,19 @@ import { useT } from "@/i18n/lang";
 import type { DatedEvent } from "@/lib/myEvents";
 
 /**
- * An opened event with a date on a phone's My events (#103): agreed
- * ("scheduled"), or one of the dates suggested before votes (#74), still
- * waiting for your answer or for the others'. Its date and time are on the
- * row above, so not repeated here: who suggested it, who hasn't said yes, its place and note, and what you can do:
- * put it in your calendar, answer, cancel or leave, and for an agreed vote
- * say you can't make it after all, which moves it for everyone (asked
- * first, as on the swipe screen, #74).
+ * An opened agreed event on a phone's My events (#103). Its date and time are
+ * on the row above, so not repeated here: who suggested it, who hasn't said
+ * yes, its place and note, and what you can do: put it in your calendar,
+ * cancel or leave, and for an agreed vote say you can't make it after all,
+ * which moves it for everyone (asked first, as on the swipe screen, #74).
  */
-export default function DatedSummary({
-  event,
-  stage,
-}: {
-  event: DatedEvent;
-  stage: "needsAnswer" | "waiting" | "scheduled";
-}) {
+export default function DatedSummary({ event }: { event: DatedEvent }) {
   const t = useT();
   const [exiting, setExiting] = useState(false);
   const [backingOut, setBackingOut] = useState(false);
   const backOut = useEventChange(() => answerDate(event.id, event.currentDate.id, "declined"));
-  const canBackOut = stage === "scheduled" && event.mode === "vote";
+  const canBackOut = event.mode === "vote";
   const notYes = event.invitees.filter((i) => i.response !== "accepted");
-  const pending = stage !== "scheduled";
 
   return (
     <div className="flex flex-col gap-3 text-sm">
@@ -52,20 +41,15 @@ export default function DatedSummary({
       </div>
 
       {notYes.length > 0 ? (
-        <People
-          invitees={pending ? event.invitees : notYes}
-          optional={event.settings.people?.optional}
-        />
+        <People invitees={notYes} optional={event.settings.people?.optional} />
       ) : (
         <p className="font-medium text-emerald-800">{t.events.acceptedByAll}</p>
       )}
       <EdgeWarnings event={event} />
-      {pending && <DateConflicts event={event} />}
       <PlaceNote event={event} />
       <EventImpactDetails event={event} />
 
-      {stage === "needsAnswer" && <AnswerButtons event={event} />}
-      {stage === "scheduled" && <AddToCalendar event={event} wide />}
+      <AddToCalendar event={event} wide />
 
       {backOut.error && (
         <Notice tone="error" bare>

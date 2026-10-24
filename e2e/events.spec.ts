@@ -1,6 +1,6 @@
 /**
- * My events: answering a date, leaving, a suggester's choice, and a vote's
- * dates answered with buttons, keys (a computer) or a swipe (a phone).
+ * My events: leaving, a suggester's choice, and a vote's dates answered with
+ * buttons, keys (a computer) or a swipe (a phone).
  */
 import type { Page } from "@playwright/test";
 
@@ -12,25 +12,6 @@ const section = (page: Page, name: string) =>
     .locator("section, div")
     .filter({ has: page.getByText(name, { exact: true }) })
     .last();
-
-test("accepting a date moves the event on to waiting for others", async ({
-  page,
-  backend,
-  isMobile,
-}) => {
-  await page.goto(isMobile ? "/events" : "/events/ev-dinner");
-  // A phone's row opens first (#103).
-  if (isMobile) await page.getByRole("button", { name: /Middag hos Sara/ }).click();
-  await page.getByRole("button", { name: "Accepter" }).first().click();
-
-  await expect.poll(() => backend.calls.some((c) => c.body.action === "respond")).toBe(true);
-  expect(backend.calls.find((c) => c.body.action === "respond")?.body).toMatchObject({
-    proposalId: "ev-dinner",
-    response: "accepted",
-  });
-  if (!isMobile) await expect(page).toHaveURL(/\/events\/ev-dinner$/);
-  await expect(page.getByRole("button", { name: "Accepter" })).toHaveCount(0);
-});
 
 test("leaving asks first, then the event is gone", async ({ page, backend, isMobile }) => {
   test.skip(isMobile, "the phone's cards are covered by the screenshots");

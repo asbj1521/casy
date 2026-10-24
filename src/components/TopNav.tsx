@@ -45,7 +45,7 @@ export default function TopNav() {
 
   // What's waiting for your answer, each on the page where it's given:
   // suggested events on My events, group invitations on My groups.
-  // Answers waiting on you, and dates you said yes to that now clash (useEventsBadge).
+  // Votes with dates waiting for your answer (useEventsBadge).
   const eventsBadge = useEventsBadge();
   const { data: invitations } = useQuery({
     ...invitationsQuery(user?.id ?? ""),
