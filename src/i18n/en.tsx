@@ -1467,6 +1467,9 @@ export const en: Messages = {
     comeBack: "You will come straight back here afterwards.",
   },
   api: {
+    // The request never got an answer (callFunction): no connection, or too slow.
+    offline: "Couldn't reach Casy. Check your connection and try again.",
+    timeout: "Casy took too long to answer. Try again.",
     loadGroups: "Couldn't load your groups",
     report: "Couldn't send the report",
     blocked: "Couldn't change who you blocked",

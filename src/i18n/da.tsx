@@ -1516,6 +1516,9 @@ export const da = {
     comeBack: "Du kommer direkte tilbage hertil bagefter.",
   },
   api: {
+    // The request never got an answer (callFunction): no connection, or too slow.
+    offline: "Ingen forbindelse til Casy. Tjek dit internet, og prøv igen.",
+    timeout: "Casy svarede ikke i tide. Prøv igen.",
     loadGroups: "Kunne ikke hente dine grupper",
     report: "Kunne ikke sende rapporten",
     blocked: "Kunne ikke ændre, hvem du har blokeret",

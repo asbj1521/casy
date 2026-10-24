@@ -13,6 +13,9 @@ const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+/** How long a call may take: long enough for an AI answer or a calendar sync. */
+const TIMEOUT_MS = 60_000;
+
 /**
  * The publishable key identifies the app; the access token identifies the
  * person. getSession() hands back a token that is still valid, refreshing it
@@ -58,16 +61,32 @@ export async function callFunction<T>(
   url.searchParams.set("lang", currentLang());
 
   const headers = await functionHeaders();
-  const res = await fetch(
-    url,
-    body === undefined
-      ? { headers }
-      : {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-  );
+  // A request that hangs (a phone between networks) gives up rather than
+  // leaving the page waiting; where the browser can't time out a fetch
+  // (older iPhones), it waits as before.
+  const signal =
+    typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(TIMEOUT_MS) : undefined;
+  let res: Response;
+  try {
+    res = await fetch(
+      url,
+      body === undefined
+        ? { headers, signal }
+        : {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+            signal,
+          },
+    );
+  } catch (err) {
+    // The browser's own words ("Load failed", "Failed to fetch") mean nothing
+    // to the person reading them: say what happened, in their language.
+    const timedOut = (err as { name?: string } | null)?.name === "TimeoutError";
+    throw new Error(timedOut ? currentMessages().api.timeout : currentMessages().api.offline, {
+      cause: err,
+    });
+  }
 
   // A failing function may answer with plain text or nothing at all, so a
   // body that won't parse is not itself an error worth reporting.

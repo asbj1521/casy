@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setCurrentLang } from "@/i18n/current";
+import { loadMessages, setCurrentLang } from "@/i18n/current";
 import { callFunction } from "@/lib/supabaseFunctions";
 
 vi.mock("@/lib/supabase", () => ({
@@ -34,6 +34,29 @@ describe("callFunction", () => {
   it("says which function failed when there is no message at all", async () => {
     answer(502, {});
     await expect(callFunction("groups", { body: {} })).rejects.toThrow("groups fejlede (HTTP 502)");
+  });
+
+  it("says there is no connection, in plain words, when the request never gets through", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Promise.reject(new TypeError("Load failed"))),
+    );
+    await expect(callFunction("groups", { body: {} })).rejects.toThrow(
+      "Ingen forbindelse til Casy. Tjek dit internet, og prøv igen.",
+    );
+  });
+
+  it("says it took too long when the request times out", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Promise.reject(new DOMException("signal timed out", "TimeoutError"))),
+    );
+    // English is fetched before a page switches to it (#157); here by hand.
+    await loadMessages("en");
+    setCurrentLang("en");
+    await expect(callFunction("groups", { body: {} })).rejects.toThrow(
+      "Casy took too long to answer. Try again.",
+    );
   });
 
   it("calls the function by name, in the page's language", async () => {
