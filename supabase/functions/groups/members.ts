@@ -87,10 +87,19 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
   // they have chosen a custom name, that is what they should see themself
   // called, the same as everyone else does.
   const memberIds = [...new Set(groups.flatMap((g) => g.group_members.map((m) => m.profile_id)))];
-  const { data: names, error: namesErr } = await db
-    .from("profiles")
-    .select("id, display_name, name_is_custom")
-    .in("id", memberIds);
+  // The names and the invitations only need the groups, so both are asked
+  // for side by side (#158).
+  const [{ data: names, error: namesErr }, { data: invitations, error: invitationsErr }] =
+    await Promise.all([
+      db.from("profiles").select("id, display_name, name_is_custom").in("id", memberIds),
+      db
+        .from("group_invitations")
+        .select("group_id, profile_id")
+        .in(
+          "group_id",
+          groups.map((g) => g.id),
+        ),
+    ]);
   if (namesErr) throw namesErr;
   const profileOf = new Map(names.map((p) => [p.id, p]));
 
@@ -105,13 +114,6 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
   // an account) is not theirs to learn. Declined invitations read as invited,
   // so a "no thanks" is never reported back.
   const known = new Set(memberIds);
-  const { data: invitations, error: invitationsErr } = await db
-    .from("group_invitations")
-    .select("group_id, profile_id")
-    .in(
-      "group_id",
-      groups.map((g) => g.id),
-    );
   if (invitationsErr) throw invitationsErr;
   const invitedTo = new Map<string, string[]>();
   for (const i of invitations) {
