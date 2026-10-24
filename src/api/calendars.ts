@@ -10,6 +10,7 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { currentMessages } from "@/i18n/current";
 import type { OverviewData } from "@/lib/calendarOverview";
 import type { PhoneCalendarPush } from "@/lib/phoneBusy";
+import { firstFromStart } from "@/api/start";
 import { callFunction } from "@/lib/supabaseFunctions";
 import type { CalendarPriority, CalendarProvider, CalendarPurpose } from "@/types";
 
@@ -59,13 +60,14 @@ export interface CalendarConnectionStatus {
 export function calendarStatusQuery(userId: string) {
   return queryOptions({
     queryKey: ["calendar-status", userId],
-    queryFn: async (): Promise<CalendarConnectionStatus[]> => {
-      const body = await callFunction<{ connections?: CalendarConnectionStatus[] }>(
-        "calendar-status",
-        { errorMessage: currentMessages().api.loadStatus },
-      );
-      return body.connections ?? [];
-    },
+    queryFn: (): Promise<CalendarConnectionStatus[]> =>
+      firstFromStart(userId, "connections", async () => {
+        const body = await callFunction<{ connections?: CalendarConnectionStatus[] }>(
+          "calendar-status",
+          { errorMessage: currentMessages().api.loadStatus },
+        );
+        return body.connections ?? [];
+      }),
     staleTime: 60_000,
   });
 }

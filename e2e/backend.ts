@@ -488,6 +488,7 @@ export class FakeBackend {
           whoami: whoami(),
           groups: w.groups,
           invitations: w.invitations,
+          connections: w.connections,
           pulse: `v${w.version}`,
         });
       case "set-name":

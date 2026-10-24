@@ -55,6 +55,7 @@ import {
   readReport,
   unblockPerson,
 } from "../_shared/safety.ts";
+import { calendarStatus } from "../_shared/calendarStatus.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { syncConnection } from "../_shared/sync.ts";
@@ -111,19 +112,20 @@ serve("groups", async (req, body) => {
       return await whoAmI(db, profileId, callerName);
 
     // Everything a page asks for as it opens, in one call (#158): who you are,
-    // your groups, your invitations and the live pulse, worked out side by
+    // your groups, your invitations, your calendar accounts and the live pulse, worked out side by
     // side. Each is also its own action, for asking again later.
     case "start": {
-      const [whoami, groups, invitations, pulse] = await Promise.all([
+      const [whoami, groups, invitations, connections, pulse] = await Promise.all([
         whoAmI(db, profileId, callerName),
         listGroups(db, profileId, callerName),
         listInvitations(db, profileId),
+        calendarStatus(db, profileId),
         db.rpc("live_pulse", { p_profile_id: profileId }).then(({ data, error }) => {
           if (error) throw error;
           return data as string;
         }),
       ]);
-      return { whoami, groups, invitations, pulse };
+      return { whoami, groups, invitations, connections, pulse };
     }
 
     case "set-name": {
