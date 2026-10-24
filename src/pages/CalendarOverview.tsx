@@ -1,7 +1,9 @@
 import { lazy, Suspense } from "react";
 
 import AiConsentPrompt from "@/components/ai/AiConsentPrompt";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { useT } from "@/i18n/lang";
 
 // Each device downloads only its own month view (#157).
 const ComputerCalendar = lazy(() => import("@/components/calendarView/ComputerCalendar"));
@@ -14,6 +16,8 @@ const PhoneCalendar = lazy(() => import("@/components/calendarView/PhoneCalendar
  * each counts beside it or in a sheet.
  */
 export default function CalendarOverview() {
+  const t = useT();
+  useDocumentTitle(t.nav.calendar);
   const phone = usePhoneLayout();
   return (
     <>

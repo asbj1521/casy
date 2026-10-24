@@ -18,6 +18,7 @@ import { CALENDAR_ACCOUNTS_PATH, isCalendarArrival } from "@/hooks/useCalendarsH
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 /**
  * Admin mode's panel, loaded only when someone actually opens it: nobody but
@@ -31,6 +32,8 @@ const AdminPanel = lazy(() => import("@/components/AdminPanel"));
  * their own screens (ProfileHub, ProfileScreen); on a computer, one page.
  */
 export default function Profile() {
+  const t = useT();
+  useDocumentTitle(t.nav.profile);
   return usePhoneLayout() ? <ProfileHub /> : <DesktopProfile />;
 }
 

@@ -19,6 +19,7 @@ import { FIRST_MONTH, LAST_MONTH, TZ, usePlanning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 import { dayOf } from "@/lib/zone";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 // Planlæg med AI's view only loads once it is opened (#157).
 const AiBoxView = lazy(() => import("@/components/findDate/ai/AiBoxView"));
@@ -53,6 +54,7 @@ export default function FindDate() {
  */
 function SchedulingPage() {
   const t = useT();
+  useDocumentTitle(t.nav.scheduler);
   // Flere indstillinger (#98), laid over the page while ?settings is set.
   const location = useLocation();
   const moreSettings = new URLSearchParams(location.search).has("settings");

@@ -10,6 +10,7 @@ import TopNav from "@/components/TopNav";
 import { useSignedInUser } from "@/context/auth";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 /**
  * Your groups, and the invitations waiting for your answer (/groups, and
@@ -27,6 +28,7 @@ export default function Groups() {
 /** The list (a phone) or the list beside the open group (a computer). */
 function GroupsPage({ selectedId }: { selectedId?: string }) {
   const t = useT();
+  useDocumentTitle(t.nav.groups);
   const phone = usePhoneLayout();
   const youId = useSignedInUser().id;
   const { data: groups } = useQuery(groupsQuery(youId));

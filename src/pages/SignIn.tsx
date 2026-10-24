@@ -23,6 +23,7 @@ import { hasSeenCalendarOnboarding } from "@/lib/calendarOnboarding";
 import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/passwordRules";
 import { supabaseAuth } from "@/lib/supabase";
 import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 /**
  * Where to go after signing in, if the link said. Only a path on this site is
@@ -67,6 +68,7 @@ function errorFromUrl(): string | null {
 export default function SignIn() {
   const { user, loading, passwordRecovery, clearPasswordRecovery } = useAuth();
   const t = useT();
+  useDocumentTitle(t.nav.signIn);
   const { lang } = useLang();
   const [searchParams] = useSearchParams();
   const next = safeNext(searchParams.get("next"));

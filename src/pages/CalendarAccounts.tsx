@@ -9,6 +9,7 @@ import { useSignedInUser } from "@/context/auth";
 import { useCalendarReturn } from "@/hooks/useCalendarReturn";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 /**
  * Connecting and managing calendars (/calendar-overview/accounts), opened from
@@ -19,6 +20,7 @@ import { useT } from "@/i18n/lang";
  */
 export default function CalendarAccounts() {
   const t = useT();
+  useDocumentTitle(t.profile.connectedCalendars);
   const phone = usePhoneLayout();
   const oauthReturn = useCalendarReturn(useSignedInUser().id);
   const notice = oauthReturn && <CalendarReturnNotice outcome={oauthReturn} className="mt-2" />;

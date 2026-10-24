@@ -16,6 +16,7 @@ import { useGroupRefresh } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { eventsInOrder, phoneEventList, sectionEvents } from "@/lib/myEvents";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 /**
  * My events: every date suggested to your groups, sorted by what it needs
@@ -28,6 +29,7 @@ import { eventsInOrder, phoneEventList, sectionEvents } from "@/lib/myEvents";
 export default function MyEvents() {
   const userId = useSignedInUser().id;
   const t = useT();
+  useDocumentTitle(t.nav.events);
   const { eventId } = useParams();
   const phone = usePhoneLayout();
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
