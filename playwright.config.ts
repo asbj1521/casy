@@ -22,7 +22,10 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   expect: {
-    toHaveScreenshot: { animations: "disabled", caret: "hide", maxDiffPixelRatio: 0.001 },
+    // A fixed number of pixels, not a share of the page: 0.1% of a computer
+    // page was about 1700 pixels, enough to miss two tabs disappearing (#156).
+    // 100 covers font smoothing; a word changed fails.
+    toHaveScreenshot: { animations: "disabled", caret: "hide", maxDiffPixels: 100 },
   },
   use: {
     baseURL: `http://localhost:${PORT}`,
