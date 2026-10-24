@@ -114,19 +114,21 @@ serve(
 );
 
 /**
- * Every block of the caller's connected calendars that overlaps the range,
- * a page at a time. Reached through a join on the owner rather than by source
- * id, so it can run alongside the sources query.
+ * Every block of the caller's connected calendars that overlaps the range.
+ * Reached through a join on the owner rather than by source id, so it can
+ * run alongside the sources query. The first page also says how many there
+ * are, so every other page is asked for at once rather than one after
+ * another (#158), as the groups function does for a group.
  */
 async function fetchBlocks(db: Db, profileId: string, from: Date, to: Date) {
-  const blocks: { calendarId: string; start: string; end: string }[] = [];
-  for (let page = 0; page < MAX_PAGES; page++) {
-    // Overlap test: a block belongs to the range if it starts before the
-    // range ends and ends after the range starts.
-    const { data, error } = await db
+  // Overlap test: a block belongs to the range if it starts before the
+  // range ends and ends after the range starts.
+  const fetchPage = (page: number, withCount = false) =>
+    db
       .from("calendar_busy_cache")
       .select(
         "source_id, start_at, end_at, calendar_sources!inner(calendar_connections!inner(profile_id, status))",
+        withCount ? { count: "exact" } : undefined,
       )
       .eq("calendar_sources.calendar_connections.profile_id", profileId)
       .eq("calendar_sources.calendar_connections.status", "connected")
@@ -135,10 +137,17 @@ async function fetchBlocks(db: Db, profileId: string, from: Date, to: Date) {
       .order("start_at", { ascending: true })
       .order("id", { ascending: true }) // stable paging when start times tie
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-    if (error) throw error;
-    for (const r of data)
+
+  const first = await fetchPage(0, true);
+  if (first.error) throw first.error;
+  const pagesNeeded = Math.ceil((first.count ?? first.data.length) / PAGE_SIZE);
+  const extraPages = Math.max(0, Math.min(pagesNeeded, MAX_PAGES) - 1);
+  const rest = await Promise.all(Array.from({ length: extraPages }, (_, i) => fetchPage(i + 1)));
+  const blocks: { calendarId: string; start: string; end: string }[] = [];
+  for (const page of [first, ...rest]) {
+    if (page.error) throw page.error;
+    for (const r of page.data)
       blocks.push({ calendarId: r.source_id, start: r.start_at, end: r.end_at });
-    if (data.length < PAGE_SIZE) return { blocks, truncated: false };
   }
-  return { blocks, truncated: true };
+  return { blocks, truncated: pagesNeeded > MAX_PAGES };
 }
