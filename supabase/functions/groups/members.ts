@@ -64,6 +64,7 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
     friend_groups: {
       id: string;
       name: string;
+      description: string | null;
       created_at: string;
       created_by: string | null;
       group_members: { profile_id: string; joined_at: string }[];
@@ -71,7 +72,9 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
   };
   const { data: mine, error: mineErr } = await db
     .from("group_members")
-    .select("friend_groups(id, name, created_at, created_by, group_members(profile_id, joined_at))")
+    .select(
+      "friend_groups(id, name, description, created_at, created_by, group_members(profile_id, joined_at))",
+    )
     .eq("profile_id", profileId);
   if (mineErr) throw mineErr;
 
@@ -124,6 +127,8 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
   return groups.map((g) => ({
     id: g.id,
     name: g.name,
+    // What the group is for (#152), in its members' words; null for none.
+    description: g.description,
     createdAt: g.created_at,
     // Whoever made the group, so the frontend can offer them (and only
     // them) the delete action. Grants nothing by itself; every membership

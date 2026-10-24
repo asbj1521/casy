@@ -11,6 +11,7 @@ const member = (profileId: string, isYou = false) => ({
 const group: Group = {
   id: "g1",
   name: "Venner",
+  description: null,
   createdAt: "2026-09-01T00:00:00.000Z",
   createdBy: "anna",
   members: [member("anna", true), member("bo"), member("cy")],

@@ -298,6 +298,7 @@ function groups(): Group[] {
     {
       id: "g-friday",
       name: "Fredagsbar",
+      description: "En øl efter arbejde, når det passer de fleste",
       createdAt: "2026-09-01T12:00:00.000Z",
       createdBy: ME.id,
       members: [
@@ -311,6 +312,7 @@ function groups(): Group[] {
     {
       id: "g-running",
       name: "Løbeklubben",
+      description: null,
       createdAt: "2026-09-10T12:00:00.000Z",
       createdBy: PEOPLE.freja.id,
       members: [
@@ -327,6 +329,7 @@ const invitations = (): Invitation[] => [
   {
     groupId: "g-badminton",
     groupName: "Badminton",
+    groupDescription: "Double om torsdagen i Valby",
     memberCount: 5,
     invitedBy: "Sara",
     createdAt: "2026-10-06T18:00:00.000Z",

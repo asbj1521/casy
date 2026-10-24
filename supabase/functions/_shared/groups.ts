@@ -16,6 +16,9 @@ export const INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 /** Longest group name we keep, matching the check constraint on the table. */
 export const MAX_GROUP_NAME_LENGTH = 60;
 
+/** Longest group description (#152); the database checks it too. */
+export const MAX_GROUP_DESCRIPTION_LENGTH = 200;
+
 /** Longest custom display name we keep. */
 export const MAX_DISPLAY_NAME_LENGTH = 40;
 
@@ -46,6 +49,11 @@ export function inviteUrl(origin: string, token: string): string {
 /** A group name as it should be stored, or null if nothing is left of it. */
 export function cleanGroupName(raw: unknown): string | null {
   return cleanText(raw, MAX_GROUP_NAME_LENGTH);
+}
+
+/** A group's description as a member typed it (#152); empty is none. */
+export function cleanGroupDescription(raw: unknown): string | null {
+  return cleanText(raw, MAX_GROUP_DESCRIPTION_LENGTH);
 }
 
 /** A display name as a person typed it, cleaned up the same way a group name is. */

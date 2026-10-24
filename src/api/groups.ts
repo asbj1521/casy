@@ -31,6 +31,8 @@ export interface GroupMember {
 export interface Group {
   id: string;
   name: string;
+  /** What the group is for, in its members' words (#152); null for none. */
+  description: string | null;
   createdAt: string;
   /**
    * Whoever made the group — null if their account is gone (created_by is set
@@ -57,6 +59,8 @@ export interface Invitees {
 export interface Invitation {
   groupId: string;
   groupName: string;
+  /** What the group is for (#152), so the invited person knows what they'd join. */
+  groupDescription: string | null;
   memberCount: number;
   /** Who invited you; null if their account has since been deleted. */
   invitedBy: string | null;
@@ -145,13 +149,16 @@ export async function refreshGroupCalendars(
  */
 export async function createGroup({
   name,
+  description,
   invitees,
 }: {
   name: string;
+  /** What the group is for (#152), optional. */
+  description?: string;
   invitees?: Invitees;
 }): Promise<{ groups: Group[]; createdId: string }> {
   return await callFunction("groups", {
-    body: { action: "create", name, ...invitees },
+    body: { action: "create", name, description, ...invitees },
     errorMessage: currentMessages().api.createGroup,
   });
 }
@@ -292,6 +299,17 @@ export async function renameGroup(groupId: string, name: string): Promise<{ grou
   });
 }
 
+/** What the group is for (#152), set by any member; empty removes it. */
+export async function describeGroup(
+  groupId: string,
+  description: string,
+): Promise<{ groups: Group[] }> {
+  return await callFunction("groups", {
+    body: { action: "describe", groupId, description },
+    errorMessage: currentMessages().api.describeGroup,
+  });
+}
+
 /** A fresh invite link. Earlier links for the group keep working until they expire. */
 export async function createInvite(groupId: string): Promise<{ url: string; expiresAt: string }> {
   return await callFunction("groups", {
@@ -301,9 +319,9 @@ export async function createInvite(groupId: string): Promise<{ url: string; expi
 }
 
 /** The group behind an invite link, for the join page before anyone signs in. */
-export async function previewInvite(
-  token: string,
-): Promise<{ group: { id: string; name: string; memberCount: number } }> {
+export async function previewInvite(token: string): Promise<{
+  group: { id: string; name: string; description?: string | null; memberCount: number };
+}> {
   return await callFunction("groups", {
     body: { action: "preview", token },
     errorMessage: currentMessages().api.preview,

@@ -82,7 +82,12 @@ Deno.test("groups say how many are in them and whether you made them", () => {
       [
         {
           joined_at: "2026-09-02T10:00:00Z",
-          friend_groups: { name: "Team", created_by: "me", group_members: [{ count: 4 }] },
+          friend_groups: {
+            name: "Team",
+            description: "Fodbold om tirsdagen",
+            created_by: "me",
+            group_members: [{ count: 4 }],
+          },
         },
         {
           joined_at: "2026-09-03T10:00:00Z",
@@ -93,8 +98,20 @@ Deno.test("groups say how many are in them and whether you made them", () => {
       "me",
     ),
     [
-      { name: "Team", members: 4, createdByYou: true, joinedAt: "2026-09-02T10:00:00Z" },
-      { name: "Friends", members: 2, createdByYou: false, joinedAt: "2026-09-03T10:00:00Z" },
+      {
+        name: "Team",
+        description: "Fodbold om tirsdagen",
+        members: 4,
+        createdByYou: true,
+        joinedAt: "2026-09-02T10:00:00Z",
+      },
+      {
+        name: "Friends",
+        description: null,
+        members: 2,
+        createdByYou: false,
+        joinedAt: "2026-09-03T10:00:00Z",
+      },
     ],
   );
 });

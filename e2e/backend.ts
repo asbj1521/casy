@@ -499,11 +499,23 @@ export class FakeBackend {
         group.name = String(body.name);
         this.changed();
         return ok({ groups: w.groups });
+      case "describe":
+        if (!group) return fail(404, "Group not found");
+        group.description =
+          String(body.description ?? "")
+            .trim()
+            .slice(0, 200) || null;
+        this.changed();
+        return ok({ groups: w.groups });
       case "create": {
         const id = `g-new-${w.groups.length}`;
         w.groups.push({
           id,
           name: String(body.name),
+          description:
+            String(body.description ?? "")
+              .trim()
+              .slice(0, 200) || null,
           createdAt: NOW,
           createdBy: ME.id,
           members: [{ profileId: ME.id, name: ME.name, isYou: true, joinedAt: NOW }],

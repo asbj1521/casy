@@ -60,7 +60,14 @@ export interface MyData {
     /** The next few, exactly as stored: a start and an end, nothing else. */
     next: { start: string; end: string }[];
   };
-  groups: { name: string; members: number; createdByYou: boolean; joinedAt: string }[];
+  groups: {
+    name: string;
+    /** What the group is for (#152), if anyone said. */
+    description: string | null;
+    members: number;
+    createdByYou: boolean;
+    joinedAt: string;
+  }[];
   inviteLinks: { made: number; active: number };
   invitations: { pending: number; declined: number; sent: number };
   emailLookups: number;
@@ -165,6 +172,7 @@ export interface MembershipRow {
   joined_at: string;
   friend_groups: {
     name: string;
+    description?: string | null;
     created_by: string | null;
     group_members: { count: number }[];
   } | null;
@@ -175,6 +183,7 @@ export function shapeGroups(rows: MembershipRow[], youId: string): MyData["group
     .filter((row) => row.friend_groups !== null)
     .map(({ joined_at, friend_groups: group }) => ({
       name: group!.name,
+      description: group!.description ?? null,
       members: group!.group_members[0]?.count ?? 0,
       createdByYou: group!.created_by === youId,
       joinedAt: joined_at,
@@ -218,7 +227,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       .maybeSingle(),
     db
       .from("group_members")
-      .select("joined_at, friend_groups(name, created_by, group_members(count))")
+      .select("joined_at, friend_groups(name, description, created_by, group_members(count))")
       .eq("profile_id", me)
       .order("joined_at", { ascending: true }),
   ]);

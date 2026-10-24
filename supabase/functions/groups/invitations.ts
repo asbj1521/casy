@@ -135,7 +135,7 @@ export async function sendInvites(
 export async function listInvitations(db: Db, profileId: string) {
   const { data: rows, error } = await db
     .from("group_invitations")
-    .select("group_id, invited_by, created_at, friend_groups!inner(name)")
+    .select("group_id, invited_by, created_at, friend_groups!inner(name, description)")
     .eq("profile_id", profileId)
     .eq("status", "pending")
     .order("created_at", { ascending: false });
@@ -158,6 +158,8 @@ export async function listInvitations(db: Db, profileId: string) {
     groupId: r.group_id,
     // A to-one embed, which the untyped client takes for a list.
     groupName: (r.friend_groups as unknown as { name: string }).name,
+    groupDescription:
+      (r.friend_groups as unknown as { description: string | null }).description ?? null,
     memberCount: memberCount.get(r.group_id) ?? 0,
     // Null once the inviter's account is gone; the invitation still stands.
     invitedBy: r.invited_by ? (nameOf.get(r.invited_by) ?? null) : null,
@@ -170,7 +172,7 @@ export async function findInvite(db: Db, token: unknown) {
   if (!looksLikeInviteToken(token)) throw new HttpError(400, "That invite link is not valid.");
   const { data: invite, error } = await db
     .from("group_invites")
-    .select("group_id, expires_at, friend_groups!inner(name)")
+    .select("group_id, expires_at, friend_groups!inner(name, description)")
     .eq("token_hash", await lookupHash(token, encryptionKeyFromEnv()))
     .maybeSingle();
   if (error) throw error;
@@ -179,6 +181,10 @@ export async function findInvite(db: Db, token: unknown) {
     throw new HttpError(410, "That invite link has expired. Ask for a new one.");
   }
   // A to-one embed, which the untyped client takes for a list.
-  const group = invite.friend_groups as unknown as { name: string };
-  return { groupId: invite.group_id as string, groupName: group.name };
+  const group = invite.friend_groups as unknown as { name: string; description: string | null };
+  return {
+    groupId: invite.group_id as string,
+    groupName: group.name,
+    groupDescription: group.description ?? null,
+  };
 }

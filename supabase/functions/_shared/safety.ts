@@ -57,12 +57,12 @@ export function readReport(body: Record<string, unknown>): ReportRequest {
 async function reportedContent(db: Db, r: ReportRequest): Promise<Record<string, unknown>> {
   const { data: group, error } = await db
     .from("friend_groups")
-    .select("name")
+    .select("name, description")
     .eq("id", r.groupId)
     .maybeSingle();
   if (error) throw error;
   if (!group) throw new HttpError(404, "That group no longer exists.");
-  if (r.kind === "group") return { groupName: group.name };
+  if (r.kind === "group") return { groupName: group.name, groupDescription: group.description };
 
   if (r.kind === "event") {
     const { data: event, error: eventErr } = await db

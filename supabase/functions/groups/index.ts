@@ -46,6 +46,7 @@ import {
   newInviteToken,
   readInvitees,
   requireMember,
+  cleanGroupDescription,
 } from "../_shared/groups.ts";
 import { afterResponse, HttpError, readRange, requireString, serve } from "../_shared/http.ts";
 import {
@@ -77,13 +78,20 @@ serve("groups", async (req, body) => {
   // Previewing an invite is the one thing that happens before signing in:
   // the link itself is the only thing proving you were meant to see it.
   if (action === "preview") {
-    const { groupId, groupName } = await findInvite(db, body.token);
+    const { groupId, groupName, groupDescription } = await findInvite(db, body.token);
     const { count, error } = await db
       .from("group_members")
       .select("profile_id", { count: "exact", head: true })
       .eq("group_id", groupId);
     if (error) throw error;
-    return { group: { id: groupId, name: groupName, memberCount: count ?? 0 } };
+    return {
+      group: {
+        id: groupId,
+        name: groupName,
+        description: groupDescription,
+        memberCount: count ?? 0,
+      },
+    };
   }
 
   const caller = await requireCaller(req, db);
@@ -149,9 +157,10 @@ serve("groups", async (req, body) => {
       if (!name) throw new HttpError(400, "Give the group a name.");
       // Limits and lookups first: a refused invitation makes no group.
       const invitees = await resolveInvitees(db, profileId, readInvitees(body));
+      const description = cleanGroupDescription(body.description);
       const { data: group, error: groupErr } = await db
         .from("friend_groups")
-        .insert({ name, created_by: profileId })
+        .insert({ name, description, created_by: profileId })
         .select("id")
         .single();
       if (groupErr) throw groupErr;
@@ -246,6 +255,17 @@ serve("groups", async (req, body) => {
       // for the group, not something only its creator should control.
       await requireMember(db, groupId, profileId);
       const { error } = await db.from("friend_groups").update({ name }).eq("id", groupId);
+      if (error) throw error;
+      return await list();
+    }
+
+    // What the group is for (#152): any member may change it, as with its
+    // name; empty removes it.
+    case "describe": {
+      const groupId = requireString(body, "groupId");
+      const description = cleanGroupDescription(body.description);
+      await requireMember(db, groupId, profileId);
+      const { error } = await db.from("friend_groups").update({ description }).eq("id", groupId);
       if (error) throw error;
       return await list();
     }
