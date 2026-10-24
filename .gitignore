@@ -27,3 +27,6 @@ dist-ssr
 dist-e2e
 test-results
 playwright-report
+
+# iCloud Drive leaves "name 2.ts" copies when files change under it (the repo is in a synced Desktop): never commit them.
+* 2.*
