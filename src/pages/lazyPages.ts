@@ -11,6 +11,9 @@ export const loadPage = {
   findDate: () => import("@/pages/FindDate"),
   profile: () => import("@/pages/Profile"),
   calendarOverview: () => import("@/pages/CalendarOverview"),
+  // My calendar's two month views, each fetched only by its own device (#157).
+  computerCalendar: () => import("@/components/calendarView/ComputerCalendar"),
+  phoneCalendar: () => import("@/components/calendarView/PhoneCalendar"),
   calendarAccounts: () => import("@/pages/CalendarAccounts"),
   myEvents: () => import("@/pages/MyEvents"),
   swipeDates: () => import("@/pages/SwipeDates"),

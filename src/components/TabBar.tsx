@@ -56,7 +56,10 @@ function PhoneTabBar() {
       label: t.nav.calendarShort,
       icon: CalendarDays,
       active: pathname.startsWith("/calendar-overview"),
-      prefetch: () => void loadPage.calendarOverview(),
+      prefetch: () => {
+        void loadPage.calendarOverview();
+        void loadPage.phoneCalendar();
+      },
     },
     signedOut
       ? {

@@ -4,10 +4,11 @@ import AiConsentPrompt from "@/components/ai/AiConsentPrompt";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { loadPage } from "@/pages/lazyPages";
 
 // Each device downloads only its own month view (#157).
-const ComputerCalendar = lazy(() => import("@/components/calendarView/ComputerCalendar"));
-const PhoneCalendar = lazy(() => import("@/components/calendarView/PhoneCalendar"));
+const ComputerCalendar = lazy(loadPage.computerCalendar);
+const PhoneCalendar = lazy(loadPage.phoneCalendar);
 
 /**
  * My calendar (/calendar-overview): your own busy time drawn like Apple

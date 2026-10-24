@@ -93,6 +93,7 @@ export default function TopNav() {
   const prefetchCalendarOverview = () => {
     if (onCalendarOverview || !user) return;
     void loadPage.calendarOverview();
+    void loadPage.computerCalendar();
   };
 
   // Signed out, the profile tab can only lead to the sign-in page, so it says
@@ -114,6 +115,7 @@ export default function TopNav() {
       short: t.nav.schedulerShort,
       icon: CalendarSearch,
       active: onHome,
+      prefetch: () => void loadPage.findDate(),
     },
     {
       to: "/events",
