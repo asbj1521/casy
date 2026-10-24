@@ -7,6 +7,8 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  lazy,
+  Suspense,
 } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -21,7 +23,6 @@ import {
 
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
-import TellCasySheet from "@/components/tellCasy/TellCasySheet";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -46,6 +47,10 @@ import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay, startOfMonth } from "@/lib/zone";
+import { useOnceTrue } from "@/hooks/useOnceTrue";
+
+// Sheets fetched the first time they open (#157).
+const TellCasySheet = lazy(() => import("@/components/tellCasy/TellCasySheet"));
 
 const TZ = APP_TIME_ZONE;
 
@@ -102,6 +107,7 @@ export default function ComputerCalendar() {
   // Tell Casy (#116): what is in no calendar, for people AI is on for.
   const aiAllowed = useAiAllowed();
   const [tellOpen, setTellOpen] = useState(false);
+  const tellWanted = useOnceTrue(tellOpen);
 
   const [today] = useState(() => startOfDay(Date.now(), TZ));
   const firstMonth = useMemo(() => startOfMonth(Date.parse(SEARCH_WINDOW.start), TZ), []);
@@ -282,8 +288,10 @@ export default function ComputerCalendar() {
                 />
               )}
             </ListGroup>
-            {aiAllowed && (
-              <TellCasySheet open={tellOpen} onClose={() => setTellOpen(false)} kept={entries} />
+            {aiAllowed && tellWanted && (
+              <Suspense fallback={null}>
+                <TellCasySheet open={tellOpen} onClose={() => setTellOpen(false)} kept={entries} />
+              </Suspense>
             )}
             <CalendarListPanel
               introInTip

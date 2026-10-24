@@ -1,7 +1,11 @@
+import { lazy, Suspense } from "react";
+
 import AiConsentPrompt from "@/components/ai/AiConsentPrompt";
-import ComputerCalendar from "@/components/calendarView/ComputerCalendar";
-import PhoneCalendar from "@/components/calendarView/PhoneCalendar";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+
+// Each device downloads only its own month view (#157).
+const ComputerCalendar = lazy(() => import("@/components/calendarView/ComputerCalendar"));
+const PhoneCalendar = lazy(() => import("@/components/calendarView/PhoneCalendar"));
 
 /**
  * My calendar (/calendar-overview): your own busy time drawn like Apple
@@ -13,7 +17,9 @@ export default function CalendarOverview() {
   const phone = usePhoneLayout();
   return (
     <>
-      {phone ? <PhoneCalendar /> : <ComputerCalendar />}
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        {phone ? <PhoneCalendar /> : <ComputerCalendar />}
+      </Suspense>
       {/* Asked once, before Casy's AI reads anything from a calendar (#120). */}
       <AiConsentPrompt />
     </>

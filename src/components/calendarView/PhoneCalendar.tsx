@@ -15,8 +15,6 @@ import DayPanel from "@/components/calendarView/DayPanel";
 import PhoneCalendarAccess from "@/components/calendarView/PhoneCalendarAccess";
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
-import TellCasySheet from "@/components/tellCasy/TellCasySheet";
-import TripSheet from "@/components/trips/TripSheet";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import MonthView from "@/components/swipe/MonthView";
@@ -43,6 +41,11 @@ import {
   type TripMark,
 } from "@/lib/tripView";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
+import { useOnceTrue } from "@/hooks/useOnceTrue";
+
+// Sheets fetched the first time they open (#157).
+const TellCasySheet = lazy(() => import("@/components/tellCasy/TellCasySheet"));
+const TripSheet = lazy(() => import("@/components/trips/TripSheet"));
 
 const TZ = APP_TIME_ZONE;
 
@@ -113,6 +116,7 @@ export default function PhoneCalendar() {
   }, [reveal]);
   const [tripMark, setTripMark] = useState<TripMark | null>(null);
   const [tripOpen, setTripOpen] = useState(false);
+  const tripWanted = useOnceTrue(tripOpen);
   const openTrip = useCallback((mark: TripMark) => {
     setTripMark(mark);
     setTripOpen(true);
@@ -126,6 +130,7 @@ export default function PhoneCalendar() {
   // Tell Casy (#116): what is in no calendar, for people AI is on for.
   const aiAllowed = useAiAllowed();
   const [tellOpen, setTellOpen] = useState(false);
+  const tellWanted = useOnceTrue(tellOpen);
   // The calendars sheet is in the address (?calendars), so the back arrow
   // on "Connected calendars" returns to it, not past it to the bare month.
   const location = useLocation();
@@ -337,10 +342,21 @@ export default function PhoneCalendar() {
         />
       )}
 
-      <TripSheet mark={tripMark} open={tripOpen} onClose={() => setTripOpen(false)} trips={trips} />
+      {tripWanted && (
+        <Suspense fallback={null}>
+          <TripSheet
+            mark={tripMark}
+            open={tripOpen}
+            onClose={() => setTripOpen(false)}
+            trips={trips}
+          />
+        </Suspense>
+      )}
 
-      {aiAllowed && (
-        <TellCasySheet open={tellOpen} onClose={() => setTellOpen(false)} kept={entries} />
+      {aiAllowed && tellWanted && (
+        <Suspense fallback={null}>
+          <TellCasySheet open={tellOpen} onClose={() => setTellOpen(false)} kept={entries} />
+        </Suspense>
       )}
 
       <DayPanel
