@@ -1,14 +1,14 @@
-import { Hourglass, Moon } from "lucide-react";
+import { Hourglass, Moon, PartyPopper } from "lucide-react";
 
 import type { EdgeWarning } from "@/lib/earlyMorning";
 import { cn } from "@/lib/utils";
 
-const ICONS = { backToBack: Hourglass, earlyMorning: Moon };
+const ICONS = { newYearsDay: PartyPopper, backToBack: Hourglass, earlyMorning: Moon };
 
 /**
  * A meeting's edge warnings (lib/earlyMorning.ts), each after its icon: an
  * hourglass for coming straight from something, a moon for an early start
- * after a late night. Said, never blocking: the date still stands.
+ * after a late night, a party popper for the day after New Year's Eve. Said, never blocking: the date still stands.
  */
 export default function EdgeWarningList({
   warnings,

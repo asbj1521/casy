@@ -16,7 +16,7 @@ import { useAuth } from "@/context/auth";
 import { useAiAllowed, useAiShare } from "@/hooks/useAiAllowed";
 import { useAiPlanner } from "@/hooks/useAiPlanner";
 import { findAnswer, TODAY, useDateSearch } from "@/hooks/useDateSearch";
-import { useEventProfile } from "@/hooks/useEventProfile";
+import { eventProfileQuery, useEventProfile } from "@/hooks/useEventProfile";
 import { useGroupRefresh, type RefreshOutcome } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
@@ -39,6 +39,7 @@ import { edgeWarnings } from "@/lib/earlyMorning";
 import { profileInput } from "@/lib/eventImpact";
 import { peopleForSearch, SEARCH_WINDOW } from "@/lib/eventSearch";
 import { monthAvailability } from "@/lib/monthAvailability";
+import { bigOnNewYearsDay } from "@/lib/newYear";
 import {
   answerKey,
   DEFAULT_EXTRAS,
@@ -227,11 +228,27 @@ export function usePlanning() {
   const loadingGroup = !activeGroup || busyLoading;
   const participants =
     !loadingGroup && activeGroup.participants.length > 0 ? activeGroup.participants : null;
+  // What the event is called when sent: the name typed, or the matching
+  // type's name, which each reader sees in their own language (eventTitle.ts).
+  const sentTitle = name.trim() || storedEventTitle(fallbackTitleId(search));
+  // What the event is likely to cause (#113): asked in the background while
+  // it is set up, for a real group only, and sent with the dates.
+  const profileFor =
+    user && activeGroup && !activeGroup.isExample
+      ? profileInput(search, sentTitle, extras.place, extras.note)
+      : null;
+  // Its profile also says whether it is a big plan on 1 January (#166),
+  // which the answer steps past.
+  const profileKey = useMemo(
+    () => (userId && profileFor ? { userId, input: profileFor } : null),
+    [userId, profileFor],
+  );
   const { found, suggestions, later, firstDay, days } = useDateSearch(
     participants,
     search,
     currentStep(steps),
     searchWindow,
+    profileKey,
   );
   const slot = found?.slot ?? null;
   const review = reviewAnswer(found, search, youProfileId, steps.accepted);
@@ -282,7 +299,16 @@ export function usePlanning() {
     const people = peopleFrom(groupId, data);
     if (!people) return null;
     const { search, step, window: within } = shownSearch.current;
-    return findAnswer(people, search, step, within);
+    // The profile as the page has it, so a big plan on 1 January is stepped
+    // past here exactly as on screen (#166).
+    const impact = profileKey
+      ? queryClient.getQueryData<EventImpact>(
+          eventProfileQuery(profileKey.userId, profileKey.input).queryKey,
+        )
+      : undefined;
+    return findAnswer(people, search, step, within, (slot) =>
+      bigOnNewYearsDay(impact, slot, search, TZ),
+    );
   }
   // The date moved because calendars changed, said in the hint line for as
   // long as that new date is the one on screen.
@@ -457,15 +483,6 @@ export function usePlanning() {
   // through (#74). The answer is the fresh list of events, which goes
   // straight into the cache the header badge reads; on a computer the
   // suggester then answers the dates themselves, right away.
-  // What the event is called when sent: the name typed, or the matching
-  // type's name, which each reader sees in their own language (eventTitle.ts).
-  const sentTitle = name.trim() || storedEventTitle(fallbackTitleId(search));
-  // What the event is likely to cause (#113): asked in the background while
-  // it is set up, for a real group only, and sent with the dates.
-  const profileFor =
-    user && activeGroup && !activeGroup.isExample
-      ? profileInput(search, sentTitle, extras.place, extras.note)
-      : null;
   const profile = useEventProfile(profileFor);
   // Waiting (briefly) for that profile before sending.
   const [preparing, setPreparing] = useState(false);
@@ -557,7 +574,7 @@ export function usePlanning() {
       // best by what everyone's important events say (#119). The scores come
       // from the server; without them (slow, or failing) the dates are
       // picked as they always were.
-      const options = { first, end: searchWindow.end, count: extras.dateCount };
+      const options = { first, end: searchWindow.end, count: extras.dateCount, profile: impact };
       const pool = findPool(fresh ?? participants, search, options, TZ);
       const scores = await scoresFor(groupId, impact, [first, ...pool]);
       dates = rankFromPool(pool, search, { ...options, scores }, TZ).chosen.map((d) => ({

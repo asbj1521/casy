@@ -173,6 +173,7 @@ describe("edgeWarnings", () => {
       one: (who: string, time: string) => `${who} starts at ${time}.`,
       many: (list: string) => `${list} start early.`,
     },
+    newYearsDay: "The day after New Year's Eve.",
   };
 
   it("gives back to back first, then the early morning after", () => {
@@ -188,5 +189,21 @@ describe("edgeWarnings", () => {
 
   it("is empty when neither applies", () => {
     expect(edgeWarnings([person("me", [])], LATE, TZ, "me", "en", words)).toEqual([]);
+  });
+
+  it("says a meeting on 1 January is the day after New Year's Eve, first (#166)", () => {
+    // 1 January 2027, 15:00 to 17:00 Danish time (UTC+1).
+    const newYearsDay = { start: "2027-01-01T14:00:00.000Z", end: "2027-01-01T16:00:00.000Z" };
+    const me = person("me", [block("2027-01-01T12:00:00.000Z", "2027-01-01T14:00:00.000Z")]);
+    expect(edgeWarnings([me], newYearsDay, TZ, "me", "en", words)).toEqual([
+      { kind: "newYearsDay", text: "The day after New Year's Eve." },
+      { kind: "backToBack", text: "You come straight from something." },
+    ]);
+  });
+
+  it("goes by Danish time: 31 December 23:30 there is not New Year's Day", () => {
+    // 22:30 UTC on 31 December is 23:30 on 31 December in Copenhagen.
+    const eve = { start: "2026-12-31T21:30:00.000Z", end: "2026-12-31T22:30:00.000Z" };
+    expect(edgeWarnings([person("me", [])], eve, TZ, "me", "en", words)).toEqual([]);
   });
 });

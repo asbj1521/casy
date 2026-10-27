@@ -697,6 +697,7 @@ export const en: Messages = {
       `Heads up: ${who} has something at ${time} the next morning.`,
     many: (list: string) => `Heads up: ${list} have something early the next morning.`,
   },
+  newYearsDay: "Heads up: it's the day after New Year's Eve.",
   backToBack: {
     you: "You",
     oneYou: "Heads up: you have something that ends just as this starts.",

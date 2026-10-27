@@ -3,7 +3,10 @@
  *  - early morning: it ends at 23:00 or later, and someone has something
  *    starting at 10:00 or earlier the next morning;
  *  - back to back: someone has something ending exactly when it starts
- *    (school until 16:00, the meeting at 16:00).
+ *    (school until 16:00, the meeting at 16:00);
+ *  - New Year's Day: it is on 1 January, the day after New Year's Eve (#166),
+ *    which Casy only offers last or not at all (newYear.ts), so a date there
+ *    was picked by hand.
  *
  * Only warnings: the date still stands. What they show (a name and a time)
  * is what group members can already see of each other's busy time. The
@@ -13,7 +16,7 @@
 import type { Lang } from "@/i18n/locale";
 import { blockRange } from "@/lib/availability";
 import { formatTime, nameList } from "@/lib/format";
-import { addDays, atHour, startOfDay } from "@/lib/zone";
+import { addDays, atHour, localDate, startOfDay } from "@/lib/zone";
 import type { Participant } from "@/types";
 
 /** A meeting ending at this local hour or later counts as late. */
@@ -172,13 +175,14 @@ export function backToBackNote(
 
 /** One of a meeting's edge warnings, as the pages show it. */
 export interface EdgeWarning {
-  kind: "backToBack" | "earlyMorning";
+  kind: "newYearsDay" | "backToBack" | "earlyMorning";
   text: string;
 }
 
 /**
- * Both warnings for a meeting on `slot`, in the order the pages show them:
- * back to back first, then the early morning after. Empty when neither applies.
+ * The warnings for a meeting on `slot`, in the order the pages show them:
+ * New Year's Day, back to back, then the early morning after. Empty when
+ * none applies.
  */
 export function edgeWarnings(
   participants: Participant[],
@@ -186,9 +190,12 @@ export function edgeWarnings(
   timeZone: string,
   youId: string | null,
   lang: Lang,
-  words: { backToBack: BackToBackWords; earlyMorning: EarlyMorningWords },
+  words: { backToBack: BackToBackWords; earlyMorning: EarlyMorningWords; newYearsDay: string },
 ): EdgeWarning[] {
   const warnings: EdgeWarning[] = [];
+  // Checked here rather than with newYear.ts, which reaches this file through eventImpact.ts.
+  const { month, day } = localDate(Date.parse(slot.start), timeZone);
+  if (month === 0 && day === 1) warnings.push({ kind: "newYearsDay", text: words.newYearsDay });
   const backToBack = backToBackNote(
     backToBackEnds(participants, slot, timeZone),
     youId,

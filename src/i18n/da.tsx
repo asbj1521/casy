@@ -734,6 +734,7 @@ export const da = {
     one: (who: string, time: string) => `Bemærk: ${who} har noget kl. ${time} næste morgen.`,
     many: (list: string) => `Bemærk: ${list} har noget tidligt næste morgen.`,
   },
+  newYearsDay: "Bemærk: Det er dagen efter nytårsaften.",
   backToBack: {
     you: "Du",
     oneYou: "Bemærk: Du har noget, der slutter lige når aftalen starter.",

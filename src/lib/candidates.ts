@@ -20,11 +20,17 @@
  * the dates nobody gives something up for: the clean dates are still taken
  * before any that cost someone, and the spacing rules still hold.
  *
+ * 1 January (#166, newYear.ts): a big plan there is never offered unless it
+ * is the date on screen, and a small one only after every other date in its
+ * group (clean, or costing someone).
+ *
  * Every date comes from the same search the page and a decline run
  * (findEventSlot), stepped forward a day (a meeting or trip) or past the end
  * (a holiday) at a time, so each is one the page itself could have shown.
  */
+import type { EventImpact } from "@/api/eventProfile";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
+import { bigOnNewYearsDay, onNewYearsDay } from "@/lib/newYear";
 import type { FoundDate } from "@/lib/scheduler";
 import { addDays, dayOf, localDate } from "@/lib/zone";
 import type { Participant } from "@/types";
@@ -46,6 +52,8 @@ interface CandidateOptions {
   count?: number;
   /** How well each date suits the group (0 to 100), by the start of its slot (#119). */
   scores?: ReadonlyMap<string, number>;
+  /** What the event does (#113), which says whether it is a big plan on 1 January (#166). */
+  profile?: EventImpact | null;
 }
 
 export function pickCandidates(
@@ -103,7 +111,7 @@ export function rankFromPool(
   options: CandidateOptions,
   timeZone: string,
 ): { pool: FoundDate[]; chosen: FoundDate[]; byPick: FoundDate[] } {
-  const { first, count = CANDIDATE_COUNT, scores } = options;
+  const { first, count = CANDIDATE_COUNT, scores, profile } = options;
 
   const chosen: FoundDate[] = [first];
   const dayNumber = (d: FoundDate) => dayIndex(d.slot.start, timeZone);
@@ -132,13 +140,20 @@ export function rankFromPool(
   // Among the dates nobody gives something up for, the best-scoring first;
   // the sort is stable, so equal scores stay soonest first.
   const scoreOf = (d: FoundDate) => scores?.get(d.slot.start) ?? 100;
-  const clean = found
+  // 1 January: a big plan is left out, a small one goes last in its group
+  // (the sort is stable, so the rest keep their order).
+  const offered = found.filter((d) => !bigOnNewYearsDay(profile, d.slot, search, timeZone));
+  const newYearLast = (a: FoundDate, b: FoundDate) =>
+    Number(onNewYearsDay(a.slot.start, timeZone)) - Number(onNewYearsDay(b.slot.start, timeZone));
+  const clean = offered
     .filter((d) => d.conflicts.length === 0)
-    .sort((a, b) => scoreOf(b) - scoreOf(a));
+    .sort((a, b) => scoreOf(b) - scoreOf(a))
+    .sort(newYearLast);
   // Fewest people giving something up first, then soonest.
-  const costly = found
+  const costly = offered
     .filter((d) => d.conflicts.length > 0)
-    .sort((a, b) => a.conflicts.length - b.conflicts.length);
+    .sort((a, b) => a.conflicts.length - b.conflicts.length)
+    .sort(newYearLast);
   take(clean, { also: newWeekday });
   take(clean);
   take(costly, { also: newWeekday });

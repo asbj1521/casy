@@ -22,6 +22,7 @@ import { nameList } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import type { GridItem } from "@/lib/monthGrid";
 import { monthScrollTop } from "@/lib/monthScroll";
+import { bigOnNewYearsDay } from "@/lib/newYear";
 import {
   buildPile,
   candidateMonth,
@@ -175,10 +176,17 @@ export default function PileScreen({
         end: searchWindow.end,
         count: extras.dateCount,
         scores,
+        profile,
       },
       TZ,
     );
-    const others = pool.filter((d) => !chosen.includes(d) && d.conflicts.length === 0);
+    // Not offered, but listed as other dates that work: never a big plan on 1 January (#166).
+    const others = pool.filter(
+      (d) =>
+        !chosen.includes(d) &&
+        d.conflicts.length === 0 &&
+        !bigOnNewYearsDay(profile, d.slot, search, TZ),
+    );
     const listed = [...chosen, ...others.slice(0, Math.max(0, LIST_MAX - chosen.length))].sort(
       (a, b) => Date.parse(a.slot.start) - Date.parse(b.slot.start),
     );

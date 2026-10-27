@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { EventImpact } from "@/api/eventProfile";
 import { findPool, pickCandidates, rankCandidates } from "@/lib/candidates";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import type { FoundDate } from "@/lib/scheduler";
@@ -156,5 +157,63 @@ describe("scores (#119)", () => {
     );
     const picked = pickCandidates(costly, EVENING, { first, end: END, scores }, TZ);
     expect(picked.slice(1).every((d) => d.conflicts.length === 0)).toBe(true);
+  });
+});
+
+describe("1 January (#166)", () => {
+  // Wednesday 30 December 2026 to Saturday 2 January 2027, 15:00 to 17:00: a short period.
+  const AFTERNOON: EventSettings = { kind: "single", durationMinutes: 120, startHour: 15 };
+  const from = new Date(wallTime(2026, 11, 30, 0, TZ)).toISOString();
+  const end = new Date(wallTime(2027, 0, 3, 0, TZ)).toISOString();
+  const group = [person("a"), person("b")];
+  const party: EventImpact = {
+    v: 1,
+    effects: ["alcohol"],
+    runsLate: true,
+    strain: "moderate",
+    recoveryDays: 1,
+    outdoors: false,
+    daylight: false,
+    confidence: "high",
+    reason: "",
+  };
+  const date = (d: FoundDate) => `${day(d).month + 1}/${day(d).day}`;
+  const first = () => {
+    const found = findEventSlot(group, AFTERNOON, from, end, TZ);
+    return { slot: found.slot!, conflicts: found.conflicts };
+  };
+
+  it("offers a small plan there only after every other date", () => {
+    const { byPick, chosen } = rankCandidates(group, AFTERNOON, { first: first(), end }, TZ);
+    // Picked last of all, though by the spacing rules it would come second.
+    expect(byPick.map(date).at(-1)).toBe("1/1");
+    expect(chosen.map(date)).toEqual(["12/30", "12/31", "1/1", "1/2"]);
+  });
+
+  it("never offers a big plan there", () => {
+    const { chosen } = rankCandidates(
+      group,
+      AFTERNOON,
+      { first: first(), end, profile: party },
+      TZ,
+    );
+    expect(chosen.map(date)).toEqual(["12/30", "12/31", "1/2"]);
+  });
+
+  it("keeps it when it is the date on screen, picked by hand", () => {
+    const onScreen = findEventSlot(
+      group,
+      AFTERNOON,
+      new Date(wallTime(2027, 0, 1, 0, TZ)).toISOString(),
+      end,
+      TZ,
+    );
+    const { byPick } = rankCandidates(
+      group,
+      AFTERNOON,
+      { first: { slot: onScreen.slot!, conflicts: [] }, end, profile: party },
+      TZ,
+    );
+    expect(byPick.map(date)[0]).toBe("1/1");
   });
 });

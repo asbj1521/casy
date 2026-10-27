@@ -1,12 +1,16 @@
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   findVacationSuggestions,
   type MultiDayResult,
   type VacationSuggestion,
 } from "@/lib/availability";
+import type { EventToProfile } from "@/api/eventProfile";
+import { eventProfileQuery } from "@/hooks/useEventProfile";
 import type { Step } from "@/lib/answerSteps";
 import { findEventSlot, SEARCH_WINDOW, type EventSettings } from "@/lib/eventSearch";
+import { bigOnNewYearsDay, onNewYearsDay } from "@/lib/newYear";
 import { laterSlots, type FoundDate } from "@/lib/scheduler";
 import { addDays, APP_TIME_ZONE, dayOf } from "@/lib/zone";
 import type { Participant } from "@/types";
@@ -24,6 +28,15 @@ interface SearchWindow {
   start: string;
   end: string;
 }
+
+/** The event's profile (#113) as asked for: whose, and about what. */
+interface ProfileKey {
+  userId: string;
+  input: EventToProfile;
+}
+
+/** No profile to read: a key nothing is ever stored under. */
+const NO_PROFILE = { userId: "", input: {} as EventToProfile };
 
 /** Every search's window unless a period narrows it: today through the year searched. */
 const WHOLE_YEAR: SearchWindow = { start: TODAY, end: SEARCH_WINDOW.end };
@@ -49,19 +62,53 @@ interface DateSearch {
  * nothing to search: a group still loading, failed, or with no calendars,
  * where "everyone" would otherwise be free today. Every date lies within
  * `window`: the period picked on the page (#74), or the whole year.
+ *
+ * A big plan on 1 January (#166) is stepped past, and left out of the later
+ * dates, as the event's profile says (`profile`, null for none). The profile
+ * is read from the cache only while the answer or a later date is on that
+ * day: anywhere else its arrival would redraw the page for nothing, and a
+ * redraw recentres the scheduler's wheels mid-turn (useEventProfile).
  */
 export function useDateSearch(
   participants: Participant[] | null,
   search: EventSettings,
   step: Step,
   window: SearchWindow,
+  profile: ProfileKey | null = null,
 ): DateSearch {
   const { from, day: pickedDay } = step;
 
-  const found = useMemo(
+  const plain = useMemo(
     () =>
       participants ? findAnswer(participants, search, { from, day: pickedDay }, window) : null,
     [participants, search, from, pickedDay, window],
+  );
+  const plainLater = useMemo(() => {
+    if (!participants || !plain?.slot) return [];
+    return laterSlots(participants, search, plain.slot.start, LATER_COUNT, window.end, TZ);
+  }, [participants, search, plain, window]);
+
+  const nearNewYear = [plain?.slot, ...plainLater.map((d) => d.slot)].some(
+    (s) => !!s && onNewYearsDay(s.start, TZ),
+  );
+  const key = nearNewYear && profile ? profile : NO_PROFILE;
+  const { data: impact } = useQuery({
+    ...eventProfileQuery(key.userId, key.input),
+    // Only read from the cache, which the page fills while the event is set up.
+    enabled: false,
+  });
+  const isBig = useMemo(
+    () => (slot: { start: string; end: string }) =>
+      bigOnNewYearsDay(nearNewYear ? impact : null, slot, search, TZ),
+    [nearNewYear, impact, search],
+  );
+  const stepped = !!plain?.slot && isBig(plain.slot);
+  const found = useMemo(
+    () =>
+      participants && stepped
+        ? findAnswer(participants, search, { from, day: pickedDay }, window, isBig)
+        : plain,
+    [participants, stepped, search, from, pickedDay, window, isBig, plain],
   );
 
   // "6 days works for everyone if you leave after work Friday" and the like.
@@ -80,8 +127,12 @@ export function useDateSearch(
   const slot = found?.slot ?? null;
   const later = useMemo(() => {
     if (!participants || !slot || suggestions.length > 0) return [];
-    return laterSlots(participants, search, slot.start, LATER_COUNT, window.end, TZ);
-  }, [participants, search, slot, suggestions, window]);
+    const after =
+      found === plain
+        ? plainLater
+        : laterSlots(participants, search, slot.start, LATER_COUNT, window.end, TZ);
+    return after.filter((d) => !isBig(d.slot));
+  }, [participants, search, slot, suggestions, window, found, plain, plainLater, isBig]);
 
   const firstDay = slot ? dayOf(slot.start, TZ) : null;
   const spanDays =
@@ -102,13 +153,16 @@ export function useDateSearch(
  * The date the page shows for `step`: the first that works for `participants`,
  * and what it costs whom. Also run on its own, with fresh busy times, to check
  * a date still holds before it is sent (FindDate's suggest), so the check and
- * the page can never disagree about what "the answer" is.
+ * the page can never disagree about what "the answer" is. A date `isBig`
+ * calls a big plan on 1 January (#166) is stepped past, unless it is the
+ * day picked.
  */
 export function findAnswer(
   participants: Participant[],
   search: EventSettings,
   step: Pick<Step, "from" | "day">,
   window: SearchWindow = WHOLE_YEAR,
+  isBig: (slot: { start: string; end: string }) => boolean = () => false,
 ): MultiDayResult {
   const { day: pickedDay } = step;
   const from = startWithin(step.from, window);
@@ -121,7 +175,13 @@ export function findAnswer(
     const onDay = findEventSlot(participants, search, searchStart(search, from), dayEnd, TZ);
     if (onDay.slot) return onDay;
   }
-  return findEventSlot(participants, search, searchStart(search, from), window.end, TZ);
+  let found = findEventSlot(participants, search, searchStart(search, from), window.end, TZ);
+  // At most one 1 January lies in a search's year, so once past it is enough.
+  if (found.slot && isBig(found.slot)) {
+    const next = new Date(addDays(Date.parse(dayOf(found.slot.start, TZ)), 1, TZ)).toISOString();
+    found = findEventSlot(participants, search, searchStart(search, next), window.end, TZ);
+  }
+  return found;
 }
 
 /** Where a step's search begins: the day stepped to, but never before the window. */
