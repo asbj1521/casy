@@ -224,6 +224,7 @@ function AccountPart({ data }: { data: MyData }) {
       <Fact
         label={w.signIn}
         value={account.signIn.map((m) => w.signInMethods[m] ?? m).join(", ") || "-"}
+        detail={account.appleToken ? w.appleToken : undefined}
       />
       <Fact
         label={w.emailLanguage}

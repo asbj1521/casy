@@ -74,7 +74,9 @@ export interface NameableUser {
  * who signed in by email link has no name at all, so the part of their
  * address before the "@" stands in: it is the half they chose, and it keeps
  * the domain (where they work, which provider they use) out of other
- * members' sight. Group members are never shown an email address.
+ * members' sight. Group members are never shown an email address. Apple's
+ * Hide My Email address (#138) is random letters before the "@", nothing
+ * anyone chose, so it never stands in; they can pick a name on their profile.
  */
 export function displayNameFor(user: NameableUser | null | undefined): string {
   const meta = user?.user_metadata ?? {};
@@ -82,9 +84,13 @@ export function displayNameFor(user: NameableUser | null | undefined): string {
     const value = meta[key];
     if (typeof value === "string" && value.trim()) return value.trim();
   }
-  const local = user?.email?.split("@")[0]?.trim();
-  return local || "Someone";
+  const [local, domain] = user?.email?.split("@") ?? [];
+  if (domain?.toLowerCase() === APPLE_RELAY_DOMAIN) return "Someone";
+  return local?.trim() || "Someone";
 }
+
+/** Where Apple's Hide My Email addresses live. */
+const APPLE_RELAY_DOMAIN = "privaterelay.appleid.com";
 
 /** Most people one request may pick to invite: a group holds 20, the inviter included. */
 export const MAX_PICKED_PER_REQUEST = 19;

@@ -171,6 +171,7 @@ export class FakeBackend {
           w.aiShare = body.on === true;
           return ok({ outcome: w.aiShare ? "sharing" : "not sharing" });
         }
+        if (action === "apple-token") return ok({ outcome: "saved" });
         if (action === "corrections-delete") {
           w.corrections = [];
           return ok({ outcome: "deleted" });

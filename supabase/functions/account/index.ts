@@ -9,6 +9,9 @@
  * - ai-share: switches the sending of their corrections of the AI to Casy for
  *   review on or off (#122), without touching the yes.
  * - corrections-delete: deletes every correction they have sent (#122).
+ * - apple-token: right after a Sign in with Apple in the app (#138), its
+ *   one-time `code`, kept (as a refresh token) only so the sign-in can be
+ *   revoked when the account is deleted; see _shared/appleSignIn.ts.
  * - delete: deletes the account and everything it owns, after the page has
  *   asked them to type a word to confirm (sent as `confirm: true`, so a stray
  *   call can't do it). See _shared/accounts.ts for what goes and what stays.
@@ -18,6 +21,7 @@
  */
 import { deleteAccount } from "../_shared/accounts.ts";
 import { setAiConsent, setAiSharing } from "../_shared/aiAccess.ts";
+import { saveAppleSignIn } from "../_shared/appleSignIn.ts";
 import { exportMyData, readMyData } from "../_shared/myData.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import { HttpError, serve } from "../_shared/http.ts";
@@ -49,6 +53,11 @@ serve("account", async (req, body) => {
       const { error } = await db.from("ai_corrections").delete().eq("profile_id", profileId);
       if (error) throw error;
       return { outcome: "deleted" };
+    }
+    case "apple-token": {
+      if (typeof body.code !== "string" || !body.code) throw new HttpError(400, "code is required");
+      await saveAppleSignIn(db, caller, body.code);
+      return { outcome: "saved" };
     }
     case "delete": {
       if (body.confirm !== true) throw new HttpError(400, "confirm must be true");

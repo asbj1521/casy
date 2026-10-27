@@ -25,8 +25,10 @@ export interface MyData {
     /** The name group members see; null until the groups function saved one. */
     name: string | null;
     nameIsCustom: boolean;
-    /** How you sign in: "email", "google". */
+    /** How you sign in: "email", "google", "apple". */
     signIn: string[];
+    /** A Sign in with Apple token is kept, only to revoke it when the account is deleted (#138). */
+    appleToken: boolean;
     /** The language Casy's emails to you are written in, if one is saved ("da", "en"). */
     language: string | null;
     createdAt: string | null;
@@ -269,6 +271,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     toldCasy,
     blockedCount,
     reportsCount,
+    appleTokens,
   ] = await Promise.all([
     sourceIds.length
       ? count(db.from("calendar_busy_cache").select("id", head).in("source_id", sourceIds))
@@ -333,6 +336,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     count(db.from("casy_entries").select("id", head).eq("profile_id", me)),
     count(db.from("blocked_people").select("blocked_id", head).eq("blocker_id", me)),
     count(db.from("content_reports").select("id", head).eq("reporter_id", me)),
+    count(db.from("apple_sign_ins").select("profile_id", head).eq("profile_id", me)),
   ]);
   for (const r of [first, last, next, consent]) if (r?.error) throw r.error;
   const consentRow = consent.data as {
@@ -358,6 +362,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       name: profileRow?.display_name ?? null,
       nameIsCustom: profileRow?.name_is_custom ?? false,
       signIn: signInMethods(caller),
+      appleToken: appleTokens > 0,
       language: savedLanguage(caller),
       createdAt: caller.created_at ?? null,
     },

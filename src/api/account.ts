@@ -62,6 +62,8 @@ export interface MyData {
     name: string | null;
     nameIsCustom: boolean;
     signIn: string[];
+    /** A Sign in with Apple token is kept, only to revoke it when the account is deleted (#138). */
+    appleToken: boolean;
     /** The language Casy's emails are written in, if one is saved. */
     language: string | null;
     createdAt: string | null;

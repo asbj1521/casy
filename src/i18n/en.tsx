@@ -1257,7 +1257,9 @@ export const en: Messages = {
     nameFromLogin: "From your login",
     nameNotYet: "Not saved yet",
     signIn: "Sign in with",
-    signInMethods: { email: "Email", google: "Google" } as Record<string, string>,
+    signInMethods: { email: "Email", google: "Google", apple: "Apple" } as Record<string, string>,
+    appleToken:
+      "A key from Apple is kept so your Apple sign-in can be ended when you delete the account",
     emailLanguage: "Language for emails",
     languages: { da: "Danish", en: "English" } as Record<string, string>,
     languageDefault: "The default, until you use Casy signed in",

@@ -11,15 +11,23 @@
  * credentials, busy times, their name and primary calendar. Events they
  * suggested stay for the others, with nobody named as the suggester.
  *
+ * Before anything, a Sign in with Apple is revoked at Apple (#138, an App
+ * Store requirement), while the token to do it with still exists. If Apple
+ * can't be reached, nothing has changed yet and the deletion fails, to be
+ * tried again.
+ *
  * Should deleting the account fail after the groups were left, it can simply
  * be tried again: leaving is already done, and nothing else changed.
  */
+import { revokeAppleSignIn } from "./appleSignIn.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
 export async function deleteAccount(
   db: Db,
   profileId: string,
 ): Promise<{ leftGroups: number; deletedGroups: number }> {
+  await revokeAppleSignIn(db, profileId);
+
   const { data: memberships, error: memberErr } = await db
     .from("group_members")
     .select("group_id")

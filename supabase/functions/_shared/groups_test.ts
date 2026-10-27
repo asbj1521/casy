@@ -89,6 +89,15 @@ Deno.test("members are named, and never by their email address", () => {
   assertEquals(displayNameFor({ email: "kristoffer@somebank.dk" }), "kristoffer");
   assertEquals(displayNameFor({ email: null, user_metadata: null }), "Someone");
   assertEquals(displayNameFor(null), "Someone");
+  // Apple's Hide My Email: random letters, not a name anyone chose.
+  assertEquals(displayNameFor({ email: "x7k2q9mz4t@privaterelay.appleid.com" }), "Someone");
+  assertEquals(
+    displayNameFor({
+      email: "x7k2q9mz4t@privaterelay.appleid.com",
+      user_metadata: { full_name: "Sara Holm" },
+    }),
+    "Sara Holm",
+  );
   // A blank name in the metadata must not win over the email.
   assertEquals(
     displayNameFor({ email: "jonas@example.com", user_metadata: { full_name: "  " } }),

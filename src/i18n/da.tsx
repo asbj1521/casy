@@ -1302,7 +1302,9 @@ export const da = {
     nameFromLogin: "Fra dit login",
     nameNotYet: "Ikke gemt endnu",
     signIn: "Log ind med",
-    signInMethods: { email: "E-mail", google: "Google" } as Record<string, string>,
+    signInMethods: { email: "E-mail", google: "Google", apple: "Apple" } as Record<string, string>,
+    appleToken:
+      "En nøgle fra Apple gemmes, så dit Apple-login kan afbrydes, når du sletter kontoen",
     emailLanguage: "Sprog i e-mails",
     languages: { da: "Dansk", en: "Engelsk" } as Record<string, string>,
     languageDefault: "Standard, indtil du har brugt Casy logget ind",

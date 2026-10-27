@@ -653,6 +653,7 @@ export function myData(world: World): MyData {
       name: world.name,
       nameIsCustom: false,
       signIn: ["email"],
+      appleToken: false,
       language: "da",
       createdAt: "2026-09-01T10:00:00.000Z",
     },

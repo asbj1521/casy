@@ -22,6 +22,8 @@ export interface Caller {
   user_metadata?: Record<string, unknown>;
   /** How they sign in ("providers"), set by Supabase Auth; read by "Your data". */
   app_metadata?: Record<string, unknown>;
+  /** Each way they sign in, with the provider's own id for them (appleSignIn.ts). */
+  identities?: { provider: string; id?: string; identity_data?: Record<string, unknown> }[];
   created_at?: string;
 }
 
