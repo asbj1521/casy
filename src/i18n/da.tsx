@@ -1444,6 +1444,8 @@ export const da = {
     title: "Log ind",
     intro: "Log ind for at forbinde dine kalendere og planlægge med dine grupper.",
     google: "Fortsæt med Google",
+    apple: "Fortsæt med Apple",
+    appleFailed: "Log ind med Apple lykkedes ikke. Prøv igen.",
     or: "eller",
     acceptTerms: (terms: ReactNode, privacy: ReactNode) => (
       <>

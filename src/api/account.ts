@@ -21,6 +21,18 @@ export async function deleteMyAccount(): Promise<void> {
 }
 
 /**
+ * Right after a Sign in with Apple (#138): its one-time code, which the
+ * server trades for what it needs to revoke the sign-in when the account is
+ * deleted (supabase/functions/_shared/appleSignIn.ts).
+ */
+export async function saveAppleSignIn(code: string): Promise<void> {
+  await callFunction("account", {
+    body: { action: "apple-token", code },
+    errorMessage: currentMessages().signIn.appleFailed,
+  });
+}
+
+/**
  * Say yes (or take the yes back) to Casy's AI using content from your calendar
  * (#120): the names of your calendars and the titles of your events. The
  * server refuses the AI features that read them without it.

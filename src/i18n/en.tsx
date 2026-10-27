@@ -1399,6 +1399,8 @@ export const en: Messages = {
     title: "Sign in",
     intro: "Sign in to connect your calendars and plan with your groups.",
     google: "Continue with Google",
+    apple: "Continue with Apple",
+    appleFailed: "Signing in with Apple didn't work. Try again.",
     or: "or",
     acceptTerms: (terms: ReactNode, privacy: ReactNode) => (
       <>

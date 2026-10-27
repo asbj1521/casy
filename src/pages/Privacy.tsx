@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 24. oktober 2026",
+  updated: "Senest opdateret 27. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -49,10 +49,11 @@ const da: LegalCopy = {
         <>
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <Term>Din konto:</Term> din e-mailadresse og dit navn, hvis du logger ind med Google,
-              eller et navn, du selv vælger på din profil. Logger du ind med din e-mail og ikke har
-              valgt et navn, bruger Casy delen af din e-mailadresse før @. Og det sprog, du bruger
-              Casy på, så e-mails fra Casy kommer på det sprog.
+              <Term>Din konto:</Term> din e-mailadresse og dit navn, hvis du logger ind med Google
+              eller Apple, eller et navn, du selv vælger på din profil. Skjuler du din e-mail, når
+              du logger ind med Apple, får Casy kun den adresse, Apple videresender fra. Logger du
+              ind med din e-mail og ikke har valgt et navn, bruger Casy delen af din e-mailadresse
+              før @. Og det sprog, du bruger Casy på, så e-mails fra Casy kommer på det sprog.
             </li>
             <li>
               <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
@@ -116,8 +117,9 @@ const da: LegalCopy = {
             <li>
               <Term>Adgangsoplysninger:</Term> det, der skal til for at holde dine kalendere
               opdateret: adgangsnøgler fra Google eller Microsoft, en app-specifik adgangskode til
-              din Apple-konto eller et kalenderlink. De krypteres, før de gemmes, og nøglen
-              opbevares adskilt fra databasen.
+              din Apple-konto eller et kalenderlink, og logger du ind med Apple, en nøgle fra Apple,
+              som kun bruges til at afbryde dit Apple-login, når du sletter din konto. De krypteres,
+              før de gemmes, og nøglen opbevares adskilt fra databasen.
             </li>
           </ul>
           <p className="mt-3">
@@ -470,6 +472,8 @@ const da: LegalCopy = {
             skriv til {mail}. Alt, der hører til den, bliver slettet med det samme: dine kalendere,
             optagede tidsrum, adgangsoplysninger og gruppemedlemskaber. Grupper, hvor du var det
             eneste medlem, bliver også slettet. Grupper med andre medlemmer fortsætter uden dig.
+            Loggede du ind med Apple, afbryder Casy først dit Apple-login hos Apple, så Casy ikke
+            længere står under Log ind med Apple i din Apple-konto.
           </p>
         </>
       ),
@@ -488,7 +492,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 24 October 2026",
+  updated: "Last updated 27 October 2026",
   sections: [
     {
       title: "In short",
@@ -515,9 +519,11 @@ const en: LegalCopy = {
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <Term>Your account:</Term> your email address, and your name if you sign in with
-              Google, or a name you choose on your profile. If you sign in with your email and have
-              not chosen a name, Casy uses the part of your email address before the @. And the
-              language you use Casy in, so emails from Casy come in that language.
+              Google or Apple, or a name you choose on your profile. If you hide your email when
+              signing in with Apple, Casy only gets the address Apple forwards from. If you sign in
+              with your email and have not chosen a name, Casy uses the part of your email address
+              before the @. And the language you use Casy in, so emails from Casy come in that
+              language.
             </li>
             <li>
               <Term>Connected calendars:</Term> which accounts you connected (for example the email
@@ -579,8 +585,9 @@ const en: LegalCopy = {
             <li>
               <Term>Access credentials:</Term> what is needed to keep your calendars up to date:
               access tokens from Google or Microsoft, an app-specific password for your Apple
-              account, or a calendar link. These are encrypted before they are stored, and the key
-              is kept separately from the database.
+              account, or a calendar link, and if you sign in with Apple, a key from Apple used only
+              to end your Apple sign-in when you delete your account. These are encrypted before
+              they are stored, and the key is kept separately from the database.
             </li>
           </ul>
           <p className="mt-3">
@@ -934,7 +941,9 @@ const en: LegalCopy = {
             To delete your Casy account entirely, use Delete account on your profile, or email
             {mail}. Everything connected to it is deleted straight away: your calendars, busy times,
             credentials and group memberships. Groups where you were the only member are deleted
-            too; groups with other members carry on without you.
+            too; groups with other members carry on without you. If you signed in with Apple, Casy
+            first ends your Apple sign-in at Apple, so Casy no longer appears under Sign in with
+            Apple in your Apple account.
           </p>
         </>
       ),

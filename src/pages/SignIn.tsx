@@ -1,7 +1,9 @@
 import { useLayoutEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { isAuthError } from "@supabase/auth-js";
 import { KeyRound, Loader2, Mail, type LucideIcon } from "lucide-react";
+import { SiApple } from "react-icons/si";
 
 import { calendarStatusQuery } from "@/api/calendars";
 import PasswordForm from "@/components/PasswordForm";
@@ -16,6 +18,7 @@ import { useCaptcha } from "@/hooks/useCaptcha";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
+import { signInWithApple } from "@/lib/appleSignIn";
 import { cardArrived } from "@/lib/cardTransition";
 import { isNativeApp } from "@/lib/nativeApp";
 import { returnPathAfterSignIn } from "@/lib/signInReturn";
@@ -51,7 +54,9 @@ function errorFromUrl(): string | null {
 
 /**
  * Sign in with Google, a one-time email link, or an email + password —
- * either an existing one or a fresh account created with one.
+ * either an existing one or a fresh account created with one. In the iPhone
+ * app, Sign in with Apple instead of Google (lib/appleSignIn.ts), which signs
+ * in on the spot rather than coming back here.
  *
  * All of these send the browser back to this page rather than straight to
  * where the person was headed. By the time they return, the Supabase client
@@ -92,6 +97,7 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [sending, setSending] = useState(false);
+  const [appleBusy, setAppleBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(errorFromUrl);
 
@@ -220,6 +226,25 @@ export default function SignIn() {
     });
     // On success the browser is already leaving for Google.
     if (err) setError(authErrorMessage(err, t));
+  }
+
+  async function handleApple() {
+    const problem = captchaProblem();
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    setAppleBusy(true);
+    setError(null);
+    try {
+      // Signed in, the auth state change above redirects via `user`.
+      await signInWithApple(captchaToken);
+    } catch (err) {
+      setError(isAuthError(err) ? authErrorMessage(err, t) : t.signIn.appleFailed);
+    } finally {
+      resetCaptcha();
+      setAppleBusy(false);
+    }
   }
 
   async function handleEmail(e: FormEvent<HTMLFormElement>) {
@@ -435,10 +460,34 @@ export default function SignIn() {
             contents fade in once it has. */}
         <div className="vt-card mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
           <div className="vt-card-content">
+            {/* The iPhone app only (#138): Sign in with Apple, first, drawn
+                as Apple asks (black, white in dark mode, its logo and
+                wording). The website has none: its flow needs a secret that
+                expires every six months. */}
+            {isNativeApp && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleApple()}
+                  disabled={appleBusy}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[17px] font-semibold text-white transition disabled:opacity-60 dark:bg-white dark:text-black"
+                >
+                  <SiApple aria-hidden className="h-[18px] w-[18px]" />
+                  {t.signIn.apple}
+                </button>
+
+                <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  {t.signIn.or}
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              </>
+            )}
+
             {/* Not in the iPhone app (#91): with a Google button, App Store
                 guideline 4.8 asks for Sign in with Apple or the like beside it,
                 and Google refuses sign-in inside an app's web view anyway.
-                Without it the app signs in only with Casy's own accounts. */}
+                The app signs in with Apple or Casy's own accounts. */}
             {!isNativeApp && (
               <>
                 <button
