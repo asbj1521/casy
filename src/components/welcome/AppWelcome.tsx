@@ -32,12 +32,6 @@ export default function AppWelcome() {
         >
           {t.welcome.start}
         </Link>
-        <Link
-          to="/privacy"
-          className="mt-4 block text-center text-sm text-muted-foreground underline underline-offset-2"
-        >
-          {t.welcome.privacy}
-        </Link>
       </div>
     </main>
   );

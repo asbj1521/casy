@@ -34,11 +34,15 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
   await expect(page.getByText("Log ind for at forbinde dine kalendere")).toHaveCount(0);
 
+  // The privacy policy is not on the welcome screen: it is under the sign-in
+  // card, and on the profile once signed in.
   await page.goto("/");
-  await page.getByRole("link", { name: "Sådan passer Casy på dine data" }).click();
+  await expect(page.getByRole("link", { name: "Sådan passer Casy på dine data" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Kom i gang" }).click();
+  await page.getByRole("link", { name: "privatlivspolitik" }).click();
   await expect(page).toHaveURL(/\/privacy$/);
   await page.getByRole("button", { name: "Tilbage" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/sign-in$/);
 });
 
 test("the website keeps its landing page and tab bar", async ({ page }) => {

@@ -62,7 +62,6 @@ export const en: Messages = {
     headline: "Find the day everyone can make it.",
     body: "Casy lays your calendars on top of each other and finds the dates that suit everyone.",
     start: "Get started",
-    privacy: "How Casy looks after your data",
     allCan: (n: number) => `All ${n} can make it`,
     back: "Back",
     yourCalendar: "Your calendar",

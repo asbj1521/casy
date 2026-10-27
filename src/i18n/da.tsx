@@ -67,7 +67,6 @@ export const da = {
     headline: "Find dagen, hvor alle kan.",
     body: "Casy lægger jeres kalendere oven på hinanden og finder de datoer, der passer alle.",
     start: "Kom i gang",
-    privacy: "Sådan passer Casy på dine data",
     allCan: (n: number) => `Alle ${n} kan`,
     back: "Tilbage",
     yourCalendar: "Din kalender",
