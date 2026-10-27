@@ -5,6 +5,7 @@
  * each in a row ("lane") of its own the whole way, and what doesn't fit
  * counted per day ("+2"). Pure, so the layout is tested rather than eyeballed.
  */
+import { addDays, startOfMonth } from "@/lib/zone";
 
 /** Something to show in the month: a busy block, a holiday, or the suggested date. */
 export interface GridItem {
@@ -18,6 +19,38 @@ export interface GridItem {
   pulse?: boolean;
   /** Its length changes as Casy guesses (#115): it glides to each new one. */
   grow?: boolean;
+}
+
+const sameItem = (a: GridItem, b: GridItem) =>
+  a === b ||
+  (a.calendarId === b.calendarId &&
+    a.start === b.start &&
+    a.end === b.end &&
+    a.label === b.label &&
+    a.pencil === b.pencil &&
+    a.pulse === b.pulse &&
+    a.grow === b.grow);
+
+/**
+ * Whether two lists of items draw the same month (`month` is its first local
+ * midnight): only what overlaps it, with a week to spare each side for the
+ * weeks that spill over, is compared, and by content, not by object. A trip
+ * Casy is asking about changes its bar's length every pulse (#115), which
+ * gives the whole list new objects; a month the bar doesn't touch must not
+ * be laid out and drawn again for that (#162).
+ */
+export function sameItemsInMonth(
+  a: GridItem[],
+  b: GridItem[],
+  month: number,
+  timeZone: string,
+): boolean {
+  if (a === b) return true;
+  const from = addDays(month, -7, timeZone);
+  const to = addDays(startOfMonth(month, timeZone, 1), 7, timeZone);
+  const near = (items: GridItem[]) => items.filter((i) => i.end > from && i.start < to);
+  const [x, y] = [near(a), near(b)];
+  return x.length === y.length && x.every((item, i) => sameItem(item, y[i]));
 }
 
 interface PlacedItem {

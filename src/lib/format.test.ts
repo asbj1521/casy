@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { formatEventDate, formatHeadline, nameList } from "@/lib/format";
+import {
+  dayLabel,
+  formatEventDate,
+  formatHeadline,
+  monthName,
+  monthShortName,
+  nameList,
+} from "@/lib/format";
+import { LOCALE } from "@/i18n/locale";
 
 // Friday 25 September 2026, 18:00 to 21:00 in Copenhagen.
 const EVENING = { start: "2026-09-25T16:00:00.000Z", end: "2026-09-25T19:00:00.000Z" };
@@ -61,5 +69,34 @@ describe("nameList", () => {
   it("joins names in Danish", () => {
     expect(nameList(["Emilie", "Tessa"], "da")).toBe("Emilie og Tessa");
     expect(nameList(["Emilie", "Tessa", "Simon", "Nora"], "da")).toBe("Emilie, Tessa og 2 andre");
+  });
+});
+
+describe("cached date formatters (#162)", () => {
+  // 3 November 2026, late evening in Copenhagen: still the 3rd there, the 4th in Auckland.
+  const evening = Date.UTC(2026, 10, 3, 22, 30);
+  const zone = { timeZone: "Europe/Copenhagen" };
+
+  it.each(["da", "en"] as const)("write what toLocaleDateString writes, in %s", (lang) => {
+    const date = new Date(evening);
+    expect(dayLabel(date, lang)).toBe(
+      date.toLocaleDateString(LOCALE[lang], {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        ...zone,
+      }),
+    );
+    expect(monthName(date, lang)).toBe(
+      date.toLocaleDateString(LOCALE[lang], { month: "long", ...zone }),
+    );
+    expect(monthShortName(date, lang)).toBe(
+      date.toLocaleDateString(LOCALE[lang], { month: "short", ...zone }),
+    );
+  });
+
+  it("read the Danish day whatever zone the machine is in", () => {
+    // 22:30 UTC on the 3rd is 23:30 in Copenhagen, so the label names the 3rd.
+    expect(dayLabel(evening, "en")).toContain("3 November");
   });
 });

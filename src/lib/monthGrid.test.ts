@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { layoutWeek, type GridItem } from "@/lib/monthGrid";
+import { layoutWeek, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
 import { addDays, wallTime } from "@/lib/zone";
 
 const TZ = "Europe/Copenhagen";
@@ -74,5 +74,43 @@ describe("layoutWeek", () => {
       1,
     );
     expect(placed.map((p) => p.item.label)).toEqual(["Frokost"]);
+  });
+});
+
+describe("sameItemsInMonth", () => {
+  /** October 2026. */
+  const OCTOBER = wallTime(2026, 9, 1, 0, TZ);
+  const trip = (days: number, extra: Partial<GridItem> = {}) =>
+    item("Trip", at(12, 0), addDays(at(12, 0), days, TZ), { pulse: true, grow: true, ...extra });
+
+  it("takes the very same list as the same", () => {
+    const items = [trip(3)];
+    expect(sameItemsInMonth(items, items, OCTOBER, TZ)).toBe(true);
+  });
+
+  it("compares by content, not by object", () => {
+    expect(sameItemsInMonth([trip(3)], [trip(3)], OCTOBER, TZ)).toBe(true);
+  });
+
+  it("sees an item in the month change length", () => {
+    expect(sameItemsInMonth([trip(3)], [trip(4)], OCTOBER, TZ)).toBe(false);
+  });
+
+  it("sees an item appear or go", () => {
+    expect(sameItemsInMonth([], [trip(3)], OCTOBER, TZ)).toBe(false);
+    expect(sameItemsInMonth([trip(3)], [], OCTOBER, TZ)).toBe(false);
+  });
+
+  it("leaves a month alone when only another month's item changes", () => {
+    const march = wallTime(2027, 2, 10, 0, TZ);
+    const far = (days: number) => item("Far", march, addDays(march, days, TZ), { pulse: true });
+    expect(sameItemsInMonth([far(2)], [far(5)], OCTOBER, TZ)).toBe(true);
+  });
+
+  it("counts an item in the week spilling over from the neighbouring month", () => {
+    // Sunday 1 November is in October's last row (Monday 26 October to Sunday 1 November).
+    const spill = (days: number) =>
+      item("Spill", wallTime(2026, 10, 1, 0, TZ), wallTime(2026, 10, 1 + days, 0, TZ));
+    expect(sameItemsInMonth([spill(1)], [spill(2)], OCTOBER, TZ)).toBe(false);
   });
 });

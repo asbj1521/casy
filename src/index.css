@@ -234,17 +234,24 @@
   }
 
   /* A trip Casy found and is asking about (#115): its bar in the month view
-     glows softly in and out, so the eye finds it among the rest. */
+     glows softly in and out, so the eye finds it among the rest. The glow is
+     a ring laid over the bar's edge (its own element, MonthView) that only
+     fades: opacity runs on the GPU, where an animated box-shadow repainted the
+     month on every frame (#162). Without the animation (reduced motion) the
+     ring stays invisible, as the bar's shadow was. */
   @keyframes trip-pulse {
     0%,
     100% {
-      box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+      opacity: 0;
     }
     50% {
-      box-shadow: 0 0 0 3px hsl(var(--primary) / 0.35);
+      opacity: 1;
     }
   }
   .animate-trip-pulse {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.35);
+    opacity: 0;
+    will-change: opacity;
     animation: trip-pulse 1.8s ease-in-out infinite;
   }
 

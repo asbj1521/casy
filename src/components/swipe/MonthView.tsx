@@ -1,4 +1,5 @@
 import {
+  Fragment,
   memo,
   useCallback,
   useEffect,
@@ -13,8 +14,8 @@ import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { buildMonthLayout } from "@/lib/calendarOverview";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
-import { capitalize } from "@/lib/format";
-import { layoutWeek, type GridItem } from "@/lib/monthGrid";
+import { capitalize, dayLabel, monthName, monthShortName } from "@/lib/format";
+import { layoutWeek, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
 import { MONTH_LABEL_PX, monthScrollTop } from "@/lib/monthScroll";
 import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
@@ -234,9 +235,7 @@ export default function MonthView({
 
   if (floating) {
     const { year } = localDate(titleMonth, TZ);
-    const name = capitalize(
-      new Date(titleMonth).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
-    );
+    const name = capitalize(monthName(titleMonth, lang));
     return (
       <div className="relative h-full">
         <div
@@ -340,24 +339,7 @@ export function MonthLayer({
   );
 }
 
-const MonthSection = memo(function MonthSection({
-  month,
-  showYear,
-  compact,
-  items,
-  colorOf,
-  today,
-  todayTone,
-  marked,
-  selected,
-  onPickDay,
-  register,
-  shine,
-  wrapRow,
-  lanes = LANES,
-  heading,
-  owner,
-}: {
+interface MonthSectionProps {
   month: number;
   showYear: boolean;
   /** Under a floating header: a short name over the first day, not a heading. */
@@ -375,14 +357,51 @@ const MonthSection = memo(function MonthSection({
   lanes?: number;
   heading?: ReactNode;
   owner?: ReactNode;
-}) {
+}
+
+/**
+ * A month is drawn again when anything about it changes, except that its
+ * items count by what they draw in this month (#162): a trip's bar changing
+ * length every pulse leaves the other eleven months alone.
+ */
+function sameMonthProps(prev: MonthSectionProps, next: MonthSectionProps): boolean {
+  const keys = new Set([...Object.keys(prev), ...Object.keys(next)]) as Set<
+    keyof MonthSectionProps
+  >;
+  for (const key of keys) {
+    if (key !== "items" && !Object.is(prev[key], next[key])) return false;
+  }
+  return sameItemsInMonth(prev.items, next.items, next.month, TZ);
+}
+
+const MonthSection = memo(function MonthSection({
+  month,
+  showYear,
+  compact,
+  items,
+  colorOf,
+  today,
+  todayTone,
+  marked,
+  selected,
+  onPickDay,
+  register,
+  shine,
+  wrapRow,
+  lanes = LANES,
+  heading,
+  owner,
+}: MonthSectionProps) {
   // Calendar colours are worked out in code, so they follow the theme here.
   const dark = useIsDark();
   const { lang } = useLang();
   const { year, month: m } = localDate(month, TZ);
   const layout = useMemo(() => buildMonthLayout(year, m, TZ, LOCALE[lang]), [year, m, lang]);
-  const name = capitalize(
-    new Date(month).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
+  const name = capitalize(monthName(month, lang));
+  // Each day's label for screen readers, made once per month rather than per draw.
+  const dayLabels = useMemo(
+    () => layout.weeks.map((week) => week.map((d) => (d.inMonth ? dayLabel(d.date, lang) : ""))),
+    [layout, lang],
   );
   // Where each week's items sit: the costly part, so only when the items change.
   const weeks = useMemo(
@@ -399,11 +418,7 @@ const MonthSection = memo(function MonthSection({
     0,
     layout.weeks[0].findIndex((d) => d.inMonth),
   );
-  const shortName = capitalize(
-    new Date(month)
-      .toLocaleDateString(LOCALE[lang], { month: "short", timeZone: TZ })
-      .replace(/\.$/, ""),
-  );
+  const shortName = capitalize(monthShortName(month, lang).replace(/\.$/, ""));
 
   return (
     // data-month: the paper pile (#126) finds the month here to line up with it.
@@ -481,33 +496,51 @@ const MonthSection = memo(function MonthSection({
                 const before = p.continuesBefore || from > p.from;
                 const after = p.continuesAfter || to < p.to;
                 const rgb = colorOf(p.item.calendarId);
+                const box = {
+                  top: p.lane * LANE_PX,
+                  height: LANE_PX - 3,
+                  left: `calc(${(from / 7) * 100}% + ${before ? 0 : 2}px)`,
+                  width: `calc(${((to - from + 1) / 7) * 100}% - ${(before ? 0 : 2) + (after ? 0 : 2)}px)`,
+                };
+                const rounding = cn(!before && "rounded-l-[4px]", !after && "rounded-r-[4px]");
+                const glide = p.item.grow && "transition-[left,width] duration-700 ease-out";
                 return (
-                  <p
-                    key={i}
-                    className={cn(
-                      "pointer-events-none absolute truncate px-1 text-[11px] font-semibold leading-[16px]",
-                      !before && "rounded-l-[4px]",
-                      !after && "rounded-r-[4px]",
-                      p.item.pencil &&
-                        "border border-dashed border-primary bg-primary/10 text-primary",
-                      p.item.pulse && "animate-trip-pulse",
-                      p.item.grow && "transition-[left,width] duration-700 ease-out",
+                  <Fragment key={i}>
+                    {/* A trip Casy is asking about glows: a ring of its own fading in and
+                        out, since a box-shadow animated on the bar repainted the month
+                        on every frame (#162). Opacity is changed by the GPU alone. */}
+                    {p.item.pulse && (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "animate-trip-pulse pointer-events-none absolute",
+                          rounding,
+                          glide,
+                        )}
+                        style={box}
+                      />
                     )}
-                    style={{
-                      top: p.lane * LANE_PX,
-                      height: LANE_PX - 3,
-                      left: `calc(${(from / 7) * 100}% + ${before ? 0 : 2}px)`,
-                      width: `calc(${((to - from + 1) / 7) * 100}% - ${(before ? 0 : 2) + (after ? 0 : 2)}px)`,
-                      ...(p.item.pencil
-                        ? {}
-                        : {
-                            background: `rgb(${tint(rgb, dark)})`,
-                            color: `rgb(${shade(rgb, dark)})`,
-                          }),
-                    }}
-                  >
-                    {p.item.label}
-                  </p>
+                    <p
+                      className={cn(
+                        "pointer-events-none absolute truncate px-1 text-[11px] font-semibold leading-[16px]",
+                        rounding,
+                        p.item.pencil &&
+                          "border border-dashed border-primary bg-primary/10 text-primary",
+                        glide,
+                      )}
+                      style={{
+                        ...box,
+                        ...(p.item.pencil
+                          ? {}
+                          : {
+                              background: `rgb(${tint(rgb, dark)})`,
+                              color: `rgb(${shade(rgb, dark)})`,
+                            }),
+                      }}
+                    >
+                      {p.item.label}
+                    </p>
+                  </Fragment>
                 );
               })}
               {hidden.map(
@@ -533,12 +566,7 @@ const MonthSection = memo(function MonthSection({
                     type="button"
                     data-day={days[c]}
                     onClick={() => onPickDay(days[c])}
-                    aria-label={d.date.toLocaleDateString(LOCALE[lang], {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      timeZone: TZ,
-                    })}
+                    aria-label={dayLabels[w][c]}
                   />
                 ) : (
                   <span key={d.key} />
@@ -551,4 +579,4 @@ const MonthSection = memo(function MonthSection({
       })}
     </section>
   );
-});
+}, sameMonthProps);

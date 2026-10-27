@@ -34,6 +34,39 @@ export function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/**
+ * `toLocaleDateString` with options builds a new Intl formatter on every call,
+ * which is what a month view with hundreds of day cells paid for on each draw
+ * (#162). These keep one formatter per language and format, in Danish time,
+ * and write exactly what `toLocaleDateString(LOCALE[lang], options)` would.
+ */
+function formatterPerLang(options: Intl.DateTimeFormatOptions) {
+  const made: Partial<Record<Lang, Intl.DateTimeFormat>> = {};
+  return (lang: Lang) =>
+    (made[lang] ??= new Intl.DateTimeFormat(LOCALE[lang], {
+      ...options,
+      timeZone: APP_TIME_ZONE,
+    }));
+}
+const dayLabelFormat = formatterPerLang({ weekday: "long", day: "numeric", month: "long" });
+const monthNameFormat = formatterPerLang({ month: "long" });
+const monthShortFormat = formatterPerLang({ month: "short" });
+
+/** "tirsdag den 3. november" / "Tuesday 3 November": a day in full, for screen readers. */
+export function dayLabel(date: Date | number, lang: Lang): string {
+  return dayLabelFormat(lang).format(date);
+}
+
+/** "november", in lower case in Danish: `capitalize` it for a heading. */
+export function monthName(date: Date | number, lang: Lang): string {
+  return monthNameFormat(lang).format(date);
+}
+
+/** "nov." / "Nov", as Intl writes it. */
+export function monthShortName(date: Date | number, lang: Lang): string {
+  return monthShortFormat(lang).format(date);
+}
+
 /** "Tue 23 Jun", or "tirs. 23. jun." in Danish; in Danish time unless another zone is asked for. */
 export function formatDate(iso: string, lang: Lang, timeZone: string = APP_TIME_ZONE): string {
   return new Date(iso).toLocaleDateString(LOCALE[lang], { ...DATE_FMT, timeZone });
