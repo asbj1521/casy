@@ -337,3 +337,50 @@ describe("an accepted trip kept as itself", () => {
     expect(detectTrips([], { ...both, dismissed: [out.id] }, NOW).trips).toEqual([]);
   });
 });
+
+describe("a trip already in the calendar (#165)", () => {
+  // Casy's own entry for the trip, as the calendar holds it: whole days, 12 to 19 November.
+  const entry = { start: at(11, 12), end: at(11, 20) };
+  const out = leg("copenhagen", "oslo", at(11, 12, 10), at(11, 12, 11, 30));
+
+  it("settles a way out inside it, though the answers on the phone are gone", () => {
+    expect(detectTrips([out], answers(), NOW, [entry])).toEqual({ trips: [], questions: [] });
+  });
+
+  it("settles a way out inside a trip kept as accepted, though the flight's id moved", () => {
+    const kept = { start: at(11, 12, 9), end: at(11, 20), city: "Oslo" };
+    const moved = { ...out, id: "moved" };
+    const { trips, questions } = detectTrips([moved], answers({ kept: { old: kept } }), NOW);
+    expect(questions).toEqual([]);
+    expect(trips.map((t) => t.id)).toEqual(["old"]);
+  });
+
+  it("settles a way back inside it", () => {
+    const back = leg("oslo", "copenhagen", at(11, 19, 18), at(11, 19, 19));
+    expect(detectTrips([back], answers(), NOW, [entry]).questions).toEqual([]);
+  });
+
+  it("doesn't suggest a pair of legs inside it again, but keeps one already accepted", () => {
+    const back = leg("oslo", "copenhagen", at(11, 19, 18), at(11, 19, 19));
+    expect(detectTrips([out, back], answers(), NOW, [entry]).trips).toEqual([]);
+    const accepted = detectTrips([out, back], answers({ accepted: [out.id] }), NOW, [entry]);
+    expect(accepted.trips.map((t) => [t.id, t.accepted])).toEqual([[out.id, true]]);
+  });
+
+  it("still asks about a journey outside it", () => {
+    const later = leg("copenhagen", "rome", at(11, 25, 10), at(11, 25, 12));
+    expect(detectTrips([later], answers(), NOW, [entry]).questions.map((q) => q.id)).toEqual([
+      later.id,
+    ]);
+  });
+});
+
+describe("a leg lasting more than a day and a half", () => {
+  it("is the stay itself, not a journey, so only the flight is asked about", () => {
+    const out = leg("copenhagen", "oslo", at(11, 12, 10), at(11, 12, 11, 30));
+    // A hand-written "travel to Oslo" over the whole stay, read as a journey from home.
+    const stay = leg("copenhagen", "oslo", at(11, 12), at(11, 20), { mode: "train" });
+    const { questions } = detectTrips([out, stay], answers(), NOW);
+    expect(questions.map((q) => q.id)).toEqual([out.id]);
+  });
+});

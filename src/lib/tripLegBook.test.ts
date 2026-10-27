@@ -11,6 +11,7 @@ import {
 import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
 import {
   BATCH_SIZE,
+  casyTripSpans,
   legBatches,
   legKey,
   phoneLegs,
@@ -273,6 +274,26 @@ describe("phoneLegs", () => {
       const kept = { trip: { start: span.start, end: span.end, city: "Oslo" } };
       const legs = legsOf({ ...entry, notes: "Husk pas" }, { ...NO_ANSWERS, kept });
       expect(legs).toHaveLength(2);
+    });
+
+    it("settles the flight out on its own after the app was installed again (#165)", () => {
+      // The answers on the phone are gone; the entry in the calendar is all that is left.
+      const spans = casyTripSpans([entry, out]);
+      expect(spans).toEqual([busySpan(entry)]);
+      const legs = phoneLegs(
+        [entry, out],
+        withEntry,
+        book([[out, leg("Copenhagen", "Oslo")]]),
+        names,
+        { ...NO_ANSWERS, home: "copenhagen" },
+      );
+      expect(legs).toHaveLength(1);
+      const found = detectTrips(legs, { ...NO_ANSWERS, home: "copenhagen" }, NOW, spans);
+      expect(found).toEqual({ trips: [], questions: [] });
+      // Without the entry the same flight is asked about, as before.
+      expect(detectTrips(legs, { ...NO_ANSWERS, home: "copenhagen" }, NOW).questions).toHaveLength(
+        1,
+      );
     });
   });
 });

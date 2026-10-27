@@ -13,6 +13,7 @@ import { isNativeApp } from "@/lib/nativeApp";
 import { addTripToPhone, phoneConnectionId, phoneEventDetailsQuery } from "@/lib/phoneCalendar";
 import {
   legBatches,
+  casyTripSpans,
   phoneLegs,
   presentLegKeys,
   readLegBook,
@@ -225,7 +226,12 @@ export function useTrips(): Trips {
   const detected = useMemo(
     () =>
       on && names && events && labels && book && answers
-        ? detectTrips(phoneLegs(events, labels, book, names, answers), answers, now)
+        ? detectTrips(
+            phoneLegs(events, labels, book, names, answers),
+            answers,
+            now,
+            casyTripSpans(events),
+          )
         : NOTHING,
     [on, names, events, labels, book, answers, now],
   );

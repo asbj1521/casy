@@ -121,6 +121,12 @@ export const ROUTINE_COUNT = 4;
 export const MAX_TRIP_DAYS = 60;
 /** Legs this close, one arriving where the next leaves, are one journey (a connection). */
 const CONNECTION_MS = 12 * 3_600_000;
+/**
+ * A leg longer than this is no journey: a flight, train or bus doesn't take a
+ * day and a half. A hand-written "travel to Oslo" spanning the whole stay is
+ * the stay itself, which the calendar already blocks (#165).
+ */
+const MAX_LEG_MS = 36 * 3_600_000;
 /** A way out with no way back is only asked about while it is recent or to come. */
 const ASK_AFTER_MS = 3 * 86_400_000;
 
@@ -213,7 +219,13 @@ function homeCandidates(segments: Segment[]): string[] {
 /** The legs that can be part of a trip (no routines, nothing going nowhere), in time order. */
 function usable(legs: Leg[]): Leg[] {
   return legs
-    .filter((l) => l.count < ROUTINE_COUNT && l.end > l.start && l.from !== l.to)
+    .filter(
+      (l) =>
+        l.count < ROUTINE_COUNT &&
+        l.end > l.start &&
+        l.end - l.start <= MAX_LEG_MS &&
+        l.from !== l.to,
+    )
     .sort((a, b) => a.start - b.start || a.end - b.end);
 }
 
@@ -255,9 +267,19 @@ function staysOvernight(start: number, end: number): boolean {
 
 /**
  * The trips in a person's legs, and what to ask about the rest. `now` only
- * decides which loose ends are still worth a question.
+ * decides which loose ends are still worth a question. `inCalendar` are the
+ * trips Casy already wrote into the calendar (their entries' spans): with the
+ * trips kept as accepted, a journey starting inside one is settled, so it is
+ * neither asked about nor suggested again. The calendar is the record that
+ * survives when the answers on the phone are gone (the app installed again,
+ * signed out) or a flight's id moved (#165).
  */
-export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): Detected {
+export function detectTrips(
+  allLegs: Leg[],
+  answers: TripAnswers,
+  now: number,
+  inCalendar: { start: number; end: number }[] = [],
+): Detected {
   const segments = segmentsOf(usable(allLegs));
   if (segments.length === 0) return { trips: withKept([], answers), questions: [] };
 
@@ -276,6 +298,8 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
   const trips: Trip[] = [];
   const questions: Question[] = [];
   const skipped = new Set(answers.dismissed);
+  const settled = [...inCalendar, ...Object.values(answers.kept)];
+  const isSettled = (t: number) => settled.some((s) => t >= s.start && t < s.end);
   // When the person last got home, as far as the legs say: no way out is
   // offered from before it.
   let lastHome: number | null = null;
@@ -295,7 +319,7 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
         answered: true,
         accepted: true,
       });
-    } else if (last.end > now - ASK_AFTER_MS) {
+    } else if (last.end > now - ASK_AFTER_MS && !isSettled(first.start)) {
       questions.push({
         kind: "return",
         id: first.id,
@@ -322,14 +346,19 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
         open.push(seg);
         if (seg.to === home) {
           const first = open[0];
-          if (!skipped.has(first.id) && staysOvernight(first.start, seg.end)) {
+          const accepted = answers.accepted.includes(first.id);
+          if (
+            !skipped.has(first.id) &&
+            staysOvernight(first.start, seg.end) &&
+            (accepted || !isSettled(first.start))
+          ) {
             trips.push({
               id: first.id,
               start: first.start,
               end: seg.end,
               legs: open.flatMap((s) => s.legs),
               answered: false,
-              accepted: answers.accepted.includes(first.id),
+              accepted,
             });
           }
           lastHome = seg.end;
@@ -353,7 +382,7 @@ export function detectTrips(allLegs: Leg[], answers: TripAnswers, now: number): 
           answered: true,
           accepted: true,
         });
-      } else if (seg.end > now) {
+      } else if (seg.end > now && !isSettled(seg.start)) {
         questions.push({
           kind: "outbound",
           id: seg.id,

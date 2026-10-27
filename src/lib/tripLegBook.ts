@@ -187,6 +187,18 @@ export function phoneLegs(
   return [...complete, ...filled];
 }
 
+/**
+ * The spans of the trips Casy wrote into this phone's calendars ("Læg i min
+ * kalender", known by Casy's note): the record of an accepted trip that
+ * outlives the answers kept on the phone (#165).
+ */
+export function casyTripSpans(events: PhoneEventWithDetails[]): { start: number; end: number }[] {
+  return events.flatMap((e) => {
+    const span = isCasyTripEntry(e) ? busySpan(e) : null;
+    return span ? [span] : [];
+  });
+}
+
 /* ----------------------------------------------------------------------------
  * Kept on the phone, per account; gone on sign-out and with the AI's consent
  * (clearLabelsFor and clearLabelBooks in eventLabels.ts take these too).
