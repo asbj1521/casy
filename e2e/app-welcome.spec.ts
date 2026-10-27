@@ -4,7 +4,7 @@
  * bar; sign-in and the privacy policy lead back to it. The website keeps its
  * landing page.
  */
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
 
@@ -18,7 +18,9 @@ async function asTheApp(page: Page) {
   });
 }
 
-test("the app opens on its welcome screen, which leads to sign-in and back", async ({ page }) => {
+test("the app opens on its welcome screen, which leads to sign-in and the legal pages and back", async ({
+  page,
+}) => {
   await asTheApp(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
@@ -28,9 +30,11 @@ test("the app opens on its welcome screen, which leads to sign-in and back", asy
 
   await page.getByRole("link", { name: "Kom i gang" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
-  await page.getByRole("button", { name: "Tilbage" }).click();
-  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
+  // Sign-in is the one way on: no back link, and no sentence about signing in (#138).
+  await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
+  await expect(page.getByText("Log ind for at forbinde dine kalendere")).toHaveCount(0);
 
+  await page.goto("/");
   await page.getByRole("link", { name: "Sådan passer Casy på dine data" }).click();
   await expect(page).toHaveURL(/\/privacy$/);
   await page.getByRole("button", { name: "Tilbage" }).click();
@@ -51,4 +55,24 @@ test("every page the signed out app can open has a way back", async ({ page }) =
     await page.goto(path);
     await expect(page.getByRole("button", { name: "Tilbage" })).toBeVisible();
   }
+});
+
+test("the app's sign-in has the email login on top and Apple, the default, under it (#138)", async ({
+  page,
+}) => {
+  await asTheApp(page);
+  await page.goto("/sign-in");
+  const email = page.getByLabel("E-mail").first();
+  const forgot = page.getByRole("button", { name: "Glemt adgangskode?" });
+  const useLink = page.getByRole("button", { name: "Brug et e-mail-link i stedet" });
+  const apple = page.getByRole("button", { name: "Fortsæt med Apple" });
+  await expect(apple).toBeVisible();
+
+  const y = async (locator: Locator) => (await locator.boundingBox())!.y;
+  expect(await y(apple)).toBeGreaterThan(await y(email));
+  expect(await y(apple)).toBeGreaterThan(await y(forgot));
+  // The two small links share a row, forgot on the left.
+  const [forgotBox, linkBox] = [await forgot.boundingBox(), await useLink.boundingBox()];
+  expect(Math.abs(forgotBox!.y - linkBox!.y)).toBeLessThan(4);
+  expect(forgotBox!.x).toBeLessThan(linkBox!.x);
 });

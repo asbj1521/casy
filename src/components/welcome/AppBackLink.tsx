@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 
 /**
  * "Tilbage" on the pages someone signed out can reach in the iPhone app
- * (sign-in, the terms and privacy policy, #151): the app has no tab bar until
- * someone signs in, and iOS's web view has no swipe back, so without it these
- * pages would be dead ends. A step back, or to the welcome screen when the
+ * (the terms, the privacy policy and how it works, #151): the app has no tab
+ * bar until someone signs in, and iOS's web view has no swipe back, so without
+ * it these pages would be dead ends. Not on sign-in itself, the way on from
+ * the welcome screen (#138). A step back, or to the welcome screen when the
  * page was opened first. Nothing on the website or once signed in.
  */
 export default function AppBackLink({ className }: { className?: string }) {

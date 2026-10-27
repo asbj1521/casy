@@ -8,7 +8,6 @@ import { SiApple } from "react-icons/si";
 import { calendarStatusQuery } from "@/api/calendars";
 import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
-import AppBackLink from "@/components/welcome/AppBackLink";
 import { FIELD, FIELD_LABEL } from "@/components/ui/field";
 import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
@@ -423,6 +422,19 @@ export default function SignIn() {
     setUnconfirmed(null);
   }
 
+  /** "Forgot password?", under the password sign-in only (beside the link switch in the app). */
+  const forgotButton =
+    mode === "password" && passwordTab === "signin" && !forgotSentTo ? (
+      <button
+        type="button"
+        onClick={() => void handleForgotPassword()}
+        disabled={forgotSending}
+        className="self-start text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-60"
+      >
+        {forgotSending ? t.signIn.sendingReset : t.signIn.forgot}
+      </button>
+    ) : null;
+
   /** "Send it again", or that it was, for a confirmation email. */
   const resendButton = (address: string) =>
     resend === "sent" ? (
@@ -443,11 +455,10 @@ export default function SignIn() {
       <TopNav />
 
       <main className="mx-auto max-w-sm px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-10">
-        <AppBackLink className="mb-4" />
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {t.signIn.title}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t.signIn.intro}</p>
+        {!isNativeApp && <p className="mt-2 text-sm text-muted-foreground">{t.signIn.intro}</p>}
 
         {/* Arrived here right after deleting an account from the profile. */}
         {searchParams.get("deleted") && (
@@ -460,30 +471,6 @@ export default function SignIn() {
             contents fade in once it has. */}
         <div className="vt-card mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
           <div className="vt-card-content">
-            {/* The iPhone app only (#138): Sign in with Apple, first, drawn
-                as Apple asks (black, white in dark mode, its logo and
-                wording). The website has none: its flow needs a secret that
-                expires every six months. */}
-            {isNativeApp && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => void handleApple()}
-                  disabled={appleBusy}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[17px] font-semibold text-white transition disabled:opacity-60 dark:bg-white dark:text-black"
-                >
-                  <SiApple aria-hidden className="h-[18px] w-[18px]" />
-                  {t.signIn.apple}
-                </button>
-
-                <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="h-px flex-1 bg-border" />
-                  {t.signIn.or}
-                  <span className="h-px flex-1 bg-border" />
-                </div>
-              </>
-            )}
-
             {/* Not in the iPhone app (#91): with a Google button, App Store
                 guideline 4.8 asks for Sign in with Apple or the like beside it,
                 and Google refuses sign-in inside an app's web view anyway.
@@ -617,14 +604,7 @@ export default function SignIn() {
                       <SubmitButton phone={phone} busy={sending} icon={KeyRound}>
                         {sending ? t.signIn.signingIn : t.signIn.signInButton}
                       </SubmitButton>
-                      <button
-                        type="button"
-                        onClick={() => void handleForgotPassword()}
-                        disabled={forgotSending}
-                        className="self-start text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-60"
-                      >
-                        {forgotSending ? t.signIn.sendingReset : t.signIn.forgot}
-                      </button>
+                      {!isNativeApp && forgotButton}
                       {forgotError && <Notice tone="error">{forgotError}</Notice>}
                     </form>
                   )
@@ -671,13 +651,19 @@ export default function SignIn() {
               </>
             )}
 
-            <button
-              type="button"
-              onClick={() => switchMode(mode === "link" ? "password" : "link")}
-              className="mt-4 text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
-            >
-              {mode === "link" ? t.signIn.usePassword : t.signIn.useLink}
-            </button>
+            {/* In the app the two small links share a row, to save height. */}
+            <div className={isNativeApp ? "mt-4 flex justify-between gap-4" : undefined}>
+              {isNativeApp && forgotButton}
+              <button
+                type="button"
+                onClick={() => switchMode(mode === "link" ? "password" : "link")}
+                className={`text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground ${
+                  isNativeApp ? "ml-auto text-right" : "mt-4"
+                }`}
+              >
+                {mode === "link" ? t.signIn.usePassword : t.signIn.useLink}
+              </button>
+            </div>
 
             {/* Cloudflare's bot check: invisible unless it wants a click. */}
             <div ref={attachCaptcha} className="mt-3 empty:hidden" />
@@ -688,6 +674,30 @@ export default function SignIn() {
                 {unconfirmed && <> {resendButton(unconfirmed)}</>}
                 {unconfirmed && resendError && <span className="mt-1 block">{resendError}</span>}
               </Notice>
+            )}
+
+            {/* The iPhone app only (#138): Sign in with Apple, last, where a thumb
+                reaches (the app's way in, so the big button), drawn as Apple
+                asks (black, white in dark mode, its logo and wording). The
+                website has none: its flow needs a secret that expires every
+                six months. */}
+            {isNativeApp && (
+              <>
+                <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  {t.signIn.or}
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleApple()}
+                  disabled={appleBusy}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[17px] font-semibold text-white transition disabled:opacity-60 dark:bg-white dark:text-black"
+                >
+                  <SiApple aria-hidden className="h-[18px] w-[18px]" />
+                  {t.signIn.apple}
+                </button>
+              </>
             )}
           </div>
         </div>

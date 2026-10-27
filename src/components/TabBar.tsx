@@ -90,7 +90,8 @@ function PhoneTabBar() {
   ];
 
   // The app has no tab bar until someone signs in (#151): the welcome screen
-  // and sign-in stand on their own, with their own way back (AppBackLink).
+  // and sign-in stand on their own; the legal pages have their own way back
+  // (AppBackLink).
   if (isNativeApp && !user) return null;
 
   return (

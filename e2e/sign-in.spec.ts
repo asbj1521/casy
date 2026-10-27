@@ -13,7 +13,7 @@ test("the website offers Google beside email", async ({ page }) => {
   await expect(page.getByLabel("E-mail")).toBeVisible();
 });
 
-test("the iPhone app offers only Casy's own sign-in", async ({ page }) => {
+test("the iPhone app offers Apple and Casy's own sign-in, never Google", async ({ page }) => {
   // The bridge the app injects before the page runs (src/lib/nativeApp.ts).
   await page.addInitScript(() => {
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
@@ -21,4 +21,5 @@ test("the iPhone app offers only Casy's own sign-in", async ({ page }) => {
   await page.goto("/sign-in");
   await expect(page.getByLabel("E-mail")).toBeVisible();
   await expect(page.getByRole("button", { name: "Fortsæt med Google" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Fortsæt med Apple" })).toBeVisible();
 });
