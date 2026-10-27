@@ -14,7 +14,6 @@
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
-		CA5E000D2F00000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CA5E000E2F00000000000001 /* PrivacyInfo.xcprivacy */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
@@ -23,7 +22,9 @@
 		CA5E00072F00000000000001 /* PhoneCalendarBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00082F00000000000001 /* PhoneCalendarBackground.swift */; };
 		CA5E00092F00000000000001 /* PhoneCalendarWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */; };
 		CA5E000B2F00000000000001 /* InvitePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E000C2F00000000000001 /* InvitePlugin.swift */; };
+		CA5E000D2F00000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CA5E000E2F00000000000001 /* PrivacyInfo.xcprivacy */; };
 		CA5E000F2F00000000000001 /* GlassPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00102F00000000000001 /* GlassPlugin.swift */; };
+		CA5E00112F00000000000001 /* AppleSignInPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00122F00000000000001 /* AppleSignInPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,7 +35,6 @@
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		CA5E000E2F00000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
@@ -46,7 +46,10 @@
 		CA5E00082F00000000000001 /* PhoneCalendarBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCalendarBackground.swift; sourceTree = "<group>"; };
 		CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCalendarWriter.swift; sourceTree = "<group>"; };
 		CA5E000C2F00000000000001 /* InvitePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvitePlugin.swift; sourceTree = "<group>"; };
+		CA5E000E2F00000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		CA5E00102F00000000000001 /* GlassPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPlugin.swift; sourceTree = "<group>"; };
+		CA5E00122F00000000000001 /* AppleSignInPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInPlugin.swift; sourceTree = "<group>"; };
+		CA5E00132F00000000000001 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +101,8 @@
 				CA5E000A2F00000000000001 /* PhoneCalendarWriter.swift */,
 				CA5E000C2F00000000000001 /* InvitePlugin.swift */,
 				CA5E00102F00000000000001 /* GlassPlugin.swift */,
+				CA5E00122F00000000000001 /* AppleSignInPlugin.swift */,
+				CA5E00132F00000000000001 /* App.entitlements */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -194,6 +199,7 @@
 				CA5E00092F00000000000001 /* PhoneCalendarWriter.swift in Sources */,
 				CA5E000B2F00000000000001 /* InvitePlugin.swift in Sources */,
 				CA5E000F2F00000000000001 /* GlassPlugin.swift in Sources */,
+				CA5E00112F00000000000001 /* AppleSignInPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,6 +348,7 @@
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ZBXDWW8AN3;
@@ -365,6 +372,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ZBXDWW8AN3;
