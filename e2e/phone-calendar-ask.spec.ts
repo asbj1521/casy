@@ -139,7 +139,7 @@ test("signing in on the app goes straight to My calendar, not a connect page", a
   await asTheApp(page, "granted");
   await page.goto("/sign-in");
   // Signed in already (the fixture), with no calendar: the website's phone would be sent on.
-  await expect(page).toHaveURL(/\/calendar-overview$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(card(page)).toBeVisible();
 });
 
@@ -163,9 +163,10 @@ test.describe("with other calendars connected, but not this phone", () => {
     ).toBeVisible();
     await card(page).getByRole("button", { name: "Ikke nu" }).click();
     await expect(card(page)).toHaveCount(0);
-    // Put away until the app is opened again, not every time the tab is.
-    await page.getByRole("link", { name: /Profil/ }).click();
-    await page.getByRole("link", { name: /Kalender/ }).click();
+    // Put away until the app is opened again, not every time the page is.
+    await page.getByRole("button", { name: "Profil", exact: true }).click();
+    await expect(page).toHaveURL(/\/profile$/);
+    await page.goBack();
     await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
     await expect(card(page)).toHaveCount(0);
     expect(backend.calls.some((c) => c.name === "calendar-phone" && c.body.create)).toBe(false);

@@ -4,7 +4,7 @@ import { currentMessages } from "@/i18n/current";
 import { callFunction } from "@/lib/supabaseFunctions";
 
 // Apart from the rest of admin.ts, which only admin mode needs: the header
-// and tab bar ask this of everyone (#157).
+// and the profile ask this of everyone (#157).
 
 /** Whether the signed-in person is an admin. `userId` only keys the cache. */
 export function adminStatusQuery(userId: string) {

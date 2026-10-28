@@ -5,13 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ConnectCalendarPrompt from "@/components/ConnectCalendarPrompt";
 import Footer from "@/components/Footer";
 import RequireAuth from "@/components/RequireAuth";
-import TabBar from "@/components/TabBar";
 import UpdateRequired from "@/components/UpdateRequired";
 import WeakPasswordNotice from "@/components/WeakPasswordNotice";
 import { useAuth } from "@/context/auth";
 import { useAccountLanguage } from "@/hooks/useAccountLanguage";
 import { useAutoCategorize } from "@/hooks/useAutoCategorize";
 import { useLiveUpdates } from "@/hooks/useLiveUpdates";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import AuthProvider from "@/context/AuthProvider";
 import LanguageProvider from "@/i18n/LanguageProvider";
 import { isNativeApp } from "@/lib/nativeApp";
@@ -32,6 +32,12 @@ if (
   window.matchMedia("(min-width: 768px)").matches
 ) {
   void loadPage.findDate();
+}
+// The app opens on its home page, My calendar (#169), fetched at once in the
+// same way. The website's phone doesn't: signed out, / is the landing page.
+if (isNativeApp && window.location.pathname === "/") {
+  void loadPage.calendarOverview();
+  void loadPage.phoneCalendar();
 }
 const FindDate = lazy(loadPage.findDate);
 const Profile = lazy(loadPage.profile);
@@ -65,7 +71,8 @@ const TripsPlayground = import.meta.env.DEV
 
 /**
  * casy.app itself: the landing page for signed-out visitors, the scheduler
- * for everyone signed in, so it never stands between a user and their groups.
+ * for everyone signed in on a computer, so it never stands between a user and
+ * their groups, and on a phone the home page, My calendar (#169).
  * Its "Go to Casy" button leads to /plan, the scheduler for anyone. The
  * iPhone app has a welcome screen of its own instead (#151). Until the
  * stored session is read this is a plain background, or a signed-in person
@@ -73,8 +80,9 @@ const TripsPlayground = import.meta.env.DEV
  */
 function Home() {
   const { user, loading } = useAuth();
+  const phone = usePhoneLayout();
   if (loading) return <div className="min-h-screen bg-background" />;
-  if (user) return <FindDate />;
+  if (user) return phone ? <CalendarOverview /> : <FindDate />;
   return isNativeApp ? <AppWelcome /> : <Landing />;
 }
 
@@ -242,8 +250,6 @@ function App() {
               </Routes>
             </Suspense>
             <Footer />
-            {/* Phones only: the main links along the bottom. */}
-            <TabBar />
             {/* Computers only: asks someone with no calendar to connect one. */}
             <ConnectCalendarPrompt />
             {/* The iPhone app only: an app too old for Casy is asked to update (#143). */}

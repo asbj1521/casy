@@ -22,9 +22,14 @@ test.describe("signed in", () => {
     isMobile,
   }) => {
     test.skip(!isMobile, "phones only");
-    for (const path of ["/groups", "/events", "/calendar-overview"]) {
+    for (const path of ["/groups", "/events", "/"]) {
       await page.goto(path);
-      await expect(page.getByRole("navigation").last()).toBeVisible();
+      await expect(
+        page
+          .getByRole("main")
+          .or(page.getByRole("button", { name: "Planlæg" }))
+          .first(),
+      ).toBeVisible();
       await expect(page.getByRole("contentinfo")).toHaveCount(0);
     }
     await page.goto("/profile");

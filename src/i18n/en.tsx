@@ -142,6 +142,7 @@ export const en: Messages = {
     eventsShort: "Events",
     calendar: "My calendar",
     calendarShort: "Calendar",
+    home: "Home",
     groups: "My groups",
     groupsShort: "Groups",
     profile: "Profile",

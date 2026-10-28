@@ -5,7 +5,8 @@ test("each main page names itself in the tab", async ({ page, isMobile }) => {
   const pages: [string, string][] = [
     ["/events", "Mine aftaler · Casy"],
     ["/groups", "Mine grupper · Casy"],
-    ["/calendar-overview", "Min kalender · Casy"],
+    // A phone's My calendar is its home page (#169).
+    ["/calendar-overview", isMobile ? "Hjem · Casy" : "Min kalender · Casy"],
     ["/profile", "Profil · Casy"],
   ];
   if (!isMobile) pages.push(["/", "Planlægning · Casy"]);

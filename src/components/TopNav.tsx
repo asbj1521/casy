@@ -166,7 +166,7 @@ export default function TopNav() {
         },
   ];
 
-  // On a phone the links are in the tab bar (TabBar), so the top is just the
+  // On a phone the links are the home page's buttons (HomeBar), so the top is just the
   // logo and, signed out, the language switch.
   if (phone) return <PhoneHeader />;
 

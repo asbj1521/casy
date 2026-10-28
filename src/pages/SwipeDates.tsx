@@ -11,7 +11,7 @@ import { isVote } from "@/lib/vote";
 
 /**
  * Swiping through a vote's dates on a phone (#74), the whole screen given to
- * the cards: over the tab bar, as a screen of its own in an app would be.
+ * the cards, as a screen of its own in an app would be.
  * A computer answers the same cards beside the list instead (VoteDetails),
  * so it is sent there; an event that isn't a vote (or is gone) goes back to
  * My events.

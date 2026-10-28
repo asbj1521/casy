@@ -64,9 +64,7 @@ test("after sending dates, Casy asks before iOS does, and Not now waits a week",
 }) => {
   await asTheApp(page, "prompt");
   await page.goto("/events");
-  await expect(
-    page.getByRole("heading", { name: "Mine aftaler" }).or(page.getByRole("navigation").last()),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mine aftaler" })).toBeVisible();
 
   const sheet = await momentShows(page, "sent", "Få besked, når de andre har svaret");
   await expect(sheet.getByRole("button", { name: "Slå notifikationer til" })).toBeVisible();

@@ -45,11 +45,15 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await expect(page).toHaveURL(/\/sign-in$/);
 });
 
-test("the website keeps its landing page and tab bar", async ({ page }) => {
+test("the website keeps its landing page, and its header leads to sign-in (#169)", async ({
+  page,
+}) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Kalender" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
+  await page.goto("/privacy");
+  await page.getByRole("banner").getByRole("link", { name: "Log ind" }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
 });
 
 test("every page the signed out app can open has a way back", async ({ page }) => {

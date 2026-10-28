@@ -65,7 +65,7 @@ test("back closes the sheet, and Ret planen goes from the dates back to it", asy
   await page.getByRole("button", { name: "Planlæg" }).click();
   await page.goBack();
   await expect(page.getByRole("dialog", { name: "Planlæg" })).toHaveCount(0);
-  await expect(page).toHaveURL(/\/calendar-overview$/);
+  await expect(page).toHaveURL(/\/$/);
 
   await page.getByRole("button", { name: "Planlæg" }).click();
   await page.getByRole("button", { name: "Find dato" }).click();

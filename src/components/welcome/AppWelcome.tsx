@@ -5,9 +5,8 @@ import { useT } from "@/i18n/lang";
 
 /**
  * The iPhone app's first screen, signed out (#151): what Casy does, shown by
- * the paper pile in small, one line on it, and one way on, to sign in. No tab
- * bar (TabBar hides it in the app until someone is signed in) and no language
- * switch (the app starts in the phone's language; Settings changes it). The
+ * the paper pile in small, one line on it, and one way on, to sign in. No
+ * language switch (the app starts in the phone's language; Settings changes it). The
  * website keeps its landing page.
  */
 export default function AppWelcome() {

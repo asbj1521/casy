@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 
 import AiConsentPrompt from "@/components/ai/AiConsentPrompt";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -14,12 +15,15 @@ const PhoneCalendar = lazy(loadPage.phoneCalendar);
  * My calendar (/calendar-overview): your own busy time drawn like Apple
  * Calendar's month view (#104), the iPhone's on a phone (PhoneCalendar) and
  * the Mac's on a computer (ComputerCalendar), with the calendars and how
- * each counts beside it or in a sheet.
+ * each counts beside it or in a sheet. On a phone it is the home page (#169),
+ * at /, and its old address leads there, sheets (?plan, ?calendars) and all.
  */
 export default function CalendarOverview() {
   const t = useT();
-  useDocumentTitle(t.nav.calendar);
   const phone = usePhoneLayout();
+  useDocumentTitle(phone ? t.nav.home : t.nav.calendar);
+  const { pathname, search } = useLocation();
+  if (phone && pathname !== "/") return <Navigate to={{ pathname: "/", search }} replace />;
   return (
     <>
       <Suspense fallback={<div className="min-h-screen bg-background" />}>

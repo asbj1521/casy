@@ -17,7 +17,7 @@ export default function NoEvents() {
         <CalendarCheck className="h-10 w-10 text-primary" />
         <p className="mt-3 text-[17px] font-semibold text-foreground">{t.events.emptyTitle}</p>
         <p className="mt-1 max-w-xs text-[15px] text-muted-foreground">{t.events.emptyBodyPhone}</p>
-        <GlassButton icon={CalendarSearch} to="/calendar-overview?plan" className="mt-5">
+        <GlassButton icon={CalendarSearch} to="/?plan" className="mt-5">
           {t.planFromCalendar.button}
         </GlassButton>
       </div>

@@ -9,9 +9,10 @@ import {
   type MouseEvent,
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { CalendarPlus, CalendarSearch, ChevronRight, Layers, Plane, Plus } from "lucide-react";
+import { CalendarPlus, ChevronRight, Layers, Plane, Plus } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
+import HomeBar from "@/components/calendarView/HomeBar";
 import PhoneCalendarAccess from "@/components/calendarView/PhoneCalendarAccess";
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
@@ -31,6 +32,7 @@ import { usePhoneImport } from "@/hooks/usePhoneImport";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
 import { useLang, useT } from "@/i18n/lang";
 import { capitalize, dayLabel } from "@/lib/format";
+import { useHomeBarFlight } from "@/lib/homeBar";
 import { isNativeApp } from "@/lib/nativeApp";
 import {
   isPending,
@@ -57,10 +59,11 @@ const APP_TOP_GAP = "0.5rem";
 const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFromCalendar"));
 
 /**
- * My calendar on a phone: your busy time as Apple Calendar's month view, the
- * same one the swipe screen opens, so it reads as the calendar already on
- * the phone. It fills the screen between the header and the tab bar and
- * scrolls month by month inside itself. A tap on a day lists what is busy on
+ * The phone's home page (#169), My calendar: your busy time as Apple
+ * Calendar's month view, the same one the swipe screen opens, so it reads as
+ * the calendar already on the phone. It fills the screen under the header and
+ * scrolls month by month inside itself, with Aftaler, Planlæg and the profile
+ * floating along the bottom (HomeBar). A tap on a day lists what is busy on
  * it in a panel along the bottom (DayPanel), the month still live behind it;
  * "Kalendere" opens the list of calendars (what counts, its category and how
  * much it matters) in a sheet, instead of leaving it under the month.
@@ -147,6 +150,8 @@ export default function PhoneCalendar() {
   // Planlæg (#126), in the address too, so the phone's back closes it.
   const planOpen = params.has("plan");
   const openPlan = () => navigate({ search: "?plan" }, { state: { fromMonth: true } });
+  // Planlæg's sent dates bring the buttons back, to fly into Aftaler (#169).
+  const flight = useHomeBarFlight();
   const [pickedDay, setPickedDay] = useState<number | null>(null);
   // What the day panel shows while it slides away, after pickedDay is cleared.
   const [panelDay, setPanelDay] = useState(() => startOfDay(Date.now(), TZ));
@@ -217,7 +222,7 @@ export default function PhoneCalendar() {
       <div
         ref={box}
         style={{
-          height: height === null ? undefined : `calc(${height}px - var(--tab-bar-height))`,
+          height: height ?? undefined,
           marginTop: isNativeApp
             ? `calc(-1 * (env(safe-area-inset-top) + ${APP_TOP_GAP}))`
             : undefined,
@@ -313,17 +318,15 @@ export default function PhoneCalendar() {
         />
       </div>
 
-      {/* Planning starts from the calendar (#126); out of the way while a day is open. */}
-      {pickedDay === null && !planOpen && (
-        <button
-          type="button"
-          onClick={openPlan}
-          className="glass-pill fixed bottom-[calc(var(--tab-bar-height)+0.75rem)] left-1/2 z-20 flex h-11 -translate-x-1/2 items-center gap-2 rounded-full pl-4 pr-5 text-[17px] text-primary transition active:scale-95"
-        >
-          <CalendarSearch className="h-5 w-5" />
-          {t.planFromCalendar.button}
-        </button>
-      )}
+      {/* Planning starts from the calendar (#126), beside Aftaler and the
+          profile; out of the way while a day or the plan is open. */}
+      <HomeBar
+        hidden={(pickedDay !== null || planOpen) && !flight}
+        flight={flight}
+        onEvents={() => navigate("/events")}
+        onPlan={openPlan}
+        onProfile={() => navigate("/profile")}
+      />
       {planOpen && (
         <Suspense fallback={null}>
           <PlanFromCalendar onClose={closeOverlay} />

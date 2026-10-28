@@ -20,6 +20,7 @@ import { clashSentence, importantClashes } from "@/lib/eventWarnings";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { nameList } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
+import { showHomeBarForFlight } from "@/lib/homeBar";
 import type { GridItem } from "@/lib/monthGrid";
 import { monthScrollTop } from "@/lib/monthScroll";
 import { bigOnNewYearsDay } from "@/lib/newYear";
@@ -453,10 +454,12 @@ export default function PileScreen({
   );
   const alpha = layerAlpha(others);
   // The dates sent (#102): the ones not sent swipe off to the right and the
-  // ones sent fly down into the Events tab, copies of the rows moving over
-  // the page, while the real rows are hidden; then, once the server has
-  // answered too, My events opens. The flight starts as they go, not after
-  // the answer (#162). Reduced motion goes straight there.
+  // ones sent fly down into the home page's Aftaler button, copies of the
+  // rows moving over the page, while the real rows are hidden; then, once the
+  // server has answered too, My events opens. The flight starts as they go,
+  // not after the answer (#162). Reduced motion goes straight there. The
+  // home page's buttons, hidden while the plan is open, come back for it
+  // (#169), and stay until the pile is gone.
   const [flying, setFlying] = useState(false);
   const listBox = useRef<HTMLDivElement>(null);
   const { setBeforeLeaving } = planning;
@@ -464,15 +467,22 @@ export default function PileScreen({
     if (reduceMotion) return;
     setBeforeLeaving((landed) => {
       const rows = [...(listBox.current?.querySelectorAll<HTMLElement>("[data-send-row]") ?? [])];
+      showHomeBarForFlight(true);
       void playSendFlight(
         rows.map((el) => ({ el, offered: el.dataset.sendRow === "yes" })),
         document.querySelector<HTMLElement>('[data-tab-icon="/events"]'),
         () => setFlying(true),
       ).finally(landed);
       // The send failed: the list comes back, with the reason under it.
-      return () => setFlying(false);
+      return () => {
+        setFlying(false);
+        showHomeBarForFlight(false);
+      };
     });
-    return () => setBeforeLeaving(null);
+    return () => {
+      setBeforeLeaving(null);
+      showHomeBarForFlight(false);
+    };
   }, [reduceMotion, setBeforeLeaving]);
   // A way to widen the search picked (#135): the plan changes here, and once
   // its first date is the answer (with its scores, and the calendar scrolled
@@ -517,14 +527,12 @@ export default function PileScreen({
 
   return (
     <>
-      {/* The layers, over My calendar's month and clear of the tab bar,
-          until the dates are lifted out: then the shared calendar below. */}
+      {/* The layers, over My calendar's month, until the dates are lifted out: then the shared calendar below. */}
       {frame && card && pile && !reduceMotion && !lifted && (
         <div
           data-pile
           aria-hidden
-          className="pointer-events-none fixed inset-x-0 top-0 z-40 overflow-hidden"
-          style={{ bottom: "var(--tab-bar-height)" }}
+          className="pointer-events-none fixed inset-0 z-40 overflow-hidden"
         >
           {pile.friends.map((friend, k) => (
             <ThrownLayer
@@ -608,16 +616,15 @@ export default function PileScreen({
 
       {/* The dates, flown up into a list over the calendar, checked one by one. */}
       {(lifted || failed) && (
-        // Over everything down to the tab bar. While the dates arrive the
+        // Over everything. While the dates arrive the
         // calendar scrolls by in plain view, the header buttons above it
         // already softened; once they all have, the calendar softens too
         // behind the list so the list reads.
         <div
           className={cn(
-            "fixed inset-x-0 top-0 z-50 flex flex-col pt-[calc(env(safe-area-inset-top)+3.5rem)]",
+            "fixed inset-0 z-50 flex flex-col pt-[calc(env(safe-area-inset-top)+3.5rem)]",
             flying && "pointer-events-none",
           )}
-          style={{ bottom: "var(--tab-bar-height)" }}
         >
           <motion.div
             aria-hidden

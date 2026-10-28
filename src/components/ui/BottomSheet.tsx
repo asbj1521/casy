@@ -20,7 +20,7 @@ const SHEET_MOTION = {
 
 /**
  * A sheet rising from the bottom of a phone's screen, over everything, the
- * tab bar included: its title on the left, one text action on the right, and
+ * home page's buttons included: its title on the left, one text action on the right, and
  * what is being chosen under them. Always glass, the page behind showing
  * through (#126, #153: the `glass` class in index.css), and barely dimmed.
  * The phone's scheduling flow (#101) opens its pickers here rather than in a

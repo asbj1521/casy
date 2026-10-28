@@ -28,7 +28,7 @@ export default function MoreSettingsScreen({
   const t = useT();
   const words = t.settingsPanel;
   return (
-    <div className="fixed inset-0 z-30 overflow-y-auto bg-background pb-[var(--tab-bar-height)] xl:hidden">
+    <div className="fixed inset-0 z-30 overflow-y-auto bg-background pb-[env(safe-area-inset-bottom)] xl:hidden">
       <PhoneSubHeader title={words.more} back={back} backLabel={words.back} />
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pb-8 pt-2">
         <p className="text-sm text-muted-foreground">{words.moreIntro}</p>

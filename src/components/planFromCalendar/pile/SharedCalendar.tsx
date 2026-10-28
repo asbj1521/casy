@@ -55,7 +55,7 @@ export default function SharedCalendar({
       className="pointer-events-none fixed inset-x-0 z-40 flex flex-col overflow-hidden rounded-t-[28px] border border-b-0"
       style={{
         top: frame.top - band,
-        bottom: "var(--tab-bar-height)",
+        bottom: 0,
         backgroundColor: `rgb(var(--glass-tint) / ${PILE_OPACITY})`,
         borderColor: "rgb(var(--glass-edge))",
       }}

@@ -7,9 +7,9 @@ import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 
 /**
- * The phone's way into Your groups: a row of the profile (the tab bar has no
- * Groups tab), with the number of invitations waiting for an answer, the same
- * count the Profile tab carries.
+ * The phone's way into Your groups: a row of the profile (the home page has
+ * no Groups button), with the number of invitations waiting for an answer,
+ * the same count the home page's profile button carries.
  */
 export default function GroupsRow() {
   const t = useT();

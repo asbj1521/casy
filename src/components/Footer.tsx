@@ -11,8 +11,8 @@ import { isNativeApp } from "@/lib/nativeApp";
  * which has to be reachable from the home page for Google's consent screen.
  * Not in the iPhone app, whose profile lists all three (HelpGroup), and not
  * on a signed-in phone either: its profile lists them too, and a footer
- * under a page that is shorter than the screen showed up above the tab bar
- * on some pages and not on others. Signed out, a phone keeps it, for the
+ * under a page that is shorter than the screen showed up above the old tab
+ * bar on some pages and not on others. Signed out, a phone keeps it, for the
  * privacy link the home page must have.
  */
 export default function Footer() {

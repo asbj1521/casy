@@ -4,7 +4,7 @@ import { eventsQuery, needsYourAnswer } from "@/api/events";
 import { useAuth } from "@/context/auth";
 
 /**
- * The number on My events, in the header and the tab bar alike: the votes
+ * The number on My events, in the header and on the home page's Aftaler button: the votes
  * with dates still waiting for your answer.
  */
 export function useEventsBadge(): number | undefined {

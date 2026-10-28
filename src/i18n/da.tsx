@@ -150,6 +150,7 @@ export const da = {
     eventsShort: "Aftaler",
     calendar: "Min kalender",
     calendarShort: "Kalender",
+    home: "Hjem",
     groups: "Mine grupper",
     groupsShort: "Grupper",
     profile: "Profil",

@@ -31,15 +31,15 @@ const AiActions = lazy(() =>
 
 /**
  * The scheduler's address (`/` signed in, `/plan`). A phone plans from My
- * calendar's Planlæg (#126, #127), so there it leads to the calendar,
- * through sign-in for anyone signed out; a computer gets the scheduling page.
+ * calendar's Planlæg (#126, #127), so there it leads to the home page (the
+ * calendar, #169), through sign-in for anyone signed out; a computer gets the scheduling page.
  */
 export default function FindDate() {
   const phone = usePhoneLayout();
   if (phone) {
     return (
       <RequireAuth>
-        <Navigate to="/calendar-overview" replace />
+        <Navigate to="/" replace />
       </RequireAuth>
     );
   }

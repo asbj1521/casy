@@ -30,8 +30,8 @@ export default function CalendarAccounts() {
       <div className="min-h-screen bg-background">
         <PhoneSubHeader
           title={t.profile.connectedCalendars}
-          back="/calendar-overview?calendars"
-          backLabel={t.nav.calendarShort}
+          back="/?calendars"
+          backLabel={t.nav.home}
         />
         <main className="px-4 pb-8">
           {notice}

@@ -1,10 +1,11 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Below Tailwind's `md` (768px) Casy uses its phone layout: the tab bar along
- * the bottom (TabBar), a compact header (PhoneHeader), and screens split up
- * to fit. Computers and tablets keep the layout they have always had. Keep in
- * step with --tab-bar-height in index.css.
+ * Below Tailwind's `md` (768px) Casy uses its phone layout: one home page,
+ * My calendar with its buttons along the bottom (HomeBar, #169), a compact
+ * header (PhoneHeader), and screens split up to fit. Computers and tablets
+ * keep the layout they have always had. Keep in step with the phone queries
+ * in index.css (--home-bar-clear).
  */
 const PHONE_QUERY = "(max-width: 767.98px)";
 

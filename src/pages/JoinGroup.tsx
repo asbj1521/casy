@@ -3,8 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, Loader2, Users, XCircle } from "lucide-react";
 
 import { groupsQuery, groupsQueryKey, joinGroup, previewInvite } from "@/api/groups";
+import PhoneSubHeader from "@/components/PhoneSubHeader";
 import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { askForPush } from "@/lib/pushAsk";
 import TopNav from "@/components/TopNav";
@@ -28,6 +30,7 @@ export default function JoinGroup() {
   const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const phone = usePhoneLayout();
   const preview = useQuery({
     queryKey: ["invite-preview", token],
     queryFn: () => previewInvite(token),
@@ -58,7 +61,8 @@ export default function JoinGroup() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav />
+      {/* A signed-in phone has no other way home from here (#169): the app has no header. */}
+      {phone && user ? <PhoneSubHeader back="/" backLabel={t.nav.home} /> : <TopNav />}
       <main className="mx-auto flex max-w-md flex-col px-4 py-8 sm:px-6 sm:py-16">
         <div className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
           {preview.isPending || loading ? (

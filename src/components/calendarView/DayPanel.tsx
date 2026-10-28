@@ -5,7 +5,7 @@ const SLIDE = "320ms cubic-bezier(0.32, 0.72, 0, 1)";
 
 /**
  * A tapped day's busy time on My calendar (#104), as a panel along the
- * bottom of the screen, above the tab bar, with the month still live behind
+ * bottom of the screen, with the month still live behind
  * it: no backdrop, so another day can be tapped straight away. It is always
  * on the page and only slides, its own layer from the start (will-change),
  * so opening it draws nothing new mid-animation; that, and no full-screen
@@ -38,9 +38,9 @@ const DayPanel = forwardRef<
       aria-label={title}
       aria-hidden={!open}
       inert={!open}
-      className="glass fixed inset-x-0 bottom-[var(--tab-bar-height)] z-30 max-h-[45dvh] overflow-y-auto overscroll-contain rounded-t-[28px] px-4 pb-3 pt-4 will-change-transform"
+      className="glass fixed inset-x-0 bottom-0 z-30 max-h-[45dvh] overflow-y-auto overscroll-contain rounded-t-[28px] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-4 will-change-transform"
       style={{
-        transform: open ? "translateY(0)" : "translateY(calc(100% + var(--tab-bar-height)))",
+        transform: open ? "translateY(0)" : "translateY(100%)",
         visibility: open ? "visible" : "hidden",
         transition: open
           ? `transform ${SLIDE}, visibility 0s`

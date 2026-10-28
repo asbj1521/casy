@@ -1,45 +1,48 @@
-/** The phone layout: the tab bar, and screens that open with a back button. */
+/** The phone layout: the home page and its buttons, and screens that open with a back button. */
 import { expect, test } from "./fixtures";
 
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "phones only"));
 
-test("the tab bar reaches every main page, and planning lives in the calendar (#127)", async ({
+test("the home page is My calendar, its buttons reach the rest, and there is no tab bar (#169)", async ({
   page,
 }) => {
-  // Signed in, the home screen is My calendar: a phone plans from there.
+  // Signed in, the home page is My calendar, at /: a phone plans from there.
   await page.goto("/");
-  await expect(page).toHaveURL(/\/calendar-overview$/);
-  const tabs = page.getByRole("navigation").last();
-  // Three tabs, the calendar in the middle (the outer two may carry a count).
-  await expect(tabs.getByRole("link")).toHaveText([/Aftaler$/, "Kalender", /Profil$/]);
-  for (const [tab, url] of [
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
+  await expect(page.getByRole("navigation")).toHaveCount(0);
+  for (const [button, url] of [
     ["Aftaler", /\/events$/],
     ["Profil", /\/profile$/],
-    ["Kalender", /\/calendar-overview$/],
   ] as const) {
-    await tabs.getByRole("link", { name: tab }).click();
+    await page.goto("/");
+    await page.getByRole("button", { name: button, exact: true }).click();
     await expect(page).toHaveURL(url);
   }
-  // The scheduler's own address leads there too.
+  // The scheduler's address and My calendar's old one lead home too.
   await page.goto("/plan");
-  await expect(page).toHaveURL(/\/calendar-overview$/);
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/calendar-overview?calendars");
+  await expect(page).toHaveURL(/\/\?calendars$/);
+  await expect(page.getByRole("dialog", { name: "Kalendere" })).toBeVisible();
 });
 
-test("groups are a row of the profile, under Settings, and the Profile tab stays lit", async ({
+test("groups are a row of the profile, under Settings, its count on the home page's Profil", async ({
   page,
 }) => {
+  // The invitation waiting is counted on the button that leads to it.
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Profil", exact: true })).toContainText("1");
+
   await page.goto("/profile");
-  const tabs = page.getByRole("navigation").last();
   // Settings, then Groups, then Sign-in and security, in that order.
   const rows = page.getByRole("link", { name: /^(Indstillinger|Grupper|Log ind og sikkerhed)/ });
   await expect(rows).toHaveText([/Indstillinger/, /Grupper/, /Log ind og sikkerhed/]);
-  // The invitation waiting is counted on the row and on the tab that leads to it.
+  // And on the row.
   await expect(page.getByRole("link", { name: /^Grupper/ })).toContainText("1");
-  await expect(tabs.getByRole("link", { name: /Profil/ })).toContainText("1");
 
   await page.getByRole("link", { name: /^Grupper/ }).click();
   await expect(page).toHaveURL(/\/groups$/);
-  await expect(tabs.getByRole("link", { name: /Profil/ })).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("Badminton")).toBeVisible();
   // A screen under the profile, with a way back to it.
   await page
@@ -80,9 +83,8 @@ test("My calendar is a month like Apple's: a day opens its busy time, Kalendere 
   // One step back from "Connected calendars" lands on the sheet, not the bare month.
   await page.getByRole("link", { name: /Forbundne kalendere/ }).click();
   await expect(page).toHaveURL(/\/calendar-overview\/accounts$/);
-  // The page's own back link, in its header: until the page has loaded, the
-  // tab bar's Kalender (the bare month) is the only one there.
-  await page.getByRole("banner").getByRole("link", { name: "Kalender" }).click();
+  // The page's own back link, in its header, leads home with the sheet open.
+  await page.getByRole("banner").getByRole("link", { name: "Hjem" }).click();
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
 });
 
@@ -152,9 +154,13 @@ test("the iPhone app has no logo at the top: the pages start there", async ({ pa
   await page.addInitScript(() => {
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
   });
-  for (const path of ["/events", "/calendar-overview", "/profile"]) {
+  for (const [path, shown] of [
+    ["/events", page.getByRole("heading", { name: "Mine aftaler" })],
+    ["/", page.getByRole("button", { name: "Planlæg" })],
+    ["/profile", page.getByRole("link", { name: /^Indstillinger/ })],
+  ] as const) {
     await page.goto(path);
-    await expect(page.getByRole("navigation").last()).toBeVisible();
+    await expect(shown).toBeVisible();
     await expect(page.getByRole("link", { name: "casy" })).toHaveCount(0);
   }
 });

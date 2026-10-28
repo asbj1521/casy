@@ -275,7 +275,12 @@ export default function MonthView({
           ref={scroller}
           data-floating-header=""
           className="relative h-full overflow-y-auto overscroll-contain"
-          style={{ paddingTop: pad ?? 0, scrollPaddingTop: pad ?? 0 }}
+          // The last weeks scroll clear of the home page's buttons (#169).
+          style={{
+            paddingTop: pad ?? 0,
+            paddingBottom: "var(--home-bar-clear)",
+            scrollPaddingTop: pad ?? 0,
+          }}
           onScroll={track}
         >
           {sections}

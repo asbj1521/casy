@@ -28,14 +28,15 @@
     --border: 220 14% 90%;
     --radius: 0.75rem;
 
-    /* The phone's tab bar (TabBar), with the home indicator under it; none
-       on a computer. Phones are below md, as in usePhoneLayout.ts. */
-    --tab-bar-height: 0px;
+    /* The room the phone's home page leaves under its months for the buttons
+       floating there (HomeBar, #169), the home indicator included; none on a
+       computer. Phones are below md, as in usePhoneLayout.ts. */
+    --home-bar-clear: 0px;
   }
 
   @media (max-width: 767.98px) {
     :root {
-      --tab-bar-height: calc(3.5rem + 1px + env(safe-area-inset-bottom));
+      --home-bar-clear: calc(3rem + 1.5rem + max(env(safe-area-inset-bottom), 0.75rem));
     }
   }
 
@@ -69,7 +70,9 @@
       env(safe-area-inset-left);
   }
 
-  /* On a phone the tab bar already covers the home indicator. */
+  /* On a phone the pages reach down under the home indicator: the home
+     page's months run under its floating buttons (HomeBar), and every other
+     page ends with room of its own. */
   @media (max-width: 767.98px) {
     html.native-app body {
       padding-bottom: 0;
@@ -77,16 +80,14 @@
   }
 
   /* A phone's pages are at least the screen tall, but the screen less what
-     comes with every page: the tab bar's room, the clock's strip in the app
+     comes with every page: the clock's strip in the app
      and the footer on the website. Counted as the whole screen, a short page
      (no groups, few events) could be scrolled into nothing by that much.
      Computers keep the whole screen, as before. ("html" so it outranks
      Tailwind's own min-h-screen, which comes later in the stylesheet.) */
   @media (max-width: 767.98px) {
     html .min-h-screen {
-      min-height: calc(
-        100dvh - var(--tab-bar-height) - env(safe-area-inset-top) - var(--footer-height)
-      );
+      min-height: calc(100dvh - env(safe-area-inset-top) - var(--footer-height));
     }
   }
 
