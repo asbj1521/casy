@@ -111,6 +111,13 @@ interface MonthPick {
 /** Your own answer to a date you suggest (#101): sent with it. */
 type SuggesterAnswer = "accepted" | "maybe";
 
+/**
+ * What plays as the dates are sent (Planlæg's flight into the Events tab):
+ * it calls `landed` when done, and returns how to bring the page back
+ * should the send fail.
+ */
+type Departure = (landed: () => void) => () => void;
+
 /** A date sent as it is, with your answer (My calendar's Planlæg, #126). */
 interface ChosenDate {
   start: string;
@@ -487,10 +494,12 @@ export function usePlanning() {
   const profile = useEventProfile(profileFor);
   // Waiting (briefly) for that profile before sending.
   const [preparing, setPreparing] = useState(false);
-  // Something to do between "sent" and leaving for My events: the dates
-  // flying into the Events tab (#102). It is handed the way on and takes it
-  // when it is done; without one the way is taken at once.
-  const beforeLeaving = useRef<((go: () => void) => void) | null>(null);
+  // Something to play as the dates go, before leaving for My events: the
+  // dates flying into the Events tab (#102). It starts the moment they are
+  // sent rather than once the server has answered, so the answer arrives
+  // under it instead of after a still second (#162); leaving waits for both.
+  const beforeLeaving = useRef<Departure | null>(null);
+  const departure = useRef<{ landed: Promise<void>; undo: () => void } | null>(null);
   const suggest = useMutation({
     mutationFn: suggestEvent,
     onSuccess: (data) => {
@@ -502,8 +511,14 @@ export function usePlanning() {
         // Now they wait for the others: the moment to offer notifications (#139).
         askForPush("sent");
       };
-      if (beforeLeaving.current) beforeLeaving.current(go);
-      else go();
+      const landed = departure.current?.landed ?? Promise.resolve();
+      departure.current = null;
+      void landed.then(go);
+    },
+    // Not sent after all: the page comes back, to say why.
+    onError: () => {
+      departure.current?.undo();
+      departure.current = null;
     },
   });
   // Waiting for the calendars to be fresh before sending.
@@ -606,6 +621,15 @@ export function usePlanning() {
           console.warn("sending the plan to Casy failed", err),
         );
       }
+    }
+    // The dates go now: so does their flight.
+    const play = beforeLeaving.current;
+    if (play) {
+      let undo = () => {};
+      const landed = new Promise<void>((done) => {
+        undo = play(done);
+      });
+      departure.current = { landed, undo };
     }
     suggest.mutate({
       groupId,
@@ -770,8 +794,8 @@ export function usePlanning() {
     suggestIsForThis,
     movedNote,
     sendSuggestion,
-    /** Run something once the send is confirmed, before leaving for My events; null to stop. */
-    setBeforeLeaving: (run: ((go: () => void) => void) | null) => {
+    /** Play something as the dates are sent, before leaving for My events; null to stop. */
+    setBeforeLeaving: (run: Departure | null) => {
       beforeLeaving.current = run;
     },
   };

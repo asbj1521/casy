@@ -452,22 +452,25 @@ export default function PileScreen({
     [pile, taken],
   );
   const alpha = layerAlpha(others);
-  // The send confirmed (#102): the dates not sent swipe off to the right and
-  // the ones sent fly down into the Events tab, copies of the rows moving
-  // over the page, while the real rows are hidden; then My events opens.
-  // Reduced motion goes straight there.
+  // The dates sent (#102): the ones not sent swipe off to the right and the
+  // ones sent fly down into the Events tab, copies of the rows moving over
+  // the page, while the real rows are hidden; then, once the server has
+  // answered too, My events opens. The flight starts as they go, not after
+  // the answer (#162). Reduced motion goes straight there.
   const [flying, setFlying] = useState(false);
   const listBox = useRef<HTMLDivElement>(null);
   const { setBeforeLeaving } = planning;
   useEffect(() => {
     if (reduceMotion) return;
-    setBeforeLeaving((go) => {
+    setBeforeLeaving((landed) => {
       const rows = [...(listBox.current?.querySelectorAll<HTMLElement>("[data-send-row]") ?? [])];
       void playSendFlight(
         rows.map((el) => ({ el, offered: el.dataset.sendRow === "yes" })),
         document.querySelector<HTMLElement>('[data-tab-icon="/events"]'),
         () => setFlying(true),
-      ).finally(go);
+      ).finally(landed);
+      // The send failed: the list comes back, with the reason under it.
+      return () => setFlying(false);
     });
     return () => setBeforeLeaving(null);
   }, [reduceMotion, setBeforeLeaving]);
