@@ -19,6 +19,7 @@ import type { PluginListenerHandle } from "@capacitor/core";
 
 import type { Lang } from "@/i18n/locale";
 import { isNativeApp } from "@/lib/nativeApp";
+import { EMPTY_TRANSCRIPT, hearSpeech, transcriptText } from "@/lib/speechTranscript";
 
 /** The part of the Web Speech API used here (prefixed in Safari and Chrome). */
 interface Recognition {
@@ -134,11 +135,16 @@ export function useSpeechInput(lang: Lang, onText: (text: string) => void) {
         return;
       }
       const language = SPEECH_LANG[lang];
+      // Apple starts over after a pause; the sentences before it are kept here.
+      let transcript = EMPTY_TRANSCRIPT;
       const handles = await within(
         Promise.all([
           speech.addListener("partialResults", (event) => {
             const heard = event.accumulatedText ?? event.matches?.[0];
-            if (heard) latestOnText.current(tidy(heard));
+            if (!heard) return;
+            const earlier = event.accumulatedText ? "" : tidy(event.accumulated ?? "");
+            transcript = hearSpeech(transcript, tidy(heard), earlier);
+            latestOnText.current(transcriptText(transcript));
           }),
           speech.addListener("listeningState", (event) => {
             if ((event.state ?? event.status) === "stopped") endNative();
