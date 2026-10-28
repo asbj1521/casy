@@ -1,7 +1,8 @@
 /**
  * Carries Planlæg's send flight out (#102; the timing is sendFlight.ts): the
- * dates not sent swipe off to the right, the ones sent fly down into the
- * Events tab. Browser only: it copies the rows and moves the copies.
+ * dates not sent swipe off to the right, the ones sent fly down into the home
+ * page's Aftaler button (#169), which hops as each lands. Browser only: it
+ * copies the rows and moves the copies.
  */
 import { haptic } from "@/lib/haptics";
 import { FLIGHT_TIMING as T, flightPlan } from "@/lib/sendFlight";
@@ -13,21 +14,38 @@ interface FlightRow {
 }
 
 /**
+ * The Aftaler button taking a date in (#169): pressed flat as it lands, then
+ * a hop up, stretched, and a small settle. `lift` is how high it hops, in px.
+ */
+function hop(lift: number): Keyframe[] {
+  return [
+    { transform: "translateY(0) scale(1)" },
+    { transform: "translateY(2px) scale(1.12, 0.9)", offset: 0.18 },
+    { transform: `translateY(${-lift}px) scale(0.94, 1.1)`, offset: 0.45 },
+    { transform: "translateY(0) scale(1.04, 0.97)", offset: 0.75 },
+    { transform: "translateY(0) scale(1)" },
+  ];
+}
+/** How high the button hops for each date; the last one 1.25 times as high. */
+const HOP_PX = 7;
+const HOP_MS = 420;
+
+/**
  * Carry the flight out: copy each row onto a layer above the page, move the
  * copies, and resolve once the last date has arrived (the layer goes then).
  * `onCopied` runs as soon as the copies are in place, to hide the real rows.
- * Resolves at once, doing nothing, without a tab to fly into.
+ * Resolves at once, doing nothing, without a button to fly into.
  */
 export async function playSendFlight(
   rows: FlightRow[],
-  tab: HTMLElement | null,
+  target: HTMLElement | null,
   onCopied: () => void,
 ): Promise<void> {
-  if (!tab || rows.length === 0) return;
+  if (!target || rows.length === 0) return;
   const plan = flightPlan(rows.map((r) => r.offered));
-  const target = tab.getBoundingClientRect();
-  const tx = target.left + target.width / 2;
-  const ty = target.top + target.height / 2;
+  const box = target.getBoundingClientRect();
+  const tx = box.left + box.width / 2;
+  const ty = box.top + box.height / 2;
 
   const layer = document.createElement("div");
   layer.setAttribute("aria-hidden", "true");
@@ -86,20 +104,19 @@ export async function playSendFlight(
         { ...timing, easing: "cubic-bezier(0.55, 0, 0.85, 0.35)" },
       ),
     );
-    // The tab takes it in: a bump and a haptic, a stronger one for the last.
+    // The button takes it in: a hop and a haptic, a bigger one for the last.
+    // A hop still going starts over, so quick arrivals each show.
     timers.push(
       window.setTimeout(
         () => {
           landing--;
-          tab.animate(
-            [
-              { transform: "scale(1)" },
-              { transform: "scale(1.3)", offset: 0.35 },
-              { transform: "scale(1)" },
-            ],
-            { duration: 320, easing: "ease-out" },
-          );
-          haptic(landing <= 0 ? "success" : "answer");
+          const last = landing <= 0;
+          target.getAnimations().forEach((a) => a.cancel());
+          target.animate(hop(last ? HOP_PX * 1.25 : HOP_PX), {
+            duration: HOP_MS,
+            easing: "ease-out",
+          });
+          haptic(last ? "success" : "answer");
         },
         (delay + duration) * 1000,
       ),

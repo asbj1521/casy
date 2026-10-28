@@ -37,7 +37,9 @@ export default function PlanFromCalendar({
   origin?: RefObject<HTMLElement | null>;
 }) {
   const t = useT();
-  const planning = usePlanning();
+  // Sent, the plan closes onto the home page, the dates having flown into
+  // its Aftaler button (#169).
+  const planning = usePlanning({ onSent: onClose });
   const [stage, setStage] = useState<"setup" | "pile">("setup");
   // The sheet grows out of the pill and shrinks back into it, but once the
   // pile has begun it slides away and back as before: the pill is hidden

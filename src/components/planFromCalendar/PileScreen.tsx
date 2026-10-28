@@ -456,8 +456,9 @@ export default function PileScreen({
   // The dates sent (#102): the ones not sent swipe off to the right and the
   // ones sent fly down into the home page's Aftaler button, copies of the
   // rows moving over the page, while the real rows are hidden; then, once the
-  // server has answered too, My events opens. The flight starts as they go,
-  // not after the answer (#162). Reduced motion goes straight there. The
+  // server has answered too, the plan closes onto the home page (#169). The
+  // flight starts as they go, not after the answer (#162). Reduced motion
+  // closes it at once. The
   // home page's buttons, hidden while the plan is open, come back for it
   // (#169), and stay until the pile is gone.
   const [flying, setFlying] = useState(false);
@@ -479,11 +480,10 @@ export default function PileScreen({
         showHomeBarForFlight(false);
       };
     });
-    return () => {
-      setBeforeLeaving(null);
-      showHomeBarForFlight(false);
-    };
+    return () => setBeforeLeaving(null);
   }, [reduceMotion, setBeforeLeaving]);
+  // The buttons go back to hiding behind the plan only once the pile is gone.
+  useEffect(() => () => showHomeBarForFlight(false), []);
   // A way to widen the search picked (#135): the plan changes here, and once
   // its first date is the answer (with its scores, and the calendar scrolled
   // to its month), the dates are lifted into the list again. The pile isn't

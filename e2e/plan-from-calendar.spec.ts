@@ -41,7 +41,10 @@ test("Planlæg opens over the calendar, and the dates found are sent as they wer
   expect(dates).toHaveLength(5);
   // Your calendar is free on every one: sent as yours too, changeable on My events.
   expect(dates.every((d) => d.answer === "accepted")).toBe(true);
-  await expect(page).toHaveURL(/\/events$/);
+  // Sent, the plan closes onto the home page; the vote waits under Aftaler (#169).
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Aftaler", exact: true })).toBeVisible();
 });
 
 test("a new group made from the plan is invited to, then picked for the plan (#153)", async ({
@@ -204,7 +207,7 @@ test.describe("with motion", () => {
     await expect(page.getByRole("button", { name: /^Foreslå/ })).toBeEnabled({ timeout: 15_000 });
   });
 
-  test("sent, the dates not offered swipe away and the five fly into the Events tab (#102)", async ({
+  test("sent, the dates not offered swipe away and the five fly into Aftaler, which hops (#102, #169)", async ({
     page,
   }) => {
     test.setTimeout(60_000);
@@ -217,17 +220,27 @@ test.describe("with motion", () => {
     const rows = await page.locator("[data-send-row]").count();
 
     await send.click();
-    // The server has confirmed: copies of every row move over the page, and
-    // My events does not open until they have arrived.
+    // Copies of every row move over the page, into the home page's Aftaler
+    // button, back for the flight; the plan stays open until they have arrived.
     const flight = page.locator("[data-send-flight]");
     await expect(flight).toBeAttached();
     expect(await flight.locator("> *").count()).toBe(rows);
+    const aftaler = page.getByRole("button", { name: "Aftaler", exact: true });
+    await expect(aftaler).toBeVisible();
+    await expect(page).toHaveURL(/\?plan$/);
+    // It hops as each date lands.
     await expect
-      .poll(() => page.evaluate(() => document.getAnimations().length))
+      // Often, so as not to step over the hops (about a second in all).
+      .poll(() => aftaler.evaluate((el) => el.getAnimations().length), {
+        timeout: 10_000,
+        intervals: [50],
+      })
       .toBeGreaterThan(0);
-    await expect(page).not.toHaveURL(/\/events$/);
 
-    await expect(page).toHaveURL(/\/\?events$/, { timeout: 10_000 });
+    // Then the plan closes onto the home page.
+    await expect(page).toHaveURL(/\/$/, { timeout: 10_000 });
     await expect(page.locator("[data-send-flight]")).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(aftaler).toBeVisible();
   });
 });

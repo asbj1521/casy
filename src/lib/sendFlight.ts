@@ -2,9 +2,9 @@
  * The moment Planlæg's dates are sent for voting (#102), on a phone. Once the
  * server has confirmed the send, the dates that didn't make the top N swipe
  * off to the right, one after another from the bottom row up, and then the
- * top N fly down into the Events tab, the bottom one first, the tab giving a
- * small bump and a haptic as each arrives. Then My events opens, where the
- * vote waits.
+ * top N fly down into the home page's Aftaler button (#169), the bottom one
+ * first, the button hopping with a haptic as each arrives. Then the plan
+ * closes onto the home page, the vote waiting under Aftaler.
  *
  * The list sits in a scrolling box that would clip anything leaving it, so
  * each row is copied onto a layer of its own above the page and the copies
@@ -23,16 +23,16 @@ export const FLIGHT_TIMING = {
   awaySpan: 0.7,
   /** How much of the last swipe is still going when the first date lifts off. */
   overlap: 0.15,
-  /** A date flying down into the tab. */
+  /** A date flying down into the Aftaler button. */
   fly: 0.62,
   /** Between one date leaving and the next. */
   flyStagger: 0.12,
-  /** The last date has arrived: a beat before My events opens. */
+  /** The last date has arrived: a beat before the plan closes. */
   after: 0.25,
 } as const;
 
 interface FlightStep {
-  /** "away": swiped off to the right; "fly": down into the Events tab. */
+  /** "away": swiped off to the right; "fly": down into the Aftaler button. */
   move: "away" | "fly";
   delay: number;
   duration: number;
@@ -41,14 +41,14 @@ interface FlightStep {
 interface FlightPlan {
   /** For each row, in the order they are drawn, top to bottom. */
   steps: FlightStep[];
-  /** When the last date has arrived, and My events may open. */
+  /** When the last date has arrived, and the plan may close. */
   end: number;
 }
 
 /**
  * When each row moves. `offered[i]` says whether row i (top to bottom) is one
  * of the dates sent. The rows not sent go first, from the bottom up; the sent
- * ones follow, again from the bottom up, the nearest to the tab first.
+ * ones follow, again from the bottom up, the nearest to the button first.
  */
 export function flightPlan(offered: boolean[]): FlightPlan {
   const T = FLIGHT_TIMING;

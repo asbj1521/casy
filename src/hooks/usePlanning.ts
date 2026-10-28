@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -131,8 +131,12 @@ interface ChosenDate {
  * group as a vote. Everything but the screens: the scheduling page
  * (FindDate) draws it as a page or the phone's flow, My calendar as its
  * Planlæg sheet.
+ *
+ * `onSent`: what sending ends with, instead of opening the new event in My
+ * events. The home page's Planlæg closes itself (#169): the dates have flown
+ * into its Aftaler button.
  */
-export function usePlanning() {
+export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
   const t = useT();
   const { lang } = useLang();
   const { user } = useAuth();
@@ -494,20 +498,29 @@ export function usePlanning() {
   const profile = useEventProfile(profileFor);
   // Waiting (briefly) for that profile before sending.
   const [preparing, setPreparing] = useState(false);
-  // Something to play as the dates go, before leaving for My events: the
-  // dates flying into the Events tab (#102). It starts the moment they are
+  // Something to play as the dates go, before leaving: the dates flying into
+  // the home page's Aftaler button (#102, #169). It starts the moment they are
   // sent rather than once the server has answered, so the answer arrives
   // under it instead of after a still second (#162); leaving waits for both.
   const beforeLeaving = useRef<Departure | null>(null);
+  /**
+   * Play something as the dates are sent, before leaving; null to stop.
+   * Stable, so a screen can set it in an effect without setting it afresh
+   * on every render.
+   */
+  const setBeforeLeaving = useCallback((run: Departure | null) => {
+    beforeLeaving.current = run;
+  }, []);
   const departure = useRef<{ landed: Promise<void>; undo: () => void } | null>(null);
   const suggest = useMutation({
     mutationFn: suggestEvent,
     onSuccess: (data) => {
       queryClient.setQueryData(eventsQueryKey(userId ?? ""), data.events);
-      // A phone's suggester has answered already (#101): on to My events,
-      // where the new vote waits for the others.
+      // On to the new vote, where it waits for the others (the suggester
+      // has answered already, #101), or whatever the caller ends with.
       const go = () => {
-        navigate(phone ? "/events" : `/events/${data.createdId}`);
+        if (onSent) onSent();
+        else navigate(phone ? "/events" : `/events/${data.createdId}`);
         // Now they wait for the others: the moment to offer notifications (#139).
         askForPush("sent");
       };
@@ -794,10 +807,7 @@ export function usePlanning() {
     suggestIsForThis,
     movedNote,
     sendSuggestion,
-    /** Play something as the dates are sent, before leaving for My events; null to stop. */
-    setBeforeLeaving: (run: Departure | null) => {
-      beforeLeaving.current = run;
-    },
+    setBeforeLeaving,
   };
 }
 
