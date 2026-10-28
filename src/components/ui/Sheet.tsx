@@ -1,4 +1,4 @@
-import { useEffect, useId, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, type FormEvent, type ReactNode, type RefObject } from "react";
 import { motion } from "framer-motion";
 
 import BottomSheet from "@/components/ui/BottomSheet";
@@ -21,6 +21,8 @@ export default function Sheet({
   footer,
   onSubmit,
   busy = false,
+  origin,
+  edge,
   children,
 }: {
   open: boolean;
@@ -31,6 +33,9 @@ export default function Sheet({
   onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
   /** A request is running: neither a tap outside nor Esc closes it. */
   busy?: boolean;
+  /** On a phone: the button the sheet grows out of, and the edge it stands on (BottomSheet, #169). */
+  origin?: RefObject<HTMLElement | null>;
+  edge?: "bottom" | "top";
   children: ReactNode;
 }) {
   const phone = usePhoneLayout();
@@ -44,6 +49,8 @@ export default function Sheet({
         footer={footer}
         onSubmit={onSubmit}
         busy={busy}
+        origin={origin}
+        edge={edge}
       >
         {children}
       </BottomSheet>

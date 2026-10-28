@@ -246,24 +246,51 @@ function GrowingPanel({
     const sheet = panel.current;
     if (!sheet || still) return;
     const button = origin.current;
-    if (!button) {
-      sheet.animate([{ transform: offScreen(edge) }, { transform: "translateY(0%)" }], {
-        duration: SLIDE_MS,
-        easing: EASE,
-      });
-      return;
-    }
-    sheet.animate(
-      [
-        asButton(button.getBoundingClientRect(), sheet.getBoundingClientRect()),
-        { ...OPEN_FRAME, borderRadius: OPEN_RADIUS[edge] },
-      ],
-      { duration: MORPH_MS, easing: EASE },
-    );
-    inner.current?.animate([{ opacity: 0 }, { opacity: 0, offset: 0.45 }, { opacity: 1 }], {
-      duration: MORPH_MS,
-      easing: "ease-out",
+    const timing = { easing: EASE, fill: "backwards" } as const;
+    const moves = button
+      ? [
+          sheet.animate(
+            [
+              asButton(button.getBoundingClientRect(), sheet.getBoundingClientRect()),
+              { ...OPEN_FRAME, borderRadius: OPEN_RADIUS[edge] },
+            ],
+            { ...timing, duration: MORPH_MS },
+          ),
+          ...(inner.current
+            ? [
+                inner.current.animate(
+                  [{ opacity: 0 }, { opacity: 0, offset: 0.45 }, { opacity: 1 }],
+                  {
+                    duration: MORPH_MS,
+                    fill: "backwards",
+                  },
+                ),
+              ]
+            : []),
+        ]
+      : [
+          sheet.animate([{ transform: offScreen(edge) }, { transform: "translateY(0%)" }], {
+            ...timing,
+            duration: SLIDE_MS,
+          }),
+        ];
+    // Held at the start (the button, or off the screen) until that has been
+    // drawn, then played: a new glass sheet's first frame (its blur, over a
+    // screen of months) can be slow to draw, and the growing should start
+    // from the button on screen, not partway through.
+    moves.forEach((move) => move.pause());
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => moves.forEach((move) => move.play()));
     });
+    // Cancelled when the effect is cleaned up: in development React runs it
+    // twice (StrictMode), and the second run would otherwise measure the sheet
+    // already shrunk to the button by the first, and barely grow it at all.
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+      moves.forEach((move) => move.cancel());
+    };
     // Only as it opens: the sheet opens afresh each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

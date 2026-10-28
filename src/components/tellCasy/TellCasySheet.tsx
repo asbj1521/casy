@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, type RefObject } from "react";
 import { Clock, Loader2, MessageSquarePlus, Plane, RotateCcw, Trash2, X } from "lucide-react";
 
 import { Composer } from "@/components/findDate/ai/AiConversation";
@@ -13,8 +13,9 @@ import { entryWhen, type CasyEntry, type StoredEntry } from "@/lib/casyEntries";
 
 /**
  * Tell Casy (#116): say or write when you are away or busy and it is in no
- * calendar, check what Casy made of it, and keep it. A glass sheet from the
- * bottom on a phone, a dialog on a computer (ui/Sheet, #153). What is kept is
+ * calendar, check what Casy made of it, and keep it. On a phone a glass sheet
+ * dropping from the plus at the top of My calendar (#169), clear of the
+ * keyboard; a dialog on a computer (ui/Sheet, #153). What is kept is
  * listed under, each with a delete: it counts in every search and shows on
  * My calendar until then.
  */
@@ -22,9 +23,12 @@ export default function TellCasySheet({
   open,
   onClose,
   kept,
+  origin,
 }: {
   open: boolean;
   onClose: () => void;
+  /** The plus it drops out of (#169). */
+  origin?: RefObject<HTMLElement | null>;
   /** The entries already kept (from My calendar's data). */
   kept: StoredEntry[];
 }) {
@@ -41,6 +45,8 @@ export default function TellCasySheet({
       onClose={onClose}
       title={t.tellCasy.title}
       closeLabel={t.tellCasy.done}
+      origin={origin}
+      edge="top"
       // Always a footer (switching layouts would slide the sheet in again);
       // the button only while Casy's reading waits to be kept.
       footer={

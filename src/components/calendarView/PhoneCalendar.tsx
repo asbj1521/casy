@@ -145,7 +145,7 @@ export default function PhoneCalendar() {
   // Tell Casy (#116): what is in no calendar, for people AI is on for.
   const aiAllowed = useAiAllowed();
   const [tellOpen, setTellOpen] = useState(false);
-  const tellWanted = useOnceTrue(tellOpen);
+  const tellButton = useRef<HTMLButtonElement>(null);
   // The calendars sheet is in the address (?calendars), so the back arrow
   // on "Connected calendars" returns to it, not past it to the bare month.
   const location = useLocation();
@@ -321,6 +321,7 @@ export default function PhoneCalendar() {
                   {/* Tell Casy (#116): the plus, left of "I dag". */}
                   {aiAllowed && (
                     <button
+                      ref={tellButton}
                       type="button"
                       onClick={() => setTellOpen(true)}
                       aria-label={t.tellCasy.button}
@@ -439,9 +440,15 @@ export default function PhoneCalendar() {
         </Suspense>
       )}
 
-      {aiAllowed && tellWanted && (
+      {/* On the page ahead of its first press, like the home page's sheets (#169). */}
+      {aiAllowed && (settled || tellOpen) && (
         <Suspense fallback={null}>
-          <TellCasySheet open={tellOpen} onClose={() => setTellOpen(false)} kept={entries} />
+          <TellCasySheet
+            open={tellOpen}
+            onClose={() => setTellOpen(false)}
+            kept={entries}
+            origin={tellButton}
+          />
         </Suspense>
       )}
 
