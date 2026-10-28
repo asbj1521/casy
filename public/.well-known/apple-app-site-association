@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["ZBXDWW8AN3.app.casy"],
+        "components": [{ "/": "/join/*", "comment": "Invite links open in the Casy app (#140)" }]
+      }
+    ]
+  }
+}

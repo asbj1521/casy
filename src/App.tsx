@@ -96,6 +96,8 @@ function LiveUpdates() {
 const AppBackground = isNativeApp ? lazy(() => import("@/components/AppBackground")) : null;
 // Push notifications' part of the page (#139): taps, registering, the question.
 const PushLinks = isNativeApp ? lazy(() => import("@/components/push/PushLinks")) : null;
+// Invite links that open the app (#140), also the app's own.
+const AppLinks = isNativeApp ? lazy(() => import("@/components/AppLinks")) : null;
 
 // Server answers count as fresh for 30 s (#158): moving between pages or
 // tabs within that time reuses them instead of asking again. Older ones are
@@ -249,6 +251,11 @@ function App() {
             {PushLinks && (
               <Suspense fallback={null}>
                 <PushLinks />
+              </Suspense>
+            )}
+            {AppLinks && (
+              <Suspense fallback={null}>
+                <AppLinks />
               </Suspense>
             )}
           </BrowserRouter>
