@@ -69,7 +69,7 @@ export default function MyData() {
   if (phone) {
     return (
       <div className="min-h-screen bg-background">
-        <PhoneSubHeader title={t.myData.title} back="/profile" backLabel={t.nav.profileShort} />
+        <PhoneSubHeader title={t.myData.title} back="/?profile" backLabel={t.nav.profileShort} />
         <main className="px-4 pb-8">
           {intro}
           <DataLists />

@@ -3,11 +3,12 @@ import { expect, test } from "./fixtures";
 
 test("each main page names itself in the tab", async ({ page, isMobile }) => {
   const pages: [string, string][] = [
-    ["/events", "Mine aftaler · Casy"],
+    // A phone's events and profile are sheets on its home page (#169).
+    ["/events", isMobile ? "Hjem · Casy" : "Mine aftaler · Casy"],
     ["/groups", "Mine grupper · Casy"],
     // A phone's My calendar is its home page (#169).
     ["/calendar-overview", isMobile ? "Hjem · Casy" : "Min kalender · Casy"],
-    ["/profile", "Profil · Casy"],
+    ["/profile", isMobile ? "Hjem · Casy" : "Profil · Casy"],
   ];
   if (!isMobile) pages.push(["/", "Planlægning · Casy"]);
   for (const [path, title] of pages) {

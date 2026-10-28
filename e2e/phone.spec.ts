@@ -11,14 +11,32 @@ test("the home page is My calendar, its buttons reach the rest, and there is no 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
   await expect(page.getByRole("navigation")).toHaveCount(0);
-  for (const [button, url] of [
-    ["Aftaler", /\/events$/],
-    ["Profil", /\/profile$/],
+  // Aftaler and Profil open as sheets over it, which Færdig and the phone's
+  // back close; their old addresses lead to them. All on the one page, as it
+  // is used (a second goto to the same address skews Chrome's animation clock
+  // against performance.now(), and a sheet's exit then starts seconds late).
+  for (const [button, url, title] of [
+    ["Aftaler", /\/\?events$/, "Mine aftaler"],
+    ["Profil", /\/\?profile$/, "Profil"],
   ] as const) {
-    await page.goto("/");
     await page.getByRole("button", { name: button, exact: true }).click();
     await expect(page).toHaveURL(url);
+    const sheet = page.getByRole("dialog", { name: title });
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: "Færdig" }).click();
+    await expect(sheet).toHaveCount(0);
+    await expect(page).toHaveURL(/\/$/);
+    await page.getByRole("button", { name: button, exact: true }).click();
+    await expect(sheet).toBeVisible();
+    await page.goBack();
+    await expect(sheet).toHaveCount(0);
   }
+  await page.goto("/events");
+  await expect(page).toHaveURL(/\/\?events$/);
+  await expect(page.getByRole("dialog", { name: "Mine aftaler" })).toBeVisible();
+  await page.goto("/profile");
+  await expect(page).toHaveURL(/\/\?profile$/);
+  await expect(page.getByRole("dialog", { name: "Profil" })).toBeVisible();
   // The scheduler's address and My calendar's old one lead home too.
   await page.goto("/plan");
   await expect(page).toHaveURL(/\/$/);
@@ -49,7 +67,7 @@ test("groups are a row of the profile, under Settings, its count on the home pag
     .getByRole("link", { name: /Profil/ })
     .first()
     .click();
-  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page).toHaveURL(/\/\?profile$/);
 });
 
 test("the profile's screens open and go back", async ({ page }) => {
@@ -60,7 +78,7 @@ test("the profile's screens open and go back", async ({ page }) => {
     .getByRole("link", { name: /Profil/ })
     .first()
     .click();
-  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page).toHaveURL(/\/\?profile$/);
 });
 
 test("My calendar is a month like Apple's: a day opens its busy time, Kalendere the list", async ({
@@ -176,7 +194,7 @@ test("the pages the profile's help list opens all have a way back to Profil", as
     await page.getByRole("link", { name: row }).click();
     await expect(page).toHaveURL(path);
     await page.getByRole("link", { name: "Profil" }).first().click();
-    await expect(page).toHaveURL(/\/profile$/);
+    await expect(page).toHaveURL(/\/\?profile$/);
   }
 });
 

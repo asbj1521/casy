@@ -49,6 +49,8 @@ import { useOnceTrue } from "@/hooks/useOnceTrue";
 // Sheets fetched the first time they open (#157).
 const TellCasySheet = lazy(() => import("@/components/tellCasy/TellCasySheet"));
 const TripSheet = lazy(() => import("@/components/trips/TripSheet"));
+const EventsSheet = lazy(() => import("@/components/myEvents/phone/EventsSheet"));
+const ProfileSheet = lazy(() => import("@/components/profile/ProfileSheet"));
 
 const TZ = APP_TIME_ZONE;
 
@@ -152,6 +154,15 @@ export default function PhoneCalendar() {
   const openPlan = () => navigate({ search: "?plan" }, { state: { fromMonth: true } });
   // Planlæg's sent dates bring the buttons back, to fly into Aftaler (#169).
   const flight = useHomeBarFlight();
+  // Aftaler and the profile, sheets over the home page (#169), in the address
+  // too, so /events and /profile can lead here and the back of their screens
+  // returns to them.
+  const eventsOpen = params.has("events");
+  const openEvents = () => navigate({ search: "?events" }, { state: { fromMonth: true } });
+  const eventsWanted = useOnceTrue(eventsOpen);
+  const profileOpen = params.has("profile");
+  const openProfile = () => navigate({ search: "?profile" }, { state: { fromMonth: true } });
+  const profileWanted = useOnceTrue(profileOpen);
   const [pickedDay, setPickedDay] = useState<number | null>(null);
   // What the day panel shows while it slides away, after pickedDay is cleared.
   const [panelDay, setPanelDay] = useState(() => startOfDay(Date.now(), TZ));
@@ -321,12 +332,22 @@ export default function PhoneCalendar() {
       {/* Planning starts from the calendar (#126), beside Aftaler and the
           profile; out of the way while a day or the plan is open. */}
       <HomeBar
-        hidden={(pickedDay !== null || planOpen) && !flight}
+        hidden={(pickedDay !== null || planOpen || eventsOpen || profileOpen) && !flight}
         flight={flight}
-        onEvents={() => navigate("/events")}
+        onEvents={openEvents}
         onPlan={openPlan}
-        onProfile={() => navigate("/profile")}
+        onProfile={openProfile}
       />
+      {eventsWanted && (
+        <Suspense fallback={null}>
+          <EventsSheet open={eventsOpen} onClose={closeOverlay} />
+        </Suspense>
+      )}
+      {profileWanted && (
+        <Suspense fallback={null}>
+          <ProfileSheet open={profileOpen} onClose={closeOverlay} />
+        </Suspense>
+      )}
       {planOpen && (
         <Suspense fallback={null}>
           <PlanFromCalendar onClose={closeOverlay} />

@@ -227,7 +227,7 @@ test.describe("with motion", () => {
       .toBeGreaterThan(0);
     await expect(page).not.toHaveURL(/\/events$/);
 
-    await expect(page).toHaveURL(/\/events$/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/\?events$/, { timeout: 10_000 });
     await expect(page.locator("[data-send-flight]")).toHaveCount(0);
   });
 });

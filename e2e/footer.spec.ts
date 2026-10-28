@@ -27,6 +27,7 @@ test.describe("signed in", () => {
       await expect(
         page
           .getByRole("main")
+          .or(page.getByRole("dialog"))
           .or(page.getByRole("button", { name: "Planlæg" }))
           .first(),
       ).toBeVisible();

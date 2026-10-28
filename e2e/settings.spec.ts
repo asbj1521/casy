@@ -36,7 +36,8 @@ test.describe("signed in", () => {
       .getByRole("link", { name: /Profile/ })
       .first()
       .click();
-    await expect(page).toHaveURL(/\/profile$/);
+    // A phone's profile is a sheet over its home page (#169).
+    await expect(page).toHaveURL(/\/(\?profile|profile)$/);
     await expect(page.getByRole("link", { name: /Settings/ })).toContainText("English");
   });
 

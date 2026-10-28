@@ -51,7 +51,11 @@ function GroupsPage({ selectedId }: { selectedId?: string }) {
     <div className="min-h-screen bg-background">
       {/* A phone reaches groups from the profile, so it is a screen with a way back. */}
       {phone ? (
-        <PhoneSubHeader title={t.groupsPage.title} back="/profile" backLabel={t.nav.profileShort} />
+        <PhoneSubHeader
+          title={t.groupsPage.title}
+          back="/?profile"
+          backLabel={t.nav.profileShort}
+        />
       ) : (
         <TopNav />
       )}

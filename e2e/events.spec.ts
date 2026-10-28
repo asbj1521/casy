@@ -207,12 +207,13 @@ test.describe("a phone's list of events (#103)", () => {
       .poll(() => backend.calls.find((c) => c.body.action === "answer")?.body)
       .toMatchObject({ proposalId: "ev-cinema", dateId: "d-cin-2", response: "declined" });
     await expect(cross).toHaveAttribute("aria-pressed", "true");
-    await expect(page).toHaveURL(/\/events$/);
+    // Still in the Aftaler sheet over the home page (#169).
+    await expect(page).toHaveURL(/\/\?events$/);
   });
 
   test("newest first, with what is over greyed at the bottom", async ({ page }) => {
     await page.goto("/events");
-    const rows = page.locator("main li");
+    const rows = page.getByRole("dialog", { name: "Mine aftaler" }).locator("li");
     // Biograf was suggested most recently; Hyttetur, with no date left, is over.
     await expect(rows.first()).toContainText("Biograf");
     await expect(rows.last()).toContainText("Hyttetur");

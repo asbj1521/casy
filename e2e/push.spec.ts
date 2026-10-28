@@ -63,8 +63,8 @@ test("after sending dates, Casy asks before iOS does, and Not now waits a week",
   page,
 }) => {
   await asTheApp(page, "prompt");
-  await page.goto("/events");
-  await expect(page.getByRole("heading", { name: "Mine aftaler" })).toBeVisible();
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
 
   const sheet = await momentShows(page, "sent", "Få besked, når de andre har svaret");
   await expect(sheet.getByRole("button", { name: "Slå notifikationer til" })).toBeVisible();
@@ -81,7 +81,7 @@ test("a yes to Casy's question hands over to iOS, and then registers the phone",
   page,
 }) => {
   await asTheApp(page, "prompt");
-  await page.goto("/events");
+  await page.goto("/");
   const sheet = await momentShows(page, "joined", "Få besked, når nogen foreslår datoer");
   const asked = () => page.evaluate(() => (window as unknown as { __asked: string[] }).__asked);
   // Casy's sheet alone asks iOS nothing.
@@ -94,7 +94,7 @@ test("a yes to Casy's question hands over to iOS, and then registers the phone",
 
 test("never asked again once iOS has said no", async ({ page }) => {
   await asTheApp(page, "denied");
-  await page.goto("/events");
+  await page.goto("/");
   await moment(page, "sent");
   await page.waitForTimeout(1200);
   await expect(page.getByRole("dialog")).toHaveCount(0);

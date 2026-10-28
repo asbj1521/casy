@@ -16,7 +16,7 @@ export default function ProfilePageTop() {
   const { user } = useAuth();
   const phone = usePhoneLayout();
   if (phone && user) {
-    return <PhoneSubHeader back="/profile" backLabel={t.nav.profileShort} />;
+    return <PhoneSubHeader back="/?profile" backLabel={t.nav.profileShort} />;
   }
   return <TopNav />;
 }

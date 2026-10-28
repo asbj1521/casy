@@ -165,7 +165,7 @@ test.describe("with other calendars connected, but not this phone", () => {
     await expect(card(page)).toHaveCount(0);
     // Put away until the app is opened again, not every time the page is.
     await page.getByRole("button", { name: "Profil", exact: true }).click();
-    await expect(page).toHaveURL(/\/profile$/);
+    await expect(page).toHaveURL(/\/\?profile$/);
     await page.goBack();
     await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
     await expect(card(page)).toHaveCount(0);

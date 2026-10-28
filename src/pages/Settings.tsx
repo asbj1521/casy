@@ -21,7 +21,7 @@ export default function Settings() {
       <div className="min-h-screen bg-background">
         <PhoneSubHeader
           title={t.profileHub.settings}
-          back="/profile"
+          back="/?profile"
           backLabel={t.nav.profileShort}
         />
         <main className="px-4 pb-8">

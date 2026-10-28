@@ -46,7 +46,7 @@ function Screen({ title, children }: { title: string; children: ReactNode }) {
   const t = useT();
   return (
     <div className="min-h-screen bg-background">
-      <PhoneSubHeader title={title} back="/profile" backLabel={t.nav.profileShort} />
+      <PhoneSubHeader title={title} back="/?profile" backLabel={t.nav.profileShort} />
       <main className="px-4 pb-8">{children}</main>
     </div>
   );
