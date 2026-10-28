@@ -154,6 +154,12 @@ function throughDays(
 export const PILE_TIMING = {
   /** My calendar scrolling to the month. */
   yours: 0.6,
+  /**
+   * The beat before the first throw where the month is measured only once
+   * it is in place (Planlæg's pile): the scroll is already behind it, so the
+   * throw starts almost at once (#162).
+   */
+  inPlace: 0.12,
   /** The first friend's calendar in the air: a quick toss, not a glide. */
   firstLand: 0.42,
   /** Each throw after takes this share of the one before... */
@@ -212,12 +218,16 @@ interface PileTimeline {
 
 /**
  * When everything happens, for `others` calendars thrown onto yours and
- * `dates` dates checked in the list.
+ * `dates` dates checked in the list, the first throw `start` seconds in.
  */
-export function pileTimeline(others: number, dates = 0): PileTimeline {
+export function pileTimeline(
+  others: number,
+  dates = 0,
+  start: number = PILE_TIMING.yours,
+): PileTimeline {
   const T = PILE_TIMING;
   const lands: PileTimeline["lands"] = [];
-  let at = T.yours;
+  let at = start;
   for (let i = 0; i < others; i++) {
     const duration = Math.max(T.fastestLand, T.firstLand * T.speedUp ** i);
     lands.push({ at, duration });

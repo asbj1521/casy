@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { motion, useMotionValue, useReducedMotion } from "framer-motion";
+import { motion, useMotionValue, useReducedMotion, type Variants } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 
@@ -27,6 +27,7 @@ import {
   buildPile,
   candidateMonth,
   layerAlpha,
+  PILE_TIMING,
   pileTimeline,
   type PileOptions,
   type PileSheet,
@@ -50,6 +51,35 @@ import DateList from "./pile/DateList";
 import PileTitle, { NoShortName } from "./pile/PileTitle";
 import SharedCalendar from "./pile/SharedCalendar";
 import ThrownLayer from "./pile/ThrownLayer";
+
+/**
+ * A week row of a layer, pressed down once as the press passes from the
+ * middle out. Variants, set off by the layer's own "pressed" (below), so the
+ * press moves the rows without React drawing every layer's month again (#162).
+ */
+const PRESS_ROW: Variants = {
+  rest: { y: 0 },
+  pressed: ({ w, count }: { w: number; count: number }) => {
+    const middle = (count - 1) / 2;
+    const away = Math.abs(w - middle);
+    return {
+      y: [0, PRESS_PX * (1 - away / (middle + 1)), 0],
+      transition: { duration: 0.55, delay: away * 0.08, ease: "easeInOut" },
+    };
+  },
+};
+const pressRow = (w: number, count: number, row: ReactNode) => (
+  <motion.div key={w} custom={{ w, count }} variants={PRESS_ROW}>
+    {row}
+  </motion.div>
+);
+/** The same each render, so the layers' months (memoised) aren't drawn again. */
+const NO_SHORT_NAME = <NoShortName />;
+const NO_ITEMS: GridItem[] = [];
+const NO_COLOR = () => "";
+/** The close button's size (p-2 round a 20px icon), and the room it keeps above the pile. */
+const CLOSE_PX = 36;
+const CLOSE_GAP_PX = 8;
 
 /**
  * The paper pile (#126), over My calendar itself: your calendar scrolls to
@@ -286,6 +316,10 @@ export default function PileScreen({
   // and the days free for everyone. The months after it, up to the last
   // date in the list, are what the shared calendar scrolls through as the
   // dates are lifted into the list.
+  // Built from the listed dates' starts alone: the scores and the event's
+  // profile arriving mid-throw change what is said about each date, not
+  // which dates there are, and must not rebuild every layer (#162).
+  const listedStarts = dates?.checked.map((d) => d.date.slot.start).join(",") ?? "";
   const pile = useMemo(() => {
     if (!participants) return null;
     const opts: PileOptions = {
@@ -295,7 +329,7 @@ export default function PileScreen({
       locale: LOCALE[lang],
       window: searchWindow,
     };
-    const listed = dates?.checked.map((d) => d.date.slot.start) ?? [];
+    const listed = listedStarts ? listedStarts.split(",") : [];
     const { year, month } = candidateMonth(listed.slice(0, 1), searchWindow.start, TZ);
     const first = wallTime(year, month, 1, 0, TZ);
     const last =
@@ -328,10 +362,12 @@ export default function PileScreen({
             label: "",
           }))
           .filter((b) => b.end > from && b.start < to);
-        return { ...s, items, color: FRIEND_COLORS[k % FRIEND_COLORS.length] };
+        const color = FRIEND_COLORS[k % FRIEND_COLORS.length];
+        // Made once, so a layer's months (memoised) never redraw on the pile's clock.
+        return { ...s, items, color, colorOf: () => color };
       });
     return { month: first, months, shine, friends };
-  }, [participants, dates, search, searchWindow, youProfileId, lang]);
+  }, [participants, listedStarts, search, searchWindow, youProfileId, lang]);
 
   // Your month on screen: My calendar scrolls to it, and the layers land on
   // where it then is.
@@ -343,9 +379,10 @@ export default function PileScreen({
       (e) => !e.closest("[data-pile]"),
     );
     const scroller = el?.closest<HTMLElement>(".overflow-y-auto");
-    if (el && scroller)
-      scroller.scrollTo({ top: monthScrollTop(scroller, el), behavior: "smooth" });
-    // Measured once the scroll has settled.
+    const target = el && scroller ? monthScrollTop(scroller, el) : 0;
+    const scrolls = !!scroller && Math.abs(scroller.scrollTop - target) > 1;
+    if (scrolls) scroller.scrollTo({ top: target, behavior: "smooth" });
+    // Measured once the scroll has settled; at once if the month is already there.
     const id = window.setTimeout(
       () => {
         const r = el?.getBoundingClientRect();
@@ -357,7 +394,7 @@ export default function PileScreen({
             : { month, top: 96, left: 0, width: window.innerWidth, height: 600, title: null },
         );
       },
-      scroller ? 450 : 0,
+      scrolls ? 450 : 0,
     );
     return () => window.clearTimeout(id);
   }, [month, reduceMotion]);
@@ -368,9 +405,13 @@ export default function PileScreen({
   const [phase, setPhase] = useState<Phase>(reduceMotion ? "done" : "landing");
   const [landed, setLanded] = useState(0);
   const others = pile?.friends.length ?? 0;
-  const timeline = useMemo(() => pileTimeline(others), [others]);
-  // Waits (briefly) for the scores, so the list is ranked by them from the start.
-  const ready = !!frame && !!pile && scoresSettled;
+  const timeline = useMemo(() => pileTimeline(others, 0, PILE_TIMING.inPlace), [others]);
+  // The throw starts as soon as the month is in place. The scores are asked
+  // meanwhile and only needed by the list, so the lift waits (briefly) for
+  // them instead, and the list is ranked by them from the start (#162).
+  const ready = !!frame && !!pile;
+  const [liftDue, setLiftDue] = useState(false);
+  if (liftDue && scoresSettled && phase === "revealed") setPhase("lifted");
   useEffect(() => {
     if (!ready || reduceMotion) return;
     const timers: number[] = [];
@@ -387,7 +428,7 @@ export default function PileScreen({
       haptic("thud");
     });
     at(timeline.revealAt, () => setPhase("revealed"));
-    at(timeline.liftAt, () => setPhase("lifted"));
+    at(timeline.liftAt, () => setLiftDue(true));
     return () => timers.forEach((id) => window.clearTimeout(id));
   }, [ready, reduceMotion, timeline]);
 
@@ -462,26 +503,14 @@ export default function PileScreen({
       dates.chosen.map((d) => ({ start: d.slot.start, end: d.slot.end, answer: "accepted" })),
     );
 
-  /** A week row of a layer, pressed down once as the press passes from the middle out. */
-  const press = (w: number, count: number, row: ReactNode) => {
-    const middle = (count - 1) / 2;
-    const away = Math.abs(w - middle);
-    return (
-      <motion.div
-        key={w}
-        animate={pressed ? { y: [0, PRESS_PX * (1 - away / (middle + 1)), 0] } : { y: 0 }}
-        transition={{ duration: 0.55, delay: away * 0.08, ease: "easeInOut" }}
-      >
-        {row}
-      </motion.div>
-    );
-  };
-
   // The pile reaches up to the page's big month name and names its month
   // there alone: the small name over the 1st gives way (#162).
   const band = frame ? titleBand(frame) : 0;
-  const card = frame && { ...frame, top: frame.top - band, height: frame.height + band };
-  const shortName = band > 0 ? <NoShortName /> : undefined;
+  const card = useMemo(
+    () => frame && { ...frame, top: frame.top - band, height: frame.height + band },
+    [frame, band],
+  );
+  const shortName = band > 0 ? NO_SHORT_NAME : undefined;
 
   return (
     <>
@@ -508,35 +537,37 @@ export default function PileScreen({
               color={friend.color}
             >
               <PileTitle frame={frame} month={pile.month} />
-              <MonthLayer
-                month={pile.month}
-                items={friend.items}
-                colorOf={() => friend.color}
-                wrapRow={press}
-                heading={shortName}
-              />
+              {/* Its rows pressed by PRESS_ROW when this turns "pressed". */}
+              <motion.div initial={false} animate={pressed ? "pressed" : "rest"}>
+                <MonthLayer
+                  month={pile.month}
+                  items={friend.items}
+                  colorOf={friend.colorOf}
+                  wrapRow={pressRow}
+                  heading={shortName}
+                />
+              </motion.div>
             </ThrownLayer>
           ))}
 
-          {/* What shines through: the days free for everyone. */}
-          {revealed && (
-            <motion.div
-              className="absolute"
-              style={{ top: card.top, left: frame.left, width: frame.width }}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            >
-              <PileTitle frame={frame} month={null} />
-              <MonthLayer
-                month={pile.month}
-                items={[]}
-                colorOf={() => ""}
-                shine={pile.shine}
-                heading={shortName}
-              />
-            </motion.div>
-          )}
+          {/* What shines through: the days free for everyone. There from the
+              start, unseen, so revealing it draws nothing new mid-press. */}
+          <motion.div
+            className="absolute"
+            style={{ top: card.top, left: frame.left, width: frame.width }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={revealed ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
+            <PileTitle frame={frame} month={null} />
+            <MonthLayer
+              month={pile.month}
+              items={NO_ITEMS}
+              colorOf={NO_COLOR}
+              shine={pile.shine}
+              heading={shortName}
+            />
+          </motion.div>
         </div>
       )}
 
@@ -557,11 +588,17 @@ export default function PileScreen({
         type="button"
         aria-label={words.close}
         onClick={onClose}
-        // Over the list and its blur, which soften the header buttons it sits on.
+        // Over the list and its blur, which soften the header buttons it sits
+        // on, and clear of the pile's top edge, which reaches up to the month name.
         className={cn(
-          "glass fixed right-3 top-[calc(env(safe-area-inset-top)+0.5rem)] z-[60] rounded-full p-2 text-foreground",
+          "glass fixed right-3 z-[60] rounded-full p-2 text-foreground",
           flying && "opacity-0",
         )}
+        style={{
+          top: card
+            ? `clamp(env(safe-area-inset-top), ${card.top - CLOSE_PX - CLOSE_GAP_PX}px, calc(env(safe-area-inset-top) + 0.5rem))`
+            : "calc(env(safe-area-inset-top) + 0.5rem)",
+        }}
       >
         <X className="h-5 w-5" />
       </button>
