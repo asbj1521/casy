@@ -170,9 +170,9 @@ export default function DateList({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* One line that stays put while the dates are checked: on the right,
-          beside the pile's month name, until the list is done (#162). */}
-      <div className={cn("flex min-h-9 items-center px-1", !done && "justify-end")}>
+      {/* One line that stays put while the dates are checked, then says how
+          many are offered: on the right, beside the pile's month name (#162). */}
+      <div className="flex min-h-9 items-center justify-end px-1">
         {done ? (
           <motion.h2
             initial={instant ? false : { opacity: 0 }}
