@@ -94,6 +94,22 @@ Deno.test(
   },
 );
 
+Deno.test("a key made for the sandbox only is tried there when production refuses it", async () => {
+  const key = await newKey();
+  await withFetch(
+    (req) =>
+      req.url.includes("sandbox")
+        ? new Response(null, { status: 200 })
+        : reason(403, "BadEnvironmentKeyInToken"),
+    async () => {
+      assertEquals(await deliver("abc123", null, MESSAGE, key), {
+        result: "sent",
+        environment: "sandbox",
+      });
+    },
+  );
+});
+
 Deno.test("a token known to work on the sandbox goes there first", async () => {
   const key = await newKey();
   const seen = await withFetch(

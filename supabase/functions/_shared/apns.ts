@@ -8,7 +8,8 @@
  * sandbox token, TestFlight and the App Store a production one, and the page
  * can't tell which it has. So a token is tried on the server it last worked
  * on (production first when there is none), and on the other when Apple says
- * it doesn't know it (BadDeviceToken); `deliver` answers which one took it.
+ * it doesn't know it (BadDeviceToken), or the key is made for the other
+ * server only (BadEnvironmentKeyInToken); `deliver` answers which one took it.
  */
 import { signAppleJwt } from "./appleJwt.ts";
 import { APPLE_CLIENT_ID } from "./appleSignIn.ts";
@@ -112,7 +113,10 @@ async function sendTo(
   }
   // The app is gone from the phone, or the token was replaced.
   if (res.status === 410 || reason === "Unregistered") return { result: "gone" };
-  if (reason === "BadDeviceToken") return { result: "wrong-server" };
+  // The token, or the key (made for one server only), belongs to the other server.
+  if (reason === "BadDeviceToken" || reason === "BadEnvironmentKeyInToken") {
+    return { result: "wrong-server" };
+  }
   if (reason === "ExpiredProviderToken" || reason === "InvalidProviderToken") {
     forgetProviderToken();
   }
