@@ -1521,6 +1521,15 @@ export const en: Messages = {
     downloadEvent: "Couldn't get the calendar file",
     failed: (name: string, status: number) => `${name} failed (HTTP ${status})`,
   },
+  push: {
+    failed: "Notifications couldn't be switched on. Try again.",
+    testButton: "Send a test notification",
+    testSending: "Sending",
+    testDenied:
+      "The iPhone says no to notifications from Casy. Switch them on under Casy in Settings.",
+    testSent: (n: number) => (n === 1 ? "Sent to 1 phone." : `Sent to ${n} phones.`),
+    testNone: (reasons: string) => `Apple didn't take it${reasons ? `: ${reasons}` : "."}`,
+  },
   admin: {
     title: "Admin",
     intro:

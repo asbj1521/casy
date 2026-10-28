@@ -32,6 +32,14 @@ export async function saveAppleSignIn(code: string): Promise<void> {
   });
 }
 
+/** This phone's APNs token (#139), after a yes to notifications, and the language to write them in. */
+export async function registerPushToken(token: string, lang: "da" | "en"): Promise<void> {
+  await callFunction("account", {
+    body: { action: "push-register", token, lang },
+    errorMessage: currentMessages().push.failed,
+  });
+}
+
 /**
  * Say yes (or take the yes back) to Casy's AI using content from your calendar
  * (#120): the names of your calendars and the titles of your events. The

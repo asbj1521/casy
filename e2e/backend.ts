@@ -172,6 +172,8 @@ export class FakeBackend {
           return ok({ outcome: w.aiShare ? "sharing" : "not sharing" });
         }
         if (action === "apple-token") return ok({ outcome: "saved" });
+        if (action === "push-register") return ok({ outcome: "registered" });
+        if (action === "push-unregister") return ok({ outcome: "unregistered" });
         if (action === "corrections-delete") {
           w.corrections = [];
           return ok({ outcome: "deleted" });
@@ -196,6 +198,7 @@ export class FakeBackend {
           w.corrections = w.corrections.filter((c) => c.id !== body.id);
           return ok({ outcome: "handled" });
         }
+        if (action === "pushTest") return ok({ sent: 1, failed: [] });
         if (action === "reports") return ok({ reports: w.reports });
         if (action === "reportHandled") {
           w.reports = w.reports.filter((r) => r.id !== body.id);

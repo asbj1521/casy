@@ -247,6 +247,16 @@ export async function adminSetAiTester(
   });
 }
 
+/** A test notification to the admin's own phones (#139): how many got it, and Apple's reasons for the rest. */
+export async function adminPushTest(
+  lang: "da" | "en",
+): Promise<{ sent: number; failed: string[] }> {
+  return await callFunction("admin", {
+    body: { action: "pushTest", lang },
+    errorMessage: currentMessages().push.failed,
+  });
+}
+
 /** Re-sync every connected calendar account of one person. */
 export async function adminSyncUser(
   userId: string,

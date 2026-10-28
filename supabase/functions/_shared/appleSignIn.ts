@@ -14,9 +14,9 @@
  * call and lives five minutes, so there is no secret that expires and has to
  * be renewed by hand (the website's Apple sign-in would need one; it has none).
  */
-import { decodeBase64 } from "jsr:@std/encoding@1/base64";
-import { decodeBase64Url, encodeBase64Url } from "jsr:@std/encoding@1/base64url";
+import { decodeBase64Url } from "jsr:@std/encoding@1/base64url";
 
+import { signAppleJwt } from "./appleJwt.ts";
 import type { Caller } from "./auth.ts";
 import { requireEnv } from "./env.ts";
 import { decryptSecret, encryptionKeyFromEnv, encryptSecret } from "./secretBox.ts";
@@ -48,53 +48,18 @@ export function appleKeyFromEnv(): AppleKey {
 }
 
 /**
- * The key's raw PKCS#8 bytes. Takes the .p8 as downloaded, or with its line
- * breaks written as "\n" (how a secret pasted on one line often arrives).
- */
-function pkcs8Bytes(pem: string): Uint8Array<ArrayBuffer> {
-  const body = pem
-    .replace(/\\n/g, "\n")
-    .replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "")
-    .replace(/\s+/g, "");
-  try {
-    return decodeBase64(body);
-  } catch {
-    throw new Error("APPLE_SIGN_IN_KEY is not a .p8 private key.");
-  }
-}
-
-function base64UrlJson(value: unknown): string {
-  return encodeBase64Url(new TextEncoder().encode(JSON.stringify(value)));
-}
-
-/**
  * The client secret Apple asks for: a JWT (ES256) from Casy's team, about
- * the app, signed with the key. WebCrypto's ECDSA signature is already the
- * raw r||s form JWTs use.
+ * the app, signed with the key (appleJwt.ts).
  */
 export async function clientSecret(key: AppleKey, now = new Date()): Promise<string> {
   const issuedAt = Math.floor(now.getTime() / 1000);
-  const header = base64UrlJson({ alg: "ES256", kid: key.keyId });
-  const payload = base64UrlJson({
+  return await signAppleJwt(key.privateKey, "APPLE_SIGN_IN_KEY", key.keyId, {
     iss: key.teamId,
     iat: issuedAt,
     exp: issuedAt + SECRET_LIFETIME_SECONDS,
     aud: APPLE_ISSUER,
     sub: APPLE_CLIENT_ID,
   });
-  const signingKey = await crypto.subtle.importKey(
-    "pkcs8",
-    pkcs8Bytes(key.privateKey),
-    { name: "ECDSA", namedCurve: "P-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign(
-    { name: "ECDSA", hash: "SHA-256" },
-    signingKey,
-    new TextEncoder().encode(`${header}.${payload}`),
-  );
-  return `${header}.${payload}.${encodeBase64Url(signature)}`;
 }
 
 /** Apple's error code from a failed answer ("invalid_grant"), or the status. */

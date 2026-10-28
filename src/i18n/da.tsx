@@ -1569,6 +1569,15 @@ export const da = {
     downloadEvent: "Kunne ikke hente kalenderfilen",
     failed: (name: string, status: number) => `${name} fejlede (HTTP ${status})`,
   },
+  push: {
+    failed: "Notifikationer kunne ikke slås til. Prøv igen.",
+    testButton: "Send en test-notifikation",
+    testSending: "Sender",
+    testDenied:
+      "iPhone siger nej til notifikationer fra Casy. Slå dem til under Casy i Indstillinger.",
+    testSent: (n: number) => (n === 1 ? "Sendt til 1 telefon." : `Sendt til ${n} telefoner.`),
+    testNone: (reasons: string) => `Apple tog ikke imod den${reasons ? `: ${reasons}` : "."}`,
+  },
   admin: {
     title: "Admin",
     intro:

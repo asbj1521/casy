@@ -31,6 +31,7 @@ import {
 import GroupRow from "./admin/GroupRow";
 import UserRow from "./admin/UserRow";
 import ConnectionRow from "./admin/ConnectionRow";
+import PushTest from "./admin/PushTest";
 
 export default function AdminPanel({ youId }: { youId: string }) {
   const t = useT();
@@ -228,6 +229,9 @@ export default function AdminPanel({ youId }: { youId: string }) {
               : t.admin.healthFailing}
         </Notice>
       )}
+
+      {/* The app only: notifications switched on here, and a test sent (#139). */}
+      <PushTest />
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <StatTile label={t.admin.statUsers} value={stats?.users ?? null} />

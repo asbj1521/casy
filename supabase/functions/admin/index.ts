@@ -24,6 +24,7 @@ import { requireCaller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
 import { healthOf, readSyncFacts } from "../_shared/health.ts";
 import { HttpError, requireString, serve } from "../_shared/http.ts";
+import { pushToProfile } from "../_shared/push.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 // Only the type here. The sync code itself (with ical.js and an XML parser
@@ -215,6 +216,17 @@ serve("admin", async (req, body) => {
   switch (action) {
     case "overview":
       return await overview(db);
+
+    // A test notification to the admin's own phones (#139), proving the
+    // whole way to Apple and back works before anything real is sent.
+    case "pushTest": {
+      const lang = body.lang === "en" ? "en" : "da";
+      return await pushToProfile(db, caller.id, {
+        title: "Casy",
+        body: lang === "en" ? "Notifications work." : "Notifikationer virker.",
+        url: "/profile/settings",
+      });
+    }
 
     // The corrections of the AI people sent for review (#122), newest first:
     // what they say and never whose they are, so a mistake the AI makes for

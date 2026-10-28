@@ -12,6 +12,9 @@
  * - apple-token: right after a Sign in with Apple in the app (#138), its
  *   one-time `code`, kept (as a refresh token) only so the sign-in can be
  *   revoked when the account is deleted; see _shared/appleSignIn.ts.
+ * - push-register: the phone's APNs `token` (#139), after the person said yes
+ *   to notifications in the app, with the `lang` to write them in.
+ * - push-unregister: forgets the phone's `token` (signing out).
  * - delete: deletes the account and everything it owns, after the page has
  *   asked them to type a word to confirm (sent as `confirm: true`, so a stray
  *   call can't do it). See _shared/accounts.ts for what goes and what stays.
@@ -22,6 +25,7 @@
 import { deleteAccount } from "../_shared/accounts.ts";
 import { setAiConsent, setAiSharing } from "../_shared/aiAccess.ts";
 import { saveAppleSignIn } from "../_shared/appleSignIn.ts";
+import { cleanToken, registerDevice, unregisterDevice } from "../_shared/push.ts";
 import { exportMyData, readMyData } from "../_shared/myData.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import { HttpError, serve } from "../_shared/http.ts";
@@ -58,6 +62,15 @@ serve("account", async (req, body) => {
       if (typeof body.code !== "string" || !body.code) throw new HttpError(400, "code is required");
       await saveAppleSignIn(db, caller, body.code);
       return { outcome: "saved" };
+    }
+    case "push-register": {
+      const lang = body.lang === "en" ? "en" : "da";
+      await registerDevice(db, profileId, cleanToken(body.token), lang);
+      return { outcome: "registered" };
+    }
+    case "push-unregister": {
+      await unregisterDevice(db, profileId, cleanToken(body.token));
+      return { outcome: "unregistered" };
     }
     case "delete": {
       if (body.confirm !== true) throw new HttpError(400, "confirm must be true");
