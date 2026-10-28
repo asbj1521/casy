@@ -269,10 +269,12 @@ function staysOvernight(start: number, end: number): boolean {
  * The trips in a person's legs, and what to ask about the rest. `now` only
  * decides which loose ends are still worth a question. `inCalendar` are the
  * trips Casy already wrote into the calendar (their entries' spans): with the
- * trips kept as accepted, a journey starting inside one is settled, so it is
- * neither asked about nor suggested again. The calendar is the record that
- * survives when the answers on the phone are gone (the app installed again,
- * signed out) or a flight's id moved (#165).
+ * trips kept as accepted, a journey that overlaps one is settled, so it is
+ * neither asked about nor suggested again, where home is included. The
+ * calendar is the record that survives when the answers on the phone are gone
+ * (the app installed again, signed out) or a flight's id moved (#165). Any
+ * overlap counts, not only a start inside, since the entry begins at the
+ * flight's time when the trip was accepted and a flight can move (#167).
  */
 export function detectTrips(
   allLegs: Leg[],
@@ -283,10 +285,14 @@ export function detectTrips(
   const segments = segmentsOf(usable(allLegs));
   if (segments.length === 0) return { trips: withKept([], answers), questions: [] };
 
+  const settled = [...inCalendar, ...Object.values(answers.kept)];
+  const isSettled = (start: number, end: number) =>
+    settled.some((s) => start < s.end && end > s.start);
+
   const home = answers.home ?? inferHome(segments);
   if (!home) {
-    // Nothing is asked about journeys that are over.
-    const next = segments.find((s) => s.end > now);
+    // Nothing is asked about journeys that are over, or already in the calendar (#167).
+    const next = segments.find((s) => s.end > now && !isSettled(s.start, s.end));
     return {
       trips: withKept([], answers),
       questions: next
@@ -298,8 +304,6 @@ export function detectTrips(
   const trips: Trip[] = [];
   const questions: Question[] = [];
   const skipped = new Set(answers.dismissed);
-  const settled = [...inCalendar, ...Object.values(answers.kept)];
-  const isSettled = (t: number) => settled.some((s) => t >= s.start && t < s.end);
   // When the person last got home, as far as the legs say: no way out is
   // offered from before it.
   let lastHome: number | null = null;
@@ -319,7 +323,7 @@ export function detectTrips(
         answered: true,
         accepted: true,
       });
-    } else if (last.end > now - ASK_AFTER_MS && !isSettled(first.start)) {
+    } else if (last.end > now - ASK_AFTER_MS && !isSettled(first.start, last.end)) {
       questions.push({
         kind: "return",
         id: first.id,
@@ -350,7 +354,7 @@ export function detectTrips(
           if (
             !skipped.has(first.id) &&
             staysOvernight(first.start, seg.end) &&
-            (accepted || !isSettled(first.start))
+            (accepted || !isSettled(first.start, seg.end))
           ) {
             trips.push({
               id: first.id,
@@ -382,7 +386,7 @@ export function detectTrips(
           answered: true,
           accepted: true,
         });
-      } else if (seg.end > now && !isSettled(seg.start)) {
+      } else if (seg.end > now && !isSettled(seg.start, seg.end)) {
         questions.push({
           kind: "outbound",
           id: seg.id,

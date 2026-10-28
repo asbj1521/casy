@@ -373,6 +373,36 @@ describe("a trip already in the calendar (#165)", () => {
       later.id,
     ]);
   });
+
+  // The app installed again: no answers at all, so not even where home is (#167).
+  const back = leg("oslo", "copenhagen", at(11, 19, 18), at(11, 19, 19));
+
+  it("doesn't ask where home is about it", () => {
+    expect(detectTrips([out, back], NO_ANSWERS, NOW, [entry])).toEqual({
+      trips: [],
+      questions: [],
+    });
+  });
+
+  it("asks where home is about the next journey outside it instead", () => {
+    // Still no city leads, so home is asked, about the train after the trip.
+    const later = leg("aarhus", "berlin", at(11, 25, 10), at(11, 25, 16), { mode: "train" });
+    const { questions } = detectTrips([out, back, later], NO_ANSWERS, NOW, [entry]);
+    expect(questions.map((q) => [q.kind, q.id])).toEqual([["home", later.id]]);
+  });
+
+  it("settles a flight that moved to just before it", () => {
+    const earlier = leg("copenhagen", "oslo", at(11, 11, 22), at(11, 12, 0, 30));
+    expect(detectTrips([earlier], answers(), NOW, [entry]).questions).toEqual([]);
+    expect(detectTrips([earlier, back], answers(), NOW, [entry]).trips).toEqual([]);
+  });
+
+  it("doesn't suggest a trip again whose flight out moved earlier than the kept trip", () => {
+    const kept = { start: out.start, end: back.end, city: "Oslo" };
+    const moved = { ...out, id: "moved", start: at(11, 12, 7), end: at(11, 12, 8, 30) };
+    const { trips } = detectTrips([moved, back], answers({ kept: { old: kept } }), NOW);
+    expect(trips.map((t) => [t.id, t.accepted])).toEqual([["old", true]]);
+  });
 });
 
 describe("a leg lasting more than a day and a half", () => {
