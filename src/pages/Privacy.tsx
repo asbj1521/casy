@@ -404,11 +404,13 @@ const da: LegalCopy = {
           fører almindelige tekniske logfiler for at drive deres tjenester. Login-siden bruger
           Cloudflare Turnstile til at tjekke, at du ikke er en robot, og Cloudflare ser tekniske
           oplysninger som din IP-adresse og browser for at gøre det. AI i Casy går gennem Anthropic,
-          som beskrevet ovenfor. Casy bruger ingen analyse- eller reklamesporing. Din browser gemmer
-          din login-session, så du forbliver logget ind, det sprog, du har valgt, og en kopi af din
-          egen gruppeliste, dine kalenderforbindelser og om du har admin-adgang, så siderne åbner
-          med det samme. Kopien slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet
-          om andres kalendere gemmes i din browser.
+          som beskrevet ovenfor. Notifikationer i iPhone-appen sendes gennem Apples
+          notifikationstjeneste, som får beskeden for at kunne levere den. Casy bruger ingen
+          analyse- eller reklamesporing. Din browser gemmer din login-session, så du forbliver
+          logget ind, det sprog, du har valgt, og en kopi af din egen gruppeliste, dine
+          kalenderforbindelser og om du har admin-adgang, så siderne åbner med det samme. Kopien
+          slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet om andres kalendere
+          gemmes i din browser.
         </p>
       ),
     },
@@ -885,11 +887,13 @@ const en: LegalCopy = {
           to send them. All three keep standard technical logs to run their services. The sign-in
           page uses Cloudflare Turnstile to check that you are not a robot, and Cloudflare sees
           technical details such as your IP address and browser to do so. AI in Casy goes through
-          Anthropic, as described above. Casy uses no analytics or advertising trackers. Your
-          browser keeps your login session so you stay signed in, the language you picked, and a
-          copy of your own group list, your calendar connections and whether you have admin access,
-          so pages open instantly. That copy is deleted when you sign out and is never kept for more
-          than a week. Nothing about other people&apos;s calendars is stored in your browser.
+          Anthropic, as described above. Notifications in the iPhone app are sent through
+          Apple&apos;s notification service, which receives the message in order to deliver it. Casy
+          uses no analytics or advertising trackers. Your browser keeps your login session so you
+          stay signed in, the language you picked, and a copy of your own group list, your calendar
+          connections and whether you have admin access, so pages open instantly. That copy is
+          deleted when you sign out and is never kept for more than a week. Nothing about other
+          people&apos;s calendars is stored in your browser.
         </p>
       ),
     },
