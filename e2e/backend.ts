@@ -174,6 +174,14 @@ export class FakeBackend {
         if (action === "apple-token") return ok({ outcome: "saved" });
         if (action === "push-register") return ok({ outcome: "registered" });
         if (action === "push-unregister") return ok({ outcome: "unregistered" });
+        if (action === "push-settings") return ok({ off: w.pushOff, devices: 1 });
+        if (action === "push-set") {
+          w.pushOff =
+            body.on === true
+              ? w.pushOff.filter((k) => k !== body.kind)
+              : [...new Set([...w.pushOff, String(body.kind)])];
+          return ok({ off: w.pushOff });
+        }
         if (action === "corrections-delete") {
           w.corrections = [];
           return ok({ outcome: "deleted" });

@@ -1302,6 +1302,11 @@ export const da = {
     nameNotYet: "Ikke gemt endnu",
     signIn: "Log ind med",
     signInMethods: { email: "E-mail", google: "Google", apple: "Apple" } as Record<string, string>,
+    push: "Notifikationer",
+    pushOn: (n: number) => (n === 1 ? "Til på 1 telefon" : `Til på ${n} telefoner`),
+    pushOff: "Fra",
+    pushDetail:
+      "Casy gemmer telefonens nøgle fra Apple og de slags beskeder, du har slået fra, til du logger ud eller sletter kontoen",
     appleToken:
       "En nøgle fra Apple gemmes, så dit Apple-login kan afbrydes, når du sletter kontoen",
     emailLanguage: "Sprog i e-mails",
@@ -1571,6 +1576,25 @@ export const da = {
   },
   push: {
     failed: "Notifikationer kunne ikke slås til. Prøv igen.",
+    askTitle: {
+      sent: "Få besked, når de andre har svaret",
+      answered: "Få besked, når datoen er fundet",
+      joined: "Få besked, når nogen foreslår datoer",
+    },
+    askEnable: "Slå notifikationer til",
+    askLater: "Ikke nu",
+    askNote: "Du kan slå hver slags besked fra under Indstillinger.",
+    title: "Notifikationer",
+    turnOn: "Slå notifikationer til",
+    deniedTitle: "Notifikationer er slået fra",
+    denied: "Slå dem til under Casy i iPhones Indstillinger.",
+    kinds: {
+      vote_invited: "Nogen foreslår datoer til dig",
+      vote_decided: "Datoen er fundet",
+      event_changed: "Datoen ændres, eller aftalen aflyses",
+      group_invitation: "Du bliver inviteret til en gruppe",
+      deadline_near: "Svarfristen nærmer sig",
+    } as Record<string, string>,
     testButton: "Send en test-notifikation",
     testSending: "Sender",
     testDenied:

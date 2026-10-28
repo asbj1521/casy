@@ -227,6 +227,11 @@ function AccountPart({ data }: { data: MyData }) {
         detail={account.appleToken ? w.appleToken : undefined}
       />
       <Fact
+        label={w.push}
+        value={account.push.devices > 0 ? w.pushOn(account.push.devices) : w.pushOff}
+        detail={account.push.devices > 0 ? w.pushDetail : undefined}
+      />
+      <Fact
         label={w.emailLanguage}
         value={(account.language && w.languages[account.language]) || w.languages.da}
         detail={account.language ? undefined : w.languageDefault}

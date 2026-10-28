@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 27. oktober 2026",
+  updated: "Senest opdateret 28. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -120,6 +120,13 @@ const da: LegalCopy = {
               din Apple-konto eller et kalenderlink, og logger du ind med Apple, en nøgle fra Apple,
               som kun bruges til at afbryde dit Apple-login, når du sletter din konto. De krypteres,
               før de gemmes, og nøglen opbevares adskilt fra databasen.
+            </li>
+            <li>
+              <Term>Notifikationer:</Term> slår du notifikationer til i iPhone-appen, gemmer Casy
+              telefonens nøgle fra Apple, som beskederne sendes til, det sprog de skrives på, og de
+              slags beskeder, du har slået fra. Beskeden selv gemmes ikke, når den er sendt. Den kan
+              nævne navnene på en aftale, en gruppe og den, der foreslog noget, og den sendes gennem
+              Apples notifikationstjeneste.
             </li>
           </ul>
           <p className="mt-3">
@@ -444,6 +451,11 @@ const da: LegalCopy = {
             selv sletter det eller sletter din konto.
           </p>
           <p>
+            Telefonens nøgle til notifikationer gemmes, til du logger ud, Apple melder, at appen er
+            fjernet fra telefonen, eller du sletter kontoen. En besked, der ikke kunne sendes,
+            slettes efter højst et døgn.
+          </p>
+          <p>
             Dit ja til, at Casys AI må læse i din kalender, gemmes, så længe du har kontoen, eller
             til du trækker det tilbage. Mærkater og rettelser gemmes kun på din telefon, til du
             trækker dit ja tilbage, logger ud eller sletter appen.
@@ -492,7 +504,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 27 October 2026",
+  updated: "Last updated 28 October 2026",
   sections: [
     {
       title: "In short",
@@ -588,6 +600,13 @@ const en: LegalCopy = {
               account, or a calendar link, and if you sign in with Apple, a key from Apple used only
               to end your Apple sign-in when you delete your account. These are encrypted before
               they are stored, and the key is kept separately from the database.
+            </li>
+            <li>
+              <Term>Notifications:</Term> if you turn on notifications in the iPhone app, Casy keeps
+              the phone&apos;s key from Apple that the messages are sent to, the language they are
+              written in, and the kinds you switched off. The message itself is not kept once it is
+              sent. It can name an event, a group and whoever suggested something, and it is sent
+              through Apple&apos;s notification service.
             </li>
           </ul>
           <p className="mt-3">
@@ -912,6 +931,11 @@ const en: LegalCopy = {
             week back to twelve months ahead. Everything else, meaning your account, your calendar
             connections, your groups and the people you blocked, is kept until you remove it or
             delete your account.
+          </p>
+          <p>
+            The phone&apos;s key for notifications is kept until you sign out, Apple reports that
+            the app was removed from the phone, or you delete your account. A message that could not
+            be sent is deleted after a day at most.
           </p>
           <p>
             Your yes to Casy&apos;s AI reading your calendar is kept as long as you have the

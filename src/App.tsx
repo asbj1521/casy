@@ -94,6 +94,8 @@ function LiveUpdates() {
 // The iPhone app's background work (phone calendars, labels, trips, day
 // facts): never downloaded by the website (#157).
 const AppBackground = isNativeApp ? lazy(() => import("@/components/AppBackground")) : null;
+// Push notifications' part of the page (#139): taps, registering, the question.
+const PushLinks = isNativeApp ? lazy(() => import("@/components/push/PushLinks")) : null;
 
 // Server answers count as fresh for 30 s (#158): moving between pages or
 // tabs within that time reuses them instead of asking again. Older ones are
@@ -244,6 +246,11 @@ function App() {
             <ConnectCalendarPrompt />
             {/* The iPhone app only: an app too old for Casy is asked to update (#143). */}
             <UpdateRequired />
+            {PushLinks && (
+              <Suspense fallback={null}>
+                <PushLinks />
+              </Suspense>
+            )}
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>

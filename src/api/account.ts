@@ -40,6 +40,33 @@ export async function registerPushToken(token: string, lang: "da" | "en"): Promi
   });
 }
 
+/** This phone's token taken back from the account (signing out). */
+export async function unregisterPushToken(token: string): Promise<void> {
+  await callFunction("account", {
+    body: { action: "push-unregister", token },
+    errorMessage: currentMessages().push.failed,
+  });
+}
+
+/** Which notification kinds are switched off, and how many phones they go to (#139). */
+export const pushSettingsQuery = (userId: string) =>
+  queryOptions({
+    queryKey: ["push-settings", userId],
+    queryFn: () =>
+      callFunction<{ off: string[]; devices: number }>("account", {
+        body: { action: "push-settings" },
+        errorMessage: currentMessages().push.failed,
+      }),
+  });
+
+/** One notification kind switched on or off; answers the kinds now off. */
+export async function setPushKind(kind: string, on: boolean): Promise<{ off: string[] }> {
+  return await callFunction("account", {
+    body: { action: "push-set", kind, on },
+    errorMessage: currentMessages().push.failed,
+  });
+}
+
 /**
  * Say yes (or take the yes back) to Casy's AI using content from your calendar
  * (#120): the names of your calendars and the titles of your events. The
@@ -82,6 +109,8 @@ export interface MyData {
     name: string | null;
     nameIsCustom: boolean;
     signIn: string[];
+    /** Notifications (#139): the phones they go to, and the kinds switched off. */
+    push: { devices: number; off: string[] };
     /** A Sign in with Apple token is kept, only to revoke it when the account is deleted (#138). */
     appleToken: boolean;
     /** The language Casy's emails are written in, if one is saved. */

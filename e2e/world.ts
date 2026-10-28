@@ -560,6 +560,8 @@ export interface World {
   dateScores: Record<string, number>;
   /** Corrections of the AI go to Casy for review (#122): on with the yes, a switch in Your data. */
   aiShare: boolean;
+  /** Notification kinds switched off (#139). */
+  pushOff: string[];
   /** The corrections sent to Casy, as admin mode lists them (#122). */
   corrections: { id: string; kind: "label" | "plan"; data: unknown; createdAt: string }[];
   /**
@@ -600,6 +602,7 @@ export function makeWorld(options: WorldOptions): World {
     aiConsent: true,
     dateScores: {},
     aiShare: true,
+    pushOff: [],
     corrections: [],
     admin: false,
     aiAccess: new Set(),
@@ -654,6 +657,7 @@ export function myData(world: World): MyData {
       nameIsCustom: false,
       signIn: ["email"],
       appleToken: false,
+      push: { devices: 0, off: [] },
       language: "da",
       createdAt: "2026-09-01T10:00:00.000Z",
     },

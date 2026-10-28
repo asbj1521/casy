@@ -6,6 +6,7 @@ import { groupsQuery, groupsQueryKey, joinGroup, previewInvite } from "@/api/gro
 import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { useT } from "@/i18n/lang";
+import { askForPush } from "@/lib/pushAsk";
 import TopNav from "@/components/TopNav";
 
 /**
@@ -48,6 +49,8 @@ export default function JoinGroup() {
       // and doesn't ask again the moment it opens.
       if (user) queryClient.setQueryData(groupsQueryKey(user.id), data.groups);
       navigate("/", { replace: true });
+      // Joined: the moment to offer notifications (#139).
+      askForPush("joined");
     },
   });
 

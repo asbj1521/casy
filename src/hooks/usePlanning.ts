@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { sendPlanFeedback } from "@/api/aiFeedback";
 import { eventsQueryKey, rankDates, suggestEvent } from "@/api/events";
+import { askForPush } from "@/lib/pushAsk";
 import type { EventImpact } from "@/api/eventProfile";
 import {
   groupBusyQuery,
@@ -496,7 +497,11 @@ export function usePlanning() {
       queryClient.setQueryData(eventsQueryKey(userId ?? ""), data.events);
       // A phone's suggester has answered already (#101): on to My events,
       // where the new vote waits for the others.
-      const go = () => navigate(phone ? "/events" : `/events/${data.createdId}`);
+      const go = () => {
+        navigate(phone ? "/events" : `/events/${data.createdId}`);
+        // Now they wait for the others: the moment to offer notifications (#139).
+        askForPush("sent");
+      };
       if (beforeLeaving.current) beforeLeaving.current(go);
       else go();
     },

@@ -1257,6 +1257,11 @@ export const en: Messages = {
     nameNotYet: "Not saved yet",
     signIn: "Sign in with",
     signInMethods: { email: "Email", google: "Google", apple: "Apple" } as Record<string, string>,
+    push: "Notifications",
+    pushOn: (n: number) => (n === 1 ? "On for 1 phone" : `On for ${n} phones`),
+    pushOff: "Off",
+    pushDetail:
+      "Casy keeps the phone's key from Apple and the kinds you switched off until you sign out or delete the account",
     appleToken:
       "A key from Apple is kept so your Apple sign-in can be ended when you delete the account",
     emailLanguage: "Language for emails",
@@ -1523,6 +1528,25 @@ export const en: Messages = {
   },
   push: {
     failed: "Notifications couldn't be switched on. Try again.",
+    askTitle: {
+      sent: "Get notified when the others have answered",
+      answered: "Get notified when the date is set",
+      joined: "Get notified when someone suggests dates",
+    },
+    askEnable: "Turn on notifications",
+    askLater: "Not now",
+    askNote: "You can switch off each kind under Settings.",
+    title: "Notifications",
+    turnOn: "Turn on notifications",
+    deniedTitle: "Notifications are off",
+    denied: "Turn them on under Casy in the iPhone's Settings.",
+    kinds: {
+      vote_invited: "Someone suggests dates to you",
+      vote_decided: "The date is set",
+      event_changed: "The date changes, or the event is cancelled",
+      group_invitation: "You are invited to a group",
+      deadline_near: "A deadline is coming up",
+    } as Record<string, string>,
     testButton: "Send a test notification",
     testSending: "Sending",
     testDenied:

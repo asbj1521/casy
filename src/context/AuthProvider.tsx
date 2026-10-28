@@ -4,6 +4,7 @@ import type { Session } from "@supabase/auth-js";
 
 import { AuthContext, type AuthState } from "@/context/auth";
 import { clearPersistedQueries } from "@/lib/queryPersistence";
+import { isNativeApp } from "@/lib/nativeApp";
 import { supabaseAuth } from "@/lib/supabase";
 
 /**
@@ -52,6 +53,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       signOut: async (scope = "local") => {
         // Supabase answers a failure (offline, say) with an error rather than
         // throwing, and keeps the session: say so, so no button pretends.
+        // This phone's notifications stop with the sign-out, while the login
+        // can still say whose they were (#139); never in the way of it.
+        if (isNativeApp) await import("@/lib/push").then((m) => m.forgetPush()).catch(() => {});
         const { error } = await supabaseAuth.signOut({ scope });
         if (error) throw error;
       },

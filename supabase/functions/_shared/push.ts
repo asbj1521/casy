@@ -46,6 +46,51 @@ export async function unregisterDevice(db: Db, profileId: string, token: string)
   if (error) throw error;
 }
 
+/** The kinds a person can switch (push_settings, the push_notifications migration). */
+export const PUSH_KINDS = [
+  "vote_invited",
+  "vote_decided",
+  "event_changed",
+  "group_invitation",
+  "deadline_near",
+] as const;
+export type PushKindName = (typeof PUSH_KINDS)[number];
+
+/** Which kinds are switched off for the person, and how many phones notifications go to. */
+export async function readPushSettings(
+  db: Db,
+  profileId: string,
+): Promise<{ off: string[]; devices: number }> {
+  const [settings, devices] = await Promise.all([
+    db.from("push_settings").select("off").eq("profile_id", profileId).maybeSingle(),
+    db
+      .from("push_devices")
+      .select("token", { count: "exact", head: true })
+      .eq("profile_id", profileId),
+  ]);
+  if (settings.error) throw settings.error;
+  if (devices.error) throw devices.error;
+  return { off: (settings.data?.off as string[] | undefined) ?? [], devices: devices.count ?? 0 };
+}
+
+/** One kind switched on or off; the rest stay as they were. */
+export async function setPushKind(
+  db: Db,
+  profileId: string,
+  kind: unknown,
+  on: unknown,
+): Promise<string[]> {
+  if (typeof on !== "boolean") throw new HttpError(400, "on must be true or false");
+  if (!PUSH_KINDS.includes(kind as PushKindName)) throw new HttpError(400, "Unknown kind");
+  const { off } = await readPushSettings(db, profileId);
+  const next = on ? off.filter((k) => k !== kind) : [...new Set([...off, kind as string])];
+  const { error } = await db
+    .from("push_settings")
+    .upsert({ profile_id: profileId, off: next, updated_at: new Date().toISOString() });
+  if (error) throw error;
+  return next;
+}
+
 interface DeviceRow {
   token: string;
   environment: ApnsEnvironment | null;

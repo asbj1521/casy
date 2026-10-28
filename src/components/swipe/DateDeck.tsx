@@ -27,6 +27,7 @@ import CardFace from "./deck/CardFace";
 import DoneView from "./deck/DoneView";
 import { ClashConfirm, MoveConfirm } from "./deck/Confirms";
 import { readStored, writeStored } from "@/lib/storage";
+import { askForPush } from "@/lib/pushAsk";
 
 const TZ = APP_TIME_ZONE;
 
@@ -126,6 +127,13 @@ export default function DateDeck({
   const done =
     index >= dates.length || (event.status !== "pending" && event.status !== "scheduled");
   const current = done ? null : (dates[index] ?? null);
+  // The last date answered just now (not an answered vote opened again): the
+  // moment to offer notifications about the outcome (#139).
+  const wasAnswering = useRef(!done);
+  useEffect(() => {
+    if (done && wasAnswering.current) askForPush("answered");
+    wasAnswering.current = !done;
+  }, [done]);
   // "I can't" on the date already decided moves it for everyone, so it is
   // asked first; and once moved, the new date is said.
   const [confirmMove, setConfirmMove] = useState(false);

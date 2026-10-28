@@ -15,6 +15,7 @@ import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
+import { askForPush } from "@/lib/pushAsk";
 
 /**
  * Invitations to groups, at the top of My events: joining is the one thing
@@ -55,6 +56,8 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
     onSuccess: (data) => {
       queryClient.setQueryData(groupsQueryKey(userId), data.groups);
       queryClient.setQueryData(invitationsQueryKey(userId), data.invitations);
+      // Joined: the moment to offer notifications (#139).
+      askForPush("joined");
     },
     onError: () => refresh(),
   });

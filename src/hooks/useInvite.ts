@@ -13,6 +13,7 @@ import { useT } from "@/i18n/lang";
 import { inviteFromContacts } from "@/lib/contactInvite";
 import { knownPeople } from "@/lib/groups";
 import { isNativeApp } from "@/lib/nativeApp";
+import { askForPush } from "@/lib/pushAsk";
 
 const NOBODY: Invitees = { profileIds: [], emails: [] };
 
@@ -41,6 +42,8 @@ export function useInvite(group: { id: string; name: string }) {
       queryClient.setQueryData(groupsQueryKey(userId), data.groups);
       setSentNote(invitees.emails.length > 0 ? "sentWithEmail" : "sent");
       setInvitees(NOBODY);
+      // Waiting for their answers: the moment to offer notifications (#139).
+      askForPush("joined");
     },
   });
   // A fresh link every time: only a fingerprint of each is stored (see the

@@ -10,6 +10,7 @@
  */
 import { aiAllowed, CONSENT_VERSION } from "./aiAccess.ts";
 import type { Caller } from "./auth.ts";
+import { readPushSettings } from "./push.ts";
 import { listBlocked } from "./safety.ts";
 import { ENTRY_COLUMNS, type EntryRow, type StoredEntry, storedFrom } from "./entries.ts";
 import type { Db } from "./supabaseAdmin.ts";
@@ -27,6 +28,8 @@ export interface MyData {
     nameIsCustom: boolean;
     /** How you sign in: "email", "google", "apple". */
     signIn: string[];
+    /** Notifications (#139): the phones they go to, and the kinds switched off. */
+    push: { devices: number; off: string[] };
     /** A Sign in with Apple token is kept, only to revoke it when the account is deleted (#138). */
     appleToken: boolean;
     /** The language Casy's emails to you are written in, if one is saved ("da", "en"). */
@@ -272,6 +275,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     blockedCount,
     reportsCount,
     appleTokens,
+    push,
   ] = await Promise.all([
     sourceIds.length
       ? count(db.from("calendar_busy_cache").select("id", head).in("source_id", sourceIds))
@@ -337,6 +341,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     count(db.from("blocked_people").select("blocked_id", head).eq("blocker_id", me)),
     count(db.from("content_reports").select("id", head).eq("reporter_id", me)),
     count(db.from("apple_sign_ins").select("profile_id", head).eq("profile_id", me)),
+    readPushSettings(db, me),
   ]);
   for (const r of [first, last, next, consent]) if (r?.error) throw r.error;
   const consentRow = consent.data as {
@@ -363,6 +368,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       nameIsCustom: profileRow?.name_is_custom ?? false,
       signIn: signInMethods(caller),
       appleToken: appleTokens > 0,
+      push,
       language: savedLanguage(caller),
       createdAt: caller.created_at ?? null,
     },

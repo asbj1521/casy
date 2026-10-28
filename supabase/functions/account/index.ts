@@ -15,6 +15,8 @@
  * - push-register: the phone's APNs `token` (#139), after the person said yes
  *   to notifications in the app, with the `lang` to write them in.
  * - push-unregister: forgets the phone's `token` (signing out).
+ * - push-settings: which notification kinds are switched off, and for how many
+ *   phones; push-set: one `kind` switched on or off (`on`).
  * - delete: deletes the account and everything it owns, after the page has
  *   asked them to type a word to confirm (sent as `confirm: true`, so a stray
  *   call can't do it). See _shared/accounts.ts for what goes and what stays.
@@ -25,7 +27,13 @@
 import { deleteAccount } from "../_shared/accounts.ts";
 import { setAiConsent, setAiSharing } from "../_shared/aiAccess.ts";
 import { saveAppleSignIn } from "../_shared/appleSignIn.ts";
-import { cleanToken, registerDevice, unregisterDevice } from "../_shared/push.ts";
+import {
+  cleanToken,
+  readPushSettings,
+  registerDevice,
+  setPushKind,
+  unregisterDevice,
+} from "../_shared/push.ts";
 import { exportMyData, readMyData } from "../_shared/myData.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import { HttpError, serve } from "../_shared/http.ts";
@@ -72,6 +80,10 @@ serve("account", async (req, body) => {
       await unregisterDevice(db, profileId, cleanToken(body.token));
       return { outcome: "unregistered" };
     }
+    case "push-settings":
+      return await readPushSettings(db, profileId);
+    case "push-set":
+      return { off: await setPushKind(db, profileId, body.kind, body.on) };
     case "delete": {
       if (body.confirm !== true) throw new HttpError(400, "confirm must be true");
       const { leftGroups, deletedGroups } = await deleteAccount(db, profileId);
