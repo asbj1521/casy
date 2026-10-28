@@ -33,7 +33,12 @@ class MainViewController: CAPBridgeViewController {
         // Casy's screens scroll inside the page.
         webView?.scrollView.scrollsToTop = false
         statusTapCatcher.onTap = { [weak self] in
-            self?.webView?.evaluateJavaScript("window.dispatchEvent(new Event('casy:status-tap'))")
+            guard let webView = self?.webView else { return }
+            // A flick still coasting would carry on under the page's glide
+            // (the screen flashed blank): stopped where it is first. A finger
+            // on the page does this itself; a tap up here never touches it.
+            Self.stopCoasting(in: webView)
+            webView.evaluateJavaScript("window.dispatchEvent(new Event('casy:status-tap'))")
         }
         view.addSubview(statusTapCatcher)
         // From iOS 26, a scroll view fades and blurs what scrolls under its top
@@ -42,6 +47,16 @@ class MainViewController: CAPBridgeViewController {
         if #available(iOS 26.0, *) {
             webView?.scrollView.topEdgeEffect.isHidden = true
             webView?.scrollView.bottomEdgeEffect.isHidden = true
+        }
+    }
+
+    /// Every scroll view in `view` still coasting from a flick, stopped where it is.
+    private static func stopCoasting(in view: UIView) {
+        for sub in view.subviews {
+            if let scroll = sub as? UIScrollView, scroll.isDecelerating {
+                scroll.setContentOffset(scroll.contentOffset, animated: false)
+            }
+            stopCoasting(in: sub)
         }
     }
 
