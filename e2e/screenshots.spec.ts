@@ -53,11 +53,13 @@ async function useInter(page: Page) {
 }
 
 /**
- * The whole page in one image. A phone's tab bar is pinned to the bottom of
- * the screen, so the screen is made as tall as the page first; otherwise it
- * would be drawn halfway down.
+ * The whole page in one image. Some of a phone's page is pinned to the bottom
+ * of the screen (the home page's buttons), so the screen is made as tall as
+ * the page first; otherwise it would be drawn halfway down. `phoneSheet`: on
+ * a phone the address opens a sheet over the home page (#169), waited for.
  */
-async function expectPage(page: Page, name: string, isMobile: boolean) {
+async function expectPage(page: Page, name: string, isMobile: boolean, phoneSheet = false) {
+  if (isMobile && phoneSheet) await expect(page.getByRole("dialog")).toBeVisible();
   await page.waitForLoadState("networkidle");
   await useInter(page);
   // Placeholders (ui/Bone.tsx) gone: the data has arrived and been drawn.
@@ -71,13 +73,20 @@ async function expectPage(page: Page, name: string, isMobile: boolean) {
   }
 }
 
-const PAGES: { name: string; path: string; world?: WorldOptions; signedIn?: boolean }[] = [
+const PAGES: {
+  name: string;
+  path: string;
+  world?: WorldOptions;
+  signedIn?: boolean;
+  /** On a phone, a sheet over the home page (#169). */
+  phoneSheet?: boolean;
+}[] = [
   { name: "landing", path: "/", signedIn: false },
   { name: "scheduler", path: "/" },
   { name: "scheduler-examples", path: "/", world: { calendars: "connected", groups: "none" } },
   { name: "groups", path: "/groups" },
   { name: "group", path: "/groups/g-friday" },
-  { name: "events", path: "/events" },
+  { name: "events", path: "/events", phoneSheet: true },
   { name: "event-vote", path: "/events/ev-boardgames" },
   { name: "calendar", path: "/calendar-overview" },
   { name: "calendars-connected", path: "/calendar-overview/accounts" },
@@ -86,11 +95,11 @@ const PAGES: { name: string; path: string; world?: WorldOptions; signedIn?: bool
     path: "/calendar-overview/accounts",
     world: { calendars: "none", groups: "some" },
   },
-  { name: "profile", path: "/profile" },
+  { name: "profile", path: "/profile", phoneSheet: true },
   { name: "my-data", path: "/profile/data" },
 ];
 
-for (const { name, path, world, signedIn } of PAGES) {
+for (const { name, path, world, signedIn, phoneSheet } of PAGES) {
   test.describe(name, () => {
     if (world) test.use({ world });
     if (signedIn === false) test.use({ signedIn: false });
@@ -99,7 +108,7 @@ for (const { name, path, world, signedIn } of PAGES) {
       test.skip(isMobile && name === "event-vote", "a phone has no open event beside the list");
       test.skip(isMobile && name.startsWith("scheduler"), "a phone plans from My calendar (#127)");
       await page.goto(path);
-      await expectPage(page, name, isMobile);
+      await expectPage(page, name, isMobile, phoneSheet);
     });
   });
 }
@@ -120,7 +129,9 @@ const DARK_PAGES = [
 test.describe("dark", () => {
   test.use({ colorScheme: "dark" });
 
-  for (const { name, path, world, signedIn } of PAGES.filter((p) => DARK_PAGES.includes(p.name))) {
+  for (const { name, path, world, signedIn, phoneSheet } of PAGES.filter((p) =>
+    DARK_PAGES.includes(p.name),
+  )) {
     test.describe(name, () => {
       if (world) test.use({ world });
       if (signedIn === false) test.use({ signedIn: false });
@@ -132,7 +143,7 @@ test.describe("dark", () => {
           "a phone plans from My calendar (#127)",
         );
         await page.goto(path);
-        await expectPage(page, `${name}-dark`, isMobile);
+        await expectPage(page, `${name}-dark`, isMobile, phoneSheet);
       });
     });
   }
