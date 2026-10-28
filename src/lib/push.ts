@@ -82,7 +82,10 @@ export async function onNotificationTap(open: (path: string) => void): Promise<(
   const { plugin } = await pushPlugin();
   const handle = await plugin.addListener("pushNotificationActionPerformed", (action) => {
     const url = action.notification.data?.url;
-    if (typeof url === "string" && url.startsWith("/") && !url.startsWith("//")) open(url);
+    const leads = typeof url === "string" && url.startsWith("/") && !url.startsWith("//");
+    // In Xcode's console, so a tap that goes nowhere can be told from one that never arrived.
+    console.log("push tap", leads ? url : `no path (${JSON.stringify(action.notification.data)})`);
+    if (leads) open(url);
   });
   return () => void handle.remove();
 }
