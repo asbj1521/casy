@@ -48,6 +48,21 @@ export interface Frame {
   left: number;
   width: number;
   height: number;
+  /** Where the page's big month name is, which the pile reaches up to and draws over. */
+  title: { top: number; left: number } | null;
+}
+
+/** How far the pile's top edge sits above the month name. */
+export const TITLE_EDGE_PX = 6;
+
+/**
+ * How much taller than the month the pile is: it reaches up to take in My
+ * calendar's big month name, so the pile shows one month name, in the page's
+ * own place, rather than a second, small one over the 1st (#162). Nothing
+ * without a name measured.
+ */
+export function titleBand(frame: Frame): number {
+  return frame.title ? frame.top - frame.title.top + TITLE_EDGE_PX : 0;
 }
 
 /** One date in the list, with what Casy checked about it. */

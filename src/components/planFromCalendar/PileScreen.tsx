@@ -44,8 +44,10 @@ import {
   type Frame,
   type CheckedDate,
   NO_INPUT,
+  titleBand,
 } from "./pile/shared";
 import DateList from "./pile/DateList";
+import PileTitle, { NoShortName } from "./pile/PileTitle";
 import SharedCalendar from "./pile/SharedCalendar";
 import ThrownLayer from "./pile/ThrownLayer";
 
@@ -347,10 +349,12 @@ export default function PileScreen({
     const id = window.setTimeout(
       () => {
         const r = el?.getBoundingClientRect();
+        const t = document.querySelector("[data-month-title]")?.getBoundingClientRect();
+        const title = t && r && t.top < r.top ? { top: t.top, left: t.left } : null;
         setFrame(
           r
-            ? { month, top: r.top, left: r.left, width: r.width, height: r.height }
-            : { month, top: 96, left: 0, width: window.innerWidth, height: 600 },
+            ? { month, top: r.top, left: r.left, width: r.width, height: r.height, title }
+            : { month, top: 96, left: 0, width: window.innerWidth, height: 600, title: null },
         );
       },
       scroller ? 450 : 0,
@@ -473,11 +477,17 @@ export default function PileScreen({
     );
   };
 
+  // The pile reaches up to the page's big month name and names its month
+  // there alone: the small name over the 1st gives way (#162).
+  const band = frame ? titleBand(frame) : 0;
+  const card = frame && { ...frame, top: frame.top - band, height: frame.height + band };
+  const shortName = band > 0 ? <NoShortName /> : undefined;
+
   return (
     <>
       {/* The layers, over My calendar's month and clear of the tab bar,
           until the dates are lifted out: then the shared calendar below. */}
-      {frame && pile && !reduceMotion && !lifted && (
+      {frame && card && pile && !reduceMotion && !lifted && (
         <div
           data-pile
           aria-hidden
@@ -488,7 +498,7 @@ export default function PileScreen({
             <ThrownLayer
               key={friend.profileId}
               k={k}
-              frame={frame}
+              frame={card}
               land={timeline.lands[k]}
               landed={landed}
               pressed={pressed}
@@ -497,11 +507,13 @@ export default function PileScreen({
               name={friend.name}
               color={friend.color}
             >
+              <PileTitle frame={frame} month={pile.month} />
               <MonthLayer
                 month={pile.month}
                 items={friend.items}
                 colorOf={() => friend.color}
                 wrapRow={press}
+                heading={shortName}
               />
             </ThrownLayer>
           ))}
@@ -510,12 +522,19 @@ export default function PileScreen({
           {revealed && (
             <motion.div
               className="absolute"
-              style={{ top: frame.top, left: frame.left, width: frame.width }}
+              style={{ top: card.top, left: frame.left, width: frame.width }}
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <MonthLayer month={pile.month} items={[]} colorOf={() => ""} shine={pile.shine} />
+              <PileTitle frame={frame} month={null} />
+              <MonthLayer
+                month={pile.month}
+                items={[]}
+                colorOf={() => ""}
+                shine={pile.shine}
+                heading={shortName}
+              />
             </motion.div>
           )}
         </div>
@@ -538,8 +557,9 @@ export default function PileScreen({
         type="button"
         aria-label={words.close}
         onClick={onClose}
+        // Over the list and its blur, which soften the header buttons it sits on.
         className={cn(
-          "glass fixed right-3 top-[calc(env(safe-area-inset-top)+0.5rem)] z-50 rounded-full p-2 text-foreground",
+          "glass fixed right-3 top-[calc(env(safe-area-inset-top)+0.5rem)] z-[60] rounded-full p-2 text-foreground",
           flying && "opacity-0",
         )}
       >
@@ -549,7 +569,8 @@ export default function PileScreen({
       {/* The dates, flown up into a list over the calendar, checked one by one. */}
       {(lifted || failed) && (
         // Over everything down to the tab bar. While the dates arrive the
-        // calendar scrolls by in plain view; once they all have, it softens
+        // calendar scrolls by in plain view, the header buttons above it
+        // already softened; once they all have, the calendar softens too
         // behind the list so the list reads.
         <div
           className={cn(
@@ -560,7 +581,16 @@ export default function PileScreen({
         >
           <motion.div
             aria-hidden
-            className="absolute inset-0 -z-10 bg-background/50 backdrop-blur-[3px]"
+            className="absolute inset-x-0 top-0 -z-10 bg-background/50 backdrop-blur-[3px]"
+            style={{ height: card?.top ?? 0 }}
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+          />
+          <motion.div
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 -z-10 bg-background/50 backdrop-blur-[3px]"
+            style={{ top: card?.top ?? 0 }}
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: atLeast(phase, "ranking") || failed ? 1 : 0 }}
             transition={{ duration: 0.4 }}

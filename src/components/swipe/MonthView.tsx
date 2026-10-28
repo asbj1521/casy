@@ -286,7 +286,11 @@ export default function MonthView({
           <div aria-hidden className="glass-bar pointer-events-none absolute inset-0" />
           <div className="relative pb-1.5">
             {header}
-            <h2 className="px-3 pb-1 pt-1 text-[30px] font-bold leading-tight tracking-tight text-foreground">
+            {/* data-month-title: the paper pile draws its month name over this one (#162). */}
+            <h2
+              data-month-title=""
+              className="px-3 pb-1 pt-1 text-[30px] font-bold leading-tight tracking-tight text-foreground"
+            >
               {year !== thisYear ? `${name} ${year}` : name}
             </h2>
             <div className="grid h-6 grid-cols-7 items-center text-center text-[12px] font-medium">
