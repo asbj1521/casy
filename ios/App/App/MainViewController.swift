@@ -4,6 +4,9 @@ import Capacitor
 /// Capacitor's web view controller, with the few native touches Casy's app
 /// needs. Main.storyboard creates this instead of CAPBridgeViewController.
 class MainViewController: CAPBridgeViewController {
+    /// Takes the tap at the very top of the screen (#168), laid over the strip behind the clock.
+    private let statusTapCatcher = StatusTapCatcher()
+
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         // The theme chosen in Casy's Settings (#129), before anything is drawn;
@@ -29,11 +32,10 @@ class MainViewController: CAPBridgeViewController {
         // the page (#168): iOS would only scroll the web view itself, and
         // Casy's screens scroll inside the page.
         webView?.scrollView.scrollsToTop = false
-        let catcher = StatusTapCatcher()
-        catcher.onTap = { [weak self] in
+        statusTapCatcher.onTap = { [weak self] in
             self?.webView?.evaluateJavaScript("window.dispatchEvent(new Event('casy:status-tap'))")
         }
-        view.addSubview(catcher)
+        view.addSubview(statusTapCatcher)
         // From iOS 26, a scroll view fades and blurs what scrolls under its top
         // and bottom edges: a grey haze over the page's own header and tab bar.
         // The page draws its own edges, as the apps it is modelled on do.
@@ -42,24 +44,39 @@ class MainViewController: CAPBridgeViewController {
             webView?.scrollView.bottomEdgeEffect.isHidden = true
         }
     }
+
+    /// iOS only sends the tap to a scroll view under the point tapped, so the
+    /// catcher spans the whole width of the strip behind the clock, which
+    /// holds nothing to tap on Casy's pages (their buttons start below it).
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let strip = max(view.safeAreaInsets.top, 20)
+        statusTapCatcher.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: strip)
+        statusTapCatcher.contentSize = CGSize(width: view.bounds.width, height: strip + 1)
+        statusTapCatcher.contentOffset = CGPoint(x: 0, y: 1)
+        view.bringSubviewToFront(statusTapCatcher)
+    }
 }
 
 /// Catches the tap at the very top of the screen (#168). iOS scrolls the one
-/// scroll view with `scrollsToTop` to its top on that tap; this invisible
-/// one, a point in the corner, is it, kept just below its own top so it is
-/// always one iOS would scroll. It asks its delegate first, which hands the
-/// tap on and says no, so it never moves.
+/// scroll view with `scrollsToTop` under the tap to its top; this invisible
+/// one, over the strip behind the clock, is it, kept just below its own top
+/// so it is always one iOS would scroll. It asks its delegate first, which
+/// hands the tap on and says no, so it never moves.
 final class StatusTapCatcher: UIScrollView, UIScrollViewDelegate {
     var onTap: (() -> Void)?
 
     init() {
-        super.init(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        super.init(frame: .zero)
         delegate = self
         scrollsToTop = true
         backgroundColor = .clear
         showsVerticalScrollIndicator = false
-        contentSize = CGSize(width: 1, height: 2)
-        contentOffset = CGPoint(x: 0, y: 1)
+        showsHorizontalScrollIndicator = false
+        // Its place is set by hand; iOS mustn't move its top for the safe area.
+        contentInsetAdjustmentBehavior = .never
+        // Never dragged: it is there for the tap only.
+        panGestureRecognizer.isEnabled = false
     }
 
     required init?(coder: NSCoder) {

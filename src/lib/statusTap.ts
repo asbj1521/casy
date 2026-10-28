@@ -18,7 +18,9 @@ export function listenForStatusTap() {
   window.addEventListener(STATUS_TAP, () => {
     const take = takers[takers.length - 1];
     if (take) take();
-    else if (document.scrollingElement) glideScroll(document.scrollingElement, 0);
+    else if (document.scrollingElement instanceof HTMLElement) {
+      glideScroll(document.scrollingElement, 0);
+    }
   });
 }
 
