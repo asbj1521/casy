@@ -3,6 +3,7 @@
  * see capacitor.config.ts) rather than as the website. Everything here is a
  * no-op in a browser, so the website never changes because of the app.
  */
+import { listenForStatusTap } from "@/lib/statusTap";
 
 /**
  * True inside the iPhone app, false on the website. Read from the bridge the
@@ -21,8 +22,10 @@ export const isNativeApp =
  * draws the page edge to edge, and `html.native-app` in index.css pads it by
  * the safe areas the viewport tag reports (see viewport.ts, which also stops
  * iOS zooming into small text fields, in the app and on the website alike).
+ * It also starts listening for a tap at the very top of the screen (#168).
  */
 export function fitToApp() {
   if (!isNativeApp) return;
   document.documentElement.classList.add("native-app");
+  listenForStatusTap();
 }

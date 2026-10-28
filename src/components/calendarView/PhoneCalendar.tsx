@@ -17,7 +17,7 @@ import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
-import MonthView from "@/components/swipe/MonthView";
+import MonthView, { type MonthViewHandle } from "@/components/swipe/MonthView";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
@@ -26,6 +26,7 @@ import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
 import { useGlassTop } from "@/hooks/useGlassTop";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
+import { useStatusTap } from "@/hooks/useStatusTap";
 import { usePhoneImport } from "@/hooks/usePhoneImport";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
@@ -189,19 +190,20 @@ export default function PhoneCalendar() {
     });
     return () => cancelAnimationFrame(frame);
   }, [pickedDay]);
-  // The month opens on today; "I dag" opens it afresh there.
-  const [focus, setFocus] = useState(() => startOfDay(Date.now(), TZ));
-  const [reopened, setReopened] = useState(0);
+  // The month opens on today; "I dag" glides back there, as does a tap at
+  // the very top of the screen in the app (#168).
+  const [focus] = useState(() => startOfDay(Date.now(), TZ));
+  const months = useRef<MonthViewHandle>(null);
+  useStatusTap(() => months.current?.glideToTop());
 
   // The month takes whatever the screen has left under the toolbar.
   const box = useRef<HTMLDivElement>(null);
   const height = useFillViewport(box);
 
   const goToday = () => {
-    // Opened afresh on today, not glided back to a trip.
+    // Today, and no longer on to a trip it was about to show.
     setTodayPressed(true);
-    setFocus(startOfDay(Date.now(), TZ));
-    setReopened((n) => n + 1);
+    months.current?.glideToMonth(Date.now());
   };
   const pickedSegments = calendar.segmentsOn(new Date(panelDay));
   // An accepted trip on the open day: a row on top of the day, to see or delete it.
@@ -223,7 +225,7 @@ export default function PhoneCalendar() {
         onClick={onMonthTap}
       >
         <MonthView
-          key={reopened}
+          handle={months}
           focus={focus}
           calendar={month}
           reveal={reveal}

@@ -173,3 +173,34 @@ test("the pages the profile's help list opens all have a way back to Profil", as
     await expect(page).toHaveURL(/\/profile$/);
   }
 });
+
+test("in the app, I dag and a tap at the top of the screen glide My calendar back up (#168)", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "phones only");
+  await page.addInitScript(() => {
+    (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+  });
+  await page.goto("/calendar-overview");
+  const months = page.locator("[data-floating-header]");
+  await expect(page.getByRole("button", { name: "I dag" })).toBeVisible();
+  // Where the months open (this month at the top), and a mark to see the
+  // list is the same one afterwards, not drawn afresh.
+  const opening = await months.evaluate((el) => {
+    el.dataset.same = "yes";
+    return el.scrollTop;
+  });
+  const scrollDown = () => months.evaluate((el) => (el.scrollTop = 3000));
+  const top = () => months.evaluate((el) => el.scrollTop);
+
+  await scrollDown();
+  await page.getByRole("button", { name: "I dag" }).click();
+  await expect.poll(top).toBeCloseTo(opening, 0);
+
+  // The tap the app passes on from iOS (StatusTapCatcher).
+  await scrollDown();
+  await page.evaluate(() => window.dispatchEvent(new Event("casy:status-tap")));
+  await expect.poll(top).toBe(0);
+  await expect(months).toHaveAttribute("data-same", "yes");
+});

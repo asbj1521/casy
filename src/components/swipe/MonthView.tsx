@@ -3,17 +3,20 @@ import {
   memo,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
+  type Ref,
 } from "react";
 
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { buildMonthLayout } from "@/lib/calendarOverview";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
+import { glideScroll } from "@/lib/glideScroll";
 import { capitalize, dayLabel, monthName, monthShortName } from "@/lib/format";
 import { layoutWeek, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
 import { MONTH_LABEL_PX, monthScrollTop } from "@/lib/monthScroll";
@@ -32,6 +35,14 @@ const LANE_PX = 20;
 const MORE_PX = 14;
 /** How long the month rests on opening before it glides to what it reveals. */
 const REVEAL_DELAY_MS = 450;
+
+/** What a page can ask of the months once they are open (#168): a fast glide, not a jump. */
+export interface MonthViewHandle {
+  /** To the top of the month a day is in. */
+  glideToMonth: (day: number) => void;
+  /** To the very top, the first month. */
+  glideToTop: () => void;
+}
 /**
  * Your calendar a month at a time, drawn like Apple Calendar's month view
  * (#74), for looking further ahead than three days (a holiday, a trip): the
@@ -63,6 +74,7 @@ export default function MonthView({
   reveal = null,
   header,
   onPickDay,
+  handle,
 }: {
   /**
    * The page's toolbar, drawn over the months in a translucent block with the
@@ -88,6 +100,8 @@ export default function MonthView({
    */
   reveal?: number | null;
   onPickDay: (day: number) => void;
+  /** For gliding the months somewhere (MonthViewHandle). */
+  handle?: Ref<MonthViewHandle>;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -177,6 +191,25 @@ export default function MonthView({
     // Only on opening: the view is opened afresh each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pad === null]);
+
+  useImperativeHandle(handle, () => {
+    const glide = (top: () => number | null) => {
+      const box = scroller.current;
+      const to = top();
+      if (!box || to === null) return;
+      // The opening position is no longer re-applied once the person goes somewhere.
+      settleUntil.current = 0;
+      glideScroll(box, to);
+    };
+    return {
+      glideToMonth: (day) =>
+        glide(() => {
+          const el = monthEls.current.get(startOfMonth(day, TZ));
+          return el && scroller.current ? monthScrollTop(scroller.current, el) : null;
+        }),
+      glideToTop: () => glide(() => 0),
+    };
+  }, []);
 
   // A header that changes height (a notice arriving) pushes the months down by
   // the same amount, so what was on screen stays where it was.
