@@ -20,6 +20,8 @@ const config: CapacitorConfig = {
   appId: "app.casy",
   appName: "Casy",
   webDir: "dist",
+  // A notification arriving while Casy is open still shows as a banner (#139).
+  plugins: { PushNotifications: { presentationOptions: ["banner", "sound", "list"] } },
   ...(liveUrl ? { server: { url: liveUrl, cleartext: true } } : {}),
 };
 
