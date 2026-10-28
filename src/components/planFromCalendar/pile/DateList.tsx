@@ -242,6 +242,8 @@ export default function DateList({
             }}
             className={cn(
               "glass relative overflow-hidden rounded-[22px]",
+              // A lighter blur while the rows move, easing back once they're still.
+              done ? "[transition:backdrop-filter_0.5s_ease-out]" : "glass-moving",
               status === "yes" && "ring-2 ring-emerald-500/70",
             )}
           >

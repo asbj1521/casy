@@ -135,6 +135,16 @@
       0 12px 40px -12px rgb(0 0 0 / 0.35);
   }
 
+  /* Glass on the move (#162): the pile's rows while they fly in and rank,
+     and the send flight's copies. A phone redraws a backdrop blur every frame
+     for each moving layer, and a dozen rows passing each other at 28px took
+     up to 190 ms a frame; a lighter blur under the same tint looks nearly
+     the same and costs a fraction. Still, the rows ease back to the full one. */
+  .glass-moving {
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    backdrop-filter: blur(10px) saturate(160%);
+  }
+
   /* My calendar's header on a phone (MonthView `header`): the months scroll
      under it and show through, blurred, as under Apple Calendar's. How much
      shows is --bar-alpha (the page's own colour, so light and dark both

@@ -48,6 +48,8 @@ export async function playSendFlight(
     }
     const copy = el.cloneNode(true) as HTMLElement;
     copy.removeAttribute("data-send-row");
+    // A lighter blur on the move (index.css): it flies too fast to tell.
+    copy.classList.add("glass-moving");
     copy.style.cssText = `position:fixed;margin:0;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;transform:none;transform-origin:50% 50%;will-change:transform,opacity`;
     layer.appendChild(copy);
 
