@@ -8,10 +8,9 @@ import {
 } from "framer-motion";
 import { Check, ChevronDown, Loader2, TriangleAlert, X } from "lucide-react";
 
-import { TZ } from "@/hooks/usePlanning";
-import { LOCALE, useLang, useT } from "@/i18n/lang";
+import { useLang, useT } from "@/i18n/lang";
 import { type EventSettings } from "@/lib/eventSearch";
-import { capitalize, formatEventDate, formatTime } from "@/lib/format";
+import { capitalize, dayLabel, formatEventDate, formatTime } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { checkTimes, liveOrder, PILE_TIMING, rankOrder } from "@/lib/paperPile";
 import { cn } from "@/lib/utils";
@@ -203,14 +202,7 @@ export default function DateList({
               ? "checking"
               : "waiting";
         const start = new Date(item.date.slot.start);
-        const label = capitalize(
-          start.toLocaleDateString(LOCALE[lang], {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            timeZone: TZ,
-          }),
-        );
+        const label = capitalize(dayLabel(start, lang));
         const isOpen = done && open === key;
         return (
           <motion.div

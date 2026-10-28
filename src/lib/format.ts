@@ -36,45 +36,59 @@ export function capitalize(text: string): string {
 
 /**
  * `toLocaleDateString` with options builds a new Intl formatter on every call,
- * which is what a month view with hundreds of day cells paid for on each draw
- * (#162). These keep one formatter per language and format, in Danish time,
- * and write exactly what `toLocaleDateString(LOCALE[lang], options)` would.
+ * which is what a month view with hundreds of day cells, the swipe deck and
+ * the pile's list paid for on each draw (#162). This keeps one formatter per
+ * locale and zone (Danish time unless asked), made on first use, writing
+ * exactly what `toLocaleDateString(locale, { ...options, timeZone })` would.
  */
-function formatterPerLang(options: Intl.DateTimeFormatOptions) {
-  const made: Partial<Record<Lang, Intl.DateTimeFormat>> = {};
-  return (lang: Lang) =>
-    (made[lang] ??= new Intl.DateTimeFormat(LOCALE[lang], {
-      ...options,
-      timeZone: APP_TIME_ZONE,
-    }));
+function cachedFormat(options: Intl.DateTimeFormatOptions) {
+  const made = new Map<string, Intl.DateTimeFormat>();
+  return (locale: string, timeZone: string = APP_TIME_ZONE) => {
+    const key = `${locale} ${timeZone}`;
+    let format = made.get(key);
+    if (!format) {
+      format = new Intl.DateTimeFormat(locale, { ...options, timeZone });
+      made.set(key, format);
+    }
+    return format;
+  };
 }
-const dayLabelFormat = formatterPerLang({ weekday: "long", day: "numeric", month: "long" });
-const monthNameFormat = formatterPerLang({ month: "long" });
-const monthShortFormat = formatterPerLang({ month: "short" });
+const dayLabelFormat = cachedFormat({ weekday: "long", day: "numeric", month: "long" });
+const monthNameFormat = cachedFormat({ month: "long" });
+const monthShortFormat = cachedFormat({ month: "short" });
+const weekdayShortFormat = cachedFormat({ weekday: "short" });
+const dateFormat = cachedFormat(DATE_FMT);
+const timeFormat = cachedFormat(TIME_FMT);
+const monthYearFormat = cachedFormat({ month: "short", year: "numeric" });
 
 /** "tirsdag den 3. november" / "Tuesday 3 November": a day in full, for screen readers. */
 export function dayLabel(date: Date | number, lang: Lang): string {
-  return dayLabelFormat(lang).format(date);
+  return dayLabelFormat(LOCALE[lang]).format(date);
 }
 
 /** "november", in lower case in Danish: `capitalize` it for a heading. */
 export function monthName(date: Date | number, lang: Lang): string {
-  return monthNameFormat(lang).format(date);
+  return monthNameFormat(LOCALE[lang]).format(date);
 }
 
 /** "nov." / "Nov", as Intl writes it. */
 export function monthShortName(date: Date | number, lang: Lang): string {
-  return monthShortFormat(lang).format(date);
+  return monthShortFormat(LOCALE[lang]).format(date);
+}
+
+/** "tirs." / "Tue", as Intl writes it. */
+export function weekdayShortName(date: Date | number, lang: Lang): string {
+  return weekdayShortFormat(LOCALE[lang]).format(date);
 }
 
 /** "Tue 23 Jun", or "tirs. 23. jun." in Danish; in Danish time unless another zone is asked for. */
 export function formatDate(iso: string, lang: Lang, timeZone: string = APP_TIME_ZONE): string {
-  return new Date(iso).toLocaleDateString(LOCALE[lang], { ...DATE_FMT, timeZone });
+  return dateFormat(LOCALE[lang], timeZone).format(new Date(iso));
 }
 
 /** "16:00", in Danish time unless another zone is asked for (the viewer's own, say). */
 export function formatTime(iso: string, timeZone: string = APP_TIME_ZONE): string {
-  return new Date(iso).toLocaleTimeString("en-GB", { ...TIME_FMT, timeZone });
+  return timeFormat("en-GB", timeZone).format(new Date(iso));
 }
 
 /** Minutes after midnight as a clock time, "18:30"; past midnight wraps round ("02:00"). */
@@ -106,12 +120,7 @@ function formatTripSpan(start: string, end: string, lang: Lang): string {
 
 /** "Fredag 9. oktober" / "Friday 9 October": the scheduling page's big answer. */
 export function formatLongDate(iso: string, lang: Lang): string {
-  const text = new Date(iso).toLocaleDateString(LOCALE[lang], {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: APP_TIME_ZONE,
-  });
+  const text = dayLabel(new Date(iso), lang);
   // This one starts a headline. English Intl puts a comma after the weekday,
   // which a headline does without.
   return capitalize(text).replace(",", "");
@@ -144,11 +153,7 @@ export function formatLongSpan(start: string, end: string, lang: Lang): string {
 
 /** "Sep 2026": how long someone has had a Casy account, or a group has existed. */
 export function formatMonthYear(iso: string, lang: Lang): string {
-  return new Date(iso).toLocaleDateString(LOCALE[lang], {
-    month: "short",
-    year: "numeric",
-    timeZone: APP_TIME_ZONE,
-  });
+  return monthYearFormat(LOCALE[lang]).format(new Date(iso));
 }
 
 /**

@@ -1,11 +1,10 @@
 import { TriangleAlert } from "lucide-react";
 
 import Collapse from "@/components/ui/Collapse";
-import { LOCALE, useLang, useT } from "@/i18n/lang";
+import { useLang, useT } from "@/i18n/lang";
 import { clashKey, clashSentence, type ImportantClash } from "@/lib/eventWarnings";
-import { formatTime } from "@/lib/format";
+import { dayLabel, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { APP_TIME_ZONE } from "@/lib/zone";
 
 /** Shown at most, the strongest first: a card has little room. */
 const SHOWN = 2;
@@ -43,12 +42,7 @@ export default function ImportantClashes({
         const open = shown === key;
         const text = clashSentence(c, words);
         const iso = new Date(c.event.start).toISOString();
-        const day = new Date(c.event.start).toLocaleDateString(LOCALE[lang], {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          timeZone: APP_TIME_ZONE,
-        });
+        const day = dayLabel(c.event.start, lang);
         return (
           <li
             key={key}

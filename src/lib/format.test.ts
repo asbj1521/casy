@@ -2,11 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   dayLabel,
+  formatDate,
   formatEventDate,
   formatHeadline,
+  formatMonthYear,
+  formatTime,
   monthName,
   monthShortName,
   nameList,
+  weekdayShortName,
 } from "@/lib/format";
 import { LOCALE } from "@/i18n/locale";
 
@@ -92,6 +96,38 @@ describe("cached date formatters (#162)", () => {
     );
     expect(monthShortName(date, lang)).toBe(
       date.toLocaleDateString(LOCALE[lang], { month: "short", ...zone }),
+    );
+    expect(weekdayShortName(date, lang)).toBe(
+      date.toLocaleDateString(LOCALE[lang], { weekday: "short", ...zone }),
+    );
+    expect(formatMonthYear(date.toISOString(), lang)).toBe(
+      date.toLocaleDateString(LOCALE[lang], { month: "short", year: "numeric", ...zone }),
+    );
+  });
+
+  // Summer and winter time, in Danish time and in another zone asked for.
+  it.each([
+    ["da", "Europe/Copenhagen", "2026-07-03T16:00:00.000Z"],
+    ["en", "Europe/Copenhagen", "2026-11-03T22:30:00.000Z"],
+    ["da", "Pacific/Auckland", "2026-11-03T22:30:00.000Z"],
+    ["en", "America/New_York", "2026-03-29T01:30:00.000Z"],
+  ] as const)("formatDate and formatTime match the old calls (%s, %s)", (lang, timeZone, iso) => {
+    const date = new Date(iso);
+    expect(formatDate(iso, lang, timeZone)).toBe(
+      date.toLocaleDateString(LOCALE[lang], {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone,
+      }),
+    );
+    expect(formatTime(iso, timeZone)).toBe(
+      date.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone,
+      }),
     );
   });
 

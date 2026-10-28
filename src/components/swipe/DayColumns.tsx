@@ -10,10 +10,10 @@ import { animate, motion, useMotionValue, useReducedMotion, type MotionValue } f
 import { Clock } from "lucide-react";
 
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
-import { LOCALE, useLang, useT } from "@/i18n/lang";
+import { useLang, useT } from "@/i18n/lang";
 import { formatSegmentRange, isoWeekNumber } from "@/lib/calendarOverview";
 import { placeBlocks, placeSpan } from "@/lib/dayStrip";
-import { formatTime } from "@/lib/format";
+import { formatTime, monthShortName, weekdayShortName } from "@/lib/format";
 import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
@@ -306,14 +306,8 @@ export default function DayColumns({
 
   /** "tirs. 6." on the strip, "tirs. 6. okt." on the whole screen. */
   const headerText = (midnight: number) => {
-    const weekday = new Date(midnight).toLocaleDateString(LOCALE[lang], {
-      weekday: "short",
-      timeZone: TZ,
-    });
-    const month = new Date(midnight).toLocaleDateString(LOCALE[lang], {
-      month: "short",
-      timeZone: TZ,
-    });
+    const weekday = weekdayShortName(midnight, lang);
+    const month = monthShortName(midnight, lang);
     const day = localDate(midnight, TZ).day;
     const sep = lang === "da" ? "." : "";
     return compact ? `${weekday} ${day}${sep}` : `${weekday} ${day}${sep} ${month}`;

@@ -29,8 +29,8 @@ import { useMyCalendarView } from "@/hooks/useMyCalendarView";
 import { useStatusTap } from "@/hooks/useStatusTap";
 import { usePhoneImport } from "@/hooks/usePhoneImport";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
-import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { capitalize } from "@/lib/format";
+import { useLang, useT } from "@/i18n/lang";
+import { capitalize, dayLabel } from "@/lib/format";
 import { isNativeApp } from "@/lib/nativeApp";
 import {
   isPending,
@@ -365,14 +365,7 @@ export default function PhoneCalendar() {
         ref={panel}
         open={pickedDay !== null}
         onClose={closeDay}
-        title={capitalize(
-          new Date(panelDay).toLocaleDateString(LOCALE[lang], {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            timeZone: TZ,
-          }),
-        )}
+        title={capitalize(dayLabel(panelDay, lang))}
         doneLabel={t.swipe.done}
       >
         {tripToday && !isPending(tripToday) && (
