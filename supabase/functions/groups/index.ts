@@ -34,7 +34,7 @@
  * filled since the hourly sync (_shared/groupRefresh.ts).
  */
 import { requireCaller } from "../_shared/auth.ts";
-import { allowedFrontends, pickFrontend } from "../_shared/frontend.ts";
+import { allowedFrontends, inviteFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
 import {
   cleanDisplayName,
@@ -295,7 +295,12 @@ serve("groups", async (req, body) => {
         expires_at: expiresAt,
       });
       if (error) throw error;
-      const origin = pickFrontend(req.headers.get("Origin"), allowedFrontends());
+      // The app says so itself (`app: true`): see inviteFrontend.
+      const origin = inviteFrontend(
+        req.headers.get("Origin"),
+        body.app === true,
+        allowedFrontends(),
+      );
       return { url: inviteUrl(origin, token), expiresAt };
     }
 

@@ -13,6 +13,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { withHolidayBlocks } from "@/lib/holidayBlocks";
+import { isNativeApp } from "@/lib/nativeApp";
 import { firstFromStart } from "@/api/start";
 import { callFunction } from "@/lib/supabaseFunctions";
 import { APP_TIME_ZONE } from "@/lib/zone";
@@ -313,7 +314,9 @@ export async function describeGroup(
 /** A fresh invite link. Earlier links for the group keep working until they expire. */
 export async function createInvite(groupId: string): Promise<{ url: string; expiresAt: string }> {
   return await callFunction("groups", {
-    body: { action: "invite", groupId },
+    // From the app the link always points to casy.app, even when the app is
+    // served by the dev server (live reload), whose address no other phone can open.
+    body: { action: "invite", groupId, app: isNativeApp },
     errorMessage: currentMessages().api.invite,
   });
 }

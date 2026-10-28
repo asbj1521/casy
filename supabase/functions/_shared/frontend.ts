@@ -33,6 +33,21 @@ export function allowedFrontends(): string[] {
   return list.length > 0 ? list : [FALLBACK];
 }
 
+/**
+ * The site an invite link points to. From the iPhone app (`fromApp`) always
+ * the default one, whatever it is served from: with live reload (npm run
+ * ios:live) the app's page is the dev server on localhost, a link no one
+ * else's phone can open. From the website, the address the person is on, so
+ * an invite made on a preview or localhost opens there too.
+ */
+export function inviteFrontend(
+  origin: string | null | undefined,
+  fromApp: boolean,
+  allowed: string[],
+): string {
+  return fromApp ? allowed[0] : pickFrontend(origin, allowed);
+}
+
 /** `candidate` if it is an allowed origin, otherwise the default one. */
 export function pickFrontend(candidate: string | null | undefined, allowed: string[]): string {
   const origin = candidate ? originOf(candidate) : null;
