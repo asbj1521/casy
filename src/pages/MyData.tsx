@@ -226,11 +226,14 @@ function AccountPart({ data }: { data: MyData }) {
         value={account.signIn.map((m) => w.signInMethods[m] ?? m).join(", ") || "-"}
         detail={account.appleToken ? w.appleToken : undefined}
       />
-      <Fact
-        label={w.push}
-        value={account.push.devices > 0 ? w.pushOn(account.push.devices) : w.pushOff}
-        detail={account.push.devices > 0 ? w.pushDetail : undefined}
-      />
+      {/* Only for someone with notifications: nothing is kept for anyone else. */}
+      {(account.push.devices > 0 || account.push.off.length > 0) && (
+        <Fact
+          label={w.push}
+          value={account.push.devices > 0 ? w.pushOn(account.push.devices) : w.pushOff}
+          detail={w.pushDetail}
+        />
+      )}
       <Fact
         label={w.emailLanguage}
         value={(account.language && w.languages[account.language]) || w.languages.da}
