@@ -34,6 +34,7 @@ import { useLang, useT } from "@/i18n/lang";
 import { capitalize, dayLabel } from "@/lib/format";
 import { useHomeBarFlight } from "@/lib/homeBar";
 import { isNativeApp } from "@/lib/nativeApp";
+import { cn } from "@/lib/utils";
 import {
   isPending,
   markOn,
@@ -49,6 +50,10 @@ import { useOnceTrue } from "@/hooks/useOnceTrue";
 // Sheets fetched the first time they open (#157).
 const TellCasySheet = lazy(() => import("@/components/tellCasy/TellCasySheet"));
 const TripSheet = lazy(() => import("@/components/trips/TripSheet"));
+// The home page's sheets (#169). Each is put on the page, closed, ahead of
+// its first press (see below): a lazy component waits for its code on its
+// first render, and React then holds back what it shows by up to 300 ms,
+// which would leave the press with nothing to grow out of the button.
 const EventsSheet = lazy(() => import("@/components/myEvents/phone/EventsSheet"));
 const ProfileSheet = lazy(() => import("@/components/profile/ProfileSheet"));
 
@@ -57,7 +62,8 @@ const TZ = APP_TIME_ZONE;
 /** The little room the app's pages leave under the clock (PhoneHeader's h-2). */
 const APP_TOP_GAP = "0.5rem";
 
-// Planning from here (#126) brings the whole scheduler with it: loaded on the first press.
+// Planning from here (#126) brings the whole scheduler with it: put on the
+// page only once a finger touches Planlæg.
 const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFromCalendar"));
 
 /**
@@ -70,6 +76,9 @@ const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFr
  * "Kalendere" opens the list of calendars (what counts, its category and how
  * much it matters) in a sheet, instead of leaving it under the month.
  */
+/** How long after the home page opens its small sheets are fetched. */
+const SHEETS_AFTER_MS = 1500;
+
 /** "Not now" on the import card (#132), kept until the app is opened again. */
 const phoneImportPutAway = { done: false };
 
@@ -143,6 +152,11 @@ export default function PhoneCalendar() {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const listOpen = params.has("calendars");
+  // The buttons each sheet grows out of and shrinks back into (#169).
+  const listButton = useRef<HTMLButtonElement>(null);
+  const eventsButton = useRef<HTMLButtonElement>(null);
+  const planButton = useRef<HTMLButtonElement>(null);
+  const profileButton = useRef<HTMLButtonElement>(null);
   const openList = () => navigate({ search: "?calendars" }, { state: { fromMonth: true } });
   // Back to the bare month: a step back if this page opened it, else in place.
   const closeOverlay = () => {
@@ -151,6 +165,23 @@ export default function PhoneCalendar() {
   };
   // Planlæg (#126), in the address too, so the phone's back closes it.
   const planOpen = params.has("plan");
+  // Planlæg stays on the page until its sheet has shrunk back into the pill
+  // (#169), then goes; a new one each time it opens, as before. (Followed as
+  // the address changes, React's pattern for a changed value.)
+  const [plan, setPlan] = useState({ shown: planOpen, key: 0, was: planOpen });
+  if (planOpen !== plan.was) {
+    setPlan({
+      shown: plan.shown || planOpen,
+      key: planOpen ? plan.key + 1 : plan.key,
+      was: planOpen,
+    });
+  }
+  // A finger on Planlæg puts the plan on the page, closed, ready for the press.
+  const [planTouched, setPlanTouched] = useState(false);
+  const planClosed = useCallback(() => {
+    setPlan((p) => (p.was ? p : { ...p, shown: false }));
+    setPlanTouched(false);
+  }, []);
   const openPlan = () => navigate({ search: "?plan" }, { state: { fromMonth: true } });
   // Planlæg's sent dates bring the buttons back, to fly into Aftaler (#169).
   const flight = useHomeBarFlight();
@@ -159,10 +190,8 @@ export default function PhoneCalendar() {
   // returns to them.
   const eventsOpen = params.has("events");
   const openEvents = () => navigate({ search: "?events" }, { state: { fromMonth: true } });
-  const eventsWanted = useOnceTrue(eventsOpen);
   const profileOpen = params.has("profile");
   const openProfile = () => navigate({ search: "?profile" }, { state: { fromMonth: true } });
-  const profileWanted = useOnceTrue(profileOpen);
   const [pickedDay, setPickedDay] = useState<number | null>(null);
   // What the day panel shows while it slides away, after pickedDay is cleared.
   const [panelDay, setPanelDay] = useState(() => startOfDay(Date.now(), TZ));
@@ -211,6 +240,22 @@ export default function PhoneCalendar() {
   const [focus] = useState(() => startOfDay(Date.now(), TZ));
   const months = useRef<MonthViewHandle>(null);
   useStatusTap(() => months.current?.glideToTop());
+  // Aftaler's and the profile's sheets are small: on the page, closed, once
+  // the home page has settled (or a finger touches their button), so they
+  // grow out of it at the first press (#169). Planlæg's is big: only on a touch.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setSettled(true), SHEETS_AFTER_MS);
+    return () => window.clearTimeout(id);
+  }, []);
+  const touched = useMemo(
+    () => ({
+      events: () => setSettled(true),
+      plan: () => setPlanTouched(true),
+      profile: () => setSettled(true),
+    }),
+    [],
+  );
 
   // The month takes whatever the screen has left under the toolbar.
   const box = useRef<HTMLDivElement>(null);
@@ -259,9 +304,14 @@ export default function PhoneCalendar() {
                 }}
               >
                 <button
+                  ref={listButton}
                   type="button"
                   onClick={openList}
-                  className="glass-pill flex h-10 items-center gap-1.5 rounded-full pl-3.5 pr-4 text-[17px] text-primary"
+                  // Its sheet drops out of it from the top (#169), standing in for it.
+                  className={cn(
+                    "glass-pill flex h-10 items-center gap-1.5 rounded-full pl-3.5 pr-4 text-[17px] text-primary transition-opacity duration-200",
+                    listOpen && "opacity-0",
+                  )}
                 >
                   <Layers className="h-5 w-5" />
                   {words.calendarsButton}
@@ -337,20 +387,30 @@ export default function PhoneCalendar() {
         onEvents={openEvents}
         onPlan={openPlan}
         onProfile={openProfile}
+        prefetch={touched}
+        eventsRef={eventsButton}
+        planRef={planButton}
+        profileRef={profileButton}
       />
-      {eventsWanted && (
+      {(settled || eventsOpen) && (
         <Suspense fallback={null}>
-          <EventsSheet open={eventsOpen} onClose={closeOverlay} />
+          <EventsSheet open={eventsOpen} onClose={closeOverlay} origin={eventsButton} />
         </Suspense>
       )}
-      {profileWanted && (
+      {(settled || profileOpen) && (
         <Suspense fallback={null}>
-          <ProfileSheet open={profileOpen} onClose={closeOverlay} />
+          <ProfileSheet open={profileOpen} onClose={closeOverlay} origin={profileButton} />
         </Suspense>
       )}
-      {planOpen && (
+      {(plan.shown || planTouched) && (
         <Suspense fallback={null}>
-          <PlanFromCalendar onClose={closeOverlay} />
+          <PlanFromCalendar
+            key={plan.key}
+            open={planOpen}
+            onClose={closeOverlay}
+            onClosed={planClosed}
+            origin={planButton}
+          />
         </Suspense>
       )}
 
@@ -426,6 +486,8 @@ export default function PhoneCalendar() {
         onClose={closeOverlay}
         title={words.calendarsButton}
         doneLabel={t.swipe.done}
+        origin={listButton}
+        edge="top"
       >
         <ListGroup className="mb-4 mt-0">
           <ListRow

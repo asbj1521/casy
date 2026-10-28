@@ -228,3 +228,35 @@ test("in the app, I dag and a tap at the top of the screen glide My calendar bac
   await expect.poll(top).toBe(0);
   await expect(months).toHaveAttribute("data-same", "yes");
 });
+
+test.describe("with motion", () => {
+  test.use({ reducedMotion: "no-preference" });
+
+  test("each sheet grows out of its button where it stands and shrinks back into it (#169)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const height = page.viewportSize()!.height;
+    for (const [button, title, done, edge] of [
+      ["Aftaler", "Mine aftaler", "Færdig", "bottom"],
+      ["Planlæg", "Planlæg", "Annuller", "bottom"],
+      ["Profil", "Profil", "Færdig", "bottom"],
+      ["Kalendere", "Kalendere", "Færdig", "top"],
+    ] as const) {
+      await page.getByRole("button", { name: button, exact: true }).click();
+      const sheet = page.getByRole("dialog", { name: title });
+      await expect(sheet).toBeVisible();
+      // Grown to its full size, standing on its own edge of the screen.
+      await expect
+        .poll(async () => {
+          const box = await sheet.boundingBox();
+          return box && Math.round(edge === "top" ? box.y : height - box.y - box.height);
+        })
+        .toBe(0);
+      await sheet.getByRole("button", { name: done }).click();
+      // Shrunk away, and gone from the page once it has.
+      await expect(sheet).toHaveCount(0);
+      await expect(page).toHaveURL(/\/$/);
+    }
+  });
+});

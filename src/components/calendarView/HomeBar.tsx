@@ -24,6 +24,7 @@ export default function HomeBar({
   onEvents,
   onPlan,
   onProfile,
+  prefetch,
   eventsRef,
   planRef,
   profileRef,
@@ -33,6 +34,8 @@ export default function HomeBar({
   onEvents: () => void;
   onPlan: () => void;
   onProfile: () => void;
+  /** A finger touches a button: its sheet's code is fetched now, ahead of the press. */
+  prefetch?: { events?: () => void; plan?: () => void; profile?: () => void };
   eventsRef?: RefObject<HTMLButtonElement | null>;
   planRef?: RefObject<HTMLButtonElement | null>;
   profileRef?: RefObject<HTMLButtonElement | null>;
@@ -60,6 +63,7 @@ export default function HomeBar({
         label={t.nav.eventsShort}
         badge={eventsBadge}
         onClick={onEvents}
+        onPointerDown={prefetch?.events}
         // Where Planlæg's sent dates fly to (#102).
         target="/events"
       />
@@ -67,6 +71,7 @@ export default function HomeBar({
         ref={planRef}
         type="button"
         onClick={onPlan}
+        onPointerDown={prefetch?.plan}
         className="glass-pill flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[17px] font-semibold text-primary transition active:scale-95"
       >
         <CalendarSearch className="h-5 w-5 shrink-0" />
@@ -78,6 +83,7 @@ export default function HomeBar({
         label={t.nav.profileShort}
         badge={invitations?.length}
         onClick={onProfile}
+        onPointerDown={prefetch?.profile}
       />
     </div>
   );
@@ -89,6 +95,7 @@ function RoundButton({
   label,
   badge,
   onClick,
+  onPointerDown,
   target,
 }: {
   ref?: RefObject<HTMLButtonElement | null>;
@@ -96,6 +103,7 @@ function RoundButton({
   label: string;
   badge?: number;
   onClick: () => void;
+  onPointerDown?: () => void;
   target?: string;
 }) {
   const t = useT();
@@ -104,6 +112,7 @@ function RoundButton({
       ref={ref}
       type="button"
       onClick={onClick}
+      onPointerDown={onPointerDown}
       aria-label={label}
       title={label}
       data-tab-icon={target}

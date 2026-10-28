@@ -1,3 +1,4 @@
+import { type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
@@ -14,12 +15,27 @@ import { useT } from "@/i18n/lang";
  * Aftaler button (?events): the same rows as the page had (#103), newest
  * first, each opening in place, the calendar still behind them.
  */
-export default function EventsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function EventsSheet({
+  open,
+  onClose,
+  origin,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** The button it grows out of (#169). */
+  origin?: RefObject<HTMLElement | null>;
+}) {
   const t = useT();
   const userId = useSignedInUser().id;
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
   return (
-    <BottomSheet open={open} onClose={onClose} title={t.events.title} doneLabel={t.swipe.done}>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={t.events.title}
+      doneLabel={t.swipe.done}
+      origin={origin}
+    >
       <DanishTimeNote className="-mt-2 mb-1" />
       {isPending ? (
         <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">

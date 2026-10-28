@@ -21,24 +21,34 @@ export default function Modal({
   onClose,
   placement = "center",
   lightBackdrop = false,
+  onClosed,
   children,
 }: {
   open: boolean;
   busy?: boolean;
   onClose: () => void;
-  /** "bottom": a sheet rising from the bottom edge, as phone apps have. */
-  placement?: "center" | "bottom";
+  /**
+   * "bottom": a sheet rising from the bottom edge, as phone apps have; "top":
+   * one dropping from the top edge, from a button up there (#169).
+   */
+  placement?: "center" | "bottom" | "top";
   /** Barely dimmed, for a glass sheet whose point is the page showing through (#126). */
   lightBackdrop?: boolean;
+  /** Once it has finished closing, its way out played to the end. */
+  onClosed?: () => void;
   children: ReactNode;
 }) {
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={onClosed}>
       {open && (
         <div
           className={cn(
             "fixed inset-0 z-50 flex justify-center",
-            placement === "bottom" ? "items-end" : "items-center p-4",
+            placement === "bottom"
+              ? "items-end"
+              : placement === "top"
+                ? "items-start"
+                : "items-center p-4",
           )}
         >
           <motion.div

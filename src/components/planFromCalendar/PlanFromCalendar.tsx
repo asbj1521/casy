@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 import FlowButton from "@/components/ui/FlowButton";
 import NewGroupDialog from "@/components/NewGroupDialog";
@@ -20,10 +20,40 @@ const HAND_BACK_MS = 600;
  * too, and the other way round. Loaded only once Planlæg is pressed, so
  * opening My calendar never fetches a group's calendars.
  */
-export default function PlanFromCalendar({ onClose }: { onClose: () => void }) {
+export default function PlanFromCalendar({
+  open,
+  onClose,
+  onClosed,
+  origin,
+}: {
+  /**
+   * Whether the plan is open (?plan). Closed, it stays on the page until its
+   * sheet has shrunk back into the pill (#169), then says so (`onClosed`).
+   */
+  open: boolean;
+  onClose: () => void;
+  onClosed: () => void;
+  /** The home page's Planlæg pill, which the sheet grows out of (#169). */
+  origin?: RefObject<HTMLElement | null>;
+}) {
   const t = useT();
   const planning = usePlanning();
   const [stage, setStage] = useState<"setup" | "pile">("setup");
+  // The sheet grows out of the pill and shrinks back into it, but once the
+  // pile has begun it slides away and back as before: the pill is hidden
+  // behind the plan then. Read by the sheet as it opens and as it closes.
+  const sheetOrigin = useRef<HTMLElement | null>(origin?.current ?? null);
+  const toPile = () => {
+    sheetOrigin.current = null;
+    setStage("pile");
+  };
+  // Closed from the pile, there is no sheet to wait for. The sheet's own
+  // closing says when it is done, unless it closed only to make way for the pile.
+  const stillOpen = useRef(open);
+  useEffect(() => {
+    stillOpen.current = open;
+    if (!open && stage === "pile") onClosed();
+  }, [open, stage, onClosed]);
   const [aiMode, setAiMode] = useState(false);
   // A new pile each time it starts over (a shorter holiday picked at its end).
   const [run, setRun] = useState(0);
@@ -46,17 +76,21 @@ export default function PlanFromCalendar({ onClose }: { onClose: () => void }) {
   return (
     <>
       <BottomSheet
-        open={stage === "setup"}
+        open={open && stage === "setup"}
         onClose={onClose}
+        onClosed={() => {
+          if (!stillOpen.current) onClosed();
+        }}
         title={t.planFromCalendar.button}
         doneLabel={t.common.cancel}
+        origin={sheetOrigin}
         footer={
           aiMode ? (
             <FlowButton quiet onClick={() => setAiMode(false)}>
               {t.planFromCalendar.byHand}
             </FlowButton>
           ) : (
-            <FlowButton onClick={() => setStage("pile")} disabled={!planning.activeGroup}>
+            <FlowButton onClick={toPile} disabled={!planning.activeGroup}>
               {t.planFromCalendar.findDate}
             </FlowButton>
           )
@@ -65,7 +99,7 @@ export default function PlanFromCalendar({ onClose }: { onClose: () => void }) {
         <PlanSetup planning={planning} aiMode={aiMode} onAiMode={setAiMode} />
       </BottomSheet>
 
-      {stage === "pile" && (
+      {open && stage === "pile" && (
         <PileScreen
           key={run}
           planning={planning}
