@@ -87,6 +87,7 @@ export default function BottomSheet({
   origin,
   edge = "bottom",
   onClosed,
+  arrived = false,
   children,
 }: {
   open: boolean;
@@ -111,6 +112,11 @@ export default function BottomSheet({
   edge?: Edge;
   /** Once it has finished closing (shrunk back into its button, or slid away). */
   onClosed?: () => void;
+  /**
+   * Open already as the page appears (back from one of its screens, #169):
+   * shown in place, as it was never closed. Still closes the usual way.
+   */
+  arrived?: boolean;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -184,12 +190,14 @@ export default function BottomSheet({
       busy={busy}
       onClose={onClose}
       onClosed={onClosed}
+      arrived={arrived}
     >
       {origin ? (
         <GrowingPanel
           origin={origin}
           edge={edge}
           column={!!footer}
+          arrived={arrived}
           aria={aria}
           onSubmit={onSubmit}
           className={className}
@@ -223,6 +231,7 @@ function GrowingPanel({
   origin,
   edge,
   column,
+  arrived,
   aria,
   onSubmit,
   className,
@@ -232,6 +241,8 @@ function GrowingPanel({
   edge: Edge;
   /** A column, the footer pinned under content that scrolls. */
   column: boolean;
+  /** Open already as the page appears: no growing, only the shrinking back. */
+  arrived: boolean;
   aria: Record<string, unknown>;
   onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
   className: string;
@@ -244,7 +255,7 @@ function GrowingPanel({
 
   useLayoutEffect(() => {
     const sheet = panel.current;
-    if (!sheet || still) return;
+    if (!sheet || still || arrived) return;
     const button = origin.current;
     const timing = { easing: EASE, fill: "backwards" } as const;
     const moves = button

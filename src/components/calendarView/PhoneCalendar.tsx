@@ -158,8 +158,13 @@ export default function PhoneCalendar() {
   const planButton = useRef<HTMLButtonElement>(null);
   const profileButton = useRef<HTMLButtonElement>(null);
   const openList = () => navigate({ search: "?calendars" }, { state: { fromMonth: true } });
+  // The sheets already open as the page appears: back from one of their
+  // screens (Grupper, Forbundne kalendere) or a link. Shown in place, not
+  // grown out of their button again (#169); forgotten once one is closed.
+  const [arrived, setArrived] = useState(() => new Set(params.keys()));
   // Back to the bare month: a step back if this page opened it, else in place.
   const closeOverlay = () => {
+    if (arrived.size > 0) setArrived(new Set());
     if ((location.state as { fromMonth?: boolean } | null)?.fromMonth) navigate(-1);
     else navigate({ search: "" }, { replace: true });
   };
@@ -395,12 +400,22 @@ export default function PhoneCalendar() {
       />
       {(settled || eventsOpen) && (
         <Suspense fallback={null}>
-          <EventsSheet open={eventsOpen} onClose={closeOverlay} origin={eventsButton} />
+          <EventsSheet
+            open={eventsOpen}
+            onClose={closeOverlay}
+            origin={eventsButton}
+            arrived={arrived.has("events")}
+          />
         </Suspense>
       )}
       {(settled || profileOpen) && (
         <Suspense fallback={null}>
-          <ProfileSheet open={profileOpen} onClose={closeOverlay} origin={profileButton} />
+          <ProfileSheet
+            open={profileOpen}
+            onClose={closeOverlay}
+            origin={profileButton}
+            arrived={arrived.has("profile")}
+          />
         </Suspense>
       )}
       {(plan.shown || planTouched) && (
@@ -495,6 +510,7 @@ export default function PhoneCalendar() {
         doneLabel={t.swipe.done}
         origin={listButton}
         edge="top"
+        arrived={arrived.has("calendars")}
       >
         <ListGroup className="mb-4 mt-0">
           <ListRow

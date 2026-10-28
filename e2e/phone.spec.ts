@@ -260,4 +260,36 @@ test.describe("with motion", () => {
       await expect(page).toHaveURL(/\/$/);
     }
   });
+
+  test("back from one of its screens, the profile sheet is there, not grown again (#169)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Profil", exact: true }).click();
+    const sheet = page.getByRole("dialog", { name: "Profil" });
+    await sheet.getByRole("link", { name: /^Grupper/ }).click();
+    await expect(page).toHaveURL(/\/groups$/);
+    // Every frame from the way back on: the sheet full size from the first.
+    await page.evaluate(() => {
+      const w = window as unknown as { heights: number[] };
+      w.heights = [];
+      const start = performance.now();
+      const tick = () => {
+        const d = document.querySelector<HTMLElement>('[role="dialog"]');
+        if (d) w.heights.push(Math.round(d.getBoundingClientRect().height));
+        if (performance.now() - start < 1500) requestAnimationFrame(tick);
+      };
+      tick();
+    });
+    await page.getByRole("link", { name: "Profil" }).first().click();
+    await expect(page).toHaveURL(/\/\?profile$/);
+    await expect(sheet).toBeVisible();
+    await page.waitForTimeout(500);
+    const heights = await page.evaluate(() => (window as unknown as { heights: number[] }).heights);
+    expect(heights.length).toBeGreaterThan(0);
+    expect(new Set(heights).size).toBe(1);
+    // Closed, it still shrinks back into its button and goes.
+    await sheet.getByRole("button", { name: "Færdig" }).click();
+    await expect(sheet).toHaveCount(0);
+  });
 });

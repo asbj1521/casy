@@ -13,11 +13,14 @@ export default function ProfileSheet({
   open,
   onClose,
   origin,
+  arrived,
 }: {
   open: boolean;
   onClose: () => void;
   /** The button it grows out of (#169). */
   origin?: RefObject<HTMLElement | null>;
+  /** Open already as the home page appears: shown in place (BottomSheet). */
+  arrived?: boolean;
 }) {
   const t = useT();
   return (
@@ -27,6 +30,7 @@ export default function ProfileSheet({
       title={t.nav.profile}
       doneLabel={t.swipe.done}
       origin={origin}
+      arrived={arrived}
     >
       <ProfileHubList />
     </BottomSheet>

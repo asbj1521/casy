@@ -22,6 +22,7 @@ export default function Modal({
   placement = "center",
   lightBackdrop = false,
   onClosed,
+  arrived = false,
   children,
 }: {
   open: boolean;
@@ -36,10 +37,12 @@ export default function Modal({
   lightBackdrop?: boolean;
   /** Once it has finished closing, its way out played to the end. */
   onClosed?: () => void;
+  /** Open already as the page appears: shown in place, without fading in. */
+  arrived?: boolean;
   children: ReactNode;
 }) {
   return createPortal(
-    <AnimatePresence onExitComplete={onClosed}>
+    <AnimatePresence initial={!arrived} onExitComplete={onClosed}>
       {open && (
         <div
           className={cn(

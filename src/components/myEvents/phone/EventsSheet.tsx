@@ -19,11 +19,14 @@ export default function EventsSheet({
   open,
   onClose,
   origin,
+  arrived,
 }: {
   open: boolean;
   onClose: () => void;
   /** The button it grows out of (#169). */
   origin?: RefObject<HTMLElement | null>;
+  /** Open already as the home page appears: shown in place (BottomSheet). */
+  arrived?: boolean;
 }) {
   const t = useT();
   const userId = useSignedInUser().id;
@@ -35,6 +38,7 @@ export default function EventsSheet({
       title={t.events.title}
       doneLabel={t.swipe.done}
       origin={origin}
+      arrived={arrived}
     >
       <DanishTimeNote className="-mt-2 mb-1" />
       {isPending ? (
