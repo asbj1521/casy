@@ -23,18 +23,12 @@ import { capitalize, dayLabel, monthName, monthShortName } from "@/lib/format";
 import { layoutWeek, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
 import { MONTH_LABEL_PX, monthScrollTop } from "@/lib/monthScroll";
 import { useIsDark } from "@/hooks/useIsDark";
+import { STAMP_TONE } from "@/components/swipe/stampTone";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay, startOfMonth } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
-
-/** A stamp's colour: the answer buttons' own. */
-const STAMP_TONE: Record<EventResponse, string> = {
-  accepted: "bg-emerald-500",
-  maybe: "bg-amber-400",
-  declined: "bg-rose-500",
-};
 
 /** Rows of chips under a day's number, a row's height, and the "+2" line under them. */
 /** How long the month keeps re-applying its opening position while the layout settles. */

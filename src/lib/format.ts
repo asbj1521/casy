@@ -57,6 +57,7 @@ const dayLabelFormat = cachedFormat({ weekday: "long", day: "numeric", month: "l
 const monthNameFormat = cachedFormat({ month: "long" });
 const monthShortFormat = cachedFormat({ month: "short" });
 const weekdayShortFormat = cachedFormat({ weekday: "short" });
+const weekdayFormat = cachedFormat({ weekday: "long" });
 const dateFormat = cachedFormat(DATE_FMT);
 const timeFormat = cachedFormat(TIME_FMT);
 const monthYearFormat = cachedFormat({ month: "short", year: "numeric" });
@@ -79,6 +80,11 @@ export function monthShortName(date: Date | number, lang: Lang): string {
 /** "tirs." / "Tue", as Intl writes it. */
 export function weekdayShortName(date: Date | number, lang: Lang): string {
   return weekdayShortFormat(LOCALE[lang]).format(date);
+}
+
+/** "tirsdag" / "Tuesday", as Intl writes it. */
+export function weekdayName(date: Date | number, lang: Lang): string {
+  return weekdayFormat(LOCALE[lang]).format(date);
 }
 
 /** "Tue 23 Jun", or "tirs. 23. jun." in Danish; in Danish time unless another zone is asked for. */

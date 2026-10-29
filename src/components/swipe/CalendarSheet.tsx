@@ -1,29 +1,19 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 import DayColumns from "@/components/swipe/DayColumns";
 import MonthView from "@/components/swipe/MonthView";
 import { ZOOM } from "@/components/swipe/morph";
+import WeekStrip from "@/components/swipe/WeekStrip";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
+import { daysBetween, mondayOf } from "@/lib/dayColumns";
 import { capitalize } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { addDays, APP_TIME_ZONE, localDate, startOfDay } from "@/lib/zone";
+import { addDays, APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
-
-/** Whole days from `a` to `b`, both local midnights; rounded for the 23 and 25 hour days. */
-const daysBetween = (a: number, b: number) => Math.round((b - a) / 86_400_000);
-
-/** The Monday of the week `day` is in. */
-const mondayOf = (day: number) => addDays(day, -((localDate(day, TZ).dow + 6) % 7), TZ);
-
-/** The week row's slide, and its band's: the same quick, soft stop as the days. */
-const SLIDE = { type: "spring", damping: 38, stiffness: 380, mass: 0.8 } as const;
-
-/** How far a sideways swipe on the week row must go (px) to turn the week. */
-const WEEK_SWIPE_AT = 40;
 
 /**
  * Your calendar on the whole screen, opened from the strip under a swipe
@@ -86,12 +76,11 @@ export default function CalendarSheet({
   const [today] = useState(() => startOfDay(Date.now(), TZ));
   // Which way the week row last turned, for its slide.
   const [weekTurn, setWeekTurn] = useState(0);
-  const monday = mondayOf(center);
-  const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i, TZ));
+  const monday = mondayOf(center, TZ);
 
   /** Show `to` days from the suggested one in the middle, turning the week row if it changes week. */
   const go = (to: number) => {
-    setWeekTurn(Math.sign(mondayOf(addDays(home, to, TZ)) - monday));
+    setWeekTurn(Math.sign(mondayOf(addDays(home, to, TZ), TZ) - monday));
     setOffset(to);
   };
 
@@ -182,27 +171,6 @@ export default function CalendarSheet({
     return () => window.removeEventListener("keydown", onKey);
   }, [contained]);
 
-  // A sideways swipe on the week row turns the week.
-  const swipe = useRef<{ x: number; y: number } | null>(null);
-  const weekSwipe = {
-    onPointerDown: (e: PointerEvent) => {
-      swipe.current = { x: e.clientX, y: e.clientY };
-    },
-    onPointerUp: (e: PointerEvent) => {
-      const s = swipe.current;
-      swipe.current = null;
-      if (!s) return;
-      const dx = e.clientX - s.x;
-      if (Math.abs(dx) > WEEK_SWIPE_AT && Math.abs(dx) > Math.abs(e.clientY - s.y)) {
-        go(offset + (dx < 0 ? 7 : -7));
-      }
-    },
-    onPointerCancel: () => {
-      swipe.current = null;
-    },
-  };
-
-  const shown = week.map((d, i) => (inView.includes(d) ? i : -1)).filter((i) => i >= 0);
   const month = capitalize(
     new Date(center).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
   );
@@ -252,117 +220,24 @@ export default function CalendarSheet({
             exit={{ opacity: 0, scale: 1.04 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
           >
-            {/* The week: letters fixed, numbers turning a week at a time. */}
-            <div className="mx-1 flex shrink-0 items-end gap-1 pb-2">
-              {/* A computer turns the week with arrows; a phone swipes the row. */}
-              {contained && (
-                <button
-                  type="button"
-                  onClick={() => go(offset + -7)}
-                  aria-label={t.swipe.weekBack}
-                  className="mb-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="grid grid-cols-7">
-                  {week.map((day) => (
-                    <span
-                      key={day}
-                      className={cn(
-                        "text-center text-[12px] font-medium",
-                        isWeekend(day) ? "text-muted-foreground" : "text-foreground",
-                      )}
-                    >
-                      {t.weekdaysShort[localDate(day, TZ).dow].charAt(0)}
-                    </span>
-                  ))}
-                </div>
-                <div
-                  className="relative mt-1 h-10 overflow-hidden"
-                  style={{ touchAction: "pan-y" }}
-                  {...weekSwipe}
-                >
-                  <AnimatePresence initial={false} custom={weekTurn}>
-                    <motion.div
-                      key={monday}
-                      custom={weekTurn}
-                      variants={{
-                        enter: (d: number) => ({ x: `${d * 100}%` }),
-                        still: { x: 0 },
-                        leave: (d: number) => ({ x: `${-d * 100}%` }),
-                      }}
-                      initial="enter"
-                      animate="still"
-                      exit="leave"
-                      transition={reduceMotion ? { duration: 0 } : SLIDE}
-                      className="absolute inset-0"
-                    >
-                      {shown.length > 0 && (
-                        <motion.div
-                          aria-hidden
-                          className="absolute inset-y-0 rounded-full bg-secondary"
-                          initial={false}
-                          animate={{
-                            left: `${(shown[0] / 7) * 100}%`,
-                            width: `${(shown.length / 7) * 100}%`,
-                          }}
-                          transition={reduceMotion ? { duration: 0 } : SLIDE}
-                        />
-                      )}
-                      <div className="relative grid h-full grid-cols-7">
-                        {week.map((day) => (
-                          <button
-                            key={day}
-                            type="button"
-                            onClick={() => go(daysBetween(home, day))}
-                            className="flex items-center justify-center"
-                          >
-                            <span
-                              className={cn(
-                                "flex h-9 w-9 items-center justify-center rounded-full text-[19px] transition-colors",
-                                day === center
-                                  ? day === today
-                                    ? "bg-red-500 font-semibold text-white"
-                                    : "bg-foreground font-semibold text-background"
-                                  : day === today
-                                    ? "font-semibold text-red-500"
-                                    : marked.has(day)
-                                      ? "font-bold text-primary"
-                                      : isWeekend(day)
-                                        ? "text-muted-foreground"
-                                        : "text-foreground",
-                              )}
-                            >
-                              {localDate(day, TZ).day}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-              </div>
-              {contained && (
-                <button
-                  type="button"
-                  onClick={() => go(offset + 7)}
-                  aria-label={t.swipe.weekOn}
-                  className="mb-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-foreground transition hover:bg-secondary"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            <WeekStrip
+              center={center}
+              inView={inView}
+              today={today}
+              marked={marked}
+              turn={weekTurn}
+              onPick={(day) => go(daysBetween(home, day))}
+              onWeek={(direction) => go(offset + 7 * direction)}
+              arrows={contained}
+            />
 
             <div ref={days} className="min-h-0 flex-1 border-t">
               <DayColumns
                 home={home}
                 offset={offset}
                 onOffset={go}
-                slot={{ start, end }}
-                slotLabel={slotLabel}
+                aim={{ start, end }}
+                pencils={[{ key: "slot", start, end, label: slotLabel }]}
                 calendar={calendar}
                 size="full"
                 fitDay={contained}
@@ -407,10 +282,4 @@ export default function CalendarSheet({
       )}
     </div>
   );
-}
-
-/** Saturday and Sunday, greyed in the week row as Apple does. */
-function isWeekend(day: number): boolean {
-  const { dow } = localDate(day, TZ);
-  return dow === 0 || dow === 6;
 }

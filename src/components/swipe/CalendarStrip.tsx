@@ -93,8 +93,8 @@ export default function CalendarStrip({
         home={home}
         offset={offset}
         focus={focus ?? null}
-        slot={{ start, end }}
-        slotLabel={slotLabel}
+        aim={{ start, end }}
+        pencils={[{ key: "slot", start, end, label: slotLabel }]}
         calendar={calendar}
         size="compact"
         fitDay={fit}

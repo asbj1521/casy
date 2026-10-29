@@ -9,11 +9,15 @@ import {
 import { animate, motion, useMotionValue, useReducedMotion, type MotionValue } from "framer-motion";
 import { Clock } from "lucide-react";
 
+import type { EventResponse } from "@/api/events";
+import { STAMP_TONE } from "@/components/swipe/stampTone";
+import { AnswerIcon } from "@/components/swipe/SwipeCard";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { useLang, useT } from "@/i18n/lang";
-import { formatSegmentRange, isoWeekNumber } from "@/lib/calendarOverview";
+import { formatSegmentRange, isoWeekNumber, type DaySegment } from "@/lib/calendarOverview";
+import { columnOf, daysInView, drawnDays, openingOf, type DayLead } from "@/lib/dayColumns";
 import { placeBlocks, placeSpan } from "@/lib/dayStrip";
-import { formatTime, monthShortName, weekdayShortName } from "@/lib/format";
+import { formatTime, monthShortName, weekdayName, weekdayShortName } from "@/lib/format";
 import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
@@ -31,8 +35,6 @@ const SIZES = {
   full: { hourPx: 46, gutter: 52, linePx: 22, twoLinesPx: 40 },
 } as const;
 
-/** How many days are in view at once. */
-const IN_VIEW = 3;
 /**
  * Days kept drawn either side of those in view while they can be swiped,
  * so a day slides in already drawn rather than appearing as it arrives.
@@ -41,6 +43,21 @@ const DRAWN_BESIDE = 8;
 
 /** How the days settle after a swipe or a tap on the week: Apple's quick, soft stop. */
 const SETTLE = { type: "spring", damping: 38, stiffness: 380, mass: 0.8 } as const;
+
+/** A date pencilled in as a dashed block: a suggested date, or a vote's date to answer. */
+export interface Pencil {
+  key: string;
+  start: number;
+  end: number;
+  label: string;
+  /** The date being answered: drawn solid. */
+  lit?: boolean;
+  /** Your answer to it, stamped in its corner. */
+  stamp?: EventResponse;
+  onTap?: () => void;
+}
+
+const NO_PENCILS: readonly Pencil[] = [];
 
 /**
  * Your calendar's days side by side, drawn like Apple Calendar's day view
@@ -56,32 +73,44 @@ const SETTLE = { type: "spring", damping: 38, stiffness: 380, mass: 0.8 } as con
  * through (done by the browser, so fast scrolling can't leave it behind).
  * Calendar names stand where Apple has event titles: Casy stores no titles.
  *
- * The days are one continuous strip, three in view, `offset` days from
- * `home`. With `onOffset`, it follows a sideways drag and settles on whole
+ * The days are one continuous strip, `days` in view (three, the day in
+ * the middle, on the swipe screen; one or two, the day first, on the home
+ * page's day view, #176), `offset` days from `home` (lib/dayColumns). With `onOffset`, it follows a sideways drag and settles on whole
  * days, and slides to a new offset given from outside (the week row): the
  * header, the whole-day row and the blocks all move as one, clipped clear
- * of the hours. The day scrolls up and down, opening on the suggested time.
+ * of the hours. The day scrolls up and down, opening on the suggested time
+ * (`aim`), or without one on the time now, the first event or 08:00.
  */
 export default function DayColumns({
   home,
   offset = 0,
   onOffset,
-  slot,
-  slotLabel,
+  days = 3,
+  lead = "middle",
+  aim,
+  pencils = NO_PENCILS,
+  onBlockTap,
   calendar,
   size,
   fitDay = false,
   corner,
   focus,
 }: {
-  /** The suggested date's local midnight: offset 0 shows the day before, it, and the day after. */
+  /** The day it is about, a local midnight: offset 0 shows it as `lead` puts it. */
   home: number;
   offset?: number;
   /** Swiping moves the days; this hears where they settle. */
   onOffset?: (offset: number) => void;
-  /** The suggested date, pencilled in where it falls. */
-  slot: { start: number; end: number };
-  slotLabel: string;
+  /** How many days are in view at once. */
+  days?: 1 | 2 | 3;
+  /** Where the day it is about sits among them: the middle of three, or first. */
+  lead?: DayLead;
+  /** The time it opens on, in the middle of the view: the suggested date. */
+  aim?: { start: number; end: number };
+  /** Dates pencilled in where they fall, dashed. */
+  pencils?: readonly Pencil[];
+  /** A tap on one of your events, timed or whole-day. */
+  onBlockTap?: (segment: DaySegment) => void;
   calendar: MyCalendarDays;
   size: keyof typeof SIZES;
   /**
@@ -128,12 +157,12 @@ export default function DayColumns({
     if (!el) return;
     // offsetWidth, not the bounding box: the box is measured while it is
     // still scaled by the morph out of the strip, and a scale isn't a size.
-    const measure = () => setColumnPx(el.offsetWidth / IN_VIEW);
+    const measure = () => setColumnPx(el.offsetWidth / days);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [days]);
 
   // Where the strip is: day k (from home) sits at (k + 1) columns, so
   // offset 0 shows days -1, 0 and 1.
@@ -152,13 +181,34 @@ export default function DayColumns({
   }, [offset, columnPx, x, reduceMotion]);
 
   // Open on the suggested time, in the middle of the view; a date lasting
-  // whole days (a trip, a holiday) opens on the morning instead.
+  // whole days (a trip, a holiday) opens on the morning instead. Without
+  // one: today on the time now, another day just before its first event.
   useLayoutEffect(() => {
     const el = scroller.current;
     if (!el || fitDay) return;
-    const span = placeSpan(slot.start, slot.end, home, TZ);
-    const target =
-      span.height > 0.8 ? 8 * hourPx : (span.top + span.height / 2) * dayPx - el.clientHeight / 2;
+    let target: number;
+    if (aim) {
+      const span = placeSpan(aim.start, aim.end, home, TZ);
+      target =
+        span.height > 0.8 ? 8 * hourPx : (span.top + span.height / 2) * dayPx - el.clientHeight / 2;
+    } else {
+      const shownDays = daysInView(offset, days, lead).map((k) => addDays(home, k, TZ));
+      const at = Date.now();
+      const firsts = shownDays.flatMap((midnight) =>
+        calendar
+          .segmentsOn(new Date(midnight))
+          .filter((s) => !s.allDay)
+          .map((s) => placeSpan(s.start.getTime(), s.end.getTime(), midnight, TZ).top),
+      );
+      const opening = openingOf({
+        now: shownDays.includes(startOfDay(at, TZ))
+          ? placeSpan(at, at + 1, startOfDay(at, TZ), TZ).top
+          : null,
+        firstEvent: firsts.length > 0 ? Math.min(...firsts) : null,
+      });
+      target =
+        "middle" in opening ? opening.middle * dayPx - el.clientHeight / 2 : opening.top * dayPx;
+    }
     el.scrollTop = Math.max(0, target);
     // Only on opening, not on every day swiped to.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,10 +225,11 @@ export default function DayColumns({
     if (!el || fitDay) return;
     if (focusStart === null && !focused.current) return;
     focused.current = focusStart !== null;
-    const span =
-      focusStart !== null && focusEnd !== null
-        ? placeSpan(focusStart, focusEnd, startOfDay(focusStart, TZ), TZ)
-        : placeSpan(slot.start, slot.end, home, TZ);
+    const back = focusStart === null || focusEnd === null;
+    if (back && !aim) return;
+    const span = back
+      ? placeSpan(aim!.start, aim!.end, home, TZ)
+      : placeSpan(focusStart, focusEnd, startOfDay(focusStart, TZ), TZ);
     const target =
       span.height > 0.8 ? 8 * hourPx : (span.top + span.height / 2) * dayPx - el.clientHeight / 2;
     el.scrollTo({ top: Math.max(0, target), behavior: reduceMotion ? "auto" : "smooth" });
@@ -197,17 +248,25 @@ export default function DayColumns({
 
   // The days drawn: those in view, and some either side to swipe into.
   const beside = onOffset || focus !== undefined ? DRAWN_BESIDE : 0;
-  const drawn = Array.from({ length: IN_VIEW + 2 * beside }, (_, i) => offset - 1 - beside + i);
+  const drawn = drawnDays(offset, days, lead, beside);
   const dayOf = (k: number) => addDays(home, k, TZ);
-  const inView = [offset - 1, offset, offset + 1].map(dayOf);
+  const inViewK = daysInView(offset, days, lead);
+  const inView = inViewK.map(dayOf);
   const showsToday = inView.includes(today);
   const allDay = new Map(
     drawn.map((k) => [k, calendar.segmentsOn(new Date(dayOf(k))).filter((s) => s.allDay)]),
   );
   // The whole-day row is there when a day in view has something for it, as
   // Apple's is, not for a day drawn out of sight.
-  const anyAllDay = [offset - 1, offset, offset + 1].some((k) => allDay.get(k)!.length > 0);
-  const columnStyle = (k: number) => ({ left: (k + 1) * columnPx, width: columnPx });
+  const anyAllDay = inViewK.some((k) => allDay.get(k)!.length > 0);
+  const columnStyle = (k: number) => ({
+    left: columnOf(k, days, lead) * columnPx,
+    width: columnPx,
+  });
+  // With one day, two whole-day entries side by side, as Apple has them.
+  const allDayShown = days === 1 && !compact ? 2 : 1;
+  const pencilOn = (midnight: number) =>
+    pencils.some((p) => p.start < addDays(midnight, 1, TZ) && p.end > midnight);
 
   // A sideways drag moves the strip under the finger, and settles on whole
   // days: as far as it was dragged, or a day on for a quick flick. Up and
@@ -221,6 +280,11 @@ export default function DayColumns({
     speed: number;
     sideways: boolean | null;
   } | null>(null);
+  // The click a sideways drag ends with isn't a tap on a block.
+  const dragged = useRef(false);
+  const tapped = (run: () => void) => () => {
+    if (!dragged.current) run();
+  };
   const settle = (to: number) => {
     if (to === offset) animate(x, -offset * columnPx, SETTLE);
     else onOffset?.(to);
@@ -264,6 +328,7 @@ export default function DayColumns({
   const dragHandlers = onOffset && {
     onPointerDown: (e: PointerEvent) => {
       x.stop();
+      dragged.current = false;
       drag.current = {
         x0: e.clientX,
         y0: e.clientY,
@@ -281,7 +346,10 @@ export default function DayColumns({
       const dy = e.clientY - d.y0;
       if (d.sideways === null && Math.max(Math.abs(dx), Math.abs(dy)) > 8) {
         d.sideways = Math.abs(dx) > Math.abs(dy);
-        if (d.sideways) e.currentTarget.setPointerCapture(e.pointerId);
+        if (d.sideways) {
+          dragged.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }
       }
       if (!d.sideways) return;
       x.set(d.from + dx);
@@ -304,13 +372,15 @@ export default function DayColumns({
     },
   };
 
-  /** "tirs. 6." on the strip, "tirs. 6. okt." on the whole screen. */
+  /** "tirs. 6." on the strip, "tirs. 6. okt." on the whole screen, "tirsdag 6. okt. 2026" alone. */
   const headerText = (midnight: number) => {
     const weekday = weekdayShortName(midnight, lang);
     const month = monthShortName(midnight, lang);
-    const day = localDate(midnight, TZ).day;
+    const { day, year } = localDate(midnight, TZ);
     const sep = lang === "da" ? "." : "";
-    return compact ? `${weekday} ${day}${sep}` : `${weekday} ${day}${sep} ${month}`;
+    if (compact) return `${weekday} ${day}${sep}`;
+    if (days === 1) return `${weekdayName(midnight, lang)} ${day}${sep} ${month} ${year}`;
+    return `${weekday} ${day}${sep} ${month}`;
   };
 
   return (
@@ -333,7 +403,7 @@ export default function DayColumns({
         <Track x={x} className="h-full">
           {drawn.map((k) => {
             const midnight = dayOf(k);
-            const onSlot = slot.start < dayOf(k + 1) && slot.end > midnight;
+            const onSlot = pencilOn(midnight);
             return (
               <p
                 key={k}
@@ -358,21 +428,29 @@ export default function DayColumns({
             {drawn.map((k) => (
               <div
                 key={k}
-                className="absolute inset-y-0 flex flex-col justify-center px-0.5"
+                className={cn(
+                  "absolute inset-y-0 flex justify-center px-0.5",
+                  allDayShown > 1 ? "items-center gap-1" : "flex-col",
+                )}
                 style={columnStyle(k)}
               >
                 {allDay
                   .get(k)!
-                  .slice(0, 1)
+                  .slice(0, allDayShown)
                   .map((s, j, list) => {
                     const rgb = calendar.colorOf(s.calendarId);
-                    const more = allDay.get(k)!.length - list.length;
+                    const more = j === list.length - 1 ? allDay.get(k)!.length - list.length : 0;
                     return (
                       <p
                         key={j}
+                        {...(onBlockTap && {
+                          role: "button",
+                          onClick: tapped(() => onBlockTap(s)),
+                        })}
                         className={cn(
                           "truncate rounded border-l-[3px] px-1 font-semibold",
                           compact ? "text-[9px] leading-[14px]" : "text-[12px] leading-5",
+                          allDayShown > 1 && "min-w-0 flex-1",
                         )}
                         style={{
                           background: `rgb(${tint(rgb, dark)})`,
@@ -439,8 +517,6 @@ export default function DayColumns({
                     TZ,
                     linePx / dayPx,
                   );
-                  const slotSpan = placeSpan(slot.start, slot.end, midnight, TZ);
-                  const slotPx = Math.max(slotSpan.height * dayPx, linePx);
                   return (
                     <div
                       key={k}
@@ -464,6 +540,10 @@ export default function DayColumns({
                         return (
                           <div
                             key={i}
+                            {...(onBlockTap && {
+                              role: "button",
+                              onClick: tapped(() => onBlockTap(b.segment)),
+                            })}
                             className={cn(
                               "absolute overflow-clip rounded-[5px] transition-shadow",
                               ringed ? "z-[5] ring-2 ring-red-500" : "ring-1 ring-card",
@@ -511,31 +591,54 @@ export default function DayColumns({
                         );
                       })}
                       {/* The suggested date: pencilled in, on top of what it runs into. */}
-                      {slotSpan.height > 0 && (
-                        <div
-                          className="pointer-events-none absolute inset-x-0.5 z-10 overflow-clip rounded-[5px] border-2 border-dashed border-primary bg-primary/10 px-1.5"
-                          style={{ top: slotSpan.top * dayPx, height: slotPx }}
-                        >
-                          <div className="sticky top-0">
-                            <p
-                              className={cn(
-                                "truncate font-bold text-primary",
-                                compact
-                                  ? "text-[10px] leading-[14px]"
-                                  : "text-[13px] leading-[18px]",
-                              )}
-                            >
-                              {slotLabel}
-                            </p>
-                            {!compact && slotPx >= twoLinesPx && (
-                              <p className="text-[12px] tabular-nums text-primary">
-                                {formatTime(new Date(slot.start).toISOString())}-
-                                {formatTime(new Date(slot.end).toISOString())}
+                      {pencils.map((p) => {
+                        const span = placeSpan(p.start, p.end, midnight, TZ);
+                        if (span.height <= 0) return null;
+                        const px = Math.max(span.height * dayPx, linePx);
+                        return (
+                          <div
+                            key={p.key}
+                            {...(p.onTap && { role: "button", onClick: tapped(p.onTap) })}
+                            className={cn(
+                              "absolute inset-x-0.5 z-10 overflow-clip rounded-[5px] border-2 border-primary px-1.5",
+                              p.lit ? "bg-primary/20" : "border-dashed bg-primary/10",
+                              !p.onTap && "pointer-events-none",
+                            )}
+                            style={{ top: span.top * dayPx, height: px }}
+                          >
+                            <div className="sticky top-0">
+                              <p
+                                className={cn(
+                                  "truncate font-bold text-primary",
+                                  compact
+                                    ? "text-[10px] leading-[14px]"
+                                    : "text-[13px] leading-[18px]",
+                                )}
+                              >
+                                {p.label}
                               </p>
+                              {!compact && px >= twoLinesPx && (
+                                <p className="text-[12px] tabular-nums text-primary">
+                                  {formatTime(new Date(p.start).toISOString())}-
+                                  {formatTime(new Date(p.end).toISOString())}
+                                </p>
+                              )}
+                            </div>
+                            {p.stamp && (
+                              <span
+                                key={p.stamp}
+                                aria-hidden
+                                className={cn(
+                                  "animate-stamp absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full text-white",
+                                  STAMP_TONE[p.stamp],
+                                )}
+                              >
+                                <AnswerIcon answer={p.stamp} />
+                              </span>
                             )}
                           </div>
-                        </div>
-                      )}
+                        );
+                      })}
                       {midnight === today && (
                         <div
                           aria-hidden
