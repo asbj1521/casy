@@ -1,4 +1,5 @@
 /** A group's busy time, as the groups function's `busy` action sends it (#160, split out of index.ts). */
+import { type AgreedInvite, agreedBusy } from "../_shared/agreedBusy.ts";
 import { withoutRepeats } from "../_shared/busyBlocks.ts";
 import { type Db } from "../_shared/supabaseAdmin.ts";
 
@@ -107,6 +108,39 @@ export async function groupBusy(db: Db, memberIds: string[], from: Date, to: Dat
       end: e.end_at,
       ...(e.kind === "away" ? { priority: "never" } : {}),
     });
+  }
+
+  // Events Casy agreed on (#172): busy for those going, even if they were
+  // never put into a calendar, so a new plan doesn't land on one. Only the
+  // times, as with a calendar; a no to the decided date means not going.
+  const { data: agreed, error: agreedErr } = await db
+    .from("event_invitees")
+    .select(
+      "profile_id, event_proposals!inner(status, event_proposal_dates(id, starts_at, ends_at, declined_at, created_at, chosen_at))",
+    )
+    .in("profile_id", memberIds)
+    .eq("event_proposals.status", "scheduled")
+    .limit(PAGE_SIZE);
+  if (agreedErr) throw agreedErr;
+  const invites = (agreed ?? []) as unknown as AgreedInvite[];
+  const dateIds = invites.flatMap((i) => i.event_proposals.event_proposal_dates.map((d) => d.id));
+  const { data: noes, error: noesErr } =
+    dateIds.length > 0
+      ? await db
+          .from("event_responses")
+          .select("date_id, profile_id")
+          .in("date_id", dateIds)
+          .in("profile_id", memberIds)
+          .eq("response", "declined")
+      : { data: [], error: null };
+  if (noesErr) throw noesErr;
+  const declined = new Set(
+    (noes ?? []).map(
+      (n: { date_id: string; profile_id: string }) => `${n.date_id}:${n.profile_id}`,
+    ),
+  );
+  for (const [member, blocks] of agreedBusy(invites, declined, from, to)) {
+    busyByMember.get(member)?.push(...blocks);
   }
 
   // Who has actually linked something: a member with no calendar reads as
