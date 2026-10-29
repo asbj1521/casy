@@ -22,6 +22,8 @@ import { ALL_DOWS, describeDays, type SchedulerSettings } from "@/lib/scheduler"
 import { FLEX_MINUTES, flexOf, flexWindow } from "@/lib/startFlex";
 import { cn } from "@/lib/utils";
 
+import { litClass, litRing, type FillKey } from "./fill";
+
 const DAY_MINUTES = 24 * 60;
 /** The day sheet's quick picks, as describeDays names them. */
 const DAY_PRESETS = [
@@ -48,10 +50,13 @@ export default function TimeRows({
   settings,
   onChange,
   guessed,
+  lit = null,
 }: {
   settings: SchedulerSettings;
   onChange: (patch: Partial<SchedulerSettings>) => void;
   guessed: readonly PlanField[];
+  /** The row Casy is filling in right now (#173), lit up. */
+  lit?: FillKey | null;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -112,11 +117,13 @@ export default function TimeRows({
 
   return (
     <section className="mt-4">
-      <KindChoice
-        fill
-        multiDay={settings.multiDay}
-        onChange={(multiDay) => onChange({ multiDay })}
-      />
+      <div className={cn("rounded-xl", litRing(lit, "kind"))}>
+        <KindChoice
+          fill
+          multiDay={settings.multiDay}
+          onChange={(multiDay) => onChange({ multiDay })}
+        />
+      </div>
       {guessed.includes("kind") && (
         <p className="mt-1.5 px-1">
           <GuessMark mark={t.aiPlan.guessed} />
@@ -126,6 +133,7 @@ export default function TimeRows({
       {settings.multiDay ? (
         <ListGroup className="mt-3">
           <ListRow
+            className={litClass(lit, "tripDays")}
             icon={CalendarDays}
             label={label(t.scheduler.tripDays, "days")}
             trailing={
@@ -141,6 +149,7 @@ export default function TimeRows({
             }
           />
           <ListRow
+            className={litClass(lit, "startDay")}
             icon={Flag}
             label={label(t.scheduler.tripStarts, "startWeekday")}
             value={
@@ -155,6 +164,7 @@ export default function TimeRows({
       ) : (
         <ListGroup className="mt-3">
           <ListRow
+            className={litClass(lit, "time")}
             icon={Clock}
             label={label(t.settingsPanel.tabs.time, guessedTime)}
             value={
@@ -170,6 +180,7 @@ export default function TimeRows({
           />
           {fixedStart && (
             <ListRow
+              className={litClass(lit, "flex")}
               icon={Diff}
               label={words.flex}
               trailing={
@@ -186,6 +197,7 @@ export default function TimeRows({
             />
           )}
           <ListRow
+            className={litClass(lit, "days")}
             icon={CalendarDays}
             label={label(t.scheduler.dayLabel, "weekdays")}
             value={daysLabel}

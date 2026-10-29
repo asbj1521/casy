@@ -128,7 +128,7 @@ export function useAiPlanner(page: AiPlannerPage) {
       setSession((s) => {
         const stated = statedFields(plan, plan.assumed);
         return {
-          texts: [...s.texts, input.text],
+          texts: first ? [input.text] : [...s.texts, input.text],
           plan,
           guessed: first
             ? guessedFields(plan, true)
@@ -155,15 +155,27 @@ export function useAiPlanner(page: AiPlannerPage) {
     },
   });
 
-  /** Ask about `text`: a first description, or more details on the settings so far. */
-  function describe(text: string) {
+  /**
+   * Ask about `text`: a first description, or more details on the settings so
+   * far. `fresh` starts a new plan whatever came before (the phone's sheet,
+   * #173); `onAnswer` hears the answer once it has been applied.
+   */
+  function describe(
+    text: string,
+    { fresh = false, onAnswer }: { fresh?: boolean; onAnswer?: (plan: AiPlan) => void } = {},
+  ) {
     const trimmed = text.trim();
     if (!trimmed || ask.isPending) return;
-    ask.mutate({
-      text: trimmed,
-      earlier: session.texts.slice(-MAX_EARLIER),
-      current: session.plan ? toPlanSettings(latest.current.settings, APP_TIME_ZONE) : null,
-    });
+    const more = !fresh && session.plan !== null;
+    if (fresh) aiTitle.current = null;
+    ask.mutate(
+      {
+        text: trimmed,
+        earlier: more ? session.texts.slice(-MAX_EARLIER) : [],
+        current: more ? toPlanSettings(latest.current.settings, APP_TIME_ZONE) : null,
+      },
+      { onSuccess: ({ plan }) => onAnswer?.(plan) },
+    );
   }
 
   /** One of a question's options: its settings applied as they are, no call. */

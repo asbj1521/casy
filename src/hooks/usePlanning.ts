@@ -21,6 +21,7 @@ import { eventProfileQuery, useEventProfile } from "@/hooks/useEventProfile";
 import { useGroupRefresh, type RefreshOutcome } from "@/hooks/useGroupRefresh";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useSchedulingGroups } from "@/hooks/useSchedulingGroups";
+import { MAX_NAME_LENGTH } from "@/components/schedulerSettings/options";
 import { storedEventTitle } from "@/i18n/eventTitle";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { planFeedback, planFieldsOf, type AiPlan } from "@/lib/aiPlan";
@@ -242,7 +243,10 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
     !loadingGroup && activeGroup.participants.length > 0 ? activeGroup.participants : null;
   // What the event is called when sent: the name typed, or the matching
   // type's name, which each reader sees in their own language (eventTitle.ts).
-  const sentTitle = name.trim() || storedEventTitle(fallbackTitleId(search));
+  // The name field may hold a longer description for Casy's AI (#173); the
+  // title the server keeps is at most MAX_NAME_LENGTH.
+  const sentTitle =
+    name.trim().slice(0, MAX_NAME_LENGTH).trim() || storedEventTitle(fallbackTitleId(search));
   // What the event is likely to cause (#113): asked in the background while
   // it is set up, for a real group only, and sent with the dates.
   const profileFor =

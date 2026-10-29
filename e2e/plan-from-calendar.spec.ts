@@ -76,7 +76,7 @@ test("back closes the sheet, and Ret planen goes from the dates back to it", asy
   await expect(page.getByRole("dialog", { name: "Planlæg" })).toBeVisible();
 });
 
-test("Planlæg med AI takes over the sheet, then hands the settings back filled in", async ({
+test("✨ in the name field asks Casy, its questions drop from the field, and the sheet fills itself in (#173)", async ({
   page,
 }) => {
   await page.goto("/calendar-overview");
@@ -84,27 +84,23 @@ test("Planlæg med AI takes over the sheet, then hands the settings back filled 
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
   // Its members are who the names in the text are matched against.
   await pickGroup(page, "Løbeklubben");
-  // By hand first; the AI is one button above.
-  await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toBeVisible();
+  const field = sheet.getByRole("textbox", { name: /Hvad skal I/i });
+  // Nothing written, nothing to ask Casy about.
+  await field.fill("");
+  await expect(sheet.getByRole("button", { name: "Planlæg med AI" })).toHaveCount(0);
+
+  await field.fill("Middag en fredag i november uden Jonas og Peter");
   await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
-  await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toBeHidden();
-  await expect(sheet.getByRole("button", { name: "Find dato" })).toBeHidden();
+  const questions = page.getByRole("dialog", { name: "Lige et spørgsmål" });
+  await questions.getByRole("radio", { name: "Kl. 18" }).click();
+  await questions.getByRole("radio", { name: "Ingen af dem" }).nth(0).click();
+  await questions.getByRole("radio", { name: "Ingen af dem" }).nth(1).click();
 
-  await sheet
-    .getByRole("textbox", { name: /Fx middag en fredag/ })
-    .fill("Middag en fredag i november uden Jonas og Peter");
-  await sheet.getByRole("button", { name: "Lav planen" }).click();
-  await sheet.getByRole("button", { name: "Kl. 18", exact: true }).click();
-  for (let i = 0; i < 2; i++) {
-    await sheet.getByRole("button", { name: "Ingen af dem", exact: true }).first().click();
-  }
-
-  // Every question answered: the settings come back with Casy's answer in
-  // them, and the AI only starts over from here.
-  await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Middag");
-  await expect(sheet.getByRole("button", { name: "Beskriv på ny" })).toBeVisible();
-  await expect(sheet.getByRole("button", { name: "Tilføj detaljer" })).toHaveCount(0);
-  await expect(sheet.getByRole("button", { name: "Find dato" })).toBeVisible();
+  // The last answer closes the questions, and the sheet holds Casy's plan.
+  await expect(questions).toHaveCount(0);
+  await expect(field).toHaveValue("Middag");
+  await expect(sheet.getByRole("button", { name: /^Dage/ })).toContainText("Fre");
+  await expect(sheet.getByRole("button", { name: "Find dato" })).toBeEnabled();
 });
 
 test("the sheet's rows: give or take an hour, and the details folded away go along (#173)", async ({
@@ -149,11 +145,10 @@ async function planNothing(page: import("@playwright/test").Page) {
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: "Planlæg" }).click();
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
-  await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
   await sheet
-    .getByRole("textbox", { name: /Fx middag en fredag/ })
+    .getByRole("textbox", { name: /Hvad skal I/i })
     .fill("møde om formiddagen på hverdage i oktober");
-  await sheet.getByRole("button", { name: "Lav planen" }).click();
+  await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
   await sheet.getByRole("button", { name: "Find dato" }).click();
 }
 

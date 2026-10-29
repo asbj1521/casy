@@ -57,6 +57,7 @@ export function ListRow({
   expanded,
   chevron = !!to || expanded !== undefined,
   selected = false,
+  className,
 }: {
   /** The row's element id, so a page can scroll to it. */
   id?: string;
@@ -76,6 +77,8 @@ export function ListRow({
   expanded?: boolean;
   /** A button at the end of a plain row (one with neither `to` nor `onClick`), such as a delete. */
   trailing?: ReactNode;
+  /** The row itself, such as a light while Casy fills it in (#173). */
+  className?: string;
 }) {
   const color = {
     default: "text-foreground",
@@ -115,7 +118,7 @@ export function ListRow({
   const pressable = cn(row, "transition-colors active:bg-secondary");
 
   return (
-    <li id={id} className="group/row">
+    <li id={id} className={cn("group/row", className)}>
       {to ? (
         <Link to={to} aria-current={selected ? "page" : undefined} className={pressable}>
           {inner}

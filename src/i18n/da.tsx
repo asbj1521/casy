@@ -503,6 +503,7 @@ export const da = {
     whoIs: (name: string) => `Hvem er ${name}?`,
     noOneNamed: (name: string) => `Ingen i gruppen hedder ${name}. Hvem mener du?`,
     noneOfThem: "Ingen af dem",
+    quickQuestion: "Lige et spørgsmål",
     left: (n: number) => (n === 1 ? "1 AI-svar tilbage i dag" : `${n} AI-svar tilbage i dag`),
   },
   // Tell Casy (#116): what is in no calendar, said or written and checked before it is kept.
@@ -1267,7 +1268,6 @@ export const da = {
   // the dates it finds.
   planFromCalendar: {
     button: "Planlæg",
-    byHand: "Indstil selv",
     findDate: "Find dato",
     // The sheet's rows (#173).
     from: "Fra",

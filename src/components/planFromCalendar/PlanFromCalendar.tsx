@@ -9,9 +9,6 @@ import { useT } from "@/i18n/lang";
 import PileScreen from "./PileScreen";
 import PlanSetup from "./PlanSetup";
 
-/** How long an answered last question stays on screen before the settings come back. */
-const HAND_BACK_MS = 600;
-
 /**
  * Planning from My calendar (#126): "Planlæg" opens a glass sheet over the
  * calendar to say what is planned, and "Find dato" shows the calendars
@@ -56,24 +53,8 @@ export default function PlanFromCalendar({
     stillOpen.current = open;
     if (!open && stage === "pile") onClosed();
   }, [open, stage, onClosed]);
-  const [aiMode, setAiMode] = useState(false);
   // A new pile each time it starts over (a shorter holiday picked at its end).
   const [run, setRun] = useState(0);
-
-  // Casy has answered and nothing is left to ask: the settings come back,
-  // filled in, a moment after the last question is answered.
-  const { planner } = planning;
-  const { session } = planner;
-  const aiDone =
-    session.plan !== null &&
-    !planner.pending &&
-    session.questions.every((q) => q.picked !== null) &&
-    session.names.every((n) => n.picked !== null);
-  useEffect(() => {
-    if (!aiMode || !aiDone) return;
-    const id = window.setTimeout(() => setAiMode(false), HAND_BACK_MS);
-    return () => window.clearTimeout(id);
-  }, [aiMode, aiDone]);
 
   return (
     <>
@@ -87,18 +68,12 @@ export default function PlanFromCalendar({
         doneLabel={t.common.cancel}
         origin={sheetOrigin}
         footer={
-          aiMode ? (
-            <FlowButton quiet onClick={() => setAiMode(false)}>
-              {t.planFromCalendar.byHand}
-            </FlowButton>
-          ) : (
-            <FlowButton onClick={toPile} disabled={!planning.activeGroup}>
-              {t.planFromCalendar.findDate}
-            </FlowButton>
-          )
+          <FlowButton onClick={toPile} disabled={!planning.activeGroup || planning.planner.pending}>
+            {t.planFromCalendar.findDate}
+          </FlowButton>
         }
       >
-        <PlanSetup planning={planning} aiMode={aiMode} onAiMode={setAiMode} />
+        <PlanSetup planning={planning} />
       </BottomSheet>
 
       {open && stage === "pile" && (

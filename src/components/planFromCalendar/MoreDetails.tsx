@@ -10,6 +10,7 @@ import { MAX_NOTE_LENGTH, MAX_PLACE_LENGTH, type EventExtras } from "@/lib/sched
 import { summarizePeople } from "@/lib/peopleSummary";
 
 import FieldRow, { ROW_INPUT } from "./FieldRow";
+import { litClass } from "./fill";
 import PeopleRows from "./PeopleRows";
 
 /**
@@ -22,7 +23,10 @@ export default function MoreDetails({
   extras,
   onExtras,
   participants,
+  lit = false,
 }: {
+  /** Casy is filling these in right now (#173). */
+  lit?: boolean;
   extras: EventExtras;
   onExtras: (patch: Partial<EventExtras>) => void;
   participants: ParticipantProps;
@@ -52,6 +56,7 @@ export default function MoreDetails({
     <>
       <ListGroup className="mt-4">
         <ListRow
+          className={litClass(lit ? "more" : null, "more")}
           icon={SlidersHorizontal}
           label={t.planFromCalendar.more}
           expanded={open}

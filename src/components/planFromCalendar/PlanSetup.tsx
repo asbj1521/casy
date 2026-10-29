@@ -1,41 +1,31 @@
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, Users } from "lucide-react";
+import { useRef, useState } from "react";
+import { Users } from "lucide-react";
 
-import AiConversation from "@/components/findDate/ai/AiConversation";
-import { MAX_NAME_LENGTH } from "@/components/schedulerSettings/options";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import BottomSheet from "@/components/ui/BottomSheet";
-import { FIELD, FIELD_LABEL } from "@/components/ui/field";
-import { SWAP } from "@/components/ui/swap";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
+import { matchNames, mentionedNames, type AiPlan } from "@/lib/aiPlan";
 
+import AiQuestionsSheet from "./AiQuestionsSheet";
 import GroupStep from "./GroupStep";
-import PlanMonths from "./PlanMonths";
 import MoreDetails from "./MoreDetails";
+import NameField from "./NameField";
+import PlanMonths from "./PlanMonths";
 import TimeRows from "./TimeRows";
+import { useAiFill, type PlanState } from "./useAiFill";
 
 /**
  * What the Planlæg sheet on My calendar holds (#126), decisions first (#173):
  * the group, the name, the time as rows, the months in view, and the rest
- * folded behind "Flere detaljer". For those Casy's AI is on for, one
- * eye-catching button under the name: pressed, the AI takes over
- * the sheet (`aiMode`), the event written or said, Casy's questions answered,
- * and then the settings come back filled in, its guesses marked. From there
- * it is the settings by hand again; the AI only starts over ("Beskriv på ny"),
- * it doesn't refine.
+ * folded behind "Flere detaljer". For those Casy's AI is on for, the name
+ * field is also where it is asked (NameField's ✨): what is written goes to
+ * Casy, its questions (if any) drop from the field (AiQuestionsSheet), and
+ * then the sheet fills itself in before your eyes (useAiFill), its guesses
+ * marked. Every setting stays yours to change by hand after.
  */
-export default function PlanSetup({
-  planning,
-  aiMode,
-  onAiMode,
-}: {
-  planning: Planning;
-  aiMode: boolean;
-  onAiMode: (on: boolean) => void;
-}) {
+export default function PlanSetup({ planning }: { planning: Planning }) {
   const t = useT();
   const {
     user,
@@ -56,87 +46,102 @@ export default function PlanSetup({
     updatePeople,
   } = planning;
   const [picking, setPicking] = useState(false);
+  const members = activeGroup?.members ?? [];
+
+  const fill = useAiFill({ name, settings: sched, extras, people: peopleChoice });
+  // The sheet as it was when Casy was asked, played forward once it has answered.
+  const before = useRef<PlanState | null>(null);
+  const [asking, setAsking] = useState(false);
+  const field = useRef<HTMLDivElement>(null);
+  const needsAnswers = (plan: AiPlan) =>
+    plan.questions.length > 0 ||
+    matchNames(mentionedNames(plan), members).some((m) => m.candidates.length !== 1);
+
+  function askAi() {
+    const from: PlanState = { name, settings: sched, extras, people: peopleChoice };
+    planner.describe(name, {
+      fresh: true,
+      onAnswer: (plan) => {
+        before.current = from;
+        if (needsAnswers(plan)) {
+          fill.hold(from);
+          setAsking(true);
+        } else fill.start(from);
+      },
+    });
+  }
+  function questionsDone() {
+    if (!asking) return;
+    setAsking(false);
+    if (before.current) fill.start(before.current);
+  }
+
+  const shown = fill.settings ?? sched;
+  // Casy's marks once it has finished, not while it is still writing.
+  const guessed = fill.active ? [] : planner.session.guessed;
   const planned = planner.session.plan !== null;
 
   return (
     <>
-      <ListGroup className="mt-0">
-        <ListRow
-          icon={Users}
-          label={t.scheduler.group}
-          value={activeGroup?.name}
-          chevron
-          onClick={() => setPicking(true)}
+      {/* Nothing to press while Casy fills the sheet in. */}
+      <div inert={fill.active || planner.pending}>
+        <ListGroup className="mt-0">
+          <ListRow
+            icon={Users}
+            label={t.scheduler.group}
+            value={activeGroup?.name}
+            chevron
+            onClick={() => setPicking(true)}
+          />
+        </ListGroup>
+
+        <NameField
+          value={fill.name ?? name}
+          onChange={setName}
+          ai={aiOn ? { pending: planner.pending, error: planner.error, onAsk: askAi } : null}
+          fieldRef={field}
+          lit={fill.lit === "name"}
         />
-      </ListGroup>
-
-      <AnimatePresence mode="wait" initial={false}>
-        {aiMode ? (
-          <motion.div key="ai" {...SWAP} className="mt-4">
-            <AiConversation
-              planner={planner}
-              members={activeGroup?.members ?? []}
-              // No "Add details" here: once Casy has answered, the settings are yours.
-              adding={false}
-              onAdding={() => {}}
-            />
-          </motion.div>
-        ) : (
-          <motion.div key="manual" {...SWAP}>
-            <label className="mt-4 block">
-              <span className={FIELD_LABEL}>{t.scheduler.name}</span>
-              <input
-                type="text"
-                value={name}
-                maxLength={MAX_NAME_LENGTH}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t.scheduler.namePlaceholder}
-                className={FIELD}
-              />
-            </label>
-            {/* Always in its place: after a plan made with AI it starts over. */}
-            {aiOn && (
-              <>
-                <AiButton
-                  onClick={() => {
-                    if (planned) planner.reset();
-                    onAiMode(true);
-                  }}
-                  label={planned ? t.aiPlan.again : t.aiPlan.start}
-                />
-                {planned && (
-                  <p className="mt-1.5 px-1 text-xs text-muted-foreground">
-                    {t.aiPlan.guessedNote}
-                  </p>
-                )}
-              </>
-            )}
-
-            <TimeRows
-              settings={sched}
-              onChange={updateSettingsByHand}
-              guessed={planner.session.guessed}
-            />
-            <PlanMonths
-              value={sched.period}
-              onChange={(period) => updateSettingsByHand({ period })}
-              mark={planner.session.guessed.includes("months") ? t.aiPlan.guessed : null}
-            />
-            <DanishTimeNote className="mt-3 px-1 text-xs" />
-            <MoreDetails
-              extras={extras}
-              onExtras={updateExtras}
-              participants={{
-                members: activeGroup?.members ?? [],
-                choice: peopleChoice,
-                onChange: updatePeople,
-                meeting: !sched.multiDay,
-                example: !activeGroup || activeGroup.isExample,
-              }}
-            />
-          </motion.div>
+        {aiOn && planned && !fill.active && guessed.length > 0 && (
+          <p className="mt-1.5 px-1 text-xs text-muted-foreground">{t.aiPlan.guessedNote}</p>
         )}
-      </AnimatePresence>
+
+        <TimeRows
+          settings={shown}
+          onChange={updateSettingsByHand}
+          guessed={guessed}
+          lit={fill.lit}
+        />
+        <PlanMonths
+          value={shown.period}
+          onChange={(period) => updateSettingsByHand({ period })}
+          mark={guessed.includes("months") ? t.aiPlan.guessed : null}
+          lit={fill.lit === "months"}
+        />
+        <DanishTimeNote className="mt-3 px-1 text-xs" />
+        <MoreDetails
+          extras={extras}
+          onExtras={updateExtras}
+          lit={fill.lit === "more"}
+          participants={{
+            members,
+            choice: peopleChoice,
+            onChange: updatePeople,
+            meeting: !shown.multiDay,
+            example: !activeGroup || activeGroup.isExample,
+          }}
+        />
+      </div>
+
+      {aiOn && (
+        <AiQuestionsSheet
+          open={asking}
+          planner={planner}
+          members={members}
+          origin={field}
+          onDone={questionsDone}
+        />
+      )}
 
       <BottomSheet
         open={picking}
@@ -159,26 +164,5 @@ export default function PlanSetup({
         />
       </BottomSheet>
     </>
-  );
-}
-
-/**
- * Planlæg med AI as one slim button that draws the eye: Casy's orange with a
- * slow band of light across it, without taking the settings' room.
- */
-function AiButton({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="animate-ai-shimmer mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-white shadow-[0_8px_24px_-10px_rgba(194,65,12,0.8)] transition active:scale-[0.98]"
-      style={{
-        backgroundImage:
-          "linear-gradient(110deg, rgb(194 65 12) 0%, rgb(234 88 12) 40%, rgb(253 186 116) 50%, rgb(234 88 12) 60%, rgb(194 65 12) 100%)",
-      }}
-    >
-      <Sparkles className="h-4 w-4" />
-      {label}
-    </button>
   );
 }

@@ -468,6 +468,7 @@ export const en: Messages = {
     whoIs: (name: string) => `Who is ${name}?`,
     noOneNamed: (name: string) => `No one in the group is called ${name}. Who do you mean?`,
     noneOfThem: "None of them",
+    quickQuestion: "A quick question",
     left: (n: number) => (n === 1 ? "1 AI answer left today" : `${n} AI answers left today`),
   },
   // Tell Casy (#116): what is in no calendar, said or written and checked before it is kept.
@@ -1222,7 +1223,6 @@ export const en: Messages = {
   },
   planFromCalendar: {
     button: "Plan",
-    byHand: "Set it yourself",
     findDate: "Find a date",
     from: "From",
     to: "To",

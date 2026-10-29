@@ -8,6 +8,8 @@ import { pickPeriodMonth, type Period } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE, localDate } from "@/lib/zone";
 
+import { litRing } from "./fill";
+
 /**
  * When, in the Planlæg sheet (#173): the twelve months searched, all in view
  * as two rows of six, neither behind a menu nor scrolled sideways. A tap
@@ -22,7 +24,10 @@ export default function PlanMonths({
   value,
   onChange,
   mark,
+  lit = false,
 }: {
+  /** Casy is filling the months in right now (#173). */
+  lit?: boolean;
   value: Period | null;
   onChange: (period: Period | null) => void;
   /** "gættet" after the label, for a period Casy's AI guessed. */
@@ -55,7 +60,10 @@ export default function PlanMonths({
       <div
         role="group"
         aria-label={t.planFromCalendar.months}
-        className="grid grid-cols-6 gap-1.5 rounded-2xl border bg-card p-1.5"
+        className={cn(
+          "grid grid-cols-6 gap-1.5 rounded-2xl border bg-card p-1.5",
+          litRing(lit ? "months" : null, "months"),
+        )}
       >
         {months.map((m, i) => {
           const { month, year } = localDate(Date.parse(m), APP_TIME_ZONE);
