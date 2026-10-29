@@ -87,16 +87,16 @@ export default function WheelPicker({
     <div className="relative" style={{ height: VISIBLE * ITEM }}>
       {/* Centre selection band */}
       <div
-        className="pointer-events-none absolute inset-x-1 top-1/2 -translate-y-1/2 rounded-md border-y border-primary/40 bg-primary/5"
+        className="pointer-events-none absolute inset-x-1 top-1/2 -translate-y-1/2 rounded-lg bg-foreground/[0.06]"
         style={{ height: ITEM }}
       />
-      {/* Fade top/bottom for the wheel illusion */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-9 bg-gradient-to-b from-card to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-9 bg-gradient-to-t from-card to-transparent" />
+      {/* The items themselves fade out towards the top and bottom (a mask,
+          not a band painted over them in one colour), so the wheel looks
+          right on any background, a glass sheet included. */}
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="h-full overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent,black_35%,black_65%,transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ scrollSnapType: "y mandatory" }}
       >
         <div style={{ paddingTop: pad, paddingBottom: pad }}>

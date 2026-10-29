@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { MapPin, SlidersHorizontal, StickyNote, Users } from "lucide-react";
 
-import ParticipantSettings, {
-  type ParticipantProps,
-} from "@/components/findDate/ParticipantSettings";
+import type { ParticipantProps } from "@/components/findDate/ParticipantSettings";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Collapse from "@/components/ui/Collapse";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -12,6 +10,7 @@ import { MAX_NOTE_LENGTH, MAX_PLACE_LENGTH, type EventExtras } from "@/lib/sched
 import { summarizePeople } from "@/lib/peopleSummary";
 
 import FieldRow, { ROW_INPUT } from "./FieldRow";
+import PeopleRows from "./PeopleRows";
 
 /**
  * What most plans never touch (#173), folded behind one "Flere detaljer" row
@@ -97,7 +96,7 @@ export default function MoreDetails({
         title={words.tabs.people}
         doneLabel={t.schedulerFlow.done}
       >
-        <ParticipantSettings {...participants} rows />
+        <PeopleRows {...participants} />
       </BottomSheet>
     </>
   );

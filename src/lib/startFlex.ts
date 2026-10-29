@@ -3,11 +3,11 @@ import type { SchedulerSettings } from "@/lib/scheduler";
 
 /**
  * How far a meeting's start may move from the hour picked (#173): exact, or
- * up to half an hour, an hour or two hours either way. The whole meeting
+ * up to two hours either way, in half hours (the row's minus and plus). The whole meeting
  * moves; its length stays. Stored as the start window (#133) around the
  * hour, clamped to the day, which the search reads as "closest to the hour".
  */
-export const FLEX_MINUTES = [0, 30, 60, 120] as const;
+export const FLEX_MINUTES = [0, 30, 60, 90, 120] as const;
 
 /** The last start a window may hold (the server's limit: 23:30). */
 const LAST_START = 24 * 60 - 30;

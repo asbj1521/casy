@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { CalendarDays, Clock, Flag, MoveHorizontal } from "lucide-react";
+import { CalendarDays, Clock, Flag, Diff } from "lucide-react";
 
+import DaySlider from "@/components/DaySlider";
 import { GuessMark, KindChoice, Stepper } from "@/components/schedulerSettings/parts";
 import {
   DURATION_VALUES,
@@ -29,14 +30,18 @@ const DAY_PRESETS = [
   { kind: "weekends", dows: [6, 0] },
 ] as const;
 
-type Open = "time" | "flex" | "days" | "startDay" | null;
+/** Fredag and lørdag: the evenings most often planned for. */
+const PARTY_DAYS = [5, 6];
+
+type Open = "time" | "days" | "startDay" | null;
 
 /**
  * The Planlæg sheet's time (#173): Møde or Tur / ferie, then one row per
  * setting with its value on the right, each opening a small sheet of its
- * own. A meeting is "17:00 til 19:00" (one sheet, two wheels), give or take
- * (Fleksibel: the whole meeting may move, stored as a start window around
- * the hour, see lib/startFlex), on some weekdays. With no set start (Når som
+ * own. A meeting is "17:00 - 19:00" (one sheet, two wheels), give or take
+ * (Fleksibel, stepped by half hours in its row: the whole meeting may move,
+ * stored as a start window around the hour, see lib/startFlex), on some
+ * weekdays (quick picks, or the seven in a row). With no set start (Når som
  * helst, or a window Casy's AI chose) the second wheel is its length.
  */
 export default function TimeRows({
@@ -67,15 +72,35 @@ export default function TimeRows({
   const guessedTime: PlanField[] = ["startHour", "durationMinutes"];
   const flex = flexOf(settings);
   const fixedStart = !settings.anyTime && flex !== null;
-  const startOptions = startHourOptions(t, settings);
-  const startLabel = startOptions.find((o) => o.value === startValue(settings))?.label;
+  // A window made by Fleksibel is the hour itself on the wheel and the row;
+  // only one Casy's AI chose is listed as its own ("Mellem 18:00 og 21:00").
+  const wheel = flex === null ? settings : { ...settings, startWindow: null };
+  const startOptions = startHourOptions(t, wheel);
+  const startLabel = startOptions.find((o) => o.value === startValue(wheel))?.label;
   const clock = (minutes: number) => formatClockMinutes(minutes % DAY_MINUTES);
-  const flexLabel = (f: number) => (f === 0 ? words.exact : `± ${t.common.duration(f)}`);
   const days = describeDays(settings.dows);
-  const daysLabel =
-    days.kind === "list"
+  const party = days.kind === "list" && days.dows.join() === PARTY_DAYS.join();
+  const daysLabel = party
+    ? words.partyDays
+    : days.kind === "list"
       ? days.dows.map((d) => t.weekdaysShort[d]).join(", ")
       : capitalize(t.scheduler.dayList[days.kind]);
+  const presets = [
+    ...DAY_PRESETS.map((p) => ({
+      key: p.kind,
+      dows: p.dows,
+      label: capitalize(t.scheduler.dayList[p.kind]),
+      detail: undefined,
+      on: days.kind === p.kind,
+    })),
+    {
+      key: "party",
+      dows: PARTY_DAYS,
+      label: words.partyDays,
+      detail: words.partyDetail,
+      on: party,
+    },
+  ];
 
   // A new hour keeps the flexibility; any other pick is pickStartHour's.
   const pickStart = (value: number) =>
@@ -86,11 +111,6 @@ export default function TimeRows({
           : { ...patch, startWindow: flexWindow(patch.startHour, flex ?? 0) },
       ),
     );
-  const toggleDay = (d: number) => {
-    const on = settings.dows.includes(d);
-    if (on && settings.dows.length <= 1) return; // at least one day stays on
-    onChange({ dows: on ? settings.dows.filter((x) => x !== d) : [...settings.dows, d] });
-  };
 
   return (
     <section className="mt-4">
@@ -142,7 +162,7 @@ export default function TimeRows({
             value={
               fixedStart
                 ? words.fromTo(
-                    startLabel ?? "",
+                    clock(settings.startHour * 60),
                     clock(settings.startHour * 60 + settings.durationMinutes),
                   )
                 : `${startLabel}, ${t.common.duration(settings.durationMinutes)}`
@@ -152,19 +172,19 @@ export default function TimeRows({
           />
           {fixedStart && (
             <ListRow
-              icon={MoveHorizontal}
+              icon={Diff}
               label={words.flex}
-              detail={
-                settings.startWindow
-                  ? words.canStart(
-                      formatClockMinutes(settings.startWindow.from),
-                      formatClockMinutes(settings.startWindow.to),
-                    )
-                  : undefined
+              trailing={
+                <Stepper
+                  inRow
+                  value={flex}
+                  values={[...FLEX_MINUTES]}
+                  format={(f) => t.common.duration(f)}
+                  onChange={(f) => onChange({ startWindow: flexWindow(settings.startHour, f) })}
+                  lessLabel={words.flexLess}
+                  moreLabel={words.flexMore}
+                />
               }
-              value={flexLabel(flex)}
-              chevron
-              onClick={() => setOpen("flex")}
             />
           )}
           <ListRow
@@ -187,7 +207,7 @@ export default function TimeRows({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className={cn(FIELD_LABEL, "text-center")}>{words.from}</p>
-            <WheelPicker options={startOptions} value={startValue(settings)} onChange={pickStart} />
+            <WheelPicker options={startOptions} value={startValue(wheel)} onChange={pickStart} />
           </div>
           <div>
             <p className={cn(FIELD_LABEL, "text-center")}>
@@ -205,64 +225,28 @@ export default function TimeRows({
         </div>
       </BottomSheet>
       <BottomSheet
-        open={open === "flex"}
-        onClose={close}
-        title={words.flex}
-        doneLabel={t.schedulerFlow.done}
-      >
-        <ListGroup className="mt-0">
-          {FLEX_MINUTES.map((f) => {
-            const window = flexWindow(settings.startHour, f);
-            return (
-              <ListPickRow
-                key={f}
-                type="radio"
-                name="flex"
-                checked={flex === f}
-                onChange={() => {
-                  onChange({ startWindow: window });
-                  close();
-                }}
-                label={flexLabel(f)}
-                detail={
-                  window
-                    ? words.canStart(formatClockMinutes(window.from), formatClockMinutes(window.to))
-                    : undefined
-                }
-              />
-            );
-          })}
-        </ListGroup>
-      </BottomSheet>
-      <BottomSheet
         open={open === "days"}
         onClose={close}
         title={t.scheduler.dayLabel}
         doneLabel={t.schedulerFlow.done}
       >
         <ListGroup className="mt-0">
-          {DAY_PRESETS.map((p) => (
+          {presets.map((p) => (
             <ListPickRow
-              key={p.kind}
+              key={p.key}
               type="radio"
               name="day-preset"
-              checked={days.kind === p.kind}
+              checked={p.on}
               onChange={() => onChange({ dows: [...p.dows] })}
-              label={capitalize(t.scheduler.dayList[p.kind])}
+              label={p.label}
+              detail={p.detail}
             />
           ))}
         </ListGroup>
-        <ListGroup>
-          {ALL_DOWS.map((d) => (
-            <ListPickRow
-              key={d}
-              type="checkbox"
-              checked={settings.dows.includes(d)}
-              onChange={() => toggleDay(d)}
-              label={capitalize(weekdayLong(d, LOCALE[lang]))}
-            />
-          ))}
-        </ListGroup>
+        {/* Or day by day, the seven in one row. */}
+        <div className="mt-4">
+          <DaySlider size="lg" selected={settings.dows} onChange={(dows) => onChange({ dows })} />
+        </div>
       </BottomSheet>
       <BottomSheet
         open={open === "startDay"}

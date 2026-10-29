@@ -113,9 +113,10 @@ test("the sheet's rows: give or take an hour, and the details folded away go alo
 }) => {
   await page.goto("/calendar-overview?plan");
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
-  await sheet.getByRole("button", { name: /^Fleksibel/ }).click();
-  await page.getByRole("radio", { name: /^± 1 t/ }).click();
-  await expect(sheet.getByText(/^Kan starte \d\d:\d\d til \d\d:\d\d$/)).toBeVisible();
+  // Two half hours either way: ± 1 t.
+  await sheet.getByRole("button", { name: "Mere fleksibel" }).click();
+  await sheet.getByRole("button", { name: "Mere fleksibel" }).click();
+  await expect(sheet.getByText("1 t", { exact: true })).toBeVisible();
 
   await sheet.getByRole("button", { name: "Flere detaljer" }).click();
   await sheet.getByRole("button", { name: /^Deltagere/ }).click();

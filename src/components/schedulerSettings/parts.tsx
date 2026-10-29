@@ -37,7 +37,7 @@ export function Stepper({
   moreLabel: string;
   /** As wide as its cell, the value centred between the buttons (the phone's flow). */
   fill?: boolean;
-  /** Small, at the end of a list row (the Planlæg sheet, #173). */
+  /** At the end of a list row, no box: orange minus and plus (the Planlæg sheet, #173). */
   inRow?: boolean;
 }) {
   const i = values.indexOf(value);
@@ -49,7 +49,7 @@ export function Stepper({
     <div
       className={cn(
         "flex items-center",
-        inRow ? "h-9 rounded-full bg-secondary" : "h-12 rounded-xl border bg-card",
+        inRow ? "h-9" : "h-12 rounded-xl border bg-card",
         fill && "w-full justify-between",
       )}
     >
@@ -59,16 +59,19 @@ export function Stepper({
         disabled={i <= 0}
         aria-label={lessLabel}
         className={cn(
-          "flex h-full w-10 items-center justify-center text-foreground transition hover:bg-secondary disabled:opacity-30",
-          inRow ? "rounded-l-full" : "rounded-l-xl",
+          "flex h-full w-10 items-center justify-center transition disabled:opacity-30",
+          inRow ? "text-primary" : "rounded-l-xl text-foreground hover:bg-secondary",
         )}
       >
         <Minus className="h-4 w-4" />
       </button>
       <span
         className={cn(
-          "whitespace-nowrap text-center font-bold text-foreground",
-          inRow ? "min-w-[3.5rem] text-[15px]" : "min-w-[4.5rem] text-base",
+          "whitespace-nowrap text-center",
+          // In a row, the same as the other rows' values.
+          inRow
+            ? "min-w-[3rem] text-sm text-muted-foreground"
+            : "min-w-[4.5rem] text-base font-bold text-foreground",
         )}
       >
         {format(value)}
@@ -79,8 +82,8 @@ export function Stepper({
         disabled={i < 0 || i >= values.length - 1}
         aria-label={moreLabel}
         className={cn(
-          "flex h-full w-10 items-center justify-center text-foreground transition hover:bg-secondary disabled:opacity-30",
-          inRow ? "rounded-r-full" : "rounded-r-xl",
+          "flex h-full w-10 items-center justify-center transition disabled:opacity-30",
+          inRow ? "text-primary" : "rounded-r-xl text-foreground hover:bg-secondary",
         )}
       >
         <Plus className="h-4 w-4" />
