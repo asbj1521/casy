@@ -14,12 +14,18 @@ export default function WheelPicker({
   value,
   onChange,
   onPick,
+  driven = false,
 }: {
   options: { label: string; value: number }[];
   value: number;
   onChange: (value: number) => void;
   /** Clicked the item already in the middle: done choosing. */
   onPick?: () => void;
+  /**
+   * Turned by the page, not the finger (#173: Casy filling in the Planlæg
+   * sheet): a new value scrolls the wheel to it, and nothing is reported back.
+   */
+  driven?: boolean;
 }) {
   const ITEM = 36;
   const VISIBLE = 5;
@@ -52,9 +58,22 @@ export default function WheelPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options]);
 
+  // Driven, the wheel rolls to each new value along the shortest way.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!driven || !el) return;
+    const optIdx = options.findIndex((o) => o.value === value);
+    if (optIdx < 0) return;
+    const at = Math.round(el.scrollTop / ITEM);
+    const copy = Math.round((at - optIdx) / len);
+    el.scrollTo({ top: (copy * len + optIdx) * ITEM, behavior: "smooth" });
+    // Only a new value moves it; the options are the mount effect's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [driven, value]);
+
   function handleScroll() {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el || driven) return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       const absIdx = Math.round(el.scrollTop / ITEM);

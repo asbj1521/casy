@@ -2,12 +2,23 @@ import { useEffect, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 
 import { haptic } from "@/lib/haptics";
-import type { EventExtras, PeopleChoice, SchedulerSettings } from "@/lib/scheduler";
-import { flexOf } from "@/lib/startFlex";
+import {
+  ALL_DOWS,
+  type EventExtras,
+  type PeopleChoice,
+  type SchedulerSettings,
+} from "@/lib/scheduler";
+import { flexOf, flexWindow } from "@/lib/startFlex";
 
 /** The sheet's rows Casy fills in, in the order they stand. */
 export type FillKey =
   "name" | "kind" | "time" | "flex" | "days" | "tripDays" | "startDay" | "months" | "more";
+
+/** A row's own sheet, opened while Casy uses it. */
+export type FillSheet = "time" | "days" | "startDay";
+
+/** A stepper's button Casy is pressing. */
+export type FillPress = "flexLess" | "flexMore" | "tripLess" | "tripMore";
 
 /** What the sheet holds: before Casy answered, and after. */
 export interface PlanState {
@@ -17,98 +28,189 @@ export interface PlanState {
   people: PeopleChoice;
 }
 
-interface Step {
-  key: FillKey;
-  patch: Partial<SchedulerSettings>;
+/** One moment of Casy's filling in: what the sheet shows, and for how long. */
+interface Frame {
+  name: string;
+  settings: SchedulerSettings;
+  lit: FillKey | null;
+  sheet: FillSheet | null;
+  press: FillPress | null;
+  ms: number;
 }
 
-/** How long each row holds the light before the next one is filled. */
-const STEP_MS = 320;
+/** A sheet growing open or shrinking shut, before the next move. */
+const SHEET_MS = 480;
+/** A wheel rolling to its value. */
+const WHEEL_MS = 750;
+/** A tap: a stepper's button, a day, a month. */
+const TAP_MS = 300;
 /** A letter deleted, a letter typed. */
 const DELETE_MS = 18;
 const TYPE_MS = 45;
 /** The longest the name may take either way, however long the text. */
 const NAME_TICKS = 14;
+/** The most taps a stepper gets before it takes bigger steps. */
+const MAX_TAPS = 8;
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+/** The day sheet's quick picks, as sets of days. */
+const PRESETS = [[...ALL_DOWS], [1, 2, 3, 4, 5], [6, 0], [5, 6]];
+const sameDays = (a: number[], b: number[]) =>
+  a.length === b.length && a.every((d) => b.includes(d));
 
-/** The rows that changed from `from` to `to`, each with what it sets. */
-function fillSteps(from: PlanState, to: PlanState): Step[] {
-  const a = from.settings;
+/**
+ * Casy's filling in as a person would do it by hand, frame by frame: the
+ * name deleted and typed, Møde or Tur switched, the time sheet opened and
+ * its wheels rolled to the start and the end, Fleksibel's plus pressed half
+ * an hour at a time, the day sheet opened and its quick pick or days tapped,
+ * the months tapped. Only what changed is done.
+ */
+function script(from: PlanState, to: PlanState): Frame[] {
+  const frames: Frame[] = [];
+  let name = from.name;
+  let s = from.settings;
   const b = to.settings;
-  const steps: Step[] = [];
-  if (a.multiDay !== b.multiDay) steps.push({ key: "kind", patch: { multiDay: b.multiDay } });
-  if (b.multiDay) {
-    if (a.days !== b.days) steps.push({ key: "tripDays", patch: { days: b.days } });
-    if (a.startDow !== b.startDow) steps.push({ key: "startDay", patch: { startDow: b.startDow } });
-  } else {
-    // A window Casy chose itself is the time row's; one around the hour is Fleksibel's.
-    const ownWindow = flexOf(b) === null;
+  const push = (
+    patch: Partial<SchedulerSettings>,
+    ms: number,
+    moment: Partial<Pick<Frame, "lit" | "sheet" | "press">> = {},
+  ) => {
+    s = { ...s, ...patch };
+    frames.push({ name, settings: s, lit: null, sheet: null, press: null, ms, ...moment });
+  };
+
+  if (from.name !== to.name) {
+    const del = Math.min(NAME_TICKS, from.name.length);
+    for (let i = 1; i <= del; i++) {
+      name = from.name.slice(0, Math.round(from.name.length * (1 - i / del)));
+      push({}, DELETE_MS, { lit: "name" });
+    }
+    const type = Math.min(NAME_TICKS * 2, to.name.length);
+    for (let i = 1; i <= type; i++) {
+      name = to.name.slice(0, Math.round(to.name.length * (i / type)));
+      push({}, TYPE_MS, { lit: "name" });
+    }
+  }
+
+  if (s.multiDay !== b.multiDay) push({ multiDay: b.multiDay }, SHEET_MS, { lit: "kind" });
+
+  if (!b.multiDay) {
     if (
-      a.startHour !== b.startHour ||
-      a.durationMinutes !== b.durationMinutes ||
-      a.anyTime !== b.anyTime ||
-      (ownWindow && !same(a.startWindow, b.startWindow))
+      s.startHour !== b.startHour ||
+      s.anyTime !== b.anyTime ||
+      s.durationMinutes !== b.durationMinutes
     ) {
-      steps.push({
-        key: "time",
-        patch: {
-          startHour: b.startHour,
-          durationMinutes: b.durationMinutes,
-          anyTime: b.anyTime,
-          startWindow: ownWindow ? b.startWindow : a.startWindow,
-        },
+      const at = { lit: "time", sheet: "time" } as const;
+      push({}, SHEET_MS, at);
+      if (s.startHour !== b.startHour || s.anyTime !== b.anyTime) {
+        // The flexibility goes along with the hour, as a new hour picked by hand keeps it.
+        const flex = flexOf(s) ?? 0;
+        push(
+          {
+            startHour: b.startHour,
+            anyTime: b.anyTime,
+            startWindow: flexWindow(b.startHour, flex),
+          },
+          WHEEL_MS,
+          at,
+        );
+      }
+      if (s.durationMinutes !== b.durationMinutes) {
+        push({ durationMinutes: b.durationMinutes }, WHEEL_MS, at);
+      }
+      push({}, SHEET_MS, { lit: "time" });
+    }
+    if (!b.anyTime) {
+      const want = flexOf(b) ?? 0;
+      let flex = flexOf(s) ?? 0;
+      while (flex !== want) {
+        const up = flex < want;
+        flex += up ? 30 : -30;
+        push({ startWindow: flexWindow(s.startHour, flex) }, TAP_MS, {
+          lit: "flex",
+          press: up ? "flexMore" : "flexLess",
+        });
+      }
+    }
+    if (!sameDays(s.dows, b.dows)) {
+      const at = { lit: "days", sheet: "days" } as const;
+      push({}, SHEET_MS, at);
+      if (PRESETS.some((p) => sameDays(p, b.dows))) push({ dows: b.dows }, TAP_MS * 2, at);
+      else {
+        // Day by day: the new ones on first, so at least one is always on.
+        for (const d of ALL_DOWS.filter((d) => b.dows.includes(d) && !s.dows.includes(d))) {
+          push({ dows: [...s.dows, d] }, TAP_MS, at);
+        }
+        for (const d of ALL_DOWS.filter((d) => !b.dows.includes(d) && s.dows.includes(d))) {
+          push({ dows: s.dows.filter((x) => x !== d) }, TAP_MS, at);
+        }
+      }
+      push({}, SHEET_MS, { lit: "days" });
+    }
+  } else {
+    if (s.days !== b.days) {
+      const step = Math.max(1, Math.ceil(Math.abs(b.days - s.days) / MAX_TAPS));
+      while (s.days !== b.days) {
+        const up = s.days < b.days;
+        const days = up ? Math.min(b.days, s.days + step) : Math.max(b.days, s.days - step);
+        push({ days }, TAP_MS, { lit: "tripDays", press: up ? "tripMore" : "tripLess" });
+      }
+    }
+    if (s.startDow !== b.startDow) {
+      const at = { lit: "startDay", sheet: "startDay" } as const;
+      push({}, SHEET_MS, at);
+      push({ startDow: b.startDow }, TAP_MS * 2, at);
+      push({}, SHEET_MS, { lit: "startDay" });
+    }
+  }
+
+  if (!same(s.period, b.period)) {
+    // A run of months is tapped as a person does: its first, then its last.
+    if (b.period && !b.period.days && b.period.from !== b.period.to) {
+      push({ period: { from: b.period.from, to: b.period.from } }, TAP_MS * 1.5, {
+        lit: "months",
       });
     }
-    if (!ownWindow && !b.anyTime && !same(a.startWindow, b.startWindow)) {
-      steps.push({ key: "flex", patch: { startWindow: b.startWindow } });
-    }
-    if (!same(a.dows, b.dows)) steps.push({ key: "days", patch: { dows: b.dows } });
+    push({ period: b.period }, TAP_MS * 1.5, { lit: "months" });
   }
-  if (!same(a.period, b.period)) steps.push({ key: "months", patch: { period: b.period } });
+
   if (!same(from.extras, to.extras) || !same(from.people, to.people)) {
-    steps.push({ key: "more", patch: {} });
+    push({}, TAP_MS * 1.5, { lit: "more" });
   }
-  return steps;
+  return frames;
 }
 
 /**
- * Casy filling in the Planlæg sheet as if by hand (#173): its answer is
- * already in the plan, but the sheet shows the plan as it was and plays the
- * difference back, a row at a time. The name is deleted and typed letter by
- * letter, then each row that changed takes its new value with a soft orange
- * light (`lit`) and a tick of the phone, in the order the rows stand. Under
- * reduced motion the answer is simply there. While it plays, `settings` and
- * `name` are what to show instead of the plan's own.
+ * Casy filling in the Planlæg sheet as if by hand (#173). Its answer is
+ * already the plan, but the sheet shows the plan as it was and plays the
+ * difference back (`script`), each move with a tick of the phone, the rows
+ * and sheets it uses opened as a person would. Under reduced motion the
+ * answer is simply there. While it plays, `settings`, `name`, `lit`, `sheet`
+ * and `press` are what to show instead of the plan's own.
  */
 export function useAiFill(live: PlanState) {
   const reduce = useReducedMotion();
+  // tick -1: held, the sheet as it was while Casy's questions are open.
   const [run, setRun] = useState<{ from: PlanState; tick: number } | null>(null);
-
-  const steps = run ? fillSteps(run.from, live) : [];
-  // The name first: ticks while deleting and typing, then one per row.
-  const oldName = run?.from.name ?? "";
-  const newName = live.name;
-  const typesName = run !== null && oldName !== newName;
-  const delTicks = typesName ? Math.min(NAME_TICKS, oldName.length) : 0;
-  const typeTicks = typesName ? Math.min(NAME_TICKS * 2, newName.length) : 0;
-  const nameTicks = delTicks + typeTicks;
-  const total = nameTicks + steps.length;
+  const frames = run ? script(run.from, live) : [];
 
   useEffect(() => {
-    // Held: the sheet as it was, until Casy's questions are answered.
     if (!run || run.tick < 0) return;
-    if (run.tick >= total) {
+    const frame = frames[run.tick];
+    if (!frame) {
       // The last light fades before the sheet is the plan's own again.
-      const id = window.setTimeout(() => setRun(null), STEP_MS * 2);
+      const id = window.setTimeout(() => setRun(null), SHEET_MS);
       return () => window.clearTimeout(id);
     }
-    const inName = run.tick < nameTicks;
-    if (!inName) haptic("tick");
-    const delay = inName ? (run.tick < delTicks ? DELETE_MS : TYPE_MS) : STEP_MS;
-    const id = window.setTimeout(() => setRun((r) => (r ? { ...r, tick: r.tick + 1 } : r)), delay);
+    if (frame.lit !== "name") haptic("tick");
+    const id = window.setTimeout(
+      () => setRun((r) => (r ? { ...r, tick: r.tick + 1 } : r)),
+      frame.ms,
+    );
     return () => window.clearTimeout(id);
-  }, [run, total, nameTicks, delTicks]);
+    // The frames follow from the run and the plan; only a new tick moves on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run]);
 
   /** Play Casy's answer back from the sheet as it was before it was asked. */
   function start(from: PlanState) {
@@ -119,38 +221,21 @@ export function useAiFill(live: PlanState) {
     if (!reduce) setRun({ from, tick: -1 });
   }
 
-  if (!run) return { start, hold, active: false, settings: null, name: null, lit: null };
+  const idle = { start, hold, sheet: null, press: null, lit: null };
+  if (!run) return { ...idle, active: false, settings: null, name: null };
   if (run.tick < 0) {
-    return {
-      start,
-      hold,
-      active: true,
-      settings: run.from.settings,
-      name: run.from.name,
-      lit: null,
-    };
+    return { ...idle, active: true, settings: run.from.settings, name: run.from.name };
   }
-
-  const tick = run.tick;
-  let name = newName;
-  if (tick < delTicks) {
-    name = oldName.slice(0, Math.round(oldName.length * (1 - tick / delTicks)));
-  } else if (tick < nameTicks) {
-    name = newName.slice(0, Math.round(newName.length * ((tick - delTicks) / typeTicks)));
-  }
-  const done = Math.max(0, tick - nameTicks + 1);
-  const settings = steps
-    .slice(0, done)
-    .reduce((s, step) => ({ ...s, ...step.patch }), run.from.settings);
-  const lit: FillKey | null =
-    tick < nameTicks ? "name" : tick < total ? (steps[tick - nameTicks]?.key ?? null) : null;
+  const frame = frames[run.tick];
   return {
     start,
     hold,
     active: true,
-    // Past the last row, whatever no row shows is the plan's too.
-    settings: tick >= total ? live.settings : settings,
-    name,
-    lit,
+    // Past the last frame, whatever no row shows is the plan's too.
+    settings: frame?.settings ?? live.settings,
+    name: frame?.name ?? live.name,
+    lit: frame?.lit ?? null,
+    sheet: frame?.sheet ?? null,
+    press: frame?.press ?? null,
   };
 }

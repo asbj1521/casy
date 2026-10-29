@@ -28,6 +28,7 @@ export function Stepper({
   moreLabel,
   fill = false,
   inRow = false,
+  pressed = null,
 }: {
   value: number;
   values: number[];
@@ -39,6 +40,8 @@ export function Stepper({
   fill?: boolean;
   /** At the end of a list row, no box: orange minus and plus (the Planlæg sheet, #173). */
   inRow?: boolean;
+  /** A button being pressed by Casy as it fills the sheet in (#173). */
+  pressed?: "less" | "more" | null;
 }) {
   const i = values.indexOf(value);
   const step = (d: number) => {
@@ -60,7 +63,8 @@ export function Stepper({
         aria-label={lessLabel}
         className={cn(
           "flex h-full w-10 items-center justify-center transition disabled:opacity-30",
-          inRow ? "text-primary" : "rounded-l-xl text-foreground hover:bg-secondary",
+          inRow ? "rounded-full text-primary" : "rounded-l-xl text-foreground hover:bg-secondary",
+          pressed === "less" && "scale-110 bg-primary/15",
         )}
       >
         <Minus className="h-4 w-4" />
@@ -83,7 +87,8 @@ export function Stepper({
         aria-label={moreLabel}
         className={cn(
           "flex h-full w-10 items-center justify-center transition disabled:opacity-30",
-          inRow ? "text-primary" : "rounded-r-xl text-foreground hover:bg-secondary",
+          inRow ? "rounded-full text-primary" : "rounded-r-xl text-foreground hover:bg-secondary",
+          pressed === "more" && "scale-110 bg-primary/15",
         )}
       >
         <Plus className="h-4 w-4" />
@@ -120,7 +125,7 @@ function Field({
 }
 
 /** "gættet" after a setting's label, for one Casy's AI guessed (#100). */
-export function GuessMark({ mark }: { mark: string }) {
+function GuessMark({ mark }: { mark: string }) {
   return (
     <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold normal-case tracking-normal text-amber-800">
       {mark}

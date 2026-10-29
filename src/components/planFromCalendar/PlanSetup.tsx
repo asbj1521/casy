@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Users } from "lucide-react";
 
 import DanishTimeNote from "@/components/time/DanishTimeNote";
@@ -7,6 +7,7 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
 import { matchNames, mentionedNames, type AiPlan } from "@/lib/aiPlan";
+import { flexAround, flexOf } from "@/lib/startFlex";
 
 import AiQuestionsSheet from "./AiQuestionsSheet";
 import GroupStep from "./GroupStep";
@@ -39,6 +40,7 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
     name,
     setName,
     sched,
+    updateSettings,
     updateSettingsByHand,
     extras,
     updateExtras,
@@ -76,10 +78,15 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
     if (before.current) fill.start(before.current);
   }
 
+  // The phone's rows know a start as an hour give or take: a window Casy's
+  // AI (or a widened search) chose is put in that shape (flexAround).
+  useEffect(() => {
+    if (!sched.multiDay && !sched.anyTime && sched.startWindow && flexOf(sched) === null) {
+      updateSettings(flexAround(sched.startWindow));
+    }
+  }, [sched, updateSettings]);
+
   const shown = fill.settings ?? sched;
-  // Casy's marks once it has finished, not while it is still writing.
-  const guessed = fill.active ? [] : planner.session.guessed;
-  const planned = planner.session.plan !== null;
 
   return (
     <>
@@ -102,20 +109,16 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
           fieldRef={field}
           lit={fill.lit === "name"}
         />
-        {aiOn && planned && !fill.active && guessed.length > 0 && (
-          <p className="mt-1.5 px-1 text-xs text-muted-foreground">{t.aiPlan.guessedNote}</p>
-        )}
 
         <TimeRows
           settings={shown}
           onChange={updateSettingsByHand}
-          guessed={guessed}
           lit={fill.lit}
+          drive={fill.active ? { sheet: fill.sheet, press: fill.press } : null}
         />
         <PlanMonths
           value={shown.period}
           onChange={(period) => updateSettingsByHand({ period })}
-          mark={guessed.includes("months") ? t.aiPlan.guessed : null}
           lit={fill.lit === "months"}
         />
         <DanishTimeNote className="mt-3 px-1 text-xs" />

@@ -33,3 +33,22 @@ export function flexOf(settings: SchedulerSettings): number | null {
   });
   return flex ?? null;
 }
+
+/**
+ * A window as an hour give or take (#173), for the phone's sheet, whose rows
+ * only know that shape: the hour nearest the window's middle, and the least
+ * flexibility that covers the window (two hours at most). "18:00 til 21:00"
+ * is 20:00 ± 2 t. A window wider than that is narrowed around its middle.
+ */
+export function flexAround(
+  window: StartWindow,
+): Pick<SchedulerSettings, "startHour" | "startWindow"> {
+  const startHour = Math.min(23, Math.round((window.from + window.to) / 2 / 60));
+  const covers = (f: number) => {
+    const w = flexWindow(startHour, f);
+    return w !== null && w.from <= window.from && w.to >= window.to;
+  };
+  const flex =
+    FLEX_MINUTES.find((f) => f > 0 && covers(f)) ?? FLEX_MINUTES[FLEX_MINUTES.length - 1];
+  return { startHour, startWindow: flexWindow(startHour, flex) };
+}

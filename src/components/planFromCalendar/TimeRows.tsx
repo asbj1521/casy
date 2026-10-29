@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { CalendarDays, Clock, Flag, Diff } from "lucide-react";
 
 import DaySlider from "@/components/DaySlider";
-import { GuessMark, KindChoice, Stepper } from "@/components/schedulerSettings/parts";
+import { KindChoice, Stepper } from "@/components/schedulerSettings/parts";
 import {
   DURATION_VALUES,
   pickStartHour,
@@ -16,13 +16,13 @@ import { FIELD_LABEL } from "@/components/ui/field";
 import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
 import WheelPicker from "@/components/WheelPicker";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import type { PlanField } from "@/lib/aiPlan";
 import { capitalize, formatClockMinutes } from "@/lib/format";
 import { ALL_DOWS, describeDays, type SchedulerSettings } from "@/lib/scheduler";
 import { FLEX_MINUTES, flexOf, flexWindow } from "@/lib/startFlex";
 import { cn } from "@/lib/utils";
 
 import { litClass, litRing, type FillKey } from "./fill";
+import type { FillPress, FillSheet } from "./useAiFill";
 
 const DAY_MINUTES = 24 * 60;
 /** The day sheet's quick picks, as describeDays names them. */
@@ -49,38 +49,54 @@ type Open = "time" | "days" | "startDay" | null;
 export default function TimeRows({
   settings,
   onChange,
-  guessed,
   lit = null,
+  drive = null,
 }: {
   settings: SchedulerSettings;
   onChange: (patch: Partial<SchedulerSettings>) => void;
-  guessed: readonly PlanField[];
   /** The row Casy is filling in right now (#173), lit up. */
   lit?: FillKey | null;
+  /** While Casy fills the sheet in: the row's sheet it has open, the button it presses. */
+  drive?: { sheet: FillSheet | null; press: FillPress | null } | null;
 }) {
   const t = useT();
   const { lang } = useLang();
   const words = t.planFromCalendar;
-  const [open, setOpen] = useState<Open>(null);
+  const [own, setOpen] = useState<Open>(null);
+  // Casy's hand opens and closes them while it fills the sheet in.
+  const open: Open = drive ? drive.sheet : own;
   const close = () => setOpen(null);
-  const label = (text: string, field: PlanField | PlanField[]): ReactNode =>
-    [field].flat().some((f) => guessed.includes(f)) ? (
-      <span className="flex items-center gap-1.5">
-        {text}
-        <GuessMark mark={t.aiPlan.guessed} />
-      </span>
-    ) : (
-      text
-    );
+  const pressed = (less: FillPress, more: FillPress) =>
+    drive?.press === less ? "less" : drive?.press === more ? "more" : null;
   const dayValues = useDayValues(settings);
 
-  const guessedTime: PlanField[] = ["startHour", "durationMinutes"];
   const flex = flexOf(settings);
   const fixedStart = !settings.anyTime && flex !== null;
   // A window made by Fleksibel is the hour itself on the wheel and the row;
   // only one Casy's AI chose is listed as its own ("Mellem 18:00 og 21:00").
   const wheel = flex === null ? settings : { ...settings, startWindow: null };
-  const startOptions = startHourOptions(t, wheel);
+  // The same lists from one render to the next, or a wheel would snap back
+  // to its value each time rather than roll there.
+  const windowFrom = wheel.startWindow?.from ?? null;
+  const windowTo = wheel.startWindow?.to ?? null;
+  const startOptions = useMemo(
+    () =>
+      startHourOptions(t, {
+        startWindow:
+          windowFrom === null || windowTo === null ? null : { from: windowFrom, to: windowTo },
+      }),
+    [t, windowFrom, windowTo],
+  );
+  const endOptions = useMemo(
+    () =>
+      DURATION_VALUES.map((d) => ({
+        label: fixedStart
+          ? formatClockMinutes((settings.startHour * 60 + d) % DAY_MINUTES)
+          : t.common.duration(d),
+        value: d,
+      })),
+    [t, fixedStart, settings.startHour],
+  );
   const startLabel = startOptions.find((o) => o.value === startValue(wheel))?.label;
   const clock = (minutes: number) => formatClockMinutes(minutes % DAY_MINUTES);
   const days = describeDays(settings.dows);
@@ -124,21 +140,17 @@ export default function TimeRows({
           onChange={(multiDay) => onChange({ multiDay })}
         />
       </div>
-      {guessed.includes("kind") && (
-        <p className="mt-1.5 px-1">
-          <GuessMark mark={t.aiPlan.guessed} />
-        </p>
-      )}
 
       {settings.multiDay ? (
         <ListGroup className="mt-3">
           <ListRow
             className={litClass(lit, "tripDays")}
             icon={CalendarDays}
-            label={label(t.scheduler.tripDays, "days")}
+            label={t.scheduler.tripDays}
             trailing={
               <Stepper
                 inRow
+                pressed={pressed("tripLess", "tripMore")}
                 value={settings.days}
                 values={dayValues}
                 format={t.common.days}
@@ -151,7 +163,7 @@ export default function TimeRows({
           <ListRow
             className={litClass(lit, "startDay")}
             icon={Flag}
-            label={label(t.scheduler.tripStarts, "startWeekday")}
+            label={t.scheduler.tripStarts}
             value={
               settings.startDow === null
                 ? t.scheduler.anyDay
@@ -166,7 +178,7 @@ export default function TimeRows({
           <ListRow
             className={litClass(lit, "time")}
             icon={Clock}
-            label={label(t.settingsPanel.tabs.time, guessedTime)}
+            label={t.settingsPanel.tabs.time}
             value={
               fixedStart
                 ? words.fromTo(
@@ -186,6 +198,7 @@ export default function TimeRows({
               trailing={
                 <Stepper
                   inRow
+                  pressed={pressed("flexLess", "flexMore")}
                   value={flex}
                   values={[...FLEX_MINUTES]}
                   format={(f) => t.common.duration(f)}
@@ -199,7 +212,7 @@ export default function TimeRows({
           <ListRow
             className={litClass(lit, "days")}
             icon={CalendarDays}
-            label={label(t.scheduler.dayLabel, "weekdays")}
+            label={t.scheduler.dayLabel}
             value={daysLabel}
             chevron
             onClick={() => setOpen("days")}
@@ -217,17 +230,20 @@ export default function TimeRows({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className={cn(FIELD_LABEL, "text-center")}>{words.from}</p>
-            <WheelPicker options={startOptions} value={startValue(wheel)} onChange={pickStart} />
+            <WheelPicker
+              driven={!!drive}
+              options={startOptions}
+              value={startValue(wheel)}
+              onChange={pickStart}
+            />
           </div>
           <div>
             <p className={cn(FIELD_LABEL, "text-center")}>
               {fixedStart ? words.to : t.scheduler.duration}
             </p>
             <WheelPicker
-              options={DURATION_VALUES.map((d) => ({
-                label: fixedStart ? clock(settings.startHour * 60 + d) : t.common.duration(d),
-                value: d,
-              }))}
+              driven={!!drive}
+              options={endOptions}
               value={settings.durationMinutes}
               onChange={(durationMinutes) => onChange({ durationMinutes })}
             />

@@ -25,7 +25,7 @@ const ANY_TIME = -1;
 const START_WINDOW = -2;
 
 /** startsAt's options: the AI's window while there is one, "any time", then the hours. */
-export function startHourOptions(t: Messages, settings: SchedulerSettings) {
+export function startHourOptions(t: Messages, settings: Pick<SchedulerSettings, "startWindow">) {
   const window = settings.startWindow
     ? [
         {

@@ -1,4 +1,3 @@
-import { GuessMark } from "@/components/schedulerSettings/parts";
 import { FIELD_LABEL } from "@/components/ui/field";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
@@ -23,15 +22,12 @@ import { litRing } from "./fill";
 export default function PlanMonths({
   value,
   onChange,
-  mark,
   lit = false,
 }: {
   /** Casy is filling the months in right now (#173). */
   lit?: boolean;
   value: Period | null;
   onChange: (period: Period | null) => void;
-  /** "gættet" after the label, for a period Casy's AI guessed. */
-  mark?: string | null;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -41,10 +37,7 @@ export default function PlanMonths({
   return (
     <section className="mt-4">
       <div className="flex items-center justify-between gap-3">
-        <span className={cn(FIELD_LABEL, "flex items-center gap-1.5")}>
-          {t.planFromCalendar.months}
-          {mark && <GuessMark mark={mark} />}
-        </span>
+        <span className={FIELD_LABEL}>{t.planFromCalendar.months}</span>
         <button
           type="button"
           onClick={() => onChange(null)}
