@@ -18,7 +18,6 @@ test("a waiting vote is answered over the day view, which moves on to each date"
     .filter({ has: page.getByRole("button", { name: "Vis Oktober" }) });
   await expect(view).toHaveAccessibleName("Onsdag 14. oktober");
   await expect(view.getByText("onsdag 14. okt. 2026")).toBeVisible();
-  await expect(view.getByRole("button", { name: "I dag" })).toHaveCount(0);
 
   await card.getByRole("button", { name: "Jeg kan", exact: true }).click();
   await expect(card.getByText("Dato 2 af 3", { exact: true })).toBeVisible();

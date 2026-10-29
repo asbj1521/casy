@@ -35,8 +35,9 @@ const FULL: Keyframe = {
 /**
  * A day of the home page's month, opened as Apple Calendar's day view
  * (#176): "‹ Oktober" back to the month, the 1/2-day switch and the plus on
- * the right, the week row (WeekStrip), then the hours (DayColumns) with the
- * day first, one day or the day and the next, and "I dag" in the corner.
+ * the right with "I dag" (the month's capsule, wider), the week row
+ * (WeekStrip), then the hours (DayColumns) with the day first, one day or
+ * the day and the next.
  * The day shown is the page's address (`day`, `onDay`): a swipe, the week
  * row and "I dag" change it, the way back stays one step.
  *
@@ -84,7 +85,7 @@ export default function DayView({
   /**
    * A vote is answered over it (#176): a new day glides there fast,
    * blurred, to the date `aim`ed at, centred above the card's `clear`
-   * pixels; "I dag" makes way for the card.
+   * pixels.
    */
   travel?: boolean;
   aim?: { start: number; end: number };
@@ -211,13 +212,14 @@ export default function DayView({
           <ChevronLeft className="h-6 w-6" />
           {month}
         </button>
-        {/* One capsule round everything on the right, as on the month. */}
+        {/* The month's capsule (the plus, "I dag") a little wider: the
+            1/2-day switch in front, so "I dag" stays where it was. */}
         <div className="glass-pill flex h-10 items-center rounded-full text-primary">
           <button
             type="button"
             onClick={toggleSpan}
             aria-label={span === 1 ? words.showTwoDays : words.showOneDay}
-            className="flex h-10 w-12 items-center justify-center rounded-full"
+            className="flex h-10 w-12 items-center justify-center rounded-l-full"
           >
             {span === 1 ? (
               <RectangleVertical className="h-5 w-5" />
@@ -234,12 +236,20 @@ export default function DayView({
                 onClick={onTell}
                 aria-label={tellLabel}
                 title={tellLabel}
-                className="flex h-10 w-11 items-center justify-center rounded-r-full"
+                className="flex h-10 w-11 items-center justify-center"
               >
                 <Plus className="h-6 w-6" strokeWidth={2.25} />
               </button>
             </>
           )}
+          <span aria-hidden className="h-5 w-px bg-primary/30" />
+          <button
+            type="button"
+            onClick={() => onDay(today)}
+            className="flex h-10 items-center rounded-r-full px-4 text-[17px]"
+          >
+            {words.today}
+          </button>
         </div>
       </header>
 
@@ -273,16 +283,6 @@ export default function DayView({
           />
         </div>
       </div>
-
-      {!travel && (
-        <button
-          type="button"
-          onClick={() => onDay(today)}
-          className="glass-pill absolute bottom-[max(env(safe-area-inset-bottom),0.75rem)] left-4 z-30 flex h-11 items-center rounded-full px-5 text-[17px] text-primary"
-        >
-          {words.today}
-        </button>
-      )}
 
       {children}
 
