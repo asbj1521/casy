@@ -1,13 +1,5 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "framer-motion";
-import { ChevronLeft, Columns2, Plus, RectangleVertical } from "lucide-react";
 
 import { DayRow } from "@/components/calendarView/DayRow";
 import DayColumns, { type Pencil } from "@/components/swipe/DayColumns";
@@ -18,13 +10,10 @@ import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { useLang, useT } from "@/i18n/lang";
 import type { DaySegment, OverviewCalendar } from "@/lib/calendarOverview";
 import { daysBetween, mondayOf } from "@/lib/dayColumns";
-import { capitalize, dayLabel, monthName } from "@/lib/format";
-import { readStored, writeStored } from "@/lib/storage";
+import { capitalize, dayLabel } from "@/lib/format";
 import { addDays, APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
-/** One day in view or two, as the person last chose: this device's own. */
-const SPAN_KEY = "casy-day-span";
 
 const FULL: Keyframe = {
   transform: "translate(0px, 0px) scale(1)",
@@ -34,10 +23,11 @@ const FULL: Keyframe = {
 
 /**
  * A day of the home page's month, opened as Apple Calendar's day view
- * (#176): "‹ Oktober" back to the month, the 1/2-day switch and the plus on
- * the right with "I dag" (the month's capsule, wider), the week row
- * (WeekStrip), then the hours (DayColumns) with the day first, one day or
- * the day and the next.
+ * (#176): the week row (WeekStrip), then the hours (DayColumns) with the
+ * day first, one day or the day and the next (`span`). Its buttons are the
+ * home page's own toolbar (HomeToolbar, #180), which stays in place over it
+ * and morphs, so it leaves `room` for them at its top; on the website it
+ * starts under the page's header (`top`), so they never move.
  * The day shown is the page's address (`day`, `onDay`): a swipe, the week
  * row and "I dag" change it, the way back stays one step.
  *
@@ -58,15 +48,14 @@ export default function DayView({
   actionOf,
   cellOf,
   onDay,
-  onBack,
   onClosed,
+  span,
+  top,
+  room,
   travel = false,
   aim,
   clear = 0,
   onTouchDays,
-  tellRef,
-  tellLabel,
-  onTell,
   children,
 }: {
   /** False plays the zoom back into the month, then `onClosed`. */
@@ -80,8 +69,13 @@ export default function DayView({
   /** A day's cell on the month, on screen; `bring` scrolls it into view first. */
   cellOf: (day: number, bring: boolean) => DOMRect | null;
   onDay: (day: number) => void;
-  onBack: () => void;
   onClosed: () => void;
+  /** One day in view or two (useDaySpan). */
+  span: 1 | 2;
+  /** Where it starts from the screen's top: under the website's header, else 0. */
+  top: number;
+  /** The room left at its top for the toolbar over it. */
+  room: number;
   /**
    * A vote is answered over it (#176): a new day glides there fast,
    * blurred, to the date `aim`ed at, centred above the card's `clear`
@@ -92,25 +86,14 @@ export default function DayView({
   clear?: number;
   /** A finger on the week row or the hours (a vote's card folds away). */
   onTouchDays?: () => void;
-  /** Tell Casy's plus (#116), for people AI is on for. */
-  tellRef: RefObject<HTMLButtonElement | null>;
-  tellLabel: string;
-  onTell?: () => void;
   children?: ReactNode;
 }) {
   const t = useT();
   const { lang } = useLang();
-  const words = t.calendarView;
   const reduceMotion = useReducedMotion();
   // The strip of days counts from the day it opened on.
   const [home] = useState(day);
   const [today] = useState(() => startOfDay(Date.now(), TZ));
-  const [span, setSpan] = useState<1 | 2>(() => (readStored(SPAN_KEY) === "2" ? 2 : 1));
-  const toggleSpan = () => {
-    const next = span === 1 ? 2 : 1;
-    setSpan(next);
-    writeStored(SPAN_KEY, String(next));
-  };
   // Which way the week row last turned, followed as the day changes.
   const [shown, setShown] = useState({ day, turn: 0 });
   if (shown.day !== day) {
@@ -118,7 +101,6 @@ export default function DayView({
   }
   const inView = span === 1 ? [day] : [day, addDays(day, 1, TZ)];
   const marked = new Set(pencils.map((p) => startOfDay(p.start, TZ)));
-  const month = capitalize(monthName(day, lang));
 
   // One of your events, its details in a sheet; kept while the sheet slides away.
   const [detail, setDetail] = useState<DaySegment | null>(null);
@@ -138,7 +120,8 @@ export default function DayView({
     const scale = cell.width / el.offsetWidth;
     const below = Math.max(el.offsetHeight - cell.height / scale, 0);
     return {
-      transform: `translate(${cell.left}px, ${cell.top}px) scale(${scale})`,
+      // From its own place: under the website's header, it starts lower.
+      transform: `translate(${cell.left}px, ${cell.top - top}px) scale(${scale})`,
       clipPath: `inset(0px 0px ${below}px 0px round ${12 / scale}px)`,
       opacity: 0,
     };
@@ -199,59 +182,11 @@ export default function DayView({
       role="region"
       aria-label={capitalize(dayLabel(day, lang))}
       inert={!open}
-      className="fixed inset-0 z-40 flex flex-col bg-background pt-[calc(env(safe-area-inset-top)+0.5rem)]"
-      style={{ transformOrigin: "0 0" }}
+      className="fixed inset-x-0 bottom-0 z-40 flex flex-col bg-background"
+      style={{ top, transformOrigin: "0 0" }}
     >
-      <header className="flex shrink-0 items-center justify-between px-4 pb-2">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label={t.swipe.showMonth(month)}
-          className="glass-pill flex h-10 items-center gap-0.5 rounded-full pl-2 pr-4 text-[17px] text-primary"
-        >
-          <ChevronLeft className="h-6 w-6" />
-          {month}
-        </button>
-        {/* The month's capsule (the plus, "I dag") a little wider: the
-            1/2-day switch in front, so "I dag" stays where it was. */}
-        <div className="glass-pill flex h-10 items-center rounded-full text-primary">
-          <button
-            type="button"
-            onClick={toggleSpan}
-            aria-label={span === 1 ? words.showTwoDays : words.showOneDay}
-            className="flex h-10 w-12 items-center justify-center rounded-l-full"
-          >
-            {span === 1 ? (
-              <RectangleVertical className="h-5 w-5" />
-            ) : (
-              <Columns2 className="h-5 w-5" />
-            )}
-          </button>
-          {onTell && (
-            <>
-              <span aria-hidden className="h-5 w-px bg-primary/30" />
-              <button
-                ref={tellRef}
-                type="button"
-                onClick={onTell}
-                aria-label={tellLabel}
-                title={tellLabel}
-                className="flex h-10 w-11 items-center justify-center"
-              >
-                <Plus className="h-6 w-6" strokeWidth={2.25} />
-              </button>
-            </>
-          )}
-          <span aria-hidden className="h-5 w-px bg-primary/30" />
-          <button
-            type="button"
-            onClick={() => onDay(today)}
-            className="flex h-10 items-center rounded-r-full px-4 text-[17px]"
-          >
-            {words.today}
-          </button>
-        </div>
-      </header>
+      {/* The toolbar's room: it stays where it is, over the day growing in. */}
+      <div aria-hidden className="shrink-0" style={{ height: room }} />
 
       <div className="flex min-h-0 flex-1 flex-col" onPointerDownCapture={onTouchDays}>
         <WeekStrip

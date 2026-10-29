@@ -103,9 +103,10 @@ test("My calendar is a month like Apple's: a day zooms into its hours, Kalendere
   // time over the hours and the home page's buttons out of the way.
   await page.getByRole("button", { name: "torsdag 1. oktober" }).click();
   await expect(page).toHaveURL(/\/\?day=2026-10-01$/);
-  const view = page
-    .getByRole("region")
-    .filter({ has: page.getByRole("button", { name: "Vis Oktober" }) });
+  // The day view, named by its day; its buttons are the page's toolbar (#180).
+  const view = page.getByRole("region", {
+    name: /^(Mandag|Tirsdag|Onsdag|Torsdag|Fredag|Lørdag|Søndag) \d+\. \p{L}+$/u,
+  });
   await expect(view).toHaveAccessibleName("Torsdag 1. oktober");
   await expect(view.getByText("torsdag 1. okt. 2026")).toBeVisible();
   await expect(page.getByRole("button", { name: "Planlæg", exact: true })).toBeHidden();
@@ -120,16 +121,16 @@ test("My calendar is a month like Apple's: a day zooms into its hours, Kalendere
   // The week row moves it in place; two days, kept on this phone.
   await view.getByRole("button", { name: "2", exact: true }).click();
   await expect(page).toHaveURL(/\?day=2026-10-02$/);
-  await view.getByRole("button", { name: "Vis to dage" }).click();
+  await page.getByRole("button", { name: "Vis to dage" }).click();
   await expect(view.getByText("fre. 2. okt.")).toBeVisible();
   await expect(view.getByText("lør. 3. okt.")).toBeVisible();
   await page.reload();
   await expect(view.getByText("lør. 3. okt.")).toBeVisible();
-  await view.getByRole("button", { name: "Vis én dag" }).click();
+  await page.getByRole("button", { name: "Vis én dag" }).click();
   await expect(view.getByText("fredag 2. okt. 2026")).toBeVisible();
 
   // Back to the month, its buttons there again.
-  await view.getByRole("button", { name: "Vis Oktober" }).click();
+  await page.getByRole("button", { name: "Vis Oktober" }).click();
   await expect(view).toHaveCount(0);
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("button", { name: "Planlæg", exact: true })).toBeVisible();

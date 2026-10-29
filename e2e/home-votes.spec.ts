@@ -13,9 +13,10 @@ test("a waiting vote is answered over the day view, which moves on to each date"
   const card = page.getByRole("region", { name: "Brætspilsaften" });
   await expect(card.getByText("Dato 1 af 3", { exact: true })).toBeVisible();
   // The day view is on the first date's day (#176), the date pencilled into its hours.
-  const view = page
-    .getByRole("region")
-    .filter({ has: page.getByRole("button", { name: "Vis Oktober" }) });
+  // The day view, named by its day; its buttons are the page's toolbar (#180).
+  const view = page.getByRole("region", {
+    name: /^(Mandag|Tirsdag|Onsdag|Torsdag|Fredag|Lørdag|Søndag) \d+\. \p{L}+$/u,
+  });
   await expect(view).toHaveAccessibleName("Onsdag 14. oktober");
   await expect(view.getByText("onsdag 14. okt. 2026")).toBeVisible();
 

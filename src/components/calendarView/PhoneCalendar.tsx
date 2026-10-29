@@ -1,11 +1,23 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { CalendarPlus, Layers, Plus } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
+import { CalendarPlus } from "lucide-react";
 
 import AgreedCard from "@/components/calendarView/AgreedCard";
 import DayView from "@/components/calendarView/dayView/DayView";
 import { useDayCalendar } from "@/components/calendarView/dayView/useDayCalendar";
+import { useDaySpan } from "@/components/calendarView/dayView/useDaySpan";
 import HomeBar from "@/components/calendarView/HomeBar";
+import HomeToolbar from "@/components/calendarView/HomeToolbar";
 import HomeVote, { type VoteView } from "@/components/calendarView/HomeVote";
 import { useHomeVotes } from "@/components/calendarView/useHomeVotes";
 import VotePill from "@/components/calendarView/VotePill";
@@ -15,6 +27,7 @@ import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import Celebration from "@/components/swipe/Celebration";
 import MonthView, { type MonthViewHandle } from "@/components/swipe/MonthView";
+import { ZOOM } from "@/components/swipe/morph";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
@@ -30,9 +43,9 @@ import { eventTitle } from "@/i18n/eventTitle";
 import type { VoteEvent } from "@/lib/vote";
 import { useLang, useT } from "@/i18n/lang";
 import { dayParam, parseDayParam } from "@/lib/dayView";
+import { capitalize, monthName } from "@/lib/format";
 import { useHomeBarFlight } from "@/lib/homeBar";
 import { isNativeApp } from "@/lib/nativeApp";
-import { cn } from "@/lib/utils";
 import {
   isPending,
   markOn,
@@ -137,8 +150,6 @@ export default function PhoneCalendar() {
   const aiAllowed = useAiAllowed();
   const [tellOpen, setTellOpen] = useState(false);
   const tellButton = useRef<HTMLButtonElement>(null);
-  // The day view's own plus, which the sheet grows out of while it is open.
-  const dayTellButton = useRef<HTMLButtonElement>(null);
   // The calendars sheet is in the address (?calendars), so the back arrow
   // on "Connected calendars" returns to it, not past it to the bare month.
   const location = useLocation();
@@ -402,6 +413,34 @@ export default function PhoneCalendar() {
   const box = useRef<HTMLDivElement>(null);
   const height = useFillViewport(box);
 
+  // The toolbar's place, and the day view's frame under it: on the website
+  // the day view starts under the page's header, so the buttons never move.
+  const toolbarAt = useRef<HTMLDivElement>(null);
+  const [dayFrame, setDayFrame] = useState({ top: 0, room: 0 });
+  useLayoutEffect(() => {
+    const measure = () => {
+      const bar = toolbarAt.current?.getBoundingClientRect();
+      const header = document.querySelector(".vt-top-nav")?.getBoundingClientRect();
+      const top = isNativeApp ? 0 : Math.max(0, header?.bottom ?? 0);
+      setDayFrame({ top, room: Math.max(0, (bar?.bottom ?? 0) + 8 - top) });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  const daySpan = useDaySpan();
+  // The toolbar becomes the day view's as the growing day reaches it, and
+  // the month's again as the day starts closing.
+  const reduceMotion = useReducedMotion();
+  const [toolbarDay, setToolbarDay] = useState(dayOpen);
+  useEffect(() => {
+    const id = window.setTimeout(
+      () => setToolbarDay(dayOpen),
+      dayOpen && !reduceMotion ? ZOOM.inMs * 0.4 : 0,
+    );
+    return () => window.clearTimeout(id);
+  }, [dayOpen, reduceMotion]);
+
   const goToday = () => {
     // Today, and no longer on to a trip it was about to show.
     setTodayPressed(true);
@@ -431,51 +470,17 @@ export default function PhoneCalendar() {
           onPickDay={pickDay}
           header={
             <>
+              {/* Where the toolbar sits (HomeToolbar, fixed over the month and
+                  the day view, #180): the row keeps its height here. */}
               <div
-                className="flex items-center justify-between px-4 pb-1"
+                className="pb-1"
                 style={{
                   paddingTop: isNativeApp
                     ? `calc(env(safe-area-inset-top) + ${APP_TOP_GAP})`
                     : "0.5rem",
                 }}
               >
-                <button
-                  ref={listButton}
-                  type="button"
-                  onClick={openList}
-                  // Its sheet drops out of it from the top (#169), standing in for it.
-                  className={cn(
-                    "glass-pill flex h-10 items-center gap-1.5 rounded-full pl-3.5 pr-4 text-[17px] text-primary transition-opacity duration-200",
-                    listOpen && "opacity-0",
-                  )}
-                >
-                  <Layers className="h-5 w-5" />
-                  {words.calendarsButton}
-                </button>
-                {/* One capsule round everything on the right. */}
-                <div className="glass-pill flex h-10 items-center rounded-full text-primary">
-                  {/* Tell Casy (#116): the plus, left of "I dag". */}
-                  {aiAllowed && (
-                    <button
-                      ref={tellButton}
-                      type="button"
-                      onClick={() => setTellOpen(true)}
-                      aria-label={t.tellCasy.button}
-                      title={t.tellCasy.button}
-                      className="flex h-10 w-11 items-center justify-center rounded-l-full"
-                    >
-                      <Plus className="h-6 w-6" strokeWidth={2.25} />
-                    </button>
-                  )}
-                  {aiAllowed && <span aria-hidden className="h-5 w-px bg-primary/30" />}
-                  <button
-                    type="button"
-                    onClick={goToday}
-                    className="flex h-10 items-center rounded-full px-4 text-[17px]"
-                  >
-                    {words.today}
-                  </button>
-                </div>
+                <div ref={toolbarAt} className="h-10" />
               </div>
               <DanishTimeNote className="px-4 pb-1" />
 
@@ -616,7 +621,7 @@ export default function PhoneCalendar() {
             open={tellOpen}
             onClose={() => setTellOpen(false)}
             kept={entries}
-            origin={dayShown !== null ? dayTellButton : tellButton}
+            origin={tellButton}
           />
         </Suspense>
       )}
@@ -635,13 +640,36 @@ export default function PhoneCalendar() {
           aim={voteOpen ? (vote.view?.current ?? undefined) : undefined}
           clear={voteOpen ? vote.clear : 0}
           onTouchDays={voteOpen ? () => foldVote(true) : undefined}
-          onBack={voteOpen ? voteToMonth : closeOverlay}
           onClosed={dayClosed}
-          tellRef={dayTellButton}
-          tellLabel={t.tellCasy.button}
-          onTell={aiAllowed ? () => setTellOpen(true) : undefined}
+          span={daySpan.span}
+          top={dayFrame.top}
+          room={dayFrame.room}
         />
       )}
+      {/* The toolbar over the month and the day view alike (#180). */}
+      <HomeToolbar
+        at={toolbarAt}
+        day={toolbarDay && dayShown !== null}
+        monthLabel={dayShown === null ? "" : capitalize(monthName(dayShown, lang))}
+        span={daySpan.span}
+        onSpan={daySpan.toggle}
+        listRef={listButton}
+        listOpen={listOpen}
+        onList={openList}
+        onBack={voteOpen ? voteToMonth : closeOverlay}
+        tellRef={tellButton}
+        tellLabel={t.tellCasy.button}
+        onTell={aiAllowed ? () => setTellOpen(true) : undefined}
+        onToday={
+          dayShown === null
+            ? goToday
+            : () => {
+                const today = startOfDay(Date.now(), TZ);
+                if (voteOpen) setVote((v) => ({ ...v, day: today }));
+                else showDay(today);
+              }
+        }
+      />
 
       <BottomSheet
         open={listOpen}
