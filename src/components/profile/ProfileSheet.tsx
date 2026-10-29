@@ -14,11 +14,15 @@ import { PhoneGroupContent, PhoneGroupsContent } from "@/pages/Groups";
 import { MyDataContent } from "@/pages/MyData";
 import { AccountContent, AdminContent, PasswordContent } from "@/pages/ProfileScreen";
 
-/** iOS's own push: the new screen in from the right, the old one a little left. */
+/**
+ * iOS's own push: the new screen in from the right, the old one a little
+ * left. The sheet is glass, with nothing behind a screen to hide the one it
+ * covers, so the one going under fades out on its way.
+ */
 const PUSH = {
-  enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-30%", opacity: dir > 0 ? 1 : 0.5 }),
+  enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-30%", opacity: dir > 0 ? 1 : 0 }),
   center: { x: "0%", opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? "-30%" : "100%", opacity: dir > 0 ? 0.5 : 1 }),
+  exit: (dir: number) => ({ x: dir > 0 ? "-30%" : "100%", opacity: dir > 0 ? 0 : 1 }),
 };
 
 /** What the home page's address says of the sheet, kept with each step. */
@@ -32,8 +36,8 @@ interface SheetState {
  * The phone's profile (#169), a sheet over the home page opened by its Profil
  * button (?profile), the calendar still behind it. Its rows open their
  * screens inside it (#174): in from the right as iOS pushes a screen, the
- * header turning into "‹ Profil" and the screen's title, the sheet growing
- * to its large height; back slides them out again. Each screen is in the
+ * header turning into "‹ Profil" and the screen's title, the sheet keeping
+ * its height; back slides them out again. Each screen is in the
  * address (`?profile=settings`, `?profile=groups/<id>`, lib/profileScreens),
  * so the phone's back steps through them, and the old addresses lead here.
  * A link inside the sheet to one of them (a row, a group in the list) opens
@@ -119,7 +123,6 @@ export default function ProfileSheet({
       origin={origin}
       arrived={arrived}
       stacked
-      tall={!atProfile}
       back={
         atProfile
           ? undefined

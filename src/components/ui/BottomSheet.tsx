@@ -91,7 +91,6 @@ export default function BottomSheet({
   arrived = false,
   stacked = false,
   back,
-  tall = false,
   children,
 }: {
   open: boolean;
@@ -122,14 +121,13 @@ export default function BottomSheet({
    */
   arrived?: boolean;
   /**
-   * Screens pushed inside the sheet (#174, the profile): the header stays put
-   * and the children scroll by themselves, each screen its own scroller.
+   * Screens pushed inside the sheet (#174, the profile): the header stays put,
+   * the children scroll by themselves, each screen its own scroller, and the
+   * sheet keeps one height, so a screen only slides in from the side.
    */
   stacked?: boolean;
   /** A way back to the screen before, left of the title, iOS's "‹ Profil" (#174). */
   back?: { label: string; onBack: () => void };
-  /** Grown to nearly the screen's height, as iOS's large sheets (#174). */
-  tall?: boolean;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -216,10 +214,8 @@ export default function BottomSheet({
       ? cn(
           "glass relative z-10 flex w-full flex-col",
           top ? "rounded-b-[28px]" : "rounded-t-[28px]",
-          // Growing to its large height and back (#174): from its content's
-          // height, which min-height can animate where height can't.
-          tall ? "max-h-[92dvh] min-h-[92dvh]" : "max-h-[85dvh] min-h-0",
-          stacked && "transition-[min-height,max-height] duration-300 ease-out",
+          // Screens inside it (#174) never change its height.
+          stacked ? "h-[85dvh]" : "max-h-[85dvh]",
         )
       : cn(
           "glass relative z-10 max-h-[85dvh] w-full overflow-y-auto p-4",

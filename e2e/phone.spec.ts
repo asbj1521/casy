@@ -275,7 +275,7 @@ test.describe("with motion", () => {
     }
   });
 
-  test("a profile screen slides in inside the sheet, which stays on its edge throughout (#174)", async ({
+  test("a profile screen slides in inside the sheet, which keeps its place and height (#174)", async ({
     page,
   }) => {
     await page.goto("/");
@@ -287,10 +287,9 @@ test.describe("with motion", () => {
     const before = (await sheet.boundingBox())!;
     await sheet.getByRole("link", { name: /^Grupper/ }).click();
     await expect(page).toHaveURL(/\?profile=groups$/);
-    // Grown to its large height for the screen.
-    await expect
-      .poll(async () => (await sheet.boundingBox())!.height)
-      .toBeGreaterThan(before.height);
+    // The same height for the screen: it only slides in from the side.
+    await page.waitForTimeout(500);
+    expect(Math.round((await sheet.boundingBox())!.height)).toBe(Math.round(before.height));
 
     // Every frame on the way back: the same sheet, standing on the bottom edge.
     await page.evaluate(() => {
@@ -311,9 +310,7 @@ test.describe("with motion", () => {
     await page.waitForTimeout(1100);
     const bottoms = await page.evaluate(() => (window as unknown as { bottoms: number[] }).bottoms);
     expect(new Set(bottoms)).toEqual(new Set([0]));
-    // Back at its own height.
-    await expect
-      .poll(async () => Math.round((await sheet.boundingBox())!.height))
-      .toBe(Math.round(before.height));
+    // And still the same height.
+    expect(Math.round((await sheet.boundingBox())!.height)).toBe(Math.round(before.height));
   });
 });
