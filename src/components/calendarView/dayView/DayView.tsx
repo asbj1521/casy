@@ -246,6 +246,7 @@ export default function DayView({
         today={today}
         marked={marked}
         turn={shown.turn}
+        tone="orange"
         onPick={onDay}
         onWeek={(direction) => onDay(addDays(day, 7 * direction, TZ))}
       />
@@ -262,6 +263,7 @@ export default function DayView({
           travel={travel}
           aim={aim}
           clear={clear}
+          tone="orange"
           calendar={calendar}
           size="full"
         />

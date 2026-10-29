@@ -2,6 +2,7 @@ import { useRef, type PointerEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { TODAY_TONE, type TodayTone } from "@/components/swipe/todayTone";
 import { useT } from "@/i18n/lang";
 import { mondayOf } from "@/lib/dayColumns";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export default function WeekStrip({
   onPick,
   onWeek,
   arrows = false,
+  tone = "red",
 }: {
   /** The day in the circle: the swipe screen's middle day, the home page's first. */
   center: number;
@@ -45,6 +47,8 @@ export default function WeekStrip({
   /** Turn a week back (-1) or on (1). */
   onWeek: (direction: -1 | 1) => void;
   arrows?: boolean;
+  /** Today's colour: Apple's red, or Casy's orange. */
+  tone?: TodayTone;
 }) {
   const t = useT();
   const reduceMotion = useReducedMotion();
@@ -143,10 +147,10 @@ export default function WeekStrip({
                         "flex h-9 w-9 items-center justify-center rounded-full text-[19px] transition-colors",
                         day === center
                           ? day === today
-                            ? "bg-red-500 font-semibold text-white"
+                            ? cn(TODAY_TONE[tone].fill, "font-semibold text-white")
                             : "bg-foreground font-semibold text-background"
                           : day === today
-                            ? "font-semibold text-red-500"
+                            ? cn(TODAY_TONE[tone].text, "font-semibold")
                             : marked.has(day)
                               ? "font-bold text-primary"
                               : isWeekend(day)

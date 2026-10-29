@@ -12,6 +12,7 @@ import { Clock } from "lucide-react";
 
 import type { EventResponse } from "@/api/events";
 import { STAMP_TONE } from "@/components/swipe/stampTone";
+import { TODAY_TONE, type TodayTone } from "@/components/swipe/todayTone";
 import { AnswerIcon } from "@/components/swipe/SwipeCard";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { useLang, useT } from "@/i18n/lang";
@@ -100,6 +101,7 @@ export default function DayColumns({
   onBlockTap,
   travel = false,
   clear = 0,
+  tone = "red",
   calendar,
   size,
   fitDay = false,
@@ -130,6 +132,8 @@ export default function DayColumns({
   travel?: boolean;
   /** Pixels covered along the bottom (a vote's card): what is aimed at is centred above them. */
   clear?: number;
+  /** Today's colour (its header, the now-line): Apple's red, or Casy's orange. */
+  tone?: TodayTone;
   calendar: MyCalendarDays;
   size: keyof typeof SIZES;
   /**
@@ -522,7 +526,7 @@ export default function DayColumns({
                   compact ? "text-[11px]" : "text-[15px]",
                   // Alone, the day's name is plain, as Apple writes it; side by side, today is red.
                   midnight === today && days > 1
-                    ? "text-red-500"
+                    ? TODAY_TONE[tone].text
                     : onSlot
                       ? "text-primary"
                       : "text-foreground",
@@ -759,7 +763,7 @@ export default function DayColumns({
                       {midnight === today && (
                         <div
                           aria-hidden
-                          className="absolute inset-x-0 z-20 h-0.5 bg-red-500"
+                          className={cn("absolute inset-x-0 z-20 h-0.5", TODAY_TONE[tone].fill)}
                           style={{ top: nowTop }}
                         />
                       )}
@@ -774,7 +778,8 @@ export default function DayColumns({
             <span
               aria-hidden
               className={cn(
-                "absolute z-20 -translate-y-1/2 rounded-full bg-red-500 text-center font-semibold tabular-nums text-white",
+                "absolute z-20 -translate-y-1/2 rounded-full text-center font-semibold tabular-nums text-white",
+                TODAY_TONE[tone].fill,
                 compact ? "left-1 h-2 w-2" : "left-0.5 px-1.5 py-0.5 text-[11px]",
               )}
               style={{ top: nowTop }}
