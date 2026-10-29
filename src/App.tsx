@@ -177,7 +177,7 @@ function App() {
                     </RequireAuth>
                   }
                 />
-                {/* Swiping through a vote's dates, the whole screen (a phone). */}
+                {/* The old swipe screen's address, in push notifications: to the vote over the month (#172). */}
                 <Route
                   path="/events/:eventId/dates"
                   element={
