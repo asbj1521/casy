@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { motion, usePresence, useReducedMotion } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
 
 import Modal from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
@@ -88,6 +89,9 @@ export default function BottomSheet({
   edge = "bottom",
   onClosed,
   arrived = false,
+  stacked = false,
+  back,
+  tall = false,
   children,
 }: {
   open: boolean;
@@ -117,6 +121,15 @@ export default function BottomSheet({
    * shown in place, as it was never closed. Still closes the usual way.
    */
   arrived?: boolean;
+  /**
+   * Screens pushed inside the sheet (#174, the profile): the header stays put
+   * and the children scroll by themselves, each screen its own scroller.
+   */
+  stacked?: boolean;
+  /** A way back to the screen before, left of the title, iOS's "‹ Profil" (#174). */
+  back?: { label: string; onBack: () => void };
+  /** Grown to nearly the screen's height, as iOS's large sheets (#174). */
+  tall?: boolean;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -130,8 +143,25 @@ export default function BottomSheet({
   }, [open, busy, onClose]);
 
   const header = (
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <h3 id={titleId} className="min-w-0 break-words text-[17px] font-bold text-foreground">
+    <div className="relative mb-3 flex items-center justify-between gap-3">
+      {back && (
+        <button
+          type="button"
+          onClick={back.onBack}
+          className="-ml-1.5 flex shrink-0 items-center text-[17px] text-primary"
+        >
+          <ChevronLeft className="h-6 w-6" />
+          {back.label}
+        </button>
+      )}
+      {/* With a way back, the title sits in the middle, as iOS draws it. */}
+      <h3
+        id={titleId}
+        className={cn(
+          "min-w-0 break-words text-[17px] font-bold text-foreground",
+          back && "pointer-events-none absolute inset-x-24 truncate text-center",
+        )}
+      >
         {title}
       </h3>
       <button
@@ -151,34 +181,51 @@ export default function BottomSheet({
   const shape = top
     ? "rounded-b-[28px] pt-[calc(1rem+env(safe-area-inset-top))]"
     : "rounded-t-[28px]";
-  const content = footer ? (
-    <>
-      <div className={cn("px-4", top ? "pt-[calc(1rem+env(safe-area-inset-top))]" : "pt-4")}>
+  const content =
+    footer || stacked ? (
+      <>
+        <div className={cn("px-4", top ? "pt-[calc(1rem+env(safe-area-inset-top))]" : "pt-4")}>
+          {header}
+        </div>
+        {stacked ? (
+          <div className="relative flex min-h-0 flex-auto flex-col overflow-hidden">{children}</div>
+        ) : (
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+            {children}
+          </div>
+        )}
+        {footer && (
+          <div
+            className={cn(
+              "px-4 pt-3",
+              top ? "pb-3" : "pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
+            )}
+          >
+            {footer}
+          </div>
+        )}
+      </>
+    ) : (
+      <>
         {header}
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">{children}</div>
-      <div
-        className={cn("px-4 pt-3", top ? "pb-3" : "pb-[calc(0.75rem+env(safe-area-inset-bottom))]")}
-      >
-        {footer}
-      </div>
-    </>
-  ) : (
-    <>
-      {header}
-      {children}
-    </>
-  );
-  const className = footer
-    ? cn(
-        "glass relative z-10 flex max-h-[85dvh] w-full flex-col",
-        top ? "rounded-b-[28px]" : "rounded-t-[28px]",
-      )
-    : cn(
-        "glass relative z-10 max-h-[85dvh] w-full overflow-y-auto p-4",
-        shape,
-        top ? "pb-4" : "pb-[calc(1rem+env(safe-area-inset-bottom))]",
-      );
+        {children}
+      </>
+    );
+  const className =
+    footer || stacked
+      ? cn(
+          "glass relative z-10 flex w-full flex-col",
+          top ? "rounded-b-[28px]" : "rounded-t-[28px]",
+          // Growing to its large height and back (#174): from its content's
+          // height, which min-height can animate where height can't.
+          tall ? "max-h-[92dvh] min-h-[92dvh]" : "max-h-[85dvh] min-h-0",
+          stacked && "transition-[min-height,max-height] duration-300 ease-out",
+        )
+      : cn(
+          "glass relative z-10 max-h-[85dvh] w-full overflow-y-auto p-4",
+          shape,
+          top ? "pb-4" : "pb-[calc(1rem+env(safe-area-inset-bottom))]",
+        );
 
   const aria = { role: "dialog", "aria-modal": true, "aria-labelledby": titleId } as const;
 
@@ -196,7 +243,7 @@ export default function BottomSheet({
         <GrowingPanel
           origin={origin}
           edge={edge}
-          column={!!footer}
+          column={!!footer || stacked}
           arrived={arrived}
           aria={aria}
           onSubmit={onSubmit}

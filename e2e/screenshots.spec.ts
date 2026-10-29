@@ -84,8 +84,9 @@ const PAGES: {
   { name: "landing", path: "/", signedIn: false },
   { name: "scheduler", path: "/" },
   { name: "scheduler-examples", path: "/", world: { calendars: "connected", groups: "none" } },
-  { name: "groups", path: "/groups" },
-  { name: "group", path: "/groups/g-friday" },
+  // On a phone, screens in the Profil sheet (#174).
+  { name: "groups", path: "/groups", phoneSheet: true },
+  { name: "group", path: "/groups/g-friday", phoneSheet: true },
   { name: "events", path: "/events", phoneSheet: true },
   { name: "event-vote", path: "/events/ev-boardgames" },
   { name: "calendar", path: "/calendar-overview" },
@@ -96,7 +97,7 @@ const PAGES: {
     world: { calendars: "none", groups: "some" },
   },
   { name: "profile", path: "/profile", phoneSheet: true },
-  { name: "my-data", path: "/profile/data" },
+  { name: "my-data", path: "/profile/data", phoneSheet: true },
 ];
 
 for (const { name, path, world, signedIn, phoneSheet } of PAGES) {

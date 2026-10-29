@@ -1,35 +1,23 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-import PhoneSubHeader from "@/components/PhoneSubHeader";
 import SettingsGroups from "@/components/profile/SettingsGroups";
 import TopNav from "@/components/TopNav";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { sheetAddress } from "@/lib/profileScreens";
 
 /**
  * Settings (#129), under the profile: the language and light or dark, the
- * same on a phone, a computer and in the iPhone app. A screen with a back
- * button on a phone, a page on a computer.
+ * same on a phone, a computer and in the iPhone app. A screen in the Profil
+ * sheet on a phone (#174), a page on a computer.
  */
 export default function Settings() {
   const t = useT();
   const phone = usePhoneLayout();
 
-  if (phone) {
-    return (
-      <div className="min-h-screen bg-background">
-        <PhoneSubHeader
-          title={t.profileHub.settings}
-          back="/?profile"
-          backLabel={t.nav.profileShort}
-        />
-        <main className="px-4 pb-8">
-          <SettingsGroups />
-        </main>
-      </div>
-    );
-  }
+  // A phone opens it inside the Profil sheet on the home page (#174).
+  if (phone) return <Navigate to={sheetAddress("settings")} replace />;
 
   return (
     <div className="min-h-screen bg-background">

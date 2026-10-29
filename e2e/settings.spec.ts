@@ -16,12 +16,16 @@ test.describe("signed in", () => {
     }
   });
 
-  test("the profile has a Settings button, and not the choices themselves", async ({ page }) => {
+  test("the profile has a Settings button, and not the choices themselves", async ({
+    page,
+    isMobile,
+  }) => {
     await page.goto("/profile");
     await expect(page.getByRole("heading", { name: "Udseende" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Sprog" })).toHaveCount(0);
     await page.getByRole("link", { name: /Indstillinger/ }).click();
-    await expect(page).toHaveURL(/\/profile\/settings$/);
+    // A phone opens it inside the Profil sheet (#174).
+    await expect(page).toHaveURL(isMobile ? /\?profile=settings$/ : /\/profile\/settings$/);
     await expect(page.getByRole("heading", { name: "Sprog" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Udseende" })).toBeVisible();
   });
@@ -32,8 +36,10 @@ test.describe("signed in", () => {
     await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("heading", { name: "Language" })).toBeVisible();
+    // A phone's settings are a screen in the Profil sheet (#174), whose way back is a button.
     await page
       .getByRole("link", { name: /Profile/ })
+      .or(page.getByRole("dialog").getByRole("button", { name: "Profile" }))
       .first()
       .click();
     // A phone's profile is a sheet over its home page (#169).

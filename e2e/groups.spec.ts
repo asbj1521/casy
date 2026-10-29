@@ -9,17 +9,15 @@ test("a group opens with its members", async ({ page, isMobile }) => {
     .getByRole("link", { name: /Løbeklubben/ })
     .first()
     .click();
-  await expect(page).toHaveURL(/\/groups\/g-running$/);
+  // A phone opens it inside the Profil sheet (#174).
+  await expect(page).toHaveURL(isMobile ? /\?profile=groups\/g-running$/ : /\/groups\/g-running$/);
   for (const name of ["Freja", "Oliver"]) {
     await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
   }
   if (isMobile) {
-    // A screen of its own, with a way back.
-    await page
-      .getByRole("link", { name: /Grupper/ })
-      .first()
-      .click();
-    await expect(page).toHaveURL(/\/groups$/);
+    // A screen of its own in the sheet, with a way back to the list.
+    await page.getByRole("button", { name: "Grupper" }).click();
+    await expect(page).toHaveURL(/\?profile=groups$/);
   }
 });
 
@@ -50,10 +48,10 @@ test("a group shows what it is for, and any member can change it (#152)", async 
 test("renaming a group on a phone leaves its name where it was", async ({ page, isMobile }) => {
   test.skip(!isMobile, "only the phone's group screen is centred");
   await page.goto("/groups/g-friday");
-  const name = page.locator("main p.text-xl", { hasText: "Fredagsbar" });
+  const name = page.getByRole("dialog").locator("p.text-xl", { hasText: "Fredagsbar" });
   const before = (await name.boundingBox())!;
   await page.getByRole("button", { name: "Omdøb gruppen" }).click();
-  const box = (await page.locator("main form input").boundingBox())!;
+  const box = (await page.getByRole("dialog").locator("form input").boundingBox())!;
   // The same centre, within a few pixels, instead of snapping to the left edge.
   expect(Math.abs(box.x + box.width / 2 - (before.x + before.width / 2))).toBeLessThan(12);
   expect(Math.abs(box.y + box.height / 2 - (before.y + before.height / 2))).toBeLessThan(6);
@@ -93,7 +91,11 @@ test("a group's invite link can be shown as a QR code to scan (#150)", async ({ 
   await expect(page.getByRole("img", { name: /QR-kode/ })).toHaveCount(0);
 });
 
-test("a new group is named, then invited to, then opened (#153)", async ({ page, backend }) => {
+test("a new group is named, then invited to, then opened (#153)", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
   await page.goto("/groups");
   await page.getByRole("button", { name: "Lav en gruppe" }).click();
   await page.getByLabel("Gruppenavn").fill("Fredagsfilm");
@@ -112,7 +114,8 @@ test("a new group is named, then invited to, then opened (#153)", async ({ page,
   // Nobody picked: no button to send, only Færdig, which opens the group.
   await expect(sheet.getByRole("button", { name: /^Send/ })).toHaveCount(0);
   await sheet.getByRole("button", { name: "Færdig" }).click();
-  await expect(page).toHaveURL(/\/groups\/g-new-\d+$/);
+  // A phone opens it inside the Profil sheet (#174).
+  await expect(page).toHaveURL(isMobile ? /\?profile=groups\/g-new-\d+$/ : /\/groups\/g-new-\d+$/);
 });
 
 test("people picked in the invite get an invitation, and show as invited", async ({

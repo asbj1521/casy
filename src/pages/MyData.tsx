@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 
@@ -11,7 +11,6 @@ import {
   AiConsentRow,
   AiShareRows,
 } from "@/components/profile/AiConsent";
-import PhoneSubHeader from "@/components/PhoneSubHeader";
 import TopNav from "@/components/TopNav";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
@@ -22,6 +21,7 @@ import { labelBookQuery } from "@/hooks/useEventLabels";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { LOCALE, useLang, useT, type Lang } from "@/i18n/lang";
 import { formatDate, formatTime } from "@/lib/format";
+import { sheetAddress } from "@/lib/profileScreens";
 import { useLabelStatus, useTripStatus } from "@/lib/labelStatus";
 import { useResetTrips, useTrips } from "@/hooks/useTrips";
 import { isNativeApp } from "@/lib/nativeApp";
@@ -50,33 +50,15 @@ function storedSpan(start: string, end: string, lang: Lang): string {
 /**
  * Your data (/profile/data): everything Casy holds about you, in the order
  * and words of the privacy policy's "What Casy stores", read fresh from the
- * server each time, and a copy to download. A phone shows it as a screen
- * off the profile; a computer as a page under the header.
+ * server each time, and a copy to download. A phone shows it as a screen in
+ * the Profil sheet (#174); a computer as a page under the header.
  */
 export default function MyData() {
   const t = useT();
   const phone = usePhoneLayout();
-  const intro = (
-    <p className="mt-1 text-sm text-muted-foreground">
-      {t.myData.intro(
-        <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">
-          {t.myData.privacyLink}
-        </Link>,
-      )}
-    </p>
-  );
 
-  if (phone) {
-    return (
-      <div className="min-h-screen bg-background">
-        <PhoneSubHeader title={t.myData.title} back="/?profile" backLabel={t.nav.profileShort} />
-        <main className="px-4 pb-8">
-          {intro}
-          <DataLists />
-        </main>
-      </div>
-    );
-  }
+  // A phone opens it inside the Profil sheet on the home page (#174).
+  if (phone) return <Navigate to={sheetAddress("data")} replace />;
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,11 +75,27 @@ export default function MyData() {
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
             {t.myData.title}
           </h1>
-          {intro}
-          <DataLists />
+          <MyDataContent />
         </div>
       </main>
     </div>
+  );
+}
+
+/** What Your data shows: on the computer's page, and in the phone's Profil sheet (#174). */
+export function MyDataContent() {
+  const t = useT();
+  return (
+    <>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {t.myData.intro(
+          <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">
+            {t.myData.privacyLink}
+          </Link>,
+        )}
+      </p>
+      <DataLists />
+    </>
   );
 }
 

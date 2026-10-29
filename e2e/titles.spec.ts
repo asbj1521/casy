@@ -5,7 +5,8 @@ test("each main page names itself in the tab", async ({ page, isMobile }) => {
   const pages: [string, string][] = [
     // A phone's events and profile are sheets on its home page (#169).
     ["/events", isMobile ? "Hjem · Casy" : "Mine aftaler · Casy"],
-    ["/groups", "Mine grupper · Casy"],
+    // A phone's groups are a screen in the Profil sheet on its home page (#174).
+    ["/groups", isMobile ? "Hjem · Casy" : "Mine grupper · Casy"],
     // A phone's My calendar is its home page (#169).
     ["/calendar-overview", isMobile ? "Hjem · Casy" : "Min kalender · Casy"],
     ["/profile", isMobile ? "Hjem · Casy" : "Profil · Casy"],

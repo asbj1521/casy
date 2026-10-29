@@ -166,7 +166,9 @@ export default function PhoneCalendar() {
   // Back to the bare month: a step back if this page opened it, else in place.
   const closeOverlay = () => {
     if (arrived.size > 0) setArrived(new Set());
-    if ((location.state as { fromMonth?: boolean } | null)?.fromMonth) navigate(-1);
+    // The steps back include the screens the Profil sheet pushed inside itself (#174).
+    const state = location.state as { fromMonth?: boolean; sheetDepth?: number } | null;
+    if (state?.fromMonth) navigate(-1 - (state.sheetDepth ?? 0));
     else navigate({ search: "" }, { replace: true });
   };
   // Planlæg (#126), in the address too, so the phone's back closes it.

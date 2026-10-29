@@ -60,25 +60,39 @@ test("groups are a row of the profile, under Settings, its count on the home pag
   await expect(page.getByRole("link", { name: /^Grupper/ })).toContainText("1");
 
   await page.getByRole("link", { name: /^Grupper/ }).click();
-  await expect(page).toHaveURL(/\/groups$/);
+  // A screen inside the Profil sheet (#174), with a way back to the profile.
+  await expect(page).toHaveURL(/\?profile=groups$/);
   await expect(page.getByText("Badminton")).toBeVisible();
-  // A screen under the profile, with a way back to it.
-  await page
-    .getByRole("link", { name: /Profil/ })
-    .first()
-    .click();
+  await page.getByRole("dialog").getByRole("button", { name: "Profil" }).click();
   await expect(page).toHaveURL(/\/\?profile$/);
 });
 
-test("the profile's screens open and go back", async ({ page }) => {
-  await page.goto("/profile");
-  await page.getByRole("link", { name: "Log ind og sikkerhed" }).click();
-  await expect(page).toHaveURL(/\/profile\/password$/);
-  await page
-    .getByRole("link", { name: /Profil/ })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/\/\?profile$/);
+test("the profile's screens slide in inside the sheet, and go back (#174)", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Profil", exact: true }).click();
+  const sheet = page.getByRole("dialog");
+  await sheet.getByRole("link", { name: "Log ind og sikkerhed" }).click();
+  await expect(page).toHaveURL(/\?profile=password$/);
+  await expect(sheet.getByRole("heading", { name: "Log ind og sikkerhed" })).toBeVisible();
+  // The phone's back steps out of the screen, the sheet still open.
+  await page.goBack();
+  await expect(page).toHaveURL(/\?profile$/);
+  await expect(sheet.getByRole("heading", { name: "Profil" })).toBeVisible();
+
+  // Two screens deep, Færdig closes the whole sheet onto the plain month.
+  await sheet.getByRole("link", { name: /^Grupper/ }).click();
+  await sheet.getByRole("link", { name: /Løbeklubben/ }).click();
+  await expect(page).toHaveURL(/\?profile=groups\/g-running$/);
+  await sheet.getByRole("button", { name: "Færdig" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  // The old addresses open the screen in the sheet.
+  await page.goto("/profile/settings");
+  await expect(page).toHaveURL(/\?profile=settings$/);
+  await expect(
+    page.getByRole("dialog").getByRole("heading", { name: "Indstillinger" }),
+  ).toBeVisible();
 });
 
 test("My calendar is a month like Apple's: a day opens its busy time, Kalendere the list", async ({
@@ -261,35 +275,45 @@ test.describe("with motion", () => {
     }
   });
 
-  test("back from one of its screens, the profile sheet is there, not grown again (#169)", async ({
+  test("a profile screen slides in inside the sheet, which stays on its edge throughout (#174)", async ({
     page,
   }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Profil", exact: true }).click();
-    const sheet = page.getByRole("dialog", { name: "Profil" });
+    const sheet = page.getByRole("dialog");
+    await expect(sheet.getByRole("heading", { name: "Profil" })).toBeVisible();
+    // Measured once it has grown out of its button.
+    await page.waitForTimeout(700);
+    const before = (await sheet.boundingBox())!;
     await sheet.getByRole("link", { name: /^Grupper/ }).click();
-    await expect(page).toHaveURL(/\/groups$/);
-    // Every frame from the way back on: the sheet full size from the first.
+    await expect(page).toHaveURL(/\?profile=groups$/);
+    // Grown to its large height for the screen.
+    await expect
+      .poll(async () => (await sheet.boundingBox())!.height)
+      .toBeGreaterThan(before.height);
+
+    // Every frame on the way back: the same sheet, standing on the bottom edge.
     await page.evaluate(() => {
-      const w = window as unknown as { heights: number[] };
-      w.heights = [];
+      const w = window as unknown as { bottoms: (number | null)[] };
+      w.bottoms = [];
       const start = performance.now();
       const tick = () => {
         const d = document.querySelector<HTMLElement>('[role="dialog"]');
-        if (d) w.heights.push(Math.round(d.getBoundingClientRect().height));
-        if (performance.now() - start < 1500) requestAnimationFrame(tick);
+        w.bottoms.push(
+          d ? Math.round(window.innerHeight - d.getBoundingClientRect().bottom) : null,
+        );
+        if (performance.now() - start < 1000) requestAnimationFrame(tick);
       };
       tick();
     });
-    await page.getByRole("link", { name: "Profil" }).first().click();
+    await sheet.getByRole("button", { name: "Profil" }).click();
     await expect(page).toHaveURL(/\/\?profile$/);
-    await expect(sheet).toBeVisible();
-    await page.waitForTimeout(500);
-    const heights = await page.evaluate(() => (window as unknown as { heights: number[] }).heights);
-    expect(heights.length).toBeGreaterThan(0);
-    expect(new Set(heights).size).toBe(1);
-    // Closed, it still shrinks back into its button and goes.
-    await sheet.getByRole("button", { name: "Færdig" }).click();
-    await expect(sheet).toHaveCount(0);
+    await page.waitForTimeout(1100);
+    const bottoms = await page.evaluate(() => (window as unknown as { bottoms: number[] }).bottoms);
+    expect(new Set(bottoms)).toEqual(new Set([0]));
+    // Back at its own height.
+    await expect
+      .poll(async () => Math.round((await sheet.boundingBox())!.height))
+      .toBe(Math.round(before.height));
   });
 });
