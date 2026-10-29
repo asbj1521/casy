@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { eventsQuery, type EventResponse, type SuggestedEvent } from "@/api/events";
@@ -27,6 +27,8 @@ const TZ = APP_TIME_ZONE;
 const CASY_RGB = "234, 88, 12";
 /** The decided events this device has seen land in their day (ids, JSON). */
 const SEEN_KEY = "casy-decided-seen";
+/** After a date has landed, before the next one is said. */
+const SETTLE_MS = 1500;
 /** The month gliding to the day before the date flies into it. */
 const GLIDE_FIRST_MS = 650;
 
@@ -49,21 +51,19 @@ function readSeen(): ReadonlySet<string> | null {
  * waiting for your answer pencilled into their days, the events decided as
  * chips in Casy's orange, and, while a vote is answered over the month, the
  * day being answered lit and your answers stamped into their days. Each
- * event decided since this device last looked flies into its day once the
- * home page is free to show it (`idle`): from where its card was, if your
- * own answer settled it (`settledHere`, with confetti as it lands), or else
- * from the Aftaler button. Its chip waits for it to land. On a device's
- * first visit everything already decided counts as seen.
+ * event decided since this device last looked is said once the home page is
+ * free to show it (`idle`): `agreed`, for AgreedCard over the month, whose
+ * closing flies the date into its day (`flyIn`), with confetti as it lands.
+ * Its chip waits for it to land. On a device's first visit everything
+ * already decided counts as seen.
  */
 export function useHomeVotes({
   calendar,
   months,
-  eventsButton,
   idle,
 }: {
   calendar: MyCalendarDays;
   months: RefObject<MonthViewHandle | null>;
-  eventsButton: RefObject<HTMLElement | null>;
   /** Nothing over the month: no sheet, no vote, no open day. */
   idle: boolean;
 }) {
@@ -113,31 +113,23 @@ export function useHomeVotes({
     [months],
   );
 
-  // Where the card was when your own answer settled a date, by event.
-  const settledFrom = useRef(new Map<string, DOMRect>());
-  const settledHere = useCallback((eventId: string, from: DOMRect) => {
-    settledFrom.current.set(eventId, from);
-  }, []);
+  // The next date agreed since this device last looked: said over the month
+  // (AgreedCard) once nothing else is over it, then flown into its day.
+  const [flying, setFlying] = useState(false);
   const [celebrations, setCelebrations] = useState(0);
-
-  // One date at a time flies into its day, once nothing is over the month.
   const next = unseen.find((e) => e.currentDate !== null);
-  const flying = useRef(false);
-  useEffect(() => {
-    if (!next?.currentDate || !idle || flying.current) return;
+  const agreed =
+    next && next.currentDate && idle && !flying ? { ...next, currentDate: next.currentDate } : null;
+
+  /** The card closed: the month glides to the day, and the date flies there from `from`. */
+  function flyIn(from: DOMRect) {
+    if (!next?.currentDate) return;
     const id = next.id;
     const day = startOfDay(Date.parse(next.currentDate.start), TZ);
     const label = titleOf(next);
-    let started = false;
-    flying.current = true;
+    setFlying(true);
     months.current?.glideToDay(day, 0);
-    const timer = window.setTimeout(() => {
-      started = true;
-      const mine = settledFrom.current.get(id);
-      const from =
-        mine ??
-        eventsButton.current?.getBoundingClientRect() ??
-        new DOMRect(window.innerWidth / 2, window.innerHeight, 0, 0);
+    window.setTimeout(() => {
       flyIntoDay({
         from,
         day,
@@ -147,19 +139,14 @@ export function useHomeVotes({
           color: `rgb(${shade(CASY_RGB, dark)})`,
         },
         onLand: () => {
-          flying.current = false;
-          settledFrom.current.delete(id);
           setSeen((s) => new Set([...(s ?? []), id]));
-          if (mine) setCelebrations((n) => n + 1);
+          setCelebrations((n) => n + 1);
+          // A moment to see it settle before the next agreed date is said.
+          window.setTimeout(() => setFlying(false), SETTLE_MS);
         },
       });
     }, GLIDE_FIRST_MS);
-    return () => {
-      window.clearTimeout(timer);
-      // Once in the air it lands by itself; before that it waits for the next chance.
-      if (!started) flying.current = false;
-    };
-  }, [next, idle, months, eventsButton, titleOf, dark]);
+  }
 
   const voteById = useCallback(
     (id: string | null) => {
@@ -177,7 +164,8 @@ export function useHomeVotes({
     view,
     setView,
     showDay,
-    settledHere,
+    agreed,
+    flyIn,
     celebrations,
   };
 }

@@ -30,9 +30,9 @@ const SWIPE_HINT_SEEN = "casy-swipe-hint-seen";
  * change an answer. A yes that clashes with something critical of yours
  * (#114) is asked first (`confirmClash`), as is a no to the date already
  * decided, which moves it for everyone (`confirmMove`). The answer that
- * settles the event brings `celebrate`, and `onScheduled` hears of it.
+ * settles the event brings `celebrate`.
  */
-export function useVoteDeck(event: VoteEvent, { onScheduled }: { onScheduled?: () => void } = {}) {
+export function useVoteDeck(event: VoteEvent) {
   const { lang } = useLang();
   const userId = useSignedInUser().id;
   const queryClient = useQueryClient();
@@ -60,11 +60,6 @@ export function useVoteDeck(event: VoteEvent, { onScheduled }: { onScheduled?: (
   const [error, setError] = useState<string | null>(null);
   // Once moved by a "no" to the decided date, the new date, said.
   const [moved, setMoved] = useState<string | null>(null);
-  // Heard by the save below, which outlives the render that started it.
-  const scheduled = useRef(onScheduled);
-  useEffect(() => {
-    scheduled.current = onScheduled;
-  });
 
   // Answers are saved one after another, in the order given, while the
   // cards move on without waiting. Each reply is the whole list of events
@@ -80,7 +75,6 @@ export function useVoteDeck(event: VoteEvent, { onScheduled }: { onScheduled?: (
         if (data.outcome === "scheduled") {
           setCelebrate(true);
           haptic("success");
-          scheduled.current?.();
         }
         if (data.outcome === "moved") {
           const now = data.events.find((e) => e.id === event.id)?.currentDate;

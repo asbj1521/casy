@@ -46,7 +46,9 @@ test("decided events show in their days in Casy's orange", async ({ page }) => {
 test.describe("with motion", () => {
   test.use({ reducedMotion: "no-preference" });
 
-  test("a date decided since this phone last looked flies into its day, once", async ({ page }) => {
+  test("a date agreed since this phone last looked is said over the month, then flies into its day", async ({
+    page,
+  }) => {
     await page.addInitScript(() => {
       if (!sessionStorage.getItem("seeded")) {
         localStorage.setItem("casy-decided-seen", "[]");
@@ -54,10 +56,15 @@ test.describe("with motion", () => {
       }
     });
     await page.goto("/");
-    // Each one remembered as it lands.
+    const card = page.getByRole("dialog", { name: "Løbetur" });
+    await expect(card.getByText("Alle har svaret")).toBeVisible();
+    await expect(card.getByRole("button", { name: /Tilføj til min kalender/ })).toBeVisible();
+    await card.getByRole("button", { name: "Se den i kalenderen" }).click();
+    await expect(card).toHaveCount(0);
+    // Remembered as it lands, and drawn in its day.
     await expect
       .poll(async () => page.evaluate(() => localStorage.getItem("casy-decided-seen")), {
-        timeout: 15_000,
+        timeout: 10_000,
       })
       .toContain("ev-run");
     await expect(page.getByText("Løbetur", { exact: true })).toBeVisible();

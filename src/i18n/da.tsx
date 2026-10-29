@@ -1269,6 +1269,9 @@ export const da = {
   homeVote: {
     answer: (title: string) => `Svar på ${title}`,
     waiting: (n: number) => `${n} afstemninger venter`,
+    // The date agreed, over the month before it flies into its day.
+    everyone: "Alle har svaret",
+    show: "Se den i kalenderen",
   },
   planFromCalendar: {
     button: "Planlæg",

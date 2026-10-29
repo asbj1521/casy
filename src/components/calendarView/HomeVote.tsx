@@ -28,9 +28,8 @@ const THANKS_MS = 1600;
  * given (`onView`). Swiped or tapped, as on the old swipe screen, and with
  * the same deck behind it (useVoteDeck). A tap on a day opens its hours,
  * the card stepping aside meanwhile (`hidden`). After the last answer a
- * short thanks, then it closes; an answer that settles the date says so with
- * where the card was (`onScheduled`), for the date to fly into its day from
- * there. Kept apart from the month on purpose: the day view to come (#176)
+ * short thanks, then it closes; a date it settled is then said over the
+ * month and flies into its day (AgreedCard, useHomeVotes). Kept apart from the month on purpose: the day view to come (#176)
  * is meant to sit under this same card.
  */
 export default function HomeVote({
@@ -38,7 +37,6 @@ export default function HomeVote({
   hidden,
   onShowDay,
   onView,
-  onScheduled,
   onClose,
 }: {
   event: VoteEvent;
@@ -47,20 +45,13 @@ export default function HomeVote({
   onShowDay: (day: number, clear: number) => void;
   /** The day being answered, and the answers to stamp into their days. */
   onView: (view: { lit: number | null; stamps: ReadonlyMap<number, EventResponse> }) => void;
-  onScheduled: (from: DOMRect) => void;
   onClose: () => void;
 }) {
   const t = useT();
   const { lang } = useLang();
   const calendar = useMyCalendarDays();
   const panel = useRef<HTMLDivElement>(null);
-  const card = useRef<HTMLDivElement>(null);
-  const deck = useVoteDeck(event, {
-    onScheduled: () => {
-      const box = card.current ?? panel.current;
-      if (box) onScheduled(box.getBoundingClientRect());
-    },
-  });
+  const deck = useVoteDeck(event);
   const { dates, index, current, done, answerOf } = deck;
 
   // Opened on a vote already answered (a push, or Aftaler's row): from its
@@ -170,7 +161,7 @@ export default function HomeVote({
         </div>
       ) : (
         <>
-          <div ref={card} className="relative mt-3 h-[min(30dvh,224px)]">
+          <div className="relative mt-3 h-[min(30dvh,224px)]">
             {/* The next date waits underneath, so the stack reads as a stack. */}
             {dates[index + 1] && (
               <div aria-hidden className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">

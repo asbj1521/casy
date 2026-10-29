@@ -12,6 +12,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CalendarPlus, ChevronRight, Layers, Plane, Plus } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
+import AgreedCard from "@/components/calendarView/AgreedCard";
 import HomeBar from "@/components/calendarView/HomeBar";
 import HomeVote from "@/components/calendarView/HomeVote";
 import { useHomeVotes } from "@/components/calendarView/useHomeVotes";
@@ -283,7 +284,6 @@ export default function PhoneCalendar() {
   const homeVotes = useHomeVotes({
     calendar,
     months,
-    eventsButton,
     idle: settled && location.search === "" && pickedDay === null,
   });
   const voteEvent = homeVotes.voteById(voteId);
@@ -297,13 +297,6 @@ export default function PhoneCalendar() {
     closeNow.current = closeOverlay;
   });
   const closeVote = useCallback(() => closeNow.current(), []);
-  const { settledHere } = homeVotes;
-  const settledNow = useCallback(
-    (from: DOMRect) => {
-      if (voteId) settledHere(voteId, from);
-    },
-    [voteId, settledHere],
-  );
   const month = useMemo(
     () => ({
       ...calendar,
@@ -480,9 +473,11 @@ export default function PhoneCalendar() {
           hidden={pickedDay !== null}
           onShowDay={homeVotes.showDay}
           onView={homeVotes.setView}
-          onScheduled={settledNow}
           onClose={closeVote}
         />
+      )}
+      {homeVotes.agreed && (
+        <AgreedCard key={homeVotes.agreed.id} event={homeVotes.agreed} onDone={homeVotes.flyIn} />
       )}
       {homeVotes.celebrations > 0 && <Celebration key={homeVotes.celebrations} />}
       {(settled || eventsOpen) && (

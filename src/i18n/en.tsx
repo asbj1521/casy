@@ -1223,6 +1223,8 @@ export const en: Messages = {
   homeVote: {
     answer: (title: string) => `Answer ${title}`,
     waiting: (n: number) => `${n} votes waiting`,
+    everyone: "Everyone has answered",
+    show: "See it in your calendar",
   },
   planFromCalendar: {
     button: "Plan",

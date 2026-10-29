@@ -1,13 +1,16 @@
 import { haptic } from "@/lib/haptics";
 
 /** How long the date takes to fly into its day. */
-const FLIGHT_MS = 750;
+const FLIGHT_MS = 1000;
+/** The ring spreading from the day as it lands. */
+const RIPPLE_MS = 700;
 
 /**
  * An agreed date flying into its day on the home page's month (#172): a chip
  * the size and colour of the month's own, with the event's title, starts
- * large over where the date came from (the vote's card, or the Aftaler
- * button) and arcs down into its day, landing with a thud. Built on the
+ * large over where the date came from (the date on AgreedCard) and arcs
+ * down into its day, landing with a little overshoot, a ring spreading from
+ * the day's number, a thud and a tick of success. Built on the
  * browser's animation engine, on transform and opacity only, like the
  * send flight (sendFlightPlay.ts); the chip is the size it lands at, so its
  * text is sharp where it ends. `onLand` runs as it lands (at once under
@@ -64,7 +67,7 @@ export function flyIntoDay({
   // From the middle of where it came from, three times as big, over an arc.
   const dx = from.left + from.width / 2 - (to.left + to.width / 2);
   const dy = from.top + from.height / 2 - (to.top + to.height / 2);
-  const lift = Math.min(120, Math.abs(dy) / 3);
+  const lift = Math.min(160, Math.abs(dy) / 2.5);
   const animation = chip.animate(
     [
       { transform: `translate(${dx}px, ${dy}px) scale(3)`, opacity: 0 },
@@ -73,15 +76,43 @@ export function flyIntoDay({
         transform: `translate(${dx * 0.4}px, ${dy * 0.4 - lift}px) scale(1.8)`,
         offset: 0.55,
       },
-      { transform: "translate(0, 0) scale(0.92)", offset: 0.9 },
+      { transform: "translate(0, 0) scale(0.82)", offset: 0.86 },
+      { transform: "translate(0, 0) scale(1.12)", offset: 0.94 },
       { transform: "translate(0, 0) scale(1)", opacity: 1 },
     ],
     { duration: FLIGHT_MS, easing: "cubic-bezier(0.32, 0.72, 0, 1)" },
   );
   animation.onfinish = () => {
     haptic("thud");
+    window.setTimeout(() => haptic("success"), 120);
+    ripple(box, colors.color);
     onLand();
     // A frame for the month's own chip to be drawn underneath first.
     requestAnimationFrame(() => chip.remove());
   };
+}
+
+/** A ring spreading from the day's number (the top of its cell) and fading. */
+function ripple(cell: DOMRect, color: string) {
+  const size = 32;
+  const ring = document.createElement("div");
+  Object.assign(ring.style, {
+    position: "fixed",
+    left: `${cell.left + cell.width / 2 - size / 2}px`,
+    top: `${cell.top + 20 - size / 2}px`,
+    width: `${size}px`,
+    height: `${size}px`,
+    borderRadius: "9999px",
+    border: `3px solid ${color}`,
+    zIndex: "70",
+    pointerEvents: "none",
+  });
+  document.body.appendChild(ring);
+  ring.animate(
+    [
+      { transform: "scale(1)", opacity: 0.9 },
+      { transform: "scale(3.2)", opacity: 0 },
+    ],
+    { duration: RIPPLE_MS, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+  ).onfinish = () => ring.remove();
 }
