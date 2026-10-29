@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { RotateCcw, Sparkles, Users } from "lucide-react";
+import { Sparkles, Users } from "lucide-react";
 
 import AiConversation from "@/components/findDate/ai/AiConversation";
 import { MAX_NAME_LENGTH } from "@/components/schedulerSettings/options";
@@ -94,25 +94,23 @@ export default function PlanSetup({
                 className={FIELD}
               />
             </label>
-            {aiOn &&
-              (planned ? (
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-muted-foreground">{t.aiPlan.guessedNote}</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      planner.reset();
-                      onAiMode(true);
-                    }}
-                    className="glass-pill inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-primary"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {t.aiPlan.again}
-                  </button>
-                </div>
-              ) : (
-                <AiButton onClick={() => onAiMode(true)} label={t.aiPlan.start} />
-              ))}
+            {/* Always in its place: after a plan made with AI it starts over. */}
+            {aiOn && (
+              <>
+                <AiButton
+                  onClick={() => {
+                    if (planned) planner.reset();
+                    onAiMode(true);
+                  }}
+                  label={planned ? t.aiPlan.again : t.aiPlan.start}
+                />
+                {planned && (
+                  <p className="mt-1.5 px-1 text-xs text-muted-foreground">
+                    {t.aiPlan.guessedNote}
+                  </p>
+                )}
+              </>
+            )}
 
             <TimeRows
               settings={sched}

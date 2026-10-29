@@ -30,8 +30,8 @@ const DAY_PRESETS = [
   { kind: "weekends", dows: [6, 0] },
 ] as const;
 
-/** Fredag and lørdag: the evenings most often planned for. */
-const PARTY_DAYS = [5, 6];
+/** Fredag og lørdag: the evenings most often planned for, a quick pick of their own. */
+const FRI_SAT = [5, 6];
 
 type Open = "time" | "days" | "startDay" | null;
 
@@ -79,9 +79,9 @@ export default function TimeRows({
   const startLabel = startOptions.find((o) => o.value === startValue(wheel))?.label;
   const clock = (minutes: number) => formatClockMinutes(minutes % DAY_MINUTES);
   const days = describeDays(settings.dows);
-  const party = days.kind === "list" && days.dows.join() === PARTY_DAYS.join();
-  const daysLabel = party
-    ? words.partyDays
+  const friSat = days.kind === "list" && days.dows.join() === FRI_SAT.join();
+  const daysLabel = friSat
+    ? words.friSat
     : days.kind === "list"
       ? days.dows.map((d) => t.weekdaysShort[d]).join(", ")
       : capitalize(t.scheduler.dayList[days.kind]);
@@ -90,15 +90,13 @@ export default function TimeRows({
       key: p.kind,
       dows: p.dows,
       label: capitalize(t.scheduler.dayList[p.kind]),
-      detail: undefined,
       on: days.kind === p.kind,
     })),
     {
-      key: "party",
-      dows: PARTY_DAYS,
-      label: words.partyDays,
-      detail: words.partyDetail,
-      on: party,
+      key: "friSat",
+      dows: FRI_SAT,
+      label: words.friSat,
+      on: friSat,
     },
   ];
 
@@ -239,7 +237,6 @@ export default function TimeRows({
               checked={p.on}
               onChange={() => onChange({ dows: [...p.dows] })}
               label={p.label}
-              detail={p.detail}
             />
           ))}
         </ListGroup>
