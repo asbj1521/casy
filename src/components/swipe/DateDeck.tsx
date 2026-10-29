@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { ChevronLeft, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 import CalendarSheet from "@/components/swipe/CalendarSheet";
 import CalendarStrip from "@/components/swipe/CalendarStrip";
@@ -35,16 +34,10 @@ const TZ = APP_TIME_ZONE;
  * it: the answer shows at once, and a failed save takes it back and says so.
  * The answer that settles the event brings the celebration.
  *
- * `screen` fills a phone's screen (SwipeDates); `pane` sits in a computer's
- * open event (VoteDetails).
+ * It sits in a computer's open event (VoteDetails); a phone answers the same
+ * dates over the home page's month instead (#172, HomeVote).
  */
-export default function DateDeck({
-  event,
-  variant,
-}: {
-  event: VoteEvent;
-  variant: "screen" | "pane";
-}) {
+export default function DateDeck({ event }: { event: VoteEvent }) {
   const t = useT();
   const { lang } = useLang();
   const calendar = useMyCalendarDays();
@@ -106,11 +99,10 @@ export default function DateDeck({
     [dates],
   );
   const slotLabel = eventTitle(event.title, t);
-  const screen = variant === "screen";
 
   // One segment per date: answered, the one on screen, still to come.
   const progress = (
-    <div className={cn("flex gap-1", screen ? "px-4" : "min-w-0 flex-1")}>
+    <div className="flex min-w-0 flex-1 gap-1">
       {dates.map((d, i) => (
         <button
           key={d.id}
@@ -135,32 +127,11 @@ export default function DateDeck({
   );
 
   return (
-    // Both fill the height they're given: a phone's screen, or on a computer
-    // the window's height below the event's header (VoteDetails).
+    // It fills the window's height below the event's header (VoteDetails).
     <div className="flex h-full min-h-0 flex-col">
-      {/* Back to My events (a phone), the event, how far along, and a step back. */}
-      <header className={cn("flex items-center gap-2", screen ? "h-12 shrink-0 px-2" : "mb-2")}>
-        {screen && (
-          <Link
-            to="/events"
-            aria-label={t.swipe.toEvents}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-primary"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Link>
-        )}
-        {/* A computer's pane already names the event above the cards, so
-            how far along it is takes the title's place there. */}
-        {screen ? (
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-semibold text-foreground">
-              {eventTitle(event.title, t)}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">{event.group.name}</p>
-          </div>
-        ) : (
-          progress
-        )}
+      {/* How far along (the pane already names the event above), and a step back. */}
+      <header className="mb-2 flex items-center gap-2">
+        {progress}
         <button
           type="button"
           onClick={() => back()}
@@ -171,23 +142,15 @@ export default function DateDeck({
           <RotateCcw className="h-5 w-5" />
         </button>
       </header>
-      {screen && progress}
 
       {done ? (
-        <DoneView
-          event={event}
-          dates={dates}
-          answerOf={answerOf}
-          onChange={back}
-          moved={moved}
-          screen={screen}
-        />
+        <DoneView event={event} dates={dates} answerOf={answerOf} onChange={back} moved={moved} />
       ) : (
         current &&
         (() => {
           // The card, the next date waiting under it, your calendar, and the answers.
           const stack = (
-            <div className={cn("relative h-full", screen && "mx-auto max-w-md")}>
+            <div className="relative h-full">
               {/* The next date waits underneath, so the stack reads as a stack. */}
               {dates[index + 1] && (
                 <div aria-hidden className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
@@ -203,7 +166,7 @@ export default function DateDeck({
                 </div>
               )}
               <AnimatePresence custom={exit} initial={false}>
-                <SwipeCard key={current.id} exitTo={exit} onAnswer={answer} draggable={screen}>
+                <SwipeCard key={current.id} exitTo={exit} onAnswer={answer} draggable={false}>
                   <CardFace
                     event={event}
                     date={current}
@@ -226,47 +189,16 @@ export default function DateDeck({
               slotLabel={slotLabel}
               calendar={calendar}
               onOpen={setCalendarFrom}
-              fit={!screen}
+              fit
               focus={shownClash && { start: shownClash.event.start, end: shownClash.event.end }}
             />
           );
           const hint = !hintSeen && index === 0 && !Object.keys(given).length && (
-            <p
-              className={cn(
-                "text-center text-xs text-muted-foreground",
-                screen ? "px-6 pb-2" : "mt-1",
-              )}
-            >
-              {screen ? t.swipe.hint : t.swipe.keysHint}
-            </p>
+            <p className="mt-1 text-center text-xs text-muted-foreground">{t.swipe.keysHint}</p>
           );
-          // A phone: one column, the card taking what height is left. A
-          // computer: the card and its answers beside your calendar, all in
-          // one screen's height; no swiping, buttons and keys instead.
-          return screen ? (
-            <>
-              <div className="relative mt-3 min-h-[230px] flex-1 px-4">{stack}</div>
-              <div className="mt-3 px-4">
-                <div className="mx-auto max-w-md">{strip}</div>
-              </div>
-              {confirmMove ? (
-                <MoveConfirm
-                  onConfirm={() => answer("declined", true)}
-                  onCancel={cancelMove}
-                  className="mx-4 my-3"
-                />
-              ) : confirmClash ? (
-                <ClashConfirm
-                  onConfirm={() => answer(confirmClash, true)}
-                  onCancel={cancelClash}
-                  className="mx-4 my-3"
-                />
-              ) : (
-                <AnswerButtons onAnswer={answer} screen />
-              )}
-              {hint}
-            </>
-          ) : (
+          // The card and its answers beside your calendar, all in one
+          // screen's height; no swiping, buttons and keys instead.
+          return (
             <div className="mt-3 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-5">
               <div className="flex min-h-0 flex-col">
                 <div className="relative min-h-[200px] flex-1">{stack}</div>
@@ -294,7 +226,7 @@ export default function DateDeck({
       )}
 
       {error && (
-        <Notice tone="error" bare className={cn("mt-2", screen && "px-4")}>
+        <Notice tone="error" bare className="mt-2">
           {error}
         </Notice>
       )}
@@ -307,7 +239,7 @@ export default function DateDeck({
           marked={marked}
           calendar={calendar}
           from={calendarFrom}
-          contained={!screen}
+          contained
           onClose={() => setCalendarFrom(null)}
         />
       )}

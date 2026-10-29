@@ -14,7 +14,7 @@ export default function DeckBox({ event }: { event: VoteEvent }) {
   const height = useFillViewport(box, { bottom: 40, min: 460 });
   return (
     <div ref={box} className="mt-3" style={{ height: height ?? undefined }}>
-      {height !== null && <DateDeck event={event} variant="pane" />}
+      {height !== null && <DateDeck event={event} />}
     </div>
   );
 }

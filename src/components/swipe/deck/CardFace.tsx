@@ -28,6 +28,7 @@ export default function CardFace({
   clashes,
   shownClash,
   onShowClash,
+  compact = false,
 }: {
   event: VoteEvent;
   date: CandidateDate;
@@ -40,6 +41,8 @@ export default function CardFace({
   /** The warning whose event is shown below (the card on top only). */
   shownClash?: string | null;
   onShowClash?: (clash: ImportantClash | null) => void;
+  /** Smaller, along the bottom of the home page's month (#172). */
+  compact?: boolean;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -48,7 +51,12 @@ export default function CardFace({
   const clash = clashesOn(date, calendar);
 
   return (
-    <div className="flex h-full select-none flex-col rounded-3xl border bg-card p-5 shadow-xl shadow-black/10">
+    <div
+      className={cn(
+        "flex h-full select-none flex-col rounded-3xl border bg-card shadow-xl shadow-black/10",
+        compact ? "p-4" : "p-5",
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-bold uppercase tracking-wide text-primary">
           {t.swipe.dateOf(position, total)}
@@ -71,10 +79,15 @@ export default function CardFace({
           </span>
         )}
       </div>
-      <p className="mt-2 text-[28px] font-extrabold leading-[1.1] tracking-tight text-foreground">
+      <p
+        className={cn(
+          "font-extrabold leading-[1.1] tracking-tight text-foreground",
+          compact ? "mt-1 text-[22px]" : "mt-2 text-[28px]",
+        )}
+      >
         {headline.lines.join(" ")}
       </p>
-      <p className="mt-1 text-lg text-foreground">
+      <p className={cn("text-foreground", compact ? "text-[17px]" : "mt-1 text-lg")}>
         {headline.time}
         <YourTime kind={event.settings.kind} date={date} />
       </p>
@@ -92,7 +105,7 @@ export default function CardFace({
         onShow={onShowClash}
         className="mt-2"
       />
-      <PlaceNote event={event} readOnly className="mt-3" />
+      <PlaceNote event={event} readOnly className={compact ? "mt-2" : "mt-3"} />
 
       <div className="mt-auto pt-3">
         {yours && (

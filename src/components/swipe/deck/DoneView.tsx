@@ -20,7 +20,6 @@ export default function DoneView({
   answerOf,
   onChange,
   moved,
-  screen,
 }: {
   event: VoteEvent;
   dates: CandidateDate[];
@@ -28,7 +27,6 @@ export default function DoneView({
   onChange: (index: number) => void;
   /** The new date, after your answer moved the decided one. */
   moved: string | null;
-  screen: boolean;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -37,8 +35,8 @@ export default function DoneView({
   const missing = event.status === "pending" ? stillToAnswer(event) : [];
 
   return (
-    <div className={cn("min-h-0 flex-1 overflow-y-auto", screen ? "px-4 pb-6 pt-5" : "mt-4")}>
-      <div className={cn(screen && "mx-auto max-w-md")}>
+    <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
+      <div>
         {moved && (
           <Notice tone="info" className="mb-4">
             {t.swipe.moved(moved)}
@@ -85,7 +83,7 @@ export default function DoneView({
             )}
             {stage === "choose" && (
               <Link
-                to={screen ? "/events" : `/events/${event.id}`}
+                to={`/events/${event.id}`}
                 className="mt-3 inline-flex rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
               >
                 {t.swipe.goChoose}
@@ -137,15 +135,6 @@ export default function DoneView({
               })}
             </ul>
           </section>
-        )}
-
-        {screen && (
-          <Link
-            to="/events"
-            className="mt-6 inline-flex rounded-full border px-4 py-2 text-sm font-semibold text-foreground"
-          >
-            {t.swipe.toEvents}
-          </Link>
         )}
       </div>
     </div>

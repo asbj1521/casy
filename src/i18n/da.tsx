@@ -1019,7 +1019,6 @@ export const da = {
     clash: (what: string, when: string, more: number) =>
       `Du har ${what}${when ? ` ${when}` : ""}${more > 0 ? ` og ${more} mere` : ""}`,
     previous: "Forrige dato",
-    toEvents: "Til Mine aftaler",
     hint: "Swipe til højre, hvis du kan, til venstre, hvis du ikke kan, og op, hvis du kan, men helst ikke.",
     keysHint: "Brug knapperne eller piletasterne: højre kan, venstre kan ikke, op helst ikke.",
     doneTitle: "Tak, du har svaret",
@@ -1266,6 +1265,11 @@ export const da = {
   },
   // Planning from My calendar (#126): the Planlæg sheet, the paper pile and
   // the dates it finds.
+  // A vote answered over the home page's month (#172).
+  homeVote: {
+    answer: (title: string) => `Svar på ${title}`,
+    waiting: (n: number) => `${n} afstemninger venter`,
+  },
   planFromCalendar: {
     button: "Planlæg",
     findDate: "Find dato",

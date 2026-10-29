@@ -118,12 +118,16 @@ test("a computer answers a vote's dates with the arrow keys", async ({
   await expect(section(page, "Venter på andre").getByText("Brætspilsaften")).toBeVisible();
 });
 
-test("a phone swipes through a vote's dates", async ({ page, backend, isMobile }) => {
+test("a phone swipes through a vote's dates over the home page's month", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
   test.skip(!isMobile, "phones only");
   await page.goto("/events");
-  // The vote's row goes straight to swiping (#103).
+  // The vote's row goes straight to swiping (#103), over the month now (#172).
   await page.getByRole("link", { name: /Brætspilsaften/ }).click();
-  await expect(page).toHaveURL(/\/events\/ev-boardgames\/dates$/);
+  await expect(page).toHaveURL(/\/\?vote=ev-boardgames$/);
 
   const answers = () => backend.calls.filter((c) => c.body.action === "answer");
   for (let i = 1; i <= 3; i++) {
@@ -145,6 +149,10 @@ test("a phone swipes through a vote's dates", async ({ page, backend, isMobile }
     await expect.poll(() => answers().length).toBe(i);
   }
   expect(answers().every((c) => c.body.response === "accepted")).toBe(true);
+  // Thanks, then the plain month again.
+  await expect(page.getByText("Tak, du har svaret").first()).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("region", { name: "Brætspilsaften" })).toHaveCount(0);
 });
 
 test("everyone sees an event's place and note; only the suggester edits them", async ({

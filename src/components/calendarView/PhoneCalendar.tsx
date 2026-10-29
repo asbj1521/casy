@@ -13,11 +13,15 @@ import { CalendarPlus, ChevronRight, Layers, Plane, Plus } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
 import HomeBar from "@/components/calendarView/HomeBar";
+import HomeVote from "@/components/calendarView/HomeVote";
+import { useHomeVotes } from "@/components/calendarView/useHomeVotes";
+import VotePill from "@/components/calendarView/VotePill";
 import PhoneCalendarAccess from "@/components/calendarView/PhoneCalendarAccess";
 import { DayRow } from "@/components/calendarView/DayRow";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
+import Celebration from "@/components/swipe/Celebration";
 import MonthView, { type MonthViewHandle } from "@/components/swipe/MonthView";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -30,6 +34,8 @@ import { useMyCalendarView } from "@/hooks/useMyCalendarView";
 import { useStatusTap } from "@/hooks/useStatusTap";
 import { usePhoneImport } from "@/hooks/usePhoneImport";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
+import { eventTitle } from "@/i18n/eventTitle";
+import type { VoteEvent } from "@/lib/vote";
 import { useLang, useT } from "@/i18n/lang";
 import { capitalize, dayLabel } from "@/lib/format";
 import { useHomeBarFlight } from "@/lib/homeBar";
@@ -114,13 +120,6 @@ export default function PhoneCalendar() {
   );
   // Bars of trips Casy is asking about change length with each pulse.
   const step = useGuessStep(marks.some((m) => m.kind === "question"));
-  const month = useMemo(
-    () =>
-      marks.length === 0
-        ? calendar
-        : { ...calendar, items: [...tripBars(marks, t.trips, step), ...calendar.items] },
-    [calendar, marks, t, step],
-  );
   // The first time My calendar opens with something waiting, it glides there
   // (and on to the next one as each is answered); "I dag" stops it.
   const [mayReveal] = useState(() => !tripReveal.done);
@@ -197,6 +196,10 @@ export default function PhoneCalendar() {
   const openEvents = () => navigate({ search: "?events" }, { state: { fromMonth: true } });
   const profileOpen = params.has("profile");
   const openProfile = () => navigate({ search: "?profile" }, { state: { fromMonth: true } });
+  // What pickDay (stable, below) needs to know of the votes (#172), set further down.
+  const waitingNow = useRef<VoteEvent[]>([]);
+  const voteOpenNow = useRef(false);
+  const openVoteNow = useRef<(id: string) => void>(() => {});
   const [pickedDay, setPickedDay] = useState<number | null>(null);
   // What the day panel shows while it slides away, after pickedDay is cleared.
   const [panelDay, setPanelDay] = useState(() => startOfDay(Date.now(), TZ));
@@ -209,6 +212,18 @@ export default function PhoneCalendar() {
       if (mark && isPending(mark)) {
         setPickedDay(null);
         openTrip(mark);
+        return;
+      }
+      // While answering, a day opens its hours; otherwise a waiting vote's
+      // pencilled date starts answering it.
+      const vote = voteOpenNow.current
+        ? undefined
+        : waitingNow.current.find((v) =>
+            v.candidates.some((c) => startOfDay(Date.parse(c.start), TZ) === day),
+          );
+      if (vote) {
+        setPickedDay(null);
+        openVoteNow.current(vote.id);
         return;
       }
       setPanelDay(day);
@@ -262,6 +277,54 @@ export default function PhoneCalendar() {
     [],
   );
 
+  // Casy's own events on the month (#172): the waiting votes' dates
+  // pencilled in, the decided ones as chips, a date just agreed flying in.
+  const voteId = params.get("vote");
+  const homeVotes = useHomeVotes({
+    calendar,
+    months,
+    eventsButton,
+    idle: settled && location.search === "" && pickedDay === null,
+  });
+  const voteEvent = homeVotes.voteById(voteId);
+  const voteOpen = voteEvent !== null;
+  const openVote = (id: string) =>
+    navigate({ search: `?vote=${id}` }, { state: { fromMonth: true } });
+  // HomeVote's callbacks stay the same from render to render, so its timers
+  // and effects aren't started over by the page drawing again.
+  const closeNow = useRef(closeOverlay);
+  useEffect(() => {
+    closeNow.current = closeOverlay;
+  });
+  const closeVote = useCallback(() => closeNow.current(), []);
+  const { settledHere } = homeVotes;
+  const settledNow = useCallback(
+    (from: DOMRect) => {
+      if (voteId) settledHere(voteId, from);
+    },
+    [voteId, settledHere],
+  );
+  const month = useMemo(
+    () => ({
+      ...calendar,
+      colorOf: homeVotes.colorOf,
+      items: [
+        ...homeVotes.items,
+        ...(marks.length === 0 ? [] : tripBars(marks, t.trips, step)),
+        ...calendar.items,
+      ],
+    }),
+    [calendar, homeVotes.colorOf, homeVotes.items, marks, t, step],
+  );
+  // A pencilled date of a waiting vote opens the vote, not the day (pickDay).
+  useEffect(() => {
+    waitingNow.current = homeVotes.waiting;
+    voteOpenNow.current = voteOpen;
+  });
+  useEffect(() => {
+    openVoteNow.current = openVote;
+  });
+
   // The month takes whatever the screen has left under the toolbar.
   const box = useRef<HTMLDivElement>(null);
   const height = useFillViewport(box);
@@ -296,6 +359,8 @@ export default function PhoneCalendar() {
           calendar={month}
           reveal={reveal}
           selected={pickedDay}
+          lit={voteOpen ? homeVotes.view.lit : null}
+          stamps={voteOpen ? homeVotes.view.stamps : undefined}
           todayTone="grey"
           onPickDay={pickDay}
           header={
@@ -388,7 +453,9 @@ export default function PhoneCalendar() {
       {/* Planning starts from the calendar (#126), beside Aftaler and the
           profile; out of the way while a day or the plan is open. */}
       <HomeBar
-        hidden={(pickedDay !== null || planOpen || eventsOpen || profileOpen) && !flight}
+        hidden={
+          (pickedDay !== null || planOpen || eventsOpen || profileOpen || voteOpen) && !flight
+        }
         flight={flight}
         onEvents={openEvents}
         onPlan={openPlan}
@@ -398,6 +465,26 @@ export default function PhoneCalendar() {
         planRef={planButton}
         profileRef={profileButton}
       />
+      {homeVotes.waiting.length > 0 && (
+        <VotePill
+          title={eventTitle(homeVotes.waiting[0].title, t)}
+          count={homeVotes.waiting.length}
+          hidden={location.search !== "" || pickedDay !== null || flight}
+          onOpen={() => openVote(homeVotes.waiting[0].id)}
+        />
+      )}
+      {voteEvent && (
+        <HomeVote
+          key={voteEvent.id}
+          event={voteEvent}
+          hidden={pickedDay !== null}
+          onShowDay={homeVotes.showDay}
+          onView={homeVotes.setView}
+          onScheduled={settledNow}
+          onClose={closeVote}
+        />
+      )}
+      {homeVotes.celebrations > 0 && <Celebration key={homeVotes.celebrations} />}
       {(settled || eventsOpen) && (
         <Suspense fallback={null}>
           <EventsSheet

@@ -154,7 +154,8 @@ function EventRow({
         <DecidingRefresh event={staged.event} />
       )}
       {yourTurn ? (
-        <Link to={`/events/${event.id}/dates`} className={rowClass}>
+        // Answered over the home page's month (#172), the Aftaler sheet closing for it.
+        <Link to={`/?vote=${event.id}`} replace className={rowClass}>
           {head}
         </Link>
       ) : stage === "closed" ? (

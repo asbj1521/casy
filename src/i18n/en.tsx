@@ -981,7 +981,6 @@ export const en: Messages = {
     clash: (what: string, when: string, more: number) =>
       `You have ${what}${when ? ` ${when}` : ""}${more > 0 ? ` and ${more} more` : ""}`,
     previous: "Previous date",
-    toEvents: "To My events",
     hint: "Swipe right if you can, left if you can't, and up if you can but would rather not.",
     keysHint: "Use the buttons or the arrow keys: right can, left can't, up rather not.",
     doneTitle: "Thanks, you've answered",
@@ -1220,6 +1219,10 @@ export const en: Messages = {
     originally: (name: string) => `Original name: ${name}`,
     useOriginalName: (name: string) => `Use the original name (${name})`,
     couldntSaveName: "Couldn't save the name",
+  },
+  homeVote: {
+    answer: (title: string) => `Answer ${title}`,
+    waiting: (n: number) => `${n} votes waiting`,
   },
   planFromCalendar: {
     button: "Plan",
