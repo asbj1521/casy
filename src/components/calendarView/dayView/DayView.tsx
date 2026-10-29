@@ -59,6 +59,9 @@ export default function DayView({
   onDay,
   onBack,
   onClosed,
+  travel = false,
+  aim,
+  clear = 0,
   tellRef,
   tellLabel,
   onTell,
@@ -77,6 +80,14 @@ export default function DayView({
   onDay: (day: number) => void;
   onBack: () => void;
   onClosed: () => void;
+  /**
+   * A vote is answered over it (#176): a new day glides there fast,
+   * blurred, to the date `aim`ed at, centred above the card's `clear`
+   * pixels; "I dag" makes way for the card.
+   */
+  travel?: boolean;
+  aim?: { start: number; end: number };
+  clear?: number;
   /** Tell Casy's plus (#116), for people AI is on for. */
   tellRef: RefObject<HTMLButtonElement | null>;
   tellLabel: string;
@@ -248,18 +259,23 @@ export default function DayView({
           lead="first"
           pencils={pencils}
           onBlockTap={tapBlock}
+          travel={travel}
+          aim={aim}
+          clear={clear}
           calendar={calendar}
           size="full"
         />
       </div>
 
-      <button
-        type="button"
-        onClick={() => onDay(today)}
-        className="glass-pill absolute bottom-[max(env(safe-area-inset-bottom),0.75rem)] left-4 z-30 flex h-11 items-center rounded-full px-5 text-[17px] text-primary"
-      >
-        {words.today}
-      </button>
+      {!travel && (
+        <button
+          type="button"
+          onClick={() => onDay(today)}
+          className="glass-pill absolute bottom-[max(env(safe-area-inset-bottom),0.75rem)] left-4 z-30 flex h-11 items-center rounded-full px-5 text-[17px] text-primary"
+        >
+          {words.today}
+        </button>
+      )}
 
       {children}
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { eventsQuery, type EventResponse, type SuggestedEvent } from "@/api/events";
+import { eventsQuery, type SuggestedEvent } from "@/api/events";
 import type { MonthViewHandle } from "@/components/swipe/MonthView";
 import { useSignedInUser } from "@/context/auth";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
@@ -33,7 +33,6 @@ const SETTLE_MS = 1500;
 const GLIDE_FIRST_MS = 650;
 
 const NO_EVENTS: SuggestedEvent[] = [];
-const NO_STAMPS: ReadonlyMap<number, EventResponse> = new Map();
 
 function readSeen(): ReadonlySet<string> | null {
   const raw = readStored(SEEN_KEY);
@@ -49,8 +48,7 @@ function readSeen(): ReadonlySet<string> | null {
 /**
  * Casy's own events on the home page's month (#172): the dates of the votes
  * waiting for your answer pencilled into their days, the events decided as
- * chips in Casy's orange, and, while a vote is answered over the month, the
- * day being answered lit and your answers stamped into their days. Each
+ * chips in Casy's orange (a vote is answered over the day view, #176). Each
  * event decided since this device last looked is said once the home page is
  * free to show it (`idle`): `agreed`, for AgreedCard over the month, whose
  * closing flies the date into its day (`flyIn`), with confetti as it lands.
@@ -101,16 +99,6 @@ export function useHomeVotes({
   const colorOf = useCallback(
     (id: string) => (id === CASY_CALENDAR ? CASY_RGB : calendarColor(id)),
     [calendarColor],
-  );
-
-  // While a vote is answered over the month: its day and your answers.
-  const [view, setView] = useState<{
-    lit: number | null;
-    stamps: ReadonlyMap<number, EventResponse>;
-  }>({ lit: null, stamps: NO_STAMPS });
-  const showDay = useCallback(
-    (day: number, clear: number) => months.current?.glideToDay(day, clear),
-    [months],
   );
 
   // The next date agreed since this device last looked: said over the month
@@ -168,9 +156,6 @@ export function useHomeVotes({
     colorOf,
     voteById,
     onDay,
-    view,
-    setView,
-    showDay,
     agreed,
     flyIn,
     celebrations,

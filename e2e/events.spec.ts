@@ -118,14 +118,14 @@ test("a computer answers a vote's dates with the arrow keys", async ({
   await expect(section(page, "Venter på andre").getByText("Brætspilsaften")).toBeVisible();
 });
 
-test("a phone swipes through a vote's dates over the home page's month", async ({
+test("a phone swipes through a vote's dates over the home page's day view", async ({
   page,
   backend,
   isMobile,
 }) => {
   test.skip(!isMobile, "phones only");
   await page.goto("/events");
-  // The vote's row goes straight to swiping (#103), over the month now (#172).
+  // The vote's row goes straight to swiping (#103), over the day view now (#172, #176).
   await page.getByRole("link", { name: /Brætspilsaften/ }).click();
   await expect(page).toHaveURL(/\/\?vote=ev-boardgames$/);
 
@@ -149,9 +149,9 @@ test("a phone swipes through a vote's dates over the home page's month", async (
     await expect.poll(() => answers().length).toBe(i);
   }
   expect(answers().every((c) => c.body.response === "accepted")).toBe(true);
-  // Thanks, then the plain month again.
+  // Thanks, then the day view stays on the last date's day.
   await expect(page.getByText("Tak, du har svaret").first()).toBeVisible();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/\?day=2026-10-21$/);
   await expect(page.getByRole("region", { name: "Brætspilsaften" })).toHaveCount(0);
 });
 

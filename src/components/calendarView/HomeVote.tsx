@@ -15,36 +15,36 @@ import { clashKey } from "@/lib/eventWarnings";
 import { formatEventDate, nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { stillToAnswer, type VoteEvent } from "@/lib/vote";
-import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
-
-const TZ = APP_TIME_ZONE;
-/** How long "Tak" stays before the month is the month again. */
+/** How long "Tak" stays before the card goes. */
 const THANKS_MS = 1600;
 
+/** What the day view under the card shows of the vote (#176). */
+export interface VoteView {
+  /** The date being answered; null once all are. */
+  current: { start: number; end: number } | null;
+  /** Your answers so far, by date id, stamped on the dates. */
+  answers: ReadonlyMap<string, EventResponse>;
+  /** How much of the screen the card covers, from the bottom. */
+  clear: number;
+}
+
 /**
- * Answering a vote over the home page's month (#172): the card and the three
- * answers along the bottom, the month above it gliding to each date's day
- * (`onShowDay`), lit, with your answers stamped into the days as they are
- * given (`onView`). Swiped or tapped, as on the old swipe screen, and with
- * the same deck behind it (useVoteDeck). A tap on a day opens its hours,
- * the card stepping aside meanwhile (`hidden`). After the last answer a
- * short thanks, then it closes; a date it settled is then said over the
- * month and flies into its day (AgreedCard, useHomeVotes). Kept apart from the month on purpose: the day view to come (#176)
- * is meant to sit under this same card.
+ * Answering a vote on the home page (#172), over the day view (#176): the
+ * card and the three answers along the bottom, the day view above it
+ * gliding to each date's own hours as it comes up, with your answers
+ * stamped on the dates (`onView`). Swiped or tapped, as on the old swipe
+ * screen, and with the same deck behind it (useVoteDeck). After the last
+ * answer a short thanks, then the card goes and the day view stays on that
+ * day; a date it settled is said over the month once you are back there,
+ * and flies into its day (AgreedCard, useHomeVotes).
  */
 export default function HomeVote({
   event,
-  hidden,
-  onShowDay,
   onView,
   onClose,
 }: {
   event: VoteEvent;
-  hidden: boolean;
-  /** Bring a day into view above the card, which covers `clear` pixels. */
-  onShowDay: (day: number, clear: number) => void;
-  /** The day being answered, and the answers to stamp into their days. */
-  onView: (view: { lit: number | null; stamps: ReadonlyMap<number, EventResponse> }) => void;
+  onView: (view: VoteView) => void;
   onClose: () => void;
 }) {
   const t = useT();
@@ -63,23 +63,24 @@ export default function HomeVote({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Each date in view above the card, as it comes up.
-  const day = current ? startOfDay(Date.parse(current.start), TZ) : null;
+  // Each date in view above the card as it comes up, and the answers given,
+  // before the screen is drawn, so the day view never shows the one before.
+  const currentId = current?.id ?? null;
+  const given = dates.map((d) => answerOf(d) ?? "").join();
   useLayoutEffect(() => {
-    if (day !== null) onShowDay(day, panel.current?.offsetHeight ?? 0);
-  }, [day, onShowDay]);
-  // The answers given, stamped into their days.
-  const answers = dates.map((d) => answerOf(d) ?? "").join();
-  useEffect(() => {
-    const stamps = new Map<number, EventResponse>();
+    const answers = new Map<string, EventResponse>();
     for (const d of dates) {
       const a = answerOf(d);
-      if (a) stamps.set(startOfDay(Date.parse(d.start), TZ), a);
+      if (a) answers.set(d.id, a);
     }
-    onView({ lit: day, stamps });
-    // `answers` stands for what answerOf reads.
+    onView({
+      current: current ? { start: Date.parse(current.start), end: Date.parse(current.end) } : null,
+      answers,
+      clear: panel.current?.offsetHeight ?? 0,
+    });
+    // `currentId` and `given` stand for what current and answerOf read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answers, day, onView]);
+  }, [currentId, given, onView]);
 
   // All answered: a moment of thanks, then the plain month.
   useEffect(() => {
@@ -95,11 +96,7 @@ export default function HomeVote({
       ref={panel}
       role="region"
       aria-label={eventTitle(event.title, t)}
-      inert={hidden}
-      className={cn(
-        "glass fixed inset-x-0 bottom-0 z-30 rounded-t-[28px] px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-3 transition-transform duration-300",
-        hidden && "translate-y-full",
-      )}
+      className="glass fixed inset-x-0 bottom-0 z-[45] rounded-t-[28px] px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-3"
     >
       <header className="flex items-center gap-2">
         <div className="min-w-0 flex-1">

@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -16,6 +17,7 @@ import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { useLang, useT } from "@/i18n/lang";
 import { formatSegmentRange, isoWeekNumber, type DaySegment } from "@/lib/calendarOverview";
 import { columnOf, daysInView, drawnDays, openingOf, type DayLead } from "@/lib/dayColumns";
+import { TRAVEL_EASE, travelBlur, travelMs } from "@/lib/dayTravel";
 import { placeBlocks, placeSpan } from "@/lib/dayStrip";
 import { formatTime, monthShortName, weekdayName, weekdayShortName } from "@/lib/format";
 import { useIsDark } from "@/hooks/useIsDark";
@@ -59,6 +61,12 @@ export interface Pencil {
 
 const NO_PENCILS: readonly Pencil[] = [];
 
+/** What a glide blurs: the clipped rows of days, never the hours beside them. */
+const BLURRED = { filter: "var(--day-blur, none)" } as const;
+
+/** Days apart beyond which a glide draws only its two ends, not every day between. */
+const DRAWN_BETWEEN = 24;
+
 /**
  * Your calendar's days side by side, drawn like Apple Calendar's day view
  * (#74), so it reads as your real calendar rather than a summary of it: the
@@ -90,6 +98,8 @@ export default function DayColumns({
   aim,
   pencils = NO_PENCILS,
   onBlockTap,
+  travel = false,
+  clear = 0,
   calendar,
   size,
   fitDay = false,
@@ -111,6 +121,15 @@ export default function DayColumns({
   pencils?: readonly Pencil[];
   /** A tap on one of your events, timed or whole-day. */
   onBlockTap?: (segment: DaySegment) => void;
+  /**
+   * A new offset given from outside (the next of a vote's dates, #176)
+   * glides there fast and stops softly, blurred sideways with the speed
+   * (lib/dayTravel); a new `aim` is scrolled to as it goes. A swipe keeps
+   * its own settle.
+   */
+  travel?: boolean;
+  /** Pixels covered along the bottom (a vote's card): what is aimed at is centred above them. */
+  clear?: number;
   calendar: MyCalendarDays;
   size: keyof typeof SIZES;
   /**
@@ -164,21 +183,58 @@ export default function DayColumns({
     return () => observer.disconnect();
   }, [days]);
 
-  // Where the strip is: day k (from home) sits at (k + 1) columns, so
-  // offset 0 shows days -1, 0 and 1.
+  // The sideways blur of a glide: an SVG filter blurring along x only,
+  // switched on (`--day-blur`) only while the days move fast.
+  const root = useRef<HTMLDivElement>(null);
+  const blurId = `day-blur-${useId().replace(/[^\w-]/g, "")}`;
+  const blurNode = useRef<SVGFEGaussianBlurElement>(null);
+  const blurTo = (px: number) => {
+    root.current?.style.setProperty("--day-blur", px > 0.3 ? `url(#${blurId})` : "none");
+    blurNode.current?.setAttribute("stdDeviation", `${px.toFixed(1)} 0`);
+  };
+
+  // The offset the strip last rested on, so a glide keeps drawing the days
+  // it leaves (React's pattern for state following a prop).
+  const [rest, setRest] = useState({ offset, from: offset });
+  if (rest.offset !== offset) setRest({ offset, from: rest.offset });
+  const rested = () => setRest((r) => ({ ...r, from: r.offset }));
+
+  // Where the strip is: day k (from home) sits at columnOf(k) columns, and
+  // the strip is moved back by `offset` columns (lib/dayColumns).
   const x = useMotionValue(0);
   const placed = useRef(false);
+  // A new offset from a swipe settling is the finger's; any other was given.
+  const swiped = useRef(false);
   useLayoutEffect(() => {
     if (!columnPx) return;
     const target = -offset * columnPx;
+    const bySwipe = swiped.current;
+    swiped.current = false;
     // The first placing, and a resize, jump; a new offset slides.
     if (!placed.current || reduceMotion) {
       x.set(target);
       placed.current = true;
-    } else {
-      animate(x, target, SETTLE);
+      return;
     }
-  }, [offset, columnPx, x, reduceMotion]);
+    if (travel && !bySwipe) {
+      const glide = animate(x, target, {
+        duration: travelMs(Math.round(Math.abs(target - x.get()) / columnPx)) / 1000,
+        ease: [...TRAVEL_EASE],
+        onUpdate: () => blurTo(travelBlur(x.getVelocity())),
+        onComplete: () => {
+          blurTo(0);
+          rested();
+        },
+      });
+      return () => {
+        glide.stop();
+        blurTo(0);
+      };
+    }
+    animate(x, target, { ...SETTLE, onComplete: rested });
+    // blurTo and rested only touch refs and state setters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, columnPx, x, reduceMotion, travel]);
 
   // Open on the suggested time, in the middle of the view; a date lasting
   // whole days (a trip, a holiday) opens on the morning instead. Without
@@ -190,7 +246,9 @@ export default function DayColumns({
     if (aim) {
       const span = placeSpan(aim.start, aim.end, home, TZ);
       target =
-        span.height > 0.8 ? 8 * hourPx : (span.top + span.height / 2) * dayPx - el.clientHeight / 2;
+        span.height > 0.8
+          ? 8 * hourPx
+          : (span.top + span.height / 2) * dayPx - (el.clientHeight - clear) / 2;
     } else {
       const shownDays = daysInView(offset, days, lead).map((k) => addDays(home, k, TZ));
       const at = Date.now();
@@ -237,6 +295,28 @@ export default function DayColumns({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusStart, focusEnd]);
 
+  // A new date aimed at (a vote's next date, or its first when the vote
+  // opens over a day already open): its time scrolled to the middle of what
+  // the card leaves in view, as the days glide to it. Not the one it opened
+  // on, which the opening placed.
+  const aimStart = aim?.start ?? null;
+  const aimEnd = aim?.end ?? null;
+  const lastAim = useRef(aimStart);
+  useEffect(() => {
+    const el = scroller.current;
+    if (aimStart === lastAim.current) return;
+    lastAim.current = aimStart;
+    if (!el || fitDay || aimStart === null || aimEnd === null) return;
+    const span = placeSpan(aimStart, aimEnd, startOfDay(aimStart, TZ), TZ);
+    const target =
+      span.height > 0.8
+        ? 8 * hourPx
+        : (span.top + span.height / 2) * dayPx - (el.clientHeight - clear) / 2;
+    el.scrollTo({ top: Math.max(0, target), behavior: reduceMotion ? "auto" : "smooth" });
+    // Only when what is aimed at changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aimStart, aimEnd]);
+
   // The red line moves with the clock.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -248,7 +328,24 @@ export default function DayColumns({
 
   // The days drawn: those in view, and some either side to swipe into.
   const beside = onOffset || focus !== undefined ? DRAWN_BESIDE : 0;
-  const drawn = drawnDays(offset, days, lead, beside);
+  // During a glide the days it leaves stay drawn too, and those between
+  // unless they are many (the blur hides that they are blank).
+  const from = rest.from;
+  const drawn =
+    from === offset
+      ? drawnDays(offset, days, lead, beside)
+      : [
+          ...new Set([
+            ...drawnDays(from, days, lead, beside),
+            ...(Math.abs(offset - from) <= DRAWN_BETWEEN
+              ? Array.from(
+                  { length: Math.abs(offset - from) + 1 },
+                  (_, i) => Math.min(from, offset) + i,
+                )
+              : []),
+            ...drawnDays(offset, days, lead, beside),
+          ]),
+        ];
   const dayOf = (k: number) => addDays(home, k, TZ);
   const inViewK = daysInView(offset, days, lead);
   const inView = inViewK.map(dayOf);
@@ -288,8 +385,12 @@ export default function DayColumns({
     if (!dragged.current) run();
   };
   const settle = (to: number) => {
-    if (to === offset) animate(x, -offset * columnPx, SETTLE);
-    else onOffset?.(to);
+    if (to === offset) {
+      animate(x, -offset * columnPx, SETTLE);
+      return;
+    }
+    swiped.current = true;
+    onOffset?.(to);
   };
 
   // A two-finger sideways swipe on a trackpad arrives as horizontal wheel
@@ -297,7 +398,6 @@ export default function DayColumns({
   // whole day once it stops. Listened to directly, not through React (whose
   // wheel listeners can't cancel), so the swipe is kept from the browser,
   // which would otherwise take it as "back a page".
-  const root = useRef<HTMLDivElement>(null);
   const latest = useRef({ columnPx, settle });
   useEffect(() => {
     latest.current = { columnPx, settle };
@@ -391,6 +491,13 @@ export default function DayColumns({
       className="flex h-full min-h-0 flex-col"
       style={swipeable ? { overscrollBehaviorX: "contain" } : undefined}
     >
+      {travel && (
+        <svg aria-hidden className="absolute h-0 w-0">
+          <filter id={blurId} x="-5%" width="110%">
+            <feGaussianBlur ref={blurNode} stdDeviation="0 0" />
+          </filter>
+        </svg>
+      )}
       {/* The days' names, with the week number in the corner as Apple has it. */}
       <div className={cn("flex shrink-0 items-center border-b", compact ? "h-7" : "h-11")}>
         <span
@@ -402,7 +509,7 @@ export default function DayColumns({
         >
           {corner ?? t.swipe.week(isoWeekNumber(new Date(dayOf(offset)), TZ))}
         </span>
-        <Track x={x} className="h-full">
+        <Track x={x} className="h-full" blurred={travel}>
           {drawn.map((k) => {
             const midnight = dayOf(k);
             const onSlot = pencilOn(midnight);
@@ -432,7 +539,7 @@ export default function DayColumns({
       {anyAllDay && (
         <div className="flex shrink-0 border-b">
           <span className="shrink-0" style={{ width: gutter }} />
-          <Track x={x} className={compact ? "h-[18px]" : "h-[26px]"}>
+          <Track x={x} className={compact ? "h-[18px]" : "h-[26px]"} blurred={travel}>
             {drawn.map((k) => (
               <div
                 key={k}
@@ -513,7 +620,7 @@ export default function DayColumns({
           <div
             ref={viewport}
             className="absolute inset-y-0 right-0 overflow-x-clip"
-            style={{ left: gutter, touchAction: "pan-y" }}
+            style={{ left: gutter, touchAction: "pan-y", ...(travel && BLURRED) }}
             {...dragHandlers}
           >
             <motion.div className="absolute inset-y-0 left-0" style={{ x }}>
@@ -676,6 +783,8 @@ export default function DayColumns({
             </span>
           )}
         </div>
+        {/* Room under the day, so the evening can be scrolled up above a card covering the bottom. */}
+        {clear > 0 && <div aria-hidden style={{ height: clear }} />}
       </div>
     </div>
   );
@@ -685,14 +794,20 @@ export default function DayColumns({
 function Track({
   x,
   className,
+  blurred = false,
   children,
 }: {
   x: MotionValue<number>;
   className?: string;
+  /** Takes the glide's blur (`travel`). */
+  blurred?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className={cn("relative min-w-0 flex-1 overflow-hidden", className)}>
+    <div
+      className={cn("relative min-w-0 flex-1 overflow-hidden", className)}
+      style={blurred ? BLURRED : undefined}
+    >
       <motion.div className="absolute inset-y-0 left-0" style={{ x }}>
         {children}
       </motion.div>

@@ -12,8 +12,6 @@ import {
   type Ref,
 } from "react";
 
-import type { EventResponse } from "@/api/events";
-import { AnswerIcon } from "@/components/swipe/SwipeCard";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { buildMonthLayout } from "@/lib/calendarOverview";
@@ -23,7 +21,6 @@ import { capitalize, dayLabel, monthName, monthShortName } from "@/lib/format";
 import { layoutWeek, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
 import { MONTH_LABEL_PX, monthScrollTop } from "@/lib/monthScroll";
 import { useIsDark } from "@/hooks/useIsDark";
-import { STAMP_TONE } from "@/components/swipe/stampTone";
 import { shade, tint } from "@/lib/tint";
 import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay, startOfMonth } from "@/lib/zone";
@@ -52,9 +49,6 @@ export interface MonthViewHandle {
   glideToDay: (day: number, clear?: number) => void;
 }
 
-/** A vote's answer stamped into its day (#172). */
-type Stamp = EventResponse;
-const NO_STAMPS: ReadonlyMap<number, Stamp> = new Map();
 /**
  * Your calendar a month at a time, drawn like Apple Calendar's month view
  * (#74), for looking further ahead than three days (a holiday, a trip): the
@@ -64,10 +58,9 @@ const NO_STAMPS: ReadonlyMap<number, Stamp> = new Map();
  * today in red, the vote's dates in orange and the one being answered
  * pencilled in. A tap on a day opens it in the day view.
  *
- * On My calendar (#104) there is no vote: `selected` is the day tapped, in
- * orange, and today is a grey circle so the two never look alike
- * (`todayTone`). Each month is memoised, so a tap redraws only the months
- * whose selected day changed, not all twelve.
+ * On My calendar (#104) there is no vote, and today is a grey circle
+ * (`todayTone`); a tapped day zooms into the day view (#176). Each month is
+ * memoised, so what changes in one month redraws only that month.
  *
  * With a `header` the months are laid out as Apple's does on a phone: the
  * header (the toolbar the page gives), the name of the month on screen and the
@@ -81,19 +74,12 @@ export default function MonthView({
   calendar,
   pencil,
   marked,
-  selected = null,
   todayTone = "red",
   reveal = null,
-  lit = null,
-  stamps,
   header,
   onPickDay,
   handle,
 }: {
-  /** The day being answered in a vote over the month (#172), ringed in orange. */
-  lit?: number | null;
-  /** Your answers to a vote's dates, stamped into their days (#172). */
-  stamps?: ReadonlyMap<number, Stamp>;
   /**
    * The page's toolbar, drawn over the months in a translucent block with the
    * month's name and the weekdays under it. Without it the months have their
@@ -107,9 +93,7 @@ export default function MonthView({
   pencil?: { start: number; end: number; label: string };
   /** The vote's dates, as local midnights; none on My calendar. */
   marked?: ReadonlySet<number>;
-  /** The day tapped, as a local midnight: ringed in orange. */
-  selected?: number | null;
-  /** How today is drawn: Apple's red circle, or a grey one where orange marks the tapped day. */
+  /** How today is drawn: Apple's red circle, or a grey one (My calendar, the paper pile). */
   todayTone?: "red" | "grey";
   /**
    * A day to glide to once it is set (a local midnight): My calendar shows
@@ -273,24 +257,8 @@ export default function MonthView({
     return () => clearTimeout(timer);
   }, [reveal]);
 
-  // Each month gets only its own stamps, the same map until they change, so
-  // an answer redraws one month rather than all twelve.
-  const stampsByMonth = useMemo(() => {
-    const byMonth = new Map<number, Map<number, Stamp>>();
-    for (const [day, stamp] of stamps ?? NO_STAMPS) {
-      const m = startOfMonth(day, TZ);
-      if (!byMonth.has(m)) byMonth.set(m, new Map());
-      byMonth.get(m)!.set(day, stamp);
-    }
-    return byMonth;
-  }, [stamps]);
-
   const sections = months.map((month) => {
-    const { year, month: m } = localDate(month, TZ);
-    const inMonth =
-      selected !== null &&
-      localDate(selected, TZ).month === m &&
-      localDate(selected, TZ).year === year;
+    const { year } = localDate(month, TZ);
     return (
       <MonthSection
         key={month}
@@ -302,9 +270,6 @@ export default function MonthView({
         today={today}
         todayTone={todayTone}
         marked={marked}
-        selected={inMonth ? selected : null}
-        lit={lit !== null && startOfMonth(lit, TZ) === month ? lit : null}
-        stamps={stampsByMonth.get(month) ?? NO_STAMPS}
         onPickDay={onPickDay}
         register={register}
       />
@@ -418,7 +383,6 @@ export function MonthLayer({
         colorOf={colorOf}
         today={today}
         todayTone="grey"
-        selected={null}
         onPickDay={NOOP}
         register={NOOP}
         shine={shine}
@@ -441,9 +405,6 @@ interface MonthSectionProps {
   today: number;
   todayTone: "red" | "grey";
   marked?: ReadonlySet<number>;
-  selected: number | null;
-  lit?: number | null;
-  stamps?: ReadonlyMap<number, Stamp>;
   onPickDay: (day: number) => void;
   register: (month: number, el: HTMLElement | null) => void;
   shine?: ReadonlySet<number>;
@@ -477,9 +438,6 @@ const MonthSection = memo(function MonthSection({
   today,
   todayTone,
   marked,
-  selected,
-  lit = null,
-  stamps = NO_STAMPS,
   onPickDay,
   register,
   shine,
@@ -556,17 +514,6 @@ const MonthSection = memo(function MonthSection({
             <div className="grid grid-cols-7">
               {week.map((d, c) => (
                 <span key={d.key} className="relative flex h-10 items-center justify-center">
-                  {d.inMonth && stamps.has(days[c]) && (
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "animate-stamp absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-white",
-                        STAMP_TONE[stamps.get(days[c])!],
-                      )}
-                    >
-                      <AnswerIcon answer={stamps.get(days[c])} />
-                    </span>
-                  )}
                   {d.inMonth && (
                     <span
                       // The paper pile's dates fly up out of their green circle (#126).
@@ -575,18 +522,15 @@ const MonthSection = memo(function MonthSection({
                         "flex h-8 w-8 items-center justify-center rounded-full text-[18px]",
                         shine?.has(days[c])
                           ? "bg-emerald-500 font-semibold text-white shadow-[0_0_14px_rgba(16,185,129,0.7)]"
-                          : days[c] === selected
-                            ? "bg-primary font-semibold text-primary-foreground"
-                            : days[c] === today
-                              ? todayTone === "red"
-                                ? "bg-red-500 font-semibold text-white"
-                                : "bg-zinc-200 font-semibold text-foreground dark:bg-white/20"
-                              : marked?.has(days[c])
-                                ? "font-bold text-primary"
-                                : c >= 5
-                                  ? "text-muted-foreground"
-                                  : "text-foreground",
-                        days[c] === lit && "ring-2 ring-primary transition-shadow",
+                          : days[c] === today
+                            ? todayTone === "red"
+                              ? "bg-red-500 font-semibold text-white"
+                              : "bg-zinc-200 font-semibold text-foreground dark:bg-white/20"
+                            : marked?.has(days[c])
+                              ? "font-bold text-primary"
+                              : c >= 5
+                                ? "text-muted-foreground"
+                                : "text-foreground",
                       )}
                     >
                       {d.dayOfMonth}

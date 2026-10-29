@@ -6,7 +6,7 @@ import AgreedCard from "@/components/calendarView/AgreedCard";
 import DayView from "@/components/calendarView/dayView/DayView";
 import { useDayCalendar } from "@/components/calendarView/dayView/useDayCalendar";
 import HomeBar from "@/components/calendarView/HomeBar";
-import HomeVote from "@/components/calendarView/HomeVote";
+import HomeVote, { type VoteView } from "@/components/calendarView/HomeVote";
 import { useHomeVotes } from "@/components/calendarView/useHomeVotes";
 import VotePill from "@/components/calendarView/VotePill";
 import PhoneCalendarAccess from "@/components/calendarView/PhoneCalendarAccess";
@@ -199,8 +199,23 @@ export default function PhoneCalendar() {
   // zooms back into the month after the address has let it go.
   const dayInAddress = parseDayParam(params.get("day"));
   const [dayShown, setDayShown] = useState(dayInAddress);
-  if (dayInAddress !== null && dayInAddress !== dayShown) setDayShown(dayInAddress);
-  const dayOpen = dayInAddress !== null;
+  // While a vote is answered, the day view is on its date instead (below).
+  const voteId = params.get("vote");
+  const [vote, setVote] = useState<{
+    id: string | null;
+    day: number | null;
+    view: VoteView | null;
+  }>({ id: voteId, day: null, view: null });
+  if (vote.id !== voteId) setVote({ id: voteId, day: null, view: null });
+  const onVoteView = useCallback(
+    (view: VoteView) =>
+      setVote((v) => ({
+        ...v,
+        view,
+        day: view.current ? startOfDay(view.current.start, TZ) : v.day,
+      })),
+    [setVote],
+  );
   const openDayNow = useRef<(day: number) => void>(() => {});
   // Stable, or every month of the view (memoised) would redraw on each tap.
   const pickDay = useCallback(
@@ -261,7 +276,6 @@ export default function PhoneCalendar() {
 
   // Casy's own events on the month (#172): the waiting votes' dates
   // pencilled in, the decided ones as chips, a date just agreed flying in.
-  const voteId = params.get("vote");
   const homeVotes = useHomeVotes({
     calendar,
     months,
@@ -271,11 +285,22 @@ export default function PhoneCalendar() {
   const voteOpen = voteEvent !== null;
   const openVote = (id: string) =>
     navigate({ search: `?vote=${id}` }, { state: { fromMonth: true } });
+  // The day view shows the day in the address, or the date being answered
+  // (#176); until the vote has said which, the day already open.
+  const dayTarget = voteOpen ? (vote.day ?? dayShown) : dayInAddress;
+  if (dayTarget !== null && dayTarget !== dayShown) setDayShown(dayTarget);
+  const dayOpen = dayTarget !== null;
   // HomeVote's callbacks stay the same from render to render, so its timers
-  // and effects aren't started over by the page drawing again.
+  // and effects aren't started over by the page drawing again. Done, it
+  // leaves the day view on the day it was on.
   const closeNow = useRef(closeOverlay);
   useEffect(() => {
-    closeNow.current = closeOverlay;
+    const day = vote.day;
+    closeNow.current =
+      day === null
+        ? closeOverlay
+        : () =>
+            navigate({ search: `?day=${dayParam(day)}` }, { replace: true, state: location.state });
   });
   const closeVote = useCallback(() => closeNow.current(), []);
   const month = useMemo(
@@ -304,6 +329,7 @@ export default function PhoneCalendar() {
     month,
     casyOn: homeVotes.onDay,
     waiting: homeVotes.waiting,
+    voting: voteEvent && { event: voteEvent, view: vote.view },
     marks,
     onEvents: openEvents,
     onVote: openVote,
@@ -339,8 +365,6 @@ export default function PhoneCalendar() {
           focus={focus}
           calendar={month}
           reveal={reveal}
-          lit={voteOpen ? homeVotes.view.lit : null}
-          stamps={voteOpen ? homeVotes.view.stamps : undefined}
           todayTone="grey"
           onPickDay={pickDay}
           header={
@@ -452,14 +476,7 @@ export default function PhoneCalendar() {
         />
       )}
       {voteEvent && (
-        <HomeVote
-          key={voteEvent.id}
-          event={voteEvent}
-          hidden={false}
-          onShowDay={homeVotes.showDay}
-          onView={homeVotes.setView}
-          onClose={closeVote}
-        />
+        <HomeVote key={voteEvent.id} event={voteEvent} onView={onVoteView} onClose={closeVote} />
       )}
       {homeVotes.agreed && (
         <AgreedCard key={homeVotes.agreed.id} event={homeVotes.agreed} onDone={homeVotes.flyIn} />
@@ -543,7 +560,10 @@ export default function PhoneCalendar() {
           pencils={dayCalendar.pencils}
           actionOf={dayCalendar.actionOf}
           cellOf={cellOf}
-          onDay={showDay}
+          onDay={voteOpen ? (day) => setVote((v) => ({ ...v, day })) : showDay}
+          travel={voteOpen}
+          aim={voteOpen ? (vote.view?.current ?? undefined) : undefined}
+          clear={voteOpen ? (vote.view?.clear ?? 0) : 0}
           onBack={closeOverlay}
           onClosed={dayClosed}
           tellRef={dayTellButton}
