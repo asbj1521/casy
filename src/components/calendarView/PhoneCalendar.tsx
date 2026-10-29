@@ -13,6 +13,7 @@ import { CalendarPlus, ChevronRight, Layers, Plane, Plus } from "lucide-react";
 
 import DayPanel from "@/components/calendarView/DayPanel";
 import AgreedCard from "@/components/calendarView/AgreedCard";
+import CasyDayRow from "@/components/calendarView/CasyDayRow";
 import HomeBar from "@/components/calendarView/HomeBar";
 import HomeVote from "@/components/calendarView/HomeVote";
 import { useHomeVotes } from "@/components/calendarView/useHomeVotes";
@@ -330,6 +331,8 @@ export default function PhoneCalendar() {
   const pickedSegments = calendar.segmentsOn(new Date(panelDay));
   // An accepted trip on the open day: a row on top of the day, to see or delete it.
   const tripToday = markOn(marks, panelDay);
+  // Casy's own events on the open day (#172): agreed ones and votes' dates.
+  const casyToday = homeVotes.onDay(panelDay);
 
   return (
     <div className="min-h-screen bg-background">
@@ -569,7 +572,22 @@ export default function PhoneCalendar() {
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           </button>
         )}
-        {pickedSegments.length === 0 && !tripToday ? (
+        {casyToday.length > 0 && (
+          <ul className="divide-y">
+            {casyToday.map((c) => (
+              <CasyDayRow
+                key={`${c.event.id}/${c.start}`}
+                {...c}
+                onOpen={() => {
+                  closeDay();
+                  if (c.vote) openVote(c.event.id);
+                  else openEvents();
+                }}
+              />
+            ))}
+          </ul>
+        )}
+        {pickedSegments.length === 0 && !tripToday && casyToday.length === 0 ? (
           <p className="pb-2 text-sm text-muted-foreground">{words.nothingBusy}</p>
         ) : (
           <ul className="divide-y">

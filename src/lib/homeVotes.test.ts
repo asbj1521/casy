@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CandidateDate, SuggestedEvent } from "@/api/events";
 import {
   CASY_CALENDAR,
+  casyOnDay,
   newlyDecided,
   pencilItems,
   scheduledItems,
@@ -85,5 +86,17 @@ describe("the home page's votes (#172)", () => {
   it("flies in only what was decided since this device last looked", () => {
     expect(newlyDecided([vote, decided], new Set(), NOW).map((e) => e.id)).toEqual(["s"]);
     expect(newlyDecided([vote, decided], new Set(["s"]), NOW)).toEqual([]);
+  });
+
+  it("lists a day's agreed events, then its votes' dates", () => {
+    const dayOf = (iso: string) => Date.parse(iso.slice(0, 10));
+    const on = (day: number) =>
+      casyOnDay([vote, decided], Date.parse(`2026-09-${day}`), dayOf, NOW).map((c) => [
+        c.event.id,
+        c.vote,
+      ]);
+    expect(on(28)).toEqual([["s", false]]);
+    expect(on(24)).toEqual([["v", true]]);
+    expect(on(25)).toEqual([]);
   });
 });

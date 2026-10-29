@@ -1225,6 +1225,8 @@ export const en: Messages = {
     waiting: (n: number) => `${n} votes waiting`,
     everyone: "Everyone has answered",
     show: "See it in your calendar",
+    agreedPill: "Plan",
+    votePill: "Vote",
   },
   planFromCalendar: {
     button: "Plan",

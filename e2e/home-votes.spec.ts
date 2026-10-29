@@ -38,9 +38,14 @@ test("a pencilled date opens its vote, and the old swipe address leads here", as
   await expect(page.getByRole("region", { name: "Brætspilsaften" })).toBeVisible();
 });
 
-test("decided events show in their days in Casy's orange", async ({ page }) => {
+test("decided events show in their days, and in the day's list", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Løbetur", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /^Søndag 11\. oktober/i }).click();
+  const day = page.getByRole("region", { name: /Søndag 11\. oktober/i });
+  await expect(day.getByRole("button", { name: /Løbetur.*Aftale/ })).toBeVisible();
+  await day.getByRole("button", { name: /Løbetur/ }).click();
+  await expect(page).toHaveURL(/\?events$/);
 });
 
 test.describe("with motion", () => {

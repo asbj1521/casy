@@ -11,6 +11,8 @@ import { useT } from "@/i18n/lang";
 import { flyIntoDay } from "@/lib/dateFlight";
 import {
   CASY_CALENDAR,
+  CASY_RGB,
+  casyOnDay,
   newlyDecided,
   pencilItems,
   scheduledItems,
@@ -23,8 +25,6 @@ import { isVote } from "@/lib/vote";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
-/** Casy's orange, as the month's calendar colours are written. */
-const CASY_RGB = "234, 88, 12";
 /** The decided events this device has seen land in their day (ids, JSON). */
 const SEEN_KEY = "casy-decided-seen";
 /** After a date has landed, before the next one is said. */
@@ -148,6 +148,12 @@ export function useHomeVotes({
     }, GLIDE_FIRST_MS);
   }
 
+  /** Casy's events on a day, for its list. */
+  const onDay = useCallback(
+    (day: number) => casyOnDay(events, day, (iso) => startOfDay(Date.parse(iso), TZ)),
+    [events],
+  );
+
   const voteById = useCallback(
     (id: string | null) => {
       const event = id ? events.find((e) => e.id === id) : undefined;
@@ -161,6 +167,7 @@ export function useHomeVotes({
     items,
     colorOf,
     voteById,
+    onDay,
     view,
     setView,
     showDay,

@@ -1272,6 +1272,9 @@ export const da = {
     // The date agreed, over the month before it flies into its day.
     everyone: "Alle har svaret",
     show: "Se den i kalenderen",
+    // Casy's own rows in a day's list.
+    agreedPill: "Aftale",
+    votePill: "Afstemning",
   },
   planFromCalendar: {
     button: "Planlæg",
