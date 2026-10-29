@@ -250,7 +250,15 @@ export default function PhoneCalendar() {
   // The day view's day changes in place: its way back stays one step.
   const showDay = (day: number) =>
     navigate({ search: `?day=${dayParam(day)}` }, { replace: true, state: location.state });
-  const dayClosed = useCallback(() => setDayShown(null), []);
+  // Back from a vote answered to the end, the month glides to today once
+  // the day view has zoomed back into it.
+  const todayAfterDay = useRef(false);
+  const dayClosed = useCallback(() => {
+    setDayShown(null);
+    if (!todayAfterDay.current) return;
+    todayAfterDay.current = false;
+    months.current?.glideToMonth(Date.now());
+  }, []);
   // A day's cell on the month, to zoom out of and back into; brought into
   // view first when the day view closes on a day scrolled out of sight.
   const cellOf = useCallback((day: number, bring: boolean) => {
@@ -292,8 +300,20 @@ export default function PhoneCalendar() {
   });
   const voteEvent = homeVotes.voteById(voteId);
   const voteOpen = voteEvent !== null;
+  // From the day view, a step more to go back past (closeOverlay's `sheetDepth`).
   const openVote = (id: string) =>
-    navigate({ search: `?vote=${id}` }, { state: { fromMonth: true } });
+    navigate(
+      { search: `?vote=${id}` },
+      {
+        state: {
+          fromMonth: true,
+          sheetDepth:
+            dayInAddress !== null && (location.state as { fromMonth?: boolean } | null)?.fromMonth
+              ? 1
+              : 0,
+        },
+      },
+    );
   // The day view shows the day in the address, or the date being answered
   // (#176); until the vote has said which, the day already open.
   const dayTarget = voteOpen ? (vote.day ?? dayShown) : dayInAddress;
@@ -312,6 +332,14 @@ export default function PhoneCalendar() {
             navigate({ search: `?day=${dayParam(day)}` }, { replace: true, state: location.state });
   });
   const closeVote = useCallback(() => closeNow.current(), []);
+  const finishNow = useRef(closeOverlay);
+  useEffect(() => {
+    finishNow.current = () => {
+      todayAfterDay.current = true;
+      closeOverlay();
+    };
+  });
+  const finishVote = useCallback(() => finishNow.current(), []);
   const month = useMemo(
     () => ({
       ...calendar,
@@ -493,6 +521,7 @@ export default function PhoneCalendar() {
           onClear={onVoteClear}
           onUnfold={unfoldVote}
           onClose={closeVote}
+          onFinished={finishVote}
         />
       )}
       {homeVotes.agreed && (

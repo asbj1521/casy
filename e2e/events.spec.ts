@@ -149,9 +149,10 @@ test("a phone swipes through a vote's dates over the home page's day view", asyn
     await expect.poll(() => answers().length).toBe(i);
   }
   expect(answers().every((c) => c.body.response === "accepted")).toBe(true);
-  // Thanks, then the day view stays on the last date's day.
+  // Thanks, then back to the month.
   await expect(page.getByText("Tak, du har svaret").first()).toBeVisible();
-  await expect(page).toHaveURL(/\/\?day=2026-10-21$/);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("button", { name: "Vis Oktober" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Brætspilsaften" })).toHaveCount(0);
 });
 
