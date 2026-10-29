@@ -108,6 +108,7 @@ export default function DayColumns({
   calendar,
   size,
   fitDay = false,
+  fitHours,
   corner,
   focus,
 }: {
@@ -144,6 +145,11 @@ export default function DayColumns({
    * rather than scrolled through: a computer has the room.
    */
   fitDay?: boolean;
+  /**
+   * So many hours fitted into the height there is, and scrolled to what is
+   * aimed at: an agreed event's slice (#177), whose length decides it.
+   */
+  fitHours?: number;
   /** What sits in the corner above the hours; the week number if nothing. */
   corner?: ReactNode;
   /**
@@ -160,18 +166,20 @@ export default function DayColumns({
   const reduceMotion = useReducedMotion();
   const { gutter, linePx, twoLinesPx } = SIZES[size];
   const scroller = useRef<HTMLDivElement>(null);
-  // Fitting the day: each hour gets a 24th of the height there is, measured.
+  // Fitting the day (or `fitHours` of it): each hour gets its share of the
+  // height there is, measured.
+  const fitted = fitDay ? 24 : fitHours;
   const [fitHourPx, setFitHourPx] = useState(0);
   useLayoutEffect(() => {
     const el = scroller.current;
-    if (!fitDay || !el) return;
-    const measure = () => setFitHourPx(el.clientHeight / 24);
+    if (!fitted || !el) return;
+    const measure = () => setFitHourPx(el.clientHeight / fitted);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [fitDay]);
-  const hourPx = fitDay ? fitHourPx : SIZES[size].hourPx;
+  }, [fitted]);
+  const hourPx = fitted ? fitHourPx : SIZES[size].hourPx;
   const dayPx = hourPx * 24;
   const compact = size === "compact";
   const viewport = useRef<HTMLDivElement>(null);
@@ -246,9 +254,12 @@ export default function DayColumns({
   // Open on the suggested time, in the middle of the view; a date lasting
   // whole days (a trip, a holiday) opens on the morning instead. Without
   // one: today on the time now, another day just before its first event.
+  // Once the hours have a height (measured first when they are fitted).
+  const opened = useRef(false);
   useLayoutEffect(() => {
     const el = scroller.current;
-    if (!el || fitDay) return;
+    if (!el || fitDay || hourPx === 0 || opened.current) return;
+    opened.current = true;
     let target: number;
     const shownDays = daysInView(offset, days, lead).map((k) => addDays(home, k, TZ));
     // Aimed at only when it is on a day in view (a vote's date, not the day
@@ -279,7 +290,7 @@ export default function DayColumns({
     el.scrollTop = Math.max(0, target);
     // Only on opening, not on every day swiped to.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hourPx]);
 
   // Shown an event (a warning's "Vis mig"): its time, in the middle of the
   // view, scrolled to smoothly; shown none again, back to the suggested time.
