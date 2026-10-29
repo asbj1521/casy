@@ -62,6 +62,27 @@ test("a vote answered to the end goes back to the month, from the day view too",
   await expect(page.getByRole("button", { name: "Planlæg", exact: true })).toBeVisible();
 });
 
+test("while answering, the month is free to look through, the card along its bottom", async ({
+  page,
+}) => {
+  await page.goto("/?vote=ev-boardgames");
+  const card = page.getByRole("region", { name: "Brætspilsaften" });
+  await expect(card.getByText("Dato 1 af 3", { exact: true })).toBeVisible();
+  // Out onto the whole month: the vote stays, folded to its card.
+  await page.getByRole("button", { name: "Vis Oktober" }).click();
+  await expect(page.getByRole("button", { name: "Vis Oktober" })).toHaveCount(0);
+  await expect(page).toHaveURL(/\?vote=ev-boardgames$/);
+  await expect(card.getByText("Dato 1 af 3", { exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Jeg kan", exact: true })).toHaveCount(0);
+  // Any day opens in the day view, the vote still on.
+  await page.getByRole("button", { name: /^fredag 23\. oktober/i }).click();
+  await expect(page.getByRole("region", { name: "Fredag 23. oktober" })).toBeVisible();
+  // A tap on the card: back to the date being answered, the answers there.
+  await card.getByText("Dato 1 af 3", { exact: true }).click();
+  await expect(page.getByRole("region", { name: "Onsdag 14. oktober" })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Jeg kan", exact: true })).toBeVisible();
+});
+
 test("a touch on the calendar folds the vote down to its card, which a tap unfolds", async ({
   page,
 }) => {

@@ -201,15 +201,20 @@ export default function PhoneCalendar() {
   const [dayShown, setDayShown] = useState(dayInAddress);
   // While a vote is answered, the day view is on its date instead (below).
   const voteId = params.get("vote");
-  // The vote's card folds down while the calendar is touched (HomeVote's `folded`).
+  // The vote's card folds down while the calendar is touched (HomeVote's
+  // `folded`); "‹ Oktober" takes the vote out onto the whole month (`month`),
+  // its card folded along the bottom, free to look anywhere.
   const [vote, setVote] = useState<{
     id: string | null;
     day: number | null;
     view: VoteView | null;
     clear: number;
     folded: boolean;
-  }>({ id: voteId, day: null, view: null, clear: 0, folded: false });
-  if (vote.id !== voteId) setVote({ id: voteId, day: null, view: null, clear: 0, folded: false });
+    month: boolean;
+  }>({ id: voteId, day: null, view: null, clear: 0, folded: false, month: false });
+  if (vote.id !== voteId) {
+    setVote({ id: voteId, day: null, view: null, clear: 0, folded: false, month: false });
+  }
   const onVoteView = useCallback(
     (view: VoteView) =>
       setVote((v) => ({
@@ -224,7 +229,23 @@ export default function PhoneCalendar() {
     (folded: boolean) => setVote((v) => (v.folded === folded ? v : { ...v, folded })),
     [setVote],
   );
-  const unfoldVote = useCallback(() => foldVote(false), [foldVote]);
+  // Unfolded, it goes back to the day view on the date being answered,
+  // from the month or another day looked at meanwhile.
+  const unfoldVote = useCallback(
+    () =>
+      setVote((v) => ({
+        ...v,
+        folded: false,
+        month: false,
+        day: v.view?.current ? startOfDay(v.view.current.start, TZ) : v.day,
+      })),
+    [setVote],
+  );
+  const voteToMonth = useCallback(
+    () => setVote((v) => ({ ...v, month: true, folded: true })),
+    [setVote],
+  );
+  const votingNow = useRef(false);
   const openDayNow = useRef<(day: number) => void>(() => {});
   // Stable, or every month of the view (memoised) would redraw on each tap.
   const pickDay = useCallback(
@@ -235,11 +256,12 @@ export default function PhoneCalendar() {
         openTrip(mark);
         return;
       }
-      // A waiting vote's pencilled date starts answering it.
+      // A waiting vote's pencilled date starts answering it; while one is
+      // answered, a day opens in the day view, the vote still on.
       const vote = waitingNow.current.find((v) =>
         v.candidates.some((c) => startOfDay(Date.parse(c.start), TZ) === day),
       );
-      if (vote) {
+      if (vote && !votingNow.current) {
         openVoteNow.current(vote.id);
         return;
       }
@@ -316,7 +338,7 @@ export default function PhoneCalendar() {
     );
   // The day view shows the day in the address, or the date being answered
   // (#176); until the vote has said which, the day already open.
-  const dayTarget = voteOpen ? (vote.day ?? dayShown) : dayInAddress;
+  const dayTarget = voteOpen ? (vote.month ? null : (vote.day ?? dayShown)) : dayInAddress;
   if (dayTarget !== null && dayTarget !== dayShown) setDayShown(dayTarget);
   const dayOpen = dayTarget !== null;
   // HomeVote's callbacks stay the same from render to render, so its timers
@@ -326,7 +348,7 @@ export default function PhoneCalendar() {
   useEffect(() => {
     const day = vote.day;
     closeNow.current =
-      day === null
+      day === null || vote.month
         ? closeOverlay
         : () =>
             navigate({ search: `?day=${dayParam(day)}` }, { replace: true, state: location.state });
@@ -335,7 +357,9 @@ export default function PhoneCalendar() {
   const finishNow = useRef(closeOverlay);
   useEffect(() => {
     finishNow.current = () => {
-      todayAfterDay.current = true;
+      // On the month already, it glides now; else once the day view is closed.
+      if (dayShown === null) months.current?.glideToMonth(Date.now());
+      else todayAfterDay.current = true;
       closeOverlay();
     };
   });
@@ -358,9 +382,19 @@ export default function PhoneCalendar() {
   });
   useEffect(() => {
     openVoteNow.current = openVote;
-    openDayNow.current = (day) =>
-      navigate({ search: `?day=${dayParam(day)}` }, { state: { fromMonth: true } });
+    votingNow.current = voteOpen;
+    openDayNow.current = voteOpen
+      ? (day) => setVote((v) => ({ ...v, day, month: false }))
+      : (day) => navigate({ search: `?day=${dayParam(day)}` }, { state: { fromMonth: true } });
   });
+  // Answering on the month: it glides to each date's day above the card.
+  const voteAt = vote.view?.current?.start ?? null;
+  useEffect(() => {
+    if (!voteOpen || !vote.month || voteAt === null) return;
+    months.current?.glideToDay(startOfDay(voteAt, TZ), vote.clear);
+    // Only as the date being answered changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voteAt]);
   // The day view's calendar: yours, and Casy's own events beside it.
   const dayCalendar = useDayCalendar({
     month,
@@ -611,7 +645,7 @@ export default function PhoneCalendar() {
           aim={voteOpen ? (vote.view?.current ?? undefined) : undefined}
           clear={voteOpen ? vote.clear : 0}
           onTouchDays={voteOpen ? () => foldVote(true) : undefined}
-          onBack={closeOverlay}
+          onBack={voteOpen ? voteToMonth : closeOverlay}
           onClosed={dayClosed}
           tellRef={dayTellButton}
           tellLabel={t.tellCasy.button}

@@ -65,6 +65,9 @@ const NO_PENCILS: readonly Pencil[] = [];
 /** What a glide blurs: the clipped rows of days, never the hours beside them. */
 const BLURRED = { filter: "var(--day-blur, none)" } as const;
 
+/** How long the vote's card is given to finish growing before the date is centred above it. */
+const CLEAR_SETTLE_MS = 120;
+
 /** Days apart beyond which a glide draws only its two ends, not every day between. */
 const DRAWN_BETWEEN = 24;
 
@@ -247,14 +250,16 @@ export default function DayColumns({
     const el = scroller.current;
     if (!el || fitDay) return;
     let target: number;
-    if (aim) {
-      const span = placeSpan(aim.start, aim.end, home, TZ);
+    const shownDays = daysInView(offset, days, lead).map((k) => addDays(home, k, TZ));
+    // Aimed at only when it is on a day in view (a vote's date, not the day
+    // looked at meanwhile).
+    if (aim && shownDays.includes(startOfDay(aim.start, TZ))) {
+      const span = placeSpan(aim.start, aim.end, startOfDay(aim.start, TZ), TZ);
       target =
         span.height > 0.8
           ? 8 * hourPx
           : (span.top + span.height / 2) * dayPx - (el.clientHeight - clear) / 2;
     } else {
-      const shownDays = daysInView(offset, days, lead).map((k) => addDays(home, k, TZ));
       const at = Date.now();
       const firsts = shownDays.flatMap((midnight) =>
         calendar
@@ -300,26 +305,50 @@ export default function DayColumns({
   }, [focusStart, focusEnd]);
 
   // A new date aimed at (a vote's next date, or its first when the vote
-  // opens over a day already open): its time scrolled to the middle of what
-  // the card leaves in view, as the days glide to it. Not the one it opened
-  // on, which the opening placed.
+  // opens over a day already open), or its day back in view (the vote's
+  // card unfolded after looking at other days): its time scrolled to the
+  // middle of what the card leaves in view, as the days glide to it. Not
+  // what it opened on, which the opening placed.
   const aimStart = aim?.start ?? null;
   const aimEnd = aim?.end ?? null;
-  const lastAim = useRef(aimStart);
+  const aimInView =
+    aimStart !== null &&
+    daysInView(offset, days, lead).some((k) => addDays(home, k, TZ) === startOfDay(aimStart, TZ));
+  const aimed = `${aimStart}/${aimInView}`;
+  const lastAim = useRef(aimed);
   useEffect(() => {
     const el = scroller.current;
-    if (aimStart === lastAim.current) return;
-    lastAim.current = aimStart;
-    if (!el || fitDay || aimStart === null || aimEnd === null) return;
+    if (aimed === lastAim.current) return;
+    lastAim.current = aimed;
+    if (!el || fitDay || !aimInView || aimStart === null || aimEnd === null) return;
     const span = placeSpan(aimStart, aimEnd, startOfDay(aimStart, TZ), TZ);
     const target =
       span.height > 0.8
         ? 8 * hourPx
         : (span.top + span.height / 2) * dayPx - (el.clientHeight - clear) / 2;
     el.scrollTo({ top: Math.max(0, target), behavior: reduceMotion ? "auto" : "smooth" });
-    // Only when what is aimed at changes.
+    // Only when what is aimed at, or whether its day is in view, changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aimStart, aimEnd]);
+  }, [aimed]);
+  // The card growing back (unfolded) covers more: once it has settled, the
+  // date is put back in the middle of what is left. Not as it folds away,
+  // which leaves you where you were looking.
+  const lastClear = useRef(clear);
+  useEffect(() => {
+    const grew = clear > lastClear.current;
+    lastClear.current = clear;
+    const el = scroller.current;
+    if (!grew || !el || fitDay || !aimInView || aimStart === null || aimEnd === null) return;
+    const id = window.setTimeout(() => {
+      const span = placeSpan(aimStart, aimEnd, startOfDay(aimStart, TZ), TZ);
+      if (span.height > 0.8) return;
+      const target = (span.top + span.height / 2) * dayPx - (el.clientHeight - clear) / 2;
+      el.scrollTo({ top: Math.max(0, target), behavior: reduceMotion ? "auto" : "smooth" });
+    }, CLEAR_SETTLE_MS);
+    return () => window.clearTimeout(id);
+    // Only as the card's height changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clear]);
 
   // The red line moves with the clock.
   const [now, setNow] = useState(() => Date.now());
