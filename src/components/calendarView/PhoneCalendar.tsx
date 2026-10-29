@@ -201,12 +201,15 @@ export default function PhoneCalendar() {
   const [dayShown, setDayShown] = useState(dayInAddress);
   // While a vote is answered, the day view is on its date instead (below).
   const voteId = params.get("vote");
+  // The vote's card folds down while the calendar is touched (HomeVote's `folded`).
   const [vote, setVote] = useState<{
     id: string | null;
     day: number | null;
     view: VoteView | null;
-  }>({ id: voteId, day: null, view: null });
-  if (vote.id !== voteId) setVote({ id: voteId, day: null, view: null });
+    clear: number;
+    folded: boolean;
+  }>({ id: voteId, day: null, view: null, clear: 0, folded: false });
+  if (vote.id !== voteId) setVote({ id: voteId, day: null, view: null, clear: 0, folded: false });
   const onVoteView = useCallback(
     (view: VoteView) =>
       setVote((v) => ({
@@ -216,6 +219,12 @@ export default function PhoneCalendar() {
       })),
     [setVote],
   );
+  const onVoteClear = useCallback((clear: number) => setVote((v) => ({ ...v, clear })), [setVote]);
+  const foldVote = useCallback(
+    (folded: boolean) => setVote((v) => (v.folded === folded ? v : { ...v, folded })),
+    [setVote],
+  );
+  const unfoldVote = useCallback(() => foldVote(false), [foldVote]);
   const openDayNow = useRef<(day: number) => void>(() => {});
   // Stable, or every month of the view (memoised) would redraw on each tap.
   const pickDay = useCallback(
@@ -476,7 +485,15 @@ export default function PhoneCalendar() {
         />
       )}
       {voteEvent && (
-        <HomeVote key={voteEvent.id} event={voteEvent} onView={onVoteView} onClose={closeVote} />
+        <HomeVote
+          key={voteEvent.id}
+          event={voteEvent}
+          folded={vote.folded}
+          onView={onVoteView}
+          onClear={onVoteClear}
+          onUnfold={unfoldVote}
+          onClose={closeVote}
+        />
       )}
       {homeVotes.agreed && (
         <AgreedCard key={homeVotes.agreed.id} event={homeVotes.agreed} onDone={homeVotes.flyIn} />
@@ -563,7 +580,8 @@ export default function PhoneCalendar() {
           onDay={voteOpen ? (day) => setVote((v) => ({ ...v, day })) : showDay}
           travel={voteOpen}
           aim={voteOpen ? (vote.view?.current ?? undefined) : undefined}
-          clear={voteOpen ? (vote.view?.clear ?? 0) : 0}
+          clear={voteOpen ? vote.clear : 0}
+          onTouchDays={voteOpen ? () => foldVote(true) : undefined}
           onBack={closeOverlay}
           onClosed={dayClosed}
           tellRef={dayTellButton}

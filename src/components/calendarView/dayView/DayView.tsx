@@ -62,6 +62,7 @@ export default function DayView({
   travel = false,
   aim,
   clear = 0,
+  onTouchDays,
   tellRef,
   tellLabel,
   onTell,
@@ -88,6 +89,8 @@ export default function DayView({
   travel?: boolean;
   aim?: { start: number; end: number };
   clear?: number;
+  /** A finger on the week row or the hours (a vote's card folds away). */
+  onTouchDays?: () => void;
   /** Tell Casy's plus (#116), for people AI is on for. */
   tellRef: RefObject<HTMLButtonElement | null>;
   tellLabel: string;
@@ -240,33 +243,35 @@ export default function DayView({
         </div>
       </header>
 
-      <WeekStrip
-        center={day}
-        inView={inView}
-        today={today}
-        marked={marked}
-        turn={shown.turn}
-        tone="orange"
-        onPick={onDay}
-        onWeek={(direction) => onDay(addDays(day, 7 * direction, TZ))}
-      />
-
-      <div className="min-h-0 flex-1 border-t">
-        <DayColumns
-          home={home}
-          offset={daysBetween(home, day)}
-          onOffset={(to) => onDay(addDays(home, to, TZ))}
-          days={span}
-          lead="first"
-          pencils={pencils}
-          onBlockTap={tapBlock}
-          travel={travel}
-          aim={aim}
-          clear={clear}
+      <div className="flex min-h-0 flex-1 flex-col" onPointerDownCapture={onTouchDays}>
+        <WeekStrip
+          center={day}
+          inView={inView}
+          today={today}
+          marked={marked}
+          turn={shown.turn}
           tone="orange"
-          calendar={calendar}
-          size="full"
+          onPick={onDay}
+          onWeek={(direction) => onDay(addDays(day, 7 * direction, TZ))}
         />
+
+        <div className="min-h-0 flex-1 border-t">
+          <DayColumns
+            home={home}
+            offset={daysBetween(home, day)}
+            onOffset={(to) => onDay(addDays(home, to, TZ))}
+            days={span}
+            lead="first"
+            pencils={pencils}
+            onBlockTap={tapBlock}
+            travel={travel}
+            aim={aim}
+            clear={clear}
+            tone="orange"
+            calendar={calendar}
+            size="full"
+          />
+        </div>
       </div>
 
       {!travel && (

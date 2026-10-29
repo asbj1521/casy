@@ -38,6 +38,23 @@ test("a waiting vote is answered over the day view, which moves on to each date"
   await expect(page.getByRole("button", { name: "Svar på Brætspilsaften" })).toBeVisible();
 });
 
+test("a touch on the calendar folds the vote down to its card, which a tap unfolds", async ({
+  page,
+}) => {
+  await page.goto("/?vote=ev-boardgames");
+  const card = page.getByRole("region", { name: "Brætspilsaften" });
+  await expect(card.getByRole("button", { name: "Jeg kan", exact: true })).toBeVisible();
+  // A finger on the hours: only the date's card stays, to be swiped.
+  await page.getByText("onsdag 14. okt. 2026").click();
+  await expect(card.getByRole("button", { name: "Jeg kan", exact: true })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Færdig" })).toHaveCount(0);
+  await expect(card.getByText("Dato 1 af 3", { exact: true })).toBeVisible();
+  // A tap on the card brings the rest back.
+  await card.getByText("Dato 1 af 3", { exact: true }).click();
+  await expect(card.getByRole("button", { name: "Jeg kan", exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Færdig" })).toBeVisible();
+});
+
 test("a pencilled date opens its vote, from the month and the day view, and the old swipe address leads here", async ({
   page,
 }) => {

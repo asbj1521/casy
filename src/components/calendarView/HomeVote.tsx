@@ -7,6 +7,7 @@ import CardFace from "@/components/swipe/deck/CardFace";
 import { ClashConfirm, MoveConfirm } from "@/components/swipe/deck/Confirms";
 import { AnswerButtons, SwipeCard } from "@/components/swipe/SwipeCard";
 import { useVoteDeck } from "@/components/swipe/useVoteDeck";
+import Collapse from "@/components/ui/Collapse";
 import Notice from "@/components/ui/Notice";
 import { useMyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { eventTitle } from "@/i18n/eventTitle";
@@ -18,14 +19,15 @@ import { stillToAnswer, type VoteEvent } from "@/lib/vote";
 /** How long "Tak" stays before the card goes. */
 const THANKS_MS = 1600;
 
+/** How far a finger may move on the folded card and still be a tap that unfolds it. */
+const TAP_PX = 8;
+
 /** What the day view under the card shows of the vote (#176). */
 export interface VoteView {
   /** The date being answered; null once all are. */
   current: { start: number; end: number } | null;
   /** Your answers so far, by date id, stamped on the dates. */
   answers: ReadonlyMap<string, EventResponse>;
-  /** How much of the screen the card covers, from the bottom. */
-  clear: number;
 }
 
 /**
@@ -37,14 +39,28 @@ export interface VoteView {
  * answer a short thanks, then the card goes and the day view stays on that
  * day; a date it settled is said over the month once you are back there,
  * and flies into its day (AgreedCard, useHomeVotes).
+ *
+ * A touch on the calendar folds it down to the card alone (`folded`), so
+ * the day view is nearly all in sight while you check it: the glass, the
+ * title row, the dates' bar and the answer buttons go, and the card stays
+ * along the bottom to be swiped, the next date's card folded too. A tap on
+ * the card unfolds it (`onUnfold`), and so does an answer needing a
+ * confirm, or the last answer. How much of the screen it covers goes to
+ * `onClear` as it changes.
  */
 export default function HomeVote({
   event,
+  folded: foldAsked,
   onView,
+  onClear,
+  onUnfold,
   onClose,
 }: {
   event: VoteEvent;
+  folded: boolean;
   onView: (view: VoteView) => void;
+  onClear: (px: number) => void;
+  onUnfold: () => void;
   onClose: () => void;
 }) {
   const t = useT();
@@ -53,6 +69,21 @@ export default function HomeVote({
   const panel = useRef<HTMLDivElement>(null);
   const deck = useVoteDeck(event);
   const { dates, index, current, done, answerOf } = deck;
+  const folded = foldAsked && !done && !deck.confirmMove && !deck.confirmClash;
+
+  // How much of the screen it covers, for the day view to keep clear.
+  useLayoutEffect(() => {
+    const el = panel.current;
+    if (!el) return;
+    const report = () => onClear(el.offsetHeight);
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onClear]);
+
+  // A tap on the folded card, not a swipe, unfolds it.
+  const press = useRef<{ x: number; y: number } | null>(null);
 
   // Opened on a vote already answered (a push, or Aftaler's row): from its
   // first date, to look again or change an answer.
@@ -76,7 +107,6 @@ export default function HomeVote({
     onView({
       current: current ? { start: Date.parse(current.start), end: Date.parse(current.end) } : null,
       answers,
-      clear: panel.current?.offsetHeight ?? 0,
     });
     // `currentId` and `given` stand for what current and answerOf read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,127 +126,156 @@ export default function HomeVote({
       ref={panel}
       role="region"
       aria-label={eventTitle(event.title, t)}
-      className="glass fixed inset-x-0 bottom-0 z-[45] rounded-t-[28px] px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-3"
+      className="fixed inset-x-0 bottom-0 z-[45] px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-3"
     >
-      <header className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[17px] font-bold text-foreground">
-            {eventTitle(event.title, t)}
-          </p>
-          <p className="truncate text-[13px] text-muted-foreground">{event.group.name}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => deck.back()}
-          disabled={index === 0 || done}
-          aria-label={t.swipe.previous}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-600 transition disabled:opacity-30"
-        >
-          <RotateCcw className="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 rounded-lg px-2 py-1 text-[15px] font-semibold text-primary"
-        >
-          {t.swipe.done}
-        </button>
-      </header>
+      {/* The glass behind it all, gone while it is folded down to the card. */}
+      <div
+        aria-hidden
+        className={cn(
+          "glass absolute inset-0 rounded-t-[28px] transition-[opacity,transform] duration-300",
+          folded && "translate-y-1/4 opacity-0",
+        )}
+      />
+      <div className="relative">
+        <Collapse open={!folded}>
+          <header className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[17px] font-bold text-foreground">
+                {eventTitle(event.title, t)}
+              </p>
+              <p className="truncate text-[13px] text-muted-foreground">{event.group.name}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => deck.back()}
+              disabled={index === 0 || done}
+              aria-label={t.swipe.previous}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-600 transition disabled:opacity-30"
+            >
+              <RotateCcw className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 rounded-lg px-2 py-1 text-[15px] font-semibold text-primary"
+            >
+              {t.swipe.done}
+            </button>
+          </header>
 
-      {/* One segment per date: answered, the one on screen, still to come. */}
-      <div className="mt-2 flex gap-1">
-        {dates.map((d, i) => (
-          <button
-            key={d.id}
-            type="button"
-            onClick={() => deck.back(i)}
-            aria-label={t.swipe.dateOf(i + 1, dates.length)}
-            className={cn(
-              "h-1.5 flex-1 rounded-full transition-colors",
-              i === index
-                ? "bg-foreground"
-                : answerOf(d) === "accepted"
-                  ? "bg-emerald-500"
-                  : answerOf(d) === "maybe"
-                    ? "bg-amber-400"
-                    : answerOf(d) === "declined"
-                      ? "bg-rose-400"
-                      : "bg-secondary",
-            )}
-          />
-        ))}
-      </div>
-
-      {done || !current ? (
-        <div className="flex h-[min(30dvh,224px)] flex-col items-center justify-center px-6 text-center">
-          <p className="text-[20px] font-bold text-foreground">{t.swipe.doneTitle}</p>
-          {waitingFor.length > 0 && (
-            <p className="mt-1 text-[15px] text-muted-foreground">
-              {t.swipe.waitingFor(nameList(waitingFor, lang))}
-            </p>
-          )}
-        </div>
-      ) : (
-        <>
-          <div className="relative mt-3 h-[min(30dvh,224px)]">
-            {/* The next date waits underneath, so the stack reads as a stack. */}
-            {dates[index + 1] && (
-              <div aria-hidden className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
-                <CardFace
-                  event={event}
-                  date={dates[index + 1]}
-                  position={index + 2}
-                  total={dates.length}
-                  yours={answerOf(dates[index + 1])}
-                  calendar={calendar}
-                  clashes={deck.clashesFor(dates[index + 1])}
-                  compact
-                />
-              </div>
-            )}
-            <AnimatePresence custom={deck.exit} initial={false}>
-              <SwipeCard key={current.id} exitTo={deck.exit} onAnswer={deck.answer} draggable>
-                <CardFace
-                  event={event}
-                  date={current}
-                  position={index + 1}
-                  total={dates.length}
-                  yours={answerOf(current)}
-                  calendar={calendar}
-                  clashes={deck.clashesFor(current)}
-                  shownClash={deck.shownClash ? clashKey(deck.shownClash) : null}
-                  onShowClash={deck.setShownClash}
-                  compact
-                />
-              </SwipeCard>
-            </AnimatePresence>
+          {/* One segment per date: answered, the one on screen, still to come. */}
+          <div className="mt-2 flex gap-1">
+            {dates.map((d, i) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => deck.back(i)}
+                aria-label={t.swipe.dateOf(i + 1, dates.length)}
+                className={cn(
+                  "h-1.5 flex-1 rounded-full transition-colors",
+                  i === index
+                    ? "bg-foreground"
+                    : answerOf(d) === "accepted"
+                      ? "bg-emerald-500"
+                      : answerOf(d) === "maybe"
+                        ? "bg-amber-400"
+                        : answerOf(d) === "declined"
+                          ? "bg-rose-400"
+                          : "bg-secondary",
+                )}
+              />
+            ))}
           </div>
-          {deck.confirmMove ? (
-            <MoveConfirm
-              onConfirm={() => deck.answer("declined", true)}
-              onCancel={deck.cancelMove}
-              className="my-3"
-            />
-          ) : deck.confirmClash ? (
-            <ClashConfirm
-              onConfirm={() => deck.confirmClash && deck.answer(deck.confirmClash, true)}
-              onCancel={deck.cancelClash}
-              className="my-3"
-            />
-          ) : (
-            <AnswerButtons onAnswer={deck.answer} screen />
-          )}
-          {!deck.hintSeen && index === 0 && Object.keys(deck.given).length === 0 && (
-            <p className="px-2 pb-1 text-center text-xs text-muted-foreground">{t.swipe.hint}</p>
-          )}
-        </>
-      )}
+        </Collapse>
 
-      {deck.error && (
-        <Notice tone="error" bare className="mt-1">
-          {deck.error}
-        </Notice>
-      )}
+        {done || !current ? (
+          <div className="flex h-[min(30dvh,224px)] flex-col items-center justify-center px-6 text-center">
+            <p className="text-[20px] font-bold text-foreground">{t.swipe.doneTitle}</p>
+            {waitingFor.length > 0 && (
+              <p className="mt-1 text-[15px] text-muted-foreground">
+                {t.swipe.waitingFor(nameList(waitingFor, lang))}
+              </p>
+            )}
+          </div>
+        ) : (
+          <>
+            <div
+              className={cn("relative h-[min(30dvh,224px)]", !folded && "mt-3")}
+              onPointerDown={(e) => {
+                press.current = { x: e.clientX, y: e.clientY };
+              }}
+              onClickCapture={(e) => {
+                const p = press.current;
+                press.current = null;
+                if (!folded) return;
+                if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > TAP_PX) return;
+                e.stopPropagation();
+                onUnfold();
+              }}
+            >
+              {/* The next date waits underneath, so the stack reads as a stack. */}
+              {dates[index + 1] && (
+                <div aria-hidden className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
+                  <CardFace
+                    event={event}
+                    date={dates[index + 1]}
+                    position={index + 2}
+                    total={dates.length}
+                    yours={answerOf(dates[index + 1])}
+                    calendar={calendar}
+                    clashes={deck.clashesFor(dates[index + 1])}
+                    compact
+                  />
+                </div>
+              )}
+              <AnimatePresence custom={deck.exit} initial={false}>
+                <SwipeCard key={current.id} exitTo={deck.exit} onAnswer={deck.answer} draggable>
+                  <CardFace
+                    event={event}
+                    date={current}
+                    position={index + 1}
+                    total={dates.length}
+                    yours={answerOf(current)}
+                    calendar={calendar}
+                    clashes={deck.clashesFor(current)}
+                    shownClash={deck.shownClash ? clashKey(deck.shownClash) : null}
+                    onShowClash={deck.setShownClash}
+                    compact
+                  />
+                </SwipeCard>
+              </AnimatePresence>
+            </div>
+            <Collapse open={!folded}>
+              {deck.confirmMove ? (
+                <MoveConfirm
+                  onConfirm={() => deck.answer("declined", true)}
+                  onCancel={deck.cancelMove}
+                  className="my-3"
+                />
+              ) : deck.confirmClash ? (
+                <ClashConfirm
+                  onConfirm={() => deck.confirmClash && deck.answer(deck.confirmClash, true)}
+                  onCancel={deck.cancelClash}
+                  className="my-3"
+                />
+              ) : (
+                <AnswerButtons onAnswer={deck.answer} screen />
+              )}
+              {!deck.hintSeen && index === 0 && Object.keys(deck.given).length === 0 && (
+                <p className="px-2 pb-1 text-center text-xs text-muted-foreground">
+                  {t.swipe.hint}
+                </p>
+              )}
+            </Collapse>
+          </>
+        )}
+
+        {deck.error && (
+          <Notice tone="error" bare className="mt-1">
+            {deck.error}
+          </Notice>
+        )}
+      </div>
       {/* Words for screen readers as the cards move. */}
       <p className="sr-only" aria-live="polite">
         {current
