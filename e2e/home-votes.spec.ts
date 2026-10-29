@@ -29,12 +29,11 @@ test("a waiting vote is answered over the day view, which moves on to each date"
   await expect(card.getByText("Dato 1 af 3", { exact: true })).toBeVisible();
   await expect(view).toHaveAccessibleName("Onsdag 14. oktober");
 
-  // Færdig leaves the rest for later, and the day view on its day.
+  // Færdig leaves the rest for later, back on the month.
   await card.getByRole("button", { name: "Færdig" }).click();
   await expect(card).toHaveCount(0);
-  await expect(page).toHaveURL(/\?day=2026-10-14$/);
-  await expect(view.getByRole("button", { name: "I dag" })).toBeVisible();
-  await view.getByRole("button", { name: "Vis Oktober" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(view).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Svar på Brætspilsaften" })).toBeVisible();
 });
 

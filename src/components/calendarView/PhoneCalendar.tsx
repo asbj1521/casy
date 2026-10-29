@@ -342,28 +342,19 @@ export default function PhoneCalendar() {
   if (dayTarget !== null && dayTarget !== dayShown) setDayShown(dayTarget);
   const dayOpen = dayTarget !== null;
   // HomeVote's callbacks stay the same from render to render, so its timers
-  // and effects aren't started over by the page drawing again. Done, it
-  // leaves the day view on the day it was on.
+  // and effects aren't started over by the page drawing again. Færdig, or
+  // every date answered: back to the month, gliding to today, where a date
+  // the vote settled is then said.
   const closeNow = useRef(closeOverlay);
   useEffect(() => {
-    const day = vote.day;
-    closeNow.current =
-      day === null || vote.month
-        ? closeOverlay
-        : () =>
-            navigate({ search: `?day=${dayParam(day)}` }, { replace: true, state: location.state });
-  });
-  const closeVote = useCallback(() => closeNow.current(), []);
-  const finishNow = useRef(closeOverlay);
-  useEffect(() => {
-    finishNow.current = () => {
+    closeNow.current = () => {
       // On the month already, it glides now; else once the day view is closed.
       if (dayShown === null) months.current?.glideToMonth(Date.now());
       else todayAfterDay.current = true;
       closeOverlay();
     };
   });
-  const finishVote = useCallback(() => finishNow.current(), []);
+  const closeVote = useCallback(() => closeNow.current(), []);
   const month = useMemo(
     () => ({
       ...calendar,
@@ -555,7 +546,6 @@ export default function PhoneCalendar() {
           onClear={onVoteClear}
           onUnfold={unfoldVote}
           onClose={closeVote}
-          onFinished={finishVote}
         />
       )}
       {homeVotes.agreed && (

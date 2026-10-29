@@ -36,9 +36,9 @@ export interface VoteView {
  * gliding to each date's own hours as it comes up, with your answers
  * stamped on the dates (`onView`). Swiped or tapped, as on the old swipe
  * screen, and with the same deck behind it (useVoteDeck). After the last
- * answer a short thanks, then back to the month, gliding to today
- * (`onFinished`), where a date it settled is said and flies into its day
- * (AgreedCard, useHomeVotes); Færdig leaves the day view on its day.
+ * answer a short thanks, then back to the month, gliding to today, where a
+ * date it settled is said and flies into its day (AgreedCard,
+ * useHomeVotes); Færdig goes back there too, the rest left for later.
  *
  * A touch on the calendar folds it down to the card alone (`folded`), so
  * the day view is nearly all in sight while you check it: the glass, the
@@ -55,17 +55,14 @@ export default function HomeVote({
   onClear,
   onUnfold,
   onClose,
-  onFinished,
 }: {
   event: VoteEvent;
   folded: boolean;
   onView: (view: VoteView) => void;
   onClear: (px: number) => void;
   onUnfold: () => void;
-  /** Færdig: the rest left for later. */
+  /** Færdig, or every date answered and the thanks said: back to the month. */
   onClose: () => void;
-  /** Every date answered, the thanks said: back to the month. */
-  onFinished: () => void;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -119,9 +116,9 @@ export default function HomeVote({
   // All answered: a moment of thanks, then the plain month.
   useEffect(() => {
     if (!done || startedDone.current) return;
-    const id = window.setTimeout(onFinished, THANKS_MS);
+    const id = window.setTimeout(onClose, THANKS_MS);
     return () => window.clearTimeout(id);
-  }, [done, onFinished]);
+  }, [done, onClose]);
 
   const waitingFor = stillToAnswer(event);
 
