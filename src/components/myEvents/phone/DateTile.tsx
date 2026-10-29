@@ -14,8 +14,7 @@ const SIZES = {
  * An event's day as Apple Calendar's app icon draws one (#177): the weekday
  * small in orange over the day's number, so a row says when at a glance.
  * A vote not yet decided (`more`, its other dates) is a little stack of
- * them, its first date on top and how many there are in the corner; one
- * that is over is greyed.
+ * them, its first date on top; one that is over is greyed.
  */
 export default function DateTile({
   start,
@@ -71,11 +70,6 @@ export default function DateTile({
           </>
         )}
       </span>
-      {more > 0 && (
-        <span className="absolute -right-1.5 -top-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cta px-1 text-[10px] font-bold text-white">
-          {more + 1}
-        </span>
-      )}
     </span>
   );
 }

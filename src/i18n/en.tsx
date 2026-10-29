@@ -954,7 +954,6 @@ export const en: Messages = {
     groupPast: "Earlier",
     optionalAre: (names: string) => `Optional: ${names}`,
     openDay: "Open the day in your calendar",
-    editAnswers: "Change your answers",
   },
   swipe: {
     yourCalendar: "Your calendar",

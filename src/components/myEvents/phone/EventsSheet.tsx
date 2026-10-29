@@ -92,7 +92,7 @@ export default function EventsSheet({
   } else if (staged?.stage === "voting" || staged?.stage === "toSwipe") {
     screen = {
       title: eventTitle(staged.event.title, t),
-      body: <VoteScreen event={staged.event} onAnswer={() => answer(staged.event.id)} />,
+      body: <VoteScreen event={staged.event} />,
     };
   } else {
     screen = {

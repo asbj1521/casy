@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Check, Loader2, LogOut } from "lucide-react";
 
 import { answerDate, chooseDate, type EventResponse } from "@/api/events";
@@ -10,13 +11,11 @@ import PeopleRow from "@/components/myEvents/phone/PeopleRow";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 import YourAnswer from "@/components/myEvents/YourAnswer";
 import ReportEventButton from "@/components/safety/ReportEventButton";
-import FlowButton from "@/components/ui/FlowButton";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useEventChange } from "@/hooks/useEventChange";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate, formatLongDate, formatTime } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import {
   bestPick,
   leader,
@@ -30,22 +29,18 @@ import {
 /**
  * A vote's screen in a phone's Aftaler once you have answered (#177): its
  * dates as a stack, everyone's face (greyed until they have answered every
- * date), and each date as a row with a bar filling as people say they can,
- * the date ahead ticked in orange (only once half the group has answered;
- * before that every date is as good as the next), your own answer at its
- * end, changed with a tap. Only when no date can win does the suggester
- * choose, with "Vælg" on each. When it is decided by is the dates'
- * footnote. Its main action answers again over the day view.
+ * date), and each date as a row with a bar filling as people say yes (a
+ * paler part for "rather not", nothing for no), the most yeses at the top,
+ * so the leading date is always first, ticked in orange once half the
+ * group has answered (before that every date is as good as the next). Your
+ * own answer is at each row's end, changed with a tap, the rows gliding to
+ * their new places. Only when no date can win does the suggester choose,
+ * with "Vælg" on each. When it is decided by is the dates' footnote.
  */
-export default function VoteScreen({
-  event,
-  onAnswer,
-}: {
-  event: VoteEvent;
-  onAnswer: () => void;
-}) {
+export default function VoteScreen({ event }: { event: VoteEvent }) {
   const t = useT();
   const { lang } = useLang();
+  const reduce = useReducedMotion();
   const [exiting, setExiting] = useState(false);
   const choose = useEventChange((dateId: string) => chooseDate(event.id, dateId));
   const answer = useEventChange((v: { dateId: string; response: EventResponse }) =>
@@ -61,19 +56,20 @@ export default function VoteScreen({
   const canChoose = mustChoose && event.createdBy.isYou;
   const marked = mustChoose ? bestPick(event) : halfIn ? leader(event) : null;
   const first = dates[0] ? Date.parse(dates[0].start) : null;
+  // Most yeses first, then most "rather not", then soonest.
+  const ranked = dates
+    .map((d) => ({ date: d, n: tally(d, event) }))
+    .sort((a, b) => b.n.accepted - a.n.accepted || b.n.maybe - a.n.maybe);
 
   return (
-    <EventScreen action={<FlowButton onClick={onAnswer}>{t.events.editAnswers}</FlowButton>}>
+    <EventScreen>
       <div className="mt-2 flex items-center gap-4">
         <span className="pr-2 pt-2">
           <DateTile start={first} more={Math.max(0, dates.length - 1)} size="hero" />
         </span>
-        <div className="min-w-0">
-          <p className="text-[17px] font-semibold text-foreground">
-            {t.events.dateCount(dates.length)}
-          </p>
-          <p className="truncate text-[13px] text-muted-foreground">{event.group.name}</p>
-        </div>
+        <p className="min-w-0 truncate text-[17px] font-semibold text-foreground">
+          {event.group.name}
+        </p>
       </div>
 
       <div className="mt-5">
@@ -102,9 +98,7 @@ export default function VoteScreen({
             : undefined
         }
       >
-        {dates.map((d) => {
-          const n = tally(d, event);
-          const can = n.accepted + n.maybe;
+        {ranked.map(({ date: d, n }) => {
           const isMarked = d.id === marked?.id;
           const label = formatEventDate(event.settings.kind, d, lang);
           // Shown as given while it saves.
@@ -115,32 +109,38 @@ export default function VoteScreen({
                 ? d.answers[you]
                 : undefined;
           return (
-            <li key={d.id} className="group/row flex items-center gap-3 pl-4">
-              <Check
-                aria-label={
-                  isMarked ? (mustChoose ? t.events.bestPick : t.events.ahead) : undefined
-                }
-                aria-hidden={!isMarked}
-                className={cn("h-5 w-5 shrink-0 text-primary", !isMarked && "invisible")}
-              />
-              <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
+            <motion.li
+              key={d.id}
+              layout={!reduce}
+              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+              className="group/row relative bg-card pl-4"
+            >
+              <span className="flex min-h-[3.25rem] min-w-0 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-medium text-foreground">
-                    {label}
+                  <span className="flex items-center gap-1 text-[15px] font-medium text-foreground">
+                    {isMarked && (
+                      <Check
+                        aria-label={mustChoose ? t.events.bestPick : t.events.ahead}
+                        className="h-4 w-4 shrink-0 text-primary"
+                        strokeWidth={3}
+                      />
+                    )}
+                    <span className="truncate">{label}</span>
                   </span>
-                  {/* How many can, as a bar filling up; the number for screen readers. */}
+                  {/* How many say yes, as a bar filling up (paler for "rather
+                      not", nothing for no); the numbers for screen readers. */}
                   <span
                     role="img"
-                    aria-label={`${t.events.canOnDate(can)}${n.declined > 0 ? `, ${t.events.cantOnDate(n.declined)}` : ""}`}
+                    aria-label={`${t.events.canOnDate(n.accepted + n.maybe)}${n.declined > 0 ? `, ${t.events.cantOnDate(n.declined)}` : ""}`}
                     className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-secondary"
                   >
                     <span
-                      className="bg-emerald-500 transition-[width]"
-                      style={{ width: `${(can / Math.max(total, 1)) * 100}%` }}
+                      className="bg-emerald-500 transition-[width] duration-300"
+                      style={{ width: `${(n.accepted / Math.max(total, 1)) * 100}%` }}
                     />
                     <span
-                      className="bg-rose-400 transition-[width]"
-                      style={{ width: `${(n.declined / Math.max(total, 1)) * 100}%` }}
+                      className="bg-emerald-500/35 transition-[width] duration-300"
+                      style={{ width: `${(n.maybe / Math.max(total, 1)) * 100}%` }}
                     />
                   </span>
                 </span>
@@ -166,7 +166,7 @@ export default function VoteScreen({
                   </button>
                 )}
               </span>
-            </li>
+            </motion.li>
           );
         })}
       </ListGroup>

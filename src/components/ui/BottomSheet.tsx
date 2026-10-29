@@ -32,6 +32,8 @@ const SHEET_MOTION = {
 const EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
 const SLIDE_MS = 320;
 const MORPH_MS = 420;
+/** How far along the shrinking (on its eased curve, so late in time) the sheet starts to fade, so the button under it shows through. */
+const SHRUNK_AT = 0.9;
 
 /** Which edge of the screen a sheet stands on. */
 type Edge = "bottom" | "top";
@@ -359,11 +361,18 @@ function GrowingPanel({
     // Measured again: the sheet may have grown since, and the button moved.
     const button = origin.current;
     sheet.getAnimations().forEach((a) => a.cancel());
+    // Into the button, fading out over the last of it: the button is on the
+    // page under it by then, so it shows through as the glass goes, rather
+    // than the glass lying over its icon until the sheet is gone.
     const going = button
       ? sheet.animate(
           [
-            { ...OPEN_FRAME, borderRadius: OPEN_RADIUS[edge] },
-            asButton(button.getBoundingClientRect(), sheet.getBoundingClientRect()),
+            { ...OPEN_FRAME, borderRadius: OPEN_RADIUS[edge], opacity: 1 },
+            { opacity: 1, offset: SHRUNK_AT },
+            {
+              ...asButton(button.getBoundingClientRect(), sheet.getBoundingClientRect()),
+              opacity: 0,
+            },
           ],
           { duration: MORPH_MS, easing: EASE, fill: "forwards" },
         )

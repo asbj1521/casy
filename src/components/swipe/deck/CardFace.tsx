@@ -13,7 +13,11 @@ import { APP_TIME_ZONE, dayOf } from "@/lib/zone";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 import { clashesOn } from "@/components/swipe/clash";
 import ImportantClashes from "@/components/swipe/ImportantClashes";
+import { STAMP_TONE } from "@/components/swipe/stampTone";
 import { AnswerIcon } from "@/components/swipe/SwipeCard";
+
+/** How many faces the compact card has room for in its one line, before "+n". */
+const FACES = 7;
 
 /** What a card says: the date, how soon, what you have then, and how others answered. */
 const TZ = APP_TIME_ZONE;
@@ -113,7 +117,39 @@ export default function CardFace({
             {t.swipe.youAnswered(t.swipe.answerWord[yours])}
           </p>
         )}
-        {others.length > 0 && (
+        {/* The phone's card (#177): one line of faces, each answer a badge,
+            so a big group never runs out of the card. */}
+        {compact && others.length > 0 && (
+          <ul className="flex items-center gap-1.5">
+            {others.slice(0, FACES).map((p, i) => {
+              const a = date.answers[p.profileId];
+              return (
+                <li
+                  key={p.profileId}
+                  aria-label={`${p.name}: ${a ? t.events.answered[a] : t.events.answered.none}`}
+                  className={cn("relative", !a && "opacity-50")}
+                >
+                  <Avatar name={p.name} index={i + 1} size="md" />
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-white ring-2 ring-card [&_svg]:h-2.5 [&_svg]:w-2.5",
+                      a ? STAMP_TONE[a] : "bg-zinc-400 dark:bg-zinc-500",
+                    )}
+                  >
+                    <AnswerIcon answer={a} />
+                  </span>
+                </li>
+              );
+            })}
+            {others.length > FACES && (
+              <li className="text-xs font-medium text-muted-foreground">
+                +{others.length - FACES}
+              </li>
+            )}
+          </ul>
+        )}
+        {!compact && others.length > 0 && (
           <ul className="flex flex-wrap gap-1.5">
             {others.map((p, i) => {
               const a = date.answers[p.profileId];
