@@ -107,12 +107,17 @@ test("Planlæg med AI takes over the sheet, then hands the settings back filled 
   await expect(sheet.getByRole("button", { name: "Find dato" })).toBeVisible();
 });
 
-test("the sheet's details: Deltagere and Hvornår open sheets, and place and note go along", async ({
+test("the sheet's rows: give or take an hour, and the details folded away go along (#173)", async ({
   page,
   backend,
 }) => {
   await page.goto("/calendar-overview?plan");
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  await sheet.getByRole("button", { name: /^Fleksibel/ }).click();
+  await page.getByRole("radio", { name: /^± 1 t/ }).click();
+  await expect(sheet.getByText(/^Kan starte \d\d:\d\d til \d\d:\d\d$/)).toBeVisible();
+
+  await sheet.getByRole("button", { name: "Flere detaljer" }).click();
   await sheet.getByRole("button", { name: /^Deltagere/ }).click();
   await expect(page.getByRole("dialog", { name: "Deltagere" })).toBeVisible();
   await page
@@ -127,6 +132,15 @@ test("the sheet's details: Deltagere and Hvornår open sheets, and place and not
   await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
   const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
   expect(sent).toMatchObject({ place: "Hos Sara", note: "Tag snacks med" });
+  // The start may move an hour either way of the hour picked, the length kept.
+  const settings = sent.settings as {
+    startHour: number;
+    startWindow: { from: number; to: number };
+  };
+  expect(settings.startWindow).toEqual({
+    from: Math.max(0, settings.startHour * 60 - 60),
+    to: Math.min(23 * 60 + 30, settings.startHour * 60 + 60),
+  });
 });
 
 /** Describes a plan that finds no date (weekday mornings in October), and looks for it. */

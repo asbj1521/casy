@@ -1051,3 +1051,63 @@ describe("start steps (#133)", () => {
     expect(slot?.start).toBe("2026-06-22T17:00:00.000Z"); // 19:00
   });
 });
+
+describe("a preferred start (#173)", () => {
+  // 17:00 ± 1 t for two hours: starts from 16:00 to 18:00, 17:00 wanted.
+  const flexible = { earliestHour: 16, latestHour: 20, startStepMinutes: 30, preferredHour: 17 };
+
+  it("takes the chosen hour when it is free, not the window's first", () => {
+    const slot = findEarliestSlot(
+      makeSearch({
+        participants: [makeParticipant("Anna", [])],
+        durationMinutes: 120,
+        constraints: flexible,
+      }),
+    );
+    expect(slot).toEqual({ start: "2026-06-22T17:00:00.000Z", end: "2026-06-22T19:00:00.000Z" });
+  });
+
+  it("moves as little as it must, the earlier of two equally near", () => {
+    const busyFrom1830 = (name: string) =>
+      makeParticipant(name, [["2026-06-22T18:30:00.000Z", "2026-06-22T20:00:00.000Z"]]);
+    // Busy from 18:30: 16:30 is the nearest start that ends in time.
+    const slot = findEarliestSlot(
+      makeSearch({
+        participants: [busyFrom1830("Anna")],
+        durationMinutes: 120,
+        constraints: flexible,
+      }),
+    );
+    expect(slot?.start).toBe("2026-06-22T16:30:00.000Z");
+  });
+
+  it("keeps the earliest day that works", () => {
+    // Monday is free only at 16:00; Tuesday is free all evening.
+    const slot = findEarliestSlot(
+      makeSearch({
+        participants: [
+          makeParticipant("Anna", [["2026-06-22T18:00:00.000Z", "2026-06-23T00:00:00.000Z"]]),
+        ],
+        durationMinutes: 120,
+        constraints: flexible,
+      }),
+    );
+    expect(slot?.start).toBe("2026-06-22T16:00:00.000Z");
+  });
+
+  it("holds a quorum to the same number of people", () => {
+    const slot = findEarliestSlot(
+      makeSearch({
+        participants: [
+          makeParticipant("Anna", [["2026-06-22T16:00:00.000Z", "2026-06-22T17:00:00.000Z"]]),
+          makeParticipant("Bo", [["2026-06-22T16:00:00.000Z", "2026-06-22T17:00:00.000Z"]]),
+          makeParticipant("Carl", [["2026-06-22T00:00:00.000Z", "2026-06-23T00:00:00.000Z"]]),
+        ],
+        durationMinutes: 120,
+        constraints: flexible,
+        quorum: 2,
+      }),
+    );
+    expect(slot?.start).toBe("2026-06-22T17:00:00.000Z");
+  });
+});

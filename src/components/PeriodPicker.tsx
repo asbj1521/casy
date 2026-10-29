@@ -5,17 +5,12 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
 import { monthName, periodText } from "@/lib/periodText";
+import { monthMarks, searchedMonths } from "@/lib/periodMonths";
 import { pickPeriodMonth, type Period } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
-import { APP_TIME_ZONE, localDate, startOfMonth } from "@/lib/zone";
+import { APP_TIME_ZONE, localDate } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
-
-/** The months the search covers, this one first, as local midnights of their 1st. */
-function searchedMonths(): string[] {
-  const first = startOfMonth(Date.now(), TZ);
-  return Array.from({ length: 12 }, (_, i) => new Date(startOfMonth(first, TZ, i)).toISOString());
-}
 
 /**
  * When the event should happen (#74): any time, one month ("i december"), or
@@ -102,16 +97,7 @@ function MonthGrid({
   const { lang } = useLang();
   const months = searchedMonths();
   const pick = (month: string) => onChange(pickPeriodMonth(value, month, TZ));
-
-  // Exact days (#134) shade every month they touch, with no ends to tap off:
-  // a tap on any month replaces them (pickPeriodMonth).
-  const inPeriod = (m: string) =>
-    !!value &&
-    (value.days
-      ? startOfMonth(Date.parse(value.from), TZ) <= Date.parse(m) &&
-        Date.parse(m) <= Date.parse(value.to)
-      : Date.parse(m) >= Date.parse(value.from) && Date.parse(m) <= Date.parse(value.to));
-  const isEnd = (m: string) => !!value && !value.days && (m === value.from || m === value.to);
+  const { inPeriod, isEnd } = monthMarks(value);
 
   return (
     <div>

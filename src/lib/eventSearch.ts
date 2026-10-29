@@ -90,8 +90,9 @@ export type EventSettings = (
        */
       anyTime?: boolean;
       /**
-       * Start at the earliest moment in this window that suits (#133),
-       * instead of at startHour (which stays the window's first hour).
+       * Start at a moment in this window that suits (#133), instead of at
+       * startHour: the one closest to startHour (#173), which is the
+       * window's first hour when the AI set it, its middle when set by hand.
        */
       startWindow?: StartWindow;
       /** Local days of week to search (0 = Sun … 6 = Sat); omitted = every day. */
@@ -160,6 +161,7 @@ export function findEventSlot(
               latestHour: (settings.startWindow.to + settings.durationMinutes) / 60,
               allowedDays: settings.allowedDays,
               startStepMinutes: START_STEP_MINUTES,
+              preferredHour: settings.startHour,
             }
           : settings.anyTime
             ? // Nobody cares what time it starts, but not the middle of the

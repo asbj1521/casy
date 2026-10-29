@@ -27,6 +27,7 @@ export function Stepper({
   lessLabel,
   moreLabel,
   fill = false,
+  inRow = false,
 }: {
   value: number;
   values: number[];
@@ -36,6 +37,8 @@ export function Stepper({
   moreLabel: string;
   /** As wide as its cell, the value centred between the buttons (the phone's flow). */
   fill?: boolean;
+  /** Small, at the end of a list row (the Planlæg sheet, #173). */
+  inRow?: boolean;
 }) {
   const i = values.indexOf(value);
   const step = (d: number) => {
@@ -45,7 +48,8 @@ export function Stepper({
   return (
     <div
       className={cn(
-        "flex h-12 items-center rounded-xl border bg-card",
+        "flex items-center",
+        inRow ? "h-9 rounded-full bg-secondary" : "h-12 rounded-xl border bg-card",
         fill && "w-full justify-between",
       )}
     >
@@ -54,11 +58,19 @@ export function Stepper({
         onClick={() => step(-1)}
         disabled={i <= 0}
         aria-label={lessLabel}
-        className="flex h-full w-10 items-center justify-center rounded-l-xl text-foreground transition hover:bg-secondary disabled:opacity-30"
+        className={cn(
+          "flex h-full w-10 items-center justify-center text-foreground transition hover:bg-secondary disabled:opacity-30",
+          inRow ? "rounded-l-full" : "rounded-l-xl",
+        )}
       >
         <Minus className="h-4 w-4" />
       </button>
-      <span className="min-w-[4.5rem] whitespace-nowrap text-center text-base font-bold text-foreground">
+      <span
+        className={cn(
+          "whitespace-nowrap text-center font-bold text-foreground",
+          inRow ? "min-w-[3.5rem] text-[15px]" : "min-w-[4.5rem] text-base",
+        )}
+      >
         {format(value)}
       </span>
       <button
@@ -66,7 +78,10 @@ export function Stepper({
         onClick={() => step(1)}
         disabled={i < 0 || i >= values.length - 1}
         aria-label={moreLabel}
-        className="flex h-full w-10 items-center justify-center rounded-r-xl text-foreground transition hover:bg-secondary disabled:opacity-30"
+        className={cn(
+          "flex h-full w-10 items-center justify-center text-foreground transition hover:bg-secondary disabled:opacity-30",
+          inRow ? "rounded-r-full" : "rounded-r-xl",
+        )}
       >
         <Plus className="h-4 w-4" />
       </button>
@@ -75,7 +90,7 @@ export function Stepper({
 }
 
 /** A label above its control, as every field in the wide bar has. */
-export function Field({
+function Field({
   label,
   mark,
   children,
@@ -94,19 +109,24 @@ export function Field({
         )}
       >
         {label}
-        {mark && (
-          <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold normal-case tracking-normal text-amber-800">
-            {mark}
-          </span>
-        )}
+        {mark && <GuessMark mark={mark} />}
       </span>
       {children}
     </div>
   );
 }
 
+/** "gættet" after a setting's label, for one Casy's AI guessed (#100). */
+export function GuessMark({ mark }: { mark: string }) {
+  return (
+    <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold normal-case tracking-normal text-amber-800">
+      {mark}
+    </span>
+  );
+}
+
 /** "Alle dage" plus the seven weekdays: the one day a trip starts on. */
-export function StartDayPicker({
+function StartDayPicker({
   value,
   onChange,
   fill = false,

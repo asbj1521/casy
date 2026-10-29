@@ -3,21 +3,25 @@ import { AnimatePresence, motion } from "framer-motion";
 import { RotateCcw, Sparkles, Users } from "lucide-react";
 
 import AiConversation from "@/components/findDate/ai/AiConversation";
-import { StepSettings } from "@/components/SchedulerSettings";
+import { MAX_NAME_LENGTH } from "@/components/schedulerSettings/options";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import BottomSheet from "@/components/ui/BottomSheet";
+import { FIELD, FIELD_LABEL } from "@/components/ui/field";
 import { SWAP } from "@/components/ui/swap";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
 
-import DetailsStep from "./DetailsStep";
 import GroupStep from "./GroupStep";
+import PlanMonths from "./PlanMonths";
+import MoreDetails from "./MoreDetails";
+import TimeRows from "./TimeRows";
 
 /**
- * What the Planlæg sheet on My calendar holds (#126). The settings by hand
- * first: the group, what and when, the optional details. For those Casy's AI
- * is on for, one eye-catching button above them: pressed, the AI takes over
+ * What the Planlæg sheet on My calendar holds (#126), decisions first (#173):
+ * the group, the name, the time as rows, the months in view, and the rest
+ * folded behind "Flere detaljer". For those Casy's AI is on for, one
+ * eye-catching button under the name: pressed, the AI takes over
  * the sheet (`aiMode`), the event written or said, Casy's questions answered,
  * and then the settings come back filled in, its guesses marked. From there
  * it is the settings by hand again; the AI only starts over ("Beskriv på ny"),
@@ -56,7 +60,7 @@ export default function PlanSetup({
 
   return (
     <>
-      <ListGroup className="mb-4 mt-0">
+      <ListGroup className="mt-0">
         <ListRow
           icon={Users}
           label={t.scheduler.group}
@@ -68,7 +72,7 @@ export default function PlanSetup({
 
       <AnimatePresence mode="wait" initial={false}>
         {aiMode ? (
-          <motion.div key="ai" {...SWAP}>
+          <motion.div key="ai" {...SWAP} className="mt-4">
             <AiConversation
               planner={planner}
               members={activeGroup?.members ?? []}
@@ -79,17 +83,28 @@ export default function PlanSetup({
           </motion.div>
         ) : (
           <motion.div key="manual" {...SWAP}>
+            <label className="mt-4 block">
+              <span className={FIELD_LABEL}>{t.scheduler.name}</span>
+              <input
+                type="text"
+                value={name}
+                maxLength={MAX_NAME_LENGTH}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t.scheduler.namePlaceholder}
+                className={FIELD}
+              />
+            </label>
             {aiOn &&
               (planned ? (
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <p className="text-sm text-muted-foreground">{t.aiPlan.guessedNote}</p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-muted-foreground">{t.aiPlan.guessedNote}</p>
                   <button
                     type="button"
                     onClick={() => {
                       planner.reset();
                       onAiMode(true);
                     }}
-                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-card/70 px-3 text-sm font-semibold text-foreground transition hover:bg-secondary"
+                    className="glass-pill inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-primary"
                   >
                     <RotateCcw className="h-4 w-4" />
                     {t.aiPlan.again}
@@ -99,18 +114,18 @@ export default function PlanSetup({
                 <AiButton onClick={() => onAiMode(true)} label={t.aiPlan.start} />
               ))}
 
-            <h3 className="mb-3 text-lg font-extrabold tracking-tight text-foreground">
-              {t.schedulerFlow.what}
-            </h3>
-            <StepSettings
-              name={name}
-              onName={setName}
+            <TimeRows
               settings={sched}
               onChange={updateSettingsByHand}
               guessed={planner.session.guessed}
             />
-            <DanishTimeNote className="mt-4 px-1" />
-            <DetailsStep
+            <PlanMonths
+              value={sched.period}
+              onChange={(period) => updateSettingsByHand({ period })}
+              mark={planner.session.guessed.includes("months") ? t.aiPlan.guessed : null}
+            />
+            <DanishTimeNote className="mt-3 px-1 text-xs" />
+            <MoreDetails
               extras={extras}
               onExtras={updateExtras}
               participants={{
@@ -158,7 +173,7 @@ function AiButton({ onClick, label }: { onClick: () => void; label: string }) {
     <button
       type="button"
       onClick={onClick}
-      className="animate-ai-shimmer mb-5 flex h-11 w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-white shadow-[0_8px_24px_-10px_rgba(194,65,12,0.8)] transition active:scale-[0.98]"
+      className="animate-ai-shimmer mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-white shadow-[0_8px_24px_-10px_rgba(194,65,12,0.8)] transition active:scale-[0.98]"
       style={{
         backgroundImage:
           "linear-gradient(110deg, rgb(194 65 12) 0%, rgb(234 88 12) 40%, rgb(253 186 116) 50%, rgb(234 88 12) 60%, rgb(194 65 12) 100%)",

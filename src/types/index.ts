@@ -143,6 +143,12 @@ export interface SchedulingConstraints {
    * starts at 19:00. Omitted: any minute, as soon as everyone is free.
    */
   startStepMinutes?: number;
+  /**
+   * On the day found, the start closest to this local hour wins over the
+   * earliest (#173: "17:00 ± 1 t" prefers 17:00 to 16:00). The day itself is
+   * still the earliest that works. Omitted: the earliest start.
+   */
+  preferredHour?: number;
 }
 
 /** A concrete proposed meeting time. */

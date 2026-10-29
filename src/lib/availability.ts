@@ -271,16 +271,67 @@ function earliestMeeting(search: MeetingSearch): { slot: TimeSlot; present: Part
   const windows = buildAllowedWindows(range, search.timeZone, search.constraints);
   const snap = startSnapper(search.timeZone, search.constraints?.startStepMinutes);
   const { quorum, participants } = search;
-  if (quorum !== undefined && quorum < participants.length) {
-    return earliestQuorumMeeting(participants, quorum, windows, range, durationMs, snap);
-  }
+  const found =
+    quorum !== undefined && quorum < participants.length
+      ? earliestQuorumMeeting(participants, quorum, windows, range, durationMs, snap)
+      : earliestFullMeeting(participants, windows, range, durationMs, snap);
+  const preferred = search.constraints?.preferredHour;
+  if (!found || preferred === undefined) return found;
+  return closestStart(found, preferred, search, windows, range, durationMs, snap) ?? found;
+}
 
+/** The earliest slot everyone is free for. */
+function earliestFullMeeting(
+  participants: Participant[],
+  windows: Interval[],
+  range: Interval,
+  durationMs: number,
+  snap: (ms: number) => number,
+): { slot: TimeSlot; present: Participant[] } | null {
   const free = subtractIntervals(windows, collectBusy(participants, range));
   for (const gap of free) {
     const start = snap(gap.start);
     if (gap.end - start >= durationMs) {
       return { slot: { start: iso(start), end: iso(start + durationMs) }, present: participants };
     }
+  }
+  return null;
+}
+
+/**
+ * The start closest to `preferredHour` in the allowed window `found` lies in,
+ * as good as `found` itself: everyone free without a quorum, at least as
+ * many people with one. Tried one step at a time, nearest first, the earlier
+ * of two equally near; a window of a few hours is a handful of tries.
+ */
+function closestStart(
+  found: { slot: TimeSlot; present: Participant[] },
+  preferredHour: number,
+  search: MeetingSearch,
+  windows: Interval[],
+  range: Interval,
+  durationMs: number,
+  snap: (ms: number) => number,
+): { slot: TimeSlot; present: Participant[] } | null {
+  const foundStart = Date.parse(found.slot.start);
+  const window = windows.find((w) => w.start <= foundStart && foundStart < w.end);
+  if (!window) return null;
+  const step = (search.constraints?.startStepMinutes || 30) * MS_PER_MINUTE;
+  const target = atHour(startOfDay(window.start, search.timeZone), preferredHour, search.timeZone);
+  const starts: number[] = [];
+  for (let s = snap(window.start); s + durationMs <= window.end; s += step) starts.push(s);
+  starts.sort((a, b) => Math.abs(a - target) - Math.abs(b - target) || a - b);
+
+  const { participants, quorum } = search;
+  const timelines = participants.map((p) => collectBusy([p], range));
+  const need = quorum !== undefined && quorum < participants.length ? quorum : participants.length;
+  for (const start of starts) {
+    if (start === foundStart) return found;
+    const end = start + durationMs;
+    const present = participants.filter((_, k) =>
+      timelines[k].every((iv) => iv.end <= start || iv.start >= end),
+    );
+    if (present.length >= need) return { slot: { start: iso(start), end: iso(end) }, present };
   }
   return null;
 }
