@@ -1,4 +1,5 @@
 import { useT } from "@/i18n/lang";
+import { haptic } from "@/lib/haptics";
 import { ALL_DOWS } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
 
@@ -27,8 +28,10 @@ export default function DaySlider({
   function toggle(d: number) {
     if (selected.includes(d)) {
       if (selected.length <= 1) return; // at least one day must stay active
+      haptic("select");
       onChange(selected.filter((x) => x !== d));
     } else {
+      haptic("select");
       onChange([...selected, d]);
     }
   }

@@ -5,6 +5,7 @@ import { Stepper } from "@/components/schedulerSettings/parts";
 import Avatar from "@/components/ui/Avatar";
 import { ListGroup, ListRow, ListSwitchRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
+import { haptic } from "@/lib/haptics";
 import type { MemberState } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
 
@@ -72,9 +73,13 @@ export default function PeopleRows({
                       aria-label={words.states[option]}
                       // You are always invited.
                       disabled={m.isYou && option === "out"}
-                      onClick={() =>
-                        onChange({ ...choice, states: { ...choice.states, [m.profileId]: option } })
-                      }
+                      onClick={() => {
+                        haptic("select");
+                        onChange({
+                          ...choice,
+                          states: { ...choice.states, [m.profileId]: option },
+                        });
+                      }}
                       className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-full text-[15px] font-bold transition-colors disabled:opacity-30",
                         s === option ? LOOK[option].on : "bg-secondary text-muted-foreground",

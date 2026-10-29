@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { haptic } from "@/lib/haptics";
+
 /**
  * An iOS-style looping scroll wheel. The options are repeated many times so the
  * user can spin freely; on settle we snap to the centred item, report it, and
@@ -37,6 +39,8 @@ export default function WheelPicker({
   const len = options.length;
   const containerRef = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // The option in the middle, so each one passing it clicks (#173).
+  const centred = useRef<number | null>(null);
   const middleStart = Math.floor(COPIES / 2) * len;
 
   const list = useMemo(
@@ -53,6 +57,7 @@ export default function WheelPicker({
       options.findIndex((o) => o.value === value),
     );
     el.scrollTop = (middleStart + optIdx) * ITEM;
+    centred.current = optIdx;
     // Centred on the value only for a new list: scrolling the wheel is what
     // sets the value, and centring again then would fight the finger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,7 +78,13 @@ export default function WheelPicker({
 
   function handleScroll() {
     const el = containerRef.current;
-    if (!el || driven) return;
+    if (!el) return;
+    // A click under the thumb for every value passing the middle, turned by
+    // hand or by Casy; the jump back to the middle copy is the same value.
+    const passing = ((Math.round(el.scrollTop / ITEM) % len) + len) % len;
+    if (centred.current !== null && passing !== centred.current) haptic("select");
+    centred.current = passing;
+    if (driven) return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       const absIdx = Math.round(el.scrollTop / ITEM);

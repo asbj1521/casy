@@ -17,6 +17,7 @@ import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
 import WheelPicker from "@/components/WheelPicker";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize, formatClockMinutes } from "@/lib/format";
+import { haptic } from "@/lib/haptics";
 import { ALL_DOWS, describeDays, type SchedulerSettings } from "@/lib/scheduler";
 import { FLEX_MINUTES, flexOf, flexWindow } from "@/lib/startFlex";
 import { cn } from "@/lib/utils";
@@ -263,7 +264,10 @@ export default function TimeRows({
               type="radio"
               name="day-preset"
               checked={p.on}
-              onChange={() => onChange({ dows: [...p.dows] })}
+              onChange={() => {
+                haptic("select");
+                onChange({ dows: [...p.dows] });
+              }}
               label={p.label}
             />
           ))}
@@ -287,6 +291,7 @@ export default function TimeRows({
               name="start-day"
               checked={settings.startDow === d}
               onChange={() => {
+                haptic("select");
                 onChange({ startDow: d });
                 close();
               }}

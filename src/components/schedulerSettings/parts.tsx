@@ -8,6 +8,7 @@ import PeriodPicker from "@/components/PeriodPicker";
 import { useT } from "@/i18n/lang";
 import { ALL_DOWS } from "@/lib/scheduler";
 import type { PlanField } from "@/lib/aiPlan";
+import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import {
   DURATION_VALUES,
@@ -46,7 +47,9 @@ export function Stepper({
   const i = values.indexOf(value);
   const step = (d: number) => {
     const next = values[i + d];
-    if (next !== undefined) onChange(next);
+    if (next === undefined) return;
+    haptic("select");
+    onChange(next);
   };
   return (
     <div

@@ -1,6 +1,7 @@
 import { FIELD_LABEL } from "@/components/ui/field";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
+import { haptic } from "@/lib/haptics";
 import { monthMarks, searchedMonths } from "@/lib/periodMonths";
 import { monthName, periodText } from "@/lib/periodText";
 import { pickPeriodMonth, type Period } from "@/lib/scheduler";
@@ -40,7 +41,10 @@ export default function PlanMonths({
         <span className={FIELD_LABEL}>{t.planFromCalendar.months}</span>
         <button
           type="button"
-          onClick={() => onChange(null)}
+          onClick={() => {
+            haptic("select");
+            onChange(null);
+          }}
           aria-pressed={value === null}
           className={cn(
             "mb-1.5 px-1 text-[13px] font-semibold transition-colors",
@@ -67,7 +71,10 @@ export default function PlanMonths({
             <button
               key={m}
               type="button"
-              onClick={() => onChange(pickPeriodMonth(value, m, APP_TIME_ZONE))}
+              onClick={() => {
+                haptic("select");
+                onChange(pickPeriodMonth(value, m, APP_TIME_ZONE));
+              }}
               aria-pressed={on}
               aria-label={`${capitalize(monthName(m, LOCALE[lang], "long"))} ${year}`}
               className={cn(
