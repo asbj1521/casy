@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type { SuggestedEvent } from "@/api/events";
 import AiReadout from "@/components/ui/AiReadout";
 import { useAiTester } from "@/hooks/useAiAllowed";
@@ -12,15 +14,18 @@ import { useT } from "@/i18n/lang";
  */
 export default function EventImpactDetails({
   event,
+  beside,
   className,
 }: {
   event: SuggestedEvent;
+  /** What starts its line (AiReadout's `beside`), shown alone when there is nothing to read. */
+  beside?: ReactNode;
   className?: string;
 }) {
   const t = useT();
   const tester = useAiTester();
   const impact = event.impact;
-  if (!impact || !tester) return null;
+  if (!impact || !tester) return beside ? <div className={className}>{beside}</div> : null;
 
   const words = t.eventImpact;
   const facts = [
@@ -39,6 +44,7 @@ export default function EventImpactDetails({
       facts={facts}
       reason={impact.reason}
       footer={<p className="text-muted-foreground">{words.testersOnly}</p>}
+      beside={beside}
     />
   );
 }

@@ -97,6 +97,18 @@ export function formatTime(iso: string, timeZone: string = APP_TIME_ZONE): strin
   return timeFormat("en-GB", timeZone).format(new Date(iso));
 }
 
+/**
+ * Time left as a ticking clock (#177): "2d 04:12:33", or "04:12:33" under a
+ * day; never below zero.
+ */
+export function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(total / 86_400);
+  const two = (n: number) => String(n).padStart(2, "0");
+  const clock = `${two(Math.floor((total % 86_400) / 3600))}:${two(Math.floor((total % 3600) / 60))}:${two(total % 60)}`;
+  return days > 0 ? `${days}d ${clock}` : clock;
+}
+
 /** Minutes after midnight as a clock time, "18:30"; past midnight wraps round ("02:00"). */
 export function formatClockMinutes(minutes: number): string {
   const m = ((minutes % 1440) + 1440) % 1440;

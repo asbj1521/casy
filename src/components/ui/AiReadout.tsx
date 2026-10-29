@@ -19,6 +19,7 @@ export default function AiReadout({
   facts,
   reason,
   footer,
+  beside,
   className,
 }: {
   /** The folded line's words. */
@@ -29,25 +30,30 @@ export default function AiReadout({
   facts: string[];
   reason: string;
   footer?: ReactNode;
+  /** Something at the start of the folded line, the line then right-aligned (a vote's countdown). */
+  beside?: ReactNode;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <div className={className}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex items-center gap-1 text-xs font-medium text-muted-foreground"
-      >
-        <Sparkles className="h-3 w-3 text-amber-500" aria-hidden />
-        {toggle}
-        {dot && <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />}
-        <ChevronDown
-          className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")}
-          aria-hidden
-        />
-      </button>
+      <div className={cn(beside && "flex items-center justify-between gap-3")}>
+        {beside}
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="flex items-center gap-1 text-xs font-medium text-muted-foreground"
+        >
+          <Sparkles className="h-3 w-3 text-amber-500" aria-hidden />
+          {toggle}
+          {dot && <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />}
+          <ChevronDown
+            className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")}
+            aria-hidden
+          />
+        </button>
+      </div>
       <Collapse open={open}>
         <div className="mt-1.5 space-y-1.5 rounded-lg bg-muted/60 p-2.5 text-xs">
           <p className="font-medium text-foreground">{headline}</p>

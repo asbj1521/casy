@@ -991,6 +991,7 @@ export const da = {
     groupPast: "Tidligere",
     optionalAre: (names: string) => `Valgfri: ${names}`,
     openDay: "Åbn dagen i din kalender",
+    settlesIn: "Afgøres om",
   },
   /** Swiping through a vote's dates (#74). */
   swipe: {

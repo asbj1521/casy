@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   dayLabel,
+  formatCountdown,
   formatDate,
   formatEventDate,
   formatHeadline,
@@ -134,5 +135,14 @@ describe("cached date formatters (#162)", () => {
   it("read the Danish day whatever zone the machine is in", () => {
     // 22:30 UTC on the 3rd is 23:30 in Copenhagen, so the label names the 3rd.
     expect(dayLabel(evening, "en")).toContain("3 November");
+  });
+});
+
+describe("formatCountdown", () => {
+  it("counts down in days, hours, minutes and seconds, never below zero", () => {
+    expect(formatCountdown(((2 * 24 + 4) * 3600 + 12 * 60 + 33) * 1000)).toBe("2d 04:12:33");
+    expect(formatCountdown((3600 + 5) * 1000 + 999)).toBe("01:00:05");
+    expect(formatCountdown(59_000)).toBe("00:00:59");
+    expect(formatCountdown(-5000)).toBe("00:00:00");
   });
 });

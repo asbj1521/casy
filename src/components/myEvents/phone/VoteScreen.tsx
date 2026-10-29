@@ -5,6 +5,7 @@ import { Check, Loader2, LogOut } from "lucide-react";
 import { answerDate, chooseDate, type EventResponse } from "@/api/events";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import { ExitConfirm } from "@/components/myEvents/parts";
+import Countdown from "@/components/myEvents/phone/Countdown";
 import DateTile from "@/components/myEvents/phone/DateTile";
 import EventScreen from "@/components/myEvents/phone/EventScreen";
 import PeopleRow from "@/components/myEvents/phone/PeopleRow";
@@ -15,7 +16,7 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useEventChange } from "@/hooks/useEventChange";
 import { useLang, useT } from "@/i18n/lang";
-import { formatEventDate, formatLongDate, formatTime } from "@/lib/format";
+import { formatEventDate } from "@/lib/format";
 import {
   bestPick,
   leader,
@@ -35,7 +36,9 @@ import {
  * group has answered (before that every date is as good as the next). Your
  * own answer is at each row's end, changed with a tap, the rows gliding to
  * their new places. Only when no date can win does the suggester choose,
- * with "Vælg" on each. When it is decided by is the dates' footnote.
+ * with "Vælg" on each. Under the dates, the time left until it is settled
+ * ticks down (Countdown), with Casy's read on the right; the place and note
+ * come last, and cancelling or leaving stays along the bottom.
  */
 export default function VoteScreen({ event }: { event: VoteEvent }) {
   const t = useT();
@@ -62,7 +65,24 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
     .sort((a, b) => b.n.accepted - a.n.accepted || b.n.maybe - a.n.maybe);
 
   return (
-    <EventScreen>
+    // Cancelling or leaving stays along the bottom, as a screen's last thing.
+    <EventScreen
+      action={
+        exiting ? (
+          <ExitConfirm event={event} onCancel={() => setExiting(false)} />
+        ) : (
+          <ListGroup className="mt-0">
+            <ReportEventButton event={event} as="row" />
+            <ListRow
+              icon={LogOut}
+              label={event.createdBy.isYou ? t.events.cancelEvent : t.events.leaveEvent}
+              tone="danger"
+              onClick={() => setExiting(true)}
+            />
+          </ListGroup>
+        )
+      }
+    >
       <div className="mt-2 flex items-center gap-4">
         <span className="pr-2 pt-2">
           <DateTile start={first} more={Math.max(0, dates.length - 1)} size="hero" />
@@ -91,13 +111,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
         </p>
       )}
 
-      <ListGroup
-        footnote={
-          !mustChoose && event.answerBy && missing.length > 0
-            ? t.swipe.decidedBy(formatLongDate(event.answerBy, lang), formatTime(event.answerBy))
-            : undefined
-        }
-      >
+      <ListGroup>
         {ranked.map(({ date: d, n }) => {
           const isMarked = d.id === marked?.id;
           const label = formatEventDate(event.settings.kind, d, lang);
@@ -176,22 +190,20 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
         </Notice>
       )}
 
-      <PlaceNote event={event} className="mt-4" />
-      <EventImpactDetails event={event} className="mt-4" />
+      {/* Under the dates: the time left on the left, Casy's read on the right. */}
+      <EventImpactDetails
+        event={event}
+        className="mt-2 px-1"
+        beside={
+          !mustChoose && event.answerBy && missing.length > 0 ? (
+            <Countdown until={event.answerBy} />
+          ) : (
+            <span />
+          )
+        }
+      />
 
-      {exiting ? (
-        <ExitConfirm event={event} onCancel={() => setExiting(false)} className="mt-6" />
-      ) : (
-        <ListGroup>
-          <ReportEventButton event={event} as="row" />
-          <ListRow
-            icon={LogOut}
-            label={event.createdBy.isYou ? t.events.cancelEvent : t.events.leaveEvent}
-            tone="danger"
-            onClick={() => setExiting(true)}
-          />
-        </ListGroup>
-      )}
+      <PlaceNote event={event} className="mt-6" />
     </EventScreen>
   );
 }
