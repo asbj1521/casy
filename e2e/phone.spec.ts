@@ -95,18 +95,44 @@ test("the profile's screens slide in inside the sheet, and go back (#174)", asyn
   ).toBeVisible();
 });
 
-test("My calendar is a month like Apple's: a day opens its busy time, Kalendere the list", async ({
+test("My calendar is a month like Apple's: a day zooms into its hours, Kalendere the list", async ({
   page,
 }) => {
   await page.goto("/calendar-overview");
-  // A tapped day's busy time slides up with the month still live behind it:
-  // another day can be tapped at once, and a blank part of the month closes it.
+  // A tapped day opens as Apple's day view (#176), in the address, its busy
+  // time over the hours and the home page's buttons out of the way.
   await page.getByRole("button", { name: "torsdag 1. oktober" }).click();
-  await expect(page.getByRole("region", { name: "Torsdag 1. oktober" })).toBeVisible();
-  await page.getByRole("button", { name: "fredag 2. oktober" }).click();
-  await expect(page.getByRole("region", { name: "Fredag 2. oktober" })).toBeVisible();
-  await page.getByRole("heading", { name: "Oktober", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Fredag 2. oktober" })).toBeHidden();
+  await expect(page).toHaveURL(/\/\?day=2026-10-01$/);
+  const view = page
+    .getByRole("region")
+    .filter({ has: page.getByRole("button", { name: "Vis Oktober" }) });
+  await expect(view).toHaveAccessibleName("Torsdag 1. oktober");
+  await expect(view.getByText("torsdag 1. okt. 2026")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Planlæg", exact: true })).toBeHidden();
+
+  // A block opens its details.
+  await view.getByRole("button", { name: /^Arbejde/ }).click();
+  const details = page.getByRole("dialog", { name: "Torsdag 1. oktober" });
+  await expect(details.getByText("08:30-16:00")).toBeVisible();
+  await details.getByRole("button", { name: "Færdig" }).click();
+  await expect(details).toBeHidden();
+
+  // The week row moves it in place; two days, kept on this phone.
+  await view.getByRole("button", { name: "2", exact: true }).click();
+  await expect(page).toHaveURL(/\?day=2026-10-02$/);
+  await view.getByRole("button", { name: "Vis to dage" }).click();
+  await expect(view.getByText("fre. 2. okt.")).toBeVisible();
+  await expect(view.getByText("lør. 3. okt.")).toBeVisible();
+  await page.reload();
+  await expect(view.getByText("lør. 3. okt.")).toBeVisible();
+  await view.getByRole("button", { name: "Vis én dag" }).click();
+  await expect(view.getByText("fredag 2. okt. 2026")).toBeVisible();
+
+  // Back to the month, its buttons there again.
+  await view.getByRole("button", { name: "Vis Oktober" }).click();
+  await expect(view).toHaveCount(0);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("button", { name: "Planlæg", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Kalendere" }).click();
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();

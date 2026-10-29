@@ -259,6 +259,8 @@ export default function DayColumns({
   // The whole-day row is there when a day in view has something for it, as
   // Apple's is, not for a day drawn out of sight.
   const anyAllDay = inViewK.some((k) => allDay.get(k)!.length > 0);
+  // The days drawn out of sight are left out for screen readers.
+  const hiddenUnless = (k: number) => (inViewK.includes(k) ? undefined : true);
   const columnStyle = (k: number) => ({
     left: columnOf(k, days, lead) * columnPx,
     width: columnPx,
@@ -407,10 +409,16 @@ export default function DayColumns({
             return (
               <p
                 key={k}
+                aria-hidden={hiddenUnless(k)}
                 className={cn(
                   "absolute inset-y-0 flex items-center justify-center truncate font-semibold",
                   compact ? "text-[11px]" : "text-[15px]",
-                  midnight === today ? "text-red-500" : onSlot ? "text-primary" : "text-foreground",
+                  // Alone, the day's name is plain, as Apple writes it; side by side, today is red.
+                  midnight === today && days > 1
+                    ? "text-red-500"
+                    : onSlot
+                      ? "text-primary"
+                      : "text-foreground",
                 )}
                 style={columnStyle(k)}
               >
@@ -428,6 +436,7 @@ export default function DayColumns({
             {drawn.map((k) => (
               <div
                 key={k}
+                aria-hidden={hiddenUnless(k)}
                 className={cn(
                   "absolute inset-y-0 flex justify-center px-0.5",
                   allDayShown > 1 ? "items-center gap-1" : "flex-col",
@@ -520,6 +529,7 @@ export default function DayColumns({
                   return (
                     <div
                       key={k}
+                      aria-hidden={hiddenUnless(k)}
                       className="absolute inset-y-0 border-l border-border/60"
                       style={columnStyle(k)}
                     >

@@ -149,6 +149,12 @@ test.describe("dark", () => {
     });
   }
 
+  test("the day view looks as it did, dark", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "phones only: a computer's day opens in a popover");
+    await page.goto(DAY_VIEW);
+    await expectDayView(page, "calendar-day-dark.png");
+  });
+
   test("the swipe screen looks as it did, dark", async ({ page, isMobile }) => {
     test.skip(!isMobile, "phones only: a computer answers beside the list (event-vote)");
     await page.goto("/events/ev-boardgames/dates");
@@ -167,4 +173,20 @@ test("the swipe screen looks as it did", async ({ page, isMobile }) => {
   await useInter(page);
   // This screen fills the phone's screen, as it is meant to: no taller page.
   await expect(page).toHaveScreenshot("swipe.png");
+});
+
+// The home page's day view (#176), on today: the now-line, the week row's red circle.
+const DAY_VIEW = "/?day=2026-10-07";
+
+async function expectDayView(page: Page, file: string) {
+  await expect(page.getByText("onsdag 7. okt. 2026")).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await useInter(page);
+  await expect(page).toHaveScreenshot(file);
+}
+
+test("the day view looks as it did", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phones only: a computer's day opens in a popover");
+  await page.goto(DAY_VIEW);
+  await expectDayView(page, "calendar-day.png");
 });

@@ -1198,6 +1198,9 @@ export const da = {
     ),
     noCalendarsLink: "Forbind en kalender",
     today: "I dag",
+    // The day view's switch (#176), saying what a press shows.
+    showOneDay: "Vis én dag",
+    showTwoDays: "Vis to dage",
     week: (n: number) => `Uge ${n}`,
     more: (n: number) => `+${n} mere`,
     nothingBusy: "Intet optaget denne dag i de viste kalendere.",
@@ -1272,9 +1275,6 @@ export const da = {
     // The date agreed, over the month before it flies into its day.
     everyone: "Alle har svaret",
     show: "Se den i kalenderen",
-    // Casy's own rows in a day's list.
-    agreedPill: "Aftale",
-    votePill: "Afstemning",
   },
   planFromCalendar: {
     button: "Planlæg",

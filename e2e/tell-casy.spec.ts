@@ -40,9 +40,12 @@ test("a description becomes entries, which are kept only when saved", async ({
   await page
     .getByRole("button", { name: isMobile ? "mandag 12. oktober" : /^man\. 12\. okt/ })
     .click();
-  const day = isMobile
-    ? page.getByRole("region", { name: "Mandag 12. oktober" })
-    : page.getByRole("dialog", { name: "Mandag 12. oktober" });
+  // A phone's day view (#176) shows it across the day; a tap opens its details.
+  if (isMobile) {
+    const view = page.getByRole("region", { name: "Mandag 12. oktober" });
+    await view.getByRole("button", { name: "Rejse" }).click();
+  }
+  const day = page.getByRole("dialog", { name: "Mandag 12. oktober" });
   await expect(day.getByText("Rejse")).toBeVisible();
   await expect(day.getByText(/· Casy$/)).toBeVisible();
   await expect(day.getByText("Fortalt", { exact: true })).toBeVisible();

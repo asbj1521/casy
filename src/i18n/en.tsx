@@ -1157,6 +1157,8 @@ export const en: Messages = {
     ),
     noCalendarsLink: "Connect a calendar",
     today: "Today",
+    showOneDay: "Show one day",
+    showTwoDays: "Show two days",
     week: (n: number) => `Week ${n}`,
     more: (n: number) => `+${n} more`,
     nothingBusy: "Nothing busy on this day in the calendars shown.",
@@ -1225,8 +1227,6 @@ export const en: Messages = {
     waiting: (n: number) => `${n} votes waiting`,
     everyone: "Everyone has answered",
     show: "See it in your calendar",
-    agreedPill: "Plan",
-    votePill: "Vote",
   },
   planFromCalendar: {
     button: "Plan",
