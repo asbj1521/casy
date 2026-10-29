@@ -183,7 +183,8 @@ function script(from: PlanState, to: PlanState): Frame[] {
 /**
  * Casy filling in the Planlæg sheet as if by hand (#173). Its answer is
  * already the plan, but the sheet shows the plan as it was and plays the
- * difference back (`script`), each move with a tick of the phone, the rows
+ * difference back (`script`), each move with a tick of the phone (each
+ * letter typed a click, the wheels clicking as they roll), the rows
  * and sheets it uses opened as a person would. Under reduced motion the
  * answer is simply there. While it plays, `settings`, `name`, `lit`, `sheet`
  * and `press` are what to show instead of the plan's own.
@@ -202,7 +203,10 @@ export function useAiFill(live: PlanState) {
       const id = window.setTimeout(() => setRun(null), SHEET_MS);
       return () => window.clearTimeout(id);
     }
+    // A tap for each move, a keyboard's click for each letter typed; the
+    // quick deletion before it stays silent, or it would buzz.
     if (frame.lit !== "name") haptic("tick");
+    else if (frame.ms === TYPE_MS) haptic("select");
     const id = window.setTimeout(
       () => setRun((r) => (r ? { ...r, tick: r.tick + 1 } : r)),
       frame.ms,
