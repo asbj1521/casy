@@ -12,6 +12,8 @@ import {
   type Ref,
 } from "react";
 
+import type { EventResponse } from "@/api/events";
+import { AnswerIcon } from "@/components/swipe/SwipeCard";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { buildMonthLayout } from "@/lib/calendarOverview";
@@ -26,6 +28,13 @@ import { cn } from "@/lib/utils";
 import { addDays, APP_TIME_ZONE, localDate, startOfDay, startOfMonth } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
+
+/** A stamp's colour: the answer buttons' own. */
+const STAMP_TONE: Record<EventResponse, string> = {
+  accepted: "bg-emerald-500",
+  maybe: "bg-amber-400",
+  declined: "bg-rose-500",
+};
 
 /** Rows of chips under a day's number, a row's height, and the "+2" line under them. */
 /** How long the month keeps re-applying its opening position while the layout settles. */
@@ -42,7 +51,16 @@ export interface MonthViewHandle {
   glideToMonth: (day: number) => void;
   /** To the very top, the first month. */
   glideToTop: () => void;
+  /**
+   * To a day, its week in the middle of what is left in view above `clear`
+   * pixels covered at the bottom (#172: the vote's card over the month).
+   */
+  glideToDay: (day: number, clear?: number) => void;
 }
+
+/** A vote's answer stamped into its day (#172). */
+type Stamp = EventResponse;
+const NO_STAMPS: ReadonlyMap<number, Stamp> = new Map();
 /**
  * Your calendar a month at a time, drawn like Apple Calendar's month view
  * (#74), for looking further ahead than three days (a holiday, a trip): the
@@ -72,10 +90,16 @@ export default function MonthView({
   selected = null,
   todayTone = "red",
   reveal = null,
+  lit = null,
+  stamps,
   header,
   onPickDay,
   handle,
 }: {
+  /** The day being answered in a vote over the month (#172), ringed in orange. */
+  lit?: number | null;
+  /** Your answers to a vote's dates, stamped into their days (#172). */
+  stamps?: ReadonlyMap<number, Stamp>;
   /**
    * The page's toolbar, drawn over the months in a translucent block with the
    * month's name and the weekdays under it. Without it the months have their
@@ -192,6 +216,12 @@ export default function MonthView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pad === null]);
 
+  // The handle below is made once, so it reads the header's height here.
+  const padNow = useRef(pad);
+  useEffect(() => {
+    padNow.current = pad;
+  }, [pad]);
+
   useImperativeHandle(handle, () => {
     const glide = (top: () => number | null) => {
       const box = scroller.current;
@@ -208,6 +238,18 @@ export default function MonthView({
           return el && scroller.current ? monthScrollTop(scroller.current, el) : null;
         }),
       glideToTop: () => glide(() => 0),
+      glideToDay: (day, clear = 0) =>
+        glide(() => {
+          const box = scroller.current;
+          const cell = box?.querySelector<HTMLElement>(`[data-day="${day}"]`);
+          const week = cell?.parentElement?.parentElement;
+          if (!box || !week) return null;
+          const top = padNow.current ?? 0;
+          const room = box.clientHeight - top - clear;
+          const at =
+            box.scrollTop + week.getBoundingClientRect().top - box.getBoundingClientRect().top;
+          return Math.max(0, at - top - Math.max(0, (room - week.offsetHeight) / 2));
+        }),
     };
   }, []);
 
@@ -237,6 +279,18 @@ export default function MonthView({
     return () => clearTimeout(timer);
   }, [reveal]);
 
+  // Each month gets only its own stamps, the same map until they change, so
+  // an answer redraws one month rather than all twelve.
+  const stampsByMonth = useMemo(() => {
+    const byMonth = new Map<number, Map<number, Stamp>>();
+    for (const [day, stamp] of stamps ?? NO_STAMPS) {
+      const m = startOfMonth(day, TZ);
+      if (!byMonth.has(m)) byMonth.set(m, new Map());
+      byMonth.get(m)!.set(day, stamp);
+    }
+    return byMonth;
+  }, [stamps]);
+
   const sections = months.map((month) => {
     const { year, month: m } = localDate(month, TZ);
     const inMonth =
@@ -255,6 +309,8 @@ export default function MonthView({
         todayTone={todayTone}
         marked={marked}
         selected={inMonth ? selected : null}
+        lit={lit !== null && startOfMonth(lit, TZ) === month ? lit : null}
+        stamps={stampsByMonth.get(month) ?? NO_STAMPS}
         onPickDay={onPickDay}
         register={register}
       />
@@ -392,6 +448,8 @@ interface MonthSectionProps {
   todayTone: "red" | "grey";
   marked?: ReadonlySet<number>;
   selected: number | null;
+  lit?: number | null;
+  stamps?: ReadonlyMap<number, Stamp>;
   onPickDay: (day: number) => void;
   register: (month: number, el: HTMLElement | null) => void;
   shine?: ReadonlySet<number>;
@@ -426,6 +484,8 @@ const MonthSection = memo(function MonthSection({
   todayTone,
   marked,
   selected,
+  lit = null,
+  stamps = NO_STAMPS,
   onPickDay,
   register,
   shine,
@@ -501,7 +561,18 @@ const MonthSection = memo(function MonthSection({
             )}
             <div className="grid grid-cols-7">
               {week.map((d, c) => (
-                <span key={d.key} className="flex h-10 items-center justify-center">
+                <span key={d.key} className="relative flex h-10 items-center justify-center">
+                  {d.inMonth && stamps.has(days[c]) && (
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "animate-stamp absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-white",
+                        STAMP_TONE[stamps.get(days[c])!],
+                      )}
+                    >
+                      <AnswerIcon answer={stamps.get(days[c])} />
+                    </span>
+                  )}
                   {d.inMonth && (
                     <span
                       // The paper pile's dates fly up out of their green circle (#126).
@@ -521,6 +592,7 @@ const MonthSection = memo(function MonthSection({
                                 : c >= 5
                                   ? "text-muted-foreground"
                                   : "text-foreground",
+                        days[c] === lit && "ring-2 ring-primary transition-shadow",
                       )}
                     >
                       {d.dayOfMonth}
