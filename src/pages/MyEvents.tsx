@@ -31,7 +31,8 @@ export default function MyEvents() {
   const phone = usePhoneLayout();
   const { data: events, isPending, isError } = useQuery(eventsQuery(userId));
 
-  if (phone) return <Navigate to="/?events" replace />;
+  // A phone's Aftaler is a sheet over the home page, an event a screen in it (#177).
+  if (phone) return <Navigate to={eventId ? `/?events=${eventId}` : "/?events"} replace />;
 
   return (
     <div className="min-h-screen bg-background">

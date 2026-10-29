@@ -126,7 +126,7 @@ test("a phone swipes through a vote's dates over the home page's day view", asyn
   test.skip(!isMobile, "phones only");
   await page.goto("/events");
   // The vote's row goes straight to swiping (#103), over the day view now (#172, #176).
-  await page.getByRole("link", { name: /Brætspilsaften/ }).click();
+  await page.getByRole("button", { name: /Brætspilsaften/ }).click();
   await expect(page).toHaveURL(/\/\?vote=ev-boardgames$/);
 
   const answers = () => backend.calls.filter((c) => c.body.action === "answer");
@@ -185,48 +185,68 @@ test("everyone sees an event's place and note; only the suggester edits them", a
   });
 });
 
-test.describe("a phone's list of events (#103)", () => {
+test.describe("a phone's Aftaler (#103, #177)", () => {
   test.beforeEach(({ isMobile }) => test.skip(!isMobile, "phones only"));
 
-  test("rows open one at a time, and nobody chooses for the group while it votes", async ({
+  test("rows in three groups: what needs you, what is to come soonest first, what is over", async ({
     page,
   }) => {
     await page.goto("/events");
-    const cinema = page.getByRole("button", { name: /Biograf/ });
-    await expect(cinema).toHaveAttribute("aria-expanded", "false");
-    await cinema.click();
-    await expect(cinema).toHaveAttribute("aria-expanded", "true");
-    // Your answer on each date, a tick and a cross, instead of a way back to swiping.
-    await expect(page.getByRole("button", { name: /^Jeg kan ikke: / })).toHaveCount(2);
-    await expect(page.getByRole("link", { name: "Ret dine svar" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Vælg" })).toHaveCount(0);
-
-    // Opening another closes the first.
-    await page.getByRole("button", { name: /Julefrokost/ }).click();
-    await expect(cinema).toHaveAttribute("aria-expanded", "false");
+    const sheet = page.getByRole("dialog", { name: "Mine aftaler" });
+    const group = (title: string) =>
+      sheet.locator("section").filter({ has: page.getByRole("heading", { name: title }) });
+    await expect(group("Svar nu").locator("li")).toHaveCount(1);
+    await expect(group("Svar nu")).toContainText("Brætspilsaften");
+    const coming = group("Kommende").locator("li");
+    await expect(coming.first()).toContainText("Løbetur");
+    await expect(coming.last()).toContainText("Julefrokost");
+    await expect(group("Tidligere")).toContainText("Hyttetur");
+    await expect(page.getByText("Aflyst", { exact: true })).toHaveCount(0);
   });
 
-  test("a tap on a date's cross changes your answer right there", async ({ page, backend }) => {
+  test("a vote opens as a screen in the sheet, where a date's cross changes your answer", async ({
+    page,
+    backend,
+  }) => {
     await page.goto("/events");
     await page.getByRole("button", { name: /Biograf/ }).click();
-    const cross = page.getByRole("button", { name: /^Jeg kan ikke: fre\. 23\./ });
+    await expect(page).toHaveURL(/\/\?events=ev-cinema$/);
+    const sheet = page.getByRole("dialog", { name: "Biograf" });
+    // Your answer on each date, a tick and a cross; nobody chooses while it votes.
+    await expect(sheet.getByRole("button", { name: /^Jeg kan ikke: / })).toHaveCount(2);
+    await expect(sheet.getByRole("button", { name: "Vælg" })).toHaveCount(0);
+    // Freja hasn't answered: her face says so.
+    await expect(
+      sheet.getByRole("listitem", { name: "Freja: Har ikke svaret endnu" }),
+    ).toBeVisible();
+
+    const cross = sheet.getByRole("button", { name: /^Jeg kan ikke: fre\. 23\./ });
     await expect(cross).toHaveAttribute("aria-pressed", "false");
     await cross.click();
     await expect
       .poll(() => backend.calls.find((c) => c.body.action === "answer")?.body)
       .toMatchObject({ proposalId: "ev-cinema", dateId: "d-cin-2", response: "declined" });
     await expect(cross).toHaveAttribute("aria-pressed", "true");
-    // Still in the Aftaler sheet over the home page (#169).
+
+    // "‹ Aftaler" back to the rows.
+    await sheet.getByRole("button", { name: "Aftaler" }).click();
     await expect(page).toHaveURL(/\/\?events$/);
+    await expect(page.getByRole("dialog", { name: "Mine aftaler" })).toBeVisible();
   });
 
-  test("newest first, with what is over greyed at the bottom", async ({ page }) => {
-    await page.goto("/events");
-    const rows = page.getByRole("dialog", { name: "Mine aftaler" }).locator("li");
-    // Biograf was suggested most recently; Hyttetur, with no date left, is over.
-    await expect(rows.first()).toContainText("Biograf");
-    await expect(rows.last()).toContainText("Hyttetur");
-    await expect(page.getByText("Aflyst", { exact: true })).toHaveCount(0);
+  test("an agreed event's screen shows your day, which opens in the day view", async ({ page }) => {
+    // An old link to one event leads to its screen in the sheet.
+    await page.goto("/events/ev-party");
+    await expect(page).toHaveURL(/\/\?events=ev-party$/);
+    const sheet = page.getByRole("dialog", { name: "Julefrokost" });
+    // The time beside its date (and again on the event in your day).
+    await expect(sheet.getByText("18:00-23:00").first()).toBeVisible();
+    await expect(
+      sheet.getByRole("listitem", { name: /^Dig: Har sagt ja\. Du foreslog den$/ }),
+    ).toBeVisible();
+    await sheet.getByRole("button", { name: "Åbn dagen i din kalender" }).click();
+    await expect(page).toHaveURL(/\/\?day=2026-11-28$/);
+    await expect(page.getByRole("region", { name: "Lørdag 28. november" })).toBeVisible();
   });
 });
 

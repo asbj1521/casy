@@ -977,17 +977,21 @@ export const da = {
     stageNoDate: "Ingen dato",
     couldntMake: (who: string) => `${who} kunne ikke`,
     // Votes (#74): several dates, swiped through.
-    datesToAnswer: (n: number) => (n === 1 ? "1 dato at svare på" : `${n} datoer at svare på`),
-    dateCount: (n: number) => (n === 1 ? "1 dato" : `${n} datoer`),
     ahead: "Bedst lige nu",
     bestPick: "Passer flest",
     choose: "Vælg",
-    // A phone's list of events (#103): one line under each event's name.
-    answeredOf: (n: number, total: number) => `${n} af ${total} har svaret`,
+    dateCount: (n: number) => (n === 1 ? "1 dato" : `${n} datoer`),
     canOnDate: (n: number) => `${n} kan`,
     cantOnDate: (n: number) => `${n} kan ikke`,
     answerNow: "Svar",
     cantAfterAll: "Kan ikke alligevel",
+    // A phone's Aftaler (#177): its three groups, and an event's screen.
+    groupAnswer: "Svar nu",
+    groupComing: "Kommende",
+    groupPast: "Tidligere",
+    optionalAre: (names: string) => `Valgfri: ${names}`,
+    openDay: "Åbn dagen i din kalender",
+    editAnswers: "Ret dine svar",
   },
   /** Swiping through a vote's dates (#74). */
   swipe: {

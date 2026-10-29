@@ -1,225 +1,116 @@
-import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { CalendarCheck, CalendarX, ChevronDown, ChevronRight, Clock, Users } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
-import Collapse from "@/components/ui/Collapse";
+import DateTile from "@/components/myEvents/phone/DateTile";
+import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { useDecidingRefresh } from "@/hooks/useDecidingRefresh";
 import { eventTitle } from "@/i18n/eventTitle";
-import { useLang, useT } from "@/i18n/lang";
-import { formatEventDate } from "@/lib/format";
+import { useT } from "@/i18n/lang";
 import type { StagedEvent } from "@/lib/myEvents";
-import { cn } from "@/lib/utils";
-import { stillToAnswer, upcomingDates, voteStage, type VoteEvent } from "@/lib/vote";
-
-import DatedSummary from "./DatedSummary";
-import VoteSummary from "./VoteSummary";
+import { upcomingDates, type VoteEvent } from "@/lib/vote";
 
 /**
- * A phone's My events (#103): every event as one compact row, newest first:
- * its name, its group (with an icon, so it is found at a glance), and its
- * date and time or where its vote stands; opening it never repeats them.
- * Coloured by where it stands: yellow with a clock while it waits for
- * answers, green once everyone agreed, grey once it is over (at the bottom,
- * and gone a week later, phoneEventList). A tap opens a row to its summary,
- * one at a time; a vote waiting for your answers goes straight to swiping.
+ * A phone's Aftaler (#103, #177) as grouped rows: what needs you now, what
+ * is to come, and what is over (phoneEventGroups). A row is its date as a
+ * tile (DateTile: a vote's a stack of its dates), its name and its group;
+ * where it stands is the tile and the group, not a sentence. A vote to
+ * answer goes straight to answering it (`onAnswer`); the others open their
+ * screen in the sheet (`onOpen`); what is over is only shown.
  */
 export default function EventRows({
-  live,
+  answer,
+  coming,
   past,
-  pastTitle,
+  onAnswer,
+  onOpen,
 }: {
-  live: StagedEvent[];
+  answer: StagedEvent[];
+  coming: StagedEvent[];
   past: StagedEvent[];
-  pastTitle: string;
+  onAnswer: (id: string) => void;
+  onOpen: (id: string) => void;
 }) {
-  const [openId, setOpenId] = useState<string | null>(null);
-  const toggle = (id: string) => setOpenId((open) => (open === id ? null : id));
-
+  const t = useT();
   return (
     <>
-      <ul className="mt-4 flex flex-col gap-2">
-        {live.map((staged) => (
-          <EventRow
-            key={staged.event.id}
-            staged={staged}
-            open={openId === staged.event.id}
-            onToggle={() => toggle(staged.event.id)}
-          />
-        ))}
-      </ul>
+      {answer.length > 0 && (
+        <ListGroup title={t.events.groupAnswer} className="mt-4">
+          {answer.map((s) => (
+            <EventRow
+              key={s.event.id}
+              staged={s}
+              onClick={() => (s.stage === "toSwipe" ? onAnswer(s.event.id) : onOpen(s.event.id))}
+              cue={s.stage === "toSwipe" ? t.events.answerNow : t.events.choose}
+            />
+          ))}
+        </ListGroup>
+      )}
+      {coming.length > 0 && (
+        <ListGroup title={t.events.groupComing} className={answer.length > 0 ? undefined : "mt-4"}>
+          {coming.map((s) => (
+            <EventRow key={s.event.id} staged={s} onClick={() => onOpen(s.event.id)} />
+          ))}
+        </ListGroup>
+      )}
       {past.length > 0 && (
-        <section className="mt-8">
-          <h2 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {pastTitle}
-          </h2>
-          <ul className="mt-2 flex flex-col gap-2">
-            {past.map((staged) => (
-              <EventRow key={staged.event.id} staged={staged} open={false} onToggle={() => {}} />
-            ))}
-          </ul>
-        </section>
+        <ListGroup title={t.events.groupPast}>
+          {past.map((s) => (
+            <EventRow key={s.event.id} staged={s} />
+          ))}
+        </ListGroup>
       )}
     </>
   );
 }
-
-const TONES = {
-  pending: {
-    row: "border-amber-200 bg-amber-50/70",
-    icon: "bg-amber-100 text-amber-700",
-    Icon: Clock,
-  },
-  agreed: {
-    row: "border-emerald-200 bg-emerald-50/70",
-    icon: "bg-emerald-100 text-emerald-700",
-    Icon: CalendarCheck,
-  },
-  past: {
-    row: "border-border bg-card/60",
-    icon: "bg-secondary text-muted-foreground",
-    Icon: CalendarX,
-  },
-};
 
 function EventRow({
   staged,
-  open,
-  onToggle,
+  onClick,
+  cue,
 }: {
   staged: StagedEvent;
-  open: boolean;
-  onToggle: () => void;
+  onClick?: () => void;
+  /** What a press does, in orange at the end: "Svar", "Vælg". */
+  cue?: string;
 }) {
   const t = useT();
   const { stage, event } = staged;
-  const tone = TONES[stage === "scheduled" ? "agreed" : stage === "closed" ? "past" : "pending"];
-  const yourTurn = stage === "toSwipe";
-  const choosing =
-    stage === "voting" && voteStage(event as VoteEvent) === "choose" && event.createdBy.isYou;
-
-  const head = (
+  const past = stage === "closed";
+  const voting = stage === "voting" || stage === "toSwipe";
+  const dates = voting ? upcomingDates(event) : [];
+  const start = voting
+    ? dates[0]
+      ? Date.parse(dates[0].start)
+      : null
+    : event.currentDate
+      ? Date.parse(event.currentDate.start)
+      : null;
+  return (
     <>
-      <span
-        className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-          tone.icon,
-        )}
-      >
-        <tone.Icon className="h-5 w-5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span
-          className={cn(
-            "block truncate text-base font-semibold",
-            stage === "closed" ? "text-muted-foreground" : "text-foreground",
-          )}
-        >
-          {eventTitle(event.title, t)}
-        </span>
-        <span
-          className={cn(
-            "flex items-center gap-1 text-[13px] font-medium",
-            stage === "closed" ? "text-muted-foreground" : "text-foreground/80",
-          )}
-        >
-          <Users className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          <span className="truncate">{event.group.name}</span>
-        </span>
-        <span className="block truncate text-sm text-muted-foreground">
-          <StatusLine staged={staged} />
-        </span>
-      </span>
-      {yourTurn || choosing ? (
-        <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-          {yourTurn ? t.events.answerNow : t.events.choose}
-          {yourTurn && <ChevronRight className="-mr-1 h-3.5 w-3.5" />}
-        </span>
-      ) : (
-        stage !== "closed" && (
-          <ChevronDown
-            className={cn(
-              "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
-              open && "rotate-180",
-            )}
-          />
-        )
-      )}
+      {voting && <DecidingRefresh event={event} />}
+      <ListRow
+        leading={<DateTile start={start} more={Math.max(0, dates.length - 1)} past={past} />}
+        label={
+          <span className={past ? "text-muted-foreground" : undefined}>
+            {eventTitle(event.title, t)}
+          </span>
+        }
+        detail={event.group.name}
+        onClick={onClick}
+        chevron={false}
+        trailing={
+          onClick &&
+          (cue ? (
+            <span className="flex shrink-0 items-center text-[15px] font-semibold text-primary">
+              {cue}
+              <ChevronRight className="h-4 w-4" />
+            </span>
+          ) : (
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+          ))
+        }
+      />
     </>
   );
-  const rowClass = "flex w-full items-center gap-3 px-3 py-2.5 text-left";
-
-  return (
-    <li className={cn("overflow-hidden rounded-2xl border", tone.row)}>
-      {(staged.stage === "voting" || staged.stage === "toSwipe") && (
-        <DecidingRefresh event={staged.event} />
-      )}
-      {yourTurn ? (
-        // Answered over the home page's month (#172), the Aftaler sheet closing for it.
-        <Link to={`/?vote=${event.id}`} replace className={rowClass}>
-          {head}
-        </Link>
-      ) : stage === "closed" ? (
-        <div className={rowClass}>{head}</div>
-      ) : (
-        <>
-          <button type="button" onClick={onToggle} aria-expanded={open} className={rowClass}>
-            {head}
-          </button>
-          <Collapse open={open}>
-            <div className="border-t border-black/5 px-3 pb-3 pt-3">
-              <Summary staged={staged} />
-            </div>
-          </Collapse>
-        </>
-      )}
-    </li>
-  );
-}
-
-/** The opened row: a vote's dates and answers, or a date's details. */
-function Summary({ staged }: { staged: StagedEvent }): ReactNode {
-  switch (staged.stage) {
-    case "voting":
-      return <VoteSummary event={staged.event} />;
-    case "scheduled":
-      return <DatedSummary event={staged.event} />;
-    default:
-      return null;
-  }
-}
-
-/** Where an event stands, on the row's last line: its date and time, or its vote. */
-function StatusLine({ staged }: { staged: StagedEvent }) {
-  const t = useT();
-  const { lang } = useLang();
-  const { stage, event } = staged;
-
-  switch (stage) {
-    case "toSwipe": {
-      const you = event.invitees.find((i) => i.isYou)?.profileId;
-      const dates = upcomingDates(event);
-      return <>{t.events.datesToAnswer(dates.filter((d) => !you || !d.answers[you]).length)}</>;
-    }
-    case "voting": {
-      const vote = voteStage(event);
-      if (vote === "choose") return <>{t.swipe.goChoose}</>;
-      if (vote === "waitingForChoice") return <>{t.swipe.waitingForChoice(event.createdBy.name)}</>;
-      const total = event.invitees.length;
-      return <>{t.events.answeredOf(total - stillToAnswer(event).length, total)}</>;
-    }
-    case "scheduled":
-      return <>{formatEventDate(event.settings.kind, event.currentDate, lang)}</>;
-    case "closed":
-      return (
-        <>
-          {event.status === "no_date" || !event.currentDate
-            ? t.events.noDate
-            : (event.status === "scheduled" ? t.events.happened : t.events.passed)(
-                formatEventDate(event.settings.kind, event.currentDate, lang),
-              )}
-        </>
-      );
-  }
 }
 
 /** A vote everyone has answered shows its decided date as soon as it exists. */

@@ -4,7 +4,7 @@
  * trusted to the page.
  */
 import { needsYourAnswer, type SuggestedEvent } from "@/api/events";
-import { isVote, upcomingDates, type VoteEvent } from "@/lib/vote";
+import { isVote, upcomingDates, voteStage, type VoteEvent } from "@/lib/vote";
 
 /** An event with a date on offer, or, once scheduled, the date it's on. */
 export type DatedEvent = SuggestedEvent & {
@@ -104,20 +104,37 @@ function endedAt(e: SuggestedEvent): number {
 }
 
 /**
- * A phone's My events as one list (#103): everything still to come, newest
- * suggestion first, then what is over, most recent first, for PAST_KEPT_MS
- * after it ended. Each keeps its stage, which says how it is drawn.
+ * A phone's Aftaler in its three groups (#177): what needs you now (a vote
+ * waiting for your answers, or one whose dates all have a "can't" and you
+ * suggested, so you choose), what is to come (votes waiting for the others
+ * and agreed events, soonest first), and what is over, most recent first,
+ * for PAST_KEPT_MS after it ended. Each keeps its stage, which says how it
+ * is drawn.
  */
-export function phoneEventList(
+export function phoneEventGroups(
   events: SuggestedEvent[],
   now = Date.now(),
-): { live: StagedEvent[]; past: StagedEvent[] } {
+): { answer: StagedEvent[]; coming: StagedEvent[]; past: StagedEvent[] } {
   const staged = eventsInOrder(sectionEvents(events, now));
-  const live = staged
-    .filter((s) => s.stage !== "closed")
-    .sort((a, b) => Date.parse(b.event.createdAt) - Date.parse(a.event.createdAt));
+  const yours = (s: StagedEvent) =>
+    s.stage === "toSwipe" ||
+    (s.stage === "voting" && s.event.createdBy.isYou && voteStage(s.event, now) === "choose");
+  const answer = staged.filter(yours);
+  const coming = staged
+    .filter((s) => s.stage !== "closed" && !yours(s))
+    .sort((a, b) => startsAt(a, now) - startsAt(b, now));
   const past = staged
     .filter((s) => s.stage === "closed" && now - endedAt(s.event) < PAST_KEPT_MS)
     .sort((a, b) => endedAt(b.event) - endedAt(a.event));
-  return { live, past };
+  return { answer, coming, past };
+}
+
+/** When an event still to come starts: its date, or a vote's first date to come. */
+function startsAt(s: StagedEvent, now: number): number {
+  if (s.stage === "scheduled") return Date.parse(s.event.currentDate.start);
+  if (s.stage === "voting" || s.stage === "toSwipe") {
+    const first = upcomingDates(s.event, now)[0];
+    return first ? Date.parse(first.start) : Infinity;
+  }
+  return Infinity;
 }

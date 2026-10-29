@@ -1,10 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check, Clock, Meh, X } from "lucide-react";
 
-import { cancelEvent, leaveEvent, type EventInvitee, type SuggestedEvent } from "@/api/events";
+import { cancelEvent, leaveEvent, type SuggestedEvent } from "@/api/events";
 import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
 import EdgeWarningList from "@/components/EdgeWarningList";
-import Avatar from "@/components/ui/Avatar";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { useSignedInUser } from "@/context/auth";
 import { useEventChange } from "@/hooks/useEventChange";
@@ -15,51 +13,6 @@ import { formatEventDate } from "@/lib/format";
 import type { DatedEvent } from "@/lib/myEvents";
 import { cn } from "@/lib/utils";
 import { APP_TIME_ZONE } from "@/lib/zone";
-
-/**
- * Everyone asked, each with where they stand on the current date; an
- * optional member (#89) is marked, since their answer decides nothing.
- */
-export function People({
-  invitees,
-  optional = [],
-}: {
-  invitees: EventInvitee[];
-  optional?: string[];
-}) {
-  const t = useT();
-  return (
-    <ul className="flex flex-wrap gap-1.5">
-      {invitees.map((p, i) => (
-        <li
-          key={p.profileId}
-          className={cn(
-            "flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 text-xs",
-            p.response === "accepted" && "border-emerald-200 bg-emerald-50 text-emerald-800",
-            p.response === "maybe" && "border-amber-200 bg-amber-50 text-amber-800",
-            p.response === "declined" && "border-rose-200 bg-rose-50 text-rose-800",
-            p.response === null && "bg-background text-muted-foreground",
-          )}
-        >
-          <Avatar name={p.name} index={i} size="xs" />
-          {p.isYou ? t.events.you : p.name}
-          {optional.includes(p.profileId) && (
-            <span className="opacity-70">{t.events.optional}</span>
-          )}
-          {p.response === "accepted" ? (
-            <Check className="h-3 w-3" />
-          ) : p.response === "maybe" ? (
-            <Meh className="h-3 w-3" />
-          ) : p.response === "declined" ? (
-            <X className="h-3 w-3" />
-          ) : (
-            <Clock className="h-3 w-3" />
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 /** Where the event came from: who suggested it, and why the date changed if it did. */
 export function Origin({ event }: { event: SuggestedEvent }) {
@@ -109,34 +62,9 @@ export function EdgeWarnings({ event, className }: { event: DatedEvent; classNam
 }
 
 /**
- * The way out of an event: whoever suggested it cancels it for everyone;
- * anyone else leaves it, and it goes ahead without them. ExitConfirm asks
- * first, and the card decides where each sits.
+ * The way out of an event, asked first: whoever suggested it cancels it for
+ * everyone; anyone else leaves it, and it goes ahead without them.
  */
-export function ExitLink({
-  event,
-  onClick,
-  className,
-}: {
-  event: SuggestedEvent;
-  onClick: () => void;
-  className?: string;
-}) {
-  const t = useT();
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "text-sm font-medium text-muted-foreground transition hover:text-red-700",
-        className,
-      )}
-    >
-      {event.createdBy.isYou ? t.events.cancelEvent : t.events.leaveEvent}
-    </button>
-  );
-}
-
 export function ExitConfirm({
   event,
   onCancel,

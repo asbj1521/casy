@@ -1,16 +1,22 @@
 import { type SuggestedEvent } from "@/api/events";
-import EventRows from "@/components/myEvents/phone/EventRows";
-import { useT } from "@/i18n/lang";
-import { phoneEventList } from "@/lib/myEvents";
 import NoEvents from "@/components/myEvents/NoEvents";
+import EventRows from "@/components/myEvents/phone/EventRows";
+import { phoneEventGroups } from "@/lib/myEvents";
 
 /**
- * A phone's My events (#103): one list of compact rows, newest first, past
- * events greyed out at the bottom until they drop off (phoneEventList).
+ * A phone's Aftaler (#103, #177): the three groups of rows, or the way to
+ * plan something when there is nothing yet.
  */
-export default function EventRowsPage({ events }: { events: SuggestedEvent[] }) {
-  const t = useT();
-  const { live, past } = phoneEventList(events);
-  if (live.length === 0 && past.length === 0) return <NoEvents />;
-  return <EventRows live={live} past={past} pastTitle={t.events.pastClosed} />;
+export default function EventRowsPage({
+  events,
+  onAnswer,
+  onOpen,
+}: {
+  events: SuggestedEvent[];
+  onAnswer: (id: string) => void;
+  onOpen: (id: string) => void;
+}) {
+  const groups = phoneEventGroups(events);
+  if (groups.answer.length + groups.coming.length + groups.past.length === 0) return <NoEvents />;
+  return <EventRows {...groups} onAnswer={onAnswer} onOpen={onOpen} />;
 }

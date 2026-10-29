@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { SuggestedEvent } from "@/api/events";
-import { eventsInOrder, phoneEventList, sectionEvents } from "@/lib/myEvents";
+import { eventsInOrder, phoneEventGroups, sectionEvents } from "@/lib/myEvents";
 
 const NOW = Date.parse("2026-09-22T12:00:00.000Z");
 
@@ -164,21 +164,56 @@ describe("eventsInOrder", () => {
   });
 });
 
-describe("phoneEventList", () => {
+describe("phoneEventGroups", () => {
   const day = 24 * 60 * 60 * 1000;
   const at = (ms: number) => new Date(ms).toISOString();
+  const on = (start: string, end: string) => ({ start, end });
 
-  it("lists what is to come newest first, whatever its stage", () => {
-    const old = openVote("old", "2026-09-10T10:00:00.000Z", true);
+  it("puts what needs you first, then what is to come soonest first", () => {
+    const toAnswer = openVote("answer", "2026-09-10T10:00:00.000Z", false);
+    const waiting = {
+      ...openVote("waiting", "2026-09-21T10:00:00.000Z", true),
+      candidates: [
+        {
+          id: "w-d",
+          ...on("2026-09-28T16:00:00.000Z", "2026-09-28T19:00:00.000Z"),
+          answers: { me: "accepted" as const },
+        },
+      ],
+    };
     const agreed = event({
       id: "agreed",
       status: "scheduled",
-      createdAt: "2026-09-15T10:00:00.000Z",
+      currentDate: { id: "a-d", ...on("2026-09-24T16:00:00.000Z", "2026-09-24T19:00:00.000Z") },
     });
-    const fresh = openVote("fresh", "2026-09-21T10:00:00.000Z", false);
-    const { live } = phoneEventList([old, agreed, fresh], NOW);
-    expect(live.map((s) => s.event.id)).toEqual(["fresh", "agreed", "old"]);
-    expect(live.map((s) => s.stage)).toEqual(["toSwipe", "scheduled", "voting"]);
+    const { answer, coming, past } = phoneEventGroups([waiting, agreed, toAnswer], NOW);
+    expect(answer.map((s) => s.event.id)).toEqual(["answer"]);
+    expect(coming.map((s) => s.event.id)).toEqual(["agreed", "waiting"]);
+    expect(past).toEqual([]);
+  });
+
+  it("asks you to choose when you suggested a vote whose every date has a no", () => {
+    const stuck = event({
+      id: "stuck",
+      mode: "vote",
+      currentDate: null,
+      createdBy: { id: "me", name: "Asbjørn", isYou: true },
+      candidates: [
+        {
+          id: "s-d",
+          ...on("2026-09-25T16:00:00.000Z", "2026-09-25T19:00:00.000Z"),
+          answers: { me: "accepted", emilie: "declined" },
+        },
+      ],
+    });
+    const theirs = {
+      ...stuck,
+      id: "theirs",
+      createdBy: { id: "emilie", name: "Emilie", isYou: false },
+    };
+    const { answer, coming } = phoneEventGroups([stuck, theirs], NOW);
+    expect(answer.map((s) => s.event.id)).toEqual(["stuck"]);
+    expect(coming.map((s) => s.event.id)).toEqual(["theirs"]);
   });
 
   it("keeps a past event at the bottom for a week after it ended, then drops it", () => {
@@ -192,18 +227,18 @@ describe("phoneEventList", () => {
           end: at(NOW - daysAgo * day),
         },
       });
-    const { live, past } = phoneEventList(
+    const { answer, coming, past } = phoneEventGroups(
       [ended("week", 8), ended("two", 2), ended("one", 1)],
       NOW,
     );
-    expect(live).toEqual([]);
+    expect([...answer, ...coming]).toEqual([]);
     expect(past.map((s) => s.event.id)).toEqual(["one", "two"]);
   });
 
   it("counts an event with no date left from when that was settled", () => {
     const noDate = (id: string, daysAgo: number) =>
       event({ id, status: "no_date", currentDate: null, updatedAt: at(NOW - daysAgo * day) });
-    const { past } = phoneEventList([noDate("recent", 3), noDate("old", 10)], NOW);
+    const { past } = phoneEventGroups([noDate("recent", 3), noDate("old", 10)], NOW);
     expect(past.map((s) => s.event.id)).toEqual(["recent"]);
   });
 });

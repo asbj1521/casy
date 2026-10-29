@@ -7,23 +7,13 @@ import { groupsQuery } from "@/api/groups";
 import { ProfileHubList } from "@/components/profile/ProfileHub";
 import SettingsGroups from "@/components/profile/SettingsGroups";
 import BottomSheet from "@/components/ui/BottomSheet";
+import { PUSH, pushTransition } from "@/components/ui/push";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { parentScreen, screenDepth, sheetAddress, sheetScreenFor } from "@/lib/profileScreens";
 import { PhoneGroupContent, PhoneGroupsContent } from "@/pages/Groups";
 import { MyDataContent } from "@/pages/MyData";
 import { AccountContent, AdminContent, PasswordContent } from "@/pages/ProfileScreen";
-
-/**
- * iOS's own push: the new screen in from the right, the old one a little
- * left. The sheet is glass, with nothing behind a screen to hide the one it
- * covers, so the one going under fades out on its way.
- */
-const PUSH = {
-  enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-30%", opacity: dir > 0 ? 1 : 0 }),
-  center: { x: "0%", opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? "-30%" : "100%", opacity: dir > 0 ? 0 : 1 }),
-};
 
 /** What the home page's address says of the sheet, kept with each step. */
 interface SheetState {
@@ -140,7 +130,7 @@ export default function ProfileSheet({
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ duration: reduce ? 0 : 0.34, ease: [0.32, 0.72, 0, 1] }}
+          transition={pushTransition(reduce)}
           onClickCapture={onClickCapture}
           className="flex min-h-0 w-full flex-auto flex-col overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >

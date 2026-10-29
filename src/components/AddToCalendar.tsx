@@ -9,6 +9,8 @@ import {
   eventsQueryKey,
   type SuggestedEvent,
 } from "@/api/events";
+import FlowButton from "@/components/ui/FlowButton";
+import { ListGroup, ListPickRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { cn } from "@/lib/utils";
 import { useSignedInUser } from "@/context/auth";
@@ -40,14 +42,22 @@ function saveFile(filename: string, text: string, type: string) {
  * the event as a calendar file instead, which any calendar app can open.
  * If the last sync found the entry deleted from the calendar by hand, the
  * card says so and the button adds it again.
+ *
+ * `flow` is the phone's look (#177), for the bottom of an event's screen:
+ * the button a glass capsule (FlowButton), quiet with a tick once it is in
+ * the calendar, what happens as a footnote under it, and the calendars to
+ * choose from as rows with a tick (ListPickRow).
  */
 export default function AddToCalendar({
   event,
   wide = false,
+  flow = false,
 }: {
   event: SuggestedEvent;
   /** The phone's card: the button across the card's width (up to the two-column layout). */
   wide?: boolean;
+  /** The phone's event screen (#177): a glass capsule, its words as a footnote. */
+  flow?: boolean;
 }) {
   const t = useT();
   const words = t.addToCalendar;
@@ -108,8 +118,102 @@ export default function AddToCalendar({
     </button>
   );
 
+  const footnote = (text: ReactNode) => (
+    <p className="mt-1.5 px-4 text-center text-xs text-muted-foreground">{text}</p>
+  );
+  const writesDirectly = !!primary;
+  const canChoose = !primary && writableIds.length > 0;
+  const gone = event.myCalendar?.state === "gone";
+  const press = () => {
+    add.reset();
+    download.reset();
+    if (writesDirectly) add.mutate(null);
+    else if (canChoose) {
+      setChosen(writableIds.length === 1 ? writableIds[0] : "");
+      setChoosing(true);
+    } else download.mutate();
+  };
+  const where = writesDirectly
+    ? primaryLabel
+      ? words.goesInto(primaryLabel)
+      : words.goesIntoFallback
+    : canChoose
+      ? words.willAsk
+      : words.asFile;
+
   let body: ReactNode;
-  if (event.myCalendar?.state === "added") {
+  if (flow && event.myCalendar?.state === "added") {
+    body = (
+      <FlowButton quiet disabled>
+        <Check className="h-5 w-5 text-emerald-600" />
+        {primaryLabel ? words.added(primaryLabel) : words.addedFallback}
+      </FlowButton>
+    );
+  } else if (flow && event.myCalendar?.state === "adding" && !add.isPending) {
+    const onPhone = !!event.myCalendar.onPhone;
+    body = (
+      <>
+        <FlowButton quiet onClick={() => add.mutate(null)} disabled={onPhone && !isNativeApp}>
+          {onPhone && !isNativeApp ? words.onPhone : words.tryAgain}
+        </FlowButton>
+        {!(onPhone && !isNativeApp) &&
+          footnote(
+            event.myCalendar.error ? (onPhone ? words.notYetPhone : words.notYet) : words.adding,
+          )}
+      </>
+    );
+  } else if (flow && choosing) {
+    body = (
+      <>
+        {options.map((group) => (
+          <ListGroup key={group.account} title={group.account} className="mb-3 mt-0">
+            {group.calendars.map((c) => (
+              <ListPickRow
+                key={c.id}
+                type="radio"
+                name="add-to-calendar"
+                checked={chosen === c.id}
+                onChange={() => setChosen(c.id)}
+                label={c.name}
+              />
+            ))}
+          </ListGroup>
+        ))}
+        <FlowButton onClick={() => add.mutate(chosen)} disabled={!chosen} busy={add.isPending}>
+          {words.useAndAdd}
+        </FlowButton>
+        <div className="mt-2 flex items-center justify-between px-2 text-[15px]">
+          <button
+            type="button"
+            onClick={() => setChoosing(false)}
+            disabled={add.isPending}
+            className="text-muted-foreground"
+          >
+            {t.common.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => download.mutate()}
+            disabled={download.isPending}
+            className="font-medium text-primary"
+          >
+            {words.downloadInstead}
+          </button>
+        </div>
+      </>
+    );
+  } else if (flow) {
+    body = (
+      <>
+        {gone && footnote(words.gone)}
+        <FlowButton onClick={press} busy={add.isPending || download.isPending}>
+          {!(add.isPending || download.isPending) && <CalendarPlus className="h-5 w-5" />}
+          {gone ? words.addAgain : words.button}
+        </FlowButton>
+        {footnote(where)}
+      </>
+    );
+  } else if (event.myCalendar?.state === "added") {
     body = (
       <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-800">
         <Check className="h-4 w-4 shrink-0" />
@@ -180,9 +284,6 @@ export default function AddToCalendar({
       </div>
     );
   } else {
-    const writesDirectly = !!primary;
-    const canChoose = !primary && writableIds.length > 0;
-    const gone = event.myCalendar?.state === "gone";
     body = (
       <div>
         {gone && (
@@ -193,15 +294,7 @@ export default function AddToCalendar({
         )}
         <button
           type="button"
-          onClick={() => {
-            add.reset();
-            download.reset();
-            if (writesDirectly) add.mutate(null);
-            else if (canChoose) {
-              setChosen(writableIds.length === 1 ? writableIds[0] : "");
-              setChoosing(true);
-            } else download.mutate();
-          }}
+          onClick={press}
           disabled={add.isPending || download.isPending}
           className={cn(
             "flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60",
@@ -215,15 +308,7 @@ export default function AddToCalendar({
           )}
           {gone ? words.addAgain : words.button}
         </button>
-        <p className="mt-1 text-xs text-emerald-900/80">
-          {writesDirectly
-            ? primaryLabel
-              ? words.goesInto(primaryLabel)
-              : words.goesIntoFallback
-            : canChoose
-              ? words.willAsk
-              : words.asFile}
-        </p>
+        <p className="mt-1 text-xs text-emerald-900/80">{where}</p>
       </div>
     );
   }

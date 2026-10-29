@@ -89,6 +89,8 @@ const PAGES: {
   { name: "group", path: "/groups/g-friday", phoneSheet: true },
   { name: "events", path: "/events", phoneSheet: true },
   { name: "event-vote", path: "/events/ev-boardgames" },
+  // On a phone, an agreed event's screen in the Aftaler sheet (#177).
+  { name: "event-agreed", path: "/events/ev-party", phoneSheet: true },
   { name: "calendar", path: "/calendar-overview" },
   { name: "calendars-connected", path: "/calendar-overview/accounts" },
   {
@@ -107,6 +109,10 @@ for (const { name, path, world, signedIn, phoneSheet } of PAGES) {
 
     test(`looks as it did`, async ({ page, isMobile }) => {
       test.skip(isMobile && name === "event-vote", "a phone has no open event beside the list");
+      test.skip(
+        !isMobile && name === "event-agreed",
+        "a computer's open event is event-vote's pane",
+      );
       test.skip(isMobile && name.startsWith("scheduler"), "a phone plans from My calendar (#127)");
       await page.goto(path);
       await expectPage(page, name, isMobile, phoneSheet);
@@ -122,6 +128,7 @@ const DARK_PAGES = [
   "groups",
   "events",
   "event-vote",
+  "event-agreed",
   "calendar",
   "calendars-connected",
   "profile",
@@ -139,6 +146,10 @@ test.describe("dark", () => {
 
       test(`looks as it did, dark`, async ({ page, isMobile }) => {
         test.skip(isMobile && name === "event-vote", "a phone has no open event beside the list");
+        test.skip(
+          !isMobile && name === "event-agreed",
+          "a computer's open event is event-vote's pane",
+        );
         test.skip(
           isMobile && name.startsWith("scheduler"),
           "a phone plans from My calendar (#127)",
