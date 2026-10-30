@@ -24,6 +24,7 @@ test("a group opens with its members", async ({ page, isMobile }) => {
 test("a group shows what it is for, and any member can change it (#152)", async ({
   page,
   backend,
+  isMobile,
 }) => {
   await page.goto("/groups/g-friday");
   await expect(page.getByText("En øl efter arbejde, når det passer de fleste")).toBeVisible();
@@ -39,10 +40,17 @@ test("a group shows what it is for, and any member can change it (#152)", async 
     description: "Fredagsøl i Nørrebro",
   });
 
-  // A group with none offers to add one instead.
-  await page.goto("/groups/g-running");
-  await expect(page.getByRole("button", { name: "Ændr beskrivelsen" })).toHaveCount(0);
+  // A group with none offers to add one instead. Reached from inside the app,
+  // not by loading the page again (#181): a second cold load took longer than
+  // the last check waits when many tests ran at once. The offer is waited for
+  // first, so the absence of "Ændr" below is checked on the group's own page.
+  if (isMobile) await page.getByRole("button", { name: "Grupper" }).click();
+  await page
+    .getByRole("link", { name: /Løbeklubben/ })
+    .first()
+    .click();
   await expect(page.getByRole("button", { name: "Tilføj en beskrivelse" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ændr beskrivelsen" })).toHaveCount(0);
 });
 
 test("renaming a group on a phone leaves its name where it was", async ({ page, isMobile }) => {
