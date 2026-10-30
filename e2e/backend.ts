@@ -219,6 +219,13 @@ export class FakeBackend {
           w.reports = w.reports.filter((r) => r.id !== body.id);
           return ok({ outcome: "handled" });
         }
+        // A reported profile picture taken down (#187): gone from the report too.
+        if (action === "removeAvatar") {
+          for (const r of w.reports) {
+            if (r.content.memberId === body.memberId) r.pictureUrl = null;
+          }
+          return ok({ outcome: "removed" });
+        }
         if (action === "overview") return ok(adminOverview(w));
         if (action === "setAiAccess") {
           const id = String(body.profileId);

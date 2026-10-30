@@ -27,6 +27,8 @@ export interface MyData {
     /** The name group members see; null until the groups function saved one. */
     name: string | null;
     nameIsCustom: boolean;
+    /** Whether a profile picture is kept (#187). */
+    picture: boolean;
     /** How you sign in: "email", "google", "apple". */
     signIn: string[];
     /** Notifications (#139): the phones they go to, and the kinds switched off. */
@@ -220,7 +222,11 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
   const nowIso = now.toISOString();
 
   const [profile, connections, primary, memberships] = await Promise.all([
-    db.from("profiles").select("display_name, name_is_custom").eq("id", me).maybeSingle(),
+    db
+      .from("profiles")
+      .select("display_name, name_is_custom, avatar_path")
+      .eq("id", me)
+      .maybeSingle(),
     db
       .from("calendar_connections")
       .select(
@@ -365,6 +371,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
   const profileRow = profile.data as {
     display_name: string | null;
     name_is_custom: boolean;
+    avatar_path: string | null;
   } | null;
   const blocks = (next?.data ?? []) as { start_at: string; end_at: string }[];
 
@@ -373,6 +380,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       email: caller.email ?? null,
       name: profileRow?.display_name ?? null,
       nameIsCustom: profileRow?.name_is_custom ?? false,
+      picture: !!profileRow?.avatar_path,
       signIn: signInMethods(caller),
       appleToken: appleTokens > 0,
       push,

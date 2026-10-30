@@ -5,7 +5,7 @@
  * when it was taken), and keeps every picture small (about 50 KB). The
  * phone's own rotation is applied first, so a portrait photo stands up.
  */
-export const PICTURE_SIZE = 512;
+const PICTURE_SIZE = 512;
 const QUALITY = 0.85;
 
 /** The picture as base64 JPEG, ready for the pictures function. */

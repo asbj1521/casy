@@ -81,11 +81,17 @@ async function reportedContent(db: Db, r: ReportRequest): Promise<Record<string,
   }
   const { data: profile, error: profileErr } = await db
     .from("profiles")
-    .select("display_name")
+    .select("display_name, avatar_path")
     .eq("id", r.memberId)
     .maybeSingle();
   if (profileErr) throw profileErr;
-  return { groupName: group.name, memberName: profile?.display_name ?? null };
+  // Their picture as it was (#187): admin mode shows it and can remove it.
+  return {
+    groupName: group.name,
+    memberName: profile?.display_name ?? null,
+    memberId: r.memberId,
+    avatarPath: profile?.avatar_path ?? null,
+  };
 }
 
 /** Files a report from a member of the group, within the day's limit. */

@@ -27,7 +27,7 @@ const link = (to: string, label: string) => (
 
 const da: LegalCopy = {
   title: "Vilkår for brug",
-  updated: "Senest opdateret 23. oktober 2026",
+  updated: "Senest opdateret 30. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -102,6 +102,10 @@ const da: LegalCopy = {
         <>
           <p>Du må ikke:</p>
           <ul className="list-disc space-y-2 pl-5">
+            <li>
+              lægge et billede op, som andre ikke skal se: nøgenhed, vold, had, eller et billede af
+              en anden, der ikke vil være med;
+            </li>
             <li>
               sende invitationer eller aftaler til folk, der ikke vil have dem, eller bruge Casy til
               at chikanere, true eller narre nogen;
@@ -290,7 +294,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Terms of service",
-  updated: "Last updated 23 October 2026",
+  updated: "Last updated 30 October 2026",
   sections: [
     {
       title: "In short",
@@ -366,6 +370,10 @@ const en: LegalCopy = {
         <>
           <p>You may not:</p>
           <ul className="list-disc space-y-2 pl-5">
+            <li>
+              upload a picture others should not see: nudity, violence, hate, or a picture of
+              someone else who does not want to be in it;
+            </li>
             <li>
               send invitations or events to people who do not want them, or use Casy to harass,
               threaten or deceive anyone;

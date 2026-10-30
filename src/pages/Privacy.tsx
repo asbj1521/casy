@@ -56,6 +56,12 @@ const da: LegalCopy = {
               før @. Og det sprog, du bruger Casy på, så e-mails fra Casy kommer på det sprog.
             </li>
             <li>
+              <Term>Dit profilbillede:</Term> hvis du vælger et. Det gøres til et lille kvadrat på
+              din telefon, før det sendes, og det, et kamera gemmer i et billede, som hvor det er
+              taget, kommer ikke med. Dine grupper kan se det. Det gemmes, til du skifter det eller
+              fjerner det, og slettes med din konto.
+            </li>
+            <li>
               <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
               e-mailadressen på en Google-konto), navnene på deres kalendere og et navn, du selv
               giver en af dem, den kategori og prioritet, du giver hver af dem (arbejde, skole,
@@ -545,6 +551,12 @@ const en: LegalCopy = {
               with your email and have not chosen a name, Casy uses the part of your email address
               before the @. And the language you use Casy in, so emails from Casy come in that
               language.
+            </li>
+            <li>
+              <Term>Your profile picture:</Term> if you choose one. It is made into a small square
+              on your phone before it is sent, and what a camera stores in a photo, such as where it
+              was taken, is left out. Your groups can see it. It is kept until you change or remove
+              it, and deleted with your account.
             </li>
             <li>
               <Term>Connected calendars:</Term> which accounts you connected (for example the email

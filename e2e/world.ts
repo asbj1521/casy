@@ -661,6 +661,7 @@ export function myData(world: World): MyData {
       email: ME.email,
       name: world.name,
       nameIsCustom: false,
+      picture: !!world.avatarUrl,
       signIn: ["email"],
       appleToken: false,
       push: { devices: 0, off: [] },

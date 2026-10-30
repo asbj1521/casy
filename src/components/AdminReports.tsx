@@ -4,6 +4,7 @@ import { Check, ChevronRight, Loader2, Trash2 } from "lucide-react";
 
 import {
   adminDeleteGroup,
+  adminRemoveAvatar,
   adminReportHandled,
   adminReportsKey,
   adminReportsQuery,
@@ -110,6 +111,7 @@ function ReportRow({
     onSuccess: onGroupDeleted,
   });
   const c = report.content;
+  const takeDown = useMutation({ mutationFn: () => adminRemoveAvatar(c.memberId!) });
   const reason = t.safety.reasons[report.reason as keyof typeof t.safety.reasons] ?? report.reason;
 
   return (
@@ -124,6 +126,13 @@ function ReportRow({
             <p className="break-words text-muted-foreground">{c.groupDescription}</p>
           )}
           {c.memberName && <p className="break-words text-foreground">{c.memberName}</p>}
+          {report.pictureUrl && (
+            <img
+              src={report.pictureUrl}
+              alt={c.memberName ?? ""}
+              className="mt-1 h-16 w-16 rounded-full object-cover"
+            />
+          )}
           {c.title && <p className="break-words text-foreground">{c.title}</p>}
           {c.place && <p className="break-words text-muted-foreground">{c.place}</p>}
           {c.note && <p className="break-words text-muted-foreground">{c.note}</p>}
@@ -147,6 +156,17 @@ function ReportRow({
             <Check className="h-3.5 w-3.5" />
             {words.handled}
           </button>
+          {report.pictureUrl && c.memberId && (
+            <button
+              type="button"
+              onClick={() => takeDown.mutate()}
+              disabled={takeDown.isPending || takeDown.isSuccess}
+              className="flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {takeDown.isSuccess ? words.pictureRemoved : words.removePicture}
+            </button>
+          )}
           {report.groupId && !confirming && (
             <button
               type="button"

@@ -58,6 +58,8 @@ export const da = {
       none: "Ingen rapporter.",
       handled: "Klaret",
       deleteGroup: "Slet gruppen",
+      removePicture: "Fjern billedet",
+      pictureRemoved: "Billedet er fjernet",
       deleteGroupConfirm: (group: string) =>
         `Slet ${group || "gruppen"} for alle i den? Det kan ikke fortrydes.`,
       kinds: { group: "Gruppe", event: "Aftale", member: "Medlem" } as Record<string, string>,
@@ -1379,6 +1381,9 @@ export const da = {
     name: "Navn",
     nameCustom: "Valgt af dig",
     nameFromLogin: "Fra dit login",
+    picture: "Profilbillede",
+    pictureKept: "Gemt",
+    pictureNone: "Intet",
     nameNotYet: "Ikke gemt endnu",
     signIn: "Log ind med",
     signInMethods: { email: "E-mail", google: "Google", apple: "Apple" } as Record<string, string>,

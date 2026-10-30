@@ -24,6 +24,7 @@ import { requireCaller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
 import { healthOf, readSyncFacts } from "../_shared/health.ts";
 import { HttpError, requireString, serve } from "../_shared/http.ts";
+import { deletePictures, pictureLinks } from "../_shared/pictures.ts";
 import { pushToProfile } from "../_shared/push.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
@@ -268,6 +269,11 @@ serve("admin", async (req, body) => {
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
+      // A reported member's picture (#187), linked for the admin to see.
+      const pictures = await pictureLinks(
+        db,
+        (data ?? []).map((r) => (r.content as { avatarPath?: string | null }).avatarPath),
+      );
       return {
         reports: (data ?? []).map((r) => ({
           id: r.id as string,
@@ -275,6 +281,7 @@ serve("admin", async (req, body) => {
           reason: r.reason as string,
           note: (r.note as string | null) ?? null,
           content: r.content as Record<string, unknown>,
+          pictureUrl: pictures.get((r.content as { avatarPath?: string }).avatarPath ?? "") ?? null,
           groupId: (r.group_id as string | null) ?? null,
           createdAt: r.created_at as string,
         })),
@@ -289,6 +296,29 @@ serve("admin", async (req, body) => {
       if (!data || data.length === 0) throw new HttpError(404, "That report is already gone.");
       console.log(`admin ${caller.id} handled report ${id}`);
       return { outcome: "handled" };
+    }
+
+    // A reported profile picture taken down (#187): the person keeps the
+    // account and can pick another.
+    case "removeAvatar": {
+      const memberId = requireString(body, "memberId");
+      const { data, error } = await db
+        .from("profiles")
+        .select("avatar_path")
+        .eq("id", memberId)
+        .maybeSingle();
+      if (error) throw error;
+      const path = (data?.avatar_path as string | null | undefined) ?? null;
+      if (path) {
+        const { error: updErr } = await db
+          .from("profiles")
+          .update({ avatar_path: null })
+          .eq("id", memberId);
+        if (updErr) throw updErr;
+        await deletePictures(db, [path]);
+      }
+      console.log(`admin ${caller.id} removed the picture of ${memberId}`);
+      return { outcome: "removed" };
     }
 
     case "deleteGroup": {

@@ -108,6 +108,8 @@ export interface MyData {
     email: string | null;
     name: string | null;
     nameIsCustom: boolean;
+    /** Whether a profile picture is kept (#187). */
+    picture?: boolean;
     signIn: string[];
     /** Notifications (#139): the phones they go to, and the kinds switched off. */
     push: { devices: number; off: string[] };

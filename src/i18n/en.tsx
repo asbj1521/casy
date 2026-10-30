@@ -53,6 +53,8 @@ export const en: Messages = {
       none: "No reports.",
       handled: "Done",
       deleteGroup: "Delete the group",
+      removePicture: "Remove the picture",
+      pictureRemoved: "Picture removed",
       deleteGroupConfirm: (group: string) =>
         `Delete ${group || "the group"} for everyone in it? This can't be undone.`,
       kinds: { group: "Group", event: "Event", member: "Member" } as Record<string, string>,
@@ -1327,6 +1329,9 @@ export const en: Messages = {
     name: "Name",
     nameCustom: "Chosen by you",
     nameFromLogin: "From your login",
+    picture: "Profile picture",
+    pictureKept: "Kept",
+    pictureNone: "None",
     nameNotYet: "Not saved yet",
     signIn: "Sign in with",
     signInMethods: { email: "Email", google: "Google", apple: "Apple" } as Record<string, string>,

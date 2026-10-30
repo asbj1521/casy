@@ -203,7 +203,10 @@ export interface AdminReport {
     place?: string;
     note?: string;
     memberName?: string;
+    memberId?: string;
   };
+  /** The reported member's picture as it was (#187), linked; null for none. */
+  pictureUrl?: string | null;
   /** Null once the group is gone. */
   groupId: string | null;
   createdAt: string;
@@ -225,6 +228,14 @@ export function adminReportsQuery(userId: string) {
         })
       ).reports,
     staleTime: 30_000,
+  });
+}
+
+/** A reported member's profile picture taken down (#187). */
+export async function adminRemoveAvatar(memberId: string): Promise<{ outcome: "removed" }> {
+  return await callFunction("admin", {
+    body: { action: "removeAvatar", memberId },
+    errorMessage: currentMessages().pictures.removeFailed,
   });
 }
 

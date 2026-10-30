@@ -219,6 +219,7 @@ function AccountPart({ data }: { data: MyData }) {
         value={account.name ?? w.nameNotYet}
         detail={account.name ? (account.nameIsCustom ? w.nameCustom : w.nameFromLogin) : undefined}
       />
+      <Fact label={w.picture} value={account.picture ? w.pictureKept : w.pictureNone} />
       <Fact
         label={w.signIn}
         value={account.signIn.map((m) => w.signInMethods[m] ?? m).join(", ") || "-"}
