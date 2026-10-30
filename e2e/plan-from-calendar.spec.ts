@@ -102,6 +102,44 @@ test("back closes the sheet, and Ret planen goes from the dates back to it", asy
   await expect(page.getByRole("dialog", { name: "Planlæg" })).toBeVisible();
 });
 
+test("the plan is kept for a minute after Annuller, then starts fresh; Nulstil starts it fresh at once (#189)", async ({
+  page,
+}) => {
+  await page.goto("/calendar-overview");
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  const name = sheet.getByRole("textbox", { name: /Hvad skal I/i });
+  const open = () => page.getByRole("button", { name: "Planlæg" }).click();
+  const close = async () => {
+    await sheet.getByRole("button", { name: "Annuller" }).click();
+    await expect(sheet).toHaveCount(0);
+  };
+
+  // Opened again within the minute, it is the same plan.
+  await open();
+  await name.fill("Padel");
+  await close();
+  await open();
+  await expect(name).toHaveValue("Padel");
+
+  // Nulstil empties it at once, and only shows on the plan itself.
+  await sheet.getByRole("button", { name: "Nulstil planen" }).click();
+  await expect(name).toHaveValue("");
+  await sheet.getByRole("button", { name: "Genveje", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Nulstil planen" })).toHaveCount(0);
+  await page
+    .getByRole("dialog", { name: "Genveje" })
+    .getByRole("button", { name: "Planlæg" })
+    .click();
+
+  // Put away for more than a minute, it opens fresh.
+  await name.fill("Padel");
+  await close();
+  const now = await page.evaluate(() => Date.now());
+  await page.clock.setFixedTime(new Date(now + 61_000));
+  await open();
+  await expect(name).toHaveValue("");
+});
+
 test("✨ in the name field asks Casy, its questions drop from the field, and the sheet fills itself in (#173)", async ({
   page,
 }) => {

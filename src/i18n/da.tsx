@@ -1330,6 +1330,7 @@ export const da = {
   planFromCalendar: {
     button: "Planlæg",
     findDate: "Find dato",
+    reset: "Nulstil planen",
     // The sheet's rows (#173).
     from: "Fra",
     to: "Til",

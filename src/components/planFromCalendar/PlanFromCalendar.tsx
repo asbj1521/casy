@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
 
 import {
   deleteShortcut,
@@ -226,6 +226,12 @@ export default function PlanFromCalendar({
         doneLabel={t.common.cancel}
         origin={sheetOrigin}
         stacked
+        // Back to a fresh plan at once (#189), on the plan itself only.
+        action={
+          screen.kind === "plan" && stage === "setup"
+            ? { label: t.planFromCalendar.reset, icon: RotateCcw, onClick: planning.reset }
+            : undefined
+        }
         back={
           screen.kind === "shortcuts"
             ? { label: t.planFromCalendar.button, onBack: () => go({ kind: "plan" }) }

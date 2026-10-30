@@ -9,7 +9,7 @@ import {
 } from "react";
 
 import { motion, usePresence, useReducedMotion } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, type LucideIcon } from "lucide-react";
 
 import Modal from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
@@ -93,6 +93,7 @@ export default function BottomSheet({
   arrived = false,
   stacked = false,
   back,
+  action,
   children,
 }: {
   open: boolean;
@@ -130,6 +131,8 @@ export default function BottomSheet({
   stacked?: boolean;
   /** A way back to the screen before, left of the title, iOS's "‹ Profil" (#174). */
   back?: { label: string; onBack: () => void };
+  /** A small icon button left of the text action, such as Planlæg's reset (#189). */
+  action?: { label: string; icon: LucideIcon; onClick: () => void };
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -164,14 +167,27 @@ export default function BottomSheet({
       >
         {title}
       </h3>
-      <button
-        type="button"
-        onClick={onClose}
-        disabled={busy}
-        className="shrink-0 rounded-lg px-2 py-1 text-[15px] font-semibold text-primary disabled:opacity-50"
-      >
-        {doneLabel}
-      </button>
+      <div className="flex shrink-0 items-center gap-1">
+        {action && (
+          <button
+            type="button"
+            onClick={action.onClick}
+            disabled={busy}
+            aria-label={action.label}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-primary disabled:opacity-50"
+          >
+            <action.icon className="h-[18px] w-[18px]" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={busy}
+          className="shrink-0 rounded-lg px-2 py-1 text-[15px] font-semibold text-primary disabled:opacity-50"
+        >
+          {doneLabel}
+        </button>
+      </div>
     </div>
   );
 

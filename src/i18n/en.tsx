@@ -1279,6 +1279,7 @@ export const en: Messages = {
   planFromCalendar: {
     button: "Plan",
     findDate: "Find a date",
+    reset: "Reset the plan",
     from: "From",
     to: "To",
     fromTo: (from: string, to: string) => `${from} - ${to}`,

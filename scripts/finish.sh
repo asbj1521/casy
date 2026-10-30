@@ -36,7 +36,8 @@ git push --quiet -u origin "$branch"
 runs_for() {
   local commit=$1 tries=$2 found=""
   for _ in $(seq 1 "$tries"); do
-    found=$(gh run list -R "$REPO" --commit "$commit" --event push --json databaseId -q '.[].databaseId')
+    # A passing server error is asked again on the next try, not the end of it.
+    found=$(gh run list -R "$REPO" --commit "$commit" --event push --json databaseId -q '.[].databaseId' || true)
     [ "$(echo "$found" | grep -c .)" -ge 2 ] && break
     sleep 2
   done
@@ -64,10 +65,21 @@ say "waiting for the checks on ${check:0:7}"
 for id in $runs; do
   gh run watch "$id" -R "$REPO" --interval 5 >/dev/null || true
 done
+# A run's result, asked again when GitHub answers with a server error (a 502
+# during an outage once read as a failed check): empty only after a minute.
+result_of() {
+  local answer=""
+  for _ in 1 2 3 4 5 6; do
+    answer=$(gh run view "$1" -R "$REPO" --json workflowName,conclusion -q '"\(.workflowName | gsub(" "; "_")) \(.conclusion)"' 2>/dev/null || true)
+    [ -n "${answer#* }" ] && break
+    sleep 10
+  done
+  echo "$answer"
+}
 failed=0
 for id in $runs; do
-  read -r name conclusion < <(gh run view "$id" -R "$REPO" --json workflowName,conclusion -q '"\(.workflowName | gsub(" "; "_")) \(.conclusion)"')
-  say "  ${name//_/ }: $conclusion"
+  read -r name conclusion < <(result_of "$id")
+  say "  ${name//_/ }: ${conclusion:-no answer from GitHub}"
   case "$conclusion" in
     success | skipped) ;;
     *) failed=1 ;;

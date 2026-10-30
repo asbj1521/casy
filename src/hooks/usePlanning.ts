@@ -103,6 +103,14 @@ interface PageMemory {
   monthPick: MonthPick | null;
 }
 let pageMemory: PageMemory | null = null;
+/** When the plan was last put away (its screen closed), for PLAN_FORGET_MS. */
+let closedAt: number | null = null;
+/**
+ * How long a phone keeps a plan put away (#189): Planlæg closed and opened
+ * again within it is the same plan; later, it starts fresh. The computer's
+ * page keeps it for the whole visit, as before.
+ */
+const PLAN_FORGET_MS = 60_000;
 
 /** A month paged to by hand, for the answer (its first day) it was paged from. */
 interface MonthPick {
@@ -149,7 +157,16 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
 
   // The plan as this person left it earlier in this visit, if they did;
   // otherwise it starts fresh, with random settings.
-  const [left] = useState(() => (pageMemory?.userId === userId ? pageMemory : null));
+  const [left] = useState(() => {
+    const stale = phone && closedAt !== null && Date.now() - closedAt > PLAN_FORGET_MS;
+    return pageMemory?.userId === userId && !stale ? pageMemory : null;
+  });
+  useEffect(
+    () => () => {
+      closedAt = Date.now();
+    },
+    [],
+  );
   const [selectedGroupId, setSelectedGroupId] = useState(left?.selectedGroupId ?? null);
   // What the event is called: only for the group to read, never searched on.
   const [name, setName] = useState(left?.name ?? "");
@@ -770,6 +787,20 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
     if ("startHour" in patch || "startWindow" in patch || "anyTime" in patch) setExtraTimes([]);
     planner.edited(planFieldsOf(patch));
   };
+  /**
+   * The plan as it opens fresh (#189), the group kept: the name, the time,
+   * the days, the months, the extras, who is coming, and what Casy was asked.
+   */
+  const reset = () => {
+    setName("");
+    setSched(oncePerLoad("scheduler-settings", () => randomDefaultSettings()));
+    setExtras(DEFAULT_EXTRAS);
+    setPeopleChoices({});
+    setExtraTimes([]);
+    setMonthPick(null);
+    setSteps(restart());
+    planner.reset();
+  };
   /** A way to widen the search picked (#135): only what it changes, by hand. */
   function applyWiden(option: WidenOption) {
     if (option.people) {
@@ -798,6 +829,7 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
     carousel,
     stopCarousel,
     selectGroup,
+    reset,
     loadPlan,
     peopleChoice,
     updatePeople,

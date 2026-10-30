@@ -7,6 +7,14 @@ on:
   pull_request:
     branches: [main]
 
+# A new push to a branch cancels that branch's runs still going (#189): they
+# check a commit already left behind, and kept the queue full when GitHub
+# was slow. Never on main: each of its commits is a group of its own, so a
+# deploy's checks are never cancelled or dropped while waiting.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   web:
     name: Web app
