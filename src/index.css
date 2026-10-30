@@ -177,6 +177,21 @@
       0 6px 18px -8px rgb(var(--pill-drop));
   }
 
+  /* The home page's bar while Apple's real glass is drawn over it (#191,
+     useNativeGlassBar): the web buttons stay under it as invisible twins that
+     take the taps, with no glass of their own and nothing showing. */
+  .native-glass .glass-pill {
+    background-color: transparent;
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .native-glass [data-glass] > * {
+    opacity: 0;
+  }
+
   /* The welcome screen's step caption where Apple's Liquid Glass isn't drawn
      natively (the website, iPhones before iOS 26; nativeGlass.ts): clear
      enough to see the animation through, lightly blurred and brightened, with
