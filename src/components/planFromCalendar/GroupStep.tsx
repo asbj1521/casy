@@ -1,7 +1,7 @@
-import { Check, Plus, Users } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 
-import Avatar from "@/components/ui/Avatar";
 import Bone from "@/components/ui/Bone";
+import GroupBubbles from "@/components/ui/GroupBubbles";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { SchedulingGroup } from "@/hooks/useSchedulingGroups";
 import { useLang, useT } from "@/i18n/lang";
@@ -58,7 +58,7 @@ export default function GroupStep({
             <ListRow
               key={i}
               leading={
-                <span className="flex w-14 shrink-0">
+                <span className="flex w-[4.5rem] shrink-0">
                   <span className="h-10 w-10 rounded-full bg-secondary" />
                 </span>
               }
@@ -114,24 +114,11 @@ export default function GroupStep({
   );
 }
 
-/**
- * Up to three members' letters, overlapping, or an example's group icon, in
- * a slot of one width, so every row's name starts in the same place.
- */
+/** The group's members as bubbles, in a slot of one width, so every row's name starts in the same place. */
 function GroupMark({ group }: { group: SchedulingGroup }) {
   return (
-    <span className="flex w-14 shrink-0 items-center">
-      {group.members.length === 0 ? (
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-primary">
-          <Users className="h-5 w-5" />
-        </span>
-      ) : (
-        <span className="flex -space-x-2">
-          {group.members.slice(0, 3).map((m, i) => (
-            <Avatar key={m.profileId} name={m.name} index={i} className="ring-2 ring-card" />
-          ))}
-        </span>
-      )}
+    <span className="flex w-[4.5rem] shrink-0 items-center">
+      <GroupBubbles members={group.members} />
     </span>
   );
 }

@@ -3,6 +3,7 @@ import { Users } from "lucide-react";
 
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import BottomSheet from "@/components/ui/BottomSheet";
+import GroupBubbles from "@/components/ui/GroupBubbles";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
@@ -93,10 +94,21 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
       {/* Nothing to press while Casy fills the sheet in. */}
       <div inert={fill.active || planner.pending}>
         <ListGroup className="mt-0">
+          {/* Show, don't tell: the members as bubbles, the group's name big;
+              "Gruppe" is left to screen readers. */}
           <ListRow
             icon={Users}
-            label={t.scheduler.group}
-            value={activeGroup?.name}
+            leading={
+              activeGroup && activeGroup.members.length > 0 ? (
+                <GroupBubbles members={activeGroup.members} size="md" />
+              ) : undefined
+            }
+            label={
+              <span className="text-[17px] font-semibold">
+                <span className="sr-only">{t.scheduler.group} </span>
+                {activeGroup?.name ?? t.scheduler.group}
+              </span>
+            }
             chevron
             onClick={() => setPicking(true)}
           />

@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { cn } from "@/lib/utils";
 
 /** A stable palette, cycled by position in a list, so neighbours never match. */
@@ -30,6 +32,7 @@ export default function Avatar({
   size = "sm",
   labelled = false,
   className,
+  style,
 }: {
   name: string;
   index: number;
@@ -37,9 +40,11 @@ export default function Avatar({
   labelled?: boolean;
   /** E.g. a ring for overlapping avatars, or other colours. */
   className?: string;
+  style?: CSSProperties;
 }) {
   return (
     <span
+      style={style}
       {...(labelled ? { role: "img", "aria-label": name, title: name } : { "aria-hidden": true })}
       className={cn(
         "flex shrink-0 items-center justify-center rounded-full font-semibold",
