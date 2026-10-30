@@ -79,7 +79,7 @@ export default function AgreedCard({
         <ul className="mt-3 flex -space-x-2">
           {going.map((p, i) => (
             <li key={p.profileId}>
-              <Avatar name={p.name} index={i} className="ring-2 ring-card" />
+              <Avatar name={p.name} index={i} className="ring-2 ring-card" src={p.avatarUrl} />
             </li>
           ))}
         </ul>

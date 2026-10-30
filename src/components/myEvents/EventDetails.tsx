@@ -175,7 +175,7 @@ function DatedDetails({
         {event.invitees.map((person, i) => (
           <ListRow
             key={person.profileId}
-            leading={<Avatar name={person.name} index={i} size="row" />}
+            leading={<Avatar name={person.name} index={i} size="row" src={person.avatarUrl} />}
             label={person.isYou ? t.common.withYou(person.name) : person.name}
             value={<Answer response={person.response} />}
           />

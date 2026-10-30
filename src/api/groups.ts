@@ -27,6 +27,8 @@ export interface GroupMember {
   /** True for the signed-in person, so the list can say "you". */
   isYou: boolean;
   joinedAt: string;
+  /** A link to their profile picture (#187), for a week; null for none. */
+  avatarUrl?: string | null;
 }
 
 export interface Group {
@@ -239,6 +241,8 @@ export async function declineInvitation(groupId: string): Promise<{ invitations:
 /** The signed-in person: what to call them, and whether AI is on for them (#111). */
 export interface WhoAmI {
   name: string;
+  /** A link to your profile picture (#187); null or missing for none. */
+  avatarUrl?: string | null;
   /** Missing in answers from before #111 (a remembered copy): read as off. */
   aiAllowed?: boolean;
   /**

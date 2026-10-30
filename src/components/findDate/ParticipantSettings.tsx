@@ -79,7 +79,7 @@ export default function ParticipantSettings({
                   s === "out" && "bg-background text-muted-foreground line-through",
                 )}
               >
-                <Avatar name={m.name} index={i} size="xs" />
+                <Avatar name={m.name} index={i} size="xs" src={m.avatarUrl} />
                 {name}
                 <span className="text-xs font-normal no-underline opacity-75">
                   {words.states[s]}

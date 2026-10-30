@@ -129,7 +129,7 @@ export default function CardFace({
                   aria-label={`${p.name}: ${a ? t.events.answered[a] : t.events.answered.none}`}
                   className={cn("relative", !a && "opacity-50")}
                 >
-                  <Avatar name={p.name} index={i + 1} size="md" />
+                  <Avatar name={p.name} index={i + 1} size="md" src={p.avatarUrl} />
                   <span
                     aria-hidden
                     className={cn(
@@ -164,7 +164,7 @@ export default function CardFace({
                     !a && "bg-background text-muted-foreground",
                   )}
                 >
-                  <Avatar name={p.name} index={i + 1} size="xs" />
+                  <Avatar name={p.name} index={i + 1} size="xs" src={p.avatarUrl} />
                   {p.name}
                   <AnswerIcon answer={a} />
                 </li>

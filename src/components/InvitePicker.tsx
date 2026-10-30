@@ -118,7 +118,7 @@ export default function InvitePicker({
                   checked={value.profileIds.includes(p.profileId)}
                   disabled={already}
                   onChange={() => toggle(p.profileId)}
-                  leading={<Avatar name={p.name} index={i} size="row" />}
+                  leading={<Avatar name={p.name} index={i} size="row" src={p.avatarUrl} />}
                   label={p.name}
                   detail={t.invite.from(p.groupNames.join(", "))}
                   value={already ? t.invite.invited : undefined}

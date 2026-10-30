@@ -32,6 +32,10 @@
 	<string>Casy reads when you are busy in your calendars, so your groups can find dates that suit you, and adds the events you choose to your calendar. Only start and end times are sent to Casy, unless you let Casy's AI read your calendar.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>Casy reads when you are busy in your calendars, so your groups can find dates that suit you, and adds the events you choose to your calendar. Only start and end times are sent to Casy, unless you let Casy's AI read your calendar.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Casy uses the camera when you choose Take Photo, to take a profile picture for your groups to see.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Casy opens your photos when you choose a profile picture. Only the picture you pick is used, made into a small square.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Casy uses the microphone when you tap Speak, so you can say what you are planning instead of typing it.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

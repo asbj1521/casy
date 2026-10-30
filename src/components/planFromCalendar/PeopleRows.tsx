@@ -59,7 +59,7 @@ export default function PeopleRows({
           return (
             <ListRow
               key={m.profileId}
-              leading={<Avatar name={m.name} index={i} size="md" />}
+              leading={<Avatar name={m.name} index={i} size="md" src={m.avatarUrl} />}
               label={name}
               detail={<span className={LOOK[s].text}>{words.states[s]}</span>}
               trailing={

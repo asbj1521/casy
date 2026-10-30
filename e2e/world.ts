@@ -577,6 +577,8 @@ export interface World {
   primary: { calendarId: string; autoAdd: boolean } | null;
   /** What Mia told Casy that is in no calendar (#116); none until a test saves some. */
   entries: StoredEntry[];
+  /** Mia's profile picture (#187), as a link the page can show; null for none. */
+  avatarUrl: string | null;
   /** Mia's genveje (#175), as plan-presets keeps them; none until a test saves one. */
   presets: { id: string; name: string; plan: unknown; updatedAt: string }[];
   groups: Group[];
@@ -613,6 +615,7 @@ export function makeWorld(options: WorldOptions): World {
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
     entries: [],
     presets: [],
+    avatarUrl: null,
     groups: withGroups ? groups() : [],
     invitations: invitations(),
     events: withGroups ? events() : [],

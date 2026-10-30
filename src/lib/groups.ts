@@ -24,6 +24,8 @@ export interface KnownPerson {
   profileId: string;
   name: string;
   groupNames: string[];
+  /** A link to their profile picture (#187), if they have one. */
+  avatarUrl?: string | null;
 }
 
 /**
@@ -35,7 +37,7 @@ export function knownPeople(
   groups: {
     id: string;
     name: string;
-    members: { profileId: string; name: string; isYou: boolean }[];
+    members: { profileId: string; name: string; isYou: boolean; avatarUrl?: string | null }[];
   }[],
   except?: string,
 ): KnownPerson[] {
@@ -48,7 +50,13 @@ export function knownPeople(
       if (m.isYou || inExcept.has(m.profileId)) continue;
       const person = people.get(m.profileId);
       if (person) person.groupNames.push(g.name);
-      else people.set(m.profileId, { profileId: m.profileId, name: m.name, groupNames: [g.name] });
+      else
+        people.set(m.profileId, {
+          profileId: m.profileId,
+          name: m.name,
+          groupNames: [g.name],
+          ...(m.avatarUrl && { avatarUrl: m.avatarUrl }),
+        });
     }
   }
   return [...people.values()].sort((a, b) => a.name.localeCompare(b.name));

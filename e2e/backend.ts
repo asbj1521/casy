@@ -245,6 +245,8 @@ export class FakeBackend {
         return this.calendarEntries(action, body);
       case "plan-presets":
         return this.planPresets(action, body);
+      case "pictures":
+        return this.pictures(action, body);
       default:
         return undefined;
     }
@@ -302,6 +304,32 @@ export class FakeBackend {
       this.changed();
       return ok({ deleted: w.entries.length < before });
     }
+    return undefined;
+  }
+
+  /**
+   * Profile pictures (#187), as the pictures function keeps them: the JPEG
+   * the page made, shown back as a data link (the real one is a signed link
+   * to storage), on Mia in every group as well.
+   */
+  private pictures(action: string, body: Record<string, unknown>): Answer | undefined {
+    const w = this.world;
+    const mine = (avatarUrl: string | null) => {
+      w.avatarUrl = avatarUrl;
+      for (const g of w.groups) {
+        for (const m of g.members) if (m.isYou) m.avatarUrl = avatarUrl;
+      }
+      this.changed();
+      return ok({ avatarUrl });
+    };
+    if (action === "set-avatar") {
+      const image = String(body.image ?? "");
+      // A JPEG starts FF D8 FF, which is "/9j/" in base64.
+      if (!image.startsWith("/9j/"))
+        return fail(400, "Det billede kan ikke bruges. Prøv et andet.");
+      return mine(`data:image/jpeg;base64,${image}`);
+    }
+    if (action === "remove-avatar") return mine(null);
     return undefined;
   }
 
@@ -518,6 +546,7 @@ export class FakeBackend {
       aiTester: w.aiTester || w.admin !== false,
       aiConsent: w.aiConsent,
       aiShare: w.aiConsent && w.aiShare,
+      avatarUrl: w.avatarUrl,
     });
     switch (action) {
       case "list":

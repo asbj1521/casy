@@ -43,6 +43,8 @@ export interface EventInvitee {
   profileId: string;
   name: string;
   isYou: boolean;
+  /** A link to their profile picture (#187); null or missing for none. */
+  avatarUrl?: string | null;
   /** Their answer to the current date; null means they haven't answered yet. */
   response: EventResponse | null;
 }

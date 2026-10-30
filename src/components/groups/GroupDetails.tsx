@@ -114,7 +114,7 @@ export default function GroupDetails({
         {group.members.map((m, i) => (
           <ListRow
             key={m.profileId}
-            leading={<Avatar name={m.name} index={i} size="row" />}
+            leading={<Avatar name={m.name} index={i} size="row" src={m.avatarUrl} />}
             label={m.isYou ? t.common.withYou(m.name) : m.name}
           />
         ))}

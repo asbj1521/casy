@@ -994,6 +994,15 @@ export const da = {
     settlesIn: "Afgøres om",
   },
   /** Swiping through a vote's dates (#74). */
+  // Pictures (#187): your profile picture.
+  pictures: {
+    change: "Skift profilbillede",
+    add: "Tilføj profilbillede",
+    remove: "Fjern billede",
+    saveFailed: "Billedet kunne ikke gemmes",
+    removeFailed: "Billedet kunne ikke fjernes",
+    unreadable: "Det billede kan ikke åbnes. Prøv et andet.",
+  },
   // Genveje (#175): saved plans, run again with one tap from the Planlæg sheet.
   shortcuts: {
     title: "Genveje",

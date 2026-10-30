@@ -6,3 +6,5 @@
    (#105), and, only with the AI consent (#120), titles for the AI (#112, #115). Keep it true (#142). */
 "NSCalendarsFullAccessUsageDescription" = "Casy reads when you are busy in your calendars, so your groups can find dates that suit you, and adds the events you choose to your calendar. Only start and end times are sent to Casy, unless you let Casy's AI read your calendar.";
 "NSCalendarsUsageDescription" = "Casy reads when you are busy in your calendars, so your groups can find dates that suit you, and adds the events you choose to your calendar. Only start and end times are sent to Casy, unless you let Casy's AI read your calendar.";
+"NSCameraUsageDescription" = "Casy uses the camera when you choose Take Photo, to take a profile picture for your groups to see.";
+"NSPhotoLibraryUsageDescription" = "Casy opens your photos when you choose a profile picture. Only the picture you pick is used, made into a small square.";

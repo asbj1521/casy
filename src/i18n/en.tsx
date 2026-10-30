@@ -956,6 +956,14 @@ export const en: Messages = {
     openDay: "Open the day in your calendar",
     settlesIn: "Settled in",
   },
+  pictures: {
+    change: "Change profile picture",
+    add: "Add a profile picture",
+    remove: "Remove picture",
+    saveFailed: "Couldn't save the picture",
+    removeFailed: "Couldn't remove the picture",
+    unreadable: "That picture can't be opened. Try another one.",
+  },
   shortcuts: {
     title: "Shortcuts",
     add: "New shortcut",

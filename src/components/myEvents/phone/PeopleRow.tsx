@@ -61,7 +61,7 @@ export default function PeopleRow({
               className="flex w-12 flex-col items-center gap-1"
             >
               <span className={cn("relative", stand === "waiting" && "opacity-50")}>
-                <Avatar name={p.name} index={invitees.indexOf(p)} size="row" />
+                <Avatar name={p.name} index={invitees.indexOf(p)} size="row" src={p.avatarUrl} />
                 <span
                   aria-hidden
                   className={cn(

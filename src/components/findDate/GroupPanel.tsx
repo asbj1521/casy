@@ -105,7 +105,12 @@ export default function GroupPanel({
             key={m.profileId}
             className="flex items-center gap-2 rounded-full border border-dashed bg-card py-1 pl-1 pr-3 text-sm"
           >
-            <Avatar name={m.name} index={0} className="bg-secondary text-muted-foreground" />
+            <Avatar
+              name={m.name}
+              index={0}
+              src={m.avatarUrl}
+              className="bg-secondary text-muted-foreground"
+            />
             <span className="truncate text-muted-foreground">{m.name}</span>
             <span className="flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground">
               <CalendarOff className="h-3 w-3" />

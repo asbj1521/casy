@@ -23,7 +23,7 @@ export default function GroupBubbles({
   size = "sm",
   className,
 }: {
-  members: { profileId: string; name: string }[];
+  members: { profileId: string; name: string; avatarUrl?: string | null }[];
   size?: "sm" | "md";
   className?: string;
 }) {
@@ -50,6 +50,7 @@ export default function GroupBubbles({
           <Avatar
             key={m.profileId}
             name={m.name}
+            src={m.avatarUrl}
             index={i}
             size={size}
             className="ring-2 ring-card"
