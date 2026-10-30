@@ -302,7 +302,9 @@ private final class BarItem {
         // it), as Apple's own bars do; the words and badge fade beside it.
         UIView.animate(withDuration: duration) {
             if #available(iOS 26.0, *) {
-                self.glass.effect = visible ? UIGlassEffect() : nil
+                // The clear variant: little of what is behind it mixes into the glass,
+                // where the regular one turned muddy over the busy calendar (#191).
+                self.glass.effect = visible ? UIGlassEffect(style: .clear) : nil
             }
             self.icon.alpha = visible ? 1 : 0
             self.title.alpha = visible ? 1 : 0
