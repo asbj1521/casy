@@ -141,11 +141,11 @@ test("the sheet's rows: give or take an hour, and the details folded away go alo
 
   await sheet.getByRole("button", { name: "Flere detaljer" }).click();
   await sheet.getByRole("button", { name: /^Deltagere/ }).click();
+  // It grows out of its row (#175), and Esc (or a tap outside) closes it, not the sheet.
   await expect(page.getByRole("dialog", { name: "Deltagere" })).toBeVisible();
-  await page
-    .getByRole("dialog", { name: "Deltagere" })
-    .getByRole("button", { name: "Færdig" })
-    .click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Deltagere" })).toHaveCount(0);
+  await expect(sheet).toBeVisible();
   await sheet.getByRole("textbox", { name: "Sted" }).fill("Hos Sara");
   await sheet.getByRole("textbox", { name: "Note" }).fill("Tag snacks med");
   await sheet.getByRole("button", { name: "Find dato" }).click();

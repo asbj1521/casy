@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Hourglass, MapPin, SlidersHorizontal, StickyNote, Users } from "lucide-react";
 
 import type { ParticipantProps } from "@/components/findDate/ParticipantSettings";
-import { DeadlineSheet } from "@/components/myEvents/VoteDeadline";
-import BottomSheet from "@/components/ui/BottomSheet";
+import { DeadlinePicker } from "@/components/myEvents/VoteDeadline";
+import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import Collapse from "@/components/ui/Collapse";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
@@ -37,6 +37,9 @@ export default function MoreDetails({
   const words = t.settingsPanel;
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [deadlineOpen, setDeadlineOpen] = useState(false);
+  // The rows the pickers grow out of (#175).
+  const id = useId();
+  const rows = { people: `${id}-people`, deadline: `${id}-deadline` };
 
   const { members, choice, meeting, example } = participants;
   const people = summarizePeople(
@@ -70,6 +73,7 @@ export default function MoreDetails({
       <Collapse open={open}>
         <ListGroup className="mt-3">
           <ListRow
+            id={rows.people}
             icon={Users}
             label={words.tabs.people}
             value={peopleValue}
@@ -97,6 +101,7 @@ export default function MoreDetails({
             />
           </FieldRow>
           <ListRow
+            id={rows.deadline}
             icon={Hourglass}
             label={t.voteDeadline.label}
             value={
@@ -107,21 +112,22 @@ export default function MoreDetails({
           />
         </ListGroup>
       </Collapse>
-      <DeadlineSheet
+      <DeadlinePicker
         open={deadlineOpen}
         onClose={() => setDeadlineOpen(false)}
+        anchorId={rows.deadline}
         value={extras.answerDays}
         onPick={(answerDays) => onExtras({ answerDays })}
       />
 
-      <BottomSheet
+      <AnchoredPanel
         open={peopleOpen}
         onClose={() => setPeopleOpen(false)}
-        title={words.tabs.people}
-        doneLabel={t.schedulerFlow.done}
+        anchorId={rows.people}
+        label={words.tabs.people}
       >
         <PeopleRows {...participants} />
-      </BottomSheet>
+      </AnchoredPanel>
     </>
   );
 }

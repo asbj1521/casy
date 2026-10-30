@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2, Zap } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import { deleteShortcut, saveShortcut, shortcutsQuery, shortcutsQueryKey } from "@/api/shortcuts";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import BottomSheet from "@/components/ui/BottomSheet";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import FlowButton from "@/components/ui/FlowButton";
-import GlassButton from "@/components/ui/GlassButton";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { PUSH, pushTransition } from "@/components/ui/push";
@@ -34,7 +33,7 @@ const DEPTH: Record<Screen["kind"], number> = { plan: 0, shortcuts: 1, editor: 2
  * too, and the other way round. Loaded only once Planlæg is pressed, so
  * opening My calendar never fetches a group's calendars.
  *
- * Genveje (#175): the capsule beside the title slides the sheet sideways to
+ * Genveje (#175): its button beside the group slides the sheet sideways to
  * the saved plans (ShortcutsScreen), as the profile's screens slide in
  * (#174). A tap on one fills the plan in and goes straight to the pile; its
  * "..." or a plus opens the plan itself to change and save (the plan on
@@ -145,18 +144,6 @@ export default function PlanFromCalendar({
         doneLabel={t.common.cancel}
         origin={sheetOrigin}
         stacked
-        accessory={
-          screen.kind === "plan" ? (
-            <GlassButton
-              size="sm"
-              icon={Zap}
-              onClick={() => go({ kind: "shortcuts" })}
-              className="h-8"
-            >
-              {words.title}
-            </GlassButton>
-          ) : undefined
-        }
         back={
           screen.kind === "shortcuts"
             ? { label: t.planFromCalendar.button, onBack: () => go({ kind: "plan" }) }
@@ -194,7 +181,9 @@ export default function PlanFromCalendar({
             transition={pushTransition(reduce)}
             className="flex min-h-0 w-full flex-auto flex-col overflow-y-auto overscroll-contain px-4 pb-4"
           >
-            {screen.kind === "plan" && <PlanSetup planning={planning} />}
+            {screen.kind === "plan" && (
+              <PlanSetup planning={planning} onShortcuts={() => go({ kind: "shortcuts" })} />
+            )}
             {screen.kind === "shortcuts" && (
               <ShortcutsScreen
                 shortcuts={shortcuts}

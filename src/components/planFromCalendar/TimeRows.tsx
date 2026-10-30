@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { CalendarDays, Clock, Flag, Diff } from "lucide-react";
 
 import DaySlider from "@/components/DaySlider";
@@ -11,7 +11,7 @@ import {
   useDayValues,
   weekdayLong,
 } from "@/components/schedulerSettings/options";
-import BottomSheet from "@/components/ui/BottomSheet";
+import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import { FIELD_LABEL } from "@/components/ui/field";
 import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
 import WheelPicker from "@/components/WheelPicker";
@@ -67,6 +67,9 @@ export default function TimeRows({
   // Casy's hand opens and closes them while it fills the sheet in.
   const open: Open = drive ? drive.sheet : own;
   const close = () => setOpen(null);
+  // The rows the pickers grow out of (#175).
+  const id = useId();
+  const ids = { time: `${id}-time`, days: `${id}-days`, startDay: `${id}-start` };
   const pressed = (less: FillPress, more: FillPress) =>
     drive?.press === less ? "less" : drive?.press === more ? "more" : null;
   const dayValues = useDayValues(settings);
@@ -162,6 +165,7 @@ export default function TimeRows({
             }
           />
           <ListRow
+            id={ids.startDay}
             className={litClass(lit, "startDay")}
             icon={Flag}
             label={t.scheduler.tripStarts}
@@ -177,6 +181,7 @@ export default function TimeRows({
       ) : (
         <ListGroup className="mt-3">
           <ListRow
+            id={ids.time}
             className={litClass(lit, "time")}
             icon={Clock}
             label={t.settingsPanel.tabs.time}
@@ -211,6 +216,7 @@ export default function TimeRows({
             />
           )}
           <ListRow
+            id={ids.days}
             className={litClass(lit, "days")}
             icon={CalendarDays}
             label={t.scheduler.dayLabel}
@@ -221,11 +227,11 @@ export default function TimeRows({
         </ListGroup>
       )}
 
-      <BottomSheet
+      <AnchoredPanel
         open={open === "time"}
         onClose={close}
-        title={t.settingsPanel.tabs.time}
-        doneLabel={t.schedulerFlow.done}
+        anchorId={ids.time}
+        label={t.settingsPanel.tabs.time}
       >
         {/* Start and end side by side; the end keeps its distance as the start moves. */}
         <div className="grid grid-cols-2 gap-3">
@@ -250,12 +256,12 @@ export default function TimeRows({
             />
           </div>
         </div>
-      </BottomSheet>
-      <BottomSheet
+      </AnchoredPanel>
+      <AnchoredPanel
         open={open === "days"}
         onClose={close}
-        title={t.scheduler.dayLabel}
-        doneLabel={t.schedulerFlow.done}
+        anchorId={ids.days}
+        label={t.scheduler.dayLabel}
       >
         <ListGroup className="mt-0">
           {presets.map((p) => (
@@ -276,12 +282,12 @@ export default function TimeRows({
         <div className="mt-4">
           <DaySlider size="lg" selected={settings.dows} onChange={(dows) => onChange({ dows })} />
         </div>
-      </BottomSheet>
-      <BottomSheet
+      </AnchoredPanel>
+      <AnchoredPanel
         open={open === "startDay"}
         onClose={close}
-        title={t.scheduler.tripStarts}
-        doneLabel={t.schedulerFlow.done}
+        anchorId={ids.startDay}
+        label={t.scheduler.tripStarts}
       >
         <ListGroup className="mt-0">
           {[null, ...ALL_DOWS].map((d) => (
@@ -299,7 +305,7 @@ export default function TimeRows({
             />
           ))}
         </ListGroup>
-      </BottomSheet>
+      </AnchoredPanel>
     </section>
   );
 }

@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Hourglass, Loader2 } from "lucide-react";
 
 import { setVoteDeadline, settleVote } from "@/api/events";
-import BottomSheet from "@/components/ui/BottomSheet";
+import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
 import { useEventChange } from "@/hooks/useEventChange";
@@ -14,25 +14,28 @@ import type { VoteEvent } from "@/lib/vote";
 
 /**
  * A vote's deadline (#179). There is none unless the suggester gives it one:
- * when planning (`DeadlineSheet` in Planlæg, a select on a computer), or
+ * when planning (`DeadlinePicker` in Planlæg, a select on a computer), or
  * later on the vote's screen, where the suggester can also settle it now
  * with the answers so far ("Afgør nu", asked first). Everyone else reads
  * when it is settled.
  */
 
 /**
- * Ingen frist, or 1 to 7 days, as rows with a tick: `value` is the days
- * chosen, null for none, and undefined for a deadline already set (no row
- * ticked: it is a moment, not a number of days).
+ * Ingen frist, or 1 to 7 days, as rows with a tick, grown out of the row
+ * that opened it (`anchorId`, #175): `value` is the days chosen, null for
+ * none, and undefined for a deadline already set (no row ticked: it is a
+ * moment, not a number of days).
  */
-export function DeadlineSheet({
+export function DeadlinePicker({
   open,
   onClose,
+  anchorId,
   value,
   onPick,
 }: {
   open: boolean;
   onClose: () => void;
+  anchorId: string;
   value: number | null | undefined;
   onPick: (days: number | null) => void;
 }) {
@@ -43,7 +46,7 @@ export function DeadlineSheet({
     onClose();
   };
   return (
-    <BottomSheet open={open} onClose={onClose} title={words.label} doneLabel={t.schedulerFlow.done}>
+    <AnchoredPanel open={open} onClose={onClose} anchorId={anchorId} label={words.label}>
       <ListGroup className="mt-0">
         <ListPickRow
           type="radio"
@@ -63,7 +66,7 @@ export function DeadlineSheet({
           />
         ))}
       </ListGroup>
-    </BottomSheet>
+    </AnchoredPanel>
   );
 }
 
@@ -98,6 +101,7 @@ export function PhoneVoteDeadline({ event }: { event: VoteEvent }) {
   const words = t.voteDeadline;
   const [picking, setPicking] = useState(false);
   const [asking, setAsking] = useState(false);
+  const row = `${useId()}-deadline`;
   const { deadline, settle, error } = useDeadlineChanges(event);
   const value = event.answerBy
     ? words.at(formatLongDate(event.answerBy, lang), formatTime(event.answerBy))
@@ -106,6 +110,7 @@ export function PhoneVoteDeadline({ event }: { event: VoteEvent }) {
     <>
       <ListGroup>
         <ListRow
+          id={row}
           icon={Hourglass}
           label={words.label}
           value={deadline.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : value}
@@ -131,9 +136,10 @@ export function PhoneVoteDeadline({ event }: { event: VoteEvent }) {
         />
       )}
       {error && <p className="mt-2 px-1 text-[13px] text-red-600">{error}</p>}
-      <DeadlineSheet
+      <DeadlinePicker
         open={picking}
         onClose={() => setPicking(false)}
+        anchorId={row}
         value={event.answerBy ? undefined : null}
         onPick={(days) => deadline.mutate(days)}
       />

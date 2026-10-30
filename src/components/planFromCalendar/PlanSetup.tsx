@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Users } from "lucide-react";
 
 import DanishTimeNote from "@/components/time/DanishTimeNote";
-import BottomSheet from "@/components/ui/BottomSheet";
+import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import GroupBubbles from "@/components/ui/GroupBubbles";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
@@ -26,8 +26,23 @@ import { useAiFill, type PlanState } from "./useAiFill";
  * Casy, its questions (if any) drop from the field (AiQuestionsSheet), and
  * then the sheet fills itself in before your eyes (useAiFill), its guesses
  * marked. Every setting stays yours to change by hand after.
+ *
+ * The group shares its row with Genveje (#175), three quarters to one. A
+ * genvej's own editor shows the plan without the group or the months (a
+ * genvej has neither: it runs with the group chosen, from today), its times
+ * in their place (`top`).
  */
-export default function PlanSetup({ planning }: { planning: Planning }) {
+export default function PlanSetup({
+  planning,
+  onShortcuts,
+  top,
+}: {
+  planning: Planning;
+  /** Genveje beside the group (#175); none in a genvej's own editor. */
+  onShortcuts?: () => void;
+  /** In a genvej's editor (#175): what stands in the group's place, and no months. */
+  top?: ReactNode;
+}) {
   const t = useT();
   const {
     user,
@@ -49,6 +64,7 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
     updatePeople,
   } = planning;
   const [picking, setPicking] = useState(false);
+  const groupRow = `${useId()}-group`;
   const members = activeGroup?.members ?? [];
 
   const fill = useAiFill({ name, settings: sched, extras, people: peopleChoice });
@@ -93,26 +109,40 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
     <>
       {/* Nothing to press while Casy fills the sheet in. */}
       <div inert={fill.active || planner.pending}>
-        <ListGroup className="mt-0">
-          {/* Show, don't tell: the members as bubbles, the group's name big;
-              "Gruppe" is left to screen readers. */}
-          <ListRow
-            icon={Users}
-            leading={
-              activeGroup && activeGroup.members.length > 0 ? (
-                <GroupBubbles members={activeGroup.members} size="md" />
-              ) : undefined
-            }
-            label={
-              <span className="text-[17px] font-semibold">
-                <span className="sr-only">{t.scheduler.group} </span>
-                {activeGroup?.name ?? t.scheduler.group}
-              </span>
-            }
-            chevron
-            onClick={() => setPicking(true)}
-          />
-        </ListGroup>
+        {top ?? (
+          <div className="flex gap-3">
+            <ListGroup className="mt-0 flex-[3]">
+              {/* Show, don't tell: the members as bubbles, the group's name big;
+                  "Gruppe" is left to screen readers. */}
+              <ListRow
+                id={groupRow}
+                icon={Users}
+                leading={
+                  activeGroup && activeGroup.members.length > 0 ? (
+                    <GroupBubbles members={activeGroup.members} />
+                  ) : undefined
+                }
+                label={
+                  <span className="text-[17px] font-semibold">
+                    <span className="sr-only">{t.scheduler.group} </span>
+                    {activeGroup?.name ?? t.scheduler.group}
+                  </span>
+                }
+                chevron
+                onClick={() => setPicking(true)}
+              />
+            </ListGroup>
+            {onShortcuts && (
+              <button
+                type="button"
+                onClick={onShortcuts}
+                className="flex min-w-0 flex-1 items-center justify-center rounded-2xl border bg-card text-[15px] font-medium text-primary transition-colors active:bg-secondary"
+              >
+                {t.shortcuts.title}
+              </button>
+            )}
+          </div>
+        )}
 
         <NameField
           value={fill.name ?? name}
@@ -128,11 +158,13 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
           lit={fill.lit}
           drive={fill.active ? { sheet: fill.sheet, press: fill.press } : null}
         />
-        <PlanMonths
-          value={shown.period}
-          onChange={(period) => updateSettingsByHand({ period })}
-          lit={fill.lit === "months"}
-        />
+        {!top && (
+          <PlanMonths
+            value={shown.period}
+            onChange={(period) => updateSettingsByHand({ period })}
+            lit={fill.lit === "months"}
+          />
+        )}
         <DanishTimeNote className="mt-3 px-1 text-xs" />
         <MoreDetails
           extras={extras}
@@ -158,11 +190,11 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
         />
       )}
 
-      <BottomSheet
+      <AnchoredPanel
         open={picking}
         onClose={() => setPicking(false)}
-        title={t.scheduler.group}
-        doneLabel={t.schedulerFlow.done}
+        anchorId={groupRow}
+        label={t.scheduler.group}
       >
         <GroupStep
           groups={groups}
@@ -177,7 +209,7 @@ export default function PlanSetup({ planning }: { planning: Planning }) {
             openNewGroup();
           }}
         />
-      </BottomSheet>
+      </AnchoredPanel>
     </>
   );
 }
