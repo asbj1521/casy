@@ -425,6 +425,28 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
     carousel.stop();
   }
 
+  /**
+   * A genvej run or opened (#175): its group (when it still has one), name,
+   * settings from today, extras and who is coming, all at once.
+   */
+  function loadPlan(plan: {
+    groupId: string | null;
+    name: string;
+    settings: Omit<SchedulerSettings, "period">;
+    extras: EventExtras;
+    people: PeopleChoice;
+  }) {
+    const groupId = plan.groupId;
+    if (groupId) {
+      setSelectedGroupId(groupId);
+      setPeopleChoices((all) => ({ ...all, [groupId]: plan.people }));
+    }
+    setName(plan.name);
+    setSched({ ...plan.settings, period: null });
+    setExtras(plan.extras);
+    setSteps(restart());
+  }
+
   /** Another group (null: whichever comes first), its first date from today. */
   function selectGroup(id: string | null) {
     setSelectedGroupId(id);
@@ -762,6 +784,7 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
     carousel,
     stopCarousel,
     selectGroup,
+    loadPlan,
     peopleChoice,
     updatePeople,
     newGroupOpen,

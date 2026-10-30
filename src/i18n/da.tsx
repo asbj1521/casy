@@ -994,6 +994,22 @@ export const da = {
     settlesIn: "Afgøres om",
   },
   /** Swiping through a vote's dates (#74). */
+  // Genveje (#175): saved plans, run again with one tap from the Planlæg sheet.
+  shortcuts: {
+    title: "Genveje",
+    add: "Ny genvej",
+    edit: (name: string) => `Ret ${name}`,
+    run: (name: string) => `Planlæg ${name}`,
+    footnote: "Tryk på en genvej for at finde datoer med den. Kun du kan se dine genveje.",
+    save: "Gem genvej",
+    nameFirst: "Giv planen et navn, så kan den gemmes som genvej.",
+    remove: "Slet genvej",
+    removeAsk: (name: string) => `Slet genvejen ${name}?`,
+    pickGroup: "Gruppen findes ikke længere. Vælg en, og gem genvejen igen.",
+    loadFailed: "Kunne ikke hente dine genveje",
+    saveFailed: "Kunne ikke gemme genvejen",
+    deleteFailed: "Kunne ikke slette genvejen",
+  },
   // A vote's deadline (#179): none by default, set when planning or later.
   voteDeadline: {
     label: "Svarfrist",
@@ -1374,6 +1390,7 @@ export const da = {
     off: "Fra",
     busy: "Optagede tidsrum",
     toldCasy: "Det, du har fortalt Casy",
+    shortcuts: "Genveje",
     reportsSent: "Rapporter, du har sendt",
     busyCount: "Antal gemt",
     busyFrom: "Det tidligste",

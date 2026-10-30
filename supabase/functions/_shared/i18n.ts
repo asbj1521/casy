@@ -75,6 +75,10 @@ export const DANISH: Record<string, string> = {
   "Those dates aren't valid any more. Search again.": "Datoerne er ikke gyldige længere. Søg igen.",
   "Only the person who suggested this event can choose its date.":
     "Kun den, der foreslog aftalen, kan vælge datoen.",
+  "That shortcut isn't valid.": "Genvejen er ikke gyldig.",
+  "That shortcut no longer exists.": "Genvejen findes ikke længere.",
+  "You can keep at most 9 shortcuts. Delete one first.":
+    "Du kan højst have 9 genveje. Slet en først.",
   "Only the person who suggested this event can change its deadline.":
     "Kun den, der foreslog aftalen, kan ændre svarfristen.",
   "Only the person who suggested this event can cancel it.":

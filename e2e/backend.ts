@@ -243,6 +243,8 @@ export class FakeBackend {
         return this.entriesAi(body);
       case "calendar-entries":
         return this.calendarEntries(action, body);
+      case "plan-presets":
+        return this.planPresets(action, body);
       default:
         return undefined;
     }
@@ -299,6 +301,36 @@ export class FakeBackend {
       w.entries = w.entries.filter((e) => e.id !== body.id);
       this.changed();
       return ok({ deleted: w.entries.length < before });
+    }
+    return undefined;
+  }
+
+  /** Genveje (#175), kept and changed as plan-presets does. */
+  private planPresets(action: string, body: Record<string, unknown>): Answer | undefined {
+    const w = this.world;
+    if (action === "list") return ok({ presets: w.presets });
+    if (action === "save") {
+      const fields = {
+        name: String(body.name).trim(),
+        groupId: (body.groupId as string | null) ?? null,
+        plan: body.plan,
+        updatedAt: NOW,
+      };
+      let savedId = body.id as string | null;
+      if (savedId) {
+        const preset = w.presets.find((p) => p.id === savedId);
+        if (!preset) return fail(404, "Genvejen findes ikke længere.");
+        Object.assign(preset, fields);
+      } else {
+        if (w.presets.length >= 9) return fail(400, "Du kan højst have 9 genveje. Slet en først.");
+        savedId = `00000000-0000-4000-8000-${String(w.presets.length + 1).padStart(12, "0")}`;
+        w.presets.push({ id: savedId, ...fields });
+      }
+      return ok({ presets: w.presets, savedId });
+    }
+    if (action === "delete") {
+      w.presets = w.presets.filter((p) => p.id !== body.id);
+      return ok({ presets: w.presets });
     }
     return undefined;
   }

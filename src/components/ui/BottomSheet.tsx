@@ -93,6 +93,7 @@ export default function BottomSheet({
   arrived = false,
   stacked = false,
   back,
+  accessory,
   children,
 }: {
   open: boolean;
@@ -130,6 +131,8 @@ export default function BottomSheet({
   stacked?: boolean;
   /** A way back to the screen before, left of the title, iOS's "‹ Profil" (#174). */
   back?: { label: string; onBack: () => void };
+  /** A small capsule beside the title (Planlæg's Genveje, #175), never with `back`. */
+  accessory?: ReactNode;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -164,6 +167,7 @@ export default function BottomSheet({
       >
         {title}
       </h3>
+      {accessory && !back && <span className="mr-auto shrink-0">{accessory}</span>}
       <button
         type="button"
         onClick={onClose}

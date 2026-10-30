@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 29. oktober 2026",
+  updated: "Senest opdateret 30. oktober 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -98,6 +98,11 @@ const da: LegalCopy = {
               hvornår det starter og slutter, og om du er væk eller optaget. Den sætning, du skrev
               eller sagde, gemmes ikke (se AI i Casy). Dine grupper kan se, at du ikke kan i de
               tidsrum, men aldrig overskriften.
+            </li>
+            <li>
+              <Term>Genveje:</Term> planer, du har gemt for at planlægge dem igen med et tryk:
+              navnet, gruppen, tidspunkterne, længden, hvem der skal med, stedet, noten og
+              svarfristen. Kun du kan se dem, og de gemmes, til du sletter dem.
             </li>
             <li>
               <Term>Dit ja til AI:</Term> om du har sagt ja til, at Casys AI må læse i din kalender,
@@ -508,7 +513,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 29 October 2026",
+  updated: "Last updated 30 October 2026",
   sections: [
     {
       title: "In short",
@@ -583,6 +588,11 @@ const en: LegalCopy = {
               and whether you are away or busy. The sentence you wrote or said is not kept (see AI
               in Casy). Your groups can see that you can&apos;t make those times, but never the
               heading.
+            </li>
+            <li>
+              <Term>Shortcuts:</Term> plans you saved to plan again with one tap: the name, the
+              group, the times, the length, who is coming, the place, the note and the deadline.
+              Only you can see them, and they are kept until you delete them.
             </li>
             <li>
               <Term>Your yes to AI:</Term> whether you said yes to Casy&apos;s AI reading your

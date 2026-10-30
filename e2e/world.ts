@@ -577,6 +577,8 @@ export interface World {
   primary: { calendarId: string; autoAdd: boolean } | null;
   /** What Mia told Casy that is in no calendar (#116); none until a test saves some. */
   entries: StoredEntry[];
+  /** Mia's genveje (#175), as plan-presets keeps them; none until a test saves one. */
+  presets: { id: string; name: string; groupId: string | null; plan: unknown; updatedAt: string }[];
   groups: Group[];
   invitations: Invitation[];
   events: SuggestedEvent[];
@@ -610,6 +612,7 @@ export function makeWorld(options: WorldOptions): World {
     connections: connected ? connections() : [],
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
     entries: [],
+    presets: [],
     groups: withGroups ? groups() : [],
     invitations: invitations(),
     events: withGroups ? events() : [],
@@ -700,6 +703,7 @@ export function myData(world: World): MyData {
     events: { invitedTo: world.events.length, suggested: 2, answers: 9, declined: 1 },
     calendarEntries: { added: 1, deletedByYou: 0 },
     toldCasy: { count: world.entries.length },
+    shortcuts: { count: world.presets.length },
     safety: { blocked: world.blocked.length, reportsSent: world.reports.length },
     ai: {
       allowed: world.aiAllowed,

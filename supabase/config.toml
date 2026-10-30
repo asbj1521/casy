@@ -600,3 +600,9 @@ verify_jwt = false
 # (_shared/auth.ts). The gateway check stays off because the publishable key
 # is not a JWT.
 verify_jwt = false
+
+[functions.plan-presets]
+# Called by the signed-in app with fetch(); checks the login itself in code
+# (_shared/auth.ts). The gateway check stays off because the publishable key
+# is not a JWT.
+verify_jwt = false

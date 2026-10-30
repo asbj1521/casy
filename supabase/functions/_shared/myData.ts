@@ -13,6 +13,7 @@ import type { Caller } from "./auth.ts";
 import { readPushSettings } from "./push.ts";
 import { listBlocked } from "./safety.ts";
 import { ENTRY_COLUMNS, type EntryRow, type StoredEntry, storedFrom } from "./entries.ts";
+import { PRESET_COLUMNS, type PresetRow, presetFrom, type StoredPreset } from "./presets.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
 export type Provider = "google" | "outlook" | "apple" | "ics" | "device";
@@ -80,6 +81,8 @@ export interface MyData {
   calendarEntries: { added: number; deletedByYou: number };
   /** Time you told Casy that is in no calendar (#116): how many entries are kept. */
   toldCasy: { count: number };
+  /** Genveje (#175): how many plans you saved to run again. */
+  shortcuts: { count: number };
   /** Report and block (#142): how many people you blocked, and your reports Casy keeps. */
   safety: { blocked: number; reportsSent: number };
   /**
@@ -102,6 +105,8 @@ export interface MyDataExport extends MyData {
   busyTimes: { calendar: string | null; start: string; end: string }[];
   /** Every entry you told Casy (#116), with the label you checked before it was saved. */
   toldCasyEntries: StoredEntry[];
+  /** Every genvej you saved (#175): its name, its group's id, and the plan as the app keeps it. */
+  shortcutsSaved: StoredPreset[];
   /** Who you blocked (#142), by the name they go by, and when. */
   blockedPeople: { name: string | null; since: string }[];
   /** Your reports Casy keeps (#142): what about, why, your note, when. */
@@ -272,6 +277,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     consent,
     corrections,
     toldCasy,
+    shortcuts,
     blockedCount,
     reportsCount,
     appleTokens,
@@ -338,6 +344,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       .maybeSingle(),
     count(db.from("ai_corrections").select("id", head).eq("profile_id", me)),
     count(db.from("casy_entries").select("id", head).eq("profile_id", me)),
+    count(db.from("plan_presets").select("id", head).eq("profile_id", me)),
     count(db.from("blocked_people").select("blocked_id", head).eq("blocker_id", me)),
     count(db.from("content_reports").select("id", head).eq("reporter_id", me)),
     count(db.from("apple_sign_ins").select("profile_id", head).eq("profile_id", me)),
@@ -396,6 +403,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     events: { invitedTo, suggested, answers, declined: declinedDates },
     calendarEntries: { added, deletedByYou: deleted },
     toldCasy: { count: toldCasy },
+    shortcuts: { count: shortcuts },
     safety: { blocked: blockedCount, reportsSent: reportsCount },
     ai: {
       allowed: aiOn,
@@ -464,6 +472,14 @@ export async function exportMyData(
     .order("start_at", { ascending: true });
   if (toldError) throw toldError;
 
+  // Genveje (#175): at most 9, so one read.
+  const { data: presets, error: presetsError } = await db
+    .from("plan_presets")
+    .select(PRESET_COLUMNS)
+    .eq("profile_id", caller.id)
+    .order("created_at");
+  if (presetsError) throw presetsError;
+
   // Report and block (#142): small lists, one read each.
   const blocked = await listBlocked(db, caller.id);
   const { data: reports, error: reportsError } = await db
@@ -477,6 +493,7 @@ export async function exportMyData(
     exportedAt: now.toISOString(),
     busyTimes,
     toldCasyEntries: (told as EntryRow[]).map(storedFrom),
+    shortcutsSaved: (presets as PresetRow[]).map(presetFrom),
     blockedPeople: blocked.map((b) => ({ name: b.name, since: b.blockedAt })),
     reportsSent: (
       reports as { kind: string; reason: string; note: string | null; created_at: string }[]
