@@ -56,6 +56,21 @@ export async function deletePictures(db: Db, paths: (string | null | undefined)[
 }
 
 /**
+ * A group's picture path, read before something that may delete the group
+ * (deleting it, its last member leaving): `deletePictures` takes it away
+ * after, since the cascades can't reach a file.
+ */
+export async function groupPicturePath(db: Db, groupId: string): Promise<string | null> {
+  const { data, error } = await db
+    .from("friend_groups")
+    .select("picture_path")
+    .eq("id", groupId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.picture_path as string | null | undefined) ?? null;
+}
+
+/**
  * A link for each picture path given (null paths left out), made in one
  * call. A link that can't be made leaves its picture out: the letter shows.
  */

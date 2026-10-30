@@ -57,12 +57,19 @@ export function readReport(body: Record<string, unknown>): ReportRequest {
 async function reportedContent(db: Db, r: ReportRequest): Promise<Record<string, unknown>> {
   const { data: group, error } = await db
     .from("friend_groups")
-    .select("name, description")
+    .select("name, description, picture_path")
     .eq("id", r.groupId)
     .maybeSingle();
   if (error) throw error;
   if (!group) throw new HttpError(404, "That group no longer exists.");
-  if (r.kind === "group") return { groupName: group.name, groupDescription: group.description };
+  // Its picture as it was (#188): admin mode shows it and can remove it.
+  if (r.kind === "group") {
+    return {
+      groupName: group.name,
+      groupDescription: group.description,
+      picturePath: group.picture_path ?? null,
+    };
+  }
 
   if (r.kind === "event") {
     const { data: event, error: eventErr } = await db

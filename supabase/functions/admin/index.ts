@@ -24,7 +24,7 @@ import { requireCaller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
 import { healthOf, readSyncFacts } from "../_shared/health.ts";
 import { HttpError, requireString, serve } from "../_shared/http.ts";
-import { deletePictures, pictureLinks } from "../_shared/pictures.ts";
+import { deletePictures, groupPicturePath, pictureLinks } from "../_shared/pictures.ts";
 import { pushToProfile } from "../_shared/push.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
@@ -269,10 +269,14 @@ serve("admin", async (req, body) => {
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      // A reported member's picture (#187), linked for the admin to see.
+      // A reported member's or group's picture (#187, #188), linked for the admin to see.
+      const pathOf = (content: unknown) => {
+        const c = content as { avatarPath?: string | null; picturePath?: string | null };
+        return c.avatarPath ?? c.picturePath ?? null;
+      };
       const pictures = await pictureLinks(
         db,
-        (data ?? []).map((r) => (r.content as { avatarPath?: string | null }).avatarPath),
+        (data ?? []).map((r) => pathOf(r.content)),
       );
       return {
         reports: (data ?? []).map((r) => ({
@@ -281,7 +285,7 @@ serve("admin", async (req, body) => {
           reason: r.reason as string,
           note: (r.note as string | null) ?? null,
           content: r.content as Record<string, unknown>,
-          pictureUrl: pictures.get((r.content as { avatarPath?: string }).avatarPath ?? "") ?? null,
+          pictureUrl: pictures.get(pathOf(r.content) ?? "") ?? null,
           groupId: (r.group_id as string | null) ?? null,
           createdAt: r.created_at as string,
         })),
@@ -321,9 +325,27 @@ serve("admin", async (req, body) => {
       return { outcome: "removed" };
     }
 
+    // A reported group picture taken down (#188): the group keeps going.
+    case "removeGroupPicture": {
+      const groupId = requireString(body, "groupId");
+      const path = await groupPicturePath(db, groupId);
+      if (path) {
+        const { error } = await db
+          .from("friend_groups")
+          .update({ picture_path: null, picture_by: null, picture_at: null })
+          .eq("id", groupId);
+        if (error) throw error;
+        await deletePictures(db, [path]);
+      }
+      console.log(`admin ${caller.id} removed the picture of group ${groupId}`);
+      return { outcome: "removed" };
+    }
+
     case "deleteGroup": {
       const groupId = requireString(body, "groupId");
-      // Members and invites cascade off the group (friend_groups migration).
+      // Members and invites cascade off the group (friend_groups migration);
+      // its picture (#188) is a file they can't reach.
+      const picture = await groupPicturePath(db, groupId);
       const { data, error } = await db
         .from("friend_groups")
         .delete()
@@ -331,6 +353,7 @@ serve("admin", async (req, body) => {
         .select("name");
       if (error) throw error;
       if (data.length === 0) throw new HttpError(404, "That group no longer exists.");
+      await deletePictures(db, [picture]);
       console.log(`admin ${caller.id} deleted group ${groupId} ("${data[0].name}")`);
       return { outcome: "deleted" };
     }
@@ -340,12 +363,14 @@ serve("admin", async (req, body) => {
       const profileId = requireString(body, "profileId");
       // The same transaction as leaving, so removing the last member deletes
       // the group rather than leaving an empty one nobody can reach.
+      const picture = await groupPicturePath(db, groupId);
       const { data: outcome, error } = await db.rpc("leave_friend_group", {
         p_group_id: groupId,
         p_profile_id: profileId,
       });
       if (error) throw error;
       if (outcome === "not_a_member") throw new HttpError(404, "They are not in that group.");
+      if (outcome === "group_deleted") await deletePictures(db, [picture]);
       console.log(`admin ${caller.id} removed ${profileId} from group ${groupId}: ${outcome}`);
       return { outcome };
     }

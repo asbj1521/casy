@@ -20,7 +20,7 @@
  * be tried again: leaving is already done, and nothing else changed.
  */
 import { revokeAppleSignIn } from "./appleSignIn.ts";
-import { deletePictures } from "./pictures.ts";
+import { deletePictures, groupPicturePath } from "./pictures.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
 export async function deleteAccount(
@@ -36,13 +36,18 @@ export async function deleteAccount(
   if (memberErr) throw memberErr;
 
   let deletedGroups = 0;
+  const groupPictures: (string | null)[] = [];
   for (const { group_id } of (memberships ?? []) as { group_id: string }[]) {
+    const picture = await groupPicturePath(db, group_id);
     const { data: outcome, error } = await db.rpc("leave_friend_group", {
       p_group_id: group_id,
       p_profile_id: profileId,
     });
     if (error) throw error;
-    if (outcome === "group_deleted") deletedGroups++;
+    if (outcome === "group_deleted") {
+      deletedGroups++;
+      groupPictures.push(picture);
+    }
   }
 
   // Pictures (#186, #187): a file in storage isn't deleted by the cascades,
@@ -58,6 +63,6 @@ export async function deleteAccount(
 
   const { error: deleteErr } = await db.auth.admin.deleteUser(profileId);
   if (deleteErr) throw deleteErr;
-  await deletePictures(db, pictures);
+  await deletePictures(db, [...pictures, ...groupPictures]);
   return { leftGroups: (memberships ?? []).length, deletedGroups };
 }

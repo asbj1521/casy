@@ -58,6 +58,7 @@ import {
 } from "../_shared/safety.ts";
 import { calendarStatus } from "../_shared/calendarStatus.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
+import { deletePictures, groupPicturePath } from "../_shared/pictures.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { syncConnection } from "../_shared/sync.ts";
 import { rememberName, membersAsMember, listGroups, whoAmI } from "./members.ts";
@@ -328,12 +329,15 @@ serve("groups", async (req, body) => {
       const groupId = requireString(body, "groupId");
       // The database decides whether that was the last member, and deletes
       // the group with them if so (leave_friend_group, one transaction).
+      const picture = await groupPicturePath(db, groupId);
       const { data: outcome, error } = await db.rpc("leave_friend_group", {
         p_group_id: groupId,
         p_profile_id: profileId,
       });
       if (error) throw error;
       if (outcome === "not_a_member") throw new HttpError(403, "You are not in that group.");
+      // The group went with its last member: its picture too (#188).
+      if (outcome === "group_deleted") await deletePictures(db, [picture]);
       return { ...(await list()), outcome };
     }
 
@@ -353,9 +357,12 @@ serve("groups", async (req, body) => {
         throw new HttpError(403, "Only the person who made this group can delete it.");
       }
       // group_members and group_invites cascade off this delete (see the
-      // friend_groups migration's foreign keys), so nothing else to clean up.
+      // friend_groups migration's foreign keys); its picture (#188) is a file
+      // they can't reach.
+      const picture = await groupPicturePath(db, groupId);
       const { error } = await db.from("friend_groups").delete().eq("id", groupId);
       if (error) throw error;
+      await deletePictures(db, [picture]);
       return { ...(await list()), outcome: "deleted" };
     }
 

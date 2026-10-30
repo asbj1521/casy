@@ -68,13 +68,14 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
       description: string | null;
       created_at: string;
       created_by: string | null;
+      picture_path: string | null;
       group_members: { profile_id: string; joined_at: string }[];
     } | null;
   };
   const { data: mine, error: mineErr } = await db
     .from("group_members")
     .select(
-      "friend_groups(id, name, description, created_at, created_by, group_members(profile_id, joined_at))",
+      "friend_groups(id, name, description, created_at, created_by, picture_path, group_members(profile_id, joined_at))",
     )
     .eq("profile_id", profileId);
   if (mineErr) throw mineErr;
@@ -109,11 +110,11 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
     ]);
   if (namesErr) throw namesErr;
   const profileOf = new Map(names.map((p) => [p.id, p]));
-  // Everyone's profile picture (#187), linked in one call.
-  const pictures = await pictureLinks(
-    db,
-    names.map((p) => p.avatar_path as string | null),
-  );
+  // Everyone's profile picture (#187) and each group's (#188), linked in one call.
+  const pictures = await pictureLinks(db, [
+    ...names.map((p) => p.avatar_path as string | null),
+    ...groups.map((g) => g.picture_path),
+  ]);
   const avatarOf = (id: string) => {
     const path = profileOf.get(id)?.avatar_path as string | null | undefined;
     return (path && pictures.get(path)) ?? null;
@@ -147,6 +148,8 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
     // them) the delete action. Grants nothing by itself; every membership
     // check still runs.
     createdBy: g.created_by,
+    // The group's picture (#188), set by any member; null for none.
+    pictureUrl: (g.picture_path && pictures.get(g.picture_path)) ?? null,
     members: [...g.group_members]
       .sort((a, b) => Date.parse(a.joined_at) - Date.parse(b.joined_at))
       .map((m) => ({
