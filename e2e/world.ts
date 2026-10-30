@@ -708,6 +708,7 @@ export function myData(world: World): MyData {
     calendarEntries: { added: 1, deletedByYou: 0 },
     toldCasy: { count: world.entries.length },
     shortcuts: { count: world.presets.length },
+    groupPictures: { count: 0 },
     safety: { blocked: world.blocked.length, reportsSent: world.reports.length },
     ai: {
       allowed: world.aiAllowed,

@@ -43,6 +43,8 @@ export interface Group {
    * delete the group outright; every other action is open to any member.
    */
   createdBy: string | null;
+  /** A link to the group's picture (#188), set by any member; null or missing for none. */
+  pictureUrl?: string | null;
   members: GroupMember[];
   /**
    * People invited who haven't joined, as profile ids, but only those you

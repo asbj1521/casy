@@ -62,6 +62,11 @@ const da: LegalCopy = {
               fjerner det, og slettes med din konto.
             </li>
             <li>
+              <Term>Gruppebilleder:</Term> et billede, et medlem har valgt til en gruppe, lavet på
+              samme måde, og hvem der valgte det. Alle i gruppen kan se det og skifte eller fjerne
+              det. Det slettes med gruppen.
+            </li>
+            <li>
               <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
               e-mailadressen på en Google-konto), navnene på deres kalendere og et navn, du selv
               giver en af dem, den kategori og prioritet, du giver hver af dem (arbejde, skole,
@@ -557,6 +562,11 @@ const en: LegalCopy = {
               on your phone before it is sent, and what a camera stores in a photo, such as where it
               was taken, is left out. Your groups can see it. It is kept until you change or remove
               it, and deleted with your account.
+            </li>
+            <li>
+              <Term>Group pictures:</Term> a picture a member chose for a group, made the same way,
+              and who chose it. Everyone in the group can see it and change or remove it. It is
+              deleted with the group.
             </li>
             <li>
               <Term>Connected calendars:</Term> which accounts you connected (for example the email

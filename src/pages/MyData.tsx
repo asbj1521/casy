@@ -448,6 +448,7 @@ function EventsPart({ data, consent }: { data: MyData; consent: AiConsentControl
         <Fact label={w.answers} value={data.events.answers} />
         <Fact label={w.declined} value={data.events.declined} />
         <Fact label={w.shortcuts} value={data.shortcuts.count} />
+        <Fact label={w.groupPictures} value={data.groupPictures?.count ?? 0} />
       </ListGroup>
       <ListGroup title={w.entries}>
         <Fact label={w.entriesAdded} value={data.calendarEntries.added} />

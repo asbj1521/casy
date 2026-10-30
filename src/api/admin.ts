@@ -239,6 +239,14 @@ export async function adminRemoveAvatar(memberId: string): Promise<{ outcome: "r
   });
 }
 
+/** A reported group's picture taken down (#188). */
+export async function adminRemoveGroupPicture(groupId: string): Promise<{ outcome: "removed" }> {
+  return await callFunction("admin", {
+    body: { action: "removeGroupPicture", groupId },
+    errorMessage: currentMessages().pictures.removeFailed,
+  });
+}
+
 /** One dealt with: deleted (#142). */
 export async function adminReportHandled(id: string): Promise<{ outcome: "handled" }> {
   return await callFunction("admin", {

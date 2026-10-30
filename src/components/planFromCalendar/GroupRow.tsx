@@ -34,8 +34,8 @@ export default function GroupRow({
           id={row}
           icon={Users}
           leading={
-            activeGroup && activeGroup.members.length > 0 ? (
-              <GroupBubbles members={activeGroup.members} />
+            activeGroup && (activeGroup.pictureUrl || activeGroup.members.length > 0) ? (
+              <GroupBubbles members={activeGroup.members} picture={activeGroup.pictureUrl} />
             ) : undefined
           }
           label={

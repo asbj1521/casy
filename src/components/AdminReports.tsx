@@ -5,6 +5,7 @@ import { Check, ChevronRight, Loader2, Trash2 } from "lucide-react";
 import {
   adminDeleteGroup,
   adminRemoveAvatar,
+  adminRemoveGroupPicture,
   adminReportHandled,
   adminReportsKey,
   adminReportsQuery,
@@ -111,7 +112,11 @@ function ReportRow({
     onSuccess: onGroupDeleted,
   });
   const c = report.content;
-  const takeDown = useMutation({ mutationFn: () => adminRemoveAvatar(c.memberId!) });
+  // A member's picture, or the group's (#187, #188).
+  const takeDown = useMutation({
+    mutationFn: () =>
+      c.memberId ? adminRemoveAvatar(c.memberId) : adminRemoveGroupPicture(report.groupId!),
+  });
   const reason = t.safety.reasons[report.reason as keyof typeof t.safety.reasons] ?? report.reason;
 
   return (
@@ -156,7 +161,7 @@ function ReportRow({
             <Check className="h-3.5 w-3.5" />
             {words.handled}
           </button>
-          {report.pictureUrl && c.memberId && (
+          {report.pictureUrl && (c.memberId || report.groupId) && (
             <button
               type="button"
               onClick={() => takeDown.mutate()}

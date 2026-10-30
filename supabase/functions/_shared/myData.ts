@@ -83,6 +83,8 @@ export interface MyData {
   calendarEntries: { added: number; deletedByYou: number };
   /** Time you told Casy that is in no calendar (#116): how many entries are kept. */
   toldCasy: { count: number };
+  /** Group pictures you chose (#188), still on their groups. */
+  groupPictures: { count: number };
   /** Genveje (#175): how many plans you saved to run again. */
   shortcuts: { count: number };
   /** Report and block (#142): how many people you blocked, and your reports Casy keeps. */
@@ -283,6 +285,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     consent,
     corrections,
     toldCasy,
+    groupPictures,
     shortcuts,
     blockedCount,
     reportsCount,
@@ -350,6 +353,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       .maybeSingle(),
     count(db.from("ai_corrections").select("id", head).eq("profile_id", me)),
     count(db.from("casy_entries").select("id", head).eq("profile_id", me)),
+    count(db.from("friend_groups").select("id", head).eq("picture_by", me)),
     count(db.from("plan_presets").select("id", head).eq("profile_id", me)),
     count(db.from("blocked_people").select("blocked_id", head).eq("blocker_id", me)),
     count(db.from("content_reports").select("id", head).eq("reporter_id", me)),
@@ -411,6 +415,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     events: { invitedTo, suggested, answers, declined: declinedDates },
     calendarEntries: { added, deletedByYou: deleted },
     toldCasy: { count: toldCasy },
+    groupPictures: { count: groupPictures },
     shortcuts: { count: shortcuts },
     safety: { blocked: blockedCount, reportsSent: reportsCount },
     ai: {

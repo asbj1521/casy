@@ -220,6 +220,12 @@ export class FakeBackend {
           return ok({ outcome: "handled" });
         }
         // A reported profile picture taken down (#187): gone from the report too.
+        if (action === "removeGroupPicture") {
+          const g = w.groups.find((x) => x.id === body.groupId);
+          if (g) g.pictureUrl = null;
+          for (const r of w.reports) if (r.groupId === body.groupId) r.pictureUrl = null;
+          return ok({ outcome: "removed" });
+        }
         if (action === "removeAvatar") {
           for (const r of w.reports) {
             if (r.content.memberId === body.memberId) r.pictureUrl = null;
@@ -337,6 +343,18 @@ export class FakeBackend {
       return mine(`data:image/jpeg;base64,${image}`);
     }
     if (action === "remove-avatar") return mine(null);
+    // A group's picture (#188), for any member.
+    if (action === "set-group-picture" || action === "remove-group-picture") {
+      const group = w.groups.find((g) => g.id === body.groupId);
+      if (!group) return fail(403, "You are not in that group.");
+      const image = String(body.image ?? "");
+      if (action === "set-group-picture" && !image.startsWith("/9j/")) {
+        return fail(400, "Det billede kan ikke bruges. Prøv et andet.");
+      }
+      group.pictureUrl = action === "set-group-picture" ? `data:image/jpeg;base64,${image}` : null;
+      this.changed();
+      return ok({ pictureUrl: group.pictureUrl });
+    }
     return undefined;
   }
 

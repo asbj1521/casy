@@ -47,6 +47,8 @@ export interface SchedulingGroup extends FriendGroup {
   waitingFor: GroupMember[];
   /** Members whose calendar hasn't been updated for days (ISO `since`): still searched, but said. */
   outdated: { member: GroupMember; since: string }[];
+  /** A link to the group's picture (#188); null for none, and for an example. */
+  pictureUrl: string | null;
   /** Everyone in a real group, for choosing who an event is for (#89); none in an example. */
   members: GroupMember[];
   /**
@@ -170,6 +172,7 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
           outdated,
           members: g.members,
           memberCount: g.members.length,
+          pictureUrl: g.pictureUrl ?? null,
         };
       });
     }
@@ -204,6 +207,7 @@ export function useSchedulingGroups(selectedGroupId: string | null): SchedulingG
         outdated: [],
         members: [],
         memberCount: def.members.length,
+        pictureUrl: null,
       };
     });
   }, [

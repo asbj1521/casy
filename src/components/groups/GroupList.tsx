@@ -63,7 +63,7 @@ export default function GroupList({
             key={group.id}
             to={`/groups/${group.id}`}
             selected={group.id === selectedId}
-            leading={<Avatar name={group.name} index={i} size="row" />}
+            leading={<Avatar name={group.name} index={i} size="row" src={group.pictureUrl} />}
             label={group.name}
             detail={memberLine(group, t.groupsPage.you)}
           />

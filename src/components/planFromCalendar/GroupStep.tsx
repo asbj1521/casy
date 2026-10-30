@@ -118,7 +118,7 @@ export default function GroupStep({
 function GroupMark({ group }: { group: SchedulingGroup }) {
   return (
     <span className="flex w-[4.5rem] shrink-0 items-center">
-      <GroupBubbles members={group.members} />
+      <GroupBubbles members={group.members} picture={group.pictureUrl} />
     </span>
   );
 }

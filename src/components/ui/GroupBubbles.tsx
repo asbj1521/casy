@@ -20,13 +20,29 @@ const FADED = [
  */
 export default function GroupBubbles({
   members,
+  picture,
   size = "sm",
   className,
 }: {
   members: { profileId: string; name: string; avatarUrl?: string | null }[];
+  /** The group's own picture (#188): shown instead of its members. */
+  picture?: string | null;
   size?: "sm" | "md";
   className?: string;
 }) {
+  if (picture) {
+    return (
+      <img
+        src={picture}
+        alt=""
+        className={cn(
+          "shrink-0 rounded-full object-cover",
+          size === "md" ? "h-8 w-8" : "h-10 w-10",
+          className,
+        )}
+      />
+    );
+  }
   if (members.length === 0) {
     return (
       <span

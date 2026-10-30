@@ -7,6 +7,8 @@ import { deleteGroup, groupsQueryKey, leaveGroup, renameGroup, type Group } from
 import InlineTextEdit from "@/components/InlineTextEdit";
 import GroupDescriptionSheet from "@/components/groups/GroupDescriptionSheet";
 import InviteDialog from "@/components/InviteDialog";
+import PictureButton from "@/components/pictures/PictureButton";
+import { removeGroupPicture, setGroupPicture } from "@/api/pictures";
 import ReportDialog from "@/components/safety/ReportDialog";
 import Avatar from "@/components/ui/Avatar";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
@@ -43,6 +45,20 @@ export default function GroupDetails({
   const [describing, setDescribing] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
+  // The group's picture (#188): any member sets or removes it; the list is
+  // fetched again so every row shows the new one.
+  const [unreadable, setUnreadable] = useState<string | null>(null);
+  const pictureChanged = () =>
+    void queryClient.invalidateQueries({ queryKey: groupsQueryKey(youId) });
+  const picture = useMutation({
+    mutationFn: (image: string) => setGroupPicture(group.id, image),
+    onSuccess: pictureChanged,
+  });
+  const unpicture = useMutation({
+    mutationFn: () => removeGroupPicture(group.id),
+    onSuccess: pictureChanged,
+  });
+  const pictureError = unreadable ?? (picture.error ?? unpicture.error)?.message ?? null;
   // Every change answers with your groups as they now are, straight into the
   // cache. Leaving or deleting goes back to the list.
   const groupsChanged = (data: { groups: Group[] }) =>
@@ -81,7 +97,17 @@ export default function GroupDetails({
           centred ? "mt-2 flex-col gap-0 text-center" : "mt-6 min-w-0",
         )}
       >
-        <Avatar name={group.name} index={index} size="lg" />
+        <PictureButton
+          label={group.pictureUrl ? t.pictures.changeGroup : t.pictures.addGroup}
+          busy={picture.isPending}
+          onPicked={(image) => {
+            setUnreadable(null);
+            picture.mutate(image);
+          }}
+          onError={setUnreadable}
+        >
+          <Avatar name={group.name} index={index} size="lg" src={group.pictureUrl} />
+        </PictureButton>
         <div className={cn("min-w-0", centred ? "mt-3 w-full" : "flex-1")}>
           {renaming ? (
             <InlineTextEdit
@@ -107,6 +133,17 @@ export default function GroupDetails({
           {group.description && (
             <p className="mt-1 break-words text-[15px] text-foreground">{group.description}</p>
           )}
+          {group.pictureUrl && (
+            <button
+              type="button"
+              onClick={() => unpicture.mutate()}
+              disabled={unpicture.isPending}
+              className="mt-1 text-[13px] font-medium text-primary disabled:opacity-50"
+            >
+              {t.pictures.remove}
+            </button>
+          )}
+          {pictureError && <p className="mt-1 text-[13px] text-red-600">{pictureError}</p>}
         </div>
       </div>
 
