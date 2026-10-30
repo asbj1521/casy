@@ -234,6 +234,32 @@ test.describe("a phone's Aftaler (#103, #177)", () => {
     await expect(page.getByRole("dialog", { name: "Mine aftaler" })).toBeVisible();
   });
 
+  test("the suggester changes a vote's deadline, or settles it now (#179)", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/?events=ev-cinema");
+    const sheet = page.getByRole("dialog", { name: "Biograf" });
+    // A deadline set: taken away, and the vote then waits for everyone.
+    await sheet.getByRole("button", { name: /^Svarfrist/ }).click();
+    await page
+      .getByRole("dialog", { name: "Svarfrist" })
+      .getByRole("radio", { name: "Ingen frist" })
+      .click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "deadline")?.body)
+      .toMatchObject({ proposalId: "ev-cinema", answerDays: null });
+    await expect(sheet.getByText("Afgøres, når alle har svaret.")).toBeVisible();
+
+    // Afgør nu, asked first: settled with the answers so far.
+    await sheet.getByRole("button", { name: "Afgør nu" }).click();
+    await page.getByRole("button", { name: "Afgør nu" }).last().click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "settle")?.body)
+      .toMatchObject({ proposalId: "ev-cinema" });
+    await expect(sheet.getByRole("button", { name: /^Svarfrist/ })).toHaveCount(0);
+  });
+
   test("an agreed event's screen shows your day, which opens in the day view", async ({ page }) => {
     // An old link to one event leads to its screen in the sheet.
     await page.goto("/events/ev-party");

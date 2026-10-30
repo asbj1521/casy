@@ -11,7 +11,7 @@ import {
   parseCandidateDates,
   parseEventDate,
   VOTE_ANSWER_MS,
-  voteAnswerMs,
+  voteAnswerBy,
 } from "./events.ts";
 
 Deno.test("settings in each known shape are accepted", () => {
@@ -111,12 +111,14 @@ Deno.test("a place or note is optional, tidied, and capped", () => {
   assertEquals(cleanEventDetail(42, MAX_PLACE_LENGTH), undefined);
 });
 
-Deno.test("a vote waits 1 to 7 whole days, 3 when not chosen", () => {
+Deno.test("a vote waits for answers 1 to 7 days, none by choice, 3 for an older app", () => {
+  const now = Date.parse("2026-10-30T12:00:00Z");
   const day = 24 * 60 * 60 * 1000;
-  assertEquals(voteAnswerMs(undefined), VOTE_ANSWER_MS);
-  assertEquals(voteAnswerMs(1), day);
-  assertEquals(voteAnswerMs(7), 7 * day);
-  for (const bad of [0, 8, 2.5, "3", null]) assertEquals(voteAnswerMs(bad), null);
+  assertEquals(voteAnswerBy(null, now), null);
+  assertEquals(voteAnswerBy(undefined, now), new Date(now + VOTE_ANSWER_MS).toISOString());
+  assertEquals(voteAnswerBy(1, now), new Date(now + day).toISOString());
+  assertEquals(voteAnswerBy(7, now), new Date(now + 7 * day).toISOString());
+  for (const bad of [0, 8, 2.5, "3", false]) assertEquals(voteAnswerBy(bad, now), undefined);
 });
 
 Deno.test("the date on offer is the newest one nobody declined", () => {

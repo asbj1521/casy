@@ -165,8 +165,8 @@ export async function suggestEvent(input: {
   /** Optional (#84); empty is the same as none. */
   place?: string;
   note?: string;
-  /** How many days everyone has to answer (#99): 1 to 7. */
-  answerDays?: number;
+  /** How many days everyone has to answer (#99): 1 to 7, or null for no deadline (#179). */
+  answerDays?: number | null;
   /** What the event is likely to cause (#113), when the AI answered in time. */
   impact?: EventImpact;
 }): Promise<{ events: SuggestedEvent[]; createdId: string }> {
@@ -220,6 +220,22 @@ export async function chooseDate(
     { action: "choose", proposalId, dateId },
     currentMessages().api.chooseDate,
   );
+}
+
+/** The suggester gives an open vote a deadline 1 to 7 days from now, or takes it away (#179). */
+export async function setVoteDeadline(
+  proposalId: string,
+  answerDays: number | null,
+): Promise<{ events: SuggestedEvent[] }> {
+  return await eventsCall(
+    { action: "deadline", proposalId, answerDays },
+    currentMessages().api.setDeadline,
+  );
+}
+
+/** The suggester settles an open vote now, with the answers so far (#179). */
+export async function settleVote(proposalId: string): Promise<{ events: SuggestedEvent[] }> {
+  return await eventsCall({ action: "settle", proposalId }, currentMessages().api.settleVote);
 }
 
 /** The suggester changes the place and the note (#84); empty clears one. */

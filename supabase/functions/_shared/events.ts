@@ -130,18 +130,24 @@ export function cleanEventDetail(raw: unknown, maxLength: number): string | null
 /** The most dates one vote may offer: what anyone swipes through in one go. */
 export const MAX_CANDIDATES = 10;
 
-/** How long a vote waits for everyone's answers before deciding with what it has. */
+/**
+ * How long a vote waits for everyone's answers before deciding with what it
+ * has, for an app from before #179, which sends no choice.
+ */
 export const VOTE_ANSWER_MS = 3 * 24 * 60 * 60 * 1000;
 
 /**
- * The days a vote waits for answers (#99), as the suggester chose them: a
- * whole number from 1 to 7. Missing means the usual 3 days (a page loaded
- * before this); anything else is null, refused by the caller.
+ * When a vote stops waiting for answers (#99, #179), as the suggester chose:
+ * `null` is no deadline (settled once everyone has answered, the default
+ * since #179), a whole number from 1 to 7 is that many days from `now`, and
+ * missing is the old default of 3 days. Anything else is undefined, refused
+ * by the caller.
  */
-export function voteAnswerMs(raw: unknown): number | null {
-  if (raw === undefined) return VOTE_ANSWER_MS;
-  if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 1 || raw > 7) return null;
-  return raw * 24 * 60 * 60 * 1000;
+export function voteAnswerBy(raw: unknown, now: number): string | null | undefined {
+  if (raw === null) return null;
+  if (raw === undefined) return new Date(now + VOTE_ANSWER_MS).toISOString();
+  if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 1 || raw > 7) return undefined;
+  return new Date(now + raw * 24 * 60 * 60 * 1000).toISOString();
 }
 
 /**

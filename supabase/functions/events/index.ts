@@ -15,6 +15,9 @@
  * The database decides a vote once everyone has answered or its deadline
  * passes (decide_vote); if every date has a decline, the suggester picks
  * one (choose). Votes past their deadline are decided on the next list.
+ * A vote has no deadline unless the suggester gives it one (#179), when
+ * suggesting or later (deadline), and the suggester can settle it at once
+ * with the answers so far (settle).
  *
  * What members see of each other here: names, and who has accepted or
  * declined which date. Never an email, a calendar or an event title from
@@ -41,7 +44,7 @@ import {
   isEventSettings,
   parseCandidateDates,
   parseEventDate,
-  voteAnswerMs,
+  voteAnswerBy,
 } from "../_shared/events.ts";
 import { displayNameFor, requireMember } from "../_shared/groups.ts";
 import { afterResponse, HttpError, requireString, serve } from "../_shared/http.ts";
@@ -99,9 +102,9 @@ serve("events", async (req, body) => {
       // suggester's answers come with the dates (#101).
       const dates = parseCandidateDates(body.dates);
       if (!dates) throw new HttpError(400, "Those dates aren't valid any more. Search again.");
-      // How long everyone has to answer (#99): 1 to 7 days, 3 if not chosen.
-      const answerMs = voteAnswerMs(body.answerDays);
-      if (answerMs === null) throw new HttpError(400, "Choose 1 to 7 days to answer in.");
+      // How long everyone has to answer (#99, #179): none, or 1 to 7 days.
+      const answerBy = voteAnswerBy(body.answerDays, Date.now());
+      if (answerBy === undefined) throw new HttpError(400, "Choose 1 to 7 days to answer in.");
       await requireMember(db, groupId, profileId);
       const members = await invitedMembers(db, groupId, profileId, body.settings);
       const { data: proposalId, error } = await db.rpc("suggest_vote_event", {
@@ -110,7 +113,7 @@ serve("events", async (req, body) => {
         p_title: title,
         p_settings: body.settings,
         p_dates: dates,
-        p_answer_by: new Date(Date.now() + answerMs).toISOString(),
+        p_answer_by: answerBy,
         p_place: details.place,
         p_note: details.note,
         p_members: members,
@@ -228,6 +231,57 @@ serve("events", async (req, body) => {
       }
       if (outcome === "past") throw new HttpError(409, "That date has already begun.");
       syncCalendarsLater(proposalId);
+      return await list();
+    }
+
+    case "deadline":
+    case "settle": {
+      // The suggester gives an open vote a deadline, moves it or takes it
+      // away (deadline, #179), or settles it now with the answers so far
+      // (settle: its deadline becomes now, and decide_vote does the rest).
+      const proposalId = requireString(body, "proposalId");
+      const answerBy =
+        action === "settle"
+          ? new Date().toISOString()
+          : body.answerDays === undefined
+            ? undefined
+            : voteAnswerBy(body.answerDays, Date.now());
+      if (answerBy === undefined) throw new HttpError(400, "Choose 1 to 7 days to answer in.");
+      const { data: proposal, error } = await db
+        .from("event_proposals")
+        .select("created_by, status, mode")
+        .eq("id", proposalId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!proposal) throw new HttpError(404, "That event no longer exists.");
+      if (proposal.created_by !== profileId) {
+        throw new HttpError(
+          403,
+          "Only the person who suggested this event can change its deadline.",
+        );
+      }
+      if (proposal.mode !== "vote" || proposal.status !== "pending") {
+        throw new HttpError(409, "That event is no longer waiting for answers.");
+      }
+      // A new deadline gets its own reminder a day before.
+      const { error: updErr } = await db
+        .from("event_proposals")
+        .update({
+          answer_by: answerBy,
+          deadline_pushed_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", proposalId)
+        .eq("status", "pending");
+      if (updErr) throw updErr;
+      if (action === "settle") {
+        const { data: outcome, error: decideErr } = await db.rpc("decide_vote", {
+          p_proposal_id: proposalId,
+          p_force: false,
+        });
+        if (decideErr) throw decideErr;
+        if (outcome === "scheduled") syncCalendarsLater(proposalId);
+      }
       return await list();
     }
 

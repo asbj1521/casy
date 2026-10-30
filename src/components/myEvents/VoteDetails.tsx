@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { stillToAnswer, voteStage, type VoteEvent } from "@/lib/vote";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import PlaceNote from "@/components/myEvents/PlaceNote";
+import { ComputerVoteDeadline, DeadlineText } from "@/components/myEvents/VoteDeadline";
 import ReportEventButton from "@/components/safety/ReportEventButton";
 
 /**
@@ -84,6 +85,16 @@ export default function VoteDetails({ event }: { event: VoteEvent }) {
                   ? t.events.waitingFor(nameList(missing, lang))
                   : t.swipe.deciding}
           </p>
+          {/* When it is settled (#179); the suggester can change that or settle it now. */}
+          {stage !== "choose" && stage !== "waitingForChoice" && event.status === "pending" ? (
+            event.createdBy.isYou ? (
+              <ComputerVoteDeadline event={event} />
+            ) : (
+              missing.length > 0 && (
+                <DeadlineText event={event} className="mt-2 text-sm text-muted-foreground" />
+              )
+            )
+          ) : null}
           <div className="mt-3">
             <VoteTallies event={event} />
           </div>

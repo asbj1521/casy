@@ -956,6 +956,14 @@ export const en: Messages = {
     openDay: "Open the day in your calendar",
     settlesIn: "Settled in",
   },
+  voteDeadline: {
+    label: "Deadline",
+    none: "No deadline",
+    at: (day: string, time: string) => `${day} at ${time}`,
+    untilAll: "Settled once everyone has answered.",
+    settleNow: "Settle now",
+    settleAsk: "Settle now with the answers so far? If no date can win, you choose.",
+  },
   swipe: {
     yourCalendar: "Your calendar",
     noCalendar: "Connect a calendar to see your plans around each date here.",
@@ -1544,6 +1552,8 @@ export const en: Messages = {
     leaveEvent: "Couldn't leave the event",
     answerDate: "Couldn't save your answer",
     chooseDate: "Couldn't choose the date",
+    setDeadline: "Couldn't change the deadline",
+    settleVote: "Couldn't settle the vote",
     notInGroup: "You're no longer in this group.",
     checkAdmin: "Couldn't check admin access",
     loadAdmin: "Couldn't load the admin overview",

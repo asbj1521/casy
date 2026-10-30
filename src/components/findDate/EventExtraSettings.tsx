@@ -83,10 +83,14 @@ export function VoteSettings({ extras, onChange }: Props) {
           <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
             {words.deadline}
           </span>
+          {/* No deadline is 0 here, the dropdown taking numbers only (#179). */}
           <Dropdown
-            value={extras.answerDays}
-            options={ANSWER_DAY_VALUES.map((d) => ({ label: t.common.days(d), value: d }))}
-            onChange={(answerDays) => onChange({ answerDays })}
+            value={extras.answerDays ?? 0}
+            options={[
+              { label: t.voteDeadline.none, value: 0 },
+              ...ANSWER_DAY_VALUES.map((d) => ({ label: t.common.days(d), value: d })),
+            ]}
+            onChange={(days) => onChange({ answerDays: days === 0 ? null : days })}
             suffix={chevron}
             triggerClassName={TRIGGER}
           />

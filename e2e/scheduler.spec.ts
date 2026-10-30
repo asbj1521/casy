@@ -263,7 +263,7 @@ test("a suggestion carries its place, note, deadline and number of dates", async
   await page.getByRole("textbox", { name: "Sted" }).fill("Hos Sara");
   await page.getByRole("textbox", { name: "Note" }).fill("Tag snacks med");
   await page.getByRole("tab", { name: "Afstemning" }).click();
-  await pickOnWheel(page, "3 dage", "5 dage");
+  await pickOnWheel(page, "Ingen frist", "5 dage");
   await pickOnWheel(page, "Op til 5", "Op til 3");
 
   await page.getByRole("button", { name: SEND }).click();

@@ -73,12 +73,14 @@ export default function DoneView({
                     ? t.swipe.waitingFor(nameList(missing, lang))
                     : t.swipe.deciding}
             </p>
-            {event.answerBy && missing.length > 0 && (
+            {missing.length > 0 && (
               <p className="mt-1 text-sm text-muted-foreground">
-                {t.swipe.decidedBy(
-                  formatLongDate(event.answerBy, lang),
-                  formatTime(event.answerBy),
-                )}
+                {event.answerBy
+                  ? t.swipe.decidedBy(
+                      formatLongDate(event.answerBy, lang),
+                      formatTime(event.answerBy),
+                    )
+                  : t.voteDeadline.untilAll}
               </p>
             )}
             {stage === "choose" && (

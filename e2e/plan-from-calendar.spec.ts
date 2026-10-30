@@ -39,12 +39,37 @@ test("Planlæg opens over the calendar, and the dates found are sent as they wer
   const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
   const dates = sent.dates as { start: string; answer: string }[];
   expect(dates).toHaveLength(5);
+  // No deadline unless one is chosen (#179): settled once everyone has answered.
+  expect(sent.answerDays).toBeNull();
   // Your calendar is free on every one: sent as yours too, changeable on My events.
   expect(dates.every((d) => d.answer === "accepted")).toBe(true);
   // Sent, the plan closes onto the home page; the vote waits under Aftaler (#169).
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Aftaler", exact: true })).toBeVisible();
+});
+
+test("a deadline chosen under Flere detaljer goes with the dates (#179)", async ({
+  page,
+  backend,
+}) => {
+  await page.goto("/calendar-overview");
+  await page.getByRole("button", { name: "Planlæg" }).click();
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  await pickGroup(page, "Løbeklubben");
+  await sheet.getByRole("button", { name: "Flere detaljer" }).click();
+  await sheet.getByRole("button", { name: /^Svarfrist/ }).click();
+  await page
+    .getByRole("dialog", { name: "Svarfrist" })
+    .getByRole("radio", { name: "2 dage" })
+    .click();
+  await expect(sheet.getByRole("button", { name: /^Svarfrist/ })).toContainText("2 dage");
+
+  await sheet.getByRole("button", { name: "Find dato" }).click();
+  await page.getByRole("button", { name: "Foreslå top 5 datoer" }).click();
+  await expect
+    .poll(() => backend.calls.find((c) => c.body.action === "suggest")?.body)
+    .toMatchObject({ answerDays: 2 });
 });
 
 test("a new group made from the plan is invited to, then picked for the plan (#153)", async ({

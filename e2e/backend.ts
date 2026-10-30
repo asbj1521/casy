@@ -23,6 +23,13 @@ export type Answer = { status: number; json: unknown };
 const ok = (json: unknown): Answer => ({ status: 200, json });
 const fail = (status: number, error: string): Answer => ({ status, json: { error } });
 
+/** A vote's deadline as the server sets it (#179): none for null, 3 days for an older app. */
+function answerBy(days: unknown): string | null {
+  if (days === null) return null;
+  const n = typeof days === "number" ? days : 3;
+  return new Date(Date.parse(NOW) + n * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export class FakeBackend {
   /** Calls nobody answers, as "function action": the test fails if any. */
   readonly unknown: string[] = [];
@@ -647,6 +654,18 @@ export class FakeBackend {
         event.status = "cancelled";
         this.changed();
         return ok(list());
+      case "deadline":
+      case "settle": {
+        // As the real ones (#179): the suggester's open vote only.
+        if (!event.createdBy.isYou)
+          return fail(403, "Only the person who suggested this event can change its deadline.");
+        if (event.status !== "pending")
+          return fail(409, "That event is no longer waiting for answers.");
+        event.answerBy = action === "settle" ? NOW : answerBy(body.answerDays);
+        if (action === "settle") this.decideVote(event, true);
+        this.changed();
+        return ok(list());
+      }
       case "choose": {
         const date = event.candidates.find((c) => c.id === body.dateId);
         if (!date) return fail(400, "Unknown date");
@@ -685,7 +704,7 @@ export class FakeBackend {
       settings: body.settings as SuggestedEvent["settings"],
       status: "pending",
       mode: "vote",
-      answerBy: "2026-10-10T08:00:00.000Z",
+      answerBy: answerBy(body.answerDays),
       createdBy: { id: ME.id, name: w.name, isYou: true },
       createdAt: NOW,
       updatedAt: NOW,
@@ -712,10 +731,11 @@ export class FakeBackend {
    * date, the date nobody declined with the fewest "rather not" wins (the
    * earliest on a tie); if every date has a no, the suggester chooses.
    */
-  private decideVote(event: SuggestedEvent): "answered" | "scheduled" | "undecided" {
+  private decideVote(event: SuggestedEvent, force = false): "answered" | "scheduled" | "undecided" {
     const everyone = event.invitees.map((i) => i.profileId);
     const upcoming = event.candidates.filter((c) => c.start > NOW);
-    const done = upcoming.every((c) => everyone.every((id) => c.answers[id] !== undefined));
+    const done =
+      force || upcoming.every((c) => everyone.every((id) => c.answers[id] !== undefined));
     if (!done) return "answered";
     const maybes = (c: (typeof upcoming)[number]) =>
       Object.values(c.answers).filter((a) => a === "maybe").length;

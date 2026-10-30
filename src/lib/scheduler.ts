@@ -73,17 +73,18 @@ export interface SchedulerSettings {
 
 /**
  * What a suggestion carries besides its search (#84, #99): where and what to
- * know, how many days everyone has to answer, and how many dates to vote on.
+ * know, how many days everyone has to answer (none by default, #179: a vote
+ * is settled once everyone has answered), and how many dates to vote on.
  * The search never looks at them.
  */
 export interface EventExtras {
   place: string;
   note: string;
-  answerDays: number;
+  answerDays: number | null;
   dateCount: number;
 }
 
-export const DEFAULT_EXTRAS: EventExtras = { place: "", note: "", answerDays: 3, dateCount: 5 };
+export const DEFAULT_EXTRAS: EventExtras = { place: "", note: "", answerDays: null, dateCount: 5 };
 /** Days to answer in: 1 to 7 (the server's limit too). */
 export const ANSWER_DAY_VALUES = [1, 2, 3, 4, 5, 6, 7];
 /** Dates in a vote: 2 to 5 (CANDIDATE_COUNT is the most). */

@@ -10,6 +10,7 @@ import DateTile from "@/components/myEvents/phone/DateTile";
 import EventScreen from "@/components/myEvents/phone/EventScreen";
 import PeopleRow from "@/components/myEvents/phone/PeopleRow";
 import PlaceNote from "@/components/myEvents/PlaceNote";
+import { PhoneVoteDeadline } from "@/components/myEvents/VoteDeadline";
 import YourAnswer from "@/components/myEvents/YourAnswer";
 import ReportEventButton from "@/components/safety/ReportEventButton";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -37,8 +38,10 @@ import {
  * own answer is at each row's end, changed with a tap, the rows gliding to
  * their new places. Only when no date can win does the suggester choose,
  * with "Vælg" on each. Under the dates, the time left until it is settled
- * ticks down (Countdown), with Casy's read on the right; the place and note
- * come last, and cancelling or leaving stays along the bottom.
+ * ticks down (Countdown), or it says it waits for everyone (#179), with
+ * Casy's read on the right; the place and note come next, then the
+ * suggester's deadline and "Afgør nu", and cancelling or leaving stays along
+ * the bottom.
  */
 export default function VoteScreen({ event }: { event: VoteEvent }) {
   const t = useT();
@@ -197,6 +200,9 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
         beside={
           !mustChoose && event.answerBy && missing.length > 0 ? (
             <Countdown until={event.answerBy} />
+          ) : !mustChoose && missing.length > 0 ? (
+            // No deadline (#179): settled once everyone has answered.
+            <span className="text-[13px] text-muted-foreground">{t.voteDeadline.untilAll}</span>
           ) : (
             <span />
           )
@@ -204,6 +210,11 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
       />
 
       <PlaceNote event={event} className="mt-6" />
+
+      {/* The suggester's deadline, and settling now (#179). */}
+      {event.createdBy.isYou && !mustChoose && event.status === "pending" && (
+        <PhoneVoteDeadline event={event} />
+      )}
     </EventScreen>
   );
 }

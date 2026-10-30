@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { MapPin, SlidersHorizontal, StickyNote, Users } from "lucide-react";
+import { Hourglass, MapPin, SlidersHorizontal, StickyNote, Users } from "lucide-react";
 
 import type { ParticipantProps } from "@/components/findDate/ParticipantSettings";
+import { DeadlineSheet } from "@/components/myEvents/VoteDeadline";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Collapse from "@/components/ui/Collapse";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -15,8 +16,9 @@ import PeopleRows from "./PeopleRows";
 
 /**
  * What most plans never touch (#173), folded behind one "Flere detaljer" row
- * at the sheet's end: who is coming (a sheet of its own), and the place and
- * note, typed into their rows. Open from the start when any of it is set, so
+ * at the sheet's end: who is coming (a sheet of its own), the place and
+ * note, typed into their rows, and a deadline for the answers (#179, none
+ * unless chosen). Open from the start when any of it is set, so
  * nothing chosen is hidden. The computer has the same settings in its box's tabs.
  */
 export default function MoreDetails({
@@ -34,6 +36,7 @@ export default function MoreDetails({
   const t = useT();
   const words = t.settingsPanel;
   const [peopleOpen, setPeopleOpen] = useState(false);
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
 
   const { members, choice, meeting, example } = participants;
   const people = summarizePeople(
@@ -49,7 +52,8 @@ export default function MoreDetails({
         : t.schedulerFlow.peopleSome(people.required, people.optional) +
           (people.atLeast !== null ? t.schedulerFlow.peopleAtLeast(people.atLeast) : "");
   const [open, setOpen] = useState(
-    () => extras.place !== "" || extras.note !== "" || !people.everyone,
+    () =>
+      extras.place !== "" || extras.note !== "" || extras.answerDays !== null || !people.everyone,
   );
 
   return (
@@ -92,8 +96,23 @@ export default function MoreDetails({
               className={ROW_INPUT}
             />
           </FieldRow>
+          <ListRow
+            icon={Hourglass}
+            label={t.voteDeadline.label}
+            value={
+              extras.answerDays === null ? t.voteDeadline.none : t.common.days(extras.answerDays)
+            }
+            chevron
+            onClick={() => setDeadlineOpen(true)}
+          />
         </ListGroup>
       </Collapse>
+      <DeadlineSheet
+        open={deadlineOpen}
+        onClose={() => setDeadlineOpen(false)}
+        value={extras.answerDays}
+        onPick={(answerDays) => onExtras({ answerDays })}
+      />
 
       <BottomSheet
         open={peopleOpen}

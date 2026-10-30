@@ -994,6 +994,15 @@ export const da = {
     settlesIn: "Afgøres om",
   },
   /** Swiping through a vote's dates (#74). */
+  // A vote's deadline (#179): none by default, set when planning or later.
+  voteDeadline: {
+    label: "Svarfrist",
+    none: "Ingen frist",
+    at: (day: string, time: string) => `${day} kl. ${time}`,
+    untilAll: "Afgøres, når alle har svaret.",
+    settleNow: "Afgør nu",
+    settleAsk: "Afgør nu med de svar, der er kommet? Kan ingen dato vinde, vælger du.",
+  },
   swipe: {
     yourCalendar: "Din kalender",
     noCalendar: "Forbind en kalender, så ser du dine planer omkring hver dato her.",
@@ -1596,6 +1605,8 @@ export const da = {
     leaveEvent: "Kunne ikke forlade aftalen",
     answerDate: "Kunne ikke gemme dit svar",
     chooseDate: "Kunne ikke vælge datoen",
+    setDeadline: "Kunne ikke ændre svarfristen",
+    settleVote: "Kunne ikke afgøre afstemningen",
     notInGroup: "Du er ikke længere med i gruppen.",
     checkAdmin: "Kunne ikke tjekke admin-adgang",
     loadAdmin: "Kunne ikke hente admin-oversigten",
