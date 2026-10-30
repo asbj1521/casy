@@ -18,7 +18,7 @@ import { formatClockMinutes } from "@/lib/format";
 import { DEFAULT_EXTRAS, type EventExtras, type SchedulerSettings } from "@/lib/scheduler";
 
 /** The most genveje a person keeps (the server's limit too). */
-export const MAX_SHORTCUTS = 9;
+export const MAX_SHORTCUTS = 6;
 export const MAX_SHORTCUT_NAME = 40;
 /** The most times one genvej looks at. */
 export const MAX_TIMES = 3;

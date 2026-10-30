@@ -1000,7 +1000,7 @@ export const da = {
     add: "Ny genvej",
     edit: (name: string) => `Ret ${name}`,
     run: (name: string) => `Planlæg ${name}`,
-    footnote: "Tryk på en genvej for at finde datoer med den. Kun du kan se dine genveje.",
+    back: (name: string) => `Læg ${name} tilbage`,
     save: "Gem genvej",
     nameFirst: "Giv planen et navn, så kan den gemmes som genvej.",
     remove: "Slet genvej",

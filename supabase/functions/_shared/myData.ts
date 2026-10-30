@@ -472,7 +472,7 @@ export async function exportMyData(
     .order("start_at", { ascending: true });
   if (toldError) throw toldError;
 
-  // Genveje (#175): at most 9, so one read.
+  // Genveje (#175): at most 6, so one read.
   const { data: presets, error: presetsError } = await db
     .from("plan_presets")
     .select(PRESET_COLUMNS)

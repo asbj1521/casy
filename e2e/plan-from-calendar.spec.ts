@@ -303,7 +303,7 @@ test.describe("Genveje (#175)", () => {
     updatedAt: "2026-10-07T08:00:00.000Z",
   });
 
-  test("a plan saved as a genvej runs with one tap, with the group chosen", async ({
+  test("a plan saved as a genvej is shown first, then run with the group chosen", async ({
     page,
     backend,
   }) => {
@@ -333,8 +333,17 @@ test.describe("Genveje (#175)", () => {
     expect(backend.world.presets[0]).not.toHaveProperty("groupId");
     expect(backend.world.presets[0].plan).not.toHaveProperty("settings.period");
 
-    // A tap runs it straight into the dates, with the group chosen in Planlæg.
+    // A tap shows it big at the bottom with what it looks at; Find dato runs
+    // it, with the group chosen in Planlæg.
     await shortcuts.getByRole("button", { name: "Planlæg Padel" }).click();
+    const preview = shortcuts.getByRole("region", { name: "Padel" });
+    await expect(preview).toContainText("Tid 1");
+    await expect(preview).toContainText("17:00-19:00");
+    // A tap on it puts it back; another shows it again.
+    await preview.getByRole("button", { name: "Læg Padel tilbage" }).click();
+    await expect(preview).toHaveCount(0);
+    await shortcuts.getByRole("button", { name: "Planlæg Padel" }).click();
+    await shortcuts.getByRole("button", { name: "Find dato" }).click();
     await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
     await page.getByRole("button", { name: "Foreslå top 5 datoer" }).click();
     await expect
@@ -405,6 +414,11 @@ test.describe("Genveje (#175)", () => {
       .getByRole("button", { name: "Genveje", exact: true })
       .click();
     await page.getByRole("button", { name: "Planlæg Padel" }).click();
+    // Both times shown before it runs.
+    const preview = page.getByRole("region", { name: "Padel" });
+    await expect(preview).toContainText("08:00-09:30");
+    await expect(preview).toContainText("19:00-20:30");
+    await page.getByRole("button", { name: "Find dato" }).click();
     await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
     // The dates listed come from both: mornings and evenings, ranked together.
     await expect(page.getByText("08:00-09:30").first()).toBeVisible();

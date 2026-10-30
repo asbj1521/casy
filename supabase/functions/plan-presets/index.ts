@@ -62,7 +62,7 @@ serve("plan-presets", async (req, body) => {
       if (countError) throw countError;
       if ((count ?? 0) >= MAX_PRESETS) {
         // Worded with the number itself so its Danish translation can be checked (i18n_test).
-        throw new HttpError(400, "You can keep at most 9 shortcuts. Delete one first.");
+        throw new HttpError(400, "You can keep at most 6 shortcuts. Delete one first.");
       }
       const { data, error } = await db
         .from("plan_presets")

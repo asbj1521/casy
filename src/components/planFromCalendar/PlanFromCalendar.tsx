@@ -103,8 +103,11 @@ export default function PlanFromCalendar({
   const go = (next: Screen) => {
     setDir(DEPTH[next.kind] >= DEPTH[screen.kind] ? 1 : -1);
     setScreen(next);
+    setSelected(null);
   };
 
+  // The genvej shown big at the bottom of Genveje, about to run (#175).
+  const [selected, setSelected] = useState<Shortcut | null>(null);
   const { data: shortcuts, error: shortcutsError } = useQuery({
     ...shortcutsQuery(userId),
     enabled: open,
@@ -222,6 +225,10 @@ export default function PlanFromCalendar({
             >
               {t.planFromCalendar.findDate}
             </FlowButton>
+          ) : screen.kind === "shortcuts" && selected ? (
+            <FlowButton onClick={() => runShortcut(selected)} disabled={!planning.activeGroup}>
+              {t.planFromCalendar.findDate}
+            </FlowButton>
           ) : screen.kind === "editor" ? (
             <FlowButton onClick={() => submit(editing)} disabled={!named}>
               {words.save}
@@ -247,7 +254,8 @@ export default function PlanFromCalendar({
               <ShortcutsScreen
                 shortcuts={shortcuts}
                 error={shortcutsError?.message ?? null}
-                onRun={runShortcut}
+                selected={selected}
+                onSelect={setSelected}
                 onEdit={openEditor}
                 onNew={() => openEditor(null)}
                 savingId={save.isPending ? (save.variables.id ?? SAVING_ID) : null}

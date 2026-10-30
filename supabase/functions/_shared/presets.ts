@@ -7,7 +7,7 @@
  */
 
 /** At most this many a person (the table's trigger says the same). */
-export const MAX_PRESETS = 9;
+export const MAX_PRESETS = 6;
 export const MAX_PRESET_NAME = 40;
 /** The plan's size as JSON, below the table's 8 KB check. */
 export const MAX_PLAN_BYTES = 8000;

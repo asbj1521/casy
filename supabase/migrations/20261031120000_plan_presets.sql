@@ -27,13 +27,13 @@ comment on table plan_presets is
 -- Like every table: the browser reads and writes nothing; the functions do.
 alter table plan_presets enable row level security;
 
--- At most 9 a person, whatever calls the database.
+-- At most 6 a person, whatever calls the database.
 create or replace function plan_presets_cap() returns trigger
 language plpgsql
 as $$
 begin
-  if (select count(*) from plan_presets where profile_id = new.profile_id) >= 9 then
-    raise exception 'plan_presets: at most 9 per person';
+  if (select count(*) from plan_presets where profile_id = new.profile_id) >= 6 then
+    raise exception 'plan_presets: at most 6 per person';
   end if;
   return new;
 end;

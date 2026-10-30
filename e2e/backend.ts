@@ -321,7 +321,7 @@ export class FakeBackend {
         if (!preset) return fail(404, "Genvejen findes ikke længere.");
         Object.assign(preset, fields);
       } else {
-        if (w.presets.length >= 9) return fail(400, "Du kan højst have 9 genveje. Slet en først.");
+        if (w.presets.length >= 6) return fail(400, "Du kan højst have 6 genveje. Slet en først.");
         savedId = `00000000-0000-4000-8000-${String(w.presets.length + 1).padStart(12, "0")}`;
         w.presets.push({ id: savedId, ...fields });
       }

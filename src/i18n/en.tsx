@@ -961,7 +961,7 @@ export const en: Messages = {
     add: "New shortcut",
     edit: (name: string) => `Edit ${name}`,
     run: (name: string) => `Plan ${name}`,
-    footnote: "Tap a shortcut to find dates with it. Only you can see your shortcuts.",
+    back: (name: string) => `Put ${name} back`,
     save: "Save shortcut",
     nameFirst: "Give the plan a name so it can be saved as a shortcut.",
     remove: "Delete shortcut",
