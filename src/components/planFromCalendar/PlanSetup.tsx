@@ -1,17 +1,13 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Users } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import DanishTimeNote from "@/components/time/DanishTimeNote";
-import AnchoredPanel from "@/components/ui/AnchoredPanel";
-import GroupBubbles from "@/components/ui/GroupBubbles";
-import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
 import { matchNames, mentionedNames, type AiPlan } from "@/lib/aiPlan";
 import { flexAround, flexOf } from "@/lib/startFlex";
 
 import AiQuestionsSheet from "./AiQuestionsSheet";
-import GroupStep from "./GroupStep";
+import GroupRow from "./GroupRow";
 import MoreDetails from "./MoreDetails";
 import NameField from "./NameField";
 import PlanMonths from "./PlanMonths";
@@ -45,12 +41,7 @@ export default function PlanSetup({
 }) {
   const t = useT();
   const {
-    user,
-    groups,
     activeGroup,
-    activeGroupId,
-    selectGroup,
-    openNewGroup,
     aiOn,
     planner,
     name,
@@ -63,8 +54,6 @@ export default function PlanSetup({
     peopleChoice,
     updatePeople,
   } = planning;
-  const [picking, setPicking] = useState(false);
-  const groupRow = `${useId()}-group`;
   const members = activeGroup?.members ?? [];
 
   const fill = useAiFill({ name, settings: sched, extras, people: peopleChoice });
@@ -126,27 +115,7 @@ export default function PlanSetup({
         ) : (
           <>
             <div className="flex gap-3">
-              <ListGroup className="mt-0 flex-[3]">
-                {/* Show, don't tell: the members as bubbles, the group's name big;
-                  "Gruppe" is left to screen readers. */}
-                <ListRow
-                  id={groupRow}
-                  icon={Users}
-                  leading={
-                    activeGroup && activeGroup.members.length > 0 ? (
-                      <GroupBubbles members={activeGroup.members} />
-                    ) : undefined
-                  }
-                  label={
-                    <span className="text-[17px] font-semibold">
-                      <span className="sr-only">{t.scheduler.group} </span>
-                      {activeGroup?.name ?? t.scheduler.group}
-                    </span>
-                  }
-                  chevron
-                  onClick={() => setPicking(true)}
-                />
-              </ListGroup>
+              <GroupRow planning={planning} className="mt-0 flex-[3]" />
               {onShortcuts && (
                 <button
                   type="button"
@@ -204,27 +173,6 @@ export default function PlanSetup({
           onDone={questionsDone}
         />
       )}
-
-      <AnchoredPanel
-        open={picking}
-        onClose={() => setPicking(false)}
-        anchorId={groupRow}
-        label={t.scheduler.group}
-      >
-        <GroupStep
-          groups={groups}
-          selectedId={activeGroupId}
-          signedIn={!!user}
-          onPick={(id) => {
-            selectGroup(id);
-            setPicking(false);
-          }}
-          onCreate={() => {
-            setPicking(false);
-            openNewGroup();
-          }}
-        />
-      </AnchoredPanel>
     </>
   );
 }

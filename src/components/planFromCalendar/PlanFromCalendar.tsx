@@ -29,6 +29,7 @@ import {
 
 import PileScreen from "./PileScreen";
 import PlanSetup from "./PlanSetup";
+import GroupRow from "./GroupRow";
 import ShortcutsScreen from "./ShortcutsScreen";
 import ShortcutTimes from "./ShortcutTimes";
 
@@ -256,6 +257,7 @@ export default function PlanFromCalendar({
                 error={shortcutsError?.message ?? null}
                 selected={selected}
                 onSelect={setSelected}
+                groupRow={<GroupRow planning={planning} className="mt-0" />}
                 onEdit={openEditor}
                 onNew={() => openEditor(null)}
                 savingId={save.isPending ? (save.variables.id ?? SAVING_ID) : null}

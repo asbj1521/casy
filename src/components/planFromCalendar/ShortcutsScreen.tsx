@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { Ellipsis, Plus, X } from "lucide-react";
 
@@ -23,7 +24,8 @@ const FLY = { type: "spring", stiffness: 380, damping: 32 } as const;
  * A tap doesn't run it: its square flies down to the bottom of the screen
  * and grows to half its width (`selected`), its times listed beside it, so
  * what is about to be searched is seen first; the sheet's "Find dato" under
- * it runs it. A tap on the big square, or on another, sends it back.
+ * it runs it, for the group in the row under it (Planlæg's own, to change
+ * there). A tap on the big square, or on another, sends it back.
  *
  * Saving shows at once: a genvej still on its way to the server pops into
  * its square (`savingId`, its "..." held back until it has an id), and one
@@ -40,6 +42,7 @@ export default function ShortcutsScreen({
   failed,
   onRetry,
   onDismiss,
+  groupRow,
 }: {
   shortcuts: Shortcut[] | undefined;
   error: string | null;
@@ -52,6 +55,8 @@ export default function ShortcutsScreen({
   failed: { name: string; message: string } | null;
   onRetry: () => void;
   onDismiss: () => void;
+  /** The plan's group, under the genvej about to run, to see and change it. */
+  groupRow: ReactNode;
 }) {
   const t = useT();
   const words = t.shortcuts;
@@ -150,23 +155,34 @@ export default function ShortcutsScreen({
 
       {/* The genvej about to run, at the bottom: big on the left, what it looks at on the right. */}
       {selected && (
-        <section aria-label={selected.name} className="mt-auto flex items-end gap-4 pt-6">
-          <motion.div
-            layoutId={`shortcut-${selected.id}`}
-            transition={FLY}
-            className={cn(SQUARE, "w-1/2 shrink-0")}
-          >
-            <button
-              type="button"
-              aria-label={words.back(selected.name)}
-              onClick={() => onSelect(null)}
-              className="flex h-full w-full items-center justify-center rounded-2xl p-4"
+        <div className="mt-auto pt-6">
+          <section aria-label={selected.name} className="flex items-end gap-4">
+            <motion.div
+              layoutId={`shortcut-${selected.id}`}
+              transition={FLY}
+              className={cn(SQUARE, "w-1/2 shrink-0")}
             >
-              <span className={cn(NAME, "text-[24px]")}>{selected.name}</span>
-            </button>
+              <button
+                type="button"
+                aria-label={words.back(selected.name)}
+                onClick={() => onSelect(null)}
+                className="flex h-full w-full items-center justify-center rounded-2xl p-4"
+              >
+                <span className={cn(NAME, "text-[24px]")}>{selected.name}</span>
+              </button>
+            </motion.div>
+            <ShortcutFacts shortcut={selected} />
+          </section>
+          {/* Which group it runs for, seen and changeable before it runs. */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, delay: 0.15 }}
+            className="mt-4"
+          >
+            {groupRow}
           </motion.div>
-          <ShortcutFacts shortcut={selected} />
-        </section>
+        </div>
       )}
     </LayoutGroup>
   );
