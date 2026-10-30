@@ -32,7 +32,7 @@
  * (a holiday) at a time, so each is one the page itself could have shown.
  */
 import type { EventImpact } from "@/api/eventProfile";
-import { comfortRater } from "@/lib/dateComfort";
+import { comfortRater, type Comfort } from "@/lib/dateComfort";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import { bigOnNewYearsDay, onNewYearsDay } from "@/lib/newYear";
 import type { FoundDate } from "@/lib/scheduler";
@@ -106,9 +106,18 @@ export function rankCandidates(
   search: EventSettings,
   options: CandidateOptions,
   timeZone: string,
-): { pool: FoundDate[]; chosen: FoundDate[]; byPick: FoundDate[] } {
+): RankedDates {
   const pool = findPool(participants, search, options, timeZone);
   return rankFromPool(pool, participants, search, options, timeZone);
+}
+
+/** What the ranking made of a pool: the dates, and what each cost the people going (#178). */
+export interface RankedDates {
+  pool: FoundDate[];
+  chosen: FoundDate[];
+  byPick: FoundDate[];
+  /** Each date's cost and the penalties it is made of, the date on screen's too. */
+  comfort: Map<FoundDate, Comfort>;
 }
 
 /** rankCandidates over a pool already searched (findPool), so scores can be fetched in between. */
@@ -118,7 +127,7 @@ export function rankFromPool(
   search: EventSettings,
   options: CandidateOptions,
   timeZone: string,
-): { pool: FoundDate[]; chosen: FoundDate[]; byPick: FoundDate[] } {
+): RankedDates {
   const { first, count = CANDIDATE_COUNT, scores, profile, now = Date.now() } = options;
 
   const chosen: FoundDate[] = [first];
@@ -148,8 +157,10 @@ export function rankFromPool(
   // What each date costs the people going (#178), the server's score in it;
   // the sorts are stable, so equal costs stay soonest first.
   const rate = comfortRater({ participants, settings: search, profile, timeZone, now });
-  const costs = new Map(found.map((d) => [d, rate(d.slot, scores?.get(d.slot.start)).cost]));
-  const costOf = (d: FoundDate) => costs.get(d) ?? 0;
+  const comfort = new Map(
+    [first, ...found].map((d) => [d, rate(d.slot, scores?.get(d.slot.start))] as const),
+  );
+  const costOf = (d: FoundDate) => comfort.get(d)?.cost ?? 0;
   // 1 January: a big plan is left out, a small one goes last in its group
   // (the sort is stable, so the rest keep their order).
   const offered = found.filter((d) => !bigOnNewYearsDay(profile, d.slot, search, timeZone));
@@ -173,6 +184,7 @@ export function rankFromPool(
 
   return {
     pool: [first, ...found],
+    comfort,
     byPick: [...chosen],
     chosen: chosen.sort((a, b) => Date.parse(a.slot.start) - Date.parse(b.slot.start)),
   };

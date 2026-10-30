@@ -14,6 +14,7 @@ import { eventProfileQuery } from "@/hooks/useEventProfile";
 import { TZ, type Planning } from "@/hooks/usePlanning";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { findPool, rankFromPool } from "@/lib/candidates";
+import { comfortNotes } from "@/lib/comfortNotes";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { impactOn } from "@/lib/eventImpact";
 import { clashSentence, importantClashes } from "@/lib/eventWarnings";
@@ -201,7 +202,7 @@ export default function PileScreen({
   // Casy checks about each.
   const dates = useMemo(() => {
     if (!participants || !found?.slot || !poolFound) return null;
-    const { pool, chosen, byPick } = rankFromPool(
+    const { pool, chosen, byPick, comfort } = rankFromPool(
       poolFound,
       participants,
       search,
@@ -236,6 +237,16 @@ export default function PileScreen({
           ? edgeWarnings(participants, date.slot, TZ, youProfileId, lang, t)
           : null;
       const absent = date.absent ?? [];
+      // What the comfort rules found (#178): room around it, the morning
+      // after, the days kept for family; each said once, never what the
+      // warnings above already say.
+      const comfortLines = comfortNotes(comfort.get(date)?.penalties ?? [], {
+        nameOf: (id) => participants.find((p) => p.profileId === id)?.name ?? "",
+        youId: youProfileId,
+        lang,
+        words: words.comfort,
+        warnings,
+      });
       const yours = importantClashes(impactOn(profile, date.slot, search, TZ), mine, TZ)
         .slice(0, 2)
         .map((c) => clashSentence(c, t.importantClash));
@@ -273,6 +284,7 @@ export default function PileScreen({
                 },
               ]
             : []),
+          ...comfortLines.map((n) => ({ found: n.text, notable: n.notable })),
           ...yours.map((found) => ({ found, notable: true })),
           {
             found:

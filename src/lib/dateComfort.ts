@@ -67,7 +67,7 @@ const MAX_DAYS_PER_BLOCK = 62;
 const LATITUDE = 55.68;
 const LONGITUDE = 12.57;
 
-type Rule =
+export type Rule =
   | "tightBefore"
   | "tightAfter"
   | "sandwiched"
