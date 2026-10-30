@@ -68,10 +68,17 @@ export default function HomeToolbar({
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
+    // The row moves without changing size when the app's web view learns the
+    // safe area only after the first layout: the padding above it grows, so
+    // the box holding it is watched too, padding and all. Missed, the
+    // buttons stayed up behind the clock.
+    if (el.parentElement) observer.observe(el.parentElement, { box: "border-box" });
     window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
     };
   }, [at]);
   if (!place) return null;

@@ -425,8 +425,15 @@ export default function PhoneCalendar() {
       setDayFrame({ top, room: Math.max(0, (bar?.bottom ?? 0) + 8 - top) });
     };
     measure();
+    // Again when the safe area arrives after the first layout (see HomeToolbar).
+    const observer = new ResizeObserver(measure);
+    const row = toolbarAt.current?.parentElement;
+    if (row) observer.observe(row, { box: "border-box" });
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
   const daySpan = useDaySpan();
   // The toolbar becomes the day view's as the growing day reaches it, and
