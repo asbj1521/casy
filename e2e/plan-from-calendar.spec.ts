@@ -327,6 +327,8 @@ test.describe("Genveje (#175)", () => {
     await editor.getByRole("textbox", { name: /Navn på genvej/ }).fill("Padel");
     await editor.getByRole("button", { name: "Gem genvej" }).click();
     await expect(shortcuts.getByRole("button", { name: "Planlæg Padel" })).toBeVisible();
+    // On screen at once; on the server a moment later.
+    await expect.poll(() => backend.world.presets.length).toBe(1);
     expect(backend.world.presets).toMatchObject([{ name: "Padel", plan: { v: 1 } }]);
     expect(backend.world.presets[0]).not.toHaveProperty("groupId");
     expect(backend.world.presets[0].plan).not.toHaveProperty("settings.period");
@@ -352,9 +354,9 @@ test.describe("Genveje (#175)", () => {
       .getByRole("button", { name: "Genveje", exact: true })
       .click();
     const shortcuts = page.getByRole("dialog", { name: "Genveje" });
-    // One, and the row filled with two plus squares; its time on the square.
+    // One, and the row filled with two plus squares; its square says its name only.
     await expect(shortcuts.getByRole("button", { name: "Ny genvej" })).toHaveCount(2);
-    await expect(shortcuts.getByRole("button", { name: "Planlæg Padel" })).toContainText("07:00");
+    await expect(shortcuts.getByRole("button", { name: "Planlæg Padel" })).toHaveText("Padel");
 
     await shortcuts.getByRole("button", { name: "Ret Padel" }).click();
     const editor = page.getByRole("dialog", { name: "Padel" });
@@ -379,10 +381,11 @@ test.describe("Genveje (#175)", () => {
     await editor.getByRole("button", { name: "Fjern tid 3" }).click();
     await expect(editor.getByRole("button", { name: /^Tid 3/ })).toHaveCount(0);
 
+    // Each time says its start and end.
+    await expect(editor.getByRole("button", { name: /^Tid 1/ })).toContainText("07:00-08:30");
     await editor.getByRole("button", { name: "Gem genvej" }).click();
-    await expect(shortcuts.getByRole("button", { name: "Planlæg Padel" })).toContainText(
-      "07:00-08:30",
-    );
+    await expect(shortcuts.getByRole("button", { name: "Planlæg Padel" })).toBeVisible();
+    await expect.poll(() => backend.calls.filter((c) => c.name === "plan-presets").length).toBe(2);
     const saved = backend.world.presets[0].plan as {
       times: { startHour: number; startWindow: { from: number; to: number } | null }[];
     };
@@ -406,6 +409,46 @@ test.describe("Genveje (#175)", () => {
     // The dates listed come from both: mornings and evenings, ranked together.
     await expect(page.getByText("08:00-09:30").first()).toBeVisible();
     await expect(page.getByText("19:00-20:30").first()).toBeVisible();
+  });
+
+  test("a genvej is in its square at once; one that fails to save says so and tries again", async ({
+    page,
+    backend,
+  }) => {
+    // The first save fails, the second goes through.
+    let saves = 0;
+    await page.route(/functions\/v1\/plan-presets/, (route) => {
+      const body = route.request().postDataJSON() as { action?: string } | null;
+      if (body?.action === "save" && saves++ === 0) {
+        return route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          headers: { "access-control-allow-origin": "*" },
+          body: JSON.stringify({ error: "Something went wrong. Please try again." }),
+        });
+      }
+      return route.fallback();
+    });
+    await page.goto("/calendar-overview");
+    await page.getByRole("button", { name: "Planlæg" }).click();
+    await page
+      .getByRole("dialog", { name: "Planlæg" })
+      .getByRole("button", { name: "Genveje", exact: true })
+      .click();
+    const shortcuts = page.getByRole("dialog", { name: "Genveje" });
+    await shortcuts.getByRole("button", { name: "Ny genvej" }).first().click();
+    const editor = page.getByRole("dialog", { name: "Ny genvej" });
+    await editor.getByRole("textbox", { name: /Navn på genvej/ }).fill("Padel");
+    await editor.getByRole("button", { name: "Gem genvej" }).click();
+
+    const failedSquare = shortcuts.getByRole("button", { name: /^Padel: Ikke gemt/ });
+    await expect(failedSquare).toBeVisible();
+    expect(backend.world.presets).toHaveLength(0);
+    await failedSquare.click();
+    await expect(shortcuts.getByRole("button", { name: "Planlæg Padel" })).toBeVisible();
+    await expect(failedSquare).toHaveCount(0);
+    await expect.poll(() => backend.world.presets.length).toBe(1);
+    expect(backend.world.presets).toMatchObject([{ name: "Padel" }]);
   });
 
   test("a genvej is deleted last, asked first", async ({ page, backend }) => {

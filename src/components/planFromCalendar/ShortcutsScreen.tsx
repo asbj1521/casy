@@ -1,8 +1,9 @@
-import { Ellipsis, Plus } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Ellipsis, Plus, X } from "lucide-react";
 
 import Notice from "@/components/ui/Notice";
 import { useT } from "@/i18n/lang";
-import { MAX_SHORTCUTS, timeLabel, type Shortcut } from "@/lib/shortcuts";
+import { MAX_SHORTCUTS, type Shortcut } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 
 /** A square's frame: three across, as tall as wide. */
@@ -10,11 +11,14 @@ const SQUARE = "relative aspect-square rounded-2xl border bg-card";
 
 /**
  * Genveje (#175), the Planlæg sheet's screen to its side: a square for each
- * saved plan, three across, with its name and the times it looks at (a
- * trip's days); a tap runs it with the group chosen in Planlæg, straight
- * into the pile, and "..." in its top corner opens it to change.
- * Squares with a plus fill the row after them (a whole row of three with
- * none yet), until there are as many as can be kept.
+ * saved plan, three across, its name big in the middle; a tap runs it with
+ * the group chosen in Planlæg, straight into the pile, and "..." in its top
+ * corner opens it to change. Squares with a plus fill the row after them (a
+ * whole row of three with none yet), until there are as many as can be kept.
+ *
+ * Saving shows at once: a genvej still on its way to the server pops into
+ * its square (`savingId`, its "..." held back until it has an id), and one
+ * that didn't make it (`failed`) stands in red, a tap trying again.
  */
 export default function ShortcutsScreen({
   shortcuts,
@@ -22,18 +26,28 @@ export default function ShortcutsScreen({
   onRun,
   onEdit,
   onNew,
+  savingId,
+  failed,
+  onRetry,
+  onDismiss,
 }: {
   shortcuts: Shortcut[] | undefined;
   error: string | null;
   onRun: (shortcut: Shortcut) => void;
   onEdit: (shortcut: Shortcut) => void;
   onNew: () => void;
+  savingId: string | null;
+  failed: { name: string; message: string } | null;
+  onRetry: () => void;
+  onDismiss: () => void;
 }) {
   const t = useT();
   const words = t.shortcuts;
+  const reduce = useReducedMotion();
   const list = shortcuts ?? [];
-  const n = list.length;
+  const n = list.length + (failed ? 1 : 0);
   const adds = n >= MAX_SHORTCUTS ? 0 : n % 3 === 0 ? 3 : 3 - (n % 3);
+  const name = "line-clamp-3 break-words text-center text-[17px] font-semibold leading-tight";
 
   return (
     <>
@@ -49,37 +63,58 @@ export default function ShortcutsScreen({
               <li key={i} className={cn(SQUARE, "animate-pulse bg-secondary")} />
             ))
           : list.map((s) => (
-              <li key={s.id} className={SQUARE}>
+              <motion.li
+                key={s.id}
+                // A genvej just saved pops into its square.
+                initial={s.id === savingId && !reduce ? { scale: 0.85, opacity: 0 } : false}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                className={SQUARE}
+              >
                 <button
                   type="button"
                   aria-label={words.run(s.name)}
                   onClick={() => onRun(s)}
-                  className="flex h-full w-full flex-col justify-end gap-1 rounded-2xl p-3 text-left transition active:scale-95"
+                  className="flex h-full w-full items-center justify-center rounded-2xl p-3 transition active:scale-95"
                 >
-                  <span className="line-clamp-2 break-words text-[15px] font-semibold leading-tight text-foreground">
-                    {s.name}
-                  </span>
-                  {/* Each time on its line, start to end; a trip's days. */}
-                  <span className="text-[12px] leading-tight text-muted-foreground">
-                    {s.plan.settings.multiDay
-                      ? t.common.days(s.plan.settings.days)
-                      : s.plan.times.map((time, i) => (
-                          <span key={i} className="block truncate">
-                            {timeLabel(time, s.plan.settings.durationMinutes, words.anyTime)}
-                          </span>
-                        ))}
-                  </span>
+                  <span className={cn(name, "text-foreground")}>{s.name}</span>
                 </button>
-                <button
-                  type="button"
-                  aria-label={words.edit(s.name)}
-                  onClick={() => onEdit(s)}
-                  className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground"
-                >
-                  <Ellipsis className="h-5 w-5" />
-                </button>
-              </li>
+                {s.id !== savingId && (
+                  <button
+                    type="button"
+                    aria-label={words.edit(s.name)}
+                    onClick={() => onEdit(s)}
+                    className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground"
+                  >
+                    <Ellipsis className="h-5 w-5" />
+                  </button>
+                )}
+              </motion.li>
             ))}
+        {failed && (
+          <li className={cn(SQUARE, "border-red-300 bg-red-50")}>
+            <button
+              type="button"
+              aria-label={`${failed.name}: ${words.notSaved}`}
+              title={failed.message}
+              onClick={onRetry}
+              className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl p-3 pt-7 transition active:scale-95"
+            >
+              <span className={cn(name, "text-foreground")}>{failed.name}</span>
+              <span className="text-center text-[12px] leading-tight text-red-700">
+                {words.notSaved}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label={words.dismiss(failed.name)}
+              onClick={onDismiss}
+              className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full text-red-700"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </li>
+        )}
         {shortcuts !== undefined &&
           Array.from({ length: adds }, (_, i) => (
             <li key={`add-${i}`} className={cn(SQUARE, "border-dashed bg-transparent")}>

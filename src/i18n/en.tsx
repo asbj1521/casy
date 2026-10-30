@@ -966,6 +966,8 @@ export const en: Messages = {
     nameFirst: "Give the plan a name so it can be saved as a shortcut.",
     remove: "Delete shortcut",
     removeAsk: (name: string) => `Delete the shortcut ${name}?`,
+    notSaved: "Not saved. Tap to try again.",
+    dismiss: (name: string) => `Forget ${name}`,
     nameLabel: "Shortcut name",
     namePlaceholder: "E.g. padel",
     time: (n: number) => `Time ${n}`,

@@ -45,12 +45,17 @@ export function shortcutsQuery(userId: string) {
   });
 }
 
-/** A new genvej (no id) or a changed one; answers with them all, and the one saved. */
-export async function saveShortcut(input: {
+/** What a save sends: a new genvej (no id) or a changed one. */
+export interface ShortcutInput {
   id: string | null;
   name: string;
   plan: ShortcutPlan;
-}): Promise<{ shortcuts: Shortcut[]; savedId: string }> {
+}
+
+/** A new genvej (no id) or a changed one; answers with them all, and the one saved. */
+export async function saveShortcut(
+  input: ShortcutInput,
+): Promise<{ shortcuts: Shortcut[]; savedId: string }> {
   const body = await callFunction<{ presets: StoredShortcut[]; savedId: string }>("plan-presets", {
     body: { action: "save", ...input },
     errorMessage: currentMessages().shortcuts.saveFailed,

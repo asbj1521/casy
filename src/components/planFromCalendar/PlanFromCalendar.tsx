@@ -3,13 +3,18 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 
-import { deleteShortcut, saveShortcut, shortcutsQuery, shortcutsQueryKey } from "@/api/shortcuts";
+import {
+  deleteShortcut,
+  saveShortcut,
+  shortcutsQuery,
+  shortcutsQueryKey,
+  type ShortcutInput,
+} from "@/api/shortcuts";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import BottomSheet from "@/components/ui/BottomSheet";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import FlowButton from "@/components/ui/FlowButton";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
-import Notice from "@/components/ui/Notice";
 import { PUSH, pushTransition } from "@/components/ui/push";
 import { useSignedInUser } from "@/context/auth";
 import { usePlanning } from "@/hooks/usePlanning";
@@ -26,6 +31,9 @@ import PileScreen from "./PileScreen";
 import PlanSetup from "./PlanSetup";
 import ShortcutsScreen from "./ShortcutsScreen";
 import ShortcutTimes from "./ShortcutTimes";
+
+/** A new genvej's id on screen until the server has given it one. */
+const SAVING_ID = "saving";
 
 /** The sheet's screens (#175): the plan, the genveje beside it, and one genvej being made or changed. */
 type Screen =
@@ -127,23 +135,47 @@ export default function PlanFromCalendar({
     setRemoving(false);
     go({ kind: "editor", shortcut });
   };
+  // Saved at once on screen (#175): the genvej is in its square the moment
+  // Gem is pressed while the server catches up; if it fails, the list is as
+  // it was and the square that didn't make it says so, a tap trying again.
+  const key = shortcutsQueryKey(userId);
+  const [failed, setFailed] = useState<{ input: ShortcutInput; message: string } | null>(null);
   const save = useMutation({
-    mutationFn: (shortcut: Shortcut | null) =>
-      saveShortcut({
-        id: shortcut?.id ?? null,
-        name: planning.name.trim().slice(0, MAX_SHORTCUT_NAME),
-        // A trip looks at whole days: its times are only a meeting's.
-        plan: shortcutPlan(
-          planning.sched,
-          planning.extras,
-          planning.sched.multiDay ? [timeOf(planning.sched)] : liveTimes,
-        ),
-      }),
-    onSuccess: ({ shortcuts: all }) => {
-      queryClient.setQueryData(shortcutsQueryKey(userId), all);
-      go({ kind: "shortcuts" });
+    mutationFn: (input: ShortcutInput) => saveShortcut(input),
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Shortcut[]>(key);
+      const shown: Shortcut = {
+        id: input.id ?? SAVING_ID,
+        name: input.name,
+        plan: input.plan,
+        updatedAt: new Date().toISOString(),
+      };
+      queryClient.setQueryData<Shortcut[]>(key, (list = []) =>
+        input.id ? list.map((s) => (s.id === input.id ? shown : s)) : [...list, shown],
+      );
+      setFailed(null);
+      return { previous };
+    },
+    onSuccess: ({ shortcuts: all }) => queryClient.setQueryData(key, all),
+    onError: (error, input, context) => {
+      queryClient.setQueryData(key, context?.previous);
+      setFailed({ input, message: error.message });
     },
   });
+  const submit = (shortcut: Shortcut | null) => {
+    save.mutate({
+      id: shortcut?.id ?? null,
+      name: planning.name.trim().slice(0, MAX_SHORTCUT_NAME),
+      // A trip looks at whole days: its times are only a meeting's.
+      plan: shortcutPlan(
+        planning.sched,
+        planning.extras,
+        planning.sched.multiDay ? [timeOf(planning.sched)] : liveTimes,
+      ),
+    });
+    go({ kind: "shortcuts" });
+  };
   const remove = useMutation({
     mutationFn: (id: string) => deleteShortcut(id),
     onSuccess: (all) => {
@@ -191,11 +223,7 @@ export default function PlanFromCalendar({
               {t.planFromCalendar.findDate}
             </FlowButton>
           ) : screen.kind === "editor" ? (
-            <FlowButton
-              onClick={() => save.mutate(editing)}
-              disabled={!named}
-              busy={save.isPending}
-            >
+            <FlowButton onClick={() => submit(editing)} disabled={!named}>
               {words.save}
             </FlowButton>
           ) : undefined
@@ -222,6 +250,10 @@ export default function PlanFromCalendar({
                 onRun={runShortcut}
                 onEdit={openEditor}
                 onNew={() => openEditor(null)}
+                savingId={save.isPending ? (save.variables.id ?? SAVING_ID) : null}
+                failed={failed && { name: failed.input.name, message: failed.message }}
+                onRetry={() => failed && save.mutate(failed.input)}
+                onDismiss={() => setFailed(null)}
               />
             )}
             {screen.kind === "editor" && (
@@ -250,11 +282,6 @@ export default function PlanFromCalendar({
                 />
                 {!named && (
                   <p className="mt-3 px-1 text-[12px] text-muted-foreground">{words.nameFirst}</p>
-                )}
-                {save.error && (
-                  <Notice tone="error" bare className="mt-3">
-                    {save.error.message}
-                  </Notice>
                 )}
                 {editing &&
                   (removing ? (

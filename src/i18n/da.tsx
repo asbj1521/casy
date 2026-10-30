@@ -1005,6 +1005,8 @@ export const da = {
     nameFirst: "Giv planen et navn, så kan den gemmes som genvej.",
     remove: "Slet genvej",
     removeAsk: (name: string) => `Slet genvejen ${name}?`,
+    notSaved: "Ikke gemt. Tryk for at prøve igen.",
+    dismiss: (name: string) => `Glem ${name}`,
     nameLabel: "Navn på genvej",
     namePlaceholder: "Fx padel",
     time: (n: number) => `Tid ${n}`,
