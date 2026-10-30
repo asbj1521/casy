@@ -38,6 +38,10 @@ const SIZES = {
   full: { hourPx: 46, gutter: 52, linePx: 22, twoLinesPx: 40 },
 } as const;
 
+/** Whole-day rows the full size stacks under the day names, a row's height with its gap. */
+const ALL_DAY_ROWS = 3;
+const ALL_DAY_ROW_PX = 24;
+
 /**
  * Days kept drawn either side of those in view while they can be swiped,
  * so a day slides in already drawn rather than appearing as it arrives.
@@ -406,8 +410,13 @@ export default function DayColumns({
     left: columnOf(k, days, lead) * columnPx,
     width: columnPx,
   });
-  // With one day, two whole-day entries side by side, as Apple has them.
-  const allDayShown = days === 1 && !compact ? 2 : 1;
+  // The full size stacks a day's whole-day entries, one row each, so none is
+  // hidden behind another; past ALL_DAY_ROWS the last row counts the rest. The
+  // strip has room for one, the rest counted on its label.
+  const allDayRows = (n: number) => Math.min(n, compact ? 1 : ALL_DAY_ROWS);
+  const allDayHeight = compact
+    ? 18
+    : Math.max(...inViewK.map((k) => allDayRows(allDay.get(k)!.length)), 1) * ALL_DAY_ROW_PX + 2;
   const pencilOn = (midnight: number) =>
     pencils.some((p) => p.start < addDays(midnight, 1, TZ) && p.end > midnight);
 
@@ -583,23 +592,22 @@ export default function DayColumns({
       {anyAllDay && (
         <div className="flex shrink-0 border-b">
           <span className="shrink-0" style={{ width: gutter }} />
-          <Track x={x} className={compact ? "h-[18px]" : "h-[26px]"} blurred={travel}>
-            {drawn.map((k) => (
-              <div
-                key={k}
-                aria-hidden={hiddenUnless(k)}
-                className={cn(
-                  "absolute inset-y-0 flex justify-center px-0.5",
-                  allDayShown > 1 ? "items-center gap-1" : "flex-col",
-                )}
-                style={columnStyle(k)}
-              >
-                {allDay
-                  .get(k)!
-                  .slice(0, allDayShown)
-                  .map((s, j, list) => {
+          <Track x={x} height={allDayHeight} blurred={travel}>
+            {drawn.map((k) => {
+              const list = allDay.get(k)!;
+              // Past the rows there are, the last one is the count of the rest.
+              const full = !compact && list.length > ALL_DAY_ROWS;
+              const shown = list.slice(0, full ? ALL_DAY_ROWS - 1 : allDayRows(list.length));
+              const more = list.length - shown.length;
+              return (
+                <div
+                  key={k}
+                  aria-hidden={hiddenUnless(k)}
+                  className="absolute inset-y-0 flex flex-col justify-start gap-1 px-0.5 pt-px"
+                  style={columnStyle(k)}
+                >
+                  {shown.map((s, j) => {
                     const rgb = calendar.colorOf(s.calendarId);
-                    const more = j === list.length - 1 ? allDay.get(k)!.length - list.length : 0;
                     return (
                       <p
                         key={j}
@@ -610,7 +618,6 @@ export default function DayColumns({
                         className={cn(
                           "truncate rounded border-l-[3px] px-1 font-semibold",
                           compact ? "text-[9px] leading-[14px]" : "text-[12px] leading-5",
-                          allDayShown > 1 && "min-w-0 flex-1",
                         )}
                         style={{
                           background: `rgb(${tint(rgb, dark)})`,
@@ -619,12 +626,18 @@ export default function DayColumns({
                         }}
                       >
                         {calendar.labelOf(s)}
-                        {more > 0 && ` +${more}`}
+                        {compact && more > 0 && ` +${more}`}
                       </p>
                     );
                   })}
-              </div>
-            ))}
+                  {full && (
+                    <p className="truncate rounded bg-muted px-1 text-[12px] font-semibold leading-5 text-muted-foreground">
+                      +{more}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </Track>
         </div>
       )}
@@ -839,11 +852,13 @@ export default function DayColumns({
 function Track({
   x,
   className,
+  height,
   blurred = false,
   children,
 }: {
   x: MotionValue<number>;
   className?: string;
+  height?: number;
   /** Takes the glide's blur (`travel`). */
   blurred?: boolean;
   children: ReactNode;
@@ -851,7 +866,7 @@ function Track({
   return (
     <div
       className={cn("relative min-w-0 flex-1 overflow-hidden", className)}
-      style={blurred ? BLURRED : undefined}
+      style={{ ...(blurred ? BLURRED : undefined), ...(height !== undefined && { height }) }}
     >
       <motion.div className="absolute inset-y-0 left-0" style={{ x }}>
         {children}
