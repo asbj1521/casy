@@ -586,9 +586,9 @@
  */
 :root {
   --glass-tint: 255 255 255;
-  --glass-alpha: 0.6;
-  --glass-edge: 255 255 255 / 0.7;
-  --glass-shine: 255 255 255 / 0.45;
+  --glass-alpha: 0.34;
+  --glass-edge: 255 255 255 / 0.85;
+  --glass-shine: 255 255 255 / 0.5;
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.theme-light) {
