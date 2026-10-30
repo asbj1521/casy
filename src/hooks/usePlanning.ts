@@ -36,7 +36,8 @@ import {
   type AnswerSteps,
 } from "@/lib/answerSteps";
 import type { MultiDayResult, VacationSuggestion } from "@/lib/availability";
-import { findPool, rankFromPool } from "@/lib/candidates";
+import { findPoolAcross, rankFromPool } from "@/lib/candidates";
+import type { ShortcutTime } from "@/lib/shortcuts";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { profileInput } from "@/lib/eventImpact";
 import { peopleForSearch, SEARCH_WINDOW } from "@/lib/eventSearch";
@@ -222,6 +223,21 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
         peopleFromChoice(memberIds, deferredChoice, !deferredSched.multiDay),
       ),
     [deferredSched, memberIds, deferredChoice],
+  );
+  // A genvej's other times (#175), searched beside the plan's own until a
+  // time is changed by hand; none for a trip, whose days are whole.
+  const [extraTimes, setExtraTimes] = useState<ShortcutTime[]>([]);
+  const extraSearches = useMemo(
+    () =>
+      deferredSched.multiDay
+        ? []
+        : extraTimes.map((time) =>
+            settingsToSearch(
+              { ...deferredSched, ...time },
+              peopleFromChoice(memberIds, deferredChoice, true),
+            ),
+          ),
+    [extraTimes, deferredSched, memberIds, deferredChoice],
   );
   const updatePeople = (choice: PeopleChoice) => {
     if (!activeGroupId) return;
@@ -426,23 +442,19 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
   }
 
   /**
-   * A genvej run or opened (#175): its group (when it still has one), name,
-   * settings from today, extras and who is coming, all at once.
+   * A genvej run or opened (#175): its name, settings from today (its first
+   * time in them) and extras, its other times searched beside it. The group
+   * and who in it is coming stay as chosen: a genvej has neither.
    */
   function loadPlan(plan: {
-    groupId: string | null;
     name: string;
     settings: Omit<SchedulerSettings, "period">;
+    times: ShortcutTime[];
     extras: EventExtras;
-    people: PeopleChoice;
   }) {
-    const groupId = plan.groupId;
-    if (groupId) {
-      setSelectedGroupId(groupId);
-      setPeopleChoices((all) => ({ ...all, [groupId]: plan.people }));
-    }
     setName(plan.name);
-    setSched({ ...plan.settings, period: null });
+    setSched({ ...plan.settings, ...plan.times[0], period: null });
+    setExtraTimes(plan.times.slice(1));
     setExtras(plan.extras);
     setSteps(restart());
   }
@@ -634,7 +646,7 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
       // from the server; without them (slow, or failing) the dates are
       // picked as they always were.
       const options = { first, end: searchWindow.end, count: extras.dateCount, profile: impact };
-      const pool = findPool(fresh ?? participants, search, options, TZ);
+      const pool = findPoolAcross(fresh ?? participants, [search, ...extraSearches], options, TZ);
       const scores = await scoresFor(groupId, impact, [first, ...pool]);
       dates = rankFromPool(
         pool,
@@ -754,6 +766,8 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
   // A setting changed by hand on the AI's screen is no longer its guess.
   const updateSettingsByHand = (patch: Partial<SchedulerSettings>) => {
     updateSettings(patch);
+    // A genvej's time changed by hand: the plan is the one time on screen now.
+    if ("startHour" in patch || "startWindow" in patch || "anyTime" in patch) setExtraTimes([]);
     planner.edited(planFieldsOf(patch));
   };
   /** A way to widen the search picked (#135): only what it changes, by hand. */
@@ -803,6 +817,7 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
     planner,
     // The search and its answer.
     search,
+    extraSearches,
     searchWindow,
     loadingGroup,
     participants,

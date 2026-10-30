@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventImpact } from "@/api/eventProfile";
-import { findPool, pickCandidates, rankCandidates, rankFromPool } from "@/lib/candidates";
+import {
+  findPool,
+  findPoolAcross,
+  pickCandidates,
+  rankCandidates,
+  rankFromPool,
+} from "@/lib/candidates";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import type { FoundDate } from "@/lib/scheduler";
 import { localDate, wallTime } from "@/lib/zone";
@@ -262,5 +268,32 @@ describe("1 January (#166)", () => {
       TZ,
     );
     expect(byPick.map(date)[0]).toBe("1/1");
+  });
+});
+
+describe("findPoolAcross (#175)", () => {
+  it("merges a genvej's times into one pool, soonest first, each moment once", () => {
+    const group = [person("a")];
+    const morning: EventSettings = { kind: "single", durationMinutes: 120, startHour: 8 };
+    const evening: EventSettings = { kind: "single", durationMinutes: 120, startHour: 19 };
+    const first = firstFrom(group, morning);
+    const end = new Date(wallTime(2026, 9, 16, 0, TZ)).toISOString();
+    const pool = findPoolAcross(group, [morning, evening, evening], { first, end }, TZ);
+    const hours = pool.map((d) => localDate(Date.parse(d.slot.start), TZ));
+    // From the day after the first, a morning and an evening each day.
+    expect(pool).toHaveLength(6);
+    expect(new Set(pool.map((d) => d.slot.start)).size).toBe(6);
+    expect([...pool].sort((x, y) => Date.parse(x.slot.start) - Date.parse(y.slot.start))).toEqual(
+      pool,
+    );
+    expect(hours.map((h) => h.day)).toEqual([13, 13, 14, 14, 15, 15]);
+  });
+
+  it("is findPool itself for one search", () => {
+    const group = [person("a")];
+    const first = firstFrom(group, EVENING);
+    expect(findPoolAcross(group, [EVENING], { first, end: END }, TZ)).toEqual(
+      findPool(group, EVENING, { first, end: END }, TZ),
+    );
   });
 });

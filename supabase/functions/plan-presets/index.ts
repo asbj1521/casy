@@ -2,16 +2,14 @@
  * Genveje (#175): a person's saved plans, run again with one tap from the
  * Planlæg sheet.
  *
- * POST { action: "list" }                            -> { presets }
- *      { action: "save", id?, name, groupId, plan }  -> { presets, savedId }
- *      { action: "delete", id }                      -> { presets }
+ * POST { action: "list" }                   -> { presets }
+ *      { action: "save", id?, name, plan }  -> { presets, savedId }
+ *      { action: "delete", id }             -> { presets }
  *
- * Only ever the caller's own. A genvej's group must be one of theirs when it
- * is saved; a group deleted later leaves it without one (the table's foreign
- * key), and the app asks for a group before it runs.
+ * Only ever the caller's own. A genvej has no group: it runs with whichever
+ * group is chosen in the Planlæg sheet.
  */
 import { requireCaller } from "../_shared/auth.ts";
-import { requireMember } from "../_shared/groups.ts";
 import { HttpError, requireString, serve } from "../_shared/http.ts";
 import {
   MAX_PRESETS,
@@ -43,8 +41,7 @@ serve("plan-presets", async (req, body) => {
   if (action === "save") {
     const preset = readPreset(body);
     if (!preset) throw new HttpError(400, "That shortcut isn't valid.");
-    if (preset.groupId) await requireMember(db, preset.groupId, caller.id);
-    const row = { name: preset.name, group_id: preset.groupId, plan: preset.plan };
+    const row = { name: preset.name, plan: preset.plan };
 
     let savedId: string;
     if (preset.id) {

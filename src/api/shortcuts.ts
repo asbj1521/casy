@@ -12,7 +12,6 @@ import { callFunction } from "@/lib/supabaseFunctions";
 interface StoredShortcut {
   id: string;
   name: string;
-  groupId: string | null;
   plan: unknown;
   updatedAt: string;
 }
@@ -23,9 +22,7 @@ function readAll(stored: StoredShortcut[] | undefined): Shortcut[] {
   const base = randomDefaultSettings(() => 0);
   return (stored ?? []).flatMap((s) => {
     const plan = readShortcutPlan(s.plan, base);
-    return plan
-      ? [{ id: s.id, name: s.name, groupId: s.groupId, plan, updatedAt: s.updatedAt }]
-      : [];
+    return plan ? [{ id: s.id, name: s.name, plan, updatedAt: s.updatedAt }] : [];
   });
 }
 
@@ -52,7 +49,6 @@ export function shortcutsQuery(userId: string) {
 export async function saveShortcut(input: {
   id: string | null;
   name: string;
-  groupId: string | null;
   plan: ShortcutPlan;
 }): Promise<{ shortcuts: Shortcut[]; savedId: string }> {
   const body = await callFunction<{ presets: StoredShortcut[]; savedId: string }>("plan-presets", {

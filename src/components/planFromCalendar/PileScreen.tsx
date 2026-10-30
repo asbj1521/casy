@@ -13,7 +13,7 @@ import { useDateScores } from "@/hooks/useDateScores";
 import { eventProfileQuery } from "@/hooks/useEventProfile";
 import { TZ, type Planning } from "@/hooks/usePlanning";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
-import { findPool, rankFromPool } from "@/lib/candidates";
+import { findPoolAcross, rankFromPool } from "@/lib/candidates";
 import { comfortNotes } from "@/lib/comfortNotes";
 import { edgeWarnings } from "@/lib/earlyMorning";
 import { impactOn } from "@/lib/eventImpact";
@@ -125,6 +125,7 @@ export default function PileScreen({
     participants,
     activeGroup,
     search,
+    extraSearches,
     searchWindow,
     youProfileId,
     found,
@@ -165,9 +166,10 @@ export default function PileScreen({
   const poolFound = useMemo(
     () =>
       participants && found?.slot
-        ? findPool(
+        ? findPoolAcross(
             participants,
-            search,
+            // A genvej's other times too (#175), ranked together.
+            [search, ...extraSearches],
             {
               first: { slot: found.slot, conflicts: found.conflicts },
               end: searchWindow.end,
@@ -176,7 +178,7 @@ export default function PileScreen({
             TZ,
           )
         : null,
-    [participants, found, search, searchWindow, extras.dateCount],
+    [participants, found, search, extraSearches, searchWindow, extras.dateCount],
   );
   const scoring = useMemo(
     () => (poolFound && found?.slot ? [{ slot: found.slot }, ...poolFound] : null),

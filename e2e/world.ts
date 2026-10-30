@@ -578,7 +578,7 @@ export interface World {
   /** What Mia told Casy that is in no calendar (#116); none until a test saves some. */
   entries: StoredEntry[];
   /** Mia's genveje (#175), as plan-presets keeps them; none until a test saves one. */
-  presets: { id: string; name: string; groupId: string | null; plan: unknown; updatedAt: string }[];
+  presets: { id: string; name: string; plan: unknown; updatedAt: string }[];
   groups: Group[];
   invitations: Invitation[];
   events: SuggestedEvent[];

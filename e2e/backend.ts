@@ -312,7 +312,6 @@ export class FakeBackend {
     if (action === "save") {
       const fields = {
         name: String(body.name).trim(),
-        groupId: (body.groupId as string | null) ?? null,
         plan: body.plan,
         updatedAt: NOW,
       };

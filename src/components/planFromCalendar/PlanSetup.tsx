@@ -30,18 +30,18 @@ import { useAiFill, type PlanState } from "./useAiFill";
  * The group shares its row with Genveje (#175), three quarters to one. A
  * genvej's own editor shows the plan without the group or the months (a
  * genvej has neither: it runs with the group chosen, from today), its times
- * in their place (`top`).
+ * in their place (`editor`).
  */
 export default function PlanSetup({
   planning,
   onShortcuts,
-  top,
+  editor,
 }: {
   planning: Planning;
   /** Genveje beside the group (#175); none in a genvej's own editor. */
   onShortcuts?: () => void;
-  /** In a genvej's editor (#175): what stands in the group's place, and no months. */
-  top?: ReactNode;
+  /** A genvej's editor (#175): no group and no months, its times (`top`) in the group's place. */
+  editor?: { top: ReactNode };
 }) {
   const t = useT();
   const {
@@ -109,48 +109,63 @@ export default function PlanSetup({
     <>
       {/* Nothing to press while Casy fills the sheet in. */}
       <div inert={fill.active || planner.pending}>
-        {top ?? (
-          <div className="flex gap-3">
-            <ListGroup className="mt-0 flex-[3]">
-              {/* Show, don't tell: the members as bubbles, the group's name big;
+        {editor ? (
+          <>
+            {/* A genvej: its name first, plain, then its times (#175). */}
+            <NameField
+              value={name}
+              onChange={setName}
+              ai={null}
+              fieldRef={field}
+              lit={false}
+              label={t.shortcuts.nameLabel}
+              placeholder={t.shortcuts.namePlaceholder}
+            />
+            {editor.top && <div className="mt-4">{editor.top}</div>}
+          </>
+        ) : (
+          <>
+            <div className="flex gap-3">
+              <ListGroup className="mt-0 flex-[3]">
+                {/* Show, don't tell: the members as bubbles, the group's name big;
                   "Gruppe" is left to screen readers. */}
-              <ListRow
-                id={groupRow}
-                icon={Users}
-                leading={
-                  activeGroup && activeGroup.members.length > 0 ? (
-                    <GroupBubbles members={activeGroup.members} />
-                  ) : undefined
-                }
-                label={
-                  <span className="text-[17px] font-semibold">
-                    <span className="sr-only">{t.scheduler.group} </span>
-                    {activeGroup?.name ?? t.scheduler.group}
-                  </span>
-                }
-                chevron
-                onClick={() => setPicking(true)}
-              />
-            </ListGroup>
-            {onShortcuts && (
-              <button
-                type="button"
-                onClick={onShortcuts}
-                className="flex min-w-0 flex-1 items-center justify-center rounded-2xl border bg-card text-[15px] font-medium text-primary transition-colors active:bg-secondary"
-              >
-                {t.shortcuts.title}
-              </button>
-            )}
-          </div>
+                <ListRow
+                  id={groupRow}
+                  icon={Users}
+                  leading={
+                    activeGroup && activeGroup.members.length > 0 ? (
+                      <GroupBubbles members={activeGroup.members} />
+                    ) : undefined
+                  }
+                  label={
+                    <span className="text-[17px] font-semibold">
+                      <span className="sr-only">{t.scheduler.group} </span>
+                      {activeGroup?.name ?? t.scheduler.group}
+                    </span>
+                  }
+                  chevron
+                  onClick={() => setPicking(true)}
+                />
+              </ListGroup>
+              {onShortcuts && (
+                <button
+                  type="button"
+                  onClick={onShortcuts}
+                  className="flex min-w-0 flex-1 items-center justify-center rounded-2xl border bg-card text-[15px] font-medium text-primary transition-colors active:bg-secondary"
+                >
+                  {t.shortcuts.title}
+                </button>
+              )}
+            </div>
+            <NameField
+              value={fill.name ?? name}
+              onChange={setName}
+              ai={aiOn ? { pending: planner.pending, error: planner.error, onAsk: askAi } : null}
+              fieldRef={field}
+              lit={fill.lit === "name"}
+            />
+          </>
         )}
-
-        <NameField
-          value={fill.name ?? name}
-          onChange={setName}
-          ai={aiOn ? { pending: planner.pending, error: planner.error, onAsk: askAi } : null}
-          fieldRef={field}
-          lit={fill.lit === "name"}
-        />
 
         <TimeRows
           settings={shown}
@@ -158,7 +173,7 @@ export default function PlanSetup({
           lit={fill.lit}
           drive={fill.active ? { sheet: fill.sheet, press: fill.press } : null}
         />
-        {!top && (
+        {!editor && (
           <PlanMonths
             value={shown.period}
             onChange={(period) => updateSettingsByHand({ period })}

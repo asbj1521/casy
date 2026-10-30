@@ -96,6 +96,26 @@ export function findPool(
 }
 
 /**
+ * findPool for several searches of one event at once (#175: a genvej's
+ * times, the first the plan's own): every date each of them offers after
+ * the first, soonest first, each moment once. The ranking then picks among
+ * them all, its spacing keeping two times off one day.
+ */
+export function findPoolAcross(
+  participants: Participant[],
+  searches: EventSettings[],
+  options: CandidateOptions,
+  timeZone: string,
+): FoundDate[] {
+  if (searches.length <= 1) return findPool(participants, searches[0], options, timeZone);
+  const seen = new Set([options.first.slot.start]);
+  return searches
+    .flatMap((search) => findPool(participants, search, options, timeZone))
+    .filter((d) => !seen.has(d.slot.start) && !!seen.add(d.slot.start))
+    .sort((a, b) => Date.parse(a.slot.start) - Date.parse(b.slot.start));
+}
+
+/**
  * pickCandidates, with every date it looked at (`pool`: the first, then the
  * rest soonest first) beside the ones it chose, soonest first (`chosen`) and
  * in the order it chose them (`byPick`: best first, by the rules above). The

@@ -101,8 +101,8 @@ const da: LegalCopy = {
             </li>
             <li>
               <Term>Genveje:</Term> planer, du har gemt for at planlægge dem igen med et tryk:
-              navnet, gruppen, tidspunkterne, længden, hvem der skal med, stedet, noten og
-              svarfristen. Kun du kan se dem, og de gemmes, til du sletter dem.
+              navnet, tidspunkterne, dagene, længden, stedet, noten og svarfristen. Kun du kan se
+              dem, og de gemmes, til du sletter dem.
             </li>
             <li>
               <Term>Dit ja til AI:</Term> om du har sagt ja til, at Casys AI må læse i din kalender,
@@ -591,8 +591,8 @@ const en: LegalCopy = {
             </li>
             <li>
               <Term>Shortcuts:</Term> plans you saved to plan again with one tap: the name, the
-              group, the times, the length, who is coming, the place, the note and the deadline.
-              Only you can see them, and they are kept until you delete them.
+              times, the days, the length, the place, the note and the deadline. Only you can see
+              them, and they are kept until you delete them.
             </li>
             <li>
               <Term>Your yes to AI:</Term> whether you said yes to Casy&apos;s AI reading your

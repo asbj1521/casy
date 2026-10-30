@@ -70,7 +70,7 @@ export default function MoreDetails({
           onClick={() => setOpen((o) => !o)}
         />
       </ListGroup>
-      <Collapse open={open}>
+      <Collapse open={open} follow>
         <ListGroup className="mt-3">
           <ListRow
             id={rows.people}

@@ -23,7 +23,6 @@ export function readUuid(raw: unknown): string | null {
 export interface PresetInput {
   id: string | null;
   name: string;
-  groupId: string | null;
   plan: Record<string, unknown>;
 }
 
@@ -31,33 +30,28 @@ export interface PresetInput {
 export function readPreset(body: Record<string, unknown>): PresetInput | null {
   const id = body.id === undefined || body.id === null ? null : readUuid(body.id);
   if (body.id != null && id === null) return null;
-  const groupId =
-    body.groupId === undefined || body.groupId === null ? null : readUuid(body.groupId);
-  if (body.groupId != null && groupId === null) return null;
   if (typeof body.name !== "string") return null;
   const name = body.name.trim().replace(/\s+/g, " ");
   if (name.length === 0 || name.length > MAX_PRESET_NAME) return null;
   const plan = body.plan;
   if (!plan || typeof plan !== "object" || Array.isArray(plan)) return null;
   if (new TextEncoder().encode(JSON.stringify(plan)).length > MAX_PLAN_BYTES) return null;
-  return { id, name, groupId, plan: plan as Record<string, unknown> };
+  return { id, name, plan: plan as Record<string, unknown> };
 }
 
 export interface PresetRow {
   id: string;
   name: string;
-  group_id: string | null;
   plan: Record<string, unknown>;
   updated_at: string;
 }
 
-export const PRESET_COLUMNS = "id, name, group_id, plan, updated_at";
+export const PRESET_COLUMNS = "id, name, plan, updated_at";
 
 /** A genvej as the app gets it. */
 export interface StoredPreset {
   id: string;
   name: string;
-  groupId: string | null;
   plan: Record<string, unknown>;
   updatedAt: string;
 }
@@ -66,7 +60,6 @@ export function presetFrom(row: PresetRow): StoredPreset {
   return {
     id: row.id,
     name: row.name,
-    groupId: row.group_id,
     plan: row.plan,
     updatedAt: row.updated_at,
   };

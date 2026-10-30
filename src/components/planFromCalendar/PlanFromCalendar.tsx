@@ -14,11 +14,18 @@ import { PUSH, pushTransition } from "@/components/ui/push";
 import { useSignedInUser } from "@/context/auth";
 import { usePlanning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
-import { MAX_SHORTCUT_NAME, shortcutPlan, type Shortcut } from "@/lib/shortcuts";
+import {
+  MAX_SHORTCUT_NAME,
+  shortcutPlan,
+  timeOf,
+  type Shortcut,
+  type ShortcutTime,
+} from "@/lib/shortcuts";
 
 import PileScreen from "./PileScreen";
 import PlanSetup from "./PlanSetup";
 import ShortcutsScreen from "./ShortcutsScreen";
+import ShortcutTimes from "./ShortcutTimes";
 
 /** The sheet's screens (#175): the plan, the genveje beside it, and one genvej being made or changed. */
 type Screen =
@@ -94,25 +101,49 @@ export default function PlanFromCalendar({
     ...shortcutsQuery(userId),
     enabled: open,
   });
-  const fill = (s: Shortcut) => planning.loadPlan({ groupId: s.groupId, name: s.name, ...s.plan });
+  const fill = (s: Shortcut) => planning.loadPlan({ name: s.name, ...s.plan });
+  // Run with the group chosen in Planlæg: a genvej has none of its own.
   const runShortcut = (s: Shortcut) => {
+    if (!planning.activeGroup) return;
     fill(s);
     toPile();
+  };
+
+  // The editor's times (#175): the one picked is the plan's own time on
+  // screen (Tidspunkt, Fleksibel), the others kept here until picked.
+  const [times, setTimes] = useState<ShortcutTime[]>([]);
+  const [removing, setRemoving] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const liveTimes = times.map((time, i) => (i === current ? timeOf(planning.sched) : time));
+  const showTime = (all: ShortcutTime[], index: number) => {
+    setTimes(all);
+    setCurrent(index);
+    planning.updateSettings(all[index]);
+  };
+  const openEditor = (shortcut: Shortcut | null) => {
+    if (shortcut) fill(shortcut);
+    setTimes(shortcut ? shortcut.plan.times : [timeOf(planning.sched)]);
+    setCurrent(0);
+    setRemoving(false);
+    go({ kind: "editor", shortcut });
   };
   const save = useMutation({
     mutationFn: (shortcut: Shortcut | null) =>
       saveShortcut({
         id: shortcut?.id ?? null,
         name: planning.name.trim().slice(0, MAX_SHORTCUT_NAME),
-        groupId: planning.activeGroup?.isExample ? null : planning.activeGroupId,
-        plan: shortcutPlan(planning.sched, planning.extras, planning.peopleChoice),
+        // A trip looks at whole days: its times are only a meeting's.
+        plan: shortcutPlan(
+          planning.sched,
+          planning.extras,
+          planning.sched.multiDay ? [timeOf(planning.sched)] : liveTimes,
+        ),
       }),
     onSuccess: ({ shortcuts: all }) => {
       queryClient.setQueryData(shortcutsQueryKey(userId), all);
       go({ kind: "shortcuts" });
     },
   });
-  const [removing, setRemoving] = useState(false);
   const remove = useMutation({
     mutationFn: (id: string) => deleteShortcut(id),
     onSuccess: (all) => {
@@ -162,7 +193,7 @@ export default function PlanFromCalendar({
           ) : screen.kind === "editor" ? (
             <FlowButton
               onClick={() => save.mutate(editing)}
-              disabled={!named || !planning.activeGroup || planning.activeGroup.isExample}
+              disabled={!named}
               busy={save.isPending}
             >
               {words.save}
@@ -187,24 +218,36 @@ export default function PlanFromCalendar({
             {screen.kind === "shortcuts" && (
               <ShortcutsScreen
                 shortcuts={shortcuts}
-                groups={planning.groups}
                 error={shortcutsError?.message ?? null}
                 onRun={runShortcut}
-                onEdit={(s) => {
-                  fill(s);
-                  go({ kind: "editor", shortcut: s });
-                }}
-                onNew={() => go({ kind: "editor", shortcut: null })}
+                onEdit={openEditor}
+                onNew={() => openEditor(null)}
               />
             )}
             {screen.kind === "editor" && (
               <>
-                {editing && !planning.groups.some((g) => g.id === editing.groupId) && (
-                  <Notice tone="info" bare className="mb-3">
-                    {words.pickGroup}
-                  </Notice>
-                )}
-                <PlanSetup planning={planning} />
+                <PlanSetup
+                  planning={planning}
+                  editor={{
+                    top: planning.sched.multiDay ? null : (
+                      <ShortcutTimes
+                        times={liveTimes}
+                        durationMinutes={planning.sched.durationMinutes}
+                        current={current}
+                        onPick={(i) => showTime(liveTimes, i)}
+                        onAdd={() =>
+                          showTime([...liveTimes, timeOf(planning.sched)], liveTimes.length)
+                        }
+                        onRemove={(i) =>
+                          showTime(
+                            liveTimes.filter((_, j) => j !== i),
+                            i - 1,
+                          )
+                        }
+                      />
+                    ),
+                  }}
+                />
                 {!named && (
                   <p className="mt-3 px-1 text-[12px] text-muted-foreground">{words.nameFirst}</p>
                 )}

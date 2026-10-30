@@ -25,6 +25,8 @@ export default function NameField({
   ai,
   fieldRef,
   lit,
+  label,
+  placeholder,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -34,6 +36,9 @@ export default function NameField({
   fieldRef: RefObject<HTMLDivElement | null>;
   /** Casy is typing in it right now. */
   lit: boolean;
+  /** Another label and example, for a genvej's name (#175). */
+  label?: string;
+  placeholder?: string;
 }) {
   const t = useT();
   const words = t.aiPlan;
@@ -51,7 +56,7 @@ export default function NameField({
   return (
     <div className="mt-4">
       <label className="block">
-        <span className={FIELD_LABEL}>{t.scheduler.name}</span>
+        <span className={FIELD_LABEL}>{label ?? t.scheduler.name}</span>
         <div ref={fieldRef} className="relative">
           <input
             type="text"
@@ -66,7 +71,9 @@ export default function NameField({
             }}
             enterKeyHint={ai ? "go" : undefined}
             readOnly={ai?.pending}
-            placeholder={speech.listening ? words.listening : t.scheduler.namePlaceholder}
+            placeholder={
+              speech.listening ? words.listening : (placeholder ?? t.scheduler.namePlaceholder)
+            }
             className={cn(
               FIELD,
               ai && "pr-14",
