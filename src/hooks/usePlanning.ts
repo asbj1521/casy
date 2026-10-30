@@ -614,7 +614,13 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
       const options = { first, end: searchWindow.end, count: extras.dateCount, profile: impact };
       const pool = findPool(fresh ?? participants, search, options, TZ);
       const scores = await scoresFor(groupId, impact, [first, ...pool]);
-      dates = rankFromPool(pool, search, { ...options, scores }, TZ).chosen.map((d) => ({
+      dates = rankFromPool(
+        pool,
+        fresh ?? participants,
+        search,
+        { ...options, scores },
+        TZ,
+      ).chosen.map((d) => ({
         start: d.slot.start,
         end: d.slot.end,
       }));

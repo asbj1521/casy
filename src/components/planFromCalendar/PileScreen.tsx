@@ -203,6 +203,7 @@ export default function PileScreen({
     if (!participants || !found?.slot || !poolFound) return null;
     const { pool, chosen, byPick } = rankFromPool(
       poolFound,
+      participants,
       search,
       {
         first: { slot: found.slot, conflicts: found.conflicts },

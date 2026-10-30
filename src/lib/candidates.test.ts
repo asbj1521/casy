@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventImpact } from "@/api/eventProfile";
-import { findPool, pickCandidates, rankCandidates } from "@/lib/candidates";
+import { findPool, pickCandidates, rankCandidates, rankFromPool } from "@/lib/candidates";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import type { FoundDate } from "@/lib/scheduler";
 import { localDate, wallTime } from "@/lib/zone";
@@ -11,6 +11,8 @@ const TZ = "Europe/Copenhagen";
 /** Monday 12 October 2026, Danish midnight. */
 const MONDAY = new Date(wallTime(2026, 9, 12, 0, TZ)).toISOString();
 const END = new Date(wallTime(2026, 11, 1, 0, TZ)).toISOString();
+/** The time now in these tests: before every date, so none is too soon (#178). */
+const NOW = wallTime(2026, 9, 1, 12, TZ);
 const EVENING: EventSettings = { kind: "single", durationMinutes: 180, startHour: 18 };
 
 const person = (name: string, busy: BusyInterval[] = []): Participant => ({
@@ -31,7 +33,7 @@ describe("pickCandidates", () => {
   it("offers five meetings, the first on screen first, spread over different weekdays", () => {
     const group = [person("a"), person("b")];
     const first = firstFrom(group, EVENING);
-    const picked = pickCandidates(group, EVENING, { first, end: END }, TZ);
+    const picked = pickCandidates(group, EVENING, { first, end: END, now: NOW }, TZ);
 
     expect(picked).toHaveLength(5);
     expect(picked[0]).toBe(first);
@@ -52,7 +54,7 @@ describe("pickCandidates", () => {
     const first = firstFrom(group, EVENING);
     expect(first.conflicts).not.toHaveLength(0);
 
-    const picked = pickCandidates(group, EVENING, { first, end: END }, TZ);
+    const picked = pickCandidates(group, EVENING, { first, end: END, now: NOW }, TZ);
     expect(picked).toHaveLength(5);
     expect(picked.slice(1).every((d) => d.conflicts.length === 0)).toBe(true);
     expect(picked.slice(1).every((d) => day(d).day >= 22)).toBe(true);
@@ -62,7 +64,7 @@ describe("pickCandidates", () => {
     const group = [person("a")];
     const first = firstFrom(group, EVENING);
     const end = new Date(wallTime(2026, 9, 16, 0, TZ)).toISOString();
-    const picked = pickCandidates(group, EVENING, { first, end }, TZ);
+    const picked = pickCandidates(group, EVENING, { first, end, now: NOW }, TZ);
     expect(picked.map((d) => day(d).day)).toEqual([12, 13, 14, 15]);
   });
 
@@ -70,7 +72,7 @@ describe("pickCandidates", () => {
     const holiday: EventSettings = { kind: "vacation", days: 3 };
     const group = [person("a"), person("b")];
     const first = firstFrom(group, holiday);
-    const picked = pickCandidates(group, holiday, { first, end: END }, TZ);
+    const picked = pickCandidates(group, holiday, { first, end: END, now: NOW }, TZ);
 
     expect(picked).toHaveLength(5);
     for (let i = 1; i < picked.length; i++) {
@@ -84,7 +86,7 @@ describe("pickCandidates", () => {
     const group = [person("a")];
     const first = firstFrom(group, EVENING);
     const end = new Date(wallTime(2026, 9, 13, 0, TZ)).toISOString();
-    expect(pickCandidates(group, EVENING, { first, end }, TZ)).toEqual([first]);
+    expect(pickCandidates(group, EVENING, { first, end, now: NOW }, TZ)).toEqual([first]);
   });
 });
 
@@ -92,23 +94,61 @@ describe("rankCandidates", () => {
   it("hands back every date looked at, the first first, the chosen among them", () => {
     const group = [person("a"), person("b")];
     const first = firstFrom(group, EVENING);
-    const { pool, chosen } = rankCandidates(group, EVENING, { first, end: END }, TZ);
+    const { pool, chosen } = rankCandidates(group, EVENING, { first, end: END, now: NOW }, TZ);
 
     expect(pool[0]).toBe(first);
     expect(pool.length).toBeGreaterThan(chosen.length);
     for (const d of chosen) expect(pool).toContain(d);
-    expect(chosen).toEqual(pickCandidates(group, EVENING, { first, end: END }, TZ));
+    expect(chosen).toEqual(pickCandidates(group, EVENING, { first, end: END, now: NOW }, TZ));
   });
 
   it("hands back the chosen in the order chosen too: the date on screen first", () => {
     const group = [person("a"), person("b")];
     const first = firstFrom(group, EVENING);
-    const { chosen, byPick } = rankCandidates(group, EVENING, { first, end: END }, TZ);
+    const { chosen, byPick } = rankCandidates(group, EVENING, { first, end: END, now: NOW }, TZ);
 
     expect(byPick[0]).toBe(first);
     expect([...byPick].sort((x, y) => Date.parse(x.slot.start) - Date.parse(y.slot.start))).toEqual(
       chosen,
     );
+  });
+});
+
+describe("comfort (#178)", () => {
+  it("passes over a date that only just fits for one that leaves room around it", () => {
+    // b works until 17:50 on Wednesday 14: the evening there is a rush.
+    const work: BusyInterval = {
+      start: new Date(wallTime(2026, 9, 14, 9, TZ)).toISOString(),
+      end: new Date(wallTime(2026, 9, 14, 17 + 50 / 60, TZ)).toISOString(),
+      category: "work",
+    };
+    const group = [person("a"), person("b", [work])];
+    const first = firstFrom(group, EVENING);
+    const { byPick } = rankCandidates(group, EVENING, { first, end: END, now: NOW }, TZ);
+    expect(byPick.map((d) => day(d).day)).not.toContain(14);
+  });
+
+  it("rates a year of busy calendars for a whole pool without a noticeable wait", () => {
+    // Five people with four blocks a day for a year.
+    const year = (name: string) =>
+      person(
+        name,
+        Array.from({ length: 365 * 4 }, (_, i) => ({
+          start: new Date(
+            wallTime(2026, 9, 1 + Math.floor(i / 4), 7 + (i % 4) * 3, TZ),
+          ).toISOString(),
+          end: new Date(
+            wallTime(2026, 9, 1 + Math.floor(i / 4), 8 + (i % 4) * 3, TZ),
+          ).toISOString(),
+        })),
+      );
+    const group = ["a", "b", "c", "d", "e"].map(year);
+    const first = firstFrom(group, EVENING);
+    const pool = findPool(group, EVENING, { first, end: END }, TZ);
+    const started = performance.now();
+    rankFromPool(pool, group, EVENING, { first, end: END, now: NOW }, TZ);
+    // About 10 ms on a laptop; the bound only catches a rule gone quadratic.
+    expect(performance.now() - started).toBeLessThan(250);
   });
 });
 
@@ -121,10 +161,10 @@ describe("scores (#119)", () => {
 
   it("takes the best-scoring clean dates, the date on screen still first", () => {
     const first = firstFrom(group, EVENING);
-    const pool = [first, ...findPool(group, EVENING, { first, end: END }, TZ)];
+    const pool = [first, ...findPool(group, EVENING, { first, end: END, now: NOW }, TZ)];
     // The 14th, 16th and 18th are bad nights for someone; the 22nd on suit everyone.
     const scores = scoresBy(pool, { 14: 40, 16: 40, 18: 40, 20: 60 });
-    const { byPick } = rankCandidates(group, EVENING, { first, end: END, scores }, TZ);
+    const { byPick } = rankCandidates(group, EVENING, { first, end: END, scores, now: NOW }, TZ);
 
     expect(byPick[0]).toBe(first);
     const days = byPick.slice(1).map((d) => day(d).day);
@@ -136,10 +176,12 @@ describe("scores (#119)", () => {
 
   it("changes nothing when every date scores the same, or when there are no scores", () => {
     const first = firstFrom(group, EVENING);
-    const pool = [first, ...findPool(group, EVENING, { first, end: END }, TZ)];
-    const plain = pickCandidates(group, EVENING, { first, end: END }, TZ);
+    const pool = [first, ...findPool(group, EVENING, { first, end: END, now: NOW }, TZ)];
+    const plain = pickCandidates(group, EVENING, { first, end: END, now: NOW }, TZ);
     const flat = scoresBy(pool, {});
-    expect(pickCandidates(group, EVENING, { first, end: END, scores: flat }, TZ)).toEqual(plain);
+    expect(pickCandidates(group, EVENING, { first, end: END, scores: flat, now: NOW }, TZ)).toEqual(
+      plain,
+    );
   });
 
   it("never lets a score lift a date that costs someone above one that costs nobody", () => {
@@ -150,12 +192,12 @@ describe("scores (#119)", () => {
     }));
     const costly = [person("a"), person("b", classes)];
     const first = firstFrom(costly, EVENING);
-    const pool = [first, ...findPool(costly, EVENING, { first, end: END }, TZ)];
+    const pool = [first, ...findPool(costly, EVENING, { first, end: END, now: NOW }, TZ)];
     // The dates needing a skip score perfectly, the clean ones poorly: clean still wins.
     const scores = new Map(
       pool.map((d) => [d.slot.start, d.conflicts.length > 0 ? 100 : 30] as const),
     );
-    const picked = pickCandidates(costly, EVENING, { first, end: END, scores }, TZ);
+    const picked = pickCandidates(costly, EVENING, { first, end: END, scores, now: NOW }, TZ);
     expect(picked.slice(1).every((d) => d.conflicts.length === 0)).toBe(true);
   });
 });
@@ -184,7 +226,12 @@ describe("1 January (#166)", () => {
   };
 
   it("offers a small plan there only after every other date", () => {
-    const { byPick, chosen } = rankCandidates(group, AFTERNOON, { first: first(), end }, TZ);
+    const { byPick, chosen } = rankCandidates(
+      group,
+      AFTERNOON,
+      { first: first(), end, now: NOW },
+      TZ,
+    );
     // Picked last of all, though by the spacing rules it would come second.
     expect(byPick.map(date).at(-1)).toBe("1/1");
     expect(chosen.map(date)).toEqual(["12/30", "12/31", "1/1", "1/2"]);
