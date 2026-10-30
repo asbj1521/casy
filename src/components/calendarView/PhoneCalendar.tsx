@@ -524,8 +524,9 @@ export default function PhoneCalendar() {
       {/* Planning starts from the calendar (#126), beside Aftaler and the
           profile; out of the way while a day or the plan is open. */}
       <HomeBar
-        hidden={(dayShown !== null || planOpen || eventsOpen || profileOpen || voteOpen) && !flight}
+        hidden={(dayOpen || planOpen || eventsOpen || profileOpen || voteOpen) && !flight}
         flight={flight}
+        zoomingOut={dayShown !== null && !dayOpen}
         onEvents={openEvents}
         onPlan={openPlan}
         onProfile={openProfile}
@@ -538,7 +539,8 @@ export default function PhoneCalendar() {
         <VotePill
           title={eventTitle(homeVotes.waiting[0].title, t)}
           count={homeVotes.waiting.length}
-          hidden={location.search !== "" || dayShown !== null || flight}
+          hidden={location.search !== "" || dayOpen || flight}
+          zoomingOut={dayShown !== null && !dayOpen}
           onOpen={() => openVote(homeVotes.waiting[0].id)}
         />
       )}

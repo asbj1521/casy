@@ -1,5 +1,6 @@
 import { ChevronRight, Vote } from "lucide-react";
 
+import { ZOOM } from "@/components/swipe/morph";
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 
@@ -12,12 +13,15 @@ export default function VotePill({
   title,
   count,
   hidden,
+  zoomingOut = false,
   onOpen,
 }: {
   /** The soonest waiting vote's title. */
   title: string;
   count: number;
   hidden: boolean;
+  /** A day is zooming back into the month: the fade-in takes as long as the zoom. */
+  zoomingOut?: boolean;
   onOpen: () => void;
 }) {
   const t = useT();
@@ -31,6 +35,7 @@ export default function VotePill({
         "bottom-[calc(max(env(safe-area-inset-bottom),0.75rem)+3.75rem)]",
         hidden && "pointer-events-none opacity-0",
       )}
+      style={zoomingOut ? { transitionDuration: `${ZOOM.outMs}ms` } : undefined}
     >
       <button
         type="button"

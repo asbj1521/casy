@@ -6,6 +6,7 @@ import { invitationsQuery } from "@/api/groups";
 import { useSignedInUser } from "@/context/auth";
 import { useEventsBadge } from "@/hooks/useEventsBadge";
 import { useT } from "@/i18n/lang";
+import { ZOOM } from "@/components/swipe/morph";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,11 +17,13 @@ import { cn } from "@/lib/utils";
  * a sheet or the plan is open, but never unmounted: Planlæg's sent dates fly
  * into the Aftaler button (data-tab-icon), measured where it stands. Under
  * every sheet (z-20, as the Planlæg button was), and over the pile only while
- * the dates fly (`flight`).
+ * the dates fly (`flight`). Back from a day, they fade in as the day zooms
+ * into the month (`zoomingOut`), not once it has landed.
  */
 export default function HomeBar({
   hidden,
   flight,
+  zoomingOut = false,
   onEvents,
   onPlan,
   onProfile,
@@ -31,6 +34,8 @@ export default function HomeBar({
 }: {
   hidden: boolean;
   flight: boolean;
+  /** A day is zooming back into the month: the fade-in takes as long as the zoom. */
+  zoomingOut?: boolean;
   onEvents: () => void;
   onPlan: () => void;
   onProfile: () => void;
@@ -56,6 +61,7 @@ export default function HomeBar({
         flight ? "z-[65]" : "z-20",
         hidden && "pointer-events-none opacity-0",
       )}
+      style={zoomingOut ? { transitionDuration: `${ZOOM.outMs}ms` } : undefined}
     >
       <RoundButton
         ref={eventsRef}
