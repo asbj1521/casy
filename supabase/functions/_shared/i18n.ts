@@ -76,6 +76,7 @@ export const DANISH: Record<string, string> = {
   "Only the person who suggested this event can choose its date.":
     "Kun den, der foreslog aftalen, kan vælge datoen.",
   "That shortcut isn't valid.": "Genvejen er ikke gyldig.",
+  "That picture can't be used. Try another one.": "Det billede kan ikke bruges. Prøv et andet.",
   "That shortcut no longer exists.": "Genvejen findes ikke længere.",
   "You can keep at most 6 shortcuts. Delete one first.":
     "Du kan højst have 6 genveje. Slet en først.",

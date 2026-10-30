@@ -1,5 +1,6 @@
 /** The events function's list: every event the caller is in, as the page shows them (#160, split out of index.ts). */
 import { currentDate, type EventMode } from "../_shared/events.ts";
+import { pictureLinks } from "../_shared/pictures.ts";
 import { cleanProfile } from "../_shared/profileAi.ts";
 import { type Db } from "../_shared/supabaseAdmin.ts";
 
@@ -140,9 +141,19 @@ export async function listEvents(db: Db, profileId: string, callerName: string, 
   }
   const { data: names, error: namesErr } = await db
     .from("profiles")
-    .select("id, display_name")
+    .select("id, display_name, avatar_path")
     .in("id", [...peopleIds]);
   if (namesErr) throw namesErr;
+  // Everyone's profile picture (#187), linked in one call.
+  const pictures = await pictureLinks(
+    db,
+    names.map((n) => n.avatar_path as string | null),
+  );
+  const avatarById = new Map<string, string>();
+  for (const n of names) {
+    const link = n.avatar_path ? pictures.get(n.avatar_path as string) : undefined;
+    if (link) avatarById.set(n.id, link);
+  }
   const nameById = new Map<string, string>();
   for (const n of names) if (n.display_name) nameById.set(n.id, n.display_name);
   const nameOf = (id: string | null) =>
@@ -178,6 +189,7 @@ export async function listEvents(db: Db, profileId: string, callerName: string, 
           profileId: id,
           name: nameOf(id),
           isYou: id === profileId,
+          avatarUrl: avatarById.get(id) ?? null,
           response: date ? (answerOf.get(`${date.id}:${id}`) ?? null) : null,
         }))
         // You first, then everyone else by name.

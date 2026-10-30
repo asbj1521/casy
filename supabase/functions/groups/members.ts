@@ -8,6 +8,7 @@ import {
 import { type Caller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
 import { HttpError } from "../_shared/http.ts";
+import { pictureLinks } from "../_shared/pictures.ts";
 import { type Db } from "../_shared/supabaseAdmin.ts";
 
 /**
@@ -94,7 +95,10 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
   // for side by side (#158).
   const [{ data: names, error: namesErr }, { data: invitations, error: invitationsErr }] =
     await Promise.all([
-      db.from("profiles").select("id, display_name, name_is_custom").in("id", memberIds),
+      db
+        .from("profiles")
+        .select("id, display_name, name_is_custom, avatar_path")
+        .in("id", memberIds),
       db
         .from("group_invitations")
         .select("group_id, profile_id")
@@ -105,6 +109,15 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
     ]);
   if (namesErr) throw namesErr;
   const profileOf = new Map(names.map((p) => [p.id, p]));
+  // Everyone's profile picture (#187), linked in one call.
+  const pictures = await pictureLinks(
+    db,
+    names.map((p) => p.avatar_path as string | null),
+  );
+  const avatarOf = (id: string) => {
+    const path = profileOf.get(id)?.avatar_path as string | null | undefined;
+    return (path && pictures.get(path)) ?? null;
+  };
 
   // The caller's own login-derived name (callerName) is fresher than
   // whatever rememberName last saved, so it wins unless a custom name is on
@@ -144,6 +157,7 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
             : (profileOf.get(m.profile_id)?.display_name ?? "Someone"),
         isYou: m.profile_id === profileId,
         joinedAt: m.joined_at,
+        avatarUrl: avatarOf(m.profile_id),
       })),
     invited: invitedTo.get(g.id) ?? [],
   }));
@@ -175,7 +189,7 @@ export async function whoAmI(db: Db, profileId: string, callerName: string) {
     console.error(`whoami: couldn't check ${what}`, err);
     return false;
   };
-  const [name, allowed, consent, share, tester] = await Promise.all([
+  const [name, allowed, consent, share, tester, avatarUrl] = await Promise.all([
     resolveOwnName(db, profileId, callerName),
     // Whether the AI features are on for you while they are tested (#111).
     aiAllowed(db, profileId).catch(orNo("AI access")),
@@ -187,6 +201,11 @@ export async function whoAmI(db: Db, profileId: string, callerName: string) {
     // admins and AI testers. Also as eventLabels, the name app builds from
     // before testers read it by.
     aiTesterAllowed(db, profileId).catch(orNo("AI testers")),
+    // Your own profile picture (#187), for the profile.
+    ownAvatar(db, profileId).catch((err) => {
+      console.error("whoami: couldn't link the profile picture", err);
+      return null;
+    }),
   ]);
   return {
     name,
@@ -195,5 +214,19 @@ export async function whoAmI(db: Db, profileId: string, callerName: string) {
     aiShare: share,
     aiTester: tester,
     eventLabels: tester,
+    avatarUrl,
   };
+}
+
+/** A link to this person's profile picture (#187), or null for none. */
+async function ownAvatar(db: Db, profileId: string): Promise<string | null> {
+  const { data, error } = await db
+    .from("profiles")
+    .select("avatar_path")
+    .eq("id", profileId)
+    .maybeSingle();
+  if (error) throw error;
+  const path = data?.avatar_path as string | null | undefined;
+  if (!path) return null;
+  return (await pictureLinks(db, [path])).get(path) ?? null;
 }

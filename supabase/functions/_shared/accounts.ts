@@ -20,6 +20,7 @@
  * be tried again: leaving is already done, and nothing else changed.
  */
 import { revokeAppleSignIn } from "./appleSignIn.ts";
+import { deletePictures } from "./pictures.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
 export async function deleteAccount(
@@ -44,7 +45,19 @@ export async function deleteAccount(
     if (outcome === "group_deleted") deletedGroups++;
   }
 
+  // Pictures (#186, #187): a file in storage isn't deleted by the cascades,
+  // so the profile picture and the genveje's are found first and deleted after.
+  const [{ data: profile }, { data: presets }] = await Promise.all([
+    db.from("profiles").select("avatar_path").eq("id", profileId).maybeSingle(),
+    db.from("plan_presets").select("picture_path").eq("profile_id", profileId),
+  ]);
+  const pictures = [
+    profile?.avatar_path as string | null | undefined,
+    ...((presets ?? []) as { picture_path: string | null }[]).map((p) => p.picture_path),
+  ];
+
   const { error: deleteErr } = await db.auth.admin.deleteUser(profileId);
   if (deleteErr) throw deleteErr;
+  await deletePictures(db, pictures);
   return { leftGroups: (memberships ?? []).length, deletedGroups };
 }
