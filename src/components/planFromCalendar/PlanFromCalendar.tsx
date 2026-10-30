@@ -19,6 +19,7 @@ import { PUSH, pushTransition } from "@/components/ui/push";
 import { useSignedInUser } from "@/context/auth";
 import { usePlanning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
+import { pictureUrl } from "@/lib/pictureFile";
 import {
   MAX_SHORTCUT_NAME,
   shortcutPlan,
@@ -30,6 +31,7 @@ import {
 import PileScreen from "./PileScreen";
 import PlanSetup from "./PlanSetup";
 import GroupRow from "./GroupRow";
+import ShortcutPicture from "./ShortcutPicture";
 import ShortcutsScreen from "./ShortcutsScreen";
 import ShortcutTimes from "./ShortcutTimes";
 
@@ -126,6 +128,10 @@ export default function PlanFromCalendar({
   const [times, setTimes] = useState<ShortcutTime[]>([]);
   const [removing, setRemoving] = useState(false);
   const [current, setCurrent] = useState(0);
+  // The editor's picture (#186), sent with the genvej when it is saved: one
+  // just picked, null to take it off, undefined to keep the one it has.
+  const [picture, setPicture] = useState<string | null | undefined>(undefined);
+  const [pictureError, setPictureError] = useState<string | null>(null);
   const liveTimes = times.map((time, i) => (i === current ? timeOf(planning.sched) : time));
   const showTime = (all: ShortcutTime[], index: number) => {
     setTimes(all);
@@ -137,6 +143,8 @@ export default function PlanFromCalendar({
     setTimes(shortcut ? shortcut.plan.times : [timeOf(planning.sched)]);
     setCurrent(0);
     setRemoving(false);
+    setPicture(undefined);
+    setPictureError(null);
     go({ kind: "editor", shortcut });
   };
   // Saved at once on screen (#175): the genvej is in its square the moment
@@ -154,6 +162,10 @@ export default function PlanFromCalendar({
         name: input.name,
         plan: input.plan,
         updatedAt: new Date().toISOString(),
+        pictureUrl:
+          input.picture === undefined
+            ? (previous?.find((s) => s.id === input.id)?.pictureUrl ?? null)
+            : input.picture && pictureUrl(input.picture),
       };
       queryClient.setQueryData<Shortcut[]>(key, (list = []) =>
         input.id ? list.map((s) => (s.id === input.id ? shown : s)) : [...list, shown],
@@ -177,6 +189,7 @@ export default function PlanFromCalendar({
         planning.extras,
         planning.sched.multiDay ? [timeOf(planning.sched)] : liveTimes,
       ),
+      ...(picture !== undefined && { picture }),
     });
     go({ kind: "shortcuts" });
   };
@@ -190,6 +203,8 @@ export default function PlanFromCalendar({
   });
 
   const editing = screen.kind === "editor" ? screen.shortcut : null;
+  const editorPicture =
+    picture === undefined ? (editing?.pictureUrl ?? null) : picture && pictureUrl(picture);
   const named = planning.name.trim() !== "";
   const title =
     screen.kind === "shortcuts"
@@ -293,6 +308,16 @@ export default function PlanFromCalendar({
                 {!named && (
                   <p className="mt-3 px-1 text-[12px] text-muted-foreground">{words.nameFirst}</p>
                 )}
+                <ShortcutPicture
+                  url={editorPicture}
+                  onPicked={(image) => {
+                    setPictureError(null);
+                    setPicture(image);
+                  }}
+                  onRemove={() => setPicture(null)}
+                  error={pictureError}
+                  onError={setPictureError}
+                />
                 {editing &&
                   (removing ? (
                     <ConfirmPanel

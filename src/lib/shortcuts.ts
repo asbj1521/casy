@@ -42,6 +42,8 @@ export interface Shortcut {
   name: string;
   plan: ShortcutPlan;
   updatedAt: string;
+  /** Its picture (#186), seen only by its owner; null for none. */
+  pictureUrl: string | null;
 }
 
 /** A time as a genvej says it: its start to its end ("17:00-19:00"), or the whole day. */

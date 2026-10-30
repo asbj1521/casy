@@ -580,7 +580,13 @@ export interface World {
   /** Mia's profile picture (#187), as a link the page can show; null for none. */
   avatarUrl: string | null;
   /** Mia's genveje (#175), as plan-presets keeps them; none until a test saves one. */
-  presets: { id: string; name: string; plan: unknown; updatedAt: string }[];
+  presets: {
+    id: string;
+    name: string;
+    plan: unknown;
+    updatedAt: string;
+    pictureUrl: string | null;
+  }[];
   groups: Group[];
   invitations: Invitation[];
   events: SuggestedEvent[];
@@ -707,7 +713,10 @@ export function myData(world: World): MyData {
     events: { invitedTo: world.events.length, suggested: 2, answers: 9, declined: 1 },
     calendarEntries: { added: 1, deletedByYou: 0 },
     toldCasy: { count: world.entries.length },
-    shortcuts: { count: world.presets.length },
+    shortcuts: {
+      count: world.presets.length,
+      pictures: world.presets.filter((p) => p.pictureUrl).length,
+    },
     groupPictures: { count: 0 },
     safety: { blocked: world.blocked.length, reportsSent: world.reports.length },
     ai: {
@@ -756,3 +765,9 @@ export function adminOverview(world: World): AdminOverview {
     connections: [],
   };
 }
+
+/** A tiny landscape PNG (4 x 2 pixels), as a photo picked from the phone would be. */
+export const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAEElEQVR4nGM4EaABRwzIHACHGgoBR/08xAAAAABJRU5ErkJggg==",
+  "base64",
+);

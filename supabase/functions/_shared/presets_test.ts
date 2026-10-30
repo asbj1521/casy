@@ -9,9 +9,16 @@ Deno.test("a genvej is read with its name tidied, and its id checked", () => {
     id: null,
     name: "Padel tennis",
     plan: { title: "Padel" },
+    picture: undefined,
   });
   assertEquals(readPreset({ id: ID.toUpperCase(), name: "x", plan: {} })?.id, ID);
   assertEquals(readUuid("not-a-uuid"), null);
+});
+
+Deno.test("a genvej's picture is kept as sent: a new one, none, or left as it is", () => {
+  assertEquals(readPreset({ name: "x", plan: {}, picture: "/9j/" })?.picture, "/9j/");
+  assertEquals(readPreset({ name: "x", plan: {}, picture: null })?.picture, null);
+  assertEquals(readPreset({ name: "x", plan: {} })?.picture, undefined);
 });
 
 Deno.test("a genvej with a bad name, id or plan is turned away", () => {
@@ -23,6 +30,7 @@ Deno.test("a genvej with a bad name, id or plan is turned away", () => {
     { name: "x", plan: [] },
     { name: "x", plan: null },
     { name: "x", plan: { note: "y".repeat(MAX_PLAN_BYTES) } },
+    { name: "x", plan: {}, picture: 3 },
   ]) {
     assertEquals(readPreset(body as Record<string, unknown>), null);
   }

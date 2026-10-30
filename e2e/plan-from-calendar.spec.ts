@@ -2,6 +2,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
+import { PNG } from "./world";
 
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "phones only"));
 
@@ -301,6 +302,7 @@ test.describe("Genveje (#175)", () => {
       extras: { place: "Padelhallen", note: "", answerDays: null, dateCount: 5 },
     },
     updatedAt: "2026-10-07T08:00:00.000Z",
+    pictureUrl: null as string | null,
   });
 
   test("a plan saved as a genvej is shown first, then run with the group chosen", async ({
@@ -480,5 +482,54 @@ test.describe("Genveje (#175)", () => {
     await editor.getByRole("button", { name: "Slet genvej" }).last().click();
     await expect(shortcuts.getByRole("button", { name: "Ny genvej" })).toHaveCount(3);
     expect(backend.world.presets).toHaveLength(0);
+  });
+
+  test("a genvej's picture is picked in its editor, saved with it, shown on its square, and removed (#186)", async ({
+    page,
+    backend,
+  }) => {
+    backend.world.presets.push(padel([{ startHour: 7 }]));
+    await page.goto("/calendar-overview");
+    await page.getByRole("button", { name: "Planlæg" }).click();
+    await page
+      .getByRole("dialog", { name: "Planlæg" })
+      .getByRole("button", { name: "Genveje", exact: true })
+      .click();
+    const shortcuts = page.getByRole("dialog", { name: "Genveje" });
+    const square = shortcuts.getByRole("button", { name: "Planlæg Padel" });
+    await expect(square.locator("img")).toHaveCount(0);
+
+    // Picked in the editor, and nothing sent until the genvej is saved.
+    await shortcuts.getByRole("button", { name: "Ret Padel" }).click();
+    const editor = page.getByRole("dialog", { name: "Padel" });
+    await expect(editor.getByRole("button", { name: /^Billede/ })).toContainText("Tilføj");
+    await editor
+      .locator('input[type="file"][accept="image/*"]')
+      .setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+    await expect(editor.getByRole("button", { name: /^Billede/ }).locator("img")).toBeVisible();
+    expect(backend.calls.filter((c) => c.body.action === "save")).toHaveLength(0);
+    await editor.getByRole("button", { name: "Gem genvej" }).click();
+
+    // Sent as a small JPEG with the genvej, and on its square at once.
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "save")?.body.picture)
+      .toMatch(/^\/9j\//);
+    await expect(square.locator("img")).toBeVisible();
+    await expect(square).toHaveText("Padel");
+    await expect.poll(() => backend.world.presets[0].pictureUrl).toMatch(/^data:image\/jpeg/);
+
+    // Saved again without touching it, it keeps it; "Fjern billede" takes it off.
+    await shortcuts.getByRole("button", { name: "Ret Padel" }).click();
+    await editor.getByRole("button", { name: "Gem genvej" }).click();
+    await expect.poll(() => backend.calls.filter((c) => c.body.action === "save").length).toBe(2);
+    expect(backend.calls.filter((c) => c.body.action === "save")[1].body).not.toHaveProperty(
+      "picture",
+    );
+    await shortcuts.getByRole("button", { name: "Ret Padel" }).click();
+    await editor.getByRole("button", { name: "Fjern billede" }).click();
+    await expect(editor.getByRole("button", { name: /^Billede/ })).toContainText("Tilføj");
+    await editor.getByRole("button", { name: "Gem genvej" }).click();
+    await expect(square.locator("img")).toHaveCount(0);
+    await expect.poll(() => backend.world.presets[0].pictureUrl).toBeNull();
   });
 });

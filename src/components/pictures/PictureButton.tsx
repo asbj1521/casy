@@ -1,16 +1,13 @@
-import { useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Camera, Loader2 } from "lucide-react";
 
-import { useT } from "@/i18n/lang";
-import { squarePicture } from "@/lib/pictureFile";
+import { usePicturePicker } from "@/hooks/usePicturePicker";
 import { cn } from "@/lib/utils";
 
 /**
  * A picture that is also its own button (#187, #188): a camera badge on its
- * corner, a tap opening the phone's own menu (the photos, the camera, a
- * file), and the photo picked made into a small square JPEG on the page
- * (lib/pictureFile) before `onPicked` sends it. A photo that can't be opened
- * says so through `onError`.
+ * corner, a tap opening the phone's own menu (usePicturePicker), the small
+ * square JPEG made from the photo handed to `onPicked`.
  */
 export default function PictureButton({
   label,
@@ -29,13 +26,12 @@ export default function PictureButton({
   /** The picture as it is now (an Avatar). */
   children: ReactNode;
 }) {
-  const t = useT();
-  const input = useRef<HTMLInputElement>(null);
+  const picker = usePicturePicker({ onPicked, onError });
   return (
     <>
       <button
         type="button"
-        onClick={() => input.current?.click()}
+        onClick={picker.open}
         disabled={busy}
         aria-label={label}
         className={cn("relative shrink-0 rounded-full", className)}
@@ -49,22 +45,7 @@ export default function PictureButton({
           )}
         </span>
       </button>
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (!file) return;
-          try {
-            onPicked(await squarePicture(file));
-          } catch {
-            onError(t.pictures.unreadable);
-          }
-        }}
-      />
+      {picker.input}
     </>
   );
 }

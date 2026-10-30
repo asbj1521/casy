@@ -38,3 +38,8 @@ export async function squarePicture(file: File): Promise<string> {
   }
   return btoa(binary);
 }
+
+/** A picture made here, as a link to show before the server has it (a genvej saved at once, #186). */
+export function pictureUrl(image: string): string {
+  return `data:image/jpeg;base64,${image}`;
+}

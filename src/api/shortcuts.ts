@@ -14,6 +14,7 @@ interface StoredShortcut {
   name: string;
   plan: unknown;
   updatedAt: string;
+  pictureUrl?: string | null;
 }
 
 /** The ones whose plan reads as one; anything else is left out rather than run wrong. */
@@ -22,7 +23,9 @@ function readAll(stored: StoredShortcut[] | undefined): Shortcut[] {
   const base = randomDefaultSettings(() => 0);
   return (stored ?? []).flatMap((s) => {
     const plan = readShortcutPlan(s.plan, base);
-    return plan ? [{ id: s.id, name: s.name, plan, updatedAt: s.updatedAt }] : [];
+    return plan
+      ? [{ id: s.id, name: s.name, plan, updatedAt: s.updatedAt, pictureUrl: s.pictureUrl ?? null }]
+      : [];
   });
 }
 
@@ -50,6 +53,11 @@ export interface ShortcutInput {
   id: string | null;
   name: string;
   plan: ShortcutPlan;
+  /**
+   * Its picture (#186), saved with it: a JPEG made on the page (base64),
+   * null to take it off, left out to keep the one it has.
+   */
+  picture?: string | null;
 }
 
 /** A new genvej (no id) or a changed one; answers with them all, and the one saved. */

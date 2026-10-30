@@ -161,7 +161,7 @@ export interface MyData {
   /** Group pictures you chose (#188). */
   groupPictures?: { count: number };
   /** Genveje (#175): how many plans you saved to run again. */
-  shortcuts: { count: number };
+  shortcuts: { count: number; pictures?: number };
   /** Report and block (#142): how many people you blocked, and your reports Casy keeps. */
   safety: { blocked: number; reportsSent: number };
   /**

@@ -24,6 +24,11 @@ export interface PresetInput {
   id: string | null;
   name: string;
   plan: Record<string, unknown>;
+  /**
+   * Its picture (#186): a JPEG to put on it (base64, read by readPicture),
+   * null to take it off, undefined to leave it as it is.
+   */
+  picture: string | null | undefined;
 }
 
 /** A save's body as a genvej, or null when any of it is wrong. */
@@ -36,7 +41,9 @@ export function readPreset(body: Record<string, unknown>): PresetInput | null {
   const plan = body.plan;
   if (!plan || typeof plan !== "object" || Array.isArray(plan)) return null;
   if (new TextEncoder().encode(JSON.stringify(plan)).length > MAX_PLAN_BYTES) return null;
-  return { id, name, plan: plan as Record<string, unknown> };
+  const picture = body.picture;
+  if (picture !== undefined && picture !== null && typeof picture !== "string") return null;
+  return { id, name, plan: plan as Record<string, unknown>, picture };
 }
 
 export interface PresetRow {
@@ -44,9 +51,10 @@ export interface PresetRow {
   name: string;
   plan: Record<string, unknown>;
   updated_at: string;
+  picture_path: string | null;
 }
 
-export const PRESET_COLUMNS = "id, name, plan, updated_at";
+export const PRESET_COLUMNS = "id, name, plan, updated_at, picture_path";
 
 /** A genvej as the app gets it. */
 export interface StoredPreset {
@@ -54,6 +62,8 @@ export interface StoredPreset {
   name: string;
   plan: Record<string, unknown>;
   updatedAt: string;
+  /** Whether it has a picture (#186): the app is handed a link to it, Your data only this. */
+  picture: boolean;
 }
 
 export function presetFrom(row: PresetRow): StoredPreset {
@@ -62,5 +72,6 @@ export function presetFrom(row: PresetRow): StoredPreset {
     name: row.name,
     plan: row.plan,
     updatedAt: row.updated_at,
+    picture: !!row.picture_path,
   };
 }

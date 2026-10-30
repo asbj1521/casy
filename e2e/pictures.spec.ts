@@ -1,11 +1,6 @@
 /** Profile pictures (#187): picked, made into a small square JPEG on the page, shown, removed. */
 import { expect, test } from "./fixtures";
-
-/** A tiny landscape PNG (4 x 2 pixels), as a photo picked from the phone would be. */
-const PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAEElEQVR4nGM4EaABRwzIHACHGgoBR/08xAAAAABJRU5ErkJggg==",
-  "base64",
-);
+import { PNG } from "./world";
 
 test("a profile picture is picked, sent as a small JPEG, shown, and removed", async ({
   page,

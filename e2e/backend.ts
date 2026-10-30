@@ -368,15 +368,21 @@ export class FakeBackend {
         plan: body.plan,
         updatedAt: NOW,
       };
+      // Its picture (#186) goes with it: a JPEG, null to take it off, left out to keep it.
+      const picture = body.picture as string | null | undefined;
+      if (typeof picture === "string" && !picture.startsWith("/9j/")) {
+        return fail(400, "Det billede kan ikke bruges. Prøv et andet.");
+      }
+      const pictureUrl = typeof picture === "string" ? `data:image/jpeg;base64,${picture}` : null;
       let savedId = body.id as string | null;
       if (savedId) {
         const preset = w.presets.find((p) => p.id === savedId);
         if (!preset) return fail(404, "Genvejen findes ikke længere.");
-        Object.assign(preset, fields);
+        Object.assign(preset, fields, picture !== undefined && { pictureUrl });
       } else {
         if (w.presets.length >= 6) return fail(400, "Du kan højst have 6 genveje. Slet en først.");
         savedId = `00000000-0000-4000-8000-${String(w.presets.length + 1).padStart(12, "0")}`;
-        w.presets.push({ id: savedId, ...fields });
+        w.presets.push({ id: savedId, ...fields, pictureUrl });
       }
       return ok({ presets: w.presets, savedId });
     }

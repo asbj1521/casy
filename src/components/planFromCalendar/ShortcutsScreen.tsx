@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { Ellipsis, Plus, X } from "lucide-react";
 
@@ -26,6 +26,9 @@ const FLY = { type: "spring", stiffness: 380, damping: 32 } as const;
  * what is about to be searched is seen first; the sheet's "Find dato" under
  * it runs it, for the group in the row under it (Planlæg's own, to change
  * there). A tap on the big square, or on another, sends it back.
+ *
+ * A genvej with a picture (#186) has it filling its square, its name over
+ * the picture's foot.
  *
  * Saving shows at once: a genvej still on its way to the server pops into
  * its square (`savingId`, its "..." held back until it has an id), and one
@@ -98,14 +101,18 @@ export default function ShortcutsScreen({
                       onClick={() => onSelect(s)}
                       className="flex h-full w-full items-center justify-center rounded-2xl p-3 transition active:scale-95"
                     >
-                      <span className={cn(NAME, "text-[17px]")}>{s.name}</span>
+                      <ShortcutFace shortcut={s} size="text-[17px]" />
                     </button>
                     {s.id !== savingId && (
                       <button
                         type="button"
                         aria-label={words.edit(s.name)}
                         onClick={() => onEdit(s)}
-                        className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground"
+                        className={cn(
+                          "absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full",
+                          // Over a picture it needs its own ground to be seen.
+                          s.pictureUrl ? "bg-black/30 text-white" : "text-muted-foreground",
+                        )}
                       >
                         <Ellipsis className="h-5 w-5" />
                       </button>
@@ -168,7 +175,7 @@ export default function ShortcutsScreen({
                 onClick={() => onSelect(null)}
                 className="flex h-full w-full items-center justify-center rounded-2xl p-4"
               >
-                <span className={cn(NAME, "text-[24px]")}>{selected.name}</span>
+                <ShortcutFace shortcut={selected} size="text-[24px]" />
               </button>
             </motion.div>
             <ShortcutFacts shortcut={selected} />
@@ -185,6 +192,30 @@ export default function ShortcutsScreen({
         </div>
       )}
     </LayoutGroup>
+  );
+}
+
+/**
+ * What a square shows: the genvej's name in the middle, or its picture
+ * filling it with the name at its foot. A picture that won't load leaves
+ * the name alone.
+ */
+function ShortcutFace({ shortcut, size }: { shortcut: Shortcut; size: string }) {
+  const [broken, setBroken] = useState<string | null>(null);
+  const src = shortcut.pictureUrl;
+  if (!src || broken === src) return <span className={cn(NAME, size)}>{shortcut.name}</span>;
+  return (
+    <>
+      <img
+        src={src}
+        alt=""
+        onError={() => setBroken(src)}
+        className="absolute inset-0 h-full w-full rounded-2xl object-cover"
+      />
+      <span className="absolute inset-x-0 bottom-0 rounded-b-2xl bg-gradient-to-t from-black/65 to-transparent px-2 pb-2 pt-8">
+        <span className={cn(NAME, size, "line-clamp-2 text-white")}>{shortcut.name}</span>
+      </span>
+    </>
   );
 }
 

@@ -85,8 +85,8 @@ export interface MyData {
   toldCasy: { count: number };
   /** Group pictures you chose (#188), still on their groups. */
   groupPictures: { count: number };
-  /** Genveje (#175): how many plans you saved to run again. */
-  shortcuts: { count: number };
+  /** Genveje (#175): how many plans you saved to run again, and how many have a picture (#186). */
+  shortcuts: { count: number; pictures: number };
   /** Report and block (#142): how many people you blocked, and your reports Casy keeps. */
   safety: { blocked: number; reportsSent: number };
   /**
@@ -287,6 +287,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     toldCasy,
     groupPictures,
     shortcuts,
+    shortcutPictures,
     blockedCount,
     reportsCount,
     appleTokens,
@@ -355,6 +356,13 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     count(db.from("casy_entries").select("id", head).eq("profile_id", me)),
     count(db.from("friend_groups").select("id", head).eq("picture_by", me)),
     count(db.from("plan_presets").select("id", head).eq("profile_id", me)),
+    count(
+      db
+        .from("plan_presets")
+        .select("id", head)
+        .eq("profile_id", me)
+        .not("picture_path", "is", null),
+    ),
     count(db.from("blocked_people").select("blocked_id", head).eq("blocker_id", me)),
     count(db.from("content_reports").select("id", head).eq("reporter_id", me)),
     count(db.from("apple_sign_ins").select("profile_id", head).eq("profile_id", me)),
@@ -416,7 +424,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     calendarEntries: { added, deletedByYou: deleted },
     toldCasy: { count: toldCasy },
     groupPictures: { count: groupPictures },
-    shortcuts: { count: shortcuts },
+    shortcuts: { count: shortcuts, pictures: shortcutPictures },
     safety: { blocked: blockedCount, reportsSent: reportsCount },
     ai: {
       allowed: aiOn,
