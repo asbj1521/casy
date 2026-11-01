@@ -139,8 +139,6 @@ interface ChosenDate {
 export interface PlanStart {
   groupId: string;
   settings: Partial<SchedulerSettings>;
-  /** What the event is called, when an idea for the time was picked. */
-  name?: string;
 }
 
 /**
@@ -184,7 +182,7 @@ export function usePlanning({
     start?.groupId ?? left?.selectedGroupId ?? null,
   );
   // What the event is called: only for the group to read, never searched on.
-  const [name, setName] = useState(start?.name ?? left?.name ?? "");
+  const [name, setName] = useState(left?.name ?? "");
   // Where, what to know, and how the vote runs (#84, #99): sent with a
   // suggestion, never searched on.
   const [extras, setExtras] = useState<EventExtras>(left?.extras ?? DEFAULT_EXTRAS);

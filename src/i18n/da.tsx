@@ -1830,8 +1830,6 @@ export const da = {
     until: (from: string, to: string) => `${from} til ${to}`,
     plan: "Planlæg",
     footnote: "Fundet i jeres kalendere. Ingen får besked, før du sender noget.",
-    ideas: "Idéer",
-    ideasFailed: "Idéerne kunne ikke hentes.",
   },
 };
 
