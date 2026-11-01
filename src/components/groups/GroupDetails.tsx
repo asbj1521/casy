@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlignLeft, Flag, LogOut, Pencil, Trash2, UserPlus } from "lucide-react";
+import { AlignLeft, CalendarHeart, Flag, LogOut, Pencil, Trash2, UserPlus } from "lucide-react";
 
-import { deleteGroup, groupsQueryKey, leaveGroup, renameGroup, type Group } from "@/api/groups";
+import {
+  deleteGroup,
+  groupsQueryKey,
+  leaveGroup,
+  renameGroup,
+  setPrimeDates,
+  type Group,
+} from "@/api/groups";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import GroupDescriptionSheet from "@/components/groups/GroupDescriptionSheet";
 import InviteDialog from "@/components/InviteDialog";
@@ -12,10 +19,11 @@ import { removeGroupPicture, setGroupPicture } from "@/api/pictures";
 import ReportDialog from "@/components/safety/ReportDialog";
 import Avatar from "@/components/ui/Avatar";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
-import { ListGroup, ListRow } from "@/components/ui/ListGroup";
+import { ListGroup, ListRow, ListSwitchRow } from "@/components/ui/ListGroup";
 import { useLang, useT } from "@/i18n/lang";
 import { formatMonthYear } from "@/lib/format";
 import { MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
+import { MIN_GROUP_SIZE } from "@/lib/primeDates";
 import { cn } from "@/lib/utils";
 
 /**
@@ -76,6 +84,13 @@ export default function GroupDetails({
       setRenaming(false);
     },
   });
+  // Tid til hinanden (#171): your own home page's stars for this group, on
+  // the switch at once while the choice is saved.
+  const prime = useMutation({
+    mutationFn: (on: boolean) => setPrimeDates(group.id, on),
+    onSuccess: groupsChanged,
+  });
+  const primeOn = prime.isPending ? prime.variables : group.primeDates !== false;
   // Leaving a group you're the only member of already deletes it (see
   // leave_friend_group), so a separate delete would be the same thing twice.
   const soleMember = group.members.length <= 1;
@@ -177,6 +192,19 @@ export default function GroupDetails({
           onClick={() => setDescribing(true)}
         />
       </ListGroup>
+
+      {/* Stars are the phone's home page's (#171), and only groups of four or more get them. */}
+      {centred && group.members.length >= MIN_GROUP_SIZE && (
+        <ListGroup footnote={prime.error?.message ?? t.prime.switchFootnote}>
+          <ListSwitchRow
+            icon={CalendarHeart}
+            label={t.prime.title}
+            checked={primeOn}
+            disabled={prime.isPending}
+            onChange={(on) => prime.mutate(on)}
+          />
+        </ListGroup>
+      )}
 
       <ListGroup>
         {/* Report or block (#142): only once there is someone else to report. */}

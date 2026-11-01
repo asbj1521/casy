@@ -6,6 +6,7 @@ import { groupBusyQuery, groupsQuery, type GroupBusy } from "@/api/groups";
 import { useSignedInUser } from "@/context/auth";
 import { ANY_TIME_EARLIEST_HOUR, SEARCH_WINDOW } from "@/lib/eventSearch";
 import {
+  MIN_GROUP_SIZE,
   MIN_HOURS,
   pickPrimeDates,
   primeCandidates,
@@ -43,7 +44,8 @@ export function usePrimeDates(enabled: boolean): PrimeDate[] {
   const busy = useQueries({
     queries: (groups ?? []).map((g) => ({
       ...groupBusyQuery(userId, g.id, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
-      enabled,
+      // Only groups that can have stars: four or more, not switched off.
+      enabled: enabled && g.primeDates !== false && g.members.length >= MIN_GROUP_SIZE,
       staleTime: FRESH_MS,
     })),
     combine: datas,
@@ -55,7 +57,8 @@ export function usePrimeDates(enabled: boolean): PrimeDate[] {
     () =>
       (groups ?? []).map((g, i) => {
         const data = busy[i];
-        if (!data || !events) return [];
+        // Switched off for this group by you (#171): no stars, nothing scored.
+        if (!data || !events || g.primeDates === false) return [];
         const own = events.filter(
           (e) => e.group.id === g.id && (e.status === "pending" || e.status === "scheduled"),
         );

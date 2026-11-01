@@ -1623,6 +1623,7 @@ export const da = {
   },
   api: {
     describeGroup: "Kunne ikke gemme beskrivelsen",
+    setPrimeDates: "Kunne ikke gemme valget",
     // The request never got an answer (callFunction): no connection, or too slow.
     offline: "Ingen forbindelse til Casy. Tjek dit internet, og prøv igen.",
     timeout: "Casy svarede ikke i tide. Prøv igen.",
@@ -1832,6 +1833,10 @@ export const da = {
     until: (from: string, to: string) => `${from} til ${to}`,
     plan: "Planlæg",
     footnote: "Fundet i jeres kalendere. Ingen får besked, før du sender noget.",
+    /** Under the group's switch: what it does, and that it is yours alone. */
+    switchFootnote: "Stjerner på din kalender, når I alle er fri. Kun du ser dem.",
+    /** Your data: a group whose stars you switched off. */
+    off: "Tid til hinanden er slået fra",
   },
 };
 

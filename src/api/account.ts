@@ -150,6 +150,8 @@ export interface MyData {
     members: number;
     createdByYou: boolean;
     joinedAt: string;
+    /** Tid til hinanden (#171); missing from older answers: on. */
+    primeDates?: boolean;
   }[];
   inviteLinks: { made: number; active: number };
   invitations: { pending: number; declined: number; sent: number };

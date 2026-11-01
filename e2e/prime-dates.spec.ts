@@ -61,11 +61,15 @@ test("no star for a group of three, even with nothing planned", async ({ page, b
     (e) => !(e.group.id === "g-running" && e.status === "pending"),
   );
   await page.goto("/");
+  // Fredagsbar's busy times are looked at; Løbeklubben's, three people, never.
   await expect
     .poll(() => backend.calls.filter((c) => c.body.action === "busy").length)
-    .toBeGreaterThanOrEqual(2);
+    .toBeGreaterThanOrEqual(1);
   await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
   await expect(starred(page)).toHaveCount(0);
+  expect(
+    backend.calls.some((c) => c.body.action === "busy" && c.body.groupId === "g-running"),
+  ).toBe(false);
 });
 
 test("no star for a group with a member with no calendar, or one already voting", async ({
@@ -74,10 +78,49 @@ test("no star for a group with a member with no calendar, or one already voting"
 }) => {
   // Fredagsbar has Emil, who has no calendar; Løbeklubben has a vote open.
   await page.goto("/");
+  // Fredagsbar's busy times are looked at; Løbeklubben's, three people, never.
   await expect
     .poll(() => backend.calls.filter((c) => c.body.action === "busy").length)
-    .toBeGreaterThanOrEqual(2);
+    .toBeGreaterThanOrEqual(1);
   await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
   await expect(starred(page)).toHaveCount(0);
+  expect(
+    backend.calls.some((c) => c.body.action === "busy" && c.body.groupId === "g-running"),
+  ).toBe(false);
   expect(backend.calls.filter((c) => c.body.action === "rank-dates")).toHaveLength(0);
+});
+
+test("a group's stars are switched off on its own screen, and stay off", async ({
+  page,
+  backend,
+}) => {
+  readyForStars(backend.world);
+  await page.goto("/");
+  await expect(starred(page)).toHaveCount(1);
+
+  // Profil, Grupper, Løbeklubben: the switch, on.
+  await page.goto("/?profile=groups/g-running");
+  const sheet = page.getByRole("dialog");
+  const toggle = sheet.getByRole("switch", { name: "Tid til hinanden" });
+  await expect(toggle).toBeChecked();
+  await expect(sheet).toContainText("Kun du ser dem.");
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
+  await expect
+    .poll(() => backend.calls.find((c) => c.body.action === "set-prime-dates")?.body)
+    .toEqual({ action: "set-prime-dates", groupId: "g-running", on: false });
+
+  // Back on the month: no star for it.
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
+  await expect
+    .poll(() => backend.calls.filter((c) => c.body.action === "busy").length)
+    .toBeGreaterThanOrEqual(1);
+  await expect(starred(page)).toHaveCount(0);
+});
+
+test("no switch for a group under four", async ({ page }) => {
+  await page.goto("/?profile=groups/g-running");
+  await expect(page.getByRole("dialog")).toContainText("Løbeklubben");
+  await expect(page.getByRole("switch", { name: "Tid til hinanden" })).toHaveCount(0);
 });

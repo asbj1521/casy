@@ -45,6 +45,11 @@ export interface Group {
   createdBy: string | null;
   /** A link to the group's picture (#188), set by any member; null or missing for none. */
   pictureUrl?: string | null;
+  /**
+   * Your own choice (#171): whether your home page stars the days the group
+   * is all free (Tid til hinanden). Missing from answers cached before it existed: on.
+   */
+  primeDates?: boolean;
   members: GroupMember[];
   /**
    * People invited who haven't joined, as profile ids, but only those you
@@ -314,6 +319,14 @@ export async function describeGroup(
   return await callFunction("groups", {
     body: { action: "describe", groupId, description },
     errorMessage: currentMessages().api.describeGroup,
+  });
+}
+
+/** Tid til hinanden on or off for a group, on your own home page only (#171). */
+export async function setPrimeDates(groupId: string, on: boolean): Promise<{ groups: Group[] }> {
+  return await callFunction("groups", {
+    body: { action: "set-prime-dates", groupId, on },
+    errorMessage: currentMessages().api.setPrimeDates,
   });
 }
 

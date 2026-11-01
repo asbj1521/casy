@@ -355,12 +355,14 @@ function GroupsPart({ data }: { data: MyData }) {
             key={i}
             label={g.name}
             detail={
-              g.description ? (
+              g.description || g.primeDates === false ? (
                 <>
                   <span className="block truncate">
                     {w.groupDetail(t.counts.members(g.members), g.createdByYou)}
                   </span>
-                  <span className="block truncate">{g.description}</span>
+                  {g.description && <span className="block truncate">{g.description}</span>}
+                  {/* Your own choice for the group (#171), kept on your membership. */}
+                  {g.primeDates === false && <span className="block truncate">{t.prime.off}</span>}
                 </>
               ) : (
                 w.groupDetail(t.counts.members(g.members), g.createdByYou)

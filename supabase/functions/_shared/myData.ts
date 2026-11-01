@@ -75,6 +75,8 @@ export interface MyData {
     members: number;
     createdByYou: boolean;
     joinedAt: string;
+    /** Whether your home page stars the days it is all free (#171); off only when you said so. */
+    primeDates: boolean;
   }[];
   inviteLinks: { made: number; active: number };
   invitations: { pending: number; declined: number; sent: number };
@@ -184,6 +186,7 @@ export function shapeCalendars(rows: ConnectionRow[]): MyData["calendars"] {
 
 export interface MembershipRow {
   joined_at: string;
+  prime_dates?: boolean;
   friend_groups: {
     name: string;
     description?: string | null;
@@ -195,12 +198,13 @@ export interface MembershipRow {
 export function shapeGroups(rows: MembershipRow[], youId: string): MyData["groups"] {
   return rows
     .filter((row) => row.friend_groups !== null)
-    .map(({ joined_at, friend_groups: group }) => ({
+    .map(({ joined_at, prime_dates, friend_groups: group }) => ({
       name: group!.name,
       description: group!.description ?? null,
       members: group!.group_members[0]?.count ?? 0,
       createdByYou: group!.created_by === youId,
       joinedAt: joined_at,
+      primeDates: prime_dates !== false,
     }));
 }
 
@@ -245,7 +249,9 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
       .maybeSingle(),
     db
       .from("group_members")
-      .select("joined_at, friend_groups(name, description, created_by, group_members(count))")
+      .select(
+        "joined_at, prime_dates, friend_groups(name, description, created_by, group_members(count))",
+      )
       .eq("profile_id", me)
       .order("joined_at", { ascending: true }),
   ]);

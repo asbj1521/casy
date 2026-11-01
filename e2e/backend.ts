@@ -609,6 +609,11 @@ export class FakeBackend {
         group.name = String(body.name);
         this.changed();
         return ok({ groups: w.groups });
+      // Tid til hinanden on or off for a group (#171): the caller's own choice.
+      case "set-prime-dates":
+        if (!group) return fail(404, "Group not found");
+        group.primeDates = body.on === true;
+        return ok({ groups: w.groups });
       case "describe":
         if (!group) return fail(404, "Group not found");
         group.description =

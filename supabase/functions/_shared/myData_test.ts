@@ -76,45 +76,51 @@ Deno.test("a connection without a stored secret has no credential", () => {
   assertEquals(shapeCalendars([connection({ calendar_secrets: [] })])[0].credential, null);
 });
 
-Deno.test("groups say how many are in them and whether you made them", () => {
-  assertEquals(
-    shapeGroups(
+Deno.test(
+  "groups say how many are in them, whether you made them, and if their stars are off",
+  () => {
+    assertEquals(
+      shapeGroups(
+        [
+          {
+            joined_at: "2026-09-02T10:00:00Z",
+            friend_groups: {
+              name: "Team",
+              description: "Fodbold om tirsdagen",
+              created_by: "me",
+              group_members: [{ count: 4 }],
+            },
+          },
+          {
+            joined_at: "2026-09-03T10:00:00Z",
+            prime_dates: false,
+            friend_groups: { name: "Friends", created_by: null, group_members: [{ count: 2 }] },
+          },
+          { joined_at: "2026-09-04T10:00:00Z", friend_groups: null },
+        ],
+        "me",
+      ),
       [
         {
-          joined_at: "2026-09-02T10:00:00Z",
-          friend_groups: {
-            name: "Team",
-            description: "Fodbold om tirsdagen",
-            created_by: "me",
-            group_members: [{ count: 4 }],
-          },
+          name: "Team",
+          description: "Fodbold om tirsdagen",
+          members: 4,
+          createdByYou: true,
+          joinedAt: "2026-09-02T10:00:00Z",
+          primeDates: true,
         },
         {
-          joined_at: "2026-09-03T10:00:00Z",
-          friend_groups: { name: "Friends", created_by: null, group_members: [{ count: 2 }] },
+          name: "Friends",
+          description: null,
+          members: 2,
+          createdByYou: false,
+          joinedAt: "2026-09-03T10:00:00Z",
+          primeDates: false,
         },
-        { joined_at: "2026-09-04T10:00:00Z", friend_groups: null },
       ],
-      "me",
-    ),
-    [
-      {
-        name: "Team",
-        description: "Fodbold om tirsdagen",
-        members: 4,
-        createdByYou: true,
-        joinedAt: "2026-09-02T10:00:00Z",
-      },
-      {
-        name: "Friends",
-        description: null,
-        members: 2,
-        createdByYou: false,
-        joinedAt: "2026-09-03T10:00:00Z",
-      },
-    ],
-  );
-});
+    );
+  },
+);
 
 Deno.test("the email language is shown only when it is one Casy writes in", () => {
   assertEquals(savedLanguage({ id: "u", user_metadata: { lang: "en" } }), "en");

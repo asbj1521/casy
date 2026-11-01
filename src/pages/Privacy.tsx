@@ -352,7 +352,9 @@ const da: LegalCopy = {
             din kalender ikke blevet opdateret i to dage eller mere, kan de også se, hvornår den
             sidst blev det, så de ved, at noget kan have ændret sig. De samme tidsrum bruger Casy på
             din egen enhed til at markere dage i de næste tre uger, hvor hele gruppen er fri (Tid
-            til hinanden). Det regnes ud på din enhed, gemmes ikke, og ingen får besked om det.
+            til hinanden). Det regnes ud på din enhed, gemmes ikke, og ingen får besked om det. Du
+            kan slå det fra for hver gruppe på gruppens side; det valg gemmes på dit medlemskab og
+            slettes med det.
           </p>
           <p>
             Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere (heller ikke dem, du
@@ -855,7 +857,8 @@ const en: LegalCopy = {
             when it last was, so they know something may have changed. Casy also uses those same
             times on your own device to mark days in the next three weeks when the whole group is
             free (Time for each other). That is worked out on your device, not stored, and nobody is
-            told about it.
+            told about it. You can switch it off for each group on the group&apos;s page; that
+            choice is kept on your membership and deleted with it.
           </p>
           <p>
             Members do not see your email address, the names of your calendars (including names you

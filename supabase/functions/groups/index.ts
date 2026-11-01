@@ -271,6 +271,21 @@ serve("groups", async (req, body) => {
       return await list();
     }
 
+    // Tid til hinanden (#171): whether your own home page stars the days
+    // this group is all free. Yours alone: nobody else sees it.
+    case "set-prime-dates": {
+      const groupId = requireString(body, "groupId");
+      if (typeof body.on !== "boolean") throw new HttpError(400, "Say on or off.");
+      await requireMember(db, groupId, profileId);
+      const { error } = await db
+        .from("group_members")
+        .update({ prime_dates: body.on })
+        .eq("group_id", groupId)
+        .eq("profile_id", profileId);
+      if (error) throw error;
+      return await list();
+    }
+
     case "invite": {
       const groupId = requireString(body, "groupId");
       // Any member may invite, which was a deliberate choice: asking the

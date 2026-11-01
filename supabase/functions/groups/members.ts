@@ -62,6 +62,8 @@ export async function membersAsMember(
  */
 export async function listGroups(db: Db, profileId: string, callerName: string) {
   type Row = {
+    /** Your own choice for the group (#171): its free days starred on your home page. */
+    prime_dates: boolean;
     friend_groups: {
       id: string;
       name: string;
@@ -75,14 +77,18 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
   const { data: mine, error: mineErr } = await db
     .from("group_members")
     .select(
-      "friend_groups(id, name, description, created_at, created_by, picture_path, group_members(profile_id, joined_at))",
+      "prime_dates, friend_groups(id, name, description, created_at, created_by, picture_path, group_members(profile_id, joined_at))",
     )
     .eq("profile_id", profileId);
   if (mineErr) throw mineErr;
 
   // A to-one embed comes back as a single row, which the untyped client
   // can't know; hence the cast.
-  const groups = (mine as unknown as Row[])
+  const rows = mine as unknown as Row[];
+  const primeOff = new Set(
+    rows.filter((r) => r.prime_dates === false && r.friend_groups).map((r) => r.friend_groups!.id),
+  );
+  const groups = rows
     .map((r) => r.friend_groups)
     .filter((g) => g !== null)
     .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
@@ -150,6 +156,8 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
     createdBy: g.created_by,
     // The group's picture (#188), set by any member; null for none.
     pictureUrl: (g.picture_path && pictures.get(g.picture_path)) ?? null,
+    // Your own choice (#171): whether your home page stars the days it is all free.
+    primeDates: !primeOff.has(g.id),
     members: [...g.group_members]
       .sort((a, b) => Date.parse(a.joined_at) - Date.parse(b.joined_at))
       .map((m) => ({

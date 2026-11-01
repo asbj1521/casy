@@ -1566,6 +1566,7 @@ export const en: Messages = {
   },
   api: {
     describeGroup: "Couldn't save the description",
+    setPrimeDates: "Couldn't save that",
     // The request never got an answer (callFunction): no connection, or too slow.
     offline: "Couldn't reach Casy. Check your connection and try again.",
     timeout: "Casy took too long to answer. Try again.",
@@ -1771,5 +1772,7 @@ export const en: Messages = {
     until: (from: string, to: string) => `${from} to ${to}`,
     plan: "Plan",
     footnote: "Found in your calendars. Nobody is told until you send something.",
+    switchFootnote: "Stars in your calendar when you are all free. Only you see them.",
+    off: "Time for each other is off",
   },
 };

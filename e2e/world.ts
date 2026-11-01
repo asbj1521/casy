@@ -706,6 +706,7 @@ export function myData(world: World): MyData {
       members: g.members.length,
       createdByYou: g.createdBy === ME.id,
       joinedAt: g.members.find((m) => m.isYou)?.joinedAt ?? g.createdAt,
+      primeDates: g.primeDates !== false,
     })),
     inviteLinks: { made: 2, active: 1 },
     invitations: { pending: world.invitations.length, declined: 0, sent: 3 },
