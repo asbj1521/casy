@@ -18,6 +18,9 @@ export default defineConfig({
   // they are only ever made on Linux.
   snapshotPathTemplate: "{testDir}/__screenshots__/{arg}-{projectName}{ext}",
   fullyParallel: true,
+  // CI's runners have four cores, and Playwright would use two (#194): the
+  // tests mostly wait on the page, so four at a time keeps them busy.
+  workers: process.env.CI ? 4 : undefined,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
