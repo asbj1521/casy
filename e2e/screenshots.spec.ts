@@ -64,6 +64,9 @@ async function expectPage(page: Page, name: string, isMobile: boolean, phoneShee
   await useInter(page);
   // Placeholders (ui/Bone.tsx) gone: the data has arrived and been drawn.
   await expect(page.locator(".animate-pulse")).toHaveCount(0);
+  // Spinners too (#194): Your data says "Henter dine data" with one rather
+  // than placeholders, and was drawn mid-load when the runner was busy.
+  await expect(page.locator(".animate-spin")).toHaveCount(0);
   if (isMobile) {
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
     await page.setViewportSize({ width: 390, height });
