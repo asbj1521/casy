@@ -11,6 +11,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
+import { Star } from "lucide-react";
 
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
@@ -74,6 +75,7 @@ export default function MonthView({
   calendar,
   pencil,
   marked,
+  starred,
   todayTone = "red",
   reveal = null,
   header,
@@ -93,6 +95,8 @@ export default function MonthView({
   pencil?: { start: number; end: number; label: string };
   /** The vote's dates, as local midnights; none on My calendar. */
   marked?: ReadonlySet<number>;
+  /** Tid til hinanden (#171): days a whole group is free, as local midnights; a star by the number. */
+  starred?: ReadonlySet<number>;
   /** How today is drawn: Apple's red circle, or a grey one (My calendar, the paper pile). */
   todayTone?: "red" | "grey";
   /**
@@ -270,6 +274,7 @@ export default function MonthView({
         today={today}
         todayTone={todayTone}
         marked={marked}
+        starred={starred}
         onPickDay={onPickDay}
         register={register}
       />
@@ -405,6 +410,7 @@ interface MonthSectionProps {
   today: number;
   todayTone: "red" | "grey";
   marked?: ReadonlySet<number>;
+  starred?: ReadonlySet<number>;
   onPickDay: (day: number) => void;
   register: (month: number, el: HTMLElement | null) => void;
   shine?: ReadonlySet<number>;
@@ -438,6 +444,7 @@ const MonthSection = memo(function MonthSection({
   today,
   todayTone,
   marked,
+  starred,
   onPickDay,
   register,
   shine,
@@ -449,6 +456,7 @@ const MonthSection = memo(function MonthSection({
   // Calendar colours are worked out in code, so they follow the theme here.
   const dark = useIsDark();
   const { lang } = useLang();
+  const t = useT();
   const { year, month: m } = localDate(month, TZ);
   const layout = useMemo(() => buildMonthLayout(year, m, TZ, LOCALE[lang]), [year, m, lang]);
   const name = capitalize(monthName(month, lang));
@@ -536,6 +544,12 @@ const MonthSection = memo(function MonthSection({
                       {d.dayOfMonth}
                     </span>
                   )}
+                  {d.inMonth && starred?.has(days[c]) && (
+                    <Star
+                      aria-hidden
+                      className="absolute right-[calc(50%-1.25rem)] top-0.5 h-2.5 w-2.5 fill-current text-primary"
+                    />
+                  )}
                 </span>
               ))}
             </div>
@@ -618,7 +632,11 @@ const MonthSection = memo(function MonthSection({
                     type="button"
                     data-day={days[c]}
                     onClick={() => onPickDay(days[c])}
-                    aria-label={dayLabels[w][c]}
+                    aria-label={
+                      starred?.has(days[c])
+                        ? `${dayLabels[w][c]}, ${t.prime.dayMark}`
+                        : dayLabels[w][c]
+                    }
                   />
                 ) : (
                   <span key={d.key} />

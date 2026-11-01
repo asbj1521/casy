@@ -135,6 +135,12 @@ interface ChosenDate {
   answer: SuggesterAnswer;
 }
 
+/** A plan started from somewhere else (#171: a starred day): this group, these settings, the rest fresh. */
+export interface PlanStart {
+  groupId: string;
+  settings: Partial<SchedulerSettings>;
+}
+
 /**
  * Planning an event for a group: who it is for, what and when, the first
  * date everyone can make and the ones after it, and sending dates to the
@@ -144,9 +150,13 @@ interface ChosenDate {
  *
  * `onSent`: what sending ends with, instead of opening the new event in My
  * events. The home page's Planlæg closes itself (#169): the dates have flown
- * into its Aftaler button.
+ * into its Aftaler button. `start`: begin with this group and these
+ * settings instead of the plan as it was left (read once, as it opens).
  */
-export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
+export function usePlanning({
+  onSent,
+  start,
+}: { onSent?: () => void; start?: PlanStart | null } = {}) {
   const t = useT();
   const { lang } = useLang();
   const { user } = useAuth();
@@ -158,6 +168,7 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
   // The plan as this person left it earlier in this visit, if they did;
   // otherwise it starts fresh, with random settings.
   const [left] = useState(() => {
+    if (start) return null;
     const stale = phone && closedAt !== null && Date.now() - closedAt > PLAN_FORGET_MS;
     return pageMemory?.userId === userId && !stale ? pageMemory : null;
   });
@@ -167,7 +178,9 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
     },
     [],
   );
-  const [selectedGroupId, setSelectedGroupId] = useState(left?.selectedGroupId ?? null);
+  const [selectedGroupId, setSelectedGroupId] = useState(
+    start?.groupId ?? left?.selectedGroupId ?? null,
+  );
   // What the event is called: only for the group to read, never searched on.
   const [name, setName] = useState(left?.name ?? "");
   // Where, what to know, and how the vote runs (#84, #99): sent with a
@@ -178,9 +191,10 @@ export function usePlanning({ onSent }: { onSent?: () => void } = {}) {
   const [peopleChoices, setPeopleChoices] = useState<Record<string, PeopleChoice>>(
     left?.peopleChoices ?? {},
   );
-  const [sched, setSched] = useState(
-    () => left?.sched ?? oncePerLoad("scheduler-settings", () => randomDefaultSettings()),
-  );
+  const [sched, setSched] = useState(() => {
+    const fresh = oncePerLoad("scheduler-settings", () => randomDefaultSettings());
+    return start ? { ...fresh, ...start.settings } : (left?.sched ?? fresh);
+  });
   const [steps, setSteps] = useState(() => left?.steps ?? restart());
   // Once the answer moves on from the date it was paged from, the chart
   // follows the answer again.

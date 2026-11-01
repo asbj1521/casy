@@ -1760,4 +1760,14 @@ export const en: Messages = {
       device: "Phone",
     } as Record<string, string>,
   },
+  prime: {
+    title: "Time for each other",
+    dayMark: "Time for each other",
+    allFree: (count: number) => `All ${count} of you are free`,
+    you: "you",
+    weekend: "The whole weekend",
+    until: (from: string, to: string) => `${from} to ${to}`,
+    plan: "Plan",
+    footnote: "Found in your calendars. Nobody is told until you send something.",
+  },
 };

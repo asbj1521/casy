@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 30. oktober 2026",
+  updated: "Senest opdateret 1. november 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -350,7 +350,9 @@ const da: LegalCopy = {
             "ikke muligt". Aftaler, I er blevet enige om i Casy, tæller også som optaget for dem,
             der skal med, også i dine andre grupper, men kun som tidsrum, aldrig hvad aftalen er. Er
             din kalender ikke blevet opdateret i to dage eller mere, kan de også se, hvornår den
-            sidst blev det, så de ved, at noget kan have ændret sig.
+            sidst blev det, så de ved, at noget kan have ændret sig. De samme tidsrum bruger Casy på
+            din egen enhed til at markere dage i de næste tre uger, hvor hele gruppen er fri (Tid
+            til hinanden). Det regnes ud på din enhed, gemmes ikke, og ingen får besked om det.
           </p>
           <p>
             Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere (heller ikke dem, du
@@ -525,7 +527,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 30 October 2026",
+  updated: "Last updated 1 November 2026",
   sections: [
     {
       title: "In short",
@@ -850,7 +852,10 @@ const en: LegalCopy = {
             tell "could take time off" apart from "not possible". Plans agreed in Casy also count as
             busy for those going, in your other groups too, but only as time ranges, never what the
             plan is. If your calendar hasn&apos;t been updated for two days or more, they also see
-            when it last was, so they know something may have changed.
+            when it last was, so they know something may have changed. Casy also uses those same
+            times on your own device to mark days in the next three weeks when the whole group is
+            free (Time for each other). That is worked out on your device, not stored, and nobody is
+            told about it.
           </p>
           <p>
             Members do not see your email address, the names of your calendars (including names you

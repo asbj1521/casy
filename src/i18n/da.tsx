@@ -257,11 +257,12 @@ export const da = {
       any: "når som helst",
       one: (month: string) => `i ${month}`,
       range: (from: string, to: string) => `${from} til ${to}`,
-      // Exact days, set by Planlæg med AI (#134).
+      // Exact days, set by Planlæg med AI (#134) or a starred day (#171).
       until: (day: string) => `til ${day}`,
       day: (day: string) => `den ${day}`,
+      // A Danish short date ends in a full stop already ("25. okt."): no second one.
       daysHint: (period: string) =>
-        `Casy har sat datoerne: ${period}. Tryk på en måned for at vælge måneder selv.`,
+        `Casy har sat datoerne: ${period}${period.endsWith(".") ? "" : "."} Tryk på en måned for at vælge måneder selv.`,
       hint: "Tryk på de måneder, det kan være i. Tryk på en af de yderste igen for at fjerne den.",
       anyButton: "Når som helst",
       done: "Færdig",
@@ -1817,6 +1818,18 @@ export const da = {
       ics: "Kalenderlink",
       device: "Telefon",
     } as Record<string, string>,
+  },
+  // Tid til hinanden (#171): times a whole group is free, found by Casy and starred on the home page.
+  prime: {
+    title: "Tid til hinanden",
+    /** Added to a starred day's name on the month, for screen readers. */
+    dayMark: "Tid til hinanden",
+    allFree: (count: number) => `Alle ${count} er fri`,
+    you: "dig",
+    weekend: "Hele weekenden",
+    until: (from: string, to: string) => `${from} til ${to}`,
+    plan: "Planlæg",
+    footnote: "Fundet i jeres kalendere. Ingen får besked, før du sender noget.",
   },
 };
 

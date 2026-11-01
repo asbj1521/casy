@@ -17,7 +17,7 @@ import FlowButton from "@/components/ui/FlowButton";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { PUSH, pushTransition } from "@/components/ui/push";
 import { useSignedInUser } from "@/context/auth";
-import { usePlanning } from "@/hooks/usePlanning";
+import { usePlanning, type PlanStart } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
 import { pictureUrl } from "@/lib/pictureFile";
 import {
@@ -62,6 +62,7 @@ export default function PlanFromCalendar({
   onClose,
   onClosed,
   origin,
+  start,
 }: {
   /**
    * Whether the plan is open (?plan). Closed, it stays on the page until its
@@ -72,6 +73,8 @@ export default function PlanFromCalendar({
   onClosed: () => void;
   /** The home page's Planlæg pill, which the sheet grows out of (#169). */
   origin?: RefObject<HTMLElement | null>;
+  /** Begin with this group and these settings (a starred day, #171), read as it opens. */
+  start?: PlanStart | null;
 }) {
   const t = useT();
   const words = t.shortcuts;
@@ -80,7 +83,7 @@ export default function PlanFromCalendar({
   const queryClient = useQueryClient();
   // Sent, the plan closes onto the home page, the dates having flown into
   // its Aftaler button (#169).
-  const planning = usePlanning({ onSent: onClose });
+  const planning = usePlanning({ onSent: onClose, start });
   const [stage, setStage] = useState<"setup" | "pile">("setup");
   // The sheet grows out of the pill and shrinks back into it, but once the
   // pile has begun it slides away and back as before: the pill is hidden

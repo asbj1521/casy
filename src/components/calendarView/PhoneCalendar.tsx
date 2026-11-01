@@ -38,6 +38,7 @@ import { useGlassTop } from "@/hooks/useGlassTop";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
 import { useStatusTap } from "@/hooks/useStatusTap";
 import { usePhoneImport } from "@/hooks/usePhoneImport";
+import { usePrimeDates } from "@/hooks/usePrimeDates";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
 import { eventTitle } from "@/i18n/eventTitle";
 import type { VoteEvent } from "@/lib/vote";
@@ -55,12 +56,14 @@ import {
   withoutTripsInCalendar,
   type TripMark,
 } from "@/lib/tripView";
+import { primeDatePlan, type PrimeDate } from "@/lib/primeDates";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 import { useOnceTrue } from "@/hooks/useOnceTrue";
 
 // Sheets fetched the first time they open (#157).
 const TellCasySheet = lazy(() => import("@/components/tellCasy/TellCasySheet"));
 const TripSheet = lazy(() => import("@/components/trips/TripSheet"));
+const PrimeDateSheet = lazy(() => import("@/components/calendarView/PrimeDateSheet"));
 // The home page's sheets (#169). Each is put on the page, closed, ahead of
 // its first press (see below): a lazy component waits for its code on its
 // first render, and React then holds back what it shows by up to 300 ms,
@@ -193,7 +196,23 @@ export default function PhoneCalendar() {
     setPlan((p) => (p.was ? p : { ...p, shown: false }));
     setPlanTouched(false);
   }, []);
-  const openPlan = () => navigate({ search: "?plan" }, { state: { fromMonth: true } });
+  // What Planlæg begins with when a starred day opens it (#171); none from the pill.
+  const [planStart, setPlanStart] = useState<PrimeDate | null>(null);
+  const openPlan = () => {
+    setPlanStart(null);
+    navigate({ search: "?plan" }, { state: { fromMonth: true } });
+  };
+  // Tid til hinanden (#171): a starred day's sheet, its date kept while it slides away.
+  const [prime, setPrime] = useState<{ date: PrimeDate | null; open: boolean }>({
+    date: null,
+    open: false,
+  });
+  const primeNow = useRef<PrimeDate[]>([]);
+  const planPrime = (date: PrimeDate) => {
+    setPrime((p) => ({ ...p, open: false }));
+    setPlanStart(date);
+    navigate({ search: "?plan" }, { state: { fromMonth: true } });
+  };
   // Planlæg's sent dates bring the buttons back, to fly into Aftaler (#169).
   const flight = useHomeBarFlight();
   // Aftaler and the profile, sheets over the home page (#169), in the address
@@ -276,6 +295,12 @@ export default function PhoneCalendar() {
         openVoteNow.current(vote.id);
         return;
       }
+      // A starred day says who is free then (#171), unless a vote is being answered.
+      const date = primeNow.current.find((p) => p.day === day);
+      if (date && !votingNow.current) {
+        setPrime({ date, open: true });
+        return;
+      }
       openDayNow.current(day);
     },
     [openTrip],
@@ -331,6 +356,12 @@ export default function PhoneCalendar() {
     months,
     idle: settled && location.search === "" && dayShown === null,
   });
+  // Times a whole group is free (#171), once the page has settled.
+  const primeDates = usePrimeDates(settled);
+  const starred = useMemo(() => new Set(primeDates.map((p) => p.day)), [primeDates]);
+  useEffect(() => {
+    primeNow.current = primeDates;
+  }, [primeDates]);
   const voteEvent = homeVotes.voteById(voteId);
   const voteOpen = voteEvent !== null;
   // From the day view, a step more to go back past (closeOverlay's `sheetDepth`).
@@ -473,6 +504,7 @@ export default function PhoneCalendar() {
           focus={focus}
           calendar={month}
           reveal={reveal}
+          starred={starred}
           todayTone="grey"
           onPickDay={pickDay}
           header={
@@ -594,6 +626,12 @@ export default function PhoneCalendar() {
             onClose={closeOverlay}
             onClosed={planClosed}
             origin={planButton}
+            start={
+              planStart && {
+                groupId: planStart.groupId,
+                settings: primeDatePlan(planStart, APP_TIME_ZONE),
+              }
+            }
           />
         </Suspense>
       )}
@@ -619,6 +657,17 @@ export default function PhoneCalendar() {
             open={tripOpen}
             onClose={() => setTripOpen(false)}
             trips={trips}
+          />
+        </Suspense>
+      )}
+
+      {prime.date && (
+        <Suspense fallback={null}>
+          <PrimeDateSheet
+            open={prime.open}
+            prime={prime.date}
+            onClose={() => setPrime((p) => ({ ...p, open: false }))}
+            onPlan={planPrime}
           />
         </Suspense>
       )}
