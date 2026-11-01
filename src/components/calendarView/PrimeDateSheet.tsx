@@ -10,7 +10,8 @@ import { useSignedInUser } from "@/context/auth";
 import { useLang, useT } from "@/i18n/lang";
 import { LOCALE } from "@/i18n/locale";
 import { formatLongDate, formatTime } from "@/lib/format";
-import type { PrimeDate } from "@/lib/primeDates";
+import { stretchShape, type PrimeDate } from "@/lib/primeDates";
+import { APP_TIME_ZONE } from "@/lib/zone";
 
 /**
  * A starred day on the home page, opened (#171): which group is free, when,
@@ -42,6 +43,15 @@ export default function PrimeDateSheet({
       ])
     : "";
   const iso = (ms: number) => new Date(ms).toISOString();
+  const time = (ms: number) => formatTime(iso(ms));
+  const when =
+    prime &&
+    {
+      weekend: () => t.prime.weekend,
+      allDay: () => t.prime.allDay,
+      from: () => t.prime.from(time(prime.start)),
+      between: () => t.prime.until(time(prime.start), time(prime.end)),
+    }[stretchShape(prime, APP_TIME_ZONE)]();
 
   return (
     <Sheet
@@ -59,7 +69,7 @@ export default function PrimeDateSheet({
     >
       {prime && group && (
         <>
-          <ListGroup>
+          <ListGroup className="mt-0" footnote={t.prime.footnote}>
             <ListRow
               leading={
                 <GroupBubbles members={group.members} picture={group.pictureUrl} size="md" />
@@ -69,15 +79,10 @@ export default function PrimeDateSheet({
             <ListRow
               icon={CalendarHeart}
               label={formatLongDate(iso(prime.day), lang)}
-              value={
-                prime.kind === "weekend"
-                  ? t.prime.weekend
-                  : t.prime.until(formatTime(iso(prime.start)), formatTime(iso(prime.end)))
-              }
+              value={when}
             />
             <ListRow icon={Users} label={t.prime.allFree(group.members.length)} detail={names} />
           </ListGroup>
-          <p className="mt-2 px-4 text-[12px] text-muted-foreground">{t.prime.footnote}</p>
         </>
       )}
     </Sheet>

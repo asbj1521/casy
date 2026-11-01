@@ -7,6 +7,7 @@ import {
   pickPrimeDates,
   primeCandidates,
   primeDatePlan,
+  stretchShape,
   type PrimeDate,
   type PrimeGroup,
 } from "./primeDates";
@@ -36,9 +37,10 @@ function workWeeks(): PrimeGroup["busy"] {
 function group(patch: Partial<PrimeGroup> = {}): PrimeGroup {
   return {
     id: "g",
-    memberIds: ["ana", "bo"],
+    // Cy and Di have calendars with nothing in them: the free times are Ana's and Bo's.
+    memberIds: ["ana", "bo", "cy", "di"],
     busy: workWeeks(),
-    connected: { ana: true, bo: true },
+    connected: { ana: true, bo: true, cy: true, di: true },
     eventDates: [],
     voting: false,
     ...patch,
@@ -104,9 +106,10 @@ describe("primeCandidates", () => {
     expect(Math.max(...days)).toBeLessThanOrEqual(addDays(NOW, LOOK_AHEAD_DAYS, TZ));
   });
 
-  it("has none for a member with no calendar, a group of one, or a group already voting", () => {
-    expect(primeCandidates(group({ connected: { ana: true, bo: false } }), NOW, TZ)).toEqual([]);
-    expect(primeCandidates(group({ memberIds: ["ana"] }), NOW, TZ)).toEqual([]);
+  it("has none for a member with no calendar, a group under four, or a group already voting", () => {
+    const noCalendar = { ana: true, bo: true, cy: true, di: false };
+    expect(primeCandidates(group({ connected: noCalendar }), NOW, TZ)).toEqual([]);
+    expect(primeCandidates(group({ memberIds: ["ana", "bo", "cy"] }), NOW, TZ)).toEqual([]);
     expect(primeCandidates(group({ voting: true }), NOW, TZ)).toEqual([]);
   });
 
@@ -165,7 +168,7 @@ describe("pickPrimeDates", () => {
 });
 
 describe("primeDatePlan", () => {
-  it("plans that one day, from the stretch's first whole hour to its end", () => {
+  it("plans three hours any time that day, not the whole stretch", () => {
     const evening: PrimeDate = {
       groupId: "g",
       kind: "hours",
@@ -176,9 +179,9 @@ describe("primeDatePlan", () => {
     };
     expect(primeDatePlan(evening, TZ)).toMatchObject({
       multiDay: false,
-      anyTime: false,
+      anyTime: true,
       startHour: 18,
-      durationMinutes: 240,
+      durationMinutes: 180,
       period: { from: at(10, 4, 0), to: at(10, 4, 0), days: true },
     });
   });
@@ -191,5 +194,23 @@ describe("primeDatePlan", () => {
       startDow: 6,
       period: { from: at(10, 14, 0), to: at(10, 15, 0), days: true },
     });
+  });
+});
+
+describe("stretchShape", () => {
+  const hours = (from: number, to: number): PrimeDate => ({
+    groupId: "g",
+    kind: "hours",
+    day: dayOf(10, 8),
+    start: Date.parse(at(10, 8, from)),
+    end: Date.parse(at(10, 8, to)),
+    value: 1,
+  });
+
+  it("says a whole day, a time until the evening's end, or two times", () => {
+    expect(stretchShape(hours(10, 22), TZ)).toBe("allDay");
+    expect(stretchShape(hours(17, 22), TZ)).toBe("from");
+    expect(stretchShape(hours(10, 16), TZ)).toBe("between");
+    expect(stretchShape({ ...hours(10, 22), kind: "weekend" }, TZ)).toBe("weekend");
   });
 });

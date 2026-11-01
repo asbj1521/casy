@@ -10,7 +10,9 @@
  * scheduler's own hours (10:00 to 22:00), at least MIN_HOURS, no Christmas
  * or New Year, and nothing the group already has suggested or planned near
  * it. A group with a member who has no calendar has none: that member would
- * look free whatever their week is like.
+ * look free whatever their week is like. Only groups of MIN_GROUP_SIZE or
+ * more: two or three friends find time on their own, a bigger group is
+ * where plans need help getting going.
  */
 import { ANY_TIME_EARLIEST_HOUR, ANY_TIME_LATEST_HOUR } from "@/lib/eventSearch";
 import { holidayBlocks } from "@/lib/holidayBlocks";
@@ -21,6 +23,8 @@ import { addDays, atHour, dayOfWeek, localDate, startOfDay } from "@/lib/zone";
 export const LOOK_AHEAD_DAYS = 21;
 /** The shortest stretch worth a star. */
 export const MIN_HOURS = 4;
+/** The smallest group that gets stars. */
+export const MIN_GROUP_SIZE = 4;
 /** How many days around the group's own events stay out: they are already seeing each other. */
 const NEAR_DAYS = 3;
 /** How many show at once, across every group: a few good ones, not a starry sky. */
@@ -83,10 +87,11 @@ const toSpan = (b: { start: string; end: string }): Span => ({
 /**
  * Every stretch the whole group is free for, best first: at most one a day
  * (its longest), and a weekend where both its days are wholly free. None for
- * a group of one, one with a member with no calendar, or one already voting.
+ * a group under MIN_GROUP_SIZE, one with a member with no calendar, or one
+ * already voting.
  */
 export function primeCandidates(group: PrimeGroup, now: number, timeZone: string): PrimeDate[] {
-  if (group.memberIds.length < 2 || group.voting) return [];
+  if (group.memberIds.length < MIN_GROUP_SIZE || group.voting) return [];
   if (group.memberIds.some((id) => !group.connected[id])) return [];
 
   // Only what falls in the weeks looked at: the busy times reach a year ahead.
@@ -195,13 +200,30 @@ export function pickPrimeDates(
     .slice(0, MAX_PRIME_DATES);
 }
 
-/** The longest meeting Planlæg can be set to (its lengths, schedulerSettings/options.ts). */
-const LONGEST_MINUTES = 12 * 60;
+/** How long a plan for a stretch starts out: an ordinary get-together, changed in Planlæg. */
+const PLAN_MINUTES = 3 * 60;
+
+/**
+ * How a stretch is said: a weekend, the whole day (10:00 to 22:00), from
+ * an hour until the evening's end ("fra 17:00"), or between two hours.
+ */
+export function stretchShape(
+  prime: PrimeDate,
+  timeZone: string,
+): "weekend" | "allDay" | "from" | "between" {
+  if (prime.kind === "weekend") return "weekend";
+  const toEnd = prime.end === atHour(prime.day, ANY_TIME_LATEST_HOUR, timeZone);
+  if (!toEnd) return "between";
+  return prime.start === atHour(prime.day, ANY_TIME_EARLIEST_HOUR, timeZone) ? "allDay" : "from";
+}
 
 /**
  * Planlæg's settings for a prime date: that day only (#134's exact days),
- * from the stretch's first whole hour for as long as it lasts (a weekend:
- * Saturday and Sunday away together). The group is chosen beside it.
+ * any time in it for PLAN_MINUTES, so the search finds when that fits
+ * everyone (a stretch is never filled end to end: a whole free day is no
+ * twelve-hour plan); a weekend is Saturday and Sunday away together. The
+ * stretch's first whole hour is kept for a time picked by hand. The group is
+ * chosen beside it.
  */
 export function primeDatePlan(prime: PrimeDate, timeZone: string): Partial<SchedulerSettings> {
   const day = new Date(prime.day).toISOString();
@@ -209,14 +231,12 @@ export function primeDatePlan(prime: PrimeDate, timeZone: string): Partial<Sched
     const sunday = new Date(addDays(prime.day, 1, timeZone)).toISOString();
     return { multiDay: true, days: 2, startDow: 6, period: { from: day, to: sunday, days: true } };
   }
-  const startHour = Math.ceil((prime.start - startOfDay(prime.start, timeZone)) / HOUR);
-  const minutes = (prime.end - atHour(prime.day, startHour, timeZone)) / 60_000;
   return {
     multiDay: false,
-    anyTime: false,
+    anyTime: true,
     startWindow: null,
-    startHour,
-    durationMinutes: Math.min(LONGEST_MINUTES, Math.floor(minutes / 30) * 30),
+    startHour: Math.ceil((prime.start - startOfDay(prime.start, timeZone)) / HOUR),
+    durationMinutes: PLAN_MINUTES,
     dows: [...ALL_DOWS],
     period: { from: day, to: day, days: true },
   };

@@ -75,7 +75,7 @@ export const ME = {
   email: "mia@example.com",
 };
 
-const PEOPLE = {
+export const PEOPLE = {
   jonas: { id: "p-jonas", name: "Jonas" },
   sara: { id: "p-sara", name: "Sara" },
   emil: { id: "p-emil", name: "Emil" },

@@ -1766,6 +1766,8 @@ export const en: Messages = {
     allFree: (count: number) => `All ${count} of you are free`,
     you: "you",
     weekend: "The whole weekend",
+    allDay: "All day",
+    from: (time: string) => `from ${time}`,
     until: (from: string, to: string) => `${from} to ${to}`,
     plan: "Plan",
     footnote: "Found in your calendars. Nobody is told until you send something.",

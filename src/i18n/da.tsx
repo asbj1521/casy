@@ -1827,6 +1827,8 @@ export const da = {
     allFree: (count: number) => `Alle ${count} er fri`,
     you: "dig",
     weekend: "Hele weekenden",
+    allDay: "Hele dagen",
+    from: (time: string) => `fra ${time}`,
     until: (from: string, to: string) => `${from} til ${to}`,
     plan: "Planlæg",
     footnote: "Fundet i jeres kalendere. Ingen får besked, før du sender noget.",
