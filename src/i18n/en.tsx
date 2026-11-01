@@ -967,6 +967,8 @@ export const en: Messages = {
     saveFailed: "Couldn't save the picture",
     removeFailed: "Couldn't remove the picture",
     unreadable: "That picture can't be opened. Try another one.",
+    cropTitle: "Move and scale",
+    cropFrame: "The picture. Drag to move it, pinch or scroll to zoom.",
   },
   shortcuts: {
     title: "Shortcuts",

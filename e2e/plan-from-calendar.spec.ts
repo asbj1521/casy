@@ -544,6 +544,11 @@ test.describe("Genveje (#175)", () => {
     await editor
       .locator('input[type="file"][accept="image/*"]')
       .setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+    // The middle square, as it opens (#190).
+    await page
+      .getByRole("dialog", { name: "Flyt og skalér" })
+      .getByRole("button", { name: "Færdig" })
+      .click();
     await expect(editor.getByRole("button", { name: /^Billede/ }).locator("img")).toBeVisible();
     expect(backend.calls.filter((c) => c.body.action === "save")).toHaveLength(0);
     await editor.getByRole("button", { name: "Gem genvej" }).click();

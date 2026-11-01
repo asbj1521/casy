@@ -1,17 +1,23 @@
+import type { Square } from "@/lib/pictureCrop";
+
 /**
- * A picture for Casy (#187) from a photo the person picked: cut to its
- * middle square, shrunk to PICTURE_SIZE and saved again as JPEG on a canvas.
- * Saving it again drops everything a camera writes into a photo (where and
- * when it was taken), and keeps every picture small (about 50 KB). The
- * phone's own rotation is applied first, so a portrait photo stands up.
+ * A picture for Casy (#187) from a photo the person picked: opened with the
+ * phone's own rotation applied, so a portrait photo stands up; then the
+ * square they chose (#190, lib/pictureCrop) shrunk to PICTURE_SIZE and saved
+ * again as JPEG on a canvas. Saving it again drops everything a camera
+ * writes into a photo (where and when it was taken), and keeps every picture
+ * small (about 50 KB).
  */
 const PICTURE_SIZE = 512;
 const QUALITY = 0.85;
 
-/** The picture as base64 JPEG, ready for the pictures function. */
-export async function squarePicture(file: File): Promise<string> {
-  const image = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const side = Math.min(image.width, image.height);
+/** The photo, ready to crop and draw. The caller closes it when done. */
+export async function openPicture(file: File): Promise<ImageBitmap> {
+  return await createImageBitmap(file, { imageOrientation: "from-image" });
+}
+
+/** The photo's `square` as base64 JPEG, ready for the pictures function. */
+export async function squarePicture(image: ImageBitmap, square: Square): Promise<string> {
   const canvas = document.createElement("canvas");
   canvas.width = PICTURE_SIZE;
   canvas.height = PICTURE_SIZE;
@@ -19,16 +25,15 @@ export async function squarePicture(file: File): Promise<string> {
   if (!context) throw new Error("no canvas");
   context.drawImage(
     image,
-    (image.width - side) / 2,
-    (image.height - side) / 2,
-    side,
-    side,
+    square.left,
+    square.top,
+    square.side,
+    square.side,
     0,
     0,
     PICTURE_SIZE,
     PICTURE_SIZE,
   );
-  image.close();
   const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/jpeg", QUALITY));
   if (!blob) throw new Error("no picture");
   const bytes = new Uint8Array(await blob.arrayBuffer());

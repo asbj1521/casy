@@ -1006,6 +1006,9 @@ export const da = {
     saveFailed: "Billedet kunne ikke gemmes",
     removeFailed: "Billedet kunne ikke fjernes",
     unreadable: "Det billede kan ikke åbnes. Prøv et andet.",
+    // Choosing the part of the photo to keep (#190), as the iPhone's own crop calls it.
+    cropTitle: "Flyt og skalér",
+    cropFrame: "Billedet. Træk for at flytte det, knib eller rul for at zoome.",
   },
   // Genveje (#175): saved plans, run again with one tap from the Planlæg sheet.
   shortcuts: {

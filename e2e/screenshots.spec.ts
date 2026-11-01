@@ -186,6 +186,39 @@ test("the swipe screen looks as it did", async ({ page, isMobile }) => {
   await expect(page).toHaveScreenshot("swipe.png");
 });
 
+test("the picture crop sheet looks as it did (#190)", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phones only: the design language's sheet");
+  await page.goto("/profile");
+  await expect(page.getByRole("button", { name: "Tilføj profilbillede" })).toBeVisible();
+  // A made-up photo, the same on every run: an orange to blue sky and a pale sun off to the side.
+  const photo = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 600;
+    canvas.height = 400;
+    const context = canvas.getContext("2d")!;
+    const sky = context.createLinearGradient(0, 0, 600, 400);
+    sky.addColorStop(0, "#f97316");
+    sky.addColorStop(1, "#1e3a8a");
+    context.fillStyle = sky;
+    context.fillRect(0, 0, 600, 400);
+    context.fillStyle = "#fde68a";
+    context.beginPath();
+    context.arc(420, 160, 80, 0, 2 * Math.PI);
+    context.fill();
+    return canvas.toDataURL("image/png").split(",")[1];
+  });
+  await page.locator('input[type="file"][accept="image/*"]').setInputFiles({
+    name: "foto.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(photo, "base64"),
+  });
+  // Once the sheet has slid up and stands still (hover waits for that).
+  await page.getByLabel(/^Billedet\./).hover();
+  await page.waitForLoadState("networkidle");
+  await useInter(page);
+  await expect(page).toHaveScreenshot("picture-crop.png");
+});
+
 // The home page's day view (#176), on today: the now-line, the week row's red circle.
 const DAY_VIEW = "/?day=2026-10-07";
 

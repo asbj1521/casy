@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 /**
  * A picture that is also its own button (#187, #188): a camera badge on its
  * corner, a tap opening the phone's own menu (usePicturePicker), the small
- * square JPEG made from the photo handed to `onPicked`.
+ * square JPEG made from the part of the photo chosen (#190) handed to `onPicked`.
  */
 export default function PictureButton({
   label,
@@ -26,7 +26,8 @@ export default function PictureButton({
   /** The picture as it is now (an Avatar). */
   children: ReactNode;
 }) {
-  const picker = usePicturePicker({ onPicked, onError });
+  // Every picture behind this button is shown round (a profile, a group).
+  const picker = usePicturePicker({ onPicked, onError, round: true });
   return (
     <>
       <button
