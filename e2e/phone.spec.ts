@@ -283,7 +283,7 @@ test.describe("with motion", () => {
       ["Planlæg", "Planlæg", "Annuller", "bottom"],
       ["Profil", "Profil", "Færdig", "bottom"],
       ["Kalendere", "Kalendere", "Færdig", "top"],
-      ["Fortæl Casy", "Fortæl Casy", "Færdig", "top"],
+      ["Tilføj til kalender", "Tilføj til kalender", "Færdig", "top"],
     ] as const) {
       await page.getByRole("button", { name: button, exact: true }).click();
       const sheet = page.getByRole("dialog", { name: title });

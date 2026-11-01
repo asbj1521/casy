@@ -1,11 +1,12 @@
 /**
- * Tell Casy (#116): what is in no calendar, said or written, checked by the
- * person and only then kept. It then shows on My calendar and is deleted
- * again from the same sheet. Phone and computer alike.
+ * Tilføj til kalender (#116, named so since #193): what is in no calendar,
+ * said or written, checked by the person and only then kept. Kept, the sheet
+ * closes; it then shows on My calendar and is deleted again from the same
+ * sheet. Phone and computer alike.
  */
 import { expect, test } from "./fixtures";
 
-const OPEN = /^Fortæl Casy/;
+const OPEN = /^Tilføj til kalender/;
 const PLACEHOLDER = "Fx jeg rejser fra den 12. til den 19. oktober";
 
 test("a description becomes entries, which are kept only when saved", async ({
@@ -15,10 +16,10 @@ test("a description becomes entries, which are kept only when saved", async ({
 }) => {
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: OPEN }).click();
-  const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
+  const sheet = page.getByRole("dialog", { name: "Tilføj til kalender" });
 
   await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("Jeg rejser 12. til 19. oktober");
-  await sheet.getByRole("button", { name: "Tilføj til kalender" }).click();
+  await sheet.getByRole("button", { name: "Tilføj", exact: true }).click();
 
   // Casy's reading is shown for checking; nothing is saved yet.
   await expect(sheet.getByText("Sådan forstod Casy det")).toBeVisible();
@@ -28,15 +29,14 @@ test("a description becomes entries, which are kept only when saved", async ({
   const asked = backend.calls.find((c) => c.name === "entries-ai")!;
   expect(asked.body).toMatchObject({ text: "Jeg rejser 12. til 19. oktober", current: null });
 
+  // Kept, the sheet closes on it (#193).
   await sheet.getByRole("button", { name: "Gem 1 post" }).click();
-  await expect(sheet.getByText("Det har du fortalt Casy")).toBeVisible();
+  await expect(sheet).toBeHidden();
   expect(backend.world.entries).toMatchObject([{ kind: "away", label: "Rejse", allDay: true }]);
   // Nothing of the sentence itself is stored.
   expect(JSON.stringify(backend.world.entries)).not.toContain("Jeg rejser");
 
   // It is on My calendar, in a calendar of its own named Casy.
-  await sheet.getByRole("button", { name: "Færdig" }).click();
-  await expect(sheet).toBeHidden();
   await page
     .getByRole("button", { name: isMobile ? "mandag 12. oktober" : /^man\. 12\. okt/ })
     .click();
@@ -48,7 +48,7 @@ test("a description becomes entries, which are kept only when saved", async ({
   const day = page.getByRole("dialog", { name: "Mandag 12. oktober" });
   await expect(day.getByText("Rejse")).toBeVisible();
   await expect(day.getByText(/· Casy$/)).toBeVisible();
-  await expect(day.getByText("Fortalt", { exact: true })).toBeVisible();
+  await expect(day.getByText("Tilføjet", { exact: true })).toBeVisible();
 });
 
 test("more details change the proposal, and a left out entry is not saved", async ({
@@ -57,9 +57,9 @@ test("more details change the proposal, and a left out entry is not saved", asyn
 }) => {
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: OPEN }).click();
-  const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
+  const sheet = page.getByRole("dialog", { name: "Tilføj til kalender" });
   await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("Jeg rejser 12. til 19. oktober");
-  await sheet.getByRole("button", { name: "Tilføj til kalender" }).click();
+  await sheet.getByRole("button", { name: "Tilføj", exact: true }).click();
   await expect(sheet.getByText("Rejse", { exact: true })).toBeVisible();
 
   await sheet.getByRole("button", { name: "Tilføj detaljer" }).click();
@@ -80,8 +80,13 @@ test("more details change the proposal, and a left out entry is not saved", asyn
 
   await sheet.getByRole("button", { name: "Drop Rejse" }).click();
   await sheet.getByRole("button", { name: "Gem 1 post" }).click();
-  await expect(sheet.getByText("Det har du fortalt Casy")).toBeVisible();
+  await expect(sheet).toBeHidden();
   expect(backend.world.entries).toMatchObject([{ kind: "busy", label: "Kursus", allDay: false }]);
+  // Opened again: what was added is listed, to delete; the box is empty for the next.
+  await page.getByRole("button", { name: OPEN }).click();
+  await expect(sheet.getByText("Det har du tilføjet")).toBeVisible();
+  await expect(sheet.getByText("Kursus")).toBeVisible();
+  await expect(sheet.getByRole("textbox", { name: PLACEHOLDER })).toHaveValue("");
 });
 
 test("a kept entry is deleted from the same sheet", async ({ page, backend }) => {
@@ -97,20 +102,20 @@ test("a kept entry is deleted from the same sheet", async ({ page, backend }) =>
   ];
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: OPEN }).click();
-  const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
+  const sheet = page.getByRole("dialog", { name: "Tilføj til kalender" });
   await expect(sheet.getByText("Hjemme hos mine forældre")).toBeVisible();
 
   await sheet.getByRole("button", { name: "Slet Hjemme hos mine forældre" }).click();
-  await expect(sheet.getByText("Det har du fortalt Casy")).toHaveCount(0);
+  await expect(sheet.getByText("Det har du tilføjet")).toHaveCount(0);
   expect(backend.world.entries).toHaveLength(0);
 });
 
 test("text Casy can't use is said so, and the words come back to fix", async ({ page }) => {
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: OPEN }).click();
-  const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
+  const sheet = page.getByRole("dialog", { name: "Tilføj til kalender" });
   await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("bare noget vrøvl");
-  await sheet.getByRole("button", { name: "Tilføj til kalender" }).click();
+  await sheet.getByRole("button", { name: "Tilføj", exact: true }).click();
   await expect(sheet.getByText(/Casy kunne ikke få en kalenderpost ud af det/)).toBeVisible();
   await expect(sheet.getByRole("textbox", { name: PLACEHOLDER })).toHaveValue("bare noget vrøvl");
 });
@@ -134,7 +139,7 @@ test("the speak button is a sound wave, and says Stop while listening (#106)", a
   });
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: OPEN }).click();
-  const sheet = page.getByRole("dialog", { name: "Fortæl Casy" });
+  const sheet = page.getByRole("dialog", { name: "Tilføj til kalender" });
 
   const speak = sheet.getByRole("button", { name: "Tal" });
   await expect(speak).toHaveAttribute("aria-pressed", "false");

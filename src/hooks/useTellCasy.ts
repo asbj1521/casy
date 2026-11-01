@@ -27,7 +27,12 @@ interface Session {
 
 const FRESH: Session = { texts: [], entries: [], message: null, left: null };
 
-export function useTellCasy() {
+export function useTellCasy({
+  onSaved,
+}: {
+  /** What was just kept (Tilføj til kalender closes on it, #193). */
+  onSaved?: (entries: CasyEntry[]) => void;
+} = {}) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session>(FRESH);
 
@@ -39,12 +44,13 @@ export function useTellCasy() {
   });
 
   const save = useMutation({
-    mutationFn: () => saveEntries(session.entries),
-    onSuccess: async () => {
+    mutationFn: (entries: CasyEntry[]) => saveEntries(entries),
+    onSuccess: async (_, entries) => {
       // Back to a blank box, but keep how many answers are left.
       setSession((s) => ({ ...FRESH, left: s.left }));
       ask.reset();
       await entriesChanged(queryClient);
+      onSaved?.(entries);
     },
   });
 
@@ -81,7 +87,7 @@ export function useTellCasy() {
     describe,
     drop,
     reset,
-    save: () => save.mutate(),
+    save: () => save.mutate(session.entries),
     saving: save.isPending,
     saveError: save.error?.message ?? null,
     deleteEntry: (id: string) => remove.mutate(id),

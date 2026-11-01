@@ -12,8 +12,10 @@ import { useLang, useT } from "@/i18n/lang";
 import { entryWhen, type CasyEntry, type StoredEntry } from "@/lib/casyEntries";
 
 /**
- * Tell Casy (#116): say or write when you are away or busy and it is in no
- * calendar, check what Casy made of it, and keep it. On a phone a glass sheet
+ * Tilføj til kalender (#116, named so since #193; Tell Casy in the code): say
+ * or write when you are away or busy and it is in no calendar, check what
+ * Casy made of it, and keep it. Kept, the sheet closes and `onSaved` has
+ * what was added, so the month can glide to it. On a phone a glass sheet
  * dropping from the plus at the top of My calendar (#169), clear of the
  * keyboard; a dialog on a computer (ui/Sheet, #153). What is kept is
  * listed under, each with a delete: it counts in every search and shows on
@@ -24,16 +26,24 @@ export default function TellCasySheet({
   onClose,
   kept,
   origin,
+  onSaved,
 }: {
   open: boolean;
   onClose: () => void;
+  /** What was just kept, soonest first, the sheet closing on it. */
+  onSaved?: (entries: CasyEntry[]) => void;
   /** The plus it drops out of (#169). */
   origin?: RefObject<HTMLElement | null>;
   /** The entries already kept (from My calendar's data). */
   kept: StoredEntry[];
 }) {
   const t = useT();
-  const tell = useTellCasy();
+  const tell = useTellCasy({
+    onSaved: (entries) => {
+      onClose();
+      onSaved?.([...entries].sort((a, b) => a.start.localeCompare(b.start)));
+    },
+  });
   const { session, pending } = tell;
   const [adding, setAdding] = useState(false);
   // Casy's reading on screen, waiting to be kept: the sheet's main button.
@@ -88,7 +98,6 @@ function TellCasyBody({
           <Thinking />
         ) : (
           <>
-            <p className="px-1 text-[15px] text-muted-foreground">{words.rowDetail}</p>
             <Composer
               // A failed answer brings back what was sent, to fix and send again.
               key={tell.failedText}
@@ -99,6 +108,7 @@ function TellCasyBody({
               placeholder={words.placeholder}
               sendLabel={words.send}
               onSend={tell.describe}
+              glassSend
             />
           </>
         )
@@ -143,6 +153,7 @@ function TellCasyBody({
               label={words.morePlaceholder}
               placeholder={words.morePlaceholder}
               sendLabel={words.update}
+              glassSend
               onSend={(text) => {
                 tell.describe(text);
                 onAdding(false);

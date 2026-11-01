@@ -221,6 +221,7 @@ export function Composer({
   sendLabel,
   onSend,
   onCancel,
+  glassSend = false,
 }: {
   /** What the box starts with: the text whose answer failed, or nothing. */
   initial: string;
@@ -236,6 +237,11 @@ export function Composer({
   sendLabel: string;
   onSend: (text: string) => void;
   onCancel?: () => void;
+  /**
+   * The send button as a glass capsule with orange text (the design
+   * language, #193), not solid orange: that is kept for Planlæg med AI.
+   */
+  glassSend?: boolean;
 }) {
   const t = useT();
   const words = t.aiPlan;
@@ -335,7 +341,12 @@ export function Composer({
               type="button"
               onClick={send}
               disabled={!draft.trim()}
-              className="inline-flex h-10 items-center gap-1.5 rounded-full bg-cta px-3.5 text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50"
+              className={cn(
+                "inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-bold transition disabled:opacity-50",
+                glassSend
+                  ? "glass-pill text-primary active:scale-[0.98]"
+                  : "bg-cta text-white hover:bg-cta-hover",
+              )}
             >
               <Sparkles className="h-4 w-4" />
               {sendLabel}

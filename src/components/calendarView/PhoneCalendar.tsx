@@ -680,6 +680,10 @@ export default function PhoneCalendar() {
             onClose={() => setTellOpen(false)}
             kept={entries}
             origin={tellButton}
+            // Kept (#193): the month glides to the first day added, to show it landed.
+            onSaved={(added) =>
+              added[0] && months.current?.glideToDay(startOfDay(Date.parse(added[0].start), TZ))
+            }
           />
         </Suspense>
       )}
