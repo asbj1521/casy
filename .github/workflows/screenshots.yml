@@ -19,34 +19,74 @@ permissions:
   contents: write
 
 jobs:
-  update:
-    name: Update screenshots
+  # The whole suite in four parts side by side (#194), as in ci.yml, each
+  # rewriting the images of its own tests that differ.
+  shots:
+    name: Browser tests (${{ matrix.shard }}/4)
     if: >-
       github.ref != 'refs/heads/main' && (github.event_name == 'workflow_dispatch' ||
       contains(github.event.head_commit.message, '[screenshots]'))
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     env:
       HOME: /root
     steps:
       - uses: actions/checkout@v4
-      - run: npm ci
+      - uses: actions/cache@v4
+        with:
+          path: /root/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+      - run: npm ci --prefer-offline --no-audit --no-fund
       # The whole suite, behaviour tests too: this workflow's commit starts no
       # CI run, and CI's browser job skips a [screenshots] commit, so this is
       # where the branch's browser tests run. Rewrites every image that
       # differs, and makes the missing ones.
-      - run: npx playwright test --update-snapshots=changed
+      - run: npx playwright test --shard=${{ matrix.shard }}/4 --update-snapshots=changed
+      # Only the images this part changed or made: a part's copy of an image
+      # it didn't run is the old one, and must not overwrite another part's
+      # new one. The marker makes the upload never empty.
+      - name: Gather the new images
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mkdir -p new-images
+          touch "new-images/part-${{ matrix.shard }}.marker"
+          git ls-files --others --modified e2e/__screenshots__ | while IFS= read -r f; do
+            cp "$f" new-images/
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: new-images-${{ matrix.shard }}
+          path: new-images
+          retention-days: 1
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-test-results
+          name: browser-test-results-${{ matrix.shard }}
           path: |
             playwright-report
             test-results
           retention-days: 14
+
+  # Every part's new images, together, committed to the branch: only once
+  # all four passed.
+  update:
+    name: Update screenshots
+    needs: shots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: new-images-*
+          path: e2e/__screenshots__
+          merge-multiple: true
       - name: Commit the new images
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          rm -f e2e/__screenshots__/*.marker
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add e2e/__screenshots__

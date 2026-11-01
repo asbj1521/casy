@@ -26,9 +26,9 @@ When a change moves pixels on purpose, make new reference images in one of two w
 - push a commit whose message contains `[screenshots]`, or
 - start "Update screenshots" from the Actions tab on the branch (once the workflow is on main).
 
-The workflow runs the whole browser suite, behaviour tests included, and commits the new images to the branch; pull them and look at the diff before merging. It is where a `[screenshots]` commit's browser tests run: CI's browser job skips that commit, and the workflow's own commit starts no CI (GitHub doesn't run workflows on commits made by a workflow). `npm run finish` waits for it and takes its commit, and also finishes a branch whose last commit is that one.
+The workflow runs the whole browser suite, behaviour tests included, in four parts side by side (#194); each part passes on only the images it changed, and a last job commits them all to the branch; pull them and look at the diff before merging. It is where a `[screenshots]` commit's browser tests run: CI's browser job skips that commit, and the workflow's own commit starts no CI (GitHub doesn't run workflows on commits made by a workflow). `npm run finish` waits for it and takes its commit, and also finishes a branch whose last commit is that one.
 
-When CI's comparison fails, download the `browser-test-results` artifact and open `playwright-report/index.html`: each failed screenshot shows the expected, actual and diff images.
+When CI's comparison fails, download the failed part's `browser-test-results-<part>` artifact and open `playwright-report/index.html`: each failed screenshot shows the expected, actual and diff images.
 
 ## Adding to it
 
