@@ -58,7 +58,13 @@ async function useInter(page: Page) {
  * the page first; otherwise it would be drawn halfway down. `phoneSheet`: on
  * a phone the address opens a sheet over the home page (#169), waited for.
  */
-async function expectPage(page: Page, name: string, isMobile: boolean, phoneSheet = false) {
+async function expectPage(
+  page: Page,
+  name: string,
+  isMobile: boolean,
+  path: string,
+  phoneSheet = false,
+) {
   if (isMobile && phoneSheet) await expect(page.getByRole("dialog")).toBeVisible();
   await page.waitForLoadState("networkidle");
   await useInter(page);
@@ -67,6 +73,11 @@ async function expectPage(page: Page, name: string, isMobile: boolean, phoneShee
   // Spinners too (#194): Your data says "Henter dine data" with one rather
   // than placeholders, and was drawn mid-load when the runner was busy.
   await expect(page.locator(".animate-spin")).toHaveCount(0);
+  // Still on the page asked for (#194): now and then a computer's page was
+  // found on the scheduler at / instead, and with --update-snapshots that
+  // image was saved as the reference without a word. Failing here retries it.
+  // Not a phone's: its addresses lead into the home page's sheets on purpose.
+  if (!isMobile) expect(new URL(page.url()).pathname).toBe(path);
   if (isMobile) {
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
     await page.setViewportSize({ width: 390, height });
@@ -118,7 +129,7 @@ for (const { name, path, world, signedIn, phoneSheet } of PAGES) {
       );
       test.skip(isMobile && name.startsWith("scheduler"), "a phone plans from My calendar (#127)");
       await page.goto(path);
-      await expectPage(page, name, isMobile, phoneSheet);
+      await expectPage(page, name, isMobile, path, phoneSheet);
     });
   });
 }
@@ -158,7 +169,7 @@ test.describe("dark", () => {
           "a phone plans from My calendar (#127)",
         );
         await page.goto(path);
-        await expectPage(page, `${name}-dark`, isMobile, phoneSheet);
+        await expectPage(page, `${name}-dark`, isMobile, path, phoneSheet);
       });
     });
   }
