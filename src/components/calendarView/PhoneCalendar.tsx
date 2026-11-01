@@ -197,7 +197,7 @@ export default function PhoneCalendar() {
     setPlanTouched(false);
   }, []);
   // What Planlæg begins with when a starred day opens it (#171); none from the pill.
-  const [planStart, setPlanStart] = useState<PrimeDate | null>(null);
+  const [planStart, setPlanStart] = useState<{ date: PrimeDate; name?: string } | null>(null);
   const openPlan = () => {
     setPlanStart(null);
     navigate({ search: "?plan" }, { state: { fromMonth: true } });
@@ -208,9 +208,9 @@ export default function PhoneCalendar() {
     open: false,
   });
   const primeNow = useRef<PrimeDate[]>([]);
-  const planPrime = (date: PrimeDate) => {
+  const planPrime = (date: PrimeDate, name?: string) => {
     setPrime((p) => ({ ...p, open: false }));
-    setPlanStart(date);
+    setPlanStart({ date, name });
     navigate({ search: "?plan" }, { state: { fromMonth: true } });
   };
   // Planlæg's sent dates bring the buttons back, to fly into Aftaler (#169).
@@ -628,8 +628,9 @@ export default function PhoneCalendar() {
             origin={planButton}
             start={
               planStart && {
-                groupId: planStart.groupId,
-                settings: primeDatePlan(planStart, APP_TIME_ZONE),
+                groupId: planStart.date.groupId,
+                settings: primeDatePlan(planStart.date, APP_TIME_ZONE),
+                name: planStart.name,
               }
             }
           />

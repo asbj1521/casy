@@ -1769,5 +1769,7 @@ export const en: Messages = {
     until: (from: string, to: string) => `${from} to ${to}`,
     plan: "Plan",
     footnote: "Found in your calendars. Nobody is told until you send something.",
+    ideas: "Ideas",
+    ideasFailed: "Couldn't fetch the ideas.",
   },
 };

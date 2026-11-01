@@ -532,6 +532,11 @@ verify_jwt = false
 # Checks the caller's access token in code, like the rest.
 verify_jwt = false
 
+[functions.prime-ideas]
+# Ideas for a time a whole group is free (#171), for anyone AI is on for.
+# Checks the caller's access token in code, like the rest.
+verify_jwt = false
+
 [functions.calendar-sync]
 # Two callers, both checked in code: the hourly pg_cron job by a shared secret
 # (x-sync-secret), and a signed-in person's "Sync now" by their login

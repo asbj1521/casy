@@ -43,7 +43,8 @@ export type Skill =
   | "event-relabel"
   | "event-profile"
   | "entries-ai"
-  | "trip-legs";
+  | "trip-legs"
+  | "prime-ideas";
 
 /**
  * Each skill's budget, and whether someone is waiting on the page (one quick
@@ -63,6 +64,8 @@ export const SKILLS: Record<Skill, { perPersonPerDay: number; waiting: boolean }
   "entries-ai": { perPersonPerDay: 30, waiting: true },
   // Trip detection (#115): only travel events, a batch of 50 each; after the first run only new ones.
   "trip-legs": { perPersonPerDay: 10, waiting: false },
+  // Tid til hinanden (#171): a starred day opened; cached per stretch on the page.
+  "prime-ideas": { perPersonPerDay: 20, waiting: true },
 };
 
 /**

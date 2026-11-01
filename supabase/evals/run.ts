@@ -6,7 +6,7 @@
  * every run costs a little (cents) and needs the API key.
  *
  *   ANTHROPIC_API_KEY=... deno run --node-modules-dir=none --allow-net --allow-env --allow-read \
- *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile | entries-ai | trip-legs | occasions]
+ *     supabase/evals/run.ts [plan-ai | calendar-categorize | event-label | event-profile | entries-ai | trip-legs | prime-ideas | occasions]
  *
  * The cases are invented: the repo is public, so no real calendar names,
  * titles or descriptions belong in them. An expected value may be
@@ -71,6 +71,13 @@ import {
   readEvent as readLegEvent,
 } from "../functions/_shared/tripLegs.ts";
 import { type Occasion, usableOccasions } from "../functions/_shared/occasions.ts";
+import {
+  buildIdeasMessage,
+  IDEAS_SCHEMA,
+  IDEAS_SYSTEM_PROMPT,
+  ideasFromAnswer,
+  readIdeasRequest,
+} from "../functions/_shared/ideasAi.ts";
 
 const client = new Anthropic();
 const here = new URL(".", import.meta.url);
@@ -677,6 +684,53 @@ async function tripLegs(): Promise<Result[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Ideas for a free stretch (#171): two or three, fitting what the group is
+// for (`mentions`, at least `mentionsAtLeast` of the ideas) and never what
+// doesn't fit the time (`avoid`), checked in the title and the line under it.
+
+interface IdeasCase {
+  name: string;
+  lang: "da" | "en";
+  stretch: unknown;
+  expect: { mentions?: string[]; mentionsAtLeast?: number; avoid?: string[] };
+}
+
+async function primeIdeas(): Promise<Result[]> {
+  const { cases } = (await load("prime-ideas.json")) as { cases: IdeasCase[] };
+  return await pool(cases, 4, async (c) => {
+    const stretch = readIdeasRequest(c.stretch);
+    if (!stretch) return { name: c.name, failures: ["the case's stretch isn't valid"] };
+    const { stop, text } = await ask(
+      skillRequest({
+        system: IDEAS_SYSTEM_PROMPT,
+        message: buildIdeasMessage(stretch, c.lang),
+        schema: IDEAS_SCHEMA,
+        maxTokens: 1500,
+      }),
+    );
+    const ideas = ideasFromAnswer(stop, text);
+    if (!ideas) return { name: c.name, failures: [`no ideas (stop_reason ${stop})`] };
+    const failures: string[] = [];
+    if (ideas.length < 2) failures.push(`only ${ideas.length} idea`);
+    const texts = ideas.map((i) => `${i.title} ${i.why}`.toLowerCase());
+    const { mentions = [], mentionsAtLeast = 0, avoid = [] } = c.expect;
+    const mentioning = texts.filter((t) => mentions.some((m) => t.includes(m))).length;
+    if (mentioning < mentionsAtLeast) {
+      failures.push(`expected ${mentionsAtLeast} to mention one of ${mentions.join(", ")}`);
+    }
+    for (const word of avoid) {
+      if (texts.some((t) => t.includes(word))) failures.push(`mentions "${word}"`);
+    }
+    // Written in the language asked for: Danish letters or words in English are a miss.
+    if (c.lang === "en" && texts.some((t) => /[æøå]|\b(og|til|med|en|på|hjemme)\b/.test(t))) {
+      failures.push("not in English");
+    }
+    if (failures.length > 0) failures.push(...ideas.map((i) => `${i.title}: ${i.why}`));
+    return { name: c.name, failures };
+  });
+}
+
+// ---------------------------------------------------------------------------
 
 const SETS: Record<string, () => Promise<Result[]>> = {
   "plan-ai": planAi,
@@ -685,6 +739,7 @@ const SETS: Record<string, () => Promise<Result[]>> = {
   "event-profile": eventProfile,
   "entries-ai": entriesAi,
   "trip-legs": tripLegs,
+  "prime-ideas": primeIdeas,
   occasions,
 };
 const wanted = Deno.args[0] ? [Deno.args[0]] : Object.keys(SETS);

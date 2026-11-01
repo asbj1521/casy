@@ -7,6 +7,7 @@ import {
   pickPrimeDates,
   primeCandidates,
   primeDatePlan,
+  primeStretch,
   type PrimeDate,
   type PrimeGroup,
 } from "./primeDates";
@@ -190,6 +191,27 @@ describe("primeDatePlan", () => {
       days: 2,
       startDow: 6,
       period: { from: at(10, 14, 0), to: at(10, 15, 0), days: true },
+    });
+  });
+});
+
+describe("primeStretch", () => {
+  it("says when, how long, the weekday and month, the size and what the group is for", () => {
+    const found = primeCandidates(group(), NOW, TZ);
+    const tuesday = found.find((p) => p.day === dayOf(10, 3))!;
+    expect(primeStretch(tuesday, { size: 2, about: "Løb" }, TZ)).toEqual({
+      kind: "hours",
+      startMinute: 17 * 60,
+      minutes: 5 * 60,
+      weekday: 2,
+      month: 10,
+      groupSize: 2,
+      about: "Løb",
+    });
+    expect(primeStretch(found[0], { size: 2, about: null }, TZ)).toMatchObject({
+      kind: "weekend",
+      weekday: 6,
+      about: "",
     });
   });
 });

@@ -221,3 +221,39 @@ export function primeDatePlan(prime: PrimeDate, timeZone: string): Partial<Sched
     period: { from: day, to: day, days: true },
   };
 }
+
+/**
+ * What the ideas for a prime date are asked from (the prime-ideas function,
+ * _shared/ideasAi.ts): when it is and how long, the weekday, the month, how
+ * many are in the group and what the group is for. Nothing else.
+ */
+export interface PrimeStretch {
+  kind: PrimeDate["kind"];
+  startMinute: number;
+  minutes: number;
+  weekday: number;
+  month: number;
+  groupSize: number;
+  about: string;
+}
+
+export function primeStretch(
+  prime: PrimeDate,
+  group: { size: number; about: string | null },
+  timeZone: string,
+): PrimeStretch {
+  const { month, dow } = localDate(prime.day, timeZone);
+  return {
+    kind: prime.kind,
+    startMinute: Math.round((prime.start - startOfDay(prime.start, timeZone)) / 60_000),
+    // A weekend is whole days: its length says nothing the kind doesn't.
+    minutes:
+      prime.kind === "weekend"
+        ? (ANY_TIME_LATEST_HOUR - ANY_TIME_EARLIEST_HOUR) * 60
+        : Math.round((prime.end - prime.start) / 60_000),
+    weekday: dow,
+    month,
+    groupSize: group.size,
+    about: group.about ?? "",
+  };
+}

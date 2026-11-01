@@ -107,6 +107,15 @@ export class FakeBackend {
         if (categorized.length > 0) this.changed();
         return ok({ categorized });
       }
+      case "prime-ideas":
+        // As the real one, without the AI: the same two ideas for any free time (#171).
+        return ok({
+          ideas: [
+            { title: "Brunch og gåtur", why: "Skoven er flot i oktober" },
+            { title: "Brætspil og pizza", why: "Hyggeligt, når det bliver mørkt tidligt" },
+          ],
+          left: 19,
+        });
       case "event-profile":
         // As the real one, without the AI: every event an evening out.
         return ok({

@@ -237,6 +237,13 @@ const da: LegalCopy = {
             de inviterede, hvis en dato ville gå ud over noget vigtigt for dem, og den slettes
             sammen med aftalen.
           </p>
+          <p>
+            Åbner du en dag, Casy har markeret som Tid til hinanden, beder Casy Anthropic om et par
+            idéer til, hvad I kan bruge tiden på. Med det sendes, hvor lang tiden er, og hvornår på
+            dagen den starter, ugedagen, måneden, hvor mange I er i gruppen, og hvad gruppen er til,
+            som I selv har skrevet det: ikke datoen, ikke kalendere og ikke navne. Idéerne gemmes
+            ikke.
+          </p>
 
           <p>
             <Term>Med dit ja: Casys AI læser i din kalender.</Term> Det er slået fra, indtil du selv
@@ -738,6 +745,13 @@ const en: LegalCopy = {
             and not the group. The answer is kept with the event, so Casy can warn the people
             invited when a date would get in the way of something important to them, and it is
             deleted with the event.
+          </p>
+          <p>
+            When you open a day Casy marked as Time for each other, Casy asks Anthropic for a few
+            ideas for what you could do with the time. Only how long it is and when in the day it
+            starts, the weekday, the month, how many are in the group and what the group is for, as
+            you wrote it yourselves, go with it: not the date, not calendars and not names. The
+            ideas are not stored.
           </p>
 
           <p>
