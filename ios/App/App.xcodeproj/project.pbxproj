@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -25,6 +25,7 @@
 		CA5E000D2F00000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CA5E000E2F00000000000001 /* PrivacyInfo.xcprivacy */; };
 		CA5E000F2F00000000000001 /* GlassPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00102F00000000000001 /* GlassPlugin.swift */; };
 		CA5E00112F00000000000001 /* AppleSignInPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5E00122F00000000000001 /* AppleSignInPlugin.swift */; };
+		CA5E00172F00000000000001 /* CasyUI in Frameworks */ = {isa = PBXBuildFile; productRef = CA5E00162F00000000000001 /* CasyUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,12 +53,21 @@
 		CA5E00132F00000000000001 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		CA5E00142F00000000000001 /* Native */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Native;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		504EC3011FED79650016851F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */,
+				CA5E00172F00000000000001 /* CasyUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,6 +113,7 @@
 				CA5E00102F00000000000001 /* GlassPlugin.swift */,
 				CA5E00122F00000000000001 /* AppleSignInPlugin.swift */,
 				CA5E00132F00000000000001 /* App.entitlements */,
+				CA5E00142F00000000000001 /* Native */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -122,9 +133,13 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				CA5E00142F00000000000001 /* Native */,
+			);
 			name = App;
 			packageProductDependencies = (
 				4D22ABE82AF431CB00220026 /* CapApp-SPM */,
+				CA5E00162F00000000000001 /* CasyUI */,
 			);
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
@@ -147,7 +162,6 @@
 				};
 			};
 			buildConfigurationList = 504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */;
-			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -158,7 +172,9 @@
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
 				D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */,
+				CA5E00152F00000000000001 /* XCLocalSwiftPackageReference "../Packages/CasyUI" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -415,6 +431,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		CA5E00152F00000000000001 /* XCLocalSwiftPackageReference "../Packages/CasyUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/CasyUI;
+		};
 		D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "CapApp-SPM";
@@ -426,6 +446,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */;
 			productName = "CapApp-SPM";
+		};
+		CA5E00162F00000000000001 /* CasyUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA5E00152F00000000000001 /* XCLocalSwiftPackageReference "../Packages/CasyUI" */;
+			productName = CasyUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

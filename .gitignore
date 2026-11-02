@@ -30,3 +30,7 @@ playwright-report
 
 # iCloud Drive leaves "name 2.ts" copies when files change under it (the repo is in a synced Desktop): never commit them.
 * 2.*
+
+# Swift packages (ios/Packages): build folders, never in the iCloud-synced repo (#196)
+ios/Packages/*/.build
+ios/Packages/*/.swiftpm
