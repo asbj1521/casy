@@ -34,8 +34,8 @@ Smaller decisions that follow from these:
 ```
 ios/
   App/                         the Xcode project (as now); the App target hosts the web view and the native screens until Phase 6
-    App/                       becomes a synchronized folder (Phase 0): new files need no project.pbxproj edit
-      Native/                  the app's own SwiftUI: Bridge/, Screens/, Background/ (new)
+    App/                       the old group, as it was (it holds public/, copied as one folder, which a synchronized folder would break)
+      Native/                  a synchronized folder (Phase 0): new files need no project.pbxproj edit; the app's own SwiftUI: Bridge/, Screens/, Background/
   Packages/                    local Swift packages (new)
     CasyCore/                  pure logic: types, time, the engine, ranking, trips, labels; Swift Testing; no UIKit or SwiftUI
       Tests/CasyCoreTests/Parity/   the JSON fixtures written by Vitest
@@ -121,7 +121,7 @@ Sizes are rough: S a few sessions, M one to two weeks of sessions, L two to four
 Prove the hard parts before building on them; throw away anything that doesn't hold.
 
 1. Raise the app's deployment target to 26.0 on a branch; build and run on the user's phone. Done 2026-11-02: set in the Xcode project only, which `cap sync` copies into `CapApp-SPM/Package.swift` as `.iOS(.v26)`, a name only Swift tools 6.2 know, so `capacitor.config.ts` raises them (`experimental.ios.spm.swiftToolsVersion`). Builds and runs on the iOS 27 simulator.
-2. Convert `ios/App/App` to a synchronized folder in Xcode (the user clicks: the folder, right click, Convert to Folder), and add an empty local package `ios/Packages/CasyUI` (File, Add Package Dependencies, Add Local). Confirm a new Swift file then needs no `project.pbxproj` edit, and update CLAUDE.md's iPhone rule.
+2. A synchronized folder for new Swift files, and an empty local package `ios/Packages/CasyUI`; update CLAUDE.md's iPhone rule. Done 2026-11-02: only the new subfolder `App/Native/` is synchronized, since `App` itself holds `public/` (copied as one folder, which Capacitor needs) and `Info.plist`. Xcode offers synchronized folders only in its 16 format, so the project moved to it (objectVersion 77) by hand, with the package wired like `CapApp-SPM`; `Native/Native.swift` importing CasyUI builds without a further edit.
 3. The bridge, minimally: `NativeBridgePlugin` with `setSession`, `open` and `closed`; a native Settings screen (Sprog and Udseende only, `List`, the system sheet from the bottom) opened from the web profile's Indstillinger row; it calls `whoami` with the borrowed token. Prove the round trip: open, change the theme natively, close, the web follows.
 4. Try the zoom-from-toolbar sheet on a native bottom bar laid over the web view, with `.medium`, `.fraction` and `.large` detents.
 5. Speech: `SpeechTranscriber.supportedLocale(equivalentTo: Locale(identifier: "da_DK"))`, then a real Danish transcription on the user's phone (the asset download can fail for a listed language). Write down which API Phase 4 uses.
