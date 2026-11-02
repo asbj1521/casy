@@ -120,7 +120,7 @@ Sizes are rough: S a few sessions, M one to two weeks of sessions, L two to four
 
 Prove the hard parts before building on them; throw away anything that doesn't hold.
 
-1. Raise the app's deployment target to 26.0 (project and `Package.swift`) on a branch; build and run on the user's phone.
+1. Raise the app's deployment target to 26.0 on a branch; build and run on the user's phone. Done 2026-11-02: set in the Xcode project only, which `cap sync` copies into `CapApp-SPM/Package.swift` as `.iOS(.v26)`, a name only Swift tools 6.2 know, so `capacitor.config.ts` raises them (`experimental.ios.spm.swiftToolsVersion`). Builds and runs on the iOS 27 simulator.
 2. Convert `ios/App/App` to a synchronized folder in Xcode (the user clicks: the folder, right click, Convert to Folder), and add an empty local package `ios/Packages/CasyUI` (File, Add Package Dependencies, Add Local). Confirm a new Swift file then needs no `project.pbxproj` edit, and update CLAUDE.md's iPhone rule.
 3. The bridge, minimally: `NativeBridgePlugin` with `setSession`, `open` and `closed`; a native Settings screen (Sprog and Udseende only, `List`, the system sheet from the bottom) opened from the web profile's Indstillinger row; it calls `whoami` with the borrowed token. Prove the round trip: open, change the theme natively, close, the web follows.
 4. Try the zoom-from-toolbar sheet on a native bottom bar laid over the web view, with `.medium`, `.fraction` and `.large` detents.
