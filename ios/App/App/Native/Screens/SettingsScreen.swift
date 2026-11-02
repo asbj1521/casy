@@ -52,6 +52,9 @@ struct SettingsScreen: View {
     let onDone: () -> Void
 
     @State private var signedIn: String?
+    #if DEBUG
+    @State private var labButton = GlassLab.shared.isVisible
+    #endif
 
     private struct WhoAmI: Decodable { let name: String }
 
@@ -79,6 +82,13 @@ struct SettingsScreen: View {
                 } footer: {
                     if let signedIn { Text(words.signedInAs(signedIn)) }
                 }
+                #if DEBUG
+                // The spike's experiments (#196), in Debug builds only.
+                Section("Spike") {
+                    Toggle("Glass test button", isOn: $labButton)
+                        .onChange(of: labButton) { _, on in GlassLab.shared.setVisible(on) }
+                }
+                #endif
             }
             .navigationTitle(words.settings)
             .toolbar {

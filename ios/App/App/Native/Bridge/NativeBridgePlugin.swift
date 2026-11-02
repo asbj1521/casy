@@ -28,6 +28,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin, UIAdaptivePresenta
     /// The screen open now, to tell the web which one closed.
     private var openScreen: String?
 
+    override public func load() {
+        #if DEBUG
+        // The spike's sheet experiment draws over the page (#196).
+        DispatchQueue.main.async { GlassLab.shared.host = self.bridge?.viewController }
+        #endif
+    }
+
     @objc func screens(_ call: CAPPluginCall) {
         call.resolve(["screens": Self.nativeScreens])
     }
