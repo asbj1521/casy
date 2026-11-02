@@ -33,11 +33,39 @@ const INTER = readFileSync(
   ),
 );
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, isMobile }) => {
   await page.route("https://fonts.test/inter.woff2", (route) =>
     route.fulfill({ body: INTER, contentType: "font/woff2" }),
   );
+  if (!isMobile) await page.addInitScript(keepWidthAnswers);
 });
+
+/**
+ * A computer's width queries keep the answer they first gave (#195). To draw
+ * the whole page, Chrome shrinks the window to 1x1 for a moment mid-capture,
+ * which reads as a phone: Your data and an open event then moved to their
+ * phone address at / and were drawn as the scheduler. These tests never
+ * change a computer's width, so nothing real is lost. Runs in the page.
+ */
+function keepWidthAnswers() {
+  const real = window.matchMedia.bind(window);
+  const answers = new Map<string, boolean>();
+  window.matchMedia = (query) => {
+    if (!query.includes("width")) return real(query);
+    if (!answers.has(query)) answers.set(query, real(query).matches);
+    const quiet = () => undefined;
+    return {
+      matches: answers.get(query)!,
+      media: query,
+      onchange: null,
+      addEventListener: quiet,
+      removeEventListener: quiet,
+      addListener: quiet,
+      removeListener: quiet,
+      dispatchEvent: () => false,
+    };
+  };
+}
 
 async function useInter(page: Page) {
   await page.addStyleTag({
@@ -73,9 +101,9 @@ async function expectPage(
   // Spinners too (#194): Your data says "Henter dine data" with one rather
   // than placeholders, and was drawn mid-load when the runner was busy.
   await expect(page.locator(".animate-spin")).toHaveCount(0);
-  // Still on the page asked for (#194): now and then a computer's page was
-  // found on the scheduler at / instead, and with --update-snapshots that
-  // image was saved as the reference without a word. Failing here retries it.
+  // Still on the page asked for (#194): a computer's page that wandered to
+  // the scheduler at / (keepWidthAnswers, #195) would otherwise be saved as
+  // the reference by --update-snapshots without a word. Kept as a guard.
   // Not a phone's: its addresses lead into the home page's sheets on purpose.
   if (!isMobile) expect(new URL(page.url()).pathname).toBe(path);
   if (isMobile) {

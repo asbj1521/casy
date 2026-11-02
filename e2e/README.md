@@ -21,6 +21,8 @@ The first run downloads Chromium once: `npx playwright install chromium`.
 
 Fonts render differently on a Mac and on Linux, so the reference images are made on Linux only, in Playwright's Docker image, like CI's. A Mac skips the comparison. A page may differ from its image by at most 100 pixels (`playwright.config.ts`): enough for font smoothing, not for a word.
 
+A whole-page screenshot (`fullPage: true`) shrinks Chrome's window to 1x1 for a moment, which the site reads as a phone: a computer page with a phone address then moves there for good (#195). `screenshots.spec.ts` keeps a computer's width queries at their first answer (`keepWidthAnswers`); do the same in any other spec that draws a whole computer page.
+
 When a change moves pixels on purpose, make new reference images in one of two ways:
 
 - push a commit whose message contains `[screenshots]`, or
