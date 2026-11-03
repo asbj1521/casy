@@ -1,0 +1,58 @@
+name: iPhone app
+
+# The app's Swift, built on a Mac (#196): CI's other jobs run on Linux and
+# never compile it. Only when something the app is built from changes, so a
+# commit to the website alone doesn't wait for a macOS runner.
+on:
+  push:
+    paths:
+      - "ios/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ios.yml"
+
+# As in ci.yml: a new push to a branch cancels its runs still going, never on main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build:
+    name: Build for the simulator
+    # Xcode 26 at the least: Swift tools 6.2 (CapApp-SPM, CasyUI), the iOS 26
+    # SDK and the project's Xcode 16 format.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Capacitor's Swift packages are read from node_modules.
+      - run: npm ci
+      # The site the app packages (ios/App/App/public, not in git), copied in
+      # with cap sync, which also writes CapApp-SPM's Package.swift.
+      - run: npm run build
+      - run: npx cap sync ios
+      - run: xcodebuild -version
+      # Debug holds the spike's labs (#if DEBUG); Release proves nothing
+      # outside them depends on them. No signing: nothing is installed.
+      - name: Build (Debug)
+        working-directory: ios/App
+        run: >
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug
+          -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build
+      - name: Build (Release)
+        working-directory: ios/App
+        run: >
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release
+          -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build
