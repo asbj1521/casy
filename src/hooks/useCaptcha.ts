@@ -18,7 +18,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Lang } from "@/i18n/locale";
 
 const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
-const SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+/** The function Cloudflare's script calls once `window.turnstile` is ready. */
+const READY = "casyTurnstileReady";
+const SCRIPT_URL = `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=${READY}`;
 
 interface Turnstile {
   render(container: HTMLElement, options: Record<string, unknown>): string;
@@ -29,20 +31,26 @@ interface Turnstile {
 declare global {
   interface Window {
     turnstile?: Turnstile;
+    [READY]?: () => void;
   }
 }
 
 let loading: Promise<Turnstile> | null = null;
 
-/** Load Cloudflare's script once, however many times it is asked for. */
+/**
+ * Load Cloudflare's script once, however many times it is asked for. Ready
+ * when the script says so (`onload=` in its address), not at its load event:
+ * on casy.app `window.turnstile` was often set a moment after that event, so
+ * the page gave up and every email sign-in failed (#203).
+ */
 function loadTurnstile(): Promise<Turnstile> {
   if (window.turnstile) return Promise.resolve(window.turnstile);
   loading ??= new Promise<Turnstile>((resolve, reject) => {
+    window[READY] = () =>
+      window.turnstile ? resolve(window.turnstile) : reject(new Error("no turnstile"));
     const script = document.createElement("script");
     script.src = SCRIPT_URL;
     script.async = true;
-    script.onload = () =>
-      window.turnstile ? resolve(window.turnstile) : reject(new Error("no turnstile"));
     script.onerror = () => {
       loading = null; // let a later page try again
       reject(new Error("turnstile failed to load"));
