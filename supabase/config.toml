@@ -212,15 +212,14 @@ token_verifications = 30
 # Number of Web3 logins that can be made in a 5 minute interval per IP address.
 web3 = 30
 
-# Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
-# Casy: Cloudflare Turnstile on the sign-in page (src/hooks/useCaptcha.ts,
-# site key VITE_TURNSTILE_SITE_KEY). Switch it on in the dashboard
-# (Authentication > Attack Protection) only once the site sends tokens, or
-# email and password sign-in stops working. The secret key lives only there.
+# Casy uses no CAPTCHA (#203): the sign-in page must work with any ad blocker,
+# and no CAPTCHA can promise that. Auth emails are limited in the auth-email
+# hook instead (per address and in all, _shared/authEmailLimits.ts), on top of
+# the per-IP limits above. Leave this off, here and in the dashboard
+# (Authentication > Attack Protection): on, every sign-in without a token fails.
 [auth.captcha]
-enabled = true
+enabled = false
 provider = "turnstile"
-secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.

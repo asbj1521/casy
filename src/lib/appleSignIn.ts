@@ -56,7 +56,7 @@ function appleFullName(givenName: string, familyName: string): string {
  * when the sheet or Supabase Auth fails (an auth error is Supabase's own, so
  * the page can translate it).
  */
-export async function signInWithApple(captchaToken?: string): Promise<"signed-in" | "cancelled"> {
+export async function signInWithApple(): Promise<"signed-in" | "cancelled"> {
   const { plugin } = await appleSignInPlugin();
   const sheet = await plugin.signIn();
   if (sheet.cancelled) return "cancelled";
@@ -65,7 +65,6 @@ export async function signInWithApple(captchaToken?: string): Promise<"signed-in
     provider: "apple",
     token: sheet.identityToken,
     nonce: sheet.nonce,
-    options: { captchaToken },
   });
   if (error) throw error;
 

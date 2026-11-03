@@ -13,7 +13,6 @@ import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
 import { useAuth } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
-import { useCaptcha } from "@/hooks/useCaptcha";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
@@ -116,16 +115,6 @@ export default function SignIn() {
   const [recoverySubmitting, setRecoverySubmitting] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
 
-  // Bot protection for every email and password call below (useCaptcha).
-  // Taken apart so the widget's ref callback stays separate from the token.
-  const {
-    enabled: captchaEnabled,
-    token: captchaValue,
-    failed: captchaFailed,
-    attach: attachCaptcha,
-    reset: resetCaptcha,
-  } = useCaptcha(lang);
-
   // Whether to route a freshly-signed-in person on a phone through "connect
   // your calendar" first (see the redirect below) rather than send them
   // straight on; on a computer, it is the answer the pop-up waits for. Already warmed from localStorage for anyone who has visited before
@@ -141,15 +130,6 @@ export default function SignIn() {
   const returnParams = new URLSearchParams({ lang });
   if (next) returnParams.set("next", next);
   const returnTo = `${window.location.origin}/sign-in?${returnParams}`;
-
-  /** Why a call can't go yet (no bot-check token), or null when it can. */
-  function captchaProblem(): string | null {
-    if (!captchaEnabled || captchaValue) return null;
-    if (!captchaFailed) return t.signIn.captchaWait;
-    return isNativeApp ? t.signIn.captchaFailedApp : t.signIn.captchaFailed;
-  }
-  // Sent with every call; undefined while bot protection isn't set up.
-  const captchaToken = captchaValue ?? undefined;
 
   async function handleNewPassword(newPassword: string) {
     setRecoverySubmitting(true);
@@ -228,39 +208,27 @@ export default function SignIn() {
   }
 
   async function handleApple() {
-    const problem = captchaProblem();
-    if (problem) {
-      setError(problem);
-      return;
-    }
     setAppleBusy(true);
     setError(null);
     try {
       // Signed in, the auth state change above redirects via `user`.
-      await signInWithApple(captchaToken);
+      await signInWithApple();
     } catch (err) {
       setError(isAuthError(err) ? authErrorMessage(err, t) : t.signIn.appleFailed);
     } finally {
-      resetCaptcha();
       setAppleBusy(false);
     }
   }
 
   async function handleEmail(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const problem = captchaProblem();
-    if (problem) {
-      setError(problem);
-      return;
-    }
     setSending(true);
     setError(null);
     const address = email.trim();
     const { error: err } = await supabaseAuth.signInWithOtp({
       email: address,
-      options: { emailRedirectTo: returnTo, captchaToken },
+      options: { emailRedirectTo: returnTo },
     });
-    resetCaptcha();
     setSending(false);
     if (err) setError(authErrorMessage(err, t));
     else setSentTo(address);
@@ -268,11 +236,6 @@ export default function SignIn() {
 
   async function handlePassword(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const problem = captchaProblem();
-    if (problem) {
-      setError(problem);
-      return;
-    }
     setSending(true);
     setError(null);
     setUnconfirmed(null);
@@ -281,9 +244,7 @@ export default function SignIn() {
     const { data, error: err } = await supabaseAuth.signInWithPassword({
       email: address,
       password: typed,
-      options: { captchaToken },
     });
-    resetCaptcha();
     setSending(false);
     // On success the auth state change above redirects via `user`.
     if (err) {
@@ -317,11 +278,6 @@ export default function SignIn() {
   }
 
   async function handleSignUp(newPassword: string) {
-    const problem = captchaProblem();
-    if (problem) {
-      setSignupError(problem);
-      return;
-    }
     setSignupSubmitting(true);
     setSignupError(null);
     const address = email.trim();
@@ -330,9 +286,8 @@ export default function SignIn() {
       password: newPassword,
       // The account's language, for emails sent later with no page to ask
       // (the security code, "password changed"); see useAccountLanguage.
-      options: { emailRedirectTo: returnTo, captchaToken, data: { lang } },
+      options: { emailRedirectTo: returnTo, data: { lang } },
     });
-    resetCaptcha();
     setSignupSubmitting(false);
     if (err) {
       setSignupError(authErrorMessage(err, t));
@@ -358,19 +313,13 @@ export default function SignIn() {
   }
 
   async function handleResendConfirm(address: string) {
-    const problem = captchaProblem();
-    if (problem) {
-      setResendError(problem);
-      return;
-    }
     setResend("sending");
     setResendError(null);
     const { error: err } = await supabaseAuth.resend({
       type: "signup",
       email: address,
-      options: { emailRedirectTo: returnTo, captchaToken },
+      options: { emailRedirectTo: returnTo },
     });
-    resetCaptcha();
     if (err) {
       setResend("idle");
       setResendError(authErrorMessage(err, t));
@@ -383,18 +332,11 @@ export default function SignIn() {
       setForgotError(t.signIn.enterEmailFirst);
       return;
     }
-    const problem = captchaProblem();
-    if (problem) {
-      setForgotError(problem);
-      return;
-    }
     setForgotSending(true);
     setForgotError(null);
     const { error: err } = await supabaseAuth.resetPasswordForEmail(address, {
       redirectTo: returnTo,
-      captchaToken,
     });
-    resetCaptcha();
     setForgotSending(false);
     if (err) setForgotError(authErrorMessage(err, t));
     else setForgotSentTo(address);
@@ -666,7 +608,6 @@ export default function SignIn() {
             </div>
 
             {/* Cloudflare's bot check: invisible unless it wants a click. */}
-            <div ref={attachCaptcha} className="mt-3 empty:hidden" />
 
             {error && (
               <Notice tone="error" className="mt-4">

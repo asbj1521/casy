@@ -63,7 +63,6 @@ export default defineConfig({
       // overwrites variables already set).
       VITE_SUPABASE_URL: "https://test-project.supabase.co",
       VITE_SUPABASE_ANON_KEY: "test-publishable-key",
-      VITE_TURNSTILE_SITE_KEY: "",
       VITE_APP_BUILD: "e2e",
       // Fixed, so raising the release never changes the reference screenshots.
       VITE_APP_VERSION: "1.0.0",

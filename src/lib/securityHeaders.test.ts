@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 // Read as text through Vite (?raw), like any other import: the app's
 // TypeScript settings have no Node types for node:fs.
 import vercelJson from "../../vercel.json?raw";
-import captchaSource from "@/hooks/useCaptcha.ts?raw";
 import passwordRulesSource from "@/lib/passwordRules.ts?raw";
 
 /**
@@ -25,17 +24,18 @@ const directive = (name: string) =>
     ?.slice(1) ?? [];
 
 describe("Content-Security-Policy", () => {
-  it("runs only Casy's own scripts, and Turnstile's", () => {
-    expect(directive("script-src")).toEqual(["'self'", "https://challenges.cloudflare.com"]);
+  it("runs only Casy's own scripts", () => {
+    expect(directive("script-src")).toEqual(["'self'"]);
     expect(csp).not.toContain("'unsafe-eval'");
     expect(directive("script-src")).not.toContain("'unsafe-inline'");
     expect(directive("object-src")).toEqual(["'none'"]);
     expect(directive("frame-ancestors")).toEqual(["'none'"]);
   });
 
-  it("allows Turnstile, which the sign-in page loads", () => {
-    expect(captchaSource).toContain("https://challenges.cloudflare.com/");
-    expect(directive("frame-src")).toContain("https://challenges.cloudflare.com");
+  it("embeds no outside page (no Turnstile since #203): frames fall back to the site's own", () => {
+    expect(directive("frame-src")).toEqual([]);
+    expect(directive("default-src")).toEqual(["'self'"]);
+    expect(csp).not.toContain("challenges.cloudflare.com");
   });
 
   it("allows Have I Been Pwned, which the password check calls", () => {

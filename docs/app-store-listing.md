@@ -161,5 +161,5 @@ never in this repository):
 - A calendar link connected, with a handful of made-up events over the next
   months.
 - Two more demo accounts in a shared group, one with a pending vote to answer.
-- Check that sign-in works from a fresh install without the captcha getting in
-  the way of the review device.
+- Check that sign-in works from a fresh install on the review device (Casy has
+  no CAPTCHA, #203; a password sign-in counts towards no email limit).

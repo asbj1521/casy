@@ -24,7 +24,6 @@ You need Node and the Supabase CLI, plus a `.env.local` with at least:
 ```bash
 VITE_SUPABASE_URL=https://<project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<publishable key>
-VITE_TURNSTILE_SITE_KEY=<optional; without it sign-in has no CAPTCHA>
 ```
 
 ```bash

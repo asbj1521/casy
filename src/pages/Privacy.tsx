@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 1. november 2026",
+  updated: "Senest opdateret 3. november 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -424,16 +424,16 @@ const da: LegalCopy = {
         <p>
           Data gemmes hos Casys databaseudbyder, Supabase, og hjemmesiden leveres af Vercel.
           Login-e-mails sendes af Resend, som får din e-mailadresse for at kunne sende dem. Alle tre
-          fører almindelige tekniske logfiler for at drive deres tjenester. Login-siden bruger
-          Cloudflare Turnstile til at tjekke, at du ikke er en robot, og Cloudflare ser tekniske
-          oplysninger som din IP-adresse og browser for at gøre det. AI i Casy går gennem Anthropic,
-          som beskrevet ovenfor. Notifikationer i iPhone-appen sendes gennem Apples
-          notifikationstjeneste, som får beskeden for at kunne levere den. Casy bruger ingen
-          analyse- eller reklamesporing. Din browser gemmer din login-session, så du forbliver
-          logget ind, det sprog, du har valgt, og en kopi af din egen gruppeliste, dine
-          kalenderforbindelser og om du har admin-adgang, så siderne åbner med det samme. Kopien
-          slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet om andres kalendere
-          gemmes i din browser.
+          fører almindelige tekniske logfiler for at drive deres tjenester. For at ingen kan få Casy
+          til at sende mængder af login-e-mails, gemmer Casy i et døgn, hvornår en sådan e-mail blev
+          sendt, og en kode lavet ud fra modtagerens adresse, som ikke kan regnes tilbage til
+          adressen. AI i Casy går gennem Anthropic, som beskrevet ovenfor. Notifikationer i
+          iPhone-appen sendes gennem Apples notifikationstjeneste, som får beskeden for at kunne
+          levere den. Casy bruger ingen analyse- eller reklamesporing. Din browser gemmer din
+          login-session, så du forbliver logget ind, det sprog, du har valgt, og en kopi af din egen
+          gruppeliste, dine kalenderforbindelser og om du har admin-adgang, så siderne åbner med det
+          samme. Kopien slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet om
+          andres kalendere gemmes i din browser.
         </p>
       ),
     },
@@ -455,6 +455,7 @@ const da: LegalCopy = {
             </li>
             <li>invitationslinks 30 dage efter, at de er holdt op med at virke;</li>
             <li>notatet om, at du har slået en e-mailadresse op, efter et døgn;</li>
+            <li>koden for en adresse, Casy har sendt en login-e-mail til, efter et døgn;</li>
             <li>notatet om dine AI-svar efter 30 dage;</li>
             <li>tider, du selv har tilføjet, 30 dage efter, at de er slut;</li>
             <li>rettelser af AI'en, du har sendt til gennemsyn, efter 90 dage;</li>
@@ -529,7 +530,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 1 November 2026",
+  updated: "Last updated 3 November 2026",
   sections: [
     {
       title: "In short",
@@ -930,16 +931,16 @@ const en: LegalCopy = {
         <p>
           Data is stored with Casy&apos;s database provider, Supabase, and the website is served by
           Vercel. Sign-in emails are delivered by Resend, which receives your email address in order
-          to send them. All three keep standard technical logs to run their services. The sign-in
-          page uses Cloudflare Turnstile to check that you are not a robot, and Cloudflare sees
-          technical details such as your IP address and browser to do so. AI in Casy goes through
-          Anthropic, as described above. Notifications in the iPhone app are sent through
-          Apple&apos;s notification service, which receives the message in order to deliver it. Casy
-          uses no analytics or advertising trackers. Your browser keeps your login session so you
-          stay signed in, the language you picked, and a copy of your own group list, your calendar
-          connections and whether you have admin access, so pages open instantly. That copy is
-          deleted when you sign out and is never kept for more than a week. Nothing about other
-          people&apos;s calendars is stored in your browser.
+          to send them. All three keep standard technical logs to run their services. So that nobody
+          can make Casy send heaps of sign-in emails, Casy keeps, for a day, when such an email was
+          sent and a code made from the recipient&apos;s address, which can&apos;t be turned back
+          into the address. AI in Casy goes through Anthropic, as described above. Notifications in
+          the iPhone app are sent through Apple&apos;s notification service, which receives the
+          message in order to deliver it. Casy uses no analytics or advertising trackers. Your
+          browser keeps your login session so you stay signed in, the language you picked, and a
+          copy of your own group list, your calendar connections and whether you have admin access,
+          so pages open instantly. That copy is deleted when you sign out and is never kept for more
+          than a week. Nothing about other people&apos;s calendars is stored in your browser.
         </p>
       ),
     },
@@ -962,6 +963,7 @@ const en: LegalCopy = {
             </li>
             <li>invite links 30 days after they stopped working;</li>
             <li>the note that you looked up an email address, after a day;</li>
+            <li>the code for an address Casy sent a sign-in email to, after a day;</li>
             <li>the note about your AI answers after 30 days;</li>
             <li>times you added yourself, 30 days after they end;</li>
             <li>corrections of the AI you sent for review after 90 days;</li>
