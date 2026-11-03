@@ -61,6 +61,18 @@ private enum LabHeight: String, CaseIterable, Identifiable {
     }
 }
 
+/// Liquid Glass on iOS 26, a plain bordered button before it: the way every
+/// glass piece will fall back, once CasyUI holds them (Phase 1).
+private struct LabGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.buttonStyle(.glass)
+        } else {
+            content.buttonStyle(.bordered)
+        }
+    }
+}
+
 /// The floating button, and the sheet it grows into.
 struct LabButton: View {
     @Namespace private var zoom
@@ -77,7 +89,7 @@ struct LabButton: View {
                 .font(.title2)
                 .frame(width: 56, height: 56)
         }
-        .buttonStyle(.glass)
+        .modifier(LabGlass())
         .buttonBorderShape(.circle)
         .matchedTransitionSource(id: "lab", in: zoom)
         .padding(4)

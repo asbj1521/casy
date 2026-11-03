@@ -87,7 +87,10 @@ struct SettingsScreen: View {
                 Section("Spike") {
                     Toggle("Glass test button", isOn: $labButton)
                         .onChange(of: labButton) { _, on in GlassLab.shared.setVisible(on) }
-                    NavigationLink("Speech in Danish") { SpeechLab() }
+                    // SpeechAnalyzer is iOS 26's: an older phone has only the old recognizer.
+                    if #available(iOS 26, *) {
+                        NavigationLink("Speech in Danish") { SpeechLab() }
+                    }
                     NavigationLink("Web view storage") { StorageLab() }
                 }
                 #endif

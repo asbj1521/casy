@@ -6,7 +6,7 @@ import PackageDescription
 /// docs/native-ios-plan.md.
 let package = Package(
     name: "CasyUI",
-    platforms: [.iOS(.v26)],
+    platforms: [.iOS(.v18)],
     products: [
         .library(name: "CasyUI", targets: ["CasyUI"])
     ],

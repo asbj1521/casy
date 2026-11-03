@@ -22,9 +22,9 @@ const config: CapacitorConfig = {
   webDir: "dist",
   // A notification arriving while Casy is open still shows as a banner (#139).
   plugins: { PushNotifications: { presentationOptions: ["banner", "sound", "list"] } },
-  // The app needs iOS 26 (#196), which `cap sync` copies from the Xcode project
-  // into CapApp-SPM's Package.swift as `.iOS(.v26)`: a name Swift's package
-  // tools only know from 6.2 on (Capacitor's default, 5.9, fails to resolve).
+  // The app's lowest iOS (#196), which `cap sync` copies from the Xcode project
+  // into CapApp-SPM's Package.swift as `.iOS(.vNN)`: Capacitor's default Swift
+  // tools, 5.9, know nothing past `.v17`, so a later one fails to resolve.
   experimental: { ios: { spm: { swiftToolsVersion: "6.2" } } },
   ...(liveUrl ? { server: { url: liveUrl, cleartext: true } } : {}),
 };

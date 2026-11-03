@@ -10,6 +10,7 @@ import SwiftUI
 /// the app uses today (through the Capacitor plugin) and already works for
 /// Danish: it is the fallback, reported but not recorded with here.
 /// Debug builds only; deleted when the spike ends.
+@available(iOS 26, *)
 @MainActor @Observable
 final class SpeechLabModel {
     enum Engine: String, CaseIterable, Identifiable {
@@ -193,6 +194,7 @@ final class SpeechLabModel {
     }
 }
 
+@available(iOS 26, *)
 struct SpeechLab: View {
     @State private var model = SpeechLabModel()
 
