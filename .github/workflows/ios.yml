@@ -28,9 +28,9 @@ concurrency:
 jobs:
   build:
     name: Build for the simulator
-    # Xcode 26 at the least: Swift tools 6.2 (CapApp-SPM, CasyUI), the iOS 26
-    # SDK and the project's Xcode 16 format.
-    runs-on: macos-26
+    # macos-latest: a job asking for macos-26 waited in the queue with no
+    # runner. The Xcode is picked below.
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,7 +43,15 @@ jobs:
       # with cap sync, which also writes CapApp-SPM's Package.swift.
       - run: npm run build
       - run: npx cap sync ios
-      - run: xcodebuild -version
+      # Xcode 26 at the least: Swift tools 6.2 (CapApp-SPM, CasyUI), the iOS 26
+      # SDK and the project's Xcode 16 format. The newest 26 or later installed.
+      - name: Pick Xcode 26 or later
+        run: |
+          ls -d /Applications/Xcode*.app
+          xcode=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$xcode" ]; then echo "::error::No Xcode 26 or later on this runner"; exit 1; fi
+          sudo xcode-select -s "$xcode/Contents/Developer"
+          xcodebuild -version
       # Debug holds the spike's labs (#if DEBUG); Release proves nothing
       # outside them depends on them. No signing: nothing is installed.
       - name: Build (Debug)
