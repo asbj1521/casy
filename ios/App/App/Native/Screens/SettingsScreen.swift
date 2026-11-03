@@ -88,6 +88,7 @@ struct SettingsScreen: View {
                     Toggle("Glass test button", isOn: $labButton)
                         .onChange(of: labButton) { _, on in GlassLab.shared.setVisible(on) }
                     NavigationLink("Speech in Danish") { SpeechLab() }
+                    NavigationLink("Web view storage") { StorageLab() }
                 }
                 #endif
             }

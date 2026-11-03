@@ -32,6 +32,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin, UIAdaptivePresenta
         #if DEBUG
         // The spike's sheet experiment draws over the page (#196).
         DispatchQueue.main.async { GlassLab.shared.host = self.bridge?.viewController }
+        // The storage test, when launched with -casyStorageProbe (#196, step 7).
+        DispatchQueue.main.async { WebStorageReader.probeIfAsked(page: self.bridge?.webView) }
         #endif
     }
 
