@@ -3,7 +3,10 @@ name: CI
 # Every branch, so a feature branch is checked (screenshots included) before
 # it is merged into main, which deploys.
 on:
+  # Branches only: a release tag (app-<version>-<build>, #143) marks a commit
+  # already checked, so its push starts nothing (#208).
   push:
+    branches: ["**"]
   pull_request:
     branches: [main]
 
