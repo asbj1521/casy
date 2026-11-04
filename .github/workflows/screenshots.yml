@@ -27,6 +27,8 @@ jobs:
       github.ref != 'refs/heads/main' && (github.event_name == 'workflow_dispatch' ||
       contains(github.event.head_commit.message, '[screenshots]'))
     runs-on: ubuntu-latest
+    # Time limits as in ci.yml (#208).
+    timeout-minutes: 15
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     strategy:
       fail-fast: false
@@ -77,6 +79,7 @@ jobs:
     name: Update screenshots
     needs: shots
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

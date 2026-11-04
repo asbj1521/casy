@@ -15,10 +15,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+# Every job has a time limit (#208): normally about 2 minutes (web), 4 (each
+# browser part) and 1 (functions). Without one, a job GitHub leaves stuck
+# runs for 6 hours and blocks the branch's next run behind it.
 jobs:
   web:
     name: Web app
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,6 +44,7 @@ jobs:
     # so it would only fail here against the old ones.
     if: ${{ !contains(github.event.head_commit.message, '[screenshots]') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Playwright's own image: the browsers and the fonts the reference
     # screenshots were made with. Its version must match @playwright/test.
     container: mcr.microsoft.com/playwright:v1.63.0-noble
@@ -76,6 +81,7 @@ jobs:
   functions:
     name: Edge Functions
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: supabase/functions

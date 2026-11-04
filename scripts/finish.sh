@@ -27,6 +27,11 @@ git fetch --quiet origin main
 git merge-base --is-ancestor origin/main HEAD ||
   die "main has moved on; rebase the branch on origin/main (or merge it in) and run this again"
 
+# CI's quick checks here first (#208): half a minute on this Mac, where a
+# mistake found in CI costs a push and five minutes.
+say "running npm run check"
+bash scripts/check.sh || die "a check failed here; nothing was pushed"
+
 sha=$(git rev-parse HEAD)
 say "pushing $branch (${sha:0:7})"
 git push --quiet -u origin "$branch"
@@ -62,9 +67,12 @@ fi
 [ "$(echo "$runs" | grep -c .)" -ge 2 ] || die "GitHub hasn't started the checks for ${check:0:7} after a minute; see https://github.com/$REPO/actions"
 
 say "waiting for the checks on ${check:0:7}"
-for id in $runs; do
-  gh run watch "$id" -R "$REPO" --interval 5 >/dev/null || true
-done
+watch_runs() {
+  for id in $runs; do
+    gh run watch "$id" -R "$REPO" --interval 5 >/dev/null || true
+  done
+}
+watch_runs
 # A run's result, asked again when GitHub answers with a server error (a 502
 # during an outage once read as a failed check): empty only after a minute.
 result_of() {
@@ -76,15 +84,39 @@ result_of() {
   done
   echo "$answer"
 }
-failed=0
-for id in $runs; do
-  read -r name conclusion < <(result_of "$id")
-  say "  ${name//_/ }: ${conclusion:-no answer from GitHub}"
-  case "$conclusion" in
-    success | skipped) ;;
-    *) failed=1 ;;
-  esac
-done
+# Each run's result: `failed` when any didn't pass, `broken` when one failed
+# for real, `stalled` the runs GitHub cancelled or timed out (#208).
+judge_runs() {
+  failed=0 broken=0 stalled=""
+  for id in $runs; do
+    read -r name conclusion < <(result_of "$id")
+    say "  ${name//_/ }: ${conclusion:-no answer from GitHub}"
+    case "$conclusion" in
+      success | skipped) ;;
+      cancelled | timed_out)
+        failed=1
+        stalled="$stalled $id"
+        ;;
+      *) failed=1 broken=1 ;;
+    esac
+  done
+}
+judge_runs
+# A run GitHub cancelled or let time out says nothing about the code (a stuck
+# runner, an outage): run it once more. A failed test is never run again.
+if [ "$failed" = 1 ] && [ "$broken" = 0 ] && [ -n "$stalled" ]; then
+  say "GitHub cancelled or timed out a run; running it once more"
+  for id in $stalled; do
+    gh run rerun "$id" -R "$REPO" >/dev/null || die "couldn't start run $id again; see https://github.com/$REPO/actions"
+    # Until the new attempt has started, watching would see the old one.
+    for _ in $(seq 1 30); do
+      [ "$(gh run view "$id" -R "$REPO" --json status -q .status 2>/dev/null || true)" != completed ] && break
+      sleep 2
+    done
+  done
+  watch_runs
+  judge_runs
+fi
 [ "$failed" = 0 ] || die "a check failed; main is untouched. Details: https://github.com/$REPO/actions?query=branch%3A$branch"
 
 # The screenshot workflow commits new images onto the branch; take them.

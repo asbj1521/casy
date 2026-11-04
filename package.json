@@ -14,6 +14,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "e2e": "playwright test",
+    "check": "bash scripts/check.sh",
     "finish": "bash scripts/finish.sh",
     "release:ios": "bash scripts/release-ios.sh",
     "review-demo": "deno run --node-modules-dir=none --no-lock --allow-net --allow-env=REVIEW_PASSWORD --allow-read supabase/review/demo.ts",
