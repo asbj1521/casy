@@ -15,7 +15,7 @@
     "test:run": "vitest run",
     "e2e": "playwright test",
     "finish": "bash scripts/finish.sh",
-    "review-demo": "deno run --node-modules-dir=none --allow-net --allow-env=REVIEW_PASSWORD --allow-read supabase/review/demo.ts",
+    "review-demo": "deno run --node-modules-dir=none --no-lock --allow-net --allow-env=REVIEW_PASSWORD --allow-read supabase/review/demo.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

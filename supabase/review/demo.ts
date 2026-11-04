@@ -5,7 +5,7 @@
  * owner before each submission, since reviewers delete accounts, vote and
  * leave groups, and every update is reviewed again:
  *
- *   read -rs REVIEW_PASSWORD && export REVIEW_PASSWORD && npm run review-demo -- owner@gmail.com
+ *   read -rsp "Alex's password: " REVIEW_PASSWORD && echo && export REVIEW_PASSWORD && npm run review-demo -- owner@gmail.com
  *
  * The emails are plus-aliases of the given address (demoEmail), so anything
  * Casy sends them reaches the owner. Only Alex's password is kept (it goes in
@@ -83,7 +83,7 @@ function randomPassword(): string {
 function checkReviewPassword(password: string | undefined): string {
   if (!password) {
     throw new DemoError(
-      "Set REVIEW_PASSWORD first (read -rs REVIEW_PASSWORD && export REVIEW_PASSWORD).",
+      "REVIEW_PASSWORD is empty. Run the command from docs/app-store-listing.md, which asks for it, and type the password before pressing Enter.",
     );
   }
   if (password.length < 12 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {

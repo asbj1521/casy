@@ -215,7 +215,7 @@ a week away, no deadline, Sara and Jonas have answered), the agreed brunch, and
 AI switched on for Alex. Run from the repo root, in your own terminal:
 
 ```bash
-read -rs REVIEW_PASSWORD && export REVIEW_PASSWORD && npm run review-demo -- you@gmail.com
+read -rsp "Alex's password: " REVIEW_PASSWORD && echo && export REVIEW_PASSWORD && npm run review-demo -- you@gmail.com
 ```
 
 - The emails are plus-aliases of the address given (`you+casy-review@gmail.com`
