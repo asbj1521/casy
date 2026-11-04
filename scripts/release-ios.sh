@@ -62,10 +62,15 @@ if [ "$(git log -1 --format=%an "$sha")" = "github-actions[bot]" ] &&
   [ -z "$(git diff --name-only "$sha~1" "$sha" | grep -v '^e2e/__screenshots__/' || true)" ]; then
   check=$(git rev-parse "$sha~1")
 fi
-ci=$(gh run list -R "$REPO" --commit "$check" --workflow CI --json status,conclusion \
-  -q '.[0] | "\(.status) \(.conclusion)"' 2>/dev/null || true)
-[ "$ci" = "completed success" ] ||
-  die "CI for ${check:0:7} is '${ci:-not found}', not a success; see https://github.com/$REPO/actions"
+# A commit merged by npm run finish has two runs: the branch's, which passed
+# before the merge, and main's own, which may still be going. One success and
+# no failure is enough; the same code can't pass once and fail once.
+ci=$(gh run list -R "$REPO" --commit "$check" --workflow CI --json conclusion \
+  -q 'if any(.[]; .conclusion == "failure" or .conclusion == "timed_out") then "failed"
+      elif any(.[]; .conclusion == "success") then "passed"
+      elif length == 0 then "not found" else "still running" end' 2>/dev/null || true)
+[ "$ci" = "passed" ] ||
+  die "CI for ${check:0:7} has ${ci:-no answer from GitHub}, not passed; see https://github.com/$REPO/actions"
 
 version=$(node -p "require('./package.json').version")
 marketing=$(grep -o 'MARKETING_VERSION = [^;]*' "$PROJECT/project.pbxproj" | sed 's/.*= //' | sort -u)
