@@ -24,7 +24,7 @@ the app they come in through the phone's own calendars.
 | Support URL | https://casy.app/support (Hjælp og kontakt, public, both languages) |
 | Marketing URL | https://casy.app |
 | Privacy policy URL | https://casy.app/privacy |
-| Age rating | Apple works it out from the questionnaire, so the way to the lowest rating is to answer truthfully: there is no violence, mature or gambling content, no web browsing and no purchases; the two answers that can raise it are user generated content (people write group and event names and notes that others see) and the AI feature. Expect the lowest bracket that allows those, around 12+. |
+| Age rating | Apple works it out from the questionnaire, so the way to the lowest rating is to answer truthfully: there is no violence, mature or gambling content, no web browsing and no purchases; the two answers that can raise it are user generated content (people write group and event names and notes that others see) and the AI feature. Expect the lowest bracket that allows those, around 13+. |
 
 Support URL: /support is built (#146) and linked from the profile's help list
 ("Hjælp og kontakt"); it opens signed out, in Danish or English.
@@ -136,6 +136,52 @@ of the welcome animation:
 
 Take them in the simulator (iPhone 17 Pro Max or the largest available) with the
 made-up data of the e2e world, never real people.
+
+## App Store Connect forms (#142)
+
+Answers taken from the code. App Privacy must say the same as
+`ios/App/App/PrivacyInfo.xcprivacy` and the privacy policy's "What Casy
+stores": change all three together.
+
+### App Privacy
+
+- Tracking: **No.** Casy has no ads, no analytics and no third-party SDKs that
+  track.
+- Data collected: **Yes.** Every type below is **linked to the user**, **not
+  used for tracking**, and used for **App Functionality** only:
+
+| App Store Connect type | What it is in Casy |
+|---|---|
+| Contact Info > Name | The display name (or the name Sign in with Apple sends the first time) |
+| Contact Info > Email Address | The sign-in address |
+| Identifiers > User ID | The account id |
+| Identifiers > Device ID | The phone's random id for its calendar connection, and the push token |
+| User Content > Photos or Videos | Profile, group and genvej pictures, if chosen |
+| User Content > Other User Content | Group and event names, places, notes, text for the AI, corrections sent for review |
+| Other Data > Other Data Types | Busy times: start and end only, never titles |
+
+- Not collected: location, contacts (the contact picker's choices never leave
+  the phone), audio (Apple's speech recognition gives Casy only text), health,
+  financial info, browsing or search history, purchases, diagnostics (no crash
+  reporting), sensitive info. Feedback is an email the person sends from their
+  own mail app, not data the app collects.
+- Open question: each AI call is noted (when, which feature, for whom, never
+  text; 30 days, for the daily limit; the privacy policy says so). Apple's
+  "Usage Data > Product Interaction" arguably covers that. Declaring it adds
+  "Usage Data" to the page; leaving it out risks being told it is missing.
+  Decide before submitting, and add it to the manifest too if declared.
+
+### Export compliance
+
+`ITSAppUsesNonExemptEncryption` is `false` in `Info.plist`, so App Store Connect
+does not ask for each build. If asked anyway: the app uses only the encryption
+built into iOS (HTTPS, the Keychain) and SHA-256 hashing (Sign in with Apple's
+nonce), which is exempt; no encryption of its own.
+
+### Age rating
+
+See Basics above. Apple's ratings are now 4+, 9+, 13+, 16+ and 18+ (2025), so
+expect about 13+ for user generated content and the AI feature.
 
 ## Notes for App Review
 
