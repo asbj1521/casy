@@ -79,6 +79,14 @@ marketing=$(grep -o 'MARKETING_VERSION = [^;]*' "$PROJECT/project.pbxproj" | sed
 team=$(grep -o 'DEVELOPMENT_TEAM = [^;]*' "$PROJECT/project.pbxproj" | sed 's/.*= //' | sort -u)
 [ -n "$team" ] && [ "$(echo "$team" | wc -l)" -eq 1 ] || die "the Xcode project has no single DEVELOPMENT_TEAM"
 
+# The App Store's icon (#206): 1024 px, opaque (Apple refuses transparency),
+# and not Capacitor's placeholder, which build 591 still had.
+icon=ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+PLACEHOLDER_ICON=29e4777e319de3ee5a52c3a8004ec19d0568414004257e36d7c94a077d71c93b
+[ "$(sips -g pixelWidth "$icon" | awk '/pixelWidth/ {print $2}')" = 1024 ] || die "$icon isn't 1024 px wide"
+[ "$(sips -g hasAlpha "$icon" | awk '/hasAlpha/ {print $2}')" = no ] || die "$icon has transparency, which the App Store refuses"
+[ "$(shasum -a 256 "$icon" | cut -c1-64)" != "$PLACEHOLDER_ICON" ] || die "$icon is still Capacitor's placeholder"
+
 build=$(git rev-list --count HEAD)
 tag="app-$version-$build"
 if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then

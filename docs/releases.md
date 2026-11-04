@@ -44,7 +44,8 @@ npm run release:ios
 - the branch is `main` or a `release/` branch;
 - the branch is level with GitHub;
 - CI passed for that commit;
-- the two versions agree.
+- the two versions agree;
+- the app icon is 1024 px, opaque, and not Capacitor's placeholder.
 
 Then it:
 1. builds the site;
