@@ -358,10 +358,13 @@ export default function PhoneCalendar() {
 
   // Casy's own events on the month (#172): the waiting votes' dates
   // pencilled in, the decided ones as chips, a date just agreed flying in.
+  // Nothing over the month: settled, no sheet, no open day. Only then is
+  // something asked (#205), one thing at a time.
+  const bare = settled && location.search === "" && dayShown === null;
   const homeVotes = useHomeVotes({
     calendar,
     months,
-    idle: settled && location.search === "" && dayShown === null && !importShown && !aiAsking,
+    idle: bare && !importShown && !aiAsking,
   });
   // Times a whole group is free (#171), once the page has settled.
   const primeDates = usePrimeDates(settled);
@@ -644,7 +647,7 @@ export default function PhoneCalendar() {
       )}
 
       {/* Asked once, before Casy's AI reads anything from a calendar (#120). */}
-      <AiConsentPrompt held={!settled || importShown || importPending} onOpenChange={setAiAsking} />
+      <AiConsentPrompt held={!bare || importShown || importPending} onOpenChange={setAiAsking} />
 
       {importShown && (
         <PhoneCalendarAccess

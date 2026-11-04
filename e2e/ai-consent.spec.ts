@@ -79,6 +79,10 @@ test("while it is off the switch is first in Your data; on, it is a row of the A
   const account = page.getByRole("heading", { name: "Din konto" });
   await expect(row).toHaveAttribute("aria-checked", "false");
   expect(await top(row)).toBeLessThan(await top(account));
+  // Past the home page's settling (1.5 s): on a phone Your data is a sheet
+  // over it, and the question doesn't open on top of a sheet (#205).
+  await page.waitForTimeout(2000);
+  await expect(page.getByRole("dialog", { name: ASK })).toHaveCount(0);
 
   await row.click();
   await expect(row).toHaveAttribute("aria-checked", "true");
