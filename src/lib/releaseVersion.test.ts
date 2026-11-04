@@ -1,5 +1,8 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+
+// Both read as text through Vite (?raw): the app's types have no Node.
+import packageJson from "../../package.json?raw";
+import project from "../../ios/App/App.xcodeproj/project.pbxproj?raw";
 
 import { parseVersion } from "./appVersion";
 
@@ -11,8 +14,7 @@ import { parseVersion } from "./appVersion";
  * the commit that parts them.
  */
 describe("the app's version", () => {
-  const pkg = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
-  const project = readFileSync("ios/App/App.xcodeproj/project.pbxproj", "utf8");
+  const pkg = JSON.parse(packageJson) as { version: string };
   const marketing = [...project.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((m) => m[1]);
 
   it("is a version the app can compare", () => {
