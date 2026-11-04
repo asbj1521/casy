@@ -1,11 +1,10 @@
-import { useRef, type RefObject } from "react";
+import { type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, CalendarSearch, User, type LucideIcon } from "lucide-react";
 
 import { invitationsQuery } from "@/api/groups";
 import { useSignedInUser } from "@/context/auth";
 import { useEventsBadge } from "@/hooks/useEventsBadge";
-import { useNativeGlassBar } from "@/hooks/useNativeGlassBar";
 import { useT } from "@/i18n/lang";
 import { ZOOM } from "@/components/swipe/morph";
 import { cn } from "@/lib/utils";
@@ -18,18 +17,22 @@ import { cn } from "@/lib/utils";
  * a sheet or the plan is open, but never unmounted: Planlæg's sent dates fly
  * into the Aftaler button (data-tab-icon), measured where it stands. Under
  * every sheet (z-20, as the Planlæg button was), and over the pile only while
- * the dates fly (`flight`). Back from a day, they fade in as the day zooms
- * into the month (`zoomingOut`), not once it has landed.
+ * the dates fly (`flight`).
  *
- * In the app on iOS 26 and later the capsules are Apple's real Liquid Glass
- * (#191, `useNativeGlassBar`): drawn natively over the page, their icon,
- * words and badge with them, while these web buttons stay under them as
- * invisible twins that take every tap. Without it (the website, older
- * iPhones, while the dates fly, while a sheet is open) the CSS glass shows.
+ * A sheet grows out of its button and shrinks back into it, so the bar goes
+ * and comes back at once with it, never fading (#207): as a sheet starts to
+ * close, its button is already there. Only a day fades it (`fade`), and back
+ * from a day it fades in as the day zooms into the month (`zoomingOut`).
+ *
+ * CSS glass everywhere, the app included (#207). Apple's native Liquid Glass
+ * (#191) is drawn above the whole web view, so it had to be swapped for the
+ * CSS glass under every sheet and back, and each swap showed (a blink, a
+ * flash or a fade). It returns with the native app (#192), sheets and all.
  */
 export default function HomeBar({
   hidden,
   flight,
+  fade = false,
   zoomingOut = false,
   onEvents,
   onPlan,
@@ -41,6 +44,8 @@ export default function HomeBar({
 }: {
   hidden: boolean;
   flight: boolean;
+  /** A day is opening or closing over the month: the bar fades with it. Otherwise it goes and comes at once. */
+  fade?: boolean;
   /** A day is zooming back into the month: the fade-in takes as long as the zoom. */
   zoomingOut?: boolean;
   onEvents: () => void;
@@ -58,32 +63,22 @@ export default function HomeBar({
   // you on Aftaler, group invitations on the profile (its Groups row says which).
   const eventsBadge = useEventsBadge();
   const { data: invitations } = useQuery(invitationsQuery(userId));
-  const bar = useRef<HTMLDivElement>(null);
-  const nativeGlass = useNativeGlassBar(
-    bar,
-    !hidden && !flight,
-    zoomingOut ? ZOOM.outMs : 200,
-    `${eventsBadge ?? 0}/${invitations?.length ?? 0}/${t.planFromCalendar.button}`,
-  );
 
   return (
     <div
-      ref={bar}
       aria-hidden={hidden}
       inert={hidden}
       className={cn(
-        "fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),0.75rem)] flex items-center gap-3 transition-opacity duration-200",
+        "fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),0.75rem)] flex items-center gap-3",
+        fade && "transition-opacity duration-200",
         flight ? "z-[65]" : "z-20",
         hidden && "pointer-events-none opacity-0",
-        nativeGlass && "native-glass",
       )}
-      style={zoomingOut ? { transitionDuration: `${ZOOM.outMs}ms` } : undefined}
+      style={fade && zoomingOut ? { transitionDuration: `${ZOOM.outMs}ms` } : undefined}
     >
       <RoundButton
         ref={eventsRef}
         icon={CalendarCheck}
-        symbols="calendar.badge.checkmark,calendar"
-        glass="events"
         label={t.nav.eventsShort}
         badge={eventsBadge}
         onClick={onEvents}
@@ -96,10 +91,6 @@ export default function HomeBar({
         type="button"
         onClick={onPlan}
         onPointerDown={prefetch?.plan}
-        data-glass="plan"
-        data-symbols="calendar.badge.magnifyingglass,calendar.badge.clock,calendar"
-        data-icon-size="20"
-        data-title={t.planFromCalendar.button}
         className="glass-pill flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[17px] font-semibold text-primary transition active:scale-95"
       >
         <CalendarSearch className="h-5 w-5 shrink-0" />
@@ -108,8 +99,6 @@ export default function HomeBar({
       <RoundButton
         ref={profileRef}
         icon={User}
-        symbols="person"
-        glass="profile"
         label={t.nav.profileShort}
         badge={invitations?.length}
         onClick={onProfile}
@@ -122,8 +111,6 @@ export default function HomeBar({
 function RoundButton({
   ref,
   icon: Icon,
-  symbols,
-  glass,
   label,
   badge,
   onClick,
@@ -132,10 +119,6 @@ function RoundButton({
 }: {
   ref?: RefObject<HTMLButtonElement | null>;
   icon: LucideIcon;
-  /** The same icon as SF Symbols (the native glass's), best first. */
-  symbols: string;
-  /** Which button it is, for the native glass. */
-  glass: string;
   label: string;
   badge?: number;
   onClick: () => void;
@@ -152,15 +135,11 @@ function RoundButton({
       aria-label={label}
       title={label}
       data-tab-icon={target}
-      data-glass={glass}
-      data-symbols={symbols}
-      data-icon-size="24"
       className="glass-pill relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-primary transition active:scale-95"
     >
       <Icon className="h-6 w-6" strokeWidth={2} />
       {!!badge && (
         <span
-          data-glass-badge
           aria-label={t.nav.waitingForAnswer(badge)}
           className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-cta px-1 text-[11px] font-semibold leading-none text-white"
         >

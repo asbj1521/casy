@@ -575,6 +575,7 @@ export default function PhoneCalendar() {
       <HomeBar
         hidden={(dayOpen || planOpen || eventsOpen || profileOpen || voteOpen) && !flight}
         flight={flight}
+        fade={dayShown !== null}
         zoomingOut={dayShown !== null && !dayOpen}
         onEvents={openEvents}
         onPlan={openPlan}

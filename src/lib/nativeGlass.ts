@@ -22,31 +22,10 @@ interface GlassCard {
   accent: [number, number, number];
 }
 
-/** One button of the home page's bar (#191), as real glass drawn at its place. */
-export interface GlassBarButton {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  /** SF Symbol names, the first this phone has. */
-  symbols: string[];
-  iconSize: number;
-  title?: string;
-  badge?: number;
-  /** The icon's and words' colour, r, g, b. */
-  tint: [number, number, number];
-  badgeTint: [number, number, number];
-}
-
 interface GlassPlugin {
   available(): Promise<{ available: boolean }>;
   show(card: GlassCard): Promise<void>;
   hide(): Promise<void>;
-  showBar(bar: { items: GlassBarButton[]; visible?: boolean; duration?: number }): Promise<void>;
-  setBarVisible(bar: { visible: boolean; duration: number }): Promise<void>;
-  pressBar(press: { id: string; down: boolean }): Promise<void>;
-  hideBar(): Promise<void>;
 }
 
 let plugin: GlassPlugin | null = null;
@@ -73,15 +52,6 @@ export function nativeGlassAvailable(): Promise<boolean> {
   return availability;
 }
 
-/** A computed colour, "rgb(234, 88, 12)" or "rgba(...)", as r, g, b; `fallback` for anything else. */
-export function parseRgb(
-  css: string,
-  fallback: [number, number, number],
-): [number, number, number] {
-  const n = css.match(/[\d.]+/g)?.map(Number) ?? [];
-  return n.length >= 3 && n.slice(0, 3).every(Number.isFinite) ? [n[0], n[1], n[2]] : fallback;
-}
-
 export async function showGlass(card: GlassCard): Promise<void> {
   const { plugin } = await glassPlugin();
   await plugin.show(card);
@@ -90,30 +60,4 @@ export async function showGlass(card: GlassCard): Promise<void> {
 export async function hideGlass(): Promise<void> {
   const { plugin } = await glassPlugin();
   await plugin.hide();
-}
-
-/** The home page's bar as real glass (#191): the buttons now on the page, shown or not. */
-export async function showGlassBar(
-  items: GlassBarButton[],
-  visible?: boolean,
-  duration?: number,
-): Promise<void> {
-  const { plugin } = await glassPlugin();
-  await plugin.showBar({ items, visible, duration });
-}
-
-export async function setGlassBarVisible(visible: boolean, duration: number): Promise<void> {
-  const { plugin } = await glassPlugin();
-  await plugin.setBarVisible({ visible, duration });
-}
-
-/** A finger on (or off) a button's web twin: its glass gives under it. */
-export async function pressGlassBar(id: string, down: boolean): Promise<void> {
-  const { plugin } = await glassPlugin();
-  await plugin.pressBar({ id, down });
-}
-
-export async function hideGlassBar(): Promise<void> {
-  const { plugin } = await glassPlugin();
-  await plugin.hideBar();
 }
