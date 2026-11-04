@@ -172,6 +172,22 @@ test.describe("with other calendars connected, but not this phone", () => {
     expect(backend.calls.some((c) => c.name === "calendar-phone" && c.body.create)).toBe(false);
   });
 
+  test("the AI question waits for the card, then follows it (#205)", async ({ page, backend }) => {
+    backend.world.aiConsent = false;
+    await asTheApp(page, "granted", { alreadyAnswered: true });
+    await page.goto("/calendar-overview");
+    const ai = page.getByRole("dialog", { name: "Lad Casys AI læse i din kalender?" });
+    await expect(
+      card(page).getByRole("heading", { name: "Telefonens kalender er ikke med endnu" }),
+    ).toBeVisible();
+    // Past the moment the home page settles (1.5 s), it still waits its turn.
+    await page.waitForTimeout(2000);
+    await expect(ai).toHaveCount(0);
+    await card(page).getByRole("button", { name: "Ikke nu" }).click();
+    await expect(card(page)).toHaveCount(0);
+    await expect(ai).toBeVisible();
+  });
+
   test("once this phone is connected, there is no card", async ({ page }) => {
     await asTheApp(page, "granted", { alreadyAnswered: true });
     // The connection the app remembers is one the server lists.

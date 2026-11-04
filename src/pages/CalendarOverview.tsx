@@ -29,8 +29,9 @@ export default function CalendarOverview() {
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         {phone ? <PhoneCalendar /> : <ComputerCalendar />}
       </Suspense>
-      {/* Asked once, before Casy's AI reads anything from a calendar (#120). */}
-      <AiConsentPrompt />
+      {/* Asked once, before Casy's AI reads anything from a calendar (#120).
+          A phone's home page asks it itself, after the import card (#205). */}
+      {!phone && <AiConsentPrompt />}
     </>
   );
 }

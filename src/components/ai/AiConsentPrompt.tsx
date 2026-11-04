@@ -31,14 +31,24 @@ const LOADED_AT = Date.now();
  * now" is as easy as "Allow"; either way it isn't asked again (the profile's
  * row, AiConsentGroup, changes it any time). Admins and AI testers are asked
  * too, so the flow is one they can try, though they may use the AI without it.
+ *
+ * On a phone the home page asks one thing at a time (#205): it mounts this
+ * itself, `held` while something comes first (the import card), and is told
+ * through `onOpenChange` while the question is up, so its own cards wait.
  */
-export default function AiConsentPrompt() {
-  const { user } = useAuth();
-  if (!user) return null;
-  return <Prompt key={user.id} userId={user.id} />;
+interface Props {
+  /** Not yet: something else on the page is asked first. */
+  held?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-function Prompt({ userId }: { userId: string }) {
+export default function AiConsentPrompt(props: Props) {
+  const { user } = useAuth();
+  if (!user) return null;
+  return <Prompt key={user.id} userId={user.id} {...props} />;
+}
+
+function Prompt({ userId, held = false, onOpenChange }: Props & { userId: string }) {
   const t = useT().aiConsent;
   const titleId = useId();
   const aiOn = useAiAllowed();
@@ -52,12 +62,16 @@ function Prompt({ userId }: { userId: string }) {
     enabled: aiOn && !consented && !asked,
   });
   const open =
+    !held &&
     aiOn &&
     !consented &&
     !asked &&
     dataUpdatedAt >= LOADED_AT &&
     !!connections &&
     hasConnectedCalendar(connections);
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
 
   // Which page is showing: read from where the pages have been scrolled to.
   const track = useRef<HTMLDivElement>(null);

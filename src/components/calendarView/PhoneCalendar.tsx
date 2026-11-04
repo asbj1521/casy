@@ -21,6 +21,7 @@ import HomeToolbar from "@/components/calendarView/HomeToolbar";
 import HomeVote, { type VoteView } from "@/components/calendarView/HomeVote";
 import { useHomeVotes } from "@/components/calendarView/useHomeVotes";
 import VotePill from "@/components/calendarView/VotePill";
+import AiConsentPrompt from "@/components/ai/AiConsentPrompt";
 import PhoneCalendarAccess from "@/components/calendarView/PhoneCalendarAccess";
 import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
@@ -119,6 +120,12 @@ export default function PhoneCalendar() {
   );
   // "Not now", for someone who has other calendars: until the app is opened again.
   const [importLater, setImportLater] = useState(() => phoneImportPutAway.done);
+  // One thing asked at a time (#205): the import card, then the AI question,
+  // then the date agreed (AgreedCard). Until the calendars are listed the app
+  // can't tell whether the card comes, so the AI question waits for that too.
+  const importShown = phoneImport.on && !importLater;
+  const importPending = isNativeApp && calendar.loading;
+  const [aiAsking, setAiAsking] = useState(false);
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
   const trips = useTrips();
   // An accepted trip already in the calendar as an event is shown once, as that event.
@@ -354,7 +361,7 @@ export default function PhoneCalendar() {
   const homeVotes = useHomeVotes({
     calendar,
     months,
-    idle: settled && location.search === "" && dayShown === null,
+    idle: settled && location.search === "" && dayShown === null && !importShown && !aiAsking,
   });
   // Times a whole group is free (#171), once the page has settled.
   const primeDates = usePrimeDates(settled);
@@ -636,7 +643,10 @@ export default function PhoneCalendar() {
         </Suspense>
       )}
 
-      {phoneImport.on && !importLater && (
+      {/* Asked once, before Casy's AI reads anything from a calendar (#120). */}
+      <AiConsentPrompt held={!settled || importShown || importPending} onOpenChange={setAiAsking} />
+
+      {importShown && (
         <PhoneCalendarAccess
           phone={phoneImport}
           onNotNow={
