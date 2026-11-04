@@ -24,7 +24,7 @@ the app they come in through the phone's own calendars.
 | Support URL | https://casy.app/support (Hjælp og kontakt, public, both languages) |
 | Marketing URL | https://casy.app |
 | Privacy policy URL | https://casy.app/privacy |
-| Age rating | Apple works it out from the questionnaire, so the way to the lowest rating is to answer truthfully: there is no violence, mature or gambling content, no web browsing and no purchases; the two answers that can raise it are user generated content (people write group and event names and notes that others see) and the AI feature. Expect the lowest bracket that allows those, around 13+. |
+| Age rating | 4+, as Apple worked it out from the questionnaire on 2026-11-04 (answered truthfully: user generated content yes, no messaging or chat, no advertising, violence, mature or gambling content, web browsing or purchases; no override). Answer it again the same way if the app changes what people can share. |
 
 Support URL: /support is built (#146) and linked from the profile's help list
 ("Hjælp og kontakt"); it opens signed out, in Danish or English.
@@ -179,8 +179,8 @@ nonce), which is exempt; no encryption of its own.
 
 ### Age rating
 
-See Basics above. Apple's ratings are now 4+, 9+, 13+, 16+ and 18+ (2025), so
-expect about 13+ for user generated content and the AI feature.
+4+, with no override (see Basics above). Apple's ratings are 4+, 9+, 13+, 16+ and
+18+ since 2025; the answers, not a target number, decide it.
 
 ## Notes for App Review
 
