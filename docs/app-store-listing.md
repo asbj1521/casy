@@ -159,17 +159,16 @@ stores": change all three together.
 | User Content > Photos or Videos | Profile, group and genvej pictures, if chosen |
 | User Content > Other User Content | Group and event names, places, notes, text for the AI, corrections sent for review |
 | Other Data > Other Data Types | Busy times: start and end only, never titles |
+| Usage Data > Product Interaction | Each AI call noted (when, which feature, for whom, never text), 30 days, for the daily limit |
 
 - Not collected: location, contacts (the contact picker's choices never leave
   the phone), audio (Apple's speech recognition gives Casy only text), health,
   financial info, browsing or search history, purchases, diagnostics (no crash
   reporting), sensitive info. Feedback is an email the person sends from their
   own mail app, not data the app collects.
-- Open question: each AI call is noted (when, which feature, for whom, never
-  text; 30 days, for the daily limit; the privacy policy says so). Apple's
-  "Usage Data > Product Interaction" arguably covers that. Declaring it adds
-  "Usage Data" to the page; leaving it out risks being told it is missing.
-  Decide before submitting, and add it to the manifest too if declared.
+- Product Interaction was declared on 2026-11-04: the AI call notes are close
+  enough to Apple's "how the user interacts with the app" that leaving it out
+  risked being told it was missing. The privacy policy already describes them.
 
 ### Export compliance
 

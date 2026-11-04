@@ -10,9 +10,11 @@
   phone's random device id (its calendar connection), busy times ("other data
   types": start and end only), what people write (group and event names,
   places, notes, text for the AI, corrections they choose to send), and the
-  pictures people choose (profile, group and genvej pictures, #186 to #188).
+  pictures people choose (profile, group and genvej pictures, #186 to #188),
+  and product interaction: a note of each AI call (when, which feature, for
+  whom, never text; 30 days, for the daily limit).
   Not collected: contacts (the picker's choices never leave the phone), audio
-  (Apple's speech recognition gives Casy only text), location, usage data.
+  (Apple's speech recognition gives Casy only text), location, diagnostics.
 -->
 <plist version="1.0">
 <dict>
@@ -85,6 +87,18 @@
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
