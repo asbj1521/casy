@@ -7,6 +7,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
+import { pickOnWheel } from "./wheel";
 import { NOW } from "./world";
 
 const SWITCH = "Send mine rettelser til Casy";
@@ -106,23 +107,6 @@ test.describe("admin mode", () => {
 });
 
 const ME_NAME = "Mia Jensen";
-
-/**
- * Picks `label` on the wheel a settings button opens, and checks it took.
- * The wheel repeats its options 15 times to loop; the 8th copy is the middle
- * one. It is turned the way a finger leaves it, with that copy in the centre,
- * where the wheel settles on it. A click raced (#208): Playwright first
- * scrolls the item into view, which turns the wheel to a neighbour, while
- * the click asks for a smooth scroll to the item, and on a busy machine the
- * neighbour could win.
- */
-async function pickOnWheel(page: Page, current: string, label: string) {
-  await page.getByRole("button", { name: current, exact: true }).filter({ visible: true }).click();
-  const item = page.getByText(label, { exact: true }).filter({ visible: true }).nth(7);
-  await item.evaluate((el) => el.scrollIntoView({ block: "center" }));
-  await expect(page.getByRole("button", { name: label, exact: true }).first()).toBeVisible();
-  await page.keyboard.press("Escape");
-}
 
 test.describe("Planlæg med AI (computers)", () => {
   test.beforeEach(({ isMobile }) => test.skip(isMobile, "a phone plans from My calendar (#127)"));
