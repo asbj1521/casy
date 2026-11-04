@@ -85,5 +85,6 @@ jobs:
         with:
           deno-version: v2.x
       # --node-modules-dir=none keeps Deno away from the web app's node_modules.
-      - run: deno check --node-modules-dir=none */index.ts _shared/*.ts
-      - run: deno test --node-modules-dir=none --allow-all _shared/
+      # ../review/ is the App Review demo (#142), built on the functions' own code.
+      - run: deno check --node-modules-dir=none */index.ts _shared/*.ts ../review/*.ts
+      - run: deno test --node-modules-dir=none --allow-all _shared/ ../review/

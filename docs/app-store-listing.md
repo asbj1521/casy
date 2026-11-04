@@ -143,23 +143,44 @@ Paste into the review notes field:
 
 > Casy helps groups of friends find a date everyone can make. Sign in with the
 > demo account below (email and password, no email code is needed). The demo
-> account already has calendar data and is a member of a group with two other
-> demo accounts, so every screen can be tried: My calendar, planning from the
-> Planlæg button, the voting screen under Aftaler, the groups under Profil.
-> Calendar access is asked when you press "Importér min kalender" on My
-> calendar; the simulator or review device may have no events, which is why the
-> demo account's own calendar is a connected calendar link with sample events.
-> The AI feature (Planlæg med AI) sends only what the user types or says.
-> Reporting and blocking are under the group's "Rapportér eller bloker" and
-> "Rapportér" on an event. Contact: asbjornbay@gmail.com
+> account, Alex, already has a calendar with sample events and is in the group
+> "Friday dinners" with two other demo accounts, Sara and Jonas, so every
+> screen can be tried. The app follows the phone's language; the Danish names
+> are in brackets. On the home page (My calendar): "Plan" (Planlæg) plans
+> with the group; "Events" (Aftaler) has Sara's vote "Dinner at Sara's"
+> waiting for your answer and the agreed "Sunday brunch" with "Add to my
+> calendar"; "Profile" (Profil) has the group. Calendar access is asked when
+> you press "Import my calendar" (Importér min kalender); the review device
+> may have no events, which is why the demo account's own calendar is a
+> connected calendar link with sample events. The AI feature, "Plan with AI"
+> (Planlæg med AI), sends only what the user types or says. Reporting and
+> blocking are under the group's "Report or block" (Rapportér eller bloker)
+> and "Report" (Rapportér) on an event. Deleting the account is under Profile
+> and works on the demo account too. Contact: asbjornbay@gmail.com
 
-Demo account (to set up before submitting; passwords go in App Store Connect,
-never in this repository):
+### The demo accounts
 
-- Email and password: create a confirmed email account with a strong password,
-  with AI switched on in admin mode.
-- A calendar link connected, with a handful of made-up events over the next
-  months.
-- Two more demo accounts in a shared group, one with a pending vote to answer.
+`npm run review-demo` builds them (`supabase/review/`), the same way every
+time; run it before each submission, since a reviewer may vote, leave the group
+or delete the account. It deletes the earlier demo accounts first (through the
+app's own account deletion), then makes Alex, Sara and Jonas with the sample
+calendars in `public/review/`, the group, Sara's vote (three Fridays at least
+a week away, no deadline, Sara and Jonas have answered), the agreed brunch, and
+AI switched on for Alex. Run from the repo root, in your own terminal:
+
+```bash
+read -rs REVIEW_PASSWORD && export REVIEW_PASSWORD && npm run review-demo -- you@gmail.com
+```
+
+- The emails are plus-aliases of the address given (`you+casy-review@gmail.com`
+  is Alex, the account the reviewer uses; `+casy-sara`, `+casy-jonas`), so any
+  email Casy sends them reaches you and none bounces.
+- `REVIEW_PASSWORD` is Alex's password: 12 or more characters with letters and
+  digits, typed at the prompt, never saved. The same one goes in App Store
+  Connect's sign-in information; use the same each run so it stays right there.
+  Sara's and Jonas's are random and thrown away.
+- It needs the service role key in `.env.local` and the feeds live on casy.app
+  (they ship with `main`).
+- Admin mode's counts include the three demo accounts.
 - Check that sign-in works from a fresh install on the review device (Casy has
   no CAPTCHA, #203; a password sign-in counts towards no email limit).
