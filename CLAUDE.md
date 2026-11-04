@@ -54,6 +54,7 @@ npm run dev              # Dev server on port 8080 (the user runs this in their 
 npm run ios              # Build the site and copy it into the iPhone app; then ▶ in Xcode (npx cap open ios)
 npm run ios:live         # Dev server + iOS Simulator with live reload (#125): edits show in the real iOS web view in about a second; run again only after Swift changes. `-- "iPhone Air"` picks another simulator, `-- --device` points a real phone at the Mac (then ▶ once in Xcode). Builds into Xcode's default DerivedData (never `cap run`, whose ios/DerivedData fails code signing in iCloud). Xcode 27 has no Simulator.app; DeviceHub.app shows the screen
 npm run build            # Type-check + production build
+npm run release:ios      # The iPhone app to TestFlight (#143): checks, archive, tag, upload; docs/releases.md
 npm run test:run         # Frontend tests once
 npm run e2e              # Browser tests (builds into dist-e2e/, serves it on port 4317)
 npm run lint             # ESLint
@@ -124,7 +125,7 @@ Each is explained in its area's doc; these hold everywhere.
 - **The first load:** only the landing page, the shell and Danish are in the entry chunk (#157). A new page goes through `lazyPages.ts`, app-only work through `AppBackground`, and anything heavy that opens on demand is `lazy()`; Casy's own random choices use `appRandom`/`oncePerLoad` (`lib/appRandom.ts`), never `Math.random`, so the browser tests stay the same on every load.
 - **Remembered queries** (`queryPersistence.ts`) are only ever about the signed-in user themself.
 - **Never change:** the `"autodate lookup hash v1"` label in `secretBox.ts`, or the auth storage key in `src/lib/supabase.ts` (everyone would be signed out).
-- **Releases:** `package.json`'s version equals the Xcode project's `MARKETING_VERSION`; the backend keeps working for every app at or above `MIN_APP_VERSION`.
+- **Releases:** `package.json`'s version equals the Xcode project's `MARKETING_VERSION` (a test checks it); the backend keeps working for every app at or above `MIN_APP_VERSION`; a build reaches TestFlight only through `npm run release:ios` (`docs/releases.md`), never an archive made by hand.
 - **Pages that make promises:** the landing page's data claims, Support, Terms and Privacy stay true to the code; a change to the terms updates its date, and one that matters is announced 30 days ahead.
 - **Sign-in in the app:** no Google button unless Sign in with Apple comes first (App Store guideline 4.8).
 
