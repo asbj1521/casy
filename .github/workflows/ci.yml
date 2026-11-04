@@ -19,6 +19,41 @@ concurrency:
 # browser part) and 1 (functions). Without one, a job GitHub leaves stuck
 # runs for 6 hours and blocks the branch's next run behind it.
 jobs:
+  # Whether the browser tests can be affected (#208): not when every file the
+  # branch changed (against main; on main, the push) is in docs/, scripts/,
+  # ios/ or supabase/ (none of which the browser tests run), or is a Markdown
+  # file. The web job's unit tests still run, and keep the pairs shared with
+  # supabase/ equal. Anything else, or a base that can't be found, runs them.
+  changes:
+    name: What changed
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      app: ${{ steps.diff.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          REF: ${{ github.ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$REF" = refs/heads/main ]; then base=$BEFORE; else base=$(git merge-base origin/main HEAD || true); fi
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "No base to compare with; running everything"
+            echo "app=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(git diff --name-only "$base" HEAD)
+          echo "Changed since ${base:0:7}:"; echo "$files"
+          if echo "$files" | grep -v -E '^(docs/|scripts/|ios/|supabase/)|\.md$' | grep -q .; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Nothing the browser tests run changed; they are skipped"
+            echo "app=false" >> "$GITHUB_OUTPUT"
+          fi
+
   web:
     name: Web app
     runs-on: ubuntu-latest
@@ -41,8 +76,10 @@ jobs:
   browser:
     name: Browser tests (${{ matrix.shard }}/4)
     # A [screenshots] commit asks for new reference images (screenshots.yml),
-    # so it would only fail here against the old ones.
-    if: ${{ !contains(github.event.head_commit.message, '[screenshots]') }}
+    # so it would only fail here against the old ones. Skipped too when
+    # nothing they run changed (the changes job); a skipped job passes.
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' && !contains(github.event.head_commit.message, '[screenshots]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Playwright's own image: the browsers and the fonts the reference
