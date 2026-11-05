@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { isAuthError } from "@supabase/auth-js";
@@ -102,6 +102,9 @@ export default function SignIn() {
   const [forgotSending, setForgotSending] = useState(false);
   const [forgotSentTo, setForgotSentTo] = useState<string | null>(null);
   const [forgotError, setForgotError] = useState<string | null>(null);
+  // "Forgot password?" with no email typed: no error, the field and a word (#212).
+  const [askEmail, setAskEmail] = useState(false);
+  const emailField = useRef<HTMLInputElement>(null);
 
   const [signupSubmitting, setSignupSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
@@ -329,9 +332,12 @@ export default function SignIn() {
   async function handleForgotPassword() {
     const address = email.trim();
     if (!address) {
-      setForgotError(t.signIn.enterEmailFirst);
+      setForgotError(null);
+      setAskEmail(true);
+      emailField.current?.focus();
       return;
     }
+    setAskEmail(false);
     setForgotSending(true);
     setForgotError(null);
     const { error: err } = await supabaseAuth.resetPasswordForEmail(address, {
@@ -349,6 +355,7 @@ export default function SignIn() {
     setSentTo(null);
     setForgotSentTo(null);
     setForgotError(null);
+    setAskEmail(false);
     setSignupError(null);
     setConfirmSentTo(null);
     setUnconfirmed(null);
@@ -359,6 +366,7 @@ export default function SignIn() {
     setError(null);
     setForgotSentTo(null);
     setForgotError(null);
+    setAskEmail(false);
     setSignupError(null);
     setConfirmSentTo(null);
     setUnconfirmed(null);
@@ -397,7 +405,12 @@ export default function SignIn() {
       <TopNav />
 
       <main className="mx-auto max-w-sm px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-10">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+        {/* On a phone the tab and the button say it already (#212). */}
+        <h1
+          className={
+            phone ? "sr-only" : "text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+          }
+        >
           {t.signIn.title}
         </h1>
         {!isNativeApp && <p className="mt-2 text-sm text-muted-foreground">{t.signIn.intro}</p>}
@@ -413,6 +426,29 @@ export default function SignIn() {
             contents fade in once it has. */}
         <div className="vt-card mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
           <div className="vt-card-content">
+            {/* The iPhone app only (#138): Sign in with Apple, first (#212): one tap
+                for a new person, the email form under it. Drawn as Apple asks
+                (black, white in dark mode, its logo and wording). The website
+                has none: its flow needs a secret that expires every six months. */}
+            {isNativeApp && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleApple()}
+                  disabled={appleBusy}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[17px] font-semibold text-white transition disabled:opacity-60 dark:bg-white dark:text-black"
+                >
+                  <SiApple aria-hidden className="h-[18px] w-[18px]" />
+                  {t.signIn.apple}
+                </button>
+                <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  {t.signIn.or}
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              </>
+            )}
+
             {/* Not in the iPhone app (#91): with a Google button, App Store
                 guideline 4.8 asks for Sign in with Apple or the like beside it,
                 and Google refuses sign-in inside an app's web view anyway.
@@ -523,6 +559,7 @@ export default function SignIn() {
                       <label className="text-sm">
                         <span className={labelClass}>{t.signIn.email}</span>
                         <input
+                          ref={emailField}
                           type="email"
                           required
                           autoComplete="email"
@@ -531,6 +568,11 @@ export default function SignIn() {
                           placeholder={t.signIn.emailPlaceholder}
                           className={inputClass}
                         />
+                        {askEmail && !email.trim() && (
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            {t.signIn.enterEmailFirst}
+                          </span>
+                        )}
                       </label>
                       <label className="text-sm">
                         <span className={labelClass}>{t.signIn.password}</span>
@@ -585,6 +627,7 @@ export default function SignIn() {
                       submitLabel={t.signIn.createAccount}
                       submittingLabel={t.signIn.creatingAccount}
                       passwordLabel={t.signIn.password}
+                      single
                       personal={[email]}
                       onSubmit={(pw) => void handleSignUp(pw)}
                     />
@@ -615,30 +658,6 @@ export default function SignIn() {
                 {unconfirmed && <> {resendButton(unconfirmed)}</>}
                 {unconfirmed && resendError && <span className="mt-1 block">{resendError}</span>}
               </Notice>
-            )}
-
-            {/* The iPhone app only (#138): Sign in with Apple, last, where a thumb
-                reaches (the app's way in, so the big button), drawn as Apple
-                asks (black, white in dark mode, its logo and wording). The
-                website has none: its flow needs a secret that expires every
-                six months. */}
-            {isNativeApp && (
-              <>
-                <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="h-px flex-1 bg-border" />
-                  {t.signIn.or}
-                  <span className="h-px flex-1 bg-border" />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void handleApple()}
-                  disabled={appleBusy}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[17px] font-semibold text-white transition disabled:opacity-60 dark:bg-white dark:text-black"
-                >
-                  <SiApple aria-hidden className="h-[18px] w-[18px]" />
-                  {t.signIn.apple}
-                </button>
-              </>
             )}
           </div>
         </div>

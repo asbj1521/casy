@@ -851,6 +851,8 @@ export const en: Messages = {
   passwordForm: {
     newPassword: "New password",
     confirm: "Confirm password",
+    show: "Show password",
+    hide: "Hide password",
     mismatch: "Passwords don't match.",
     ruleLength: (n: number) => `At least ${n} characters`,
     ruleLettersDigits: "Both letters and numbers",
@@ -1544,7 +1546,7 @@ export const en: Messages = {
     creatingAccount: "Creating account",
     usePassword: "Use a password instead",
     useLink: "Use an email link instead",
-    enterEmailFirst: "Enter your email above first.",
+    enterEmailFirst: "Enter your email here and we will send you a link.",
     newPasswordTitle: "Choose a new password",
     newPasswordIntro: "You can sign in with this the next time, instead of an email link.",
   },

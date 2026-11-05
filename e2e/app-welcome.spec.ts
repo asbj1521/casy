@@ -65,7 +65,7 @@ test("every page the signed out app can open has a way back", async ({ page }) =
   }
 });
 
-test("the app's sign-in has the email login on top and Apple, the default, under it (#138)", async ({
+test("the app's sign-in has Apple, the one-tap way in, on top and the email login under it (#212)", async ({
   page,
 }) => {
   await asTheApp(page);
@@ -77,8 +77,8 @@ test("the app's sign-in has the email login on top and Apple, the default, under
   await expect(apple).toBeVisible();
 
   const y = async (locator: Locator) => (await locator.boundingBox())!.y;
-  expect(await y(apple)).toBeGreaterThan(await y(email));
-  expect(await y(apple)).toBeGreaterThan(await y(forgot));
+  expect(await y(apple)).toBeLessThan(await y(email));
+  expect(await y(apple)).toBeLessThan(await y(forgot));
   // The two small links share a row, forgot on the left.
   const [forgotBox, linkBox] = [await forgot.boundingBox(), await useLink.boundingBox()];
   expect(Math.abs(forgotBox!.y - linkBox!.y)).toBeLessThan(4);

@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type FormEvent } from "react";
-import { Check, Circle, Loader2, Lock } from "lucide-react";
+import { Check, Circle, Eye, EyeOff, Loader2, Lock } from "lucide-react";
 
 import { FIELD, FIELD_LABEL } from "@/components/ui/field";
 import FlowButton from "@/components/ui/FlowButton";
@@ -31,6 +31,9 @@ import { cn } from "@/lib/utils";
  * off as they are met. On submit, after they pass, the password is checked
  * against known data leaks; a leaked one is refused with the reason. If that
  * check can't be reached, the password goes through on the rules alone.
+ *
+ * `single` (a new account, #212): one field and a button to see what was
+ * typed, instead of typing it twice. Changing a password keeps the pair.
  */
 export default function PasswordForm({
   submitting,
@@ -39,6 +42,7 @@ export default function PasswordForm({
   submittingLabel,
   passwordLabel,
   personal = [],
+  single = false,
   onSubmit,
   onCancel,
 }: {
@@ -50,6 +54,8 @@ export default function PasswordForm({
   passwordLabel?: string;
   /** The person's email and name, which the password mustn't be built from. */
   personal?: (string | null | undefined)[];
+  /** One field with a show-password button, no confirm field. */
+  single?: boolean;
   onSubmit: (password: string) => void;
   onCancel?: () => void;
 }) {
@@ -62,6 +68,7 @@ export default function PasswordForm({
   const { lang } = useLang();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [shown, setShown] = useState(false);
   // A problem found here, before anything is sent: shown until the next keystroke.
   const [localError, setLocalError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -79,7 +86,7 @@ export default function PasswordForm({
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (password !== confirm) {
+    if (!single && password !== confirm) {
       setLocalError(t.passwordForm.mismatch);
       return;
     }
@@ -114,19 +121,32 @@ export default function PasswordForm({
             <Lock className="h-3.5 w-3.5" />
             <label htmlFor={passwordId}>{passwordLabel ?? t.passwordForm.newPassword}</label>
           </div>
-          <input
-            id={passwordId}
-            type="password"
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              clearLocalError();
-            }}
-            className={inputClass}
-          />
+          <div className="relative">
+            <input
+              id={passwordId}
+              type={single && shown ? "text" : "password"}
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearLocalError();
+              }}
+              className={cn(inputClass, single && "pr-12")}
+            />
+            {single && (
+              <button
+                type="button"
+                onClick={() => setShown(!shown)}
+                aria-label={shown ? t.passwordForm.hide : t.passwordForm.show}
+                aria-pressed={shown}
+                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground transition hover:text-foreground"
+              >
+                {shown ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            )}
+          </div>
           {/* The rules, ticked off as they are met. */}
           <ul className="mt-2 flex flex-col gap-1 text-xs">
             {rules.map((rule) => (
@@ -147,24 +167,26 @@ export default function PasswordForm({
             ))}
           </ul>
         </div>
-        <label className="text-sm">
-          <span className={phone ? FIELD_LABEL : "mb-1 block font-medium text-foreground"}>
-            {t.passwordForm.confirm}
-          </span>
-          <input
-            id={confirmId}
-            type="password"
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(e) => {
-              setConfirm(e.target.value);
-              clearLocalError();
-            }}
-            className={inputClass}
-          />
-        </label>
+        {!single && (
+          <label className="text-sm">
+            <span className={phone ? FIELD_LABEL : "mb-1 block font-medium text-foreground"}>
+              {t.passwordForm.confirm}
+            </span>
+            <input
+              id={confirmId}
+              type="password"
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => {
+                setConfirm(e.target.value);
+                clearLocalError();
+              }}
+              className={inputClass}
+            />
+          </label>
+        )}
         {(localError || error) && <Notice tone="error">{localError ?? error}</Notice>}
         <div className={phone ? "flex flex-col items-center gap-3" : "flex items-center gap-3"}>
           {phone ? (

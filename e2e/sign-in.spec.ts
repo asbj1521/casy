@@ -1,7 +1,7 @@
 /**
  * The sign-in page. The iPhone app has no Google button (#91): with one, App
  * Store guideline 4.8 asks for another sign-in service beside it; without,
- * the app signs in only with Casy's own accounts.
+ * the app signs in only with Casy's own accounts. Fewer steps for a new person: #212.
  */
 import { expect, test } from "./fixtures";
 
@@ -22,4 +22,28 @@ test("the iPhone app offers Apple and Casy's own sign-in, never Google", async (
   await expect(page.getByLabel("E-mail")).toBeVisible();
   await expect(page.getByRole("button", { name: "Fortsæt med Google" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Fortsæt med Apple" })).toBeVisible();
+});
+
+test("a new account takes one password field, which can be shown (#212)", async ({ page }) => {
+  await page.goto("/sign-in?signup=1");
+  await expect(page.getByLabel("Bekræft adgangskode")).toHaveCount(0);
+  const field = page.getByLabel("Adgangskode", { exact: true });
+  await field.fill("hemmelig123");
+  await expect(field).toHaveAttribute("type", "password");
+  await page.getByRole("button", { name: "Vis adgangskode" }).click();
+  await expect(field).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "Skjul adgangskode" }).click();
+  await expect(field).toHaveAttribute("type", "password");
+});
+
+test("Glemt adgangskode with no email asks for it there, with no error (#212)", async ({
+  page,
+}) => {
+  await page.goto("/sign-in");
+  await page.getByRole("button", { name: "Glemt adgangskode?" }).click();
+  const email = page.getByLabel(/^E-mail/);
+  await expect(email).toBeFocused();
+  await expect(page.getByText("Skriv din e-mail her")).toBeVisible();
+  await email.fill("mig@eksempel.dk");
+  await expect(page.getByText("Skriv din e-mail her")).toHaveCount(0);
 });

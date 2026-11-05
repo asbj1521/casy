@@ -891,6 +891,8 @@ export const da = {
   passwordForm: {
     newPassword: "Ny adgangskode",
     confirm: "Bekræft adgangskode",
+    show: "Vis adgangskode",
+    hide: "Skjul adgangskode",
     mismatch: "Adgangskoderne er ikke ens.",
     ruleLength: (n: number) => `Mindst ${n} tegn`,
     ruleLettersDigits: "Både bogstaver og tal",
@@ -1600,7 +1602,7 @@ export const da = {
     creatingAccount: "Opretter konto",
     usePassword: "Brug en adgangskode i stedet",
     useLink: "Brug et e-mail-link i stedet",
-    enterEmailFirst: "Skriv din e-mail ovenfor først.",
+    enterEmailFirst: "Skriv din e-mail her, så sender vi dig et link.",
     newPasswordTitle: "Vælg en ny adgangskode",
     newPasswordIntro: "Næste gang kan du logge ind med den i stedet for et e-mail-link.",
   },
