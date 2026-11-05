@@ -839,6 +839,16 @@ export const da = {
     phoneUpdates: "opdateres, når du åbner appen",
   },
   phoneCalendar: {
+    // The import sheet's picture (#215): made-up events, losing their names.
+    demo: {
+      phone: "Din telefon",
+      casy: "Casy ser kun",
+      events: [
+        { time: "09:30", title: "Tandlæge" },
+        { time: "14:00", title: "Lægen" },
+        { time: "18:30", title: "Middag" },
+      ],
+    },
     connected: (calendars: string, blocks: string) =>
       `Telefonen er forbundet: ${calendars} med ${blocks}. Casy opdaterer dem, hver gang du åbner appen.`,
     denied:

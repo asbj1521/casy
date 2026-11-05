@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import OnlyTimesDemo from "@/components/calendarView/OnlyTimesDemo";
 import BottomSheet from "@/components/ui/BottomSheet";
 import FlowButton from "@/components/ui/FlowButton";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
@@ -64,6 +65,7 @@ export default function PhoneCalendarAccess({
         </FlowButton>
       }
     >
+      <OnlyTimesDemo />
       <p className="px-1 text-[15px] text-muted-foreground">
         {denied ? words.denied : words.needBody}
         {!denied && access === "prompt" && ` ${words.needAsk}`}

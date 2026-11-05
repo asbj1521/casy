@@ -800,6 +800,15 @@ export const en: Messages = {
     phoneUpdates: "updated whenever you open the app",
   },
   phoneCalendar: {
+    demo: {
+      phone: "Your phone",
+      casy: "Casy only sees",
+      events: [
+        { time: "09:30", title: "Dentist" },
+        { time: "14:00", title: "Doctor" },
+        { time: "18:30", title: "Dinner" },
+      ],
+    },
     connected: (calendars: string, blocks: string) =>
       `The phone is connected: ${calendars} with ${blocks}. Casy updates them every time you open the app.`,
     denied:
