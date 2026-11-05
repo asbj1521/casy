@@ -4,18 +4,19 @@ import { isNativeApp } from "@/lib/nativeApp";
 const IOS_DEFAULT_BODY_PX = 17;
 const ROOT_PX = 16;
 /**
- * The range followed. Past it (iOS's accessibility sizes reach three times
+ * How far it follows. Past this (iOS's accessibility sizes reach three times
  * the default) the phone's seven-column month has no room left: what a
- * person with those sizes gets is the largest that still lays out.
+ * person with those sizes gets is the largest that still lays out. Never
+ * below the page as drawn: a smaller text size on the iPhone shrank Casy's
+ * buttons along with its text, and the page as drawn is the standard.
  */
-const MIN_SCALE = 0.85;
 const MAX_SCALE = 1.35;
 /** From this root size on, rows drop their icons so their words fit (`large-text:`). */
 const LARGE_TEXT_PX = 18.5;
 
 /** The page's root size for iOS's body text at `bodyPx`; everything in rem follows it. */
 export function rootPxFor(bodyPx: number): number {
-  const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, bodyPx / IOS_DEFAULT_BODY_PX));
+  const scale = Math.min(MAX_SCALE, Math.max(1, bodyPx / IOS_DEFAULT_BODY_PX));
   return Math.round(ROOT_PX * scale * 100) / 100;
 }
 

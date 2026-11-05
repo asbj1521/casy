@@ -915,6 +915,8 @@ export const en: Messages = {
     invitations: "Invitations",
     invitedBy: (name: string) => `${name} invited you`,
     invitedAnon: "You're invited",
+    invitedTo: "You're invited to",
+    joinMeansShort: "Members see your name and when you are busy.",
     joinMeans: "If you say yes, the group's members can see your name and when you're busy.",
     join: "Join",
     noThanks: "No thanks",

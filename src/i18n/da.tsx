@@ -955,6 +955,8 @@ export const da = {
     invitations: "Invitationer",
     invitedBy: (name: string) => `${name} har inviteret dig`,
     invitedAnon: "Du er inviteret",
+    invitedTo: "Du er inviteret til",
+    joinMeansShort: "Medlemmerne ser dit navn, og hvornår du er optaget.",
     joinMeans: "Siger du ja, kan gruppens medlemmer se dit navn, og hvornår du er optaget.",
     join: "Deltag",
     noThanks: "Nej tak",

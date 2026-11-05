@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, Users, X } from "lucide-react";
 
@@ -15,7 +16,8 @@ import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
-import { useSignedInUser } from "@/context/auth";
+import Avatar from "@/components/ui/Avatar";
+import { displayName, useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { askForPush } from "@/lib/pushAsk";
 
@@ -91,23 +93,48 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
   const busy = accept.isPending || decline.isPending;
   const error = (accept.error ?? decline.error)?.message;
 
-  return (
-    <li className="rounded-2xl border border-primary/30 bg-card p-4 shadow-sm sm:p-5">
-      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary">
-        <Users className="h-3.5 w-3.5" />
-        {invitation.invitedBy ? t.events.invitedBy(invitation.invitedBy) : t.events.invitedAnon}
-      </p>
-      <p className="mt-1 break-words text-xl font-bold text-foreground">{invitation.groupName}</p>
-      <p className="text-sm text-muted-foreground">{t.counts.members(invitation.memberCount)}</p>
-      {invitation.groupDescription && (
-        <p className="mt-2 break-words text-[0.9375rem] text-foreground">
-          {invitation.groupDescription}
-        </p>
-      )}
-      <p className="mt-3 text-sm text-muted-foreground">{t.events.joinMeans}</p>
+  const blockRow =
+    invitation.invitedBy &&
+    (blocking ? (
+      <ConfirmPanel
+        className="mt-3"
+        message={t.safety.blockSenderConfirm(invitation.invitedBy)}
+        confirmLabel={t.safety.block}
+        busy={block.isPending}
+        error={block.error?.message}
+        onConfirm={() => block.mutate()}
+        onCancel={() => setBlocking(false)}
+      />
+    ) : (
+      <button
+        type="button"
+        onClick={() => setBlocking(true)}
+        disabled={busy}
+        className="hit mt-3 text-xs font-medium text-muted-foreground transition hover:text-red-700 disabled:opacity-60"
+      >
+        {t.safety.blockSender}
+      </button>
+    ));
 
-      {phone ? (
-        // Glass capsules on a phone (#215), as everywhere else there.
+  // A phone shows it: who is in, and your place among them.
+  if (phone) {
+    return (
+      <li className="rounded-2xl border bg-card px-4 pb-4 pt-5 text-center">
+        <InviteFaces invitedBy={invitation.invitedBy} memberCount={invitation.memberCount} />
+        <p className="mt-3 text-[0.8125rem] text-muted-foreground">{t.events.invitedTo}</p>
+        <p className="break-words text-[1.5rem] font-bold leading-tight text-foreground">
+          {invitation.groupName}
+        </p>
+        <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">
+          {[invitation.invitedBy, t.counts.members(invitation.memberCount)]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+        {invitation.groupDescription && (
+          <p className="mt-2 break-words text-[0.9375rem] text-foreground">
+            {invitation.groupDescription}
+          </p>
+        )}
         <div className="mt-4 grid grid-cols-2 gap-2">
           <FlowButton
             onClick={() => {
@@ -131,42 +158,66 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
             {t.events.noThanks}
           </FlowButton>
         </div>
-      ) : (
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              decline.reset();
-              accept.mutate();
-            }}
-            disabled={busy}
-            className="flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-60"
-          >
-            {accept.isPending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Check className="h-5 w-5" />
-            )}
-            {t.events.join}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              accept.reset();
-              decline.mutate();
-            }}
-            disabled={busy}
-            className="flex items-center justify-center gap-2 rounded-full border bg-background py-2.5 font-semibold text-foreground transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
-          >
-            {decline.isPending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <X className="h-5 w-5" />
-            )}
-            {t.events.noThanks}
-          </button>
-        </div>
+        <p className="mt-3 text-[0.75rem] text-muted-foreground">{t.events.joinMeansShort}</p>
+        {error && (
+          <Notice tone="error" bare className="mt-3">
+            {error}
+          </Notice>
+        )}
+        {blockRow}
+      </li>
+    );
+  }
+
+  return (
+    <li className="rounded-2xl border border-primary/30 bg-card p-4 shadow-sm sm:p-5">
+      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary">
+        <Users className="h-3.5 w-3.5" />
+        {invitation.invitedBy ? t.events.invitedBy(invitation.invitedBy) : t.events.invitedAnon}
+      </p>
+      <p className="mt-1 break-words text-xl font-bold text-foreground">{invitation.groupName}</p>
+      <p className="text-sm text-muted-foreground">{t.counts.members(invitation.memberCount)}</p>
+      {invitation.groupDescription && (
+        <p className="mt-2 break-words text-[0.9375rem] text-foreground">
+          {invitation.groupDescription}
+        </p>
       )}
+      <p className="mt-3 text-sm text-muted-foreground">{t.events.joinMeans}</p>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            decline.reset();
+            accept.mutate();
+          }}
+          disabled={busy}
+          className="flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-60"
+        >
+          {accept.isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Check className="h-5 w-5" />
+          )}
+          {t.events.join}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            accept.reset();
+            decline.mutate();
+          }}
+          disabled={busy}
+          className="flex items-center justify-center gap-2 rounded-full border bg-background py-2.5 font-semibold text-foreground transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
+        >
+          {decline.isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <X className="h-5 w-5" />
+          )}
+          {t.events.noThanks}
+        </button>
+      </div>
 
       {error && (
         <Notice tone="error" bare className="mt-3">
@@ -174,27 +225,61 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
         </Notice>
       )}
 
-      {invitation.invitedBy &&
-        (blocking ? (
-          <ConfirmPanel
-            className="mt-3"
-            message={t.safety.blockSenderConfirm(invitation.invitedBy)}
-            confirmLabel={t.safety.block}
-            busy={block.isPending}
-            error={block.error?.message}
-            onConfirm={() => block.mutate()}
-            onCancel={() => setBlocking(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setBlocking(true)}
-            disabled={busy}
-            className="hit mt-3 text-xs font-medium text-muted-foreground transition hover:text-red-700 disabled:opacity-60"
-          >
-            {t.safety.blockSender}
-          </button>
-        ))}
+      {blockRow}
     </li>
+  );
+}
+
+/** How many faces the group's row shows, before "+n". */
+const FACES = 4;
+
+/**
+ * Who is in the group and your place among them: whoever invited you, the
+ * others as plain circles (nobody's name or face before you have said yes), and
+ * you waiting at the end, your own circle breathing. Decoration for screen
+ * readers: the lines under it say the same. Reduced motion holds it still.
+ */
+function InviteFaces({
+  invitedBy,
+  memberCount,
+}: {
+  invitedBy: string | null;
+  memberCount: number;
+}) {
+  const user = useSignedInUser();
+  const reduce = useReducedMotion();
+  const shown = Math.max(0, Math.min(FACES, memberCount) - (invitedBy ? 1 : 0));
+  const more = memberCount - shown - (invitedBy ? 1 : 0);
+  const circle = "h-12 w-12 rounded-full ring-2 ring-card";
+  return (
+    <div aria-hidden className="flex items-center justify-center">
+      <div className="flex items-center -space-x-3">
+        {invitedBy && (
+          <Avatar
+            name={invitedBy}
+            index={0}
+            size="lg"
+            className={`${circle} relative z-10 text-lg`}
+          />
+        )}
+        {Array.from({ length: shown }, (_, i) => (
+          <span key={i} className={`${circle} inline-block bg-secondary`} />
+        ))}
+        {more > 0 && (
+          <span
+            className={`${circle} flex items-center justify-center bg-secondary text-[0.8125rem] font-semibold text-muted-foreground`}
+          >
+            +{more}
+          </span>
+        )}
+      </div>
+      <motion.span
+        className="ml-2 rounded-full border-2 border-dashed border-primary p-0.5"
+        animate={reduce ? undefined : { scale: [1, 1.08, 1] }}
+        transition={reduce ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Avatar name={displayName(user)} index={1} size="lg" className="h-11 w-11 text-base" />
+      </motion.span>
+    </div>
   );
 }

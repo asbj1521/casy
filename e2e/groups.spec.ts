@@ -70,6 +70,15 @@ test("an invitation says what the group is for (#152)", async ({ page }) => {
   await expect(page.getByText("Double om torsdagen i Valby")).toBeVisible();
 });
 
+test("a phone's invitation shows who is in, and says little (#216)", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "a computer keeps its card");
+  await page.goto("/groups");
+  await expect(page.getByText("Du er inviteret til")).toBeVisible();
+  await expect(page.getByText("Sara · 5 medlemmer")).toBeVisible();
+  await expect(page.getByText("Medlemmerne ser dit navn, og hvornår du er optaget.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bloker afsenderen" })).toBeVisible();
+});
+
 test("declining an invitation removes it", async ({ page, backend }) => {
   await page.goto("/groups");
   await expect(page.getByText("Badminton")).toBeVisible();
