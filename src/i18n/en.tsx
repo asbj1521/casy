@@ -1043,6 +1043,7 @@ export const en: Messages = {
       `You have ${what}${when ? ` ${when}` : ""}${more > 0 ? ` and ${more} more` : ""}`,
     previous: "Previous date",
     hint: "Swipe right if you can, left if you can't, and up if you can but would rather not.",
+    hintShort: "Or swipe: right can, left can't, up rather not.",
     keysHint: "Use the buttons or the arrow keys: right can, left can't, up rather not.",
     doneTitle: "Thanks, you've answered",
     settledTitle: "The date is set",

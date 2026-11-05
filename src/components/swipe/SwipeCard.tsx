@@ -145,15 +145,24 @@ export function AnswerIcon({ answer }: { answer: EventResponse | undefined | nul
 export function AnswerButtons({
   onAnswer,
   screen,
+  tight = false,
 }: {
   onAnswer: (response: EventResponse) => void;
   screen: boolean;
+  /** On a short phone's home page (#214): smaller, so more of the day shows. */
+  tight?: boolean;
 }) {
   const t = useT();
   const base =
     "flex items-center justify-center rounded-full border-2 bg-card shadow-md transition active:scale-90";
   return (
-    <div className={cn("flex items-start justify-center gap-6", screen ? "py-3" : "mt-4")}>
+    <div
+      className={cn(
+        "flex items-start justify-center gap-6",
+        screen ? "py-3" : "mt-4",
+        tight && "short:py-2",
+      )}
+    >
       {(
         [
           ["declined", X, "h-16 w-16 border-rose-200 text-rose-600", "h-8 w-8", t.swipe.cant],
@@ -178,7 +187,14 @@ export function AnswerButtons({
             type="button"
             onClick={() => onAnswer(response)}
             aria-label={t.swipe.answerLong[response]}
-            className={cn(base, size)}
+            className={cn(
+              base,
+              size,
+              tight &&
+                (response === "maybe"
+                  ? "short:mt-1 short:h-11 short:w-11"
+                  : "short:h-14 short:w-14"),
+            )}
           >
             <Icon className={iconSize} strokeWidth={2.5} />
           </button>

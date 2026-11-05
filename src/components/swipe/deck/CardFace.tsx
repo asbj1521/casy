@@ -58,7 +58,7 @@ export default function CardFace({
     <div
       className={cn(
         "flex h-full select-none flex-col rounded-3xl border bg-card shadow-xl shadow-black/10",
-        compact ? "p-4" : "p-5",
+        compact ? "p-4 short:p-3" : "p-5",
       )}
     >
       <div className="flex items-center justify-between gap-2">
@@ -91,27 +91,30 @@ export default function CardFace({
       >
         {headline.lines.join(" ")}
       </p>
-      <p className={cn("text-foreground", compact ? "text-[17px]" : "mt-1 text-lg")}>
-        {headline.time}
-        <YourTime kind={event.settings.kind} date={date} />
-      </p>
-      <p className="text-sm text-muted-foreground">
-        {t.scheduler.inDays(daysUntil(dayOf(date.start, TZ), TODAY))}
-      </p>
-      {clash && (
-        <p className="mt-2 text-sm font-medium text-rose-700">
-          {t.swipe.clash(clash.label, clash.when, clash.more)}
+      {/* In the compact card's fixed height, whatever doesn't fit is cut off
+          here, so the faces always stay inside the card (#214). */}
+      <div className={cn(compact && "min-h-0 flex-1 overflow-hidden")}>
+        <p className={cn("text-foreground", compact ? "text-[17px]" : "mt-1 text-lg")}>
+          {headline.time}
+          <YourTime kind={event.settings.kind} date={date} />
         </p>
-      )}
-      <ImportantClashes
-        clashes={clashes}
-        shown={shownClash}
-        onShow={onShowClash}
-        className="mt-2"
-      />
-      <PlaceNote event={event} readOnly className={compact ? "mt-2" : "mt-3"} />
-
-      <div className="mt-auto pt-3">
+        <p className={cn("text-sm text-muted-foreground", compact && "short:hidden")}>
+          {t.scheduler.inDays(daysUntil(dayOf(date.start, TZ), TODAY))}
+        </p>
+        {clash && (
+          <p className="mt-2 text-sm font-medium text-rose-700">
+            {t.swipe.clash(clash.label, clash.when, clash.more)}
+          </p>
+        )}
+        <ImportantClashes
+          clashes={clashes}
+          shown={shownClash}
+          onShow={onShowClash}
+          className="mt-2"
+        />
+        <PlaceNote event={event} readOnly className={compact ? "mt-2" : "mt-3"} />
+      </div>
+      <div className={cn("mt-auto pt-3", compact && "shrink-0 short:pt-1.5")}>
         {yours && (
           <p className="mb-2 text-sm font-semibold text-foreground">
             {t.swipe.youAnswered(t.swipe.answerWord[yours])}

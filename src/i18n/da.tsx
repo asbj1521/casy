@@ -1088,6 +1088,7 @@ export const da = {
       `Du har ${what}${when ? ` ${when}` : ""}${more > 0 ? ` og ${more} mere` : ""}`,
     previous: "Forrige dato",
     hint: "Swipe til højre, hvis du kan, til venstre, hvis du ikke kan, og op, hvis du kan, men helst ikke.",
+    hintShort: "Eller swipe: højre kan, venstre kan ikke, op helst ikke.",
     keysHint: "Brug knapperne eller piletasterne: højre kan, venstre kan ikke, op helst ikke.",
     doneTitle: "Tak, du har svaret",
     settledTitle: "Datoen er fundet",

@@ -160,3 +160,22 @@ test.describe("with motion", () => {
     await expect(page.getByText("Løbetur", { exact: true })).toBeVisible();
   });
 });
+
+test.describe("on the smallest iPhone (#214)", () => {
+  test.use({ viewport: { width: 375, height: 667 } });
+
+  test("the faces stay inside the card, and over half the screen is left for the day", async ({
+    page,
+  }) => {
+    await page.goto("/?vote=ev-boardgames");
+    const panel = page.getByRole("region", { name: "Brætspilsaften" });
+    const answer = panel.getByRole("button", { name: "Jeg kan", exact: true });
+    await expect(answer).toBeVisible();
+
+    const face = await panel.getByRole("listitem").first().boundingBox();
+    const button = await answer.boundingBox();
+    expect(face!.y + face!.height).toBeLessThanOrEqual(button!.y);
+    const box = await panel.boundingBox();
+    expect(box!.height).toBeLessThan(667 * 0.58);
+  });
+});
