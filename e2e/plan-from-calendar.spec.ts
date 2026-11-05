@@ -278,6 +278,28 @@ test.describe("with no groups yet (#210)", () => {
     await expect(page.getByRole("dialog", { name: /Vennerne/ })).toBeVisible();
   });
 
+  test("a group with only you leads to inviting friends, not to a vote for nobody (#218)", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/?plan");
+    const sheet = page.getByRole("dialog", { name: "Planlæg" });
+    await sheet.getByRole("button", { name: /^Gruppe/ }).click();
+    await page.getByRole("button", { name: /^Ny gruppe/ }).click();
+    const fresh = page.getByRole("dialog", { name: "Ny gruppe" });
+    await fresh.getByRole("textbox", { name: "Gruppenavn" }).fill("Vennerne");
+    await fresh.getByRole("button", { name: "Næste" }).click();
+    await page.getByRole("button", { name: "Færdig" }).last().click();
+    await expect(sheet.getByRole("button", { name: /^Gruppe/ })).toContainText("Vennerne");
+
+    await sheet.getByRole("button", { name: "Find dato" }).click();
+    await expect(page.getByText(/Der er kun dig i gruppen/)).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Foreslå/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Inviter venner" }).click();
+    await expect(page.getByRole("dialog", { name: /Vennerne/ })).toBeVisible();
+    expect(backend.calls.some((c) => c.body.action === "suggest")).toBe(false);
+  });
+
   test("a waiting invitation is the way in: no nudge beside it", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();

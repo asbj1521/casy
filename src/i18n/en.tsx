@@ -713,6 +713,12 @@ export const en: Messages = {
     busyBlocks: (n: number) => (n === 1 ? "1 busy block" : `${n} busy blocks`),
     members: (n: number) => (n === 1 ? "1 member" : `${n} members`),
   },
+  syncedShort: {
+    justNow: "just now",
+    minutes: (n: number) => `${n} min ago`,
+    hours: (n: number) => `${n} h ago`,
+    days: (n: number) => `${days(n)} ago`,
+  },
   synced: {
     justNow: "Synced just now",
     minutes: (n: number) => `Synced ${n} min ago`,
@@ -814,7 +820,7 @@ export const en: Messages = {
     denied:
       "Casy can't see the phone's calendars. Turn on Calendars under Casy in Settings, then try again.",
     openSettings: "Open Settings",
-    needTitle: "Casy can't see a calendar yet",
+    needTitle: "Link your Apple Calendar",
     phoneTitle: "Link your Apple Calendar",
     notNow: "Not now",
     needBody:
@@ -1317,6 +1323,8 @@ export const en: Messages = {
     ranked: (n: number) => (n === 1 ? "The best date" : `The ${n} best dates`),
     noneThrough: "No day in the period works for everyone. Try changing the plan.",
     suggest: (n: number) => (n === 1 ? "Suggest the date" : `Suggest the top ${n} dates`),
+    inviteFriends: "Invite friends",
+    onlyYou: "It's only you in the group so far. The dates can go out once someone has joined.",
     change: "Change the plan",
     makeGroup: "Make a group",
     cant: (names: string) => `${names} can't make it`,
@@ -1488,6 +1496,8 @@ export const en: Messages = {
   },
   primaryCalendar: {
     title: "Primary calendar",
+    introShort: "Where Casy puts the events you agree on.",
+    autoAddShort: "Once everyone has said yes",
     intro:
       "Casy adds the events you agree on to this calendar: when you ask it to, or on its own if Add automatically is on.",
     noWritable:

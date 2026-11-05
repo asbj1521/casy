@@ -137,14 +137,26 @@ test("My calendar is a month like Apple's: a day zooms into its hours, Kalendere
 
   await page.getByRole("button", { name: "Kalendere" }).click();
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Forbundne kalendere/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Forbundne kalendere/ })).toBeVisible();
 
-  // One step back from "Connected calendars" lands on the sheet, not the bare month.
-  await page.getByRole("link", { name: /Forbundne kalendere/ }).click();
-  await expect(page).toHaveURL(/\/calendar-overview\/accounts$/);
-  // The page's own back link, in its header, leads home with the sheet open.
-  await page.getByRole("banner").getByRole("link", { name: "Hjem" }).click();
+  // Forbundne kalendere slides in inside the sheet (#219), and back out of it.
+  await page.getByRole("button", { name: /Forbundne kalendere/ }).click();
+  await expect(page).toHaveURL(/\/\?calendars=accounts$/);
+  const sheet = page.getByRole("dialog", { name: "Forbundne kalendere" });
+  await expect(sheet.getByRole("button", { name: "Synkronisér nu" })).toBeVisible();
+  await sheet.getByRole("button", { name: "Kalendere", exact: true }).click();
+  await expect(page).toHaveURL(/\/\?calendars$/);
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
+
+  // Its old address leads there on a phone, and Færdig closes the whole sheet.
+  await page.goto("/calendar-overview/accounts");
+  await expect(page).toHaveURL(/\/\?calendars=accounts$/);
+  await page
+    .getByRole("dialog", { name: "Forbundne kalendere" })
+    .getByRole("button", { name: "Færdig" })
+    .click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
 test("My calendar's month name stays on top and follows the scroll", async ({ page }) => {

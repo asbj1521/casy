@@ -104,7 +104,8 @@ export default function CalendarListPanel({
         </InfoTip>
       </div>
       {!introInTip && <p className="mt-1 text-xs text-muted-foreground">{words.listIntro}</p>}
-      {showPrimaryLine && (
+      {/* A phone's sheet leaves it to its Forbundne kalendere screen (#219). */}
+      {showPrimaryLine && !introInTip && (
         <PrimaryCalendarPicker
           connections={connections}
           compact

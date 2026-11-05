@@ -217,7 +217,7 @@ export default function CalendarsSection() {
         </Notice>
       )}
 
-      <Collapse open={openForm === "ics"}>
+      <Collapse open={openForm === "ics"} follow={phone}>
         <FormCard provider="ics">
           <IcsLinkForm
             submitting={addLink.isPending}
@@ -241,7 +241,7 @@ export default function CalendarsSection() {
           />
         </FormCard>
       </Collapse>
-      <Collapse open={openForm === "apple"}>
+      <Collapse open={openForm === "apple"} follow={phone}>
         <FormCard provider="apple">
           <AppleCredentialsForm
             submitting={addApple.isPending}

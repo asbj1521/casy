@@ -46,7 +46,7 @@ export default function PrimaryCalendarCard({
   if (phone) {
     return (
       <>
-        <ListGroup title={words.title} footnote={words.intro}>
+        <ListGroup footnote={words.introShort}>
           {connections && groups.length === 0 ? (
             <ListRow label={hasApple ? words.waitingForSync : words.noWritable} />
           ) : (
@@ -56,7 +56,7 @@ export default function PrimaryCalendarCard({
               </li>
               <ListSwitchRow
                 label={words.autoAdd}
-                detail={primary ? words.autoAddHelp : words.autoAddNeedsPrimary}
+                detail={primary ? words.autoAddShort : words.autoAddNeedsPrimary}
                 checked={!!primary?.autoAdd}
                 disabled={!primary || autoAdd.isPending}
                 onChange={(on) => {

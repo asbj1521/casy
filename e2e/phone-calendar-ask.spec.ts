@@ -82,9 +82,7 @@ test("with iOS not asked yet, the card offers Allow and import, and iOS asks on 
 }) => {
   await asTheApp(page, "granted");
   await page.goto("/calendar-overview");
-  await expect(
-    page.getByRole("dialog", { name: "Casy kan ikke se nogen kalender endnu" }),
-  ).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible();
   // Nothing is asked by itself: the person presses.
   expect(await asked(page)).not.toContain("requestAccess");
   await card(page).getByRole("button", { name: "Tillad og importér" }).click();
@@ -112,7 +110,7 @@ test("a refusal leads to Settings, or to another calendar", async ({ page }) => 
   await expect.poll(() => asked(page)).toContain("openSettings");
 
   await card(page).getByRole("link", { name: "Brug en anden kalender" }).click();
-  await expect(page).toHaveURL(/\/calendar-overview\/accounts$/);
+  await expect(page).toHaveURL(/\/\?calendars=accounts$/);
 });
 
 test("with no calendar at all it can still be put away, until the app is opened again (#215)", async ({

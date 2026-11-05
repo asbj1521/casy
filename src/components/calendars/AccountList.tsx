@@ -6,6 +6,7 @@ import { disconnectCalendar, type CalendarConnectionStatus } from "@/api/calenda
 import { PROVIDER_BRANDS } from "@/components/calendarProviders";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { useSignedInUser } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Messages } from "@/i18n/da";
 import { useT } from "@/i18n/lang";
@@ -104,7 +105,8 @@ function AccountRow({
   // The clock is read once, when the row appears: rendering must not depend
   // on the time it happens to run, and minutes-level freshness is plenty.
   const [now] = useState(Date.now);
-  const synced = syncedAgo(account.last_synced_at, now, t.synced);
+  const phone = usePhoneLayout();
+  const synced = syncedAgo(account.last_synced_at, now, phone ? t.syncedShort : t.synced);
   const reconnect = account.needs_reconnect;
 
   return (
@@ -126,7 +128,8 @@ function AccountRow({
                 {account.account_label ?? t.providerCard.unknownAccount}
               </p>
               <p className="text-[0.8125rem] text-muted-foreground">
-                {t.calendarView.providerNames[account.provider]} ·{" "}
+                {/* A phone: its mark says the provider, the rest is what matters (#219). */}
+                {!phone && <>{t.calendarView.providerNames[account.provider]} · </>}
                 {t.counts.calendars(account.calendar_sources.length)}
                 {/* Too much for a phone's line; a wider screen has room. */}
                 <span className="hidden sm:inline">
@@ -136,7 +139,7 @@ function AccountRow({
                 {synced && <> · {synced}</>}
                 {/* Only the phone can send its calendars, so they are as fresh
                     as the last time its app was opened. */}
-                {account.provider === "device" && <> · {t.providerCard.phoneUpdates}</>}
+                {account.provider === "device" && !phone && <> · {t.providerCard.phoneUpdates}</>}
                 {/* A temporary failure: the busy times shown are the last good
                     ones and the next run retries, so this stays quiet. */}
                 {account.sync_error && !reconnect && (

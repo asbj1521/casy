@@ -10,6 +10,7 @@ import {
   shortcutsQueryKey,
   type ShortcutInput,
 } from "@/api/shortcuts";
+import InviteDialog from "@/components/InviteDialog";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import BottomSheet from "@/components/ui/BottomSheet";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
@@ -102,6 +103,8 @@ export default function PlanFromCalendar({
   }, [open, stage, onClosed]);
   // A new pile each time it starts over (a shorter holiday picked at its end).
   const [run, setRun] = useState(0);
+  // A group of one's invite, from the end of the pile (#218).
+  const [inviting, setInviting] = useState(false);
 
   // Which screen the sheet shows, and which way the last move went.
   const [screen, setScreen] = useState<Screen>({ kind: "plan" });
@@ -372,10 +375,22 @@ export default function PlanFromCalendar({
             setStage("setup");
             planning.openNewGroup();
           }}
+          onInvite={() => {
+            setScreen({ kind: "plan" });
+            setStage("setup");
+            setInviting(true);
+          }}
           onClose={onClose}
         />
       )}
 
+      {planning.activeGroup && !planning.activeGroup.isExample && (
+        <InviteDialog
+          group={planning.activeGroup}
+          open={inviting}
+          onClose={() => setInviting(false)}
+        />
+      )}
       <NewGroupDialog
         open={planning.newGroupOpen}
         onClose={() => planning.setNewGroupOpen(false)}

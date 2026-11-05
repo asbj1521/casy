@@ -729,7 +729,7 @@ export const da = {
       apple: "iPhone, iPad og Mac",
       google: "Gmail og Android",
       outlook: "Microsoft 365, Outlook.com og Hotmail",
-      device: "Alle kalendere på telefonen, uden adgangskode",
+      device: "Alle kalendere på telefonen",
       ics: "Andre kalendere med et link",
     },
     later: "Ikke nu",
@@ -751,6 +751,12 @@ export const da = {
     calendars: (n: number) => (n === 1 ? "1 kalender" : `${n} kalendere`),
     busyBlocks: (n: number) => (n === 1 ? "1 optaget tidsrum" : `${n} optagede tidsrum`),
     members: (n: number) => (n === 1 ? "1 medlem" : `${n} medlemmer`),
+  },
+  syncedShort: {
+    justNow: "lige nu",
+    minutes: (n: number) => `for ${n} min siden`,
+    hours: (n: number) => `for ${n} t siden`,
+    days: (n: number) => `for ${days(n)} siden`,
   },
   synced: {
     justNow: "Synkroniseret lige nu",
@@ -854,7 +860,7 @@ export const da = {
     denied:
       "Casy har ikke adgang til telefonens kalendere. Slå Kalendere til under Casy i Indstillinger, og prøv igen.",
     openSettings: "Åbn Indstillinger",
-    needTitle: "Casy kan ikke se nogen kalender endnu",
+    needTitle: "Link din Apple-kalender",
     phoneTitle: "Link din Apple-kalender",
     notNow: "Ikke nu",
     needBody:
@@ -1374,6 +1380,8 @@ export const da = {
     ranked: (n: number) => (n === 1 ? "Den bedste dato" : `De ${n} bedste datoer`),
     noneThrough: "Ingen dag i perioden passer alle. Prøv at ændre planen.",
     suggest: (n: number) => (n === 1 ? "Foreslå datoen" : `Foreslå top ${n} datoer`),
+    inviteFriends: "Inviter venner",
+    onlyYou: "Der er kun dig i gruppen endnu. Datoerne kan sendes, når nogen er med.",
     change: "Ret planen",
     makeGroup: "Lav en gruppe",
     cant: (names: string) => `${names} kan ikke`,
@@ -1545,6 +1553,9 @@ export const da = {
   },
   primaryCalendar: {
     title: "Primær kalender",
+    // A phone's shorter words (#219).
+    introShort: "Her lægger Casy de aftaler, I bliver enige om.",
+    autoAddShort: "Når alle har sagt ja",
     intro:
       "Casy lægger de aftaler, I bliver enige om, i denne kalender: når du beder om det, eller af sig selv, hvis Tilføj automatisk er slået til.",
     noWritable:

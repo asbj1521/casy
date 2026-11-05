@@ -10,9 +10,9 @@ import {
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
-import { CalendarPlus } from "lucide-react";
 
 import AgreedCard from "@/components/calendarView/AgreedCard";
+import CalendarsSheet from "@/components/calendarView/CalendarsSheet";
 import GroupPill from "@/components/calendarView/GroupPill";
 import DayView from "@/components/calendarView/dayView/DayView";
 import { useDayCalendar } from "@/components/calendarView/dayView/useDayCalendar";
@@ -24,14 +24,11 @@ import { useHomeVotes } from "@/components/calendarView/useHomeVotes";
 import VotePill from "@/components/calendarView/VotePill";
 import AiConsentPrompt from "@/components/ai/AiConsentPrompt";
 import PhoneCalendarAccess from "@/components/calendarView/PhoneCalendarAccess";
-import CalendarListPanel from "@/components/CalendarListPanel";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import Celebration from "@/components/swipe/Celebration";
 import MonthView, { type MonthViewHandle } from "@/components/swipe/MonthView";
 import { ZOOM } from "@/components/swipe/morph";
-import BottomSheet from "@/components/ui/BottomSheet";
-import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
@@ -756,32 +753,17 @@ export default function PhoneCalendar() {
         }
       />
 
-      <BottomSheet
+      <CalendarsSheet
         open={listOpen}
         onClose={closeOverlay}
-        title={words.calendarsButton}
-        doneLabel={t.swipe.done}
         origin={listButton}
-        edge="top"
         arrived={arrived.has("calendars")}
-      >
-        <ListGroup className="mb-4 mt-0">
-          <ListRow
-            to={calendarsHome.to}
-            icon={CalendarPlus}
-            label={t.calendarAccounts.row}
-            detail={t.calendarAccounts.rowDetail}
-            value={calendar.loading ? null : connectedCount}
-          />
-        </ListGroup>
-        <CalendarListPanel
-          introInTip
-          calendars={calendars}
-          colorOf={calendar.colorOf}
-          onSetVisible={setCalendarsVisible}
-          visibilityError={visibilityError}
-        />
-      </BottomSheet>
+        calendars={calendars}
+        colorOf={calendar.colorOf}
+        connectedCount={calendar.loading ? null : connectedCount}
+        onSetVisible={setCalendarsVisible}
+        visibilityError={visibilityError}
+      />
     </div>
   );
 }

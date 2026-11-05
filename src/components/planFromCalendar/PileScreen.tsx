@@ -109,6 +109,7 @@ export default function PileScreen({
   onChange,
   onRestart,
   onMakeGroup,
+  onInvite,
   onClose,
 }: {
   planning: Planning;
@@ -118,11 +119,18 @@ export default function PileScreen({
   onRestart: () => void;
   /** An example's way on (#210): a group of your own, the plan kept. */
   onMakeGroup: () => void;
+  /** A group of one's way on (#218): friends into it, the plan kept. */
+  onInvite: () => void;
   onClose: () => void;
 }) {
   const t = useT();
   const words = t.planFromCalendar;
   const { lang } = useLang();
+  // Nobody to send a vote to yet. An invitation out doesn't count until it is taken.
+  const alone =
+    !!planning.activeGroup &&
+    !planning.activeGroup.isExample &&
+    planning.activeGroup.memberCount <= 1;
   const reduceMotion = !!useReducedMotion();
   const {
     participants,
@@ -726,7 +734,7 @@ export default function PileScreen({
                 </p>
               )}
               {suggest.isError && <p className="text-sm text-red-700">{suggest.error.message}</p>}
-              {review.tone === "approve" && !activeGroup?.isExample && (
+              {review.tone === "approve" && !activeGroup?.isExample && !alone && (
                 <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
                   {t.scheduler.hintAccept}
                   <button
@@ -738,9 +746,12 @@ export default function PileScreen({
                   </button>
                 </div>
               )}
-              {/* An example can't be sent to anyone: the way on is a group of your own (#210). */}
+              {/* An example or a group of one can't be sent to anyone: the way on
+                  is a group of your own (#210), or friends in it (#218). */}
               {activeGroup?.isExample ? (
                 <FlowButton onClick={onMakeGroup}>{words.makeGroup}</FlowButton>
+              ) : alone ? (
+                <FlowButton onClick={onInvite}>{words.inviteFriends}</FlowButton>
               ) : (
                 dates && (
                   <FlowButton onClick={send} disabled={!canSuggest || checking || sending}>
@@ -751,9 +762,9 @@ export default function PileScreen({
               <FlowButton quiet onClick={onChange}>
                 {words.change}
               </FlowButton>
-              {activeGroup?.isExample && (
+              {(activeGroup?.isExample || alone) && (
                 <p className="text-center text-xs text-muted-foreground">
-                  {t.scheduler.hintExample}
+                  {alone ? words.onlyYou : t.scheduler.hintExample}
                 </p>
               )}
             </motion.div>

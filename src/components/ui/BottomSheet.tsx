@@ -130,7 +130,12 @@ export default function BottomSheet({
    */
   stacked?: boolean;
   /** A way back to the screen before, left of the title, iOS's "‹ Profil" (#174). */
-  back?: { label: string; onBack: () => void };
+  back?: {
+    label: string;
+    onBack: () => void;
+    /** Only "‹", the label for screen readers: a long title needs the room (#219). */
+    iconOnly?: boolean;
+  };
   /** A small icon button left of the text action, such as Planlæg's reset (#189). */
   action?: { label: string; icon: LucideIcon; onClick: () => void };
   children: ReactNode;
@@ -154,7 +159,7 @@ export default function BottomSheet({
           className="hit -ml-1.5 flex shrink-0 items-center text-[1.0625rem] text-primary"
         >
           <ChevronLeft className="h-6 w-6" />
-          <span className="large-text:sr-only">{back.label}</span>
+          <span className={back.iconOnly ? "sr-only" : "large-text:sr-only"}>{back.label}</span>
         </button>
       )}
       {/* With a way back, the title sits in the middle, as iOS draws it. */}
@@ -162,8 +167,8 @@ export default function BottomSheet({
         id={titleId}
         className={cn(
           "min-w-0 break-words text-[1.0625rem] font-bold text-foreground",
-          back &&
-            "pointer-events-none absolute inset-x-24 truncate text-center large-text:inset-x-16",
+          back && "pointer-events-none absolute truncate text-center large-text:inset-x-16",
+          back && (back.iconOnly ? "inset-x-16" : "inset-x-24"),
         )}
       >
         {title}
