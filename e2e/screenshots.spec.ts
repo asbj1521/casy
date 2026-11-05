@@ -37,7 +37,10 @@ test.beforeEach(async ({ page, isMobile }) => {
   await page.route("https://fonts.test/inter.woff2", (route) =>
     route.fulfill({ body: INTER, contentType: "font/woff2" }),
   );
-  if (!isMobile) await page.addInitScript(keepWidthAnswers);
+  if (!isMobile) {
+    await page.addInitScript(keepWidthAnswers);
+    await page.addInitScript(ignoreCaptureWindow);
+  }
 });
 
 /**
@@ -64,6 +67,34 @@ function keepWidthAnswers() {
       removeListener: quiet,
       dispatchEvent: () => false,
     };
+  };
+}
+
+/**
+ * The page takes no notice of that 1x1 moment (#209). Measuring it made a
+ * fitted day calendar (DayColumns, useFillViewport) work out its hours from a
+ * window that isn't there, and the picture could be taken before it had
+ * measured again: the calendar squashed, then "failed to take two consecutive
+ * stable screenshots" with the page in fact matching its reference. With
+ * nothing changed during the moment, there is nothing to catch up on. Runs in
+ * the page, before any of its own listeners.
+ */
+function ignoreCaptureWindow() {
+  const capturing = () => window.innerWidth <= 1;
+  window.addEventListener(
+    "resize",
+    (event) => {
+      if (capturing()) event.stopImmediatePropagation();
+    },
+    true,
+  );
+  const Real = window.ResizeObserver;
+  window.ResizeObserver = class extends Real {
+    constructor(callback: ResizeObserverCallback) {
+      super((entries, observer) => {
+        if (!capturing()) callback(entries, observer);
+      });
+    }
   };
 }
 
