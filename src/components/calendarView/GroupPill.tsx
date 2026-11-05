@@ -8,7 +8,9 @@ import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { groupNudge } from "@/lib/groupNudge";
 
-// On the page as the pill appears, so the sheet grows out of it at the first press (#169).
+// On the page as the pill appears, ready for the first press (#169). The new group's sheet
+// slides up rather than growing out of the pill: it opens the keyboard at once, and growing
+// while the keyboard came left the sheet out of sight behind it on an iPhone.
 const NewGroupDialog = lazy(() => import("@/components/NewGroupDialog"));
 const InviteDialog = lazy(() => import("@/components/InviteDialog"));
 
@@ -49,12 +51,7 @@ export default function GroupPill({ hidden }: { hidden: boolean }) {
       )}
       <Suspense fallback={null}>
         {newWanted && (
-          <NewGroupDialog
-            open={making}
-            onClose={() => setMaking(false)}
-            onCreated={() => {}}
-            origin={button}
-          />
+          <NewGroupDialog open={making} onClose={() => setMaking(false)} onCreated={() => {}} />
         )}
         {invited && (
           <InviteDialog

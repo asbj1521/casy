@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent, type RefObject } from "react";
+import { useId, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -28,14 +28,11 @@ export default function NewGroupDialog({
   onClose,
   onCreated,
   onDone,
-  origin,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: (groupId: string) => void;
   onDone?: (groupId: string) => void;
-  /** On a phone: the button the sheet grows out of (#169). */
-  origin?: RefObject<HTMLElement | null>;
 }) {
   // A new round each time it opens: an empty name, back on the first step.
   return (
@@ -45,7 +42,6 @@ export default function NewGroupDialog({
       onClose={onClose}
       onCreated={onCreated}
       onDone={onDone}
-      origin={origin}
     />
   );
 }
@@ -55,14 +51,11 @@ function NewGroupSheet({
   onClose,
   onCreated,
   onDone,
-  origin,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: (groupId: string) => void;
   onDone?: (groupId: string) => void;
-  /** On a phone: the button the sheet grows out of (#169). */
-  origin?: RefObject<HTMLElement | null>;
 }) {
   const t = useT();
   const userId = useSignedInUser().id;
@@ -140,7 +133,6 @@ function NewGroupSheet({
       closeLabel={made ? t.common.done : t.common.cancel}
       onSubmit={made ? invite.submit : handleName}
       busy={create.isPending}
-      origin={origin}
       footer={
         made ? (
           <SendButton invite={invite} />
