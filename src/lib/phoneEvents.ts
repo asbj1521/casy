@@ -17,6 +17,28 @@ import { busySpan, type PhoneEvent } from "@/lib/phoneBusy";
 /** One event as `readDetails` returns it: its timing, and what it is. */
 export interface PhoneEventWithDetails extends PhoneEvent, Partial<EventDetails> {}
 
+/** One calendar's look and account, as the plugin's `calendarInfo` returns it (#220). */
+export interface PhoneCalendarInfo {
+  /** EventKit's calendarIdentifier. */
+  id: string;
+  /** Apple's colour for it, "r, g, b"; empty if it couldn't be read. */
+  color: string;
+  accountKind: string;
+}
+
+/** Apple's colour for each of this phone's calendars, by the server's calendar id. */
+export function phoneCalendarColors(
+  info: PhoneCalendarInfo[],
+  serverIdOf: Map<string, string>,
+): Map<string, string> {
+  const colors = new Map<string, string>();
+  for (const calendar of info) {
+    const id = serverIdOf.get(calendar.id);
+    if (id && calendar.color) colors.set(id, calendar.color);
+  }
+  return colors;
+}
+
 /**
  * The server's calendar id for each EventKit calendar of this phone's
  * connection: only those can be drawn from the phone.

@@ -386,15 +386,23 @@ const UNCATEGORISED_PALETTE = [
 /**
  * One colour per calendar: its category's colour if it has one, otherwise the
  * next colour from a palette so uncategorised calendars stay distinguishable.
+ * `own`: a calendar's own colour where there is one, which wins (this phone's
+ * calendars, in Apple's colours, #220).
  */
-export function calendarColors(calendars: OverviewCalendar[]): Map<string, string> {
+export function calendarColors(
+  calendars: OverviewCalendar[],
+  own?: ReadonlyMap<string, string>,
+): Map<string, string> {
   const colors = new Map<string, string>([
     [HOLIDAY_CALENDAR_ID, HOLIDAY_RGB],
     [CASY_CALENDAR_ID, CASY_RGB],
   ]);
   let uncategorised = 0;
   for (const c of calendars) {
-    if (c.purpose) {
+    const mine = own?.get(c.id);
+    if (mine) {
+      colors.set(c.id, mine);
+    } else if (c.purpose) {
       colors.set(c.id, CATEGORY_RGB[c.purpose]);
     } else {
       colors.set(c.id, UNCATEGORISED_PALETTE[uncategorised % UNCATEGORISED_PALETTE.length]);

@@ -22,9 +22,10 @@ import { isNativeApp } from "@/lib/nativeApp";
 import {
   onPhoneCalendarChange,
   phoneConnectionId,
+  phoneCalendarInfoQuery,
   phoneEventDetailsQuery,
 } from "@/lib/phoneCalendar";
-import { phoneCalendarIds, withPhoneEvents } from "@/lib/phoneEvents";
+import { phoneCalendarColors, phoneCalendarIds, withPhoneEvents } from "@/lib/phoneEvents";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
 const TZ = APP_TIME_ZONE;
@@ -102,13 +103,19 @@ export function useMyCalendarDays(): MyCalendarDays {
     ...phoneEventDetailsQuery(userId, SEARCH_WINDOW),
     enabled: !!phoneConnection,
   });
+  // Their colours in Apple Calendar (#220), read and kept on the phone too.
+  const { data: phoneInfo } = useQuery({
+    ...phoneCalendarInfoQuery(userId),
+    enabled: !!phoneConnection,
+  });
   useEffect(() => {
     if (!phoneConnection) return;
     let stop: (() => void) | undefined;
     let gone = false;
-    onPhoneCalendarChange(
-      () => void queryClient.invalidateQueries({ queryKey: ["phone-event-details", userId] }),
-    )
+    onPhoneCalendarChange(() => {
+      void queryClient.invalidateQueries({ queryKey: ["phone-event-details", userId] });
+      void queryClient.invalidateQueries({ queryKey: ["phone-calendar-info", userId] });
+    })
       .then((remove) => (gone ? remove() : (stop = remove)))
       .catch((err) => console.warn("watching the phone's calendars failed", err));
     return () => {
@@ -146,7 +153,16 @@ export function useMyCalendarDays(): MyCalendarDays {
       ),
     [counted, holidays],
   );
-  const palette = useMemo(() => calendarColors(data?.calendars ?? []), [data]);
+  const palette = useMemo(
+    () =>
+      calendarColors(
+        data?.calendars ?? [],
+        data && phoneConnection && phoneInfo
+          ? phoneCalendarColors(phoneInfo, phoneCalendarIds(data.calendars, phoneConnection))
+          : undefined,
+      ),
+    [data, phoneConnection, phoneInfo],
+  );
   const names = useMemo(() => new Map((data?.calendars ?? []).map((c) => [c.id, c.name])), [data]);
   const items = useMemo(
     (): GridItem[] => [

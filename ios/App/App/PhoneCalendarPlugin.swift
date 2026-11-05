@@ -78,6 +78,32 @@ enum PhoneCalendarReader {
         return status == .authorized ? "granted" : "denied"
     }
 
+    /// A colour as the page writes one, "r, g, b"; whatever space EventKit
+    /// keeps it in, in plain sRGB through UIColor.
+    static func rgb(of color: CGColor?) -> String {
+        guard let color else { return "" }
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        guard UIColor(cgColor: color).getRed(&red, green: &green, blue: &blue, alpha: nil) else {
+            return ""
+        }
+        let channel = { (value: CGFloat) in Int((min(max(value, 0), 1) * 255).rounded()) }
+        return "\(channel(red)), \(channel(green)), \(channel(blue))"
+    }
+
+    /// The kind of account a calendar belongs to, never its name or address.
+    static func accountKind(of source: EKSource?) -> String {
+        guard let source else { return "other" }
+        switch source.sourceType {
+        case .exchange: return "exchange"
+        case .local: return "local"
+        case .subscribed: return "subscribed"
+        case .calDAV, .mobileMe: return source.title == "iCloud" ? "icloud" : "other"
+        default: return "other"
+        }
+    }
+
     /// Every calendar on the phone and its events between `from` and `to`
     /// (epoch ms). Recurring events come back as their single occurrences.
     static func read(store: EKEventStore, from: Double, to: Double)
@@ -119,7 +145,7 @@ enum PhoneCalendarReader {
 
     /// Birthdays are whole days every year; they would block everyone's
     /// birthday for the person, and aren't plans.
-    private static func readable(_ store: EKEventStore) -> [EKCalendar] {
+    static func readable(_ store: EKEventStore) -> [EKCalendar] {
         store.calendars(for: .event).filter { $0.type != .birthday }
     }
 
@@ -216,6 +242,7 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "requestAccess", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "read", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "readDetails", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "calendarInfo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setAppearance", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "addTrip", returnType: CAPPluginReturnPromise),
@@ -364,6 +391,26 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
                     return item
                 }
             ])
+        }
+    }
+
+    /// Each calendar's colour and kind of account, for the page on this phone
+    /// (#220): Apple's own colours on the month, and a hint for sorting. Kept
+    /// out of `read`, which is what is sent to Casy's server.
+    @objc func calendarInfo(_ call: CAPPluginCall) {
+        guard PhoneCalendarReader.accessState() == "granted" else {
+            call.reject("Calendar access is not granted", "denied")
+            return
+        }
+        DispatchQueue.global(qos: .userInitiated).async { [store] in
+            let calendars = PhoneCalendarReader.readable(store).map { calendar -> [String: Any] in
+                [
+                    "id": calendar.calendarIdentifier,
+                    "color": PhoneCalendarReader.rgb(of: calendar.cgColor),
+                    "accountKind": PhoneCalendarReader.accountKind(of: calendar.source),
+                ]
+            }
+            call.resolve(["calendars": calendars])
         }
     }
 

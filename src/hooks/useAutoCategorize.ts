@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { calendarsChanged, calendarStatusQuery, categorizeCalendars } from "@/api/calendars";
 import { useAuth } from "@/context/auth";
 import { useAiContent } from "@/hooks/useAiAllowed";
-import { phoneSourceIds, sampleTitles, uncategorised } from "@/lib/autoCategorize";
+import { accountKindsFor, phoneSourceIds, sampleTitles, uncategorised } from "@/lib/autoCategorize";
 import { isNativeApp } from "@/lib/nativeApp";
 
 /** How far around today the admin's phone looks for sample titles. */
@@ -45,6 +45,7 @@ export function useAutoCategorize() {
 
     void (async () => {
       let titles: Record<string, string[]> | undefined;
+      let accountKinds: Record<string, string> | undefined;
       // The phone's code loads only in the app (#157).
       const phoneCalendar = isNativeApp ? await import("@/lib/phoneCalendar") : null;
       const phone = phoneCalendar?.phoneConnectionId(userId) ?? null;
@@ -60,8 +61,19 @@ export function useAutoCategorize() {
           // Names alone still sort them.
           console.warn("reading sample titles failed", err);
         }
+        // A hint for the sorting, not needed for it (#220).
+        await phoneCalendar
+          .readPhoneCalendarInfo()
+          .then((info) => {
+            accountKinds = accountKindsFor(
+              info,
+              phoneSourceIds(connections, phone),
+              new Set(pending),
+            );
+          })
+          .catch((err) => console.warn("reading the phone's accounts failed", err));
       }
-      const categorized = await categorizeCalendars(titles);
+      const categorized = await categorizeCalendars(titles, accountKinds);
       if (categorized.length > 0) await calendarsChanged(queryClient);
     })().catch((err) => console.warn("sorting calendars failed", err));
   }, [connections, allowed, queryClient, userId]);

@@ -130,11 +130,12 @@ export async function updateCalendar(calendarId: string, change: CalendarChange)
  */
 export async function categorizeCalendars(
   titles?: Record<string, string[]>,
+  accountKinds?: Record<string, string>,
 ): Promise<{ calendarId: string; purpose: CalendarPurpose | null }[]> {
   const { categorized } = await callFunction<{
     categorized: { calendarId: string; purpose: CalendarPurpose | null }[];
   }>("calendar-categorize", {
-    body: titles ? { titles } : {},
+    body: { ...(titles && { titles }), ...(accountKinds && { accountKinds }) },
     errorMessage: currentMessages().calendarView.couldntSaveCategory,
   });
   return categorized;

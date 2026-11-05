@@ -5,7 +5,7 @@
  * the server (calendar-categorize), which checks everything again.
  */
 import type { CalendarConnectionStatus } from "@/api/calendars";
-import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
+import type { PhoneCalendarInfo, PhoneEventWithDetails } from "@/lib/phoneEvents";
 
 /** Titles sent per calendar (the server keeps at most as many). */
 export const SAMPLE_TITLES = 15;
@@ -59,4 +59,18 @@ export function sampleTitles(
     if (list.length < SAMPLE_TITLES && !list.includes(title)) list.push(title);
   }
   return titles;
+}
+
+/** The kind of account behind each calendar asked about, by the server's id (#220). */
+export function accountKindsFor(
+  info: PhoneCalendarInfo[],
+  serverIdOf: Map<string, string>,
+  pending: ReadonlySet<string>,
+): Record<string, string> {
+  const kinds: Record<string, string> = {};
+  for (const calendar of info) {
+    const id = serverIdOf.get(calendar.id);
+    if (id && pending.has(id)) kinds[id] = calendar.accountKind;
+  }
+  return kinds;
 }

@@ -2,6 +2,7 @@ import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 
 import {
   buildCategorizeMessage,
+  readAccountKinds,
   categoriesFromAnswer,
   CATEGORIZE_SCHEMA,
   MAX_TITLES,
@@ -84,3 +85,25 @@ Deno.test("the schema allows only the four categories and unsure", () => {
   ).items;
   assertEquals(items.properties.category.enum, ["work", "school", "personal", "other", "unsure"]);
 });
+
+Deno.test(
+  "an account kind reaches the model only for calendars asked about, in known words",
+  () => {
+    const kinds = readAccountKinds(
+      { a: "exchange", b: "someone@example.com", c: "icloud", gone: "local" },
+      new Set(["a", "b", "c"]),
+    );
+    assertEquals(
+      [...kinds],
+      [
+        ["a", "exchange"],
+        ["c", "icloud"],
+      ],
+    );
+    assertEquals(readAccountKinds("nope", new Set(["a"])).size, 0);
+    const message = buildCategorizeMessage([
+      { id: "a", name: "Calendar", provider: "device", accountKind: "exchange", titles: [] },
+    ]);
+    assertEquals(message.includes('"accountType":"exchange"'), true);
+  },
+);

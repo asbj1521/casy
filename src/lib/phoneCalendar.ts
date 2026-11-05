@@ -12,6 +12,7 @@ import type { PluginListenerHandle } from "@capacitor/core";
 import { queryOptions } from "@tanstack/react-query";
 
 import type { PhoneWork, PhoneWriteReport } from "@/api/calendars";
+import type { PhoneCalendarInfo } from "@/lib/phoneEvents";
 import type { PhoneRead } from "@/lib/phoneBusy";
 import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
 import { readStored, writeStored } from "@/lib/storage";
@@ -23,6 +24,7 @@ interface PhoneCalendarPlugin {
   requestAccess(): Promise<{ state: PhoneAccess }>;
   read(options: { from: number; to: number }): Promise<PhoneRead>;
   readDetails(options: { from: number; to: number }): Promise<{ events: PhoneEventWithDetails[] }>;
+  calendarInfo(): Promise<{ calendars?: PhoneCalendarInfo[] }>;
   openSettings(): Promise<void>;
   setAppearance(options: { choice: "system" | "light" | "dark" }): Promise<void>;
   addTrip(options: {
@@ -99,6 +101,26 @@ export function phoneEventDetailsQuery(userId: string, window: { start: string; 
     queryFn: () => readPhoneEventDetails(Date.parse(window.start), Date.parse(window.end)),
     staleTime: 30_000,
     // An app build without readDetails: the blocks as the server has them.
+    retry: false,
+  });
+}
+
+/**
+ * Each of this phone's calendars' colour and kind of account (#220), read
+ * here and kept here: the colour is never sent, and only the sorting (with
+ * the person's yes) hears the kind. Fails on an app build without it, and the
+ * calendars then keep their category's colour.
+ */
+export async function readPhoneCalendarInfo(): Promise<PhoneCalendarInfo[]> {
+  const { plugin } = await phonePlugin();
+  return (await plugin.calendarInfo()).calendars ?? [];
+}
+
+export function phoneCalendarInfoQuery(userId: string) {
+  return queryOptions({
+    queryKey: ["phone-calendar-info", userId],
+    queryFn: readPhoneCalendarInfo,
+    staleTime: 30_000,
     retry: false,
   });
 }

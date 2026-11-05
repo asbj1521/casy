@@ -28,6 +28,7 @@ import {
   CATEGORIZE_SYSTEM_PROMPT,
   categoriesFromAnswer,
   MAX_CALENDARS,
+  readAccountKinds,
   readTitles,
   type CalendarToSort,
 } from "../_shared/categorizeAi.ts";
@@ -60,12 +61,15 @@ serve("calendar-categorize", async (req, body) => {
   const rows = (data ?? []) as unknown as SourceRow[];
   if (rows.length === 0) return { categorized: [] };
 
-  const titles = readTitles(body.titles, new Set(rows.map((r) => r.id)));
+  const asked = new Set(rows.map((r) => r.id));
+  const titles = readTitles(body.titles, asked);
+  const accountKinds = readAccountKinds(body.accountKinds, asked);
   const calendars: CalendarToSort[] = rows.map((r) => ({
     id: r.id,
     name: r.custom_name ?? r.display_name ?? "",
     provider: r.calendar_connections.provider,
     titles: titles.get(r.id) ?? [],
+    accountKind: accountKinds.get(r.id),
   }));
 
   const ids = calendars.map((c) => c.id);

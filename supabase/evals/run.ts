@@ -259,6 +259,7 @@ interface CategorizeCase {
   name: string;
   provider: string;
   titles?: string[];
+  accountKind?: string;
   /** work, school, personal, other, or null for "unsure". */
   expect: Expected;
 }
@@ -270,6 +271,7 @@ async function calendarCategorize(): Promise<Result[]> {
     name: c.name,
     provider: c.provider,
     titles: c.titles ?? [],
+    accountKind: c.accountKind,
   }));
   const { stop, text } = await ask(
     skillRequest({
