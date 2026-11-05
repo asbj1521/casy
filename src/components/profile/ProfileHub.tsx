@@ -1,6 +1,6 @@
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { KeyRound, LogOut, ShieldCheck, Trash2 } from "lucide-react";
+import { KeyRound, LogOut, ShieldCheck, Trash2, Contact } from "lucide-react";
 
 import { adminStatusQuery } from "@/api/adminStatus";
 import GroupsRow from "@/components/profile/GroupsRow";
@@ -10,6 +10,7 @@ import { BuildLine, FeedbackShareGroup, HelpGroup } from "@/components/profile/P
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { useAuth, useSignedInUser } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH, isCalendarArrival } from "@/hooks/useCalendarsHome";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 
 /**
@@ -47,6 +48,7 @@ export function ProfileHubList() {
   const t = useT();
   const navigate = useNavigate();
 
+  const phone = usePhoneLayout();
   const { data: isAdmin } = useQuery(adminStatusQuery(user.id));
 
   return (
@@ -56,6 +58,7 @@ export function ProfileHubList() {
       <ListGroup>
         <SettingsRow />
         <GroupsRow />
+        {phone && <ListRow to="/profile/friends" icon={Contact} label={t.friends.screenTitle} />}
       </ListGroup>
 
       <ListGroup>

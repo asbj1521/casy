@@ -74,7 +74,8 @@ function NewGroupSheet({
   const [unreadable, setUnreadable] = useState<string | null>(null);
   const [made, setMade] = useState<{ id: string; name: string } | null>(null);
   // Called before the group exists too (hooks can't wait); nothing in it runs until then.
-  const invite = useInvite(made ?? { id: "", name });
+  // On a phone sending ends it, so one press finishes the whole thing (#227).
+  const invite = useInvite(made ?? { id: "", name }, phone ? close : undefined);
 
   const create = useMutation({
     // The picture needs the group to exist, so it follows. Without it the

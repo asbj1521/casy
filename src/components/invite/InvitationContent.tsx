@@ -77,27 +77,22 @@ function Answer({ invitation, onLeft }: { invitation: Invitation; onLeft: () => 
         pictureUrl: invitation.pictureUrl,
       }}
       help={
-        sender &&
-        (blocking ? (
-          <ConfirmPanel
-            className="mt-4"
-            message={t.safety.blockSenderConfirm(sender)}
-            confirmLabel={t.safety.block}
-            busy={block.isPending}
-            error={block.error?.message}
-            onConfirm={() => block.mutate()}
-            onCancel={() => setBlocking(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setBlocking(true)}
-            disabled={busy}
-            className="hit mt-4 text-[0.9375rem] font-medium text-red-700 disabled:opacity-60"
-          >
-            {t.safety.blockSender}
-          </button>
-        ))
+        sender
+          ? (close) => (
+              <button
+                type="button"
+                onClick={() => {
+                  close();
+                  block.reset();
+                  setBlocking(true);
+                }}
+                disabled={busy}
+                className="hit mt-4 font-medium text-red-700 disabled:opacity-60"
+              >
+                {t.safety.blockSender}
+              </button>
+            )
+          : undefined
       }
     >
       <InviteAction
@@ -125,6 +120,16 @@ function Answer({ invitation, onLeft }: { invitation: Invitation; onLeft: () => 
         <Notice tone="error" bare className="mt-1">
           {error}
         </Notice>
+      )}
+      {blocking && sender && (
+        <ConfirmPanel
+          message={t.safety.blockSenderConfirm(sender)}
+          confirmLabel={t.safety.block}
+          busy={block.isPending}
+          error={block.error?.message}
+          onConfirm={() => block.mutate()}
+          onCancel={() => setBlocking(false)}
+        />
       )}
     </InviteDetails>
   );

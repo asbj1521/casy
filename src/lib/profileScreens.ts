@@ -8,7 +8,7 @@
 /** The sheet's screen for an address, or null for one it doesn't hold. */
 export function sheetScreenFor(pathname: string): string | null {
   const path = pathname.replace(/\/+$/, "");
-  const profile = /^\/profile\/(settings|password|account|admin|data)$/.exec(path);
+  const profile = /^\/profile\/(settings|password|account|admin|data|friends)$/.exec(path);
   if (profile) return profile[1];
   if (path === "/groups") return "groups";
   const invited = /^\/invited\/([^/]+)$/.exec(path);

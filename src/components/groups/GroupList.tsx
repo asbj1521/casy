@@ -154,7 +154,8 @@ export default function GroupList({
         open={newGroupOpen}
         onClose={() => setNewGroupOpen(false)}
         onCreated={() => {}}
-        onDone={(id) => navigate(`/groups/${id}`)}
+        // A phone goes home: the group's screen under it would ask for a second Færdig (#227).
+        onDone={(id) => navigate(phone ? "/" : `/groups/${id}`)}
       />
     </>
   );

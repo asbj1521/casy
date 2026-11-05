@@ -29,9 +29,13 @@ test("a group shows what it is for, and any member can change it (#152)", async 
   await page.goto("/groups/g-friday");
   await expect(page.getByText("En øl efter arbejde, når det passer de fleste")).toBeVisible();
 
-  await page.getByRole("button", { name: "Ændr beskrivelsen" }).first().click();
-  const sheet = page.getByRole("dialog", { name: "Beskrivelse" });
-  await sheet.getByLabel("Hvad er gruppen til?").fill("Fredagsøl i Nørrebro");
+  // A phone changes it with the name and the picture, in one sheet (#227).
+  await page
+    .getByRole("button", { name: isMobile ? "Rediger gruppe" : "Ændr beskrivelsen" })
+    .first()
+    .click();
+  const sheet = page.getByRole("dialog", { name: isMobile ? "Rediger gruppe" : "Beskrivelse" });
+  await sheet.getByLabel(/Hvad er gruppen til\?/).fill("Fredagsøl i Nørrebro");
   await sheet.getByRole("button", { name: "Gem" }).click();
   await expect(sheet).toBeHidden();
   await expect(page.getByText("Fredagsøl i Nørrebro")).toBeVisible();
@@ -44,7 +48,7 @@ test("a group shows what it is for, and any member can change it (#152)", async 
   // not by loading the page again (#181): a second cold load took longer than
   // the last check waits when many tests ran at once. The offer is waited for
   // first, so the absence of "Ændr" below is checked on the group's own page.
-  if (isMobile) await page.getByRole("button", { name: "Grupper" }).click();
+  if (isMobile) return;
   await page
     .getByRole("link", { name: /Løbeklubben/ })
     .first()
@@ -53,16 +57,100 @@ test("a group shows what it is for, and any member can change it (#152)", async 
   await expect(page.getByRole("button", { name: "Ændr beskrivelsen" })).toHaveCount(0);
 });
 
-test("renaming a group on a phone leaves its name where it was", async ({ page, isMobile }) => {
-  test.skip(!isMobile, "only the phone's group screen is centred");
-  await page.goto("/groups/g-friday");
-  const name = page.getByRole("dialog").locator("p.text-xl", { hasText: "Fredagsbar" });
-  const before = (await name.boundingBox())!;
-  await page.getByRole("button", { name: "Omdøb gruppen" }).click();
-  const box = (await page.getByRole("dialog").locator("form input").boundingBox())!;
-  // The same centre, within a few pixels, instead of snapping to the left edge.
-  expect(Math.abs(box.x + box.width / 2 - (before.x + before.width / 2))).toBeLessThan(12);
-  expect(Math.abs(box.y + box.height / 2 - (before.y + before.height / 2))).toBeLessThan(6);
+test.describe("a group on a phone (#227)", () => {
+  test.beforeEach(({ isMobile }) => test.skip(!isMobile, "a computer keeps its pane"));
+
+  test("its name is changed in one sheet, and only what changed is saved", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/groups/g-friday");
+    await page.getByRole("button", { name: "Rediger gruppe" }).click();
+    const sheet = page.getByRole("dialog", { name: "Rediger gruppe" });
+    await sheet.getByLabel("Gruppenavn").fill("Fredagsøl");
+    await sheet.getByRole("button", { name: "Gem" }).click();
+    await expect(sheet).toBeHidden();
+    expect(backend.calls.find((c) => c.body.action === "rename")?.body).toMatchObject({
+      name: "Fredagsøl",
+    });
+    expect(backend.calls.some((c) => c.body.action === "describe")).toBe(false);
+  });
+
+  test("what members see is behind a ?, and leaving asks in a sheet", async ({ page, backend }) => {
+    await page.goto("/groups/g-friday");
+    await expect(page.getByText(/^Alle i en gruppe kan se/)).toHaveCount(0);
+    await page.getByRole("button", { name: "Hvad kan medlemmerne se?" }).click();
+    await expect(page.getByText(/^Alle i en gruppe kan se/)).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: "Forlad gruppe" }).click();
+    const ask = page.getByRole("dialog", { name: "Er du sikker?" });
+    await ask.getByRole("button", { name: "Annuller" }).click();
+    await expect(ask).toHaveCount(0);
+    expect(backend.calls.some((c) => c.body.action === "leave")).toBe(false);
+
+    await page.getByRole("button", { name: "Forlad gruppe" }).click();
+    await page
+      .getByRole("dialog", { name: "Er du sikker?" })
+      .getByRole("button", { name: "Forlad gruppe" })
+      .click();
+    await expect.poll(() => backend.calls.some((c) => c.body.action === "leave")).toBe(true);
+  });
+
+  test("inviting shows email and link first, and folds a long list of people", async ({
+    page,
+    backend,
+  }) => {
+    backend.world.friends = ["Ane", "Bo", "Carl", "Dan", "Eva", "Finn"].map((name) => ({
+      profileId: `p-${name}`,
+      name,
+    }));
+    await page.goto("/groups/g-running");
+    await page.getByRole("button", { name: /Invitér folk/ }).click();
+    const sheet = page.getByRole("dialog", { name: "Invitér til Løbeklubben" });
+    const words = (await sheet.textContent()) ?? "";
+    expect(words.indexOf("Med e-mail")).toBeLessThan(words.indexOf("Folk fra dine grupper"));
+
+    await expect(sheet.getByRole("checkbox")).toHaveCount(4);
+    await sheet.getByRole("button", { name: /^Vis alle/ }).click();
+    await sheet.getByRole("checkbox", { name: /^Finn/ }).check();
+    await sheet.getByRole("button", { name: "Vis færre" }).click();
+    // Someone picked stays in view when the list folds.
+    await expect(sheet.getByRole("checkbox", { name: /^Finn/ })).toBeChecked();
+    await expect(sheet.getByRole("checkbox")).toHaveCount(5);
+  });
+
+  test("after making a group, sending finishes it, with no second Færdig", async ({ page }) => {
+    await page.goto("/groups");
+    await page.getByRole("button", { name: "Lav en gruppe" }).click();
+    await page.getByLabel("Gruppenavn").fill("Fredagsfilm");
+    await page.getByRole("button", { name: "Næste" }).click();
+    const sheet = page.getByRole("dialog", { name: "Invitér til Fredagsfilm" });
+    await sheet.getByRole("checkbox").first().check();
+    await sheet.getByRole("button", { name: "Send invitation" }).click();
+    await expect(sheet).toHaveCount(0);
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("friends have their own screen, not a place among the groups", async ({ page, backend }) => {
+    backend.world.friends = [{ profileId: "p-past", name: "Tilde" }];
+    await page.goto("/?profile");
+    await page.getByRole("link", { name: "Venner", exact: true }).click();
+    await expect(page).toHaveURL(/\?profile=friends$/);
+    // People still in a group are here too, but only those from gone ones can go.
+    await expect(page.getByText("Jonas", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Fjern Jonas" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Fjern Tilde" }).click();
+    await page
+      .getByRole("dialog", { name: "Er du sikker?" })
+      .getByRole("button", { name: "Fjern" })
+      .click();
+    await expect(page.getByText("Tilde", { exact: true })).toHaveCount(0);
+
+    await page.goto("/groups");
+    await expect(page.getByText("Venner fra tidligere grupper")).toHaveCount(0);
+  });
 });
 
 test("an invitation says what the group is for (#152)", async ({ page, isMobile }) => {
@@ -101,7 +189,7 @@ test.describe("a phone's invitation (#224)", () => {
     await page.getByRole("button", { name: "Om invitationen" }).click();
     const about = page.getByRole("dialog", { name: "Om invitationen" });
     await about.getByRole("button", { name: "Bloker afsenderen" }).click();
-    await about.getByRole("button", { name: "Bloker", exact: true }).click();
+    await page.getByRole("button", { name: "Bloker", exact: true }).click();
     await expect(page).toHaveURL(/profile=groups/);
     expect(backend.world.blocked).toHaveLength(1);
   });
@@ -170,11 +258,11 @@ test("a new group is named, then invited to, then opened (#153)", async ({
   expect(backend.calls.find((c) => c.body.action === "create")?.body).not.toHaveProperty(
     "profileIds",
   );
-  // Nobody picked: no button to send, only Færdig, which opens the group.
+  // Nobody picked: no button to send, only Færdig, which opens the group on a
+  // computer and ends it on a phone, with no second Færdig to press (#227).
   await expect(sheet.getByRole("button", { name: /^Send/ })).toHaveCount(0);
   await sheet.getByRole("button", { name: "Færdig" }).click();
-  // A phone opens it inside the Profil sheet (#174).
-  await expect(page).toHaveURL(isMobile ? /\?profile=groups\/g-new-\d+$/ : /\/groups\/g-new-\d+$/);
+  await expect(page).toHaveURL(isMobile ? /\/$/ : /\/groups\/g-new-\d+$/);
 });
 
 test("people picked in the invite get an invitation, and show as invited", async ({
@@ -269,10 +357,10 @@ test.describe("in the app", () => {
 });
 
 test.describe("friends from groups since gone (#222)", () => {
-  test("can be invited again, and removed", async ({ page, backend }) => {
+  test("can be invited again, and removed", async ({ page, backend, isMobile }) => {
     backend.world.friends = [{ profileId: "p-past", name: "Tilde" }];
-    await page.goto("/groups");
-    await expect(page.getByText("Venner fra tidligere grupper")).toBeVisible();
+    await page.goto(isMobile ? "/?profile=friends" : "/groups");
+    if (!isMobile) await expect(page.getByText("Venner fra tidligere grupper")).toBeVisible();
     await expect(page.getByText("Tilde", { exact: true }).first()).toBeVisible();
 
     // Offered when inviting, though no group of yours holds them any more.
@@ -288,12 +376,12 @@ test.describe("friends from groups since gone (#222)", () => {
     await expect
       .poll(() => backend.calls.find((c) => c.body.action === "invite-members")?.body)
       .toMatchObject({ profileIds: ["p-past"] });
-    await page.goto("/groups");
+    await page.goto(isMobile ? "/?profile=friends" : "/groups");
 
     await page.getByRole("button", { name: "Fjern Tilde" }).click();
     await expect(page.getByText(/^Fjern Tilde\?/)).toBeVisible();
     await page.getByRole("button", { name: "Fjern", exact: true }).click();
-    await expect(page.getByText("Venner fra tidligere grupper")).toHaveCount(0);
+    await expect(page.getByText("Tilde", { exact: true })).toHaveCount(0);
     expect(backend.calls.find((c) => c.body.action === "remove-friend")?.body).toMatchObject({
       profileId: "p-past",
     });
@@ -333,9 +421,10 @@ test.describe("swiping a group in the list (#223)", () => {
     await page.getByRole("button", { name: "Slet", exact: true }).click();
     expect(backend.calls.some((c) => c.body.action === "delete")).toBe(false);
     await expect(page.getByText(/^Slet "Fredagsbar" for alle\?/)).toBeVisible();
-    // Under its own row.
-    const asked = page.getByRole("listitem").filter({ hasText: /^.*Slet "Fredagsbar" for alle/ });
-    await asked.getByRole("button", { name: "Slet", exact: true }).last().click();
+    await page
+      .getByRole("dialog", { name: "Er du sikker?" })
+      .getByRole("button", { name: "Slet", exact: true })
+      .click();
     await expect
       .poll(() => backend.calls.find((c) => c.body.action === "delete")?.body)
       .toMatchObject({

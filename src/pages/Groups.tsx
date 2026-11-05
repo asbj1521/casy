@@ -80,7 +80,6 @@ export function PhoneGroupsContent() {
       <InvitationsSection />
       {/* What members see is said once, on a group's own screen. */}
       <GroupList privacyNote={false} />
-      <FriendsSection />
     </>
   );
 }

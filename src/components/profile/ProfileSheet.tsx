@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 
 import { groupsQuery } from "@/api/groups";
+import FriendsContent from "@/components/groups/FriendsContent";
 import InvitationContent from "@/components/invite/InvitationContent";
 import { ProfileHubList } from "@/components/profile/ProfileHub";
 import SettingsGroups from "@/components/profile/SettingsGroups";
@@ -94,17 +95,19 @@ export default function ProfileSheet({
         }
       : key === "settings"
         ? { title: t.profileHub.settings, body: <SettingsGroups /> }
-        : key === "groups"
-          ? { title: t.groupsPage.title, body: <PhoneGroupsContent /> }
-          : key === "password"
-            ? { title: t.profileHub.security, body: <PasswordContent /> }
-            : key === "account"
-              ? { title: t.deleteAccount.title, body: <AccountContent /> }
-              : key === "admin"
-                ? { title: t.profileHub.admin, body: <AdminContent /> }
-                : key === "data"
-                  ? { title: t.myData.title, body: <MyDataContent /> }
-                  : { title: t.nav.profile, body: <ProfileHubList /> };
+        : key === "friends"
+          ? { title: t.friends.screenTitle, body: <FriendsContent /> }
+          : key === "groups"
+            ? { title: t.groupsPage.title, body: <PhoneGroupsContent /> }
+            : key === "password"
+              ? { title: t.profileHub.security, body: <PasswordContent /> }
+              : key === "account"
+                ? { title: t.deleteAccount.title, body: <AccountContent /> }
+                : key === "admin"
+                  ? { title: t.profileHub.admin, body: <AdminContent /> }
+                  : key === "data"
+                    ? { title: t.myData.title, body: <MyDataContent /> }
+                    : { title: t.nav.profile, body: <ProfileHubList /> };
   const atProfile = key === "";
 
   return (

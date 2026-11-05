@@ -15,6 +15,7 @@ export default function FlowButton({
   disabled = false,
   busy = false,
   quiet = false,
+  danger = false,
   children,
 }: {
   onClick?: () => void;
@@ -25,6 +26,8 @@ export default function FlowButton({
   busy?: boolean;
   /** The second choice: the same glass capsule, its text not orange. */
   quiet?: boolean;
+  /** What is lost for good (a yes in ConfirmPanel): the same capsule, its text red. */
+  danger?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -34,7 +37,11 @@ export default function FlowButton({
       disabled={disabled || busy}
       className={cn(
         "glass-pill inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-[1.0625rem] transition active:scale-[0.98] disabled:opacity-50",
-        quiet ? "font-semibold text-foreground" : "font-bold text-primary",
+        quiet
+          ? "font-semibold text-foreground"
+          : danger
+            ? "font-bold text-red-600"
+            : "font-bold text-primary",
       )}
     >
       {busy && <Loader2 className="h-4 w-4 animate-spin" />}

@@ -90,6 +90,7 @@ export const en: Messages = {
     reload: "Reload the page",
   },
   common: {
+    areYouSure: "Are you sure?",
     cancel: "Cancel",
     done: "Done",
     save: "Save",
@@ -154,6 +155,8 @@ export const en: Messages = {
     waitingForAnswer: (n: number) => `${n} waiting for your answer`,
   },
   friends: {
+    screenTitle: "Friends",
+    empty: "Everyone you are in a group with shows up here.",
     title: "Friends from earlier groups",
     note: "You can invite each other to new groups.",
     remove: "Remove",
@@ -162,6 +165,7 @@ export const en: Messages = {
     inData: "Friends from groups",
   },
   groupsPage: {
+    whatMembersSee: "What can members see?",
     title: "Groups",
     you: "You",
     members: "Members",
@@ -607,6 +611,8 @@ export const en: Messages = {
       "Anyone in the group can change the description. It shows in invitations and on the invite link's page.",
   },
   invite: {
+    showAll: (n: number) => `Show all (${n})`,
+    showFewer: "Show fewer",
     title: (group: string) => `Invite to ${group}`,
     people: "People from your groups",
     peopleEmpty: "Once you're in a group with someone, you can invite them from here.",
@@ -888,6 +894,7 @@ export const en: Messages = {
       `That password appears ${times} times in known data leaks, so it is easy to guess. Choose another.`,
   },
   groupsSection: {
+    edit: "Edit group",
     swipeDelete: "Delete",
     swipeLeave: "Leave",
     title: "Your groups",

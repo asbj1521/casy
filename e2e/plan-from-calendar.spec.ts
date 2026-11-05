@@ -596,7 +596,10 @@ test.describe("Genveje (#175)", () => {
     await shortcuts.getByRole("button", { name: "Ret Padel" }).click();
     const editor = page.getByRole("dialog", { name: "Padel" });
     await editor.getByRole("button", { name: "Slet genvej" }).click();
-    await editor.getByRole("button", { name: "Slet genvej" }).last().click();
+    await page
+      .getByRole("dialog", { name: "Er du sikker?" })
+      .getByRole("button", { name: "Slet genvej" })
+      .click();
     await expect(shortcuts.getByRole("button", { name: "Ny genvej" })).toHaveCount(3);
     expect(backend.world.presets).toHaveLength(0);
   });

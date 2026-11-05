@@ -1,6 +1,10 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
+import BottomSheet from "@/components/ui/BottomSheet";
+import FlowButton from "@/components/ui/FlowButton";
+import Notice from "@/components/ui/Notice";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +14,8 @@ import { cn } from "@/lib/utils";
  * is lost for good, neutral when nothing is (choosing another primary
  * calendar). `children` sits between the message and the buttons, for a
  * word to type before a deletion; `confirmDisabled` holds the button until
- * it is typed.
+ * it is typed. On a phone it is a small sheet of its own (#227), wherever it is
+ * put; a computer shows the box in place.
  */
 export default function ConfirmPanel({
   tone = "danger",
@@ -39,7 +44,25 @@ export default function ConfirmPanel({
   children?: ReactNode;
 }) {
   const t = useT();
+  const phone = usePhoneLayout();
   const danger = tone === "danger";
+  if (phone) {
+    return (
+      <ConfirmSheet
+        danger={danger}
+        message={message}
+        confirmLabel={confirmLabel}
+        cancelLabel={cancelLabel}
+        busy={busy}
+        error={error}
+        confirmDisabled={confirmDisabled}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      >
+        {children}
+      </ConfirmSheet>
+    );
+  }
   return (
     <div
       className={cn(
@@ -81,5 +104,56 @@ export default function ConfirmPanel({
         </button>
       </div>
     </div>
+  );
+}
+
+function ConfirmSheet({
+  danger,
+  message,
+  confirmLabel,
+  cancelLabel,
+  busy,
+  error,
+  confirmDisabled,
+  onConfirm,
+  onCancel,
+  children,
+}: {
+  danger: boolean;
+  message: ReactNode;
+  confirmLabel: ReactNode;
+  cancelLabel?: string;
+  busy: boolean;
+  error?: string | null;
+  confirmDisabled: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  children?: ReactNode;
+}) {
+  const t = useT();
+  // Annuller slides it away first; the page then forgets it.
+  const [open, setOpen] = useState(true);
+  return (
+    <BottomSheet
+      open={open}
+      onClose={() => setOpen(false)}
+      onClosed={onCancel}
+      title={t.common.areYouSure}
+      doneLabel={cancelLabel ?? t.common.cancel}
+      busy={busy}
+      footer={
+        <FlowButton danger={danger} onClick={onConfirm} disabled={confirmDisabled} busy={busy}>
+          {confirmLabel}
+        </FlowButton>
+      }
+    >
+      <div className="text-[0.9375rem] text-foreground">{message}</div>
+      {children}
+      {error && (
+        <Notice tone="error" bare className="mt-3">
+          {error}
+        </Notice>
+      )}
+    </BottomSheet>
   );
 }

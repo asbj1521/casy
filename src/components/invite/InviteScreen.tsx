@@ -1,9 +1,9 @@
-import { useId, useState, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { CircleHelp, Loader2, XCircle } from "lucide-react";
+import { Loader2, XCircle } from "lucide-react";
 
-import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import Avatar from "@/components/ui/Avatar";
+import HelpButton from "@/components/ui/HelpButton";
 import { useT } from "@/i18n/lang";
 
 /** What an invite shows, wherever it came from (a link or a named invitation). */
@@ -41,8 +41,8 @@ export function InviteDetails({
   children,
 }: {
   invite: InviteFacts;
-  /** More behind the ?, under what joining means. */
-  help?: ReactNode;
+  /** More behind the ?, under what joining means; `close` shuts the panel. */
+  help?: (close: () => void) => ReactNode;
   /** A line above the answer. */
   note?: ReactNode;
   /** The answer. */
@@ -50,7 +50,6 @@ export function InviteDetails({
 }) {
   const t = useT();
   const helpAnchor = useId();
-  const [helpOpen, setHelpOpen] = useState(false);
   return (
     <>
       <Avatar
@@ -74,27 +73,17 @@ export function InviteDetails({
         className="mt-2 flex items-center justify-center gap-2 text-[0.8125rem] text-muted-foreground"
       >
         {t.join.membersSoFar(invite.memberCount)}
-        <button
-          type="button"
-          aria-label={t.join.aboutTitle}
-          onClick={() => setHelpOpen(true)}
-          className="hit text-primary"
-        >
-          <CircleHelp aria-hidden className="h-5 w-5" />
-        </button>
+        <HelpButton label={t.join.aboutTitle} anchorId={helpAnchor}>
+          {(close) => (
+            <>
+              <p>{t.join.privacy}</p>
+              {help?.(close)}
+            </>
+          )}
+        </HelpButton>
       </p>
       {note && <p className="mt-4 text-[0.9375rem] text-foreground">{note}</p>}
       <div className="mt-8 flex flex-col gap-2">{children}</div>
-      <AnchoredPanel
-        open={helpOpen}
-        onClose={() => setHelpOpen(false)}
-        anchorId={helpAnchor}
-        label={t.join.aboutTitle}
-        className="p-4 text-left"
-      >
-        <p className="text-[0.9375rem] text-foreground">{t.join.privacy}</p>
-        {help}
-      </AnchoredPanel>
     </>
   );
 }

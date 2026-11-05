@@ -95,6 +95,7 @@ export const da = {
     reload: "Indlæs siden igen",
   },
   common: {
+    areYouSure: "Er du sikker?",
     cancel: "Annuller",
     done: "Færdig",
     save: "Gem",
@@ -163,6 +164,8 @@ export const da = {
   },
   // Friends from groups since gone (#222).
   friends: {
+    screenTitle: "Venner",
+    empty: "Alle, du er i en gruppe med, kommer her.",
     title: "Venner fra tidligere grupper",
     note: "I kan invitere hinanden til nye grupper.",
     remove: "Fjern",
@@ -171,6 +174,7 @@ export const da = {
     inData: "Venner fra grupper",
   },
   groupsPage: {
+    whatMembersSee: "Hvad kan medlemmerne se?",
     title: "Grupper",
     you: "Dig",
     members: "Medlemmer",
@@ -648,6 +652,8 @@ export const da = {
       "Alle i gruppen kan ændre beskrivelsen. Den vises i invitationer og på invitationslinkets side.",
   },
   invite: {
+    showAll: (n: number) => `Vis alle (${n})`,
+    showFewer: "Vis færre",
     title: (group: string) => `Invitér til ${group}`,
     people: "Folk fra dine grupper",
     peopleEmpty: "Når du er i en gruppe med nogen, kan du invitere dem herfra.",
@@ -930,6 +936,7 @@ export const da = {
       `Den adgangskode optræder ${times} gange i kendte datalæk, så den er let at gætte. Vælg en anden.`,
   },
   groupsSection: {
+    edit: "Rediger gruppe",
     swipeDelete: "Slet",
     swipeLeave: "Forlad",
     title: "Dine grupper",

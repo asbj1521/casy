@@ -25,7 +25,11 @@ const NOBODY: Invitees = { profileIds: [], emails: [] };
  * it can join by (also as a QR code, #150), and in the app the contacts,
  * texted the link (#149).
  */
-export function useInvite(group: { id: string; name: string }) {
+export function useInvite(
+  group: { id: string; name: string },
+  /** Once the picks are sent, for a sheet that ends there (a new group on a phone, #227). */
+  onSent?: () => void,
+) {
   const t = useT();
   const userId = useSignedInUser().id;
   const queryClient = useQueryClient();
@@ -45,6 +49,7 @@ export function useInvite(group: { id: string; name: string }) {
       setInvitees(NOBODY);
       // Waiting for their answers: the moment to offer notifications (#139).
       askForPush("joined");
+      onSent?.();
     },
   });
   // A fresh link every time: only a fingerprint of each is stored (see the

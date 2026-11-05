@@ -97,11 +97,31 @@ test("Annuller in the crop sheet keeps the picture as it was (#190)", async ({ p
   expect(backend.calls.filter((c) => c.body.action === "set-avatar")).toHaveLength(0);
 });
 
-test("any member gives a group a picture, shown in place of its members, and removes it (#188)", async ({
+test("any member gives a group a picture, on a phone in its edit sheet, and removes it (#188, #227)", async ({
   page,
   backend,
+  isMobile,
 }) => {
   await page.goto("/groups/g-running");
+  if (isMobile) {
+    await page.getByRole("button", { name: "Rediger gruppe" }).click();
+    const sheet = page.getByRole("dialog", { name: "Rediger gruppe" });
+    await pick(page, PNG);
+    await cropSheet(page).getByRole("button", { name: "Færdig" }).click();
+    await expect(
+      sheet.getByRole("button", { name: "Skift gruppens billede" }).locator("img"),
+    ).toBeVisible();
+    await sheet.getByRole("button", { name: "Gem" }).click();
+    await expect(sheet).toBeHidden();
+    expect(backend.world.groups.find((g) => g.id === "g-running")?.pictureUrl).toBeTruthy();
+
+    await page.getByRole("button", { name: "Rediger gruppe" }).click();
+    await sheet.getByRole("button", { name: "Fjern billede" }).click();
+    await sheet.getByRole("button", { name: "Gem" }).click();
+    await expect(sheet).toBeHidden();
+    expect(backend.world.groups.find((g) => g.id === "g-running")?.pictureUrl).toBeNull();
+    return;
+  }
   const add = page.getByRole("button", { name: "Tilføj et billede til gruppen" });
   await expect(add).toBeVisible();
   await pick(page, PNG);
