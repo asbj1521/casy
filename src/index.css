@@ -201,8 +201,7 @@
       0 6px 18px -8px rgb(var(--pill-drop));
   }
 
-  /* The welcome screen's step caption where Apple's Liquid Glass isn't drawn
-     natively (the website, iPhones before iOS 26; nativeGlass.ts): clear
+  /* The welcome screen's step caption: clear
      enough to see the animation through, lightly blurred and brightened, with
      the capsules' bright rim. */
   .glass-caption {

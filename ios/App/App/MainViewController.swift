@@ -38,8 +38,6 @@ class MainViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(PhoneCalendarPlugin())
         // Inviting friends from the contacts, by message (#149).
         bridge?.registerPluginInstance(InvitePlugin())
-        // Apple's own Liquid Glass for a card on the page (#151).
-        bridge?.registerPluginInstance(GlassPlugin())
         // Sign in with Apple (#138).
         bridge?.registerPluginInstance(AppleSignInPlugin())
         // A tap at the very top of the screen (by the Dynamic Island) goes to

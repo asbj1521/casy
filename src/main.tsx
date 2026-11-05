@@ -20,12 +20,6 @@ followTextSize();
 applyTheme(storedTheme());
 syncNativeTheme(storedTheme());
 
-// The native glass card lies over the web view and outlives a reload, which forgets
-// it was ever shown: taken away first, or it stays on whatever page this load opens.
-if (isNativeApp) {
-  void import("@/lib/nativeGlass").then(({ hideGlass }) => hideGlass()).catch(() => {});
-}
-
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <CrashScreen>

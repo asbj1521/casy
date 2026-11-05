@@ -6,7 +6,7 @@ Written 2026-11-02, before any of it is built. The epic is #192; each phase belo
 
 Today the iPhone app is the website in a Capacitor web view (`ios/`), with about 1,600 lines of Swift for what a web page can't do: the phone's calendars (EventKit, reading, writing and the background refresh), Sign in with Apple, contacts and Messages, Apple's Liquid Glass laid over the page, and the status bar tap. Everything else, about 60,000 lines of TypeScript, is shared with the website.
 
-The goal is the same app written in Swift and SwiftUI: Apple's real Liquid Glass everywhere, system sheets, navigation and scrolling, and later widgets, Siri (App Intents) and Live Activities. What does not change:
+The goal is the same app written in Swift and SwiftUI: Apple's real Liquid Glass everywhere (the web view app has none since 2026-11-05: laid over the page it lagged and blinked, so all its glass is CSS; `GlassPlugin.swift` is in git history at 3710c5f), system sheets, navigation and scrolling, and later widgets, Siri (App Intents) and Live Activities. What does not change:
 
 - **The backend.** Every Edge Function, table, migration and cron job stays. The native app calls the same functions with the same JSON; no backend change is planned, and one that turns out to be needed gets its own step and must keep every app release at or above `MIN_APP_VERSION` working.
 - **The website.** casy.app stays React: computers, invite links for people without the app, Android friends, the legal pages, the Apple walkthrough.
@@ -172,7 +172,7 @@ Done when the user has lived on the switch for a while and nothing sends them ba
 2. The web view, Capacitor, its plugins, `capacitor.config.ts`, `npm run ios` and `ios:live`, the bridge and `CapApp-SPM` are removed; the plugins' Swift (`PhoneCalendarPlugin`, `InvitePlugin`, `AppleSignInPlugin`, `GlassPlugin`, `MainViewController`) is folded into plain Swift or deleted; the app target moves to Swift 6.
 3. `PrivacyInfo.xcprivacy`, the permission texts and App Store Connect's privacy answers checked against what the native code does.
 4. Release 2.0 through TestFlight to friends first, then App Review.
-5. The website loses what only the app used: every `isNativeApp` branch (about 40 files), `nativeApp.ts`, `nativeGlass.ts`, `push.ts`, `pushAsk.ts`, `components/push/`, `contactInvite.ts`, `appleSignIn.ts`, `statusTap.ts`, `appLinksNative.ts`, `AppLinks`, `AppBackground`, `welcome/`, `UpdateRequired`, the labels, trips and day facts code and their hooks, `phoneCalendar.ts`, `phoneEvents.ts`, `phoneBusy.ts` (its rules live on in CasyCore and the server), and the Capacitor packages. Each checked with grep and knip at the time; the parity fixtures stay for what both still share.
+5. The website loses what only the app used: every `isNativeApp` branch (about 40 files), `nativeApp.ts`, `push.ts`, `pushAsk.ts`, `components/push/`, `contactInvite.ts`, `appleSignIn.ts`, `statusTap.ts`, `appLinksNative.ts`, `AppLinks`, `AppBackground`, `welcome/`, `UpdateRequired`, the labels, trips and day facts code and their hooks, `phoneCalendar.ts`, `phoneEvents.ts`, `phoneBusy.ts` (its rules live on in CasyCore and the server), and the Capacitor packages. Each checked with grep and knip at the time; the parity fixtures stay for what both still share.
 6. CLAUDE.md, `docs/architecture/platform.md` and `overview.md` rewritten for two clients: the website (React) and the iPhone app (Swift).
 
 ### Later (not part of #192)
