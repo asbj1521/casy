@@ -47,3 +47,30 @@ test("Glemt adgangskode with no email asks for it there, with no error (#212)", 
   await email.fill("mig@eksempel.dk");
   await expect(page.getByText("Skriv din e-mail her")).toHaveCount(0);
 });
+
+test("a new account by email on a phone gives a name, which goes with it", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "a computer's sign-up stays as it was");
+  const sent: { data?: { full_name?: string } }[] = [];
+  await page.route("**/auth/v1/signup*", async (route) => {
+    sent.push(route.request().postDataJSON());
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ id: "new", email: "ny@example.com", identities: [{}] }),
+    });
+  });
+  await page.goto("/sign-in?signup=1");
+  await page.getByLabel("E-mail").fill("ny@example.com");
+  const password = page.getByLabel("Adgangskode", { exact: true });
+  await password.fill("Blaa-Hest-Springer-4471");
+  await page.locator('button[type="submit"]').click();
+  await expect(page.getByText("Skriv dit navn")).toBeVisible();
+  expect(sent).toHaveLength(0);
+
+  await page.getByLabel("Dit navn").fill("Sara");
+  await page.locator('button[type="submit"]').click();
+  await expect.poll(() => sent[0]?.data?.full_name).toBe("Sara");
+});

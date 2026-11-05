@@ -25,6 +25,7 @@ import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/p
 import { supabaseAuth } from "@/lib/supabase";
 import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/groups";
 
 /**
  * Where to go after signing in, if the link said. Only a path on this site is
@@ -93,6 +94,8 @@ export default function SignIn() {
     searchParams.get("signup") ? "signup" : "signin",
   );
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const nameField = useRef<HTMLInputElement>(null);
   const [password, setPassword] = useState("");
   const [sending, setSending] = useState(false);
   const [appleBusy, setAppleBusy] = useState(false);
@@ -281,6 +284,13 @@ export default function SignIn() {
   }
 
   async function handleSignUp(newPassword: string) {
+    // On a phone a new account by email says what its groups call it; Apple
+    // hands over a name itself. It is outside PasswordForm's form, so asked here.
+    if (phone && !name.trim()) {
+      setSignupError(t.signIn.nameNeeded);
+      nameField.current?.focus();
+      return;
+    }
     setSignupSubmitting(true);
     setSignupError(null);
     const address = email.trim();
@@ -289,7 +299,11 @@ export default function SignIn() {
       password: newPassword,
       // The account's language, for emails sent later with no page to ask
       // (the security code, "password changed"); see useAccountLanguage.
-      options: { emailRedirectTo: returnTo, data: { lang } },
+      // `full_name` is what groups call them by (displayNameFor).
+      options: {
+        emailRedirectTo: returnTo,
+        data: phone ? { lang, full_name: name.trim() } : { lang },
+      },
     });
     setSignupSubmitting(false);
     if (err) {
@@ -609,6 +623,20 @@ export default function SignIn() {
                   </Notice>
                 ) : (
                   <div className="flex flex-col gap-3">
+                    {phone && (
+                      <label className="text-sm">
+                        <span className={labelClass}>{t.signIn.name}</span>
+                        <input
+                          ref={nameField}
+                          type="text"
+                          autoComplete="name"
+                          maxLength={MAX_DISPLAY_NAME_LENGTH}
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className={inputClass}
+                        />
+                      </label>
+                    )}
                     <label className="text-sm">
                       <span className={labelClass}>{t.signIn.email}</span>
                       <input
@@ -628,7 +656,7 @@ export default function SignIn() {
                       submittingLabel={t.signIn.creatingAccount}
                       passwordLabel={t.signIn.password}
                       single
-                      personal={[email]}
+                      personal={[email, name]}
                       onSubmit={(pw) => void handleSignUp(pw)}
                     />
                   </div>

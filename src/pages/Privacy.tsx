@@ -50,10 +50,11 @@ const da: LegalCopy = {
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <Term>Din konto:</Term> din e-mailadresse og dit navn, hvis du logger ind med Google
-              eller Apple, eller et navn, du selv vælger på din profil. Skjuler du din e-mail, når
-              du logger ind med Apple, får Casy kun den adresse, Apple videresender fra. Logger du
-              ind med din e-mail og ikke har valgt et navn, bruger Casy delen af din e-mailadresse
-              før @. Og det sprog, du bruger Casy på, så e-mails fra Casy kommer på det sprog.
+              eller Apple, eller et navn, du selv vælger, når du opretter dig eller på din profil.
+              Skjuler du din e-mail, når du logger ind med Apple, får Casy kun den adresse, Apple
+              videresender fra. Logger du ind med din e-mail og ikke har valgt et navn, bruger Casy
+              delen af din e-mailadresse før @. Og det sprog, du bruger Casy på, så e-mails fra Casy
+              kommer på det sprog.
             </li>
             <li>
               <Term>Dit profilbillede:</Term> hvis du vælger et. Det gøres til et lille kvadrat på
@@ -563,11 +564,11 @@ const en: LegalCopy = {
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <Term>Your account:</Term> your email address, and your name if you sign in with
-              Google or Apple, or a name you choose on your profile. If you hide your email when
-              signing in with Apple, Casy only gets the address Apple forwards from. If you sign in
-              with your email and have not chosen a name, Casy uses the part of your email address
-              before the @. And the language you use Casy in, so emails from Casy come in that
-              language.
+              Google or Apple, or a name you choose when you sign up or on your profile. If you hide
+              your email when signing in with Apple, Casy only gets the address Apple forwards from.
+              If you sign in with your email and have not chosen a name, Casy uses the part of your
+              email address before the @. And the language you use Casy in, so emails from Casy come
+              in that language.
             </li>
             <li>
               <Term>Your profile picture:</Term> if you choose one. It is made into a small square

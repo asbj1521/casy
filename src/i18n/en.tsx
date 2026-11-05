@@ -1544,6 +1544,8 @@ export const en: Messages = {
     badge: "Primary",
   },
   signIn: {
+    name: "Your name",
+    nameNeeded: "Enter your name, so your group can see who you are.",
     title: "Sign in",
     intro: "Sign in to connect your calendars and plan with your groups.",
     google: "Continue with Google",

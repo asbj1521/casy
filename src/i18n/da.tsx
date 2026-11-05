@@ -1603,6 +1603,8 @@ export const da = {
     badge: "Primær",
   },
   signIn: {
+    name: "Dit navn",
+    nameNeeded: "Skriv dit navn, så din gruppe kan se, hvem du er.",
     title: "Log ind",
     intro: "Log ind for at forbinde dine kalendere og planlægge med dine grupper.",
     google: "Fortsæt med Google",
