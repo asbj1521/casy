@@ -47,3 +47,9 @@ test("a calendar nobody has sorted gets a category by AI, marked until one is pi
   expect(family).toMatchObject({ purpose: "personal", purpose_source: "user" });
   expect(backend.calls.filter((c) => c.name === "calendar-categorize")).toHaveLength(1);
 });
+
+test("the sidebar has the primary calendar", async ({ page }) => {
+  await page.goto("/calendar-overview");
+  await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
+  await expect(page.getByText("Primær kalender", { exact: true })).toBeVisible();
+});

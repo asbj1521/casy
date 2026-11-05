@@ -56,6 +56,7 @@ export default function CalendarListPanel({
   onSetVisible,
   visibilityError,
   introInTip = false,
+  noPrimary = false,
 }: {
   /** Every calendar, the built-in holidays included, each with its tick and total. */
   calendars: OverviewCalendar[];
@@ -66,6 +67,8 @@ export default function CalendarListPanel({
   visibilityError: string | null;
   /** The sentence under the title goes into the (i) beside it instead (a phone's sheet). */
   introInTip?: boolean;
+  /** No primary calendar line: a phone's sheet leaves it to Forbundne kalendere (#219). */
+  noPrimary?: boolean;
 }) {
   const t = useT();
   const words = t.calendarView;
@@ -104,8 +107,7 @@ export default function CalendarListPanel({
         </InfoTip>
       </div>
       {!introInTip && <p className="mt-1 text-xs text-muted-foreground">{words.listIntro}</p>}
-      {/* A phone's sheet leaves it to its Forbundne kalendere screen (#219). */}
-      {showPrimaryLine && !introInTip && (
+      {showPrimaryLine && !noPrimary && (
         <PrimaryCalendarPicker
           connections={connections}
           compact

@@ -110,6 +110,7 @@ export default function CalendarsSheet({
               </ListGroup>
               <CalendarListPanel
                 introInTip
+                noPrimary
                 calendars={calendars}
                 colorOf={colorOf}
                 onSetVisible={onSetVisible}

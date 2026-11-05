@@ -138,6 +138,8 @@ test("My calendar is a month like Apple's: a day zooms into its hours, Kalendere
   await page.getByRole("button", { name: "Kalendere" }).click();
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Forbundne kalendere/ })).toBeVisible();
+  // The primary calendar is set on Forbundne kalendere, not here (#219).
+  await expect(page.getByText("Primær kalender", { exact: true })).toHaveCount(0);
 
   // Forbundne kalendere slides in inside the sheet (#219), and back out of it.
   await page.getByRole("button", { name: /Forbundne kalendere/ }).click();
