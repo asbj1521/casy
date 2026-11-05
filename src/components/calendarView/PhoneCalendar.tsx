@@ -13,6 +13,7 @@ import { useReducedMotion } from "framer-motion";
 import { CalendarPlus } from "lucide-react";
 
 import AgreedCard from "@/components/calendarView/AgreedCard";
+import GroupPill from "@/components/calendarView/GroupPill";
 import DayView from "@/components/calendarView/dayView/DayView";
 import { useDayCalendar } from "@/components/calendarView/dayView/useDayCalendar";
 import { useDaySpan } from "@/components/calendarView/dayView/useDaySpan";
@@ -592,6 +593,12 @@ export default function PhoneCalendar() {
           hidden={location.search !== "" || dayOpen || flight}
           zoomingOut={dayShown !== null && !dayOpen}
           onOpen={() => openVote(homeVotes.waiting[0].id)}
+        />
+      )}
+      {/* Nobody else in yet (#210): the same spot, when no vote needs it. */}
+      {homeVotes.waiting.length === 0 && (
+        <GroupPill
+          hidden={!bare || importShown || importPending || aiAsking || flight || !!homeVotes.agreed}
         />
       )}
       {voteEvent && (

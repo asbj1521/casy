@@ -237,6 +237,63 @@ test("without AI switched on, the sheet offers no planning with AI (#111)", asyn
   await expect(page.getByRole("button", { name: "Planlæg med AI" })).toHaveCount(0);
 });
 
+test.describe("with no groups yet (#210)", () => {
+  test.use({ world: { calendars: "connected", groups: "none" } });
+
+  test("an example says so, and its dates lead to making a group, the plan kept", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/?plan");
+    const sheet = page.getByRole("dialog", { name: "Planlæg" });
+    await expect(sheet.getByRole("button", { name: /^Gruppe/ })).toContainText("Eksempel");
+    await sheet.getByRole("textbox", { name: /Hvad skal I/i }).fill("Fredagsbar");
+    await sheet.getByRole("button", { name: "Find dato" }).click();
+
+    await expect(page.getByRole("button", { name: /^Foreslå/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Lav en gruppe" }).click();
+    const fresh = page.getByRole("dialog", { name: "Ny gruppe" });
+    await fresh.getByRole("textbox", { name: "Gruppenavn" }).fill("Vennerne");
+    await fresh.getByRole("button", { name: "Næste" }).click();
+    await expect.poll(() => backend.calls.find((c) => c.body.action === "create")).toBeTruthy();
+    await page.getByRole("button", { name: "Færdig" }).last().click();
+
+    await expect(sheet.getByRole("button", { name: /^Gruppe/ })).toContainText("Vennerne");
+    await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Fredagsbar");
+  });
+
+  test("the home page offers a group, then to invite to it, in the same spot", async ({
+    page,
+    backend,
+  }) => {
+    backend.world.invitations = [];
+    await page.goto("/");
+    await page.getByRole("button", { name: "Lav en gruppe med dine venner" }).click();
+    const fresh = page.getByRole("dialog", { name: "Ny gruppe" });
+    await fresh.getByRole("textbox", { name: "Gruppenavn" }).fill("Vennerne");
+    await fresh.getByRole("button", { name: "Næste" }).click();
+    await page.getByRole("button", { name: "Færdig" }).last().click();
+
+    await page.getByRole("button", { name: "Inviter venner til Vennerne" }).click();
+    await expect(page.getByRole("dialog", { name: /Vennerne/ })).toBeVisible();
+  });
+
+  test("a waiting invitation is the way in: no nudge beside it", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
+    await page.waitForTimeout(1800);
+    await expect(page.getByRole("button", { name: /Lav en gruppe/ })).toHaveCount(0);
+  });
+});
+
+test("with friends in a group, the home page nudges nobody (#210)", async ({ page, backend }) => {
+  backend.world.invitations = [];
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
+  await page.waitForTimeout(1800);
+  await expect(page.getByRole("button", { name: /Lav en gruppe|Inviter venner/ })).toHaveCount(0);
+});
+
 test.describe("signed out", () => {
   test.use({ signedIn: false });
 

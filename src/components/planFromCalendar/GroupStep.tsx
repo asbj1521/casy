@@ -7,6 +7,8 @@ import type { SchedulingGroup } from "@/hooks/useSchedulingGroups";
 import { useLang, useT } from "@/i18n/lang";
 import { nameList } from "@/lib/format";
 
+import ExampleBadge from "./ExampleBadge";
+
 /**
  * The flow's first step (#101): your groups as a list to pick one from, the
  * picked one ticked, "New group" under them; the flow's button moves on, so
@@ -73,11 +75,7 @@ export default function GroupStep({
               label={
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="truncate">{g.name}</span>
-                  {g.isExample && (
-                    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                      {t.common.example}
-                    </span>
-                  )}
+                  {g.isExample && <ExampleBadge />}
                 </span>
               }
               detail={

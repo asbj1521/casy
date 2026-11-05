@@ -1325,6 +1325,11 @@ export const da = {
   // Planning from My calendar (#126): the Planlæg sheet, the paper pile and
   // the dates it finds.
   // A vote answered over the home page's month (#172).
+  // The home page's nudge while nobody else is in (#210).
+  homeNudge: {
+    newGroup: "Lav en gruppe med dine venner",
+    invite: (group: string) => `Inviter venner til ${group}`,
+  },
   homeVote: {
     answer: (title: string) => `Svar på ${title}`,
     waiting: (n: number) => `${n} afstemninger venter`,
@@ -1352,6 +1357,7 @@ export const da = {
     noneThrough: "Ingen dag i perioden passer alle. Prøv at ændre planen.",
     suggest: (n: number) => (n === 1 ? "Foreslå datoen" : `Foreslå top ${n} datoer`),
     change: "Ret planen",
+    makeGroup: "Lav en gruppe",
     cant: (names: string) => `${names} kan ikke`,
     reviewing: "Gennemgår kalenderne",
     allCan: (n: number) => (n === 1 ? "Du kan" : `Alle ${n} kan`),

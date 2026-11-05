@@ -108,6 +108,7 @@ export default function PileScreen({
   planning,
   onChange,
   onRestart,
+  onMakeGroup,
   onClose,
 }: {
   planning: Planning;
@@ -115,6 +116,8 @@ export default function PileScreen({
   onChange: () => void;
   /** Start the pile over: the plan changed from here (a shorter holiday). */
   onRestart: () => void;
+  /** An example's way on (#210): a group of your own, the plan kept. */
+  onMakeGroup: () => void;
   onClose: () => void;
 }) {
   const t = useT();
@@ -723,7 +726,7 @@ export default function PileScreen({
                 </p>
               )}
               {suggest.isError && <p className="text-sm text-red-700">{suggest.error.message}</p>}
-              {review.tone === "approve" && (
+              {review.tone === "approve" && !activeGroup?.isExample && (
                 <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
                   {t.scheduler.hintAccept}
                   <button
@@ -735,17 +738,22 @@ export default function PileScreen({
                   </button>
                 </div>
               )}
-              {dates && (
-                <FlowButton onClick={send} disabled={!canSuggest || checking || sending}>
-                  {checking ? t.scheduler.checking : words.suggest(dates.chosen.length)}
-                </FlowButton>
+              {/* An example can't be sent to anyone: the way on is a group of your own (#210). */}
+              {activeGroup?.isExample ? (
+                <FlowButton onClick={onMakeGroup}>{words.makeGroup}</FlowButton>
+              ) : (
+                dates && (
+                  <FlowButton onClick={send} disabled={!canSuggest || checking || sending}>
+                    {checking ? t.scheduler.checking : words.suggest(dates.chosen.length)}
+                  </FlowButton>
+                )
               )}
               <FlowButton quiet onClick={onChange}>
                 {words.change}
               </FlowButton>
-              {dates && !canSuggest && review.tone !== "approve" && (
+              {activeGroup?.isExample && (
                 <p className="text-center text-xs text-muted-foreground">
-                  {planning.user ? t.scheduler.hintExample : t.scheduler.hintSignIn}
+                  {t.scheduler.hintExample}
                 </p>
               )}
             </motion.div>

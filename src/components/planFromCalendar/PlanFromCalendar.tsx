@@ -363,6 +363,13 @@ export default function PlanFromCalendar({
             setStage("setup");
           }}
           onRestart={() => setRun((n) => n + 1)}
+          // Back to the sheet, the plan kept, with the new group over it (#210):
+          // made, it is picked, and "Find dato" runs on it.
+          onMakeGroup={() => {
+            setScreen({ kind: "plan" });
+            setStage("setup");
+            planning.openNewGroup();
+          }}
           onClose={onClose}
         />
       )}

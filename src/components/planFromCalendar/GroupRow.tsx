@@ -7,6 +7,7 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import type { Planning } from "@/hooks/usePlanning";
 import { useT } from "@/i18n/lang";
 
+import ExampleBadge from "./ExampleBadge";
 import GroupStep from "./GroupStep";
 
 /**
@@ -39,9 +40,12 @@ export default function GroupRow({
             ) : undefined
           }
           label={
-            <span className="text-[17px] font-semibold">
-              <span className="sr-only">{t.scheduler.group} </span>
-              {activeGroup?.name ?? t.scheduler.group}
+            <span className="flex min-w-0 items-center gap-2 text-[17px] font-semibold">
+              <span className="truncate">
+                <span className="sr-only">{t.scheduler.group} </span>
+                {activeGroup?.name ?? t.scheduler.group}
+              </span>
+              {activeGroup?.isExample && <ExampleBadge />}
             </span>
           }
           chevron

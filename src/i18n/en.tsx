@@ -1272,6 +1272,10 @@ export const en: Messages = {
     useOriginalName: (name: string) => `Use the original name (${name})`,
     couldntSaveName: "Couldn't save the name",
   },
+  homeNudge: {
+    newGroup: "Make a group with your friends",
+    invite: (group: string) => `Invite friends to ${group}`,
+  },
   homeVote: {
     answer: (title: string) => `Answer ${title}`,
     waiting: (n: number) => `${n} votes waiting`,
@@ -1297,6 +1301,7 @@ export const en: Messages = {
     noneThrough: "No day in the period works for everyone. Try changing the plan.",
     suggest: (n: number) => (n === 1 ? "Suggest the date" : `Suggest the top ${n} dates`),
     change: "Change the plan",
+    makeGroup: "Make a group",
     cant: (names: string) => `${names} can't make it`,
     reviewing: "Going through the calendars",
     allCan: (n: number) => (n === 1 ? "You can make it" : `All ${n} can make it`),
