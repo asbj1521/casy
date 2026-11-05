@@ -120,7 +120,11 @@ export default function InvitePicker({
                   onChange={() => toggle(p.profileId)}
                   leading={<Avatar name={p.name} index={i} size="row" src={p.avatarUrl} />}
                   label={p.name}
-                  detail={t.invite.from(p.groupNames.join(", "))}
+                  detail={
+                    p.groupNames.length > 0
+                      ? t.invite.from(p.groupNames.join(", "))
+                      : t.invite.fromPast
+                  }
                   value={already ? t.invite.invited : undefined}
                 />
               );

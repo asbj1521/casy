@@ -590,6 +590,8 @@ export interface World {
   }[];
   groups: Group[];
   invitations: Invitation[];
+  /** People from groups since gone (#222). */
+  friends: { profileId: string; name: string }[];
   events: SuggestedEvent[];
   /** Bumped on every change, so the live-update pulse moves like the real one. */
   version: number;
@@ -609,6 +611,7 @@ export function makeWorld(options: WorldOptions): World {
     aiTester: false,
     minAppVersion: null,
     blocked: [],
+    friends: [],
     reports: [],
     aiConsent: true,
     dateScores: {},
@@ -721,6 +724,7 @@ export function myData(world: World): MyData {
     },
     groupPictures: { count: 0 },
     safety: { blocked: world.blocked.length, reportsSent: world.reports.length },
+    friends: { count: world.friends.length },
     ai: {
       allowed: world.aiAllowed,
       calls: 2,

@@ -225,3 +225,48 @@ test.describe("in the app", () => {
       });
   });
 });
+
+test.describe("friends from groups since gone (#222)", () => {
+  test("can be invited again, and removed", async ({ page, backend }) => {
+    backend.world.friends = [{ profileId: "p-past", name: "Tilde" }];
+    await page.goto("/groups");
+    await expect(page.getByText("Venner fra tidligere grupper")).toBeVisible();
+    await expect(page.getByText("Tilde", { exact: true }).first()).toBeVisible();
+
+    // Offered when inviting, though no group of yours holds them any more.
+    await page.goto("/groups/g-running");
+    await page
+      .getByRole("button", { name: /Invitér folk/ })
+      .first()
+      .click();
+    const sheet = page.getByRole("dialog", { name: "Invitér til Løbeklubben" });
+    await sheet.getByRole("checkbox", { name: /^Tilde/ }).check();
+    await expect(sheet.getByText("Fra en tidligere gruppe")).toBeVisible();
+    await sheet.getByRole("button", { name: "Send invitation" }).click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "invite-members")?.body)
+      .toMatchObject({ profileIds: ["p-past"] });
+    await page.goto("/groups");
+
+    await page.getByRole("button", { name: "Fjern Tilde" }).click();
+    await expect(page.getByText(/^Fjern Tilde\?/)).toBeVisible();
+    await page.getByRole("button", { name: "Fjern", exact: true }).click();
+    await expect(page.getByText("Venner fra tidligere grupper")).toHaveCount(0);
+    expect(backend.calls.find((c) => c.body.action === "remove-friend")?.body).toMatchObject({
+      profileId: "p-past",
+    });
+  });
+
+  test("someone still in a group of yours isn't listed apart", async ({ page, backend }) => {
+    const member = backend.world.groups[0].members.find((m) => !m.isYou)!;
+    backend.world.friends = [{ profileId: member.profileId, name: member.name }];
+    await page.goto("/groups");
+    await expect(
+      page
+        .getByRole("button", { name: /Fredagsbar/ })
+        .or(page.getByRole("link", { name: /Fredagsbar/ }))
+        .first(),
+    ).toBeVisible();
+    await expect(page.getByText("Venner fra tidligere grupper")).toHaveCount(0);
+  });
+});

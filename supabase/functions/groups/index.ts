@@ -35,6 +35,7 @@
  * filled since the hourly sync (_shared/groupRefresh.ts).
  */
 import { requireCaller } from "../_shared/auth.ts";
+import { listFriends, removeFriend } from "./friends.ts";
 import { allowedFrontends, inviteFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
 import {
@@ -255,6 +256,14 @@ serve("groups", async (req, body) => {
 
     case "blocked":
       return { blocked: await listBlocked(db, profileId) };
+
+    // People you have shared a group with (#222), to invite again.
+    case "friends":
+      return { friends: await listFriends(db, profileId) };
+
+    case "remove-friend":
+      await removeFriend(db, profileId, requireString(body, "profileId"));
+      return { friends: await listFriends(db, profileId) };
 
     case "rename": {
       const groupId = requireString(body, "groupId");

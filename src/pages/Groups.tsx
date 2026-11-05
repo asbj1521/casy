@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { groupsQuery } from "@/api/groups";
 import GroupDetails from "@/components/groups/GroupDetails";
 import GroupList from "@/components/groups/GroupList";
+import FriendsSection from "@/components/groups/FriendsSection";
 import InvitationsSection from "@/components/myEvents/InvitationsSection";
 import TopNav from "@/components/TopNav";
 import { useSignedInUser } from "@/context/auth";
@@ -57,7 +58,10 @@ function GroupsPage({ selectedId }: { selectedId?: string }) {
         <p className="mt-1 text-sm text-muted-foreground">{t.groupsPage.intro}</p>
         <InvitationsSection />
         <div className="grid items-start gap-x-8 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-          <GroupList selectedId={open?.id} privacyNote={false} />
+          <div className="min-w-0">
+            <GroupList selectedId={open?.id} privacyNote={false} />
+            <FriendsSection />
+          </div>
           {open && (
             <section className="mt-6 min-w-0 rounded-2xl border bg-card/60 p-5 pt-0 sm:p-6 sm:pt-0">
               <GroupDetails group={open} index={index} youId={youId} layout="pane" />
@@ -76,6 +80,7 @@ export function PhoneGroupsContent() {
       <InvitationsSection />
       {/* What members see is said once, on a group's own screen. */}
       <GroupList privacyNote={false} />
+      <FriendsSection />
     </>
   );
 }

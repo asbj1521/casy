@@ -11,14 +11,23 @@ import { type Db } from "../_shared/supabaseAdmin.ts";
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Everyone the caller shares a group with right now, themself left out. */
+/**
+ * Everyone the caller may pick to invite: who they share a group with right
+ * now, and their friends from groups since gone (#222), themself left out.
+ */
 export async function knownPeople(db: Db, profileId: string): Promise<Set<string>> {
+  const { data: friends, error: friendsErr } = await db
+    .from("friends")
+    .select("friend_id")
+    .eq("profile_id", profileId);
+  if (friendsErr) throw friendsErr;
+  const known = friends.map((f) => f.friend_id as string);
   const { data: mine, error: mineErr } = await db
     .from("group_members")
     .select("group_id")
     .eq("profile_id", profileId);
   if (mineErr) throw mineErr;
-  if (mine.length === 0) return new Set();
+  if (mine.length === 0) return new Set(known);
   const { data: others, error } = await db
     .from("group_members")
     .select("profile_id")
@@ -28,7 +37,7 @@ export async function knownPeople(db: Db, profileId: string): Promise<Set<string
     )
     .neq("profile_id", profileId);
   if (error) throw error;
-  return new Set(others.map((o) => o.profile_id));
+  return new Set([...known, ...others.map((o) => o.profile_id as string)]);
 }
 
 /** Who is about to be invited: picked people, and the accounts behind the emails. */
@@ -41,7 +50,7 @@ export interface ResolvedInvitees {
  * Check the daily limits and work out who the invitees are, before anything
  * is changed (so a refused request makes no group and sends nothing).
  *
- * Picked people must share a group with the caller; anyone else is dropped
+ * Picked people must be known to the caller (knownPeople); anyone else is dropped
  * without a word, since only a doctored request could name them.
  *
  * Email addresses are where care is needed: nothing the caller gets back may

@@ -432,3 +432,34 @@ export function participantsFromGroup(
     }),
   };
 }
+
+/** Someone you have shared a group with (#222), who can be invited again. */
+export interface Friend {
+  profileId: string;
+  name: string;
+  avatarUrl?: string | null;
+}
+
+export const friendsQueryKey = (userId: string) => ["friends", userId] as const;
+
+/** Not among the remembered queries: these are other people (queryPersistence.ts). */
+export function friendsQuery(userId: string) {
+  return queryOptions({
+    queryKey: friendsQueryKey(userId),
+    queryFn: async () =>
+      (
+        await callFunction<{ friends: Friend[] }>("groups", {
+          body: { action: "friends" },
+          errorMessage: currentMessages().api.friends,
+        })
+      ).friends,
+  });
+}
+
+export async function removeFriend(profileId: string): Promise<Friend[]> {
+  const { friends } = await callFunction<{ friends: Friend[] }>("groups", {
+    body: { action: "remove-friend", profileId },
+    errorMessage: currentMessages().api.friends,
+  });
+  return friends;
+}

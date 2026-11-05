@@ -161,6 +161,15 @@ export const da = {
     signOut: "Log ud",
     waitingForAnswer: (n: number) => `${n} venter på dit svar`,
   },
+  // Friends from groups since gone (#222).
+  friends: {
+    title: "Venner fra tidligere grupper",
+    note: "I kan invitere hinanden til nye grupper.",
+    remove: "Fjern",
+    removeAsk: (name: string) =>
+      `Fjern ${name}? I kan ikke invitere hinanden, før I er i samme gruppe igen.`,
+    inData: "Venner fra grupper",
+  },
   groupsPage: {
     title: "Grupper",
     you: "Dig",
@@ -643,6 +652,7 @@ export const da = {
     peopleEmpty: "Når du er i en gruppe med nogen, kan du invitere dem herfra.",
     allIn: "Alle, du kender fra dine grupper, er allerede med.",
     from: (groups: string) => `Fra ${groups}`,
+    fromPast: "Fra en tidligere gruppe",
     filter: "Søg efter navn",
     noMatch: "Ingen med det navn.",
     invited: "Inviteret",
@@ -1662,6 +1672,7 @@ export const da = {
     comeBack: "Du kommer direkte tilbage hertil bagefter.",
   },
   api: {
+    friends: "Kunne ikke hente dine venner",
     describeGroup: "Kunne ikke gemme beskrivelsen",
     setPrimeDates: "Kunne ikke gemme valget",
     // The request never got an answer (callFunction): no connection, or too slow.

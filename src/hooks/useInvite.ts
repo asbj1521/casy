@@ -7,6 +7,7 @@ import {
   groupsQueryKey,
   inviteMembers,
   type Invitees,
+  friendsQuery,
 } from "@/api/groups";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
@@ -63,10 +64,13 @@ export function useInvite(group: { id: string; name: string }) {
     },
   });
 
+  // Until these answer, or if they can't, the people in your groups are still offered.
+  const { data: friends } = useQuery(friendsQuery(userId));
+
   return {
     group,
     groups,
-    people: knownPeople(groups, group.id),
+    people: knownPeople(groups, group.id, friends),
     invited: groups.find((g) => g.id === group.id)?.invited ?? [],
     invitees,
     setInvitees: (value: Invitees) => {

@@ -153,6 +153,14 @@ export const en: Messages = {
     signOut: "Sign out",
     waitingForAnswer: (n: number) => `${n} waiting for your answer`,
   },
+  friends: {
+    title: "Friends from earlier groups",
+    note: "You can invite each other to new groups.",
+    remove: "Remove",
+    removeAsk: (name: string) =>
+      `Remove ${name}? You can't invite each other until you are in the same group again.`,
+    inData: "Friends from groups",
+  },
   groupsPage: {
     title: "Groups",
     you: "You",
@@ -603,6 +611,7 @@ export const en: Messages = {
     peopleEmpty: "Once you're in a group with someone, you can invite them from here.",
     allIn: "Everyone you know from your groups is already in.",
     from: (groups: string) => `From ${groups}`,
+    fromPast: "From an earlier group",
     filter: "Search by name",
     noMatch: "Nobody by that name.",
     invited: "Invited",
@@ -1603,6 +1612,7 @@ export const en: Messages = {
     comeBack: "You will come straight back here afterwards.",
   },
   api: {
+    friends: "Couldn't load your friends",
     describeGroup: "Couldn't save the description",
     setPrimeDates: "Couldn't save that",
     // The request never got an answer (callFunction): no connection, or too slow.

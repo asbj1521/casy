@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { da } from "@/i18n/da";
 import { en } from "@/i18n/en";
-import { inviteExpiryLabel, knownPeople, looksLikeEmail, membershipKey } from "@/lib/groups";
+import {
+  friendsOutsideGroups,
+  inviteExpiryLabel,
+  knownPeople,
+  looksLikeEmail,
+  membershipKey,
+} from "@/lib/groups";
 
 describe("inviteExpiryLabel", () => {
   const now = Date.parse("2026-09-20T12:00:00.000Z");
@@ -94,5 +100,35 @@ describe("membershipKey", () => {
     const before = membershipKey([{ id: "g1", members: m("a", "b") }]);
     expect(membershipKey([{ id: "g1", members: m("a", "b", "c") }])).not.toBe(before);
     expect(membershipKey([{ id: "g1", members: m("a") }])).not.toBe(before);
+  });
+});
+
+describe("friends from groups since gone (#222)", () => {
+  const groups = [
+    {
+      id: "g1",
+      name: "Fredag",
+      members: [
+        { profileId: "me", name: "Mig", isYou: true },
+        { profileId: "b", name: "Bo", isYou: false },
+      ],
+    },
+  ];
+  const friends = [
+    { profileId: "b", name: "Bo" },
+    { profileId: "c", name: "Cille" },
+  ];
+
+  it("can be invited, listed once, with no group to name", () => {
+    expect(knownPeople(groups, undefined, friends)).toEqual([
+      { profileId: "b", name: "Bo", groupNames: ["Fredag"] },
+      { profileId: "c", name: "Cille", groupNames: [] },
+    ]);
+  });
+  it("aren't offered for the group they are already in", () => {
+    expect(knownPeople(groups, "g1", friends).map((p) => p.name)).toEqual(["Cille"]);
+  });
+  it("are listed apart only when no group shows them", () => {
+    expect(friendsOutsideGroups(friends, groups)).toEqual([{ profileId: "c", name: "Cille" }]);
   });
 });

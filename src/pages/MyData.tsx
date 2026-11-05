@@ -381,6 +381,9 @@ function GroupsPart({ data }: { data: MyData }) {
       />
       <Fact label={w.invitationsSent} value={data.invitations.sent} />
       <Fact label={w.emailLookups} value={data.emailLookups} detail={w.emailLookupsDetail} />
+      {(data.friends?.count ?? 0) > 0 && (
+        <Fact label={t.friends.inData} value={data.friends?.count} />
+      )}
       {data.safety.reportsSent > 0 && (
         <Fact label={w.reportsSent} value={data.safety.reportsSent} />
       )}

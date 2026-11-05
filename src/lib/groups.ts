@@ -40,6 +40,8 @@ export function knownPeople(
     members: { profileId: string; name: string; isYou: boolean; avatarUrl?: string | null }[];
   }[],
   except?: string,
+  /** People from groups since gone (#222); they have no group to name. */
+  friends: { profileId: string; name: string; avatarUrl?: string | null }[] = [],
 ): KnownPerson[] {
   const inExcept = new Set(
     groups.find((g) => g.id === except)?.members.map((m) => m.profileId) ?? [],
@@ -59,7 +61,25 @@ export function knownPeople(
         });
     }
   }
+  for (const f of friends) {
+    if (inExcept.has(f.profileId) || people.has(f.profileId)) continue;
+    people.set(f.profileId, {
+      profileId: f.profileId,
+      name: f.name,
+      groupNames: [],
+      ...(f.avatarUrl && { avatarUrl: f.avatarUrl }),
+    });
+  }
   return [...people.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** The friends you share no group with now: everyone else is listed under a group already. */
+export function friendsOutsideGroups<F extends { profileId: string }>(
+  friends: F[],
+  groups: { members: { profileId: string }[] }[],
+): F[] {
+  const inGroups = new Set(groups.flatMap((g) => g.members.map((m) => m.profileId)));
+  return friends.filter((f) => !inGroups.has(f.profileId));
 }
 
 /**

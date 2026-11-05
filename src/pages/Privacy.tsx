@@ -86,14 +86,15 @@ const da: LegalCopy = {
             <li>
               <Term>Grupper:</Term> navnet på hver gruppe, du er med i, den korte beskrivelse af,
               hvad gruppen er til, hvis nogen har skrevet en, hvem der ellers er med, hvem der
-              lavede den, og de invitationslinks, der er lavet til den. Invitationslinks gemmes som
-              et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til
-              grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev
-              afslået. Slår du en e-mailadresse op for at invitere nogen, noterer Casy kun, at du
-              gjorde det, så der kan sættes en grænse for, hvor mange du kan slå op om dagen.
-              Adressen gemmes ikke. Den, der har et invitationslink, kan uden at logge ind se
-              gruppens navn og beskrivelse, hvor mange der er med, og navnet på den, der lavede
-              linket.
+              lavede den, og de invitationslinks, der er lavet til den. Hvem du har været i en
+              gruppe med, så I kan invitere hinanden igen, også når gruppen er væk, indtil en af jer
+              fjerner den anden under Mine grupper. Invitationslinks gemmes som et fingeraftryk, der
+              ikke kan laves om til et link, der virker. Invitationer til grupper: hvem der
+              inviterede hvem, og om invitationen stadig er åben eller blev afslået. Slår du en
+              e-mailadresse op for at invitere nogen, noterer Casy kun, at du gjorde det, så der kan
+              sættes en grænse for, hvor mange du kan slå op om dagen. Adressen gemmes ikke. Den,
+              der har et invitationslink, kan uden at logge ind se gruppens navn og beskrivelse,
+              hvor mange der er med, og navnet på den, der lavede linket.
             </li>
             <li>
               <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
@@ -381,11 +382,11 @@ const da: LegalCopy = {
             der lavede en gruppe, kan slette den, hvilket fjerner den for alle medlemmer på én gang.
           </p>
           <p>
-            Andre kan også invitere dig til en gruppe inde i Casy: folk, du allerede er i en gruppe
-            med, og alle, der kender den e-mailadresse, du bruger til Casy. Du bliver kun medlem,
-            hvis du selv siger ja under Mine grupper. Den, der inviterer dig med e-mail, får ikke at
-            vide, om adressen har en konto hos Casy, og ser ikke dit navn, før du har sagt ja.
-            Medlemmer af gruppen, der allerede er i en anden gruppe med dig, kan se, at du er
+            Andre kan også invitere dig til en gruppe inde i Casy: folk, du er eller har været i en
+            gruppe med, og alle, der kender den e-mailadresse, du bruger til Casy. Du bliver kun
+            medlem, hvis du selv siger ja under Mine grupper. Den, der inviterer dig med e-mail, får
+            ikke at vide, om adressen har en konto hos Casy, og ser ikke dit navn, før du har sagt
+            ja. Medlemmer af gruppen, der allerede er i en anden gruppe med dig, kan se, at du er
             inviteret. Siger du nej tak, får ingen besked, og gruppen kan ikke invitere dig igen de
             næste seks måneder, men du kan stadig blive medlem med et link.
           </p>
@@ -597,13 +598,14 @@ const en: LegalCopy = {
             <li>
               <Term>Groups:</Term> the name of each group you are in, the short description of what
               the group is for if anyone wrote one, who else is in it, who made it, and the invite
-              links made for it. Invite links are stored as a fingerprint that cannot be turned back
-              into a working link. Invitations to groups: who invited whom, and whether the
-              invitation is still open or was declined. When you look up an email address to invite
-              someone, Casy only notes that you did, so it can limit how many you can look up in a
-              day. The address is not stored. Anyone holding an invite link can see, without signing
-              in, the group's name and description, how many are in it, and the name of whoever made
-              the link.
+              links made for it. Who you have shared a group with, so you can invite each other
+              again even when the group is gone, until either of you removes the other on My groups.
+              Invite links are stored as a fingerprint that cannot be turned back into a working
+              link. Invitations to groups: who invited whom, and whether the invitation is still
+              open or was declined. When you look up an email address to invite someone, Casy only
+              notes that you did, so it can limit how many you can look up in a day. The address is
+              not stored. Anyone holding an invite link can see, without signing in, the group's
+              name and description, how many are in it, and the name of whoever made the link.
             </li>
             <li>
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
@@ -891,13 +893,13 @@ const en: LegalCopy = {
             person who made a group can delete it, which removes it for every member at once.
           </p>
           <p>
-            People can also invite you to a group from inside Casy: anyone you already share a group
-            with, and anyone who knows the email address you use for Casy. You only join if you say
-            yes yourself, on My groups. Someone inviting you by email is not told whether the
-            address has a Casy account, and doesn&apos;t see your name until you say yes. Members of
-            that group who already share another group with you can see that you were invited. If
-            you say no thanks, nobody is told, and that group can&apos;t invite you again for six
-            months, though you can still join with a link.
+            People can also invite you to a group from inside Casy: anyone you share or have shared
+            a group with, and anyone who knows the email address you use for Casy. You only join if
+            you say yes yourself, on My groups. Someone inviting you by email is not told whether
+            the address has a Casy account, and doesn&apos;t see your name until you say yes.
+            Members of that group who already share another group with you can see that you were
+            invited. If you say no thanks, nobody is told, and that group can&apos;t invite you
+            again for six months, though you can still join with a link.
           </p>
           <p>
             When someone suggests an event, everyone in the group sees it, the dates on offer, its

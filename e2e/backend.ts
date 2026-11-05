@@ -712,6 +712,11 @@ export class FakeBackend {
         return ok({ blocked: w.blocked });
       case "blocked":
         return ok({ blocked: w.blocked });
+      case "friends":
+        return ok({ friends: w.friends });
+      case "remove-friend":
+        w.friends = w.friends.filter((f) => f.profileId !== body.profileId);
+        return ok({ friends: w.friends });
       case "leave":
         w.groups = w.groups.filter((g) => g.id !== body.groupId);
         this.changed();

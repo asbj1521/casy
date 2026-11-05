@@ -92,6 +92,8 @@ export interface MyData {
   shortcuts: { count: number; pictures: number };
   /** Report and block (#142): how many people you blocked, and your reports Casy keeps. */
   safety: { blocked: number; reportsSent: number };
+  /** People you have shared a group with (#222), who can invite you again. */
+  friends: { count: number };
   /**
    * Whether the AI features are on for you (#111), your AI calls recorded (30
    * days), and your yes to the AI using content from your calendar (#120):
@@ -116,6 +118,8 @@ export interface MyDataExport extends MyData {
   shortcutsSaved: StoredPreset[];
   /** Who you blocked (#142), by the name they go by, and when. */
   blockedPeople: { name: string | null; since: string }[];
+  /** People you have shared a group with (#222), by the name they go by, and since when. */
+  friendsFromGroups: { name: string | null; since: string }[];
   /** Your reports Casy keeps (#142): what about, why, your note, when. */
   reportsSent: { kind: string; reason: string; note: string | null; sentAt: string }[];
 }
@@ -299,6 +303,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     shortcutPictures,
     blockedCount,
     reportsCount,
+    friendsCount,
     appleTokens,
     push,
   ] = await Promise.all([
@@ -374,6 +379,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     ),
     count(db.from("blocked_people").select("blocked_id", head).eq("blocker_id", me)),
     count(db.from("content_reports").select("id", head).eq("reporter_id", me)),
+    count(db.from("friends").select("friend_id", head).eq("profile_id", me)),
     count(db.from("apple_sign_ins").select("profile_id", head).eq("profile_id", me)),
     readPushSettings(db, me),
   ]);
@@ -435,6 +441,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     groupPictures: { count: groupPictures },
     shortcuts: { count: shortcuts, pictures: shortcutPictures },
     safety: { blocked: blockedCount, reportsSent: reportsCount },
+    friends: { count: friendsCount },
     ai: {
       allowed: aiOn,
       calls: aiCalls,
@@ -512,6 +519,21 @@ export async function exportMyData(
 
   // Report and block (#142): small lists, one read each.
   const blocked = await listBlocked(db, caller.id);
+  // Friends from groups (#222): names one read apart, as for those you blocked.
+  const { data: friendRows, error: friendsError } = await db
+    .from("friends")
+    .select("friend_id, created_at")
+    .eq("profile_id", caller.id);
+  if (friendsError) throw friendsError;
+  const { data: friendNames, error: friendNamesError } = await db
+    .from("profiles")
+    .select("id, display_name")
+    .in(
+      "id",
+      friendRows.map((f) => f.friend_id),
+    );
+  if (friendNamesError) throw friendNamesError;
+  const friendNameOf = new Map(friendNames.map((p) => [p.id as string, p.display_name as string]));
   const { data: reports, error: reportsError } = await db
     .from("content_reports")
     .select("kind, reason, note, created_at")
@@ -525,6 +547,10 @@ export async function exportMyData(
     toldCasyEntries: (told as EntryRow[]).map(storedFrom),
     shortcutsSaved: (presets as PresetRow[]).map(presetFrom),
     blockedPeople: blocked.map((b) => ({ name: b.name, since: b.blockedAt })),
+    friendsFromGroups: friendRows.map((f) => ({
+      name: friendNameOf.get(f.friend_id as string) ?? null,
+      since: f.created_at as string,
+    })),
     reportsSent: (
       reports as { kind: string; reason: string; note: string | null; created_at: string }[]
     ).map((r) => ({ kind: r.kind, reason: r.reason, note: r.note, sentAt: r.created_at })),
