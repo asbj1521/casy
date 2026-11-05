@@ -36,7 +36,13 @@
  */
 import { requireCaller } from "../_shared/auth.ts";
 import { langOf } from "../_shared/i18n.ts";
-import { listFriends, removeFriend } from "./friends.ts";
+import {
+  addFriendByLink,
+  listFriends,
+  makeFriendLink,
+  previewFriendLink,
+  removeFriend,
+} from "./friends.ts";
 import { allowedFrontends, inviteFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
 import {
@@ -116,6 +122,9 @@ serve("groups", async (req, body) => {
       },
     };
   }
+
+  // A friend link's page, also before signing in (#226).
+  if (action === "preview-friend") return await previewFriendLink(db, body.token);
 
   const caller = await requireCaller(req, db);
 
@@ -350,6 +359,18 @@ serve("groups", async (req, body) => {
       );
       return { url: inviteUrl(origin, token), expiresAt };
     }
+
+    case "friend-link":
+      return await makeFriendLink(
+        db,
+        profileId,
+        // The app says so itself (`app: true`): see inviteFrontend.
+        inviteFrontend(req.headers.get("Origin"), body.app === true, allowedFrontends()),
+      );
+
+    case "add-friend":
+      await addFriendByLink(db, profileId, body.token);
+      return { friends: await listFriends(db, profileId, lang) };
 
     case "join": {
       const { groupId } = await findInvite(db, body.token);

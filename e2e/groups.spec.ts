@@ -371,7 +371,7 @@ test.describe("friends from groups since gone (#222)", () => {
       .click();
     const sheet = page.getByRole("dialog", { name: "Invitér til Løbeklubben" });
     await sheet.getByRole("checkbox", { name: /^Tilde/ }).check();
-    await expect(sheet.getByText("Fra en tidligere gruppe")).toBeVisible();
+    await expect(sheet.getByText("Din ven")).toBeVisible();
     await sheet.getByRole("button", { name: "Send invitation" }).click();
     await expect
       .poll(() => backend.calls.find((c) => c.body.action === "invite-members")?.body)
@@ -464,5 +464,59 @@ test.describe("swiping a group in the list (#223)", () => {
     await page.goto("/groups");
     await page.getByRole("link", { name: /^Fredagsbar/ }).click();
     await expect(page).toHaveURL(/g-friday/);
+  });
+});
+
+test.describe("adding a friend by link (#226)", () => {
+  test.beforeEach(({ isMobile }) => test.skip(!isMobile, "the app is a phone"));
+
+  test("the Venner screen makes a link to send", async ({ page, backend }) => {
+    await page.goto("/?profile=friends");
+    await page.getByRole("button", { name: "Tilføj en ven" }).click();
+    const sheet = page.getByRole("dialog", { name: "Tilføj en ven" });
+    await sheet.getByRole("button", { name: "Lav et link" }).click();
+    await expect(sheet.getByText("casy.app/friend/test-friend-token")).toBeVisible();
+    expect(backend.calls.some((c) => c.body.action === "friend-link")).toBe(true);
+  });
+
+  test("a tap on the link's page is the yes, and leads to Venner", async ({ page }) => {
+    await page.goto("/friend/a-token");
+    await expect(page.getByRole("heading", { name: "Sara vil være venner" })).toBeVisible();
+    await page.getByRole("button", { name: "Bliv venner" }).click();
+    await expect(page).toHaveURL(/\?profile=friends$/);
+    await expect(page.getByText("Sara Ny", { exact: true }).first()).toBeVisible();
+  });
+
+  test("your own link says so", async ({ page }) => {
+    await page.goto("/friend/own-token");
+    await page.getByRole("button", { name: "Bliv venner" }).click();
+    await expect(page.getByText("This is your own friend link.")).toBeVisible();
+  });
+
+  test("back from signing up, the yes already given makes you friends", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/friend/a-token?add=1");
+    await expect
+      .poll(() => backend.calls.filter((c) => c.body.action === "add-friend").length)
+      .toBe(1);
+    await expect(page).toHaveURL(/\?profile=friends$/);
+  });
+
+  test.describe("signed out", () => {
+    test.use({ signedIn: false });
+
+    test("says who asks, and goes through sign-up", async ({ page }) => {
+      await page.goto("/friend/a-token");
+      await expect(page.getByRole("heading", { name: "Sara vil være venner" })).toBeVisible();
+      await page.getByRole("link", { name: "Bliv venner" }).click();
+      await expect(page).toHaveURL(/\/sign-in\?signup=1&next=%2Ffriend%2Fa-token%3Fadd%3D1/);
+    });
+
+    test("an expired link says so", async ({ page }) => {
+      await page.goto("/friend/expired-token");
+      await expect(page.getByRole("heading", { name: "Invitationen virker ikke" })).toBeVisible();
+    });
   });
 });

@@ -62,10 +62,10 @@ export function useInvite(
   const contacts = useMutation({
     mutationFn: async () => {
       const url = (link.data ?? (await link.mutateAsync())).url;
-      return await inviteFromContacts(
-        { id: group.id, url },
-        { message, shareTitle: t.invite.shareTitle(group.name) },
-      );
+      return await inviteFromContacts(url, {
+        message,
+        shareTitle: t.invite.shareTitle(group.name),
+      });
     },
   });
 

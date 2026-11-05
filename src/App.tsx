@@ -52,6 +52,7 @@ const MyData = lazy(loadPage.myData);
 const Settings = lazy(loadPage.settings);
 const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
+const FriendLink = lazy(loadPage.friendLink);
 const Invitation = lazy(loadPage.invitation);
 const Privacy = lazy(loadPage.privacy);
 const Terms = lazy(loadPage.terms);
@@ -155,6 +156,7 @@ function App() {
                   {/* The invite link. Signing in happens on the page itself, so
                     someone can see what they were invited to before deciding. */}
                   <Route path="/join/:token" element={<JoinGroup />} />
+                  <Route path="/friend/:token" element={<FriendLink />} />
                   {/* Everything tied to one person's calendars needs a login. */}
                   <Route
                     path="/profile"

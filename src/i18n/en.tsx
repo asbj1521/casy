@@ -154,6 +154,21 @@ export const en: Messages = {
     signOut: "Sign out",
     waitingForAnswer: (n: number) => `${n} waiting for your answer`,
   },
+  friendLink: {
+    add: "Add a friend",
+    asks: (name: string) => `${name} wants to be friends`,
+    asksAnon: "You are invited to be friends",
+    detail: "on Casy",
+    accept: "Become friends",
+    about: "What does this mean?",
+    promise:
+      "You can invite each other to groups. Neither of you can see the other's calendar until you both say yes to a group.",
+    message: "Be friends with me on Casy, so we can find a date that works:",
+    shareTitle: "Be friends on Casy",
+    linkHelp: (expiry: string) =>
+      `Anyone with the link can become your friend, so only send it to people you know. It works for ${expiry}.`,
+    qrHelp: "Let your friend scan the code with their camera.",
+  },
   friends: {
     screenTitle: "Friends",
     empty: "Everyone you are in a group with shows up here.",
@@ -161,7 +176,8 @@ export const en: Messages = {
     note: "You can invite each other to new groups.",
     remove: "Remove",
     removeAsk: (name: string) =>
-      `Remove ${name}? You can't invite each other until you are in the same group again.`,
+      `Remove ${name}? You can't invite each other until you are friends again.`,
+    linksInData: "Friend links",
     inData: "Friends from groups",
   },
   groupsPage: {
@@ -618,7 +634,7 @@ export const en: Messages = {
     peopleEmpty: "Once you're in a group with someone, you can invite them from here.",
     allIn: "Everyone you know from your groups is already in.",
     from: (groups: string) => `From ${groups}`,
-    fromPast: "From an earlier group",
+    fromPast: "Your friend",
     filter: "Search by name",
     noMatch: "Nobody by that name.",
     invited: "Invited",
@@ -1631,6 +1647,7 @@ export const en: Messages = {
     goneBody: "The group may have been deleted, or you have already answered.",
   },
   api: {
+    friendLink: "That did not work. Please try again.",
     friends: "Couldn't load your friends",
     describeGroup: "Couldn't save the description",
     setPrimeDates: "Couldn't save that",

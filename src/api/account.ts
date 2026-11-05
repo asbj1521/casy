@@ -156,6 +156,8 @@ export interface MyData {
     primeDates?: boolean;
   }[];
   inviteLinks: { made: number; active: number };
+  /** Missing in answers from before #226. */
+  friendLinks?: { made: number; active: number };
   invitations: { pending: number; declined: number; sent: number };
   emailLookups: number;
   events: { invitedTo: number; suggested: number; answers: number; declined: number };

@@ -8,7 +8,6 @@
  * As in phoneCalendar.ts, @capacitor/core loads on first use and only the
  * module goes through promises, never the plugin itself.
  */
-import { createInvite } from "@/api/groups";
 import { shareLink } from "@/lib/share";
 
 /** One person picked: their name and every number and email they have. */
@@ -69,18 +68,17 @@ export function recipientsOf(contacts: PickedContact[]): string[] {
 }
 
 /**
- * The whole invite from the contacts (#149): the people picked, a link to the
- * group (`url`, or a new one), and Messages opened with them and the text
- * and link; a phone that can't text gets the share sheet instead. Null when
- * nobody was picked. Used by a group's Invite dialog and by New group.
+ * The whole invite from the contacts (#149): the people picked, and Messages
+ * opened with them and the text and link; a phone that can't text gets the
+ * share sheet instead. Null when nobody was picked. Used for a group's link
+ * (its Invite sheet, New group) and a friend link (#226).
  */
 export async function inviteFromContacts(
-  group: { id: string; url?: string },
+  url: string,
   words: { message: string; shareTitle: string },
 ): Promise<TextResult | "shared" | null> {
   const to = recipientsOf(await pickContacts());
   if (to.length === 0) return null;
-  const url = group.url ?? (await createInvite(group.id)).url;
   if (await canText()) return await textInvite(to, `${words.message} ${url}`);
   await shareLink({ title: words.shareTitle, text: words.message, url });
   return "shared";

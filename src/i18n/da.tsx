@@ -163,6 +163,21 @@ export const da = {
     waitingForAnswer: (n: number) => `${n} venter på dit svar`,
   },
   // Friends from groups since gone (#222).
+  friendLink: {
+    add: "Tilføj en ven",
+    asks: (name: string) => `${name} vil være venner`,
+    asksAnon: "Du er inviteret til at blive venner",
+    detail: "på Casy",
+    accept: "Bliv venner",
+    about: "Hvad betyder det?",
+    promise:
+      "I kan invitere hinanden til grupper. Ingen af jer kan se den andens kalender, før I selv siger ja til en gruppe.",
+    message: "Bliv venner med mig på Casy, så kan vi finde en dato, der passer:",
+    shareTitle: "Bliv venner på Casy",
+    linkHelp: (expiry: string) =>
+      `Alle med linket kan blive din ven, så send det kun til dem, du kender. Det virker i ${expiry}.`,
+    qrHelp: "Lad din ven scanne koden med kameraet.",
+  },
   friends: {
     screenTitle: "Venner",
     empty: "Alle, du er i en gruppe med, kommer her.",
@@ -170,7 +185,8 @@ export const da = {
     note: "I kan invitere hinanden til nye grupper.",
     remove: "Fjern",
     removeAsk: (name: string) =>
-      `Fjern ${name}? I kan ikke invitere hinanden, før I er i samme gruppe igen.`,
+      `Fjern ${name}? I kan ikke invitere hinanden, før I er venner igen.`,
+    linksInData: "Venskabslinks",
     inData: "Venner fra grupper",
   },
   groupsPage: {
@@ -659,7 +675,7 @@ export const da = {
     peopleEmpty: "Når du er i en gruppe med nogen, kan du invitere dem herfra.",
     allIn: "Alle, du kender fra dine grupper, er allerede med.",
     from: (groups: string) => `Fra ${groups}`,
-    fromPast: "Fra en tidligere gruppe",
+    fromPast: "Din ven",
     filter: "Søg efter navn",
     noMatch: "Ingen med det navn.",
     invited: "Inviteret",
@@ -1691,6 +1707,7 @@ export const da = {
     goneBody: "Gruppen er måske slettet, eller du har allerede svaret.",
   },
   api: {
+    friendLink: "Det lykkedes ikke. Prøv igen.",
     friends: "Kunne ikke hente dine venner",
     describeGroup: "Kunne ikke gemme beskrivelsen",
     setPrimeDates: "Kunne ikke gemme valget",

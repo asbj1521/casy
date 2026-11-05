@@ -33,6 +33,12 @@ export function langOf(req: Request): Lang {
 }
 
 export const DANISH: Record<string, string> = {
+  // Friend links (#226)
+  "That friend link is not valid.": "Linket virker ikke.",
+  "That friend link has expired. Ask for a new one.": "Linket er udløbet. Bed om et nyt.",
+  "You have made too many friend links today. Try again tomorrow.":
+    "Du har lavet for mange links i dag. Prøv igen i morgen.",
+  "This is your own friend link.": "Det her er dit eget link.",
   // Sign-in and access
   "Please sign in again.": "Log ind igen.",
   "Admins only.": "Kun for administratorer.",

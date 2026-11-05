@@ -12,6 +12,7 @@ describe("appLinkPath", () => {
   it("leads an invite link to its join page", () => {
     expect(appLinkPath("https://casy.app/join/abc123")).toBe("/join/abc123");
     expect(appLinkPath("https://casy.app/join/abc123/")).toBe("/join/abc123");
+    expect(appLinkPath("https://casy.app/friend/abc123")).toBe("/friend/abc123");
   });
 
   it("opens the link the server makes, which the QR code, the copied link and the text carry", () => {
@@ -61,7 +62,7 @@ describe("the association file", () => {
   });
 
   it("lists only the invite links, which is all appLinkPath opens", () => {
-    expect(detail.components.map((c) => c["/"])).toEqual(["/join/*"]);
+    expect(detail.components.map((c) => c["/"])).toEqual(["/join/*", "/friend/*"]);
   });
 
   it("is what the app's entitlement and appLinkPath are about: casy.app", () => {

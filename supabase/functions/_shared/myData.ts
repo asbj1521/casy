@@ -80,6 +80,8 @@ export interface MyData {
     primeDates: boolean;
   }[];
   inviteLinks: { made: number; active: number };
+  /** Links to become your friend (#226). */
+  friendLinks: { made: number; active: number };
   invitations: { pending: number; declined: number; sent: number };
   emailLookups: number;
   events: { invitedTo: number; suggested: number; answers: number; declined: number };
@@ -282,6 +284,8 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     last,
     next,
     linksMade,
+    friendLinksMade,
+    friendLinksActive,
     linksActive,
     pending,
     declined,
@@ -322,6 +326,8 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
           .limit(3)
       : null,
     count(db.from("group_invites").select("id", head).eq("created_by", me)),
+    count(db.from("friend_links").select("id", head).eq("created_by", me)),
+    count(db.from("friend_links").select("id", head).eq("created_by", me).gt("expires_at", nowIso)),
     count(
       db.from("group_invites").select("id", head).eq("created_by", me).gt("expires_at", nowIso),
     ),
@@ -433,6 +439,7 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     },
     groups: shapeGroups(memberships.data as unknown as MembershipRow[], me),
     inviteLinks: { made: linksMade, active: linksActive },
+    friendLinks: { made: friendLinksMade, active: friendLinksActive },
     invitations: { pending, declined, sent },
     emailLookups: lookups,
     events: { invitedTo, suggested, answers, declined: declinedDates },

@@ -344,6 +344,32 @@ export async function createInvite(groupId: string): Promise<{ url: string; expi
   });
 }
 
+/** A new link to become your friend (#226). */
+export async function createFriendLink(): Promise<{ url: string; expiresAt: string }> {
+  return await callFunction("groups", {
+    body: { action: "friend-link", app: isNativeApp },
+    errorMessage: currentMessages().api.friendLink,
+  });
+}
+
+/** Who made a friend link, for its page before anyone signs in. */
+export async function previewFriend(
+  token: string,
+): Promise<{ friend: { name: string | null; avatarUrl: string | null } }> {
+  return await callFunction("groups", {
+    body: { action: "preview-friend", token },
+    errorMessage: currentMessages().api.preview,
+  });
+}
+
+/** Say yes to a friend link: friends both ways. */
+export async function addFriend(token: string): Promise<{ friends: Friend[] }> {
+  return await callFunction("groups", {
+    body: { action: "add-friend", token },
+    errorMessage: currentMessages().api.friendLink,
+  });
+}
+
 /** The group behind an invite link, for the join page before anyone signs in. */
 export async function previewInvite(token: string): Promise<{
   group: {

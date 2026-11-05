@@ -1,21 +1,16 @@
-import { lazy, Suspense } from "react";
-import { BookUser, Check, Copy, Link2, Loader2, QrCode as QrIcon, Share } from "lucide-react";
+import { BookUser, Loader2 } from "lucide-react";
 
+import { LinkOutcome, LinkRows } from "@/components/groups/LinkRows";
 import InvitePicker, { EmailField, EmailRows, PeopleList } from "@/components/InvitePicker";
 import FlowButton from "@/components/ui/FlowButton";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
-import { useCopy } from "@/hooks/useCopy";
 import { useEmailEntry } from "@/hooks/useEmailEntry";
 import type { Invite } from "@/hooks/useInvite";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { inviteExpiryLabel } from "@/lib/groups";
 import { isNativeApp } from "@/lib/nativeApp";
-import { shareLink } from "@/lib/share";
-
-// The QR library is only fetched once a code is asked for (#157).
-const QrCode = lazy(() => import("@/components/ui/QrCode"));
 
 /**
  * What an Invite sheet holds (#153), most used first: the contacts (in the
@@ -27,14 +22,8 @@ const QrCode = lazy(() => import("@/components/ui/QrCode"));
 export default function InviteBody({ invite }: { invite: Invite }) {
   const t = useT();
   const { group, link, contacts, showQr, setShowQr } = invite;
-  const [copied, copy] = useCopy();
   const phone = usePhoneLayout();
   const email = useEmailEntry(invite.invitees, invite.setInvitees);
-
-  function toggleQr() {
-    setShowQr(!showQr);
-    if (!link.data && !link.isPending) link.mutate();
-  }
 
   const contactRow = (
     <ListRow
@@ -60,70 +49,22 @@ export default function InviteBody({ invite }: { invite: Invite }) {
     </>
   );
   const linkRows = (
-    <>
-      {link.data ? (
-        <ListRow
-          icon={Link2}
-          label={link.data.url}
-          value={
-            <span className="flex items-center gap-1 text-primary">
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? t.common.copied : t.common.copy}
-            </span>
-          }
-          onClick={() => copy(link.data!.url)}
-        />
-      ) : (
-        <ListRow
-          icon={Link2}
-          label={link.isPending ? t.invite.makingLink : t.invite.makeLink}
-          value={link.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
-          onClick={() => !link.isPending && link.mutate()}
-        />
-      )}
-      {link.data && invite.canShare && (
-        <ListRow
-          icon={Share}
-          label={t.invite.shareLink}
-          onClick={() =>
-            void shareLink({
-              title: t.invite.shareTitle(group.name),
-              text: invite.message,
-              url: link.data!.url,
-            })
-          }
-        />
-      )}
-      <ListRow
-        icon={QrIcon}
-        label={showQr ? t.invite.hideQr : t.invite.showQr}
-        expanded={showQr}
-        onClick={toggleQr}
-      />
-    </>
+    <LinkRows
+      link={link}
+      canShare={invite.canShare}
+      shareTitle={t.invite.shareTitle(group.name)}
+      message={invite.message}
+      showQr={showQr}
+      setShowQr={setShowQr}
+    />
   );
   const linkOutcome = (
-    <>
-      {showQr && link.data && (
-        <figure className="mt-3 flex flex-col items-center gap-2">
-          <Suspense fallback={<div className="h-56 w-56 rounded-xl bg-white" />}>
-            <QrCode
-              value={link.data.url}
-              label={t.invite.qrLabel(group.name)}
-              className="h-56 w-56 rounded-xl"
-            />
-          </Suspense>
-          <figcaption className="text-center text-xs text-muted-foreground">
-            {t.invite.qrHelp}
-          </figcaption>
-        </figure>
-      )}
-      {link.isError && (
-        <Notice tone="error" bare className="mt-2">
-          {link.error.message}
-        </Notice>
-      )}
-    </>
+    <LinkOutcome
+      link={link}
+      showQr={showQr}
+      qrLabel={t.invite.qrLabel(group.name)}
+      qrHelp={t.invite.qrHelp}
+    />
   );
   const sentNotices = (
     <>

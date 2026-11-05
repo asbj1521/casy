@@ -88,15 +88,16 @@ const da: LegalCopy = {
               <Term>Grupper:</Term> navnet på hver gruppe, du er med i, den korte beskrivelse af,
               hvad gruppen er til, hvis nogen har skrevet en, hvem der ellers er med, hvem der
               lavede den, og de invitationslinks, der er lavet til den. Hvem du har været i en
-              gruppe med, så I kan invitere hinanden igen, også når gruppen er væk, indtil en af jer
-              fjerner den anden under Mine grupper. Invitationslinks gemmes som et fingeraftryk, der
-              ikke kan laves om til et link, der virker. Invitationer til grupper: hvem der
-              inviterede hvem, og om invitationen stadig er åben eller blev afslået. Slår du en
-              e-mailadresse op for at invitere nogen, noterer Casy kun, at du gjorde det, så der kan
-              sættes en grænse for, hvor mange du kan slå op om dagen. Adressen gemmes ikke. Den,
-              der har et invitationslink, kan uden at logge ind se gruppens navn og beskrivelse,
-              hvor mange der er med, navnet på den, der lavede linket, og gruppens billede eller,
-              uden et, billedet af den, der lavede linket.
+              gruppe med, eller er blevet venner med gennem et link, så I kan invitere hinanden,
+              også når gruppen er væk, indtil en af jer fjerner den anden. Invitationslinks gemmes
+              som et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til
+              grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev
+              afslået. Slår du en e-mailadresse op for at invitere nogen, noterer Casy kun, at du
+              gjorde det, så der kan sættes en grænse for, hvor mange du kan slå op om dagen.
+              Adressen gemmes ikke. Den, der har et invitationslink, kan uden at logge ind se
+              gruppens navn og beskrivelse, hvor mange der er med, navnet på den, der lavede linket,
+              og gruppens billede eller, uden et, billedet af den, der lavede linket. Den, der har
+              et venskabslink, kan uden at logge ind se navnet og billedet på den, der lavede det.
             </li>
             <li>
               <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
@@ -460,7 +461,7 @@ const da: LegalCopy = {
               aflyste aftaler og aftaler, der ikke fandt en dato, 30 dage efter de blev lukket (lidt
               senere, hvis Casy endnu ikke har fået fjernet en aflyst aftale fra nogens kalender);
             </li>
-            <li>invitationslinks 30 dage efter, at de er holdt op med at virke;</li>
+            <li>invitations- og venskabslinks 30 dage efter, at de er holdt op med at virke;</li>
             <li>notatet om, at du har slået en e-mailadresse op, efter et døgn;</li>
             <li>koden for en adresse, Casy har sendt en login-e-mail til, efter et døgn;</li>
             <li>notatet om dine AI-svar efter 30 dage;</li>
@@ -601,15 +602,17 @@ const en: LegalCopy = {
             <li>
               <Term>Groups:</Term> the name of each group you are in, the short description of what
               the group is for if anyone wrote one, who else is in it, who made it, and the invite
-              links made for it. Who you have shared a group with, so you can invite each other
-              again even when the group is gone, until either of you removes the other on My groups.
-              Invite links are stored as a fingerprint that cannot be turned back into a working
-              link. Invitations to groups: who invited whom, and whether the invitation is still
-              open or was declined. When you look up an email address to invite someone, Casy only
-              notes that you did, so it can limit how many you can look up in a day. The address is
-              not stored. Anyone holding an invite link can see, without signing in, the group's
-              name and description, how many are in it, the name of whoever made the link, and the
-              group's picture or, without one, the picture of whoever made the link.
+              links made for it. Who you have shared a group with, or become friends with through a
+              link, so you can invite each other, even once the group is gone, until one of you
+              removes the other. Invite links are stored as a fingerprint that cannot be turned back
+              into a working link. Invitations to groups: who invited whom, and whether the
+              invitation is still open or was declined. When you look up an email address to invite
+              someone, Casy only notes that you did, so it can limit how many you can look up in a
+              day. The address is not stored. Anyone holding an invite link can see, without signing
+              in, the group's name and description, how many are in it, the name of whoever made the
+              link, and the group's picture or, without one, the picture of whoever made the link.
+              Anyone holding a friend link can see, without signing in, the name and picture of
+              whoever made it.
             </li>
             <li>
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
@@ -974,7 +977,7 @@ const en: LegalCopy = {
               later if Casy has not yet managed to take a cancelled event out of someone&apos;s
               calendar);
             </li>
-            <li>invite links 30 days after they stopped working;</li>
+            <li>invite and friend links 30 days after they stopped working;</li>
             <li>the note that you looked up an email address, after a day;</li>
             <li>the code for an address Casy sent a sign-in email to, after a day;</li>
             <li>the note about your AI answers after 30 days;</li>

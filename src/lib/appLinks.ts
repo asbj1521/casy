@@ -1,8 +1,8 @@
 /**
  * Links that open the iPhone app (#140): iOS hands the app the URL of a
  * casy.app link it was opened from, and this says where in the app it leads.
- * Only an invite link, `/join/<token>` on casy.app itself, which is also all
- * the association file lists (public/.well-known/apple-app-site-association):
+ * Only an invite link, `/join/<token>`, or a friend link, `/friend/<token>`
+ * (#226), on casy.app itself, which is also all the association file lists (public/.well-known/apple-app-site-association):
  * anything else is ignored, so a link can never take the app to a page, or
  * to another site, it didn't promise.
  */
@@ -19,6 +19,6 @@ export function appLinkPath(url: string): string | null {
     return null;
   }
   if (parsed.protocol !== "https:" || parsed.hostname !== APP_LINK_HOST) return null;
-  const token = /^\/join\/([^/]+)\/?$/.exec(parsed.pathname)?.[1];
-  return token ? `/join/${token}` : null;
+  const link = /^\/(join|friend)\/([^/]+)\/?$/.exec(parsed.pathname);
+  return link ? `/${link[1]}/${link[2]}` : null;
 }

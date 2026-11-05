@@ -3,7 +3,10 @@
     "details": [
       {
         "appIDs": ["ZBXDWW8AN3.app.casy"],
-        "components": [{ "/": "/join/*", "comment": "Invite links open in the Casy app (#140)" }]
+        "components": [
+          { "/": "/join/*", "comment": "Invite links open in the Casy app (#140)" },
+          { "/": "/friend/*", "comment": "Friend links open in the Casy app (#226)" }
+        ]
       }
     ]
   }

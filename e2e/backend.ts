@@ -668,6 +668,20 @@ export class FakeBackend {
           url: "https://casy.app/join/test-invite-token",
           expiresAt: "2026-10-14T08:00:00.000Z",
         });
+      case "friend-link":
+        return ok({
+          url: "https://casy.app/friend/test-friend-token",
+          expiresAt: "2026-10-14T08:00:00.000Z",
+        });
+      case "preview-friend":
+        if (body.token === "expired-token") {
+          return fail(410, "That friend link has expired. Ask for a new one.");
+        }
+        return ok({ friend: { name: "Sara", avatarUrl: null } });
+      case "add-friend":
+        if (body.token === "own-token") return fail(400, "This is your own friend link.");
+        w.friends = [...w.friends, { profileId: "p-sara-new", name: "Sara Ny" }];
+        return ok({ friends: w.friends });
       case "invite-members":
         return ok({ groups: w.groups });
       case "accept-invitation":
