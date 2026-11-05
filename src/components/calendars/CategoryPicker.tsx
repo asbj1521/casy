@@ -1,7 +1,8 @@
 import { useId, useState } from "react";
-import { ChevronDown, Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 
 import type { CalendarChange } from "@/api/calendars";
+import PickerButton from "@/components/calendars/PickerButton";
 import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import { FIELD, FIELD_LABEL } from "@/components/ui/field";
 import FlowButton from "@/components/ui/FlowButton";
@@ -62,21 +63,18 @@ export default function CategoryPicker({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        disabled={disabled}
-        aria-label={
+      <PickerButton
+        label={
           calendar.purposeGuessed
             ? `${words.categoryFor(calendar.name)}, ${t.aiPlan.guessed}`
             : words.categoryFor(calendar.name)
         }
-        className="hit flex h-7 max-w-full items-center gap-1 rounded-full bg-secondary px-2.5 text-xs font-medium text-foreground disabled:opacity-50"
+        disabled={disabled}
+        onClick={() => setOpen(true)}
       >
         {calendar.purposeGuessed && <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />}
         <span className="truncate">{categoryLabel(calendar, t.categories, words.noCategory)}</span>
-        <ChevronDown aria-hidden className="h-3 w-3 shrink-0 text-muted-foreground" />
-      </button>
+      </PickerButton>
       <AnchoredPanel
         open={open}
         onClose={() => setOpen(false)}

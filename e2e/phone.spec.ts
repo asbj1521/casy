@@ -392,3 +392,26 @@ test("a calendar can get a category of your own, which any calendar can then pic
   await page.getByRole("radio", { name: "Privat", exact: true }).click();
   await expect(category).toContainText("Privat");
 });
+
+test("a calendar's priority is picked the same way as its category (#220)", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "a computer keeps its menus");
+  await page.goto("/?calendars");
+  const sheet = page.getByRole("dialog", { name: "Kalendere" });
+  await sheet
+    .getByRole("button", { name: /Google/ })
+    .first()
+    .click();
+  await expect(sheet.locator("select")).toHaveCount(0);
+  await sheet
+    .getByRole("button", { name: /^Hvor vigtig er/ })
+    .first()
+    .click();
+  await page.getByRole("radio", { name: "Spring aldrig over" }).click();
+  await expect
+    .poll(() => backend.calls.find((c) => c.name === "calendar-set-purpose")?.body)
+    .toMatchObject({ priority: "never" });
+});

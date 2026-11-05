@@ -15,6 +15,7 @@ import { shade } from "@/lib/tint";
 import InfoTip from "@/components/InfoTip";
 import InlineTextEdit from "@/components/InlineTextEdit";
 import CategoryPicker from "@/components/calendars/CategoryPicker";
+import PriorityPicker from "@/components/calendars/PriorityPicker";
 import PrimaryCalendarPicker from "@/components/PrimaryCalendarPicker";
 import FitSelect from "@/components/ui/FitSelect";
 import Collapse from "@/components/ui/Collapse";
@@ -549,16 +550,25 @@ function CalendarRow({
                 }
               />
             )}
-            <FitSelect
-              value={c.priority}
-              options={PRIORITIES.map((priority) => ({
-                value: priority,
-                label: words.priorities[priority],
-              }))}
-              onChange={(priority) => labels.mutate({ priority })}
-              disabled={labels.isPending}
-              label={words.priorityFor(c.name)}
-            />
+            {phone ? (
+              <PriorityPicker
+                calendar={c}
+                anchorId={rowId}
+                disabled={labels.isPending}
+                onChange={(priority) => labels.mutate({ priority })}
+              />
+            ) : (
+              <FitSelect
+                value={c.priority}
+                options={PRIORITIES.map((priority) => ({
+                  value: priority,
+                  label: words.priorities[priority],
+                }))}
+                onChange={(priority) => labels.mutate({ priority })}
+                disabled={labels.isPending}
+                label={words.priorityFor(c.name)}
+              />
+            )}
           </>
         )}
         {labels.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
