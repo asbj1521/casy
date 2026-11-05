@@ -6,6 +6,7 @@ test.describe("signed out", () => {
 
   test("says who invited you, to what, and what Casy is, before asking for an account", async ({
     page,
+    isMobile,
   }) => {
     await page.goto("/join/a-token");
     await expect(page.getByRole("heading", { name: "Sara har inviteret dig til" })).toBeVisible();
@@ -13,8 +14,15 @@ test.describe("signed out", () => {
     await expect(page.getByText("4 medlemmer indtil videre")).toBeVisible();
     await expect(page.getByText(/^Casy finder de datoer/)).toBeVisible();
 
-    await page.getByRole("link", { name: "Log ind for at blive medlem" }).click();
-    await expect(page).toHaveURL(/\/sign-in\?next=%2Fjoin%2Fa-token/);
+    await page
+      .getByRole("link", { name: isMobile ? "Bliv medlem" : "Log ind for at blive medlem" })
+      .click();
+    // A phone says yes first, so it signs up and comes back to join (#224).
+    await expect(page).toHaveURL(
+      isMobile
+        ? /\/sign-in\?signup=1&next=%2Fjoin%2Fa-token%3Fjoin%3D1/
+        : /\/sign-in\?next=%2Fjoin%2Fa-token/,
+    );
   });
 
   test("a link whose maker's account is gone still says what it is for", async ({ page }) => {
@@ -56,4 +64,15 @@ test("a phone's invite shows the picture, and keeps the small print behind the ?
   await expect(
     page.getByRole("dialog", { name: "Om invitationen" }).getByText(/^Medlemmer kan se/),
   ).toBeVisible();
+});
+
+test("back from signing up on a phone, the yes already given joins the group (#224)", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "a computer signs in first and answers after");
+  await page.goto("/join/a-token?join=1");
+  await expect.poll(() => backend.calls.filter((c) => c.body.action === "join").length).toBe(1);
+  await expect(page).toHaveURL(/\/$/);
 });

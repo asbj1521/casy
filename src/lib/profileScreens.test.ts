@@ -25,3 +25,12 @@ describe("the Profil sheet's screens (#174)", () => {
     expect(sheetAddress("password", "?password=new")).toBe("/?password=new&profile=password");
   });
 });
+
+describe("an invitation in the sheet (#224)", () => {
+  it("is a screen under Grupper", () => {
+    expect(sheetScreenFor("/invited/g1")).toBe("invited/g1");
+    expect(screenDepth("invited/g1")).toBe(2);
+    expect(parentScreen("invited/g1")).toBe("groups");
+    expect(sheetAddress("invited/g1")).toBe("/?profile=invited/g1");
+  });
+});

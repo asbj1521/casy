@@ -73,10 +73,13 @@ test("an invitation says what the group is for (#152)", async ({ page, isMobile 
 test.describe("a phone's invitation (#224)", () => {
   test.beforeEach(({ isMobile }) => test.skip(!isMobile, "a computer keeps its card"));
 
-  test("is a row under Grupper that opens the invite page, which says little", async ({ page }) => {
+  test("is a row under Grupper that slides in inside the sheet, and says little", async ({
+    page,
+  }) => {
     await page.goto("/groups");
     await page.getByRole("link", { name: /Badminton/ }).click();
-    await expect(page).toHaveURL(/\/invited\/g-badminton$/);
+    await expect(page).toHaveURL(/\?profile=invited\/g-badminton$/);
+    await expect(page.getByRole("dialog", { name: "Invitationer" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Sara har inviteret dig til" })).toBeVisible();
     await expect(page.getByText(/^Medlemmer kan se/)).toHaveCount(0);
 
@@ -101,6 +104,12 @@ test.describe("a phone's invitation (#224)", () => {
     await about.getByRole("button", { name: "Bloker", exact: true }).click();
     await expect(page).toHaveURL(/profile=groups/);
     expect(backend.world.blocked).toHaveLength(1);
+  });
+
+  test("its way back is Grupper", async ({ page }) => {
+    await page.goto("/invited/g-badminton");
+    await page.getByRole("button", { name: "Grupper" }).click();
+    await expect(page).toHaveURL(/\?profile=groups$/);
   });
 
   test("one that is gone says so", async ({ page }) => {

@@ -1,4 +1,5 @@
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { CalendarCheck, Loader2, Users, XCircle } from "lucide-react";
 
 import {
@@ -40,6 +41,15 @@ export default function JoinGroup() {
 function PhoneJoin({ token }: { token: string }) {
   const t = useT();
   const { user, loading, preview, invited, alreadyIn, join, here } = useLinkInvite(token);
+  // Back from signing up: they already said yes before the detour, so they are in.
+  const [params] = useSearchParams();
+  const said = params.has("join");
+  const joining = useRef(false);
+  useEffect(() => {
+    if (!said || !user || !invited || alreadyIn || joining.current) return;
+    joining.current = true;
+    join.mutate();
+  }, [said, user, invited, alreadyIn, join]);
   return (
     <InviteShell
       // A signed-in phone has no other way home from here (#169): the app has no header.
@@ -56,11 +66,6 @@ function PhoneJoin({ token }: { token: string }) {
         <InviteDetails
           invite={invited}
           note={alreadyIn ? t.join.alreadyIn : !user ? t.join.whatIsCasy : undefined}
-          help={
-            !user && (
-              <p className="mt-3 text-[0.9375rem] text-muted-foreground">{t.join.comeBack}</p>
-            )
-          }
         >
           {alreadyIn ? (
             <InviteAction to="/">{t.join.findDate}</InviteAction>
@@ -76,8 +81,8 @@ function PhoneJoin({ token }: { token: string }) {
               )}
             </>
           ) : (
-            <InviteAction to={`/sign-in?next=${encodeURIComponent(here)}`}>
-              {t.join.signInToJoin}
+            <InviteAction to={`/sign-in?signup=1&next=${encodeURIComponent(`${here}?join=1`)}`}>
+              {t.join.joinGroup}
             </InviteAction>
           )}
         </InviteDetails>

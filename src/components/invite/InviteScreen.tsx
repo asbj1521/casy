@@ -1,9 +1,9 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CircleHelp, Loader2, XCircle } from "lucide-react";
 
+import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import Avatar from "@/components/ui/Avatar";
-import Sheet from "@/components/ui/Sheet";
 import { useT } from "@/i18n/lang";
 
 /** What an invite shows, wherever it came from (a link or a named invitation). */
@@ -17,9 +17,11 @@ export interface InviteFacts {
 }
 
 /**
- * The one invite page on a phone and in the app (#224): every invite opens it,
- * a link as much as an invitation by name. Only the picture, who asked, the
- * group and the answer are on it, centred; what joining means is behind the ?.
+ * The invite page on a phone and in the app (#224), full screen for a link: it
+ * is what a friend meets first, so only the picture, who asked, the group and
+ * the answer are on it, centred; what joining means is behind the ?. An
+ * invitation by name shows the same details as a screen in the Profil sheet
+ * (InvitationContent).
  */
 export function InviteShell({ header, children }: { header: ReactNode; children: ReactNode }) {
   return (
@@ -39,7 +41,7 @@ export function InviteDetails({
   children,
 }: {
   invite: InviteFacts;
-  /** More for the ? sheet, under what joining means. */
+  /** More behind the ?, under what joining means. */
   help?: ReactNode;
   /** A line above the answer. */
   note?: ReactNode;
@@ -47,7 +49,7 @@ export function InviteDetails({
   children: ReactNode;
 }) {
   const t = useT();
-  const helpButton = useRef<HTMLButtonElement>(null);
+  const helpAnchor = useId();
   const [helpOpen, setHelpOpen] = useState(false);
   return (
     <>
@@ -67,10 +69,12 @@ export function InviteDetails({
       {invite.description && (
         <p className="mt-2 break-words text-[0.9375rem] text-foreground">{invite.description}</p>
       )}
-      <p className="mt-2 flex items-center justify-center gap-2 text-[0.8125rem] text-muted-foreground">
+      <p
+        id={helpAnchor}
+        className="mt-2 flex items-center justify-center gap-2 text-[0.8125rem] text-muted-foreground"
+      >
         {t.join.membersSoFar(invite.memberCount)}
         <button
-          ref={helpButton}
           type="button"
           aria-label={t.join.aboutTitle}
           onClick={() => setHelpOpen(true)}
@@ -81,16 +85,16 @@ export function InviteDetails({
       </p>
       {note && <p className="mt-4 text-[0.9375rem] text-foreground">{note}</p>}
       <div className="mt-8 flex flex-col gap-2">{children}</div>
-      <Sheet
+      <AnchoredPanel
         open={helpOpen}
         onClose={() => setHelpOpen(false)}
-        title={t.join.aboutTitle}
-        closeLabel={t.common.done}
-        origin={helpButton}
+        anchorId={helpAnchor}
+        label={t.join.aboutTitle}
+        className="p-4 text-left"
       >
         <p className="text-[0.9375rem] text-foreground">{t.join.privacy}</p>
         {help}
-      </Sheet>
+      </AnchoredPanel>
     </>
   );
 }
