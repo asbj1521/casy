@@ -166,9 +166,7 @@ test.describe("with other calendars connected, but not this phone", () => {
   }) => {
     await asTheApp(page, "granted", { alreadyAnswered: true });
     await page.goto("/calendar-overview");
-    await expect(
-      page.getByRole("dialog", { name: "Telefonens kalender er ikke med endnu" }),
-    ).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible();
     await card(page).getByRole("button", { name: "Ikke nu" }).click();
     await expect(card(page)).toHaveCount(0);
     // Put away until the app is opened again, not every time the page is.
@@ -185,16 +183,12 @@ test.describe("with other calendars connected, but not this phone", () => {
     await asTheApp(page, "granted", { alreadyAnswered: true });
     await page.goto("/calendar-overview");
     const ai = page.getByRole("dialog", { name: "Lad Casys AI læse i din kalender?" });
-    await expect(
-      page.getByRole("dialog", { name: "Telefonens kalender er ikke med endnu" }),
-    ).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible();
     // Past the moment the home page settles (1.5 s), it still waits its turn.
     await page.waitForTimeout(2000);
     await expect(ai).toHaveCount(0);
     await card(page).getByRole("button", { name: "Ikke nu" }).click();
-    await expect(
-      page.getByRole("dialog", { name: "Telefonens kalender er ikke med endnu" }),
-    ).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toHaveCount(0);
     await expect(ai).toBeVisible();
   });
 

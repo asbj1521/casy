@@ -855,7 +855,7 @@ export const da = {
       "Casy har ikke adgang til telefonens kalendere. Slå Kalendere til under Casy i Indstillinger, og prøv igen.",
     openSettings: "Åbn Indstillinger",
     needTitle: "Casy kan ikke se nogen kalender endnu",
-    phoneTitle: "Telefonens kalender er ikke med endnu",
+    phoneTitle: "Link din Apple-kalender",
     notNow: "Ikke nu",
     needBody:
       "Importér telefonens kalender, så Casy kan se, hvornår du er optaget. Casy gemmer kun tidspunkterne, aldrig titlerne.",

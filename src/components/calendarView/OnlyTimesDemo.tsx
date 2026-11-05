@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useT } from "@/i18n/lang";
 
 /** Seconds round the loop: three events across, then a moment to read the result. */
-const LOOP = 6.5;
+const LOOP = 4.5;
 /** A row's own width as the way across: the columns are 46% wide, the second starting at 54%. */
 const ACROSS = `${(54 / 46) * 100}%`;
 const ROW = "absolute inset-x-0 flex h-7 items-center gap-2 overflow-hidden rounded-lg px-2.5";
