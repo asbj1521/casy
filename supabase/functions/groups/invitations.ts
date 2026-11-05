@@ -172,7 +172,7 @@ export async function findInvite(db: Db, token: unknown) {
   if (!looksLikeInviteToken(token)) throw new HttpError(400, "That invite link is not valid.");
   const { data: invite, error } = await db
     .from("group_invites")
-    .select("group_id, expires_at, friend_groups!inner(name, description)")
+    .select("group_id, expires_at, created_by, friend_groups!inner(name, description)")
     .eq("token_hash", await lookupHash(token, encryptionKeyFromEnv()))
     .maybeSingle();
   if (error) throw error;
@@ -186,5 +186,7 @@ export async function findInvite(db: Db, token: unknown) {
     groupId: invite.group_id as string,
     groupName: group.name,
     groupDescription: group.description ?? null,
+    // Null once their account is gone; the link still works.
+    madeBy: (invite.created_by as string | null) ?? null,
   };
 }

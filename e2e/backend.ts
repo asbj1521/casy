@@ -582,6 +582,21 @@ export class FakeBackend {
     switch (action) {
       case "list":
         return ok({ groups: w.groups });
+      case "preview":
+        if (body.token === "expired-token") {
+          return fail(410, "That invite link has expired. Ask for a new one.");
+        }
+        return ok({
+          group: {
+            id: "g-invited",
+            name: "Sommerhuset",
+            description: "Vi finder en weekend",
+            memberCount: 4,
+            invitedBy: body.token === "orphan-token" ? null : "Sara",
+          },
+        });
+      case "join":
+        return ok({ groups: w.groups, joinedId: "g-invited" });
       case "busy":
         return ok(groupBusy(w, body.groupId as string, body.from as string, body.to as string));
       case "refresh":

@@ -13,8 +13,9 @@
  *
  * `preview` is the one action that works signed out: someone following an
  * invite link needs to see what they are joining before they sign in. It
- * reveals only the group's name and how many people are in it, to whoever
- * already holds the link they were sent.
+ * reveals only the group's name, what it is for, how many people are in it
+ * and who made the link (#211), to whoever already holds the link they were
+ * sent.
  *
  * What members learn about each other is deliberately narrow: a display name
  * and busy time ranges. Never an email address, never a calendar's name,
@@ -79,18 +80,25 @@ serve("groups", async (req, body) => {
   // Previewing an invite is the one thing that happens before signing in:
   // the link itself is the only thing proving you were meant to see it.
   if (action === "preview") {
-    const { groupId, groupName, groupDescription } = await findInvite(db, body.token);
-    const { count, error } = await db
-      .from("group_members")
-      .select("profile_id", { count: "exact", head: true })
-      .eq("group_id", groupId);
-    if (error) throw error;
+    const { groupId, groupName, groupDescription, madeBy } = await findInvite(db, body.token);
+    const [members, maker] = await Promise.all([
+      db
+        .from("group_members")
+        .select("profile_id", { count: "exact", head: true })
+        .eq("group_id", groupId),
+      madeBy
+        ? db.from("profiles").select("display_name").eq("id", madeBy).maybeSingle()
+        : { data: null, error: null },
+    ]);
+    if (members.error) throw members.error;
+    if (maker.error) throw maker.error;
     return {
       group: {
         id: groupId,
         name: groupName,
         description: groupDescription,
-        memberCount: count ?? 0,
+        memberCount: members.count ?? 0,
+        invitedBy: maker.data?.display_name ?? null,
       },
     };
   }

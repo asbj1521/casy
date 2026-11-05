@@ -342,7 +342,14 @@ export async function createInvite(groupId: string): Promise<{ url: string; expi
 
 /** The group behind an invite link, for the join page before anyone signs in. */
 export async function previewInvite(token: string): Promise<{
-  group: { id: string; name: string; description?: string | null; memberCount: number };
+  group: {
+    id: string;
+    name: string;
+    description?: string | null;
+    memberCount: number;
+    /** Who made the link (#211); null once their account is gone. */
+    invitedBy?: string | null;
+  };
 }> {
   return await callFunction("groups", {
     body: { action: "preview", token },

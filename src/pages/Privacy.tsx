@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 3. november 2026",
+  updated: "Senest opdateret 5. november 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -90,7 +90,9 @@ const da: LegalCopy = {
               grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev
               afslået. Slår du en e-mailadresse op for at invitere nogen, noterer Casy kun, at du
               gjorde det, så der kan sættes en grænse for, hvor mange du kan slå op om dagen.
-              Adressen gemmes ikke.
+              Adressen gemmes ikke. Den, der har et invitationslink, kan uden at logge ind se
+              gruppens navn og beskrivelse, hvor mange der er med, og navnet på den, der lavede
+              linket.
             </li>
             <li>
               <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
@@ -530,7 +532,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 3 November 2026",
+  updated: "Last updated 5 November 2026",
   sections: [
     {
       title: "In short",
@@ -597,7 +599,9 @@ const en: LegalCopy = {
               into a working link. Invitations to groups: who invited whom, and whether the
               invitation is still open or was declined. When you look up an email address to invite
               someone, Casy only notes that you did, so it can limit how many you can look up in a
-              day. The address is not stored.
+              day. The address is not stored. Anyone holding an invite link can see, without signing
+              in, the group's name and description, how many are in it, and the name of whoever made
+              the link.
             </li>
             <li>
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it

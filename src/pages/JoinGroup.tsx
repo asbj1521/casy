@@ -17,8 +17,10 @@ import TopNav from "@/components/TopNav";
  * It answers the question anyone following a link from a chat actually has:
  * what am I joining, and who else is in it? That much is shown before signing
  * in, because asking someone to hand over an account to see what they were
- * sent is backwards. Only the name, what the group is for and the number of members are revealed,
- * and only to whoever already holds the link.
+ * sent is backwards. Only who made the link, the name, what the group is for
+ * and the number of members are revealed, and only to whoever already holds
+ * the link. A friend following it may never have heard of Casy, so signed out
+ * it says in one line what Casy is (#211).
  *
  * Joining itself needs an account, since a member with no account is nobody.
  * The sign-in page is told to come back here, so the link keeps working
@@ -88,7 +90,9 @@ export default function JoinGroup() {
             </>
           ) : (
             <>
-              <h1 className="text-lg font-bold text-foreground">{t.join.invitedTo}</h1>
+              <h1 className="text-lg font-bold text-foreground">
+                {invited.invitedBy ? t.join.invitedBy(invited.invitedBy) : t.join.invitedTo}
+              </h1>
               <p className="mt-1 text-2xl font-bold text-foreground">{invited.name}</p>
               {invited.description && (
                 <p className="mt-2 break-words text-[15px] text-foreground">
@@ -132,6 +136,7 @@ export default function JoinGroup() {
                 </>
               ) : (
                 <>
+                  <p className="mt-3 text-sm text-foreground">{t.join.whatIsCasy}</p>
                   <Link
                     to={`/sign-in?next=${encodeURIComponent(here)}`}
                     className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"

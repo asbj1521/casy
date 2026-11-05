@@ -1611,6 +1611,8 @@ export const da = {
       `${reason} Invitationslinks virker i syv dage, så bed den, der sendte det, om et nyt.`,
     goToCasy: "Gå til Casy",
     invitedTo: "Du er inviteret til",
+    invitedBy: (name: string) => `${name} har inviteret dig til`,
+    whatIsCasy: "Casy finder de datoer, hvor alle i en gruppe kan, ud fra jeres kalendere.",
     membersSoFar: (n: number) =>
       n === 1 ? "1 medlem indtil videre" : `${n} medlemmer indtil videre`,
     privacy:

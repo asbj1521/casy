@@ -1555,6 +1555,8 @@ export const en: Messages = {
       `${reason} Invite links last seven days, so ask whoever sent it for a fresh one.`,
     goToCasy: "Go to Casy",
     invitedTo: "You have been invited to",
+    invitedBy: (name: string) => `${name} has invited you to`,
+    whatIsCasy: "Casy finds the dates everyone in a group can make, from your calendars.",
     membersSoFar: (n: number) => (n === 1 ? "1 member so far" : `${n} members so far`),
     privacy:
       "Members can see each other's name and when they are busy, so Casy can find a time that works for everyone. Nobody sees your email address, your calendars' names, or what any of your events are called.",
