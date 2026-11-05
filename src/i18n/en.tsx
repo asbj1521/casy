@@ -950,6 +950,8 @@ export const en: Messages = {
     happened: (date: string) => `Happened: ${date}.`,
     passed: (date: string) => `The date passed before everyone answered: ${date}.`,
     cancelConfirm: "Cancel this event for everyone?",
+    swipeCancel: "Cancel",
+    swipeLeave: "Leave",
     cancelEvent: "Cancel event",
     leaveConfirm:
       "Leave this event? It goes ahead without you, and Casy takes it out of your calendar if Casy put it there.",

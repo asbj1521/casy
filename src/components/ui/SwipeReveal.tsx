@@ -63,7 +63,9 @@ export default function SwipeReveal({
         tabIndex={open ? 0 : -1}
         aria-hidden={!open}
         onClick={onPress}
-        className="absolute inset-y-0 right-0 w-[5.5rem] bg-red-600 text-[0.9375rem] font-semibold text-white"
+        // A fixed red, as iOS's own, with white words: the dark theme's reds are made lighter.
+        style={{ backgroundColor: "rgb(220, 38, 38)" }}
+        className="absolute inset-y-0 right-0 w-[5.5rem] text-[0.9375rem] font-semibold text-white"
       >
         {label}
       </button>

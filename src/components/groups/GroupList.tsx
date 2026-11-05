@@ -96,20 +96,40 @@ export default function GroupList({
             wrap={
               phone
                 ? (row) => (
-                    <SwipeReveal
-                      label={
-                        groupSwipe(group, youId) === "leave"
-                          ? t.groupsSection.swipeLeave
-                          : t.groupsSection.swipeDelete
-                      }
-                      open={swiped === group.id}
-                      onOpenChange={(open) =>
-                        setSwiped((now) => (open ? group.id : now === group.id ? null : now))
-                      }
-                      onPress={() => pressed(group)}
-                    >
-                      {row}
-                    </SwipeReveal>
+                    <>
+                      <SwipeReveal
+                        label={
+                          groupSwipe(group, youId) === "leave"
+                            ? t.groupsSection.swipeLeave
+                            : t.groupsSection.swipeDelete
+                        }
+                        open={swiped === group.id}
+                        onOpenChange={(open) =>
+                          setSwiped((now) => (open ? group.id : now === group.id ? null : now))
+                        }
+                        onPress={() => pressed(group)}
+                      >
+                        {row}
+                      </SwipeReveal>
+                      {/* Under its own row, where it can't end up out of sight. */}
+                      {asking?.id === group.id && (
+                        <ConfirmPanel
+                          className="mx-4 mb-3"
+                          message={t.groupsSection.deleteConfirm(
+                            asking.name,
+                            asking.members.length,
+                          )}
+                          confirmLabel={t.groupsSection.swipeDelete}
+                          busy={remove.isPending}
+                          error={remove.error?.message}
+                          onConfirm={() => remove.mutate(asking.id)}
+                          onCancel={() => {
+                            setAsking(null);
+                            setSwiped(null);
+                          }}
+                        />
+                      )}
+                    </>
                   )
                 : undefined
             }
@@ -123,20 +143,6 @@ export default function GroupList({
         />
       </ListGroup>
 
-      {asking && (
-        <ConfirmPanel
-          className="mt-3"
-          message={t.groupsSection.deleteConfirm(asking.name, asking.members.length)}
-          confirmLabel={t.groupsSection.swipeDelete}
-          busy={remove.isPending}
-          error={remove.error?.message}
-          onConfirm={() => remove.mutate(asking.id)}
-          onCancel={() => {
-            setAsking(null);
-            setSwiped(null);
-          }}
-        />
-      )}
       {failed && !asking && (
         <Notice tone="error" bare className="mt-3">
           {failed}

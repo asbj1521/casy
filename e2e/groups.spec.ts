@@ -291,7 +291,9 @@ test.describe("swiping a group in the list (#223)", () => {
     await page.getByRole("button", { name: "Slet", exact: true }).click();
     expect(backend.calls.some((c) => c.body.action === "delete")).toBe(false);
     await expect(page.getByText(/^Slet "Fredagsbar" for alle\?/)).toBeVisible();
-    await page.getByRole("button", { name: "Slet", exact: true }).last().click();
+    // Under its own row.
+    const asked = page.getByRole("listitem").filter({ hasText: /^.*Slet "Fredagsbar" for alle/ });
+    await asked.getByRole("button", { name: "Slet", exact: true }).last().click();
     await expect
       .poll(() => backend.calls.find((c) => c.body.action === "delete")?.body)
       .toMatchObject({

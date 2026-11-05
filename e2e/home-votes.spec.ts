@@ -179,3 +179,44 @@ test.describe("on the smallest iPhone (#214)", () => {
     expect(box!.height).toBeLessThan(667 * 0.58);
   });
 });
+
+test.describe("swiping a row in Aftaler (#223)", () => {
+  async function swipe(page: import("@playwright/test").Page, name: RegExp) {
+    const row = page.getByRole("button", { name });
+    await expect(row).toBeVisible();
+    const box = (await row.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(box.x + box.width - 20, y);
+    await page.mouse.down();
+    for (const dx of [20, 60, 120, 180]) await page.mouse.move(box.x + box.width - 20 - dx, y);
+    await page.mouse.up();
+  }
+
+  test("your own event is cancelled, asked first under its row", async ({ page, backend }) => {
+    await page.goto("/?events");
+    await swipe(page, /^Julefrokost/);
+    await page.getByRole("button", { name: "Aflys", exact: true }).click();
+    expect(backend.calls.some((c) => c.body.action === "cancel")).toBe(false);
+    await expect(page.getByText("Aflys aftalen for alle?")).toBeVisible();
+    await page.getByRole("button", { name: "Aflys aftale", exact: true }).click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "cancel")?.body)
+      .toMatchObject({ proposalId: "ev-party" });
+  });
+
+  test("someone else's event is left at the press", async ({ page, backend }) => {
+    await page.goto("/?events");
+    await swipe(page, /^Løbetur/);
+    expect(backend.calls.some((c) => c.body.action === "leave")).toBe(false);
+    await page.getByRole("button", { name: "Forlad", exact: true }).click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "leave")?.body)
+      .toMatchObject({ proposalId: "ev-run" });
+  });
+
+  test("a tap on a row left alone still opens it", async ({ page }) => {
+    await page.goto("/?events");
+    await page.getByRole("button", { name: /^Løbetur/ }).click();
+    await expect(page).toHaveURL(/events=ev-run/);
+  });
+});

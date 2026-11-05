@@ -991,6 +991,8 @@ export const da = {
     happened: (date: string) => `Fandt sted: ${date}.`,
     passed: (date: string) => `Datoen gik, før alle havde svaret: ${date}.`,
     cancelConfirm: "Aflys aftalen for alle?",
+    swipeCancel: "Aflys",
+    swipeLeave: "Forlad",
     cancelEvent: "Aflys aftale",
     leaveConfirm:
       "Forlad aftalen? Den fortsætter uden dig, og Casy fjerner den fra din kalender, hvis Casy satte den ind.",
