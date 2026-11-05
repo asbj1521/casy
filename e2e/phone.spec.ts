@@ -151,12 +151,13 @@ test("My calendar is a month like Apple's: a day zooms into its hours, Kalendere
   // Its old address leads there on a phone, and Færdig closes the whole sheet.
   await page.goto("/calendar-overview/accounts");
   await expect(page).toHaveURL(/\/\?calendars=accounts$/);
-  await page
-    .getByRole("dialog", { name: "Forbundne kalendere" })
-    .getByRole("button", { name: "Færdig" })
-    .click();
+  const again = page.getByRole("dialog", { name: "Forbundne kalendere" });
+  await expect(again.getByRole("button", { name: "Synkronisér nu" })).toBeVisible();
+  await again.getByRole("button", { name: "Færdig" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // A page just loaded is busy drawing its months: on a loaded runner the sheet
+  // can take over 5 s to leave (#219), though it always does.
+  await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 15_000 });
 });
 
 test("My calendar's month name stays on top and follows the scroll", async ({ page }) => {
