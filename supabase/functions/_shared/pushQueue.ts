@@ -108,6 +108,7 @@ export async function drainQueue(
           actorName: row.actor_name,
           eventTitle: event?.title ?? null,
           groupName: group,
+          groupId: row.group_id,
           chosenAt: event?.chosenAt ?? null,
         };
         let reached = false;

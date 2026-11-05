@@ -12,6 +12,10 @@ import type { AiPlan } from "@/lib/aiPlan";
 import type { CasyEntry } from "@/lib/casyEntries";
 import { adminOverview, groupBusy, ME, myData, myOverview, NOW, type World } from "./world";
 
+/** One transparent pixel, for an invite with a picture. */
+const PICTURE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
 export interface FunctionCall {
   name: string;
   params: URLSearchParams;
@@ -596,6 +600,7 @@ export class FakeBackend {
             description: "Vi finder en weekend",
             memberCount: 4,
             invitedBy: body.token === "orphan-token" ? null : "Sara",
+            pictureUrl: body.token === "picture-token" ? PICTURE : null,
           },
         });
       case "join":
@@ -665,6 +670,10 @@ export class FakeBackend {
         });
       case "invite-members":
         return ok({ groups: w.groups });
+      case "accept-invitation":
+        w.invitations = w.invitations.filter((i) => i.groupId !== body.groupId);
+        this.changed();
+        return ok({ groups: w.groups, invitations: w.invitations });
       case "decline-invitation":
         w.invitations = w.invitations.filter((i) => i.groupId !== body.groupId);
         this.changed();

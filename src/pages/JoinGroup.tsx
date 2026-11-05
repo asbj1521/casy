@@ -1,14 +1,18 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useParams } from "react-router-dom";
 import { CalendarCheck, Loader2, Users, XCircle } from "lucide-react";
 
-import { groupsQuery, groupsQueryKey, joinGroup, previewInvite } from "@/api/groups";
+import {
+  InviteAction,
+  InviteBroken,
+  InviteDetails,
+  InviteLoading,
+  InviteShell,
+} from "@/components/invite/InviteScreen";
 import PhoneSubHeader from "@/components/PhoneSubHeader";
 import Notice from "@/components/ui/Notice";
-import { useAuth } from "@/context/auth";
+import { useLinkInvite } from "@/hooks/useLinkInvite";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
-import { askForPush } from "@/lib/pushAsk";
 import TopNav from "@/components/TopNav";
 
 /**
@@ -17,54 +21,78 @@ import TopNav from "@/components/TopNav";
  * It answers the question anyone following a link from a chat actually has:
  * what am I joining, and who else is in it? That much is shown before signing
  * in, because asking someone to hand over an account to see what they were
- * sent is backwards. Only who made the link, the name, what the group is for
- * and the number of members are revealed, and only to whoever already holds
+ * sent is backwards. Only who made the link, the name, what the group is for,
+ * its picture (or the maker's) and the number of members are revealed, and only to whoever already holds
  * the link. A friend following it may never have heard of Casy, so signed out
  * it says in one line what Casy is (#211).
  *
  * Joining itself needs an account, since a member with no account is nobody.
  * The sign-in page is told to come back here, so the link keeps working
- * through the detour.
+ * through the detour. A phone shows it as the one invite page (#224).
  */
 export default function JoinGroup() {
   const { token = "" } = useParams();
-  const { user, loading } = useAuth();
-  const t = useT();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const phone = usePhoneLayout();
-  const preview = useQuery({
-    queryKey: ["invite-preview", token],
-    queryFn: () => previewInvite(token),
-    retry: false,
-  });
-  const invited = preview.data?.group;
+  return phone ? <PhoneJoin token={token} /> : <ComputerJoin token={token} />;
+}
 
-  // Someone who is already a member gets a different button: the link is not
-  // an error for them, it simply has nothing left to do. Their groups are
-  // usually remembered from an earlier visit (queryPersistence.ts), so this
-  // rarely waits on the network.
-  const { data: myGroups } = useQuery({ ...groupsQuery(user?.id ?? ""), enabled: !!user });
-  const alreadyIn = !!invited && !!myGroups?.some((g) => g.id === invited.id);
+/** A link on the one invite page (#224). */
+function PhoneJoin({ token }: { token: string }) {
+  const t = useT();
+  const { user, loading, preview, invited, alreadyIn, join, here } = useLinkInvite(token);
+  return (
+    <InviteShell
+      // A signed-in phone has no other way home from here (#169): the app has no header.
+      header={user ? <PhoneSubHeader back="/" backLabel={t.nav.home} /> : <TopNav />}
+    >
+      {preview.isPending || loading ? (
+        <InviteLoading />
+      ) : !invited ? (
+        <InviteBroken
+          title={t.join.broken}
+          body={t.join.brokenBody(preview.error?.message ?? "")}
+        />
+      ) : (
+        <InviteDetails
+          invite={invited}
+          note={alreadyIn ? t.join.alreadyIn : !user ? t.join.whatIsCasy : undefined}
+          help={
+            !user && (
+              <p className="mt-3 text-[0.9375rem] text-muted-foreground">{t.join.comeBack}</p>
+            )
+          }
+        >
+          {alreadyIn ? (
+            <InviteAction to="/">{t.join.findDate}</InviteAction>
+          ) : user ? (
+            <>
+              <InviteAction onClick={() => join.mutate()} busy={join.isPending}>
+                {t.join.joinGroup}
+              </InviteAction>
+              {join.isError && (
+                <Notice tone="error" bare className="mt-1">
+                  {join.error.message}
+                </Notice>
+              )}
+            </>
+          ) : (
+            <InviteAction to={`/sign-in?next=${encodeURIComponent(here)}`}>
+              {t.join.signInToJoin}
+            </InviteAction>
+          )}
+        </InviteDetails>
+      )}
+    </InviteShell>
+  );
+}
 
-  const join = useMutation({
-    mutationFn: () => joinGroup(token),
-    onSuccess: (data) => {
-      // The reply carries the new list, so the scheduling page has it already
-      // and doesn't ask again the moment it opens.
-      if (user) queryClient.setQueryData(groupsQueryKey(user.id), data.groups);
-      navigate("/", { replace: true });
-      // Joined: the moment to offer notifications (#139).
-      askForPush("joined");
-    },
-  });
-
-  const here = `/join/${encodeURIComponent(token)}`;
+function ComputerJoin({ token }: { token: string }) {
+  const t = useT();
+  const { user, loading, preview, invited, alreadyIn, join, here } = useLinkInvite(token);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* A signed-in phone has no other way home from here (#169): the app has no header. */}
-      {phone && user ? <PhoneSubHeader back="/" backLabel={t.nav.home} /> : <TopNav />}
+      <TopNav />
       <main className="mx-auto flex max-w-md flex-col px-4 py-8 sm:px-6 sm:py-16">
         <div className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
           {preview.isPending || loading ? (

@@ -967,8 +967,6 @@ export const da = {
     invitations: "Invitationer",
     invitedBy: (name: string) => `${name} har inviteret dig`,
     invitedAnon: "Du er inviteret",
-    invitedTo: "Du er inviteret til",
-    joinMeansShort: "Medlemmerne ser dit navn, og hvornår du er optaget.",
     joinMeans: "Siger du ja, kan gruppens medlemmer se dit navn, og hvornår du er optaget.",
     join: "Deltag",
     noThanks: "Nej tak",
@@ -1678,6 +1676,9 @@ export const da = {
     joinGroup: "Bliv medlem",
     signInToJoin: "Log ind for at blive medlem",
     comeBack: "Du kommer direkte tilbage hertil bagefter.",
+    aboutTitle: "Om invitationen",
+    gone: "Invitationen findes ikke længere",
+    goneBody: "Gruppen er måske slettet, eller du har allerede svaret.",
   },
   api: {
     friends: "Kunne ikke hente dine venner",

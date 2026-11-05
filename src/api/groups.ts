@@ -74,6 +74,8 @@ export interface Invitation {
   memberCount: number;
   /** Who invited you; null if their account has since been deleted. */
   invitedBy: string | null;
+  /** The group's picture, else the inviter's (#224); none shows a letter. */
+  pictureUrl?: string | null;
   createdAt: string;
 }
 
@@ -351,6 +353,8 @@ export async function previewInvite(token: string): Promise<{
     memberCount: number;
     /** Who made the link (#211); null once their account is gone. */
     invitedBy?: string | null;
+    /** The group's picture, else the maker's (#224); none shows a letter. */
+    pictureUrl?: string | null;
   };
 }> {
   return await callFunction("groups", {

@@ -52,6 +52,7 @@ const MyData = lazy(loadPage.myData);
 const Settings = lazy(loadPage.settings);
 const SignIn = lazy(loadPage.signIn);
 const JoinGroup = lazy(loadPage.joinGroup);
+const Invitation = lazy(loadPage.invitation);
 const Privacy = lazy(loadPage.privacy);
 const Terms = lazy(loadPage.terms);
 const Support = lazy(loadPage.support);
@@ -190,6 +191,14 @@ function App() {
                     }
                   />
                   {/* Your groups, and one group (both the same page, Groups.tsx). */}
+                  <Route
+                    path="/invited/:groupId"
+                    element={
+                      <RequireAuth>
+                        <Invitation />
+                      </RequireAuth>
+                    }
+                  />
                   <Route
                     path="/groups"
                     element={

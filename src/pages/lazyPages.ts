@@ -25,6 +25,7 @@ export const loadPage = {
   settings: () => import("@/pages/Settings"),
   signIn: () => import("@/pages/SignIn"),
   joinGroup: () => import("@/pages/JoinGroup"),
+  invitation: () => import("@/pages/Invitation"),
   privacy: () => import("@/pages/Privacy"),
   terms: () => import("@/pages/Terms"),
   support: () => import("@/pages/Support"),

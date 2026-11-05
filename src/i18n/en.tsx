@@ -926,8 +926,6 @@ export const en: Messages = {
     invitations: "Invitations",
     invitedBy: (name: string) => `${name} invited you`,
     invitedAnon: "You're invited",
-    invitedTo: "You're invited to",
-    joinMeansShort: "Members see your name and when you are busy.",
     joinMeans: "If you say yes, the group's members can see your name and when you're busy.",
     join: "Join",
     noThanks: "No thanks",
@@ -1618,6 +1616,9 @@ export const en: Messages = {
     joinGroup: "Join group",
     signInToJoin: "Sign in to join",
     comeBack: "You will come straight back here afterwards.",
+    aboutTitle: "About this invitation",
+    gone: "This invitation is no longer here",
+    goneBody: "The group may have been deleted, or you have already answered.",
   },
   api: {
     friends: "Couldn't load your friends",

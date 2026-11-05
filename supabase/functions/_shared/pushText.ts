@@ -31,6 +31,8 @@ export interface PushFacts {
   /** The event's name, as written. */
   eventTitle: string | null;
   groupName: string | null;
+  /** The group an invitation is to, for opening it (#224). */
+  groupId?: string | null;
   /** The date a vote chose (a decided or moved event), as a time. */
   chosenAt: number | null;
 }
@@ -132,7 +134,7 @@ export function composePush(facts: PushFacts, lang: Lang): PushMessage {
       return {
         title: "Casy",
         body: da ? `${who} inviterede dig til ${group}.` : `${who} invited you to ${group}.`,
-        url: "/groups",
+        url: facts.groupId ? `/invited/${facts.groupId}` : "/groups",
       };
     case "deadline":
       return {

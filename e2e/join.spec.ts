@@ -43,3 +43,17 @@ test("signed in, one press joins, with no word on what Casy is", async ({ page, 
   await expect.poll(() => backend.calls.find((c) => c.body.action === "join")).toBeTruthy();
   await expect(page).toHaveURL(/\/$/);
 });
+
+test("a phone's invite shows the picture, and keeps the small print behind the ? (#224)", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "a computer keeps its card");
+  await page.goto("/join/picture-token");
+  await expect(page.locator("main img")).toBeVisible();
+  await expect(page.getByText(/^Medlemmer kan se/)).toHaveCount(0);
+  await page.getByRole("button", { name: "Om invitationen" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Om invitationen" }).getByText(/^Medlemmer kan se/),
+  ).toBeVisible();
+});

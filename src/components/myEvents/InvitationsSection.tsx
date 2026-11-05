@@ -1,30 +1,22 @@
 import { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Check, Loader2, Users, X } from "lucide-react";
 
-import {
-  acceptInvitation,
-  declineInvitation,
-  groupsQueryKey,
-  invitationsQuery,
-  invitationsQueryKey,
-  type Invitation,
-} from "@/api/groups";
-import { blockedQueryKey, blockPerson } from "@/api/safety";
-import ConfirmPanel from "@/components/ui/ConfirmPanel";
-import FlowButton from "@/components/ui/FlowButton";
-import Notice from "@/components/ui/Notice";
-import { usePhoneLayout } from "@/hooks/usePhoneLayout";
+import { invitationsQuery, type Invitation } from "@/api/groups";
 import Avatar from "@/components/ui/Avatar";
-import { displayName, useSignedInUser } from "@/context/auth";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import { ListGroup, ListRow } from "@/components/ui/ListGroup";
+import Notice from "@/components/ui/Notice";
+import { useSignedInUser } from "@/context/auth";
+import { useInvitationAnswers } from "@/hooks/useInvitationAnswers";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
-import { askForPush } from "@/lib/pushAsk";
 
 /**
- * Invitations to groups, at the top of My events: joining is the one thing
- * here that needs your yes before anyone sees your busy times, so it says so
- * on every card. Nothing at all when there are none.
+ * Invitations to groups, at the top of Groups: joining is the one thing here
+ * that needs your yes before anyone sees your busy times, so a computer's card
+ * says so. A phone's rows open the one invite page, which has it behind the ?.
+ * Nothing at all when there are none.
  */
 export default function InvitationsSection() {
   const t = useT();
@@ -33,21 +25,40 @@ export default function InvitationsSection() {
   const phone = usePhoneLayout();
   if (invitations.length === 0) return null;
 
+  // A phone lists them; each opens the one invite page (#224).
+  if (phone) {
+    return (
+      <ListGroup title={t.events.invitations}>
+        {invitations.map((invitation, i) => (
+          <ListRow
+            key={invitation.groupId}
+            to={`/invited/${invitation.groupId}`}
+            leading={
+              <Avatar
+                name={invitation.groupName}
+                index={i}
+                size="row"
+                src={invitation.pictureUrl}
+              />
+            }
+            label={invitation.groupName}
+            detail={[invitation.invitedBy, t.counts.members(invitation.memberCount)]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+        ))}
+      </ListGroup>
+    );
+  }
+
   return (
     <section className="mt-8">
-      {phone ? (
-        // Headed like the phone's other small labels (#215).
-        <h2 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t.events.invitations}
-        </h2>
-      ) : (
-        <h2 className="text-lg font-semibold text-foreground">
-          {t.events.invitations}
-          <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-            {invitations.length}
-          </span>
-        </h2>
-      )}
+      <h2 className="text-lg font-semibold text-foreground">
+        {t.events.invitations}
+        <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+          {invitations.length}
+        </span>
+      </h2>
       <ul className="mt-3 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
         {invitations.map((invitation) => (
           <InvitationCard key={invitation.groupId} invitation={invitation} />
@@ -59,39 +70,8 @@ export default function InvitationsSection() {
 
 function InvitationCard({ invitation }: { invitation: Invitation }) {
   const t = useT();
-  const userId = useSignedInUser().id;
-  const queryClient = useQueryClient();
-  // Each answer comes back with your invitations as they now are; joining
-  // also hands back your groups, the new one included.
-  const accept = useMutation({
-    mutationFn: () => acceptInvitation(invitation.groupId),
-    onSuccess: (data) => {
-      queryClient.setQueryData(groupsQueryKey(userId), data.groups);
-      queryClient.setQueryData(invitationsQueryKey(userId), data.invitations);
-      // Joined: the moment to offer notifications (#139).
-      askForPush("joined");
-    },
-    onError: () => refresh(),
-  });
-  const decline = useMutation({
-    mutationFn: () => declineInvitation(invitation.groupId),
-    onSuccess: (data) => queryClient.setQueryData(invitationsQueryKey(userId), data.invitations),
-    onError: () => refresh(),
-  });
-  // Gone meanwhile (the group was deleted, say): the fresh list drops this card.
-  const refresh = () => queryClient.invalidateQueries({ queryKey: invitationsQueryKey(userId) });
-  // Blocking the sender (#142): the invitation is declined, and none come from them again.
+  const { accept, decline, block, busy, error } = useInvitationAnswers(invitation.groupId);
   const [blocking, setBlocking] = useState(false);
-  const block = useMutation({
-    mutationFn: () => blockPerson({ invitationGroupId: invitation.groupId }),
-    onSuccess: (data) => {
-      queryClient.setQueryData(invitationsQueryKey(userId), data.invitations);
-      queryClient.setQueryData(blockedQueryKey(userId), data.blocked);
-    },
-  });
-  const phone = usePhoneLayout();
-  const busy = accept.isPending || decline.isPending;
-  const error = (accept.error ?? decline.error)?.message;
 
   const blockRow =
     invitation.invitedBy &&
@@ -115,59 +95,6 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
         {t.safety.blockSender}
       </button>
     ));
-
-  // A phone shows it: who is in, and your place among them.
-  if (phone) {
-    return (
-      <li className="rounded-2xl border bg-card px-4 pb-4 pt-5 text-center">
-        <InviteFaces invitedBy={invitation.invitedBy} memberCount={invitation.memberCount} />
-        <p className="mt-3 text-[0.8125rem] text-muted-foreground">{t.events.invitedTo}</p>
-        <p className="break-words text-[1.5rem] font-bold leading-tight text-foreground">
-          {invitation.groupName}
-        </p>
-        <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">
-          {[invitation.invitedBy, t.counts.members(invitation.memberCount)]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-        {invitation.groupDescription && (
-          <p className="mt-2 break-words text-[0.9375rem] text-foreground">
-            {invitation.groupDescription}
-          </p>
-        )}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <FlowButton
-            onClick={() => {
-              decline.reset();
-              accept.mutate();
-            }}
-            disabled={busy}
-            busy={accept.isPending}
-          >
-            {t.events.join}
-          </FlowButton>
-          <FlowButton
-            quiet
-            onClick={() => {
-              accept.reset();
-              decline.mutate();
-            }}
-            disabled={busy}
-            busy={decline.isPending}
-          >
-            {t.events.noThanks}
-          </FlowButton>
-        </div>
-        <p className="mt-3 text-[0.75rem] text-muted-foreground">{t.events.joinMeansShort}</p>
-        {error && (
-          <Notice tone="error" bare className="mt-3">
-            {error}
-          </Notice>
-        )}
-        {blockRow}
-      </li>
-    );
-  }
 
   return (
     <li className="rounded-2xl border border-primary/30 bg-card p-4 shadow-sm sm:p-5">
@@ -227,59 +154,5 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
 
       {blockRow}
     </li>
-  );
-}
-
-/** How many faces the group's row shows, before "+n". */
-const FACES = 4;
-
-/**
- * Who is in the group and your place among them: whoever invited you, the
- * others as plain circles (nobody's name or face before you have said yes), and
- * you waiting at the end, your own circle breathing. Decoration for screen
- * readers: the lines under it say the same. Reduced motion holds it still.
- */
-function InviteFaces({
-  invitedBy,
-  memberCount,
-}: {
-  invitedBy: string | null;
-  memberCount: number;
-}) {
-  const user = useSignedInUser();
-  const reduce = useReducedMotion();
-  const shown = Math.max(0, Math.min(FACES, memberCount) - (invitedBy ? 1 : 0));
-  const more = memberCount - shown - (invitedBy ? 1 : 0);
-  const circle = "h-12 w-12 rounded-full ring-2 ring-card";
-  return (
-    <div aria-hidden className="flex items-center justify-center">
-      <div className="flex items-center -space-x-3">
-        {invitedBy && (
-          <Avatar
-            name={invitedBy}
-            index={0}
-            size="lg"
-            className={`${circle} relative z-10 text-lg`}
-          />
-        )}
-        {Array.from({ length: shown }, (_, i) => (
-          <span key={i} className={`${circle} inline-block bg-secondary`} />
-        ))}
-        {more > 0 && (
-          <span
-            className={`${circle} flex items-center justify-center bg-secondary text-[0.8125rem] font-semibold text-muted-foreground`}
-          >
-            +{more}
-          </span>
-        )}
-      </div>
-      <motion.span
-        className="ml-2 rounded-full border-2 border-dashed border-primary p-0.5"
-        animate={reduce ? undefined : { scale: [1, 1.08, 1] }}
-        transition={reduce ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <Avatar name={displayName(user)} index={1} size="lg" className="h-11 w-11 text-base" />
-      </motion.span>
-    </div>
   );
 }

@@ -61,7 +61,7 @@ import {
 } from "../_shared/safety.ts";
 import { calendarStatus } from "../_shared/calendarStatus.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
-import { deletePictures, groupPicturePath } from "../_shared/pictures.ts";
+import { deletePictures, groupPicturePath, pictureLinks } from "../_shared/pictures.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { syncConnection } from "../_shared/sync.ts";
 import { rememberName, membersAsMember, listGroups, whoAmI } from "./members.ts";
@@ -88,20 +88,26 @@ serve("groups", async (req, body) => {
   // Previewing an invite is the one thing that happens before signing in:
   // the link itself is the only thing proving you were meant to see it.
   if (action === "preview") {
-    const { groupId, groupName, groupDescription, madeBy } = await findInvite(db, body.token);
+    const { groupId, groupName, groupDescription, groupPicture, madeBy } = await findInvite(
+      db,
+      body.token,
+    );
     const [members, maker] = await Promise.all([
       db
         .from("group_members")
         .select("profile_id", { count: "exact", head: true })
         .eq("group_id", groupId),
       madeBy
-        ? db.from("profiles").select("display_name").eq("id", madeBy).maybeSingle()
+        ? db.from("profiles").select("display_name, avatar_path").eq("id", madeBy).maybeSingle()
         : { data: null, error: null },
     ]);
     if (members.error) throw members.error;
     if (maker.error) throw maker.error;
+    // The group's picture, else the maker's (#224).
+    const picture = groupPicture ?? maker.data?.avatar_path;
     return {
       group: {
+        pictureUrl: (await pictureLinks(db, [picture])).get(picture ?? "") ?? null,
         id: groupId,
         name: groupName,
         description: groupDescription,

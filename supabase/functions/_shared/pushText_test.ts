@@ -91,3 +91,8 @@ Deno.test("someone with no name is the language's own word in a notification (#1
     true,
   );
 });
+
+Deno.test("a notification of an invitation opens that invitation (#224)", () => {
+  const message = composePush(facts("group_invitation", { groupId: "g1" }), "da");
+  assertEquals(message.url, "/invited/g1");
+});

@@ -94,7 +94,8 @@ const da: LegalCopy = {
               e-mailadresse op for at invitere nogen, noterer Casy kun, at du gjorde det, så der kan
               sættes en grænse for, hvor mange du kan slå op om dagen. Adressen gemmes ikke. Den,
               der har et invitationslink, kan uden at logge ind se gruppens navn og beskrivelse,
-              hvor mange der er med, og navnet på den, der lavede linket.
+              hvor mange der er med, navnet på den, der lavede linket, og gruppens billede eller,
+              uden et, billedet af den, der lavede linket.
             </li>
             <li>
               <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
@@ -375,11 +376,12 @@ const da: LegalCopy = {
             score alligevel pege på en af medlemmerne.
           </p>
           <p>
-            Alle, der har en gruppes invitationslink, kan se gruppens navn og beskrivelse, og hvor
-            mange medlemmer den har, og kan blive medlem, i de syv dage linket virker. Behandl et
-            invitationslink som en adresse, du kun sender til dem, du vil have med i gruppen. Når du
-            forlader en gruppe, holder de andre medlemmer op med at se noget om dig fra da af. Den,
-            der lavede en gruppe, kan slette den, hvilket fjerner den for alle medlemmer på én gang.
+            Alle, der har en gruppes invitationslink, kan se gruppens navn, beskrivelse og billede
+            (eller, uden et, billedet af den, der lavede linket), og hvor mange medlemmer den har,
+            og kan blive medlem, i de syv dage linket virker. Behandl et invitationslink som en
+            adresse, du kun sender til dem, du vil have med i gruppen. Når du forlader en gruppe,
+            holder de andre medlemmer op med at se noget om dig fra da af. Den, der lavede en
+            gruppe, kan slette den, hvilket fjerner den for alle medlemmer på én gang.
           </p>
           <p>
             Andre kan også invitere dig til en gruppe inde i Casy: folk, du er eller har været i en
@@ -605,7 +607,8 @@ const en: LegalCopy = {
               open or was declined. When you look up an email address to invite someone, Casy only
               notes that you did, so it can limit how many you can look up in a day. The address is
               not stored. Anyone holding an invite link can see, without signing in, the group's
-              name and description, how many are in it, and the name of whoever made the link.
+              name and description, how many are in it, the name of whoever made the link, and the
+              group's picture or, without one, the picture of whoever made the link.
             </li>
             <li>
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
@@ -886,11 +889,12 @@ const en: LegalCopy = {
             point at one of the members.
           </p>
           <p>
-            Anyone holding a group&apos;s invite link can see the group&apos;s name and description
-            and how many members it has, and can join it, for the seven days the link works. Treat
-            an invite link like an address you would only send to people you want in the group.
-            Leaving a group stops the other members seeing anything about you from then on. The
-            person who made a group can delete it, which removes it for every member at once.
+            Anyone holding a group&apos;s invite link can see the group&apos;s name, description and
+            picture (or, without one, the picture of whoever made the link) and how many members it
+            has, and can join it, for the seven days the link works. Treat an invite link like an
+            address you would only send to people you want in the group. Leaving a group stops the
+            other members seeing anything about you from then on. The person who made a group can
+            delete it, which removes it for every member at once.
           </p>
           <p>
             People can also invite you to a group from inside Casy: anyone you share or have shared

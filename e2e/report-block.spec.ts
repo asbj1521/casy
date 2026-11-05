@@ -43,9 +43,18 @@ test("a member is reported and blocked from the group, and unblocked in Your dat
   await expect(page.getByText("Blokerede personer")).toHaveCount(0);
 });
 
-test("an invitation's sender is blocked, which declines it", async ({ page, backend }) => {
+test("an invitation's sender is blocked, which declines it", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
   await page.goto("/groups");
   await expect(page.getByText("Badminton")).toBeVisible();
+  if (isMobile) {
+    // On a phone it is on the invite page, behind the ? (#224).
+    await page.getByRole("link", { name: /Badminton/ }).click();
+    await page.getByRole("button", { name: "Om invitationen" }).click();
+  }
   await page.getByRole("button", { name: "Bloker afsenderen" }).click();
   await page.getByRole("button", { name: "Bloker", exact: true }).click();
   await expect(page.getByText("Badminton")).toBeHidden();

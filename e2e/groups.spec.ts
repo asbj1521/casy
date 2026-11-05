@@ -65,23 +65,56 @@ test("renaming a group on a phone leaves its name where it was", async ({ page, 
   expect(Math.abs(box.y + box.height / 2 - (before.y + before.height / 2))).toBeLessThan(6);
 });
 
-test("an invitation says what the group is for (#152)", async ({ page }) => {
-  await page.goto("/groups");
+test("an invitation says what the group is for (#152)", async ({ page, isMobile }) => {
+  await page.goto(isMobile ? "/invited/g-badminton" : "/groups");
   await expect(page.getByText("Double om torsdagen i Valby")).toBeVisible();
 });
 
-test("a phone's invitation shows who is in, and says little (#216)", async ({ page, isMobile }) => {
-  test.skip(!isMobile, "a computer keeps its card");
-  await page.goto("/groups");
-  await expect(page.getByText("Du er inviteret til")).toBeVisible();
-  await expect(page.getByText("Sara · 5 medlemmer")).toBeVisible();
-  await expect(page.getByText("Medlemmerne ser dit navn, og hvornår du er optaget.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Bloker afsenderen" })).toBeVisible();
+test.describe("a phone's invitation (#224)", () => {
+  test.beforeEach(({ isMobile }) => test.skip(!isMobile, "a computer keeps its card"));
+
+  test("is a row under Grupper that opens the invite page, which says little", async ({ page }) => {
+    await page.goto("/groups");
+    await page.getByRole("link", { name: /Badminton/ }).click();
+    await expect(page).toHaveURL(/\/invited\/g-badminton$/);
+    await expect(page.getByRole("heading", { name: "Sara har inviteret dig til" })).toBeVisible();
+    await expect(page.getByText(/^Medlemmer kan se/)).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Om invitationen" }).click();
+    const about = page.getByRole("dialog", { name: "Om invitationen" });
+    await expect(about.getByText(/^Medlemmer kan se/)).toBeVisible();
+    await expect(about.getByRole("button", { name: "Bloker afsenderen" })).toBeVisible();
+  });
+
+  test("yes joins and goes home", async ({ page, backend }) => {
+    await page.goto("/invited/g-badminton");
+    await page.getByRole("button", { name: "Bliv medlem" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    expect(backend.calls.some((c) => c.body.action === "accept-invitation")).toBe(true);
+  });
+
+  test("blocking the sender goes back to Grupper", async ({ page, backend }) => {
+    await page.goto("/invited/g-badminton");
+    await page.getByRole("button", { name: "Om invitationen" }).click();
+    const about = page.getByRole("dialog", { name: "Om invitationen" });
+    await about.getByRole("button", { name: "Bloker afsenderen" }).click();
+    await about.getByRole("button", { name: "Bloker", exact: true }).click();
+    await expect(page).toHaveURL(/profile=groups/);
+    expect(backend.world.blocked).toHaveLength(1);
+  });
+
+  test("one that is gone says so", async ({ page }) => {
+    await page.goto("/invited/g-nothing");
+    await expect(
+      page.getByRole("heading", { name: "Invitationen findes ikke længere" }),
+    ).toBeVisible();
+  });
 });
 
-test("declining an invitation removes it", async ({ page, backend }) => {
+test("declining an invitation removes it", async ({ page, backend, isMobile }) => {
   await page.goto("/groups");
   await expect(page.getByText("Badminton")).toBeVisible();
+  if (isMobile) await page.getByRole("link", { name: /Badminton/ }).click();
   await page.getByRole("button", { name: "Nej tak" }).click();
   await expect(page.getByText("Badminton")).toBeHidden();
   expect(backend.calls.find((c) => c.body.action === "decline-invitation")?.body).toMatchObject({

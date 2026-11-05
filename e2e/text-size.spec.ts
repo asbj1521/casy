@@ -55,7 +55,8 @@ test("at the largest text size Planlæg's rows keep their words", async ({ page 
 });
 
 test("a small link's touch area reaches 44 pt, without moving it", async ({ page }) => {
-  await page.goto("/?profile=groups");
+  await page.goto("/invited/g-badminton");
+  await page.getByRole("button", { name: "Om invitationen" }).click();
   const block = page.getByRole("button", { name: "Bloker afsenderen" });
   await expect(block).toBeVisible();
   const after = await block.evaluate((el) => {

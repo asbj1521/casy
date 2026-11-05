@@ -9,6 +9,7 @@ import { HttpError } from "../_shared/http.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
 import { type Db } from "../_shared/supabaseAdmin.ts";
 import { NO_NAME } from "../_shared/i18n.ts";
+import { pictureLinks } from "../_shared/pictures.ts";
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -145,7 +146,9 @@ export async function sendInvites(
 export async function listInvitations(db: Db, profileId: string) {
   const { data: rows, error } = await db
     .from("group_invitations")
-    .select("group_id, invited_by, created_at, friend_groups!inner(name, description)")
+    .select(
+      "group_id, invited_by, created_at, friend_groups!inner(name, description, picture_path)",
+    )
     .eq("profile_id", profileId)
     .eq("status", "pending")
     .order("created_at", { ascending: false });
@@ -156,16 +159,23 @@ export async function listInvitations(db: Db, profileId: string) {
   const inviterIds = [...new Set(rows.map((r) => r.invited_by).filter((id) => id !== null))];
   const [members, inviters] = await Promise.all([
     db.from("group_members").select("group_id").in("group_id", groupIds),
-    db.from("profiles").select("id, display_name").in("id", inviterIds),
+    db.from("profiles").select("id, display_name, avatar_path").in("id", inviterIds),
   ]);
   if (members.error) throw members.error;
   if (inviters.error) throw inviters.error;
   const memberCount = new Map<string, number>();
   for (const m of members.data) memberCount.set(m.group_id, (memberCount.get(m.group_id) ?? 0) + 1);
   const nameOf = new Map(inviters.data.map((p) => [p.id, p.display_name]));
+  const avatarOf = new Map(inviters.data.map((p) => [p.id, p.avatar_path as string | null]));
+  // The group's picture, else the inviter's (#224).
+  const pictureOf = (r: (typeof rows)[number]) =>
+    (r.friend_groups as unknown as { picture_path: string | null }).picture_path ??
+    (r.invited_by ? avatarOf.get(r.invited_by) : null);
+  const pictures = await pictureLinks(db, rows.map(pictureOf));
 
   return rows.map((r) => ({
     groupId: r.group_id,
+    pictureUrl: pictures.get(pictureOf(r) ?? "") ?? null,
     // A to-one embed, which the untyped client takes for a list.
     groupName: (r.friend_groups as unknown as { name: string }).name,
     groupDescription:
@@ -187,7 +197,9 @@ export async function findInvite(db: Db, token: unknown) {
   if (!looksLikeInviteToken(token)) throw new HttpError(400, "That invite link is not valid.");
   const { data: invite, error } = await db
     .from("group_invites")
-    .select("group_id, expires_at, created_by, friend_groups!inner(name, description)")
+    .select(
+      "group_id, expires_at, created_by, friend_groups!inner(name, description, picture_path)",
+    )
     .eq("token_hash", await lookupHash(token, encryptionKeyFromEnv()))
     .maybeSingle();
   if (error) throw error;
@@ -196,11 +208,16 @@ export async function findInvite(db: Db, token: unknown) {
     throw new HttpError(410, "That invite link has expired. Ask for a new one.");
   }
   // A to-one embed, which the untyped client takes for a list.
-  const group = invite.friend_groups as unknown as { name: string; description: string | null };
+  const group = invite.friend_groups as unknown as {
+    name: string;
+    description: string | null;
+    picture_path: string | null;
+  };
   return {
     groupId: invite.group_id as string,
     groupName: group.name,
     groupDescription: group.description ?? null,
+    groupPicture: group.picture_path,
     // Null once their account is gone; the link still works.
     madeBy: (invite.created_by as string | null) ?? null,
   };
