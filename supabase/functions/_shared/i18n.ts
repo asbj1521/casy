@@ -16,6 +16,18 @@
 
 export type Lang = "da" | "en";
 
+/**
+ * What someone with no name is called until they choose one (a Hide My Email
+ * sign-in with Apple's name removed, say). It is what `profiles` stores, so
+ * it is put in the reader's language as it leaves a function (shownName).
+ */
+export const NO_NAME = "Someone";
+
+/** A person's name as this reader should see it. */
+export function shownName(name: string, lang: Lang): string {
+  return name === NO_NAME && lang === "da" ? "Nogen" : name;
+}
+
 export function langOf(req: Request): Lang {
   return new URL(req.url).searchParams.get("lang") === "da" ? "da" : "en";
 }

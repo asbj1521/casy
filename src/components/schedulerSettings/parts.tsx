@@ -65,7 +65,7 @@ export function Stepper({
         disabled={i <= 0}
         aria-label={lessLabel}
         className={cn(
-          "flex h-full w-10 items-center justify-center transition disabled:opacity-30",
+          "hit flex h-full w-10 items-center justify-center transition disabled:opacity-30",
           inRow ? "rounded-full text-primary" : "rounded-l-xl text-foreground hover:bg-secondary",
           pressed === "less" && "scale-110 bg-primary/15",
         )}
@@ -89,7 +89,7 @@ export function Stepper({
         disabled={i < 0 || i >= values.length - 1}
         aria-label={moreLabel}
         className={cn(
-          "flex h-full w-10 items-center justify-center transition disabled:opacity-30",
+          "hit flex h-full w-10 items-center justify-center transition disabled:opacity-30",
           inRow ? "rounded-full text-primary" : "rounded-r-xl text-foreground hover:bg-secondary",
           pressed === "more" && "scale-110 bg-primary/15",
         )}

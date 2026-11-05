@@ -84,3 +84,10 @@ Deno.test("every notification, in both languages, has no emoji and no long dash"
     }
   }
 });
+
+Deno.test("someone with no name is the language's own word in a notification (#170)", () => {
+  assertEquals(
+    composePush(facts("invited", { actorName: "Someone" }), "da").body.startsWith("Én "),
+    true,
+  );
+});

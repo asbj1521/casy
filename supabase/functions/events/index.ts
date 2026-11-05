@@ -48,10 +48,10 @@ import {
 } from "../_shared/events.ts";
 import { displayNameFor, requireMember } from "../_shared/groups.ts";
 import { afterResponse, HttpError, requireString, serve } from "../_shared/http.ts";
-import { langOf } from "../_shared/i18n.ts";
 import { groupMemberIds, MAX_RANKED_DATES, scoreDates } from "../_shared/rankDates.ts";
 import { cleanProfile } from "../_shared/profileAi.ts";
 import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
+import { langOf } from "../_shared/i18n.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { listEvents } from "./list.ts";
 import { invitedMembers, eventDetails, storeMatchScores } from "./suggest.ts";
@@ -62,9 +62,10 @@ serve("events", async (req, body) => {
   const caller = await requireCaller(req, db);
   const profileId = caller.id;
   const callerName = displayNameFor(caller);
-  const list = async () => ({ events: await listEvents(db, profileId, callerName) });
+  const lang = langOf(req);
+  const list = async () => ({ events: await listEvents(db, profileId, callerName, lang) });
   const one = async (proposalId: string) => {
-    const [event] = await listEvents(db, profileId, callerName, proposalId);
+    const [event] = await listEvents(db, profileId, callerName, lang, proposalId);
     if (!event) throw new HttpError(404, "That event no longer exists.");
     return event;
   };

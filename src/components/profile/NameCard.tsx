@@ -49,7 +49,10 @@ export default function NameCard({ className }: { className?: string }) {
   const setName = useMutation({
     mutationFn: setDisplayName,
     onSuccess: (data) => {
-      queryClient.setQueryData(whoAmIQueryKey(user.id), data);
+      queryClient.setQueryData<WhoAmI>(
+        whoAmIQueryKey(user.id),
+        (w) => w && { ...w, name: data.name, unnamed: false },
+      );
       setEditing(false);
     },
   });

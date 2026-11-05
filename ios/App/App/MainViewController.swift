@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 
 /// Capacitor's web view controller, with the few native touches Casy's app
 /// needs. Main.storyboard creates this instead of CAPBridgeViewController.
@@ -20,6 +21,19 @@ class MainViewController: CAPBridgeViewController {
         webView?.isOpaque = false
         webView?.backgroundColor = background
         webView?.scrollView.backgroundColor = background
+        // The phone's whole language list, before the page's first line runs
+        // (#170): iOS's web view reports only one, so a Dane with an English
+        // iPhone and Danish second would otherwise get English (lib phoneLang).
+        if let json = try? JSONEncoder().encode(Locale.preferredLanguages),
+           let list = String(data: json, encoding: .utf8) {
+            webView?.configuration.userContentController.addUserScript(
+                WKUserScript(
+                    source: "window.casyPhoneLanguages = \(list);",
+                    injectionTime: .atDocumentStart,
+                    forMainFrameOnly: true
+                )
+            )
+        }
         // The app's own plugin (not an npm package), so it is registered here.
         bridge?.registerPluginInstance(PhoneCalendarPlugin())
         // Inviting friends from the contacts, by message (#149).

@@ -16,7 +16,7 @@ export default function InfoTip({ label, children }: { label: string; children: 
   return (
     <Popover
       className="inline-block"
-      triggerClassName="flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition hover:text-foreground"
+      triggerClassName="hit flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition hover:text-foreground"
       panelClassName="w-72 max-w-[calc(100vw-3rem)] p-3 text-xs font-normal leading-relaxed text-foreground/80"
       trigger={() => (
         <>

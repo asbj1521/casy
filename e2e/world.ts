@@ -544,6 +544,7 @@ export const DEFAULT_WORLD: WorldOptions = { calendars: "connected", groups: "so
 
 export interface World {
   name: string;
+  unnamed: boolean;
   /** The AI features are on for Mia (#111); a test switches them off. */
   aiAllowed: boolean;
   /** Mia gets the admin-only AI features as an AI tester; off unless a test turns it on. */
@@ -607,6 +608,7 @@ export function makeWorld(options: WorldOptions): World {
   const withGroups = options.groups === "some";
   return {
     name: ME.name,
+    unnamed: false,
     aiAllowed: true,
     aiTester: false,
     minAppVersion: null,

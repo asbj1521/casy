@@ -13,7 +13,7 @@ import { useReducedMotion } from "framer-motion";
 
 import AgreedCard from "@/components/calendarView/AgreedCard";
 import CalendarsSheet from "@/components/calendarView/CalendarsSheet";
-import GroupPill from "@/components/calendarView/GroupPill";
+import HomeNextStep from "@/components/calendarView/HomeNextStep";
 import DayView from "@/components/calendarView/dayView/DayView";
 import { useDayCalendar } from "@/components/calendarView/dayView/useDayCalendar";
 import { useDaySpan } from "@/components/calendarView/dayView/useDaySpan";
@@ -596,9 +596,9 @@ export default function PhoneCalendar() {
           onOpen={() => openVote(homeVotes.waiting[0].id)}
         />
       )}
-      {/* Nobody else in yet (#210): the same spot, when no vote needs it. */}
+      {/* No name yet (#170), or nobody else in (#210): the same spot, when no vote needs it. */}
       {homeVotes.waiting.length === 0 && (
-        <GroupPill
+        <HomeNextStep
           hidden={!bare || importShown || importPending || aiAsking || flight || !!homeVotes.agreed}
         />
       )}

@@ -575,6 +575,7 @@ export class FakeBackend {
     const group = w.groups.find((g) => g.id === body.groupId);
     const whoami = () => ({
       name: w.name,
+      unnamed: w.unnamed,
       aiAllowed: w.aiAllowed,
       aiTester: w.aiTester || w.admin !== false,
       aiConsent: w.aiConsent,
@@ -620,6 +621,7 @@ export class FakeBackend {
         });
       case "set-name":
         w.name = String(body.name);
+        w.unnamed = false;
         return ok({ name: w.name });
       case "rename":
         if (!group) return fail(404, "Group not found");

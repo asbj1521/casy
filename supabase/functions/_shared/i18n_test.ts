@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 
-import { DANISH, DANISH_PATTERNS, langOf, translateError } from "./i18n.ts";
+import { DANISH, DANISH_PATTERNS, langOf, NO_NAME, shownName, translateError } from "./i18n.ts";
 
 /** Every .ts and .sql file the English messages could come from. */
 async function allSource(): Promise<string> {
@@ -50,4 +50,10 @@ Deno.test("only ?lang=da asks for Danish", () => {
   assertEquals(langOf(new Request("https://x.test/fn?lang=da")), "da");
   assertEquals(langOf(new Request("https://x.test/fn?lang=en")), "en");
   assertEquals(langOf(new Request("https://x.test/fn")), "en");
+});
+
+Deno.test("no name reads in the reader's language; a real name is left alone", () => {
+  assertEquals(shownName(NO_NAME, "da"), "Nogen");
+  assertEquals(shownName(NO_NAME, "en"), "Someone");
+  assertEquals(shownName("Sara", "da"), "Sara");
 });

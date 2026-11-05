@@ -36,7 +36,7 @@ import {
 } from "./caldav.ts";
 import { type AgreedEvent, buildEventIcs, eventResourceName, eventUid } from "./eventIcs.ts";
 import { currentDate } from "./events.ts";
-import type { Lang } from "./i18n.ts";
+import { type Lang, NO_NAME } from "./i18n.ts";
 import { decryptSecret } from "./secretBox.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
@@ -476,7 +476,7 @@ export async function loadWriteContext(
     const others = inviteeRows
       .filter((i) => i.proposal_id === row.proposal_id && i.profile_id !== row.profile_id)
       .map((i) => nameById.get(i.profile_id) ?? null)
-      .filter((n): n is string => !!n)
+      .filter((n): n is string => !!n && n !== NO_NAME)
       .sort((a, b) => a.localeCompare(b));
     return {
       id: proposal.id,

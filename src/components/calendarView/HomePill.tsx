@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The glass capsule just above the home page's bottom buttons: what is
- * waiting for you (VotePill) or the next step (GroupPill). Never both.
+ * waiting for you (VotePill) or the next step (HomeNextStep). Never both.
  */
 export default function HomePill({
   icon: Icon,

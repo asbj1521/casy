@@ -5,6 +5,13 @@ import { initialLang, LANG_STORAGE_KEY, LanguageContext, phoneLang, type Lang } 
 import { isNativeApp } from "@/lib/nativeApp";
 import { readStored, writeStored } from "@/lib/storage";
 
+declare global {
+  interface Window {
+    /** The phone's languages in order, from the app (MainViewController, #170). */
+    casyPhoneLanguages?: string[];
+  }
+}
+
 /**
  * The page's language. Danish is always loaded; English is fetched the first
  * time it is needed (#157), before the page switches to it, so nothing is
@@ -14,7 +21,9 @@ import { readStored, writeStored } from "@/lib/storage";
 export default function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     // The app starts in the phone's language (#151); the website in Danish.
-    const fallback = isNativeApp ? phoneLang(navigator.languages ?? [navigator.language]) : "da";
+    const fallback = isNativeApp
+      ? phoneLang(window.casyPhoneLanguages ?? navigator.languages ?? [navigator.language])
+      : "da";
     const first = initialLang(window.location.search, readStored(LANG_STORAGE_KEY), fallback);
     setCurrentLang(first);
     return first;

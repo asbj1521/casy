@@ -576,6 +576,18 @@
   --c-zinc-900: 24 24 27;
   --c-zinc-950: 9 9 11;
 }
+/* Orange text on a phone in dark mode reads at 4.5:1 on the glass capsules (#170);
+   computers keep theirs. */
+@media (max-width: 767.98px) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primary: 20 90% 58%;
+  }
+}
+@media (max-width: 767.98px) {
+  :root[data-theme="dark"] {
+    --primary: 20 90% 58%;
+  }
+}
 @media (max-width: 767.98px) {
   .force-light {
     /* As on a phone in light mode (index.css, #216). */

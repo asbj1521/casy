@@ -235,7 +235,7 @@ export default function CalendarListPanel({
                         checked={false}
                         onChange={() => onSetVisible([c.id], true)}
                         aria-label={words.show(c.name)}
-                        className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
+                        className={TICK_INPUT}
                       />
                     </TickCircle>
                   ) : (
@@ -301,11 +301,7 @@ function GroupCheckbox({
       checked={state === "all"}
       onChange={onChange}
       aria-label={label}
-      className={
-        phone
-          ? "absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
-          : "h-4 w-4 shrink-0 cursor-pointer accent-primary"
-      }
+      className={phone ? TICK_INPUT : "h-4 w-4 shrink-0 cursor-pointer accent-primary"}
     />
   );
   return phone ? (
@@ -316,6 +312,10 @@ function GroupCheckbox({
     input
   );
 }
+
+/** The invisible checkbox over a phone's tick: a 44 pt touch area centred on the small circle. */
+const TICK_INPUT =
+  "absolute left-1/2 top-1/2 z-10 m-0 h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-pointer appearance-none opacity-0";
 
 /**
  * A phone's tick (#153), as Apple Calendar's calendar list draws it: a circle
@@ -416,7 +416,7 @@ function CalendarRow({
               checked
               onChange={onUntick}
               aria-label={words.show(c.name)}
-              className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
+              className={TICK_INPUT}
             />
           </TickCircle>
         ) : (

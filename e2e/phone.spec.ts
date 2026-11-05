@@ -415,3 +415,28 @@ test("a calendar's priority is picked the same way as its category (#220)", asyn
     .poll(() => backend.calls.find((c) => c.name === "calendar-set-purpose")?.body)
     .toMatchObject({ priority: "never" });
 });
+
+test("someone with no name is offered to choose one, once per opening (#170)", async ({
+  page,
+  backend,
+}) => {
+  backend.world.unnamed = true;
+  // A vote waiting would take the same spot.
+  backend.world.events = [];
+  await page.goto("/");
+  const pill = page.getByRole("button", { name: "Vælg dit navn" });
+  await pill.click();
+  let sheet = page.getByRole("dialog", { name: "Dit navn" });
+  await sheet.getByRole("button", { name: "Annuller" }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(pill).toHaveCount(0);
+
+  await page.reload();
+  await pill.click();
+  sheet = page.getByRole("dialog", { name: "Dit navn" });
+  await sheet.getByRole("textbox", { name: "Navn" }).fill("Sara");
+  await sheet.getByRole("button", { name: "Gem" }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(pill).toHaveCount(0);
+  expect(backend.world.name).toBe("Sara");
+});

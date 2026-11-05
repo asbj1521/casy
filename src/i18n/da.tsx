@@ -1374,6 +1374,10 @@ export const da = {
   homeNudge: {
     newGroup: "Lav en gruppe med dine venner",
     invite: (group: string) => `Inviter venner til ${group}`,
+    chooseName: "Vælg dit navn",
+    nameTitle: "Dit navn",
+    nameLabel: "Navn",
+    nameNote: "Det er det, dine grupper ser.",
   },
   homeVote: {
     answer: (title: string) => `Svar på ${title}`,

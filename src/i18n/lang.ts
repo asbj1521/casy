@@ -27,7 +27,9 @@ export function initialLang(search: string, stored: string | null, fallback: Lan
 /**
  * The iPhone app's first language (#151): Danish when the phone lists Danish
  * among its languages at all, else English. Danes with an English iPhone often
- * keep Danish as a second language, so Danish wins wherever it appears.
+ * keep Danish as a second language, so Danish wins wherever it appears. iOS's
+ * web view reports only the first language, so the list comes from the app
+ * (`window.casyPhoneLanguages`, MainViewController, #170).
  */
 export function phoneLang(languages: readonly string[]): Lang {
   return languages.some((l) => l.toLowerCase().startsWith("da")) ? "da" : "en";

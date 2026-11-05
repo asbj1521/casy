@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MotionConfig } from "framer-motion";
 
 import ConnectCalendarPrompt from "@/components/ConnectCalendarPrompt";
 import Footer from "@/components/Footer";
@@ -119,155 +120,158 @@ persistQueries(queryClient);
 
 function App() {
   return (
-    <LanguageProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <LiveUpdates />
-          {AppBackground && (
-            <Suspense fallback={null}>
-              <AppBackground />
-            </Suspense>
-          )}
-          <BrowserRouter>
-            {/* After signing in with a password that no longer meets the rules. */}
-            <WeakPasswordNotice />
-            {/* Plain background rather than a spinner: these chunks are small, and
+    // Someone who asked for less motion gets fades, not movement, everywhere (#170).
+    <MotionConfig reducedMotion="user">
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <LiveUpdates />
+            {AppBackground && (
+              <Suspense fallback={null}>
+                <AppBackground />
+              </Suspense>
+            )}
+            <BrowserRouter>
+              {/* After signing in with a password that no longer meets the rules. */}
+              <WeakPasswordNotice />
+              {/* Plain background rather than a spinner: these chunks are small, and
                 a flash of "Loading…" would read as slower than a beat of nothing. */}
-            <Suspense fallback={<div className="min-h-screen bg-background" />}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/plan" element={<FindDate />} />
-                <Route path="/sign-in" element={<SignIn />} />
-                {MotionPlayground && <Route path="/dev/motion" element={<MotionPlayground />} />}
-                {TripsPlayground && <Route path="/dev/trips" element={<TripsPlayground />} />}
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/how-it-works" element={<HowItWorks />} />
-                <Route path="/help/connect-icloud" element={<ConnectIcloudHelp />} />
-                <Route path="/help/connect-ics" element={<ConnectIcsHelp />} />
-                <Route path="/help/connect-google" element={<ConnectGoogleHelp />} />
-                <Route path="/help/connect-outlook" element={<ConnectOutlookHelp />} />
-                {/* The invite link. Signing in happens on the page itself, so
+              <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/plan" element={<FindDate />} />
+                  <Route path="/sign-in" element={<SignIn />} />
+                  {MotionPlayground && <Route path="/dev/motion" element={<MotionPlayground />} />}
+                  {TripsPlayground && <Route path="/dev/trips" element={<TripsPlayground />} />}
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/support" element={<Support />} />
+                  <Route path="/how-it-works" element={<HowItWorks />} />
+                  <Route path="/help/connect-icloud" element={<ConnectIcloudHelp />} />
+                  <Route path="/help/connect-ics" element={<ConnectIcsHelp />} />
+                  <Route path="/help/connect-google" element={<ConnectGoogleHelp />} />
+                  <Route path="/help/connect-outlook" element={<ConnectOutlookHelp />} />
+                  {/* The invite link. Signing in happens on the page itself, so
                     someone can see what they were invited to before deciding. */}
-                <Route path="/join/:token" element={<JoinGroup />} />
-                {/* Everything tied to one person's calendars needs a login. */}
-                <Route
-                  path="/profile"
-                  element={
-                    <RequireAuth>
-                      <Profile />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/events"
-                  element={
-                    <RequireAuth>
-                      <MyEvents />
-                    </RequireAuth>
-                  }
-                />
-                {/* One event open beside the list (a computer; a phone goes back to /events). */}
-                <Route
-                  path="/events/:eventId"
-                  element={
-                    <RequireAuth>
-                      <MyEvents />
-                    </RequireAuth>
-                  }
-                />
-                {/* The old swipe screen's address, in push notifications: to the vote over the month (#172). */}
-                <Route
-                  path="/events/:eventId/dates"
-                  element={
-                    <RequireAuth>
-                      <SwipeDates />
-                    </RequireAuth>
-                  }
-                />
-                {/* Your groups, and one group (both the same page, Groups.tsx). */}
-                <Route
-                  path="/groups"
-                  element={
-                    <RequireAuth>
-                      <Groups />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/groups/:groupId"
-                  element={
-                    <RequireAuth>
-                      <Groups />
-                    </RequireAuth>
-                  }
-                />
-                {/* Everything Casy holds about you: a screen on a phone, a page on a computer. */}
-                <Route
-                  path="/profile/data"
-                  element={
-                    <RequireAuth>
-                      <MyData />
-                    </RequireAuth>
-                  }
-                />
-                {/* Language and light or dark, under the profile: every device. */}
-                <Route
-                  path="/profile/settings"
-                  element={
-                    <RequireAuth>
-                      <Settings />
-                    </RequireAuth>
-                  }
-                />
-                {/* The phone profile's screens, opened from its hub. */}
-                <Route
-                  path="/profile/:screen"
-                  element={
-                    <RequireAuth>
-                      <ProfileScreen />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/calendar-overview"
-                  element={
-                    <RequireAuth>
-                      <CalendarOverview />
-                    </RequireAuth>
-                  }
-                />
-                {/* Connecting calendars, opened from My calendar (the Calendar tab). */}
-                <Route
-                  path="/calendar-overview/accounts"
-                  element={
-                    <RequireAuth>
-                      <CalendarAccounts />
-                    </RequireAuth>
-                  }
-                />
-              </Routes>
-            </Suspense>
-            <Footer />
-            {/* Computers only: asks someone with no calendar to connect one. */}
-            <ConnectCalendarPrompt />
-            {/* The iPhone app only: an app too old for Casy is asked to update (#143). */}
-            <UpdateRequired />
-            {PushLinks && (
-              <Suspense fallback={null}>
-                <PushLinks />
+                  <Route path="/join/:token" element={<JoinGroup />} />
+                  {/* Everything tied to one person's calendars needs a login. */}
+                  <Route
+                    path="/profile"
+                    element={
+                      <RequireAuth>
+                        <Profile />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/events"
+                    element={
+                      <RequireAuth>
+                        <MyEvents />
+                      </RequireAuth>
+                    }
+                  />
+                  {/* One event open beside the list (a computer; a phone goes back to /events). */}
+                  <Route
+                    path="/events/:eventId"
+                    element={
+                      <RequireAuth>
+                        <MyEvents />
+                      </RequireAuth>
+                    }
+                  />
+                  {/* The old swipe screen's address, in push notifications: to the vote over the month (#172). */}
+                  <Route
+                    path="/events/:eventId/dates"
+                    element={
+                      <RequireAuth>
+                        <SwipeDates />
+                      </RequireAuth>
+                    }
+                  />
+                  {/* Your groups, and one group (both the same page, Groups.tsx). */}
+                  <Route
+                    path="/groups"
+                    element={
+                      <RequireAuth>
+                        <Groups />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/groups/:groupId"
+                    element={
+                      <RequireAuth>
+                        <Groups />
+                      </RequireAuth>
+                    }
+                  />
+                  {/* Everything Casy holds about you: a screen on a phone, a page on a computer. */}
+                  <Route
+                    path="/profile/data"
+                    element={
+                      <RequireAuth>
+                        <MyData />
+                      </RequireAuth>
+                    }
+                  />
+                  {/* Language and light or dark, under the profile: every device. */}
+                  <Route
+                    path="/profile/settings"
+                    element={
+                      <RequireAuth>
+                        <Settings />
+                      </RequireAuth>
+                    }
+                  />
+                  {/* The phone profile's screens, opened from its hub. */}
+                  <Route
+                    path="/profile/:screen"
+                    element={
+                      <RequireAuth>
+                        <ProfileScreen />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/calendar-overview"
+                    element={
+                      <RequireAuth>
+                        <CalendarOverview />
+                      </RequireAuth>
+                    }
+                  />
+                  {/* Connecting calendars, opened from My calendar (the Calendar tab). */}
+                  <Route
+                    path="/calendar-overview/accounts"
+                    element={
+                      <RequireAuth>
+                        <CalendarAccounts />
+                      </RequireAuth>
+                    }
+                  />
+                </Routes>
               </Suspense>
-            )}
-            {AppLinks && (
-              <Suspense fallback={null}>
-                <AppLinks />
-              </Suspense>
-            )}
-          </BrowserRouter>
-        </AuthProvider>
-      </QueryClientProvider>
-    </LanguageProvider>
+              <Footer />
+              {/* Computers only: asks someone with no calendar to connect one. */}
+              <ConnectCalendarPrompt />
+              {/* The iPhone app only: an app too old for Casy is asked to update (#143). */}
+              <UpdateRequired />
+              {PushLinks && (
+                <Suspense fallback={null}>
+                  <PushLinks />
+                </Suspense>
+              )}
+              {AppLinks && (
+                <Suspense fallback={null}>
+                  <AppLinks />
+                </Suspense>
+              )}
+            </BrowserRouter>
+          </AuthProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
+    </MotionConfig>
   );
 }
 

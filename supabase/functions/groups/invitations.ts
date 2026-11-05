@@ -8,6 +8,7 @@ import {
 import { HttpError } from "../_shared/http.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
 import { type Db } from "../_shared/supabaseAdmin.ts";
+import { NO_NAME } from "../_shared/i18n.ts";
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -170,10 +171,15 @@ export async function listInvitations(db: Db, profileId: string) {
     groupDescription:
       (r.friend_groups as unknown as { description: string | null }).description ?? null,
     memberCount: memberCount.get(r.group_id) ?? 0,
-    // Null once the inviter's account is gone; the invitation still stands.
-    invitedBy: r.invited_by ? (nameOf.get(r.invited_by) ?? null) : null,
+    // Null once the inviter's account is gone, or they have no name; the invitation still stands.
+    invitedBy: namedInviter(r.invited_by ? nameOf.get(r.invited_by) : null),
     createdAt: r.created_at,
   }));
+}
+
+/** An inviter's name, or null for someone with no name to give. */
+export function namedInviter(name: string | null | undefined): string | null {
+  return name && name !== NO_NAME ? name : null;
 }
 
 /** The live invite behind a link, with its group; refused if it never was one or has expired. */

@@ -102,7 +102,7 @@ export default function NameField({
                     disabled={!written}
                     aria-label={words.start}
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+                      "hit flex h-9 w-9 items-center justify-center rounded-full transition-colors",
                       written
                         ? "bg-primary/10 text-primary active:bg-primary/20"
                         : "text-muted-foreground/50",

@@ -248,6 +248,8 @@ export async function declineInvitation(groupId: string): Promise<{ invitations:
 /** The signed-in person: what to call them, and whether AI is on for them (#111). */
 export interface WhoAmI {
   name: string;
+  /** No name of their own yet (#170): the home page offers to choose one. Missing reads as named. */
+  unnamed?: boolean;
   /** A link to your profile picture (#187); null or missing for none. */
   avatarUrl?: string | null;
   /** Missing in answers from before #111 (a remembered copy): read as off. */

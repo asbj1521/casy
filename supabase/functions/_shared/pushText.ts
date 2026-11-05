@@ -5,6 +5,7 @@
  * as written; without one the sentence says "someone".
  */
 import type { PushMessage } from "./apns.ts";
+import { NO_NAME } from "./i18n.ts";
 
 export type PushKind =
   "vote_invited" | "vote_decided" | "event_changed" | "group_invitation" | "deadline_near";
@@ -63,7 +64,8 @@ const NAMES = {
 
 /** The notification for these facts, in this language. */
 export function composePush(facts: PushFacts, lang: Lang): PushMessage {
-  const who = facts.actorName?.trim() || NAMES[lang].someone;
+  const actor = facts.actorName?.trim();
+  const who = actor && actor !== NO_NAME ? actor : NAMES[lang].someone;
   const event = facts.eventTitle?.trim() || NAMES[lang].event;
   const group = facts.groupName?.trim() || (lang === "da" ? "en gruppe" : "a group");
   const when = facts.chosenAt === null ? "" : dateText(facts.chosenAt, lang);

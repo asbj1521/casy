@@ -35,6 +35,7 @@
  * filled since the hourly sync (_shared/groupRefresh.ts).
  */
 import { requireCaller } from "../_shared/auth.ts";
+import { langOf } from "../_shared/i18n.ts";
 import { listFriends, removeFriend } from "./friends.ts";
 import { allowedFrontends, inviteFrontend } from "../_shared/frontend.ts";
 import { claimStaleConnections, freshForMs, refreshTargets } from "../_shared/groupRefresh.ts";
@@ -64,7 +65,13 @@ import { deletePictures, groupPicturePath } from "../_shared/pictures.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { syncConnection } from "../_shared/sync.ts";
 import { rememberName, membersAsMember, listGroups, whoAmI } from "./members.ts";
-import { resolveInvitees, sendInvites, listInvitations, findInvite } from "./invitations.ts";
+import {
+  resolveInvitees,
+  sendInvites,
+  listInvitations,
+  findInvite,
+  namedInviter,
+} from "./invitations.ts";
 import { groupBusy } from "./busy.ts";
 
 /**
@@ -99,7 +106,7 @@ serve("groups", async (req, body) => {
         name: groupName,
         description: groupDescription,
         memberCount: members.count ?? 0,
-        invitedBy: maker.data?.display_name ?? null,
+        invitedBy: namedInviter(maker.data?.display_name),
       },
     };
   }
@@ -116,26 +123,27 @@ serve("groups", async (req, body) => {
 
   const profileId = caller.id;
   const callerName = displayNameFor(caller);
+  const lang = langOf(req);
   // Saved in the background: nothing below waits on it, since the caller's
   // own name is taken straight from their login wherever it is shown. The
   // worst a failure does is leave a slightly stale name.
   afterResponse("remember_login_name", () => rememberName(db, caller));
-  const list = async () => ({ groups: await listGroups(db, profileId, callerName) });
+  const list = async () => ({ groups: await listGroups(db, profileId, callerName, lang) });
 
   switch (action) {
     case "list":
       return await list();
 
     case "whoami":
-      return await whoAmI(db, profileId, callerName);
+      return await whoAmI(db, profileId, callerName, lang);
 
     // Everything a page asks for as it opens, in one call (#158): who you are,
     // your groups, your invitations, your calendar accounts and the live pulse, worked out side by
     // side. Each is also its own action, for asking again later.
     case "start": {
       const [whoami, groups, invitations, connections, pulse] = await Promise.all([
-        whoAmI(db, profileId, callerName),
-        listGroups(db, profileId, callerName),
+        whoAmI(db, profileId, callerName, lang),
+        listGroups(db, profileId, callerName, lang),
         listInvitations(db, profileId),
         calendarStatus(db, profileId),
         db.rpc("live_pulse", { p_profile_id: profileId }).then(({ data, error }) => {
@@ -259,11 +267,11 @@ serve("groups", async (req, body) => {
 
     // People you have shared a group with (#222), to invite again.
     case "friends":
-      return { friends: await listFriends(db, profileId) };
+      return { friends: await listFriends(db, profileId, lang) };
 
     case "remove-friend":
       await removeFriend(db, profileId, requireString(body, "profileId"));
-      return { friends: await listFriends(db, profileId) };
+      return { friends: await listFriends(db, profileId, lang) };
 
     case "rename": {
       const groupId = requireString(body, "groupId");

@@ -3,6 +3,7 @@ import { currentDate, type EventMode } from "../_shared/events.ts";
 import { pictureLinks } from "../_shared/pictures.ts";
 import { cleanProfile } from "../_shared/profileAi.ts";
 import { type Db } from "../_shared/supabaseAdmin.ts";
+import { NO_NAME, shownName, type Lang } from "../_shared/i18n.ts";
 
 /** How many events the list returns, newest first. Plenty for a person's groups. */
 export const LIST_LIMIT = 100;
@@ -58,7 +59,13 @@ export type MyCalendar =
  * events with their dates embedded, everyone invited with their answers to
  * each current date (and to every date of a vote), and the names.
  */
-export async function listEvents(db: Db, profileId: string, callerName: string, only?: string) {
+export async function listEvents(
+  db: Db,
+  profileId: string,
+  callerName: string,
+  lang: Lang,
+  only?: string,
+) {
   const { data: memberships, error: memErr } = await db
     .from("group_members")
     .select("group_id")
@@ -157,7 +164,10 @@ export async function listEvents(db: Db, profileId: string, callerName: string, 
   const nameById = new Map<string, string>();
   for (const n of names) if (n.display_name) nameById.set(n.id, n.display_name);
   const nameOf = (id: string | null) =>
-    !id ? "Someone" : (nameById.get(id) ?? (id === profileId ? callerName : "Someone"));
+    shownName(
+      !id ? NO_NAME : (nameById.get(id) ?? (id === profileId ? callerName : NO_NAME)),
+      lang,
+    );
 
   return proposals.map((p) => {
     const date = current.get(p.id) ?? null;

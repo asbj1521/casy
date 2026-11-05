@@ -1318,6 +1318,10 @@ export const en: Messages = {
   homeNudge: {
     newGroup: "Make a group with your friends",
     invite: (group: string) => `Invite friends to ${group}`,
+    chooseName: "Choose your name",
+    nameTitle: "Your name",
+    nameLabel: "Name",
+    nameNote: "This is what your groups see.",
   },
   homeVote: {
     answer: (title: string) => `Answer ${title}`,

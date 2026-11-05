@@ -7,6 +7,7 @@
 import { encodeBase64Url } from "jsr:@std/encoding@1/base64url";
 
 import { HttpError } from "./http.ts";
+import { NO_NAME } from "./i18n.ts";
 import type { Db } from "./supabaseAdmin.ts";
 import { cleanText } from "./text.ts";
 
@@ -85,8 +86,8 @@ export function displayNameFor(user: NameableUser | null | undefined): string {
     if (typeof value === "string" && value.trim()) return value.trim();
   }
   const [local, domain] = user?.email?.split("@") ?? [];
-  if (domain?.toLowerCase() === APPLE_RELAY_DOMAIN) return "Someone";
-  return local?.trim() || "Someone";
+  if (domain?.toLowerCase() === APPLE_RELAY_DOMAIN) return NO_NAME;
+  return local?.trim() || NO_NAME;
 }
 
 /** Where Apple's Hide My Email addresses live. */

@@ -7,6 +7,7 @@ import {
 } from "../_shared/aiAccess.ts";
 import { type Caller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
+import { NO_NAME, shownName, type Lang } from "../_shared/i18n.ts";
 import { HttpError } from "../_shared/http.ts";
 import { pictureLinks } from "../_shared/pictures.ts";
 import { type Db } from "../_shared/supabaseAdmin.ts";
@@ -60,7 +61,7 @@ export async function membersAsMember(
  * `callerName` is the caller's own name straight from their login, so they
  * are named correctly even before rememberName's write has landed.
  */
-export async function listGroups(db: Db, profileId: string, callerName: string) {
+export async function listGroups(db: Db, profileId: string, callerName: string, lang: Lang) {
   type Row = {
     /** Your own choice for the group (#171): its free days starred on your home page. */
     prime_dates: boolean;
@@ -162,10 +163,12 @@ export async function listGroups(db: Db, profileId: string, callerName: string) 
       .sort((a, b) => Date.parse(a.joined_at) - Date.parse(b.joined_at))
       .map((m) => ({
         profileId: m.profile_id,
-        name:
+        name: shownName(
           m.profile_id === profileId
             ? ownName
-            : (profileOf.get(m.profile_id)?.display_name ?? "Someone"),
+            : (profileOf.get(m.profile_id)?.display_name ?? NO_NAME),
+          lang,
+        ),
         isYou: m.profile_id === profileId,
         joinedAt: m.joined_at,
         avatarUrl: avatarOf(m.profile_id),
@@ -195,7 +198,7 @@ export async function resolveOwnName(
  * run side by side (#158). Any of them failing (a migration not yet applied)
  * is "not yet", never a broken page.
  */
-export async function whoAmI(db: Db, profileId: string, callerName: string) {
+export async function whoAmI(db: Db, profileId: string, callerName: string, lang: Lang) {
   const orNo = (what: string) => (err: unknown) => {
     console.error(`whoami: couldn't check ${what}`, err);
     return false;
@@ -219,7 +222,9 @@ export async function whoAmI(db: Db, profileId: string, callerName: string) {
     }),
   ]);
   return {
-    name,
+    name: shownName(name, lang),
+    // No name of their own yet: the home page offers to choose one (#170).
+    unnamed: name === NO_NAME,
     aiAllowed: allowed,
     aiConsent: consent,
     aiShare: share,
