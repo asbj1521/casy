@@ -146,19 +146,19 @@ export default function GroupDetails({
             {t.groupsSection.made(formatMonthYear(group.createdAt, lang))}
           </p>
           {group.description && (
-            <p className="mt-1 break-words text-[15px] text-foreground">{group.description}</p>
+            <p className="mt-1 break-words text-[0.9375rem] text-foreground">{group.description}</p>
           )}
           {group.pictureUrl && (
             <button
               type="button"
               onClick={() => unpicture.mutate()}
               disabled={unpicture.isPending}
-              className="mt-1 text-[13px] font-medium text-primary disabled:opacity-50"
+              className="mt-1 text-[0.8125rem] font-medium text-primary disabled:opacity-50"
             >
               {t.pictures.remove}
             </button>
           )}
-          {pictureError && <p className="mt-1 text-[13px] text-red-600">{pictureError}</p>}
+          {pictureError && <p className="mt-1 text-[0.8125rem] text-red-600">{pictureError}</p>}
         </div>
       </div>
 

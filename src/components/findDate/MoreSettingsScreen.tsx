@@ -49,7 +49,7 @@ export default function MoreSettingsScreen({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl border bg-card p-4 shadow-sm">
-      <h2 className="mb-2 text-[17px] font-bold text-foreground">{title}</h2>
+      <h2 className="mb-2 text-[1.0625rem] font-bold text-foreground">{title}</h2>
       {children}
     </section>
   );

@@ -37,6 +37,10 @@
   @media (max-width: 767.98px) {
     :root {
       /* The buttons, and the capsule above them (HomePill, #215). */
+      /* Orange text on a phone in light mode reads at 4.5:1 or better on the
+         page and on white (#216): about the depth of `--cta`, its solid orange.
+         Dark mode has its own, and computers keep theirs. */
+      --primary: 20 90% 38%;
       --home-bar-clear: calc(
         3rem + 1.5rem + 2.75rem + 0.75rem + max(env(safe-area-inset-bottom), 0.75rem)
       );
@@ -102,6 +106,23 @@
     height: env(safe-area-inset-top);
     background: hsl(var(--background));
   }
+}
+
+/*
+ * A small control's touch area reaches 44 pt without moving anything (#216):
+ * an invisible layer over it, centred, as wide and tall as 2.75rem at least.
+ */
+.hit {
+  position: relative;
+}
+.hit::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 2.75rem);
+  height: max(100%, 2.75rem);
+  transform: translate(-50%, -50%);
 }
 
 @layer utilities {

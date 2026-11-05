@@ -54,7 +54,7 @@ export default function WidenSearch({
         glass ? "glass rounded-[22px]" : "rounded-2xl border bg-card",
       )}
     >
-      <p className="px-1 text-[15px] text-foreground">{words.title}</p>
+      <p className="px-1 text-[0.9375rem] text-foreground">{words.title}</p>
       {options.map((option, i) => {
         const absent = option.first.absent ?? [];
         // Written as the kind it searches (a trip that may start any day is a holiday).
@@ -69,7 +69,7 @@ export default function WidenSearch({
             className="flex items-center justify-between gap-3 rounded-xl bg-background/60 px-3.5 py-3 text-left transition hover:bg-secondary"
           >
             <span className="min-w-0">
-              <span className="block text-[15px] font-semibold text-foreground">
+              <span className="block text-[0.9375rem] font-semibold text-foreground">
                 {label(option)}
               </span>
               <span className="block text-sm text-muted-foreground">

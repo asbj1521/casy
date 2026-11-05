@@ -94,7 +94,7 @@ export default function WeekStrip({
             <span
               key={day}
               className={cn(
-                "text-center text-[12px] font-medium",
+                "text-center text-[0.75rem] font-medium",
                 isWeekend(day) ? "text-muted-foreground" : "text-foreground",
               )}
             >
@@ -144,7 +144,7 @@ export default function WeekStrip({
                   >
                     <span
                       className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-full text-[19px] transition-colors",
+                        "flex h-9 w-9 items-center justify-center rounded-full text-[1.1875rem] transition-colors",
                         day === center
                           ? day === today
                             ? cn(TODAY_TONE[tone].fill, "font-semibold text-white")

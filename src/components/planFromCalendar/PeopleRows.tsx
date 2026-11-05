@@ -81,7 +81,7 @@ export default function PeopleRows({
                         });
                       }}
                       className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full text-[15px] font-bold transition-colors disabled:opacity-30",
+                        "flex h-8 w-8 items-center justify-center rounded-full text-[0.9375rem] font-bold transition-colors disabled:opacity-30",
                         s === option ? LOOK[option].on : "bg-secondary text-muted-foreground",
                       )}
                     >

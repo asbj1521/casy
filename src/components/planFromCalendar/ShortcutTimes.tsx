@@ -44,9 +44,12 @@ export default function ShortcutTimes({
                 on ? "border-primary text-primary" : "text-muted-foreground active:bg-secondary",
               )}
             >
-              <span className="text-[13px] font-medium">{words.time(i + 1)}</span>
+              <span className="text-[0.8125rem] font-medium">{words.time(i + 1)}</span>
               <span
-                className={cn("text-[15px] font-semibold", on ? "text-primary" : "text-foreground")}
+                className={cn(
+                  "text-[0.9375rem] font-semibold",
+                  on ? "text-primary" : "text-foreground",
+                )}
               >
                 {timeLabel(time, durationMinutes, words.anyTime)}
               </span>

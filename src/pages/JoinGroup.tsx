@@ -95,7 +95,7 @@ export default function JoinGroup() {
               </h1>
               <p className="mt-1 text-2xl font-bold text-foreground">{invited.name}</p>
               {invited.description && (
-                <p className="mt-2 break-words text-[15px] text-foreground">
+                <p className="mt-2 break-words text-[0.9375rem] text-foreground">
                   {invited.description}
                 </p>
               )}

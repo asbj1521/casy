@@ -17,7 +17,7 @@ export default function Countdown({ until }: { until: string }) {
     return () => window.clearInterval(id);
   }, []);
   return (
-    <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+    <p className="flex items-center gap-1.5 text-[0.8125rem] text-muted-foreground">
       <Timer className="h-3.5 w-3.5" aria-hidden />
       {t.events.settlesIn}
       <span className="font-semibold tabular-nums text-foreground">

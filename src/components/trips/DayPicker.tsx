@@ -72,7 +72,7 @@ export default function DayPicker({
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <span className="text-[15px] font-semibold text-foreground">{name}</span>
+        <span className="text-[0.9375rem] font-semibold text-foreground">{name}</span>
         <button
           type="button"
           onClick={() => turn(1)}
@@ -83,7 +83,7 @@ export default function DayPicker({
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
-      <div className="grid grid-cols-7 text-center text-[12px] font-medium text-muted-foreground">
+      <div className="grid grid-cols-7 text-center text-[0.75rem] font-medium text-muted-foreground">
         {[1, 2, 3, 4, 5, 6, 0].map((dow) => (
           <span key={dow} className="py-1">
             {t.weekdaysShort[dow].charAt(0)}
@@ -121,7 +121,7 @@ export default function DayPicker({
                     timeZone: TZ,
                   })}
                   className={cn(
-                    "relative flex h-10 w-10 items-center justify-center rounded-full text-[17px]",
+                    "relative flex h-10 w-10 items-center justify-center rounded-full text-[1.0625rem]",
                     picked
                       ? "bg-primary font-semibold text-primary-foreground"
                       : isJourney

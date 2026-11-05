@@ -73,10 +73,12 @@ export default function Caption({
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-[22px] font-bold text-primary-foreground">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-[1.375rem] font-bold text-primary-foreground">
               {n}
             </span>
-            <span className="text-[20px] font-semibold leading-snug text-foreground">{text}</span>
+            <span className="text-[1.25rem] font-semibold leading-snug text-foreground">
+              {text}
+            </span>
           </motion.div>
         </AnimatePresence>
       )}

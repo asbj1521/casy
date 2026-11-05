@@ -139,30 +139,30 @@ export default function HomeVote({
       />
       <div className="relative">
         <Collapse open={!folded}>
-          <header className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[17px] font-bold text-foreground">
+              <p className="truncate text-[1.0625rem] font-bold text-foreground">
                 {eventTitle(event.title, t)}
               </p>
-              <p className="truncate text-[13px] text-muted-foreground">{event.group.name}</p>
+              <p className="truncate text-[0.8125rem] text-muted-foreground">{event.group.name}</p>
             </div>
             <button
               type="button"
               onClick={() => deck.back()}
               disabled={index === 0 || done}
               aria-label={t.swipe.previous}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-600 transition disabled:opacity-30"
+              className="hit flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-600 transition disabled:opacity-30"
             >
               <RotateCcw className="h-5 w-5" />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 rounded-lg px-2 py-1 text-[15px] font-semibold text-primary"
+              className="hit shrink-0 rounded-lg px-2 py-1 text-[0.9375rem] font-semibold text-primary"
             >
               {t.swipe.done}
             </button>
-          </header>
+          </div>
 
           {/* One segment per date: answered, the one on screen, still to come. */}
           <div className="mt-2 flex gap-1">
@@ -190,10 +190,10 @@ export default function HomeVote({
         </Collapse>
 
         {done || !current ? (
-          <div className="flex h-[min(30dvh,236px)] flex-col items-center justify-center px-6 text-center short:h-[176px]">
-            <p className="text-[20px] font-bold text-foreground">{t.swipe.doneTitle}</p>
+          <div className="flex h-[min(34dvh,14.75rem)] flex-col items-center justify-center px-6 text-center short:h-[11rem]">
+            <p className="text-[1.25rem] font-bold text-foreground">{t.swipe.doneTitle}</p>
             {waitingFor.length > 0 && (
-              <p className="mt-1 text-[15px] text-muted-foreground">
+              <p className="mt-1 text-[0.9375rem] text-muted-foreground">
                 {t.swipe.waitingFor(nameList(waitingFor, lang))}
               </p>
             )}
@@ -202,7 +202,7 @@ export default function HomeVote({
           <>
             <div
               className={cn(
-                "relative h-[min(30dvh,236px)] short:h-[176px]",
+                "relative h-[min(34dvh,14.75rem)] short:h-[11rem]",
                 !folded && "mt-3 short:mt-2",
               )}
               onPointerDown={(e) => {
@@ -266,7 +266,7 @@ export default function HomeVote({
                 <AnswerButtons onAnswer={deck.answer} screen tight />
               )}
               {!deck.hintSeen && index === 0 && Object.keys(deck.given).length === 0 && (
-                <p className="truncate px-2 pb-1 text-center text-xs text-muted-foreground">
+                <p className="px-2 pb-1 text-center text-xs text-muted-foreground">
                   {t.swipe.hintShort}
                 </p>
               )}

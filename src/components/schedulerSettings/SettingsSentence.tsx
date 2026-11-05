@@ -22,7 +22,7 @@ import {
 } from "./options";
 
 const CHIP =
-  "inline-flex min-h-10 items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-2.5 text-[17px] font-bold text-orange-900 transition hover:bg-orange-100";
+  "inline-flex min-h-10 items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-2.5 text-[1.0625rem] font-bold text-orange-900 transition hover:bg-orange-100";
 
 /** The phone version: fill in the blanks of a sentence. */
 export function SettingsSentence({ groupSwitcher, name, onName, settings, onChange }: Props) {
@@ -90,10 +90,10 @@ export function SettingsSentence({ groupSwitcher, name, onName, settings, onChan
         onChange={(e) => onName(e.target.value)}
         placeholder={t.scheduler.namePlaceholder}
         aria-label={t.scheduler.name}
-        className="mt-1.5 h-11 w-full rounded-xl border bg-card px-3.5 text-[17px] font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+        className="mt-1.5 h-11 w-full rounded-xl border bg-card px-3.5 text-[1.0625rem] font-bold text-foreground outline-none transition placeholder:font-medium placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[17px] font-semibold text-foreground">
+      <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[1.0625rem] font-semibold text-foreground">
         {settings.multiDay ? (
           <>
             <span>{t.scheduler.sentenceFor}</span>

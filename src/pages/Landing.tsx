@@ -202,7 +202,7 @@ function ChartDrawing() {
       className="vt-card rounded-2xl border bg-card px-4 pb-4 pt-3 shadow-sm sm:px-6 sm:pt-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <p className="text-[15px] font-bold text-foreground sm:text-lg">
+        <p className="text-[0.9375rem] font-bold text-foreground sm:text-lg">
           {t.scheduler.chartTitle(title)}
         </p>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">

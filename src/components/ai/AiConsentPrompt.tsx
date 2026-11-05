@@ -139,7 +139,7 @@ function Prompt({ userId, held = false, onOpenChange }: Props & { userId: string
             aria-label={t.pageDot(i + 1, pages.length)}
             className="w-full shrink-0 snap-start px-1 text-sm text-muted-foreground"
           >
-            <h3 className="mb-2 text-[15px] font-semibold text-foreground">{t.pages[i]}</h3>
+            <h3 className="mb-2 text-[0.9375rem] font-semibold text-foreground">{t.pages[i]}</h3>
             {body}
           </section>
         ))}

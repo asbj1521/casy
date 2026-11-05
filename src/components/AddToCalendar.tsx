@@ -182,7 +182,7 @@ export default function AddToCalendar({
         <FlowButton onClick={() => add.mutate(chosen)} disabled={!chosen} busy={add.isPending}>
           {words.useAndAdd}
         </FlowButton>
-        <div className="mt-2 flex items-center justify-between px-2 text-[15px]">
+        <div className="mt-2 flex items-center justify-between px-2 text-[0.9375rem]">
           <button
             type="button"
             onClick={() => setChoosing(false)}

@@ -95,7 +95,7 @@ function AccountHeader({ a, signedIn }: { a: AppleWords; signedIn: boolean }) {
       style={at(100, 24, 520, 36)}
       className="flex items-center justify-between border-b border-[#d2d2d7]"
     >
-      <span className="text-[14px] font-semibold" style={{ color: INK }}>
+      <span className="text-[0.875rem] font-semibold" style={{ color: INK }}>
         {a.account}
       </span>
       {signedIn ? (
@@ -193,7 +193,7 @@ function LandingPage({ a }: { a: AppleWords }) {
       </div>
       <p
         style={{ ...at(0, 232, W), color: INK }}
-        className="text-center text-[24px] font-semibold tracking-tight"
+        className="text-center text-[1.5rem] font-semibold tracking-tight"
       >
         {a.landingTitle}
       </p>
@@ -224,7 +224,7 @@ function BiometricSheet({ a }: { a: AppleWords }) {
         style={at(225, 70, 270, 250)}
         className="rounded-[14px] border border-white/10 bg-[#2a2a2c] shadow-2xl"
       />
-      <span style={at(239, 80)} className="text-[13px] font-semibold text-white">
+      <span style={at(239, 80)} className="text-[0.8125rem] font-semibold text-white">
         {a.account}
       </span>
       <span
@@ -278,7 +278,10 @@ function SignInForm({ a, phase }: { a: AppleWords; phase: number }) {
       <span style={at(347, 86, 26, 28)} className="flex items-center justify-center">
         <SiApple className="h-6 w-6" style={{ color: INK }} />
       </span>
-      <p style={{ ...at(0, 120, W), color: INK }} className="text-center text-[15px] font-semibold">
+      <p
+        style={{ ...at(0, 120, W), color: INK }}
+        className="text-center text-[0.9375rem] font-semibold"
+      >
         {a.account}
       </p>
       <Field
@@ -313,14 +316,17 @@ function CodeEntry({ a, phase }: { a: AppleWords; phase: number }) {
     <>
       <AppleNav a={a} />
       <AccountHeader a={a} signedIn={false} />
-      <p style={{ ...at(0, 110, W), color: INK }} className="text-center text-[15px] font-semibold">
+      <p
+        style={{ ...at(0, 110, W), color: INK }}
+        className="text-center text-[0.9375rem] font-semibold"
+      >
         {a.twoFactor}
       </p>
       {Array.from({ length: 6 }, (_, i) => (
         <span
           key={i}
           style={{ ...at(262 + i * 34, 150, 26, 32), color: INK }}
-          className="flex items-center justify-center rounded-[7px] border border-[#86868b] bg-white text-[14px]"
+          className="flex items-center justify-center rounded-[7px] border border-[#86868b] bg-white text-[0.875rem]"
         >
           {phase >= 1 ? EXAMPLE_CODE[i] : ""}
         </span>
@@ -351,7 +357,7 @@ function SecurityPage({
         >
           <span
             style={at(100, 20, 40, 40)}
-            className="flex items-center justify-center rounded-full bg-gradient-to-b from-[#d1d5db] to-[#9ca3af] text-[12px] font-semibold text-white"
+            className="flex items-center justify-center rounded-full bg-gradient-to-b from-[#d1d5db] to-[#9ca3af] text-[0.75rem] font-semibold text-white"
           >
             {PERSON.initials}
           </span>
@@ -372,7 +378,7 @@ function SecurityPage({
           ))}
           <span
             style={{ ...at(258, 18), color: INK }}
-            className="text-[18px] font-bold tracking-tight"
+            className="text-[1.125rem] font-bold tracking-tight"
           >
             {a.security}
           </span>
@@ -421,7 +427,7 @@ function ListModal({ a }: { a: AppleWords }) {
       <X style={{ ...at(176, 46, 12, 12), color: INK }} />
       <p
         style={{ ...at(160, 96, 400), color: INK }}
-        className="text-center text-[15px] font-semibold"
+        className="text-center text-[0.9375rem] font-semibold"
       >
         {a.listTitle}
       </p>
@@ -434,7 +440,7 @@ function ListModal({ a }: { a: AppleWords }) {
       <p style={{ ...at(160, 156, 400), color: BLUE }} className="text-center text-[9px]">
         {a.listLink} ↗
       </p>
-      <span style={{ ...at(200, 198), color: INK }} className="text-[12px] font-semibold">
+      <span style={{ ...at(200, 198), color: INK }} className="text-[0.75rem] font-semibold">
         {a.passwords}
       </span>
       <Plus strokeWidth={2.25} style={{ ...at(500, 197, 16, 16), color: BLUE }} />
@@ -539,7 +545,7 @@ function RevealModal({ a, phase }: { a: AppleWords; phase: number }) {
       </p>
       <p
         style={{ ...at(235, 137, 250), color: INK }}
-        className="text-center text-[12px] font-semibold"
+        className="text-center text-[0.75rem] font-semibold"
       >
         <span className={cn("rounded-sm px-0.5", phase >= 1 && "bg-[#b3d7ff]")}>
           {EXAMPLE_PASSWORD.join("-")}

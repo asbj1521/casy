@@ -33,10 +33,10 @@ export default function OnlyTimesDemo() {
         <div className="absolute inset-y-0 left-0 w-[46%]">
           {words.events.map((event, i) => (
             <div key={event.time} className={`${ROW} bg-secondary`} style={rowTop(i)}>
-              <span className="shrink-0 text-[13px] font-semibold text-foreground">
+              <span className="shrink-0 text-[0.8125rem] font-semibold text-foreground">
                 {event.time}
               </span>
-              <span className="truncate text-[13px] text-foreground">{event.title}</span>
+              <span className="truncate text-[0.8125rem] text-foreground">{event.title}</span>
             </div>
           ))}
         </div>
@@ -49,7 +49,7 @@ export default function OnlyTimesDemo() {
               style={rowTop(i)}
             >
               {reduce && (
-                <span className="text-[13px] font-semibold text-foreground">{event.time}</span>
+                <span className="text-[0.8125rem] font-semibold text-foreground">{event.time}</span>
               )}
             </div>
           ))}
@@ -84,12 +84,12 @@ function Flying({ event, index }: { event: { time: string; title: string }; inde
           animate={{ opacity: [0, 0, 1, 1, 0] }}
           transition={{ ...clock, times: [0, off + 0.06, on, 0.97, 1] }}
         />
-        <span className="relative shrink-0 text-[13px] font-semibold text-foreground">
+        <span className="relative shrink-0 text-[0.8125rem] font-semibold text-foreground">
           {event.time}
         </span>
         {/* The name goes on the way: this is the point of it all. */}
         <motion.span
-          className="relative truncate text-[13px] text-foreground"
+          className="relative truncate text-[0.8125rem] text-foreground"
           animate={{ opacity: [1, 1, 0, 0, 1] }}
           transition={{ ...clock, times: [0, off + 0.02, off + 0.1, 0.97, 1] }}
         >

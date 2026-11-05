@@ -101,7 +101,7 @@ export default function ShortcutsScreen({
                       onClick={() => onSelect(s)}
                       className="flex h-full w-full items-center justify-center rounded-2xl p-3 transition active:scale-95"
                     >
-                      <ShortcutFace shortcut={s} size="text-[17px]" />
+                      <ShortcutFace shortcut={s} size="text-[1.0625rem]" />
                     </button>
                     {s.id !== savingId && (
                       <button
@@ -130,8 +130,8 @@ export default function ShortcutsScreen({
               onClick={onRetry}
               className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl p-3 pt-7 transition active:scale-95"
             >
-              <span className={cn(NAME, "text-[17px]")}>{failed.name}</span>
-              <span className="text-center text-[12px] leading-tight text-red-700">
+              <span className={cn(NAME, "text-[1.0625rem]")}>{failed.name}</span>
+              <span className="text-center text-[0.75rem] leading-tight text-red-700">
                 {words.notSaved}
               </span>
             </button>
@@ -161,7 +161,7 @@ export default function ShortcutsScreen({
       </ul>
       {/* With none yet, three bare plus tiles say nothing on their own (#213). */}
       {shortcuts?.length === 0 && !failed && (
-        <p className="mt-3 px-1 text-[12px] text-muted-foreground">{words.emptyNote}</p>
+        <p className="mt-3 px-1 text-[0.75rem] text-muted-foreground">{words.emptyNote}</p>
       )}
 
       {/* The genvej about to run, at the bottom: big on the left, what it looks at on the right. */}
@@ -179,7 +179,7 @@ export default function ShortcutsScreen({
                 onClick={() => onSelect(null)}
                 className="flex h-full w-full items-center justify-center rounded-2xl p-4"
               >
-                <ShortcutFace shortcut={selected} size="text-[24px]" />
+                <ShortcutFace shortcut={selected} size="text-[1.5rem]" />
               </button>
             </motion.div>
             <ShortcutFacts shortcut={selected} />
@@ -242,22 +242,24 @@ function ShortcutFacts({ shortcut }: { shortcut: Shortcut }) {
     >
       {settings.multiDay ? (
         <li>
-          <p className="text-[13px] text-muted-foreground">{t.scheduler.tripDays}</p>
-          <p className="text-[17px] font-semibold text-foreground">
+          <p className="text-[0.8125rem] text-muted-foreground">{t.scheduler.tripDays}</p>
+          <p className="text-[1.0625rem] font-semibold text-foreground">
             {t.common.days(settings.days)}
           </p>
         </li>
       ) : (
         times.map((time, i) => (
           <li key={i}>
-            <p className="text-[13px] text-muted-foreground">{words.time(i + 1)}</p>
-            <p className="text-[17px] font-semibold text-foreground">
+            <p className="text-[0.8125rem] text-muted-foreground">{words.time(i + 1)}</p>
+            <p className="text-[1.0625rem] font-semibold text-foreground">
               {timeLabel(time, settings.durationMinutes, words.anyTime)}
             </p>
           </li>
         ))
       )}
-      {!settings.multiDay && <li className="text-[13px] text-muted-foreground">{daysLabel}</li>}
+      {!settings.multiDay && (
+        <li className="text-[0.8125rem] text-muted-foreground">{daysLabel}</li>
+      )}
     </motion.ul>
   );
 }

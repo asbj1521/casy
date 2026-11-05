@@ -66,13 +66,16 @@ export default function PhoneCalendarAccess({
       }
     >
       <OnlyTimesDemo />
-      <p className="px-1 text-[15px] text-muted-foreground">
+      <p className="px-1 text-[0.9375rem] text-muted-foreground">
         {denied ? words.denied : words.needBody}
         {!denied && access === "prompt" && ` ${words.needAsk}`}
       </p>
-      {note && <p className="mt-3 px-1 text-[13px] text-red-600">{note}</p>}
+      {note && <p className="mt-3 px-1 text-[0.8125rem] text-red-600">{note}</p>}
       {!phone.others && (
-        <Link to={home.to} className="mt-3 block px-1 pb-2 text-[15px] font-semibold text-primary">
+        <Link
+          to={home.to}
+          className="mt-3 block px-1 pb-2 text-[0.9375rem] font-semibold text-primary"
+        >
           {words.otherCalendar}
         </Link>
       )}

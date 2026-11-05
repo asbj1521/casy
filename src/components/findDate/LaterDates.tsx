@@ -51,7 +51,7 @@ export default function LaterDates({
               <span className="hidden text-xs text-muted-foreground sm:block">
                 {t.scheduler.alsoPossible}
               </span>
-              <span className="block min-w-0 text-[15px] font-bold sm:mt-0.5 sm:text-lg">
+              <span className="block min-w-0 text-[0.9375rem] font-bold sm:mt-0.5 sm:text-lg">
                 <Bone chars={16} />
               </span>
               <span className="block shrink-0 text-sm sm:mt-0.5">
@@ -130,7 +130,7 @@ export default function LaterDates({
             <span className="hidden text-xs text-muted-foreground sm:block">
               {t.scheduler.alsoPossible}
             </span>
-            <span className="block min-w-0 truncate text-[15px] font-bold text-foreground sm:mt-0.5 sm:text-lg">
+            <span className="block min-w-0 truncate text-[0.9375rem] font-bold text-foreground sm:mt-0.5 sm:text-lg">
               {search.kind === "single"
                 ? formatLongDate(slot.start, lang)
                 : formatLongSpan(slot.start, slot.end, lang)}

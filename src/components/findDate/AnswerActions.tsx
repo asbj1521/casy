@@ -57,7 +57,7 @@ export default function AnswerActions({
             type="button"
             onClick={onStepOn}
             disabled={!canStepOn}
-            className="h-12 min-w-0 flex-1 truncate rounded-xl border bg-card px-3 text-[15px] font-semibold text-foreground transition hover:bg-secondary disabled:opacity-30 sm:flex-none sm:px-4"
+            className="h-12 min-w-0 flex-1 truncate rounded-xl border bg-card px-3 text-[0.9375rem] font-semibold text-foreground transition hover:bg-secondary disabled:opacity-30 sm:flex-none sm:px-4"
           >
             <span className="sm:hidden">{t.scheduler.nextShort}</span>
             <span className="hidden sm:inline">{t.scheduler.nextOption}</span>
@@ -68,7 +68,7 @@ export default function AnswerActions({
         <button
           type="button"
           onClick={onAccept}
-          className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 text-[15px] font-bold text-white transition hover:bg-amber-700 sm:flex-none sm:px-5"
+          className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 text-[0.9375rem] font-bold text-white transition hover:bg-amber-700 sm:flex-none sm:px-5"
         >
           <Check className="h-5 w-5 shrink-0" />
           {t.scheduler.accept}
@@ -78,7 +78,7 @@ export default function AnswerActions({
           type="button"
           onClick={onSuggest}
           disabled={!canSuggest || checking || suggesting || suggested}
-          className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-cta px-4 text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50 sm:flex-none sm:px-5"
+          className="inline-flex h-12 min-w-0 flex-[2] items-center justify-center gap-2 rounded-xl bg-cta px-4 text-[0.9375rem] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50 sm:flex-none sm:px-5"
         >
           {checking || suggesting ? (
             <Loader2 className="h-5 w-5 shrink-0 animate-spin" />

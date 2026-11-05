@@ -100,7 +100,7 @@ function EventRow({
         trailing={
           onClick &&
           (cue ? (
-            <span className="flex shrink-0 items-center text-[15px] font-semibold text-primary">
+            <span className="flex shrink-0 items-center text-[0.9375rem] font-semibold text-primary">
               {cue}
               <ChevronRight className="h-4 w-4" />
             </span>

@@ -5,8 +5,8 @@ import { Loader2, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const SIZES = {
-  md: { button: "h-11 pl-4 pr-5 text-[17px]", icon: "h-5 w-5" },
-  sm: { button: "h-9 px-3.5 text-[15px] font-semibold", icon: "h-4 w-4" },
+  md: { button: "h-11 pl-4 pr-5 text-[1.0625rem]", icon: "h-5 w-5" },
+  sm: { button: "h-9 px-3.5 text-[0.9375rem] font-semibold", icon: "h-4 w-4" },
 };
 
 /**

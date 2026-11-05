@@ -79,5 +79,7 @@ export default {
     // A short phone's screen (iPhone SE, #214): `short:` tightens what must fit
     // above the fold. A variant, since an object in `screens` turns off `min-*` and `max-*`.
     ({ addVariant }) => addVariant("short", "@media (max-height: 700px)"),
+    // The iPhone set to large text (lib/textSize.ts, #216): words win over decoration.
+    ({ addVariant }) => addVariant("large-text", "html.large-text &"),
   ],
 };

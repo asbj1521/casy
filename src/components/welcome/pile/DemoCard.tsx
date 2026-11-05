@@ -56,7 +56,7 @@ export function DemoCard({
         <p className="text-xs font-bold uppercase tracking-wide text-primary">
           {t.swipe.dateOf(position, total)}
         </p>
-        <p className="mt-2 text-[26px] font-extrabold leading-[1.1] tracking-tight text-foreground">
+        <p className="mt-2 text-[1.625rem] font-extrabold leading-[1.1] tracking-tight text-foreground">
           {date}
         </p>
         <p className="mt-1 text-lg text-foreground">{time}</p>

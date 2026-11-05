@@ -122,10 +122,10 @@ function AccountRow({
         <div className="min-w-0 flex-1 border-t py-3 pr-4 group-first/row:border-t-0">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-medium text-foreground">
+              <p className="truncate text-[0.9375rem] font-medium text-foreground">
                 {account.account_label ?? t.providerCard.unknownAccount}
               </p>
-              <p className="text-[13px] text-muted-foreground">
+              <p className="text-[0.8125rem] text-muted-foreground">
                 {t.calendarView.providerNames[account.provider]} ·{" "}
                 {t.counts.calendars(account.calendar_sources.length)}
                 {/* Too much for a phone's line; a wider screen has room. */}

@@ -37,11 +37,13 @@ export default function GroupRow({
           icon={activeGroup?.isExample ? undefined : Users}
           leading={
             activeGroup && (activeGroup.pictureUrl || activeGroup.members.length > 0) ? (
-              <GroupBubbles members={activeGroup.members} picture={activeGroup.pictureUrl} />
+              <span className="large-text:hidden">
+                <GroupBubbles members={activeGroup.members} picture={activeGroup.pictureUrl} />
+              </span>
             ) : undefined
           }
           label={
-            <span className="flex min-w-0 items-center gap-2 text-[17px] font-semibold">
+            <span className="flex min-w-0 items-center gap-2 text-[1.0625rem] font-semibold">
               <span className="truncate">
                 <span className="sr-only">{t.scheduler.group} </span>
                 {activeGroup?.name ?? t.scheduler.group}

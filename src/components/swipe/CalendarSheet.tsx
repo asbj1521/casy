@@ -175,7 +175,7 @@ export default function CalendarSheet({
     new Date(center).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
   );
   const pill =
-    "flex h-10 items-center rounded-full border bg-card text-[17px] font-medium text-foreground shadow-sm";
+    "flex h-10 items-center rounded-full border bg-card text-[1.0625rem] font-medium text-foreground shadow-sm";
 
   return (
     <div
@@ -275,7 +275,7 @@ export default function CalendarSheet({
             go(0);
             setView("day");
           }}
-          className="absolute bottom-[calc(env(safe-area-inset-bottom)+16px)] left-4 z-30 rounded-full border bg-card/90 px-5 py-2.5 text-[17px] font-medium text-foreground shadow-lg backdrop-blur"
+          className="absolute bottom-[calc(env(safe-area-inset-bottom)+16px)] left-4 z-30 rounded-full border bg-card/90 px-5 py-2.5 text-[1.0625rem] font-medium text-foreground shadow-lg backdrop-blur"
         >
           {t.swipe.toSuggestion}
         </button>

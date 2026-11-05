@@ -15,8 +15,10 @@ export default function NoEvents() {
     return (
       <div className="mt-16 flex flex-col items-center text-center">
         <CalendarCheck className="h-10 w-10 text-primary" />
-        <p className="mt-3 text-[17px] font-semibold text-foreground">{t.events.emptyTitle}</p>
-        <p className="mt-1 max-w-xs text-[15px] text-muted-foreground">{t.events.emptyBodyPhone}</p>
+        <p className="mt-3 text-[1.0625rem] font-semibold text-foreground">{t.events.emptyTitle}</p>
+        <p className="mt-1 max-w-xs text-[0.9375rem] text-muted-foreground">
+          {t.events.emptyBodyPhone}
+        </p>
         <GlassButton icon={CalendarSearch} to="/?plan" className="mt-5">
           {t.planFromCalendar.button}
         </GlassButton>

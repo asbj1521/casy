@@ -47,7 +47,7 @@ export default function PlanMonths({
           }}
           aria-pressed={value === null}
           className={cn(
-            "mb-1.5 px-1 text-[13px] font-semibold transition-colors",
+            "hit mb-1.5 px-1 text-[0.8125rem] font-semibold transition-colors",
             value === null ? "text-primary" : "text-muted-foreground",
           )}
         >
@@ -78,7 +78,7 @@ export default function PlanMonths({
               aria-pressed={on}
               aria-label={`${capitalize(monthName(m, LOCALE[lang], "long"))} ${year}`}
               className={cn(
-                "flex h-11 flex-col items-center justify-center rounded-xl text-[15px] font-semibold leading-tight transition",
+                "flex h-11 flex-col items-center justify-center rounded-xl text-[0.9375rem] font-semibold leading-tight transition",
                 end
                   ? "bg-cta text-white"
                   : on

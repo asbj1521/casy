@@ -306,7 +306,7 @@ export default function ComputerCalendar() {
 
           <section className="order-1 flex h-[680px] min-h-0 min-w-0 flex-col lg:order-2 lg:h-auto">
             <div className="flex items-center justify-between gap-4 pb-3">
-              <h2 className="flex items-center gap-2 text-[28px] font-bold tracking-tight text-foreground">
+              <h2 className="flex items-center gap-2 text-[1.75rem] font-bold tracking-tight text-foreground">
                 <span>
                   {monthName} <span className="font-normal">{year}</span>
                 </span>
@@ -381,7 +381,7 @@ export default function ComputerCalendar() {
                   <span
                     key={label}
                     className={cn(
-                      "px-2 py-1.5 text-right text-[13px]",
+                      "px-2 py-1.5 text-right text-[0.8125rem]",
                       c >= 5 ? "text-muted-foreground" : "text-foreground/80",
                     )}
                   >
@@ -437,7 +437,7 @@ export default function ComputerCalendar() {
                       style={at.style}
                     >
                       <div className="mb-1 flex items-start justify-between gap-3">
-                        <h3 className="text-[15px] font-bold text-foreground">{dayTitle}</h3>
+                        <h3 className="text-[0.9375rem] font-bold text-foreground">{dayTitle}</h3>
                         <button
                           type="button"
                           onClick={() => setSelected(null)}
@@ -536,7 +536,7 @@ const WeekRow = memo(function WeekRow({
             )}
             <span
               className={cn(
-                "absolute right-1.5 top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[13px] tabular-nums",
+                "absolute right-1.5 top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[0.8125rem] tabular-nums",
                 day === selected
                   ? "bg-primary font-semibold text-primary-foreground"
                   : day === today
@@ -569,7 +569,7 @@ const WeekRow = memo(function WeekRow({
             <p
               key={i}
               className={cn(
-                "absolute truncate px-1.5 text-[12px] font-medium leading-[17px]",
+                "absolute truncate px-1.5 text-[0.75rem] font-medium leading-[17px]",
                 !before && "rounded-l-[4px]",
                 !after && "rounded-r-[4px]",
               )}
@@ -584,7 +584,7 @@ const WeekRow = memo(function WeekRow({
           ) : (
             <p
               key={i}
-              className="absolute flex items-center gap-1.5 px-1.5 text-[12px] leading-[17px] text-foreground"
+              className="absolute flex items-center gap-1.5 px-1.5 text-[0.75rem] leading-[17px] text-foreground"
               style={position}
             >
               <span

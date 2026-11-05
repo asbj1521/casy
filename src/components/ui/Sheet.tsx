@@ -111,7 +111,7 @@ function DialogPanel({
           type="button"
           onClick={onClose}
           disabled={busy}
-          className="shrink-0 rounded-lg px-2 py-1 text-[15px] font-semibold text-primary transition hover:bg-secondary disabled:opacity-50"
+          className="shrink-0 rounded-lg px-2 py-1 text-[0.9375rem] font-semibold text-primary transition hover:bg-secondary disabled:opacity-50"
         >
           {closeLabel}
         </button>

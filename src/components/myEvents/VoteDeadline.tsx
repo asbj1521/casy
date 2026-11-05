@@ -135,7 +135,7 @@ export function PhoneVoteDeadline({ event }: { event: VoteEvent }) {
           onCancel={() => setAsking(false)}
         />
       )}
-      {error && <p className="mt-2 px-1 text-[13px] text-red-600">{error}</p>}
+      {error && <p className="mt-2 px-1 text-[0.8125rem] text-red-600">{error}</p>}
       <DeadlinePicker
         open={picking}
         onClose={() => setPicking(false)}

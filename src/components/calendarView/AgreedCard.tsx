@@ -66,16 +66,16 @@ export default function AgreedCard({
         <p className="text-xs font-bold uppercase tracking-wide text-primary">
           {t.homeVote.everyone}
         </p>
-        <p className="mt-1 text-[17px] font-semibold text-foreground">
+        <p className="mt-1 text-[1.0625rem] font-semibold text-foreground">
           {eventTitle(event.title, t)}
         </p>
         <p
           ref={date}
-          className="mt-1 text-[28px] font-extrabold leading-[1.1] tracking-tight text-foreground"
+          className="mt-1 text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-foreground"
         >
           {headline.lines.join(" ")}
         </p>
-        <p className="mt-1 text-[17px] text-foreground">{headline.time}</p>
+        <p className="mt-1 text-[1.0625rem] text-foreground">{headline.time}</p>
         <ul className="mt-3 flex -space-x-2">
           {going.map((p, i) => (
             <li key={p.profileId}>

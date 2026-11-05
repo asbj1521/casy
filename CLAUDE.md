@@ -46,6 +46,7 @@ The phone and the iPhone app follow one design language, taken from the newest s
 7. **Text:** no intro sentence that repeats what the screen shows. A sentence that is a promise (what others see, who is told) stays, once, as a footnote under the section it is about, shown when it matters.
 8. **Order:** what most people do first at the top; leaving and deleting last.
 9. **Shapes and sizes:** buttons are capsules (`rounded-full`), lists and cards `rounded-2xl`, sheets 28px at the top; 17px for sheet titles and main buttons, 15px for rows, 13px for a row's detail, 12px for footnotes.
+10. **Text size and touch (#216):** the app follows the iPhone's text size (`lib/textSize.ts`), so text of 12px and up is written in rem (`text-[0.9375rem]` for 15px), and a height that must hold text too; only a calendar's tiny labels stay in px. `large-text:` drops decoration so the words fit (a row's icon, a group's faces). A small text link or icon button gets `hit`: a 44 pt touch area that moves nothing. Check a new screen at the largest size (`e2e/text-size.spec.ts`).
 
 ## Common Commands
 

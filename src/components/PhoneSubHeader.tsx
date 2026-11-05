@@ -36,13 +36,15 @@ export default function PhoneSubHeader({
             onBack();
           })
         }
-        className="flex min-w-0 items-center justify-self-start rounded-lg py-1 pr-2 text-[15px] text-primary"
+        className="flex min-w-0 items-center justify-self-start rounded-lg py-1 pr-2 text-[0.9375rem] text-primary"
       >
         <ChevronLeft className="h-6 w-6 shrink-0" />
         <span className="truncate">{backLabel}</span>
       </Link>
       {title ? (
-        <h1 className="max-w-[55vw] truncate text-[15px] font-semibold text-foreground">{title}</h1>
+        <h1 className="max-w-[55vw] truncate text-[0.9375rem] font-semibold text-foreground">
+          {title}
+        </h1>
       ) : (
         <span />
       )}

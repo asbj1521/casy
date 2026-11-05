@@ -70,9 +70,9 @@ export default function TripSheet({
     title = words.title(mark.city);
     body = (
       <>
-        <p className="mb-3 text-[15px] text-muted-foreground">{words.found}</p>
+        <p className="mb-3 text-[0.9375rem] text-muted-foreground">{words.found}</p>
         <LegList legs={trip.legs} at={at} />
-        <p className="mb-2 mt-4 text-[15px] font-semibold text-foreground">
+        <p className="mb-2 mt-4 text-[0.9375rem] font-semibold text-foreground">
           {/* A date ending the sentence may end in its own period ("8. nov."): one is enough. */}
           {words.away(at(trip.start), end.replace(/\.$/, ""))}
         </p>
@@ -208,7 +208,7 @@ function AddToPhoneCalendar({ mark, trips }: { mark: TripMark; trips: Trips }) {
   const inCalendar = mark.kind === "trip" && mark.trip.inCalendar;
   if (inCalendar) {
     return (
-      <p className="flex h-12 items-center justify-center gap-2 text-[15px] font-semibold text-emerald-600">
+      <p className="flex h-12 items-center justify-center gap-2 text-[0.9375rem] font-semibold text-emerald-600">
         <CalendarCheck className="h-5 w-5" aria-hidden />
         {add.data ? words.addedTo(add.data) : words.inCalendar}
       </p>
@@ -236,7 +236,7 @@ function LegList({ legs, at }: { legs: Leg[]; at: (ms: number) => string }) {
           <li key={leg.id} className="flex items-start gap-3 px-3 py-2.5">
             <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
             <div className="min-w-0">
-              <p className="text-[15px] font-medium text-foreground">
+              <p className="text-[0.9375rem] font-medium text-foreground">
                 {words.modes[leg.mode]}:{" "}
                 {words.route(cityName(leg.from, legs, lang), cityName(leg.to, legs, lang))}
               </p>
@@ -271,7 +271,7 @@ function SecondaryButton({ onClick, children }: { onClick: () => void; children:
     <button
       type="button"
       onClick={onClick}
-      className="mt-2 h-12 w-full rounded-full text-[15px] font-semibold text-primary"
+      className="mt-2 h-12 w-full rounded-full text-[0.9375rem] font-semibold text-primary"
     >
       {children}
     </button>

@@ -106,13 +106,13 @@ export default function NameCard({ className }: { className?: string }) {
             type="button"
             onClick={() => unpicture.mutate()}
             disabled={unpicture.isPending}
-            className="mt-1 text-[13px] font-medium text-primary disabled:opacity-50"
+            className="mt-1 text-[0.8125rem] font-medium text-primary disabled:opacity-50"
           >
             {t.pictures.remove}
           </button>
         )}
         {(unreadable ?? picture.error ?? unpicture.error) && (
-          <p className="mt-1 text-[13px] text-red-600">
+          <p className="mt-1 text-[0.8125rem] text-red-600">
             {unreadable ?? (picture.error ?? unpicture.error)?.message}
           </p>
         )}

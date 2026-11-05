@@ -379,7 +379,7 @@ export default function SignIn() {
         type="button"
         onClick={() => void handleForgotPassword()}
         disabled={forgotSending}
-        className="self-start text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-60"
+        className="hit self-start text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-60"
       >
         {forgotSending ? t.signIn.sendingReset : t.signIn.forgot}
       </button>
@@ -436,7 +436,7 @@ export default function SignIn() {
                   type="button"
                   onClick={() => void handleApple()}
                   disabled={appleBusy}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[17px] font-semibold text-white transition disabled:opacity-60 dark:bg-white dark:text-black"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[1.0625rem] font-semibold text-white transition disabled:opacity-60 dark:bg-white dark:text-black"
                 >
                   <SiApple aria-hidden className="h-[18px] w-[18px]" />
                   {t.signIn.apple}
@@ -642,7 +642,7 @@ export default function SignIn() {
               <button
                 type="button"
                 onClick={() => switchMode(mode === "link" ? "password" : "link")}
-                className={`text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground ${
+                className={`hit text-xs text-muted-foreground underline underline-offset-2 transition hover:text-foreground ${
                   isNativeApp ? "ml-auto text-right" : "mt-4"
                 }`}
               >

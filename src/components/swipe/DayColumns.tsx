@@ -556,7 +556,7 @@ export default function DayColumns({
         <span
           className={cn(
             "flex shrink-0 justify-center text-muted-foreground",
-            compact ? "text-[10px]" : "text-[15px]",
+            compact ? "text-[10px]" : "text-[0.9375rem]",
           )}
           style={{ width: gutter }}
         >
@@ -572,7 +572,7 @@ export default function DayColumns({
                 aria-hidden={hiddenUnless(k)}
                 className={cn(
                   "absolute inset-y-0 flex items-center justify-center truncate font-semibold",
-                  compact ? "text-[11px]" : "text-[15px]",
+                  compact ? "text-[11px]" : "text-[0.9375rem]",
                   // Alone, the day's name is plain, as Apple writes it; side by side, today is red.
                   midnight === today && days > 1
                     ? TODAY_TONE[tone].text
@@ -617,7 +617,7 @@ export default function DayColumns({
                         })}
                         className={cn(
                           "truncate rounded border-l-[3px] px-1 font-semibold",
-                          compact ? "text-[9px] leading-[14px]" : "text-[12px] leading-5",
+                          compact ? "text-[9px] leading-[14px]" : "text-[0.75rem] leading-5",
                         )}
                         style={{
                           background: `rgb(${tint(rgb, dark)})`,
@@ -631,7 +631,7 @@ export default function DayColumns({
                     );
                   })}
                   {full && (
-                    <p className="truncate rounded bg-muted px-1 text-[12px] font-semibold leading-5 text-muted-foreground">
+                    <p className="truncate rounded bg-muted px-1 text-[0.75rem] font-semibold leading-5 text-muted-foreground">
                       +{more}
                     </p>
                   )}
@@ -661,7 +661,7 @@ export default function DayColumns({
                   <span
                     className={cn(
                       "absolute -translate-y-1/2 pr-1.5 text-right tabular-nums text-muted-foreground",
-                      compact ? "text-[9px]" : "text-[12px]",
+                      compact ? "text-[9px]" : "text-[0.75rem]",
                     )}
                     style={{ width: gutter }}
                   >
@@ -744,7 +744,7 @@ export default function DayColumns({
                                   "truncate font-semibold",
                                   compact
                                     ? "text-[10px] leading-[14px]"
-                                    : "text-[13px] leading-[17px]",
+                                    : "text-[0.8125rem] leading-[17px]",
                                 )}
                               >
                                 {calendar.labelOf(b.segment)}
@@ -753,7 +753,7 @@ export default function DayColumns({
                                 <p
                                   className={cn(
                                     "flex items-center gap-0.5 truncate tabular-nums opacity-90",
-                                    compact ? "text-[9px]" : "text-[12px]",
+                                    compact ? "text-[9px]" : "text-[0.75rem]",
                                   )}
                                 >
                                   <Clock className={compact ? "h-2.5 w-2.5" : "h-3 w-3"} />
@@ -786,13 +786,13 @@ export default function DayColumns({
                                   "truncate font-bold text-primary",
                                   compact
                                     ? "text-[10px] leading-[14px]"
-                                    : "text-[13px] leading-[18px]",
+                                    : "text-[0.8125rem] leading-[18px]",
                                 )}
                               >
                                 {p.label}
                               </p>
                               {!compact && px >= twoLinesPx && (
-                                <p className="text-[12px] tabular-nums text-primary">
+                                <p className="text-[0.75rem] tabular-nums text-primary">
                                   {formatTime(new Date(p.start).toISOString())}-
                                   {formatTime(new Date(p.end).toISOString())}
                                 </p>

@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 
 /** A text field typed straight into its row, its text on the right. */
 export const ROW_INPUT =
-  "min-w-0 flex-1 bg-transparent text-right text-[15px] text-foreground outline-none placeholder:text-muted-foreground";
+  "min-w-0 flex-1 bg-transparent text-right text-[0.9375rem] text-foreground outline-none placeholder:text-muted-foreground";
 
 /**
  * A row like ListRow's (in a ListGroup), with a control on the right instead
@@ -28,7 +28,7 @@ export default function FieldRow({
       <Row className="flex w-full items-center gap-3 pl-4">
         <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
         <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
-          <span className="shrink-0 text-[15px] font-medium text-foreground">{label}</span>
+          <span className="shrink-0 text-[0.9375rem] font-medium text-foreground">{label}</span>
           <span className="flex min-w-0 flex-1 justify-end">{children}</span>
         </span>
       </Row>

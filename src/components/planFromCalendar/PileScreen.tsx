@@ -665,7 +665,7 @@ export default function PileScreen({
             className={cn("min-h-0 flex-1 overflow-y-auto px-3 pb-3", flying && "opacity-0")}
           >
             {failed ? (
-              <p className="glass rounded-[22px] p-4 text-[15px] text-foreground">
+              <p className="glass rounded-[22px] p-4 text-[0.9375rem] text-foreground">
                 {waiting?.text}
               </p>
             ) : dates ? (
@@ -689,7 +689,7 @@ export default function PileScreen({
                   {widen.length > 0 ? (
                     <WidenSearch glass options={widen} onPick={pickWiden} />
                   ) : (
-                    <p className="glass rounded-[22px] p-4 text-[15px] text-foreground">
+                    <p className="glass rounded-[22px] p-4 text-[0.9375rem] text-foreground">
                       {words.noneThrough}
                     </p>
                   )}

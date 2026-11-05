@@ -44,7 +44,7 @@ export default function PileTitle({
       {name && (
         // The page's own heading, to the pixel: the same classes, padding included.
         <span
-          className="absolute whitespace-nowrap px-3 pb-1 pt-1 text-[30px] font-bold leading-tight tracking-tight text-foreground"
+          className="absolute whitespace-nowrap px-3 pb-1 pt-1 text-[1.875rem] font-bold leading-tight tracking-tight text-foreground"
           style={{ top: TITLE_EDGE_PX, left: frame.title.left - frame.left }}
         >
           {year !== thisYear ? `${name} ${year}` : name}

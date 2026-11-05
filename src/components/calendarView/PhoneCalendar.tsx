@@ -454,7 +454,7 @@ export default function PhoneCalendar() {
   });
 
   // The month takes whatever the screen has left under the toolbar.
-  const box = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLElement>(null);
   const height = useFillViewport(box);
 
   // The toolbar's place, and the day view's frame under it: on the website
@@ -501,9 +501,11 @@ export default function PhoneCalendar() {
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
+      {/* Named for VoiceOver's headings; the month names under it are what is seen (#216). */}
+      <h1 className="sr-only">{t.nav.home}</h1>
       {/* The months fill everything under the page's top, the header drawn
           over them in glass. In the app they reach up behind the clock. */}
-      <div
+      <main
         ref={box}
         style={{
           height: height ?? undefined,
@@ -571,7 +573,7 @@ export default function PhoneCalendar() {
             </>
           }
         />
-      </div>
+      </main>
 
       {/* Planning starts from the calendar (#126), beside Aftaler and the
           profile; out of the way while a day or the plan is open. */}

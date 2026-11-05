@@ -91,7 +91,7 @@ export default function HomeBar({
         type="button"
         onClick={onPlan}
         onPointerDown={prefetch?.plan}
-        className="glass-pill flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[17px] font-semibold text-primary transition active:scale-95"
+        className="glass-pill flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[1.0625rem] font-semibold text-primary transition active:scale-95"
       >
         <CalendarSearch className="h-5 w-5 shrink-0" />
         <span className="truncate">{t.planFromCalendar.button}</span>

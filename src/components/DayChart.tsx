@@ -138,7 +138,7 @@ export default function DayChart({
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <h2 className="text-[15px] font-bold text-foreground sm:text-lg">
+              <h2 className="text-[0.9375rem] font-bold text-foreground sm:text-lg">
                 {loading ? (
                   // The real title's size, kept blank until the month is known.
                   <span className="animate-pulse rounded-md bg-secondary text-transparent">

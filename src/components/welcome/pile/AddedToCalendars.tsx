@@ -36,7 +36,7 @@ export default function AddedToCalendars({
   return (
     <>
       <motion.div
-        className="absolute inset-x-6 top-2 flex h-12 items-center justify-center rounded-full bg-cta text-[15px] font-bold text-white shadow-lg"
+        className="absolute inset-x-6 top-2 flex h-12 items-center justify-center rounded-full bg-cta text-[0.9375rem] font-bold text-white shadow-lg"
         initial={{ opacity: 0, y: 10 }}
         animate={
           pressed
@@ -82,7 +82,7 @@ export default function AddedToCalendars({
                 transition={{ delay: 0.4 + i * 0.05, duration: 0.35 }}
               >
                 <span className="text-[9px] font-bold leading-none text-red-500">{weekday}</span>
-                <span className="text-[24px] font-light leading-tight text-foreground">
+                <span className="text-[1.5rem] font-light leading-tight text-foreground">
                   {dayNumber}
                 </span>
                 {landed && (

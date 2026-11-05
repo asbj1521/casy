@@ -120,7 +120,7 @@ export default function PlanSetup({
                 <button
                   type="button"
                   onClick={onShortcuts}
-                  className="flex shrink-0 items-center justify-center rounded-2xl border bg-card px-3.5 text-[15px] font-medium text-primary transition-colors active:bg-secondary"
+                  className="flex shrink-0 items-center justify-center rounded-2xl border bg-card px-3.5 text-[0.9375rem] font-medium text-primary transition-colors active:bg-secondary"
                 >
                   {t.shortcuts.title}
                 </button>

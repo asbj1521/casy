@@ -90,15 +90,18 @@ export function ListRow({
       {leading ??
         (Icon && (
           <Icon
-            className={cn("h-5 w-5 shrink-0", tone === "default" ? "text-muted-foreground" : color)}
+            className={cn(
+              "h-5 w-5 shrink-0 large-text:hidden",
+              tone === "default" ? "text-muted-foreground" : color,
+            )}
           />
         ))}
       {/* The hairline sits on this part, so it starts after the icon. */}
       <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
         <span className="min-w-0 flex-1">
-          <span className={cn("block truncate text-[15px] font-medium", color)}>{label}</span>
+          <span className={cn("block truncate text-[0.9375rem] font-medium", color)}>{label}</span>
           {detail && (
-            <span className="block truncate text-[13px] text-muted-foreground">{detail}</span>
+            <span className="block truncate text-[0.8125rem] text-muted-foreground">{detail}</span>
           )}
         </span>
         {value != null && <span className="shrink-0 text-sm text-muted-foreground">{value}</span>}
@@ -150,9 +153,9 @@ function RowText({
   return (
     <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-medium text-foreground">{label}</span>
+        <span className="block truncate text-[0.9375rem] font-medium text-foreground">{label}</span>
         {detail && (
-          <span className={cn("block text-[13px] text-muted-foreground", !wrap && "truncate")}>
+          <span className={cn("block text-[0.8125rem] text-muted-foreground", !wrap && "truncate")}>
             {detail}
           </span>
         )}
@@ -210,7 +213,8 @@ export function ListPickRow({
           // Over the whole row, invisible: a tap anywhere on it is a tap on the input.
           className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer appearance-none opacity-0 disabled:cursor-default"
         />
-        {leading ?? (Icon && <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />)}
+        {leading ??
+          (Icon && <Icon className="h-5 w-5 shrink-0 text-muted-foreground large-text:hidden" />)}
         <RowText
           label={label}
           detail={detail}
@@ -251,7 +255,7 @@ export function ListSwitchRow({
   return (
     <li className="group/row">
       <div className="flex w-full items-center gap-3 pl-4">
-        {Icon && <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />}
+        {Icon && <Icon className="h-5 w-5 shrink-0 text-muted-foreground large-text:hidden" />}
         <RowText
           label={label}
           detail={detail}

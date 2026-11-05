@@ -41,7 +41,7 @@ export default function PhoneHeader() {
           {!isNativeApp && pathname !== "/sign-in" && pathname !== "/" && (
             <Link
               to="/sign-in"
-              className="glass-pill flex h-9 items-center rounded-full px-4 text-[15px] font-semibold text-primary"
+              className="glass-pill flex h-9 items-center rounded-full px-4 text-[0.9375rem] font-semibold text-primary"
             >
               {t.nav.signIn}
             </Link>

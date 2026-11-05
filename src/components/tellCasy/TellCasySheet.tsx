@@ -137,7 +137,7 @@ function TellCasyBody({
             </ListGroup>
           ) : (
             !session.message && (
-              <p className="px-1 text-[15px] text-muted-foreground">{words.nothingFound}</p>
+              <p className="px-1 text-[0.9375rem] text-muted-foreground">{words.nothingFound}</p>
             )
           )}
           {session.message && <Notice tone="info">{session.message}</Notice>}
@@ -216,7 +216,7 @@ function TellCasyBody({
 function Thinking() {
   const words = useT().tellCasy;
   return (
-    <p className="flex items-center gap-2 text-[15px] text-muted-foreground" role="status">
+    <p className="flex items-center gap-2 text-[0.9375rem] text-muted-foreground" role="status">
       <Loader2 className="h-4 w-4 animate-spin" />
       {words.thinking}
     </p>

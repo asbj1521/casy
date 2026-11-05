@@ -151,18 +151,19 @@ export default function BottomSheet({
         <button
           type="button"
           onClick={back.onBack}
-          className="-ml-1.5 flex shrink-0 items-center text-[17px] text-primary"
+          className="hit -ml-1.5 flex shrink-0 items-center text-[1.0625rem] text-primary"
         >
           <ChevronLeft className="h-6 w-6" />
-          {back.label}
+          <span className="large-text:sr-only">{back.label}</span>
         </button>
       )}
       {/* With a way back, the title sits in the middle, as iOS draws it. */}
       <h3
         id={titleId}
         className={cn(
-          "min-w-0 break-words text-[17px] font-bold text-foreground",
-          back && "pointer-events-none absolute inset-x-24 truncate text-center",
+          "min-w-0 break-words text-[1.0625rem] font-bold text-foreground",
+          back &&
+            "pointer-events-none absolute inset-x-24 truncate text-center large-text:inset-x-16",
         )}
       >
         {title}
@@ -174,7 +175,7 @@ export default function BottomSheet({
             onClick={action.onClick}
             disabled={busy}
             aria-label={action.label}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-primary disabled:opacity-50"
+            className="hit flex h-8 w-8 items-center justify-center rounded-full text-primary disabled:opacity-50"
           >
             <action.icon className="h-[18px] w-[18px]" />
           </button>
@@ -183,7 +184,7 @@ export default function BottomSheet({
           type="button"
           onClick={onClose}
           disabled={busy}
-          className="shrink-0 rounded-lg px-2 py-1 text-[15px] font-semibold text-primary disabled:opacity-50"
+          className="hit shrink-0 rounded-lg px-2 py-1 text-[0.9375rem] font-semibold text-primary disabled:opacity-50"
         >
           {doneLabel}
         </button>

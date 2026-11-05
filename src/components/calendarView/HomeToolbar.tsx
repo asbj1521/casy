@@ -97,7 +97,7 @@ export default function HomeToolbar({
         aria-label={day ? t.swipe.showMonth(monthLabel) : undefined}
         // Its sheet drops out of it from the top (#169), standing in for it.
         className={cn(
-          "glass-pill flex h-10 items-center overflow-hidden rounded-full text-[17px] text-primary transition-opacity duration-200",
+          "glass-pill flex h-10 items-center overflow-hidden rounded-full text-[1.0625rem] text-primary transition-opacity duration-200",
           day ? "gap-0.5 pl-2 pr-4" : "gap-1.5 pl-3.5 pr-4",
           listOpen && !day && "opacity-0",
         )}
@@ -114,13 +114,14 @@ export default function HomeToolbar({
             className="flex items-center gap-[inherit] whitespace-nowrap"
           >
             {day ? <ChevronLeft className="h-6 w-6" /> : <Layers className="h-5 w-5" />}
-            {day ? monthLabel : words.calendarsButton}
+            {/* With large text "‹" alone: its label says which month (aria-label). */}
+            {day ? <span className="large-text:hidden">{monthLabel}</span> : words.calendarsButton}
           </motion.span>
         </AnimatePresence>
       </motion.button>
 
       {/* One capsule round everything on the right; the switch slides in on its left. */}
-      <div className="glass-pill flex h-10 items-center overflow-hidden rounded-full text-primary">
+      <div className="glass-pill flex h-10 shrink-0 items-center overflow-hidden whitespace-nowrap rounded-full text-primary">
         <AnimatePresence initial={false}>
           {day && (
             <motion.span
@@ -135,7 +136,7 @@ export default function HomeToolbar({
                 type="button"
                 onClick={onSpan}
                 aria-label={span === 1 ? words.showTwoDays : words.showOneDay}
-                className="flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-l-full pl-4 pr-3 text-[15px] font-semibold"
+                className="flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-l-full pl-4 pr-3 text-[0.9375rem] font-semibold"
               >
                 {/* What a press shows, in words (#215): an icon read as a phone. */}
                 {span === 1 ? words.twoDays : words.oneDay}
@@ -163,7 +164,7 @@ export default function HomeToolbar({
         <button
           type="button"
           onClick={onToday}
-          className="flex h-10 items-center rounded-full px-4 text-[17px]"
+          className="flex h-10 items-center rounded-full px-4 text-[1.0625rem]"
         >
           {words.today}
         </button>

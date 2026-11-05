@@ -34,11 +34,11 @@ export default function UpdateRequired() {
       <h1 id="update-required-title" className="text-2xl font-bold text-foreground">
         {words.title}
       </h1>
-      <p className="max-w-sm text-[15px] text-muted-foreground">{words.body}</p>
+      <p className="max-w-sm text-[0.9375rem] text-muted-foreground">{words.body}</p>
       {data.storeUrl && (
         <a
           href={data.storeUrl}
-          className="mt-2 rounded-full bg-cta px-6 py-3 text-[15px] font-bold text-white"
+          className="mt-2 rounded-full bg-cta px-6 py-3 text-[0.9375rem] font-bold text-white"
         >
           {words.button}
         </a>

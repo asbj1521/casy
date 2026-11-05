@@ -54,10 +54,14 @@ export default function DatedScreen({
       <div className="mt-2 flex items-center gap-4">
         <DateTile start={start} size="hero" />
         <div className="min-w-0">
-          <p className="text-[17px] font-semibold tabular-nums text-foreground">{when}</p>
-          <p className="truncate text-[13px] text-muted-foreground">{event.group.name}</p>
+          <p className="text-[1.0625rem] font-semibold tabular-nums text-foreground">{when}</p>
+          <p className="truncate text-[0.8125rem] text-muted-foreground">{event.group.name}</p>
           {/* The time in the viewer's own clock, where it isn't Danish time. */}
-          <YourTime kind={event.settings.kind} date={event.currentDate} className="text-[13px]" />
+          <YourTime
+            kind={event.settings.kind}
+            date={event.currentDate}
+            className="text-[0.8125rem]"
+          />
         </div>
       </div>
 

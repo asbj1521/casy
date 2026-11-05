@@ -114,10 +114,10 @@ export default function PrimaryCalendarPicker({
         >
           <span className="min-w-0 flex-1">
             {label ?? (
-              <span className="text-[15px] font-medium text-foreground">{words.title}</span>
+              <span className="text-[0.9375rem] font-medium text-foreground">{words.title}</span>
             )}
           </span>
-          <span className="min-w-0 truncate text-[15px] text-muted-foreground">
+          <span className="min-w-0 truncate text-[0.9375rem] text-muted-foreground">
             {currentName ?? words.choose}
           </span>
           {busy ? (

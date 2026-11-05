@@ -315,7 +315,9 @@ export default function PlanFromCalendar({
                   }}
                 />
                 {!named && (
-                  <p className="mt-3 px-1 text-[12px] text-muted-foreground">{words.nameFirst}</p>
+                  <p className="mt-3 px-1 text-[0.75rem] text-muted-foreground">
+                    {words.nameFirst}
+                  </p>
                 )}
                 <ShortcutPicture
                   url={editorPicture}

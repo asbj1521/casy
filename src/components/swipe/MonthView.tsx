@@ -314,11 +314,11 @@ export default function MonthView({
             {/* data-month-title: the paper pile draws its month name over this one (#162). */}
             <h2
               data-month-title=""
-              className="px-3 pb-1 pt-1 text-[30px] font-bold leading-tight tracking-tight text-foreground"
+              className="px-3 pb-1 pt-1 text-[1.875rem] font-bold leading-tight tracking-tight text-foreground"
             >
               {year !== thisYear ? `${name} ${year}` : name}
             </h2>
-            <div className="grid h-6 grid-cols-7 items-center text-center text-[12px] font-medium">
+            <div className="grid h-6 grid-cols-7 items-center text-center text-[0.75rem] font-medium">
               {weekdays}
             </div>
           </div>
@@ -333,7 +333,7 @@ export default function MonthView({
           scroller: iOS Safari left a sliver over a sticky row where the
           months showed as they scrolled under it. Here they are clipped at
           the scroller's own edge. */}
-      <div className="grid h-7 shrink-0 grid-cols-7 items-center border-b bg-background text-center text-[12px] font-medium">
+      <div className="grid h-7 shrink-0 grid-cols-7 items-center border-b bg-background text-center text-[0.75rem] font-medium">
         {weekdays}
       </div>
 
@@ -490,14 +490,14 @@ const MonthSection = memo(function MonthSection({
       ) : compact ? (
         <div aria-hidden className="relative" style={{ height: MONTH_LABEL_PX }}>
           <span
-            className="absolute top-0 truncate text-center text-[17px] font-bold leading-none text-foreground"
+            className="absolute top-0 truncate text-center text-[1.0625rem] font-bold leading-none text-foreground"
             style={{ left: `${(firstColumn / 7) * 100}%`, width: `${100 / 7}%` }}
           >
             {shortName}
           </span>
         </div>
       ) : (
-        <h3 className="px-3 pb-1 pt-5 text-[28px] font-bold tracking-tight text-foreground">
+        <h3 className="px-3 pb-1 pt-5 text-[1.75rem] font-bold tracking-tight text-foreground">
           {showYear ? `${name} ${year}` : name}
         </h3>
       )}
@@ -527,7 +527,7 @@ const MonthSection = memo(function MonthSection({
                       // The paper pile's dates fly up out of their green circle (#126).
                       data-shine={shine?.has(days[c]) ? days[c] : undefined}
                       className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full text-[18px]",
+                        "flex h-8 w-8 items-center justify-center rounded-full text-[1.125rem]",
                         shine?.has(days[c])
                           ? "bg-emerald-500 font-semibold text-white shadow-[0_0_14px_rgba(16,185,129,0.7)]"
                           : days[c] === today

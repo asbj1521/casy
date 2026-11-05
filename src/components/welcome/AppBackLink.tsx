@@ -24,7 +24,7 @@ export default function AppBackLink({ className }: { className?: string }) {
     <button
       type="button"
       onClick={() => (location.key === "default" ? navigate("/") : navigate(-1))}
-      className={cn("-ml-1 flex items-center gap-0.5 text-[17px] text-primary", className)}
+      className={cn("-ml-1 flex items-center gap-0.5 text-[1.0625rem] text-primary", className)}
     >
       <ChevronLeft className="h-5 w-5" />
       {t.welcome.back}

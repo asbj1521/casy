@@ -33,7 +33,7 @@ export default function FlowButton({
       onClick={onClick}
       disabled={disabled || busy}
       className={cn(
-        "glass-pill inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-[17px] transition active:scale-[0.98] disabled:opacity-50",
+        "glass-pill inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-[1.0625rem] transition active:scale-[0.98] disabled:opacity-50",
         quiet ? "font-semibold text-foreground" : "font-bold text-primary",
       )}
     >

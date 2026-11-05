@@ -6,8 +6,8 @@ import { APP_TIME_ZONE, localDate } from "@/lib/zone";
 const TZ = APP_TIME_ZONE;
 
 const SIZES = {
-  row: { box: "h-11 w-10 rounded-xl", day: "text-[19px]", weekday: "text-[9px]" },
-  hero: { box: "h-16 w-14 rounded-2xl", day: "text-[28px]", weekday: "text-[11px]" },
+  row: { box: "h-11 w-10 rounded-xl", day: "text-[1.1875rem]", weekday: "text-[9px]" },
+  hero: { box: "h-16 w-14 rounded-2xl", day: "text-[1.75rem]", weekday: "text-[11px]" },
 } as const;
 
 /**

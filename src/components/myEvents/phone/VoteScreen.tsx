@@ -90,7 +90,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
         <span className="pr-2 pt-2">
           <DateTile start={first} more={Math.max(0, dates.length - 1)} size="hero" />
         </span>
-        <p className="min-w-0 truncate text-[17px] font-semibold text-foreground">
+        <p className="min-w-0 truncate text-[1.0625rem] font-semibold text-foreground">
           {event.group.name}
         </p>
       </div>
@@ -107,7 +107,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
       </div>
 
       {mustChoose && (
-        <p className="mt-4 text-[15px] font-medium text-foreground">
+        <p className="mt-4 text-[0.9375rem] font-medium text-foreground">
           {event.createdBy.isYou
             ? t.swipe.chooseNow
             : t.swipe.waitingForChoice(event.createdBy.name)}
@@ -134,7 +134,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
             >
               <span className="flex min-h-[3.25rem] min-w-0 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1 text-[15px] font-medium text-foreground">
+                  <span className="flex items-center gap-1 text-[0.9375rem] font-medium text-foreground">
                     {isMarked && (
                       <Check
                         aria-label={mustChoose ? t.events.bestPick : t.events.ahead}
@@ -174,7 +174,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
                     type="button"
                     onClick={() => choose.mutate(d.id)}
                     disabled={choose.isPending}
-                    className="flex shrink-0 items-center gap-1 text-[15px] font-semibold text-primary disabled:opacity-60"
+                    className="flex shrink-0 items-center gap-1 text-[0.9375rem] font-semibold text-primary disabled:opacity-60"
                   >
                     {choose.isPending && choose.variables === d.id && (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -202,7 +202,9 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
             <Countdown until={event.answerBy} />
           ) : !mustChoose && missing.length > 0 ? (
             // No deadline (#179): settled once everyone has answered.
-            <span className="text-[13px] text-muted-foreground">{t.voteDeadline.untilAll}</span>
+            <span className="text-[0.8125rem] text-muted-foreground">
+              {t.voteDeadline.untilAll}
+            </span>
           ) : (
             <span />
           )

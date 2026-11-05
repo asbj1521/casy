@@ -120,7 +120,7 @@ export default function AiConversation({
       })}
 
       {pending ? (
-        <p className="flex items-center gap-2 text-[15px] text-muted-foreground" role="status">
+        <p className="flex items-center gap-2 text-[0.9375rem] text-muted-foreground" role="status">
           <Loader2 className="h-4 w-4 animate-spin" />
           {words.thinking}
         </p>
@@ -147,7 +147,7 @@ export default function AiConversation({
         <AiActions compact={compact} onAdd={() => setAdding(true)} onReset={planner.reset} />
       )}
 
-      {error && <p className="text-[15px] text-red-700">{error}</p>}
+      {error && <p className="text-[0.9375rem] text-red-700">{error}</p>}
 
       {!compact && footnote ? <p className="text-xs text-muted-foreground">{footnote}</p> : null}
     </div>
@@ -185,7 +185,7 @@ export function AiActions({
         title={inRow ? words.addDetails : undefined}
         className={cn(
           "inline-flex shrink-0 items-center gap-1.5 rounded-xl border bg-card font-bold text-foreground transition hover:bg-secondary",
-          compact ? "h-9 px-2.5 text-sm" : "h-10 px-3.5 text-[15px]",
+          compact ? "h-9 px-2.5 text-sm" : "h-10 px-3.5 text-[0.9375rem]",
         )}
       >
         <MessageSquarePlus className="h-4 w-4 text-primary" />
@@ -197,7 +197,7 @@ export function AiActions({
         title={inRow ? words.again : undefined}
         className={cn(
           "inline-flex shrink-0 items-center gap-1.5 rounded-xl font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground",
-          compact ? "h-9 px-2 text-sm" : "h-10 px-3 text-[15px]",
+          compact ? "h-9 px-2 text-sm" : "h-10 px-3 text-[0.9375rem]",
         )}
       >
         <RotateCcw className="h-4 w-4" />
@@ -281,7 +281,7 @@ export function Composer({
           aria-label={label}
           className={cn(
             "block w-full resize-none rounded-2xl bg-transparent px-3.5 pt-3 text-foreground outline-none placeholder:text-muted-foreground",
-            big && !compact ? "text-[17px] leading-relaxed" : "text-[16px] leading-6",
+            big && !compact ? "text-[1.0625rem] leading-relaxed" : "text-[1rem] leading-6",
           )}
         />
         {/* Wraps where the box is narrow (beside the summary), the buttons
@@ -332,7 +332,7 @@ export function Composer({
                   speech.stop();
                   onCancel();
                 }}
-                className="h-10 rounded-full px-3 text-[15px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                className="h-10 rounded-full px-3 text-[0.9375rem] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
               >
                 {words.cancel}
               </button>
@@ -342,7 +342,7 @@ export function Composer({
               onClick={send}
               disabled={!draft.trim()}
               className={cn(
-                "inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-bold transition disabled:opacity-50",
+                "inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[0.9375rem] font-bold transition disabled:opacity-50",
                 glassSend
                   ? "glass-pill text-primary active:scale-[0.98]"
                   : "bg-cta text-white hover:bg-cta-hover",
@@ -370,7 +370,7 @@ const OPTION =
   "inline-flex items-center rounded-xl border font-bold transition disabled:opacity-50";
 /** An option's size: a computer's box is tighter, so two options share a line. */
 const optionSize = (compact: boolean) =>
-  compact ? "min-h-9 px-2.5 text-sm" : "min-h-10 px-3 text-[15px]";
+  compact ? "min-h-9 px-2.5 text-sm" : "min-h-10 px-3 text-[0.9375rem]";
 
 /** A question with its options as buttons, the picked one filled. */
 function ChoiceCard({
@@ -397,7 +397,7 @@ function ChoiceCard({
       <button
         type="button"
         onClick={() => setReopened(true)}
-        className="flex w-full items-center gap-2 rounded-2xl border bg-card px-3.5 py-2.5 text-left text-[15px] transition hover:bg-secondary"
+        className="flex w-full items-center gap-2 rounded-2xl border bg-card px-3.5 py-2.5 text-left text-[0.9375rem] transition hover:bg-secondary"
       >
         <Check className="h-4 w-4 shrink-0 text-green-600" />
         <span className="min-w-0 flex-1 truncate text-muted-foreground">{question}</span>
@@ -407,7 +407,7 @@ function ChoiceCard({
   }
   return (
     <div className={cn("rounded-2xl border bg-card", compact ? "p-3" : "p-3.5")}>
-      <p className="flex items-start gap-2 text-[15px] font-bold text-foreground">
+      <p className="flex items-start gap-2 text-[0.9375rem] font-bold text-foreground">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
         {question}
       </p>
@@ -496,12 +496,12 @@ function QuestionCard({
             maxLength={200}
             onChange={(e) => setOther(e.target.value)}
             placeholder={words.otherPlaceholder}
-            className="h-10 min-w-0 flex-1 rounded-xl border bg-card px-3 text-[16px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="h-10 min-w-0 flex-1 rounded-xl border bg-card px-3 text-[1rem] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
           <button
             type="submit"
             disabled={disabled || !other.trim()}
-            className="h-10 rounded-xl bg-cta px-3.5 text-[15px] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50"
+            className="h-10 rounded-xl bg-cta px-3.5 text-[0.9375rem] font-bold text-white transition hover:bg-cta-hover disabled:opacity-50"
           >
             {words.answer}
           </button>

@@ -31,7 +31,7 @@ export default function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "flex shrink-0 items-center rounded-full transition-colors disabled:opacity-50",
+        "hit flex shrink-0 items-center rounded-full transition-colors disabled:opacity-50",
         SIZES[size].track,
         checked ? "justify-end bg-primary" : "justify-start bg-zinc-300",
         className,

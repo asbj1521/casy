@@ -100,7 +100,7 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
       <p className="mt-1 break-words text-xl font-bold text-foreground">{invitation.groupName}</p>
       <p className="text-sm text-muted-foreground">{t.counts.members(invitation.memberCount)}</p>
       {invitation.groupDescription && (
-        <p className="mt-2 break-words text-[15px] text-foreground">
+        <p className="mt-2 break-words text-[0.9375rem] text-foreground">
           {invitation.groupDescription}
         </p>
       )}
@@ -190,7 +190,7 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
             type="button"
             onClick={() => setBlocking(true)}
             disabled={busy}
-            className="mt-3 text-xs font-medium text-muted-foreground transition hover:text-red-700 disabled:opacity-60"
+            className="hit mt-3 text-xs font-medium text-muted-foreground transition hover:text-red-700 disabled:opacity-60"
           >
             {t.safety.blockSender}
           </button>

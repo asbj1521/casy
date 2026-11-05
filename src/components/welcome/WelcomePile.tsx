@@ -142,7 +142,7 @@ export default function WelcomePile() {
   // The month's name at the top left and the weekdays under it, as a calendar has them.
   const heading = (
     <div className="px-4 pt-3">
-      <div className="text-[20px] font-bold tracking-tight text-foreground">{monthName}</div>
+      <div className="text-[1.25rem] font-bold tracking-tight text-foreground">{monthName}</div>
       <div className="-mx-4 mt-1 grid grid-cols-7 pb-1 text-center text-[11px] font-medium">
         {[1, 2, 3, 4, 5, 6, 0].map((dow) => (
           <span key={dow} className={dow === 0 || dow === 6 ? "text-muted-foreground" : ""}>
@@ -155,7 +155,7 @@ export default function WelcomePile() {
   const pressed = step >= PRESSED;
   const owner = (label: string, color: string) => (
     <motion.span
-      className="flex min-w-0 items-center gap-1.5 text-[14px] font-semibold text-foreground"
+      className="flex min-w-0 items-center gap-1.5 text-[0.875rem] font-semibold text-foreground"
       animate={{ opacity: pressed ? 0 : 1 }}
     >
       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: `rgb(${color})` }} />
@@ -274,14 +274,14 @@ export default function WelcomePile() {
                         : { delay: i * 0.35, type: "spring", stiffness: 220, damping: 24 }
                     }
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[0.8125rem] font-bold text-white">
                       {i + 1}
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-[15px] font-semibold text-foreground">
+                      <span className="block truncate text-[0.9375rem] font-semibold text-foreground">
                         {dateOf(d)}
                       </span>
-                      <span className="block text-[12px] text-muted-foreground">
+                      <span className="block text-[0.75rem] text-muted-foreground">
                         {t.welcome.allCan(FRIENDS.length + 1)}
                       </span>
                     </span>
@@ -290,7 +290,7 @@ export default function WelcomePile() {
               </ul>
               {/* Planlæg's own send button, pressed. */}
               <motion.div
-                className="mt-4 flex h-12 items-center justify-center rounded-full bg-cta text-[15px] font-bold text-white shadow-lg"
+                className="mt-4 flex h-12 items-center justify-center rounded-full bg-cta text-[0.9375rem] font-bold text-white shadow-lg"
                 initial={still ? false : { opacity: 0, y: 12 }}
                 animate={
                   step >= SEND
@@ -356,10 +356,10 @@ export default function WelcomePile() {
                   <span className="mt-3 text-xs font-bold uppercase tracking-wide text-emerald-600">
                     {t.welcome.agreed}
                   </span>
-                  <span className="mt-1 text-[22px] font-extrabold tracking-tight text-foreground">
+                  <span className="mt-1 text-[1.375rem] font-extrabold tracking-tight text-foreground">
                     {t.welcome.event}
                   </span>
-                  <span className="text-[15px] text-muted-foreground">{dateOf(FREE[0])}</span>
+                  <span className="text-[0.9375rem] text-muted-foreground">{dateOf(FREE[0])}</span>
                 </motion.div>
               )}
             </div>

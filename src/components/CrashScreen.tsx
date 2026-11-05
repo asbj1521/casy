@@ -25,11 +25,11 @@ export default class CrashScreen extends Component<{ children: ReactNode }, { cr
     const words = currentMessages().crash;
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-        <p className="text-[17px] font-semibold text-foreground">{words.title}</p>
+        <p className="text-[1.0625rem] font-semibold text-foreground">{words.title}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="glass-pill inline-flex h-11 items-center gap-2 rounded-full pl-4 pr-5 text-[17px] text-primary"
+          className="glass-pill inline-flex h-11 items-center gap-2 rounded-full pl-4 pr-5 text-[1.0625rem] text-primary"
         >
           <RotateCw className="h-5 w-5" />
           {words.reload}

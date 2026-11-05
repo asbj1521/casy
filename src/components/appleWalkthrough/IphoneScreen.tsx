@@ -82,7 +82,7 @@ function PhoneHeader({
       style={at(0, top, W, 38)}
       className="flex items-center border-b border-[#d2d2d7] bg-white px-4"
     >
-      <span className="text-[15px] font-semibold" style={{ color: INK }}>
+      <span className="text-[0.9375rem] font-semibold" style={{ color: INK }}>
         {a.account}
       </span>
       <span className="ml-auto flex items-center gap-4">
@@ -130,7 +130,7 @@ function PhoneField({
   return (
     <div
       style={at(left, top, width, 40)}
-      className="flex items-center rounded-[10px] border border-[#86868b] bg-white px-3 text-[12px]"
+      className="flex items-center rounded-[10px] border border-[#86868b] bg-white px-3 text-[0.75rem]"
     >
       {value ? (
         <span style={{ color: INK }}>{value}</span>
@@ -162,7 +162,7 @@ function PhoneDialogButton({
         borderColor: BLUE,
       }}
       className={cn(
-        "flex items-center justify-center rounded-[8px] text-[12px] transition-colors",
+        "flex items-center justify-center rounded-[8px] text-[0.75rem] transition-colors",
         !filled && "border",
       )}
     >
@@ -185,7 +185,7 @@ function PhoneLanding({ a }: { a: AppleWords }) {
       </div>
       <p
         style={{ ...at(0, 272, W), color: INK }}
-        className="text-center text-[21px] font-semibold tracking-tight"
+        className="text-center text-[1.3125rem] font-semibold tracking-tight"
       >
         {a.landingTitle}
       </p>
@@ -197,7 +197,7 @@ function PhoneLanding({ a }: { a: AppleWords }) {
       </p>
       <div
         style={{ ...at(138, 398, 84, 32), background: BLUE }}
-        className="flex items-center justify-center rounded-full text-[13px] text-white"
+        className="flex items-center justify-center rounded-full text-[0.8125rem] text-white"
       >
         {a.signIn}
       </div>
@@ -218,7 +218,7 @@ function PhoneBiometric({ a }: { a: AppleWords }) {
       </div>
       <div style={at(0, 0, W, H)} className="bg-black/35" />
       <div style={at(8, 372, 344, 262)} className="rounded-[26px] bg-[#6a6a6d] shadow-2xl" />
-      <span style={at(28, 392)} className="text-[16px] font-semibold text-white">
+      <span style={at(28, 392)} className="text-[1rem] font-semibold text-white">
         {a.account}
       </span>
       <span
@@ -241,7 +241,7 @@ function PhoneBiometric({ a }: { a: AppleWords }) {
         className="flex items-center gap-3 rounded-full bg-[#1c1c1e] px-2"
       >
         <Avatar size={32} fontSize={11} />
-        <span className="text-[12px] text-white">{PERSON.name}</span>
+        <span className="text-[0.75rem] text-white">{PERSON.name}</span>
       </div>
       <div style={at(8, 552, 344, 1)} className="bg-white/15" />
       <p style={at(8, 590, 344)} className="text-center text-[10.5px] text-[#64d2ff]">
@@ -263,10 +263,13 @@ function PhoneSignIn({ a, phase }: { a: AppleWords; phase: number }) {
           <SiApple className="h-5 w-5" style={{ color: "#000" }} />
         </span>
       </div>
-      <p style={{ ...at(0, 184, W), color: INK }} className="text-center text-[19px] font-semibold">
+      <p
+        style={{ ...at(0, 184, W), color: INK }}
+        className="text-center text-[1.1875rem] font-semibold"
+      >
         {a.account}
       </p>
-      <p style={{ ...at(0, 212, W), color: INK }} className="text-center text-[12px]">
+      <p style={{ ...at(0, 212, W), color: INK }} className="text-center text-[0.75rem]">
         {a.manageAccount}
       </p>
       <PhoneField
@@ -284,7 +287,7 @@ function PhoneSignIn({ a, phase }: { a: AppleWords; phase: number }) {
       )}
       <div
         style={{ ...at(16, 350, 154, 32), background: phase >= 1 ? BLUE : FAINT_BLUE }}
-        className="flex items-center justify-center rounded-[9px] text-[12px] text-white transition-colors"
+        className="flex items-center justify-center rounded-[9px] text-[0.75rem] text-white transition-colors"
       >
         {a.continue}
       </div>
@@ -311,14 +314,17 @@ function PhoneCode({ a, phase }: { a: AppleWords; phase: number }) {
     <>
       <PhoneNav />
       <PhoneHeader a={a} signedIn={false} />
-      <p style={{ ...at(0, 150, W), color: INK }} className="text-center text-[18px] font-semibold">
+      <p
+        style={{ ...at(0, 150, W), color: INK }}
+        className="text-center text-[1.125rem] font-semibold"
+      >
         {a.twoFactor}
       </p>
       {Array.from({ length: 6 }, (_, i) => (
         <span
           key={i}
           style={{ ...at(52 + i * 44, 196, 36, 44), color: INK }}
-          className="flex items-center justify-center rounded-[9px] border border-[#86868b] bg-white text-[18px]"
+          className="flex items-center justify-center rounded-[9px] border border-[#86868b] bg-white text-[1.125rem]"
         >
           {phase >= 1 ? EXAMPLE_CODE[i] : ""}
         </span>
@@ -353,7 +359,7 @@ function PhoneSecurity({
           <PhoneHeader a={a} signedIn />
           <span
             style={{ ...at(52, 96), color: INK }}
-            className="text-[20px] font-bold tracking-tight"
+            className="text-[1.25rem] font-bold tracking-tight"
           >
             {a.security}
           </span>
@@ -372,7 +378,7 @@ function PhoneSecurity({
               )}
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="truncate text-[13.5px] font-semibold" style={{ color: INK }}>
+                <span className="truncate text-[0.8438rem] font-semibold" style={{ color: INK }}>
                   {title}
                 </span>
                 <TileIcon index={i} size={17} />
@@ -412,7 +418,7 @@ function PhoneList({ a }: { a: AppleWords }) {
       <X style={{ ...at(18, 22, 20, 20), color: INK }} />
       <p
         style={{ ...at(0, 100, W), color: INK }}
-        className="text-center text-[18.5px] font-semibold"
+        className="text-center text-[1.1562rem] font-semibold"
       >
         {a.listTitle}
       </p>
@@ -425,7 +431,7 @@ function PhoneList({ a }: { a: AppleWords }) {
       <p style={{ ...at(0, 178, W), color: BLUE }} className="text-center text-[10.5px]">
         {a.listLink} ↗
       </p>
-      <span style={{ ...at(16, 240), color: INK }} className="text-[15px] font-semibold">
+      <span style={{ ...at(16, 240), color: INK }} className="text-[0.9375rem] font-semibold">
         {a.passwords}
       </span>
       <Plus strokeWidth={2} style={{ ...at(318, 240, 22, 22), color: BLUE }} />
@@ -462,7 +468,7 @@ function PhoneGenerate({ a, phase }: { a: AppleWords; phase: number }) {
       <DottedAppleIcon cx={180} cy={190} r={18} />
       <p
         style={{ ...at(55, 218, 250), color: INK }}
-        className="text-center text-[15px] font-semibold leading-tight"
+        className="text-center text-[0.9375rem] font-semibold leading-tight"
       >
         {a.generateTitle}
       </p>
@@ -492,7 +498,7 @@ function PhoneConfirm({ a, phase }: { a: AppleWords; phase: number }) {
       <DottedAppleIcon cx={180} cy={198} r={18} />
       <p
         style={{ ...at(55, 226, 250), color: INK }}
-        className="text-center text-[15px] font-semibold"
+        className="text-center text-[0.9375rem] font-semibold"
       >
         {a.confirmTitle}
       </p>
@@ -577,13 +583,13 @@ function PhoneReveal({ a, phase }: { a: AppleWords; phase: number }) {
       <DottedAppleIcon cx={180} cy={208} r={18} />
       <p
         style={{ ...at(55, 234, 250), color: INK }}
-        className="text-center text-[15px] font-semibold leading-tight"
+        className="text-center text-[0.9375rem] font-semibold leading-tight"
       >
         {a.revealTitle}
       </p>
       <p
         style={{ ...at(43, 280, 274), color: INK }}
-        className="text-center text-[16px] font-semibold"
+        className="text-center text-[1rem] font-semibold"
       >
         <SelectablePassword selected={SELECTED_BY_PHASE[phase] ?? []} />
       </p>

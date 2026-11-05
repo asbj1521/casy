@@ -86,7 +86,7 @@ export default function CardFace({
       <p
         className={cn(
           "font-extrabold leading-[1.1] tracking-tight text-foreground",
-          compact ? "mt-1 text-[22px]" : "mt-2 text-[28px]",
+          compact ? "mt-1 text-[1.375rem]" : "mt-2 text-[1.75rem]",
         )}
       >
         {headline.lines.join(" ")}
@@ -94,7 +94,7 @@ export default function CardFace({
       {/* In the compact card's fixed height, whatever doesn't fit is cut off
           here, so the faces always stay inside the card (#214). */}
       <div className={cn(compact && "min-h-0 flex-1 overflow-hidden")}>
-        <p className={cn("text-foreground", compact ? "text-[17px]" : "mt-1 text-lg")}>
+        <p className={cn("text-foreground", compact ? "text-[1.0625rem]" : "mt-1 text-lg")}>
           {headline.time}
           <YourTime kind={event.settings.kind} date={date} />
         </p>

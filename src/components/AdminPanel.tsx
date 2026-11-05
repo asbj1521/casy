@@ -309,7 +309,7 @@ export default function AdminPanel({ youId }: { youId: string }) {
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition",
                   // Three tabs side by side must fit a phone, even in Danish.
-                  phone && "flex-auto justify-center whitespace-nowrap px-1.5 text-[13px]",
+                  phone && "flex-auto justify-center whitespace-nowrap px-1.5 text-[0.8125rem]",
                   tab === item.id
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",

@@ -182,7 +182,7 @@ export default function DateList({
             {words.ranked(items.filter((i) => i.chosen).length)}
           </motion.h2>
         ) : (
-          <p className="glass flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium text-foreground">
+          <p className="glass flex items-center gap-2 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium text-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
             {words.reviewing}
           </p>
@@ -278,7 +278,7 @@ export default function DateList({
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 22 }}
                     className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-bold",
+                      "flex h-6 w-6 items-center justify-center rounded-full text-[0.75rem] font-bold",
                       item.chosen ? "bg-cta text-white" : "bg-secondary text-muted-foreground",
                     )}
                   >
@@ -289,9 +289,9 @@ export default function DateList({
                 )}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[16px] font-bold text-foreground">{label}</p>
+                <p className="truncate text-[1rem] font-bold text-foreground">{label}</p>
                 {meeting && (
-                  <p className="text-[13px] text-muted-foreground">
+                  <p className="text-[0.8125rem] text-muted-foreground">
                     {formatTime(item.date.slot.start)}-{formatTime(item.date.slot.end)}
                   </p>
                 )}
@@ -300,7 +300,7 @@ export default function DateList({
                   <motion.p
                     initial={instant ? false : { opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
-                    className="mt-0.5 flex items-start gap-1 text-[12px] font-medium text-amber-800"
+                    className="mt-0.5 flex items-start gap-1 text-[0.75rem] font-medium text-amber-800"
                   >
                     <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
                     <span className="line-clamp-2">{item.yours}</span>
@@ -327,7 +327,7 @@ export default function DateList({
                   transition={{ duration: 0.25 }}
                   className="relative overflow-hidden"
                 >
-                  <div className="space-y-1.5 border-t border-white/30 px-4 pb-3 pt-2.5 text-[14px]">
+                  <div className="space-y-1.5 border-t border-white/30 px-4 pb-3 pt-2.5 text-[0.875rem]">
                     <p className="font-semibold text-foreground">
                       {formatEventDate(kind, item.date.slot, lang)}
                     </p>

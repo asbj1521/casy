@@ -40,7 +40,7 @@ export default function HomePill({
         ref={buttonRef}
         type="button"
         onClick={onClick}
-        className="glass-pill flex h-11 min-w-0 max-w-full items-center gap-2 rounded-full pl-4 pr-3 text-[15px] font-semibold text-primary"
+        className="glass-pill flex h-11 min-w-0 max-w-full items-center gap-2 rounded-full pl-4 pr-3 text-[0.9375rem] font-semibold text-primary"
       >
         <Icon className="h-5 w-5 shrink-0" />
         <span className="truncate">{children}</span>
