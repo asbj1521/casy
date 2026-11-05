@@ -116,3 +116,47 @@ test("any member gives a group a picture, shown in place of its members, and rem
   await expect(add).toBeVisible();
   expect(backend.world.groups.find((g) => g.id === "g-running")?.pictureUrl).toBeNull();
 });
+
+test.describe("a new group's picture on a phone (#225)", () => {
+  test.beforeEach(({ isMobile }) => test.skip(!isMobile, "a computer's sheet stays as it was"));
+
+  const makeGroup = async (page: Page) => {
+    await page.goto("/groups");
+    await page.getByRole("button", { name: "Lav en gruppe" }).click();
+    const sheet = page.getByRole("dialog", { name: "Ny gruppe" });
+    await expect(
+      sheet.getByRole("button", { name: "Tilføj et billede til gruppen" }),
+    ).toBeVisible();
+    await pick(page, PNG);
+    await cropSheet(page).getByRole("button", { name: "Færdig" }).click();
+    await expect(
+      sheet.getByRole("button", { name: "Skift gruppens billede" }).locator("img"),
+    ).toBeVisible();
+    await sheet.getByRole("textbox", { name: "Gruppenavn" }).fill("Vennerne");
+    await sheet.getByRole("button", { name: "Næste" }).click();
+  };
+
+  test("is picked before the group is made, and saved with it", async ({ page, backend }) => {
+    await makeGroup(page);
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "set-group-picture")?.body)
+      .toMatchObject({ groupId: expect.stringMatching(/^g-new-/) });
+    const made = backend.world.groups.find((g) => g.name === "Vennerne");
+    expect(made?.pictureUrl).toBeTruthy();
+    await expect(page.getByText("Billedet kom ikke med")).toHaveCount(0);
+  });
+
+  test("that can't be saved still leaves the group, and says so", async ({ page, backend }) => {
+    await page.route("**/functions/v1/pictures*", (route) =>
+      route.fulfill({
+        status: 500,
+        headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "*" },
+        contentType: "application/json",
+        body: JSON.stringify({ error: "nej" }),
+      }),
+    );
+    await makeGroup(page);
+    await expect(page.getByText("Billedet kom ikke med")).toBeVisible();
+    expect(backend.world.groups.some((g) => g.name === "Vennerne")).toBe(true);
+  });
+});

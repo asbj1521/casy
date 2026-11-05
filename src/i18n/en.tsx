@@ -589,6 +589,7 @@ export const en: Messages = {
     underAnHour: "under an hour",
   },
   newGroup: {
+    pictureLost: "The picture did not make it. You can add it on the group afterwards.",
     title: "New group",
     nameLabel: "Group name",
     next: "Next",

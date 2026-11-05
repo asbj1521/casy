@@ -630,6 +630,7 @@ export const da = {
     underAnHour: "under en time",
   },
   newGroup: {
+    pictureLost: "Billedet kom ikke med. Du kan tilføje det på gruppen bagefter.",
     title: "Ny gruppe",
     nameLabel: "Gruppenavn",
     next: "Næste",
