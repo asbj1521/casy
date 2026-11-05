@@ -1,6 +1,6 @@
 /**
  * The iPhone app, with no calendar connected, says so on My calendar and offers
- * to import the phone's (#132): a card over the month with one button, whatever
+ * to import the phone's (#132): a sheet over the month with one button, whatever
  * iOS has been told. The app's native side is faked: Capacitor reads
  * the plugin's methods from `PluginHeaders` and hands each call to
  * `nativePromise`, so the page runs as in the app, with iOS's answer chosen
@@ -74,7 +74,7 @@ async function asTheApp(
 const asked = (page: Page) =>
   page.evaluate(() => (window as unknown as { __asked: string[] }).__asked);
 
-const card = (page: Page) => page.getByRole("status");
+const card = (page: Page) => page.getByRole("dialog");
 
 test("with iOS not asked yet, the card offers Allow and import, and iOS asks on the press", async ({
   page,
@@ -83,7 +83,7 @@ test("with iOS not asked yet, the card offers Allow and import, and iOS asks on 
   await asTheApp(page, "granted");
   await page.goto("/calendar-overview");
   await expect(
-    card(page).getByRole("heading", { name: "Casy kan ikke se nogen kalender endnu" }),
+    page.getByRole("dialog", { name: "Casy kan ikke se nogen kalender endnu" }),
   ).toBeVisible();
   // Nothing is asked by itself: the person presses.
   expect(await asked(page)).not.toContain("requestAccess");
@@ -108,13 +108,21 @@ test("a refusal leads to Settings, or to another calendar", async ({ page }) => 
   await page.goto("/calendar-overview");
   await card(page).getByRole("button", { name: "Tillad og importér" }).click();
   await expect(card(page).getByRole("button", { name: "Åbn Indstillinger" })).toBeVisible();
-  // Over the month, not above it: the month's own toolbar stays where it was.
-  await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
   await card(page).getByRole("button", { name: "Åbn Indstillinger" }).click();
   await expect.poll(() => asked(page)).toContain("openSettings");
 
   await card(page).getByRole("link", { name: "Brug en anden kalender" }).click();
   await expect(page).toHaveURL(/\/calendar-overview\/accounts$/);
+});
+
+test("with no calendar at all it can still be put away, until the app is opened again (#215)", async ({
+  page,
+}) => {
+  await asTheApp(page, "granted");
+  await page.goto("/calendar-overview");
+  await card(page).getByRole("button", { name: "Ikke nu" }).click();
+  await expect(card(page)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
 });
 
 test("the card is there even when the app remembers a connection the server has removed", async ({
@@ -159,7 +167,7 @@ test.describe("with other calendars connected, but not this phone", () => {
     await asTheApp(page, "granted", { alreadyAnswered: true });
     await page.goto("/calendar-overview");
     await expect(
-      card(page).getByRole("heading", { name: "Telefonens kalender er ikke med endnu" }),
+      page.getByRole("dialog", { name: "Telefonens kalender er ikke med endnu" }),
     ).toBeVisible();
     await card(page).getByRole("button", { name: "Ikke nu" }).click();
     await expect(card(page)).toHaveCount(0);
@@ -178,13 +186,15 @@ test.describe("with other calendars connected, but not this phone", () => {
     await page.goto("/calendar-overview");
     const ai = page.getByRole("dialog", { name: "Lad Casys AI læse i din kalender?" });
     await expect(
-      card(page).getByRole("heading", { name: "Telefonens kalender er ikke med endnu" }),
+      page.getByRole("dialog", { name: "Telefonens kalender er ikke med endnu" }),
     ).toBeVisible();
     // Past the moment the home page settles (1.5 s), it still waits its turn.
     await page.waitForTimeout(2000);
     await expect(ai).toHaveCount(0);
     await card(page).getByRole("button", { name: "Ikke nu" }).click();
-    await expect(card(page)).toHaveCount(0);
+    await expect(
+      page.getByRole("dialog", { name: "Telefonens kalender er ikke med endnu" }),
+    ).toHaveCount(0);
     await expect(ai).toBeVisible();
   });
 

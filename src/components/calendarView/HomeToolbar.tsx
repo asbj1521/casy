@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, Columns2, Layers, Plus, RectangleVertical } from "lucide-react";
+import { ChevronLeft, Layers, Plus } from "lucide-react";
 
 import { useT } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
@@ -135,13 +135,10 @@ export default function HomeToolbar({
                 type="button"
                 onClick={onSpan}
                 aria-label={span === 1 ? words.showTwoDays : words.showOneDay}
-                className="flex h-10 w-12 shrink-0 items-center justify-center rounded-l-full"
+                className="flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-l-full pl-4 pr-3 text-[15px] font-semibold"
               >
-                {span === 1 ? (
-                  <RectangleVertical className="h-5 w-5" />
-                ) : (
-                  <Columns2 className="h-5 w-5" />
-                )}
+                {/* What a press shows, in words (#215): an icon read as a phone. */}
+                {span === 1 ? words.twoDays : words.oneDay}
               </button>
               <span aria-hidden className="h-5 w-px shrink-0 bg-primary/30" />
             </motion.span>

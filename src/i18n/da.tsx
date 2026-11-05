@@ -173,7 +173,7 @@ export const da = {
   calendarAccounts: {
     back: "Tilbage til kalendere",
     row: "Forbundne kalendere",
-    rowDetail: "Tilføj konti, synkronisér og vælg primær kalender",
+    rowDetail: "Konti og primær kalender",
     accounts: "Dine konti",
     add: "Tilføj en kalender",
     help: "Hjælp til at forbinde:",
@@ -1258,6 +1258,8 @@ export const da = {
     today: "I dag",
     // The day view's switch (#176), saying what a press shows.
     showOneDay: "Vis én dag",
+    oneDay: "1 dag",
+    twoDays: "2 dage",
     showTwoDays: "Vis to dage",
     week: (n: number) => `Uge ${n}`,
     more: (n: number) => `+${n} mere`,
@@ -1306,7 +1308,7 @@ export const da = {
     showAll: (brand: string) => `Tæl alle ${brand}-kalendere med`,
     show: (name: string) => `Tæl ${name} med`,
     total: (n: number) => `${n} i alt`,
-    builtInNoAccount: "Indbygget, kræver ingen konto",
+    builtInNoAccount: "Kræver ingen konto",
     categoryFor: (name: string) => `Kategori for ${name}`,
     notCounted: (n: number) => `Tæller ikke med (${n})`,
     priorityFor: (name: string) => `Hvor vigtig er ${name}`,

@@ -74,7 +74,7 @@ test("after sending dates, Casy asks before iOS does, and Not now waits a week",
   // The next moment is within the week: nothing shows.
   await moment(page, "answered");
   await page.waitForTimeout(1200);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: /^Få besked/ })).toHaveCount(0);
 });
 
 test("a yes to Casy's question hands over to iOS, and then registers the phone", async ({
@@ -97,7 +97,7 @@ test("never asked again once iOS has said no", async ({ page }) => {
   await page.goto("/");
   await moment(page, "sent");
   await page.waitForTimeout(1200);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: /^Få besked/ })).toHaveCount(0);
 });
 
 test("Settings has a switch for each kind once notifications are on, and keeps a switch off", async ({

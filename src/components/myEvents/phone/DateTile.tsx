@@ -46,7 +46,8 @@ export default function DateTile({
       )}
       <span className={cn(card, "relative")}>
         {start === null ? (
-          <span className={cn("font-semibold text-muted-foreground", s.day)}>?</span>
+          // Over with no date: nothing to ask about (#215).
+          !past && <span className={cn("font-semibold text-muted-foreground", s.day)}>?</span>
         ) : (
           <>
             <span

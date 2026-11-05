@@ -33,7 +33,8 @@ export default function GroupRow({
       <ListGroup className={className}>
         <ListRow
           id={row}
-          icon={Users}
+          // An example's badge takes the room of the icon, so its name still fits (#210).
+          icon={activeGroup?.isExample ? undefined : Users}
           leading={
             activeGroup && (activeGroup.pictureUrl || activeGroup.members.length > 0) ? (
               <GroupBubbles members={activeGroup.members} picture={activeGroup.pictureUrl} />

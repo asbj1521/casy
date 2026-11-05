@@ -248,6 +248,8 @@ test("in the app, I dag and a tap at the top of the screen glide My calendar bac
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
   });
   await page.goto("/calendar-overview");
+  // The app asks for the phone's calendar first (#215).
+  await page.getByRole("button", { name: "Ikke nu" }).click();
   const months = page.locator("[data-floating-header]");
   await expect(page.getByRole("button", { name: "I dag" })).toBeVisible();
   // Where the months open (this month at the top), and a mark to see the

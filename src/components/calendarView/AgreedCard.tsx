@@ -85,7 +85,7 @@ export default function AgreedCard({
         </ul>
 
         <div className="mt-4">
-          <AddToCalendar event={event} wide />
+          <AddToCalendar event={event} flow />
         </div>
         {primary && (
           <ListGroup className="mt-3">
@@ -101,6 +101,7 @@ export default function AgreedCard({
 
         <div className="mt-4">
           <FlowButton
+            quiet
             onClick={() => {
               const box = date.current;
               onDone(box ? box.getBoundingClientRect() : new DOMRect());

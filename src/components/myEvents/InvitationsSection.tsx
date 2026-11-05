@@ -12,7 +12,9 @@ import {
 } from "@/api/groups";
 import { blockedQueryKey, blockPerson } from "@/api/safety";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
+import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { askForPush } from "@/lib/pushAsk";
@@ -26,16 +28,24 @@ export default function InvitationsSection() {
   const t = useT();
   const userId = useSignedInUser().id;
   const { data: invitations = [] } = useQuery(invitationsQuery(userId));
+  const phone = usePhoneLayout();
   if (invitations.length === 0) return null;
 
   return (
     <section className="mt-8">
-      <h2 className="text-lg font-semibold text-foreground">
-        {t.events.invitations}
-        <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-          {invitations.length}
-        </span>
-      </h2>
+      {phone ? (
+        // Headed like the phone's other small labels (#215).
+        <h2 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {t.events.invitations}
+        </h2>
+      ) : (
+        <h2 className="text-lg font-semibold text-foreground">
+          {t.events.invitations}
+          <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+            {invitations.length}
+          </span>
+        </h2>
+      )}
       <ul className="mt-3 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
         {invitations.map((invitation) => (
           <InvitationCard key={invitation.groupId} invitation={invitation} />
@@ -77,6 +87,7 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
       queryClient.setQueryData(blockedQueryKey(userId), data.blocked);
     },
   });
+  const phone = usePhoneLayout();
   const busy = accept.isPending || decline.isPending;
   const error = (accept.error ?? decline.error)?.message;
 
@@ -95,40 +106,67 @@ function InvitationCard({ invitation }: { invitation: Invitation }) {
       )}
       <p className="mt-3 text-sm text-muted-foreground">{t.events.joinMeans}</p>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            decline.reset();
-            accept.mutate();
-          }}
-          disabled={busy}
-          className="flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-60"
-        >
-          {accept.isPending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Check className="h-5 w-5" />
-          )}
-          {t.events.join}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            accept.reset();
-            decline.mutate();
-          }}
-          disabled={busy}
-          className="flex items-center justify-center gap-2 rounded-full border bg-background py-2.5 font-semibold text-foreground transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
-        >
-          {decline.isPending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <X className="h-5 w-5" />
-          )}
-          {t.events.noThanks}
-        </button>
-      </div>
+      {phone ? (
+        // Glass capsules on a phone (#215), as everywhere else there.
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <FlowButton
+            onClick={() => {
+              decline.reset();
+              accept.mutate();
+            }}
+            disabled={busy}
+            busy={accept.isPending}
+          >
+            {t.events.join}
+          </FlowButton>
+          <FlowButton
+            quiet
+            onClick={() => {
+              accept.reset();
+              decline.mutate();
+            }}
+            disabled={busy}
+            busy={decline.isPending}
+          >
+            {t.events.noThanks}
+          </FlowButton>
+        </div>
+      ) : (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              decline.reset();
+              accept.mutate();
+            }}
+            disabled={busy}
+            className="flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-60"
+          >
+            {accept.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Check className="h-5 w-5" />
+            )}
+            {t.events.join}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              accept.reset();
+              decline.mutate();
+            }}
+            disabled={busy}
+            className="flex items-center justify-center gap-2 rounded-full border bg-background py-2.5 font-semibold text-foreground transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
+          >
+            {decline.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <X className="h-5 w-5" />
+            )}
+            {t.events.noThanks}
+          </button>
+        </div>
+      )}
 
       {error && (
         <Notice tone="error" bare className="mt-3">

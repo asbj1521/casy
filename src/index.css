@@ -36,7 +36,10 @@
 
   @media (max-width: 767.98px) {
     :root {
-      --home-bar-clear: calc(3rem + 1.5rem + max(env(safe-area-inset-bottom), 0.75rem));
+      /* The buttons, and the capsule above them (HomePill, #215). */
+      --home-bar-clear: calc(
+        3rem + 1.5rem + 2.75rem + 0.75rem + max(env(safe-area-inset-bottom), 0.75rem)
+      );
     }
   }
 

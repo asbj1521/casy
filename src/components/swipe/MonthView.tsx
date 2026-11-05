@@ -98,7 +98,7 @@ export default function MonthView({
   /** Tid til hinanden (#171): days a whole group is free, as local midnights; a star by the number. */
   starred?: ReadonlySet<number>;
   /** How today is drawn: Apple's red circle, or a grey one (My calendar, the paper pile). */
-  todayTone?: "red" | "grey";
+  todayTone?: "red" | "orange";
   /**
    * A day to glide to once it is set (a local midnight): My calendar shows
    * the person a trip it found (#115). A third of the way down, so the weeks
@@ -387,7 +387,7 @@ export function MonthLayer({
         items={items}
         colorOf={colorOf}
         today={today}
-        todayTone="grey"
+        todayTone="orange"
         onPickDay={NOOP}
         register={NOOP}
         shine={shine}
@@ -408,7 +408,7 @@ interface MonthSectionProps {
   items: GridItem[];
   colorOf: (calendarId: string) => string;
   today: number;
-  todayTone: "red" | "grey";
+  todayTone: "red" | "orange";
   marked?: ReadonlySet<number>;
   starred?: ReadonlySet<number>;
   onPickDay: (day: number) => void;
@@ -533,7 +533,7 @@ const MonthSection = memo(function MonthSection({
                           : days[c] === today
                             ? todayTone === "red"
                               ? "bg-red-500 font-semibold text-white"
-                              : "bg-zinc-200 font-semibold text-foreground dark:bg-white/20"
+                              : "bg-cta font-semibold text-white"
                             : marked?.has(days[c])
                               ? "font-bold text-primary"
                               : c >= 5

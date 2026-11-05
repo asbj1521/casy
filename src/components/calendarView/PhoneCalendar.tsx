@@ -119,7 +119,7 @@ export default function PhoneCalendar() {
   const phoneImport = usePhoneImport(
     calendar.loading || calendar.error ? null : calendar.calendars,
   );
-  // "Not now", for someone who has other calendars: until the app is opened again.
+  // "Not now": until the app is opened again.
   const [importLater, setImportLater] = useState(() => phoneImportPutAway.done);
   // One thing asked at a time (#205): the import card, then the AI question,
   // then the date agreed (AgreedCard). Until the calendars are listed the app
@@ -166,6 +166,8 @@ export default function PhoneCalendar() {
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
+  // Anything over the month in the address; `?lang=en` is none of that (#215).
+  const overMonth = [...params.keys()].some((key) => key !== "lang");
   const listOpen = params.has("calendars");
   // The buttons each sheet grows out of and shrinks back into (#169).
   const listButton = useRef<HTMLButtonElement>(null);
@@ -361,7 +363,7 @@ export default function PhoneCalendar() {
   // pencilled in, the decided ones as chips, a date just agreed flying in.
   // Nothing over the month: settled, no sheet, no open day. Only then is
   // something asked (#205), one thing at a time.
-  const bare = settled && location.search === "" && dayShown === null;
+  const bare = settled && !overMonth && dayShown === null;
   const homeVotes = useHomeVotes({
     calendar,
     months,
@@ -516,7 +518,7 @@ export default function PhoneCalendar() {
           calendar={month}
           reveal={reveal}
           starred={starred}
-          todayTone="grey"
+          todayTone="orange"
           onPickDay={pickDay}
           header={
             <>
@@ -590,7 +592,7 @@ export default function PhoneCalendar() {
         <VotePill
           title={eventTitle(homeVotes.waiting[0].title, t)}
           count={homeVotes.waiting.length}
-          hidden={location.search !== "" || dayOpen || flight}
+          hidden={overMonth || dayOpen || flight}
           zoomingOut={dayShown !== null && !dayOpen}
           onOpen={() => openVote(homeVotes.waiting[0].id)}
         />
@@ -657,17 +659,15 @@ export default function PhoneCalendar() {
       {/* Asked once, before Casy's AI reads anything from a calendar (#120). */}
       <AiConsentPrompt held={!bare || importShown || importPending} onOpenChange={setAiAsking} />
 
-      {importShown && (
+      {phoneImport.on && (
         <PhoneCalendarAccess
           phone={phoneImport}
-          onNotNow={
-            phoneImport.others
-              ? () => {
-                  phoneImportPutAway.done = true;
-                  setImportLater(true);
-                }
-              : undefined
-          }
+          // Never over another sheet or a day: it waits for the bare month.
+          open={!importLater && !overMonth && dayShown === null}
+          onNotNow={() => {
+            phoneImportPutAway.done = true;
+            setImportLater(true);
+          }}
         />
       )}
 

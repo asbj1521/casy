@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { CalendarArrowDown } from "lucide-react";
 
+import BottomSheet from "@/components/ui/BottomSheet";
 import FlowButton from "@/components/ui/FlowButton";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import type { usePhoneImport } from "@/hooks/usePhoneImport";
@@ -10,18 +10,21 @@ import { openPhoneSettings } from "@/lib/phoneCalendar";
 type Import = ReturnType<typeof usePhoneImport>;
 
 /**
- * What the iPhone app says when nothing is connected (#132): a card over the
- * month, never above it, so the month keeps its place. It says Casy can't see
+ * What the iPhone app says when this phone isn't connected (#132): a sheet
+ * over the month (#215), so the month keeps its place. It says Casy can't see
  * a calendar yet and has one button: import the phone's, which asks iOS first
- * when it hasn't been asked, or leads to Settings when it was refused.
+ * when it hasn't been asked, or leads to Settings when it was refused. It can
+ * always be put away ("Ikke nu"), until the app is opened again: nothing in
+ * Casy is behind this question.
  */
 export default function PhoneCalendarAccess({
   phone,
+  open,
   onNotNow,
 }: {
   phone: Import;
-  /** Only for someone with other calendars: put the card away for now. */
-  onNotNow?: () => void;
+  open: boolean;
+  onNotNow: () => void;
 }) {
   const t = useT();
   const words = t.phoneCalendar;
@@ -36,7 +39,7 @@ export default function PhoneCalendarAccess({
       : access === "prompt"
         ? words.allowAndImport
         : words.importCalendar;
-  // What the last press came to, under the button.
+  // What the last press came to, under the text.
   const note = error
     ? error
     : outcome?.state === "synced" && outcome.calendars === 0
@@ -46,19 +49,12 @@ export default function PhoneCalendarAccess({
         : null;
 
   return (
-    <div
-      role="status"
-      className="glass fixed inset-x-4 top-[24%] z-30 mx-auto max-w-sm rounded-[28px] p-5 text-center"
-    >
-      <CalendarArrowDown className="mx-auto h-8 w-8 text-primary" aria-hidden />
-      <h2 className="mt-3 text-lg font-bold text-foreground">
-        {phone.others ? words.phoneTitle : words.needTitle}
-      </h2>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        {denied ? words.denied : words.needBody}
-        {!denied && access === "prompt" && ` ${words.needAsk}`}
-      </p>
-      <div className="mt-4">
+    <BottomSheet
+      open={open}
+      onClose={onNotNow}
+      title={phone.others ? words.phoneTitle : words.needTitle}
+      doneLabel={words.notNow}
+      footer={
         <FlowButton
           disabled={importing}
           busy={importing}
@@ -66,21 +62,18 @@ export default function PhoneCalendarAccess({
         >
           {button}
         </FlowButton>
-      </div>
-      {note && <p className="mt-3 text-sm text-red-600">{note}</p>}
-      {onNotNow ? (
-        <button
-          type="button"
-          onClick={onNotNow}
-          className="mt-3 block w-full text-sm font-semibold text-primary"
-        >
-          {words.notNow}
-        </button>
-      ) : (
-        <Link to={home.to} className="mt-3 block text-sm font-semibold text-primary">
+      }
+    >
+      <p className="px-1 text-[15px] text-muted-foreground">
+        {denied ? words.denied : words.needBody}
+        {!denied && access === "prompt" && ` ${words.needAsk}`}
+      </p>
+      {note && <p className="mt-3 px-1 text-[13px] text-red-600">{note}</p>}
+      {!phone.others && (
+        <Link to={home.to} className="mt-3 block px-1 pb-2 text-[15px] font-semibold text-primary">
           {words.otherCalendar}
         </Link>
       )}
-    </div>
+    </BottomSheet>
   );
 }

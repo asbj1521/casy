@@ -147,7 +147,7 @@ export default function TripsPlayground() {
           key={run}
           focus={startOfDay(now, TZ)}
           calendar={calendar}
-          todayTone="grey"
+          todayTone="orange"
           reveal={revealDay(marks)}
           onPickDay={pickDay}
         />
