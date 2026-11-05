@@ -4,6 +4,7 @@ import { da } from "@/i18n/da";
 import { en } from "@/i18n/en";
 import {
   friendsOutsideGroups,
+  groupSwipe,
   inviteExpiryLabel,
   knownPeople,
   looksLikeEmail,
@@ -130,5 +131,18 @@ describe("friends from groups since gone (#222)", () => {
   });
   it("are listed apart only when no group shows them", () => {
     expect(friendsOutsideGroups(friends, groups)).toEqual([{ profileId: "c", name: "Cille" }]);
+  });
+});
+
+describe("groupSwipe (#223)", () => {
+  it("deletes a group you are alone in, whoever made it", () => {
+    expect(groupSwipe({ createdBy: "me", members: [{}] }, "me")).toBe("delete-alone");
+    expect(groupSwipe({ createdBy: "other", members: [{}] }, "me")).toBe("delete-alone");
+    expect(groupSwipe({ createdBy: null, members: [{}] }, "me")).toBe("delete-alone");
+  });
+  it("deletes for all only if you made it, and leaves otherwise", () => {
+    expect(groupSwipe({ createdBy: "me", members: [{}, {}] }, "me")).toBe("delete-for-all");
+    expect(groupSwipe({ createdBy: "other", members: [{}, {}] }, "me")).toBe("leave");
+    expect(groupSwipe({ createdBy: null, members: [{}, {}] }, "me")).toBe("leave");
   });
 });

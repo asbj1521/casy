@@ -270,3 +270,66 @@ test.describe("friends from groups since gone (#222)", () => {
     await expect(page.getByText("Venner fra tidligere grupper")).toHaveCount(0);
   });
 });
+
+test.describe("swiping a group in the list (#223)", () => {
+  test.beforeEach(({ isMobile }) => test.skip(!isMobile, "phones only"));
+
+  async function swipe(page: import("@playwright/test").Page, name: RegExp) {
+    const row = page.getByRole("link", { name });
+    await expect(row).toBeVisible();
+    const box = (await row.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(box.x + box.width - 20, y);
+    await page.mouse.down();
+    for (const dx of [20, 60, 120, 180]) await page.mouse.move(box.x + box.width - 20 - dx, y);
+    await page.mouse.up();
+  }
+
+  test("a group you made asks before it goes for everyone", async ({ page, backend }) => {
+    await page.goto("/groups");
+    await swipe(page, /^Fredagsbar/);
+    await page.getByRole("button", { name: "Slet", exact: true }).click();
+    expect(backend.calls.some((c) => c.body.action === "delete")).toBe(false);
+    await expect(page.getByText(/^Slet "Fredagsbar" for alle\?/)).toBeVisible();
+    await page.getByRole("button", { name: "Slet", exact: true }).last().click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "delete")?.body)
+      .toMatchObject({
+        groupId: "g-friday",
+      });
+    await expect(page.getByRole("link", { name: /^Fredagsbar/ })).toHaveCount(0);
+  });
+
+  test("someone else's group is left at the press, nothing happening before it", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/groups");
+    await swipe(page, /^Løbeklubben/);
+    expect(backend.calls.some((c) => c.body.action === "leave")).toBe(false);
+    await page.getByRole("button", { name: "Forlad", exact: true }).click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "leave")?.body)
+      .toMatchObject({
+        groupId: "g-running",
+      });
+  });
+
+  test("a tap on a row swiped open closes it, rather than opening the group", async ({ page }) => {
+    await page.goto("/groups");
+    await swipe(page, /^Fredagsbar/);
+    const row = page.getByRole("link", { name: /^Fredagsbar/ });
+    const box = (await row.boundingBox())!;
+    await page.waitForTimeout(350);
+    await page.mouse.click(box.x + 150, box.y + box.height / 2);
+    await page.waitForTimeout(200);
+    expect(new URL(page.url()).search).not.toContain("groups/g-friday");
+    expect(new URL(page.url()).pathname).not.toContain("g-friday");
+  });
+
+  test("a tap on a row left alone still opens the group", async ({ page }) => {
+    await page.goto("/groups");
+    await page.getByRole("link", { name: /^Fredagsbar/ }).click();
+    await expect(page).toHaveURL(/g-friday/);
+  });
+});

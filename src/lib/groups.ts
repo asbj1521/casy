@@ -133,3 +133,16 @@ export function inviteExpiryLabel(
   if (hours >= 1) return words.hours(hours);
   return words.underAnHour;
 }
+
+/**
+ * What a swipe on a group does (#223). Only the person who made it can delete
+ * it for everyone, which is asked first; anyone else leaves. Alone in it,
+ * leaving deletes it (leave_friend_group), with nobody else to lose it.
+ */
+export function groupSwipe(
+  group: { createdBy: string | null; members: unknown[] },
+  youId: string,
+): "delete-alone" | "delete-for-all" | "leave" {
+  if (group.members.length <= 1) return "delete-alone";
+  return group.createdBy === youId ? "delete-for-all" : "leave";
+}

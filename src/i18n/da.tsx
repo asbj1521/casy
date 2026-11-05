@@ -929,6 +929,8 @@ export const da = {
       `Den adgangskode optræder ${times} gange i kendte datalæk, så den er let at gætte. Vælg en anden.`,
   },
   groupsSection: {
+    swipeDelete: "Slet",
+    swipeLeave: "Forlad",
     title: "Dine grupper",
     makeGroup: "Lav en gruppe",
     loading: "Henter dine grupper…",

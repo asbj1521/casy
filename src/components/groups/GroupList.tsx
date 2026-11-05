@@ -1,20 +1,27 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 
-import { groupsQuery, type Group } from "@/api/groups";
+import { deleteGroup, groupsQuery, groupsQueryKey, leaveGroup, type Group } from "@/api/groups";
 import NewGroupDialog from "@/components/NewGroupDialog";
 import Avatar from "@/components/ui/Avatar";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
+import SwipeReveal from "@/components/ui/SwipeReveal";
 import { useSignedInUser } from "@/context/auth";
+import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { groupSwipe } from "@/lib/groups";
 
 /**
  * Your groups as an iPhone list: one row each, opening the group
  * (/groups/:groupId), and a row at the end to make a new one. A phone's whole
  * Groups tab; the left pane of a computer's, with the open group `selected`.
+ * On a phone a row swipes left to delete or leave the group (#223; groupSwipe):
+ * asked first only when it takes the group from other people. The group's own
+ * screen has the same, for anyone who can't swipe.
  */
 export default function GroupList({
   selectedId,
@@ -29,6 +36,26 @@ export default function GroupList({
   const navigate = useNavigate();
   const { data: groups, isPending, isError } = useQuery(groupsQuery(youId));
   const [newGroupOpen, setNewGroupOpen] = useState(false);
+  const phone = usePhoneLayout();
+  const queryClient = useQueryClient();
+  const [swiped, setSwiped] = useState<string | null>(null);
+  const [asking, setAsking] = useState<Group | null>(null);
+  const done = (data: { groups: Group[] }) => {
+    queryClient.setQueryData(groupsQueryKey(youId), data.groups);
+    setSwiped(null);
+    setAsking(null);
+  };
+  const leave = useMutation({ mutationFn: leaveGroup, onSuccess: done });
+  const remove = useMutation({ mutationFn: deleteGroup, onSuccess: done });
+  const failed = (leave.error ?? remove.error)?.message;
+
+  function pressed(group: Group) {
+    leave.reset();
+    remove.reset();
+    const action = groupSwipe(group, youId);
+    if (action === "delete-for-all") setAsking(group);
+    else leave.mutate(group.id);
+  }
 
   if (isPending) {
     return (
@@ -66,6 +93,26 @@ export default function GroupList({
             leading={<Avatar name={group.name} index={i} size="row" src={group.pictureUrl} />}
             label={group.name}
             detail={memberLine(group, t.groupsPage.you)}
+            wrap={
+              phone
+                ? (row) => (
+                    <SwipeReveal
+                      label={
+                        groupSwipe(group, youId) === "leave"
+                          ? t.groupsSection.swipeLeave
+                          : t.groupsSection.swipeDelete
+                      }
+                      open={swiped === group.id}
+                      onOpenChange={(open) =>
+                        setSwiped((now) => (open ? group.id : now === group.id ? null : now))
+                      }
+                      onPress={() => pressed(group)}
+                    >
+                      {row}
+                    </SwipeReveal>
+                  )
+                : undefined
+            }
           />
         ))}
         <ListRow
@@ -75,6 +122,26 @@ export default function GroupList({
           onClick={() => setNewGroupOpen(true)}
         />
       </ListGroup>
+
+      {asking && (
+        <ConfirmPanel
+          className="mt-3"
+          message={t.groupsSection.deleteConfirm(asking.name, asking.members.length)}
+          confirmLabel={t.groupsSection.swipeDelete}
+          busy={remove.isPending}
+          error={remove.error?.message}
+          onConfirm={() => remove.mutate(asking.id)}
+          onCancel={() => {
+            setAsking(null);
+            setSwiped(null);
+          }}
+        />
+      )}
+      {failed && !asking && (
+        <Notice tone="error" bare className="mt-3">
+          {failed}
+        </Notice>
+      )}
 
       {/* Made and invited to in its sheet (#153); the group opens once that closes. */}
       <NewGroupDialog

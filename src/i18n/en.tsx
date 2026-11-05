@@ -887,6 +887,8 @@ export const en: Messages = {
       `That password appears ${times} times in known data leaks, so it is easy to guess. Choose another.`,
   },
   groupsSection: {
+    swipeDelete: "Delete",
+    swipeLeave: "Leave",
     title: "Your groups",
     makeGroup: "Make a group",
     loading: "Loading your groups…",

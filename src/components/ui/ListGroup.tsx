@@ -58,6 +58,7 @@ export function ListRow({
   chevron = !!to || expanded !== undefined,
   selected = false,
   className,
+  wrap,
 }: {
   /** The row's element id, so a page can scroll to it. */
   id?: string;
@@ -79,6 +80,8 @@ export function ListRow({
   trailing?: ReactNode;
   /** The row itself, such as a light while Casy fills it in (#173). */
   className?: string;
+  /** Around what can be pressed, inside the list item: a swipe's reveal (#223). */
+  wrap?: (row: ReactNode) => ReactNode;
 }) {
   const color = {
     default: "text-foreground",
@@ -119,20 +122,21 @@ export function ListRow({
   );
   const row = cn("flex w-full items-center gap-3 pl-4 text-left", selected && "bg-secondary");
   const pressable = cn(row, "transition-colors active:bg-secondary");
+  const body = to ? (
+    <Link to={to} aria-current={selected ? "page" : undefined} className={pressable}>
+      {inner}
+    </Link>
+  ) : onClick ? (
+    <button type="button" onClick={onClick} aria-expanded={expanded} className={pressable}>
+      {inner}
+    </button>
+  ) : (
+    <div className={row}>{inner}</div>
+  );
 
   return (
     <li id={id} className={cn("group/row", className)}>
-      {to ? (
-        <Link to={to} aria-current={selected ? "page" : undefined} className={pressable}>
-          {inner}
-        </Link>
-      ) : onClick ? (
-        <button type="button" onClick={onClick} aria-expanded={expanded} className={pressable}>
-          {inner}
-        </button>
-      ) : (
-        <div className={row}>{inner}</div>
-      )}
+      {wrap ? wrap(body) : body}
     </li>
   );
 }
