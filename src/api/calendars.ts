@@ -101,7 +101,8 @@ export async function calendarsChanged(queryClient: QueryClient): Promise<void> 
 
 /** One change to one calendar, as My calendar makes them. */
 export type CalendarChange =
-  | { purpose: CalendarPurpose | null }
+  /** With `categoryName`, the owner's own name for it (#220); without, the name goes. */
+  | { purpose: CalendarPurpose | null; categoryName?: string | null }
   | { priority: CalendarPriority }
   | { included: boolean }
   /** A name of its owner's, or null to go back to the provider's own. */

@@ -1295,6 +1295,13 @@ export const da = {
     denmark: "Danmark",
     calendarFallback: "Kalender",
     noCategory: "Ingen kategori",
+    newCategory: "Ny kategori",
+    newCategoryName: "Navn",
+    newCategoryPlaceholder: "Fx fodbold",
+    newCategoryAsk: "Må en tur ligge oven i det?",
+    newCategoryYes: "Ja, men spørg mig først",
+    newCategoryNo: "Nej",
+    newCategorySave: "Gem kategori",
     /** Beside a category Casy's AI picked (#118). */
     guessedCategory: "Casy har gættet kategorien. Ret den, hvis den ikke passer.",
     holidayCategory: "Helligdag",

@@ -53,3 +53,15 @@ test("the sidebar has the primary calendar", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Dine kalendere" })).toBeVisible();
   await expect(page.getByText("Primær kalender", { exact: true })).toBeVisible();
 });
+
+test("a computer can pick a category made on a phone (#220)", async ({ page, backend }) => {
+  const source = backend.world.connections[0].calendar_sources[0] as { category_name?: string };
+  source.category_name = "Fodbold";
+  await page.goto("/calendar-overview");
+  await page
+    .getByRole("button", { name: /Google/ })
+    .first()
+    .click();
+  const select = page.getByRole("combobox", { name: /^Kategori for/ }).first();
+  await expect(select.locator("option", { hasText: "Fodbold" })).toHaveCount(1);
+});

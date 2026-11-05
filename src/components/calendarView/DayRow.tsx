@@ -10,6 +10,7 @@ import {
   holidayName,
   type DaySegment,
   type OverviewCalendar,
+  categoryLabel,
 } from "@/lib/calendarOverview";
 import { useIsDark } from "@/hooks/useIsDark";
 import { clockMinute } from "@/lib/eventLabels";
@@ -73,8 +74,8 @@ export function DayRow({
     ? words.holidayCategory
     : calendar?.id === CASY_CALENDAR_ID
       ? words.casyPill
-      : calendar?.purpose
-        ? t.categories[calendar.purpose]
+      : calendar
+        ? categoryLabel(calendar, t.categories, words.noCategory)
         : words.noCategory;
 
   return (

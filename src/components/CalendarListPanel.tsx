@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, useId } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Loader2, Minus, Pencil, Sparkles, Star } from "lucide-react";
 
@@ -14,6 +14,7 @@ import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { shade } from "@/lib/tint";
 import InfoTip from "@/components/InfoTip";
 import InlineTextEdit from "@/components/InlineTextEdit";
+import CategoryPicker from "@/components/calendars/CategoryPicker";
 import PrimaryCalendarPicker from "@/components/PrimaryCalendarPicker";
 import FitSelect from "@/components/ui/FitSelect";
 import Collapse from "@/components/ui/Collapse";
@@ -25,6 +26,7 @@ import {
   groupCalendarsByBrand,
   groupVisibility,
   type OverviewCalendar,
+  ownCategories,
 } from "@/lib/calendarOverview";
 import { cn } from "@/lib/utils";
 import type { CalendarPriority, CalendarPurpose } from "@/types";
@@ -197,6 +199,7 @@ export default function CalendarListPanel({
                       color={colorOf(c.id)}
                       showAccount={!sharedAccount}
                       primary={primary}
+                      calendars={calendars}
                       onUntick={() => onSetVisible([c.id], false)}
                     />
                   ))}
@@ -359,9 +362,12 @@ function CalendarRow({
   color,
   showAccount,
   primary,
+  calendars,
   onUntick,
 }: {
   calendar: OverviewCalendar;
+  /** Every calendar, for the person's own categories. */
+  calendars: OverviewCalendar[];
   /** "r, g, b". */
   color: string;
   /** False when the group header already names the one account behind it. */
@@ -375,6 +381,8 @@ function CalendarRow({
   const words = t.calendarView;
   const queryClient = useQueryClient();
   const [renaming, setRenaming] = useState(false);
+  const own = ownCategories(calendars);
+  const rowId = `${useId()}-calendar`;
 
   const labels = useMutation({
     mutationFn: (change: CalendarChange) => updateCalendar(c.id, change),
@@ -398,7 +406,7 @@ function CalendarRow({
     .join(" · ");
 
   return (
-    <li className="flex flex-col gap-1.5 border-t border-dashed py-2 pl-7">
+    <li id={rowId} className="flex flex-col gap-1.5 border-t border-dashed py-2 pl-7">
       <div className="flex items-start gap-3">
         {phone ? (
           <TickCircle color={color} state="all">
@@ -498,29 +506,49 @@ function CalendarRow({
             {/* Each as wide as its choice, so the two fit side by side. A
                 category Casy's AI guessed (#118) carries a small sparkle until
                 its owner picks one; it says so to screen readers and on hover. */}
-            <FitSelect
-              value={c.purpose ?? ""}
-              options={[
-                { value: "", label: words.noCategory },
-                ...CATEGORIES.map((category) => ({
-                  value: category,
-                  label: t.categories[category],
-                })),
-              ]}
-              onChange={(value) =>
-                labels.mutate({ purpose: (value || null) as CalendarPurpose | null })
-              }
-              disabled={labels.isPending}
-              label={
-                c.purposeGuessed
-                  ? `${words.categoryFor(c.name)}, ${t.aiPlan.guessed}`
-                  : words.categoryFor(c.name)
-              }
-              title={c.purposeGuessed ? words.guessedCategory : undefined}
-              leading={
-                c.purposeGuessed && <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />
-              }
-            />
+            {phone ? (
+              <CategoryPicker
+                calendar={c}
+                calendars={calendars}
+                anchorId={rowId}
+                disabled={labels.isPending}
+                onChange={(change) => labels.mutate(change)}
+              />
+            ) : (
+              <FitSelect
+                value={c.categoryName ? `own:${c.categoryName}` : (c.purpose ?? "")}
+                options={[
+                  { value: "", label: words.noCategory },
+                  ...CATEGORIES.map((category) => ({
+                    value: category,
+                    label: t.categories[category],
+                  })),
+                  // A computer can pick the person's own, made on a phone (#220).
+                  ...own.map((category) => ({
+                    value: `own:${category.name}`,
+                    label: category.name,
+                  })),
+                ]}
+                onChange={(value) => {
+                  const mine = own.find((category) => `own:${category.name}` === value);
+                  labels.mutate(
+                    mine
+                      ? { purpose: mine.purpose, categoryName: mine.name }
+                      : { purpose: (value || null) as CalendarPurpose | null },
+                  );
+                }}
+                disabled={labels.isPending}
+                label={
+                  c.purposeGuessed
+                    ? `${words.categoryFor(c.name)}, ${t.aiPlan.guessed}`
+                    : words.categoryFor(c.name)
+                }
+                title={c.purposeGuessed ? words.guessedCategory : undefined}
+                leading={
+                  c.purposeGuessed && <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />
+                }
+              />
+            )}
             <FitSelect
               value={c.priority}
               options={PRIORITIES.map((priority) => ({

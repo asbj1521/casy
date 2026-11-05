@@ -34,6 +34,8 @@ export interface OverviewCalendar {
   writable: boolean;
   /** The category the user gave this calendar, or null if unset. */
   purpose: CalendarPurpose | null;
+  /** Its owner's own name for the category (#220); `purpose` is the kind underneath. */
+  categoryName?: string | null;
   /** The category is Casy's AI's guess (#118), shown as such until its owner picks one. */
   purposeGuessed?: boolean;
   /** How much it matters to its owner when scheduling. */
@@ -363,6 +365,32 @@ export function formatDuration(start: Date, end: Date, hourUnit = "h"): string {
 
 /** The categories a calendar can have, in the order the picker lists them. */
 export const CATEGORIES: CalendarPurpose[] = ["work", "school", "personal", "other"];
+
+/** What a calendar's category reads as: its owner's name, its kind, or `none`. */
+export function categoryLabel(
+  calendar: Pick<OverviewCalendar, "purpose" | "categoryName">,
+  categories: Record<CalendarPurpose, string>,
+  none: string,
+): string {
+  if (calendar.categoryName) return calendar.categoryName;
+  return calendar.purpose ? categories[calendar.purpose] : none;
+}
+
+/**
+ * The person's own categories, from what their calendars are set to, once each
+ * (a different case is the same one), the first calendar's kind standing for
+ * it. There is no list of them apart from that: one goes once nothing uses it.
+ */
+export function ownCategories(
+  calendars: Pick<OverviewCalendar, "purpose" | "categoryName">[],
+): { name: string; purpose: CalendarPurpose }[] {
+  const seen = new Map<string, { name: string; purpose: CalendarPurpose }>();
+  for (const { categoryName: name, purpose } of calendars) {
+    if (!name || !purpose || seen.has(name.toLowerCase())) continue;
+    seen.set(name.toLowerCase(), { name, purpose });
+  }
+  return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
 
 /** "r, g, b" strings, for use in rgba(...). */
 const CATEGORY_RGB: Record<CalendarPurpose, string> = {

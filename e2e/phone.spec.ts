@@ -358,3 +358,37 @@ test.describe("with motion", () => {
     expect(Math.round((await sheet.boundingBox())!.height)).toBe(Math.round(before.height));
   });
 });
+
+test("a calendar can get a category of your own, which any calendar can then pick (#220)", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "made on a phone; a computer lists them");
+  await page.goto("/?calendars");
+  const sheet = page.getByRole("dialog", { name: "Kalendere" });
+  await sheet
+    .getByRole("button", { name: /Google/ })
+    .first()
+    .click();
+  const category = sheet.getByRole("button", { name: /^Kategori for/ }).first();
+  await category.click();
+  await page.getByRole("button", { name: "Ny kategori" }).click();
+  await page.getByPlaceholder("Fx fodbold").fill("Fodbold");
+  await page.getByRole("radio", { name: "Ja, men spørg mig først" }).check();
+  await page.getByRole("button", { name: "Gem kategori" }).click();
+
+  await expect
+    .poll(() => backend.calls.find((c) => c.body.categoryName === "Fodbold")?.body)
+    .toMatchObject({
+      purpose: "work",
+      categoryName: "Fodbold",
+    });
+  await expect(category).toContainText("Fodbold");
+
+  // Now among the choices, and picking a built-in one takes the name off again.
+  await category.click();
+  await expect(page.getByRole("radio", { name: "Fodbold" })).toBeChecked();
+  await page.getByRole("radio", { name: "Privat", exact: true }).click();
+  await expect(category).toContainText("Privat");
+});

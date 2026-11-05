@@ -101,6 +101,7 @@ export const DANISH: Record<string, string> = {
   "Connection not found": "Forbindelsen blev ikke fundet",
   "Calendar not found": "Kalenderen blev ikke fundet",
   "Keep the name to 60 characters.": "Navnet må højst være 60 tegn.",
+  "Keep the category's name to 30 characters.": "Kategoriens navn må højst være 30 tegn.",
   "Casy can't add events to that calendar.": "Casy kan ikke lægge aftaler i den kalender.",
   "Choose a primary calendar first.": "Vælg en primær kalender først.",
 

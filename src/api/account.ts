@@ -130,6 +130,8 @@ export interface MyData {
       name: string | null;
       customName: string | null;
       purpose: CalendarPurpose | null;
+      /** Their own name for the category (#220); missing from an older function. */
+      categoryName?: string | null;
       /** Casy's AI guessed the category (#118). */
       purposeGuessed: boolean;
       priority: CalendarPriority;

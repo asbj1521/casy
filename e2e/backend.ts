@@ -88,6 +88,8 @@ export class FakeBackend {
         if (source && "purpose" in body) {
           source.purpose = body.purpose as typeof source.purpose;
           source.purpose_source = "user";
+          (source as { category_name?: string | null }).category_name =
+            (body.categoryName as string | null | undefined) ?? null;
           this.changed();
         }
         return ok({});

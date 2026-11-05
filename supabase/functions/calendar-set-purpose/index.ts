@@ -20,13 +20,15 @@ const PURPOSES: ReadonlySet<unknown> = new Set(["work", "school", "personal", "o
 const PRIORITIES: ReadonlySet<unknown> = new Set(["skip", "normal", "never"]);
 /** Matches the check on calendar_sources.custom_name. */
 const MAX_NAME_LENGTH = 60;
+/** Matches the check on calendar_sources.category_name. */
+const MAX_CATEGORY_NAME_LENGTH = 30;
 
 serve("calendar-set-purpose", async (req, body) => {
   const db = supabaseAdmin();
   const { id: profileId } = await requireCaller(req, db);
 
   const calendarId = requireString(body, "calendarId");
-  const { purpose, priority, included, name } = body;
+  const { purpose, categoryName, priority, included, name } = body;
   // Any field may be left out to keep it as it is, but not all of them.
   if (
     purpose === undefined &&
@@ -57,6 +59,17 @@ serve("calendar-set-purpose", async (req, body) => {
     throw new HttpError(400, "Keep the name to 60 characters.");
   }
 
+  // An owner's own name for the category (#220) goes with its kind, and any
+  // change of the kind without one takes the old name off.
+  if (categoryName !== undefined && categoryName !== null && typeof categoryName !== "string") {
+    throw new HttpError(400, "categoryName must be text or null");
+  }
+  const ownCategory =
+    purpose && typeof categoryName === "string" && categoryName.trim() ? categoryName.trim() : null;
+  if (ownCategory !== null && ownCategory.length > MAX_CATEGORY_NAME_LENGTH) {
+    throw new HttpError(400, "Keep the category's name to 30 characters.");
+  }
+
   // Ownership check first: the calendar's connection must belong to the caller.
   const { data: owned, error: lookupErr } = await db
     .from("calendar_sources")
@@ -71,7 +84,9 @@ serve("calendar-set-purpose", async (req, body) => {
     .from("calendar_sources")
     .update({
       // Picked or cleared by hand: Casy's AI never touches it again (#118).
-      ...(purpose !== undefined ? { purpose, purpose_source: "user" } : {}),
+      ...(purpose !== undefined
+        ? { purpose, purpose_source: "user", category_name: ownCategory }
+        : {}),
       ...(priority !== undefined ? { priority } : {}),
       ...(included !== undefined ? { included } : {}),
       ...(name !== undefined ? { custom_name: customName } : {}),

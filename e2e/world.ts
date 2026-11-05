@@ -274,6 +274,7 @@ function overviewCalendars(conns: CalendarConnectionStatus[]): OverviewCalendar[
       renamed: s.custom_name !== null,
       writable: s.writable,
       purpose: s.purpose,
+      categoryName: (s as { category_name?: string | null }).category_name ?? null,
       purposeGuessed: s.purpose_source === "ai" && s.purpose !== null,
       priority: s.priority,
       included: true,

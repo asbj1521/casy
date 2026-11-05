@@ -70,8 +70,9 @@ const da: LegalCopy = {
               <Term>Forbundne kalendere:</Term> hvilke konti du har forbundet (for eksempel
               e-mailadressen på en Google-konto), navnene på deres kalendere og et navn, du selv
               giver en af dem, den kategori og prioritet, du giver hver af dem (arbejde, skole,
-              privat, andet; kan springes over, normal, spring aldrig over), om den tæller med,
-              hvilken der er din primære kalender, og om Casy må tilføje aftaler automatisk.
+              privat, andet eller et navn, du selv finder på, som kun du ser; kan springes over,
+              normal, spring aldrig over), om den tæller med, hvilken der er din primære kalender,
+              og om Casy må tilføje aftaler automatisk.
             </li>
             <li>
               <Term>Optagede tidsrum:</Term> start og slut på hvert tidsrum, hvor du er optaget, for
@@ -579,9 +580,10 @@ const en: LegalCopy = {
             <li>
               <Term>Connected calendars:</Term> which accounts you connected (for example the email
               address of a Google account), the names of their calendars and any name you give one
-              yourself, the category and priority you give each one (work, school, personal, other;
-              can skip, normal, never skip), whether it counts, which one is your primary calendar,
-              and whether Casy may add events automatically.
+              yourself, the category and priority you give each one (work, school, personal, other,
+              or a name of your own that only you see; can skip, normal, never skip), whether it
+              counts, which one is your primary calendar, and whether Casy may add events
+              automatically.
             </li>
             <li>
               <Term>Busy times:</Term> the start and end of each busy period, for roughly the next
