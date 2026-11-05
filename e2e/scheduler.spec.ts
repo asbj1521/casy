@@ -92,7 +92,7 @@ test.describe("on a laptop's screen", () => {
       expect((await boxOf(settingsBox(page))).height).toBe(before);
     }
     await page.getByRole("tab", { name: "Tidspunkt" }).click();
-    await expect(page.getByRole("radio", { name: "Møde" })).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Aftale" })).toBeVisible();
   });
 
   test("planning with AI (#100) fills the settings beside the answer, the chart still in view", async ({

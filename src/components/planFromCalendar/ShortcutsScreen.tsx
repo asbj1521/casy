@@ -159,6 +159,10 @@ export default function ShortcutsScreen({
             </li>
           ))}
       </ul>
+      {/* With none yet, three bare plus tiles say nothing on their own (#213). */}
+      {shortcuts?.length === 0 && !failed && (
+        <p className="mt-3 px-1 text-[12px] text-muted-foreground">{words.emptyNote}</p>
+      )}
 
       {/* The genvej about to run, at the bottom: big on the left, what it looks at on the right. */}
       {selected && (

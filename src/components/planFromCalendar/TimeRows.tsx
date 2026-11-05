@@ -39,10 +39,10 @@ const FRI_SAT = [5, 6];
 type Open = "time" | "days" | "startDay" | null;
 
 /**
- * The Planlæg sheet's time (#173): Møde or Tur / ferie, then one row per
+ * The Planlæg sheet's time (#173): Aftale or Tur / ferie, then one row per
  * setting with its value on the right, each opening a small sheet of its
  * own. A meeting is "17:00 - 19:00" (one sheet, two wheels), give or take
- * (Fleksibel, stepped by half hours in its row: the whole meeting may move,
+ * (Kan rykkes, stepped by half hours in its row: the whole meeting may move,
  * stored as a start window around the hour, see lib/startFlex), on some
  * weekdays (quick picks, or the seven in a row). With no set start (Når som
  * helst, or a window Casy's AI chose) the second wheel is its length.
@@ -76,7 +76,7 @@ export default function TimeRows({
 
   const flex = flexOf(settings);
   const fixedStart = !settings.anyTime && flex !== null;
-  // A window made by Fleksibel is the hour itself on the wheel and the row;
+  // A window made by Kan rykkes is the hour itself on the wheel and the row;
   // only one Casy's AI chose is listed as its own ("Mellem 18:00 og 21:00").
   const wheel = flex === null ? settings : { ...settings, startWindow: null };
   // The same lists from one render to the next, or a wheel would snap back
@@ -207,7 +207,7 @@ export default function TimeRows({
                   pressed={pressed("flexLess", "flexMore")}
                   value={flex}
                   values={[...FLEX_MINUTES]}
-                  format={(f) => t.common.duration(f)}
+                  format={(f) => (f === 0 ? words.flexNone : `± ${t.common.duration(f)}`)}
                   onChange={(f) => onChange({ startWindow: flexWindow(settings.startHour, f) })}
                   lessLabel={words.flexLess}
                   moreLabel={words.flexMore}

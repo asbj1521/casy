@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * A genvej's times (#175), in its editor where the group would be: "Tid 1"
  * alone at first with a plus beside it, then halves, then thirds once there
  * are three and no plus. The one picked is the one the rows under it
- * (Tidspunkt, Fleksibel) show and change; the second and third can be taken
+ * (Tidspunkt, Kan rykkes) show and change; the second and third can be taken
  * away again with the cross on the one picked.
  */
 export default function ShortcutTimes({

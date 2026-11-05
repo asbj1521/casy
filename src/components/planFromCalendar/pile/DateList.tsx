@@ -6,7 +6,7 @@ import {
   type AnimationPlaybackControls,
   type MotionValue,
 } from "framer-motion";
-import { Check, ChevronDown, Loader2, TriangleAlert, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, TriangleAlert } from "lucide-react";
 
 import { useLang, useT } from "@/i18n/lang";
 import { type EventSettings } from "@/lib/eventSearch";
@@ -245,7 +245,7 @@ export default function DateList({
               "glass relative overflow-hidden rounded-[22px]",
               // A lighter blur while the rows move, easing back once they're still.
               done ? "[transition:backdrop-filter_0.5s_ease-out]" : "glass-moving",
-              status === "yes" && "ring-2 ring-emerald-500/70",
+              status === "yes" && "ring-2 ring-primary/60",
             )}
           >
             {/* The green of the circle it came out of, fading into glass. */}
@@ -279,9 +279,7 @@ export default function DateList({
                     transition={{ type: "spring", stiffness: 500, damping: 22 }}
                     className={cn(
                       "flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-bold",
-                      item.chosen
-                        ? "bg-emerald-500 text-white"
-                        : "bg-secondary text-muted-foreground",
+                      item.chosen ? "bg-cta text-white" : "bg-secondary text-muted-foreground",
                     )}
                   >
                     {rank}
@@ -309,7 +307,7 @@ export default function DateList({
                   </motion.p>
                 )}
               </div>
-              <StatusMark status={status} instant={instant} />
+              <StatusMark status={status} instant={instant} picked={words.picked} />
               {/* There from the start, so the marks never move; shown once a row can open. */}
               <ChevronDown
                 aria-hidden
@@ -360,9 +358,12 @@ export default function DateList({
 function StatusMark({
   status,
   instant,
+  picked,
 }: {
   status: "waiting" | "checking" | "yes" | "no";
   instant: boolean;
+  /** Said to screen readers for a date the vote offers. */
+  picked: string;
 }) {
   return (
     <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
@@ -371,24 +372,20 @@ function StatusMark({
           <motion.span key="checking" exit={{ opacity: 0, scale: 0.6 }}>
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
           </motion.span>
-        ) : status === "yes" || status === "no" ? (
+        ) : status === "yes" ? (
+          // Picked: an orange tick, as every choice (rule 5). Left out is no
+          // mark at all, since a red cross read as "can't" (#213).
           <motion.span
-            key={status}
+            key="yes"
             initial={instant ? false : { scale: 0, rotate: -45 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 20 }}
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-full text-white",
-              status === "yes" ? "bg-emerald-500" : "bg-red-500",
-            )}
+            className="text-primary"
           >
-            {status === "yes" ? (
-              <Check className="h-4 w-4" strokeWidth={3} />
-            ) : (
-              <X className="h-4 w-4" strokeWidth={3} />
-            )}
+            <Check className="h-5 w-5" strokeWidth={3} />
+            <span className="sr-only">{picked}</span>
           </motion.span>
-        ) : (
+        ) : status === "no" ? null : (
           <span key="waiting" className="h-2 w-2 rounded-full bg-muted-foreground/30" />
         )}
       </AnimatePresence>

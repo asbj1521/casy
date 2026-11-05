@@ -127,7 +127,7 @@ export default function PlanFromCalendar({
   };
 
   // The editor's times (#175): the one picked is the plan's own time on
-  // screen (Tidspunkt, Fleksibel), the others kept here until picked.
+  // screen (Tidspunkt, Kan rykkes), the others kept here until picked.
   const [times, setTimes] = useState<ShortcutTime[]>([]);
   const [removing, setRemoving] = useState(false);
   const [current, setCurrent] = useState(0);

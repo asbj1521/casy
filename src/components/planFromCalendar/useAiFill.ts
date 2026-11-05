@@ -61,7 +61,7 @@ const sameDays = (a: number[], b: number[]) =>
 /**
  * Casy's filling in as a person would do it by hand, frame by frame: the
  * name deleted and typed, Møde or Tur switched, the time sheet opened and
- * its wheels rolled to the start and the end, Fleksibel's plus pressed half
+ * its wheels rolled to the start and the end, Kan rykkes' plus pressed half
  * an hour at a time, the day sheet opened and its quick pick or days tapped,
  * the months tapped. Only what changed is done.
  */

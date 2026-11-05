@@ -15,9 +15,9 @@ import { litRing } from "./fill";
  * as two rows of six, neither behind a menu nor scrolled sideways. A tap
  * picks a month, a tap on another stretches the period to it, and a tap on
  * either end takes that month off (pickPeriodMonth, as the month grid).
- * Beside the label, "Når som helst" as plain text: lit while it holds, with
- * every month lit too since all are searched, grey once months are picked,
- * and a tap clears them. Exact days set by Casy's AI (#134) shade the months
+ * Beside the label, "Alle måneder" as plain text (#213), so the lit months
+ * explain themselves: lit while it holds, with every month lit too since all
+ * are searched, grey once months are picked, and a tap clears them. Exact days set by Casy's AI (#134) shade the months
  * they touch, and the line under says which.
  */
 export default function PlanMonths({
@@ -51,7 +51,7 @@ export default function PlanMonths({
             value === null ? "text-primary" : "text-muted-foreground",
           )}
         >
-          {t.scheduler.period.anyButton}
+          {t.planFromCalendar.allMonths}
         </button>
       </div>
       <div
@@ -65,7 +65,7 @@ export default function PlanMonths({
         {months.map((m, i) => {
           const { month, year } = localDate(Date.parse(m), APP_TIME_ZONE);
           const end = isEnd(m);
-          // Når som helst lights every month: all of them are searched.
+          // Alle måneder lights every month: all of them are searched.
           const on = value === null || inPeriod(m);
           return (
             <button

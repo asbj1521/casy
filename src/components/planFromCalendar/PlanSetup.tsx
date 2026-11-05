@@ -23,7 +23,7 @@ import { useAiFill, type PlanState } from "./useAiFill";
  * then the sheet fills itself in before your eyes (useAiFill), its guesses
  * marked. Every setting stays yours to change by hand after.
  *
- * The group shares its row with Genveje (#175), three quarters to one. A
+ * The group shares its row with Genveje (#175), which is as wide as its word. A
  * genvej's own editor shows the plan without the group or the months (a
  * genvej has neither: it runs with the group chosen, from today), its times
  * in their place (`editor`).
@@ -115,12 +115,12 @@ export default function PlanSetup({
         ) : (
           <>
             <div className="flex gap-3">
-              <GroupRow planning={planning} className="mt-0 flex-[3]" />
+              <GroupRow planning={planning} className="mt-0 min-w-0 flex-1" />
               {onShortcuts && (
                 <button
                   type="button"
                   onClick={onShortcuts}
-                  className="flex min-w-0 flex-1 items-center justify-center rounded-2xl border bg-card text-[15px] font-medium text-primary transition-colors active:bg-secondary"
+                  className="flex shrink-0 items-center justify-center rounded-2xl border bg-card px-3.5 text-[15px] font-medium text-primary transition-colors active:bg-secondary"
                 >
                   {t.shortcuts.title}
                 </button>

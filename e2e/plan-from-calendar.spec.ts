@@ -174,9 +174,9 @@ test("the sheet's rows: give or take an hour, and the details folded away go alo
   await page.goto("/calendar-overview?plan");
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
   // Two half hours either way: ± 1 t.
-  await sheet.getByRole("button", { name: "Mere fleksibel" }).click();
-  await sheet.getByRole("button", { name: "Mere fleksibel" }).click();
-  await expect(sheet.getByText("1 t", { exact: true })).toBeVisible();
+  await sheet.getByRole("button", { name: "Mere plads at rykke" }).click();
+  await sheet.getByRole("button", { name: "Mere plads at rykke" }).click();
+  await expect(sheet.getByText("± 1 t", { exact: true })).toBeVisible();
 
   await sheet.getByRole("button", { name: "Flere detaljer" }).click();
   await sheet.getByRole("button", { name: /^Deltagere/ }).click();
@@ -473,14 +473,14 @@ test.describe("Genveje (#175)", () => {
       "aria-pressed",
       "true",
     );
-    await editor.getByRole("button", { name: "Mere fleksibel" }).click();
-    await editor.getByRole("button", { name: "Mere fleksibel" }).click();
-    await expect(editor.getByText("1 t", { exact: true })).toBeVisible();
+    await editor.getByRole("button", { name: "Mere plads at rykke" }).click();
+    await editor.getByRole("button", { name: "Mere plads at rykke" }).click();
+    await expect(editor.getByText("± 1 t", { exact: true })).toBeVisible();
     // Back on the first, its own time again; and the second still its own.
     await editor.getByRole("button", { name: /^Tid 1/ }).click();
-    await expect(editor.getByText("0 min", { exact: true })).toBeVisible();
+    await expect(editor.getByText("Nej", { exact: true })).toBeVisible();
     await editor.getByRole("button", { name: /^Tid 2/ }).click();
-    await expect(editor.getByText("1 t", { exact: true })).toBeVisible();
+    await expect(editor.getByText("± 1 t", { exact: true })).toBeVisible();
     // A third, then no more to add; taken away with the cross on it.
     await editor.getByRole("button", { name: "Tilføj et tidspunkt" }).click();
     await expect(editor.getByRole("button", { name: "Tilføj et tidspunkt" })).toHaveCount(0);
