@@ -3,16 +3,16 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { useLang, useT } from "@/i18n/lang";
 import { addDays } from "@/lib/zone";
-import AgreedMoment, { FLIGHT_S } from "./phone/AgreedMoment";
 import PaperCalendar from "./phone/PaperCalendar";
 import PaperStack from "./phone/PaperStack";
 import PeopleJoining from "./phone/PeopleJoining";
 import PhoneDates from "./phone/PhoneDates";
-import { listScrolls } from "./phone/dayCell";
 import PhoneDevice from "./phone/PhoneDevice";
 import PhoneGroup from "./phone/PhoneGroup";
 import PhoneHome from "./phone/PhoneHome";
 import PhoneVote from "./phone/PhoneVote";
+import TravelBox, { FLIGHT_S, type BoxStage } from "./phone/TravelBox";
+import { dayCell, listScrolls } from "./phone/dayCell";
 import {
   demoMonth,
   demoPlan,
@@ -31,17 +31,16 @@ const POSE = {
   below: { y: 1.05, scale: 1, rotateY: 0, rotate: 0 },
   /** Facing you, room around it for the faces and the paper. */
   flat: { y: 0, scale: 1, rotateY: 0, rotate: 0 },
-  /** Sunk a little, making room for the words over the list of dates. */
-  low: { y: 0.15, scale: 1, rotateY: 0, rotate: 0 },
-  /** Answering: turned a little, its side showing. */
-  turned: { y: 0, scale: 1.02, rotateY: -13, rotate: 2.5 },
+  /** A little smaller and lower, all of it in view, under a headline. */
+  framed: { y: 0.09, scale: 0.86, rotateY: 0, rotate: 0 },
+  /** The same, turned a little as you answer, its side showing. */
+  turned: { y: 0.09, scale: 0.86, rotateY: -11, rotate: 2 },
 };
-const POSE_SPRING = { type: "spring", stiffness: 110, damping: 20 } as const;
+const POSE_SPRING = { type: "spring", stiffness: 90, damping: 20 } as const;
 
 /** Where the colour shape lies behind the phone, as shares of its panel. */
 const SHAPE = {
   under: { x: "-8%", y: "34%", rotate: -14, scale: 1.05, opacity: 1 },
-  above: { x: "-14%", y: "-46%", rotate: 22, scale: 1.1, opacity: 1 },
   gone: { x: "-8%", y: "20%", rotate: 8, scale: 1, opacity: 0 },
 };
 
@@ -53,10 +52,15 @@ const FLY_FOR = 0.42;
 /** The paper's weeks dissolving into the month under it, from the middle out. */
 const DISSOLVE_S = 1.15;
 
+/** One screen of the phone giving way to the next, zooming on the date when a day opens or closes. */
+const SCREEN_MOVE = { duration: 0.48, ease: [0.32, 0.72, 0, 1] } as const;
+
 const AT = (() => {
   const joined = FLY_AT.map((at) => at + FLY_FOR);
-  const home = joined[joined.length - 1] + 0.5;
-  const throwsAt = home + 0.35;
+  // The members' card grows into the page the month appears on.
+  const leave = joined[joined.length - 1] + 0.4;
+  const home = leave + 0.42;
+  const throwsAt = home + 0.3;
   const thrown = THROWS.map((th) => throwsAt + th.at);
   const landed = THROWS.map((th) => throwsAt + th.landed);
   // Squared up, one sheet with everyone's pen on it, then that dissolving.
@@ -72,17 +76,22 @@ const AT = (() => {
   const taken = scrolls.map((at) => at + 0.45);
   const button = taken[2] + 0.4;
   const pressed = button + 0.75;
+  // The button moves down to become the pill as the dates fly into Aftaler.
   const sent = pressed + 0.3;
-  const back = sent + 0.5;
+  const back = sent + 0.3;
   const badge = sent + 0.85;
-  const vote = badge + 0.55;
-  const answers = [vote + 1.2, vote + 2.15, vote + 3];
+  const pillPressed = badge + 0.55;
+  // The pill grows into the vote's panel as the month zooms into the day.
+  const vote = pillPressed + 0.22;
+  const answers = [vote + 1.35, vote + 2.3, vote + 3.15];
+  // The panel becomes the agreed card, the card the circle, the circle lands.
   const agreed = answers[2] + 0.7;
-  const collapsed = agreed + 1.4;
-  const flying = collapsed + 0.5;
+  const collapsed = agreed + 1.5;
+  const flying = collapsed + 0.45;
   const landing = flying + FLIGHT_S;
   return {
     joined,
+    leave,
     home,
     throwsAt,
     thrown,
@@ -101,6 +110,7 @@ const AT = (() => {
     sent,
     back,
     badge,
+    pillPressed,
     vote,
     answers,
     agreed,
@@ -112,6 +122,7 @@ const AT = (() => {
 })();
 const MOMENTS = [
   ...AT.joined,
+  AT.leave,
   AT.home,
   ...AT.thrown,
   ...AT.landed,
@@ -129,6 +140,7 @@ const MOMENTS = [
   AT.sent,
   AT.back,
   AT.badge,
+  AT.pillPressed,
   AT.vote,
   ...AT.answers,
   AT.agreed,
@@ -143,8 +155,10 @@ const MOMENTS = [
  * after another, become one sheet and dissolve into the real month; the days
  * free for everyone light up and are lifted into a list of possible dates; those
  * are sent off for a vote; you answer it; the agreed date lands in its day. Then
- * it runs on from the top. Under reduced motion, a still of the phone with the
- * days lit.
+ * it runs on from the top. Each step hands on to the next through something they
+ * share: the members' card grows into the page, a circle stretches into a row,
+ * and one box (TravelBox) is the send button, the pill, the vote and the agreed
+ * date. Under reduced motion, a still of the phone with the days lit.
  */
 export default function WelcomeStage() {
   const t = useT();
@@ -193,6 +207,7 @@ export default function WelcomeStage() {
     [agreedDay, everyone, t.welcome.event],
   );
   const scrolls = useMemo(() => listScrolls(plan.free, month, lang), [plan, month, lang]);
+  const zoomOn = useMemo(() => dayCell(agreedDay, month, lang), [agreedDay, month, lang]);
 
   const count = (moments: number[]) => moments.filter((at) => now >= at).length;
   const joined = count(AT.joined);
@@ -208,22 +223,33 @@ export default function WelcomeStage() {
   const listing = now >= AT.list && now < AT.vote;
   const onScreen = now < AT.home ? "group" : voting ? "vote" : "home";
 
-  const words = now >= AT.list && now < AT.sent;
-  const pose = voting ? POSE.turned : words ? POSE.low : POSE.flat;
-  const shape = now < AT.home ? SHAPE.under : voting ? SHAPE.above : SHAPE.gone;
+  // A line over the phone says what is going on: possible dates, then the vote.
+  const headline = listing ? t.welcome.candidates : voting ? t.welcome.voting : null;
+  const pose = voting ? POSE.turned : listing ? POSE.framed : POSE.flat;
+  const shape = now < AT.home || voting ? SHAPE.under : SHAPE.gone;
   const scale = Math.min((size.height * 0.92) / DEVICE.height, (size.width * 0.62) / DEVICE.width);
   const place = (p: typeof pose) => ({ ...p, y: p.y * size.height, scale: p.scale * scale });
 
   const items = now >= AT.landing ? withEvent : now >= AT.digital ? everyone : yours;
   const pressing = !still && ((now >= AT.press && now < AT.list) || now >= AT.landing);
-  const agreedStage =
-    now >= AT.landing
-      ? "landed"
-      : now >= AT.flying
-        ? "flying"
-        : now >= AT.collapsed
-          ? "collapsed"
-          : "card";
+  const boxStage: BoxStage | null =
+    now < AT.button
+      ? null
+      : now < AT.sent
+        ? "button"
+        : now < AT.vote
+          ? "pill"
+          : now < AT.agreed
+            ? "panel"
+            : now < AT.collapsed
+              ? "card"
+              : now < AT.flying
+                ? "ball"
+                : now < AT.landing
+                  ? "flying"
+                  : "landed";
+  const boxPressed =
+    (now >= AT.pressed && now < AT.sent) || (now >= AT.pillPressed && now < AT.vote);
 
   return (
     <div
@@ -266,17 +292,18 @@ export default function WelcomeStage() {
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
         </div>
 
-        {/* The words over the list: these are possible dates, not yet the date. */}
+        {/* The line over the phone, one giving way to the next in the same place. */}
         <AnimatePresence>
-          {words && !still && (
+          {headline && !still && (
             <motion.p
+              key={headline}
               className="absolute inset-x-4 top-[3%] text-center text-[2.5rem] font-bold leading-[1.05] tracking-tight text-foreground large-text:text-[1.875rem]"
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.34 }}
             >
-              {t.welcome.candidates}
+              {headline}
             </motion.p>
           )}
         </AnimatePresence>
@@ -300,7 +327,7 @@ export default function WelcomeStage() {
               over={
                 !still && (
                   <>
-                    {now < AT.home && (
+                    {now < AT.leave && (
                       <PeopleJoining key={round} popAt={POP_AT} flyAt={FLY_AT} flyFor={FLY_FOR} />
                     )}
                     {thrown > 0 && now < AT.digital && (
@@ -332,16 +359,33 @@ export default function WelcomeStage() {
                 )
               }
             >
-              <AnimatePresence initial={false}>
+              <AnimatePresence initial={false} custom={onScreen}>
                 <motion.div
                   key={onScreen}
                   className="absolute inset-0"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.28 }}
+                  style={{ transformOrigin: `${zoomOn.x}px ${zoomOn.y}px` }}
+                  custom={onScreen}
+                  variants={{
+                    // The month zooms up into a day, and the day back down into the month.
+                    leave: (to: string) => ({
+                      opacity: 0,
+                      scale: to === "vote" ? 1.5 : to === "home" ? 0.6 : 1,
+                    }),
+                  }}
+                  initial={
+                    onScreen === "vote"
+                      ? { opacity: 0, scale: 0.6 }
+                      : onScreen === "home" && now >= AT.agreed
+                        ? { opacity: 0, scale: 1.5 }
+                        : { opacity: 0, scale: 1 }
+                  }
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit="leave"
+                  transition={SCREEN_MOVE}
                 >
-                  {onScreen === "group" && <PhoneGroup joined={joined} />}
+                  {onScreen === "group" && (
+                    <PhoneGroup joined={joined} leaving={now >= AT.leave} arriving={round > 0} />
+                  )}
                   {onScreen === "vote" && <PhoneVote event={vote} answered={answered} />}
                   {onScreen === "home" && (
                     <PhoneHome
@@ -362,19 +406,24 @@ export default function WelcomeStage() {
                   days={plan.free}
                   month={month}
                   taken={taken}
-                  button={now >= AT.button}
-                  pressed={now >= AT.pressed}
                   sent={now >= AT.sent}
                 />
               )}
               <AnimatePresence>
-                {now >= AT.agreed && !still && (
+                {boxStage && !still && (
                   <motion.div
                     className="absolute inset-0"
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.28 }}
                   >
-                    <AgreedMoment event={vote} day={agreedDay} month={month} stage={agreedStage} />
+                    <TravelBox
+                      event={vote}
+                      day={agreedDay}
+                      month={month}
+                      stage={boxStage}
+                      pressed={boxPressed}
+                      answered={answered}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 
-import { useLang, useT } from "@/i18n/lang";
+import { useLang } from "@/i18n/lang";
 import { capitalize, dayLabel, formatTime } from "@/lib/format";
 import type { VoteEvent } from "@/lib/vote";
 import { dayCell, LIST, rowTop } from "./dayCell";
@@ -16,17 +16,16 @@ const AFTALER = { x: 40, y: SCREEN.height - 44 };
 /**
  * The dates found, as Planlæg lists them (#228, DateList): the month scrolls
  * until a green circle is level with its row, the circle stretches into the
- * row, and so on. Then "Foreslå top 3 datoer" is pressed and the dates fly down
- * into the Aftaler button (sendFlightPlay). Solid rows, not glass: this all
- * moves with the phone, and a backdrop blur would be redrawn on every frame.
+ * row, and so on. Sent, the dates fly down into the Aftaler button
+ * (sendFlightPlay). Solid rows, not glass: this all moves with the phone, and a
+ * backdrop blur would be redrawn on every frame. The button under them is the
+ * start of TravelBox.
  */
 export default function PhoneDates({
   event,
   days,
   month,
   taken,
-  button,
-  pressed,
   sent,
 }: {
   event: VoteEvent;
@@ -34,11 +33,8 @@ export default function PhoneDates({
   month: number;
   /** How many dates have come out of their circles so far. */
   taken: number;
-  button: boolean;
-  pressed: boolean;
   sent: boolean;
 }) {
-  const t = useT();
   const { lang } = useLang();
   return (
     <div className="absolute inset-0">
@@ -110,29 +106,6 @@ export default function PhoneDates({
           </motion.div>
         );
       })}
-      {button && (
-        <motion.div
-          className="glass-pill absolute flex h-14 items-center justify-center rounded-full text-[17px] font-bold text-primary"
-          style={{
-            left: LIST.left,
-            right: LIST.left,
-            top: rowTop(days.length) + 6,
-            backdropFilter: "none",
-            WebkitBackdropFilter: "none",
-          }}
-          initial={{ opacity: 0, y: 12 }}
-          animate={
-            sent
-              ? { opacity: 0, y: 0, scale: 1 }
-              : pressed
-                ? { opacity: 1, y: 0, scale: [1, 0.93, 1] }
-                : { opacity: 1, y: 0, scale: 1 }
-          }
-          transition={{ duration: sent ? 0.2 : 0.32 }}
-        >
-          {t.planFromCalendar.suggest(days.length)}
-        </motion.div>
-      )}
     </div>
   );
 }

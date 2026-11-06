@@ -96,12 +96,9 @@ function Day({ event, date }: { event: VoteEvent; date: CandidateDate }) {
 }
 
 /**
- * Answering a vote on the phone (#228), as the home page does it (HomeVote over
- * DayView, #172, #176): the day of the date in question with the event
- * pencilled in, gliding on to the next date as each is answered, and over it
- * the panel with the title, one bar per date and the app's real card, thrown
- * the way its answer says, stamped. `answered` is how many dates are done. No
- * answer buttons: swiping is the point here, and the day gets their room.
+ * The day behind a vote on the phone (#228), as the home page does it (DayView,
+ * #172, #176): the date in question with the event pencilled in, gliding on to
+ * the next date as each is answered.
  */
 const PhoneVote = memo(function PhoneVote({
   event,
@@ -113,14 +110,12 @@ const PhoneVote = memo(function PhoneVote({
   const t = useT();
   const { lang } = useLang();
   const dates = event.candidates;
-  const index = Math.min(answered, dates.length - 1);
-  const date = dates[index];
+  const date = dates[Math.min(answered, dates.length - 1)];
   const monthName = capitalize(
     new Date(date.start).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
   );
   return (
     <div className="absolute inset-0 bg-background">
-      {/* The day, gliding sideways to the next date. */}
       <div
         className="absolute inset-x-0 overflow-hidden"
         style={{ top: DAY_TOP, height: SCREEN.height - DAY_TOP - PANEL_PX + 28 }}
@@ -159,116 +154,127 @@ const PhoneVote = memo(function PhoneVote({
           {t.calendarView.today}
         </span>
       </div>
-      {/* The panel over it (HomeVote), the glass a solid tint: it moves with the phone. */}
-      <div
-        className="absolute inset-x-0 bottom-0 rounded-t-[28px] border-t bg-card/95 px-4 pb-5 pt-3 shadow-[0_-12px_40px_-14px_rgb(0_0_0/0.35)]"
-        style={{ height: PANEL_PX }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[17px] font-bold text-foreground">{event.title}</p>
-            <p className="truncate text-[13px] text-muted-foreground">{event.group.name}</p>
-          </div>
-          <RotateCcw className="h-5 w-5 text-amber-600 opacity-30" />
-          <span className="px-2 text-[15px] font-semibold text-primary">{t.swipe.done}</span>
+    </div>
+  );
+});
+
+export default PhoneVote;
+
+/**
+ * What the panel over the day says (HomeVote): the title, one bar per date and
+ * the app's real card, thrown the way its answer says, stamped. `answered` is
+ * how many dates are done. No answer buttons: swiping is the point here, and
+ * the day gets their room. The box around it is TravelBox's.
+ */
+export function VotePanel({ event, answered }: { event: VoteEvent; answered: number }) {
+  const t = useT();
+  const dates = event.candidates;
+  const index = Math.min(answered, dates.length - 1);
+  const date = dates[index];
+  return (
+    <div className="px-4 pb-5 pt-3">
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[17px] font-bold text-foreground">{event.title}</p>
+          <p className="truncate text-[13px] text-muted-foreground">{event.group.name}</p>
         </div>
-        <div className="mt-2 flex gap-1">
-          {dates.map((d, i) => (
-            <span
-              key={d.id}
-              className={cn(
-                "h-1.5 flex-1 rounded-full transition-colors duration-300",
-                i === answered
-                  ? "bg-foreground"
-                  : i < answered
-                    ? ANSWERS[i] === "accepted"
-                      ? "bg-emerald-500"
-                      : "bg-rose-400"
-                    : "bg-secondary",
-              )}
+        <RotateCcw className="h-5 w-5 text-amber-600 opacity-30" />
+        <span className="px-2 text-[15px] font-semibold text-primary">{t.swipe.done}</span>
+      </div>
+      <div className="mt-2 flex gap-1">
+        {dates.map((d, i) => (
+          <span
+            key={d.id}
+            className={cn(
+              "h-1.5 flex-1 rounded-full transition-colors duration-300",
+              i === answered
+                ? "bg-foreground"
+                : i < answered
+                  ? ANSWERS[i] === "accepted"
+                    ? "bg-emerald-500"
+                    : "bg-rose-400"
+                  : "bg-secondary",
+            )}
+          />
+        ))}
+      </div>
+      <div className="relative mt-3" style={{ height: CARD_PX }}>
+        {dates[index + 1] && (
+          <div className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
+            <CardFace
+              event={event}
+              date={dates[index + 1]}
+              position={index + 2}
+              total={dates.length}
+              yours={undefined}
+              calendar={NO_CALENDAR}
+              clashes={[]}
+              compact
             />
-          ))}
-        </div>
-        <div className="relative mt-3" style={{ height: CARD_PX }}>
-          {dates[index + 1] && (
-            <div className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
+          </div>
+        )}
+        {answered >= dates.length && (
+          <motion.p
+            className="absolute inset-0 flex items-center justify-center text-[20px] font-bold text-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15, duration: 0.2 }}
+          >
+            {t.swipe.doneTitle}
+          </motion.p>
+        )}
+        <AnimatePresence initial={false} custom={ANSWERS[answered - 1]}>
+          {answered < dates.length && (
+            <motion.div
+              key={date.id}
+              className="absolute inset-0 z-10"
+              custom={ANSWERS[answered - 1]}
+              variants={{
+                // Solid from the start: see-through, the card under it would show in its text.
+                enter: { scale: 0.96, y: 8, opacity: 1 },
+                center: { scale: 1, y: 0, opacity: 1 },
+                exit: (to: EventResponse) => ({
+                  x: to === "accepted" ? 640 : -640,
+                  rotate: to === "accepted" ? 18 : -18,
+                  opacity: 0,
+                  transition: { duration: 0.42, ease: [0.3, 0, 0.8, 0.6] },
+                }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", damping: 26, stiffness: 300 }}
+            >
               <CardFace
                 event={event}
-                date={dates[index + 1]}
-                position={index + 2}
+                date={date}
+                position={index + 1}
                 total={dates.length}
                 yours={undefined}
                 calendar={NO_CALENDAR}
                 clashes={[]}
                 compact
               />
-            </div>
-          )}
-          {answered >= dates.length && (
-            <motion.p
-              className="absolute inset-0 flex items-center justify-center text-[20px] font-bold text-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.15, duration: 0.2 }}
-            >
-              {t.swipe.doneTitle}
-            </motion.p>
-          )}
-          <AnimatePresence initial={false} custom={ANSWERS[answered - 1]}>
-            {answered < dates.length && (
-              <motion.div
-                key={date.id}
-                className="absolute inset-0 z-10"
-                custom={ANSWERS[answered - 1]}
+              {/* The answer it goes with, stamped on as the real card does (SwipeCard). */}
+              <motion.span
                 variants={{
-                  // Solid from the start: see-through, the card under it would show in its text.
-                  enter: { scale: 0.96, y: 8, opacity: 1 },
-                  center: { scale: 1, y: 0, opacity: 1 },
-                  exit: (to: EventResponse) => ({
-                    x: to === "accepted" ? 640 : -640,
-                    rotate: to === "accepted" ? 18 : -18,
-                    opacity: 0,
-                    transition: { duration: 0.42, ease: [0.3, 0, 0.8, 0.6] },
-                  }),
+                  enter: { opacity: 0 },
+                  center: { opacity: 0 },
+                  exit: { opacity: 1, transition: { duration: 0.08 } },
                 }}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: "spring", damping: 26, stiffness: 300 }}
+                className={cn(
+                  "absolute top-6 rounded-lg border-[3px] px-2 py-0.5 text-[24px] font-extrabold uppercase tracking-wide",
+                  ANSWERS[index] === "accepted"
+                    ? "left-5 -rotate-12 border-emerald-500 text-emerald-600"
+                    : "right-5 rotate-12 border-rose-500 text-rose-600",
+                )}
               >
-                <CardFace
-                  event={event}
-                  date={date}
-                  position={index + 1}
-                  total={dates.length}
-                  yours={undefined}
-                  calendar={NO_CALENDAR}
-                  clashes={[]}
-                  compact
-                />
-                {/* The answer it goes with, stamped on as the real card does (SwipeCard). */}
-                <motion.span
-                  variants={{
-                    enter: { opacity: 0 },
-                    center: { opacity: 0 },
-                    exit: { opacity: 1, transition: { duration: 0.08 } },
-                  }}
-                  className={cn(
-                    "absolute top-6 rounded-lg border-[3px] px-2 py-0.5 text-[24px] font-extrabold uppercase tracking-wide",
-                    ANSWERS[index] === "accepted"
-                      ? "left-5 -rotate-12 border-emerald-500 text-emerald-600"
-                      : "right-5 rotate-12 border-rose-500 text-rose-600",
-                  )}
-                >
-                  {ANSWERS[index] === "accepted" ? t.swipe.can : t.swipe.cant}
-                </motion.span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                {ANSWERS[index] === "accepted" ? t.swipe.can : t.swipe.cant}
+              </motion.span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
-});
-
-export default PhoneVote;
+}
