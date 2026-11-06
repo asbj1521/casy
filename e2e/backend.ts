@@ -175,6 +175,8 @@ export class FakeBackend {
         return body.create === true
           ? ok({ connectionId: "c-phone", calendars: 1, busyBlocks: 0 })
           : ok({ gone: true });
+      case "day-facts":
+        return ok({ saved: true });
       case "oauth-google-start":
       case "oauth-outlook-start":
         return ok({ url: `https://consent.test/${name}` });

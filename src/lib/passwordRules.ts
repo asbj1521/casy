@@ -1,7 +1,7 @@
 /**
  * What makes a password good enough for Casy, checked in the browser wherever
- * one is chosen (PasswordForm) and again after signing in with one (to nudge
- * people with an older, weaker password to pick a new one).
+ * one is chosen (PasswordForm). After signing in, only a known leak or the
+ * server's own rules nudge someone to pick a new one (#147).
  *
  * The length and letters-and-numbers rules match what Supabase Auth enforces
  * on the server (`minimum_password_length` and `password_requirements =

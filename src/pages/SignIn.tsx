@@ -21,7 +21,7 @@ import { cardArrived } from "@/lib/cardTransition";
 import { isNativeApp } from "@/lib/nativeApp";
 import { returnPathAfterSignIn } from "@/lib/signInReturn";
 import { hasSeenCalendarOnboarding } from "@/lib/calendarOnboarding";
-import { checkPassword, passesChecks, personalWords, timesLeaked } from "@/lib/passwordRules";
+import { timesLeaked } from "@/lib/passwordRules";
 import { supabaseAuth } from "@/lib/supabase";
 import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -265,8 +265,9 @@ export default function SignIn() {
     }
     // A password chosen before today's rules gets a note asking for a new
     // one (WeakPasswordNotice). Supabase flags the ones its own rules catch;
-    // the rest (a name in it, a known leak) are checked here, after the
-    // redirect, so signing in never waits on them.
+    // a known leak is checked here, after the redirect, so signing in never
+    // waits on it. A word from the email in a long password isn't weak: only
+    // choosing a new one refuses that (PasswordForm).
     const userId = data.user?.id;
     if (!userId) return;
     if (data.weakPassword?.reasons?.length) {
@@ -274,10 +275,7 @@ export default function SignIn() {
       return;
     }
     void (async () => {
-      if (
-        !passesChecks(checkPassword(typed, personalWords([address]))) ||
-        (await timesLeaked(typed))
-      ) {
+      if (await timesLeaked(typed)) {
         flagWeakPassword(userId);
       }
     })();

@@ -96,6 +96,8 @@ const SHEETS_AFTER_MS = 1500;
 
 /** "Not now" on the import card (#132), kept until the app is opened again. */
 const phoneImportPutAway = { done: false };
+/** The month is seen first; the question about the phone's calendar comes after (#147). */
+const IMPORT_ASK_AFTER_MS = 3000;
 
 export default function PhoneCalendar() {
   const t = useT();
@@ -124,6 +126,11 @@ export default function PhoneCalendar() {
   // then the date agreed (AgreedCard). Until the calendars are listed the app
   // can't tell whether the card comes, so the AI question waits for that too.
   const importShown = phoneImport.on && !importLater;
+  const [importAskDue, setImportAskDue] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setImportAskDue(true), IMPORT_ASK_AFTER_MS);
+    return () => window.clearTimeout(id);
+  }, []);
   const importPending = isNativeApp && calendar.loading;
   const [aiAsking, setAiAsking] = useState(false);
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
@@ -673,7 +680,7 @@ export default function PhoneCalendar() {
         <PhoneCalendarAccess
           phone={phoneImport}
           // Never over another sheet or a day: it waits for the bare month.
-          open={!importLater && !overMonth && dayShown === null}
+          open={importAskDue && !importLater && !overMonth && dayShown === null}
           onNotNow={() => {
             phoneImportPutAway.done = true;
             setImportLater(true);

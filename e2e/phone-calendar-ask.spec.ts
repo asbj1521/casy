@@ -203,3 +203,13 @@ test.describe("with other calendars connected, but not this phone", () => {
     await expect(card(page)).toHaveCount(0);
   });
 });
+
+test("the month shows first; the card comes about three seconds later (#147)", async ({ page }) => {
+  await asTheApp(page, "granted");
+  await page.goto("/calendar-overview");
+  await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
+  await expect(card(page)).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible({
+    timeout: 8000,
+  });
+});
