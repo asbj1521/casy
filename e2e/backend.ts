@@ -96,6 +96,14 @@ export class FakeBackend {
             (body.categoryName as string | null | undefined) ?? null;
           this.changed();
         }
+        if (source && "priority" in body) {
+          source.priority = body.priority as typeof source.priority;
+          this.changed();
+        }
+        if (source && "included" in body) {
+          (source as { included?: boolean }).included = body.included as boolean;
+          this.changed();
+        }
         return ok({});
       }
       case "calendar-categorize": {

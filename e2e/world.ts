@@ -277,7 +277,7 @@ function overviewCalendars(conns: CalendarConnectionStatus[]): OverviewCalendar[
       categoryName: (s as { category_name?: string | null }).category_name ?? null,
       purposeGuessed: s.purpose_source === "ai" && s.purpose !== null,
       priority: s.priority,
-      included: true,
+      included: (s as { included?: boolean }).included ?? true,
       total: busyOf(ME.id).filter((b) => b.calendarId === s.id).length,
       provider: c.provider,
       account: c.account_label,

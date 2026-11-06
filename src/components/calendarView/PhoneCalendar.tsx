@@ -12,6 +12,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
 
 import AgreedCard from "@/components/calendarView/AgreedCard";
+import { useTourOffer } from "@/components/calendarTour/useTourOffer";
+import { tourCalendars } from "@/lib/calendarTour";
 import CalendarsSheet from "@/components/calendarView/CalendarsSheet";
 import HomeNextStep from "@/components/calendarView/HomeNextStep";
 import DayView from "@/components/calendarView/dayView/DayView";
@@ -78,6 +80,7 @@ const APP_TOP_GAP = "0.5rem";
 // Planning from here (#126) brings the whole scheduler with it: put on the
 // page only once a finger touches Planlæg.
 const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFromCalendar"));
+const CalendarTour = lazy(() => import("@/components/calendarTour/CalendarTour"));
 
 /**
  * The phone's home page (#169), My calendar: your busy time as Apple
@@ -184,6 +187,12 @@ export default function PhoneCalendar() {
     if (state?.fromMonth) navigate(-1 - (state.sheetDepth ?? 0));
     else navigate({ search: "" }, { replace: true });
   };
+  // The guided calendar setup (#221, the app only), in the address like the sheets;
+  // a new one each time it opens.
+  const tourOpen = isNativeApp && params.has("tour");
+  const tourWanted = useOnceTrue(tourOpen);
+  const [tour, setTour] = useState({ open: tourOpen, run: 0 });
+  if (tourOpen !== tour.open) setTour({ open: tourOpen, run: tour.run + (tourOpen ? 1 : 0) });
   // Planlæg (#126), in the address too, so the phone's back closes it.
   const planOpen = params.has("plan");
   // Planlæg stays on the page until its sheet has shrunk back into the pill
@@ -365,6 +374,20 @@ export default function PhoneCalendar() {
     calendar,
     months,
     idle: bare && !importShown && !aiAsking,
+  });
+  // Offered once, after the import card and the AI question (#221).
+  useTourOffer({
+    ready:
+      bare &&
+      !importShown &&
+      !importPending &&
+      !aiAsking &&
+      !flight &&
+      !homeVotes.agreed &&
+      !calendar.loading &&
+      !calendar.error,
+    count: tourCalendars(calendars).length,
+    onOffer: () => navigate({ search: "?tour" }, { state: { fromMonth: true } }),
   });
   // Times a whole group is free (#171), once the page has settled.
   const primeDates = usePrimeDates(settled);
@@ -763,7 +786,21 @@ export default function PhoneCalendar() {
         connectedCount={calendar.loading ? null : connectedCount}
         onSetVisible={setCalendarsVisible}
         visibilityError={visibilityError}
+        // In the sheet's place, so closing it comes back to the month.
+        onTour={() => navigate({ search: "?tour" }, { replace: true, state: location.state })}
       />
+
+      {tourWanted && !calendar.loading && (
+        <Suspense fallback={null}>
+          <CalendarTour
+            key={tour.run}
+            open={tourOpen}
+            onClose={closeOverlay}
+            calendars={calendars}
+            colorOf={calendar.colorOf}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -150,7 +150,7 @@ The rows in Svar nu, Kommende and Tidligere (`myEvents/phone/EventsSheet`, `Even
 
 ### Phase 4: the small sheets (M to L)
 
-Kalendere (`CalendarListPanel`: ticks, categories, priorities, the primary calendar), the calendars page (`CalendarsSection`: Denne telefon, Apple Calendar's form, an ICS link, Synkronisér nu, remove; Google and Outlook still not offered in the app), Tilføj til kalender (`TellCasySheet` with native speech), the trip sheet, Tid til hinanden's sheet (Planlæg hands back to the web's plan until Phase 5), the AI consent ask, the push ask, Opdater Casy (`UpdateRequired`). CasyCore gains `casyEntries.ts`, `trips.ts`, `tripLegBook.ts`, `tripView.ts`, `casyTripEntry.ts`, `primeDates.ts`.
+Kalendere (`CalendarListPanel`: ticks, categories, priorities, the primary calendar), the calendars page (`CalendarsSection`: Denne telefon, Apple Calendar's form, an ICS link, Synkronisér nu, remove; Google and Outlook still not offered in the app), Tilføj til kalender (`TellCasySheet` with native speech), the trip sheet, Tid til hinanden's sheet (Planlæg hands back to the web's plan until Phase 5), the guided calendar setup (#221), the AI consent ask, the push ask, Opdater Casy (`UpdateRequired`). CasyCore gains `casyEntries.ts`, `trips.ts`, `tripLegBook.ts`, `tripView.ts`, `casyTripEntry.ts`, `primeDates.ts`.
 
 ### Phase 5: the home page (XL)
 

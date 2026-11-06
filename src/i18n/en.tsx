@@ -1242,6 +1242,31 @@ export const en: Messages = {
     sending: "Labelling…",
     cancel: "Cancel",
   },
+  calendarTour: {
+    title: "Your calendars",
+    row: "Go through calendars",
+    rowDetail: "One at a time",
+    next: "Next",
+    finish: "Finish",
+    step: (i: number, n: number) => `Calendar ${i} of ${n}`,
+    events: (n: number) => (n === 1 ? "1 event" : `${n} events`),
+    category: "What kind of calendar is it?",
+    importance: "How much does it matter?",
+    off: "Doesn't count",
+    effects: {
+      off: "Casy ignores it, and it isn't shown on your calendar.",
+      skip: "Casy may put events on top of it if no date within a week works without.",
+      normal: "Busy, but for trips and holidays you can take time off work and school.",
+      never: "Always busy, also when trips are being planned.",
+    },
+    doneTitle: "Your calendars are ready",
+    doneBody:
+      "Casy now looks for dates based on what you chose. You can always change it under Calendars.",
+    see: "See my calendar",
+    someFailed: (n: number) =>
+      n === 1 ? "1 calendar couldn't be saved." : `${n} calendars couldn't be saved.`,
+    retry: "Try again",
+  },
   calendarView: {
     title: "My calendar",
     intro: "What Casy sees in your calendars: only when you're busy, never what you're doing.",

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, type RefObject } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, ListChecks } from "lucide-react";
 
 import CalendarListPanel from "@/components/CalendarListPanel";
 import BottomSheet from "@/components/ui/BottomSheet";
@@ -9,6 +9,7 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { PUSH, pushTransition } from "@/components/ui/push";
 import { useT } from "@/i18n/lang";
 import type { OverviewCalendar } from "@/lib/calendarOverview";
+import { isNativeApp } from "@/lib/nativeApp";
 
 // Connecting calendars brings its forms along: fetched as it first opens.
 const ConnectedCalendars = lazy(() => import("@/components/calendarView/ConnectedCalendars"));
@@ -32,6 +33,7 @@ export default function CalendarsSheet({
   connectedCount,
   onSetVisible,
   visibilityError,
+  onTour,
 }: {
   open: boolean;
   onClose: () => void;
@@ -43,6 +45,8 @@ export default function CalendarsSheet({
   connectedCount: number | null;
   onSetVisible: (calendarIds: string[], visible: boolean) => void;
   visibilityError: string | null;
+  /** The guided setup (#221, the app only): your calendars one at a time. */
+  onTour: () => void;
 }) {
   const t = useT();
   const words = t.calendarView;
@@ -107,6 +111,14 @@ export default function CalendarsSheet({
                     )
                   }
                 />
+                {isNativeApp && (
+                  <ListRow
+                    icon={ListChecks}
+                    label={t.calendarTour.row}
+                    detail={t.calendarTour.rowDetail}
+                    onClick={onTour}
+                  />
+                )}
               </ListGroup>
               <CalendarListPanel
                 introInTip

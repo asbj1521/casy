@@ -1291,6 +1291,31 @@ export const da = {
     sending: "Vurderer…",
     cancel: "Annuller",
   },
+  calendarTour: {
+    title: "Dine kalendere",
+    row: "Gennemgå kalendere",
+    rowDetail: "Én ad gangen",
+    next: "Næste",
+    finish: "Færdig",
+    step: (i: number, n: number) => `Kalender ${i} af ${n}`,
+    events: (n: number) => (n === 1 ? "1 aftale" : `${n} aftaler`),
+    category: "Hvad er det for en kalender?",
+    importance: "Hvor meget betyder den?",
+    off: "Tæller ikke med",
+    effects: {
+      off: "Casy ser bort fra den, og den vises ikke på din kalender.",
+      skip: "Casy må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden.",
+      normal: "Optaget, men til ture og ferier kan du tage fri fra arbejde og skole.",
+      never: "Altid optaget, også når der planlægges ture.",
+    },
+    doneTitle: "Så er dine kalendere klar",
+    doneBody:
+      "Casy leder nu efter datoer ud fra det, du har valgt. Du kan altid ændre det under Kalendere.",
+    see: "Se min kalender",
+    someFailed: (n: number) =>
+      n === 1 ? "1 kalender kunne ikke gemmes." : `${n} kalendere kunne ikke gemmes.`,
+    retry: "Prøv igen",
+  },
   calendarView: {
     title: "Min kalender",
     intro: "Det, Casy ser i dine kalendere: kun hvornår du er optaget, aldrig hvad du laver.",
