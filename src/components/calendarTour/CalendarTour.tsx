@@ -10,7 +10,7 @@ import FlowButton from "@/components/ui/FlowButton";
 import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
 import { CATEGORIES, ownCategories, type OverviewCalendar } from "@/lib/calendarOverview";
-import { changesFrom, choiceOf, tourCalendars, type TourChoice } from "@/lib/calendarTour";
+import { changesFrom, choiceOf, tourSteps, type TourChoice } from "@/lib/calendarTour";
 import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import TourCard from "./TourCard";
@@ -38,25 +38,32 @@ const CARD = {
  * guess is already ticked, so "Næste" alone takes care of a good one. It moves on
  * at once and saves behind it: a card waiting on the network would spoil what
  * makes this quick, and anything that failed is said at the end. What it saves
- * is what the calendar list's pickers save.
+ * is what the calendar list's pickers save. Opened from Kalendere, never by
+ * itself: it is a chore to choose, not one to land in.
  */
 export default function CalendarTour({
   open,
   onClose,
   calendars,
   colorOf,
+  seen,
+  onSeen,
 }: {
   open: boolean;
   onClose: () => void;
   calendars: OverviewCalendar[];
   colorOf: (calendarId: string) => string;
+  /** Those already gone through: the tour takes those still wanting a look. */
+  seen: ReadonlySet<string>;
+  /** One has been gone through, so the Kalendere button stops counting it. */
+  onSeen: (calendarId: string) => void;
 }) {
   const t = useT();
   const words = t.calendarTour;
   const queryClient = useQueryClient();
 
   // The calendars it set out with, in the same order however saving changes them.
-  const [ids] = useState(() => tourCalendars(calendars).map((c) => c.id));
+  const [ids] = useState(() => tourSteps(calendars, seen).map((c) => c.id));
   const steps = useMemo(
     () =>
       ids.flatMap((id) => {
@@ -104,6 +111,7 @@ export default function CalendarTour({
   const goOn = () => {
     if (!current || !choice) return;
     save(current.id, changesFrom(current, choice));
+    onSeen(current.id);
     setForward(true);
     setIndex(index + 1);
     haptic(index + 1 >= steps.length ? "success" : "answer");

@@ -34,6 +34,7 @@ export default function CalendarsSheet({
   onSetVisible,
   visibilityError,
   onTour,
+  toSort,
 }: {
   open: boolean;
   onClose: () => void;
@@ -47,6 +48,8 @@ export default function CalendarsSheet({
   visibilityError: string | null;
   /** The guided setup (#221, the app only): your calendars one at a time. */
   onTour: () => void;
+  /** How many calendars aren't set up yet: then it is what comes first here, and says so. */
+  toSort: number;
 }) {
   const t = useT();
   const words = t.calendarView;
@@ -66,6 +69,25 @@ export default function CalendarsSheet({
     if (depth > 0) navigate(-1);
     else navigate({ search: "?calendars" }, { replace: true, state });
   };
+
+  // The guided setup (#221): first and in orange while something waits for it.
+  const tourRow = (
+    <ListRow
+      icon={ListChecks}
+      tone={toSort > 0 ? "primary" : "default"}
+      label={t.calendarTour.row}
+      detail={
+        toSort > 0 ? (
+          // All of it: this line is why it is worth doing.
+          <span className="whitespace-normal">{t.calendarTour.rowUnsorted(toSort)}</span>
+        ) : (
+          t.calendarTour.rowDetail
+        )
+      }
+      value={toSort > 0 ? toSort : undefined}
+      onClick={onTour}
+    />
+  );
 
   return (
     <BottomSheet
@@ -99,6 +121,7 @@ export default function CalendarsSheet({
           ) : (
             <>
               <ListGroup className="mb-4 mt-0">
+                {isNativeApp && toSort > 0 && tourRow}
                 <ListRow
                   icon={CalendarPlus}
                   label={t.calendarAccounts.row}
@@ -111,14 +134,7 @@ export default function CalendarsSheet({
                     )
                   }
                 />
-                {isNativeApp && (
-                  <ListRow
-                    icon={ListChecks}
-                    label={t.calendarTour.row}
-                    detail={t.calendarTour.rowDetail}
-                    onClick={onTour}
-                  />
-                )}
+                {isNativeApp && toSort === 0 && tourRow}
               </ListGroup>
               <CalendarListPanel
                 introInTip

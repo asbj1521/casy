@@ -4,10 +4,12 @@ import type { OverviewCalendar } from "@/lib/calendarOverview";
 import {
   changesFrom,
   choiceOf,
-  rememberTourOffered,
+  readTourSeen,
+  rememberTourSeen,
   textOn,
   tourCalendars,
-  wasTourOffered,
+  tourSteps,
+  unsortedCalendars,
 } from "@/lib/calendarTour";
 
 const calendar = (over: Partial<OverviewCalendar> = {}): OverviewCalendar =>
@@ -95,7 +97,39 @@ describe("textOn", () => {
   });
 });
 
-describe("the tour's flag", () => {
+describe("the calendars wanting a look", () => {
+  const none = new Set<string>();
+
+  it("are those with no category or only Casy's guess", () => {
+    const list = [
+      calendar({ id: "blank" }),
+      calendar({ id: "guess", purpose: "work", purposeGuessed: true }),
+      calendar({ id: "sorted", purpose: "work" }),
+    ];
+    expect(unsortedCalendars(list, none).map((c) => c.id)).toEqual(["blank", "guess"]);
+  });
+
+  it("leave out what doesn't count, and Casy's own", () => {
+    const list = [
+      calendar({ id: "off", included: false }),
+      calendar({ id: "h", provider: "builtin" }),
+    ];
+    expect(unsortedCalendars(list, none)).toEqual([]);
+  });
+
+  it("leave out one already gone through, so the count can reach nothing", () => {
+    expect(unsortedCalendars([calendar({ id: "blank" })], new Set(["blank"]))).toEqual([]);
+  });
+
+  it("are what the tour goes through, or with none left, every calendar", () => {
+    const blank = calendar({ id: "blank" });
+    const sorted = calendar({ id: "sorted", purpose: "work" });
+    expect(tourSteps([blank, sorted], none).map((c) => c.id)).toEqual(["blank"]);
+    expect(tourSteps([sorted], none).map((c) => c.id)).toEqual(["sorted"]);
+  });
+});
+
+describe("what has been gone through", () => {
   beforeEach(() => {
     const items = new Map<string, string>();
     vi.stubGlobal("localStorage", {
@@ -106,10 +140,15 @@ describe("the tour's flag", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("is per person", () => {
-    expect(wasTourOffered("a")).toBe(false);
-    rememberTourOffered("a");
-    expect(wasTourOffered("a")).toBe(true);
-    expect(wasTourOffered("b")).toBe(false);
+  it("is remembered per person", () => {
+    expect(readTourSeen("a").size).toBe(0);
+    rememberTourSeen("a", new Set(["c1"]));
+    expect([...readTourSeen("a")]).toEqual(["c1"]);
+    expect(readTourSeen("b").size).toBe(0);
+  });
+
+  it("survives something unreadable in storage", () => {
+    localStorage.setItem("casy-calendar-tour-seen:a", "not json");
+    expect(readTourSeen("a").size).toBe(0);
   });
 });

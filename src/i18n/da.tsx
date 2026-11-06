@@ -1295,6 +1295,11 @@ export const da = {
     title: "Dine kalendere",
     row: "Gennemgå kalendere",
     rowDetail: "Én ad gangen",
+    rowUnsorted: (n: number) =>
+      n === 1
+        ? "1 kalender er ikke sat op endnu. Det giver bedre datoer."
+        : `${n} kalendere er ikke sat op endnu. Det giver bedre datoer.`,
+    badge: (n: number) => (n === 1 ? "1 kalender er ikke sat op" : `${n} kalendere er ikke sat op`),
     next: "Næste",
     finish: "Færdig",
     step: (i: number, n: number) => `Kalender ${i} af ${n}`,

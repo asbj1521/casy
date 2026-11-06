@@ -32,6 +32,7 @@ export default function HomeToolbar({
   tellLabel,
   onTell,
   onToday,
+  toSort = 0,
 }: {
   /** The stand-in row on the month the toolbar sits over. */
   at: RefObject<HTMLElement | null>;
@@ -50,6 +51,8 @@ export default function HomeToolbar({
   tellLabel: string;
   onTell?: () => void;
   onToday: () => void;
+  /** Calendars not set up yet (#221): a count on Kalendere, as Aftaler and Profil have theirs. */
+  toSort?: number;
 }) {
   const t = useT();
   const words = t.calendarView;
@@ -88,37 +91,54 @@ export default function HomeToolbar({
       className="fixed z-[41] flex items-start justify-between px-4"
       style={{ top: place.top, left: place.left, width: place.width }}
     >
-      <motion.button
-        ref={listRef}
-        layout
-        transition={move}
-        type="button"
-        onClick={day ? onBack : onList}
-        aria-label={day ? t.swipe.showMonth(monthLabel) : undefined}
-        // Its sheet drops out of it from the top (#169), standing in for it.
-        className={cn(
-          "glass-pill flex h-10 items-center overflow-hidden rounded-full text-[1.0625rem] text-primary transition-opacity duration-200",
-          day ? "gap-0.5 pl-2 pr-4" : "gap-1.5 pl-3.5 pr-4",
-          listOpen && !day && "opacity-0",
-        )}
-        style={{ borderRadius: 9999 }}
-      >
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.span
-            key={day ? `day-${monthLabel}` : "month"}
-            layout="position"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={reduce ? { duration: 0 } : { duration: 0.18 }}
-            className="flex items-center gap-[inherit] whitespace-nowrap"
+      <div className="relative">
+        <motion.button
+          ref={listRef}
+          layout
+          transition={move}
+          type="button"
+          onClick={day ? onBack : onList}
+          aria-label={day ? t.swipe.showMonth(monthLabel) : undefined}
+          // Its sheet drops out of it from the top (#169), standing in for it.
+          className={cn(
+            "glass-pill flex h-10 items-center overflow-hidden rounded-full text-[1.0625rem] text-primary transition-opacity duration-200",
+            day ? "gap-0.5 pl-2 pr-4" : "gap-1.5 pl-3.5 pr-4",
+            listOpen && !day && "opacity-0",
+          )}
+          style={{ borderRadius: 9999 }}
+        >
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={day ? `day-${monthLabel}` : "month"}
+              layout="position"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={reduce ? { duration: 0 } : { duration: 0.18 }}
+              className="flex items-center gap-[inherit] whitespace-nowrap"
+            >
+              {day ? <ChevronLeft className="h-6 w-6" /> : <Layers className="h-5 w-5" />}
+              {/* With large text "‹" alone: its label says which month (aria-label). */}
+              {day ? (
+                <span className="large-text:hidden">{monthLabel}</span>
+              ) : (
+                words.calendarsButton
+              )}
+              {!day && toSort > 0 && (
+                <span className="sr-only">{t.calendarTour.badge(toSort)}</span>
+              )}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
+        {toSort > 0 && !day && !listOpen && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-cta px-1 text-[11px] font-semibold leading-none text-white"
           >
-            {day ? <ChevronLeft className="h-6 w-6" /> : <Layers className="h-5 w-5" />}
-            {/* With large text "‹" alone: its label says which month (aria-label). */}
-            {day ? <span className="large-text:hidden">{monthLabel}</span> : words.calendarsButton}
-          </motion.span>
-        </AnimatePresence>
-      </motion.button>
+            {toSort}
+          </span>
+        )}
+      </div>
 
       {/* One capsule round everything on the right; the switch slides in on its left. */}
       <div className="glass-pill flex h-10 shrink-0 items-center overflow-hidden whitespace-nowrap rounded-full text-primary">

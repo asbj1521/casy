@@ -141,10 +141,6 @@ export const test = base.extend<Options & Fixtures>({
         if (value && !sessionStorage.getItem("e2e-seeded")) {
           localStorage.setItem(key, value);
         }
-        // Only e2e/calendar-tour.spec.ts wants the guided setup offered (#221).
-        if (!sessionStorage.getItem("e2e-seeded")) {
-          localStorage.setItem("casy-calendar-tour-offered:p-mia", "1");
-        }
         sessionStorage.setItem("e2e-seeded", "1");
       },
       { key: SESSION_KEY, value: signedIn ? JSON.stringify(session()) : "" },

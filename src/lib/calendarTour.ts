@@ -1,7 +1,7 @@
 /**
  * The guided calendar setup (#221): the pure part. Which calendars come, the
  * slider's four stops as they map onto what a calendar stores, what a card
- * changed, and whether it has been offered yet.
+ * changed, and which calendars still want a look.
  */
 import type { CalendarChange } from "@/api/calendars";
 import type { OverviewCalendar } from "@/lib/calendarOverview";
@@ -76,10 +76,42 @@ export function textOn(rgb: string): "#ffffff" | "#1c1c1e" {
   return luminance > 0.3 ? "#1c1c1e" : "#ffffff";
 }
 
-const offeredKey = (userId: string) => `casy-calendar-tour-offered:${userId}`;
+const seenKey = (userId: string) => `casy-calendar-tour-seen:${userId}`;
 
-export const wasTourOffered = (userId: string): boolean => readStored(offeredKey(userId)) === "1";
+/** The calendars this person has been through, on this phone. */
+export function readTourSeen(userId: string): Set<string> {
+  try {
+    const ids: unknown = JSON.parse(readStored(seenKey(userId)) ?? "[]");
+    return new Set(Array.isArray(ids) ? ids.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
 
-export function rememberTourOffered(userId: string): void {
-  writeStored(offeredKey(userId), "1");
+export function rememberTourSeen(userId: string, seen: ReadonlySet<string>): void {
+  writeStored(seenKey(userId), JSON.stringify([...seen]));
+}
+
+/**
+ * The calendars still wanting a look, which the Kalendere button counts: counting,
+ * and with no category or only Casy's guess. One gone through and left without a
+ * category isn't asked about again (`seen`), so the count can always reach nothing,
+ * and a calendar connected later brings it back.
+ */
+export function unsortedCalendars(
+  calendars: OverviewCalendar[],
+  seen: ReadonlySet<string>,
+): OverviewCalendar[] {
+  return tourCalendars(calendars).filter(
+    (c) => c.included && (c.purpose === null || c.purposeGuessed) && !seen.has(c.id),
+  );
+}
+
+/** What the tour goes through: only those wanting a look, or with none left, all of them. */
+export function tourSteps(
+  calendars: OverviewCalendar[],
+  seen: ReadonlySet<string>,
+): OverviewCalendar[] {
+  const unsorted = unsortedCalendars(calendars, seen);
+  return unsorted.length > 0 ? unsorted : tourCalendars(calendars);
 }
