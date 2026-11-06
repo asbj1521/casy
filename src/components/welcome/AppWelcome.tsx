@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 
-import WelcomePile from "@/components/welcome/WelcomePile";
+import WelcomeStage from "@/components/welcome/WelcomeStage";
 import { useT } from "@/i18n/lang";
 
 /**
- * The iPhone app's first screen, signed out (#151): what Casy does, shown by
- * the paper pile in small, one line on it, and one way on, to sign in. No
- * language switch (the app starts in the phone's language; Settings changes it). The
- * website keeps its landing page.
+ * The iPhone app's first screen, signed out (#151, #228): a real phone playing
+ * the app above, and below it, never moving, one line and the two ways on, to
+ * make an account or to log in. No language switch (the app starts in the
+ * phone's language; Settings changes it). The website keeps its landing page.
  */
 export default function AppWelcome() {
   const t = useT();
@@ -17,20 +17,24 @@ export default function AppWelcome() {
       style={{ height: "calc(100dvh - env(safe-area-inset-top))" }}
     >
       <div className="min-h-0 flex-1">
-        <WelcomePile />
+        <WelcomeStage />
       </div>
-      {/* Up over the calendar's faded bottom edge. */}
-      <div className="relative -mt-6 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div className="relative px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 text-center">
         <h1 className="text-balance text-[2rem] font-bold leading-tight tracking-tight text-foreground">
           {t.welcome.headline}
         </h1>
-        <p className="mt-2 text-[1.0625rem] text-muted-foreground">{t.welcome.body}</p>
         <Link
-          to="/sign-in"
-          className="mt-6 flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
+          to="/sign-in?signup=1"
+          className="mt-5 flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
         >
           {t.welcome.start}
         </Link>
+        <p className="mt-4 text-[0.9375rem] text-muted-foreground">
+          {t.welcome.haveAccount}{" "}
+          <Link to="/sign-in" className="hit font-semibold text-foreground">
+            {t.nav.signIn}
+          </Link>
+        </p>
       </div>
     </main>
   );

@@ -145,6 +145,8 @@ function App() {
                   <Route path="/sign-in" element={<SignIn />} />
                   {MotionPlayground && <Route path="/dev/motion" element={<MotionPlayground />} />}
                   {TripsPlayground && <Route path="/dev/trips" element={<TripsPlayground />} />}
+                  {/* Dev only: the app's welcome screen in any browser, to tune it (#228). */}
+                  {import.meta.env.DEV && <Route path="/dev/welcome" element={<AppWelcome />} />}
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/support" element={<Support />} />

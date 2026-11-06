@@ -62,22 +62,9 @@ export const en: Messages = {
   },
   welcome: {
     headline: "Find the day everyone can make it.",
-    body: "Casy lays your calendars on top of each other and finds the dates that suit everyone.",
     start: "Get started",
-    allCan: (n: number) => `All ${n} can make it`,
+    haveAccount: "Already have an account?",
     back: "Back",
-    yourCalendar: "Your calendar",
-    calendarOf: (name: string) => `${name}'s calendar`,
-    you: "You",
-    steps: {
-      pile: "Your calendars are laid on top of each other",
-      list: "Casy finds the dates that suit everyone",
-      swipe: "Friends swipe yes or no",
-      added: "The event lands in everyone's calendar",
-    },
-    event: "Board games night",
-    at: (time: string) => `At ${time}`,
-    agreed: "Agreed",
   },
   updateRequired: {
     title: "Update Casy",

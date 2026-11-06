@@ -19,7 +19,7 @@ import { buildMonthLayout } from "@/lib/calendarOverview";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { glideScroll } from "@/lib/glideScroll";
 import { capitalize, dayLabel, monthName, monthShortName } from "@/lib/format";
-import { layoutWeek, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
+import { LANE_PX, layoutWeek, MORE_PX, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
 import { MONTH_LABEL_PX, monthScrollTop } from "@/lib/monthScroll";
 import { useIsDark } from "@/hooks/useIsDark";
 import { shade, tint } from "@/lib/tint";
@@ -32,8 +32,6 @@ const TZ = APP_TIME_ZONE;
 /** How long the month keeps re-applying its opening position while the layout settles. */
 const OPEN_SETTLE_MS = 350;
 const LANES = 3;
-const LANE_PX = 20;
-const MORE_PX = 14;
 /** How long the month rests on opening before it glides to what it reveals. */
 const REVEAL_DELAY_MS = 450;
 
@@ -359,7 +357,6 @@ export function MonthLayer({
   wrapRow,
   lanes,
   heading,
-  owner,
 }: {
   /** The month's first local midnight. */
   month: number;
@@ -373,8 +370,6 @@ export function MonthLayer({
   lanes?: number;
   /** In place of the short month name over the first day (the welcome screen's own heading). */
   heading?: ReactNode;
-  /** Shown in the empty days before the 1st, as whose calendar it is (#151). */
-  owner?: ReactNode;
 }) {
   const [today] = useState(() => startOfDay(Date.now(), TZ));
   return (
@@ -394,7 +389,6 @@ export function MonthLayer({
         wrapRow={wrapRow}
         lanes={lanes}
         heading={heading}
-        owner={owner}
       />
     </div>
   );
@@ -417,7 +411,6 @@ interface MonthSectionProps {
   wrapRow?: (w: number, count: number, row: ReactNode) => ReactNode;
   lanes?: number;
   heading?: ReactNode;
-  owner?: ReactNode;
 }
 
 /**
@@ -451,7 +444,6 @@ const MonthSection = memo(function MonthSection({
   wrapRow,
   lanes = LANES,
   heading,
-  owner,
 }: MonthSectionProps) {
   // Calendar colours are worked out in code, so they follow the theme here.
   const dark = useIsDark();
@@ -510,15 +502,6 @@ const MonthSection = memo(function MonthSection({
             <span className="absolute left-1 top-0.5 text-[10px] tabular-nums text-muted-foreground">
               {layout.weekNumbers[w]}
             </span>
-            {/* Whose calendar it is, in the empty days before the 1st. */}
-            {owner && w === 0 && first > 0 && (
-              <span
-                className="absolute left-0 top-0 flex h-10 items-center pl-6 pr-1"
-                style={{ width: `${(first / 7) * 100}%` }}
-              >
-                {owner}
-              </span>
-            )}
             <div className="grid grid-cols-7">
               {week.map((d, c) => (
                 <span key={d.key} className="relative flex h-10 items-center justify-center">

@@ -1,8 +1,8 @@
 /**
  * The iPhone app's own first screen (#151): signed out, the app opens on a
- * welcome screen (the paper pile in small, one line, Kom i gang) with no tab
- * bar; sign-in and the privacy policy lead back to it. The website keeps its
- * landing page.
+ * welcome screen (a phone playing the app, #228; one line, Kom i gang, Log ind)
+ * with no tab bar; the privacy policy leads back to sign-in. The website keeps
+ * its landing page.
  */
 import type { Locator, Page } from "@playwright/test";
 
@@ -28,8 +28,12 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await expect(page.getByRole("link", { name: "Kalender" })).toHaveCount(0);
   await expect(page.getByText("Dine data, kort fortalt")).toHaveCount(0);
 
-  await page.getByRole("link", { name: "Kom i gang" }).click();
+  // Kom i gang opens the sign-up tab, Log ind the log-in tab.
+  await page.getByRole("link", { name: "Log ind" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
+  await page.goto("/");
+  await page.getByRole("link", { name: "Kom i gang" }).click();
+  await expect(page).toHaveURL(/\/sign-in\?signup=1$/);
   // Sign-in is the one way on: no back link, and no sentence about signing in (#138).
   await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
   await expect(page.getByText("Log ind for at forbinde dine kalendere")).toHaveCount(0);
@@ -42,7 +46,7 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await page.getByRole("link", { name: "privatlivspolitik" }).click();
   await expect(page).toHaveURL(/\/privacy$/);
   await page.getByRole("button", { name: "Tilbage" }).click();
-  await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page).toHaveURL(/\/sign-in\?signup=1$/);
 });
 
 test("the website keeps its landing page, and its header leads to sign-in (#169)", async ({

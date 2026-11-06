@@ -67,22 +67,9 @@ export const da = {
   },
   welcome: {
     headline: "Find dagen, hvor alle kan.",
-    body: "Casy lægger jeres kalendere oven på hinanden og finder de datoer, der passer alle.",
     start: "Kom i gang",
-    allCan: (n: number) => `Alle ${n} kan`,
+    haveAccount: "Har du allerede en konto?",
     back: "Tilbage",
-    yourCalendar: "Din kalender",
-    calendarOf: (name: string) => `${name}${name.endsWith("s") ? "'" : "s"} kalender`,
-    you: "Dig",
-    steps: {
-      pile: "Jeres kalendere lægges oven på hinanden",
-      list: "Casy finder de datoer, der passer alle",
-      swipe: "Vennerne swiper ja eller nej",
-      added: "Aftalen lander i alles kalendere",
-    },
-    event: "Brætspilsaften",
-    at: (time: string) => `Kl. ${time}`,
-    agreed: "Aftalt",
   },
   updateRequired: {
     title: "Opdater Casy",
