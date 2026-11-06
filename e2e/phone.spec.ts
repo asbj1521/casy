@@ -436,7 +436,10 @@ test("someone with no name is offered to choose one, once per opening (#170)", a
   sheet = page.getByRole("dialog", { name: "Dit navn" });
   await sheet.getByRole("textbox", { name: "Navn" }).fill("Sara");
   await sheet.getByRole("button", { name: "Gem" }).click();
-  await expect(sheet).toHaveCount(0);
+  // After a reload, headless Chrome starts a sheet's exit animation 4 to 5 seconds
+  // late (the clock skew described at the top of this file), right at the default
+  // limit: the name is saved at once, the sheet only leaves late.
+  await expect(sheet).toHaveCount(0, { timeout: 20_000 });
   await expect(pill).toHaveCount(0);
   expect(backend.world.name).toBe("Sara");
 });
