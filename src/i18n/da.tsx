@@ -74,6 +74,7 @@ export const da = {
     event: "Brætspilsaften",
     candidates: "Mulige datoer",
     voting: "Afstemning af foreslåede datoer",
+    inEveryones: "Datoen står nu i alles kalender",
   },
   updateRequired: {
     title: "Opdater Casy",

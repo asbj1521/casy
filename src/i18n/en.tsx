@@ -69,6 +69,7 @@ export const en: Messages = {
     event: "Board games night",
     candidates: "Possible dates",
     voting: "Voting on the suggested dates",
+    inEveryones: "The date is now in everyone's calendar",
   },
   updateRequired: {
     title: "Update Casy",

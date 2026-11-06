@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { useLang, useT } from "@/i18n/lang";
-import { addDays } from "@/lib/zone";
+import InEveryonesCalendar from "./phone/InEveryonesCalendar";
 import PaperCalendar from "./phone/PaperCalendar";
 import PaperStack from "./phone/PaperStack";
 import PeopleJoining from "./phone/PeopleJoining";
@@ -13,15 +13,7 @@ import PhoneHome from "./phone/PhoneHome";
 import PhoneVote from "./phone/PhoneVote";
 import TravelBox, { FLIGHT_S, type BoxStage } from "./phone/TravelBox";
 import { dayCell, listScrolls } from "./phone/dayCell";
-import {
-  demoMonth,
-  demoPlan,
-  demoVote,
-  EVENT_CALENDAR,
-  FRIENDS,
-  GROUP_NAME,
-  TZ,
-} from "./phone/demo";
+import { demoMonth, demoPlan, demoVote, FRIENDS, GROUP_NAME } from "./phone/demo";
 import { DEVICE } from "./phone/geometry";
 import { STACK_DONE, THROWS } from "./phone/throws";
 
@@ -44,18 +36,16 @@ const HEADLINE_TEXT =
 const POSE_SPRING = { type: "spring", stiffness: 90, damping: 20 } as const;
 
 /**
- * Where the colour shape lies behind the phone at each step, as shares of its
- * panel. It never goes: it moves on with the phone, so the steps run together.
- * Never so high that it runs behind a headline.
+ * Where the colour shape lies behind the phone, as shares of its panel: one place
+ * for each way the phone stands, so it moves only when the phone does, and with
+ * it. Never so high that it runs behind a headline.
  */
 const SHAPE = {
-  group: { x: "-8%", y: "34%", rotate: -14, scale: 1.05 },
-  calendars: { x: "-20%", y: "46%", rotate: 10, scale: 1.1 },
-  found: { x: "6%", y: "40%", rotate: -8, scale: 1 },
+  flat: { x: "-8%", y: "34%", rotate: -14, scale: 1.05 },
   list: { x: "-16%", y: "38%", rotate: 20, scale: 1.05 },
   vote: { x: "-4%", y: "30%", rotate: -22, scale: 1.1 },
   agreed: { x: "-24%", y: "42%", rotate: 6, scale: 1.05 },
-  landed: { x: "0%", y: "36%", rotate: -10, scale: 1.1 },
+  finale: { x: "2%", y: "32%", rotate: -6, scale: 1.15 },
 };
 
 /** When a friend's face pops up around the phone and when it leaves for its row. */
@@ -69,6 +59,9 @@ const DISSOLVE_S = 1.15;
 /** One screen of the phone giving way to the next, zooming on the date when a day opens or closes. */
 const SCREEN_MOVE = { duration: 0.48, ease: [0.32, 0.72, 0, 1] } as const;
 
+/** How long the end stays: long enough to take in, since it is what all of it led up to. */
+const FINALE_S = 3.6;
+
 const AT = (() => {
   const joined = FLY_AT.map((at) => at + FLY_FOR);
   // The members' card grows into the page the month appears on.
@@ -79,9 +72,9 @@ const AT = (() => {
   const landed = THROWS.map((th) => throwsAt + th.landed);
   // Squared up, one sheet with everyone's pen on it, then that dissolving.
   const squared = throwsAt + STACK_DONE + 0.15;
-  const merged = squared + 0.45;
-  const digital = merged + 0.2;
-  const dissolve = digital + 0.15;
+  const merged = squared + 0.2;
+  const digital = merged + 0.28;
+  const dissolve = digital + 0.22;
   const press = dissolve + DISSOLVE_S - 0.1;
   const shine = press + 0.35;
   // The free days lifted out one by one into a list, under the words.
@@ -103,6 +96,10 @@ const AT = (() => {
   const collapsed = agreed + 1.5;
   const flying = collapsed + 0.45;
   const landing = flying + FLIGHT_S;
+  // The date is in; then the phone steps back and it goes out to everyone.
+  const thudDone = landing + 0.2;
+  const finale = landing + 0.75;
+  const finaleOut = finale + FINALE_S;
   return {
     joined,
     leave,
@@ -131,7 +128,10 @@ const AT = (() => {
     collapsed,
     flying,
     landing,
-    end: landing + 2,
+    thudDone,
+    finale,
+    finaleOut,
+    end: finaleOut + 0.3,
   };
 })();
 const MOMENTS = [
@@ -161,6 +161,9 @@ const MOMENTS = [
   AT.collapsed,
   AT.flying,
   AT.landing,
+  AT.thudDone,
+  AT.finale,
+  AT.finaleOut,
 ].sort((a, b) => a - b);
 
 /**
@@ -213,18 +216,6 @@ export default function WelcomeStage() {
   const everyone = useMemo(() => plan.items.flat(), [plan]);
   const yours = plan.items[0];
   const agreedDay = plan.free[0];
-  const withEvent = useMemo(
-    () => [
-      {
-        calendarId: EVENT_CALENDAR,
-        start: agreedDay,
-        end: addDays(agreedDay, 1, TZ),
-        label: t.welcome.event,
-      },
-      ...everyone,
-    ],
-    [agreedDay, everyone, t.welcome.event],
-  );
   const scrolls = useMemo(() => listScrolls(plan.free, month, lang), [plan, month, lang]);
   const zoomOn = useMemo(() => dayCell(agreedDay, month, lang), [agreedDay, month, lang]);
 
@@ -240,25 +231,28 @@ export default function WelcomeStage() {
 
   const voting = now >= AT.vote && now < AT.agreed;
   const listing = now >= AT.list && now < AT.vote;
+  const finale = now >= AT.finale;
   const onScreen = now < AT.home ? "group" : voting ? "vote" : "home";
 
   // A line over the phone says what is going on: possible dates, then the vote.
-  const headline = listing ? t.welcome.candidates : voting ? t.welcome.voting : null;
-  const pose = voting ? POSE.turned : listing ? POSE.framed : POSE.flat;
-  const shape =
-    now < AT.home
-      ? SHAPE.group
-      : now < AT.shine
-        ? SHAPE.calendars
-        : now < AT.list
-          ? SHAPE.found
-          : now < AT.vote
-            ? SHAPE.list
-            : now < AT.agreed
-              ? SHAPE.vote
-              : now < AT.landing
-                ? SHAPE.agreed
-                : SHAPE.landed;
+  const headline = listing
+    ? t.welcome.candidates
+    : voting
+      ? t.welcome.voting
+      : finale && now < AT.finaleOut
+        ? t.welcome.inEveryones
+        : null;
+  const framedNow = listing || voting || finale;
+  const pose = voting ? POSE.turned : framedNow ? POSE.framed : POSE.flat;
+  const shape = finale
+    ? SHAPE.finale
+    : now >= AT.agreed
+      ? SHAPE.agreed
+      : voting
+        ? SHAPE.vote
+        : listing
+          ? SHAPE.list
+          : SHAPE.flat;
   const scale = Math.min((size.height * 0.92) / DEVICE.height, (size.width * 0.62) / DEVICE.width);
   const place = (p: typeof pose) => ({ ...p, y: p.y * size.height, scale: p.scale * scale });
   // Under a headline: as big as fits in what is left, and centred there.
@@ -269,7 +263,8 @@ export default function WelcomeStage() {
     scale: Math.min(framedHeight / DEVICE.height, scale),
   };
 
-  const items = now >= AT.landing ? withEvent : now >= AT.digital ? everyone : yours;
+  const thud = now >= AT.landing && now < AT.thudDone;
+  const items = now >= AT.digital ? everyone : yours;
   const pressing = !still && ((now >= AT.press && now < AT.list) || now >= AT.landing);
   const boxStage: BoxStage | null =
     now < AT.button
@@ -303,33 +298,24 @@ export default function WelcomeStage() {
           <motion.div
             className="absolute inset-x-[-30%] top-0"
             style={{ aspectRatio: "1 / 0.9" }}
-            initial={still ? SHAPE.group : { ...SHAPE.group, y: "90%" }}
-            animate={still ? SHAPE.group : shape}
-            transition={{ type: "spring", stiffness: 42, damping: 15 }}
+            initial={still ? SHAPE.flat : { ...SHAPE.flat, y: "90%" }}
+            animate={still ? SHAPE.flat : shape}
+            transition={POSE_SPRING}
           >
-            {/* Always drifting a little, so it is alive between the steps too. */}
-            <motion.div
-              className="absolute inset-0"
-              animate={
-                still ? undefined : { rotate: [-4, 4, -4], x: [-10, 12, -10], y: [6, -8, 6] }
-              }
-              transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div
-                className="absolute inset-0 rounded-[46%]"
-                style={{
-                  background:
-                    "radial-gradient(circle at 74% 26%, #ffd60a 0, transparent 44%), radial-gradient(circle at 82% 78%, #ff2d78 0, transparent 50%), linear-gradient(135deg, #fb923c, #f43f5e)",
-                }}
-              />
-              <div
-                className="absolute inset-x-[-6%] top-[52%] h-[70%] rounded-[50%]"
-                style={{
-                  background:
-                    "radial-gradient(circle at 20% 20%, #fbbf24 0, transparent 60%), linear-gradient(120deg, #f97316, #ec4899)",
-                }}
-              />
-            </motion.div>
+            <div
+              className="absolute inset-0 rounded-[46%]"
+              style={{
+                background:
+                  "radial-gradient(circle at 74% 26%, #ffd60a 0, transparent 44%), radial-gradient(circle at 82% 78%, #ff2d78 0, transparent 50%), linear-gradient(135deg, #fb923c, #f43f5e)",
+              }}
+            />
+            <div
+              className="absolute inset-x-[-6%] top-[52%] h-[70%] rounded-[50%]"
+              style={{
+                background:
+                  "radial-gradient(circle at 20% 20%, #fbbf24 0, transparent 60%), linear-gradient(120deg, #f97316, #ec4899)",
+              }}
+            />
           </motion.div>
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
         </div>
@@ -340,7 +326,9 @@ export default function WelcomeStage() {
           className={`invisible absolute inset-x-4 ${HEADLINE_TEXT}`}
           style={{ top: HEADLINE_TOP }}
         >
-          {t.welcome.voting}
+          {t.welcome.voting.length > t.welcome.inEveryones.length
+            ? t.welcome.voting
+            : t.welcome.inEveryones}
         </p>
         <AnimatePresence>
           {headline && !still && (
@@ -371,7 +359,13 @@ export default function WelcomeStage() {
             }}
             initial={still ? false : place(POSE.below)}
             animate={
-              still ? place(POSE.flat) : listing || voting ? { ...pose, ...framed } : place(pose)
+              still
+                ? place(POSE.flat)
+                : framedNow
+                  ? { ...pose, ...framed }
+                  : thud
+                    ? { ...place(POSE.flat), scale: scale * 1.05 }
+                    : place(pose)
             }
             transition={still ? { duration: 0 } : POSE_SPRING}
           >
@@ -392,6 +386,15 @@ export default function WelcomeStage() {
                       />
                     )}
                     {/* The pile, squared, become one sheet with everyone's pen on it. */}
+                    {finale && (
+                      <InEveryonesCalendar
+                        day={agreedDay}
+                        month={month}
+                        scale={framed.scale}
+                        stageWidth={size.width}
+                        leaving={now >= AT.finaleOut}
+                      />
+                    )}
                     {now >= AT.merged && now < AT.press + 0.5 && (
                       <motion.div
                         className="absolute inset-0"
@@ -446,7 +449,7 @@ export default function WelcomeStage() {
                       pressed={pressing}
                       shine={now >= AT.shine && now < AT.vote ? lit : null}
                       scroll={listing && now < AT.back && scrolled > 0 ? scrolls[scrolled - 1] : 0}
-                      dim={listing && now < AT.back}
+                      dim={(listing && now < AT.back) || now >= AT.landing}
                       badge={now >= AT.badge && now < AT.vote}
                     />
                   )}

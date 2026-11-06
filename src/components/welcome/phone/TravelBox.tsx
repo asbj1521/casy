@@ -60,9 +60,9 @@ const RECT: Record<
 })();
 
 /** A burst on landing: bits in everyone's colours and Casy's orange, thrown out and falling. */
-const BITS = Array.from({ length: 16 }, (_, i) => {
-  const angle = (i / 16) * Math.PI * 2 + (i % 3) * 0.2;
-  const reach = 62 + (i % 4) * 16;
+const BITS = Array.from({ length: 40 }, (_, i) => {
+  const angle = (i / 40) * Math.PI * 2 + (i % 3) * 0.2;
+  const reach = 70 + (i % 5) * 34;
   return {
     x: Math.cos(angle) * reach,
     y: Math.sin(angle) * reach - 18,
@@ -272,27 +272,40 @@ export default function TravelBox({
           className="absolute left-0 top-0"
           style={{ transform: `translate(${cell.x}px, ${cell.y}px)` }}
         >
-          {/* The shock of it: one ring going out. */}
+          {/* The event itself, under its number, solid while the month dims around it. */}
           <motion.span
-            className="absolute rounded-full border-[3px] border-primary"
-            style={{ width: 40, height: 40, left: -20, top: -20 }}
-            initial={{ scale: 0.6, opacity: 0.9 }}
-            animate={{ scale: 3.2, opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          />
+            className="absolute truncate rounded-[4px] bg-cta px-1 text-[11px] font-semibold leading-[17px] text-white"
+            style={{ left: -25, top: 21, width: 50, height: 17 }}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, duration: 0.25 }}
+          >
+            {event.title}
+          </motion.span>
+          {/* The shock of it: two rings going out. */}
+          {[0, 0.12].map((delay) => (
+            <motion.span
+              key={delay}
+              className="absolute rounded-full border-[3px] border-primary"
+              style={{ width: 40, height: 40, left: -20, top: -20 }}
+              initial={{ scale: 0.6, opacity: 0.9 }}
+              animate={{ scale: 5, opacity: 0 }}
+              transition={{ delay, duration: 0.8, ease: "easeOut" }}
+            />
+          ))}
           {BITS.map((bit, i) => (
             <motion.span
               key={i}
-              className="absolute h-[9px] w-[5px] rounded-[1px]"
+              className="absolute h-[11px] w-[6px] rounded-[1px]"
               style={{ background: `rgb(${BIT_COLORS[i % BIT_COLORS.length]})`, left: -2, top: -4 }}
               initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
               animate={{
                 x: bit.x,
-                y: [0, bit.y, bit.y + 46],
+                y: [0, bit.y, bit.y + 90],
                 rotate: bit.spin,
                 opacity: [1, 1, 0],
               }}
-              transition={{ duration: 0.95, ease: "easeOut", times: [0, 0.5, 1] }}
+              transition={{ duration: 1.3, ease: "easeOut", times: [0, 0.45, 1] }}
             />
           ))}
         </div>

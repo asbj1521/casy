@@ -24,12 +24,7 @@ export const PEOPLE = [
 ];
 export const FRIENDS = PEOPLE.slice(1);
 
-/** The agreed event in the month: Casy's own orange. */
-export const EVENT_CALENDAR = "event";
-const EVENT_COLOR = "234, 88, 12";
-
-export const colorOf = (id: string) =>
-  id === EVENT_CALENDAR ? EVENT_COLOR : (PEOPLE.find((p) => p.id === id)?.color ?? "");
+export const colorOf = (id: string) => PEOPLE.find((p) => p.id === id)?.color ?? "";
 
 /** The example month: next month, so the days in it are all still to come. */
 export const demoMonth = (now: number): number => startOfMonth(now, TZ, 1);
