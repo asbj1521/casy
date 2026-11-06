@@ -27,7 +27,7 @@ const link = (to: string, label: string) => (
 
 const da: LegalCopy = {
   title: "Vilkår for brug",
-  updated: "Senest opdateret 30. oktober 2026",
+  updated: "Senest opdateret 6. november 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -122,10 +122,10 @@ const da: LegalCopy = {
             <li>bryde loven med Casy.</li>
           </ul>
           <p>
-            Ser du noget i Casy, der ikke er i orden, kan du rapportere det fra gruppen eller
-            aftalen og blokere den, der står bag. Casy kigger på hver rapport, så hurtigt det kan,
-            og kan fjerne indhold, grupper eller konti, der bryder disse vilkår (se Når en konto
-            slutter).
+            Casy har nultolerance over for stødende indhold og krænkende brugere. Ser du noget i
+            Casy, der ikke er i orden, kan du rapportere det fra gruppen eller aftalen og blokere
+            den, der står bag. Casy kigger på hver rapport inden for 24 timer og kan fjerne indhold,
+            grupper eller konti, der bryder disse vilkår (se Når en konto slutter).
           </p>
         </>
       ),
@@ -294,7 +294,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Terms of service",
-  updated: "Last updated 30 October 2026",
+  updated: "Last updated 6 November 2026",
   sections: [
     {
       title: "In short",
@@ -387,10 +387,10 @@ const en: LegalCopy = {
             <li>break the law with Casy.</li>
           </ul>
           <p>
-            If you see something in Casy that isn&apos;t right, you can report it from the group or
-            the event and block whoever is behind it. Casy looks at every report as soon as it can,
-            and can remove content, groups or accounts that break these terms (see When an account
-            ends).
+            Casy has zero tolerance for objectionable content and abusive users. If you see
+            something in Casy that isn&apos;t right, you can report it from the group or the event
+            and block whoever is behind it. Casy looks at every report within 24 hours and can
+            remove content, groups or accounts that break these terms (see When an account ends).
           </p>
         </>
       ),

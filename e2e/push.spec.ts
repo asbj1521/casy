@@ -59,7 +59,7 @@ async function momentShows(page: Page, reason: "sent" | "answered" | "joined", t
   return sheet;
 }
 
-test("after sending dates, Casy asks before iOS does, and Not now waits a week", async ({
+test("after sending dates, Casy says why with one way on: to iOS's question (#147)", async ({
   page,
 }) => {
   await asTheApp(page, "prompt");
@@ -67,14 +67,8 @@ test("after sending dates, Casy asks before iOS does, and Not now waits a week",
   await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
 
   const sheet = await momentShows(page, "sent", "Få besked, når de andre har svaret");
-  await expect(sheet.getByRole("button", { name: "Slå notifikationer til" })).toBeVisible();
-  await sheet.getByRole("button", { name: "Ikke nu" }).click();
-  await expect(sheet).toHaveCount(0);
-
-  // The next moment is within the week: nothing shows.
-  await moment(page, "answered");
-  await page.waitForTimeout(1200);
-  await expect(page.getByRole("dialog", { name: /^Få besked/ })).toHaveCount(0);
+  await expect(sheet.getByRole("button", { name: "Fortsæt" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Ikke nu" })).toHaveCount(0);
 });
 
 test("a yes to Casy's question hands over to iOS, and then registers the phone", async ({
@@ -86,7 +80,7 @@ test("a yes to Casy's question hands over to iOS, and then registers the phone",
   const asked = () => page.evaluate(() => (window as unknown as { __asked: string[] }).__asked);
   // Casy's sheet alone asks iOS nothing.
   expect(await asked()).not.toContain("requestPermissions");
-  await sheet.getByRole("button", { name: "Slå notifikationer til" }).click();
+  await sheet.getByRole("button", { name: "Fortsæt" }).click();
   await expect.poll(asked).toContain("requestPermissions");
   // iOS said yes (the fake); registering then waits for a token the fake never gives.
   await expect.poll(asked).toContain("register");

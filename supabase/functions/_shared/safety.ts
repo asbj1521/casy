@@ -11,8 +11,11 @@
  * deletes the pending ones at once. Someone can only block a person they know:
  * a member of a group they share, or whoever sent them an invitation.
  */
+import { parseAdminIds } from "./admin.ts";
+import { requireEnv } from "./env.ts";
 import { isMember, requireMember } from "./groups.ts";
 import { HttpError, requireString } from "./http.ts";
+import { sendEmail } from "./resend.ts";
 import type { Db } from "./supabaseAdmin.ts";
 import { cleanText } from "./text.ts";
 
@@ -126,6 +129,40 @@ export async function fileReport(db: Db, reporterId: string, r: ReportRequest): 
     content,
   });
   if (error) throw error;
+}
+
+/**
+ * The email to the admins about a new report (#147): only that one waits, what
+ * kind and why. The report itself stays in admin mode, and never says who sent it.
+ */
+export function reportAlert(
+  kind: ReportKind,
+  reason: ReportReason,
+): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const line = `En ny rapport venter: ${kind}, ${reason}.`;
+  const link = "https://casy.app/profile/admin";
+  return {
+    subject: "Casy: en ny rapport",
+    text: `${line}\n\nDen skal ses inden for 24 timer, som vilkårene lover: ${link}`,
+    html: `<p>${line}</p><p>Den skal ses inden for 24 timer, som vilkårene lover: <a href="${link}">admin mode</a></p>`,
+  };
+}
+
+/** Tells each admin that a report waits. It runs after the answer; a failure is only logged. */
+export async function alertAboutReport(db: Db, r: ReportRequest): Promise<void> {
+  const key = requireEnv("RESEND_SEND_KEY");
+  const email = reportAlert(r.kind, r.reason);
+  for (const id of parseAdminIds(Deno.env.get("ADMIN_USER_IDS"))) {
+    const { data, error } = await db.auth.admin.getUserById(id);
+    if (error) throw error;
+    if (data.user?.email) {
+      await sendEmail(key, { to: data.user.email, ...email }, crypto.randomUUID());
+    }
+  }
 }
 
 /** Whether two people are in a group together. */

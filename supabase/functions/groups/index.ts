@@ -60,12 +60,14 @@ import {
 import { afterResponse, HttpError, readRange, requireString, serve } from "../_shared/http.ts";
 import {
   blockPerson,
+  alertAboutReport,
   fileReport,
   listBlocked,
   readReport,
   unblockPerson,
 } from "../_shared/safety.ts";
 import { calendarStatus } from "../_shared/calendarStatus.ts";
+import { refuseBlockedWords } from "../_shared/contentFilter.ts";
 import { encryptionKeyFromEnv, lookupHash } from "../_shared/secretBox.ts";
 import { deletePictures, groupPicturePath, pictureLinks } from "../_shared/pictures.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
@@ -172,6 +174,7 @@ serve("groups", async (req, body) => {
     case "set-name": {
       const name = cleanDisplayName(body.name);
       if (!name) throw new HttpError(400, "Give yourself a name.");
+      refuseBlockedWords(name);
       const { error } = await db.from("profiles").upsert(
         {
           id: profileId,
@@ -191,6 +194,7 @@ serve("groups", async (req, body) => {
       // Limits and lookups first: a refused invitation makes no group.
       const invitees = await resolveInvitees(db, profileId, readInvitees(body));
       const description = cleanGroupDescription(body.description);
+      refuseBlockedWords(name, description);
       const { data: group, error: groupErr } = await db
         .from("friend_groups")
         .insert({ name, description, created_by: profileId })
@@ -262,9 +266,12 @@ serve("groups", async (req, body) => {
       return { invitations: await listInvitations(db, profileId) };
     }
 
-    case "report":
-      await fileReport(db, profileId, readReport(body));
+    case "report": {
+      const report = readReport(body);
+      await fileReport(db, profileId, report);
+      afterResponse("report alert", () => alertAboutReport(db, report));
       return { reported: true };
+    }
 
     case "block":
       await blockPerson(db, profileId, body);
@@ -292,6 +299,7 @@ serve("groups", async (req, body) => {
       const groupId = requireString(body, "groupId");
       const name = cleanGroupName(body.name);
       if (!name) throw new HttpError(400, "Give the group a name.");
+      refuseBlockedWords(name);
       // Any member may rename, the same as inviting: it is a shared label
       // for the group, not something only its creator should control.
       await requireMember(db, groupId, profileId);
@@ -305,6 +313,7 @@ serve("groups", async (req, body) => {
     case "describe": {
       const groupId = requireString(body, "groupId");
       const description = cleanGroupDescription(body.description);
+      refuseBlockedWords(description);
       await requireMember(db, groupId, profileId);
       const { error } = await db.from("friend_groups").update({ description }).eq("id", groupId);
       if (error) throw error;

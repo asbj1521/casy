@@ -854,7 +854,7 @@ export const en: Messages = {
       "Import the phone's calendar so Casy can see when you are busy. Casy only stores the times, never the titles.",
     needAsk: "iPhone asks you first whether Casy may see the calendar.",
     importCalendar: "Import my calendar",
-    allowAndImport: "Allow and import",
+    continueToIos: "Continue",
     importing: "Importing",
     nothingOnPhone: "There were no calendars on the phone to import.",
     otherCalendar: "Use another calendar",
@@ -1577,7 +1577,7 @@ export const en: Messages = {
     intro:
       "Casy adds the events you agree on to this calendar: when you ask it to, or on its own if Add automatically is on.",
     noWritable:
-      "Connect an Apple calendar above, or your phone in the Casy app, and Casy can add your agreed events straight to it. Google and Outlook are coming later.",
+      "Connect an Apple calendar above, or your phone in the Casy app, and Casy can add your agreed events straight to it.",
     waitingForSync:
       "Casy is checking which of your Apple calendars it may add events to. Press Sync now, or wait up to an hour.",
     selectLabel: "Choose primary calendar",
@@ -1736,7 +1736,7 @@ export const en: Messages = {
       answered: "Get notified when the date is set",
       joined: "Get notified when someone suggests dates",
     },
-    askEnable: "Turn on notifications",
+    askEnable: "Continue",
     askLater: "Not now",
     askNote: "You can switch off each kind under Settings.",
     title: "Notifications",

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
+import BottomSheet from "@/components/ui/BottomSheet";
 import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
-import Sheet from "@/components/ui/Sheet";
 import { useLang, useT } from "@/i18n/lang";
 import { enablePush, pushPermission } from "@/lib/push";
 import { type AskReason, mayAsk, onAskForPush, readAskState, recordAsk } from "@/lib/pushAsk";
@@ -11,10 +11,11 @@ import { type AskReason, mayAsk, onAskForPush, readAskState, recordAsk } from "@
 const SHOW_AFTER_MS = 700;
 
 /**
- * Casy's own question before iOS's (#139): shown where people are waiting on
- * others, never more often than pushAsk.ts allows. "Slå til" hands over to
- * iOS's prompt; "Ikke nu" (or swiping it away) leaves the question for a
- * later moment. Lives in the app only (PushLinks).
+ * What Casy says before iOS's question (#139): shown where people are waiting
+ * on others, never more often than pushAsk.ts allows. Its one button, "Fortsæt",
+ * leads straight to iOS's prompt, where the person answers, so the sheet can only
+ * be put away if that failed (App Store guideline 5.1.1(iv), #147). Lives in the
+ * app only (PushLinks).
  */
 export default function PushAsk() {
   const t = useT();
@@ -64,11 +65,11 @@ export default function PushAsk() {
   }
 
   return (
-    <Sheet
+    <BottomSheet
       open={reason !== null}
-      onClose={close}
+      onClose={error ? close : () => undefined}
       title={t.push.askTitle[reason ?? "sent"]}
-      closeLabel={t.push.askLater}
+      doneLabel={error ? t.push.askLater : undefined}
       busy={busy}
       footer={
         <FlowButton busy={busy} onClick={() => void enable()}>
@@ -82,6 +83,6 @@ export default function PushAsk() {
           {error}
         </Notice>
       )}
-    </Sheet>
+    </BottomSheet>
   );
 }

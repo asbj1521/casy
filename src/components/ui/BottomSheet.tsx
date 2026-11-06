@@ -99,7 +99,8 @@ export default function BottomSheet({
   open: boolean;
   onClose: () => void;
   title: string;
-  doneLabel: string;
+  /** The text action at the top right. Left out: this sheet has no way to be put away. */
+  doneLabel?: string;
   /**
    * The sheet's way on, pinned along its bottom while the rest scrolls
    * (My calendar's Planlæg sheet, #126). Without one, the whole sheet scrolls.
@@ -185,14 +186,16 @@ export default function BottomSheet({
             <action.icon className="h-[18px] w-[18px]" />
           </button>
         )}
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={busy}
-          className="hit shrink-0 rounded-lg px-2 py-1 text-[0.9375rem] font-semibold text-primary disabled:opacity-50"
-        >
-          {doneLabel}
-        </button>
+        {doneLabel && (
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="hit shrink-0 rounded-lg px-2 py-1 text-[0.9375rem] font-semibold text-primary disabled:opacity-50"
+          >
+            {doneLabel}
+          </button>
+        )}
       </div>
     </div>
   );

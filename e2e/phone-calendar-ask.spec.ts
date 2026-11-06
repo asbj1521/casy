@@ -76,7 +76,7 @@ const asked = (page: Page) =>
 
 const card = (page: Page) => page.getByRole("dialog");
 
-test("with iOS not asked yet, the card offers Allow and import, and iOS asks on the press", async ({
+test("with iOS not asked yet, the card has one way on, and iOS asks on the press (#147)", async ({
   page,
   backend,
 }) => {
@@ -85,7 +85,8 @@ test("with iOS not asked yet, the card offers Allow and import, and iOS asks on 
   await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible();
   // Nothing is asked by itself: the person presses.
   expect(await asked(page)).not.toContain("requestAccess");
-  await card(page).getByRole("button", { name: "Tillad og importér" }).click();
+  await expect(card(page).getByRole("button", { name: "Ikke nu" })).toHaveCount(0);
+  await card(page).getByRole("button", { name: "Fortsæt" }).click();
   await expect.poll(() => asked(page)).toContain("requestAccess");
   await expect
     .poll(() => backend.calls.find((c) => c.name === "calendar-phone")?.body)
@@ -104,7 +105,7 @@ test("with iOS already allowed, the same card just says Import", async ({ page, 
 test("a refusal leads to Settings, or to another calendar", async ({ page }) => {
   await asTheApp(page, "denied");
   await page.goto("/calendar-overview");
-  await card(page).getByRole("button", { name: "Tillad og importér" }).click();
+  await card(page).getByRole("button", { name: "Fortsæt" }).click();
   await expect(card(page).getByRole("button", { name: "Åbn Indstillinger" })).toBeVisible();
   await card(page).getByRole("button", { name: "Åbn Indstillinger" }).click();
   await expect.poll(() => asked(page)).toContain("openSettings");
@@ -116,7 +117,7 @@ test("a refusal leads to Settings, or to another calendar", async ({ page }) => 
 test("with no calendar at all it can still be put away, until the app is opened again (#215)", async ({
   page,
 }) => {
-  await asTheApp(page, "granted");
+  await asTheApp(page, "granted", { alreadyAnswered: true });
   await page.goto("/calendar-overview");
   await card(page).getByRole("button", { name: "Ikke nu" }).click();
   await expect(card(page)).toHaveCount(0);

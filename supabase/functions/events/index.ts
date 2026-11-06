@@ -31,6 +31,7 @@
  * whatever didn't work. `ics` hands out the same entry as a file, for
  * people with no primary calendar.
  */
+import { refuseBlockedWords } from "../_shared/contentFilter.ts";
 import { requireCaller } from "../_shared/auth.ts";
 import {
   catchUpWrites,
@@ -96,6 +97,7 @@ serve("events", async (req, body) => {
         throw new HttpError(400, "Those event settings aren't valid.");
       }
       const details = eventDetails(body);
+      refuseBlockedWords(title, details.place, details.note);
 
       // The dates of a vote (#74); a single `date`, as the site suggested before
       // #74, is turned away. Everyone, the suggester included,
@@ -291,6 +293,7 @@ serve("events", async (req, body) => {
       // Entries already in people's calendars are rewritten with them.
       const proposalId = requireString(body, "proposalId");
       const details = eventDetails(body);
+      refuseBlockedWords(details.place, details.note);
       const { data: outcome, error } = await db.rpc("edit_event_details", {
         p_proposal_id: proposalId,
         p_profile_id: profileId,

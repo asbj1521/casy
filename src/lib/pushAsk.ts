@@ -1,11 +1,11 @@
 /**
  * When Casy asks to send notifications (#139). iOS shows its own prompt only
  * once, ever: a no there can only be undone in iPhone's Settings. So Casy
- * asks first, in its own sheet, where people are waiting on others and the
+ * says why first, in its own sheet, where people are waiting on others and the
  * value of a notification is plain (right after sending dates, after
- * answering a vote, after joining a group or inviting someone), and iOS's
- * prompt follows only a yes. "Ikke nu" is asked again at the next such moment
- * a week later at the earliest, three times at most.
+ * answering a vote, after joining a group or inviting someone), and its one
+ * button leads to iOS's prompt. If that fails, it is asked again at the next
+ * such moment a week later at the earliest, three times at most.
  *
  * This file knows nothing of Capacitor, so the places that ask (a page, a
  * hook) can import it without pulling the plugin in.

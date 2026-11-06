@@ -895,7 +895,7 @@ export const da = {
       "Importér telefonens kalender, så Casy kan se, hvornår du er optaget. Casy gemmer kun tidspunkterne, aldrig titlerne.",
     needAsk: "iPhone spørger dig først, om Casy må se kalenderen.",
     importCalendar: "Importér min kalender",
-    allowAndImport: "Tillad og importér",
+    continueToIos: "Fortsæt",
     importing: "Importerer",
     nothingOnPhone: "Der var ingen kalendere på telefonen at importere.",
     otherCalendar: "Brug en anden kalender",
@@ -1636,7 +1636,7 @@ export const da = {
     intro:
       "Casy lægger de aftaler, I bliver enige om, i denne kalender: når du beder om det, eller af sig selv, hvis Tilføj automatisk er slået til.",
     noWritable:
-      "Forbind en Apple-kalender ovenfor, eller din telefon i Casy-appen, så kan Casy lægge jeres aftaler direkte i den. Google og Outlook kommer senere.",
+      "Forbind en Apple-kalender ovenfor, eller din telefon i Casy-appen, så kan Casy lægge jeres aftaler direkte i den.",
     waitingForSync:
       "Casy tjekker, hvilke af dine Apple-kalendere den må lægge aftaler i. Tryk Synkronisér nu, eller vent op til en time.",
     selectLabel: "Vælg primær kalender",
@@ -1796,7 +1796,7 @@ export const da = {
       answered: "Få besked, når datoen er fundet",
       joined: "Få besked, når nogen foreslår datoer",
     },
-    askEnable: "Slå notifikationer til",
+    askEnable: "Fortsæt",
     askLater: "Ikke nu",
     askNote: "Du kan slå hver slags besked fra under Indstillinger.",
     title: "Notifikationer",

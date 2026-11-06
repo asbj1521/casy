@@ -200,9 +200,10 @@ Paste into the review notes field:
 > are in brackets. On the home page (My calendar): "Plan" (Planlæg) plans
 > with the group; "Events" (Aftaler) has Sara's vote "Dinner at Sara's"
 > waiting for your answer and the agreed "Sunday brunch" with "Add to my
-> calendar"; "Profile" (Profil) has the group. Calendar access is asked when
-> you press "Import my calendar" (Importér min kalender); the review device
-> may have no events, which is why the demo account's own calendar is a
+> calendar"; "Profile" (Profil) has the group. On first opening, a sheet says why
+> Casy wants the calendar, and "Continue" (Fortsæt) leads to iOS's own
+> question; the app works whichever answer is given. Notifications are asked
+> the same way, after dates are sent. The review device may have no events, which is why the demo account's own calendar is a
 > connected calendar link with sample events. Casy's AI is Claude from
 > Anthropic, a third party, and is optional. Nothing is sent to it until the
 > person says yes on the sheet "Turn on Casy's AI?" (Slå Casys AI til?), which
@@ -210,7 +211,13 @@ Paste into the review notes field:
 > button is pressed, such as "Plan with AI" (Planlæg med AI); "Not now" leaves
 > the app fully usable, and the yes can be withdrawn under Profile, Your data.
 > With the yes, the AI plans from what the person writes or says, sorts their
-> calendars, labels their events and finds their trips. Reporting and blocking are under the group's "Report or block" (Rapportér eller bloker)
+> calendars, labels their events and finds their trips. Casy is built around
+> the iPhone: it reads the phone's calendars with EventKit, also in the
+> background, writes agreed events back to them, sends push notifications,
+> signs in with Sign in with Apple, recognises speech with Apple's speech
+> service, and opens invite links in the app. Words that break the terms are
+> refused when text is saved, and a report alerts the developer by email.
+> Reporting and blocking are under the group's "Report or block" (Rapportér eller bloker)
 > and "Report" (Rapportér) on an event. Deleting the account is under Profile
 > and works on the demo account too. Contact: asbjornbay@gmail.com
 
