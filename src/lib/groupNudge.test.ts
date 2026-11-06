@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { groupNudge } from "./groupNudge";
 
-const alone = { id: "a", name: "Alene", members: [{}] };
-const together = { id: "b", name: "Sammen", members: [{}, {}] };
+const alone = { id: "a", name: "Alene", members: [{}], invited: [] };
+const together = { id: "b", name: "Sammen", members: [{}, {}], invited: [] };
 
 describe("groupNudge", () => {
   it("says nothing until both answers are in", () => {
@@ -21,6 +21,9 @@ describe("groupNudge", () => {
   });
   it("is gone once anyone else is in a group", () => {
     expect(groupNudge([alone, together], [])).toBeNull();
+  });
+  it("is gone once someone has been invited, as they may still answer (#147)", () => {
+    expect(groupNudge([{ ...alone, invited: ["p"] }], [])).toBeNull();
   });
   it("stays away while an invitation waits", () => {
     expect(groupNudge([], [{}])).toBeNull();
