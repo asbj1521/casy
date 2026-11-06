@@ -68,6 +68,20 @@ tested. Submitting for the App Store (#147) picks one of these builds.
 The first upload needs the app's record in App Store Connect (bundle id
 `app.casy`), made once by hand.
 
+## Releasing a version on the App Store
+
+1. Run `npm run review-demo` right before submitting (`docs/app-store-listing.md`),
+   and try the demo sign-in from a fresh install.
+2. Pick the build under the version in App Store Connect; the version field must
+   equal the build's (`1.0.0`).
+3. Choose "Manually release this version", so an approved version waits for you.
+4. **The first version goes to everyone in the countries it is offered in at
+   once:** Apple offers a phased release only for updates. To start small, offer
+   v1 in Denmark only and add countries later. From the first update on, choose
+   the phased release.
+5. Once v1 is live, set the `APP_STORE_URL` function secret. Leave
+   `MIN_APP_VERSION` unset until a build has to be retired.
+
 ## A hotfix
 
 When a shipped version needs a fix but `main` holds app changes not ready to

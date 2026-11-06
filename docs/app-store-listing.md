@@ -7,9 +7,7 @@ on Casy. Limits are Apple's: name 30, subtitle 30, promotional text 170,
 keywords 100 (comma separated, no spaces after the commas), description 4000.
 
 Written to be true to what v1 does today (the data paragraph follows the
-calendar permission text and the privacy policy: change all three together). Two things are deliberately left out
-until they exist: push notifications (#139) and Sign in with Apple (#138); add a
-line for each when they ship. Google and Outlook calendars are not mentioned: in
+calendar permission text and the privacy policy: change all three together). Google and Outlook calendars are not mentioned: in
 the app they come in through the phone's own calendars.
 
 ## Basics
@@ -17,6 +15,8 @@ the app they come in through the phone's own calendars.
 | Field | Value |
 |---|---|
 | Bundle id | app.casy |
+| Devices | iPhone only (`TARGETED_DEVICE_FAMILY = 1`, #147), so no iPad screenshots |
+| Version | 1.0.0, the same as the build; App Store Connect's version field must read this, not 1.0 |
 | Primary category | Productivity |
 | Secondary category | Lifestyle |
 | Price | Free |
@@ -72,6 +72,8 @@ Det kan Casy
 - Tage hensyn til, hvem der er med, hvem der gerne må være med, og hvor mange der mindst skal kunne.
 - Planlægge med AI: skriv eller sig, hvad I vil, og Casy sætter det op for dig. Det er valgfrit.
 - Lægge den aftalte dato i din kalender, eller gøre det af sig selv.
+- Give dig besked, når du skal stemme, og når datoen er på plads. Du vælger selv, hvad du får besked om.
+- Logge dig ind med din Apple-konto, så du er i gang på et øjeblik.
 
 Dine data
 Casy sender kun, hvornår du er optaget, ikke hvad dine aftaler hedder. Navnene bliver på din telefon, medmindre du selv siger ja til, at Casys AI må læse dem. Dine venner ser kun, at du ikke kan, og hvornår. Der er ingen reklamer og ingen sporing. Du kan se alt, Casy har om dig, hente en kopi og slette din konto i appen.
@@ -108,6 +110,8 @@ What Casy can do
 - Take into account who is coming, who may come, and how many at least must be able to.
 - Plan with AI: write or say what you want, and Casy sets it up for you. It is optional.
 - Add the agreed date to your calendar, or do it by itself.
+- Tell you when it is your turn to vote and when the date is set. You choose what you hear about.
+- Sign you in with your Apple account, so you are up and running in a moment.
 
 Your data
 Casy only sends when you are busy, not what your events are called. The names stay on your phone unless you yourself say yes to Casy's AI reading them. Your friends only see that you can't, and when. There are no ads and no tracking. You can see everything Casy has about you, download a copy and delete your account in the app.
