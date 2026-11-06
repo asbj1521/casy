@@ -6,6 +6,7 @@ import { MonthLayer } from "@/components/swipe/MonthView";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
 import type { GridItem } from "@/lib/monthGrid";
+import { startOfMonth } from "@/lib/zone";
 import { colorOf, TZ } from "./demo";
 import { HEADER_PILL_TOP, HEADER_PX } from "./geometry";
 
@@ -27,6 +28,9 @@ const PhoneHome = memo(function PhoneHome({
   items,
   pressed,
   shine,
+  scroll = 0,
+  dim = false,
+  badge = false,
 }: {
   month: number;
   items: GridItem[];
@@ -34,6 +38,12 @@ const PhoneHome = memo(function PhoneHome({
   pressed: boolean;
   /** The days free for everyone, lit up once they are found. */
   shine: ReadonlySet<number> | null;
+  /** How far the month has scrolled up, as dates are lifted out of it. */
+  scroll?: number;
+  /** Faded back behind the list of dates. */
+  dim?: boolean;
+  /** A vote waiting on the Aftaler button. */
+  badge?: boolean;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -69,32 +79,45 @@ const PhoneHome = memo(function PhoneHome({
     ),
     [pressed],
   );
+  const next = useMemo(() => startOfMonth(month, TZ, 1), [month]);
   return (
     <>
-      <MonthLayer
-        month={month}
-        items={items}
-        colorOf={colorOf}
-        lanes={3}
-        heading={heading}
-        wrapRow={wrapRow}
-      />
-      {/* The free days over it, so they can fade up instead of switching on. */}
       <motion.div
         className="absolute inset-x-0 top-0"
         initial={false}
-        animate={{ opacity: shine ? 1 : 0, scale: shine ? 1 : 0.985 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        animate={{ y: -scroll, opacity: dim ? 0.3 : 1 }}
+        transition={{ duration: 0.45, ease: "easeInOut" }}
       >
         <MonthLayer
           month={month}
-          items={[]}
+          items={items}
           colorOf={colorOf}
           lanes={3}
-          shine={shine ?? undefined}
-          heading={<div className="invisible">{heading}</div>}
+          heading={heading}
+          wrapRow={wrapRow}
         />
+        {/* The next month under it, to scroll up into view. */}
+        <MonthLayer month={next} items={[]} colorOf={colorOf} lanes={3} />
+        {/* The free days over it, so they can fade up instead of switching on. */}
+        <motion.div
+          className="absolute inset-x-0 top-0"
+          initial={false}
+          animate={{ opacity: shine ? 1 : 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          <MonthLayer
+            month={month}
+            items={[]}
+            colorOf={colorOf}
+            lanes={3}
+            shine={shine ?? undefined}
+            heading={<div className="invisible">{heading}</div>}
+          />
+        </motion.div>
       </motion.div>
+      {/* The real capsules blur what passes under them; these fade it out instead. */}
+      <div className="absolute inset-x-0 top-0 h-[104px] bg-gradient-to-b from-background from-80% to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-[92px] bg-gradient-to-t from-background from-70% to-transparent" />
       {/* Where the home page's own capsules sit. */}
       <div
         className="absolute inset-x-4 flex items-start justify-between"
@@ -118,10 +141,20 @@ const PhoneHome = memo(function PhoneHome({
       </div>
       <div className="absolute inset-x-4 bottom-5 flex items-center gap-3">
         <span
-          className="glass-pill flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-primary"
+          className="glass-pill relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-primary"
           style={NO_BLUR}
         >
           <CalendarCheck className="h-6 w-6" />
+          {badge && (
+            <motion.span
+              className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-cta px-1 text-[11px] font-semibold leading-none text-white"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 18 }}
+            >
+              1
+            </motion.span>
+          )}
         </span>
         <span
           className="glass-pill flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-[17px] font-semibold text-primary"

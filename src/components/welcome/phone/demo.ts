@@ -6,6 +6,9 @@ import { addDays, APP_TIME_ZONE, dayOfWeek, localDate, startOfMonth, wallTime } 
 
 export const TZ = APP_TIME_ZONE;
 
+/** The made-up group, the same name in both languages. */
+export const GROUP_NAME = "Uni-Gruppen";
+
 /**
  * You first, then the five friends whose paper calendars land on your phone.
  * One colour each, the same on their face, their pen and their bars, so you can
@@ -13,11 +16,11 @@ export const TZ = APP_TIME_ZONE;
  */
 export const PEOPLE = [
   { id: "you", name: "", color: "0, 122, 255" },
-  { id: "sara", name: "Sara", color: "52, 199, 89" },
-  { id: "nova", name: "Nova", color: "175, 82, 222" },
-  { id: "erik", name: "Erik", color: "255, 149, 0" },
-  { id: "jonas", name: "Jonas", color: "255, 59, 48" },
-  { id: "liv", name: "Liv", color: "48, 176, 199" },
+  { id: "philip", name: "Philip", color: "52, 199, 89" },
+  { id: "emilie", name: "Emilie", color: "175, 82, 222" },
+  { id: "elias", name: "Elias", color: "255, 149, 0" },
+  { id: "claes", name: "Claes", color: "255, 59, 48" },
+  { id: "simon", name: "Simon", color: "48, 176, 199" },
 ];
 export const FRIENDS = PEOPLE.slice(1);
 
@@ -28,17 +31,8 @@ const EVENT_COLOR = "234, 88, 12";
 export const colorOf = (id: string) =>
   id === EVENT_CALENDAR ? EVENT_COLOR : (PEOPLE.find((p) => p.id === id)?.color ?? "");
 
-/**
- * The example month: the first from next month whose 1st falls on a Thursday
- * or later, so the empty days before it have room for the name on the paper.
- */
-export function demoMonth(now: number): number {
-  for (let n = 1; n <= 12; n++) {
-    const month = startOfMonth(now, TZ, n);
-    if ((dayOfWeek(month, TZ) + 6) % 7 >= 3) return month;
-  }
-  return startOfMonth(now, TZ, 1);
-}
+/** The example month: next month, so the days in it are all still to come. */
+export const demoMonth = (now: number): number => startOfMonth(now, TZ, 1);
 
 /**
  * Who is busy when: every day has someone busy except three Fridays, which are
@@ -81,11 +75,11 @@ export const EVENT_HOURS = { from: 19, to: 22 };
  * reads filled in; nothing is ever sent anywhere. The friends' answers so far:
  * most are in, as they are when you get to it.
  */
-export function demoVote(free: number[], title: string, group: string): VoteEvent {
+export function demoVote(free: number[], title: string): VoteEvent {
   const others = FRIENDS.map((f) => f.id);
   return {
     id: "welcome",
-    group: { id: "welcome", name: group },
+    group: { id: "welcome", name: GROUP_NAME },
     title,
     place: null,
     note: null,

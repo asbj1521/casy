@@ -1,13 +1,14 @@
 /** The timing of the paper calendars thrown on the phone (#228). */
 
 /**
- * How the paper calendars come, in seconds: the first takes its time, then each
- * is much quicker than the one before and leaves before the last has settled,
- * ending like cards being shuffled.
+ * How the paper calendars come, in seconds: the first takes its time, each
+ * after it is a little quicker and leaves as the one before is slowing down, so
+ * they end up shuffling onto each other without ever looking rushed.
  */
-const FLY = [0.62, 0.4, 0.26, 0.17, 0.12];
-const LEAVE_AFTER = [0.72, 0.44, 0.26, 0.15];
-export const HIT = 0.24;
+const FLY = [1.05, 0.86, 0.7, 0.56, 0.44];
+const LEAVE_AFTER = [0.95, 0.74, 0.58, 0.46];
+/** The landing: past the spot a little, back, and settled. */
+export const HIT = 0.48;
 
 export const THROWS = (() => {
   let at = 0;

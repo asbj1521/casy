@@ -71,9 +71,8 @@ export const da = {
     haveAccount: "Har du allerede en konto?",
     back: "Tilbage",
     you: "Dig",
-    group: "Fredagsbar",
     event: "Brætspilsaften",
-    allCan: "Alle kan fredag.",
+    candidates: "Mulige datoer",
   },
   updateRequired: {
     title: "Opdater Casy",

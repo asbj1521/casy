@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, Plus } from "lucide-react";
 
 import { useT } from "@/i18n/lang";
-import { FRIENDS, PEOPLE } from "./demo";
+import { FRIENDS, GROUP_NAME, PEOPLE } from "./demo";
 import { GROUP_ROWS } from "./geometry";
 
 /** A person's round face in their own colour: the colour their pen and bars have later. */
@@ -45,10 +45,10 @@ const PhoneGroup = memo(function PhoneGroup({ joined }: { joined: number }) {
           className="flex h-[96px] w-[96px] items-center justify-center rounded-full bg-orange-100 text-[40px] font-bold text-orange-700"
           aria-hidden
         >
-          {t.welcome.group.charAt(0)}
+          {GROUP_NAME.charAt(0)}
         </span>
         <span className="mt-3 text-[24px] font-bold tracking-tight text-foreground">
-          {t.welcome.group}
+          {GROUP_NAME}
         </span>
         <span className="text-[15px] tabular-nums text-muted-foreground">
           {t.groupPanel.members(1 + joined)}

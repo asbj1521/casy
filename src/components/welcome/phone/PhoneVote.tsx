@@ -1,9 +1,8 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, Plus, RotateCcw } from "lucide-react";
 
-import type { EventResponse } from "@/api/events";
-import { AnswerButtons } from "@/components/swipe/SwipeCard";
+import type { CandidateDate, EventResponse } from "@/api/events";
 import CardFace from "@/components/swipe/deck/CardFace";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
@@ -12,7 +11,7 @@ import { cn } from "@/lib/utils";
 import type { VoteEvent } from "@/lib/vote";
 import { addDays, dayOfWeek, localDate } from "@/lib/zone";
 import { EVENT_HOURS, TZ } from "./demo";
-import { HEADER_PILL_TOP } from "./geometry";
+import { HEADER_PILL_TOP, SCREEN } from "./geometry";
 
 /** Your own calendar under the card: empty that evening, so the card says nothing about a clash. */
 const NO_CALENDAR = {
@@ -21,38 +20,25 @@ const NO_CALENDAR = {
   labelOf: () => "",
 } as unknown as MyCalendarDays;
 
-const HOUR_PX = 52;
+const HOUR_PX = 62;
 const FIRST_HOUR = EVENT_HOURS.from - 1;
+const CARD_PX = 212;
+const PANEL_PX = 316;
+/** Where the day starts under the toolbar. */
+const DAY_TOP = 106;
 
 /** How each date is answered, in order: yes, no, yes. */
 const ANSWERS: EventResponse[] = ["accepted", "declined", "accepted"];
 
-/**
- * Answering a vote on the phone (#228), as the home page does it (HomeVote over
- * DayView, #172, #176): the day of the date in question with the event
- * pencilled in, and over it the glass panel with the title, one bar per date,
- * the app's real card and answer buttons. `answered` is how many dates are
- * done; each card goes the way its answer says, stamped, and the day above
- * moves on to the next date.
- */
-const PhoneVote = memo(function PhoneVote({
-  event,
-  answered,
-}: {
-  event: VoteEvent;
-  answered: number;
-}) {
+/** The day gliding to the next date, as the home page's does when a date is answered (#176). */
+const GLIDE = { duration: 0.5, ease: [0.32, 0.72, 0, 1] } as const;
+
+/** One date's day: its week with the day marked, its name, the evening with the event pencilled in. */
+function Day({ event, date }: { event: VoteEvent; date: CandidateDate }) {
   const t = useT();
   const { lang } = useLang();
-  const dates = event.candidates;
-  const index = Math.min(answered, dates.length - 1);
-  const date = dates[index];
-  const dayStart = useMemo(() => {
-    const at = Date.parse(date.start);
-    // This week's Monday, from the date itself: through the zone, never by adding ms.
-    return addDays(at, -((dayOfWeek(at, TZ) + 6) % 7), TZ);
-  }, [date.start]);
-  const week = Array.from({ length: 7 }, (_, i) => addDays(dayStart, i, TZ));
+  const at = Date.parse(date.start);
+  const column = (dayOfWeek(at, TZ) + 6) % 7;
   const label = capitalize(
     new Date(date.start).toLocaleDateString(LOCALE[lang], {
       weekday: "long",
@@ -61,62 +47,30 @@ const PhoneVote = memo(function PhoneVote({
       timeZone: TZ,
     }),
   );
-  const monthName = capitalize(
-    new Date(date.start).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
-  );
   return (
-    <div className="absolute inset-0 bg-background">
-      {/* The toolbar, as it is over a day. */}
-      <div
-        className="absolute inset-x-4 flex items-start justify-between"
-        style={{ top: HEADER_PILL_TOP }}
-      >
-        <span
-          className="glass-pill flex h-10 items-center rounded-full px-4 text-[17px] text-primary"
-          style={{ backdropFilter: "none", WebkitBackdropFilter: "none" }}
-        >
-          <ChevronLeft className="-ml-1 h-6 w-6" />
-          {monthName}
-        </span>
-        <span
-          className="glass-pill flex h-10 items-center gap-3 rounded-full px-4 text-[17px] text-primary"
-          style={{ backdropFilter: "none", WebkitBackdropFilter: "none" }}
-        >
-          <Plus className="h-5 w-5" />
-          <span className="h-5 w-px bg-primary/30" />
-          {t.calendarView.today}
-        </span>
-      </div>
-      {/* The week, its selected day marked. */}
-      <div className="absolute inset-x-0 grid grid-cols-7 text-center" style={{ top: 112 }}>
-        {week.map((d, i) => {
-          const selected = i === (dayOfWeek(Date.parse(date.start), TZ) + 6) % 7;
-          return (
-            <span key={d} className="flex flex-col items-center gap-1">
-              <span className="text-[12px] font-medium text-foreground">
-                {t.weekdaysShort[(i + 1) % 7].charAt(0)}
-              </span>
-              <span
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-[18px]",
-                  selected ? "bg-foreground font-bold text-background" : "text-foreground",
-                )}
-              >
-                {localDate(d, TZ).day}
-              </span>
+    <div className="absolute inset-0">
+      <div className="grid grid-cols-7 text-center">
+        {Array.from({ length: 7 }, (_, i) => (
+          <span key={i} className="flex flex-col items-center gap-1">
+            <span className="text-[12px] font-medium text-foreground">
+              {t.weekdaysShort[(i + 1) % 7].charAt(0)}
             </span>
-          );
-        })}
+            <span
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full text-[18px]",
+                i === column ? "bg-foreground font-bold text-background" : "text-foreground",
+              )}
+            >
+              {localDate(addDays(at, i - column, TZ), TZ).day}
+            </span>
+          </span>
+        ))}
       </div>
-      <div
-        className="absolute inset-x-0 border-y border-border/70 py-2 text-center text-[15px] font-bold text-primary"
-        style={{ top: 178 }}
-      >
+      <div className="mt-2 border-y border-border/70 py-2 text-center text-[15px] font-bold text-primary">
         {label}
       </div>
-      {/* The evening, with the event pencilled in. */}
-      <div className="absolute inset-x-0 overflow-hidden" style={{ top: 217, height: 210 }}>
-        {[0, 1, 2, 3, 4].map((i) => (
+      <div className="relative mt-2">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="absolute inset-x-0" style={{ top: i * HOUR_PX }}>
             <span className="absolute left-2 top-[-8px] text-[12px] tabular-nums text-muted-foreground">
               {FIRST_HOUR + i}:00
@@ -137,10 +91,78 @@ const PhoneVote = memo(function PhoneVote({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Answering a vote on the phone (#228), as the home page does it (HomeVote over
+ * DayView, #172, #176): the day of the date in question with the event
+ * pencilled in, gliding on to the next date as each is answered, and over it
+ * the panel with the title, one bar per date and the app's real card, thrown
+ * the way its answer says, stamped. `answered` is how many dates are done. No
+ * answer buttons: swiping is the point here, and the day gets their room.
+ */
+const PhoneVote = memo(function PhoneVote({
+  event,
+  answered,
+}: {
+  event: VoteEvent;
+  answered: number;
+}) {
+  const t = useT();
+  const { lang } = useLang();
+  const dates = event.candidates;
+  const index = Math.min(answered, dates.length - 1);
+  const date = dates[index];
+  const monthName = capitalize(
+    new Date(date.start).toLocaleDateString(LOCALE[lang], { month: "long", timeZone: TZ }),
+  );
+  return (
+    <div className="absolute inset-0 bg-background">
+      {/* The day, gliding sideways to the next date. */}
+      <div
+        className="absolute inset-x-0 overflow-hidden"
+        style={{ top: DAY_TOP, height: SCREEN.height - DAY_TOP - PANEL_PX + 28 }}
+      >
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={date.id}
+            className="absolute inset-0"
+            initial={{ x: SCREEN.width }}
+            animate={{ x: 0 }}
+            exit={{ x: -SCREEN.width }}
+            transition={GLIDE}
+          >
+            <Day event={event} date={date} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+      {/* The toolbar, as it is over a day. */}
+      <div
+        className="absolute inset-x-4 flex items-start justify-between"
+        style={{ top: HEADER_PILL_TOP }}
+      >
+        <span
+          className="glass-pill flex h-10 items-center rounded-full pl-2 pr-4 text-[17px] text-primary"
+          style={{ backdropFilter: "none", WebkitBackdropFilter: "none" }}
+        >
+          <ChevronLeft className="h-6 w-6" />
+          {monthName}
+        </span>
+        <span
+          className="glass-pill flex h-10 items-center gap-3 rounded-full px-4 text-[17px] text-primary"
+          style={{ backdropFilter: "none", WebkitBackdropFilter: "none" }}
+        >
+          <Plus className="h-5 w-5" />
+          <span className="h-5 w-px bg-primary/30" />
+          {t.calendarView.today}
+        </span>
+      </div>
       {/* The panel over it (HomeVote), the glass a solid tint: it moves with the phone. */}
       <div
         className="absolute inset-x-0 bottom-0 rounded-t-[28px] border-t bg-card/95 px-4 pb-5 pt-3 shadow-[0_-12px_40px_-14px_rgb(0_0_0/0.35)]"
-        style={{ height: 430 }}
+        style={{ height: PANEL_PX }}
       >
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
@@ -167,7 +189,7 @@ const PhoneVote = memo(function PhoneVote({
             />
           ))}
         </div>
-        <div className="relative mt-3" style={{ height: 236 }}>
+        <div className="relative mt-3" style={{ height: CARD_PX }}>
           {dates[index + 1] && (
             <div className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
               <CardFace
@@ -206,7 +228,7 @@ const PhoneVote = memo(function PhoneVote({
                     x: to === "accepted" ? 640 : -640,
                     rotate: to === "accepted" ? 18 : -18,
                     opacity: 0,
-                    transition: { duration: 0.38, ease: [0.3, 0, 0.8, 0.6] },
+                    transition: { duration: 0.42, ease: [0.3, 0, 0.8, 0.6] },
                   }),
                 }}
                 initial="enter"
@@ -244,7 +266,6 @@ const PhoneVote = memo(function PhoneVote({
             )}
           </AnimatePresence>
         </div>
-        <AnswerButtons onAnswer={() => {}} screen tight />
       </div>
     </div>
   );

@@ -66,9 +66,8 @@ export const en: Messages = {
     haveAccount: "Already have an account?",
     back: "Back",
     you: "You",
-    group: "Friday drinks",
     event: "Board games night",
-    allCan: "Everyone's free Friday.",
+    candidates: "Possible dates",
   },
   updateRequired: {
     title: "Update Casy",
