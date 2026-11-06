@@ -1,3 +1,6 @@
+import { useId } from "react";
+
+import HelpButton from "@/components/ui/HelpButton";
 import { TOUR_STOPS, type TourStop } from "@/lib/calendarTour";
 import { haptic } from "@/lib/haptics";
 import { useT } from "@/i18n/lang";
@@ -7,27 +10,40 @@ const THUMB_PX = 28;
 const place = (share: number) => `calc(${THUMB_PX / 2}px + ${share} * (100% - ${THUMB_PX}px))`;
 
 /**
- * How much a calendar matters (#221): a real range input, so it is dragged and
- * read out as one, that snaps to the four stops with a small tick on each. The
- * stop's name and what it does stand under it, in a fixed height, so nothing
- * below jumps as it moves.
+ * A calendar's priority (#221): a real range input, so it is dragged and read out
+ * as one, that snaps to the four stops with a small tick on each. Under it only
+ * the stop's name; what each does in practice is behind the ?.
  */
 export default function TourSlider({
   stop,
-  label,
   onChange,
 }: {
   stop: TourStop;
-  label: string;
   onChange: (stop: TourStop) => void;
 }) {
   const t = useT();
   const words = t.calendarTour;
-  const names: Record<TourStop, string> = { off: words.off, ...t.calendarView.priorities };
+  const names: Record<TourStop, string> = { off: words.off, ...words.levels };
+  const helpId = useId();
   const at = TOUR_STOPS.indexOf(stop);
   const filled = place(at / (TOUR_STOPS.length - 1));
   return (
-    <div>
+    <div id={helpId}>
+      <div className="flex items-center gap-1.5 px-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {words.importance}
+        </p>
+        <HelpButton label={words.importanceHelp} anchorId={helpId}>
+          {() => (
+            <div className="space-y-2">
+              <p>{words.levelsHelp}</p>
+              <p>
+                {words.off}: {words.effects.off}
+              </p>
+            </div>
+          )}
+        </HelpButton>
+      </div>
       <div className="relative h-11">
         {/* The stops, on the track and under the thumb. */}
         {TOUR_STOPS.map((s, i) => (
@@ -46,7 +62,7 @@ export default function TourSlider({
           max={TOUR_STOPS.length - 1}
           step={1}
           value={at}
-          aria-label={label}
+          aria-label={words.importance}
           aria-valuetext={names[stop]}
           onChange={(e) => {
             haptic("select");
@@ -60,10 +76,9 @@ export default function TourSlider({
           }
         />
       </div>
-      <div className="mt-1 min-h-[3.5rem] px-1">
-        <p className="text-[0.9375rem] font-semibold text-foreground">{names[stop]}</p>
-        <p className="text-[0.8125rem] leading-snug text-muted-foreground">{words.effects[stop]}</p>
-      </div>
+      <p className="px-1 text-center text-[0.9375rem] font-semibold text-foreground">
+        {names[stop]}
+      </p>
     </div>
   );
 }

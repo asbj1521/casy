@@ -22,6 +22,7 @@ import Collapse from "@/components/ui/Collapse";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
+import { isNativeApp } from "@/lib/nativeApp";
 import {
   CATEGORIES,
   groupCalendarsByBrand,
@@ -106,7 +107,7 @@ export default function CalendarListPanel({
         <h2 className="font-semibold text-foreground">{words.listTitle}</h2>
         <InfoTip label={words.priorityHelpLabel}>
           {introInTip && <p className="mb-2">{words.listIntro}</p>}
-          {words.priorityHelp}
+          {isNativeApp ? t.calendarTour.levelsHelp : words.priorityHelp}
         </InfoTip>
       </div>
       {!introInTip && <p className="mt-1 text-xs text-muted-foreground">{words.listIntro}</p>}

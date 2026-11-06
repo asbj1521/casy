@@ -1254,8 +1254,16 @@ export const en: Messages = {
     finish: "Finish",
     step: (i: number, n: number) => `Calendar ${i} of ${n}`,
     events: (n: number) => (n === 1 ? "1 event" : `${n} events`),
-    category: "What kind of calendar is it?",
-    importance: "How much does it matter?",
+    category: "Category",
+    importance: "Priority",
+    importanceHelp: "What does priority mean?",
+    levels: {
+      skip: "Low priority",
+      normal: "Normal priority",
+      never: "High priority",
+    },
+    levelsHelp:
+      "Low priority: Casy may put events on top of it if no date within a week works without. Normal priority: busy, but for trips and holidays you can take time off work and school. High priority: busy, also when trips are being planned.",
     off: "Doesn't count",
     effects: {
       off: "Casy ignores it, and it isn't shown on your calendar.",

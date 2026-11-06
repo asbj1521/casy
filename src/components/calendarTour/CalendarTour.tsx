@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Sparkles } from "lucide-react";
+import { Check, Plus, Sparkles } from "lucide-react";
 
 import { calendarsChanged, updateCalendar, type CalendarChange } from "@/api/calendars";
 import NewCategorySheet from "@/components/calendars/NewCategorySheet";
 import FlowButton from "@/components/ui/FlowButton";
-import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
 import { CATEGORIES, ownCategories, type OverviewCalendar } from "@/lib/calendarOverview";
 import { changesFrom, choiceOf, tourSteps, type TourChoice } from "@/lib/calendarTour";
@@ -30,6 +29,54 @@ const CARD = {
         }
       : { opacity: 0, scale: 0.96, transition: { duration: 0.15 } },
 };
+
+/**
+ * One category in the grid, with a real radio over the whole of it. Not a list row
+ * as choices usually are (design rule 5): with a slider under it on one screen,
+ * rows ran off the bottom as soon as someone had a category of their own.
+ */
+function CategoryChoice({
+  group,
+  checked,
+  onChange,
+  guessed = false,
+  children,
+}: {
+  group: string;
+  checked: boolean;
+  onChange: () => void;
+  guessed?: boolean;
+  children: string;
+}) {
+  const t = useT();
+  return (
+    <label
+      className={cn(
+        "relative flex min-h-[2.75rem] cursor-pointer items-center gap-1.5 rounded-2xl border px-3 text-[0.9375rem] transition-colors",
+        checked
+          ? "border-primary bg-primary/10 font-semibold text-primary"
+          : "bg-card text-foreground",
+      )}
+    >
+      <input
+        type="radio"
+        name={group}
+        checked={checked}
+        onChange={onChange}
+        aria-label={guessed ? `${children}, ${t.aiPlan.guessed}` : children}
+        className="absolute inset-0 m-0 h-full w-full cursor-pointer appearance-none opacity-0"
+      />
+      <span className="min-w-0 truncate">{children}</span>
+      {guessed && (
+        <span className="flex shrink-0 items-center gap-1 text-[0.75rem] font-normal text-muted-foreground large-text:hidden">
+          <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />
+          {t.aiPlan.guessed}
+        </span>
+      )}
+      {checked && <Check aria-hidden className="ml-auto h-4 w-4 shrink-0" strokeWidth={3} />}
+    </label>
+  );
+}
 
 /**
  * The guided calendar setup (#221): your calendars one at a time, in their own
@@ -168,7 +215,7 @@ export default function CalendarTour({
             </div>
 
             {/* The card, the next one waiting behind it, so it reads as a stack. */}
-            <div className="relative mt-3 h-[6.25rem] short:h-[4.5rem]">
+            <div className="relative mt-3 h-[6.25rem] short:h-[4.5rem] large-text:h-[3.75rem]">
               {next && (
                 <div aria-hidden className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
                   <TourCard calendar={next} color={colorOf(next.id)} />
@@ -190,59 +237,50 @@ export default function CalendarTour({
               </AnimatePresence>
             </div>
 
-            <ListGroup title={words.category} className="mt-4">
+            <p className="mb-2 mt-4 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {words.category}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((category) => (
-                <ListPickRow
+                <CategoryChoice
                   key={category}
-                  type="radio"
-                  name={`tour-${current.id}`}
+                  group={`tour-${current.id}`}
                   checked={choice.purpose === category && !choice.categoryName}
                   onChange={() => setChoice({ purpose: category, categoryName: null })}
-                  label={
-                    current.purposeGuessed &&
+                  guessed={
+                    !!current.purposeGuessed &&
                     current.purpose === category &&
-                    !current.categoryName ? (
-                      <span className="flex items-center gap-1.5">
-                        {t.categories[category]}
-                        <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />
-                        <span className="text-[0.75rem] text-muted-foreground">
-                          {t.aiPlan.guessed}
-                        </span>
-                      </span>
-                    ) : (
-                      t.categories[category]
-                    )
+                    !current.categoryName
                   }
-                />
+                >
+                  {t.categories[category]}
+                </CategoryChoice>
               ))}
               {own.map((category) => (
-                <ListPickRow
+                <CategoryChoice
                   key={category.name}
-                  type="radio"
-                  name={`tour-${current.id}`}
+                  group={`tour-${current.id}`}
                   checked={choice.categoryName === category.name}
                   onChange={() =>
                     setChoice({ purpose: category.purpose, categoryName: category.name })
                   }
-                  label={category.name}
-                />
+                >
+                  {category.name}
+                </CategoryChoice>
               ))}
-              <ListRow
-                icon={Plus}
-                tone="primary"
-                label={t.calendarView.newCategory}
+              <button
+                type="button"
                 onClick={() => setCreating(true)}
-              />
-            </ListGroup>
+                className="flex min-h-[2.75rem] items-center gap-1.5 rounded-2xl border border-dashed px-3 text-left text-[0.9375rem] font-medium text-primary"
+              >
+                <Plus aria-hidden className="h-4 w-4 shrink-0" />
+                <span className="truncate">{t.calendarView.newCategory}</span>
+              </button>
+            </div>
 
-            <p className="mt-4 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {words.importance}
-            </p>
-            <TourSlider
-              stop={choice.stop}
-              label={words.importance}
-              onChange={(stop) => setChoice({ stop })}
-            />
+            <div className="mt-4">
+              <TourSlider stop={choice.stop} onChange={(stop) => setChoice({ stop })} />
+            </div>
 
             <NewCategorySheet
               open={creating}

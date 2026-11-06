@@ -1303,8 +1303,16 @@ export const da = {
     finish: "Afslut",
     step: (i: number, n: number) => `Kalender ${i} af ${n}`,
     events: (n: number) => (n === 1 ? "1 aftale" : `${n} aftaler`),
-    category: "Hvad er det for en kalender?",
-    importance: "Hvor meget betyder den?",
+    category: "Kategori",
+    importance: "Prioritet",
+    importanceHelp: "Hvad betyder prioritet?",
+    levels: {
+      skip: "Lav prioritet",
+      normal: "Normal prioritet",
+      never: "Høj prioritet",
+    },
+    levelsHelp:
+      "Lav prioritet: Casy må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden. Normal prioritet: optaget, men til ture og ferier kan du tage fri fra arbejde og skole. Høj prioritet: optaget, også når der planlægges ture.",
     off: "Tæller ikke med",
     effects: {
       off: "Casy ser bort fra den, og den vises ikke på din kalender.",

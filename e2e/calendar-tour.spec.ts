@@ -84,7 +84,7 @@ test("Casy's guess counts, is ticked and marked, and Næste makes it the person'
   await asTheApp(page);
   await page.goto("/?calendars=tour");
   await expect(steps(page)).toHaveCount(1);
-  await expect(tour(page).getByRole("radio", { name: "Arbejde" })).toBeChecked();
+  await expect(tour(page).getByRole("radio", { name: /^Arbejde/ })).toBeChecked();
   await expect(tour(page).getByText("gættet")).toBeVisible();
   await tour(page).getByRole("button", { name: "Afslut" }).click();
   await expect.poll(() => first.purpose_source).toBe("user");
@@ -110,10 +110,7 @@ test("the slider saves its stop, and the lowest switches a calendar off", async 
   await asTheApp(page);
   await page.goto("/?calendars=tour");
   await tour(page).getByRole("slider").fill("3");
-  await expect(tour(page).getByRole("slider")).toHaveAttribute(
-    "aria-valuetext",
-    "Spring aldrig over",
-  );
+  await expect(tour(page).getByRole("slider")).toHaveAttribute("aria-valuetext", "Høj prioritet");
   await tour(page).getByRole("button", { name: "Næste" }).click();
   await expect.poll(() => first.priority).toBe("never");
   await tour(page).getByRole("slider").fill("0");

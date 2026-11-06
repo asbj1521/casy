@@ -5,6 +5,7 @@ import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import { ListGroup, ListPickRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
 import type { OverviewCalendar } from "@/lib/calendarOverview";
+import { isNativeApp } from "@/lib/nativeApp";
 import type { CalendarPriority } from "@/types";
 
 const PRIORITIES: CalendarPriority[] = ["skip", "normal", "never"];
@@ -22,7 +23,10 @@ export default function PriorityPicker({
   disabled: boolean;
   onChange: (priority: CalendarPriority) => void;
 }) {
-  const words = useT().calendarView;
+  const t = useT();
+  const words = t.calendarView;
+  // The app calls them what the guided setup does (#221).
+  const names = isNativeApp ? t.calendarTour.levels : words.priorities;
   const group = useId();
   const [open, setOpen] = useState(false);
 
@@ -33,7 +37,7 @@ export default function PriorityPicker({
         disabled={disabled}
         onClick={() => setOpen(true)}
       >
-        <span className="truncate">{words.priorities[calendar.priority]}</span>
+        <span className="truncate">{names[calendar.priority]}</span>
       </PickerButton>
       <AnchoredPanel
         open={open}
@@ -52,7 +56,7 @@ export default function PriorityPicker({
                 onChange(priority);
                 setOpen(false);
               }}
-              label={words.priorities[priority]}
+              label={names[priority]}
             />
           ))}
         </ListGroup>
