@@ -200,6 +200,39 @@ test("in the app, the phone's own calendars come first and Google and Outlook wa
   );
 });
 
+test.describe("connecting calendars in the app (#229)", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+    });
+  });
+
+  test.describe("with nothing connected", () => {
+    test.use({ world: { calendars: "none", groups: "some" } });
+
+    test("it is one button, and the other ways wait under one row", async ({ page }) => {
+      await page.goto("/calendar-overview/accounts");
+      await expect(page.getByRole("heading", { name: "Link din Apple-kalender" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Importér min kalender" })).toBeVisible();
+      await expect(page.getByText("Forbind din kalender")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: /Denne telefon/ })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: /^Apple-kalender/ })).toHaveCount(0);
+      await page.getByRole("button", { name: /Andre måder at forbinde/ }).click();
+      await expect(page.getByRole("button", { name: /^Apple-kalender/ })).toBeVisible();
+    });
+  });
+
+  test("once connected, it doesn't ask for an Apple calendar all over again", async ({ page }) => {
+    await page.goto("/calendar-overview/accounts");
+    await expect(page.getByRole("heading", { name: "Link din Apple-kalender" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Apple-kalender/ })).toHaveCount(0);
+    await page.getByRole("button", { name: /Andre måder at forbinde/ }).click();
+    await expect(
+      page.getByRole("button", { name: /Apple-kalender.*ikke er på denne telefon/ }),
+    ).toBeVisible();
+  });
+});
+
 test.describe("short pages", () => {
   test.use({ world: { calendars: "connected", groups: "none" } });
 

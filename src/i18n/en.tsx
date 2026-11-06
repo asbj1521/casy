@@ -189,7 +189,8 @@ export const en: Messages = {
     add: "Add a calendar",
     help: "Help connecting:",
     more: "Other ways to connect",
-    moreDetail: "Apple Calendar or a calendar link",
+    moreDetail: "Another Apple account or a calendar link",
+    appleElsewhere: "An Apple account that isn't on this phone",
   },
   appearance: {
     title: "Appearance",

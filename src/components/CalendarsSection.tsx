@@ -13,6 +13,7 @@ import {
 import AppleCredentialsForm from "@/components/AppleCredentialsForm";
 import AccountList from "@/components/calendars/AccountList";
 import AddCalendar from "@/components/calendars/AddCalendar";
+import ImportThisPhone from "@/components/calendars/ImportThisPhone";
 import { ADD_HERE, addTargetId, PROVIDER_BRANDS } from "@/components/calendarProviders";
 import IcsLinkForm from "@/components/IcsLinkForm";
 import PrimaryCalendarCard from "@/components/PrimaryCalendarCard";
@@ -47,7 +48,9 @@ import type { CalendarProvider } from "@/types";
  * Until a first calendar is linked, the page opens with a note saying it is
  * the next step, and the providers take turns glowing; arriving with one
  * picked (?connect=apple, from ConnectCalendarPrompt), that one is marked
- * instead, its form already open if it has one.
+ * instead, its form already open if it has one. In the app it is one button
+ * instead (#229), the import sheet's (ImportThisPhone): with the other ways folded
+ * away under the same row, before and after connecting, the screen stays the same.
  */
 export default function CalendarsSection() {
   const t = useT();
@@ -63,7 +66,11 @@ export default function CalendarsSection() {
   // This phone, connected already, isn't offered again; another phone of
   // yours (an iPad) doesn't count.
   const thisPhone = isNativeApp ? phoneConnectionId(user.id) : null;
-  const offer = ADD_HERE.filter((p) => p !== "device" || !accounts.some((a) => a.id === thisPhone));
+  // Nothing yet in the app: the phone is the one button, not a row among the others.
+  const importFirst = isNativeApp && !isPending && !hasConnected;
+  const offer = ADD_HERE.filter(
+    (p) => p !== "device" || (!importFirst && !accounts.some((a) => a.id === thisPhone)),
+  );
 
   // The provider picked before arriving, read once; the address is then
   // cleaned so a refresh doesn't open its form again.
@@ -160,7 +167,7 @@ export default function CalendarsSection() {
 
   return (
     <>
-      {!isPending && !hasConnected && (
+      {!isNativeApp && !isPending && !hasConnected && (
         <div className="mt-6 rounded-2xl border-2 border-primary/40 bg-primary/5 p-4 text-center sm:p-5">
           <h2 className="text-xl font-bold text-foreground sm:text-2xl">
             {t.profile.onboardingTitle}
@@ -179,6 +186,14 @@ export default function CalendarsSection() {
 
       {/* At the top, where it is seen: the phone's row is far down a phone's screen. */}
       <PhoneNote outcome={connectPhone.data} error={connectPhone.error?.message ?? null} />
+
+      {importFirst && (
+        <ImportThisPhone
+          importing={connectPhone.isPending}
+          denied={connectPhone.data?.state === "denied"}
+          onImport={() => connectPhone.mutate()}
+        />
+      )}
 
       {hasConnected && (
         <AccountList

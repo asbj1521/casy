@@ -63,8 +63,8 @@ function connectLabel(state: ProviderState, t: Messages): string {
  * draws it); the phone asks iOS and sends its calendars.
  *
  * In the iPhone app (#141) the phone's own calendars come first, and the other
- * ways (APP_MORE) fold away under one row, open when one of them is picked,
- * connecting or failed.
+ * ways (APP_MORE) fold away under one row, the same before and after connecting
+ * (#229), open when one of them is picked, connecting or failed.
  */
 export default function AddCalendar({
   offer,
@@ -98,14 +98,14 @@ export default function AddCalendar({
     const folded = isNativeApp ? APP_MORE : [];
     const main = states.filter((s) => !folded.includes(s.id));
     const more = states.filter((s) => folded.includes(s.id));
-    const showMore =
-      moreOpen || more.some((s) => s.chosen || s.pending || s.failed) || main.length === 0;
+    const showMore = moreOpen || more.some((s) => s.chosen || s.pending || s.failed);
     const shown = showMore ? [...main, ...more] : main;
     const guides = shown.map((s) => s.id).filter((id) => PROVIDER_BRANDS[id].helpTo);
     return (
       <>
         <ListGroup
-          title={t.calendarAccounts.add}
+          // With only the other ways left, their own row says it all.
+          title={main.length > 0 ? t.calendarAccounts.add : undefined}
           footnote={
             guides.length > 0 && (
               <>
@@ -126,7 +126,7 @@ export default function AddCalendar({
           }
         >
           {main.map(row)}
-          {more.length > 0 && main.length > 0 && (
+          {more.length > 0 && (
             <ListRow
               icon={Ellipsis}
               label={t.calendarAccounts.more}
@@ -159,7 +159,12 @@ export default function AddCalendar({
             </span>
           }
           label={t.providers[state.id].label}
-          detail={t.connectPrompt.hints[state.id]}
+          // In the app, the phone's Apple calendar is in by importing the phone.
+          detail={
+            isNativeApp && state.id === "apple"
+              ? t.calendarAccounts.appleElsewhere
+              : t.connectPrompt.hints[state.id]
+          }
           value={waiting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           selected={state.chosen}
           onClick={waiting ? undefined : () => onConnect(state.id)}

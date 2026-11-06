@@ -199,7 +199,8 @@ export const da = {
     add: "Tilføj en kalender",
     help: "Hjælp til at forbinde:",
     more: "Andre måder at forbinde",
-    moreDetail: "Apple-kalender eller et kalenderlink",
+    moreDetail: "En anden Apple-konto eller et kalenderlink",
+    appleElsewhere: "En Apple-konto, der ikke er på denne telefon",
   },
   appearance: {
     title: "Udseende",
