@@ -31,17 +31,31 @@ const POSE = {
   below: { y: 1.05, scale: 1, rotateY: 0, rotate: 0 },
   /** Facing you, room around it for the faces and the paper. */
   flat: { y: 0, scale: 1, rotateY: 0, rotate: 0 },
-  /** A little smaller and lower, all of it in view, under a headline. */
-  framed: { y: 0.09, scale: 0.86, rotateY: 0, rotate: 0 },
+  /** All of it in view under a headline: where it stands and how big comes from the room left. */
+  framed: { y: 0, scale: 1, rotateY: 0, rotate: 0 },
   /** The same, turned a little as you answer, its side showing. */
-  turned: { y: 0.09, scale: 0.86, rotateY: -11, rotate: 2 },
+  turned: { y: 0, scale: 1, rotateY: -11, rotate: 2 },
 };
+/** The headline's distance from the top of the stage, in px. */
+const HEADLINE_TOP = 12;
+const HEADLINE_TEXT =
+  "text-balance text-center text-[2rem] font-bold leading-[1.08] tracking-tight text-foreground large-text:text-[1.5rem]";
+
 const POSE_SPRING = { type: "spring", stiffness: 90, damping: 20 } as const;
 
-/** Where the colour shape lies behind the phone, as shares of its panel. */
+/**
+ * Where the colour shape lies behind the phone at each step, as shares of its
+ * panel. It never goes: it moves on with the phone, so the steps run together.
+ * Never so high that it runs behind a headline.
+ */
 const SHAPE = {
-  under: { x: "-8%", y: "34%", rotate: -14, scale: 1.05, opacity: 1 },
-  gone: { x: "-8%", y: "20%", rotate: 8, scale: 1, opacity: 0 },
+  group: { x: "-8%", y: "34%", rotate: -14, scale: 1.05 },
+  calendars: { x: "-20%", y: "46%", rotate: 10, scale: 1.1 },
+  found: { x: "6%", y: "40%", rotate: -8, scale: 1 },
+  list: { x: "-16%", y: "38%", rotate: 20, scale: 1.05 },
+  vote: { x: "-4%", y: "30%", rotate: -22, scale: 1.1 },
+  agreed: { x: "-24%", y: "42%", rotate: 6, scale: 1.05 },
+  landed: { x: "0%", y: "36%", rotate: -10, scale: 1.1 },
 };
 
 /** When a friend's face pops up around the phone and when it leaves for its row. */
@@ -166,14 +180,19 @@ export default function WelcomeStage() {
   const still = useReducedMotion() ?? false;
 
   const stage = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  // The longest headline, unseen, measured: the phone stands under that much room.
+  const ruler = useRef<HTMLParagraphElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0, headline: 0 });
   useLayoutEffect(() => {
     const el = stage.current;
-    if (!el) return;
-    const measure = () => setSize({ width: el.clientWidth, height: el.clientHeight });
+    const line = ruler.current;
+    if (!el || !line) return;
+    const measure = () =>
+      setSize({ width: el.clientWidth, height: el.clientHeight, headline: line.offsetHeight });
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
+    observer.observe(line);
     return () => observer.disconnect();
   }, []);
 
@@ -226,9 +245,29 @@ export default function WelcomeStage() {
   // A line over the phone says what is going on: possible dates, then the vote.
   const headline = listing ? t.welcome.candidates : voting ? t.welcome.voting : null;
   const pose = voting ? POSE.turned : listing ? POSE.framed : POSE.flat;
-  const shape = now < AT.home || voting ? SHAPE.under : SHAPE.gone;
+  const shape =
+    now < AT.home
+      ? SHAPE.group
+      : now < AT.shine
+        ? SHAPE.calendars
+        : now < AT.list
+          ? SHAPE.found
+          : now < AT.vote
+            ? SHAPE.list
+            : now < AT.agreed
+              ? SHAPE.vote
+              : now < AT.landing
+                ? SHAPE.agreed
+                : SHAPE.landed;
   const scale = Math.min((size.height * 0.92) / DEVICE.height, (size.width * 0.62) / DEVICE.width);
   const place = (p: typeof pose) => ({ ...p, y: p.y * size.height, scale: p.scale * scale });
+  // Under a headline: as big as fits in what is left, and centred there.
+  const room = HEADLINE_TOP + size.headline + 10;
+  const framedHeight = size.height - room - 6;
+  const framed = {
+    y: room + framedHeight / 2 - size.height / 2,
+    scale: Math.min(framedHeight / DEVICE.height, scale),
+  };
 
   const items = now >= AT.landing ? withEvent : now >= AT.digital ? everyone : yours;
   const pressing = !still && ((now >= AT.press && now < AT.list) || now >= AT.landing);
@@ -264,40 +303,51 @@ export default function WelcomeStage() {
           <motion.div
             className="absolute inset-x-[-30%] top-0"
             style={{ aspectRatio: "1 / 0.9" }}
-            initial={still ? SHAPE.gone : { ...SHAPE.under, y: "90%", opacity: 0 }}
-            animate={still ? SHAPE.gone : shape}
-            transition={{
-              type: "spring",
-              stiffness: 50,
-              damping: 16,
-              // Gone before it has swept away, so it leaves no dark trail behind.
-              opacity: { duration: 0.35, ease: "easeOut" },
-            }}
+            initial={still ? SHAPE.group : { ...SHAPE.group, y: "90%" }}
+            animate={still ? SHAPE.group : shape}
+            transition={{ type: "spring", stiffness: 42, damping: 15 }}
           >
-            <div
-              className="absolute inset-0 rounded-[46%]"
-              style={{
-                background:
-                  "radial-gradient(circle at 74% 26%, #ffd60a 0, transparent 44%), radial-gradient(circle at 82% 78%, #ff2d78 0, transparent 50%), linear-gradient(135deg, #fb923c, #f43f5e)",
-              }}
-            />
-            <div
-              className="absolute inset-x-[-6%] top-[52%] h-[70%] rounded-[50%]"
-              style={{
-                background:
-                  "radial-gradient(circle at 20% 20%, #fbbf24 0, transparent 60%), linear-gradient(120deg, #f97316, #ec4899)",
-              }}
-            />
+            {/* Always drifting a little, so it is alive between the steps too. */}
+            <motion.div
+              className="absolute inset-0"
+              animate={
+                still ? undefined : { rotate: [-4, 4, -4], x: [-10, 12, -10], y: [6, -8, 6] }
+              }
+              transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <div
+                className="absolute inset-0 rounded-[46%]"
+                style={{
+                  background:
+                    "radial-gradient(circle at 74% 26%, #ffd60a 0, transparent 44%), radial-gradient(circle at 82% 78%, #ff2d78 0, transparent 50%), linear-gradient(135deg, #fb923c, #f43f5e)",
+                }}
+              />
+              <div
+                className="absolute inset-x-[-6%] top-[52%] h-[70%] rounded-[50%]"
+                style={{
+                  background:
+                    "radial-gradient(circle at 20% 20%, #fbbf24 0, transparent 60%), linear-gradient(120deg, #f97316, #ec4899)",
+                }}
+              />
+            </motion.div>
           </motion.div>
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
         </div>
 
         {/* The line over the phone, one giving way to the next in the same place. */}
+        <p
+          ref={ruler}
+          className={`invisible absolute inset-x-4 ${HEADLINE_TEXT}`}
+          style={{ top: HEADLINE_TOP }}
+        >
+          {t.welcome.voting}
+        </p>
         <AnimatePresence>
           {headline && !still && (
             <motion.p
               key={headline}
-              className="absolute inset-x-4 top-[3%] text-center text-[2.5rem] font-bold leading-[1.05] tracking-tight text-foreground large-text:text-[1.875rem]"
+              className={`absolute inset-x-4 ${HEADLINE_TEXT}`}
+              style={{ top: HEADLINE_TOP }}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -320,7 +370,9 @@ export default function WelcomeStage() {
               transformStyle: "preserve-3d",
             }}
             initial={still ? false : place(POSE.below)}
-            animate={still ? place(POSE.flat) : place(pose)}
+            animate={
+              still ? place(POSE.flat) : listing || voting ? { ...pose, ...framed } : place(pose)
+            }
             transition={still ? { duration: 0 } : POSE_SPRING}
           >
             <PhoneDevice

@@ -68,7 +68,7 @@ export const en: Messages = {
     you: "You",
     event: "Board games night",
     candidates: "Possible dates",
-    voting: "Everyone votes",
+    voting: "Voting on the suggested dates",
   },
   updateRequired: {
     title: "Update Casy",

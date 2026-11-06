@@ -73,7 +73,7 @@ export const da = {
     you: "Dig",
     event: "Brætspilsaften",
     candidates: "Mulige datoer",
-    voting: "Alle stemmer",
+    voting: "Afstemning af foreslåede datoer",
   },
   updateRequired: {
     title: "Opdater Casy",
