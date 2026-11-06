@@ -1,11 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Sparkles } from "lucide-react";
 
 import { calendarsChanged, updateCalendar, type CalendarChange } from "@/api/calendars";
 import NewCategorySheet from "@/components/calendars/NewCategorySheet";
-import BottomSheet from "@/components/ui/BottomSheet";
 import FlowButton from "@/components/ui/FlowButton";
 import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
@@ -38,18 +37,18 @@ const CARD = {
  * guess is already ticked, so "Næste" alone takes care of a good one. It moves on
  * at once and saves behind it: a card waiting on the network would spoil what
  * makes this quick, and anything that failed is said at the end. What it saves
- * is what the calendar list's pickers save. Opened from Kalendere, never by
- * itself: it is a chore to choose, not one to land in.
+ * is what the calendar list's pickers save. A screen inside the Kalendere sheet,
+ * sliding in as "Forbundne kalendere" does, with its back arrow; never by itself:
+ * it is a chore to choose, not one to land in.
  */
 export default function CalendarTour({
-  open,
   onClose,
   calendars,
   colorOf,
   seen,
   onSeen,
 }: {
-  open: boolean;
+  /** "Se min kalender", at the end: out of Kalendere altogether. */
   onClose: () => void;
   calendars: OverviewCalendar[];
   colorOf: (calendarId: string) => string;
@@ -128,144 +127,144 @@ export default function CalendarTour({
     for (const { id, changes } of again) save(id, changes);
   };
 
-  // The list and the month pick it all up as it closes, once everything is saved.
-  const close = () => {
-    const pending = saving.current;
-    saving.current = [];
-    if (pending.length > 0) void Promise.all(pending).then(() => calendarsChanged(queryClient));
-    onClose();
-  };
+  // The list and the month pick it all up on leaving this screen, once everything is saved.
+  useEffect(() => {
+    const sends = saving;
+    return () => {
+      const pending = sends.current;
+      sends.current = [];
+      if (pending.length > 0) void Promise.all(pending).then(() => calendarsChanged(queryClient));
+    };
+  }, [queryClient]);
 
   return (
-    <BottomSheet
-      open={open}
-      onClose={close}
-      title={done ? "" : words.title}
-      doneLabel={done ? t.common.done : t.common.cancel}
-      footer={
-        done ? (
-          <FlowButton onClick={close}>{words.see}</FlowButton>
+    <div className="flex h-full flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
+        {done || !current || !choice ? (
+          <TourDone
+            calendars={steps.filter((c) => (choices[c.id] ?? choiceOf(c)).stop !== "off")}
+            colorOf={colorOf}
+            failed={failed.length}
+            onRetry={retry}
+          />
+        ) : (
+          <div>
+            {/* One bar per calendar: tap back to one already done. */}
+            <div className="flex gap-1">
+              {steps.map((c, i) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  disabled={i >= index}
+                  onClick={() => goBackTo(i)}
+                  aria-label={words.step(i + 1, steps.length)}
+                  aria-current={i === index ? "step" : undefined}
+                  className={cn(
+                    "hit h-1.5 flex-1 rounded-full transition-colors duration-300",
+                    i === index ? "bg-foreground" : i < index ? "bg-primary" : "bg-secondary",
+                  )}
+                />
+              ))}
+            </div>
+
+            {/* The card, the next one waiting behind it, so it reads as a stack. */}
+            <div className="relative mt-3 h-[6.25rem] short:h-[4.5rem]">
+              {next && (
+                <div aria-hidden className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
+                  <TourCard calendar={next} color={colorOf(next.id)} />
+                </div>
+              )}
+              <AnimatePresence initial={false} custom={forward}>
+                <motion.div
+                  key={current.id}
+                  className="absolute inset-0 z-10"
+                  custom={forward}
+                  variants={CARD}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ type: "spring", damping: 26, stiffness: 300 }}
+                >
+                  <TourCard calendar={current} color={colorOf(current.id)} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <ListGroup title={words.category} className="mt-4">
+              {CATEGORIES.map((category) => (
+                <ListPickRow
+                  key={category}
+                  type="radio"
+                  name={`tour-${current.id}`}
+                  checked={choice.purpose === category && !choice.categoryName}
+                  onChange={() => setChoice({ purpose: category, categoryName: null })}
+                  label={
+                    current.purposeGuessed &&
+                    current.purpose === category &&
+                    !current.categoryName ? (
+                      <span className="flex items-center gap-1.5">
+                        {t.categories[category]}
+                        <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />
+                        <span className="text-[0.75rem] text-muted-foreground">
+                          {t.aiPlan.guessed}
+                        </span>
+                      </span>
+                    ) : (
+                      t.categories[category]
+                    )
+                  }
+                />
+              ))}
+              {own.map((category) => (
+                <ListPickRow
+                  key={category.name}
+                  type="radio"
+                  name={`tour-${current.id}`}
+                  checked={choice.categoryName === category.name}
+                  onChange={() =>
+                    setChoice({ purpose: category.purpose, categoryName: category.name })
+                  }
+                  label={category.name}
+                />
+              ))}
+              <ListRow
+                icon={Plus}
+                tone="primary"
+                label={t.calendarView.newCategory}
+                onClick={() => setCreating(true)}
+              />
+            </ListGroup>
+
+            <p className="mt-4 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {words.importance}
+            </p>
+            <TourSlider
+              stop={choice.stop}
+              label={words.importance}
+              onChange={(stop) => setChoice({ stop })}
+            />
+
+            <NewCategorySheet
+              open={creating}
+              onClose={() => setCreating(false)}
+              onSave={(category) => {
+                setChoice(category);
+                setCreating(false);
+              }}
+            />
+          </div>
+        )}
+      </div>
+      {/* Pinned under what scrolls: the sheet is shared, so this screen keeps its own. */}
+      <div className="shrink-0 px-4 pb-4 pt-2">
+        {done ? (
+          <FlowButton onClick={onClose}>{words.see}</FlowButton>
         ) : (
           <FlowButton onClick={goOn}>
             {index + 1 >= steps.length ? words.finish : words.next}
           </FlowButton>
-        )
-      }
-    >
-      {done || !current || !choice ? (
-        <TourDone
-          calendars={steps.filter((c) => (choices[c.id] ?? choiceOf(c)).stop !== "off")}
-          colorOf={colorOf}
-          failed={failed.length}
-          onRetry={retry}
-        />
-      ) : (
-        <div>
-          {/* One bar per calendar: tap back to one already done. */}
-          <div className="flex gap-1">
-            {steps.map((c, i) => (
-              <button
-                key={c.id}
-                type="button"
-                disabled={i >= index}
-                onClick={() => goBackTo(i)}
-                aria-label={words.step(i + 1, steps.length)}
-                aria-current={i === index ? "step" : undefined}
-                className={cn(
-                  "hit h-1.5 flex-1 rounded-full transition-colors duration-300",
-                  i === index ? "bg-foreground" : i < index ? "bg-primary" : "bg-secondary",
-                )}
-              />
-            ))}
-          </div>
-
-          {/* The card, the next one waiting behind it, so it reads as a stack. */}
-          <div className="relative mt-3 h-[6.25rem] short:h-[4.5rem]">
-            {next && (
-              <div aria-hidden className="absolute inset-0 translate-y-2 scale-[0.96] opacity-60">
-                <TourCard calendar={next} color={colorOf(next.id)} />
-              </div>
-            )}
-            <AnimatePresence initial={false} custom={forward}>
-              <motion.div
-                key={current.id}
-                className="absolute inset-0 z-10"
-                custom={forward}
-                variants={CARD}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: "spring", damping: 26, stiffness: 300 }}
-              >
-                <TourCard calendar={current} color={colorOf(current.id)} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          <ListGroup title={words.category} className="mt-4">
-            {CATEGORIES.map((category) => (
-              <ListPickRow
-                key={category}
-                type="radio"
-                name={`tour-${current.id}`}
-                checked={choice.purpose === category && !choice.categoryName}
-                onChange={() => setChoice({ purpose: category, categoryName: null })}
-                label={
-                  current.purposeGuessed &&
-                  current.purpose === category &&
-                  !current.categoryName ? (
-                    <span className="flex items-center gap-1.5">
-                      {t.categories[category]}
-                      <Sparkles aria-hidden className="h-3 w-3 text-amber-500" />
-                      <span className="text-[0.75rem] text-muted-foreground">
-                        {t.aiPlan.guessed}
-                      </span>
-                    </span>
-                  ) : (
-                    t.categories[category]
-                  )
-                }
-              />
-            ))}
-            {own.map((category) => (
-              <ListPickRow
-                key={category.name}
-                type="radio"
-                name={`tour-${current.id}`}
-                checked={choice.categoryName === category.name}
-                onChange={() =>
-                  setChoice({ purpose: category.purpose, categoryName: category.name })
-                }
-                label={category.name}
-              />
-            ))}
-            <ListRow
-              icon={Plus}
-              tone="primary"
-              label={t.calendarView.newCategory}
-              onClick={() => setCreating(true)}
-            />
-          </ListGroup>
-
-          <p className="mt-4 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {words.importance}
-          </p>
-          <TourSlider
-            stop={choice.stop}
-            label={words.importance}
-            onChange={(stop) => setChoice({ stop })}
-          />
-
-          <NewCategorySheet
-            open={creating}
-            onClose={() => setCreating(false)}
-            onSave={(category) => {
-              setChoice(category);
-              setCreating(false);
-            }}
-          />
-        </div>
-      )}
-    </BottomSheet>
+        )}
+      </div>
+    </div>
   );
 }

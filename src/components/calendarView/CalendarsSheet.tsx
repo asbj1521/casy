@@ -13,9 +13,13 @@ import { isNativeApp } from "@/lib/nativeApp";
 
 // Connecting calendars brings its forms along: fetched as it first opens.
 const ConnectedCalendars = lazy(() => import("@/components/calendarView/ConnectedCalendars"));
+// The guided setup (#221), the app's only.
+const CalendarTour = lazy(() => import("@/components/calendarTour/CalendarTour"));
 
 /** The sheet's own screen in the address: `?calendars=accounts`. */
 const ACCOUNTS = "accounts";
+/** The guided setup: `?calendars=tour`. */
+const TOUR = "tour";
 
 /**
  * The phone's Kalendere (#219), dropping out of its button at the top: your
@@ -33,8 +37,9 @@ export default function CalendarsSheet({
   connectedCount,
   onSetVisible,
   visibilityError,
-  onTour,
   toSort,
+  tourSeen,
+  onTourSeen,
 }: {
   open: boolean;
   onClose: () => void;
@@ -46,10 +51,11 @@ export default function CalendarsSheet({
   connectedCount: number | null;
   onSetVisible: (calendarIds: string[], visible: boolean) => void;
   visibilityError: string | null;
-  /** The guided setup (#221, the app only): your calendars one at a time. */
-  onTour: () => void;
   /** How many calendars aren't set up yet: then it is what comes first here, and says so. */
   toSort: number;
+  /** The calendars the guided setup has been through. */
+  tourSeen: ReadonlySet<string>;
+  onTourSeen: (calendarId: string) => void;
 }) {
   const t = useT();
   const words = t.calendarView;
@@ -58,34 +64,40 @@ export default function CalendarsSheet({
   const reduce = useReducedMotion();
   const screen = new URLSearchParams(location.search).get("calendars");
   const accounts = screen === ACCOUNTS;
+  const tour = isNativeApp && screen === TOUR;
+  const current = accounts ? ACCOUNTS : tour ? TOUR : "list";
   const state = (location.state as { fromMonth?: boolean; sheetDepth?: number } | null) ?? {};
   const depth = state.sheetDepth ?? 0;
 
   // Which way it moves (React's pattern for state that follows a changed value).
-  const [shown, setShown] = useState({ accounts, dir: 1 });
-  if (accounts !== shown.accounts) setShown({ accounts, dir: accounts ? 1 : -1 });
+  const [shown, setShown] = useState({ screen: current, dir: 1 });
+  if (current !== shown.screen) setShown({ screen: current, dir: current === "list" ? -1 : 1 });
 
   const back = () => {
     if (depth > 0) navigate(-1);
     else navigate({ search: "?calendars" }, { replace: true, state });
   };
 
-  // The guided setup (#221): first and in orange while something waits for it.
+  // The guided setup (#221): first while something waits for it, carrying on the
+  // count from the Kalendere button, so it is plain which row that count led to.
   const tourRow = (
     <ListRow
       icon={ListChecks}
-      tone={toSort > 0 ? "primary" : "default"}
       label={t.calendarTour.row}
-      detail={
+      detail={toSort > 0 ? t.calendarTour.rowUnsorted(toSort) : t.calendarTour.rowDetail}
+      value={
         toSort > 0 ? (
-          // All of it: this line is why it is worth doing.
-          <span className="whitespace-normal">{t.calendarTour.rowUnsorted(toSort)}</span>
-        ) : (
-          t.calendarTour.rowDetail
-        )
+          <span
+            aria-hidden
+            className="flex h-5 min-w-5 items-center justify-center rounded-full bg-cta px-1 text-[11px] font-semibold leading-none text-white"
+          >
+            {toSort}
+          </span>
+        ) : undefined
       }
-      value={toSort > 0 ? toSort : undefined}
-      onClick={onTour}
+      onClick={() =>
+        navigate({ search: `?calendars=${TOUR}` }, { state: { ...state, sheetDepth: depth + 1 } })
+      }
     />
   );
 
@@ -93,17 +105,27 @@ export default function CalendarsSheet({
     <BottomSheet
       open={open}
       onClose={onClose}
-      title={accounts ? t.profile.connectedCalendars : words.calendarsButton}
+      title={
+        accounts
+          ? t.profile.connectedCalendars
+          : tour
+            ? t.calendarTour.title
+            : words.calendarsButton
+      }
       doneLabel={t.swipe.done}
       origin={origin}
       edge="top"
       arrived={arrived}
       stacked
-      back={accounts ? { label: words.calendarsButton, onBack: back, iconOnly: true } : undefined}
+      back={
+        current !== "list"
+          ? { label: words.calendarsButton, onBack: back, iconOnly: true }
+          : undefined
+      }
     >
       <AnimatePresence initial={false} mode="popLayout" custom={shown.dir}>
         <motion.div
-          key={accounts ? "accounts" : "list"}
+          key={current}
           custom={shown.dir}
           variants={PUSH}
           initial="enter"
@@ -112,12 +134,29 @@ export default function CalendarsSheet({
           transition={pushTransition(reduce)}
           // A plain block, not a flex column: a column would squash the forms'
           // collapsing boxes (overflow hidden) down to nothing.
-          className="min-h-0 w-full flex-auto overflow-y-auto overscroll-contain px-4 pb-4"
+          className={
+            tour
+              ? "min-h-0 w-full flex-auto"
+              : "min-h-0 w-full flex-auto overflow-y-auto overscroll-contain px-4 pb-4"
+          }
         >
           {accounts ? (
             <Suspense fallback={null}>
               <ConnectedCalendars />
             </Suspense>
+          ) : tour ? (
+            // Once the calendars are known: it sets out with the ones there are then.
+            connectedCount !== null && (
+              <Suspense fallback={null}>
+                <CalendarTour
+                  onClose={onClose}
+                  calendars={calendars}
+                  colorOf={colorOf}
+                  seen={tourSeen}
+                  onSeen={onTourSeen}
+                />
+              </Suspense>
+            )
           ) : (
             <>
               <ListGroup className="mb-4 mt-0">

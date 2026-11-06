@@ -80,7 +80,6 @@ const APP_TOP_GAP = "0.5rem";
 // Planning from here (#126) brings the whole scheduler with it: put on the
 // page only once a finger touches Planlæg.
 const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFromCalendar"));
-const CalendarTour = lazy(() => import("@/components/calendarTour/CalendarTour"));
 
 /**
  * The phone's home page (#169), My calendar: your busy time as Apple
@@ -187,12 +186,6 @@ export default function PhoneCalendar() {
     if (state?.fromMonth) navigate(-1 - (state.sheetDepth ?? 0));
     else navigate({ search: "" }, { replace: true });
   };
-  // The guided calendar setup (#221, the app only), in the address like the sheets;
-  // a new one each time it opens.
-  const tourOpen = isNativeApp && params.has("tour");
-  const tourWanted = useOnceTrue(tourOpen);
-  const [tour, setTour] = useState({ open: tourOpen, run: 0 });
-  if (tourOpen !== tour.open) setTour({ open: tourOpen, run: tour.run + (tourOpen ? 1 : 0) });
   // What it has been through stays on the phone; what's left is counted on Kalendere.
   const userId = useSignedInUser().id;
   const [tourSeen, setTourSeen] = useState(() => readTourSeen(userId));
@@ -782,24 +775,10 @@ export default function PhoneCalendar() {
         connectedCount={calendar.loading ? null : connectedCount}
         onSetVisible={setCalendarsVisible}
         visibilityError={visibilityError}
-        // In the sheet's place, so closing it comes back to the month.
-        onTour={() => navigate({ search: "?tour" }, { replace: true, state: location.state })}
         toSort={toSort}
+        tourSeen={tourSeen}
+        onTourSeen={seeInTour}
       />
-
-      {tourWanted && !calendar.loading && (
-        <Suspense fallback={null}>
-          <CalendarTour
-            key={tour.run}
-            open={tourOpen}
-            onClose={closeOverlay}
-            calendars={calendars}
-            colorOf={calendar.colorOf}
-            seen={tourSeen}
-            onSeen={seeInTour}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

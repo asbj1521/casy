@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
 
 import Celebration from "@/components/swipe/Celebration";
@@ -32,7 +33,8 @@ export default function TourDone({
   const middle = (fan.length - 1) / 2;
   return (
     <div className="flex flex-col items-center px-2 pb-4 pt-6 text-center">
-      <Celebration />
+      {/* On the page itself: inside the sheet it would be cut to the sheet. */}
+      {createPortal(<Celebration />, document.body)}
       <div aria-hidden className="relative h-36 w-full">
         {fan.map((c, i) => (
           <motion.div

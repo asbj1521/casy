@@ -1248,9 +1248,7 @@ export const en: Messages = {
     row: "Go through calendars",
     rowDetail: "One at a time",
     rowUnsorted: (n: number) =>
-      n === 1
-        ? "1 calendar isn't set up yet. Doing it gives you better dates."
-        : `${n} calendars aren't set up yet. Doing it gives you better dates.`,
+      n === 1 ? "1 calendar isn't set up" : `${n} calendars aren't set up`,
     badge: (n: number) => (n === 1 ? "1 calendar isn't set up" : `${n} calendars aren't set up`),
     next: "Next",
     finish: "Finish",

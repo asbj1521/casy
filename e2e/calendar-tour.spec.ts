@@ -50,11 +50,13 @@ test("it never opens by itself: Kalendere counts what isn't set up, and leads to
   // Only that one, and once it has one, the count is gone.
   await expect(steps(page)).toHaveCount(1);
   await tour(page).getByRole("radio", { name: "Skole" }).check();
-  await tour(page).getByRole("button", { name: "Færdig" }).click();
+  await tour(page).getByRole("button", { name: "Afslut" }).click();
   await expect.poll(() => unsorted[0].purpose).toBe("school");
   await expect(page.getByText("Så er dine kalendere klar")).toBeVisible();
   await page.getByRole("button", { name: "Se min kalender" }).click();
   await expect(page).toHaveURL(/\/$/);
+  // Once the sheet, with its own way back to Kalendere, has gone.
+  await expect(tour(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Kalendere", exact: true })).toBeVisible();
 });
 
@@ -64,7 +66,7 @@ test("one left without a category isn't counted again", async ({ page }) => {
   await importPutAway(page);
   await page.getByRole("button", { name: "Kalendere 1 kalender" }).click();
   await page.getByRole("button", { name: /Gennemgå kalendere/ }).click();
-  await tour(page).getByRole("button", { name: "Færdig" }).click();
+  await tour(page).getByRole("button", { name: "Afslut" }).click();
   await page.getByRole("button", { name: "Se min kalender" }).click();
   await page.reload();
   await importPutAway(page);
@@ -80,11 +82,11 @@ test("Casy's guess counts, is ticked and marked, and Næste makes it the person'
   first.purpose = "work";
   first.purpose_source = "ai";
   await asTheApp(page);
-  await page.goto("/?tour");
+  await page.goto("/?calendars=tour");
   await expect(steps(page)).toHaveCount(1);
   await expect(tour(page).getByRole("radio", { name: "Arbejde" })).toBeChecked();
   await expect(tour(page).getByText("gættet")).toBeVisible();
-  await tour(page).getByRole("button", { name: "Færdig" }).click();
+  await tour(page).getByRole("button", { name: "Afslut" }).click();
   await expect.poll(() => first.purpose_source).toBe("user");
   expect(first.purpose).toBe("work");
 });
@@ -106,7 +108,7 @@ test("the slider saves its stop, and the lowest switches a calendar off", async 
   allSorted(backend);
   const [first, second] = sources(backend);
   await asTheApp(page);
-  await page.goto("/?tour");
+  await page.goto("/?calendars=tour");
   await tour(page).getByRole("slider").fill("3");
   await expect(tour(page).getByRole("slider")).toHaveAttribute(
     "aria-valuetext",
@@ -123,12 +125,26 @@ test("the slider saves its stop, and the lowest switches a calendar off", async 
 test("a bar goes back to a calendar already done", async ({ page, backend }) => {
   allSorted(backend);
   await asTheApp(page);
-  await page.goto("/?tour");
+  await page.goto("/?calendars=tour");
   await expect(steps(page).nth(0)).toHaveAttribute("aria-current", "step");
   await tour(page).getByRole("button", { name: "Næste" }).click();
   await expect(steps(page).nth(1)).toHaveAttribute("aria-current", "step");
   await steps(page).nth(0).click();
   await expect(steps(page).nth(0)).toHaveAttribute("aria-current", "step");
+});
+
+test("it slides in inside Kalendere, and its arrow goes back to the list", async ({ page }) => {
+  await asTheApp(page);
+  await page.goto("/");
+  await importPutAway(page);
+  await page.getByRole("button", { name: "Kalendere 1 kalender" }).click();
+  await page.getByRole("button", { name: /Gennemgå kalendere/ }).click();
+  await expect(page).toHaveURL(/\?calendars=tour$/);
+  await expect(tour(page)).toBeVisible();
+  await tour(page).getByRole("button", { name: "Kalendere" }).click();
+  await expect(page).toHaveURL(/\?calendars$/);
+  await expect(page.getByRole("dialog", { name: "Kalendere" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Gennemgå kalendere/ })).toBeVisible();
 });
 
 test("the website has none of it", async ({ page }) => {
