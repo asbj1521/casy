@@ -2,10 +2,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { useLang, useT } from "@/i18n/lang";
-import InEveryonesCalendar from "./phone/InEveryonesCalendar";
+import Friends, { FLY_FOR, SEND_FOR, type FriendState } from "./phone/Friends";
 import PaperCalendar from "./phone/PaperCalendar";
 import PaperStack from "./phone/PaperStack";
-import PeopleJoining from "./phone/PeopleJoining";
 import PhoneDates from "./phone/PhoneDates";
 import PhoneDevice from "./phone/PhoneDevice";
 import PhoneGroup from "./phone/PhoneGroup";
@@ -51,7 +50,6 @@ const SHAPE = {
 /** When a friend's face pops up around the phone and when it leaves for its row. */
 const POP_AT = FRIENDS.map((_, i) => 0.3 + i * 0.13);
 const FLY_AT = FRIENDS.map((_, i) => 1.35 + i * 0.13);
-const FLY_FOR = 0.42;
 
 /** The paper's weeks dissolving into the month under it, from the middle out. */
 const DISSOLVE_S = 1.15;
@@ -59,8 +57,8 @@ const DISSOLVE_S = 1.15;
 /** One screen of the phone giving way to the next, zooming on the date when a day opens or closes. */
 const SCREEN_MOVE = { duration: 0.48, ease: [0.32, 0.72, 0, 1] } as const;
 
-/** How long the end stays: long enough to take in, since it is what all of it led up to. */
-const FINALE_S = 3.6;
+/** How long the end stays once all have it: long enough to take in, it is what all of it led up to. */
+const FINALE_HOLD_S = 2;
 
 const AT = (() => {
   const joined = FLY_AT.map((at) => at + FLY_FOR);
@@ -99,7 +97,10 @@ const AT = (() => {
   // The date is in; then the phone steps back and it goes out to everyone.
   const thudDone = landing + 0.2;
   const finale = landing + 0.75;
-  const finaleOut = finale + FINALE_S;
+  const sends = FRIENDS.map((_, i) => finale + 0.55 + i * 0.17);
+  const arrived = sends.map((at) => at + SEND_FOR);
+  // It stays a while, then the tiles go and the phone grows back under the faces.
+  const finaleOut = arrived[arrived.length - 1] + FINALE_HOLD_S;
   return {
     joined,
     leave,
@@ -130,11 +131,15 @@ const AT = (() => {
     landing,
     thudDone,
     finale,
+    sends,
+    arrived,
     finaleOut,
-    end: finaleOut + 0.3,
+    end: finaleOut + 0.28,
   };
 })();
 const MOMENTS = [
+  ...POP_AT,
+  ...FLY_AT,
   ...AT.joined,
   AT.leave,
   AT.home,
@@ -163,6 +168,8 @@ const MOMENTS = [
   AT.landing,
   AT.thudDone,
   AT.finale,
+  ...AT.sends,
+  ...AT.arrived,
   AT.finaleOut,
 ].sort((a, b) => a - b);
 
@@ -242,10 +249,12 @@ export default function WelcomeStage() {
       : finale && now < AT.finaleOut
         ? t.welcome.inEveryones
         : null;
-  const framedNow = listing || voting || finale;
+  const framedNow = listing || voting || (finale && now < AT.finaleOut);
   const pose = voting ? POSE.turned : framedNow ? POSE.framed : POSE.flat;
   const shape = finale
-    ? SHAPE.finale
+    ? now < AT.finaleOut
+      ? SHAPE.finale
+      : SHAPE.flat
     : now >= AT.agreed
       ? SHAPE.agreed
       : voting
@@ -263,6 +272,13 @@ export default function WelcomeStage() {
     scale: Math.min(framedHeight / DEVICE.height, scale),
   };
 
+  // Past the first round they are already standing there, from the end of the last.
+  const friends: FriendState[] = FRIENDS.map((_, i) => {
+    if (now >= AT.arrived[i]) return "around";
+    if (now >= AT.joined[i]) return "gone";
+    if (now >= FLY_AT[i]) return "row";
+    return round > 0 || now >= POP_AT[i] ? "around" : "gone";
+  });
   const thud = now >= AT.landing && now < AT.thudDone;
   const items = now >= AT.digital ? everyone : yours;
   const pressing = !still && ((now >= AT.press && now < AT.list) || now >= AT.landing);
@@ -373,9 +389,6 @@ export default function WelcomeStage() {
               over={
                 !still && (
                   <>
-                    {now < AT.leave && (
-                      <PeopleJoining key={round} popAt={POP_AT} flyAt={FLY_AT} flyFor={FLY_FOR} />
-                    )}
                     {thrown > 0 && now < AT.digital && (
                       <PaperStack
                         thrown={thrown}
@@ -386,15 +399,6 @@ export default function WelcomeStage() {
                       />
                     )}
                     {/* The pile, squared, become one sheet with everyone's pen on it. */}
-                    {finale && (
-                      <InEveryonesCalendar
-                        day={agreedDay}
-                        month={month}
-                        scale={framed.scale}
-                        stageWidth={size.width}
-                        leaving={now >= AT.finaleOut}
-                      />
-                    )}
                     {now >= AT.merged && now < AT.press + 0.5 && (
                       <motion.div
                         className="absolute inset-0"
@@ -484,6 +488,20 @@ export default function WelcomeStage() {
               </AnimatePresence>
             </PhoneDevice>
           </motion.div>
+        )}
+        {/* The friends, on the stage and outside the phone, so they can stay put as it changes. */}
+        {scale > 0 && !still && (
+          <Friends
+            width={size.width}
+            height={size.height}
+            scale={scale}
+            framed={framed}
+            cell={zoomOn}
+            day={agreedDay}
+            states={friends}
+            sent={AT.sends.map((at) => now >= at)}
+            tiles={AT.arrived.map((at) => now >= at && now < AT.finaleOut)}
+          />
         )}
       </div>
     </div>
