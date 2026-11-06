@@ -41,6 +41,7 @@ export type FriendState = "gone" | "around" | "row";
 export default function Friends({
   width,
   height,
+  top,
   scale,
   framed,
   cell,
@@ -51,6 +52,8 @@ export default function Friends({
 }: {
   width: number;
   height: number;
+  /** Where the room under the headline begins: the faces stand in that, never behind the words. */
+  top: number;
   /** How the phone stands when it fills the stage, where the rows are. */
   scale: number;
   /** How it stands under a headline, where the date goes out from. */
@@ -77,7 +80,10 @@ export default function Friends({
   return (
     <div className="absolute inset-0">
       {FRIENDS.map((f, i) => {
-        const place = { x: PLACES[i].side < 0 ? leftX : rightX, y: PLACES[i].y * height };
+        const place = {
+          x: PLACES[i].side < 0 ? leftX : rightX,
+          y: top + PLACES[i].y * (height - top),
+        };
         const row = {
           x: width / 2 + (GROUP_ROWS.left + 12 + GROUP_ROWS.face / 2 - SCREEN.width / 2) * scale,
           y:

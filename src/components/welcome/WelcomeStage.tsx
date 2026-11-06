@@ -628,6 +628,7 @@ export default function WelcomeStage({
           <Friends
             width={size.width}
             height={size.height}
+            top={room}
             scale={scale}
             framed={framed}
             cell={zoomOn}

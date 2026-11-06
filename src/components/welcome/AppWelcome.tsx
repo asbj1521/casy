@@ -107,7 +107,7 @@ export default function AppWelcome({
             transition={appearing}
           >
             {/* Solid: orange text can't be read through glass on the orange behind it. */}
-            <GlassButton icon={ChevronLeft} size="sm" onClick={back} className="bg-card">
+            <GlassButton icon={ChevronLeft} size="sm" onClick={back} className="!bg-card">
               {t.welcome.back}
             </GlassButton>
           </motion.div>
