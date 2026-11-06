@@ -51,9 +51,10 @@ test.describe("Your data", () => {
     expect(backend.world.aiShare).toBe(false);
     // The AI itself is still on: only the sending stopped.
     expect(backend.world.aiConsent).toBe(true);
-    await expect(
-      page.getByRole("switch", { name: "Lad Casys AI læse i din kalender" }),
-    ).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("switch", { name: "Casys AI" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
 
     await share.click();
     await expect(share).toHaveAttribute("aria-checked", "true");
@@ -75,7 +76,7 @@ test.describe("Your data", () => {
   test("withdrawing the yes takes the sent corrections with it", async ({ page, backend }) => {
     backend.world.corrections = sent(3);
     await page.goto("/profile/data");
-    await page.getByRole("switch", { name: "Lad Casys AI læse i din kalender" }).click();
+    await page.getByRole("switch", { name: "Casys AI" }).click();
     await page.getByRole("button", { name: "Slå fra" }).click();
     await expect.poll(() => backend.world.aiConsent).toBe(false);
     expect(backend.world.corrections).toEqual([]);

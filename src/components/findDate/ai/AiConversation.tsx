@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Check, Loader2, MessageSquarePlus, RotateCcw, Sparkles } from "lucide-react";
 
+import { useAiConsentGate } from "@/hooks/useAiConsentGate";
 import type { AiPlanner } from "@/hooks/useAiPlanner";
 import { useSpeechInput } from "@/hooks/useSpeechInput";
 import SoundWave from "@/components/ui/SoundWave";
@@ -43,6 +44,7 @@ export default function AiConversation({
   const words = t.aiPlan;
   const { session, pending, error } = planner;
   const [addingHere, setAddingHere] = useState(false);
+  const consent = useAiConsentGate();
   const outside = onAdding !== undefined;
   const adding = outside ? !!addingOutside : addingHere;
   const setAdding = outside ? onAdding : setAddingHere;
@@ -53,6 +55,7 @@ export default function AiConversation({
 
   return (
     <div className={cn("flex flex-col", compact ? "gap-2.5" : "gap-3", className)}>
+      {consent.sheet}
       {/* What Casy picked up, where there's room for it (a computer); the
           words it came from fold away, since speech recognition often
           mishears and the settings are what count. */}
@@ -137,10 +140,12 @@ export default function AiConversation({
           // the narrower box beside the summary has no room for it here.
           note={compact && !hasPlan ? footnote : undefined}
           sendLabel={hasPlan ? (compact ? words.updateShort : words.update) : words.send}
-          onSend={(text) => {
-            planner.describe(text);
-            setAdding(false);
-          }}
+          onSend={(text) =>
+            consent.guard(() => {
+              planner.describe(text);
+              setAdding(false);
+            })
+          }
           onCancel={hasPlan ? () => setAdding(false) : undefined}
         />
       ) : outside ? null : (

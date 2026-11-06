@@ -16,8 +16,8 @@
  * person, so the demo is made the way a real one would be. The Auth admin
  * API (service role key, from .env.local) only creates the accounts, and
  * resets an earlier demo account's password so it can delete itself through
- * `account`; the AI switch is the one row written directly, as admin mode's
- * setAiAccess does. Nothing is touched but accounts whose email is exactly
+ * `account`. Alex has not said yes to the AI: the reviewer is asked, as anyone
+ * is. Nothing is touched but accounts whose email is exactly
  * one of the three demo addresses.
  */
 import {
@@ -141,15 +141,6 @@ function admin(env: Env) {
           }),
         }),
         `Creating ${p.name}`,
-      ),
-    allowAi: (id: string) =>
-      call(
-        fetch(`${env.url}/rest/v1/ai_access`, {
-          method: "POST",
-          headers: { ...headers, Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify({ profile_id: id }),
-        }),
-        "Switching AI on",
       ),
   };
 }
@@ -308,10 +299,6 @@ async function main() {
     );
   }
   console.log(`"${AGREED.title}" is agreed for everyone`);
-
-  // 6. The AI features for the reviewer.
-  await auth.allowAi(alex.id!);
-  console.log("AI is on for Alex");
 
   console.log(`\nDone. The reviewer signs in with ${alex.email} and REVIEW_PASSWORD.`);
 }

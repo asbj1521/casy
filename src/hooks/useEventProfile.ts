@@ -3,7 +3,7 @@ import { queryOptions, useQueryClient } from "@tanstack/react-query";
 
 import { profileEvent, type EventImpact, type EventToProfile } from "@/api/eventProfile";
 import { useAuth } from "@/context/auth";
-import { useAiAllowed } from "@/hooks/useAiAllowed";
+import { useAiContent } from "@/hooks/useAiAllowed";
 
 /** How long the name, place and note must rest before they are asked about. */
 const SETTLE_MS = 2000;
@@ -42,7 +42,7 @@ export function eventProfileQuery(userId: string, input: EventToProfile) {
 export function useEventProfile(input: EventToProfile | null) {
   const { user } = useAuth();
   const userId = user?.id ?? "";
-  const aiOn = useAiAllowed();
+  const aiOn = useAiContent();
   const queryClient = useQueryClient();
   // Compared as text, so a new object with the same contents changes nothing.
   const key = input ? JSON.stringify(input) : null;

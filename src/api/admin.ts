@@ -37,10 +37,9 @@ export interface AdminUser {
   lastSignInAt: string | null;
   groups: number;
   calendars: number;
-  /** AI while it is tested (#111): admins always, others once switched on here. */
-  /** Missing from a function deployed before #111. */
+  /** "admin" can't be switched. Missing from a function deployed before #111. */
   ai?: "admin" | "allowed" | "off";
-  /** An AI tester: every admin-only AI feature. Always for admins, else switched on here. */
+  /** An AI tester: more daily calls, and what is only for testing. Always for admins. */
   tester?: boolean;
 }
 
@@ -128,17 +127,6 @@ export async function adminDeleteUser(
   return await callFunction("admin", {
     body: { action: "deleteUser", profileId },
     errorMessage: currentMessages().api.adminDeleteAccount,
-  });
-}
-
-/** Switch the AI features on or off for someone who isn't an admin (#111). */
-export async function adminSetAiAccess(
-  profileId: string,
-  allowed: boolean,
-): Promise<{ ai: "allowed" | "off" }> {
-  return await callFunction("admin", {
-    body: { action: "setAiAccess", profileId, allowed },
-    errorMessage: currentMessages().api.adminAiAccess,
   });
 }
 
@@ -255,7 +243,7 @@ export async function adminReportHandled(id: string): Promise<{ outcome: "handle
   });
 }
 
-/** Mark someone who has AI on as an AI tester, or not. */
+/** Mark someone as an AI tester, or not. */
 export async function adminSetAiTester(
   profileId: string,
   allowed: boolean,

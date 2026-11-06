@@ -247,18 +247,8 @@ export class FakeBackend {
           return ok({ outcome: "removed" });
         }
         if (action === "overview") return ok(adminOverview(w));
-        if (action === "setAiAccess") {
-          const id = String(body.profileId);
-          if (body.allowed) w.aiAccess.add(id);
-          else {
-            w.aiAccess.delete(id);
-            w.testers.delete(id);
-          }
-          return ok({ ai: body.allowed ? "allowed" : "off" });
-        }
         if (action === "setAiTester") {
           const id = String(body.profileId);
-          if (!w.aiAccess.has(id)) return fail(400, "Slå AI til for personen først.");
           if (body.allowed) w.testers.add(id);
           else w.testers.delete(id);
           return ok({ tester: body.allowed === true });
@@ -588,7 +578,7 @@ export class FakeBackend {
     const whoami = () => ({
       name: w.name,
       unnamed: w.unnamed,
-      aiAllowed: w.aiAllowed,
+      aiAllowed: true,
       aiTester: w.aiTester || w.admin !== false,
       aiConsent: w.aiConsent,
       aiShare: w.aiConsent && w.aiShare,

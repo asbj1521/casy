@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, Loader2, RefreshCw, Sparkles, Trash2, Users } from "lucide-react";
 
-import { adminSetAiAccess, adminSetAiTester, type AdminUser } from "@/api/admin";
+import { adminSetAiTester, type AdminUser } from "@/api/admin";
 import Avatar from "@/components/ui/Avatar";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
@@ -232,17 +232,12 @@ export default function UserRow({
 }
 
 /**
- * One person's AI switch (#111): admins always have it; anyone else gets it
- * once switched on here, and loses it again with a second tap. Saves at once
- * and refetches the overview.
+ * Whether someone is an AI tester: admins always are; anyone else is switched
+ * here. Saves at once and refetches the overview.
  */
 function AiAccess({ user, inline = false }: { user: AdminUser; inline?: boolean }) {
   const t = useT();
   const queryClient = useQueryClient();
-  const toggle = useMutation({
-    mutationFn: (allowed: boolean) => adminSetAiAccess(user.id, allowed),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
-  });
   const labels = useMutation({
     mutationFn: (allowed: boolean) => adminSetAiTester(user.id, allowed),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
@@ -263,33 +258,9 @@ function AiAccess({ user, inline = false }: { user: AdminUser; inline?: boolean 
       </span>
     );
   }
-  const on = user.ai === "allowed";
   return (
     <span className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        onClick={() => toggle.mutate(!on)}
-        disabled={toggle.isPending}
-        aria-pressed={on}
-        title={on ? t.admin.aiTurnOff(user.name) : t.admin.aiTurnOn(user.name)}
-        aria-label={on ? t.admin.aiTurnOff(user.name) : t.admin.aiTurnOn(user.name)}
-        className={cn(
-          pill,
-          "border transition disabled:opacity-50",
-          on
-            ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-            : "bg-background text-muted-foreground hover:bg-secondary hover:text-foreground",
-        )}
-      >
-        {toggle.isPending ? (
-          <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-        ) : (
-          !inline && <Sparkles className="h-3 w-3" aria-hidden />
-        )}
-        {on ? t.admin.aiAllowed : t.admin.aiOff}
-      </button>
-      {/* An AI tester (every admin-only AI feature): a switch of its own, once AI is on. */}
-      {on && user.tester !== undefined && (
+      {user.tester !== undefined && (
         <button
           type="button"
           onClick={() => labels.mutate(!user.tester)}
@@ -311,7 +282,6 @@ function AiAccess({ user, inline = false }: { user: AdminUser; inline?: boolean 
           {user.tester ? t.admin.testerOn : t.admin.testerOff}
         </button>
       )}
-      {toggle.isError && <span className="text-[11px] text-red-700">{toggle.error.message}</span>}
       {labels.isError && <span className="text-[11px] text-red-700">{labels.error.message}</span>}
     </span>
   );

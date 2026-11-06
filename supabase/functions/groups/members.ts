@@ -1,10 +1,5 @@
 /** The groups function's members, names and group list (#160, split out of index.ts). */
-import {
-  aiAllowed,
-  aiConsented,
-  aiSharesCorrections,
-  aiTesterAllowed,
-} from "../_shared/aiAccess.ts";
+import { aiConsented, aiSharesCorrections, aiTesterAllowed } from "../_shared/aiAccess.ts";
 import { type Caller } from "../_shared/auth.ts";
 import { displayNameFor } from "../_shared/groups.ts";
 import { NO_NAME, shownName, type Lang } from "../_shared/i18n.ts";
@@ -203,16 +198,13 @@ export async function whoAmI(db: Db, profileId: string, callerName: string, lang
     console.error(`whoami: couldn't check ${what}`, err);
     return false;
   };
-  const [name, allowed, consent, share, tester, avatarUrl] = await Promise.all([
+  const [name, consent, share, tester, avatarUrl] = await Promise.all([
     resolveOwnName(db, profileId, callerName),
-    // Whether the AI features are on for you while they are tested (#111).
-    aiAllowed(db, profileId).catch(orNo("AI access")),
-    // Whether they said yes to the AI using content from their calendar (#120).
+    // Whether they said yes to the AI (#120).
     aiConsented(db, profileId).catch(orNo("AI consent")),
     // Whether their corrections of the AI go to Casy for review (#122).
     aiSharesCorrections(db, profileId).catch(orNo("sharing")),
-    // Whether this person gets the admin-only AI features being tested:
-    // admins and AI testers. Also as eventLabels, the name app builds from
+    // Whether this person is an admin or AI tester. Also as eventLabels, the name app builds from
     // before testers read it by.
     aiTesterAllowed(db, profileId).catch(orNo("AI testers")),
     // Your own profile picture (#187), for the profile.
@@ -225,7 +217,8 @@ export async function whoAmI(db: Db, profileId: string, callerName: string, lang
     name: shownName(name, lang),
     // No name of their own yet: the home page offers to choose one (#170).
     unnamed: name === NO_NAME,
-    aiAllowed: allowed,
+    // The AI is there for everyone (#147); builds from before that read this.
+    aiAllowed: true,
     aiConsent: consent,
     aiShare: share,
     aiTester: tester,

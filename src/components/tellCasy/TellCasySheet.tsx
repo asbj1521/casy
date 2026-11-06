@@ -7,6 +7,7 @@ import GlassButton from "@/components/ui/GlassButton";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import Sheet from "@/components/ui/Sheet";
+import { useAiConsentGate } from "@/hooks/useAiConsentGate";
 import { useTellCasy, type TellCasy } from "@/hooks/useTellCasy";
 import { useLang, useT } from "@/i18n/lang";
 import { entryWhen, type CasyEntry, type StoredEntry } from "@/lib/casyEntries";
@@ -45,32 +46,42 @@ export default function TellCasySheet({
     },
   });
   const { session, pending } = tell;
+  const consent = useAiConsentGate();
   const [adding, setAdding] = useState(false);
   // Casy's reading on screen, waiting to be kept: the sheet's main button.
   const proposing = session.texts.length > 0 && session.entries.length > 0 && !pending && !adding;
 
   return (
-    <Sheet
-      open={open}
-      onClose={onClose}
-      title={t.tellCasy.title}
-      closeLabel={t.tellCasy.done}
-      origin={origin}
-      edge="top"
-      // Always a footer (switching layouts would slide the sheet in again);
-      // the button only while Casy's reading waits to be kept.
-      footer={
-        <>
-          {proposing && (
-            <FlowButton onClick={tell.save} busy={tell.saving}>
-              {tell.saving ? t.tellCasy.saving : t.tellCasy.save(session.entries.length)}
-            </FlowButton>
-          )}
-        </>
-      }
-    >
-      <TellCasyBody kept={kept} tell={tell} adding={adding} onAdding={setAdding} />
-    </Sheet>
+    <>
+      {consent.sheet}
+      <Sheet
+        open={open}
+        onClose={onClose}
+        title={t.tellCasy.title}
+        closeLabel={t.tellCasy.done}
+        origin={origin}
+        edge="top"
+        // Always a footer (switching layouts would slide the sheet in again);
+        // the button only while Casy's reading waits to be kept.
+        footer={
+          <>
+            {proposing && (
+              <FlowButton onClick={tell.save} busy={tell.saving}>
+                {tell.saving ? t.tellCasy.saving : t.tellCasy.save(session.entries.length)}
+              </FlowButton>
+            )}
+          </>
+        }
+      >
+        <TellCasyBody
+          kept={kept}
+          tell={tell}
+          adding={adding}
+          onAdding={setAdding}
+          guard={consent.guard}
+        />
+      </Sheet>
+    </>
   );
 }
 
@@ -79,7 +90,10 @@ function TellCasyBody({
   tell,
   adding,
   onAdding,
+  guard,
 }: {
+  /** Asks for the yes to the AI first, if it is missing (#147). */
+  guard: (run: () => void) => void;
   kept: StoredEntry[];
   tell: TellCasy;
   adding: boolean;
@@ -107,7 +121,7 @@ function TellCasyBody({
               label={words.placeholder}
               placeholder={words.placeholder}
               sendLabel={words.send}
-              onSend={tell.describe}
+              onSend={(text) => guard(() => tell.describe(text))}
               glassSend
             />
           </>
@@ -154,10 +168,12 @@ function TellCasyBody({
               placeholder={words.morePlaceholder}
               sendLabel={words.update}
               glassSend
-              onSend={(text) => {
-                tell.describe(text);
-                onAdding(false);
-              }}
+              onSend={(text) =>
+                guard(() => {
+                  tell.describe(text);
+                  onAdding(false);
+                })
+              }
               onCancel={session.entries.length > 0 ? () => onAdding(false) : undefined}
             />
           ) : (

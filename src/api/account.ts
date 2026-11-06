@@ -178,7 +178,6 @@ export interface MyData {
    * when you gave it, and whether it is under today's wording.
    */
   ai: {
-    allowed: boolean;
     calls: number;
     consent: { givenAt: string; current: boolean } | null;
     /** Corrections of the AI you sent to Casy for review (#122): how many are kept, and whether they are sent. */

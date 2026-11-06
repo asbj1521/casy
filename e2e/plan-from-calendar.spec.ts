@@ -227,14 +227,29 @@ test("with no date, a way to widen the search finds one and lists its dates (#13
   await expect(page.getByRole("button", { name: /^Foreslå/ })).toBeEnabled();
 });
 
-test("without AI switched on, the sheet offers no planning with AI (#111)", async ({
+test("without a yes, Planlæg med AI asks first, and sends only after the yes (#147)", async ({
   page,
   backend,
 }) => {
-  backend.world.aiAllowed = false;
+  backend.world.aiConsent = false;
   await page.goto("/calendar-overview?plan");
-  await expect(page.getByRole("button", { name: "Find dato" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Planlæg med AI" })).toHaveCount(0);
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  await sheet.getByRole("textbox").first().fill("Middag på fredag");
+  await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
+  const ask = page.getByRole("dialog", { name: "Slå Casys AI til?" });
+  await expect(ask).toBeVisible();
+
+  // Not now: nothing is sent, and what was typed stays.
+  await ask.getByRole("button", { name: "Ikke nu" }).click();
+  await expect(ask).toBeHidden();
+  expect(backend.calls.some((c) => c.name === "plan-ai" || c.name === "event-profile")).toBe(false);
+  await expect(sheet.getByRole("textbox").first()).toHaveValue("Middag på fredag");
+
+  // Asked again on the next press; the yes runs what was pressed.
+  await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
+  for (let i = 0; i < 3; i++) await ask.getByRole("button", { name: "Næste" }).click();
+  await ask.getByRole("button", { name: "Tillad" }).click();
+  await expect.poll(() => backend.calls.some((c) => c.name === "plan-ai")).toBe(true);
 });
 
 test.describe("with no groups yet (#210)", () => {

@@ -6,6 +6,7 @@ import { useT } from "@/i18n/lang";
 import { matchNames, mentionedNames, type AiPlan } from "@/lib/aiPlan";
 import { flexAround, flexOf } from "@/lib/startFlex";
 
+import { useAiConsentGate } from "@/hooks/useAiConsentGate";
 import AiQuestionsSheet from "./AiQuestionsSheet";
 import GroupRow from "./GroupRow";
 import MoreDetails from "./MoreDetails";
@@ -60,22 +61,25 @@ export default function PlanSetup({
   // The sheet as it was when Casy was asked, played forward once it has answered.
   const before = useRef<PlanState | null>(null);
   const [asking, setAsking] = useState(false);
+  const consent = useAiConsentGate();
   const field = useRef<HTMLDivElement>(null);
   const needsAnswers = (plan: AiPlan) =>
     plan.questions.length > 0 ||
     matchNames(mentionedNames(plan), members).some((m) => m.candidates.length !== 1);
 
   function askAi() {
-    const from: PlanState = { name, settings: sched, extras, people: peopleChoice };
-    planner.describe(name, {
-      fresh: true,
-      onAnswer: (plan) => {
-        before.current = from;
-        if (needsAnswers(plan)) {
-          fill.hold(from);
-          setAsking(true);
-        } else fill.start(from);
-      },
+    consent.guard(() => {
+      const from: PlanState = { name, settings: sched, extras, people: peopleChoice };
+      planner.describe(name, {
+        fresh: true,
+        onAnswer: (plan) => {
+          before.current = from;
+          if (needsAnswers(plan)) {
+            fill.hold(from);
+            setAsking(true);
+          } else fill.start(from);
+        },
+      });
     });
   }
   function questionsDone() {
@@ -164,6 +168,7 @@ export default function PlanSetup({
         />
       </div>
 
+      {consent.sheet}
       {aiOn && (
         <AiQuestionsSheet
           open={asking}

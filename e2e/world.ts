@@ -546,7 +546,6 @@ export interface World {
   name: string;
   unnamed: boolean;
   /** The AI features are on for Mia (#111); a test switches them off. */
-  aiAllowed: boolean;
   /** Mia gets the admin-only AI features as an AI tester; off unless a test turns it on. */
   aiTester: boolean;
   /**
@@ -571,9 +570,7 @@ export interface World {
    * deployed before #111 (no AI per skill, no AI switch per user).
    */
   admin: false | "current" | "beforeAi";
-  /** Who has AI switched on in admin mode, besides admins. */
-  aiAccess: Set<string>;
-  /** Who an admin marked as an AI tester, among those with AI. */
+  /** Who an admin marked as an AI tester. */
   testers: Set<string>;
   connections: CalendarConnectionStatus[];
   primary: { calendarId: string; autoAdd: boolean } | null;
@@ -609,7 +606,6 @@ export function makeWorld(options: WorldOptions): World {
   return {
     name: ME.name,
     unnamed: false,
-    aiAllowed: true,
     aiTester: false,
     minAppVersion: null,
     blocked: [],
@@ -621,7 +617,6 @@ export function makeWorld(options: WorldOptions): World {
     pushOff: [],
     corrections: [],
     admin: false,
-    aiAccess: new Set(),
     testers: new Set(),
     connections: connected ? connections() : [],
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
@@ -728,7 +723,6 @@ export function myData(world: World): MyData {
     safety: { blocked: world.blocked.length, reportsSent: world.reports.length },
     friends: { count: world.friends.length },
     ai: {
-      allowed: world.aiAllowed,
       calls: 2,
       consent: world.aiConsent ? { givenAt: "2026-10-01T09:00:00.000Z", current: true } : null,
       corrections: { kept: world.corrections.length, sharing: world.aiConsent && world.aiShare },
@@ -747,11 +741,7 @@ export function adminOverview(world: World): AdminOverview {
     groups: 1,
     calendars: 1,
     ...(current && {
-      ai: admin
-        ? ("admin" as const)
-        : world.aiAccess.has(id)
-          ? ("allowed" as const)
-          : ("off" as const),
+      ai: admin ? ("admin" as const) : ("allowed" as const),
       tester: admin || world.testers.has(id),
     }),
   });

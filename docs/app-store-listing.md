@@ -70,13 +70,14 @@ Det kan Casy
 - Vise måneden dag for dag, så du ser, hvor der er plads.
 - Lade gruppen stemme ved at swipe, ligesom du kender det: ja til højre, nej til venstre, og op for "helst ikke".
 - Tage hensyn til, hvem der er med, hvem der gerne må være med, og hvor mange der mindst skal kunne.
-- Planlægge med AI: skriv eller sig, hvad I vil, og Casy sætter det op for dig. Det er valgfrit.
+- Planlægge med AI: skriv eller sig, hvad I vil, og Casy sætter det op for dig.
+- Sortere dine kalendere, forstå hvad dine aftaler betyder, og finde dine rejser med AI. Det hele er valgfrit: AI'en gør intet, før du siger ja.
 - Lægge den aftalte dato i din kalender, eller gøre det af sig selv.
 - Give dig besked, når du skal stemme, og når datoen er på plads. Du vælger selv, hvad du får besked om.
 - Logge dig ind med din Apple-konto, så du er i gang på et øjeblik.
 
 Dine data
-Casy sender kun, hvornår du er optaget, ikke hvad dine aftaler hedder. Navnene bliver på din telefon, medmindre du selv siger ja til, at Casys AI må læse dem. Dine venner ser kun, at du ikke kan, og hvornår. Der er ingen reklamer og ingen sporing. Du kan se alt, Casy har om dig, hente en kopi og slette din konto i appen.
+Casy sender kun, hvornår du er optaget, ikke hvad dine aftaler hedder. Navnene bliver på din telefon, medmindre du selv siger ja til Casys AI. Dine venner ser kun, at du ikke kan, og hvornår. Der er ingen reklamer og ingen sporing. Du kan se alt, Casy har om dig, hente en kopi og slette din konto i appen.
 
 Casy er lavet i Danmark og er gratis.
 
@@ -108,13 +109,14 @@ What Casy can do
 - Show the month day by day, so you can see where there is room.
 - Let the group vote by swiping, the way you know it: yes to the right, no to the left, and up for "rather not".
 - Take into account who is coming, who may come, and how many at least must be able to.
-- Plan with AI: write or say what you want, and Casy sets it up for you. It is optional.
+- Plan with AI: write or say what you want, and Casy sets it up for you.
+- Sort your calendars, understand what your events mean and find your trips with AI. All of it is optional: the AI does nothing until you say yes.
 - Add the agreed date to your calendar, or do it by itself.
 - Tell you when it is your turn to vote and when the date is set. You choose what you hear about.
 - Sign you in with your Apple account, so you are up and running in a moment.
 
 Your data
-Casy only sends when you are busy, not what your events are called. The names stay on your phone unless you yourself say yes to Casy's AI reading them. Your friends only see that you can't, and when. There are no ads and no tracking. You can see everything Casy has about you, download a copy and delete your account in the app.
+Casy only sends when you are busy, not what your events are called. The names stay on your phone unless you yourself say yes to Casy's AI. Your friends only see that you can't, and when. There are no ads and no tracking. You can see everything Casy has about you, download a copy and delete your account in the app.
 
 Casy is made in Denmark and is free.
 
@@ -201,9 +203,14 @@ Paste into the review notes field:
 > calendar"; "Profile" (Profil) has the group. Calendar access is asked when
 > you press "Import my calendar" (Importér min kalender); the review device
 > may have no events, which is why the demo account's own calendar is a
-> connected calendar link with sample events. The AI feature, "Plan with AI"
-> (Planlæg med AI), sends only what the user types or says. Reporting and
-> blocking are under the group's "Report or block" (Rapportér eller bloker)
+> connected calendar link with sample events. Casy's AI is Claude from
+> Anthropic, a third party, and is optional. Nothing is sent to it until the
+> person says yes on the sheet "Turn on Casy's AI?" (Slå Casys AI til?), which
+> says what is sent and to whom. It appears on the home page and when an AI
+> button is pressed, such as "Plan with AI" (Planlæg med AI); "Not now" leaves
+> the app fully usable, and the yes can be withdrawn under Profile, Your data.
+> With the yes, the AI plans from what the person writes or says, sorts their
+> calendars, labels their events and finds their trips. Reporting and blocking are under the group's "Report or block" (Rapportér eller bloker)
 > and "Report" (Rapportér) on an event. Deleting the account is under Profile
 > and works on the demo account too. Contact: asbjornbay@gmail.com
 
@@ -214,8 +221,8 @@ time; run it before each submission, since a reviewer may vote, leave the group
 or delete the account. It deletes the earlier demo accounts first (through the
 app's own account deletion), then makes Alex, Sara and Jonas with the sample
 calendars in `public/review/`, the group, Sara's vote (three Fridays at least
-a week away, no deadline, Sara and Jonas have answered), the agreed brunch, and
-AI switched on for Alex. Run from the repo root, in your own terminal:
+a week away, no deadline, Sara and Jonas have answered) and the agreed brunch.
+Alex has not said yes to the AI, so the reviewer sees the question. Run from the repo root, in your own terminal:
 
 ```bash
 read -rsp "Alex's password: " REVIEW_PASSWORD && echo && export REVIEW_PASSWORD && npm run review-demo -- you@gmail.com

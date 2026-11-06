@@ -669,31 +669,33 @@ export const en: Messages = {
     outlook: { label: "Outlook Calendar", help: "How it works" },
   },
   aiConsent: {
-    // The profile's row, and the box asked once on My calendar (#120).
-    group: "AI and your calendar",
-    row: "Let Casy's AI read your calendar",
+    // The row in Your data, and the sheet that asks (#120, #147).
+    group: "Casy's AI",
+    row: "Casy's AI",
     rowOn: "On",
     rowOff: "Off",
     footnote: (privacy: ReactNode) => (
       <>
-        When it is on, Casy sends the names of your calendars and the titles of your events to
-        Anthropic, which makes the AI model Claude, so Casy can sort your calendars and judge what
-        your events mean for you. For flights, trains and buses the place goes too, so Casy can find
-        your trips. Casy also shares, without titles, when something important starts, so dates can
-        be ranked for the group. You can turn it off at any time. Read more in the {privacy}.
+        When it is on, Casy sends what you write or say to the AI, what you plan, the names of your
+        calendars and the titles of your events to Anthropic, which makes the AI model Claude, so
+        Casy can plan with you, sort your calendars and judge what your events mean for you. For
+        flights, trains and buses the place goes too, so Casy can find your trips. Casy also shares,
+        without titles, when something important starts, so dates can be ranked for the group. You
+        can turn it off at any time. Read more in the {privacy}.
       </>
     ),
     privacyLink: "privacy policy",
-    title: "Let Casy's AI read your calendar?",
+    title: "Turn on Casy's AI?",
     intro:
-      "Then Casy can sort your calendars and understand what your events mean, for example that an exam is important.",
-    sent: "The names of your calendars and the titles of your events (in the iPhone app) are sent to Anthropic in the United States, which makes the AI. For flights, trains and buses the place too, so Casy can find your trips and ask you about them. Never notes, guests or dates.",
+      "Then you can plan by writing or saying what you want, and Casy can sort your calendars, find your trips and understand what your events mean, for example that an exam is important.",
+    sent: "What you write or say to the AI, and the name, place and note of what you plan, are sent to Anthropic in the United States, which makes the AI. So are the names of your calendars and the titles of your events (in the iPhone app), and for flights, trains and buses the place. From your calendar never notes, guests or dates.",
     corrections:
       "Casy also receives the corrections you write to the AI's judgements, with the event's title, and the plans you make with AI, with what you wrote and what you changed, so the AI can learn from them. You can turn that off under Your data.",
     shared:
       "Casy also shares, without titles, when something important starts, so dates can be ranked for the group. The others only see a score for each date.",
     safe: "Casy does not store names or titles, Anthropic does not train on them, and you can turn it off at any time under Your data.",
-    privateNote: "Titles can be private, so only say yes if you are comfortable with it.",
+    privateNote:
+      "This can be private, so only say yes if you are comfortable with it. You can use Casy without it.",
     readMore: "Read more in the",
     allow: "Allow",
     next: "Next",
@@ -703,7 +705,7 @@ export const en: Messages = {
     saving: "Saving",
     failed: "That didn't work. Try again.",
     turnOffMessage:
-      "Casy's AI stops reading your calendar, and the labels kept on this phone and what you shared about important events and your sent corrections are deleted.",
+      "Casy's AI is turned off, and the labels kept on this phone and what you shared about important events and your sent corrections are deleted.",
     turnOff: "Turn off",
   },
   connectPrompt: {
@@ -1504,11 +1506,8 @@ export const en: Messages = {
     entriesAdded: "Put in your calendar by Casy",
     entriesDeleted: "Deleted by you afterwards",
     ai: "AI",
-    aiAllowed: "AI features",
-    aiOn: "On",
-    aiOff: "Not switched on yet",
     aiCalls: "Your AI calls in the last 30 days",
-    aiConsent: "AI may read your calendar",
+    aiConsent: "Your yes to Casy's AI",
     aiConsentOn: (date: string) => `Yes, since ${date}`,
     aiConsentAgain: "Yes, but you need to say yes again",
     aiConsentOff: "No",
@@ -1853,10 +1852,6 @@ export const en: Messages = {
     syncFailed: "Sync failed.",
     syncUserTitle: (name: string) => `Sync all calendars for ${name}`,
     aiAdmin: "AI: admin",
-    aiAllowed: "AI on",
-    aiOff: "Allow AI",
-    aiTurnOff: (name: string) => `Turn AI off for ${name}`,
-    aiTurnOn: (name: string) => `Turn AI on for ${name}`,
     testerOn: "AI tester",
     testerOff: "Make AI tester",
     testerTurnOff: (name: string) => `${name} is no longer an AI tester`,

@@ -90,23 +90,18 @@ Deno.test("a yes counts only under today's wording", async () => {
   );
 });
 
-Deno.test("calendar content needs AI on and a yes", async () => {
-  const on = { access: { tester: false } };
-  // AI on, no yes: refused.
-  assertEquals(await aiContentAllowed(fakeDb(on).db, "u"), false);
-  // AI on and a yes: allowed.
-  assertEquals(
-    await aiContentAllowed(fakeDb({ ...on, consent: { version: CONSENT_VERSION } }).db, "u"),
-    true,
-  );
-  // A yes with no AI switched on for them: still refused.
+Deno.test("the AI needs a yes, from anyone (#147)", async () => {
+  // No yes, with or without an ai_access row: refused.
+  assertEquals(await aiContentAllowed(fakeDb({}).db, "u"), false);
+  assertEquals(await aiContentAllowed(fakeDb({ access: { tester: false } }).db, "u"), false);
+  // A yes, and no ai_access row: allowed.
   assertEquals(
     await aiContentAllowed(fakeDb({ consent: { version: CONSENT_VERSION } }).db, "u"),
-    false,
+    true,
   );
   // A yes to older wording: asked again, refused meanwhile.
   assertEquals(
-    await aiContentAllowed(fakeDb({ ...on, consent: { version: CONSENT_VERSION - 1 } }).db, "u"),
+    await aiContentAllowed(fakeDb({ consent: { version: CONSENT_VERSION - 1 } }).db, "u"),
     false,
   );
 });

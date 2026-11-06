@@ -1,37 +1,16 @@
 /**
- * Who may use the AI features while they are tested (#111), on its own so
- * that functions which only ask (groups' whoami) don't load Anthropic's SDK.
+ * Who Casy's AI may work for (#111, #147), on its own so that functions which
+ * only ask (groups' whoami) don't load Anthropic's SDK. The AI is there for
+ * everyone, and does nothing for anyone until they have said yes.
  */
 import { isAdminId } from "./admin.ts";
 import type { Db } from "./supabaseAdmin.ts";
 
 /**
- * Whether this person may use the AI features: admins always, everyone else
- * once an admin has switched it on (ai_access). While they are tested, so
- * that nobody else spends the budget.
- */
-export async function aiAllowed(db: Pick<Db, "from">, profileId: string): Promise<boolean> {
-  if (isAdminId(profileId, Deno.env.get("ADMIN_USER_IDS"))) return true;
-  const { data, error } = await db
-    .from("ai_access")
-    .select("profile_id")
-    .eq("profile_id", profileId)
-    .maybeSingle();
-  if (error) throw error;
-  return data !== null;
-}
-
-/** Refused before anything is claimed or asked. */
-export const NOT_ALLOWED = "AI features aren't switched on for your account yet.";
-
-/**
- * Whether this person gets the AI features that are admin-only while they
- * are tested: admins always, everyone else only once an admin marked them as
- * an AI tester (ai_access.tester), on top of the AI features. Every such
- * feature checks this, never admin status alone, so a tester's account (the
- * operator's own test account, for one) gets each of them. Features that read
- * calendar content check aiContentAllowed instead, which also lets in whoever
- * has said yes (#120).
+ * Whether this person is an admin or AI tester (ai_access.tester): more daily
+ * calls, and what is only for testing, such as Your data's diagnostics. Every
+ * such thing checks this, never admin status alone, so a tester's account (the
+ * operator's own test account, for one) gets each of them.
  */
 export async function aiTesterAllowed(db: Pick<Db, "from">, profileId: string): Promise<boolean> {
   if (isAdminId(profileId, Deno.env.get("ADMIN_USER_IDS"))) return true;
@@ -45,19 +24,20 @@ export async function aiTesterAllowed(db: Pick<Db, "from">, profileId: string): 
 }
 
 /**
- * The wording of the yes people give to Casy's AI using content from their
- * calendar (#120): the names of their calendars and the titles of their
- * events. Raised whenever the AI may do more with it, which asks everyone
+ * The wording of the yes people give to Casy's AI (#120): the names of their
+ * calendars and the titles of their events, and since 5 what they write or say
+ * to it and the events they plan. Raised whenever the AI may do more with it, which asks everyone
  * again: a yes under an older number counts as none. 2 (#119): the phone also
  * shares, for each important event, when it starts and how much it matters
  * (never its title), so a vote's dates can be ranked for the whole group. 3
  * (#122): corrections of the AI are sent to Casy for review (a label
  * correction with its title, a plan with its text), unless the person switches
  * that off in Your data. 4 (#115): for flights, trains and buses the event's
- * place goes too, so the app can find trips. Keep it in step with the privacy
+ * place goes too, so the app can find trips. 5 (#147): one yes for all of the
+ * AI, now that it is there for everyone. Keep it in step with the privacy
  * policy's AI section.
  */
-export const CONSENT_VERSION = 4;
+export const CONSENT_VERSION = 5;
 
 /**
  * Say yes under the current wording, or take the yes back: the row goes, and
@@ -138,16 +118,13 @@ export async function aiConsented(db: Pick<Db, "from">, profileId: string): Prom
 }
 
 /**
- * Whether Casy's AI may read content from this person's calendar (names,
- * event titles): the AI is on for them, and they have said yes, or they are
- * an admin or AI tester, who may while it is tested. Event labels and
- * calendar sorting ask this; Planning with AI does not, since it sends only
- * what the person types or says.
+ * Whether Casy's AI may work for this person (#147): they have said yes, or
+ * they are an admin or AI tester. runSkill asks this before every call, so
+ * nothing reaches Anthropic without it.
  */
 export async function aiContentAllowed(db: Pick<Db, "from">, profileId: string): Promise<boolean> {
-  if (!(await aiAllowed(db, profileId))) return false;
   return (await aiTesterAllowed(db, profileId)) || (await aiConsented(db, profileId));
 }
 
 /** Refused before anything is read, claimed or asked. */
-export const CONTENT_NOT_ALLOWED = "Casy's AI needs your yes before it reads your calendar.";
+export const CONTENT_NOT_ALLOWED = "Casy's AI needs your yes first.";

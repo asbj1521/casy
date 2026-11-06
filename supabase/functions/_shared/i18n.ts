@@ -125,10 +125,7 @@ export const DANISH: Record<string, string> = {
 
   // Planning with AI
   "Describe the event in a few words.": "Beskriv aftalen med et par ord.",
-  "AI features aren't switched on for your account yet.":
-    "AI-funktionerne er ikke slået til for din konto endnu.",
-  "Casy's AI needs your yes before it reads your calendar.":
-    "Casys AI skal have dit ja, før den læser i din kalender.",
+  "Casy's AI needs your yes first.": "Casys AI skal have dit ja først.",
   "You've used all your AI planning for today. Plan it by hand, or try tomorrow.":
     "Du har brugt al din AI-planlægning for i dag. Planlæg selv, eller prøv i morgen.",
   "AI planning is used up for today. Plan it by hand, or try tomorrow.":
@@ -152,7 +149,6 @@ export const DANISH: Record<string, string> = {
     "Du kan højst have 100 poster. Slet nogle først.",
 
   // Event labels, corrected by hand
-  "Switch AI on for them first.": "Slå AI til for personen først.",
   "Write what is wrong with the label.": "Skriv, hvad der er forkert.",
   "You've corrected labels as many times as you can today. Try again tomorrow.":
     "Du har rettet så mange vurderinger, som du kan i dag. Prøv igen i morgen.",

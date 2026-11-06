@@ -710,31 +710,33 @@ export const da = {
     outlook: { label: "Outlook-kalender", help: "Sådan virker det" },
   },
   aiConsent: {
-    // The profile's row, and the box asked once on My calendar (#120).
-    group: "AI og din kalender",
-    row: "Lad Casys AI læse i din kalender",
+    // The row in Your data, and the sheet that asks (#120, #147).
+    group: "Casys AI",
+    row: "Casys AI",
     rowOn: "Slået til",
     rowOff: "Slået fra",
     footnote: (privacy: ReactNode) => (
       <>
-        Slået til sender Casy navnene på dine kalendere og titlerne på dine aftaler til Anthropic,
-        som laver AI-modellen Claude, så Casy kan sortere dine kalendere og vurdere, hvad dine
-        aftaler betyder for dig. For fly, tog og busser følger stedet med, så Casy kan finde dine
-        rejser. Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres
-        for gruppen. Du kan slå det fra når som helst. Læs mere i {privacy}.
+        Slået til sender Casy det, du skriver eller siger til AI&apos;en, det, du planlægger,
+        navnene på dine kalendere og titlerne på dine aftaler til Anthropic, som laver AI-modellen
+        Claude, så Casy kan planlægge med dig, sortere dine kalendere og vurdere, hvad dine aftaler
+        betyder for dig. For fly, tog og busser følger stedet med, så Casy kan finde dine rejser.
+        Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for
+        gruppen. Du kan slå det fra når som helst. Læs mere i {privacy}.
       </>
     ),
     privacyLink: "privatlivspolitikken",
-    title: "Lad Casys AI læse i din kalender?",
+    title: "Slå Casys AI til?",
     intro:
-      "Så kan Casy sortere dine kalendere og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
-    sent: "Navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen) sendes til Anthropic i USA, som laver AI'en. For fly, tog og busser også stedet, så Casy kan finde dine rejser og spørge dig om dem. Aldrig noter, gæster eller datoer.",
+      "Så kan du planlægge ved at skrive eller sige, hvad I vil, og Casy kan sortere dine kalendere, finde dine rejser og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
+    sent: "Det, du skriver eller siger til AI'en, og navn, sted og note på det, du planlægger, sendes til Anthropic i USA, som laver AI'en. Det samme gør navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen), og for fly, tog og busser stedet. Fra din kalender aldrig noter, gæster eller datoer.",
     corrections:
       "Casy modtager også de rettelser, du skriver til AI'ens vurderinger, med aftalens titel, og de planer, du laver med AI, med det du skrev og det du ændrede, så AI'en kan lære af dem. Du kan slå det fra under Dine data.",
     shared:
       "Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for gruppen. De andre ser kun en score for hver dato.",
     safe: "Casy gemmer ikke navne eller titler, Anthropic træner ikke på dem, og du kan slå det fra når som helst under Dine data.",
-    privateNote: "Titler kan være private, så sig kun ja, hvis du er tryg ved det.",
+    privateNote:
+      "Det kan være privat, så sig kun ja, hvis du er tryg ved det. Du kan bruge Casy uden.",
     readMore: "Læs mere i",
     allow: "Tillad",
     next: "Næste",
@@ -744,7 +746,7 @@ export const da = {
     saving: "Gemmer",
     failed: "Det lykkedes ikke. Prøv igen.",
     turnOffMessage:
-      "Casys AI holder op med at læse i din kalender, og de mærkater, der er gemt på denne telefon, og det, du har delt om vigtige aftaler og dine sendte rettelser, slettes.",
+      "Casys AI slås fra, og de mærkater, der er gemt på denne telefon, og det, du har delt om vigtige aftaler og dine sendte rettelser, slettes.",
     turnOff: "Slå fra",
   },
   connectPrompt: {
@@ -1562,11 +1564,8 @@ export const da = {
     entriesAdded: "Lagt i din kalender af Casy",
     entriesDeleted: "Slettet af dig bagefter",
     ai: "AI",
-    aiAllowed: "AI-funktioner",
-    aiOn: "Slået til",
-    aiOff: "Ikke slået til endnu",
     aiCalls: "Dine AI-kald de sidste 30 dage",
-    aiConsent: "AI må læse i din kalender",
+    aiConsent: "Dit ja til Casys AI",
     aiConsentOn: (date: string) => `Ja, siden ${date}`,
     aiConsentAgain: "Ja, men du skal sige ja igen",
     aiConsentOff: "Nej",
@@ -1915,10 +1914,6 @@ export const da = {
     syncFailed: "Synkroniseringen fejlede.",
     syncUserTitle: (name: string) => `Synkronisér alle kalendere for ${name}`,
     aiAdmin: "AI: admin",
-    aiAllowed: "AI slået til",
-    aiOff: "Tillad AI",
-    aiTurnOff: (name: string) => `Slå AI fra for ${name}`,
-    aiTurnOn: (name: string) => `Slå AI til for ${name}`,
     testerOn: "AI-tester",
     testerOff: "Gør til AI-tester",
     testerTurnOff: (name: string) => `${name} skal ikke længere være AI-tester`,

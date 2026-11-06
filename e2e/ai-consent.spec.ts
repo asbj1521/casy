@@ -1,11 +1,11 @@
 /**
- * Consent for Casy's AI to use content from a calendar (#120): asked once on
- * My calendar, changed any time in the profile, and shown in Your data.
+ * The yes to Casy's AI (#120, #147): asked once on My calendar and when an AI
+ * button is pressed, changed any time in Your data.
  */
 import { expect, test } from "./fixtures";
 
-const ASK = "Lad Casys AI læse i din kalender?";
-const ROW = "Lad Casys AI læse i din kalender";
+const ASK = "Slå Casys AI til?";
+const ROW = "Casys AI";
 
 test("My calendar asks once, and Allow saves the yes", async ({ page, backend }) => {
   backend.world.aiConsent = false;
@@ -47,17 +47,10 @@ test("Not now closes it for good, and nothing is saved", async ({ page, backend 
   await expect(page.getByRole("dialog", { name: ASK })).toHaveCount(0);
 });
 
-test("without AI switched on for them, nobody is asked and there is no switch", async ({
-  page,
-  backend,
-}) => {
-  backend.world.aiAllowed = false;
+test("without a yes the switch waits in Your data, for anyone", async ({ page, backend }) => {
   backend.world.aiConsent = false;
-  await page.goto("/calendar-overview");
-  await expect(page.getByRole("dialog", { name: ASK })).toHaveCount(0);
   await page.goto("/profile/data");
-  await expect(page.getByRole("heading", { name: "Din konto" })).toBeVisible();
-  await expect(page.getByRole("switch", { name: ROW })).toHaveCount(0);
+  await expect(page.getByRole("switch", { name: ROW })).toHaveAttribute("aria-checked", "false");
 });
 
 test("the profile itself has no switch; it lives in Your data", async ({ page }) => {

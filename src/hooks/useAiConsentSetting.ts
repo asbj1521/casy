@@ -11,11 +11,10 @@ import { clearLabelsFor } from "@/lib/eventLabels";
 import { NO_ANSWERS } from "@/lib/trips";
 
 /**
- * Saying yes, or no again, to Casy's AI using content from your calendar
- * (#120). Taking the yes back also deletes the labels and trips (#115) kept on
+ * Saying yes, or no again, to Casy's AI (#120). Taking the yes back also deletes the labels and trips (#115) kept on
  * this phone, at once, since they were made from titles the AI is no longer
  * allowed to read.
- * Shared by the box asked on My calendar and the profile's row.
+ * Shared by the sheet that asks (AiConsentSheet) and the row in Your data.
  */
 export function useAiConsentSetting() {
   const { user } = useAuth();
@@ -46,7 +45,8 @@ export function useAiConsentSetting() {
 
   return {
     consented,
-    set: (on: boolean) => mutation.mutate(on),
+    /** `onDone` runs once the answer is saved. */
+    set: (on: boolean, onDone?: () => void) => mutation.mutate(on, { onSuccess: onDone }),
     saving: mutation.isPending,
     error: mutation.error?.message ?? null,
     reset: mutation.reset,

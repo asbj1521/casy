@@ -8,6 +8,7 @@ import WidenSearch from "@/components/findDate/WidenSearch";
 import FlowButton from "@/components/ui/FlowButton";
 import { MonthLayer } from "@/components/swipe/MonthView";
 import { TODAY } from "@/hooks/useDateSearch";
+import { useAiContent } from "@/hooks/useAiAllowed";
 import { useLabelledEvents } from "@/hooks/useEventLabels";
 import { useDateScores } from "@/hooks/useDateScores";
 import { eventProfileQuery } from "@/hooks/useEventProfile";
@@ -156,20 +157,19 @@ export default function PileScreen({
     adoptSuggestion,
     widen,
     applyWiden,
-    aiOn,
     profileFor,
     user,
   } = planning;
-  // Your own important events (#114, labelled on this phone; app only, for
-  // admins and AI testers), and what the planned event is likely to cause
+  // Your own important events (#114, labelled on this phone; app only), and what the planned event is likely to cause
   // (#113), asked while it was set up: together, what a date runs into for
   // you. Real, from your own calendar; never anyone else's.
   const mine = useLabelledEvents();
+  const aiYes = useAiContent();
   // A yes or no, so the dates below aren't worked out afresh on every render.
   const someCheckByHand = !!checkers;
   const { data: profile, isLoading: profileLoading } = useQuery({
     ...eventProfileQuery(user?.id ?? "", profileFor ?? NO_INPUT),
-    enabled: aiOn && !!user && !!profileFor,
+    enabled: aiYes && !!user && !!profileFor,
   });
 
   // Everything the search offers, the first date first: what is scored (#119)

@@ -1,5 +1,5 @@
 /**
- * Casy's AI using content from your calendar (#120): which wording of the
+ * Your yes to Casy's AI (#120): which wording of the
  * consent the app asks about, and whether the person already said "not now".
  */
 import { readStored, writeStored } from "@/lib/storage";
@@ -7,10 +7,10 @@ import { readStored, writeStored } from "@/lib/storage";
 /**
  * The wording of the consent the app shows. Kept equal to CONSENT_VERSION in
  * supabase/functions/_shared/aiAccess.ts, which raises it whenever the AI may
- * do more with calendar content; a "not now" is remembered per version, so a
+ * do more; a "not now" is remembered per version, so a
  * wider ask is put to everyone again.
  */
-const AI_CONSENT_VERSION = 4;
+const AI_CONSENT_VERSION = 5;
 
 const key = (userId: string) => `casy-ai-consent-asked:${userId}`;
 

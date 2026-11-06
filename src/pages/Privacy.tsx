@@ -23,7 +23,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 5. november 2026",
+  updated: "Senest opdateret 6. november 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -103,8 +103,8 @@ const da: LegalCopy = {
               <Term>Foreslåede aftaler:</Term> aftaler foreslået i dine grupper: hvilken slags
               aftale det er, de datoer, der er tilbudt, hvem der foreslog den, et sted og en note,
               hvis den, der foreslog den, har skrevet dem, og hvad hver enkelt har svaret på hver
-              dato: kan, kan men helst ikke, eller kan ikke. Er AI slået til for den, der foreslog
-              den, også hvad Casys AI forventer, at aftalen indebærer (se AI i Casy).
+              dato: kan, kan men helst ikke, eller kan ikke. Har den, der foreslog den, sagt ja til
+              Casys AI, også hvad Casys AI forventer, at aftalen indebærer (se AI i Casy).
             </li>
             <li>
               <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære
@@ -124,12 +124,11 @@ const da: LegalCopy = {
               du sletter dem.
             </li>
             <li>
-              <Term>Dit ja til AI:</Term> om du har sagt ja til, at Casys AI må læse i din kalender,
-              hvornår, og hvilken version af teksten (se AI i Casy). Mærkater, som AI&apos;en laver
-              af dine aftaler, gemmes kun på din telefon. Hvornår dine vigtige aftaler starter og
-              hvor vigtige de er, uden titel, gemmes hos Casy, så datoer kan rangeres for din
-              gruppe. Det gør de rettelser af AI'en, du har sendt til gennemsyn, og om du sender dem
-              (se AI i Casy).
+              <Term>Dit ja til AI:</Term> om du har sagt ja til Casys AI, hvornår, og hvilken
+              version af teksten (se AI i Casy). Mærkater, som AI&apos;en laver af dine aftaler,
+              gemmes kun på din telefon. Hvornår dine vigtige aftaler starter og hvor vigtige de er,
+              uden titel, gemmes hos Casy, så datoer kan rangeres for din gruppe. Det gør de
+              rettelser af AI'en, du har sendt til gennemsyn, og om du sender dem (se AI i Casy).
             </li>
             <li>
               <Term>Rapporter og blokeringer:</Term> rapporterer du noget, gemmer Casy, hvad det
@@ -210,9 +209,10 @@ const da: LegalCopy = {
       body: (
         <>
           <p>
-            Casys AI er Claude, en AI-model fra Anthropic. Noget sendes til Anthropic, fordi du selv
-            beder om det. Andet sendes kun, hvis du har sagt ja til, at Casys AI må læse i din
-            kalender. Indtil videre er AI kun slået til for en del af brugerne.
+            Casys AI er Claude, en AI-model fra Anthropic. Intet sendes til Anthropic, før du har
+            sagt ja til Casys AI. Casy spørger på Min kalender og første gang, du bruger en af
+            AI-knapperne. Du kan bruge Casy uden, og du kan altid ændre dit svar under Profil, Dine
+            data.
           </p>
 
           <p>
@@ -232,8 +232,7 @@ const da: LegalCopy = {
             før, og de tider, du ser på skærmen. Intet andet: ikke dine kalendere og ikke navne.
             Anthropic svarer med tider, som du ser og kan rette, før noget bliver gemt. Først når du
             trykker Gem, gemmer Casy tiderne (se Det gemmer Casy), og aldrig den sætning, du skrev
-            eller sagde. Det kræver ikke dit ja til, at AI&apos;en må læse i din kalender, for den
-            læser intet fra den.
+            eller sagde. AI&apos;en læser intet fra din kalender for at gøre det.
           </p>
           <p>
             Foreslår du en aftale, beder Casy også Anthropic om at vurdere, hvad den typisk
@@ -246,9 +245,7 @@ const da: LegalCopy = {
           </p>
 
           <p>
-            <Term>Med dit ja: Casys AI læser i din kalender.</Term> Det er slået fra, indtil du selv
-            slår det til. Casy spørger én gang på Min kalender, og du kan altid ændre det under
-            Profil, Dine data. Er det slået til, sendes:
+            <Term>Casys AI læser i din kalender.</Term> Med dit ja sendes også:
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
@@ -372,10 +369,10 @@ const da: LegalCopy = {
             anna.jensen@example.com). Resten af adressen vises aldrig.
           </p>
           <p>
-            Har du sagt ja til, at Casys AI læser i din kalender, tæller dine vigtige aftaler med,
-            når datoerne i en afstemning får en score. De andre i gruppen ser kun scoren for hver
-            dato, aldrig dine aftaler eller hvem der påvirkede den. I en lille gruppe kan en lav
-            score alligevel pege på en af medlemmerne.
+            Har du sagt ja til Casys AI, tæller dine vigtige aftaler med, når datoerne i en
+            afstemning får en score. De andre i gruppen ser kun scoren for hver dato, aldrig dine
+            aftaler eller hvem der påvirkede den. I en lille gruppe kan en lav score alligevel pege
+            på en af medlemmerne.
           </p>
           <p>
             Alle, der har en gruppes invitationslink, kan se gruppens navn, beskrivelse og billede
@@ -490,9 +487,9 @@ const da: LegalCopy = {
             slettes efter højst et døgn.
           </p>
           <p>
-            Dit ja til, at Casys AI må læse i din kalender, gemmes, så længe du har kontoen, eller
-            til du trækker det tilbage. Mærkater og rettelser gemmes kun på din telefon, til du
-            trækker dit ja tilbage, logger ud eller sletter appen.
+            Dit ja til Casys AI gemmes, så længe du har kontoen, eller til du trækker det tilbage.
+            Mærkater og rettelser gemmes kun på din telefon, til du trækker dit ja tilbage, logger
+            ud eller sletter appen.
           </p>
         </>
       ),
@@ -538,7 +535,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 5 November 2026",
+  updated: "Last updated 6 November 2026",
   sections: [
     {
       title: "In short",
@@ -618,8 +615,8 @@ const en: LegalCopy = {
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
               is, the dates offered, who suggested it, a place and a note if whoever suggested it
               wrote them, and how each person answered each date: can, can but would rather not, or
-              can't. If AI is on for whoever suggested it, also what Casy's AI expects the event to
-              involve (see AI in Casy).
+              can't. If whoever suggested it said yes to Casy's AI, also what Casy's AI expects the
+              event to involve (see AI in Casy).
             </li>
             <li>
               <Term>Events in your calendar:</Term> which events Casy added to your primary
@@ -639,12 +636,11 @@ const en: LegalCopy = {
               kept until you delete them.
             </li>
             <li>
-              <Term>Your yes to AI:</Term> whether you said yes to Casy&apos;s AI reading your
-              calendar, when, and which version of the text (see AI in Casy). Labels the AI makes of
-              your events are kept only on your phone. When your important events start and how
-              important they are, without titles, is stored by Casy, so dates can be ranked for your
-              group. So are the corrections of the AI you sent for review, and whether you send them
-              (see AI in Casy).
+              <Term>Your yes to AI:</Term> whether you said yes to Casy&apos;s AI, when, and which
+              version of the text (see AI in Casy). Labels the AI makes of your events are kept only
+              on your phone. When your important events start and how important they are, without
+              titles, is stored by Casy, so dates can be ranked for your group. So are the
+              corrections of the AI you sent for review, and whether you send them (see AI in Casy).
             </li>
             <li>
               <Term>Reports and blocks:</Term> if you report something, Casy keeps what it is about
@@ -724,9 +720,10 @@ const en: LegalCopy = {
       body: (
         <>
           <p>
-            Casy&apos;s AI is Claude, an AI model from Anthropic. Some things are sent to Anthropic
-            because you ask for it. Others are sent only if you have said yes to Casy&apos;s AI
-            reading your calendar. For now AI is switched on for only some of the users.
+            Casy&apos;s AI is Claude, an AI model from Anthropic. Nothing is sent to Anthropic until
+            you have said yes to Casy&apos;s AI. Casy asks on My calendar and the first time you use
+            one of the AI buttons. You can use Casy without it, and you can always change your
+            answer under Profile, Your data.
           </p>
 
           <p>
@@ -746,8 +743,7 @@ const en: LegalCopy = {
             you see on screen. Nothing else: not your calendars and not names. Anthropic answers
             with times, which you see and can change before anything is kept. Only when you press
             Save does Casy keep the times (see What Casy stores), and never the sentence you wrote
-            or said. It does not need your yes to the AI reading your calendar, since it reads
-            nothing from it.
+            or said. The AI reads nothing from your calendar to do this.
           </p>
           <p>
             When you suggest an event, Casy also asks Anthropic what it usually involves for the
@@ -760,9 +756,7 @@ const en: LegalCopy = {
           </p>
 
           <p>
-            <Term>With your yes: Casy&apos;s AI reads your calendar.</Term> It is off until you
-            switch it on yourself. Casy asks once on My calendar, and you can always change it under
-            Profile, Your data. When it is on, this is sent:
+            <Term>Casy&apos;s AI reads your calendar.</Term> With your yes, this is sent too:
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
@@ -887,10 +881,9 @@ const en: LegalCopy = {
             address is never shown.
           </p>
           <p>
-            If you said yes to Casy&apos;s AI reading your calendar, your important events count
-            when the dates of a vote get a score. The others in the group see only the score for
-            each date, never your events or who affected it. In a small group a low score can still
-            point at one of the members.
+            If you said yes to Casy&apos;s AI, your important events count when the dates of a vote
+            get a score. The others in the group see only the score for each date, never your events
+            or who affected it. In a small group a low score can still point at one of the members.
           </p>
           <p>
             Anyone holding a group&apos;s invite link can see the group&apos;s name, description and
@@ -1006,9 +999,9 @@ const en: LegalCopy = {
             be sent is deleted after a day at most.
           </p>
           <p>
-            Your yes to Casy&apos;s AI reading your calendar is kept as long as you have the
-            account, or until you withdraw it. Labels and corrections are kept only on your phone,
-            until you withdraw your yes, sign out or delete the app.
+            Your yes to Casy&apos;s AI is kept as long as you have the account, or until you
+            withdraw it. Labels and corrections are kept only on your phone, until you withdraw your
+            yes, sign out or delete the app.
           </p>
         </>
       ),

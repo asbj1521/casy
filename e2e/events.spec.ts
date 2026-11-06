@@ -276,7 +276,7 @@ test.describe("a phone's Aftaler (#103, #177)", () => {
   });
 });
 
-test("an AI tester sees what Casy expects an event to involve (#113); nobody else does", async ({
+test("anyone sees what Casy expects an event to involve (#113, #147)", async ({
   page,
   backend,
   isMobile,
@@ -295,12 +295,6 @@ test("an AI tester sees what Casy expects an event to involve (#113); nobody els
     reason: "En løbetur udenfor.",
   };
   await page.goto("/events/ev-run");
-  await expect(page.getByText("Foreslået af Freja")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Casys vurdering" })).toHaveCount(0);
-
-  // An AI tester who isn't an admin (the operator's test account).
-  backend.world.aiTester = true;
-  await page.reload();
   await page.getByRole("button", { name: "Casys vurdering" }).click();
   await expect(page.getByText("Lidt krævende · Sikker")).toBeVisible();
   await expect(page.getByText("Hård træning")).toBeVisible();

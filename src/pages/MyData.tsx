@@ -125,7 +125,7 @@ function DataLists() {
 
   return (
     <>
-      {data.ai.allowed && !consent.consented && (
+      {!consent.consented && (
         <ListGroup title={t.aiConsent.group} footnote={<AiConsentFootnote control={consent} />}>
           <AiConsentRow
             control={consent}
@@ -450,7 +450,7 @@ function EventsPart({ data, consent }: { data: MyData; consent: AiConsentControl
   const w = t.myData;
   const given = data.ai.consent;
   // Once on, the switch is a row here; while off it is at the top of the page.
-  const consentRow = data.ai.allowed && consent.consented;
+  const consentRow = consent.consented;
   return (
     <>
       <ListGroup title={w.events}>
@@ -467,7 +467,6 @@ function EventsPart({ data, consent }: { data: MyData; consent: AiConsentControl
         <Fact label={w.entriesDeleted} value={data.calendarEntries.deletedByYou} />
       </ListGroup>
       <ListGroup title={w.ai} footnote={isNativeApp ? `${w.aiNote} ${w.labelsNote}` : w.aiNote}>
-        <Fact label={w.aiAllowed} value={data.ai.allowed ? w.aiOn : w.aiOff} />
         {consentRow && (
           <AiConsentRow
             control={consent}

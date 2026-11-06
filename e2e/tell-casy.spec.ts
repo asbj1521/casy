@@ -120,11 +120,18 @@ test("text Casy can't use is said so, and the words come back to fix", async ({ 
   await expect(sheet.getByRole("textbox", { name: PLACEHOLDER })).toHaveValue("bare noget vrøvl");
 });
 
-test("without AI switched on for them there is no way in", async ({ page, backend }) => {
-  backend.world.aiAllowed = false;
+test("without a yes, sending asks first (#147)", async ({ page, backend }) => {
+  backend.world.aiConsent = false;
   await page.goto("/calendar-overview");
-  await expect(page.getByRole("button", { name: /Kalendere|Forrige måned/ }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: OPEN })).toHaveCount(0);
+  const ask = page.getByRole("dialog", { name: "Slå Casys AI til?" });
+  // The home page's own question first, answered for good.
+  await ask.getByRole("button", { name: "Ikke nu" }).click();
+  await page.getByRole("button", { name: OPEN }).click();
+  const sheet = page.getByRole("dialog", { name: "Tilføj til kalender" });
+  await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("Væk hele december");
+  await sheet.getByRole("button", { name: "Tilføj", exact: true }).click();
+  await expect(ask).toBeVisible();
+  expect(backend.calls.some((c) => c.name === "entries-ai")).toBe(false);
 });
 
 test("the speak button is a sound wave, and says Stop while listening (#106)", async ({ page }) => {

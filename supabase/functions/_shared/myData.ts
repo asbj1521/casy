@@ -8,7 +8,7 @@
  * stored comes from the provider and whether a calendar_secrets row exists,
  * selecting nothing but its key.
  */
-import { aiAllowed, CONSENT_VERSION } from "./aiAccess.ts";
+import { CONSENT_VERSION } from "./aiAccess.ts";
 import type { Caller } from "./auth.ts";
 import { readPushSettings } from "./push.ts";
 import { listBlocked } from "./safety.ts";
@@ -102,7 +102,6 @@ export interface MyData {
    * when you gave it, and whether it is under today's wording (else you are asked again).
    */
   ai: {
-    allowed: boolean;
     calls: number;
     consent: { givenAt: string; current: boolean } | null;
     /** Corrections of the AI you sent to Casy for review (#122): how many are kept, and whether they are sent. */
@@ -298,7 +297,6 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     added,
     deleted,
     aiCalls,
-    aiOn,
     consent,
     corrections,
     toldCasy,
@@ -366,7 +364,6 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
         .not("gone_at", "is", null),
     ),
     count(db.from("ai_calls").select("id", head).eq("profile_id", me)),
-    aiAllowed(db, me),
     db
       .from("ai_consent")
       .select("version, given_at, share_corrections")
@@ -450,7 +447,6 @@ export async function readMyData(db: Db, caller: Caller, now = new Date()): Prom
     safety: { blocked: blockedCount, reportsSent: reportsCount },
     friends: { count: friendsCount },
     ai: {
-      allowed: aiOn,
       calls: aiCalls,
       consent: consentRow
         ? { givenAt: consentRow.given_at, current: consentRow.version >= CONSENT_VERSION }

@@ -96,7 +96,6 @@ async function overview(db: Db) {
   if (aiAccessErr) console.error("admin: couldn't read who has AI", aiAccessErr);
   type AccessRow = { profile_id: string; tester: boolean };
   const accessRows = (aiAccess ?? []) as AccessRow[];
-  const allowedAi = new Set(accessRows.map((r) => r.profile_id));
   const testers = new Set(accessRows.filter((r) => r.tester).map((r) => r.profile_id));
   const adminIds = Deno.env.get("ADMIN_USER_IDS");
 
@@ -182,9 +181,9 @@ async function overview(db: Db) {
         lastSignInAt: u.last_sign_in_at ?? null,
         groups: groupsJoined.get(u.id) ?? 0,
         calendars: calendarsLinked.get(u.id) ?? 0,
-        // AI while it is tested (#111): admins always, others once allowed here.
-        ai: isAdminId(u.id, adminIds) ? "admin" : allowedAi.has(u.id) ? "allowed" : "off",
-        // An AI tester: every admin-only AI feature, on top of AI.
+        // Everyone has the AI (#147); an admin can't be made a tester.
+        ai: isAdminId(u.id, adminIds) ? "admin" : "allowed",
+        // An AI tester: more daily calls, and what is only for testing.
         tester: isAdminId(u.id, adminIds) || testers.has(u.id),
       }))
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)),
@@ -392,44 +391,19 @@ serve("admin", async (req, body) => {
       return { outcome: "deleted", leftGroups, deletedGroups };
     }
 
-    case "setAiAccess": {
-      // Switch the AI features on or off for someone (#111). Admins always
-      // have them, so there is nothing to switch for one.
-      const profileId = requireString(body, "profileId");
-      if (typeof body.allowed !== "boolean")
-        throw new HttpError(400, "allowed must be true or false");
-      if (isAdminId(profileId, Deno.env.get("ADMIN_USER_IDS"))) {
-        throw new HttpError(400, "Admins always have AI.");
-      }
-      const { data: found, error } = await db.auth.admin.getUserById(profileId);
-      if (error || !found.user) throw new HttpError(404, "That account no longer exists.");
-      const write = body.allowed
-        ? db.from("ai_access").upsert({ profile_id: profileId }, { onConflict: "profile_id" })
-        : db.from("ai_access").delete().eq("profile_id", profileId);
-      const { error: writeError } = await write;
-      if (writeError) throw writeError;
-      console.log(`admin ${caller.id} turned AI ${body.allowed ? "on" : "off"} for ${profileId}`);
-      return { ai: body.allowed ? "allowed" : "off" };
-    }
-
     case "setAiTester": {
-      // Mark someone with AI on as an AI tester, or not: a tester gets every
-      // AI feature that is admin-only while it is tested (event labels, #112,
-      // which send their event titles, among them). Admins always do.
+      // Mark someone as an AI tester, or not: more daily calls, the AI without
+      // the yes, and what is only for testing. Admins always are.
       const profileId = requireString(body, "profileId");
       if (typeof body.allowed !== "boolean")
         throw new HttpError(400, "allowed must be true or false");
       if (isAdminId(profileId, Deno.env.get("ADMIN_USER_IDS"))) {
         throw new HttpError(400, "Admins always have AI.");
       }
-      const { data: updated, error } = await db
+      const { error } = await db
         .from("ai_access")
-        .update({ tester: body.allowed })
-        .eq("profile_id", profileId)
-        .select("profile_id");
+        .upsert({ profile_id: profileId, tester: body.allowed }, { onConflict: "profile_id" });
       if (error) throw error;
-      if (!updated || updated.length === 0)
-        throw new HttpError(400, "Switch AI on for them first.");
       console.log(
         `admin ${caller.id} made ${profileId} ${body.allowed ? "an" : "no longer an"} AI tester`,
       );

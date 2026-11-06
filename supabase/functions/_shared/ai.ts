@@ -16,12 +16,10 @@
  */
 import Anthropic from "npm:@anthropic-ai/sdk@0.132.1";
 
-import { aiAllowed, aiTesterAllowed, NOT_ALLOWED } from "./aiAccess.ts";
+import { aiContentAllowed, aiTesterAllowed, CONTENT_NOT_ALLOWED } from "./aiAccess.ts";
 import { requireEnv } from "./env.ts";
 import { HttpError } from "./http.ts";
 import type { Db } from "./supabaseAdmin.ts";
-
-export { aiAllowed, NOT_ALLOWED };
 
 export const AI_MODEL = "claude-haiku-5-5";
 
@@ -161,7 +159,7 @@ export async function runSkill<T>(
   call: SkillCall<T>,
   create: CreateMessage = anthropic,
 ): Promise<{ result: T; userLeft: number }> {
-  if (!(await aiAllowed(db, profileId))) throw new HttpError(403, NOT_ALLOWED);
+  if (!(await aiContentAllowed(db, profileId))) throw new HttpError(403, CONTENT_NOT_ALLOWED);
   const budget = SKILLS[call.skill];
   const factor = (await aiTesterAllowed(db, profileId)) ? TESTER_BUDGET_FACTOR : 1;
   const { data, error } = await db.rpc("claim_ai_skill_call", {

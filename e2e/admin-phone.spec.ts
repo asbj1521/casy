@@ -6,12 +6,11 @@ import { expect, test } from "./fixtures";
 
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "phones only"));
 
-test("a user's dates sit above one line: the AI switches left, the numbers and buttons right", async ({
+test("a user's dates sit above one line: the AI tester switch left, the numbers and buttons right", async ({
   page,
   backend,
 }) => {
   backend.world.admin = "current";
-  backend.world.aiAccess.add("p-sara");
   await page.goto("/profile/admin");
   await page.getByRole("button", { name: /^Brugere/ }).click();
 
@@ -22,8 +21,7 @@ test("a user's dates sit above one line: the AI switches left, the numbers and b
   const dates = sara.getByText(/^Oprettet/);
   expect((await box(dates)).height).toBeLessThan(20);
 
-  // The AI switches, the two numbers, sync and delete share one line.
-  const ai = sara.getByRole("button", { name: "Slå AI fra for Sara" });
+  // The AI tester switch, the two numbers, sync and delete share one line.
   const tester = sara.getByRole("button", { name: /Gør Sara til AI-tester/ });
   const groups = sara.getByTitle(/grupper$/);
   const calendars = sara.getByTitle(/kalendere$/);
@@ -33,14 +31,13 @@ test("a user's dates sit above one line: the AI switches left, the numbers and b
     const b = await box(l);
     return b.y + b.height / 2;
   };
-  const line = await middle(ai);
-  for (const other of [tester, groups, calendars, sync, remove]) {
+  const line = await middle(tester);
+  for (const other of [groups, calendars, sync, remove]) {
     expect(Math.abs((await middle(other)) - line)).toBeLessThan(4);
   }
-  expect((await box(dates)).y).toBeLessThan((await box(ai)).y);
+  expect((await box(dates)).y).toBeLessThan((await box(tester)).y);
 
-  // Left to right: the switches, then the numbers, then the buttons at the right edge.
-  expect((await box(ai)).x).toBeLessThan((await box(tester)).x);
+  // Left to right: the switch, then the numbers, then the buttons at the right edge.
   expect((await box(tester)).x).toBeLessThan((await box(groups)).x);
   expect((await box(groups)).x).toBeLessThan((await box(calendars)).x);
   expect((await box(calendars)).x).toBeLessThan((await box(sync)).x);
