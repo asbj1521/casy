@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { useLang, useT } from "@/i18n/lang";
@@ -14,6 +14,7 @@ import TravelBox, { FLIGHT_S, type BoxStage } from "./phone/TravelBox";
 import { dayCell, listScrolls } from "./phone/dayCell";
 import { demoMonth, demoPlan, demoVote, FRIENDS, GROUP_NAME } from "./phone/demo";
 import { DEVICE } from "./phone/geometry";
+import { rectOfCard, type MorphRect } from "./phone/morph";
 import { STACK_DONE, THROWS } from "./phone/throws";
 
 /** How the phone stands: `y` a share of the stage's height, `scale` of its fitted size, degrees. */
@@ -173,6 +174,14 @@ const MOMENTS = [
   AT.finaleOut,
 ].sort((a, b) => a - b);
 
+/** The colour shape spread out to fill the screen, behind the sign-in card. */
+const SHAPE_FILL = { x: "-15%", y: "-6%", rotate: -8, scale: 1.7 };
+const SHAPE_COLORS =
+  "radial-gradient(circle at 74% 26%, #ffd60a 0, transparent 44%), radial-gradient(circle at 82% 78%, #ff2d78 0, transparent 50%), linear-gradient(135deg, #fb923c, #f43f5e)";
+const MORPH_SPRING = { type: "spring", stiffness: 170, damping: 24 } as const;
+/** How long the box stands in for the card or the phone, until the real one has appeared over it. */
+const MORPH_S = 0.95;
+
 /**
  * The app's welcome animation (#228), every step something Casy does, on a real
  * phone: your friends join a group; their paper calendars are thrown on, one
@@ -183,8 +192,19 @@ const MOMENTS = [
  * share: the members' card grows into the page, a circle stretches into a row,
  * and one box (TravelBox) is the send button, the pill, the vote and the agreed
  * date. Under reduced motion, a still of the phone with the days lit.
+ *
+ * `leaving` is sign-in opening over it: wherever the animation had got to, the
+ * phone turns into the sign-in card and the colour spreads to fill the screen and
+ * stays behind it. Going back does the same the other way, and it starts over.
  */
-export default function WelcomeStage() {
+export default function WelcomeStage({
+  leaving = false,
+  cardOnLeaving,
+}: {
+  leaving?: boolean;
+  /** Where the card stood as sign-in closed, to shrink back from. */
+  cardOnLeaving?: RefObject<MorphRect | null>;
+}) {
   const t = useT();
   const { lang } = useLang();
   const still = useReducedMotion() ?? false;
@@ -192,13 +212,21 @@ export default function WelcomeStage() {
   const stage = useRef<HTMLDivElement>(null);
   // The longest headline, unseen, measured: the phone stands under that much room.
   const ruler = useRef<HTMLParagraphElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0, headline: 0 });
+  const [size, setSize] = useState({ left: 0, top: 0, width: 0, height: 0, headline: 0 });
   useLayoutEffect(() => {
     const el = stage.current;
     const line = ruler.current;
     if (!el || !line) return;
-    const measure = () =>
-      setSize({ width: el.clientWidth, height: el.clientHeight, headline: line.offsetHeight });
+    const measure = () => {
+      const { left, top } = el.getBoundingClientRect();
+      setSize({
+        left,
+        top,
+        width: el.clientWidth,
+        height: el.clientHeight,
+        headline: line.offsetHeight,
+      });
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
@@ -210,12 +238,22 @@ export default function WelcomeStage() {
   const [round, setRound] = useState(0);
   const [reached, setReached] = useState({ round: 0, at: 0 });
   const now = still ? AT.shine : reached.round === round ? reached.at : 0;
+  // While sign-in is open it waits, and starts over behind the scenes, ready for back.
+  const startedOver = useRef(-1);
   useEffect(() => {
     if (still) return;
+    if (leaving) {
+      if (startedOver.current === round) return;
+      const id = setTimeout(() => {
+        startedOver.current = round + 1;
+        setRound((r) => r + 1);
+      }, MORPH_S * 1000);
+      return () => clearTimeout(id);
+    }
     const timers = MOMENTS.map((at) => setTimeout(() => setReached({ round, at }), at * 1000));
     timers.push(setTimeout(() => setRound((r) => r + 1), AT.end * 1000));
     return () => timers.forEach(clearTimeout);
-  }, [round, still]);
+  }, [round, still, leaving]);
 
   const [month] = useState(() => demoMonth(Date.now()));
   const plan = useMemo(() => demoPlan(month), [month]);
@@ -298,6 +336,50 @@ export default function WelcomeStage() {
                 : now < AT.landing
                   ? "flying"
                   : "landed";
+  // The phone turning into the card, or back: a box from the one to the other.
+  const phoneRect = (flat: boolean): MorphRect => {
+    const standing = !flat && framedNow ? framed : { y: 0, scale };
+    const width = DEVICE.width * standing.scale;
+    const height = DEVICE.height * standing.scale;
+    return {
+      left: size.left + (size.width - width) / 2,
+      top: size.top + size.height / 2 + standing.y - height / 2,
+      width,
+      height,
+      borderRadius: DEVICE.radius * standing.scale,
+    };
+  };
+  const [morph, setMorph] = useState<{ from: MorphRect; to: MorphRect; out: boolean } | null>(null);
+  const wasLeaving = useRef(leaving);
+  useEffect(() => {
+    if (wasLeaving.current === leaving) return;
+    wasLeaving.current = leaving;
+    if (still) return;
+    let frame = 0;
+    let tries = 0;
+    if (leaving) {
+      const from = phoneRect(false);
+      const find = () => {
+        const card = rectOfCard();
+        if (card) setMorph({ from, to: card, out: true });
+        else if (tries++ < 120) frame = requestAnimationFrame(find);
+      };
+      frame = requestAnimationFrame(find);
+    } else {
+      const from = cardOnLeaving?.current;
+      frame = requestAnimationFrame(() => {
+        if (from) setMorph({ from, to: phoneRect(true), out: false });
+      });
+    }
+    const done = setTimeout(() => setMorph(null), MORPH_S * 1000);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(done);
+    };
+    // Only as sign-in opens or closes: where things stand is read at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leaving, still]);
+
   const boxPressed =
     (now >= AT.pressed && now < AT.sent) || (now >= AT.pillPressed && now < AT.vote);
 
@@ -308,23 +390,46 @@ export default function WelcomeStage() {
       inert
       className="pointer-events-none relative h-full overflow-hidden"
     >
-      <div className="absolute inset-0" style={{ perspective: size.height * 1.9 }}>
-        {/* The colour shape, in a panel of its own that fades out at the bottom. */}
-        <div className="absolute inset-x-[5%] bottom-0 top-3 overflow-hidden rounded-[28px]">
+      {/* The colour shape, in a panel of its own: fixed, so it can spread over the whole screen. */}
+      {scale > 0 && (
+        <motion.div
+          className="fixed overflow-hidden"
+          initial={false}
+          animate={
+            leaving
+              ? {
+                  left: 0,
+                  top: 0,
+                  width: window.innerWidth,
+                  // A little past the bottom: the keyboard and the bounce never show an edge.
+                  height: window.innerHeight + 120,
+                  borderRadius: 0,
+                }
+              : {
+                  left: size.left + size.width * 0.05,
+                  top: size.top + 12,
+                  width: size.width * 0.9,
+                  height: size.height - 12,
+                  borderRadius: 28,
+                }
+          }
+          transition={MORPH_SPRING}
+        >
+          <motion.div
+            className="absolute inset-0"
+            style={{ background: SHAPE_COLORS }}
+            initial={false}
+            animate={{ opacity: leaving ? 1 : 0 }}
+            transition={{ duration: 0.45 }}
+          />
           <motion.div
             className="absolute inset-x-[-30%] top-0"
             style={{ aspectRatio: "1 / 0.9" }}
             initial={still ? SHAPE.flat : { ...SHAPE.flat, y: "90%" }}
-            animate={still ? SHAPE.flat : shape}
+            animate={leaving ? SHAPE_FILL : still ? SHAPE.flat : shape}
             transition={POSE_SPRING}
           >
-            <div
-              className="absolute inset-0 rounded-[46%]"
-              style={{
-                background:
-                  "radial-gradient(circle at 74% 26%, #ffd60a 0, transparent 44%), radial-gradient(circle at 82% 78%, #ff2d78 0, transparent 50%), linear-gradient(135deg, #fb923c, #f43f5e)",
-              }}
-            />
+            <div className="absolute inset-0 rounded-[46%]" style={{ background: SHAPE_COLORS }} />
             <div
               className="absolute inset-x-[-6%] top-[52%] h-[70%] rounded-[50%]"
               style={{
@@ -333,9 +438,38 @@ export default function WelcomeStage() {
               }}
             />
           </motion.div>
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
-        </div>
-
+          <motion.div
+            className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent"
+            initial={false}
+            animate={{ opacity: leaving ? 0 : 1 }}
+            transition={{ duration: 0.3 }}
+          />
+        </motion.div>
+      )}
+      {morph && (
+        <motion.div
+          className="fixed border bg-card shadow-2xl shadow-black/30"
+          initial={morph.from}
+          animate={morph.to}
+          transition={MORPH_SPRING}
+        >
+          {/* The phone's metal edge, there only as long as it is still a phone. */}
+          <motion.div
+            className="absolute inset-0 rounded-[inherit]"
+            style={{ boxShadow: "inset 0 0 0 3px #c4c6c9" }}
+            initial={{ opacity: morph.out ? 1 : 0 }}
+            animate={{ opacity: morph.out ? 0 : 1 }}
+            transition={{ duration: 0.3 }}
+          />
+        </motion.div>
+      )}
+      <motion.div
+        className="absolute inset-0"
+        style={{ perspective: size.height * 1.9 }}
+        initial={false}
+        animate={{ opacity: leaving ? 0 : 1 }}
+        transition={leaving ? { duration: 0.18 } : { delay: 0.42, duration: 0.22 }}
+      >
         {/* The line over the phone, one giving way to the next in the same place. */}
         <p
           ref={ruler}
@@ -503,7 +637,7 @@ export default function WelcomeStage() {
             tiles={AT.arrived.map((at) => now >= at && now < AT.finaleOut)}
           />
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

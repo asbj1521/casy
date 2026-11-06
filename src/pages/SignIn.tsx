@@ -414,8 +414,25 @@ export default function SignIn() {
       </button>
     );
 
+  // Signing in (or creating an account) is accepting the terms. The invite page
+  // sends people here too, so this one line covers both. In the app it lies in the
+  // card, since small grey text can't be read on the colour behind it.
+  const terms = (
+    <p className="mt-4 text-center text-xs text-muted-foreground">
+      {t.signIn.acceptTerms(
+        <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
+          {t.signIn.termsLink}
+        </Link>,
+        <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+          {t.signIn.privacyLink}
+        </Link>,
+      )}
+    </p>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
+    // In the app the colour of the welcome screen stays behind it (AppWelcome, #228).
+    <div className={isNativeApp ? "min-h-full" : "min-h-screen bg-background"}>
       <TopNav />
 
       <main className="mx-auto max-w-sm px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-10">
@@ -438,7 +455,10 @@ export default function SignIn() {
 
         {/* vt-card: where the landing chart lands (cardTransition.ts); its
             contents fade in once it has. */}
-        <div className="vt-card mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6">
+        <div
+          data-auth-card
+          className="vt-card mt-6 rounded-2xl border bg-card p-5 shadow-sm sm:mt-8 sm:p-6"
+        >
           <div className="vt-card-content">
             {/* The iPhone app only (#138): Sign in with Apple, first (#212): one tap
                 for a new person, the email form under it. Drawn as Apple asks
@@ -687,21 +707,11 @@ export default function SignIn() {
                 {unconfirmed && resendError && <span className="mt-1 block">{resendError}</span>}
               </Notice>
             )}
+            {isNativeApp && terms}
           </div>
         </div>
 
-        {/* Signing in (or creating an account) is accepting the terms. The
-            invite page sends people here too, so this one line covers both. */}
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          {t.signIn.acceptTerms(
-            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
-              {t.signIn.termsLink}
-            </Link>,
-            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
-              {t.signIn.privacyLink}
-            </Link>,
-          )}
-        </p>
+        {!isNativeApp && terms}
       </main>
     </div>
   );

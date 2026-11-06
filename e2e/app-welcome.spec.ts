@@ -1,7 +1,7 @@
 /**
  * The iPhone app's own first screen (#151): signed out, the app opens on a
  * welcome screen (a phone playing the app, #228; one line, Kom i gang, Log ind)
- * with no tab bar; the privacy policy leads back to sign-in. The website keeps
+ * with no tab bar; sign-in leads back to it, the privacy policy to sign-in. The website keeps
  * its landing page.
  */
 import type { Locator, Page } from "@playwright/test";
@@ -34,9 +34,11 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await page.goto("/");
   await page.getByRole("link", { name: "Kom i gang" }).click();
   await expect(page).toHaveURL(/\/sign-in\?signup=1$/);
-  // Sign-in is the one way on: no back link, and no sentence about signing in (#138).
-  await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
+  // No sentence about signing in (#138), and a way back to the animation (#228).
   await expect(page.getByText("Log ind for at forbinde dine kalendere")).toHaveCount(0);
+  await page.getByRole("button", { name: "Tilbage" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
 
   // The privacy policy is not on the welcome screen: it is under the sign-in
   // card, and on the profile once signed in.

@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
  * "Tilbage" on the pages someone signed out can reach in the iPhone app
  * (the terms, the privacy policy and how it works, #151): the app has no tab
  * bar until someone signs in, and iOS's web view has no swipe back, so without
- * it these pages would be dead ends. Not on sign-in itself, the way on from
- * the welcome screen (#138). A step back, or to the welcome screen when the
+ * it these pages would be dead ends. Sign-in has its own, which also turns the
+ * card back into the phone (AppWelcome, #228). A step back, or to the welcome screen when the
  * page was opened first. Nothing on the website or once signed in.
  */
 export default function AppBackLink({ className }: { className?: string }) {

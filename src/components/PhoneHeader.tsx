@@ -26,7 +26,12 @@ export default function PhoneHeader() {
   if (isNativeApp && !showSwitch) return <div aria-hidden className="vt-top-nav h-2" />;
   return (
     <header
-      className={`vt-top-nav sticky top-[env(safe-area-inset-top)] z-30 flex h-12 items-center bg-background px-4 ${isNativeApp ? "justify-end" : "justify-between"}`}
+      className={`vt-top-nav z-30 flex h-12 items-center px-4 ${
+        // The app's sign-in: over the welcome screen's colour, scrolling with the page.
+        isNativeApp && pathname === "/sign-in"
+          ? "relative"
+          : "sticky top-[env(safe-area-inset-top)] bg-background"
+      } ${isNativeApp ? "justify-end" : "justify-between"}`}
     >
       {!isNativeApp && (
         <Link to="/" className="text-xl font-bold tracking-tight">

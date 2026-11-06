@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Outlet, Routes, Route, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "framer-motion";
 
@@ -79,14 +79,31 @@ const TripsPlayground = import.meta.env.DEV
  * Its "Go to Casy" button leads to /plan, the scheduler for anyone. The
  * iPhone app has a welcome screen of its own instead (#151). Until the
  * stored session is read this is a plain background, or a signed-in person
- * would see the landing page flash first.
+ * would see the landing page flash first. The app's welcome screen is drawn by
+ * AppEntry around this, so it can stay open as sign-in opens.
  */
 function Home() {
   const { user, loading } = useAuth();
   const phone = usePhoneLayout();
   if (loading) return <div className="min-h-screen bg-background" />;
   if (user) return phone ? <CalendarOverview /> : <FindDate />;
-  return isNativeApp ? <AppWelcome /> : <Landing />;
+  return isNativeApp ? null : <Landing />;
+}
+
+/**
+ * The iPhone app's two signed-out pages, / and /sign-in, kept in one open
+ * AppWelcome across the addresses, so the phone on the one can turn into the card
+ * on the other (#228). Signed in or still finding out, the pages are on their own.
+ */
+function AppEntry() {
+  const { user, loading } = useAuth();
+  const { pathname } = useLocation();
+  if (user || loading) return <Outlet />;
+  return (
+    <AppWelcome signIn={pathname === "/sign-in"}>
+      <Outlet />
+    </AppWelcome>
+  );
 }
 
 /**
@@ -140,9 +157,11 @@ function App() {
                 a flash of "Loading…" would read as slower than a beat of nothing. */}
               <Suspense fallback={<div className="min-h-screen bg-background" />}>
                 <Routes>
-                  <Route path="/" element={<Home />} />
+                  <Route element={isNativeApp ? <AppEntry /> : <Outlet />}>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/sign-in" element={<SignIn />} />
+                  </Route>
                   <Route path="/plan" element={<FindDate />} />
-                  <Route path="/sign-in" element={<SignIn />} />
                   {MotionPlayground && <Route path="/dev/motion" element={<MotionPlayground />} />}
                   {TripsPlayground && <Route path="/dev/trips" element={<TripsPlayground />} />}
                   {/* Dev only: the app's welcome screen in any browser, to tune it (#228). */}
