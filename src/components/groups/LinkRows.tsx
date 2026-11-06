@@ -21,7 +21,10 @@ export function LinkRows({
   message,
   showQr,
   setShowQr,
+  onUsed,
 }: {
+  /** The link was copied, shared or its QR code shown: someone is probably being invited. */
+  onUsed?: () => void;
   link: LinkMutation;
   canShare: boolean;
   shareTitle: string;
@@ -43,7 +46,10 @@ export function LinkRows({
               {copied ? t.common.copied : t.common.copy}
             </span>
           }
-          onClick={() => copy(link.data!.url)}
+          onClick={() => {
+            copy(link.data!.url);
+            onUsed?.();
+          }}
         />
       ) : (
         <ListRow
@@ -57,7 +63,10 @@ export function LinkRows({
         <ListRow
           icon={Share}
           label={t.invite.shareLink}
-          onClick={() => void shareLink({ title: shareTitle, text: message, url: link.data!.url })}
+          onClick={() => {
+            void shareLink({ title: shareTitle, text: message, url: link.data!.url });
+            onUsed?.();
+          }}
         />
       )}
       <ListRow
@@ -66,6 +75,7 @@ export function LinkRows({
         expanded={showQr}
         onClick={() => {
           setShowQr(!showQr);
+          if (!showQr) onUsed?.();
           if (!link.data && !link.isPending) link.mutate();
         }}
       />

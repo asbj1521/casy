@@ -96,21 +96,23 @@ export async function listGroups(db: Db, profileId: string, callerName: string, 
   const memberIds = [...new Set(groups.flatMap((g) => g.group_members.map((m) => m.profile_id)))];
   // The names and the invitations only need the groups, so both are asked
   // for side by side (#158).
-  const [{ data: names, error: namesErr }, { data: invitations, error: invitationsErr }] =
-    await Promise.all([
-      db
-        .from("profiles")
-        .select("id, display_name, name_is_custom, avatar_path")
-        .in("id", memberIds),
-      db
-        .from("group_invitations")
-        .select("group_id, profile_id")
-        .in(
-          "group_id",
-          groups.map((g) => g.id),
-        ),
-    ]);
+  const [
+    { data: names, error: namesErr },
+    { data: invitations, error: invitationsErr },
+    { data: friends, error: friendsErr },
+  ] = await Promise.all([
+    db.from("profiles").select("id, display_name, name_is_custom, avatar_path").in("id", memberIds),
+    db
+      .from("group_invitations")
+      .select("group_id, profile_id")
+      .in(
+        "group_id",
+        groups.map((g) => g.id),
+      ),
+    db.from("friends").select("friend_id").eq("profile_id", profileId),
+  ]);
   if (namesErr) throw namesErr;
+  if (friendsErr) throw friendsErr;
   const profileOf = new Map(names.map((p) => [p.id, p]));
   // Everyone's profile picture (#187) and each group's (#188), linked in one call.
   const pictures = await pictureLinks(db, [
@@ -129,10 +131,10 @@ export async function listGroups(db: Db, profileId: string, callerName: string, 
   const ownName = own?.name_is_custom && own.display_name ? own.display_name : callerName;
 
   // Who has been invited to each group, but only people the caller already
-  // shares a group with: anyone else's name (or the fact that an email found
+  // knows, from a group now or as a friend (#222): anyone else's name (or the fact that an email found
   // an account) is not theirs to learn. Declined invitations read as invited,
   // so a "no thanks" is never reported back.
-  const known = new Set(memberIds);
+  const known = new Set([...memberIds, ...friends.map((f) => f.friend_id as string)]);
   if (invitationsErr) throw invitationsErr;
   const invitedTo = new Map<string, string[]>();
   for (const i of invitations) {

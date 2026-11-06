@@ -50,6 +50,7 @@ export default function InviteBody({ invite }: { invite: Invite }) {
   );
   const linkRows = (
     <LinkRows
+      onUsed={invite.linkUsed}
       link={link}
       canShare={invite.canShare}
       shareTitle={t.invite.shareTitle(group.name)}

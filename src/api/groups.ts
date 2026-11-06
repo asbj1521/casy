@@ -53,7 +53,7 @@ export interface Group {
   members: GroupMember[];
   /**
    * People invited who haven't joined, as profile ids, but only those you
-   * already share a group with (the function leaves out anyone else). A "no
+   * already know, from a group or as a friend (the function leaves out anyone else). A "no
    * thanks" still reads as invited here: declining is never reported back.
    */
   invited: string[];

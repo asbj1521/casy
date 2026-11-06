@@ -282,6 +282,7 @@ test.describe("with no groups yet (#210)", () => {
     backend,
   }) => {
     backend.world.invitations = [];
+    backend.world.friends = [{ profileId: "p-freja", name: "Freja" }];
     await page.goto("/");
     await page.getByRole("button", { name: "Lav en gruppe med dine venner" }).click();
     const fresh = page.getByRole("dialog", { name: "Ny gruppe" });
@@ -290,7 +291,18 @@ test.describe("with no groups yet (#210)", () => {
     await page.getByRole("button", { name: "Færdig" }).last().click();
 
     await page.getByRole("button", { name: "Inviter venner til Vennerne" }).click();
-    await expect(page.getByRole("dialog", { name: /Vennerne/ })).toBeVisible();
+    const invite = page.getByRole("dialog", { name: /Vennerne/ });
+    await expect(invite).toBeVisible();
+
+    // Once someone is invited the pill is gone, also after a reload (#147).
+    await invite.getByRole("checkbox", { name: /Freja/ }).check();
+    await invite.getByRole("button", { name: /^Send/ }).click();
+    await invite.getByRole("button", { name: "Færdig" }).click();
+    await expect(invite).toBeHidden();
+    await expect(page.getByRole("button", { name: "Inviter venner til Vennerne" })).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Planlæg" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Inviter venner til Vennerne" })).toHaveCount(0);
   });
 
   test("a group with only you leads to inviting friends, not to a vote for nobody (#218)", async ({

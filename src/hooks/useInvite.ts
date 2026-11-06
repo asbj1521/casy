@@ -10,6 +10,7 @@ import {
   friendsQuery,
 } from "@/api/groups";
 import { useSignedInUser } from "@/context/auth";
+import { rememberInviteSent } from "@/lib/groupNudge";
 import { useT } from "@/i18n/lang";
 import { inviteFromContacts } from "@/lib/contactInvite";
 import { knownPeople } from "@/lib/groups";
@@ -45,6 +46,7 @@ export function useInvite(
     // shows them so once the picks are cleared.
     onSuccess: (data) => {
       queryClient.setQueryData(groupsQueryKey(userId), data.groups);
+      rememberInviteSent(userId, group.id);
       setSentNote(invitees.emails.length > 0 ? "sentWithEmail" : "sent");
       setInvitees(NOBODY);
       // Waiting for their answers: the moment to offer notifications (#139).
@@ -66,6 +68,9 @@ export function useInvite(
         message,
         shareTitle: t.invite.shareTitle(group.name),
       });
+    },
+    onSuccess: (result) => {
+      if (result === "sent" || result === "shared") rememberInviteSent(userId, group.id);
     },
   });
 
@@ -91,6 +96,8 @@ export function useInvite(
     },
     sentNote,
     link,
+    /** The link was copied, shared or its QR code shown. */
+    linkUsed: () => rememberInviteSent(userId, group.id),
     contacts,
     showQr,
     setShowQr,

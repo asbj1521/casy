@@ -6,7 +6,7 @@ import { groupsQuery, invitationsQuery } from "@/api/groups";
 import HomePill from "@/components/calendarView/HomePill";
 import { useSignedInUser } from "@/context/auth";
 import { useT } from "@/i18n/lang";
-import { groupNudge } from "@/lib/groupNudge";
+import { groupNudge, inviteWasSent } from "@/lib/groupNudge";
 
 // On the page as the pill appears, ready for the first press (#169). The new group's sheet
 // slides up rather than growing out of the pill: it opens the keyboard at once, and growing
@@ -28,7 +28,7 @@ export default function GroupPill({ hidden }: { hidden: boolean }) {
   const [inviting, setInviting] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
 
-  const nudge = groupNudge(groups, invitations);
+  const nudge = groupNudge(groups, invitations, (id) => inviteWasSent(userId, id));
   // Kept while its sheet is open or closing: making the group changes the nudge.
   const [invited, setInvited] = useState<{ id: string; name: string } | null>(null);
   const [newWanted, setNewWanted] = useState(false);
@@ -39,14 +39,16 @@ export default function GroupPill({ hidden }: { hidden: boolean }) {
 
   return (
     <>
-      {nudge && (
+      {/* Kept while its sheet is open: the sheet grows out of it, and an
+          invitation sent there ends the nudge. Gone as the sheet closes. */}
+      {(nudge || inviting) && (
         <HomePill
           icon={UserPlus}
           hidden={hidden || making || inviting}
           buttonRef={button}
-          onClick={() => (nudge.kind === "new" ? setMaking(true) : setInviting(true))}
+          onClick={() => (nudge?.kind === "new" ? setMaking(true) : setInviting(true))}
         >
-          {nudge.kind === "new" ? t.homeNudge.newGroup : t.homeNudge.invite(nudge.group.name)}
+          {nudge?.kind === "new" ? t.homeNudge.newGroup : t.homeNudge.invite(invited?.name ?? "")}
         </HomePill>
       )}
       <Suspense fallback={null}>

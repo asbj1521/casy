@@ -25,6 +25,10 @@ describe("groupNudge", () => {
   it("is gone once someone has been invited, as they may still answer (#147)", () => {
     expect(groupNudge([{ ...alone, invited: ["p"] }], [])).toBeNull();
   });
+  it("is gone once this device has invited someone, whom the server may not list", () => {
+    expect(groupNudge([alone], [], (id) => id === "a")).toBeNull();
+    expect(groupNudge([alone], [], (id) => id === "x")).not.toBeNull();
+  });
   it("stays away while an invitation waits", () => {
     expect(groupNudge([], [{}])).toBeNull();
     expect(groupNudge([alone], [{}])).toBeNull();
