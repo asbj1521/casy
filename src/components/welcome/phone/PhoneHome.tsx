@@ -7,7 +7,7 @@ import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { capitalize } from "@/lib/format";
 import type { GridItem } from "@/lib/monthGrid";
 import { colorOf, TZ } from "./demo";
-import { HEADER_PX } from "./geometry";
+import { HEADER_PILL_TOP, HEADER_PX } from "./geometry";
 
 /**
  * The home page's glass capsules with nothing behind the glass to blur: a
@@ -96,7 +96,10 @@ const PhoneHome = memo(function PhoneHome({
         />
       </motion.div>
       {/* Where the home page's own capsules sit. */}
-      <div className="absolute inset-x-4 flex items-start justify-between" style={{ top: 58 }}>
+      <div
+        className="absolute inset-x-4 flex items-start justify-between"
+        style={{ top: HEADER_PILL_TOP }}
+      >
         <span
           className="glass-pill flex h-10 items-center gap-1.5 rounded-full pl-3.5 pr-4 text-[17px] text-primary"
           style={NO_BLUR}

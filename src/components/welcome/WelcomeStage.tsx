@@ -1,75 +1,104 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
-import Avatar from "@/components/ui/Avatar";
-import FlyingCalendar, { IMPACT, TURN } from "./phone/FlyingCalendar";
+import { useT } from "@/i18n/lang";
+import { addDays } from "@/lib/zone";
+import AgreedMoment from "./phone/AgreedMoment";
+import PaperStack, { TURN_ALL, TURN_COVERED, TurnDigital } from "./phone/PaperStack";
+import { STACK_DONE, THROWS } from "./phone/throws";
+import PeopleJoining from "./phone/PeopleJoining";
 import PhoneDevice from "./phone/PhoneDevice";
-import { DEVICE } from "./phone/geometry";
+import PhoneGroup from "./phone/PhoneGroup";
 import PhoneHome from "./phone/PhoneHome";
-import { demoMonth, demoPlan, FRIENDS, PEOPLE } from "./phone/demo";
+import PhoneVote from "./phone/PhoneVote";
+import { demoMonth, demoPlan, demoVote, EVENT_CALENDAR, FRIENDS, TZ } from "./phone/demo";
+import { DEVICE } from "./phone/geometry";
 
 /** How the phone stands: `y` a share of the stage's height, `scale` of its fitted size, degrees. */
 const POSE = {
-  /** Coming in, lying back with its bottom edge toward you. */
-  rising: { y: 0.2, scale: 1.02, rotateX: 50, rotateY: 0, rotate: 0, opacity: 0 },
-  lying: { y: -0.03, scale: 1.02, rotateX: 34, rotateY: 0, rotate: 0, opacity: 1 },
-  /** Sunk to the bottom and cut off, making room for the shape and the card. */
-  low: { y: 0.6, scale: 1.12, rotateX: 0, rotateY: 0, rotate: 0, opacity: 1 },
-  /** Facing you: the only pose the paper calendars can land on. */
-  flat: { y: 0, scale: 1.06, rotateX: 0, rotateY: 0, rotate: 0, opacity: 1 },
+  /** Before anything, under the stage. */
+  below: { y: 1.05, scale: 1, rotateY: 0, rotate: 0 },
+  /** Facing you, room around it for the faces and the paper. */
+  flat: { y: 0, scale: 1, rotateY: 0, rotate: 0 },
+  /** Answering: turned a little, its side showing. */
+  turned: { y: 0, scale: 1.02, rotateY: -13, rotate: 2.5 },
 };
-const POSE_SPRING = { type: "spring", stiffness: 60, damping: 16, mass: 1 } as const;
+const POSE_SPRING = { type: "spring", stiffness: 110, damping: 20 } as const;
 
-/** Where the colour shape lies in each pose, as shares of its panel. */
+/** Where the colour shape lies behind the phone, as shares of its panel. */
 const SHAPE = {
-  lying: { x: "-8%", y: "48%", rotate: -14, scale: 1, opacity: 1 },
-  low: { x: "-24%", y: "-40%", rotate: 22, scale: 1.1, opacity: 1 },
-  flat: { x: "-8%", y: "-110%", rotate: 40, scale: 1, opacity: 0 },
+  under: { x: "-8%", y: "34%", rotate: -14, scale: 1.05, opacity: 1 },
+  above: { x: "-14%", y: "-46%", rotate: 22, scale: 1.1, opacity: 1 },
+  gone: { x: "-8%", y: "20%", rotate: 8, scale: 1, opacity: 0 },
 };
 
-/**
- * The paper calendars land right, left, right, each sooner than the last, as
- * Planlæg throws them quicker and quicker.
- */
-const SIDES = [1, -1, 1] as const;
-const FLY = [0.72, 0.58, 0.46];
-const GAP = [0.5, 0.3];
+/** When a friend's face pops up around the phone and when it leaves for its row. */
+const POP_AT = FRIENDS.map((_, i) => 0.3 + i * 0.13);
+const FLY_AT = FRIENDS.map((_, i) => 1.35 + i * 0.13);
+const FLY_FOR = 0.42;
 
 const AT = (() => {
-  const low = 2;
-  const flat = low + 1.9;
-  let t = flat + 0.75;
-  const throws = FLY.map((fly, k) => {
-    const at = t;
-    t += fly + IMPACT + TURN + (GAP[k] ?? 0);
-    return at;
-  });
-  // A calendar goes onto the screen once its paper has landed over it, unseen.
-  const landed = throws.map((at, k) => at + FLY[k] + IMPACT * 0.5);
-  const gone = throws.map((at, k) => at + FLY[k] + IMPACT + TURN + 0.05);
-  const pressed = t + 0.25;
-  const shine = pressed + 0.75;
-  return { low, flat, throws, landed, gone, pressed, shine, end: shine + 2.6 };
+  const joined = FLY_AT.map((at) => at + FLY_FOR);
+  const home = joined[joined.length - 1] + 0.5;
+  const throwsAt = home + 0.35;
+  const landed = THROWS.map((th) => throwsAt + th.landed);
+  const squared = throwsAt + STACK_DONE + 0.12;
+  const turn = squared + 0.28;
+  const digital = turn + TURN_COVERED;
+  const press = turn + TURN_ALL - 0.2;
+  const shine = press + 0.4;
+  const words = shine + 1.5;
+  const vote = words + 1.5;
+  const answers = [vote + 1.2, vote + 2.05, vote + 2.75];
+  const agreed = answers[2] + 0.55;
+  const flying = agreed + 1.5;
+  const event = flying + 0.55;
+  return {
+    joined,
+    home,
+    throwsAt,
+    landed,
+    squared,
+    turn,
+    digital,
+    press,
+    shine,
+    words,
+    vote,
+    answers,
+    agreed,
+    flying,
+    event,
+    end: event + 1.7,
+  };
 })();
 const MOMENTS = [
-  AT.low,
-  AT.flat,
-  ...AT.throws,
+  ...AT.joined,
+  AT.home,
+  AT.throwsAt,
   ...AT.landed,
-  ...AT.gone,
-  AT.pressed,
+  AT.squared,
+  AT.turn,
+  AT.digital,
+  AT.press,
   AT.shine,
+  AT.words,
+  AT.vote,
+  ...AT.answers,
+  AT.agreed,
+  AT.flying,
+  AT.event,
 ].sort((a, b) => a - b);
 
 /**
- * The app's welcome animation (#228): a real phone playing the app, moving to
- * make room. It leans back and straightens over a colour shape, sinks for the
- * friends' card, then stands facing you while real paper calendars fly in from
- * outside it, land on the screen and turn digital; pressed into one, the days
- * free for everyone light up. Everything else about the screen stays still
- * (AppWelcome). Under reduced motion, a still of the phone with the days lit.
+ * The app's welcome animation (#228), every step something Casy does, on a real
+ * phone: your friends join a group; their paper calendars are thrown on, faster
+ * and faster, and turn digital together; the days free for everyone light up;
+ * you answer a vote; the agreed date lands in its day. Then it runs on from the
+ * top with no fade. Under reduced motion, a still of the phone with the days lit.
  */
 export default function WelcomeStage() {
+  const t = useT();
   const still = useReducedMotion() ?? false;
 
   const stage = useRef<HTMLDivElement>(null);
@@ -87,7 +116,7 @@ export default function WelcomeStage() {
   // Where in the round it is, as the last moment reached.
   const [round, setRound] = useState(0);
   const [reached, setReached] = useState({ round: 0, at: 0 });
-  const now = still ? AT.end : reached.round === round ? reached.at : 0;
+  const now = still ? AT.shine : reached.round === round ? reached.at : 0;
   useEffect(() => {
     if (still) return;
     const timers = MOMENTS.map((at) => setTimeout(() => setReached({ round, at }), at * 1000));
@@ -98,35 +127,60 @@ export default function WelcomeStage() {
   const [month] = useState(() => demoMonth(Date.now()));
   const plan = useMemo(() => demoPlan(month), [month]);
   const shine = useMemo(() => new Set(plan.free), [plan]);
-  // Yours, then each friend's from when their paper has landed over the screen.
-  const landedCount = 1 + AT.landed.filter((at) => now >= at).length;
-  const items = useMemo(() => plan.items.slice(0, landedCount).flat(), [plan, landedCount]);
+  const agreedShine = useMemo(() => new Set([plan.free[0]]), [plan]);
+  const vote = useMemo(
+    () => demoVote(plan.free, t.welcome.event, t.welcome.group),
+    [plan, t.welcome.event, t.welcome.group],
+  );
+  const everyone = useMemo(() => plan.items.flat(), [plan]);
+  const yours = plan.items[0];
+  const agreedDay = plan.free[0];
+  const withEvent = useMemo(
+    () => [
+      {
+        calendarId: EVENT_CALENDAR,
+        start: agreedDay,
+        end: addDays(agreedDay, 1, TZ),
+        label: t.welcome.event,
+      },
+      ...everyone,
+    ],
+    [agreedDay, everyone, t.welcome.event],
+  );
 
-  const phase = now >= AT.flat ? "flat" : now >= AT.low ? "low" : "lying";
-  const scale = Math.min((size.height * 0.8) / DEVICE.height, (size.width * 0.62) / DEVICE.width);
-  const pose = POSE[phase];
+  const joined = AT.joined.filter((at) => now >= at).length;
+  const landed = AT.landed.filter((at) => now >= at).length;
+  const answered = AT.answers.filter((at) => now >= at).length;
+  const voting = now >= AT.vote && now < AT.agreed;
+  const onScreen = now < AT.home ? "group" : voting ? "vote" : "home";
+
+  const hidden = now >= AT.words && now < AT.vote;
+  const pose = voting ? POSE.turned : hidden ? POSE.below : POSE.flat;
+  const shape = now < AT.home ? SHAPE.under : voting ? SHAPE.above : SHAPE.gone;
+  const scale = Math.min((size.height * 0.92) / DEVICE.height, (size.width * 0.62) / DEVICE.width);
+  const place = (p: typeof pose) => ({ ...p, y: p.y * size.height, scale: p.scale * scale });
+
+  const items = now >= AT.event ? withEvent : now >= AT.digital ? everyone : yours;
 
   return (
-    <div ref={stage} aria-hidden className="pointer-events-none relative h-full overflow-hidden">
-      <motion.div
-        key={round}
-        className="absolute inset-0"
-        initial={still ? false : { opacity: round === 0 ? 1 : 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        style={{ perspective: size.height * 1.7 }}
-      >
+    <div
+      ref={stage}
+      aria-hidden
+      inert
+      className="pointer-events-none relative h-full overflow-hidden"
+    >
+      <div className="absolute inset-0" style={{ perspective: size.height * 1.9 }}>
         {/* The colour shape, in a panel of its own that fades out at the bottom. */}
-        <div className="absolute inset-x-[7%] bottom-0 top-3 overflow-hidden rounded-[28px]">
+        <div className="absolute inset-x-[5%] bottom-0 top-3 overflow-hidden rounded-[28px]">
           <motion.div
             className="absolute inset-x-[-30%] top-0"
             style={{ aspectRatio: "1 / 0.9" }}
-            initial={still ? SHAPE.flat : { ...SHAPE.lying, y: "90%", opacity: 0 }}
-            animate={still ? SHAPE.flat : SHAPE[phase]}
+            initial={still ? SHAPE.gone : { ...SHAPE.under, y: "90%", opacity: 0 }}
+            animate={still ? SHAPE.gone : shape}
             transition={{
               type: "spring",
-              stiffness: 42,
-              damping: 15,
+              stiffness: 50,
+              damping: 16,
               // Gone before it has swept away, so it leaves no dark trail behind.
               opacity: { duration: 0.35, ease: "easeOut" },
             }}
@@ -146,33 +200,22 @@ export default function WelcomeStage() {
               }}
             />
           </motion.div>
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
         </div>
 
-        {/* The friends' card on the shape, while the phone is low. */}
+        {/* The big words, alone on a plain page, while the phone is away. */}
         <AnimatePresence>
-          {phase === "low" && !still && (
+          {hidden && !still && (
             <motion.div
-              className="absolute inset-x-[12%] top-[20%] flex items-center gap-3 rounded-[1.75rem] bg-card/95 p-4 shadow-xl shadow-black/15"
-              initial={{ opacity: 0, y: 30, scale: 0.92 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -24, scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 170, damping: 20, delay: 0.25 }}
+              className="absolute inset-x-6 top-0 flex h-full items-center justify-center"
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.04 }}
+              transition={{ duration: 0.32, delay: 0.1 }}
             >
-              <span className="flex shrink-0 -space-x-2 large-text:hidden">
-                {FRIENDS.map((f, i) => (
-                  <Avatar
-                    key={f.id}
-                    name={f.name}
-                    index={i + 1}
-                    size="md"
-                    className="ring-2 ring-card"
-                  />
-                ))}
-              </span>
-              <span className="min-w-0 truncate text-[0.9375rem] font-semibold text-foreground">
-                {FRIENDS.map((f) => f.name).join(", ")}
-              </span>
+              <p className="text-balance text-center text-[3rem] font-bold leading-[1.05] tracking-tight text-foreground">
+                {t.welcome.allCan}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -188,53 +231,69 @@ export default function WelcomeStage() {
               marginTop: -DEVICE.height / 2,
               transformStyle: "preserve-3d",
             }}
-            initial={
-              still
-                ? false
-                : {
-                    ...POSE.rising,
-                    y: POSE.rising.y * size.height,
-                    scale: POSE.rising.scale * scale,
-                  }
-            }
-            animate={
-              still
-                ? { ...POSE.flat, y: POSE.flat.y, scale: POSE.flat.scale * scale }
-                : { ...pose, y: pose.y * size.height, scale: pose.scale * scale }
-            }
+            initial={still ? false : place(POSE.below)}
+            animate={still ? place(POSE.flat) : place(pose)}
             transition={still ? { duration: 0 } : POSE_SPRING}
           >
             <PhoneDevice
               over={
-                !still &&
-                AT.throws.map(
-                  (at, k) =>
-                    now >= at &&
-                    now < AT.gone[k] && (
-                      <FlyingCalendar
-                        key={k}
-                        side={SIDES[k]}
-                        fly={FLY[k]}
+                !still && (
+                  <>
+                    {now < AT.home && (
+                      <PeopleJoining key={round} popAt={POP_AT} flyAt={FLY_AT} flyFor={FLY_FOR} />
+                    )}
+                    {now >= AT.throwsAt && now < AT.digital && (
+                      <PaperStack
+                        landed={landed}
+                        squared={now >= AT.squared}
                         month={month}
-                        items={plan.items.slice(0, k + 2).flat()}
-                        who={PEOPLE[k + 1].id}
-                        name={PEOPLE[k + 1].name}
-                        color={PEOPLE[k + 1].color}
+                        items={everyone}
                       />
-                    ),
+                    )}
+                    {now >= AT.turn && now < AT.press + 0.4 && <TurnDigital />}
+                  </>
                 )
               }
             >
-              <PhoneHome
-                month={month}
-                items={items}
-                pressed={!still && now >= AT.pressed}
-                shine={now >= AT.shine ? shine : null}
-              />
+              <AnimatePresence initial={false}>
+                <motion.div
+                  key={onScreen}
+                  className="absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.28 }}
+                >
+                  {onScreen === "group" && <PhoneGroup joined={joined} />}
+                  {onScreen === "vote" && <PhoneVote event={vote} answered={answered} />}
+                  {onScreen === "home" && (
+                    <PhoneHome
+                      month={month}
+                      items={items}
+                      pressed={!still && now >= AT.press && now < AT.words}
+                      shine={
+                        now >= AT.event
+                          ? agreedShine
+                          : now >= AT.shine && now < AT.agreed
+                            ? shine
+                            : null
+                      }
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+              {now >= AT.agreed && now < AT.event + 0.1 && (
+                <AgreedMoment
+                  event={vote}
+                  day={agreedDay}
+                  month={month}
+                  flying={now >= AT.flying}
+                />
+              )}
             </PhoneDevice>
           </motion.div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

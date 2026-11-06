@@ -112,7 +112,10 @@ export default function CardFace({
           onShow={onShowClash}
           className="mt-2"
         />
-        <PlaceNote event={event} readOnly className={compact ? "mt-2" : "mt-3"} />
+        {/* Only mounted with something to show: the welcome screen's made-up card has neither, and no one signed in. */}
+        {(event.place || event.note) && (
+          <PlaceNote event={event} readOnly className={compact ? "mt-2" : "mt-3"} />
+        )}
       </div>
       <div className={cn("mt-auto pt-3", compact && "shrink-0 short:pt-1.5")}>
         {yours && (

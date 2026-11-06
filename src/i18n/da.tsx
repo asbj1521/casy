@@ -70,6 +70,10 @@ export const da = {
     start: "Kom i gang",
     haveAccount: "Har du allerede en konto?",
     back: "Tilbage",
+    you: "Dig",
+    group: "Fredagsbar",
+    event: "Brætspilsaften",
+    allCan: "Alle kan fredag.",
   },
   updateRequired: {
     title: "Opdater Casy",
