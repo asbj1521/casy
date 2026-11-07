@@ -120,6 +120,42 @@ describe("rankCandidates", () => {
   });
 });
 
+describe("the soonest (#234)", () => {
+  it("takes the earliest dates that keep the spacing, even one that needs a skip", () => {
+    // Every evening clean but Thursday the 15th, where b has something skippable.
+    const b = person("b", [
+      {
+        start: new Date(wallTime(2026, 9, 15, 17, TZ)).toISOString(),
+        end: new Date(wallTime(2026, 9, 15, 23, TZ)).toISOString(),
+        priority: "skip",
+      },
+    ]);
+    const group = [person("a"), b];
+    const first = firstFrom(group, EVENING);
+    const options = { first, end: END, now: NOW };
+    const soonest = pickCandidates(group, EVENING, { ...options, priority: "soon" }, TZ);
+
+    const days = soonest.map((d) => day(d).day);
+    expect(days).toEqual([...days].sort((x, y) => x - y));
+    for (let i = 1; i < soonest.length; i++)
+      expect(days[i] - days[i - 1]).toBeGreaterThanOrEqual(2);
+    // No later than the good ones would be, which go looking for new weekdays.
+    const good = pickCandidates(group, EVENING, options, TZ);
+    expect(Date.parse(soonest.at(-1)!.slot.start)).toBeLessThanOrEqual(
+      Date.parse(good.at(-1)!.slot.start),
+    );
+  });
+
+  it("asked for nothing, picks as it always has", () => {
+    const group = [person("a"), person("b")];
+    const first = firstFrom(group, EVENING);
+    const options = { first, end: END, now: NOW };
+    expect(pickCandidates(group, EVENING, options, TZ)).toEqual(
+      pickCandidates(group, EVENING, { ...options, priority: "hassle" }, TZ),
+    );
+  });
+});
+
 describe("comfort (#178)", () => {
   it("passes over a date that only just fits for one that leaves room around it", () => {
     // b works until 17:50 on Wednesday 14: the evening there is a rush.

@@ -11,7 +11,13 @@ const settings: SchedulerSettings = {
   dows: [1, 2, 3, 4, 5],
   period: { from: "2026-11", to: "2026-12" } as unknown as SchedulerSettings["period"],
 };
-const extras = { place: "Padelhallen", note: "", answerDays: 2, dateCount: 4 };
+const extras = {
+  place: "Padelhallen",
+  note: "",
+  answerDays: 2,
+  dateCount: 4,
+  priority: "soon" as const,
+};
 const morning = {
   startHour: 7,
   startWindow: { from: 360, to: 480 },
@@ -55,7 +61,13 @@ describe("shortcuts (#175)", () => {
         durationMinutes: base.durationMinutes,
       },
     ]);
-    expect(read?.extras).toEqual({ place: "", note: "", answerDays: null, dateCount: 4 });
+    expect(read?.extras).toEqual({
+      place: "",
+      note: "",
+      answerDays: null,
+      dateCount: 4,
+      priority: "hassle",
+    });
   });
 
   it("gives every time its own length, the first's in the settings (#232)", () => {

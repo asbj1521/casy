@@ -425,6 +425,70 @@ test.describe("with motion", () => {
   });
 });
 
+test("the choice over the dates ranks them at once, and it is what is sent (#234)", async ({
+  page,
+  backend,
+}) => {
+  await page.goto("/calendar-overview");
+  await page.getByRole("button", { name: "Planlæg" }).click();
+  await pickGroup(page, "Løbeklubben");
+  await page
+    .getByRole("dialog", { name: "Planlæg" })
+    .getByRole("button", { name: "Find dato" })
+    .click();
+  await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
+  const ticked = () =>
+    page
+      .locator('[data-send-row="yes"]')
+      .evaluateAll((rows) => rows.map((r) => r.getAttribute("data-date") ?? ""));
+  const rows = page.locator("[data-send-row]");
+  const allRows = await rows.count();
+
+  // Least hassle first; what isn't offered goes under what is.
+  const priority = page.getByRole("button", { name: /^Prioritér/ });
+  await expect(priority).toContainText("Mindst besvær");
+
+  await priority.click();
+  await page.getByRole("radio", { name: "Snarest" }).click({ force: true });
+  await expect(priority).toContainText("Snarest");
+  // By date, and the same rows, moved rather than swapped.
+  await expect
+    .poll(async () => {
+      const dates = await ticked();
+      return dates.length === 5 && dates.every((d, i) => i === 0 || dates[i - 1] < d);
+    })
+    .toBe(true);
+  await expect(rows).toHaveCount(allRows);
+  const soonest = await ticked();
+
+  await page.getByRole("button", { name: /^Foreslå top 5/ }).click();
+  await expect
+    .poll(() => backend.calls.find((c) => c.body.action === "suggest")?.body.dates)
+    .toBeTruthy();
+  const sent = backend.calls.find((c) => c.body.action === "suggest")!.body.dates as {
+    start: string;
+  }[];
+  expect(sent.map((d) => d.start).sort()).toEqual([...soonest].sort());
+});
+
+test("a genvej remembers the choice (#234)", async ({ page, backend }) => {
+  await page.goto("/calendar-overview");
+  await page.getByRole("button", { name: "Planlæg" }).click();
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  await sheet.getByRole("button", { name: "Genveje", exact: true }).click();
+  const shortcuts = page.getByRole("dialog", { name: "Genveje" });
+  await shortcuts.getByRole("button", { name: "Ny genvej" }).first().click();
+  const editor = page.getByRole("dialog", { name: "Ny genvej" });
+  await editor.getByRole("button", { name: "Flere detaljer" }).click();
+  await editor.getByRole("button", { name: /^Prioritér/ }).click();
+  await page.getByRole("radio", { name: "Snarest" }).click({ force: true });
+  await expect(editor.getByRole("button", { name: /^Prioritér/ })).toContainText("Snarest");
+  await editor.getByRole("textbox", { name: /Navn på genvej/ }).fill("Hurtig");
+  await editor.getByRole("button", { name: "Gem genvej" }).click();
+  await expect.poll(() => backend.world.presets.length).toBe(1);
+  expect(backend.world.presets[0].plan).toMatchObject({ extras: { priority: "soon" } });
+});
+
 test.describe("Genveje (#175)", () => {
   /** A genvej as plan-presets keeps it: padel on weekdays, at the times given. */
   const padel = (times: { startHour: number; durationMinutes?: number }[]) => ({

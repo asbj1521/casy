@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   animate,
   AnimatePresence,
@@ -10,6 +10,7 @@ import { Check, ChevronDown, Loader2, TriangleAlert } from "lucide-react";
 
 import { useLang, useT } from "@/i18n/lang";
 import { type EventSettings } from "@/lib/eventSearch";
+import type { DatePriority } from "@/lib/scheduler";
 import { capitalize, dayLabel, formatEventDate, formatTime } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { checkTimes, liveOrder, PILE_TIMING, rankOrder } from "@/lib/paperPile";
@@ -42,6 +43,8 @@ export default function DateList({
   items,
   meeting,
   kind,
+  priority,
+  control,
   phase,
   instant,
   scroll,
@@ -52,6 +55,10 @@ export default function DateList({
   items: CheckedDate[];
   meeting: boolean;
   kind: EventSettings["kind"];
+  /** What the list is ranked by (#234). */
+  priority: DatePriority;
+  /** The way to change it, over the list once the list is done. */
+  control?: ReactNode;
   phase: Phase;
   instant: boolean;
   /** The shared calendar's scroll, which this list drives to lift each date out. */
@@ -161,7 +168,14 @@ export default function DateList({
     return () => window.clearTimeout(id);
   }, [ranking, allChecked, onRanked]);
 
-  const order = useMemo(() => rankOrder(items.map((i) => i.facts)), [items]);
+  const order = useMemo(
+    () =>
+      rankOrder(
+        items.map((i) => i.facts),
+        priority,
+      ),
+    [items, priority],
+  );
   const shown = liveOrder(
     order,
     checked,
@@ -188,6 +202,7 @@ export default function DateList({
           </p>
         )}
       </div>
+      {done && control}
 
       {shown.map((item) => {
         const key = item.date.slot.start;
@@ -211,6 +226,7 @@ export default function DateList({
             key={`${key}-${flight ? "in" : "waiting"}`}
             // Which rows the send flight moves, and which way (sendFlightPlay.ts).
             data-send-row={item.chosen ? "yes" : "no"}
+            data-date={key}
             ref={(el) => {
               if (el) rows.current.set(key, el);
             }}

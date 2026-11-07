@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, useMotionValue, useReducedMotion, type Variants } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
@@ -50,6 +50,8 @@ import {
   NO_INPUT,
   titleBand,
 } from "./pile/shared";
+import type { DatePriority } from "@/lib/scheduler";
+import { DatePriorityPicker, DatePriorityRow } from "./DatePriority";
 import DateList from "./pile/DateList";
 import PileTitle, { NoShortName } from "./pile/PileTitle";
 import SharedCalendar from "./pile/SharedCalendar";
@@ -133,6 +135,8 @@ export default function PileScreen({
     !planning.activeGroup.isExample &&
     planning.activeGroup.memberCount <= 1;
   const reduceMotion = !!useReducedMotion();
+  const priorityRow = useId();
+  const [priorityOpen, setPriorityOpen] = useState(false);
   const {
     participants,
     activeGroup,
@@ -143,6 +147,7 @@ export default function PileScreen({
     found,
     waiting,
     extras,
+    updateExtras,
     review,
     canSuggest,
     acceptOwnTimeOff,
@@ -215,27 +220,29 @@ export default function PileScreen({
   // Casy checks about each.
   const dates = useMemo(() => {
     if (!participants || !found?.slot || !poolFound) return null;
-    const { pool, chosen, byPick, comfort } = rankFromPool(
-      poolFound,
-      participants,
-      search,
-      {
-        first: { slot: found.slot, conflicts: found.conflicts },
-        end: searchWindow.end,
-        count: extras.dateCount,
-        scores,
-        profile,
-      },
-      TZ,
-    );
+    const first = { slot: found.slot, conflicts: found.conflicts };
+    const rankBy = (priority: DatePriority) =>
+      rankFromPool(
+        poolFound,
+        participants,
+        search,
+        { first, end: searchWindow.end, count: extras.dateCount, scores, profile, priority },
+        TZ,
+      );
+    const { pool, chosen, byPick, comfort } = rankBy(extras.priority);
+    // The other choice's dates are listed too, so changing it (#234) moves the
+    // rows and which are ticked, and the list and the pile under it stay as they are.
+    const either = [
+      ...new Set([...chosen, ...rankBy(extras.priority === "soon" ? "hassle" : "soon").chosen]),
+    ];
     // Not offered, but listed as other dates that work: never a big plan on 1 January (#166).
     const others = pool.filter(
       (d) =>
-        !chosen.includes(d) &&
+        !either.includes(d) &&
         d.conflicts.length === 0 &&
         !bigOnNewYearsDay(profile, d.slot, search, TZ),
     );
-    const listed = [...chosen, ...others.slice(0, Math.max(0, LIST_MAX - chosen.length))].sort(
+    const listed = [...either, ...others.slice(0, Math.max(0, LIST_MAX - either.length))].sort(
       (a, b) => Date.parse(a.slot.start) - Date.parse(b.slot.start),
     );
     const names = (list: { name: string }[]) =>
@@ -313,6 +320,7 @@ export default function PileScreen({
         facts: {
           pickedAt: byPick.includes(date) ? byPick.indexOf(date) : null,
           conflicts: date.conflicts.length + absent.length,
+          cost: comfort.get(date)?.cost ?? 0,
           warnings: (warnings?.length ?? 0) + yours.length,
           start: Date.parse(date.slot.start),
         },
@@ -329,6 +337,7 @@ export default function PileScreen({
     search,
     searchWindow,
     extras.dateCount,
+    extras.priority,
     lang,
     t,
     words,
@@ -682,6 +691,23 @@ export default function PileScreen({
                 items={dates.checked}
                 meeting={search.kind === "single"}
                 kind={search.kind}
+                priority={extras.priority}
+                control={
+                  <>
+                    <DatePriorityRow
+                      id={priorityRow}
+                      value={extras.priority}
+                      onOpen={() => setPriorityOpen(true)}
+                    />
+                    <DatePriorityPicker
+                      open={priorityOpen}
+                      onClose={() => setPriorityOpen(false)}
+                      anchorId={priorityRow}
+                      value={extras.priority}
+                      onPick={(priority) => updateExtras({ priority })}
+                    />
+                  </>
+                }
                 phase={phase}
                 instant={reduceMotion}
                 scroll={scroll}

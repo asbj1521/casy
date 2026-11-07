@@ -218,9 +218,30 @@ describe("layerAlpha", () => {
 });
 
 describe("rankOrder", () => {
+  it("puts a date everyone can make above an earlier one that needs a skip (#234)", () => {
+    const facts = (over: Partial<RankedFacts>): RankedFacts => ({
+      pickedAt: null,
+      conflicts: 0,
+      cost: 0,
+      warnings: 0,
+      start: 0,
+      ...over,
+    });
+    const nov20 = facts({ pickedAt: 0, conflicts: 1, start: 1 });
+    const jan2 = facts({ pickedAt: 1, cost: 3, start: 2 });
+    const jan9 = facts({ pickedAt: 2, cost: 1, start: 3 });
+    const notOffered = facts({ start: 0 });
+    const dates = [nov20, jan2, jan9, notOffered];
+    // Fewest giving something up, then the lowest cost; what isn't offered last.
+    expect(rankOrder(dates)).toEqual([2, 1, 0, 3]);
+    // By date among the offered, whatever they cost.
+    expect(rankOrder(dates, "soon")).toEqual([0, 1, 2, 3]);
+  });
+
   const date = (over: Partial<RankedFacts>): RankedFacts => ({
     pickedAt: null,
     conflicts: 0,
+    cost: 0,
     warnings: 0,
     start: 0,
     ...over,

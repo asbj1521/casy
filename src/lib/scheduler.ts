@@ -77,14 +77,25 @@ export interface SchedulerSettings {
  * is settled once everyone has answered), and how many dates to vote on.
  * The search never looks at them.
  */
+/** What a plan's dates are ranked by (#234): fewest giving something up, or the earliest. */
+export type DatePriority = "hassle" | "soon";
+
 export interface EventExtras {
   place: string;
   note: string;
   answerDays: number | null;
   dateCount: number;
+  /** Planlæg's ranking (#234); never sent, a computer picks as for "hassle". */
+  priority: DatePriority;
 }
 
-export const DEFAULT_EXTRAS: EventExtras = { place: "", note: "", answerDays: null, dateCount: 5 };
+export const DEFAULT_EXTRAS: EventExtras = {
+  place: "",
+  note: "",
+  answerDays: null,
+  dateCount: 5,
+  priority: "hassle",
+};
 /** Days to answer in: 1 to 7 (the server's limit too). */
 export const ANSWER_DAY_VALUES = [1, 2, 3, 4, 5, 6, 7];
 /** Dates in a vote: 2 to 5 (CANDIDATE_COUNT is the most). */

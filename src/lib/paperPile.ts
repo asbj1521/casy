@@ -17,6 +17,7 @@ import {
   type DayCell,
   type MonthAvailabilityOptions,
 } from "@/lib/monthAvailability";
+import type { DatePriority } from "@/lib/scheduler";
 import { localDate, startOfMonth, wallTime } from "@/lib/zone";
 import type { Participant } from "@/types";
 
@@ -249,6 +250,8 @@ export interface RankedFacts {
   pickedAt: number | null;
   /** How many would have to skip something or take time off. */
   conflicts: number;
+  /** What it costs the people going (dateComfort.ts). */
+  cost: number;
   /** How many notes about the evening before or the morning after. */
   warnings: number;
   /** When it starts, epoch ms. */
@@ -274,23 +277,26 @@ export function liveOrder(ranked: number[], checked: number, offered: boolean[])
 }
 
 /**
- * The list best first (#126), as indexes into `dates`. Until #119 scores
- * dates by what they cost everyone, "best" is Casy's own order of choice:
- * the dates a vote offers first, in the order pickCandidates chose them
- * (the date on screen, then the ones spreading the vote over the week);
- * then the rest by fewest giving something up, fewest notes about the
- * evening before or morning after, and soonest.
+ * The list best first (#126), as indexes into `dates`: the dates a vote offers
+ * first. Among them, by Planlæg's choice (#234): for the least hassle, fewest
+ * giving something up, then what they cost everyone (dateComfort.ts), then
+ * Casy's order of choice, so a date everyone can make goes above an earlier one
+ * that needs a skip; for the soonest, by date. Then the rest: for the least
+ * hassle by fewest giving something up, fewest notes about the evening before or
+ * morning after, and soonest; for the soonest by date.
  */
-export function rankOrder(dates: RankedFacts[]): number[] {
+export function rankOrder(dates: RankedFacts[], priority: DatePriority = "hassle"): number[] {
+  const offered = (d: RankedFacts) => (d.pickedAt === null ? 1 : 0);
   return dates
     .map((d, i) => ({ d, i }))
-    .sort(
-      ({ d: a }, { d: b }) =>
-        (a.pickedAt ?? Infinity) - (b.pickedAt ?? Infinity) ||
-        a.conflicts - b.conflicts ||
-        a.warnings - b.warnings ||
-        a.start - b.start,
-    )
+    .sort(({ d: a }, { d: b }) => {
+      if (offered(a) !== offered(b)) return offered(a) - offered(b);
+      if (priority === "soon") return a.start - b.start;
+      if (a.pickedAt !== null && b.pickedAt !== null) {
+        return a.conflicts - b.conflicts || a.cost - b.cost || a.pickedAt - b.pickedAt;
+      }
+      return a.conflicts - b.conflicts || a.warnings - b.warnings || a.start - b.start;
+    })
     .map(({ i }) => i);
 }
 

@@ -23,6 +23,9 @@
  * that cost. The clean dates are still taken before any that cost someone,
  * and the spacing rules still hold.
  *
+ * Asked for the soonest instead (#234, Planlæg's choice), the dates are simply
+ * the earliest ones that keep the spacing, whatever they cost.
+ *
  * 1 January (#166, newYear.ts): a big plan there is never offered unless it
  * is the date on screen, and a small one only after every other date in its
  * group (clean, or costing someone).
@@ -35,7 +38,7 @@ import type { EventImpact } from "@/api/eventProfile";
 import { comfortRater, type Comfort } from "@/lib/dateComfort";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import { bigOnNewYearsDay, onNewYearsDay } from "@/lib/newYear";
-import type { FoundDate } from "@/lib/scheduler";
+import type { DatePriority, FoundDate } from "@/lib/scheduler";
 import { addDays, dayOf, localDate } from "@/lib/zone";
 import type { Participant } from "@/types";
 
@@ -60,6 +63,8 @@ interface CandidateOptions {
   profile?: EventImpact | null;
   /** The time now, for how much notice a date gives (#178); Date.now() unless a test says. */
   now?: number;
+  /** "soon": the earliest dates, whatever they cost (#234). Else the good ones, as above. */
+  priority?: DatePriority;
 }
 
 export function pickCandidates(
@@ -148,7 +153,7 @@ export function rankFromPool(
   options: CandidateOptions,
   timeZone: string,
 ): RankedDates {
-  const { first, count = CANDIDATE_COUNT, scores, profile, now = Date.now() } = options;
+  const { first, count = CANDIDATE_COUNT, scores, profile, now = Date.now(), priority } = options;
 
   const chosen: FoundDate[] = [first];
   const dayNumber = (d: FoundDate) => dayIndex(d.slot.start, timeZone);
@@ -195,12 +200,18 @@ export function rankFromPool(
     .filter((d) => d.conflicts.length > 0)
     .sort((a, b) => a.conflicts.length - b.conflicts.length || costOf(a) - costOf(b))
     .sort(newYearLast);
-  take(clean, { also: newWeekday });
-  take(clean);
-  take(costly, { also: newWeekday });
-  take(costly);
-  take(clean, { gap: 1 });
-  take(costly, { gap: 1 });
+  if (priority === "soon") {
+    const soonest = [...offered].sort(newYearLast);
+    take(soonest);
+    take(soonest, { gap: 1 });
+  } else {
+    take(clean, { also: newWeekday });
+    take(clean);
+    take(costly, { also: newWeekday });
+    take(costly);
+    take(clean, { gap: 1 });
+    take(costly, { gap: 1 });
+  }
 
   return {
     pool: [first, ...found],

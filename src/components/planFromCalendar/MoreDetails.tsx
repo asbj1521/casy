@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { Hourglass, MapPin, SlidersHorizontal, StickyNote, Users } from "lucide-react";
+import { ArrowUpDown, Hourglass, MapPin, SlidersHorizontal, StickyNote, Users } from "lucide-react";
 
 import type { ParticipantProps } from "@/components/findDate/ParticipantSettings";
 import { DeadlinePicker } from "@/components/myEvents/VoteDeadline";
@@ -7,9 +7,15 @@ import AnchoredPanel from "@/components/ui/AnchoredPanel";
 import Collapse from "@/components/ui/Collapse";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import { useT } from "@/i18n/lang";
-import { MAX_NOTE_LENGTH, MAX_PLACE_LENGTH, type EventExtras } from "@/lib/scheduler";
+import {
+  DEFAULT_EXTRAS,
+  MAX_NOTE_LENGTH,
+  MAX_PLACE_LENGTH,
+  type EventExtras,
+} from "@/lib/scheduler";
 import { summarizePeople } from "@/lib/peopleSummary";
 
+import { DatePriorityPicker } from "./DatePriority";
 import FieldRow, { ROW_INPUT } from "./FieldRow";
 import { litClass } from "./fill";
 import PeopleRows from "./PeopleRows";
@@ -38,9 +44,10 @@ export default function MoreDetails({
   const words = t.settingsPanel;
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [deadlineOpen, setDeadlineOpen] = useState(false);
+  const [priorityOpen, setPriorityOpen] = useState(false);
   // The rows the pickers grow out of (#175).
   const id = useId();
-  const rows = { people: `${id}-people`, deadline: `${id}-deadline` };
+  const rows = { people: `${id}-people`, deadline: `${id}-deadline`, priority: `${id}-priority` };
 
   const people =
     participants &&
@@ -61,6 +68,7 @@ export default function MoreDetails({
       extras.place !== "" ||
       extras.note !== "" ||
       extras.answerDays !== null ||
+      extras.priority !== DEFAULT_EXTRAS.priority ||
       (!!people && !people.everyone),
   );
 
@@ -117,6 +125,14 @@ export default function MoreDetails({
             chevron
             onClick={() => setDeadlineOpen(true)}
           />
+          <ListRow
+            id={rows.priority}
+            icon={ArrowUpDown}
+            label={t.planFromCalendar.priority.label}
+            value={t.planFromCalendar.priority[extras.priority]}
+            chevron
+            onClick={() => setPriorityOpen(true)}
+          />
         </ListGroup>
       </Collapse>
       <DeadlinePicker
@@ -125,6 +141,13 @@ export default function MoreDetails({
         anchorId={rows.deadline}
         value={extras.answerDays}
         onPick={(answerDays) => onExtras({ answerDays })}
+      />
+      <DatePriorityPicker
+        open={priorityOpen}
+        onClose={() => setPriorityOpen(false)}
+        anchorId={rows.priority}
+        value={extras.priority}
+        onPick={(priority) => onExtras({ priority })}
       />
 
       {participants && (

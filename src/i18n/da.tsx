@@ -1458,6 +1458,7 @@ export const da = {
     you: "Dig",
     waiting: "Henter gruppens kalendere",
     ranked: (n: number) => (n === 1 ? "Den bedste dato" : `De ${n} bedste datoer`),
+    priority: { label: "Prioritér", hassle: "Mindst besvær", soon: "Snarest" },
     noneThrough: "Ingen dag i perioden passer alle. Prøv at ændre planen.",
     suggest: (n: number) => (n === 1 ? "Foreslå datoen" : `Foreslå top ${n} datoer`),
     inviteFriends: "Inviter venner",

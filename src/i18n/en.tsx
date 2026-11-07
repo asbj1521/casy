@@ -1400,6 +1400,7 @@ export const en: Messages = {
     you: "You",
     waiting: "Fetching the group's calendars",
     ranked: (n: number) => (n === 1 ? "The best date" : `The ${n} best dates`),
+    priority: { label: "Prioritise", hassle: "Least hassle", soon: "Soonest" },
     noneThrough: "No day in the period works for everyone. Try changing the plan.",
     suggest: (n: number) => (n === 1 ? "Suggest the date" : `Suggest the top ${n} dates`),
     inviteFriends: "Invite friends",

@@ -146,6 +146,7 @@ export function readShortcutPlan(raw: unknown, base: SchedulerSettings): Shortcu
         ? answerDays
         : null,
     dateCount: num(e.dateCount, 2, 5, DEFAULT_EXTRAS.dateCount),
+    priority: e.priority === "soon" ? "soon" : DEFAULT_EXTRAS.priority,
   };
   return { v: 1, settings, times: [first, ...more], extras };
 }
