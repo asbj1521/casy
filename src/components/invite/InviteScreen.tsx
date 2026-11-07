@@ -5,6 +5,12 @@ import { Loader2, XCircle } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import HelpButton from "@/components/ui/HelpButton";
 import { useT } from "@/i18n/lang";
+import { isNativeApp } from "@/lib/nativeApp";
+
+const APP_STORE_URL = "https://apps.apple.com/app/id6830713238";
+
+/** An iPhone's browser, Safari or another; not an iPad, since the app is iPhone only. */
+const onIPhoneBrowser = !isNativeApp && /iPhone/.test(navigator.userAgent);
 
 /** What an invite shows, wherever it came from (a link or a named invitation). */
 export interface InviteFacts {
@@ -119,6 +125,24 @@ export function InviteAction({
       {busy && <Loader2 className="h-5 w-5 animate-spin" />}
       {children}
     </button>
+  );
+}
+
+/**
+ * The way to the App Store under the answer, for a friend on an iPhone's browser
+ * who may not have the app. Nothing anywhere else: a computer has no app to get,
+ * and the app is already there.
+ */
+export function GetTheApp() {
+  const t = useT();
+  if (!onIPhoneBrowser) return null;
+  return (
+    <a
+      href={APP_STORE_URL}
+      className="hit mx-auto mt-3 text-[0.9375rem] font-semibold text-primary"
+    >
+      {t.join.getTheApp}
+    </a>
   );
 }
 

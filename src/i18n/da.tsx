@@ -1728,6 +1728,7 @@ export const da = {
     alreadyIn: "Du er allerede med i gruppen.",
     findDate: "Find en dato",
     joinGroup: "Bliv medlem",
+    getTheApp: "Hent appen",
     signInToJoin: "Log ind for at blive medlem",
     comeBack: "Du kommer direkte tilbage hertil bagefter.",
     aboutTitle: "Om invitationen",

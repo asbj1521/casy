@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { CalendarCheck, Loader2, Users, XCircle } from "lucide-react";
 
 import {
+  GetTheApp,
   InviteAction,
   InviteBroken,
   InviteDetails,
@@ -81,9 +82,12 @@ function PhoneJoin({ token }: { token: string }) {
               )}
             </>
           ) : (
-            <InviteAction to={`/sign-in?signup=1&next=${encodeURIComponent(`${here}?join=1`)}`}>
-              {t.join.joinGroup}
-            </InviteAction>
+            <>
+              <InviteAction to={`/sign-in?signup=1&next=${encodeURIComponent(`${here}?join=1`)}`}>
+                {t.join.joinGroup}
+              </InviteAction>
+              <GetTheApp />
+            </>
           )}
         </InviteDetails>
       )}

@@ -1668,6 +1668,7 @@ export const en: Messages = {
     alreadyIn: "You are already in this group.",
     findDate: "Find a date",
     joinGroup: "Join group",
+    getTheApp: "Get the app",
     signInToJoin: "Sign in to join",
     comeBack: "You will come straight back here afterwards.",
     aboutTitle: "About this invitation",

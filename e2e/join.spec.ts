@@ -41,6 +41,40 @@ test.describe("signed out", () => {
     await expect(page.getByRole("heading", { name: "Sara has invited you to" })).toBeVisible();
     await expect(page.getByText(/^Casy finds the dates/)).toBeVisible();
   });
+
+  test("a browser that is no iPhone has no way to the App Store", async ({ page }) => {
+    await page.goto("/join/a-token");
+    await expect(page.getByRole("heading", { name: "Sara har inviteret dig til" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Hent appen" })).toHaveCount(0);
+  });
+
+  test.describe("on an iPhone", () => {
+    test.use({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) Safari/604.1" });
+
+    test("the browser offers the app under the answer, in both languages", async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!isMobile, "a computer keeps its card");
+      await page.goto("/join/a-token");
+      await expect(page.getByRole("link", { name: "Hent appen" })).toHaveAttribute(
+        "href",
+        "https://apps.apple.com/app/id6830713238",
+      );
+      await page.goto("/join/a-token?lang=en");
+      await expect(page.getByRole("link", { name: "Get the app" })).toBeVisible();
+    });
+
+    test("the app itself does not", async ({ page, isMobile }) => {
+      test.skip(!isMobile, "the app is a phone");
+      await page.addInitScript(() => {
+        (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+      });
+      await page.goto("/join/a-token");
+      await expect(page.getByRole("link", { name: "Bliv medlem" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Hent appen" })).toHaveCount(0);
+    });
+  });
 });
 
 test("signed in, one press joins, with no word on what Casy is", async ({ page, backend }) => {
