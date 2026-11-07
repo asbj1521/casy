@@ -168,6 +168,46 @@ describe("new weekdays (#234)", () => {
   });
 });
 
+describe("a genvej's times", () => {
+  // The morning costs less than the evening, so ranking alone would take only mornings.
+  const MORNING: EventSettings = { kind: "single", durationMinutes: 90, startHour: 8 };
+  const LATE: EventSettings = { kind: "single", durationMinutes: 90, startHour: 19 };
+  const hour = (d: FoundDate) =>
+    new Date(d.slot.start).toLocaleString("da-DK", {
+      hour: "2-digit",
+      timeZone: TZ,
+    });
+  const group = [person("a"), person("b")];
+
+  for (const priority of ["hassle", "soon"] as const) {
+    it(`gets a date at each of them, picking by ${priority}`, () => {
+      const first = firstFrom(group, MORNING);
+      const base = { first, end: END, now: NOW, priority };
+      const pool = findPoolAcross(group, [MORNING, LATE], base, TZ);
+      const { chosen } = rankFromPool(pool, group, MORNING, { ...base, everyTime: true }, TZ);
+      expect(new Set(chosen.map(hour)).size).toBe(2);
+    });
+  }
+
+  it("never takes a date that costs someone just to reach another time", () => {
+    // Every evening needs a skip, every morning is clean.
+    const skips: BusyInterval[] = Array.from({ length: 40 }, (_, i) => {
+      const at = addDays(wallTime(2026, 9, 12, 0, TZ), i, TZ);
+      return {
+        start: new Date(at + 18 * 3_600_000).toISOString(),
+        end: new Date(at + 22 * 3_600_000).toISOString(),
+        priority: "skip",
+      };
+    });
+    const costly = [person("a"), person("b", skips)];
+    const first = firstFrom(costly, MORNING);
+    const base = { first, end: END, now: NOW };
+    const pool = findPoolAcross(costly, [MORNING, LATE], base, TZ);
+    const { chosen } = rankFromPool(pool, costly, MORNING, { ...base, everyTime: true }, TZ);
+    expect(chosen.every((d) => d.conflicts.length === 0)).toBe(true);
+  });
+});
+
 describe("the soonest (#234)", () => {
   it("takes the earliest dates that keep the spacing, even one that needs a skip", () => {
     // Every evening clean but Thursday the 15th, where b has something skippable.

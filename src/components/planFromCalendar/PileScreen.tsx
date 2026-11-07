@@ -226,7 +226,15 @@ export default function PileScreen({
         poolFound,
         participants,
         search,
-        { first, end: searchWindow.end, count: extras.dateCount, scores, profile, priority },
+        {
+          first,
+          end: searchWindow.end,
+          count: extras.dateCount,
+          scores,
+          profile,
+          priority,
+          everyTime: extraSearches.length > 0,
+        },
         TZ,
       );
     const { pool, chosen, byPick, comfort } = rankBy(extras.priority);
@@ -338,6 +346,7 @@ export default function PileScreen({
     searchWindow,
     extras.dateCount,
     extras.priority,
+    extraSearches,
     lang,
     t,
     words,

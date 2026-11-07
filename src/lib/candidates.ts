@@ -25,6 +25,10 @@
  * that cost. The clean dates are still taken before any that cost someone,
  * and the spacing rules still hold.
  *
+ * A genvej with several times (#175) gets a date at each of them first, as far
+ * as dates that cost nobody allow: the person asked for those times, so none is
+ * dropped because another happens to cost a little less.
+ *
  * Asked for the soonest instead (#234, Planlæg's choice), the dates are simply
  * the earliest ones that keep the spacing, whatever they cost.
  *
@@ -41,7 +45,7 @@ import { comfortRater, type Comfort } from "@/lib/dateComfort";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import { bigOnNewYearsDay, onNewYearsDay } from "@/lib/newYear";
 import type { DatePriority, FoundDate } from "@/lib/scheduler";
-import { addDays, dayOf, localDate } from "@/lib/zone";
+import { addDays, dayOf, localDate, startOfDay } from "@/lib/zone";
 import type { Participant } from "@/types";
 
 /** How many dates a vote offers, when there are that many good ones. */
@@ -70,6 +74,8 @@ interface CandidateOptions {
   now?: number;
   /** "soon": the earliest dates, whatever they cost (#234). Else the good ones, as above. */
   priority?: DatePriority;
+  /** The pool comes from several times (findPoolAcross): offer a date at each of them. */
+  everyTime?: boolean;
 }
 
 export function pickCandidates(
@@ -158,7 +164,15 @@ export function rankFromPool(
   options: CandidateOptions,
   timeZone: string,
 ): RankedDates {
-  const { first, count = CANDIDATE_COUNT, scores, profile, now = Date.now(), priority } = options;
+  const {
+    first,
+    count = CANDIDATE_COUNT,
+    scores,
+    profile,
+    now = Date.now(),
+    priority,
+    everyTime = false,
+  } = options;
 
   const chosen: FoundDate[] = [first];
   const dayNumber = (d: FoundDate) => dayIndex(d.slot.start, timeZone);
@@ -173,6 +187,11 @@ export function rankFromPool(
   const newWeekday = (d: FoundDate) =>
     chosen.every((c) => weekday(c) !== weekday(d)) &&
     (search.kind !== "single" || dayNumber(d) - dayNumber(first) <= VARIETY_DAYS);
+  const clock = (d: FoundDate) => {
+    const start = Date.parse(d.slot.start);
+    return start - startOfDay(start, timeZone);
+  };
+  const newTime = (d: FoundDate) => chosen.every((c) => clock(c) !== clock(d));
   const take = (
     pool: FoundDate[],
     {
@@ -209,9 +228,11 @@ export function rankFromPool(
     .sort(newYearLast);
   if (priority === "soon") {
     const soonest = [...offered].sort(newYearLast);
+    if (everyTime) take(soonest, { also: newTime });
     take(soonest);
     take(soonest, { gap: 1 });
   } else {
+    if (everyTime) take(clean, { also: newTime });
     take(clean, { also: newWeekday });
     take(clean);
     take(costly, { also: newWeekday });

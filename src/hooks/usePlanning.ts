@@ -683,7 +683,7 @@ export function usePlanning({
         pool,
         fresh ?? participants,
         search,
-        { ...options, scores },
+        { ...options, scores, everyTime: extraSearches.length > 0 },
         TZ,
       ).chosen.map((d) => ({
         start: d.slot.start,
