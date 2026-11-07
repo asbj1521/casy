@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { randomDefaultSettings, type SchedulerSettings } from "@/lib/scheduler";
-import { readShortcutPlan, shortcutPlan, timeOf } from "@/lib/shortcuts";
+import { readShortcutPlan, shortcutPlan, timeLabel, timeOf } from "@/lib/shortcuts";
 
 const base = randomDefaultSettings(() => 0);
 const settings: SchedulerSettings = {
@@ -12,7 +12,12 @@ const settings: SchedulerSettings = {
   period: { from: "2026-11", to: "2026-12" } as unknown as SchedulerSettings["period"],
 };
 const extras = { place: "Padelhallen", note: "", answerDays: 2, dateCount: 4 };
-const morning = { startHour: 7, startWindow: { from: 360, to: 480 }, anyTime: false };
+const morning = {
+  startHour: 7,
+  startWindow: { from: 360, to: 480 },
+  anyTime: false,
+  durationMinutes: 60,
+};
 
 describe("shortcuts (#175)", () => {
   it("keeps the plan less its months, its first time in the settings, and reads it back", () => {
@@ -43,9 +48,39 @@ describe("shortcuts (#175)", () => {
     expect(read?.settings.durationMinutes).toBe(base.durationMinutes);
     expect(read?.times).toEqual([
       timeOf(read!.settings),
-      { startHour: 12, startWindow: null, anyTime: base.anyTime },
+      {
+        startHour: 12,
+        startWindow: null,
+        anyTime: base.anyTime,
+        durationMinutes: base.durationMinutes,
+      },
     ]);
     expect(read?.extras).toEqual({ place: "", note: "", answerDays: null, dateCount: 4 });
+  });
+
+  it("gives every time its own length, the first's in the settings (#232)", () => {
+    const evening = { ...timeOf(settings), startHour: 20, durationMinutes: 420 };
+    const plan = shortcutPlan(settings, extras, [morning, evening]);
+    expect(plan.settings.durationMinutes).toBe(60);
+    const read = readShortcutPlan(JSON.parse(JSON.stringify(plan)), base);
+    expect(read?.times.map((t) => t.durationMinutes)).toEqual([60, 420]);
+    expect(read?.times.map((t) => timeLabel(t, "hele dagen"))).toEqual([
+      "07:00-08:00",
+      "20:00-03:00",
+    ]);
+  });
+
+  it("reads a time saved without a length as the first's, as every time was then (#232)", () => {
+    const read = readShortcutPlan(
+      {
+        v: 1,
+        settings: { multiDay: false, startHour: 18, durationMinutes: 480, dows: [5] },
+        times: [{ startHour: 18 }, { startHour: 20, startWindow: null, anyTime: false }],
+        extras: {},
+      },
+      base,
+    );
+    expect(read?.times.map((t) => t.durationMinutes)).toEqual([480, 480]);
   });
 
   it("reads something that isn't a plan as none", () => {

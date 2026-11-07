@@ -8,20 +8,18 @@ import { cn } from "@/lib/utils";
  * A genvej's times (#175), in its editor where the group would be: "Tid 1"
  * alone at first with a plus beside it, then halves, then thirds once there
  * are three and no plus. The one picked is the one the rows under it
- * (Tidspunkt, Kan rykkes) show and change; the second and third can be taken
- * away again with the cross on the one picked.
+ * (Tidspunkt, Kan rykkes) show and change, its start and end alike, the others
+ * staying as they are (#232); the second and third can be taken away again with
+ * the cross on the one picked.
  */
 export default function ShortcutTimes({
   times,
-  durationMinutes,
   current,
   onPick,
   onAdd,
   onRemove,
 }: {
   times: ShortcutTime[];
-  /** The genvej's length, the same for every time. */
-  durationMinutes: number;
   current: number;
   onPick: (index: number) => void;
   onAdd: () => void;
@@ -51,7 +49,7 @@ export default function ShortcutTimes({
                   on ? "text-primary" : "text-foreground",
                 )}
               >
-                {timeLabel(time, durationMinutes, words.anyTime)}
+                {timeLabel(time, words.anyTime)}
               </span>
             </button>
             {on && i > 0 && (

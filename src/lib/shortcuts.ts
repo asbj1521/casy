@@ -6,9 +6,11 @@
  * group or who in it is coming (a genvej runs with whichever group is
  * chosen, so one serves them all).
  *
- * A time is only when the meeting starts and how freely (`startHour`, the
- * start window around it, or any time of day); everything else, the length
- * included, is the genvej's own and the same for every time.
+ * A time is when the meeting starts and how freely (`startHour`, the start
+ * window around it, or any time of day) and how long it lasts (#232), so
+ * changing one leaves the others alone; everything else is the genvej's own
+ * and the same for every time. A time saved before #232 has no length of its
+ * own and takes the first time's, which was the length of them all.
  *
  * The plan comes back from the server as it was sent, so it is read here
  * strictly: anything missing or of the wrong kind takes the default, and a
@@ -24,7 +26,10 @@ export const MAX_SHORTCUT_NAME = 40;
 export const MAX_TIMES = 3;
 
 /** One time a genvej looks at. */
-export type ShortcutTime = Pick<SchedulerSettings, "startHour" | "startWindow" | "anyTime">;
+export type ShortcutTime = Pick<
+  SchedulerSettings,
+  "startHour" | "startWindow" | "anyTime" | "durationMinutes"
+>;
 
 /** A genvej's plan, as kept on the server. */
 export interface ShortcutPlan {
@@ -47,11 +52,11 @@ export interface Shortcut {
 }
 
 /** A time as a genvej says it: its start to its end ("17:00-19:00"), or the whole day. */
-export function timeLabel(time: ShortcutTime, durationMinutes: number, allDay: string): string {
+export function timeLabel(time: ShortcutTime, allDay: string): string {
   if (time.anyTime) return allDay;
   const start = time.startHour * 60;
   const clock = (minutes: number) => formatClockMinutes(minutes % (24 * 60));
-  return `${clock(start)}-${clock(start + durationMinutes)}`;
+  return `${clock(start)}-${clock(start + time.durationMinutes)}`;
 }
 
 /** The time a plan's settings hold. */
@@ -60,6 +65,7 @@ export function timeOf(settings: ShortcutTime): ShortcutTime {
     startHour: settings.startHour,
     startWindow: settings.startWindow ? { ...settings.startWindow } : null,
     anyTime: settings.anyTime,
+    durationMinutes: settings.durationMinutes,
   };
 }
 
@@ -101,6 +107,7 @@ function readTime(raw: unknown, base: ShortcutTime): ShortcutTime | null {
     startHour: num(raw.startHour, 0, 23.75, base.startHour),
     startWindow: readWindow(raw.startWindow),
     anyTime: typeof raw.anyTime === "boolean" ? raw.anyTime : base.anyTime,
+    durationMinutes: num(raw.durationMinutes, 15, 24 * 60, base.durationMinutes),
   };
 }
 
@@ -118,7 +125,6 @@ export function readShortcutPlan(raw: unknown, base: SchedulerSettings): Shortcu
   const settings: ShortcutPlan["settings"] = {
     multiDay: typeof s.multiDay === "boolean" ? s.multiDay : base.multiDay,
     ...first,
-    durationMinutes: num(s.durationMinutes, 15, 24 * 60, base.durationMinutes),
     dows: dows.length > 0 ? [...new Set(dows)] : base.dows,
     days: num(s.days, 1, 30, base.days),
     startDow: s.startDow === null ? null : num(s.startDow, 0, 6, base.startDow ?? 5),

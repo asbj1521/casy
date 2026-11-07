@@ -252,7 +252,7 @@ function ShortcutFacts({ shortcut }: { shortcut: Shortcut }) {
           <li key={i}>
             <p className="text-[0.8125rem] text-muted-foreground">{words.time(i + 1)}</p>
             <p className="text-[1.0625rem] font-semibold text-foreground">
-              {timeLabel(time, settings.durationMinutes, words.anyTime)}
+              {timeLabel(time, words.anyTime)}
             </p>
           </li>
         ))

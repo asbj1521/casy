@@ -798,7 +798,14 @@ export function usePlanning({
   const updateSettingsByHand = (patch: Partial<SchedulerSettings>) => {
     updateSettings(patch);
     // A genvej's time changed by hand: the plan is the one time on screen now.
-    if ("startHour" in patch || "startWindow" in patch || "anyTime" in patch) setExtraTimes([]);
+    if (
+      "startHour" in patch ||
+      "startWindow" in patch ||
+      "anyTime" in patch ||
+      "durationMinutes" in patch
+    ) {
+      setExtraTimes([]);
+    }
     planner.edited(planFieldsOf(patch));
   };
   /**

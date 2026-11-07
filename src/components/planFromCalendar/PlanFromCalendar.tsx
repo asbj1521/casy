@@ -301,7 +301,6 @@ export default function PlanFromCalendar({
                     top: planning.sched.multiDay ? null : (
                       <ShortcutTimes
                         times={liveTimes}
-                        durationMinutes={planning.sched.durationMinutes}
                         current={current}
                         onPick={(i) => showTime(liveTimes, i)}
                         onAdd={() =>

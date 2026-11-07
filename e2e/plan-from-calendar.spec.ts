@@ -427,7 +427,7 @@ test.describe("with motion", () => {
 
 test.describe("Genveje (#175)", () => {
   /** A genvej as plan-presets keeps it: padel on weekdays, at the times given. */
-  const padel = (times: { startHour: number }[]) => ({
+  const padel = (times: { startHour: number; durationMinutes?: number }[]) => ({
     id: "00000000-0000-4000-8000-000000000001",
     name: "Padel",
     plan: {
@@ -435,7 +435,7 @@ test.describe("Genveje (#175)", () => {
       settings: {
         multiDay: false,
         startHour: times[0].startHour,
-        durationMinutes: 90,
+        durationMinutes: times[0].durationMinutes ?? 90,
         dows: [1, 2, 3, 4, 5],
         anyTime: false,
         startWindow: null,
@@ -447,6 +447,72 @@ test.describe("Genveje (#175)", () => {
     },
     updatedAt: "2026-10-07T08:00:00.000Z",
     pictureUrl: null as string | null,
+  });
+
+  test("moving one time's end leaves the other times where they are (#232)", async ({
+    page,
+    backend,
+  }) => {
+    backend.world.presets.push(padel([{ startHour: 7 }, { startHour: 19 }, { startHour: 20 }]));
+    await page.goto("/calendar-overview");
+    await page.getByRole("button", { name: "Planlæg" }).click();
+    await page
+      .getByRole("dialog", { name: "Planlæg" })
+      .getByRole("button", { name: "Genveje", exact: true })
+      .click();
+    const shortcuts = page.getByRole("dialog", { name: "Genveje" });
+    await shortcuts.getByRole("button", { name: "Ret Padel" }).click();
+    const editor = page.getByRole("dialog", { name: "Padel" });
+
+    // The first time's end, on the wheel beside its start.
+    await editor.getByRole("button", { name: /^Tidspunkt/ }).click();
+    const end = page.getByText("Til", { exact: true }).filter({ visible: true }).locator("..");
+    await end
+      .getByText("09:00", { exact: true })
+      .nth(7)
+      .evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await expect(editor.getByRole("button", { name: /^Tid 1/ })).toContainText("07:00-09:00");
+    await page.keyboard.press("Escape");
+
+    await expect(editor.getByRole("button", { name: /^Tid 2/ })).toContainText("19:00-20:30");
+    await expect(editor.getByRole("button", { name: /^Tid 3/ })).toContainText("20:00-21:30");
+
+    // Saved the same way, and the first's length is the plan's own.
+    await editor.getByRole("button", { name: "Gem genvej" }).click();
+    await expect.poll(() => backend.calls.filter((c) => c.name === "plan-presets").length).toBe(2);
+    const saved = backend.world.presets[0].plan as {
+      settings: { durationMinutes: number };
+      times: { durationMinutes: number }[];
+    };
+    expect(saved.settings.durationMinutes).toBe(120);
+    expect(saved.times.map((t) => t.durationMinutes)).toEqual([120, 90, 90]);
+  });
+
+  test("times of different lengths are searched at their own lengths (#232)", async ({
+    page,
+    backend,
+  }) => {
+    backend.world.presets.push(
+      padel([
+        { startHour: 8, durationMinutes: 60 },
+        { startHour: 19, durationMinutes: 120 },
+      ]),
+    );
+    await page.goto("/calendar-overview");
+    await page.getByRole("button", { name: "Planlæg" }).click();
+    await pickGroup(page, "Løbeklubben");
+    await page
+      .getByRole("dialog", { name: "Planlæg" })
+      .getByRole("button", { name: "Genveje", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Planlæg Padel" }).click();
+    const preview = page.getByRole("region", { name: "Padel" });
+    await expect(preview).toContainText("08:00-09:00");
+    await expect(preview).toContainText("19:00-21:00");
+    await page.getByRole("button", { name: "Find dato" }).click();
+    await expect(page.getByText("De 5 bedste datoer")).toBeVisible();
+    await expect(page.getByText("08:00-09:00").first()).toBeVisible();
+    await expect(page.getByText("19:00-21:00").first()).toBeVisible();
   });
 
   test("a plan saved as a genvej is shown first, then run with the group chosen", async ({
