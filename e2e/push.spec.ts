@@ -135,3 +135,50 @@ test("the website has no notifications group", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("Notifikationer")).toHaveCount(0);
 });
+
+test.describe("after saying yes to an invitation (#230)", () => {
+  test.use({ reducedMotion: "no-preference" });
+
+  test("the sheet shrinks once, and what comes after waits, one at a time", async ({ page }) => {
+    await asTheApp(page, "prompt");
+    await page.goto("/");
+    await page.getByRole("button", { name: "Profil" }).click();
+    await page
+      .getByRole("link", { name: /Grupper/ })
+      .first()
+      .click();
+    await page.getByRole("link", { name: /Badminton/ }).click();
+    const yes = page.getByRole("button", { name: "Bliv medlem" });
+    await expect(yes).toBeVisible();
+    // Long enough for the phone's calendar question to be due.
+    await page.waitForTimeout(3100);
+
+    // How many sheets there are on every frame from here.
+    await page.evaluate(() => {
+      const frames: { at: number; sheets: number }[] = [];
+      (window as unknown as { __frames: typeof frames }).__frames = frames;
+      const tick = () => {
+        frames.push({
+          at: performance.now(),
+          sheets: document.querySelectorAll('[role="dialog"]').length,
+        });
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    await yes.click();
+    await expect(page.getByRole("dialog", { name: /^Få besked/ })).toBeVisible({ timeout: 5000 });
+    // Past when the phone's calendar question would have come: still only this one.
+    await page.waitForTimeout(3500);
+    await expect(page.getByRole("dialog")).toHaveCount(1);
+
+    const frames = await page.evaluate(
+      () => (window as unknown as { __frames: { at: number; sheets: number }[] }).__frames,
+    );
+    expect(Math.max(...frames.map((f) => f.sheets))).toBe(1);
+    const gone = frames.find((f) => f.sheets === 0);
+    const next = frames.find((f) => gone && f.at > gone.at && f.sheets > 0);
+    // A clear beat with the month bare, not a second animation straight after the first.
+    expect(next!.at - gone!.at).toBeGreaterThan(500);
+  });
+});

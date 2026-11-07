@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { groupsQuery, invitationsQuery, type Invitation } from "@/api/groups";
@@ -21,14 +21,16 @@ import { sheetAddress } from "@/lib/profileScreens";
  * An invitation by name as a screen in the Profil sheet (#224), pushed from
  * its row under Grupper or arrived at from its notification: the invite page's
  * contents, centred in the sheet. Declining or blocking goes back to Grupper
- * (`onLeft`); joining goes home.
+ * (`onLeft`); joining closes the sheet the way Færdig does (`onJoined`, #230).
  */
 export default function InvitationContent({
   groupId,
   onLeft,
+  onJoined,
 }: {
   groupId: string;
   onLeft: () => void;
+  onJoined: () => void;
 }) {
   const t = useT();
   const userId = useSignedInUser().id;
@@ -47,7 +49,7 @@ export default function InvitationContent({
   return (
     <div className="flex flex-auto flex-col justify-center py-6 text-center">
       {invitation ? (
-        <Answer invitation={invitation} onLeft={onLeft} />
+        <Answer invitation={invitation} onLeft={onLeft} onJoined={onJoined} />
       ) : invitations || isError ? (
         <InviteBroken title={t.join.gone} body={t.join.goneBody} />
       ) : (
@@ -57,11 +59,18 @@ export default function InvitationContent({
   );
 }
 
-function Answer({ invitation, onLeft }: { invitation: Invitation; onLeft: () => void }) {
+function Answer({
+  invitation,
+  onLeft,
+  onJoined,
+}: {
+  invitation: Invitation;
+  onLeft: () => void;
+  onJoined: () => void;
+}) {
   const t = useT();
-  const navigate = useNavigate();
   const { accept, decline, block, busy, error } = useInvitationAnswers(invitation.groupId, {
-    joined: () => navigate("/", { replace: true }),
+    joined: onJoined,
     left: onLeft,
   });
   const [blocking, setBlocking] = useState(false);

@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
@@ -47,7 +48,9 @@ import { useLang, useT } from "@/i18n/lang";
 import { dayParam, parseDayParam } from "@/lib/dayView";
 import { capitalize, monthName } from "@/lib/format";
 import { useHomeBarFlight } from "@/lib/homeBar";
+import { APP_CALENDAR_MONTHS } from "@/lib/eventSearch";
 import { isNativeApp } from "@/lib/nativeApp";
+import { onPushAskOpenChange, pushAskOpen } from "@/lib/pushAsk";
 import {
   isPending,
   markOn,
@@ -96,7 +99,11 @@ const SHEETS_AFTER_MS = 1500;
 
 /** "Not now" on the import card (#132), kept until the app is opened again. */
 const phoneImportPutAway = { done: false };
-/** The month is seen first; the question about the phone's calendar comes after (#147). */
+/**
+ * The month is seen first; the question about the phone's calendar comes after
+ * (#147), once the month has been bare this long: never rising the moment
+ * another sheet has shrunk away, which reads as one animation running twice (#230).
+ */
 const IMPORT_ASK_AFTER_MS = 3000;
 
 export default function PhoneCalendar() {
@@ -106,6 +113,8 @@ export default function PhoneCalendar() {
   const calendarsHome = useCalendarsHome();
   // In the app the months scroll under the clock too (the header's glass).
   useGlassTop();
+  // Scrolled past the months searched, in the app (#231).
+  const [further, setFurther] = useState(false);
   const {
     calendar,
     calendars,
@@ -114,7 +123,7 @@ export default function PhoneCalendar() {
     connectedCount,
     setCalendarsVisible,
     visibilityError,
-  } = useMyCalendarView();
+  } = useMyCalendarView(further);
   // The app offers to import the phone's calendar until this phone is connected (#132).
   // The server's own list (the holidays the page adds aren't in it).
   const phoneImport = usePhoneImport(
@@ -126,11 +135,6 @@ export default function PhoneCalendar() {
   // then the date agreed (AgreedCard). Until the calendars are listed the app
   // can't tell whether the card comes, so the AI question waits for that too.
   const importShown = phoneImport.on && !importLater;
-  const [importAskDue, setImportAskDue] = useState(false);
-  useEffect(() => {
-    const id = window.setTimeout(() => setImportAskDue(true), IMPORT_ASK_AFTER_MS);
-    return () => window.clearTimeout(id);
-  }, []);
   const importPending = isNativeApp && calendar.loading;
   const [aiAsking, setAiAsking] = useState(false);
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
@@ -254,6 +258,18 @@ export default function PhoneCalendar() {
   // zooms back into the month after the address has let it go.
   const dayInAddress = parseDayParam(params.get("day"));
   const [dayShown, setDayShown] = useState(dayInAddress);
+  const pushAsking = useSyncExternalStore(onPushAskOpenChange, pushAskOpen);
+  // Nothing else over the month, for the import card to come after (#230).
+  const monthClear = !overMonth && dayShown === null && !pushAsking;
+  const [importAskDue, setImportAskDue] = useState(false);
+  useEffect(() => {
+    if (!monthClear) return;
+    const id = window.setTimeout(() => setImportAskDue(true), IMPORT_ASK_AFTER_MS);
+    return () => {
+      window.clearTimeout(id);
+      setImportAskDue(false);
+    };
+  }, [monthClear]);
   // While a vote is answered, the day view is on its date instead (below).
   const voteId = params.get("vote");
   // The vote's card folds down while the calendar is touched (HomeVote's
@@ -537,6 +553,8 @@ export default function PhoneCalendar() {
           starred={starred}
           todayTone="orange"
           onPickDay={pickDay}
+          maxMonths={isNativeApp ? APP_CALENDAR_MONTHS : undefined}
+          onFurther={() => setFurther(true)}
           header={
             <>
               {/* Where the toolbar sits (HomeToolbar, fixed over the month and
@@ -680,7 +698,7 @@ export default function PhoneCalendar() {
         <PhoneCalendarAccess
           phone={phoneImport}
           // Never over another sheet or a day: it waits for the bare month.
-          open={importAskDue && !importLater && !overMonth && dayShown === null}
+          open={importAskDue && !importLater && monthClear}
           onNotNow={() => {
             phoneImportPutAway.done = true;
             setImportLater(true);

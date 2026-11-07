@@ -16,7 +16,7 @@ import { Star } from "lucide-react";
 import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { buildMonthLayout } from "@/lib/calendarOverview";
-import { SEARCH_WINDOW } from "@/lib/eventSearch";
+import { SEARCH_MONTHS, SEARCH_WINDOW } from "@/lib/eventSearch";
 import { glideScroll } from "@/lib/glideScroll";
 import { capitalize, dayLabel, monthName, monthShortName } from "@/lib/format";
 import { LANE_PX, layoutWeek, MORE_PX, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
@@ -34,6 +34,8 @@ const OPEN_SETTLE_MS = 350;
 const LANES = 3;
 /** How long the month rests on opening before it glides to what it reveals. */
 const REVEAL_DELAY_MS = 450;
+/** How near the end the next months are added (#231): before a flick can reach it. */
+const GROW_WITHIN_PX = 1500;
 
 /** What a page can ask of the months once they are open (#168): a fast glide, not a jump. */
 export interface MonthViewHandle {
@@ -79,7 +81,17 @@ export default function MonthView({
   header,
   onPickDay,
   handle,
+  maxMonths = SEARCH_MONTHS,
+  onFurther,
 }: {
+  /**
+   * How many months it can scroll to (#231): the months searched are drawn first
+   * and the rest added a year at a time as the end comes near, so opening the
+   * calendar costs the same however far it reaches. Only with a `header`.
+   */
+  maxMonths?: number;
+  /** The months are going past the ones searched: what they show must reach further. */
+  onFurther?: () => void;
   /**
    * The page's toolbar, drawn over the months in a translucent block with the
    * month's name and the weekdays under it. Without it the months have their
@@ -116,10 +128,13 @@ export default function MonthView({
   const register = useCallback((month: number, el: HTMLElement | null) => {
     if (el) monthEls.current.set(month, el);
   }, []);
+  const [monthCount, setMonthCount] = useState(SEARCH_MONTHS);
   const months = useMemo(
     () =>
-      Array.from({ length: 12 }, (_, i) => startOfMonth(Date.parse(SEARCH_WINDOW.start), TZ, i)),
-    [],
+      Array.from({ length: monthCount }, (_, i) =>
+        startOfMonth(Date.parse(SEARCH_WINDOW.start), TZ, i),
+      ),
+    [monthCount],
   );
   const items = useMemo(
     (): GridItem[] =>
@@ -157,9 +172,21 @@ export default function MonthView({
       const el = monthEls.current.get(m);
       if (el && el.offsetTop + MONTH_LABEL_PX <= line) current = m;
     }
+    // At the very end the last month is on screen, though it is too short for
+    // its first week ever to reach the header (#231).
+    if (box.scrollTop + box.clientHeight >= box.scrollHeight - 2)
+      current = months[months.length - 1];
     // Only a change of month redraws, however fast it scrolls.
     setTitleMonth(current);
   }, [floating, pad, months]);
+
+  const grow = () => {
+    const box = scroller.current;
+    if (!box || monthCount >= maxMonths) return;
+    if (box.scrollTop + box.clientHeight < box.scrollHeight - GROW_WITHIN_PX) return;
+    setMonthCount(Math.min(monthCount + SEARCH_MONTHS, maxMonths));
+    onFurther?.();
+  };
 
   // Open on the focused month, once the header's height is known. In the app
   // the box can still be getting its height then (a scroller with nothing to
@@ -299,7 +326,10 @@ export default function MonthView({
             paddingBottom: "var(--home-bar-clear)",
             scrollPaddingTop: pad ?? 0,
           }}
-          onScroll={track}
+          onScroll={() => {
+            track();
+            grow();
+          }}
         >
           {sections}
         </div>

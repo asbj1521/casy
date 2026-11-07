@@ -24,10 +24,21 @@ import type { Participant } from "@/types";
  * the example groups are generated for the same months.
  */
 const THIS_MONTH = startOfMonth(Date.now(), APP_TIME_ZONE);
+export const SEARCH_MONTHS = 12;
 export const SEARCH_WINDOW = {
   start: new Date(THIS_MONTH).toISOString(),
-  end: new Date(startOfMonth(THIS_MONTH, APP_TIME_ZONE, 12)).toISOString(),
+  end: new Date(startOfMonth(THIS_MONTH, APP_TIME_ZONE, SEARCH_MONTHS)).toISOString(),
 };
+
+/**
+ * How far My calendar scrolls in the app (#231), longer than anything is searched
+ * or synced: what lies past the search is read from the phone and stays on it, with
+ * the holidays. Under the four years EventKit reads at once. Only ever for looking at.
+ */
+export const APP_CALENDAR_MONTHS = 36;
+export const APP_CALENDAR_END = new Date(
+  startOfMonth(THIS_MONTH, APP_TIME_ZONE, APP_CALENDAR_MONTHS),
+).toISOString();
 
 /**
  * The hours "any time" may place a meeting within: not overnight, even for

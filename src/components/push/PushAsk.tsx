@@ -5,10 +5,20 @@ import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
 import { useLang, useT } from "@/i18n/lang";
 import { enablePush, pushPermission } from "@/lib/push";
-import { type AskReason, mayAsk, onAskForPush, readAskState, recordAsk } from "@/lib/pushAsk";
+import {
+  type AskReason,
+  markPushAskOpen,
+  mayAsk,
+  onAskForPush,
+  readAskState,
+  recordAsk,
+} from "@/lib/pushAsk";
 
-/** A beat after what the person did, so the sheet doesn't land on top of the page still moving. */
-const SHOW_AFTER_MS = 700;
+/**
+ * A clear beat after what the person did, so the sheet neither lands on the page
+ * still moving nor reads as the sheet just closed coming back (#230).
+ */
+const SHOW_AFTER_MS = 1200;
 
 /**
  * What Casy says before iOS's question (#139): shown where people are waiting
@@ -40,6 +50,7 @@ export default function PushAsk() {
             recordAsk(Date.now());
             setError(null);
             setReason(next);
+            markPushAskOpen(true);
           }, SHOW_AFTER_MS);
         })();
       }),
@@ -49,6 +60,7 @@ export default function PushAsk() {
   function close() {
     showing.current = false;
     setReason(null);
+    markPushAskOpen(false);
   }
 
   async function enable() {

@@ -16,7 +16,7 @@ import {
   type DaySegment,
   type OverviewCalendar,
 } from "@/lib/calendarOverview";
-import { SEARCH_WINDOW } from "@/lib/eventSearch";
+import { APP_CALENDAR_END, SEARCH_WINDOW } from "@/lib/eventSearch";
 import type { GridItem } from "@/lib/monthGrid";
 import { isNativeApp } from "@/lib/nativeApp";
 import {
@@ -24,6 +24,7 @@ import {
   phoneConnectionId,
   phoneCalendarInfoQuery,
   phoneEventDetailsQuery,
+  phoneEventsFurtherQuery,
 } from "@/lib/phoneCalendar";
 import { phoneCalendarColors, phoneCalendarIds, withPhoneEvents } from "@/lib/phoneEvents";
 import { APP_TIME_ZONE } from "@/lib/zone";
@@ -80,7 +81,11 @@ export interface MyCalendarDays {
  * not as they were when the app last sent them (the copy is refetched once
  * the send lands).
  */
-export function useMyCalendarDays(): MyCalendarDays {
+export function useMyCalendarDays(
+  /** My calendar scrolled past the months searched, in the app (#231): read further. */
+  further = false,
+): MyCalendarDays {
+  const end = further ? APP_CALENDAR_END : SEARCH_WINDOW.end;
   const userId = useSignedInUser().id;
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -102,6 +107,10 @@ export function useMyCalendarDays(): MyCalendarDays {
   const { data: phoneEvents } = useQuery({
     ...phoneEventDetailsQuery(userId, SEARCH_WINDOW),
     enabled: !!phoneConnection,
+  });
+  const { data: phoneEventsFurther } = useQuery({
+    ...phoneEventsFurtherQuery(userId, { start: SEARCH_WINDOW.start, end: APP_CALENDAR_END }),
+    enabled: !!phoneConnection && further,
   });
   // Their colours in Apple Calendar (#220), read and kept on the phone too.
   const { data: phoneInfo } = useQuery({
@@ -126,13 +135,14 @@ export function useMyCalendarDays(): MyCalendarDays {
 
   const counted = useMemo(() => {
     const included = new Set(data?.calendars.filter((c) => c.included).map((c) => c.id));
+    const fromPhone = (further && phoneEventsFurther) || phoneEvents;
     const blocks =
-      data && phoneConnection && phoneEvents
+      data && phoneConnection && fromPhone
         ? withPhoneEvents(
             data.blocks,
-            phoneEvents,
+            fromPhone,
             phoneCalendarIds(data.calendars, phoneConnection),
-            { from: Date.parse(SEARCH_WINDOW.start), to: Date.parse(SEARCH_WINDOW.end) },
+            { from: Date.parse(SEARCH_WINDOW.start), to: Date.parse(end) },
           )
         : (data?.blocks ?? []);
     // What you told Casy has no tick: it always counts, so it is always drawn.
@@ -140,18 +150,18 @@ export function useMyCalendarDays(): MyCalendarDays {
       ...blocks.filter((b) => included.has(b.calendarId)),
       ...entryBlocks(data?.entries ?? NO_ENTRIES),
     ];
-  }, [data, phoneConnection, phoneEvents]);
+  }, [data, phoneConnection, phoneEvents, phoneEventsFurther, further, end]);
   const holidays = useMemo(
-    () => holidaySegmentsByDay(new Date(SEARCH_WINDOW.start), new Date(SEARCH_WINDOW.end), TZ),
-    [],
+    () => holidaySegmentsByDay(new Date(SEARCH_WINDOW.start), new Date(end), TZ),
+    [end],
   );
   const byDay = useMemo(
     () =>
       withHolidays(
-        segmentByDay(counted, new Date(SEARCH_WINDOW.start), new Date(SEARCH_WINDOW.end), TZ),
+        segmentByDay(counted, new Date(SEARCH_WINDOW.start), new Date(end), TZ),
         holidays,
       ),
-    [counted, holidays],
+    [counted, holidays, end],
   );
   const palette = useMemo(
     () =>

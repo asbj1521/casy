@@ -18,9 +18,9 @@ import { APP_TIME_ZONE } from "@/lib/zone";
  * their tick is off, and the list of calendars with the built-in holidays
  * first, named in the page's language, with the ticks that change them.
  */
-export function useMyCalendarView() {
+export function useMyCalendarView(further = false) {
   const t = useT();
-  const mine = useMyCalendarDays();
+  const mine = useMyCalendarDays(further);
   const { holidaysHidden, setCalendarsVisible, error } = useCalendarVisibility();
 
   // The holiday calendar's tick only hides it here.

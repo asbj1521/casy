@@ -106,6 +106,21 @@ export function phoneEventDetailsQuery(userId: string, window: { start: string; 
 }
 
 /**
+ * This phone's events as far as My calendar scrolls in the app (#231), read only
+ * once someone scrolls past the months searched. A query of its own, so the labels
+ * and trips keep the year they look at; its key starts the same, so a change on the
+ * phone refreshes it too.
+ */
+export function phoneEventsFurtherQuery(userId: string, window: { start: string; end: string }) {
+  return queryOptions({
+    queryKey: ["phone-event-details", userId, "further"],
+    queryFn: () => readPhoneEventDetails(Date.parse(window.start), Date.parse(window.end)),
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+/**
  * Each of this phone's calendars' colour and kind of account (#220), read
  * here and kept here: the colour is never sent, and only the sorting (with
  * the person's yes) hears the kind. Fails on an app build without it, and the

@@ -55,6 +55,24 @@ export function recordAsk(now: number): void {
   writeStored(KEY, JSON.stringify({ asked: state.asked + 1, last: now }));
 }
 
+let sheetOpen = false;
+const sheetChanges = new Set<() => void>();
+
+/** The sheet opened or closed, for what must not rise over it (the import card, #230). */
+export function markPushAskOpen(open: boolean): void {
+  sheetOpen = open;
+  sheetChanges.forEach((change) => change());
+}
+
+export function pushAskOpen(): boolean {
+  return sheetOpen;
+}
+
+export function onPushAskOpenChange(change: () => void): () => void {
+  sheetChanges.add(change);
+  return () => sheetChanges.delete(change);
+}
+
 /** Say that a moment worth asking at has come; the sheet decides whether to show. App only. */
 export function askForPush(reason: AskReason): void {
   if (!isNativeApp) return;

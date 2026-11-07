@@ -86,7 +86,7 @@ export default function ProfileSheet({
   const screen: { title: string; body: ReactNode } = invitedTo
     ? {
         title: t.events.invitations,
-        body: <InvitationContent groupId={invitedTo} onLeft={toGroups} />,
+        body: <InvitationContent groupId={invitedTo} onLeft={toGroups} onJoined={onClose} />,
       }
     : groupId
       ? {
