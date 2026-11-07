@@ -25,9 +25,9 @@ import { useAiFill, type PlanState } from "./useAiFill";
  * marked. Every setting stays yours to change by hand after.
  *
  * The group shares its row with Genveje (#175), which is as wide as its word. A
- * genvej's own editor shows the plan without the group or the months (a
- * genvej has neither: it runs with the group chosen, from today), its times
- * in their place (`editor`).
+ * genvej's own editor shows the plan without the group, who in it is coming or
+ * the months (a genvej has none of them: it runs with the group chosen, from
+ * today), its times in their place (`editor`).
  */
 export default function PlanSetup({
   planning,
@@ -158,13 +158,17 @@ export default function PlanSetup({
           extras={extras}
           onExtras={updateExtras}
           lit={fill.lit === "more"}
-          participants={{
-            members,
-            choice: peopleChoice,
-            onChange: updatePeople,
-            meeting: !shown.multiDay,
-            example: !activeGroup || activeGroup.isExample,
-          }}
+          participants={
+            editor
+              ? undefined
+              : {
+                  members,
+                  choice: peopleChoice,
+                  onChange: updatePeople,
+                  meeting: !shown.multiDay,
+                  example: !activeGroup || activeGroup.isExample,
+                }
+          }
         />
       </div>
 

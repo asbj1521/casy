@@ -469,6 +469,10 @@ test.describe("Genveje (#175)", () => {
     const editor = page.getByRole("dialog", { name: "Ny genvej" });
     await expect(editor.getByRole("button", { name: /^Gruppe/ })).toHaveCount(0);
     await expect(editor.getByText("Måneder")).toHaveCount(0);
+    // Nor anyone from a group to choose among (#233); the rest of the details stay.
+    await editor.getByRole("button", { name: "Flere detaljer" }).click();
+    await expect(editor.getByRole("textbox", { name: "Sted" })).toBeVisible();
+    await expect(editor.getByRole("button", { name: /^Deltagere/ })).toHaveCount(0);
     await expect(editor.getByRole("button", { name: "Gem genvej" })).toBeDisabled();
     await editor.getByRole("textbox", { name: /Navn på genvej/ }).fill("Padel");
     await editor.getByRole("button", { name: "Gem genvej" }).click();

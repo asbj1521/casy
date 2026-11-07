@@ -20,6 +20,7 @@ import PeopleRows from "./PeopleRows";
  * note, typed into their rows, and a deadline for the answers (#179, none
  * unless chosen). Open from the start when any of it is set, so
  * nothing chosen is hidden. The computer has the same settings in its box's tabs.
+ * A genvej's editor has no one to choose from (#233), so no `participants`.
  */
 export default function MoreDetails({
   extras,
@@ -31,7 +32,7 @@ export default function MoreDetails({
   lit?: boolean;
   extras: EventExtras;
   onExtras: (patch: Partial<EventExtras>) => void;
-  participants: ParticipantProps;
+  participants?: ParticipantProps;
 }) {
   const t = useT();
   const words = t.settingsPanel;
@@ -41,14 +42,15 @@ export default function MoreDetails({
   const id = useId();
   const rows = { people: `${id}-people`, deadline: `${id}-deadline` };
 
-  const { members, choice, meeting, example } = participants;
-  const people = summarizePeople(
-    members.map((m) => m.profileId),
-    choice,
-    meeting,
-  );
+  const people =
+    participants &&
+    summarizePeople(
+      participants.members.map((m) => m.profileId),
+      participants.choice,
+      participants.meeting,
+    );
   const peopleValue =
-    example || members.length === 0
+    !participants || !people || participants.example || participants.members.length === 0
       ? null
       : people.everyone
         ? t.schedulerFlow.peopleAll(people.total)
@@ -56,7 +58,10 @@ export default function MoreDetails({
           (people.atLeast !== null ? t.schedulerFlow.peopleAtLeast(people.atLeast) : "");
   const [open, setOpen] = useState(
     () =>
-      extras.place !== "" || extras.note !== "" || extras.answerDays !== null || !people.everyone,
+      extras.place !== "" ||
+      extras.note !== "" ||
+      extras.answerDays !== null ||
+      (!!people && !people.everyone),
   );
 
   return (
@@ -72,14 +77,16 @@ export default function MoreDetails({
       </ListGroup>
       <Collapse open={open} follow>
         <ListGroup className="mt-3">
-          <ListRow
-            id={rows.people}
-            icon={Users}
-            label={words.tabs.people}
-            value={peopleValue}
-            chevron
-            onClick={() => setPeopleOpen(true)}
-          />
+          {participants && (
+            <ListRow
+              id={rows.people}
+              icon={Users}
+              label={words.tabs.people}
+              value={peopleValue}
+              chevron
+              onClick={() => setPeopleOpen(true)}
+            />
+          )}
           <FieldRow icon={MapPin} label={words.place.where}>
             <input
               type="text"
@@ -120,14 +127,16 @@ export default function MoreDetails({
         onPick={(answerDays) => onExtras({ answerDays })}
       />
 
-      <AnchoredPanel
-        open={peopleOpen}
-        onClose={() => setPeopleOpen(false)}
-        anchorId={rows.people}
-        label={words.tabs.people}
-      >
-        <PeopleRows {...participants} />
-      </AnchoredPanel>
+      {participants && (
+        <AnchoredPanel
+          open={peopleOpen}
+          onClose={() => setPeopleOpen(false)}
+          anchorId={rows.people}
+          label={words.tabs.people}
+        >
+          <PeopleRows {...participants} />
+        </AnchoredPanel>
+      )}
     </>
   );
 }
