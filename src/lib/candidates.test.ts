@@ -10,7 +10,7 @@ import {
 } from "@/lib/candidates";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
 import type { FoundDate } from "@/lib/scheduler";
-import { localDate, wallTime } from "@/lib/zone";
+import { addDays, localDate, wallTime } from "@/lib/zone";
 import type { BusyInterval, Participant } from "@/types";
 
 const TZ = "Europe/Copenhagen";
@@ -117,6 +117,54 @@ describe("rankCandidates", () => {
     expect([...byPick].sort((x, y) => Date.parse(x.slot.start) - Date.parse(y.slot.start))).toEqual(
       chosen,
     );
+  });
+});
+
+describe("new weekdays (#234)", () => {
+  // Only Saturdays are free for months; every other day opens up in February.
+  const busyTill = wallTime(2027, 1, 1, 0, TZ);
+  const busy: BusyInterval[] = [];
+  for (let at = wallTime(2026, 9, 12, 0, TZ); at < busyTill; at = addDays(at, 1, TZ)) {
+    if (localDate(at, TZ).dow === 6) continue;
+    busy.push({
+      start: new Date(at).toISOString(),
+      end: new Date(addDays(at, 1, TZ)).toISOString(),
+    });
+  }
+  const far = new Date(wallTime(2027, 2, 1, 0, TZ)).toISOString();
+
+  it("are not worth going months ahead for: the near dates fill the vote", () => {
+    const group = [person("a", busy), person("b")];
+    const first = firstFrom(group, EVENING);
+    const chosen = pickCandidates(group, EVENING, { first, end: far, now: NOW }, TZ);
+
+    expect(chosen).toHaveLength(5);
+    const sixWeeks = addDays(Date.parse(first.slot.start), 42, TZ);
+    for (const d of chosen) expect(Date.parse(d.slot.start)).toBeLessThanOrEqual(sixWeeks);
+  });
+
+  it("still go on a new weekday within reach", () => {
+    const group = [person("a"), person("b")];
+    const first = firstFrom(group, EVENING);
+    const chosen = pickCandidates(group, EVENING, { first, end: END, now: NOW }, TZ);
+    expect(new Set(chosen.map((d) => day(d).dow)).size).toBe(chosen.length);
+  });
+
+  it("a date far off is still offered when nothing nearer works", () => {
+    const onlyOneSaturday = busy.concat(
+      Array.from({ length: 16 }, (_, i) => {
+        const at = addDays(wallTime(2026, 9, 24, 0, TZ), i * 7, TZ);
+        return {
+          start: new Date(at).toISOString(),
+          end: new Date(addDays(at, 1, TZ)).toISOString(),
+        };
+      }),
+    );
+    const group = [person("a", onlyOneSaturday), person("b")];
+    const first = firstFrom(group, EVENING);
+    const chosen = pickCandidates(group, EVENING, { first, end: far, now: NOW }, TZ);
+    expect(chosen.length).toBeGreaterThan(1);
+    expect(day(chosen[1]).month).toBe(1);
   });
 });
 

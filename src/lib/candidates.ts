@@ -10,7 +10,9 @@
  *    up what clean dates can't.
  * 2. Spread out: meetings at least MEETING_GAP_DAYS apart and, where
  *    possible, on weekdays not offered yet, so "Wednesday is bad for me"
- *    doesn't rule out every date at once; trips and holidays never overlap.
+ *    doesn't rule out every date at once; a new weekday is only worth going
+ *    VARIETY_DAYS past the first date for, never months ahead (#234); trips and
+ *    holidays never overlap.
  *    Only if a short period leaves too few dates that way do meetings on
  *    days next to each other fill up (never two on one day).
  * 3. Soonest first, within those rules.
@@ -47,6 +49,9 @@ const CANDIDATE_COUNT = 5;
 
 /** The fewest days between two meetings offered in one vote. */
 const MEETING_GAP_DAYS = 2;
+
+/** How far past the first date a meeting is taken just for being on a new weekday. */
+const VARIETY_DAYS = 42;
 
 /** How many dates are looked at before choosing: plenty to spread over, and quick. */
 const MAX_LOOKED_AT = 60;
@@ -165,7 +170,9 @@ export function rankFromPool(
           Date.parse(d.slot.end) <= Date.parse(c.slot.start),
     );
   const weekday = (d: FoundDate) => localDate(Date.parse(d.slot.start), timeZone).dow;
-  const newWeekday = (d: FoundDate) => chosen.every((c) => weekday(c) !== weekday(d));
+  const newWeekday = (d: FoundDate) =>
+    chosen.every((c) => weekday(c) !== weekday(d)) &&
+    (search.kind !== "single" || dayNumber(d) - dayNumber(first) <= VARIETY_DAYS);
   const take = (
     pool: FoundDate[],
     {
