@@ -16,7 +16,7 @@ the app they come in through the phone's own calendars.
 |---|---|
 | Bundle id | app.casy |
 | Devices | iPhone only (`TARGETED_DEVICE_FAMILY = 1`, #147), so no iPad screenshots |
-| Version | 1.0.0, the same as the build; App Store Connect's version field must read this, not 1.0 |
+| Version | 1.0.1, the same as the build; App Store Connect's version field must read this, not 1.0 |
 | Primary category | Productivity |
 | Secondary category | Lifestyle |
 | Price | Free |
