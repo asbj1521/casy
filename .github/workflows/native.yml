@@ -45,3 +45,14 @@ jobs:
         env:
           TZ: America/New_York
         run: swift test --package-path ios/Packages/CasyAPI
+      - name: Test CasyUI
+        env:
+          TZ: America/New_York
+        run: swift test --package-path ios/Packages/CasyUI
+      # The tests run on the Mac; what a phone compiles is proven here.
+      - name: Build for the iOS simulator
+        run: |
+          for package in CasyCore CasyAPI CasyUI; do
+            (cd "ios/Packages/$package" && xcodebuild -scheme "$package" \
+              -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build)
+          done
