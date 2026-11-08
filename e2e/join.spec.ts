@@ -120,8 +120,11 @@ test("a member's own link waits for their groups, then says they are in and lead
   // Already in the group the link is for.
   backend.world.groups.push({ ...backend.world.groups[0], id: "g-invited", name: "Sommerhuset" });
   // Their groups come slowly, as on a fresh phone: until then nothing is offered.
+  // A page opening asks through "start" (#158), so that is held as well as "list".
   await page.route("**/functions/v1/groups?*", async (route) => {
-    if (route.request().postDataJSON()?.action !== "list") return route.fallback();
+    if (!["list", "start"].includes(route.request().postDataJSON()?.action)) {
+      return route.fallback();
+    }
     await new Promise((done) => setTimeout(done, 1200));
     await route.fallback();
   });
