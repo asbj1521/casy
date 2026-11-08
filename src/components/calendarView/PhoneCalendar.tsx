@@ -49,6 +49,7 @@ import { dayParam, parseDayParam } from "@/lib/dayView";
 import { capitalize, monthName } from "@/lib/format";
 import { useHomeBarFlight } from "@/lib/homeBar";
 import { APP_CALENDAR_MONTHS } from "@/lib/eventSearch";
+import type { PlanStart } from "@/hooks/usePlanning";
 import { isNativeApp } from "@/lib/nativeApp";
 import { onPushAskOpenChange, pushAskOpen } from "@/lib/pushAsk";
 import {
@@ -682,10 +683,12 @@ export default function PhoneCalendar() {
             onClosed={planClosed}
             origin={planButton}
             start={
-              planStart && {
+              // A vote searched again (#240) hands its plan over in the address's state.
+              (location.state as { planStart?: PlanStart } | null)?.planStart ??
+              (planStart && {
                 groupId: planStart.groupId,
                 settings: primeDatePlan(planStart, APP_TIME_ZONE),
-              }
+              })
             }
           />
         </Suspense>

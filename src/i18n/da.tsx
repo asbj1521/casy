@@ -1097,9 +1097,6 @@ export const da = {
     pickTitle: "Tilføj til afstemningen",
     warning: "Advarsel",
     warningText: "Hvis I søger igen, skal alle stemme igen.",
-    noneFound: "Casy fandt ingen nye datoer, der passer alle.",
-    finding: "Finder nye datoer",
-    noGroup: "Gruppen kunne ikke hentes. Prøv igen.",
   },
   voteDeadline: {
     label: "Svarfrist",
@@ -1469,6 +1466,10 @@ export const da = {
     you: "Dig",
     waiting: "Henter gruppens kalendere",
     ranked: (n: number) => (n === 1 ? "Den bedste dato" : `De ${n} bedste datoer`),
+    // A vote searched again (#240): its dates are new ones.
+    rankedNew: (n: number) => (n === 1 ? "Den bedste nye dato" : `De ${n} bedste nye datoer`),
+    sendNew: (n: number) => (n === 1 ? "Send den nye dato" : `Send ${n} nye datoer`),
+    reviewingNew: "Finder nye datoer",
     priority: { label: "Prioritér", hassle: "Mindst besvær", soon: "Snarest" },
     noneThrough: "Ingen dag i perioden passer alle. Prøv at ændre planen.",
     suggest: (n: number) => (n === 1 ? "Foreslå datoen" : `Foreslå top ${n} datoer`),

@@ -1,75 +1,54 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
-import { searchVoteAgain } from "@/api/events";
-import { groupBusyQuery, groupsQuery, participantsFromGroup } from "@/api/groups";
+import { groupsQuery } from "@/api/groups";
 import { useSignedInUser } from "@/context/auth";
-import { TODAY } from "@/hooks/useDateSearch";
-import { useEventChange } from "@/hooks/useEventChange";
-import { useT } from "@/i18n/lang";
-import { SEARCH_WINDOW } from "@/lib/eventSearch";
-import { FRIEND_COLORS } from "@/components/planFromCalendar/pile/shared";
-import {
-  pileSeconds,
-  searchAgainDates,
-  searchAgainPile,
-  searchSettings,
-  withAnswers,
-  type SearchAgainPile,
-} from "@/lib/searchAgain";
+import type { PlanStart } from "@/hooks/usePlanning";
+import { planFromVote } from "@/lib/searchAgain";
 import type { VoteEvent } from "@/lib/vote";
-import { APP_TIME_ZONE } from "@/lib/zone";
+
+/** The fewest and most dates a vote offers (DATE_COUNT_VALUES). */
+const MIN_DATES = 2;
+const MAX_DATES = 5;
 
 /**
- * Searching an open vote again (#240): who in its group it leaves out, and
- * the search itself, which adds the members picked (`add`, none to only look
- * again). The group's calendars are fetched fresh, everyone's answers to the
- * dates counted in (searchAgain.ts), and the dates found replace the vote's.
- * Once found, the pile to show (`onPile`, SearchAgainPile) is handed over,
- * and the search waits for it to have been seen as well as for the server.
+ * Searching an open vote again (#240): who in its group it leaves out, and a
+ * way to search, which opens Planlæg's pile with the vote's plan and the
+ * members picked (`add`, none to only look again) among everyone it is for.
+ * Their calendars are thrown onto those already searched; sending gives the
+ * vote the new dates. Planlæg opens over the home page and closes back onto
+ * the vote.
  */
-export function useSearchAgain(
-  event: VoteEvent,
-  { onPile, still }: { onPile: (pile: SearchAgainPile) => void; still: boolean },
-) {
-  const t = useT();
+export function useSearchAgain(event: VoteEvent) {
   const userId = useSignedInUser().id;
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: groups } = useQuery(groupsQuery(userId));
   const group = groups?.find((g) => g.id === event.group.id);
   const invited = event.invitees.map((i) => i.profileId);
   const missing = group?.members.filter((m) => !invited.includes(m.profileId)) ?? [];
 
-  const search = useEventChange(async (add: string[]) => {
-    if (!group) throw new Error(t.searchAgain.noGroup);
-    const busy = await queryClient.fetchQuery({
-      ...groupBusyQuery(userId, group.id, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
-      staleTime: 0,
-    });
+  const searchAgain = (add: string[]) => {
+    if (!group) return;
     const everyone = [...new Set([...invited, ...add])];
-    const settings = searchSettings(
+    const plan = planFromVote(
       event.settings,
       everyone,
       group.members.map((m) => m.profileId),
     );
-    const { participants } = participantsFromGroup(group, busy);
-    const dates = searchAgainDates(
-      withAnswers(participants, event.candidates),
-      settings,
-      { from: TODAY, end: SEARCH_WINDOW.end, count: event.candidates.length },
-      APP_TIME_ZONE,
-    );
-    if (!dates) throw new Error(t.searchAgain.noneFound);
-    const people = participants.filter((p) => everyone.includes(p.profileId));
-    const pile = searchAgainPile(people, userId, add, dates, FRIEND_COLORS, APP_TIME_ZONE);
-    onPile(pile);
-    const seen = still
-      ? Promise.resolve()
-      : new Promise((done) =>
-          setTimeout(done, pileSeconds(pile.layers.filter((l) => l.isNew).length) * 1000),
-        );
-    const [answer] = await Promise.all([searchVoteAgain(event.id, { add, settings, dates }), seen]);
-    return answer;
-  });
+    const planStart: PlanStart = {
+      groupId: group.id,
+      settings: plan.sched,
+      people: plan.people,
+      name: event.title,
+      extras: {
+        place: event.place ?? "",
+        note: event.note ?? "",
+        dateCount: Math.min(MAX_DATES, Math.max(MIN_DATES, event.candidates.length)),
+      },
+      again: { eventId: event.id, add, before: invited, dates: event.candidates },
+    };
+    navigate({ search: "?plan" }, { state: { fromMonth: true, planStart } });
+  };
 
-  return { missing, search };
+  return { missing, ready: !!group, searchAgain };
 }

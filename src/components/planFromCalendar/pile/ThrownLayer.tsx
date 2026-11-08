@@ -15,7 +15,8 @@ import { type Frame } from "./shared";
  * (`jostle`, on a layer of its own so a knock never restarts the throw).
  * Pressed, it settles straight without a bounce, and stays: the pile is now
  * the group's calendar together, where the free days light up. Revealed,
- * only its name and its shadow go.
+ * only its name and its shadow go. One searched before (`placed`, a vote searched
+ * again, #240) lies where it landed then from the start, never thrown.
  */
 const ThrownLayer = memo(function ThrownLayer({
   k,
@@ -27,6 +28,7 @@ const ThrownLayer = memo(function ThrownLayer({
   alpha,
   name,
   color,
+  placed = false,
   children,
 }: {
   k: number;
@@ -38,6 +40,7 @@ const ThrownLayer = memo(function ThrownLayer({
   alpha: number;
   name: string;
   color: string;
+  placed?: boolean;
   children: ReactNode;
 }) {
   const toss = useMemo((): {
@@ -87,7 +90,7 @@ const ThrownLayer = memo(function ThrownLayer({
       <motion.div
         className="absolute rounded-[28px] bg-black blur-2xl"
         style={{ ...place, height: frame.height }}
-        initial={toss.shadowFrom}
+        initial={placed ? false : toss.shadowFrom}
         animate={
           revealed
             ? { x: 0, y: 12, rotate: 0, scale: 1, opacity: 0 }
@@ -100,7 +103,7 @@ const ThrownLayer = memo(function ThrownLayer({
       <motion.div
         className="absolute"
         style={{ ...place, transformOrigin: "50% 35%" }}
-        initial={toss.initial}
+        initial={placed ? false : toss.initial}
         animate={pressed ? { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 } : toss.animate}
         transition={pressed ? settle : toss.transition}
       >

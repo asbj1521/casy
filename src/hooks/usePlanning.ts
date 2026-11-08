@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import { sendPlanFeedback } from "@/api/aiFeedback";
-import { eventsQueryKey, rankDates, suggestEvent } from "@/api/events";
+import { eventsQueryKey, rankDates, searchVoteAgain, suggestEvent } from "@/api/events";
 import { askForPush } from "@/lib/pushAsk";
 import type { EventImpact } from "@/api/eventProfile";
 import {
@@ -62,6 +62,7 @@ import {
 import { readStored, writeStored } from "@/lib/storage";
 import { addDays, APP_TIME_ZONE, dayOf, localDate, startOfMonth } from "@/lib/zone";
 import { oncePerLoad } from "@/lib/appRandom";
+import { withAnswers, type AgainStart } from "@/lib/searchAgain";
 
 /** The zone every search and every day planned is local to. */
 export const TZ = APP_TIME_ZONE;
@@ -139,6 +140,16 @@ interface ChosenDate {
 export interface PlanStart {
   groupId: string;
   settings: Partial<SchedulerSettings>;
+  /** What it is called and the rest of it, as the vote searched again has them (#240). */
+  name?: string;
+  extras?: Partial<EventExtras>;
+  /** Who it is for (#89). */
+  people?: PeopleChoice;
+  /**
+   * A vote searched again (#240): its answers count in the search, and
+   * sending gives it the dates instead of making a new vote.
+   */
+  again?: AgainStart;
 }
 
 /**
@@ -182,15 +193,19 @@ export function usePlanning({
     start?.groupId ?? left?.selectedGroupId ?? null,
   );
   // What the event is called: only for the group to read, never searched on.
-  const [name, setName] = useState(left?.name ?? "");
+  const [name, setName] = useState(start?.name ?? left?.name ?? "");
   // Where, what to know, and how the vote runs (#84, #99): sent with a
   // suggestion, never searched on.
-  const [extras, setExtras] = useState<EventExtras>(left?.extras ?? DEFAULT_EXTRAS);
+  const [extras, setExtras] = useState<EventExtras>(
+    start?.extras ? { ...DEFAULT_EXTRAS, ...start.extras } : (left?.extras ?? DEFAULT_EXTRAS),
+  );
   const updateExtras = (patch: Partial<EventExtras>) => setExtras((e) => ({ ...e, ...patch }));
   // Who each group's event is for (#89), per group: members differ.
-  const [peopleChoices, setPeopleChoices] = useState<Record<string, PeopleChoice>>(
-    left?.peopleChoices ?? {},
+  const [peopleChoices, setPeopleChoices] = useState<Record<string, PeopleChoice>>(() =>
+    start?.people ? { [start.groupId]: start.people } : (left?.peopleChoices ?? {}),
   );
+  // A vote searched again (#240), for as long as this plan is open.
+  const again = start?.again ?? null;
   const [sched, setSched] = useState(() => {
     const fresh = oncePerLoad("scheduler-settings", () => randomDefaultSettings());
     return start ? { ...fresh, ...start.settings } : (left?.sched ?? fresh);
@@ -286,8 +301,11 @@ export function usePlanning({
   // doesn't jump when they land. With no calendars at all there is nothing
   // to search, or "everyone" would be free today.
   const loadingGroup = !activeGroup || busyLoading;
-  const participants =
-    !loadingGroup && activeGroup.participants.length > 0 ? activeGroup.participants : null;
+  const participants = useMemo(() => {
+    if (loadingGroup || activeGroup.participants.length === 0) return null;
+    // Searched again (#240): everyone's answers to the vote's dates count.
+    return again ? withAnswers(activeGroup.participants, again.dates) : activeGroup.participants;
+  }, [loadingGroup, activeGroup, again]);
   // What the event is called when sent: the name typed, or the matching
   // type's name, which each reader sees in their own language (eventTitle.ts).
   // The name field may hold a longer description for Casy's AI (#173); the
@@ -351,7 +369,8 @@ export function usePlanning({
       ?.find((g) => g.id === groupId);
     if (!group || !data) return null;
     const { participants: people } = participantsFromGroup(group, data, t.common.withYou);
-    return people.length > 0 ? people : null;
+    if (people.length === 0) return null;
+    return again ? withAnswers(people, again.dates) : people;
   }
   /**
    * The answer the page would show from `data`: the same search the page
@@ -582,7 +601,16 @@ export function usePlanning({
   }, []);
   const departure = useRef<{ landed: Promise<void>; undo: () => void } | null>(null);
   const suggest = useMutation({
-    mutationFn: suggestEvent,
+    // Searched again (#240), the vote gets the dates, everyone answering anew.
+    mutationFn: async (input: Parameters<typeof suggestEvent>[0]) => {
+      if (!again) return await suggestEvent(input);
+      const answer = await searchVoteAgain(again.eventId, {
+        add: again.add,
+        settings: input.settings,
+        dates: input.dates.map(({ start, end }) => ({ start, end })),
+      });
+      return { ...answer, createdId: again.eventId };
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(eventsQueryKey(userId ?? ""), data.events);
       // On to the new vote, where it waits for the others (the suggester
@@ -839,6 +867,8 @@ export function usePlanning({
 
   return {
     user,
+    /** A vote searched again (#240), or null. */
+    again,
     // The group, and who in it the event is for.
     groups,
     activeGroup,

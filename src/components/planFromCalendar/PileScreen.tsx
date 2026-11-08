@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, useMotionValue, useReducedMotion, type Variants } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { TriangleAlert, X } from "lucide-react";
 
 import LaterDates from "@/components/findDate/LaterDates";
 import WidenSearch from "@/components/findDate/WidenSearch";
+import ConfirmPanel from "@/components/ui/ConfirmPanel";
 import FlowButton from "@/components/ui/FlowButton";
 import { MonthLayer } from "@/components/swipe/MonthView";
 import { TODAY } from "@/hooks/useDateSearch";
@@ -82,6 +83,8 @@ const pressRow = (w: number, count: number, row: ReactNode) => (
 const NO_SHORT_NAME = <NoShortName />;
 const NO_ITEMS: GridItem[] = [];
 const NO_COLOR = () => "";
+/** Where a calendar searched before lies: landed already (#240). */
+const PLACED = { at: 0, duration: 0 };
 /** The close button's size (p-2 round a 20px icon), and the room it keeps above the pile. */
 const CLOSE_PX = 36;
 const CLOSE_GAP_PX = 8;
@@ -136,6 +139,8 @@ export default function PileScreen({
     planning.activeGroup.memberCount <= 1;
   const reduceMotion = !!useReducedMotion();
   const priorityRow = useId();
+  // Sending a vote searched again (#240), asked first.
+  const [warning, setWarning] = useState(false);
   const [priorityOpen, setPriorityOpen] = useState(false);
   const {
     participants,
@@ -156,6 +161,7 @@ export default function PileScreen({
     suggest,
     movedNote,
     sendSuggestion,
+    again,
     groupSize,
     checkers,
     suggestions,
@@ -409,10 +415,14 @@ export default function PileScreen({
           .filter((b) => b.end > from && b.start < to);
         const color = FRIEND_COLORS[k % FRIEND_COLORS.length];
         // Made once, so a layer's months (memoised) never redraw on the pile's clock.
-        return { ...s, items, color, colorOf: () => color };
+        // Searched before (#240): on the pile already, under the ones thrown now.
+        const placed = !!again?.before.includes(s.profileId);
+        return { ...s, items, color, colorOf: () => color, placed };
       });
+    // Those on the pile already first, so the ones thrown now land on top.
+    friends.sort((x, y) => Number(y.placed) - Number(x.placed));
     return { month: first, months, shine, friends };
-  }, [participants, listedStarts, search, searchWindow, youProfileId, lang]);
+  }, [participants, listedStarts, search, searchWindow, youProfileId, lang, again]);
 
   // Your month on screen: My calendar scrolls to it, and the layers land on
   // where it then is.
@@ -450,7 +460,13 @@ export default function PileScreen({
   const [phase, setPhase] = useState<Phase>(reduceMotion ? "done" : "landing");
   const [landed, setLanded] = useState(0);
   const others = pile?.friends.length ?? 0;
-  const timeline = useMemo(() => pileTimeline(others, 0, PILE_TIMING.inPlace), [others]);
+  // A vote searched again (#240): only the calendars added are thrown.
+  const placedCount = pile?.friends.filter((f) => f.placed).length ?? 0;
+  const timeline = useMemo(
+    () => pileTimeline(others - placedCount, 0, PILE_TIMING.inPlace),
+    [others, placedCount],
+  );
+  const landedNow = placedCount + landed;
   // The throw starts as soon as the month is in place. The scores are asked
   // meanwhile and only needed by the list, so the lift waits (briefly) for
   // them instead, and the list is ranked by them from the start (#162).
@@ -583,8 +599,9 @@ export default function PileScreen({
               key={friend.profileId}
               k={k}
               frame={card}
-              land={timeline.lands[k]}
-              landed={landed}
+              land={friend.placed ? PLACED : timeline.lands[k - placedCount]}
+              landed={landedNow}
+              placed={friend.placed}
               pressed={pressed}
               revealed={revealed}
               alpha={alpha}
@@ -701,6 +718,7 @@ export default function PileScreen({
                 meeting={search.kind === "single"}
                 kind={search.kind}
                 priority={extras.priority}
+                fresh={!!again}
                 control={
                   <>
                     <DatePriorityRow
@@ -789,8 +807,14 @@ export default function PileScreen({
                 <FlowButton onClick={onInvite}>{words.inviteFriends}</FlowButton>
               ) : (
                 dates && (
-                  <FlowButton onClick={send} disabled={!canSuggest || checking || sending}>
-                    {checking ? t.scheduler.checking : words.suggest(dates.chosen.length)}
+                  <FlowButton
+                    // A vote searched again (#240) asks first: everyone votes anew.
+                    onClick={again ? () => setWarning(true) : send}
+                    disabled={!canSuggest || checking || sending}
+                  >
+                    {checking
+                      ? t.scheduler.checking
+                      : (again ? words.sendNew : words.suggest)(dates.chosen.length)}
                   </FlowButton>
                 )
               )}
@@ -805,6 +829,27 @@ export default function PileScreen({
             </motion.div>
           )}
         </div>
+      )}
+      {warning && (
+        <ConfirmPanel
+          tone="neutral"
+          message={
+            <span className="flex items-start gap-2">
+              <TriangleAlert aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <span>
+                <span className="font-semibold">{t.searchAgain.warning}: </span>
+                {t.searchAgain.warningText}
+              </span>
+            </span>
+          }
+          confirmLabel={dates ? words.sendNew(dates.chosen.length) : t.searchAgain.button}
+          busy={sending}
+          onConfirm={() => {
+            setWarning(false);
+            send();
+          }}
+          onCancel={() => setWarning(false)}
+        />
       )}
     </>
   );

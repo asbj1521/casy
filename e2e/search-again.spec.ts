@@ -1,6 +1,7 @@
 /** Searching an open vote again, with the members it left out (#240): the app only. */
 import type { Page } from "@playwright/test";
 
+import type { FakeBackend } from "./backend";
 import { expect, test } from "./fixtures";
 import { PEOPLE } from "./world";
 
@@ -11,74 +12,88 @@ const asTheApp = (page: Page) =>
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
   });
 
-test("someone the vote left out is added, and the vote searched again with them", async ({
+/** The cinema vote, Oliver having joined Løbeklubben after it was made. */
+const withoutOliver = (backend: FakeBackend) => {
+  const cinema = backend.world.events.find((e) => e.id === "ev-cinema")!;
+  cinema.invitees = cinema.invitees.filter((i) => i.profileId !== PEOPLE.oliver.id);
+};
+
+test("someone the vote left out is added, the dates found in Planlæg, and sent after a warning", async ({
   page,
   backend,
 }) => {
-  // Oliver joined Løbeklubben after the vote was made.
-  const cinema = backend.world.events.find((e) => e.id === "ev-cinema")!;
-  cinema.invitees = cinema.invitees.filter((i) => i.profileId !== PEOPLE.oliver.id);
+  withoutOliver(backend);
   await asTheApp(page);
   await page.goto("/?events=ev-cinema");
   const vote = page.getByRole("dialog", { name: "Biograf" });
 
   await vote.getByRole("button", { name: /1 i gruppen er ikke med/ }).click();
   const picking = page.getByRole("dialog", { name: "Tilføj til afstemningen" });
-  // Everyone left out is ticked to begin with, and it says what searching does.
   await expect(picking.getByRole("checkbox", { name: "Oliver" })).toBeChecked();
-  await expect(picking.getByText("Hvis I søger igen, skal alle stemme igen.")).toBeVisible();
   await picking.getByRole("button", { name: "Søg igen" }).click();
+
+  // Planlæg's own pile, straight to its list (reduced motion), saying the dates are new.
+  await expect(page).toHaveURL(/\?plan$/);
+  await expect(page.getByText("De 2 bedste nye datoer")).toBeVisible();
+  // Nothing has changed yet.
+  expect(backend.calls.some((c) => c.body.action === "search-again")).toBe(false);
+
+  await page.getByRole("button", { name: "Send 2 nye datoer" }).click();
+  const sure = page.getByRole("dialog", { name: "Er du sikker?" });
+  await expect(sure.getByText("Hvis I søger igen, skal alle stemme igen.")).toBeVisible();
+  await sure.getByRole("button", { name: "Send 2 nye datoer" }).click();
 
   await expect
     .poll(() => backend.calls.find((c) => c.body.action === "search-again")?.body)
     .toMatchObject({ proposalId: "ev-cinema", add: [PEOPLE.oliver.id] });
   const sent = backend.calls.find((c) => c.body.action === "search-again")!.body;
-  expect((sent.dates as unknown[]).length).toBe(2);
-  // In the vote now, so nobody is left out.
+  expect(sent.dates).toHaveLength(2);
+  // Nobody's answers ride along: everyone votes on the new dates.
+  expect((sent.dates as Record<string, unknown>[]).every((d) => !("answer" in d))).toBe(true);
+  // Back on the vote, Oliver in it.
   await expect(vote.getByRole("button", { name: /i gruppen er ikke med/ })).toHaveCount(0);
 });
 
-test("searching again with nobody added asks first: everyone votes again", async ({
-  page,
-  backend,
-}) => {
+test("searching again with nobody added opens Planlæg the same way", async ({ page, backend }) => {
   await asTheApp(page);
   await page.goto("/?events=ev-cinema");
   const vote = page.getByRole("dialog", { name: "Biograf" });
   await expect(vote.getByRole("button", { name: /i gruppen er ikke med/ })).toHaveCount(0);
-
   await vote.getByRole("button", { name: "Søg igen" }).click();
-  const sure = page.getByRole("dialog", { name: "Er du sikker?" });
-  await expect(sure.getByText("Hvis I søger igen, skal alle stemme igen.")).toBeVisible();
-  await sure.getByRole("button", { name: "Søg igen" }).click();
+
+  await expect(page.getByText("De 2 bedste nye datoer")).toBeVisible();
+  await page.getByRole("button", { name: "Send 2 nye datoer" }).click();
+  await page
+    .getByRole("dialog", { name: "Er du sikker?" })
+    .getByRole("button", { name: "Send 2 nye datoer" })
+    .click();
   await expect
     .poll(() => backend.calls.find((c) => c.body.action === "search-again")?.body)
     .toMatchObject({ proposalId: "ev-cinema", add: [] });
 });
 
-test("when the server turns the search down, it says so, and nothing has changed", async ({
+test("when the server turns the new dates down, it says so, and nothing has changed", async ({
   page,
   backend,
 }) => {
   await asTheApp(page);
-  await page.goto("/?events=ev-cinema");
-  const vote = page.getByRole("dialog", { name: "Biograf" });
-  await expect(vote.getByRole("button", { name: "Søg igen" })).toBeVisible();
-  // A server without the action yet (its deploy not done): the vote is as it was.
+  // A server without the action yet (its deploy not done).
   await page.route("**/functions/v1/events?*", async (route) => {
     if (route.request().postDataJSON()?.action !== "search-again") return route.fallback();
     await route.fulfill({ status: 400, json: { error: "Unknown action: search-again" } });
   });
-  await vote.getByRole("button", { name: "Søg igen" }).click();
+  await page.goto("/?events=ev-cinema");
   await page
-    .getByRole("dialog", { name: "Er du sikker?" })
+    .getByRole("dialog", { name: "Biograf" })
     .getByRole("button", { name: "Søg igen" })
     .click();
-  // Said where it can't be missed, the vote unchanged, and ready to try again.
-  await expect(vote.getByText("Unknown action: search-again")).toBeVisible();
-  await expect(vote.getByText("fre. 16. okt. · 20:00-22:30")).toBeVisible();
+  await page.getByRole("button", { name: "Send 2 nye datoer" }).click();
+  await page
+    .getByRole("dialog", { name: "Er du sikker?" })
+    .getByRole("button", { name: "Send 2 nye datoer" })
+    .click();
+  await expect(page.getByText("Unknown action: search-again")).toBeVisible();
   expect(backend.calls.some((c) => c.body.action === "search-again")).toBe(false);
-  await expect(vote.getByRole("button", { name: "Søg igen" })).toBeVisible();
 });
 
 test("the website has none of it", async ({ page }) => {
@@ -91,26 +106,26 @@ test("the website has none of it", async ({ page }) => {
 test.describe("with motion", () => {
   test.use({ reducedMotion: "no-preference" });
 
-  test("the search is seen: the new person's calendar thrown on the pile, then the new dates", async ({
+  test("the calendars searched before lie on the pile; only the one added is thrown", async ({
     page,
     backend,
   }) => {
-    const cinema = backend.world.events.find((e) => e.id === "ev-cinema")!;
-    cinema.invitees = cinema.invitees.filter((i) => i.profileId !== PEOPLE.oliver.id);
+    withoutOliver(backend);
     await asTheApp(page);
     await page.goto("/?events=ev-cinema");
-    const vote = page.getByRole("dialog", { name: "Biograf" });
-    await vote.getByRole("button", { name: /1 i gruppen er ikke med/ }).click();
+    await page
+      .getByRole("dialog", { name: "Biograf" })
+      .getByRole("button", { name: /1 i gruppen er ikke med/ })
+      .click();
     await page
       .getByRole("dialog", { name: "Tilføj til afstemningen" })
       .getByRole("button", { name: "Søg igen" })
       .click();
 
-    const pile = page.locator("[aria-hidden] >> text=Finder nye datoer");
-    await expect(pile).toBeVisible();
-    await expect(page.getByText("Oliver", { exact: true }).last()).toBeVisible();
-    // Gone once the dates are in and every calendar has landed.
-    await expect(pile).toHaveCount(0, { timeout: 8000 });
-    await expect(vote.getByRole("button", { name: /i gruppen er ikke med/ })).toHaveCount(0);
+    const pile = page.locator("[data-pile]");
+    await expect(pile.getByText("Freja", { exact: true })).toBeVisible();
+    await expect(pile.getByText("Oliver", { exact: true })).toBeVisible();
+    // Then the whole of the rest, to the list of new dates.
+    await expect(page.getByText("De 2 bedste nye datoer")).toBeVisible({ timeout: 20_000 });
   });
 });

@@ -45,6 +45,7 @@ export default function DateList({
   kind,
   priority,
   control,
+  fresh = false,
   phase,
   instant,
   scroll,
@@ -59,6 +60,8 @@ export default function DateList({
   priority: DatePriority;
   /** The way to change it, over the list once the list is done. */
   control?: ReactNode;
+  /** New dates for a vote searched again (#240): said so as they are found and listed. */
+  fresh?: boolean;
   phase: Phase;
   instant: boolean;
   /** The shared calendar's scroll, which this list drives to lift each date out. */
@@ -193,12 +196,12 @@ export default function DateList({
             animate={{ opacity: 1 }}
             className="text-lg font-extrabold tracking-tight text-foreground"
           >
-            {words.ranked(items.filter((i) => i.chosen).length)}
+            {(fresh ? words.rankedNew : words.ranked)(items.filter((i) => i.chosen).length)}
           </motion.h2>
         ) : (
           <p className="glass flex items-center gap-2 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium text-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-            {words.reviewing}
+            {fresh ? words.reviewingNew : words.reviewing}
           </p>
         )}
       </div>

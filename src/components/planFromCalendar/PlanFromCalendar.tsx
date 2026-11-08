@@ -85,11 +85,12 @@ export default function PlanFromCalendar({
   // Sent, the plan closes onto the home page, the dates having flown into
   // its Aftaler button (#169).
   const planning = usePlanning({ onSent: onClose, start });
-  const [stage, setStage] = useState<"setup" | "pile">("setup");
+  // A vote searched again (#240) goes straight to the pile: its plan is set.
+  const [stage, setStage] = useState<"setup" | "pile">(start?.again ? "pile" : "setup");
   // The sheet grows out of the pill and shrinks back into it, but once the
   // pile has begun it slides away and back as before: the pill is hidden
   // behind the plan then. Read by the sheet as it opens and as it closes.
-  const sheetOrigin = useRef<HTMLElement | null>(origin?.current ?? null);
+  const sheetOrigin = useRef<HTMLElement | null>(start?.again ? null : (origin?.current ?? null));
   const toPile = () => {
     sheetOrigin.current = null;
     setStage("pile");

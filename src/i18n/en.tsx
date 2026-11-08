@@ -1052,9 +1052,6 @@ export const en: Messages = {
     pickTitle: "Add to the vote",
     warning: "Warning",
     warningText: "If you search again, everyone will have to vote again.",
-    noneFound: "Casy found no new dates that suit everyone.",
-    finding: "Finding new dates",
-    noGroup: "The group couldn't be loaded. Try again.",
   },
   voteDeadline: {
     label: "Deadline",
@@ -1412,6 +1409,10 @@ export const en: Messages = {
     you: "You",
     waiting: "Fetching the group's calendars",
     ranked: (n: number) => (n === 1 ? "The best date" : `The ${n} best dates`),
+    // A vote searched again (#240): its dates are new ones.
+    rankedNew: (n: number) => (n === 1 ? "The best new date" : `The ${n} best new dates`),
+    sendNew: (n: number) => (n === 1 ? "Send the new date" : `Send ${n} new dates`),
+    reviewingNew: "Finding new dates",
     priority: { label: "Prioritise", hassle: "Least hassle", soon: "Soonest" },
     noneThrough: "No day in the period works for everyone. Try changing the plan.",
     suggest: (n: number) => (n === 1 ? "Suggest the date" : `Suggest the top ${n} dates`),
