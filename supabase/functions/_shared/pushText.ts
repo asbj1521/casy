@@ -19,7 +19,8 @@ export type PushTopic =
   | "moved"
   | "cancelled"
   | "group_invitation"
-  | "deadline";
+  | "deadline"
+  | "new_dates";
 
 type Lang = "da" | "en";
 
@@ -128,6 +129,16 @@ export function composePush(facts: PushFacts, lang: Lang): PushMessage {
         title: event,
         body: da ? `${who} aflyste aftalen.` : `${who} cancelled the event.`,
         url: details,
+        thread,
+      };
+    // Someone searched the vote again (#240): its dates are new, so answer again.
+    case "new_dates":
+      return {
+        title: event,
+        body: da
+          ? `${who} har fundet nye datoer. Stem igen.`
+          : `${who} found new dates. Vote again.`,
+        url: dates,
         thread,
       };
     case "group_invitation":

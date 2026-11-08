@@ -210,3 +210,37 @@ export function currentDate<
       null,
     );
 }
+
+/** Most members one search may add (#240): a group holds 20. */
+const MAX_ADDED = 19;
+
+/** The members a search adds (#240): ids, each once, lower case; null if it isn't that. */
+export function parseMemberIds(raw: unknown): string[] | null {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw) || raw.length > MAX_ADDED) return null;
+  const ids = raw.map((id) => (typeof id === "string" ? id.trim().toLowerCase() : ""));
+  if (ids.some((id) => !UUID.test(id))) return null;
+  return [...new Set(ids)];
+}
+
+/**
+ * The settings a vote searched again keeps (#240): the search's own, with who
+ * it is for made to match who is invited now. Everyone in the group is said by
+ * naming nobody, as when suggesting (invitedMembers); anyone left out is named,
+ * keeping those who were optional optional.
+ */
+export function settingsFor(raw: unknown, invited: string[], group: string[]): unknown {
+  const settings = { ...(raw as Record<string, unknown>) };
+  const people = settings.people as { optional?: string[]; atLeast?: number } | undefined;
+  const all = group.every((id) => invited.includes(id));
+  if (all && !people?.optional?.length && people?.atLeast === undefined) {
+    delete settings.people;
+    return settings;
+  }
+  settings.people = {
+    ...people,
+    members: invited,
+    optional: (people?.optional ?? []).filter((id) => invited.includes(id)),
+  };
+  return settings;
+}

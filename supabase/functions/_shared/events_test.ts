@@ -10,6 +10,8 @@ import {
   MAX_PLACE_LENGTH,
   parseCandidateDates,
   parseEventDate,
+  parseMemberIds,
+  settingsFor,
   VOTE_ANSWER_MS,
   voteAnswerBy,
 } from "./events.ts";
@@ -209,3 +211,48 @@ Deno.test("people settings: members, optional among them, at least N for meeting
   assertEquals(isEventSettings({ ...single, people: { members: [a], optional: [] } }), true);
   assertEquals(isEventSettings({ ...single, people: { members: [] } }), false);
 });
+
+const A = "11111111-1111-4111-8111-111111111111";
+const B = "22222222-2222-4222-8222-222222222222";
+const C = "33333333-3333-4333-8333-333333333333";
+const MEETING = { kind: "single", durationMinutes: 120, startHour: 18 };
+
+Deno.test("the members a search adds (#240): ids once, lower case, or refused", () => {
+  assertEquals(parseMemberIds(undefined), []);
+  assertEquals(parseMemberIds([A.toUpperCase(), A, B]), [A, B]);
+  assertEquals(parseMemberIds(["nobody"]), null);
+  assertEquals(parseMemberIds(A), null);
+  assertEquals(parseMemberIds(Array.from({ length: 20 }, () => A)), null);
+});
+
+Deno.test("searched again with the whole group invited, the settings name nobody (#240)", () => {
+  const settings = settingsFor(
+    { ...MEETING, people: { members: [A, B], optional: [] } },
+    [A, B, C],
+    [A, B, C],
+  );
+  assertEquals(settings, MEETING);
+  assertEquals(isEventSettings(settings), true);
+});
+
+Deno.test(
+  "searched again with someone still left out, the settings name who is invited (#240)",
+  () => {
+    const settings = settingsFor(
+      { ...MEETING, people: { members: [A, B], optional: [B], atLeast: 1 } },
+      [A, B],
+      [A, B, C],
+    );
+    assertEquals(settings, { ...MEETING, people: { members: [A, B], optional: [B], atLeast: 1 } });
+    assertEquals(isEventSettings(settings), true);
+    // Optional people stay optional, so "at least" keeps the group whole.
+    assertEquals(
+      settingsFor(
+        { ...MEETING, people: { members: [A], optional: [], atLeast: 1 } },
+        [A, B],
+        [A, B, C],
+      ),
+      { ...MEETING, people: { members: [A, B], optional: [], atLeast: 1 } },
+    );
+  },
+);

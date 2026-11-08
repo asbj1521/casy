@@ -71,6 +71,7 @@ Deno.test("every notification, in both languages, has no emoji and no long dash"
     "cancelled",
     "group_invitation",
     "deadline",
+    "new_dates",
   ];
   for (const topic of topics) {
     for (const lang of ["da", "en"] as const) {

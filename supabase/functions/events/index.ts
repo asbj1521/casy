@@ -1,7 +1,8 @@
 /**
  * Suggested events: suggest a date to your group, answer one suggested to
  * you, cancel one you suggested or change its place and note (edit, #84),
- * leave one someone else suggested, and list everything you're part of.
+ * leave one someone else suggested, search an open vote again with the members
+ * it left out (search-again, #240), and list everything you're part of.
  *
  * One function with an `action` in the POST body, the same shape as `groups`.
  * Identity always comes from the caller's verified login (_shared/auth.ts);
@@ -45,6 +46,8 @@ import {
   isEventSettings,
   parseCandidateDates,
   parseEventDate,
+  parseMemberIds,
+  settingsFor,
   voteAnswerBy,
 } from "../_shared/events.ts";
 import { displayNameFor, requireMember } from "../_shared/groups.ts";
@@ -55,7 +58,7 @@ import { encryptionKeyFromEnv } from "../_shared/secretBox.ts";
 import { langOf } from "../_shared/i18n.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { listEvents } from "./list.ts";
-import { invitedMembers, eventDetails, storeMatchScores } from "./suggest.ts";
+import { eventDetails, invitedMembers, storeMatchScores } from "./suggest.ts";
 
 serve("events", async (req, body) => {
   const action = requireString(body, "action");
@@ -333,6 +336,69 @@ serve("events", async (req, body) => {
         // Out of every calendar Casy put it in.
         await unwantEverywhere(db, proposalId);
         syncCalendarsLater(proposalId);
+      }
+      return await list();
+    }
+
+    // New dates for an open vote (#240), searched on the phone with everyone's
+    // calendars, the members added among them. Anyone in the group may: a
+    // group is trusted, and the warning before it says everyone answers again.
+    case "search-again": {
+      const proposalId = requireString(body, "proposalId");
+      if (!isEventSettings(body.settings)) {
+        throw new HttpError(400, "Those event settings aren't valid.");
+      }
+      const dates = parseCandidateDates(body.dates);
+      if (!dates || dates.some((d) => d.answer)) {
+        throw new HttpError(400, "Those dates aren't valid any more. Search again.");
+      }
+      const add = parseMemberIds(body.add);
+      if (!add) throw new HttpError(400, "Everyone added must be in the group.");
+
+      const { data: proposal, error: readErr } = await db
+        .from("event_proposals")
+        .select("group_id, impact")
+        .eq("id", proposalId)
+        .maybeSingle();
+      if (readErr) throw readErr;
+      if (!proposal) throw new HttpError(404, "That event no longer exists.");
+      const { data: invited, error: invitedErr } = await db
+        .from("event_invitees")
+        .select("profile_id")
+        .eq("proposal_id", proposalId);
+      if (invitedErr) throw invitedErr;
+      const everyone = [
+        ...new Set([...(invited ?? []).map((i) => i.profile_id as string), ...add]),
+      ];
+      const groupIds = await groupMemberIds(db, proposal.group_id as string);
+      const settings = settingsFor(body.settings, everyone, groupIds);
+
+      const { data: outcome, error } = await db.rpc("search_vote_again", {
+        p_proposal_id: proposalId,
+        p_by: profileId,
+        p_add: add,
+        p_settings: settings,
+        p_dates: dates,
+      });
+      if (error) throw error;
+      if (outcome === "not_found") throw new HttpError(404, "That event no longer exists.");
+      if (outcome === "not_member") {
+        throw new HttpError(403, "Only people in the group can search this vote again.");
+      }
+      if (outcome === "closed")
+        throw new HttpError(409, "Only an open vote can be searched again.");
+      if (outcome === "outsider") throw new HttpError(400, "Everyone added must be in the group.");
+      // The new dates' scores (#119), as when it was suggested; never worth failing over.
+      try {
+        await storeMatchScores(
+          db,
+          proposalId,
+          everyone,
+          proposal.impact ? cleanProfile(proposal.impact) : null,
+          settings,
+        );
+      } catch (scoreError) {
+        console.error("events: couldn't score the vote's new dates", scoreError);
       }
       return await list();
     }

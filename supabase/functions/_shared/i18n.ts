@@ -77,6 +77,10 @@ export const DANISH: Record<string, string> = {
 
   // Suggested events
   "That event no longer exists.": "Aftalen findes ikke længere.",
+  "Only people in the group can search this vote again.":
+    "Kun dem i gruppen kan søge efter nye datoer til afstemningen.",
+  "Only an open vote can be searched again.": "Kun en åben afstemning kan få nye datoer.",
+  "Everyone added must be in the group.": "Alle, der bliver tilføjet, skal være med i gruppen.",
   "Give the event a name.": "Giv aftalen et navn.",
   "Choose 1 to 7 days to answer in.": "Vælg mellem 1 og 7 dage at svare i.",
   "The place and note must be text.": "Sted og note skal være tekst.",
