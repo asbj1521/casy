@@ -109,6 +109,7 @@ Before changing an area, read its doc; when the behaviour changes, update the do
 - **AI** (foundation and consent, Planlæg med AI, sorting, labels, profiles, warnings, ranking, corrections, trips, occasions, Tell Casy): `docs/architecture/ai.md`. Main files: `supabase/functions/_shared/ai.ts` and the skills beside it, `src/hooks/useAiPlanner.ts`, `useEventLabels.ts`, `useTrips.ts`, `useTellCasy.ts`
 - **Platform** (theme, hosting and CSP, the iPhone app, tests, storage, live updates, landing, legal pages, sign-in helpers, the layout switch, connecting calendars): `docs/architecture/platform.md`
 - **Backend** (every function's actions, invitations, report and block, events, accounts, auth emails, admin, data model, calendar writes, backups, retention, secrets, sync): `docs/architecture/backend.md`
+- **The native iPhone app** (the Swift packages beside the app, what keeps them equal to the web, their tests): `docs/architecture/native.md`; where it is going: `docs/native-ios-plan.md`
 - **The product tour** (what each page does today): `docs/architecture/overview.md`
 
 ### Rules that span the code
