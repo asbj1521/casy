@@ -9,6 +9,7 @@ import Countdown from "@/components/myEvents/phone/Countdown";
 import DateTile from "@/components/myEvents/phone/DateTile";
 import EventScreen from "@/components/myEvents/phone/EventScreen";
 import PeopleRow from "@/components/myEvents/phone/PeopleRow";
+import SearchAgain from "@/components/myEvents/phone/SearchAgain";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 import { PhoneVoteDeadline } from "@/components/myEvents/VoteDeadline";
 import YourAnswer from "@/components/myEvents/YourAnswer";
@@ -18,6 +19,7 @@ import Notice from "@/components/ui/Notice";
 import { useEventChange } from "@/hooks/useEventChange";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate } from "@/lib/format";
+import { isNativeApp } from "@/lib/nativeApp";
 import {
   bestPick,
   leader,
@@ -41,7 +43,8 @@ import {
  * ticks down (Countdown), or it says it waits for everyone (#179), with
  * Casy's read on the right; the place and note come next, then the
  * suggester's deadline and "Afgør nu", and cancelling or leaving stays along
- * the bottom.
+ * the bottom. In the app, an open vote can be searched again under its dates,
+ * with any of the group it leaves out (SearchAgain, #240).
  */
 export default function VoteScreen({ event }: { event: VoteEvent }) {
   const t = useT();
@@ -210,6 +213,8 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
           )
         }
       />
+
+      {isNativeApp && event.status === "pending" && <SearchAgain event={event} />}
 
       <PlaceNote event={event} className="mt-6" />
 

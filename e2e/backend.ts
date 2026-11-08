@@ -793,6 +793,33 @@ export class FakeBackend {
         this.changed();
         return ok(list());
       }
+      case "search-again": {
+        // As the real one (#240): an open vote, new dates (answers kept on any
+        // offered again unchanged), the members added invited.
+        if (event.status !== "pending")
+          return fail(409, "Only an open vote can be searched again.");
+        const group = w.groups.find((g) => g.id === event.group.id);
+        const add = (body.add as string[]) ?? [];
+        for (const id of add) {
+          const member = group?.members.find((m) => m.profileId === id);
+          if (!member) return fail(400, "Everyone added must be in the group.");
+          if (!event.invitees.some((i) => i.profileId === id))
+            event.invitees.push({
+              profileId: id,
+              name: member.name,
+              isYou: member.isYou,
+              response: null,
+            });
+        }
+        const dates = body.dates as { start: string; end: string }[];
+        event.candidates = dates.map((d, i) => {
+          const same = event.candidates.find((c) => c.start === d.start && c.end === d.end);
+          return same ?? { id: `d-again-${i}`, start: d.start, end: d.end, answers: {} };
+        });
+        event.settings = body.settings as SuggestedEvent["settings"];
+        this.changed();
+        return ok(list());
+      }
       case "cancel":
         event.status = "cancelled";
         this.changed();

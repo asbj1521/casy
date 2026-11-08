@@ -1044,6 +1044,17 @@ export const en: Messages = {
     saveFailed: "Couldn't save the shortcut",
     deleteFailed: "Couldn't delete the shortcut",
   },
+  // Searching an open vote again (#240).
+  searchAgain: {
+    missing: (n: number) =>
+      n === 1 ? "1 in the group isn't in it" : `${n} in the group aren't in it`,
+    button: "Search again",
+    pickTitle: "Add to the vote",
+    warning: "Warning",
+    warningText: "If you search again, everyone will have to vote again.",
+    noneFound: "Casy found no new dates that suit everyone.",
+    noGroup: "The group couldn't be loaded. Try again.",
+  },
   voteDeadline: {
     label: "Deadline",
     none: "No deadline",
@@ -1708,6 +1719,7 @@ export const en: Messages = {
     planAi: "AI planning didn't answer",
     relabel: "Couldn't label the event again",
     cancelEvent: "Couldn't cancel the event",
+    searchAgain: "Couldn't search again. Try again.",
     editEvent: "Couldn't save the place and note",
     leaveEvent: "Couldn't leave the event",
     answerDate: "Couldn't save your answer",

@@ -1090,6 +1090,16 @@ export const da = {
     deleteFailed: "Kunne ikke slette genvejen",
   },
   // A vote's deadline (#179): none by default, set when planning or later.
+  // Searching an open vote again (#240).
+  searchAgain: {
+    missing: (n: number) => (n === 1 ? "1 i gruppen er ikke med" : `${n} i gruppen er ikke med`),
+    button: "Søg igen",
+    pickTitle: "Tilføj til afstemningen",
+    warning: "Advarsel",
+    warningText: "Hvis I søger igen, skal alle stemme igen.",
+    noneFound: "Casy fandt ingen nye datoer, der passer alle.",
+    noGroup: "Gruppen kunne ikke hentes. Prøv igen.",
+  },
   voteDeadline: {
     label: "Svarfrist",
     none: "Ingen frist",
@@ -1768,6 +1778,7 @@ export const da = {
     planAi: "AI-planlægningen svarede ikke",
     relabel: "Kunne ikke vurdere aftalen igen",
     cancelEvent: "Kunne ikke aflyse aftalen",
+    searchAgain: "Kunne ikke søge igen. Prøv igen.",
     editEvent: "Kunne ikke gemme sted og note",
     leaveEvent: "Kunne ikke forlade aftalen",
     answerDate: "Kunne ikke gemme dit svar",

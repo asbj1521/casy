@@ -255,6 +255,20 @@ export async function cancelEvent(proposalId: string): Promise<{ events: Suggest
   return await eventsCall({ action: "cancel", proposalId }, currentMessages().api.cancelEvent);
 }
 
+/**
+ * New dates for an open vote (#240), searched on the phone with the members
+ * it left out (`add`) among everyone; everyone answers again.
+ */
+export async function searchVoteAgain(
+  proposalId: string,
+  change: { add: string[]; settings: EventSettings; dates: { start: string; end: string }[] },
+): Promise<{ events: SuggestedEvent[] }> {
+  return await eventsCall(
+    { action: "search-again", proposalId, ...change },
+    currentMessages().api.searchAgain,
+  );
+}
+
 /** Drop out of an event someone else suggested; it carries on without you. */
 export async function leaveEvent(proposalId: string): Promise<{ events: SuggestedEvent[] }> {
   return await eventsCall({ action: "leave", proposalId }, currentMessages().api.leaveEvent);
