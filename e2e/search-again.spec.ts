@@ -62,3 +62,30 @@ test("the website has none of it", async ({ page }) => {
   await expect(vote).toBeVisible();
   await expect(vote.getByRole("button", { name: "Søg igen" })).toHaveCount(0);
 });
+
+test.describe("with motion", () => {
+  test.use({ reducedMotion: "no-preference" });
+
+  test("the search is seen: the new person's calendar thrown on the pile, then the new dates", async ({
+    page,
+    backend,
+  }) => {
+    const cinema = backend.world.events.find((e) => e.id === "ev-cinema")!;
+    cinema.invitees = cinema.invitees.filter((i) => i.profileId !== PEOPLE.oliver.id);
+    await asTheApp(page);
+    await page.goto("/?events=ev-cinema");
+    const vote = page.getByRole("dialog", { name: "Biograf" });
+    await vote.getByRole("button", { name: /1 i gruppen er ikke med/ }).click();
+    await page
+      .getByRole("dialog", { name: "Tilføj til afstemningen" })
+      .getByRole("button", { name: "Søg igen" })
+      .click();
+
+    const pile = page.locator("[aria-hidden] >> text=Finder nye datoer");
+    await expect(pile).toBeVisible();
+    await expect(page.getByText("Oliver", { exact: true }).last()).toBeVisible();
+    // Gone once the dates are in and every calendar has landed.
+    await expect(pile).toHaveCount(0, { timeout: 8000 });
+    await expect(vote.getByRole("button", { name: /i gruppen er ikke med/ })).toHaveCount(0);
+  });
+});

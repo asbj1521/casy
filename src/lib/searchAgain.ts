@@ -10,6 +10,9 @@
  */
 import { pickCandidates } from "@/lib/candidates";
 import { findEventSlot, type EventSettings } from "@/lib/eventSearch";
+import type { GridItem } from "@/lib/monthGrid";
+import { candidateMonth, PILE_TIMING, pileTimeline } from "@/lib/paperPile";
+import { addDays, startOfMonth, wallTime } from "@/lib/zone";
 import type { BusyInterval, Participant } from "@/types";
 
 /** A vote's date with the answers on it, as the events list hands it out. */
@@ -88,4 +91,88 @@ export function searchAgainDates(
     },
     timeZone,
   ).map((d) => ({ start: d.slot.start, end: d.slot.end }));
+}
+
+/** One calendar on the pile (#240): its busy time over the month shown, as bars. */
+interface PileLayer {
+  profileId: string;
+  name: string;
+  /** Searched just now for the first time: thrown on, not lying there already. */
+  isNew: boolean;
+  items: GridItem[];
+  color: string;
+  colorOf: (calendarId: string) => string;
+}
+
+/** What the search's pile shows (SearchAgainPile): a month, yours first, then everyone else's. */
+export interface SearchAgainPile {
+  /** The month's first local midnight. */
+  month: number;
+  you: { items: GridItem[]; colorOf: (calendarId: string) => string };
+  layers: PileLayer[];
+}
+
+/** Your own calendar's colour on the pile: Casy's orange. */
+const YOUR_COLOR = "234, 88, 12";
+
+/**
+ * The pile for a search (#240): the month holding most of the new dates, your
+ * calendar under it, the calendars already searched on it, and those of the
+ * people added (`added`) to be thrown on top. Only people with a calendar.
+ */
+export function searchAgainPile(
+  participants: Participant[],
+  youId: string,
+  added: string[],
+  dates: { start: string }[],
+  colors: readonly string[],
+  timeZone: string,
+): SearchAgainPile {
+  const { year, month } = candidateMonth(
+    dates.map((d) => d.start),
+    dates[0]?.start ?? new Date().toISOString(),
+    timeZone,
+  );
+  const first = wallTime(year, month, 1, 0, timeZone);
+  const from = addDays(first, -7, timeZone);
+  const to = addDays(startOfMonth(first, timeZone, 1), 7, timeZone);
+  const itemsOf = (p: Participant): GridItem[] =>
+    p.busy
+      .filter((b) => !b.holiday)
+      .map((b) => ({
+        calendarId: p.profileId,
+        start: Date.parse(b.start),
+        end: Date.parse(b.end),
+        label: "",
+      }))
+      .filter((b) => b.end > from && b.start < to);
+  const you = participants.find((p) => p.profileId === youId);
+  const others = participants.filter((p) => p.profileId !== youId);
+  // Those searched before first, so the new ones land on top of them.
+  const ordered = [
+    ...others.filter((p) => !added.includes(p.profileId)),
+    ...others.filter((p) => added.includes(p.profileId)),
+  ];
+  return {
+    month: first,
+    you: { items: you ? itemsOf(you) : [], colorOf: () => YOUR_COLOR },
+    layers: ordered.map((p, k) => {
+      const color = colors[k % colors.length];
+      return {
+        profileId: p.profileId,
+        name: p.name,
+        isNew: added.includes(p.profileId),
+        items: itemsOf(p),
+        color,
+        colorOf: () => color,
+      };
+    }),
+  };
+}
+
+/** How long the pile is shown at least (#240): every new calendar landed, and a beat to see them. */
+export function pileSeconds(newCalendars: number): number {
+  const lands = pileTimeline(newCalendars, 0, 0.5).lands;
+  const last = lands.at(-1);
+  return Math.max(1.6, last ? last.at + last.duration + PILE_TIMING.impact + 0.9 : 0);
 }

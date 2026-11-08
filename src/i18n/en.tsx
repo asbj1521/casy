@@ -1053,6 +1053,7 @@ export const en: Messages = {
     warning: "Warning",
     warningText: "If you search again, everyone will have to vote again.",
     noneFound: "Casy found no new dates that suit everyone.",
+    finding: "Finding new dates",
     noGroup: "The group couldn't be loaded. Try again.",
   },
   voteDeadline: {

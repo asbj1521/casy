@@ -7,7 +7,15 @@ import { TODAY } from "@/hooks/useDateSearch";
 import { useEventChange } from "@/hooks/useEventChange";
 import { useT } from "@/i18n/lang";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
-import { searchAgainDates, searchSettings, withAnswers } from "@/lib/searchAgain";
+import { FRIEND_COLORS } from "@/components/planFromCalendar/pile/shared";
+import {
+  pileSeconds,
+  searchAgainDates,
+  searchAgainPile,
+  searchSettings,
+  withAnswers,
+  type SearchAgainPile,
+} from "@/lib/searchAgain";
 import type { VoteEvent } from "@/lib/vote";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
@@ -16,8 +24,13 @@ import { APP_TIME_ZONE } from "@/lib/zone";
  * the search itself, which adds the members picked (`add`, none to only look
  * again). The group's calendars are fetched fresh, everyone's answers to the
  * dates counted in (searchAgain.ts), and the dates found replace the vote's.
+ * Once found, the pile to show (`onPile`, SearchAgainPile) is handed over,
+ * and the search waits for it to have been seen as well as for the server.
  */
-export function useSearchAgain(event: VoteEvent) {
+export function useSearchAgain(
+  event: VoteEvent,
+  { onPile, still }: { onPile: (pile: SearchAgainPile) => void; still: boolean },
+) {
   const t = useT();
   const userId = useSignedInUser().id;
   const queryClient = useQueryClient();
@@ -46,7 +59,16 @@ export function useSearchAgain(event: VoteEvent) {
       APP_TIME_ZONE,
     );
     if (!dates) throw new Error(t.searchAgain.noneFound);
-    return await searchVoteAgain(event.id, { add, settings, dates });
+    const people = participants.filter((p) => everyone.includes(p.profileId));
+    const pile = searchAgainPile(people, userId, add, dates, FRIEND_COLORS, APP_TIME_ZONE);
+    onPile(pile);
+    const seen = still
+      ? Promise.resolve()
+      : new Promise((done) =>
+          setTimeout(done, pileSeconds(pile.layers.filter((l) => l.isNew).length) * 1000),
+        );
+    const [answer] = await Promise.all([searchVoteAgain(event.id, { add, settings, dates }), seen]);
+    return answer;
   });
 
   return { missing, search };

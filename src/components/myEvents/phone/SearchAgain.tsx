@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence, useReducedMotion } from "framer-motion";
 import { RefreshCw, TriangleAlert, UserPlus } from "lucide-react";
 
 import Avatar from "@/components/ui/Avatar";
@@ -9,7 +10,9 @@ import Notice from "@/components/ui/Notice";
 import Sheet from "@/components/ui/Sheet";
 import { useSearchAgain } from "@/hooks/useSearchAgain";
 import { useT } from "@/i18n/lang";
+import type { SearchAgainPile as Pile } from "@/lib/searchAgain";
 import type { VoteEvent } from "@/lib/vote";
+import SearchAgainPile from "./SearchAgainPile";
 
 /**
  * Searching an open vote again (#240, the app only), under its dates: the
@@ -18,15 +21,28 @@ import type { VoteEvent } from "@/lib/vote";
  * new look with the same people, when no date suits everyone. Anyone in the
  * group may: a group is trusted. Both say first that everyone votes again: in
  * the picking sheet over its button, and otherwise in a small sheet of its
- * own, so one sheet never closes straight into another (#230).
+ * own, so one sheet never closes straight into another (#230). Once the dates
+ * are found, the sheet goes and the pile shows the search (SearchAgainPile),
+ * the new people's calendars thrown on; it fades over the vote's new dates.
  */
 export default function SearchAgain({ event }: { event: VoteEvent }) {
   const t = useT();
   const words = t.searchAgain;
-  const { missing, search } = useSearchAgain(event);
+  const still = !!useReducedMotion();
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
   const [warning, setWarning] = useState(false);
+  const [pile, setPile] = useState<Pile | null>(null);
+  const { missing, search } = useSearchAgain(event, {
+    // Found: the sheet that asked goes, and the search is seen on the pile.
+    onPile: (found) => {
+      setPicking(false);
+      setWarning(false);
+      if (!still) setPile(found);
+    },
+    still,
+  });
+  const run = (add: string[]) => search.mutate(add, { onSettled: () => setPile(null) });
 
   const openPicking = () => {
     search.reset();
@@ -65,6 +81,14 @@ export default function SearchAgain({ event }: { event: VoteEvent }) {
           }}
         />
       </ListGroup>
+      {/* A failure once the asking sheet has gone (the server's answer). */}
+      {search.error && !picking && !warning && (
+        <Notice tone="error" bare className="mt-2">
+          {search.error.message}
+        </Notice>
+      )}
+
+      <AnimatePresence>{pile && <SearchAgainPile pile={pile} />}</AnimatePresence>
 
       <Sheet
         open={picking}
@@ -74,7 +98,7 @@ export default function SearchAgain({ event }: { event: VoteEvent }) {
         busy={search.isPending}
         footer={
           <FlowButton
-            onClick={() => search.mutate(picked, { onSuccess: () => setPicking(false) })}
+            onClick={() => run(picked)}
             disabled={picked.length === 0}
             busy={search.isPending}
           >
@@ -112,7 +136,7 @@ export default function SearchAgain({ event }: { event: VoteEvent }) {
           confirmLabel={words.button}
           busy={search.isPending}
           error={search.error?.message}
-          onConfirm={() => search.mutate([], { onSuccess: () => setWarning(false) })}
+          onConfirm={() => run([])}
           onCancel={() => setWarning(false)}
         />
       )}

@@ -1098,6 +1098,7 @@ export const da = {
     warning: "Advarsel",
     warningText: "Hvis I søger igen, skal alle stemme igen.",
     noneFound: "Casy fandt ingen nye datoer, der passer alle.",
+    finding: "Finder nye datoer",
     noGroup: "Gruppen kunne ikke hentes. Prøv igen.",
   },
   voteDeadline: {

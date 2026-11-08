@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { EventSettings } from "@/lib/eventSearch";
-import { searchAgainDates, searchSettings, withAnswers } from "@/lib/searchAgain";
+import {
+  pileSeconds,
+  searchAgainDates,
+  searchAgainPile,
+  searchSettings,
+  withAnswers,
+} from "@/lib/searchAgain";
 import { wallTime } from "@/lib/zone";
 import type { Participant } from "@/types";
 
@@ -78,5 +84,36 @@ describe("searching a vote again (#240)", () => {
       ...EVENING,
       people: { members: ["a"], optional: [] },
     });
+  });
+
+  it("shows the month of the new dates, the people added on top, thrown last", () => {
+    const busy = (id: string) => ({
+      ...person(id),
+      busy: [
+        { start: at(14, 9), end: at(14, 17) },
+        { start: at(14, 0), end: at(14, 23), holiday: true },
+      ],
+    });
+    const pile = searchAgainPile(
+      [busy("you"), busy("new"), busy("old")],
+      "you",
+      ["new"],
+      [{ start: at(14, 18) }, { start: at(20, 18) }],
+      ["1, 1, 1", "2, 2, 2"],
+      TZ,
+    );
+    expect(pile.month).toBe(wallTime(2026, 9, 1, 0, TZ));
+    expect(pile.layers.map((l) => [l.profileId, l.isNew])).toEqual([
+      ["old", false],
+      ["new", true],
+    ]);
+    // Busy time as bars, never the holidays everyone shares.
+    expect(pile.you.items).toHaveLength(1);
+    expect(pile.layers[1].colorOf("x")).toBe("2, 2, 2");
+  });
+
+  it("is seen long enough for every new calendar to land", () => {
+    expect(pileSeconds(0)).toBe(1.6);
+    expect(pileSeconds(3)).toBeGreaterThan(pileSeconds(1));
   });
 });
