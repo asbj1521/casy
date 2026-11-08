@@ -44,6 +44,6 @@ TZ=America/New_York swift test --package-path ios/Packages/CasyCore \
 scripts/native/snapshots.sh            # CasyUI's pictures; --record draws them anew
 ```
 
-CI's `native.yml` tests all three packages on a Mac and builds them for the iOS simulator, whenever `ios/Packages` or `src/lib` change.
+CI's `native.yml` tests all three packages on a Mac (CasyUI through `xcodebuild`, as its Xcode's plain `swift test` doesn't compile the String Catalog) and builds them for the iOS simulator, whenever `ios/Packages` or `src/lib` change.
 
 The snapshots (`CasyUISnapshotTests`) check layout, colours and words on the pinned simulator (iPhone 17, iOS 27.2), and are not on CI: its Xcode has an older iOS. They are drawn off screen, where **Liquid Glass doesn't show**, so glass is judged on a real phone.

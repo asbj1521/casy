@@ -45,10 +45,15 @@ jobs:
         env:
           TZ: America/New_York
         run: swift test --package-path ios/Packages/CasyAPI
+      # Through Xcode, as the app is built: on this Xcode plain `swift test`
+      # doesn't compile the String Catalog, so the strings wouldn't load.
       - name: Test CasyUI
+        working-directory: ios/Packages/CasyUI
         env:
           TZ: America/New_York
-        run: swift test --package-path ios/Packages/CasyUI
+        run: >
+          xcodebuild test -scheme CasyUI -destination "platform=macOS"
+          -only-testing:CasyUITests CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
       # The tests run on the Mac; what a phone compiles is proven here.
       - name: Build for the iOS simulator
         run: |
