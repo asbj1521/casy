@@ -16,7 +16,12 @@ import type { Db } from "./supabaseAdmin.ts";
 export const PER_ADDRESS_PER_HOUR = 5;
 export const PER_ADDRESS_PER_DAY = 10;
 /** Emails to everyone together, per hour: a spray at many addresses stops here. */
-export const ALL_PER_HOUR = 50;
+export const ALL_PER_HOUR = 30;
+/**
+ * And per day (#235), under the 100 a day of Resend's free plan, so a busy day
+ * still leaves room for the emails that are never limited. Raise it with the plan.
+ */
+export const ALL_PER_DAY = 80;
 
 /**
  * The kinds anyone can ask for with only an address. The rest need a
@@ -60,6 +65,7 @@ export async function claimAuthEmail(db: Db, recipient: string): Promise<Verdict
     p_per_hour: PER_ADDRESS_PER_HOUR,
     p_per_day: PER_ADDRESS_PER_DAY,
     p_all_per_hour: ALL_PER_HOUR,
+    p_all_per_day: ALL_PER_DAY,
   });
   if (error) throw error;
   return verdictOf(data);
@@ -81,6 +87,6 @@ export function refusal(verdict: "address" | "all", lang: Lang): string {
       : "Many emails have gone to that address lately. Wait an hour and try again.";
   }
   return lang === "da"
-    ? "Casy sender mange e-mails lige nu. Prøv igen om en time."
-    : "Casy is sending a lot of emails right now. Try again in an hour.";
+    ? "Casy sender mange e-mails lige nu. Prøv igen senere."
+    : "Casy is sending a lot of emails right now. Try again later.";
 }
