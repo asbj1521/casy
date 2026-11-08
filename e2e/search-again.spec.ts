@@ -56,6 +56,31 @@ test("searching again with nobody added asks first: everyone votes again", async
     .toMatchObject({ proposalId: "ev-cinema", add: [] });
 });
 
+test("when the server turns the search down, it says so, and nothing has changed", async ({
+  page,
+  backend,
+}) => {
+  await asTheApp(page);
+  await page.goto("/?events=ev-cinema");
+  const vote = page.getByRole("dialog", { name: "Biograf" });
+  await expect(vote.getByRole("button", { name: "Søg igen" })).toBeVisible();
+  // A server without the action yet (its deploy not done): the vote is as it was.
+  await page.route("**/functions/v1/events?*", async (route) => {
+    if (route.request().postDataJSON()?.action !== "search-again") return route.fallback();
+    await route.fulfill({ status: 400, json: { error: "Unknown action: search-again" } });
+  });
+  await vote.getByRole("button", { name: "Søg igen" }).click();
+  await page
+    .getByRole("dialog", { name: "Er du sikker?" })
+    .getByRole("button", { name: "Søg igen" })
+    .click();
+  // Said where it can't be missed, the vote unchanged, and ready to try again.
+  await expect(vote.getByText("Unknown action: search-again")).toBeVisible();
+  await expect(vote.getByText("fre. 16. okt. · 20:00-22:30")).toBeVisible();
+  expect(backend.calls.some((c) => c.body.action === "search-again")).toBe(false);
+  await expect(vote.getByRole("button", { name: "Søg igen" })).toBeVisible();
+});
+
 test("the website has none of it", async ({ page }) => {
   await page.goto("/?events=ev-cinema");
   const vote = page.getByRole("dialog", { name: "Biograf" });

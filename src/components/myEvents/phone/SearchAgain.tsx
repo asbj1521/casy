@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, useReducedMotion } from "framer-motion";
-import { RefreshCw, TriangleAlert, UserPlus } from "lucide-react";
+import { Loader2, RefreshCw, TriangleAlert, UserPlus } from "lucide-react";
 
 import Avatar from "@/components/ui/Avatar";
 import ConfirmPanel from "@/components/ui/ConfirmPanel";
@@ -43,6 +43,8 @@ export default function SearchAgain({ event }: { event: VoteEvent }) {
     still,
   });
   const run = (add: string[]) => search.mutate(add, { onSettled: () => setPile(null) });
+  // Searching: nothing more to press until it has answered.
+  const busy = search.isPending;
 
   const openPicking = () => {
     search.reset();
@@ -69,21 +71,26 @@ export default function SearchAgain({ event }: { event: VoteEvent }) {
             icon={UserPlus}
             label={words.missing(missing.length)}
             chevron
-            onClick={openPicking}
+            onClick={busy ? undefined : openPicking}
           />
         )}
         <ListRow
           icon={RefreshCw}
           label={words.button}
-          onClick={() => {
-            search.reset();
-            setWarning(true);
-          }}
+          value={busy ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : undefined}
+          onClick={
+            busy
+              ? undefined
+              : () => {
+                  search.reset();
+                  setWarning(true);
+                }
+          }
         />
       </ListGroup>
       {/* A failure once the asking sheet has gone (the server's answer). */}
       {search.error && !picking && !warning && (
-        <Notice tone="error" bare className="mt-2">
+        <Notice tone="error" className="mt-2">
           {search.error.message}
         </Notice>
       )}
