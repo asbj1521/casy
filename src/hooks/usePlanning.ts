@@ -62,6 +62,7 @@ import {
 import { readStored, writeStored } from "@/lib/storage";
 import { addDays, APP_TIME_ZONE, dayOf, localDate, startOfMonth } from "@/lib/zone";
 import { oncePerLoad } from "@/lib/appRandom";
+import type { PrimeDate } from "@/lib/primeDates";
 import { withAnswers, type AgainStart } from "@/lib/searchAgain";
 
 /** The zone every search and every day planned is local to. */
@@ -145,6 +146,8 @@ export interface PlanStart {
   extras?: Partial<EventExtras>;
   /** Who it is for (#89). */
   people?: PeopleChoice;
+  /** A starred day of Tid til hinanden (#171, #243), said at the top while it is the plan. */
+  prime?: PrimeDate;
   /**
    * A vote searched again (#240): its answers count in the search, and
    * sending gives it the dates instead of making a new vote.
@@ -869,6 +872,11 @@ export function usePlanning({
     user,
     /** A vote searched again (#240), or null. */
     again,
+    /** The starred day being planned (#243), while the months are still its day. */
+    prime:
+      start?.prime && sched.period && Date.parse(sched.period.from) === start.prime.day
+        ? start.prime
+        : null,
     // The group, and who in it the event is for.
     groups,
     activeGroup,

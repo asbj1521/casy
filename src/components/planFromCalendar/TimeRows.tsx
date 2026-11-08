@@ -52,6 +52,7 @@ export default function TimeRows({
   onChange,
   lit = null,
   drive = null,
+  anyTimeLabel,
 }: {
   settings: SchedulerSettings;
   onChange: (patch: Partial<SchedulerSettings>) => void;
@@ -59,6 +60,8 @@ export default function TimeRows({
   lit?: FillKey | null;
   /** While Casy fills the sheet in: the row's sheet it has open, the button it presses. */
   drive?: { sheet: FillSheet | null; press: FillPress | null } | null;
+  /** Said for "any time" instead (#243: a starred day's free hours, which it searches within). */
+  anyTimeLabel?: string | null;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -191,7 +194,7 @@ export default function TimeRows({
                     clock(settings.startHour * 60),
                     clock(settings.startHour * 60 + settings.durationMinutes),
                   )
-                : `${startLabel}, ${t.common.duration(settings.durationMinutes)}`
+                : `${(settings.anyTime && anyTimeLabel) || startLabel}, ${t.common.duration(settings.durationMinutes)}`
             }
             chevron
             onClick={() => setOpen("time")}

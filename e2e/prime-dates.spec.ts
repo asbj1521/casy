@@ -52,6 +52,8 @@ test("a starred day says which group is free, and Planlæg opens on it", async (
   await expect(plan).toContainText("Løbeklubben");
   await expect(plan).toContainText("2 dage");
   await expect(plan).toContainText("Casy har sat datoerne: 24. okt. til 25. okt. Tryk");
+  // Said first, what is being planned (#243).
+  await expect(plan).toContainText("Tid til hinanden · Lørdag 24. oktober, Hele weekenden");
   await expect(sheet).toBeHidden();
 });
 

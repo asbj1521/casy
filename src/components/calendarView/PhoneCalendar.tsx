@@ -691,6 +691,7 @@ export default function PhoneCalendar() {
               (planStart && {
                 groupId: planStart.groupId,
                 settings: primeDatePlan(planStart, APP_TIME_ZONE),
+                prime: planStart,
               })
             }
           />

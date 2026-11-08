@@ -9,9 +9,9 @@ import Sheet from "@/components/ui/Sheet";
 import { useSignedInUser } from "@/context/auth";
 import { useLang, useT } from "@/i18n/lang";
 import { LOCALE } from "@/i18n/locale";
-import { formatLongDate, formatTime } from "@/lib/format";
-import { stretchShape, type PrimeDate } from "@/lib/primeDates";
-import { APP_TIME_ZONE } from "@/lib/zone";
+import { formatLongDate } from "@/lib/format";
+import type { PrimeDate } from "@/lib/primeDates";
+import { usePrimeWhen } from "@/hooks/usePrimeWhen";
 
 /**
  * A starred day on the home page, opened (#171): which group is free, when,
@@ -43,15 +43,7 @@ export default function PrimeDateSheet({
       ])
     : "";
   const iso = (ms: number) => new Date(ms).toISOString();
-  const time = (ms: number) => formatTime(iso(ms));
-  const when =
-    prime &&
-    {
-      weekend: () => t.prime.weekend,
-      allDay: () => t.prime.allDay,
-      from: () => t.prime.from(time(prime.start)),
-      between: () => t.prime.until(time(prime.start), time(prime.end)),
-    }[stretchShape(prime, APP_TIME_ZONE)]();
+  const when = usePrimeWhen(prime);
 
   return (
     <Sheet

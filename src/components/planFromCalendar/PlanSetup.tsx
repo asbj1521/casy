@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Star } from "lucide-react";
+
+import { usePrimeWhen } from "@/hooks/usePrimeWhen";
 
 import DanishTimeNote from "@/components/time/DanishTimeNote";
 import type { Planning } from "@/hooks/usePlanning";
-import { useT } from "@/i18n/lang";
+import { useLang, useT } from "@/i18n/lang";
+import { capitalize, dayLabel } from "@/lib/format";
 import { matchNames, mentionedNames, type AiPlan } from "@/lib/aiPlan";
 import { flexAround, flexOf } from "@/lib/startFlex";
 
@@ -41,6 +45,7 @@ export default function PlanSetup({
   editor?: { top: ReactNode };
 }) {
   const t = useT();
+  const { lang } = useLang();
   const {
     activeGroup,
     aiOn,
@@ -97,6 +102,8 @@ export default function PlanSetup({
   }, [sched, updateSettings]);
 
   const shown = fill.settings ?? sched;
+  // A starred day's free hours (#243), while it is the day being planned.
+  const primeWhen = usePrimeWhen(planning.prime);
 
   return (
     <>
@@ -118,6 +125,18 @@ export default function PlanSetup({
           </>
         ) : (
           <>
+            {/* Planning a starred day (#243): which, and when everyone is free, said first. */}
+            {planning.prime && (
+              <p className="mb-3 flex items-center gap-2 px-1 text-[0.9375rem] text-foreground">
+                <Star aria-hidden className="h-4 w-4 shrink-0 fill-primary text-primary" />
+                <span className="min-w-0">
+                  <span className="font-semibold">{t.prime.title}</span>
+                  {" · "}
+                  {capitalize(dayLabel(new Date(planning.prime.day), lang))}
+                  {primeWhen && `, ${primeWhen}`}
+                </span>
+              </p>
+            )}
             <div className="flex gap-3">
               <GroupRow planning={planning} className="mt-0 min-w-0 flex-1" />
               {onShortcuts && (
@@ -141,6 +160,7 @@ export default function PlanSetup({
         )}
 
         <TimeRows
+          anyTimeLabel={primeWhen && capitalize(primeWhen)}
           settings={shown}
           onChange={updateSettingsByHand}
           lit={fill.lit}
