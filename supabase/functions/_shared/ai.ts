@@ -24,7 +24,14 @@ import type { Db } from "./supabaseAdmin.ts";
 export const AI_MODEL = "claude-haiku-5-5";
 
 /** Every call together, per day in Danish time: the ceiling over all budgets. */
-export const GLOBAL_DAILY_AI_CALLS = 500;
+export const GLOBAL_DAILY_AI_CALLS = 3000;
+
+/**
+ * Once the day's calls reach this many, the skills marked `spareOnly` stop for
+ * the day (#235), so the rest of the ceiling stays for what makes the suggested
+ * dates good: reading people's calendars and what an event will cost them.
+ */
+export const SPARE_ONLY_DAILY_AI_CALLS = 1200;
 
 /**
  * Admins and AI testers get this many times each skill's daily budget:
@@ -47,8 +54,11 @@ export type Skill =
  * Each skill's budget, and whether someone is waiting on the page (one quick
  * retry) or it runs in the background (more patience).
  */
-export const SKILLS: Record<Skill, { perPersonPerDay: number; waiting: boolean }> = {
-  "plan-ai": { perPersonPerDay: 30, waiting: true },
+export const SKILLS: Record<
+  Skill,
+  { perPersonPerDay: number; waiting: boolean; spareOnly?: boolean }
+> = {
+  "plan-ai": { perPersonPerDay: 10, waiting: true, spareOnly: true },
   // Runs once per new calendar; more than a few a day means something loops.
   "calendar-categorize": { perPersonPerDay: 5, waiting: false },
   // A first run is a few batches of 50 titles; after that only new titles.
@@ -58,10 +68,15 @@ export const SKILLS: Record<Skill, { perPersonPerDay: number; waiting: boolean }
   // Once per event set up (cached per name, place, note and timing).
   "event-profile": { perPersonPerDay: 40, waiting: true },
   // Tell Casy (#116): a go at saying when you're away or busy, and each correction of it.
-  "entries-ai": { perPersonPerDay: 30, waiting: true },
+  "entries-ai": { perPersonPerDay: 10, waiting: true, spareOnly: true },
   // Trip detection (#115): only travel events, a batch of 50 each; after the first run only new ones.
   "trip-legs": { perPersonPerDay: 10, waiting: false },
 };
+
+/** How many of the day's calls, from everyone together, a skill may run under. */
+export function dailyCeiling(skill: Skill): number {
+  return SKILLS[skill].spareOnly ? SPARE_ONLY_DAILY_AI_CALLS : GLOBAL_DAILY_AI_CALLS;
+}
 
 /**
  * Haiku 5.5's list price in dollars per million tokens, for the admin
@@ -166,7 +181,7 @@ export async function runSkill<T>(
     p_skill: call.skill,
     p_profile_id: profileId,
     p_user_limit: budget.perPersonPerDay * factor,
-    p_global_limit: GLOBAL_DAILY_AI_CALLS,
+    p_global_limit: dailyCeiling(call.skill),
   });
   if (error) throw error;
   const claim = data as Claim;

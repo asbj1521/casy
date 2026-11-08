@@ -2,7 +2,9 @@ import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 
 import {
   estimateCost,
+  dailyCeiling,
   GLOBAL_DAILY_AI_CALLS,
+  SPARE_ONLY_DAILY_AI_CALLS,
   runSkill,
   SKILLS,
   TESTER_BUDGET_FACTOR,
@@ -74,7 +76,7 @@ Deno.test("a call claims the skill's budget for the person, under the ceiling", 
     p_skill: "plan-ai",
     p_profile_id: "user-1",
     p_user_limit: SKILLS["plan-ai"].perPersonPerDay,
-    p_global_limit: GLOBAL_DAILY_AI_CALLS,
+    p_global_limit: SPARE_ONLY_DAILY_AI_CALLS,
   });
   assertEquals(calls.id, 7);
   assertEquals(calls.usage, {
@@ -89,7 +91,7 @@ Deno.test("an AI tester gets a larger budget per skill, under the same ceiling",
   const { db, calls } = fakeDb({ id: 8, userLeft: 199 }, true, true);
   await runSkill(db, "tester-1", call, answering("ok"));
   assertEquals(calls.rpc?.p_user_limit, SKILLS["plan-ai"].perPersonPerDay * TESTER_BUDGET_FACTOR);
-  assertEquals(calls.rpc?.p_global_limit, GLOBAL_DAILY_AI_CALLS);
+  assertEquals(calls.rpc?.p_global_limit, SPARE_ONLY_DAILY_AI_CALLS);
 });
 
 Deno.test("a used-up budget says whose, and never asks the model", async () => {
@@ -247,3 +249,22 @@ Deno.test(
     assertEquals(asked, 2);
   },
 );
+
+Deno.test("what makes the suggested dates good keeps the whole ceiling (#235)", () => {
+  for (const skill of [
+    "event-label",
+    "event-relabel",
+    "event-profile",
+    "calendar-categorize",
+    "trip-legs",
+  ] as const) {
+    assertEquals(dailyCeiling(skill), GLOBAL_DAILY_AI_CALLS);
+  }
+});
+
+Deno.test("creating from words stops first, leaving room for the rest (#235)", () => {
+  for (const skill of ["plan-ai", "entries-ai"] as const) {
+    assertEquals(dailyCeiling(skill), SPARE_ONLY_DAILY_AI_CALLS);
+  }
+  assertEquals(SPARE_ONLY_DAILY_AI_CALLS < GLOBAL_DAILY_AI_CALLS, true);
+});
