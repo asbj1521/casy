@@ -1,0 +1,43 @@
+name: Native packages
+
+# The Swift packages (#197), tested on a Mac: CI's other jobs run on Linux.
+# Only when they or the TypeScript they mirror change, so a commit to the
+# website alone doesn't wait for a macOS runner.
+on:
+  push:
+    paths:
+      - "ios/Packages/**"
+      - "src/lib/**"
+      - ".github/workflows/native.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ios/Packages/**"
+      - "src/lib/**"
+      - ".github/workflows/native.yml"
+
+# As in ci.yml: a new push to a branch cancels its runs still going, never on main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  casycore:
+    name: CasyCore
+    # macos-latest: a job asking for macos-26 waited in the queue with no runner.
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # Xcode 26 at the least, for Swift tools 6.2. The newest installed.
+      - name: Pick Xcode 26 or later
+        run: |
+          xcode=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$xcode" ]; then echo "::error::No Xcode 26 or later on this runner"; exit 1; fi
+          sudo xcode-select -s "$xcode/Contents/Developer"
+          xcodebuild -version
+      # In New York, as Vitest is, so a slip into the device's own zone fails.
+      - name: Test
+        env:
+          TZ: America/New_York
+        run: swift test --package-path ios/Packages/CasyCore
