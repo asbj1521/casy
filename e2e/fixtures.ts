@@ -45,7 +45,7 @@ const user = {
   updated_at: "2026-09-01T10:00:00.000Z",
 };
 
-function session() {
+function session(over: Record<string, unknown> | null = null) {
   // A year past NOW: the stopped clock never reaches it, so auth-js never refreshes.
   const expiresAt = Math.floor(Date.parse(NOW) / 1000) + 365 * 24 * 3600;
   return {
@@ -54,7 +54,7 @@ function session() {
     token_type: "bearer",
     expires_in: 3600,
     expires_at: expiresAt,
-    user,
+    user: over ? { ...user, ...over } : user,
   };
 }
 
@@ -80,7 +80,12 @@ async function routeSupabase(page: Page, backend: FakeBackend) {
     }
     if (url.pathname === "/auth/v1/user") return fulfil(200, user);
     if (url.pathname === "/auth/v1/logout") return fulfil(204);
-    if (url.pathname === "/auth/v1/token") return fulfil(200, session());
+    if (url.pathname === "/auth/v1/token") {
+      // Sign in with Apple (#245): as the test says Apple's account is, else the usual.
+      const apple = url.searchParams.get("grant_type") === "id_token";
+      if (apple && backend.appleFails) return fulfil(422, backend.appleFails);
+      return fulfil(200, session(apple ? backend.appleUser : null));
+    }
     backend.unknown.push(`${request.method()} ${url.pathname}`);
     return fulfil(404, { error: "not in the test backend" });
   });

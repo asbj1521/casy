@@ -1,22 +1,31 @@
-import { useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { isAuthError } from "@supabase/auth-js";
 import { KeyRound, Loader2, Mail, type LucideIcon } from "lucide-react";
 import { SiApple } from "react-icons/si";
 
+import { deleteMyAccount } from "@/api/account";
 import { calendarStatusQuery } from "@/api/calendars";
 import PasswordForm from "@/components/PasswordForm";
 import TopNav from "@/components/TopNav";
 import { FIELD, FIELD_LABEL } from "@/components/ui/field";
 import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
+import Sheet from "@/components/ui/Sheet";
 import { useAuth } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
-import { signInWithApple } from "@/lib/appleSignIn";
+import { answerAppleQuestion, appleStage, onAppleStage, signInWithApple } from "@/lib/appleSignIn";
 import { cardArrived } from "@/lib/cardTransition";
 import { isNativeApp, SITE_URL } from "@/lib/nativeApp";
 import { returnPathAfterSignIn } from "@/lib/signInReturn";
@@ -99,6 +108,10 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [sending, setSending] = useState(false);
   const [appleBusy, setAppleBusy] = useState(false);
+  // A first Apple sign-in that made a new account (#245): asked before going
+  // on, and told how to come in after a "yes, I have one" (appleSignIn.ts).
+  const apple = useSyncExternalStore(onAppleStage, appleStage);
+  const [leaving, setLeaving] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(errorFromUrl);
 
@@ -181,6 +194,47 @@ export default function SignIn() {
     );
   }
 
+  // Just made by Apple (#245): nothing goes on until it is said whether the
+  // person had an account already. A "yes" deletes the empty one just made
+  // (seconds old, nothing in it) and signs out, for the old way in.
+  if (user && (apple === "signing" || apple === "ask")) {
+    const leaveForOld = async () => {
+      setLeaving(true);
+      try {
+        await deleteMyAccount();
+      } catch (err) {
+        console.warn("Could not delete the account Apple just made", err);
+      }
+      // Signed out first: answered while still signed in, the page would go on in.
+      await supabaseAuth.signOut({ scope: "local" });
+      answerAppleQuestion("told");
+      setLeaving(false);
+    };
+    return (
+      <div className="min-h-screen bg-background">
+        <Sheet
+          open={apple === "ask"}
+          onClose={() => answerAppleQuestion("idle")}
+          title={t.signIn.haveAccountTitle}
+          closeLabel={t.common.cancel}
+          busy={leaving}
+          footer={
+            <div className="flex flex-col gap-2">
+              <FlowButton onClick={() => answerAppleQuestion("idle")} disabled={leaving}>
+                {t.signIn.imNew}
+              </FlowButton>
+              <FlowButton quiet onClick={() => void leaveForOld()} busy={leaving}>
+                {t.signIn.haveAccount}
+              </FlowButton>
+            </div>
+          }
+        >
+          <p className="text-[0.9375rem] text-foreground">{t.signIn.haveAccountBody}</p>
+        </Sheet>
+      </div>
+    );
+  }
+
   if (user) {
     // A computer goes where it was heading, and asks for a calendar there if
     // none is connected (ConnectCalendarPrompt).
@@ -221,7 +275,8 @@ export default function SignIn() {
     setAppleBusy(true);
     setError(null);
     try {
-      // Signed in, the auth state change above redirects via `user`.
+      // Signed in, the auth state change above redirects via `user`, unless
+      // Apple has just made the account (#245): then it is asked first.
       await signInWithApple();
     } catch (err) {
       setError(isAuthError(err) ? authErrorMessage(err, t) : t.signIn.appleFailed);
@@ -447,6 +502,13 @@ export default function SignIn() {
           {t.signIn.title}
         </h1>
         {!isNativeApp && <p className="mt-2 text-sm text-muted-foreground">{t.signIn.intro}</p>}
+
+        {/* Back from an Apple sign-in that would have been a second account (#245). */}
+        {apple === "told" && (
+          <Notice tone="info" className="mt-4">
+            {t.signIn.useOldWay}
+          </Notice>
+        )}
 
         {/* Arrived here right after deleting an account from the profile. */}
         {searchParams.get("deleted") && (

@@ -970,6 +970,15 @@ export const da = {
     emailNotConfirmed: "Bekræft din e-mail først. Tjek din indbakke.",
     userExists: "Der findes allerede en konto med den e-mail.",
     codeInvalid: "Koden er forkert eller udløbet. Tjek mailen, eller få en ny kode.",
+    appleTaken: "Det Apple-id hører allerede til en anden Casy-konto.",
+    linkingOff: "Apple kan ikke tilføjes lige nu. Prøv igen senere.",
+  },
+  // Apple as a second way into the account (#245), under Log ind og sikkerhed.
+  appleLink: {
+    label: "Log ind med Apple",
+    add: "Tilføj",
+    added: "Tilføjet",
+    footnote: "Så fører Log ind med Apple altid til denne konto.",
   },
   categories: {
     work: "Arbejde",
@@ -1676,6 +1685,14 @@ export const da = {
     google: "Fortsæt med Google",
     apple: "Fortsæt med Apple",
     appleFailed: "Log ind med Apple lykkedes ikke. Prøv igen.",
+    // A first Apple sign-in that has made a new account (#245).
+    haveAccountTitle: "Har du allerede en Casy-konto?",
+    haveAccountBody:
+      "Du er logget ind med Apple for første gang. Har du brugt Casy før med Google eller e-mail, så log ind på den måde i stedet, så du ikke får to konti.",
+    imNew: "Nej, jeg er ny",
+    haveAccount: "Ja, jeg har en konto",
+    useOldWay:
+      "Log ind på den måde, du gjorde før. Bagefter kan du tilføje Apple under Log ind og sikkerhed.",
     or: "eller",
     acceptTerms: (terms: ReactNode, privacy: ReactNode) => (
       <>

@@ -929,6 +929,15 @@ export const en: Messages = {
     emailNotConfirmed: "Confirm your email first. Check your inbox.",
     codeInvalid: "That code is wrong or has expired. Check the email, or get a new code.",
     userExists: "There is already an account with that email.",
+    appleTaken: "That Apple ID already belongs to another Casy account.",
+    linkingOff: "Apple can't be added right now. Try again later.",
+  },
+  // Apple as a second way into the account (#245), under Sign-in and security.
+  appleLink: {
+    label: "Sign in with Apple",
+    add: "Add",
+    added: "Added",
+    footnote: "Then Sign in with Apple always leads to this account.",
   },
   categories: {
     work: "Work",
@@ -1618,6 +1627,14 @@ export const en: Messages = {
     google: "Continue with Google",
     apple: "Continue with Apple",
     appleFailed: "Signing in with Apple didn't work. Try again.",
+    // A first Apple sign-in that has made a new account (#245).
+    haveAccountTitle: "Do you already have a Casy account?",
+    haveAccountBody:
+      "You signed in with Apple for the first time. If you have used Casy before with Google or email, sign in that way instead, so you don't end up with two accounts.",
+    imNew: "No, I'm new",
+    haveAccount: "Yes, I have an account",
+    useOldWay:
+      "Sign in the way you did before. Afterwards you can add Apple under Sign-in and security.",
     or: "or",
     acceptTerms: (terms: ReactNode, privacy: ReactNode) => (
       <>

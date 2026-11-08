@@ -35,6 +35,10 @@ function answerBy(days: unknown): string | null {
 }
 
 export class FakeBackend {
+  /** What a sign-in with Apple's token answers for the account (#245); null: the usual person. */
+  appleUser: Record<string, unknown> | null = null;
+  /** An Apple sign-in or link Supabase turns down, as its error body (#245). */
+  appleFails: { error_code: string; msg: string } | null = null;
   /** Calls nobody answers, as "function action": the test fails if any. */
   readonly unknown: string[] = [];
   /** Every call made, in order, for tests that check what the page sent. */

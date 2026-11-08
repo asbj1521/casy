@@ -23,6 +23,12 @@ export function authErrorMessage(err: { code?: string; message: string }, t: Mes
     case "user_already_exists":
     case "email_exists":
       return t.authErrors.userExists;
+    // Adding Apple to an account (#245): it is someone else's way in already,
+    // or linking is switched off in Supabase Auth.
+    case "identity_already_exists":
+      return t.authErrors.appleTaken;
+    case "manual_linking_disabled":
+      return t.authErrors.linkingOff;
     default:
       return err.message;
   }

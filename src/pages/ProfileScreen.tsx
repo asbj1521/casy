@@ -7,10 +7,12 @@ import { adminStatusQuery } from "@/api/adminStatus";
 import { whoAmIQuery } from "@/api/groups";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
 import PasswordSection from "@/components/PasswordSection";
+import AppleSignInRow from "@/components/profile/AppleSignInRow";
 import { displayName, useSignedInUser } from "@/context/auth";
 import { CALENDAR_ACCOUNTS_PATH } from "@/hooks/useCalendarsHome";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { isNativeApp } from "@/lib/nativeApp";
 import { sheetAddress, sheetScreenFor } from "@/lib/profileScreens";
 
 /** Admin mode's panel, loaded only when an admin opens it (as on the computer). */
@@ -42,7 +44,13 @@ export default function ProfileScreen() {
 export function PasswordContent() {
   const user = useSignedInUser();
   const { data: whoAmI } = useQuery(whoAmIQuery(user.id));
-  return <PasswordSection name={whoAmI?.name ?? displayName(user)} titled={false} />;
+  return (
+    <>
+      <PasswordSection name={whoAmI?.name ?? displayName(user)} titled={false} />
+      {/* Apple as a second way in (#245): the app only, the website has no Apple sign-in. */}
+      {isNativeApp && <AppleSignInRow />}
+    </>
+  );
 }
 
 /** Slet konto, in the Profil sheet (#174). */
