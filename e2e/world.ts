@@ -699,7 +699,11 @@ export function myData(world: World): MyData {
       count: mine.length,
       first: mine[0]?.start ?? null,
       last: mine.at(-1)?.end ?? null,
-      next: mine.filter((b) => b.start > NOW).slice(0, 3),
+      // As the real one: a start and an end, nothing else.
+      next: mine
+        .filter((b) => b.start > NOW)
+        .slice(0, 3)
+        .map(({ start, end }) => ({ start, end })),
     },
     groups: world.groups.map((g) => ({
       name: g.name,

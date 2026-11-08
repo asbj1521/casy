@@ -22,8 +22,8 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  casycore:
-    name: CasyCore
+  packages:
+    name: Swift packages
     # macos-latest: a job asking for macos-26 waited in the queue with no runner.
     runs-on: macos-latest
     timeout-minutes: 20
@@ -37,7 +37,11 @@ jobs:
           sudo xcode-select -s "$xcode/Contents/Developer"
           xcodebuild -version
       # In New York, as Vitest is, so a slip into the device's own zone fails.
-      - name: Test
+      - name: Test CasyCore
         env:
           TZ: America/New_York
         run: swift test --package-path ios/Packages/CasyCore
+      - name: Test CasyAPI
+        env:
+          TZ: America/New_York
+        run: swift test --package-path ios/Packages/CasyAPI

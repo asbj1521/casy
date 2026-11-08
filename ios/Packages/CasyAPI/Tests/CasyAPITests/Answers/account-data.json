@@ -1,0 +1,185 @@
+{
+  "account": {
+    "email": "mia@example.com",
+    "name": "Mia Jensen",
+    "nameIsCustom": false,
+    "picture": false,
+    "signIn": [
+      "email"
+    ],
+    "appleToken": false,
+    "push": {
+      "devices": 0,
+      "off": []
+    },
+    "language": "da",
+    "createdAt": "2026-09-01T10:00:00.000Z"
+  },
+  "calendars": [
+    {
+      "provider": "apple",
+      "label": "mia@icloud.com",
+      "status": "connected",
+      "connectedAt": "2026-09-01T10:00:00.000Z",
+      "lastSyncedAt": "2026-10-07T07:40:00.000Z",
+      "credential": "password",
+      "calendars": [
+        {
+          "name": "Arbejde",
+          "customName": null,
+          "purpose": "work",
+          "purposeGuessed": false,
+          "priority": "normal",
+          "included": true,
+          "busyCount": 87
+        },
+        {
+          "name": "Privat",
+          "customName": null,
+          "purpose": "personal",
+          "purposeGuessed": false,
+          "priority": "normal",
+          "included": true,
+          "busyCount": 26
+        },
+        {
+          "name": "Familie",
+          "customName": null,
+          "purpose": null,
+          "purposeGuessed": false,
+          "priority": "normal",
+          "included": true,
+          "busyCount": 9
+        }
+      ]
+    },
+    {
+      "provider": "google",
+      "label": "mia@example.com",
+      "status": "connected",
+      "connectedAt": "2026-09-05T10:00:00.000Z",
+      "lastSyncedAt": "2026-10-07T07:40:00.000Z",
+      "credential": "oauth",
+      "calendars": [
+        {
+          "name": "mia@example.com",
+          "customName": "Kor",
+          "purpose": "personal",
+          "purposeGuessed": false,
+          "priority": "normal",
+          "included": true,
+          "busyCount": 18
+        }
+      ]
+    },
+    {
+      "provider": "ics",
+      "label": "Fodbold",
+      "status": "connected",
+      "connectedAt": "2026-09-10T10:00:00.000Z",
+      "lastSyncedAt": "2026-10-07T07:40:00.000Z",
+      "credential": "link",
+      "calendars": [
+        {
+          "name": "Fodbold",
+          "customName": null,
+          "purpose": "other",
+          "purposeGuessed": false,
+          "priority": "skip",
+          "included": true,
+          "busyCount": 17
+        }
+      ]
+    }
+  ],
+  "primary": {
+    "calendar": "Privat",
+    "autoAdd": false,
+    "lang": "da"
+  },
+  "busy": {
+    "count": 157,
+    "first": "2026-10-01T06:30:00.000Z",
+    "last": "2027-01-29T15:00:00.000Z",
+    "next": [
+      {
+        "start": "2026-10-08T06:30:00.000Z",
+        "end": "2026-10-08T14:00:00.000Z"
+      },
+      {
+        "start": "2026-10-08T17:00:00.000Z",
+        "end": "2026-10-08T19:00:00.000Z"
+      },
+      {
+        "start": "2026-10-09T06:30:00.000Z",
+        "end": "2026-10-09T14:00:00.000Z"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "Fredagsbar",
+      "description": "En øl efter arbejde, når det passer de fleste",
+      "members": 4,
+      "createdByYou": true,
+      "joinedAt": "2026-09-01T12:00:00.000Z",
+      "primeDates": true
+    },
+    {
+      "name": "Løbeklubben",
+      "description": null,
+      "members": 3,
+      "createdByYou": false,
+      "joinedAt": "2026-09-11T12:00:00.000Z",
+      "primeDates": true
+    }
+  ],
+  "inviteLinks": {
+    "made": 2,
+    "active": 1
+  },
+  "invitations": {
+    "pending": 1,
+    "declined": 0,
+    "sent": 3
+  },
+  "emailLookups": 0,
+  "events": {
+    "invitedTo": 7,
+    "suggested": 2,
+    "answers": 9,
+    "declined": 1
+  },
+  "calendarEntries": {
+    "added": 1,
+    "deletedByYou": 0
+  },
+  "toldCasy": {
+    "count": 0
+  },
+  "shortcuts": {
+    "count": 0,
+    "pictures": 0
+  },
+  "groupPictures": {
+    "count": 0
+  },
+  "safety": {
+    "blocked": 0,
+    "reportsSent": 0
+  },
+  "friends": {
+    "count": 0
+  },
+  "ai": {
+    "calls": 2,
+    "consent": {
+      "givenAt": "2026-10-01T09:00:00.000Z",
+      "current": true
+    },
+    "corrections": {
+      "kept": 0,
+      "sharing": true
+    }
+  }
+}

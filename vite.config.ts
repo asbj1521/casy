@@ -66,8 +66,9 @@ export default defineConfig({
     },
   },
   test: {
-    // The site's own tests; the browser tests in e2e/ are Playwright's.
-    include: ["src/**/*.test.{ts,tsx}"],
+    // The site's own tests; the browser tests in e2e/ are Playwright's. The
+    // .parity files there write what the Swift tests read (#197).
+    include: ["src/**/*.test.{ts,tsx}", "e2e/*.parity.ts"],
     // The tests never talk to a real project, so they get a made-up one
     // instead of whatever a developer's .env.local holds (CI has none).
     env: {
