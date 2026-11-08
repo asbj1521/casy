@@ -17,13 +17,8 @@ import {
   wallTime,
 } from "@/lib/zone";
 
+import type { ParityCase } from "./cases";
 import { seededRandom } from "./random";
-
-export interface ParityCase {
-  name: string;
-  input: { fn: string; args: Record<string, unknown> };
-  output: unknown;
-}
 
 const ZONES = [
   "Europe/Copenhagen",

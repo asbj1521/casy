@@ -9,9 +9,20 @@ import { describe, expect, it } from "vitest";
 
 // Read as text through Vite (?raw): the app's TypeScript settings have no
 // Node types for node:fs.
+import eventsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/events.json?raw";
+import formatFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/format.json?raw";
+import holidaysFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/holidays.json?raw";
+import periodFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/period.json?raw";
+import phoneBusyFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/phoneBusy.json?raw";
 import zoneFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/zone.json?raw";
 
-import { type ParityCase, zoneCases } from "./zone.cases";
+import type { ParityCase } from "./cases";
+import { eventsCases } from "./events.cases";
+import { formatCases } from "./format.cases";
+import { holidaysCases } from "./holidays.cases";
+import { periodCases } from "./period.cases";
+import { phoneBusyCases } from "./phoneBusy.cases";
+import { zoneCases } from "./zone.cases";
 
 const FIXTURES = "ios/Packages/CasyCore/Tests/CasyCoreTests/Parity";
 
@@ -20,7 +31,14 @@ function written(cases: ParityCase[]): string {
   return `[\n${cases.map((c) => JSON.stringify(c)).join(",\n")}\n]\n`;
 }
 
-describe.each([["zone", zoneCases(), zoneFixture]] as const)("%s", (module, cases, fixture) => {
+describe.each([
+  ["zone", zoneCases(), zoneFixture],
+  ["format", formatCases(), formatFixture],
+  ["holidays", holidaysCases(), holidaysFixture],
+  ["period", periodCases(), periodFixture],
+  ["phoneBusy", phoneBusyCases(), phoneBusyFixture],
+  ["events", eventsCases(), eventsFixture],
+] as const)("%s", (module, cases, fixture) => {
   it.runIf(import.meta.env.UPDATE_PARITY)("writes the fixtures", async () => {
     // Named through a variable so the type check doesn't look for Node's types.
     const fsModule: string = "node:fs";

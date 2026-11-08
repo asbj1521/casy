@@ -84,6 +84,11 @@ private func utcMilliseconds(year: Int, month: Int, day: Int) -> Int64 {
     return (days + Int64(day) - 1) * msPerDay
 }
 
+/// Midnight UTC of a calendar date, the month 0-based and rolling over.
+func calendarDayMilliseconds(_ year: Int, _ month: Int, _ day: Int) -> Int64 {
+    utcMilliseconds(year: year, month: month, day: day)
+}
+
 /// JavaScript's `Math.round`: halves go up, also below zero.
 private func roundedLikeJavaScript(_ value: Double) -> Int64 {
     let below = value.rounded(.down)
@@ -203,7 +208,7 @@ public func isoString(_ ms: Int64) -> String {
 /// `Date.parse` does with what Postgres sends.
 public func parseInstant(_ text: String) -> Int64? {
     let pattern =
-        /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:\d{2})$/
+        /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:\d{2})$/.asciiOnlyDigits()
     guard let m = text.wholeMatch(of: pattern),
         let year = Int(m.1), let month = Int(m.2), let day = Int(m.3),
         let hour = Int64(m.4), let minute = Int64(m.5),
