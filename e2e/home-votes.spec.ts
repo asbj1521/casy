@@ -29,11 +29,14 @@ test("a waiting vote is answered over the day view, which moves on to each date"
   await expect(card.getByText("Dato 1 af 3", { exact: true })).toBeVisible();
   await expect(view).toHaveAccessibleName("Onsdag 14. oktober");
 
-  // Færdig leaves the rest for later, back on the month.
+  // Færdig leaves the rest for later, back on the month, the vote put away (#241).
   await card.getByRole("button", { name: "Færdig" }).click();
   await expect(card).toHaveCount(0);
   await expect(page).toHaveURL(/\/$/);
   await expect(view).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Svar på Brætspilsaften" })).toHaveCount(0);
+  // The app opened again: there it is.
+  await page.reload();
   await expect(page.getByRole("button", { name: "Svar på Brætspilsaften" })).toBeVisible();
 });
 
@@ -97,6 +100,22 @@ test("a touch on the calendar folds the vote down to its card, which a tap unfol
   await card.getByText("Dato 1 af 3", { exact: true }).click();
   await expect(card.getByRole("button", { name: "Jeg kan", exact: true })).toBeVisible();
   await expect(card.getByRole("button", { name: "Færdig" })).toBeVisible();
+});
+
+test("folded down to its card, the vote can still be put away unanswered (#241)", async ({
+  page,
+  backend,
+}) => {
+  await page.goto("/?vote=ev-boardgames");
+  const card = page.getByRole("region", { name: "Brætspilsaften" });
+  await page.getByText("onsdag 14. okt. 2026").click();
+  await expect(card.getByRole("button", { name: "Færdig" })).toHaveCount(0);
+
+  await card.getByRole("button", { name: "Senere" }).click();
+  await expect(card).toHaveCount(0);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("button", { name: "Svar på Brætspilsaften" })).toHaveCount(0);
+  expect(backend.calls.some((c) => c.body.action === "answer")).toBe(false);
 });
 
 test("a pencilled date opens its vote, from the month and the day view, and the old swipe address leads here", async ({

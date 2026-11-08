@@ -1107,6 +1107,7 @@ export const da = {
     settleAsk: "Afgør nu med de svar, der er kommet? Kan ingen dato vinde, vælger du.",
   },
   swipe: {
+    later: "Senere",
     yourCalendar: "Din kalender",
     noCalendar: "Forbind en kalender, så ser du dine planer omkring hver dato her.",
     week: (n: number) => `U${n}`,

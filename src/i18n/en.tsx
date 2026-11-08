@@ -1062,6 +1062,7 @@ export const en: Messages = {
     settleAsk: "Settle now with the answers so far? If no date can win, you choose.",
   },
   swipe: {
+    later: "Later",
     yourCalendar: "Your calendar",
     noCalendar: "Connect a calendar to see your plans around each date here.",
     week: (n: number) => `W${n}`,

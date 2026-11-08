@@ -52,6 +52,7 @@ import { APP_CALENDAR_MONTHS } from "@/lib/eventSearch";
 import type { PlanStart } from "@/hooks/usePlanning";
 import { isNativeApp } from "@/lib/nativeApp";
 import { onPushAskOpenChange, pushAskOpen } from "@/lib/pushAsk";
+import { onVotesAwayChange, votesAway } from "@/lib/voteLater";
 import {
   isPending,
   markOn,
@@ -260,6 +261,8 @@ export default function PhoneCalendar() {
   const dayInAddress = parseDayParam(params.get("day"));
   const [dayShown, setDayShown] = useState(dayInAddress);
   const pushAsking = useSyncExternalStore(onPushAskOpenChange, pushAskOpen);
+  // Put away for now (#241): the pill is gone until the app is opened again.
+  const votesPutAway = useSyncExternalStore(onVotesAwayChange, votesAway);
   // Nothing else over the month, for the import card to come after (#230).
   const monthClear = !overMonth && dayShown === null && !pushAsking;
   const [importAskDue, setImportAskDue] = useState(false);
@@ -624,7 +627,7 @@ export default function PhoneCalendar() {
         planRef={planButton}
         profileRef={profileButton}
       />
-      {homeVotes.waiting.length > 0 && (
+      {homeVotes.waiting.length > 0 && !votesPutAway && (
         <VotePill
           title={eventTitle(homeVotes.waiting[0].title, t)}
           count={homeVotes.waiting.length}

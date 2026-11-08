@@ -16,6 +16,7 @@ import { clashKey } from "@/lib/eventWarnings";
 import { formatEventDate, nameList } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { stillToAnswer, type VoteEvent } from "@/lib/vote";
+import { putVotesAway } from "@/lib/voteLater";
 /** How long "Tak" stays before the card goes. */
 const THANKS_MS = 1600;
 
@@ -38,13 +39,15 @@ export interface VoteView {
  * screen, and with the same deck behind it (useVoteDeck). After the last
  * answer a short thanks, then back to the month, gliding to today, where a
  * date it settled is said and flies into its day (AgreedCard,
- * useHomeVotes); Færdig goes back there too, the rest left for later.
+ * useHomeVotes); Færdig goes back there too, the rest left for later, and the
+ * "Svar på" pill stays away until the app is opened again (voteLater.ts, #241).
  *
  * A touch on the calendar folds it down to the card alone (`folded`), so
  * the day view is nearly all in sight while you check it: the glass, the
  * title row, the dates' bar and the answer buttons go, and the card stays
  * along the bottom to be swiped, the next date's card folded too. A tap on
- * the card unfolds it (`onUnfold`), and so does an answer needing a
+ * the card unfolds it (`onUnfold`), "Senere" over it puts the vote away as
+ * Færdig does (#241: folded, there was no way out but answering), and so does an answer needing a
  * confirm, or the last answer. How much of the screen it covers goes to
  * `onClear` as it changes.
  */
@@ -122,6 +125,12 @@ export default function HomeVote({
 
   const waitingFor = stillToAnswer(event);
 
+  // Færdig or Senere (#241): back to the month, the vote left for when the app is next opened.
+  const later = () => {
+    putVotesAway();
+    onClose();
+  };
+
   return (
     <div
       ref={panel}
@@ -138,6 +147,16 @@ export default function HomeVote({
         )}
       />
       <div className="relative">
+        {/* Folded, the card alone: still a way to put it away without answering. */}
+        {folded && (
+          <button
+            type="button"
+            onClick={later}
+            className="glass-pill absolute -top-14 right-0 flex min-h-11 items-center rounded-full px-4 text-[0.9375rem] font-semibold text-primary"
+          >
+            {t.swipe.later}
+          </button>
+        )}
         <Collapse open={!folded}>
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
@@ -157,7 +176,7 @@ export default function HomeVote({
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={later}
               className="hit shrink-0 rounded-lg px-2 py-1 text-[0.9375rem] font-semibold text-primary"
             >
               {t.swipe.done}
