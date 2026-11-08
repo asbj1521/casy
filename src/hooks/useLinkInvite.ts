@@ -21,7 +21,12 @@ export function useLinkInvite(token: string) {
   // an error for them, it simply has nothing left to do. Their groups are
   // usually remembered from an earlier visit (queryPersistence.ts), so this
   // rarely waits on the network.
-  const { data: myGroups } = useQuery({ ...groupsQuery(user?.id ?? ""), enabled: !!user });
+  // Until they are known, whether you are in it can't be said, and the page
+  // waits rather than offer "Bliv medlem" to a member (#244).
+  const { data: myGroups, isPending: groupsPending } = useQuery({
+    ...groupsQuery(user?.id ?? ""),
+    enabled: !!user,
+  });
   const alreadyIn = !!invited && !!myGroups?.some((g) => g.id === invited.id);
 
   const join = useMutation({
@@ -38,7 +43,7 @@ export function useLinkInvite(token: string) {
 
   return {
     user,
-    loading,
+    loading: loading || (!!user && groupsPending),
     preview,
     invited,
     alreadyIn,

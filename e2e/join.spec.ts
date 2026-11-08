@@ -110,3 +110,27 @@ test("back from signing up on a phone, the yes already given joins the group (#2
   await expect.poll(() => backend.calls.filter((c) => c.body.action === "join").length).toBe(1);
   await expect(page).toHaveURL(/\/$/);
 });
+
+test("a member's own link waits for their groups, then says they are in and leads to the group (#244)", async ({
+  page,
+  backend,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "a computer keeps its card");
+  // Already in the group the link is for.
+  backend.world.groups.push({ ...backend.world.groups[0], id: "g-invited", name: "Sommerhuset" });
+  // Their groups come slowly, as on a fresh phone: until then nothing is offered.
+  await page.route("**/functions/v1/groups?*", async (route) => {
+    if (route.request().postDataJSON()?.action !== "list") return route.fallback();
+    await new Promise((done) => setTimeout(done, 1200));
+    await route.fallback();
+  });
+  await page.goto("/join/a-token");
+  await expect(page.getByText("Åbner invitationen…")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Bliv medlem" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Bliv medlem" })).toHaveCount(0);
+
+  await expect(page.getByText("Du er allerede med i gruppen.")).toBeVisible();
+  await page.getByRole("link", { name: "Gå til gruppen" }).click();
+  await expect(page).toHaveURL(/\?profile=groups\/g-invited$/);
+});

@@ -15,6 +15,7 @@ import Notice from "@/components/ui/Notice";
 import { useLinkInvite } from "@/hooks/useLinkInvite";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { sheetAddress } from "@/lib/profileScreens";
 import TopNav from "@/components/TopNav";
 
 /**
@@ -47,10 +48,10 @@ function PhoneJoin({ token }: { token: string }) {
   const said = params.has("join");
   const joining = useRef(false);
   useEffect(() => {
-    if (!said || !user || !invited || alreadyIn || joining.current) return;
+    if (!said || !user || loading || !invited || alreadyIn || joining.current) return;
     joining.current = true;
     join.mutate();
-  }, [said, user, invited, alreadyIn, join]);
+  }, [said, user, loading, invited, alreadyIn, join]);
   return (
     <InviteShell
       // A signed-in phone has no other way home from here (#169): the app has no header.
@@ -69,7 +70,8 @@ function PhoneJoin({ token }: { token: string }) {
           note={alreadyIn ? t.join.alreadyIn : !user ? t.join.whatIsCasy : undefined}
         >
           {alreadyIn ? (
-            <InviteAction to="/">{t.join.findDate}</InviteAction>
+            // Into the group itself (#244), in the Profil sheet as everywhere on a phone.
+            <InviteAction to={sheetAddress(`groups/${invited.id}`)}>{t.join.toGroup}</InviteAction>
           ) : user ? (
             <>
               <InviteAction onClick={() => join.mutate()} busy={join.isPending}>

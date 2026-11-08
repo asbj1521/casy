@@ -1739,6 +1739,7 @@ export const da = {
     privacy:
       "Medlemmer kan se hinandens navne, og hvornår de er optaget, så Casy kan finde et tidspunkt, der passer alle. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder.",
     alreadyIn: "Du er allerede med i gruppen.",
+    toGroup: "Gå til gruppen",
     findDate: "Find en dato",
     joinGroup: "Bliv medlem",
     getTheApp: "Hent appen",

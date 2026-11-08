@@ -1680,6 +1680,7 @@ export const en: Messages = {
     privacy:
       "Members can see each other's name and when they are busy, so Casy can find a time that works for everyone. Nobody sees your email address, your calendars' names, or what any of your events are called.",
     alreadyIn: "You are already in this group.",
+    toGroup: "Go to the group",
     findDate: "Find a date",
     joinGroup: "Join group",
     getTheApp: "Get the app",
