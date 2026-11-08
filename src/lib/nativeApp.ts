@@ -5,6 +5,9 @@
  */
 import { listenForStatusTap } from "@/lib/statusTap";
 
+/** The website the app belongs to: where links that leave the app point. */
+export const SITE_URL = "https://casy.app";
+
 /**
  * True inside the iPhone app, false on the website. Read from the bridge the
  * app injects before the page runs (`window.Capacitor`) rather than through

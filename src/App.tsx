@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Outlet, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Routes, Route, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "framer-motion";
 
@@ -82,6 +82,18 @@ const TripsPlayground = import.meta.env.DEV
  * would see the landing page flash first. The app's welcome screen is drawn by
  * AppEntry around this, so it can stay open as sign-in opens.
  */
+/**
+ * A password-reset link that lands anywhere but the sign-in page (#242: an
+ * older email, or one Supabase sent to the site's front page) still ends on
+ * "choose a new password", which only the sign-in page shows.
+ */
+function PasswordRecoveryRedirect() {
+  const { passwordRecovery } = useAuth();
+  const { pathname } = useLocation();
+  if (!passwordRecovery || pathname === "/sign-in") return null;
+  return <Navigate to="/sign-in" replace />;
+}
+
 function Home() {
   const { user, loading } = useAuth();
   const phone = usePhoneLayout();
@@ -153,6 +165,7 @@ function App() {
             <BrowserRouter>
               {/* After signing in with a password that no longer meets the rules. */}
               <WeakPasswordNotice />
+              <PasswordRecoveryRedirect />
               {/* Plain background rather than a spinner: these chunks are small, and
                 a flash of "Loading…" would read as slower than a beat of nothing. */}
               <Suspense fallback={<div className="min-h-screen bg-background" />}>

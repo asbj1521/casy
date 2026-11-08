@@ -8,9 +8,9 @@ import { APP_VERSION } from "@/lib/appVersion";
 import { APP_BUILD, feedbackMailto } from "@/lib/feedback";
 import { isNativeApp } from "@/lib/nativeApp";
 import { shareLink } from "@/lib/share";
+import { SITE_URL } from "@/lib/nativeApp";
 
 /** What "Share Casy" hands on. */
-const CASY_URL = "https://casy.app";
 
 /**
  * The profile's "Send feedback" (an email with the build and device filled
@@ -22,7 +22,7 @@ export function FeedbackShareGroup() {
   const [showLink, setShowLink] = useState(false);
 
   function shareCasy() {
-    void shareLink({ title: "Casy", text: t.profileHub.shareText, url: CASY_URL }).then((opened) =>
+    void shareLink({ title: "Casy", text: t.profileHub.shareText, url: SITE_URL }).then((opened) =>
       setShowLink(!opened),
     );
   }
@@ -45,7 +45,7 @@ export function FeedbackShareGroup() {
         />
         <ListRow icon={Share} label={t.profileHub.share} onClick={shareCasy} />
       </ListGroup>
-      {showLink && <CopyField value={CASY_URL} label={t.profileHub.share} className="mt-2" />}
+      {showLink && <CopyField value={SITE_URL} label={t.profileHub.share} className="mt-2" />}
     </>
   );
 }

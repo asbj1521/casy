@@ -74,3 +74,23 @@ test("a new account by email on a phone gives a name, which goes with it", async
   await page.locator('button[type="submit"]').click();
   await expect.poll(() => sent[0]?.data?.full_name).toBe("Sara");
 });
+
+test("in the app, the reset email's link opens casy.app's sign-in page (#242)", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "the app is a phone");
+  await page.addInitScript(() => {
+    (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+  });
+  const asked: string[] = [];
+  await page.route("**/auth/v1/recover*", async (route) => {
+    asked.push(new URL(route.request().url()).searchParams.get("redirect_to") ?? "");
+    await route.fulfill({ status: 200, json: {} });
+  });
+  await page.goto("/sign-in");
+  await page.getByLabel(/^E-mail/).fill("mig@eksempel.dk");
+  await page.getByRole("button", { name: "Glemt adgangskode?" }).click();
+  await expect.poll(() => asked.length).toBe(1);
+  expect(asked[0]).toMatch(/^https:\/\/casy\.app\/sign-in\?/);
+});

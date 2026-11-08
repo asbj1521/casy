@@ -18,7 +18,7 @@ import { authErrorMessage } from "@/i18n/authError";
 import { useLang, useT } from "@/i18n/lang";
 import { signInWithApple } from "@/lib/appleSignIn";
 import { cardArrived } from "@/lib/cardTransition";
-import { isNativeApp } from "@/lib/nativeApp";
+import { isNativeApp, SITE_URL } from "@/lib/nativeApp";
 import { returnPathAfterSignIn } from "@/lib/signInReturn";
 import { hasSeenCalendarOnboarding } from "@/lib/calendarOnboarding";
 import { timesLeaked } from "@/lib/passwordRules";
@@ -135,7 +135,11 @@ export default function SignIn() {
   // in the email opens the site in it too.
   const returnParams = new URLSearchParams({ lang });
   if (next) returnParams.set("next", next);
-  const returnTo = `${window.location.origin}/sign-in?${returnParams}`;
+  // In the app the page's own address (capacitor://localhost) is none an email
+  // link can open, and Supabase would send it to the site's front page
+  // instead (#242): the link opens casy.app's sign-in page, in Safari.
+  const site = isNativeApp ? SITE_URL : window.location.origin;
+  const returnTo = `${site}/sign-in?${returnParams}`;
 
   async function handleNewPassword(newPassword: string) {
     setRecoverySubmitting(true);
