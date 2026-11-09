@@ -71,8 +71,12 @@ jobs:
         run: >
           xcodebuild -project App.xcodeproj -scheme App -configuration Release
           -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build
-      # The native screens, signed in against the fake backend (#198).
+      # The native screens, signed in against the fake backend (#198). On main
+      # only, after the merge: they take about 9 minutes on GitHub's Mac, and
+      # are run on this Mac before every commit. The native screens are Debug
+      # only until the rewrite ships, so a failure here never reaches anyone.
       - name: UI tests
+        if: github.ref == 'refs/heads/main'
         run: |
           device=$(xcrun simctl list devices available | grep -E "^ +iPhone" | tail -1 \
             | sed -E 's/^ +(.*) \([0-9A-F-]{36}\).*/\1/')

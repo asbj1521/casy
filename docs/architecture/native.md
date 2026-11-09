@@ -56,7 +56,7 @@ scripts/native/snapshots.sh            # CasyUI's pictures; --record draws them 
 
 CI's `native.yml` tests all three packages on a Mac (CasyUI through `xcodebuild`, as its Xcode's plain `swift test` doesn't compile the String Catalog) and builds them for the iOS simulator, whenever `ios/Packages` or `src/lib` change.
 
-The app's UI tests (`ios/App/AppUITests`, a synchronized folder) open native screens signed in, against the browser tests' fake backend over HTTP (`scripts/native/fake-backend.ts`), locally and on CI (`ios.yml`):
+The app's UI tests (`ios/App/AppUITests`, a synchronized folder) open native screens signed in, against the browser tests' fake backend over HTTP (`scripts/native/fake-backend.ts`), locally before every commit, and on CI (`ios.yml`) on `main` only, after the merge, so a merge doesn't wait the 9 minutes they take on GitHub's Mac:
 
 ```bash
 scripts/native/ui-tests.sh             # UI_TEST_DEVICE picks the simulator

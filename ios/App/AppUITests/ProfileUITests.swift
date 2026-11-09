@@ -117,7 +117,7 @@ final class ProfileUITests: XCTestCase {
     func testARowStillOnThePageClosesTheSheet() { leavesForThePage("Grupper") }
 
     /// Help pages open in the app's own page too, never Safari.
-    func testAHelpPageClosesTheSheet() { leavesForThePage("Vilkår") }
+    func testAHelpPageClosesTheSheet() { leavesForThePage("Hjælp og kontakt") }
 
     private func leavesForThePage(_ label: String) {
         let app = launch()
