@@ -72,10 +72,7 @@ enum PhoneCalendarReader {
     static func accessState() -> String {
         let status = EKEventStore.authorizationStatus(for: .event)
         if status == .notDetermined { return "prompt" }
-        if #available(iOS 17.0, *) {
-            return status == .fullAccess ? "granted" : "denied"
-        }
-        return status == .authorized ? "granted" : "denied"
+        return status == .fullAccess ? "granted" : "denied"
     }
 
     /// A colour as the page writes one, "r, g, b"; whatever space EventKit

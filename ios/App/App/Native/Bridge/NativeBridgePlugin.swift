@@ -23,26 +23,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "pushResult", returnType: CAPPluginReturnPromise),
     ]
 
-    /// The screens drawn natively in this build. A screen joins Release only
-    /// when it does everything the web's does: until then people get the web's.
-    private static let nativeScreens: [String] = {
-        #if DEBUG
-            return ["settings"]
-        #else
-            return []
-        #endif
-    }()
+    /// The screens drawn natively in this build. A screen joins only when it
+    /// does everything the web's does; until then, list it under `#if DEBUG`.
+    private static let nativeScreens = ["settings"]
 
     private var openScreen: String?
     /// A native screen waiting for the web view to turn notifications on.
     private var pushAnswer: CheckedContinuation<String, Never>?
 
     override public func load() {
-        Task {
-            await SessionBox.shared.setAskWeb { [weak self] in
-                self?.notifyListeners("needSession", data: [:])
-            }
+        let askWeb: @Sendable () -> Void = { [weak self] in
+            self?.notifyListeners("needSession", data: [:])
         }
+        Task { await SessionBox.shared.setAskWeb(askWeb) }
     }
 
     @objc func screens(_ call: CAPPluginCall) {
@@ -98,22 +91,26 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 call.reject("Nothing to show the screen on")
                 return
             }
-            let host = UIHostingController(
-                rootView: SettingsScreen(
-                    preferences: NativePreferences.shared,
-                    onChoose: { [weak self] lang, theme in
-                        self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
-                    },
-                    onDone: { [weak self] in self?.dismissOpenScreen() },
-                    enablePush: { [weak self] in await self?.enablePush() ?? "failed" }))
-            host.modalPresentationStyle = .pageSheet
-            host.sheetPresentationController?.prefersGrabberVisible = true
-            // A swipe down closes it too: tell the web either way.
-            host.presentationController?.delegate = self
-            self.openScreen = screen
-            presenter.present(host, animated: true)
+            self.present(screen, on: presenter)
             call.resolve()
         }
+    }
+
+    private func present(_ screen: String, on presenter: UIViewController) {
+        let host = UIHostingController(
+            rootView: SettingsScreen(
+                preferences: NativePreferences.shared,
+                onChoose: { [weak self] lang, theme in
+                    self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
+                },
+                onDone: { [weak self] in self?.dismissOpenScreen() },
+                enablePush: { [weak self] in await self?.enablePush() ?? "failed" }))
+        host.modalPresentationStyle = .pageSheet
+        host.sheetPresentationController?.prefersGrabberVisible = true
+        // A swipe down closes it too: tell the web either way.
+        host.presentationController?.delegate = self
+        openScreen = screen
+        presenter.present(host, animated: true)
     }
 
     /// `{ answer }`: how turning notifications on went, from the web view.
