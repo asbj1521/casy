@@ -15,6 +15,10 @@ public struct WhoAmI: Codable, Sendable, Equatable {
     public var aiShare: Bool?
 }
 
+public struct DisplayName: Codable, Sendable, Equatable {
+    public var name: String
+}
+
 public struct GroupMember: Codable, Sendable, Equatable, Identifiable {
     public var profileId: String
     public var name: String

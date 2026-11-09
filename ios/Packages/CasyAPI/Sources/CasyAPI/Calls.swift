@@ -16,6 +16,11 @@ private struct PushSet: Encodable, Sendable {
     let on: Bool
 }
 
+private struct SetName: Encodable, Sendable {
+    let action = "set-name"
+    let name: String
+}
+
 extension EdgeFunctions {
     public func pushSettings(errorMessage: String? = nil) async throws -> PushSettings {
         try await call("account", body: Action(action: "push-settings"), errorMessage: errorMessage)
@@ -34,6 +39,13 @@ extension EdgeFunctions {
 
     public func whoAmI(errorMessage: String? = nil) async throws -> WhoAmI {
         try await call("groups", body: Action(action: "whoami"), errorMessage: errorMessage)
+    }
+
+    /// The name your groups see; answers it as it was saved.
+    public func setDisplayName(_ name: String, errorMessage: String? = nil) async throws -> String {
+        let answer: DisplayName = try await call(
+            "groups", body: SetName(name: name), errorMessage: errorMessage)
+        return answer.name
     }
 
     public func groups(errorMessage: String? = nil) async throws -> [Group] {

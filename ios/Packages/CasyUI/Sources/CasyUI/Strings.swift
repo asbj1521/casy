@@ -34,6 +34,26 @@ public enum CasyStrings {
     public static var settingsLight: String { text("settings.light") }
     public static var settingsDark: String { text("settings.dark") }
 
+    public static var profileTitle: String { text("profile.title") }
+    public static var profileChangeName: String { text("profile.changeName") }
+    public static var profileSetNameFailed: String { text("profile.setNameFailed") }
+    public static var profileGroups: String { text("profile.groups") }
+    public static var profileFriends: String { text("profile.friends") }
+    public static var profileSecurity: String { text("profile.security") }
+    public static var profileAdmin: String { text("profile.admin") }
+    public static var profileFeedback: String { text("profile.feedback") }
+    public static var profileFeedbackSubject: String { text("profile.feedbackSubject") }
+    public static var profileFeedbackPrompt: String { text("profile.feedbackPrompt") }
+    public static var profileShare: String { text("profile.share") }
+    public static var profileShareText: String { text("profile.shareText") }
+    public static var profileMyData: String { text("profile.myData") }
+    public static var profileSupport: String { text("profile.support") }
+    public static var profileHowItWorks: String { text("profile.howItWorks") }
+    public static var profileTerms: String { text("profile.terms") }
+    public static var profilePrivacy: String { text("profile.privacy") }
+    public static var profileSignOut: String { text("profile.signOut") }
+    public static var profileDeleteAccount: String { text("profile.deleteAccount") }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

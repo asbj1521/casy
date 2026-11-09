@@ -33,6 +33,7 @@ export default function NativeBridgeSync() {
           accessToken: session.access_token,
           expiresAt: session.expires_at ?? 0,
           userId: session.user.id,
+          email: session.user.email,
         }
       : null;
     lendSession(lent).catch((err) => console.warn("lending the app the login failed", err));

@@ -11,11 +11,27 @@
 import type { PluginListenerHandle } from "@capacitor/core";
 
 import type { Lang } from "@/i18n/locale";
+import { APP_BUILD } from "@/lib/feedback";
 import { isNativeApp } from "@/lib/nativeApp";
 import type { ThemeChoice } from "@/lib/theme";
 
 /** A screen the app may draw natively in place of the page's own. */
-export type NativeScreen = "settings";
+export type NativeScreen = "settings" | "profile";
+
+interface LentSession {
+  accessToken: string;
+  expiresAt: number;
+  userId: string;
+  email?: string;
+}
+
+/** A native screen has closed, and what the page should do about it. */
+export interface NativeClosed {
+  screen: NativeScreen;
+  /** An address in the page: the screen handed over to the page's own. */
+  next?: string;
+  signOut?: boolean;
+}
 
 interface Preferences {
   lang: Lang;
@@ -27,14 +43,18 @@ interface NativeBridgePlugin {
   setSession(options: {
     projectUrl: string;
     apiKey: string;
-    session: { accessToken: string; expiresAt: number; userId: string } | null;
+    session: LentSession | null;
   }): Promise<void>;
   setPreferences(options: Preferences): Promise<void>;
-  open(options: { screen: NativeScreen }): Promise<void>;
+  open(options: { screen: NativeScreen; build: string; userAgent: string }): Promise<void>;
   pushResult(options: { answer: "granted" | "denied" | "failed" }): Promise<void>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    event: "closed",
+    listener: (closed: NativeClosed) => void,
   ): Promise<PluginListenerHandle>;
   addListener(event: "needSession", listener: () => void): Promise<PluginListenerHandle>;
   addListener(event: "enablePush", listener: () => void): Promise<PluginListenerHandle>;
@@ -69,16 +89,14 @@ export function nativeScreens(): Promise<ReadonlySet<string>> {
 /** Show a native screen over the page. */
 export async function openNativeScreen(screen: NativeScreen): Promise<void> {
   const { plugin } = await bridgePlugin();
-  await plugin.open({ screen });
+  await plugin.open({ screen, build: APP_BUILD, userAgent: navigator.userAgent });
 }
 
 /**
  * Lend the app the login (null when signed out). Only the access token goes:
  * the page keeps refreshing it and sends each new one.
  */
-export async function lendSession(
-  session: { accessToken: string; expiresAt: number; userId: string } | null,
-): Promise<void> {
+export async function lendSession(session: LentSession | null): Promise<void> {
   const { plugin } = await bridgePlugin();
   await plugin.setSession({
     projectUrl: import.meta.env.VITE_SUPABASE_URL,
@@ -99,6 +117,14 @@ export async function onNativeChoice(
 ): Promise<PluginListenerHandle> {
   const { plugin } = await bridgePlugin();
   return plugin.addListener("preferences", onChoose);
+}
+
+/** Calls `onClose` when a native screen has closed. */
+export async function onNativeClosed(
+  onClose: (closed: NativeClosed) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("closed", onClose);
 }
 
 /** Calls `onNeed` when a native screen's login has run out, so the page refreshes it. */

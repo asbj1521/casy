@@ -25,7 +25,7 @@
             backend.map {
                 SessionBox.Connection(
                     projectURL: $0, apiKey: "test-key", accessToken: "test-token",
-                    expiresAt: .distantFuture, userId: "test-user")
+                    expiresAt: .distantFuture, userId: "test-user", email: "test@example.com")
             }
         }
     }

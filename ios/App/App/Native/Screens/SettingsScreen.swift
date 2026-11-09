@@ -18,8 +18,35 @@ final class NativePreferences {
     var theme = "system"
 }
 
-/// Indstillinger as a native screen (#198): Sprog, Udseende and Notifikationer.
+/// Indstillinger opened by itself, from the web's profile row.
 struct SettingsScreen: View {
+    let preferences: NativePreferences
+    let onChoose: (_ lang: String, _ theme: String) -> Void
+    let onDone: () -> Void
+    let enablePush: () async -> String
+
+    var body: some View {
+        NavigationStack {
+            SettingsList(
+                preferences: preferences, onChoose: onChoose, onDone: onDone,
+                enablePush: enablePush)
+        }
+        .nativeSheetLook(preferences)
+    }
+}
+
+extension View {
+    /// Casy's orange, and Casy's own light or dark choice.
+    func nativeSheetLook(_ preferences: NativePreferences) -> some View {
+        tint(Theme.primary.color)
+            .preferredColorScheme(
+                preferences.theme == "light" ? .light : preferences.theme == "dark" ? .dark : nil)
+    }
+}
+
+/// Indstillinger (#198): Sprog, Udseende and Notifikationer. Needs a
+/// navigation stack around it.
+struct SettingsList: View {
     let preferences: NativePreferences
     let onChoose: (_ lang: String, _ theme: String) -> Void
     let onDone: () -> Void
@@ -29,49 +56,39 @@ struct SettingsScreen: View {
     private let notifications = NotificationsModel.shared
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section(CasyStrings.settingsLanguage) {
-                    // Each language by its own name, whatever the screen is in.
-                    ListPickRow("Dansk", isSelected: preferences.lang == "da") { pick(lang: "da") }
-                    ListPickRow("English", isSelected: preferences.lang == "en") {
-                        pick(lang: "en")
-                    }
-                }
-                Section(CasyStrings.settingsAppearance) {
-                    ListPickRow(
-                        CasyStrings.settingsSystem, isSelected: preferences.theme == "system"
-                    ) { pick(theme: "system") }
-                    ListPickRow(
-                        CasyStrings.settingsLight, isSelected: preferences.theme == "light"
-                    ) { pick(theme: "light") }
-                    ListPickRow(CasyStrings.settingsDark, isSelected: preferences.theme == "dark") {
-                        pick(theme: "dark")
-                    }
-                }
-                NotificationsSection(model: notifications, enablePush: enablePush)
-            }
-            .task { await notifications.readPermission() }
-            .task(id: notifications.permission == .granted) {
-                if notifications.permission == .granted { await notifications.loadKinds() }
-            }
-            .navigationTitle(CasyStrings.settingsTitle)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(CasyStrings.done, action: onDone)
+        List {
+            Section(CasyStrings.settingsLanguage) {
+                // Each language by its own name, whatever the screen is in.
+                ListPickRow("Dansk", isSelected: preferences.lang == "da") { pick(lang: "da") }
+                ListPickRow("English", isSelected: preferences.lang == "en") {
+                    pick(lang: "en")
                 }
             }
+            Section(CasyStrings.settingsAppearance) {
+                ListPickRow(
+                    CasyStrings.settingsSystem, isSelected: preferences.theme == "system"
+                ) { pick(theme: "system") }
+                ListPickRow(
+                    CasyStrings.settingsLight, isSelected: preferences.theme == "light"
+                ) { pick(theme: "light") }
+                ListPickRow(CasyStrings.settingsDark, isSelected: preferences.theme == "dark") {
+                    pick(theme: "dark")
+                }
+            }
+            NotificationsSection(model: notifications, enablePush: enablePush)
         }
-        .tint(Theme.primary.color)
+        // New words at once, without leaving the screen: on the stack instead,
+        // this id would throw a pushed Indstillinger back to Profil.
         .id(preferences.lang)
-        .preferredColorScheme(colorScheme)
-    }
-
-    private var colorScheme: ColorScheme? {
-        switch preferences.theme {
-        case "light": .light
-        case "dark": .dark
-        default: nil
+        .task { await notifications.readPermission() }
+        .task(id: notifications.permission == .granted) {
+            if notifications.permission == .granted { await notifications.loadKinds() }
+        }
+        .navigationTitle(CasyStrings.settingsTitle)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(CasyStrings.done, action: onDone)
+            }
         }
     }
 

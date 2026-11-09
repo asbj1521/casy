@@ -26,6 +26,8 @@ Rules for code in them:
 - Language and theme are the web view's too: a choice made natively is sent back and applied as its own rows do. Strings follow Casy's language (`CasyStrings.language`), not the phone's.
 - **A screen reaches people only when it does everything the web's does.** `nativeScreens` lists it for `DEBUG` until then, so TestFlight and App Store builds keep the web's. The web asks once which screens exist (`useNativeScreen`), so a web build never opens one its app doesn't have.
 
+- **The Profil list** (`Screens/ProfileScreen.swift`, Debug only until the whole sheet is native) opens from `?profile` through `profile/NativeProfile.tsx`. Indstillinger is pushed inside it; a row whose screen is still the web's closes the sheet and `closed` carries `next` (the address), so the page goes there as one step; `signOut` is the page's too, as it owns the login. The web's sheet answers `?profile=<screen>` as before, and its way back to `?profile` opens the native list again. The picture on the name card (add, crop, remove) is not native yet.
+
 ## What keeps it equal to the web
 
 | Kept equal | Written by | Checked in Swift by |

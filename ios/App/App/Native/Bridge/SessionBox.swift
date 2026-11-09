@@ -17,6 +17,7 @@ actor SessionBox: SessionProviding {
         let accessToken: String
         let expiresAt: Date
         let userId: String
+        var email: String?
     }
 
     /// How long before it runs out a token counts as gone.

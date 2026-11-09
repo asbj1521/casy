@@ -9,7 +9,7 @@ import UIKit
 /// address and the cached data, and native screens borrow what they need:
 /// `setSession`, `setPreferences`, `screens` (which screens this build draws),
 /// `open`. Back to the web: `preferences` when a native screen changed a
-/// choice, `closed` when one closes, `needSession` for a fresh login.
+/// choice, `closed` when one closes (with where to go next, if anywhere), `needSession` for a fresh login.
 public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     UIAdaptivePresentationControllerDelegate
 {
@@ -25,7 +25,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// The screens drawn natively in this build. A screen joins only when it
     /// does everything the web's does; until then, list it under `#if DEBUG`.
-    private static let nativeScreens = ["settings"]
+    private static let nativeScreens: [String] = {
+        var screens = ["settings"]
+        #if DEBUG
+            screens.append("profile")  // until the whole Profil sheet is native
+        #endif
+        return screens
+    }()
 
     private var openScreen: String?
     /// A native screen waiting for the web view to turn notifications on.
@@ -77,14 +83,18 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         {
             next = SessionBox.Connection(
                 projectURL: url, apiKey: apiKey, accessToken: token,
-                expiresAt: Date(timeIntervalSince1970: expiresAt), userId: userId)
+                expiresAt: Date(timeIntervalSince1970: expiresAt), userId: userId,
+                email: session["email"] as? String)
         }
         Task {
             let before = await SessionBox.shared.current()?.userId
             await SessionBox.shared.set(next)
             // Someone else on this phone must never see the last person's choices.
             if before != next?.userId {
-                await MainActor.run { NotificationsModel.shared.reset() }
+                await MainActor.run {
+                    NotificationsModel.shared.reset()
+                    ProfileModel.shared.reset()
+                }
             }
             call.resolve()
         }
@@ -105,9 +115,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
-    /// `{ screen }`: a native screen as a sheet over the page.
+    /// `{ screen, build, userAgent }`: a native screen as a sheet over the page.
+    /// The last two are what Send feedback reports, as the page knows them.
     @objc func open(_ call: CAPPluginCall) {
         let screen = call.getString("screen") ?? ""
+        let build = call.getString("build") ?? "dev"
+        let userAgent = call.getString("userAgent") ?? ""
         guard Self.nativeScreens.contains(screen) else {
             call.reject("No native screen \(screen)")
             return
@@ -117,20 +130,41 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 call.reject("Nothing to show the screen on")
                 return
             }
-            self.present(screen, on: presenter)
+            self.present(screen, on: presenter, build: build, userAgent: userAgent)
             call.resolve()
         }
     }
 
-    private func present(_ screen: String, on presenter: UIViewController) {
-        let host = UIHostingController(
-            rootView: SettingsScreen(
-                preferences: NativePreferences.shared,
-                onChoose: { [weak self] lang, theme in
-                    self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
-                },
-                onDone: { [weak self] in self?.dismissOpenScreen() },
-                enablePush: { [weak self] in await self?.enablePush() ?? "failed" }))
+    private func present(
+        _ screen: String, on presenter: UIViewController, build: String = "dev",
+        userAgent: String = ""
+    ) {
+        let onChoose: (String, String) -> Void = { [weak self] lang, theme in
+            self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
+        }
+        let onDone: () -> Void = { [weak self] in self?.dismissOpenScreen() }
+        let enablePush: () async -> String = { [weak self] in
+            await self?.enablePush() ?? "failed"
+        }
+        let root: AnyView =
+            screen == "profile"
+            ? AnyView(
+                ProfileScreen(
+                    preferences: NativePreferences.shared, build: build, userAgent: userAgent,
+                    onChoose: onChoose, onDone: onDone, enablePush: enablePush,
+                    leave: { [weak self] leaving in
+                        switch leaving {
+                        case .webScreen(let address):
+                            self?.dismissOpenScreen(["next": address])
+                        case .signOut:
+                            self?.dismissOpenScreen(["signOut": true])
+                        }
+                    }))
+            : AnyView(
+                SettingsScreen(
+                    preferences: NativePreferences.shared, onChoose: onChoose, onDone: onDone,
+                    enablePush: enablePush))
+        let host = UIHostingController(rootView: root)
         host.modalPresentationStyle = .pageSheet
         host.sheetPresentationController?.prefersGrabberVisible = true
         // A swipe down closes it too: tell the web either way.
@@ -162,9 +196,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         pushAnswer = nil
     }
 
-    private func dismissOpenScreen() {
+    /// `then` goes with `closed`: what the page does next, as one message, so
+    /// it can't step the address back before hearing where to go.
+    private func dismissOpenScreen(_ then: [String: Any] = [:]) {
         bridge?.viewController?.presentedViewController?.dismiss(animated: true) { [weak self] in
-            self?.closed()
+            self?.closed(then)
         }
     }
 
@@ -174,10 +210,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         closed()
     }
 
-    private func closed() {
+    private func closed(_ then: [String: Any] = [:]) {
         finishPush("failed")
         guard let screen = openScreen else { return }
         openScreen = nil
-        notifyListeners("closed", data: ["screen": screen])
+        notifyListeners("closed", data: then.merging(["screen": screen]) { $1 })
     }
 }
