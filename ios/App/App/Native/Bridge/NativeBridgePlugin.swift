@@ -36,14 +36,37 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             self?.notifyListeners("needSession", data: [:])
         }
         Task { await SessionBox.shared.setAskWeb(askWeb) }
+        #if DEBUG
+            startTestLaunch()
+        #endif
     }
 
     @objc func screens(_ call: CAPPluginCall) {
         call.resolve(["screens": Self.nativeScreens])
     }
 
+    #if DEBUG
+        /// The UI tests' way in: a made-up login and a screen open at once.
+        private func startTestLaunch() {
+            guard let connection = TestLaunch.connection() else { return }
+            Task { @MainActor in
+                await SessionBox.shared.set(connection)
+                if let lang = TestLaunch.lang { NativePreferences.shared.lang = lang }
+                guard let screen = TestLaunch.screen else { return }
+                // The web view's own controller has to be on screen first.
+                while bridge?.viewController?.view.window == nil {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+                if let presenter = bridge?.viewController { present(screen, on: presenter) }
+            }
+        }
+    #endif
+
     /// `{ projectUrl, apiKey, session: { accessToken, expiresAt (epoch s), userId } | null }`.
     @objc func setSession(_ call: CAPPluginCall) {
+        #if DEBUG
+            if TestLaunch.isActive { return call.resolve() }
+        #endif
         var next: SessionBox.Connection?
         if let session = call.getObject("session"),
             let url = call.getString("projectUrl").flatMap(URL.init(string:)),
@@ -69,6 +92,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// `{ lang, theme }`: what the web view uses now.
     @objc func setPreferences(_ call: CAPPluginCall) {
+        #if DEBUG
+            if TestLaunch.isActive { return call.resolve() }
+        #endif
         let lang = call.getString("lang")
         let theme = call.getString("theme")
         DispatchQueue.main.async {

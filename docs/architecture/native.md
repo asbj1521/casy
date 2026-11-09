@@ -54,4 +54,12 @@ scripts/native/snapshots.sh            # CasyUI's pictures; --record draws them 
 
 CI's `native.yml` tests all three packages on a Mac (CasyUI through `xcodebuild`, as its Xcode's plain `swift test` doesn't compile the String Catalog) and builds them for the iOS simulator, whenever `ios/Packages` or `src/lib` change.
 
+The app's UI tests (`ios/App/AppUITests`, a synchronized folder) open native screens signed in, against the browser tests' fake backend over HTTP (`scripts/native/fake-backend.ts`), locally and on CI (`ios.yml`):
+
+```bash
+scripts/native/ui-tests.sh             # UI_TEST_DEVICE picks the simulator
+```
+
+A Debug build reads the launch arguments that make this possible (`TestLaunch.swift`: `-casyBackend`, `-casyOpenScreen`, `-casyPushPermission`, `-casyLang`), and then ignores what the web view sends. A Release build has none of it. Each new screen gets its tests here: both bugs found by hand in Notifikationer (the section never loading, a switch waiting for the server) are the kind they catch. `Info.plist` allows local networking so the app can reach the fake backend; it opens nothing else.
+
 The snapshots (`CasyUISnapshotTests`) check layout, colours and words on the pinned simulator (iPhone 17, iOS 27.2), and are not on CI: its Xcode has an older iOS. They are drawn off screen, where **Liquid Glass doesn't show**, so glass is judged on a real phone.

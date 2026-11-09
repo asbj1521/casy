@@ -11,6 +11,9 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/ios.yml"
+      - "scripts/native/**"
+      - "e2e/backend.ts"
+      - "e2e/world.ts"
   pull_request:
     branches: [main]
     paths:
@@ -19,6 +22,9 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/ios.yml"
+      - "scripts/native/**"
+      - "e2e/backend.ts"
+      - "e2e/world.ts"
 
 # As in ci.yml: a new push to a branch cancels its runs still going, never on main.
 concurrency:
@@ -31,7 +37,7 @@ jobs:
     # macos-latest: a job asking for macos-26 waited in the queue with no
     # runner. The Xcode is picked below.
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -65,3 +71,10 @@ jobs:
         run: >
           xcodebuild -project App.xcodeproj -scheme App -configuration Release
           -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build
+      # The native screens, signed in against the fake backend (#198).
+      - name: UI tests
+        run: |
+          device=$(xcrun simctl list devices available | grep -E "^ +iPhone" | tail -1 \
+            | sed -E 's/^ +(.*) \([0-9A-F-]{36}\).*/\1/')
+          echo "On $device"
+          UI_TEST_DEVICE="$device" scripts/native/ui-tests.sh

@@ -110,6 +110,14 @@ final class NotificationsModel {
     }
 
     func readPermission() async {
+        #if DEBUG
+            switch TestLaunch.pushPermission {
+            case "prompt": permission = .prompt; return
+            case "granted": permission = .granted; return
+            case "denied": permission = .denied; return
+            default: break
+            }
+        #endif
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         switch settings.authorizationStatus {
         case .notDetermined: permission = .prompt
