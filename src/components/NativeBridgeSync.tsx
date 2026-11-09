@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { eventsQueryKey } from "@/api/events";
+import { groupsQueryKey, whoAmIQueryKey } from "@/api/groups";
 
 import { useAuth } from "@/context/auth";
 import { useLang } from "@/i18n/lang";
@@ -6,6 +10,7 @@ import {
   lendSession,
   onEnablePush,
   onNativeChoice,
+  onNativeDataChanged,
   onNeedSession,
   sharePreferences,
 } from "@/lib/nativeBridge";
@@ -62,6 +67,34 @@ export default function NativeBridgeSync() {
       void handle?.remove();
     };
   }, [setLang]);
+
+  // A native screen changed your name or picture: the page's copies, and
+  // the lists your picture is in, are fetched again.
+  const queryClient = useQueryClient();
+  const youId = session?.user.id;
+  useEffect(() => {
+    if (!youId) return;
+    let handle: { remove: () => Promise<void> } | undefined;
+    let gone = false;
+    onNativeDataChanged(() => {
+      for (const queryKey of [
+        whoAmIQueryKey(youId),
+        groupsQueryKey(youId),
+        eventsQueryKey(youId),
+      ]) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
+    })
+      .then((h) => {
+        if (gone) void h.remove();
+        else handle = h;
+      })
+      .catch((err) => console.warn("listening for the app's changes failed", err));
+    return () => {
+      gone = true;
+      void handle?.remove();
+    };
+  }, [queryClient, youId]);
 
   // A native screen's token ran out: getSession() refreshes it, and the change
   // comes back above through `session`.

@@ -13,6 +13,7 @@ import eventsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Pa
 import formatFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/format.json?raw";
 import holidaysFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/holidays.json?raw";
 import periodFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/period.json?raw";
+import pictureCropFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/pictureCrop.json?raw";
 import phoneBusyFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/phoneBusy.json?raw";
 import zoneFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/zone.json?raw";
 
@@ -21,6 +22,7 @@ import { eventsCases } from "./events.cases";
 import { formatCases } from "./format.cases";
 import { holidaysCases } from "./holidays.cases";
 import { periodCases } from "./period.cases";
+import { pictureCropCases } from "./pictureCrop.cases";
 import { phoneBusyCases } from "./phoneBusy.cases";
 import { zoneCases } from "./zone.cases";
 
@@ -38,6 +40,7 @@ describe.each([
   ["period", periodCases(), periodFixture],
   ["phoneBusy", phoneBusyCases(), phoneBusyFixture],
   ["events", eventsCases(), eventsFixture],
+  ["pictureCrop", pictureCropCases(), pictureCropFixture],
 ] as const)("%s", (module, cases, fixture) => {
   it.runIf(import.meta.env.UPDATE_PARITY)("writes the fixtures", async () => {
     // Named through a variable so the type check doesn't look for Node's types.

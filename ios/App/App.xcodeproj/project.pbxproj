@@ -203,14 +203,14 @@
 				LastSwiftUpdateCheck = 0920;
 				LastUpgradeCheck = 0920;
 				TargetAttributes = {
-					CA5E00202F00000000000001 = {
-						CreatedOnToolsVersion = 26.0;
-						TestTargetID = 504EC3031FED79650016851F;
-					};
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
+					};
+					CA5E00202F00000000000001 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 504EC3031FED79650016851F;
 					};
 				};
 			};

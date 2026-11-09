@@ -5,6 +5,7 @@ final class ProfileUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
+            "-casyTestPicture", "YES",
             "-casyBackend", "http://localhost:4318",
             "-casyOpenScreen", "profile",
             "-casyPushPermission", "granted",
@@ -87,6 +88,31 @@ final class ProfileUITests: XCTestCase {
             "the share sheet never opened")
     }
 
+    /// A picture picked, cropped and saved, then taken away again.
+    func testAPictureIsAddedAndRemoved() {
+        let app = launch()
+        let picture = app.buttons.matching(
+            NSPredicate(format: "label == %@ OR label == %@", "Tilføj profilbillede", "Skift profilbillede")
+        ).firstMatch
+        XCTAssertTrue(picture.waitForExistence(timeout: 10))
+        if picture.label == "Skift profilbillede" {
+            picture.tap()
+            app.buttons["Fjern billede"].firstMatch.tap()
+            XCTAssertTrue(app.buttons["Tilføj profilbillede"].waitForExistence(timeout: 10))
+        }
+
+        app.buttons["Tilføj profilbillede"].firstMatch.tap()
+        app.buttons["Fotobibliotek"].firstMatch.tap()
+        let crop = app.navigationBars["Flyt og skalér"]
+        XCTAssertTrue(crop.waitForExistence(timeout: 10))
+        crop.buttons["Færdig"].tap()
+        XCTAssertTrue(app.buttons["Skift profilbillede"].waitForExistence(timeout: 10), "not saved")
+
+        app.buttons["Skift profilbillede"].firstMatch.tap()
+        app.buttons["Fjern billede"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Tilføj profilbillede"].waitForExistence(timeout: 10), "not removed")
+    }
+
     /// A screen that is still the page's closes the native sheet.
     func testARowStillOnThePageClosesTheSheet() { leavesForThePage("Grupper") }
 
@@ -97,6 +123,14 @@ final class ProfileUITests: XCTestCase {
         let app = launch()
         let target = row(app, label)
         XCTAssertTrue(target.waitForExistence(timeout: 10))
+        // A tap on a list still gliding only stops it.
+        var still = 0
+        var last = target.frame
+        for _ in 0..<40 where still < 3 {
+            usleep(250_000)
+            still = target.frame == last ? still + 1 : 0
+            last = target.frame
+        }
         target.tap()
         let gone = NSPredicate(format: "exists == false")
         let waited = XCTNSPredicateExpectation(

@@ -279,3 +279,26 @@ private func idOrNull(_ date: CandidateDate?) -> JSONValue { date.map { .string(
         }
     }
 }
+
+@Test func pictureCropGivesTheTypeScriptAnswers() throws {
+    try check("pictureCrop", atLeast: 500) { fn, a in
+        func number(_ key: String) throws -> Double { try a[key].decoded() }
+        switch fn {
+        case "centredSquare":
+            return try json(centredSquare(try number("width"), try number("height")))
+        case "moveSquare":
+            return try json(
+                moveSquare(
+                    try a["square"].decoded(), dx: try number("dx"), dy: try number("dy"),
+                    frame: try number("frame"), width: try number("width"),
+                    height: try number("height")))
+        case "zoomSquare":
+            return try json(
+                zoomSquare(
+                    try a["square"].decoded(), factor: try number("factor"), x: try number("x"),
+                    y: try number("y"), frame: try number("frame"), width: try number("width"),
+                    height: try number("height")))
+        default: return unknown(fn)
+        }
+    }
+}

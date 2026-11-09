@@ -21,6 +21,11 @@ private struct SetName: Encodable, Sendable {
     let name: String
 }
 
+private struct SetAvatar: Encodable, Sendable {
+    let action = "set-avatar"
+    let image: String
+}
+
 extension EdgeFunctions {
     public func pushSettings(errorMessage: String? = nil) async throws -> PushSettings {
         try await call("account", body: Action(action: "push-settings"), errorMessage: errorMessage)
@@ -46,6 +51,18 @@ extension EdgeFunctions {
         let answer: DisplayName = try await call(
             "groups", body: SetName(name: name), errorMessage: errorMessage)
         return answer.name
+    }
+
+    /// Your new picture, a base64 JPEG; answers a link to it.
+    public func setAvatar(_ image: String, errorMessage: String? = nil) async throws -> String? {
+        let answer: AvatarAnswer = try await call(
+            "pictures", body: SetAvatar(image: image), errorMessage: errorMessage)
+        return answer.avatarUrl
+    }
+
+    public func removeAvatar(errorMessage: String? = nil) async throws {
+        let _: AvatarAnswer = try await call(
+            "pictures", body: Action(action: "remove-avatar"), errorMessage: errorMessage)
     }
 
     public func groups(errorMessage: String? = nil) async throws -> [Group] {

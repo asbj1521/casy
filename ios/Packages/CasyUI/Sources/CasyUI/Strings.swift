@@ -54,6 +54,17 @@ public enum CasyStrings {
     public static var profileSignOut: String { text("profile.signOut") }
     public static var profileDeleteAccount: String { text("profile.deleteAccount") }
 
+    public static var picturesChange: String { text("pictures.change") }
+    public static var picturesAdd: String { text("pictures.add") }
+    public static var picturesRemove: String { text("pictures.remove") }
+    public static var picturesSaveFailed: String { text("pictures.saveFailed") }
+    public static var picturesRemoveFailed: String { text("pictures.removeFailed") }
+    public static var picturesUnreadable: String { text("pictures.unreadable") }
+    public static var picturesCropTitle: String { text("pictures.cropTitle") }
+    public static var picturesCropFrame: String { text("pictures.cropFrame") }
+    public static var picturesLibrary: String { text("pictures.library") }
+    public static var picturesCamera: String { text("pictures.camera") }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

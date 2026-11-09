@@ -57,6 +57,7 @@ interface NativeBridgePlugin {
     listener: (closed: NativeClosed) => void,
   ): Promise<PluginListenerHandle>;
   addListener(event: "needSession", listener: () => void): Promise<PluginListenerHandle>;
+  addListener(event: "dataChanged", listener: () => void): Promise<PluginListenerHandle>;
   addListener(event: "enablePush", listener: () => void): Promise<PluginListenerHandle>;
 }
 
@@ -125,6 +126,12 @@ export async function onNativeClosed(
 ): Promise<PluginListenerHandle> {
   const { plugin } = await bridgePlugin();
   return plugin.addListener("closed", onClose);
+}
+
+/** Calls `onChange` when a native screen changed your name or picture. */
+export async function onNativeDataChanged(onChange: () => void): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("dataChanged", onChange);
 }
 
 /** Calls `onNeed` when a native screen's login has run out, so the page refreshes it. */

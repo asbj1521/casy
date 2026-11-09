@@ -19,6 +19,10 @@ public struct DisplayName: Codable, Sendable, Equatable {
     public var name: String
 }
 
+public struct AvatarAnswer: Codable, Sendable, Equatable {
+    public var avatarUrl: String?
+}
+
 public struct GroupMember: Codable, Sendable, Equatable, Identifiable {
     public var profileId: String
     public var name: String

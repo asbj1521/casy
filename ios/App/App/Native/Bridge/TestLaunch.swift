@@ -21,6 +21,18 @@
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
         static var lang: String? { defaults.string(forKey: "casyLang") }
 
+        /// `-casyTestPicture YES`: Fotobibliotek hands over a made-up photo, as
+        /// the system's photo picker runs outside the app, where tests can't reach.
+        static var samplePicture: UIImage? {
+            guard defaults.bool(forKey: "casyTestPicture") else { return nil }
+            return UIGraphicsImageRenderer(size: CGSize(width: 1200, height: 800)).image { context in
+                UIColor.systemOrange.setFill()
+                context.fill(CGRect(x: 0, y: 0, width: 1200, height: 800))
+                UIColor.systemBlue.setFill()
+                context.fill(CGRect(x: 400, y: 200, width: 400, height: 400))
+            }
+        }
+
         static func connection() -> SessionBox.Connection? {
             backend.map {
                 SessionBox.Connection(

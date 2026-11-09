@@ -9,7 +9,7 @@ import UIKit
 /// address and the cached data, and native screens borrow what they need:
 /// `setSession`, `setPreferences`, `screens` (which screens this build draws),
 /// `open`. Back to the web: `preferences` when a native screen changed a
-/// choice, `closed` when one closes (with where to go next, if anywhere), `needSession` for a fresh login.
+/// choice, `closed` when one closes (with where to go next, if anywhere), `dataChanged` when one changed what the page has cached, `needSession` for a fresh login.
 public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     UIAdaptivePresentationControllerDelegate
 {
@@ -43,6 +43,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             self?.notifyListeners("needSession", data: [:])
         }
         Task { await SessionBox.shared.setAskWeb(askWeb) }
+        Task { @MainActor in
+            ProfileModel.shared.onChange = { [weak self] in
+                self?.notifyListeners("dataChanged", data: [:])
+            }
+        }
         #if DEBUG
             startTestLaunch()
         #endif

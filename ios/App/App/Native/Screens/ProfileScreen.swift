@@ -12,8 +12,13 @@ final class ProfileModel {
     private(set) var email: String?
     private(set) var invitations = 0
     private(set) var isAdmin = false
-    private(set) var failure: String?
+    fileprivate(set) var failure: String?
     private(set) var saving = false
+    private(set) var pictureBusy = false
+
+    /// Tells the web view that your name or picture changed, so its own
+    /// copies (the groups and events lists) are fetched again.
+    var onChange: (() -> Void)?
 
     func reset() {
         whoAmI = nil
@@ -46,6 +51,41 @@ final class ProfileModel {
                     name, errorMessage: CasyStrings.profileSetNameFailed)
                 whoAmI?.name = saved
                 whoAmI?.unnamed = false
+                onChange?()
+            } catch {
+                failure = error.localizedDescription
+            }
+        }
+    }
+}
+
+extension ProfileModel {
+    func setPicture(_ jpeg: String) {
+        changePicture(failedWith: CasyStrings.picturesSaveFailed) { api in
+            try await api.setAvatar(jpeg, errorMessage: CasyStrings.picturesSaveFailed)
+        }
+    }
+
+    func removePicture() {
+        changePicture(failedWith: CasyStrings.picturesRemoveFailed) { api in
+            try await api.removeAvatar(errorMessage: CasyStrings.picturesRemoveFailed)
+            return nil
+        }
+    }
+
+    func unreadable() { failure = CasyStrings.picturesUnreadable }
+
+    private func changePicture(
+        failedWith message: String, _ send: @escaping (EdgeFunctions) async throws -> String?
+    ) {
+        pictureBusy = true
+        failure = nil
+        Task {
+            defer { pictureBusy = false }
+            do {
+                guard let api = await Native.api() else { return }
+                whoAmI?.avatarUrl = try await send(api)
+                onChange?()
             } catch {
                 failure = error.localizedDescription
             }
@@ -167,17 +207,45 @@ struct ProfileScreen: View {
         .nativeSheetLook(preferences)
     }
 
-    /// Who you are; tap to change the name your groups see.
+    /// Who you are: tap the picture to pick another, the name to change the
+    /// name your groups see. Two buttons in one row, so each borderless.
     private var nameCard: some View {
         Section {
-            Button {
-                newName = name
-                renaming = true
-            } label: {
-                HStack(spacing: 16) {
+            HStack(spacing: 16) {
+                PictureMenu(
+                    hasPicture: model.whoAmI?.avatarUrl != nil,
+                    addLabel: CasyStrings.picturesAdd,
+                    changeLabel: CasyStrings.picturesChange,
+                    onPicked: model.setPicture,
+                    onRemove: model.removePicture,
+                    onUnreadable: model.unreadable
+                ) {
                     Avatar(
                         name: name, index: 0, size: .large,
-                        url: model.whoAmI?.avatarUrl.flatMap(URL.init(string:)))
+                        url: model.whoAmI?.avatarUrl.flatMap(URL.init(string:))
+                    )
+                    .overlay(alignment: .bottomTrailing) {
+                        ZStack {
+                            Circle().fill(Theme.background.color)
+                            if model.pictureBusy {
+                                ProgressView().controlSize(.mini)
+                            } else {
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Theme.primary.color)
+                            }
+                        }
+                        .frame(width: 24, height: 24)
+                        .offset(x: 2, y: 2)
+                    }
+                }
+                .buttonStyle(.borderless)
+                .disabled(model.pictureBusy)
+                Button {
+                    newName = name
+                    renaming = true
+                } label: {
+                    HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name)
                             .font(.title3.bold())
@@ -195,12 +263,14 @@ struct ProfileScreen: View {
                     Image(systemName: "pencil")
                         .foregroundStyle(Theme.mutedForeground.color)
                         .accessibilityHidden(true)
+                    }
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.borderless)
+                .disabled(model.saving)
+                .accessibilityLabel(CasyStrings.profileChangeName)
+                .accessibilityValue(name)
             }
-            .disabled(model.saving)
-            .accessibilityLabel(CasyStrings.profileChangeName)
-            .accessibilityValue(name)
             if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
         }
     }

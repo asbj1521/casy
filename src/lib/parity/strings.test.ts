@@ -49,6 +49,14 @@ const WEB: Record<string, (t: Messages) => string> = {
   "profile.privacy": (t) => t.footer.privacy,
   "profile.signOut": (t) => t.nav.signOut,
   "profile.deleteAccount": (t) => t.deleteAccount.title,
+  "pictures.change": (t) => t.pictures.change,
+  "pictures.add": (t) => t.pictures.add,
+  "pictures.remove": (t) => t.pictures.remove,
+  "pictures.saveFailed": (t) => t.pictures.saveFailed,
+  "pictures.removeFailed": (t) => t.pictures.removeFailed,
+  "pictures.unreadable": (t) => t.pictures.unreadable,
+  "pictures.cropTitle": (t) => t.pictures.cropTitle,
+  "pictures.cropFrame": (t) => t.pictures.cropFrame,
   "push.failed": (t) => t.push.failed,
   "push.title": (t) => t.push.title,
   "push.turnOn": (t) => t.push.turnOn,
@@ -59,6 +67,15 @@ const WEB: Record<string, (t: Messages) => string> = {
   ),
 };
 
+/**
+ * Words only the native screens have, where iOS shows its own menu on the web
+ * (the file field's Fotobibliotek and Tag billede), in iOS's own wording.
+ */
+const NATIVE_ONLY: Record<string, { da: string; en: string }> = {
+  "pictures.library": { da: "Fotobibliotek", en: "Photo Library" },
+  "pictures.camera": { da: "Tag billede", en: "Take Photo" },
+};
+
 interface Catalog {
   strings: Record<string, { localizations: Record<string, { stringUnit: { value: string } }> }>;
 }
@@ -66,12 +83,20 @@ const catalog = JSON.parse(catalogText) as Catalog;
 
 describe("the native String Catalog", () => {
   it("lists exactly the keys checked here", () => {
-    expect(Object.keys(catalog.strings).sort()).toEqual(Object.keys(WEB).sort());
+    expect(Object.keys(catalog.strings).sort()).toEqual(
+      [...Object.keys(WEB), ...Object.keys(NATIVE_ONLY)].sort(),
+    );
   });
 
   it.each(Object.keys(WEB))("%s says what the web says", (key) => {
     const { localizations } = catalog.strings[key];
     expect(localizations.da.stringUnit.value).toBe(WEB[key](da));
     expect(localizations.en.stringUnit.value).toBe(WEB[key](en as Messages));
+  });
+
+  it.each(Object.keys(NATIVE_ONLY))("%s says what iOS says", (key) => {
+    const { localizations } = catalog.strings[key];
+    expect(localizations.da.stringUnit.value).toBe(NATIVE_ONLY[key].da);
+    expect(localizations.en.stringUnit.value).toBe(NATIVE_ONLY[key].en);
   });
 });
