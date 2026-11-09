@@ -163,7 +163,6 @@ struct ProfileScreen: View {
                         .padding(.top, 12)
                 }
             }
-            .buttonStyle(.plain)
             .task { await model.load() }
             .navigationTitle(CasyStrings.profileTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -201,6 +200,7 @@ struct ProfileScreen: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name)
                             .font(.title3.bold())
+                            .foregroundStyle(Theme.foreground.color)
                             .lineLimit(1)
                         // When the email is already the name, it would only repeat it.
                         if let email = model.email, email != name {

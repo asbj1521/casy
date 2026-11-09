@@ -75,6 +75,18 @@ final class ProfileUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [waited], timeout: 10), .completed)
     }
 
+    /// The whole row is the button, not only its icon: found on a phone,
+    /// where Del Casy seemed dead and the help pages opened only from the icon.
+    func testARowAnswersFarFromItsIcon() {
+        let app = launch()
+        let share = row(app, "Del Casy")
+        XCTAssertTrue(share.waitForExistence(timeout: 10))
+        share.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5)).tap()
+        XCTAssertTrue(
+            app.otherElements["ActivityListView"].waitForExistence(timeout: 10),
+            "the share sheet never opened")
+    }
+
     /// A screen that is still the page's closes the native sheet.
     func testARowStillOnThePageClosesTheSheet() {
         let app = launch()
