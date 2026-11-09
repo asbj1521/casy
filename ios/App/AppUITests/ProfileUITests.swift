@@ -88,11 +88,16 @@ final class ProfileUITests: XCTestCase {
     }
 
     /// A screen that is still the page's closes the native sheet.
-    func testARowStillOnThePageClosesTheSheet() {
+    func testARowStillOnThePageClosesTheSheet() { leavesForThePage("Grupper") }
+
+    /// Help pages open in the app's own page too, never Safari.
+    func testAHelpPageClosesTheSheet() { leavesForThePage("Vilkår") }
+
+    private func leavesForThePage(_ label: String) {
         let app = launch()
-        let groups = row(app, "Grupper")
-        XCTAssertTrue(groups.waitForExistence(timeout: 10))
-        groups.tap()
+        let target = row(app, label)
+        XCTAssertTrue(target.waitForExistence(timeout: 10))
+        target.tap()
         let gone = NSPredicate(format: "exists == false")
         let waited = XCTNSPredicateExpectation(
             predicate: gone, object: app.navigationBars["Profil"])

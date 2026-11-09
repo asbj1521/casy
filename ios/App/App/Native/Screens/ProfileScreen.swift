@@ -1,6 +1,5 @@
 import CasyAPI
 import CasyUI
-import SafariServices
 import SwiftUI
 
 /// What the Profil list shows. One for the whole launch, so reopening the
@@ -61,22 +60,6 @@ enum LeavingProfile {
     case signOut
 }
 
-/// A page of casy.app, in the browser's sheet.
-private struct WebPage: Identifiable {
-    let url: URL
-    var id: URL { url }
-}
-
-private struct SafariView: UIViewControllerRepresentable {
-    let url: URL
-
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        SFSafariViewController(url: url)
-    }
-
-    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
-}
-
 /// The Profil list as a native screen (#198), `ProfileHubList` on the web.
 /// Rows whose screens aren't native yet hand over to the page's own.
 struct ProfileScreen: View {
@@ -94,7 +77,6 @@ struct ProfileScreen: View {
     private static let maxNameLength = 40
 
     @Environment(\.openURL) private var openURL
-    @State private var page: WebPage?
     @State private var renaming = false
     @State private var newName = ""
 
@@ -141,10 +123,10 @@ struct ProfileScreen: View {
                 }
                 Section {
                     handOver(CasyStrings.profileMyData, "cylinder", "data")
-                    site(CasyStrings.profileSupport, "lifepreserver", "support")
-                    site(CasyStrings.profileHowItWorks, "questionmark.circle", "how-it-works")
-                    site(CasyStrings.profileTerms, "doc.text", "terms")
-                    site(CasyStrings.profilePrivacy, "lock", "privacy")
+                    handOver(CasyStrings.profileSupport, "lifepreserver", to: "/support")
+                    handOver(CasyStrings.profileHowItWorks, "questionmark.circle", to: "/how-it-works")
+                    handOver(CasyStrings.profileTerms, "doc.text", to: "/terms")
+                    handOver(CasyStrings.profilePrivacy, "lock", to: "/privacy")
                 }
                 Section {
                     Button {
@@ -171,7 +153,6 @@ struct ProfileScreen: View {
                     Button(CasyStrings.done, action: onDone)
                 }
             }
-            .sheet(item: $page) { SafariView(url: $0.url).ignoresSafeArea() }
             .alert(CasyStrings.profileChangeName, isPresented: $renaming) {
                 TextField(CasyStrings.profileChangeName, text: $newName)
                 Button(CasyStrings.cancel, role: .cancel) {}
@@ -224,13 +205,22 @@ struct ProfileScreen: View {
         }
     }
 
-    /// A row whose screen is still the page's: `?profile=<screen>`.
+    /// A row whose screen is one of the Profil sheet's, still the page's.
     private func handOver(
         _ label: String, _ icon: String, _ screen: String, badge: Int = 0,
         tone: RowTone = .standard
     ) -> some View {
+        handOver(label, icon, to: "/?profile=\(screen)", badge: badge, tone: tone)
+    }
+
+    /// A row whose screen is still the page's, inside the app: the app never
+    /// leaves for Safari.
+    private func handOver(
+        _ label: String, _ icon: String, to address: String, badge: Int = 0,
+        tone: RowTone = .standard
+    ) -> some View {
         Button {
-            leave(.webScreen("/?profile=\(screen)"))
+            leave(.webScreen(address))
         } label: {
             HStack(spacing: 8) {
                 ListRow(label, systemImage: icon, tone: tone)
@@ -248,17 +238,6 @@ struct ProfileScreen: View {
                     .accessibilityHidden(true)
             }
             .contentShape(Rectangle())
-        }
-    }
-
-    /// A page of casy.app, in Casy's language.
-    private func site(_ label: String, _ icon: String, _ path: String) -> some View {
-        Button {
-            var address = Self.site.appendingPathComponent(path).absoluteString
-            if preferences.lang == "en" { address += "?lang=en" }
-            page = URL(string: address).map(WebPage.init(url:))
-        } label: {
-            ListRow(label, systemImage: icon)
         }
     }
 
