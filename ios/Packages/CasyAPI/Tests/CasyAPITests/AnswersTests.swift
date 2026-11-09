@@ -107,3 +107,12 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
 @Test func deletingAnAccountReads() throws {
     try readsWithNothingLost("account-delete", as: NoAnswer.self)
 }
+
+@Test func pushSettingsRead() throws {
+    try readsWithNothingLost("account-push-settings", as: PushSettings.self)
+}
+
+@Test func changingAPushKindReads() throws {
+    let answer = try readsWithNothingLost("account-push-set", as: PushKindsOff.self)
+    #expect(answer.off.contains("deadline_near"))
+}

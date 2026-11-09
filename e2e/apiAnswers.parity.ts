@@ -24,6 +24,13 @@ const ASKED: [file: string, world: WorldOptions, fn: string, body: Record<string
   ["account-data", DEFAULT_WORLD, "account", { action: "data" }],
   ["account-data-empty", EMPTY, "account", { action: "data" }],
   ["account-delete", DEFAULT_WORLD, "account", { action: "delete", confirm: true }],
+  ["account-push-settings", DEFAULT_WORLD, "account", { action: "push-settings" }],
+  [
+    "account-push-set",
+    DEFAULT_WORLD,
+    "account",
+    { action: "push-set", kind: "deadline_near", on: false },
+  ],
   ["admin-status", DEFAULT_WORLD, "admin", { action: "status" }],
 ];
 

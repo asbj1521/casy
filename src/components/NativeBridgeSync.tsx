@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/context/auth";
 import { useLang } from "@/i18n/lang";
-import { lendSession, onNativeChoice, onNeedSession, sharePreferences } from "@/lib/nativeBridge";
+import {
+  lendSession,
+  onEnablePush,
+  onNativeChoice,
+  onNeedSession,
+  sharePreferences,
+} from "@/lib/nativeBridge";
+import { enablePush } from "@/lib/push";
 import { supabaseAuth } from "@/lib/supabase";
 import { chooseTheme, onThemeChange, storedTheme } from "@/lib/theme";
 
@@ -66,6 +73,26 @@ export default function NativeBridgeSync() {
         else handle = h;
       })
       .catch((err) => console.warn("listening for the app's login failed", err));
+    return () => {
+      gone = true;
+      void handle?.remove();
+    };
+  }, []);
+
+  // Turning notifications on from a native screen: always in the language now.
+  const langNow = useRef(lang);
+  useEffect(() => {
+    langNow.current = lang;
+  }, [lang]);
+  useEffect(() => {
+    let handle: { remove: () => Promise<void> } | undefined;
+    let gone = false;
+    onEnablePush(() => enablePush(langNow.current))
+      .then((h) => {
+        if (gone) void h.remove();
+        else handle = h;
+      })
+      .catch((err) => console.warn("listening for notifications failed", err));
     return () => {
       gone = true;
       void handle?.remove();

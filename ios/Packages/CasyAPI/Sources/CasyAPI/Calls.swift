@@ -10,7 +10,28 @@ private struct ConfirmedAction: Encodable, Sendable {
     let confirm: Bool
 }
 
+private struct PushSet: Encodable, Sendable {
+    let action = "push-set"
+    let kind: String
+    let on: Bool
+}
+
 extension EdgeFunctions {
+    public func pushSettings(errorMessage: String? = nil) async throws -> PushSettings {
+        try await call("account", body: Action(action: "push-settings"), errorMessage: errorMessage)
+    }
+
+    /// One notification kind switched on or off; answers the kinds now off.
+    public func setPushKind(
+        _ kind: String,
+        on: Bool,
+        errorMessage: String? = nil
+    ) async throws -> [String] {
+        let answer: PushKindsOff = try await call(
+            "account", body: PushSet(kind: kind, on: on), errorMessage: errorMessage)
+        return answer.off
+    }
+
     public func whoAmI(errorMessage: String? = nil) async throws -> WhoAmI {
         try await call("groups", body: Action(action: "whoami"), errorMessage: errorMessage)
     }

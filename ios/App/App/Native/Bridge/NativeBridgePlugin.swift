@@ -20,6 +20,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "setSession", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setPreferences", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "open", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pushResult", returnType: CAPPluginReturnPromise),
     ]
 
     /// The screens drawn natively in this build. A screen joins Release only
@@ -33,6 +34,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }()
 
     private var openScreen: String?
+    /// A native screen waiting for the web view to turn notifications on.
+    private var pushAnswer: CheckedContinuation<String, Never>?
 
     override public func load() {
         Task {
@@ -61,7 +64,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 expiresAt: Date(timeIntervalSince1970: expiresAt), userId: userId)
         }
         Task {
+            let before = await SessionBox.shared.current()?.userId
             await SessionBox.shared.set(next)
+            // Someone else on this phone must never see the last person's choices.
+            if before != next?.userId {
+                await MainActor.run { NotificationsModel.shared.reset() }
+            }
             call.resolve()
         }
     }
@@ -96,7 +104,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     onChoose: { [weak self] lang, theme in
                         self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
                     },
-                    onDone: { [weak self] in self?.dismissOpenScreen() }))
+                    onDone: { [weak self] in self?.dismissOpenScreen() },
+                    enablePush: { [weak self] in await self?.enablePush() ?? "failed" }))
             host.modalPresentationStyle = .pageSheet
             host.sheetPresentationController?.prefersGrabberVisible = true
             // A swipe down closes it too: tell the web either way.
@@ -105,6 +114,29 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             presenter.present(host, animated: true)
             call.resolve()
         }
+    }
+
+    /// `{ answer }`: how turning notifications on went, from the web view.
+    @objc func pushResult(_ call: CAPPluginCall) {
+        let answer = call.getString("answer") ?? "failed"
+        DispatchQueue.main.async {
+            self.finishPush(answer)
+            call.resolve()
+        }
+    }
+
+    /// The web view turns them on: the phone's token reaches only the page.
+    @MainActor private func enablePush() async -> String {
+        finishPush("failed")
+        return await withCheckedContinuation { continuation in
+            pushAnswer = continuation
+            notifyListeners("enablePush", data: [:])
+        }
+    }
+
+    private func finishPush(_ answer: String) {
+        pushAnswer?.resume(returning: answer)
+        pushAnswer = nil
     }
 
     private func dismissOpenScreen() {
@@ -120,6 +152,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }
 
     private func closed() {
+        finishPush("failed")
         guard let screen = openScreen else { return }
         openScreen = nil
         notifyListeners("closed", data: ["screen": screen])

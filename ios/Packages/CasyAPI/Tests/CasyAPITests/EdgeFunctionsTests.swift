@@ -163,3 +163,15 @@ private func failure(_ work: () async throws -> Void) async -> APIError? {
     #expect(object["action"] as? String == "delete")
     #expect(object["confirm"] as? Bool == true)
 }
+
+@Test func switchingANotificationSendsWhatTheServerReads() async throws {
+    var fake = Fake()
+    fake.body = #"{"off":["vote_decided"]}"#
+    let off = try await client(fake).setPushKind("vote_decided", on: false)
+    #expect(off == ["vote_decided"])
+    let sent = try #require(await fake.recorder.requests.first?.httpBody)
+    let object = try #require(JSONSerialization.jsonObject(with: sent) as? [String: Any])
+    #expect(object["action"] as? String == "push-set")
+    #expect(object["kind"] as? String == "vote_decided")
+    #expect(object["on"] as? Bool == false)
+}

@@ -61,6 +61,17 @@ public struct AdminStatus: Codable, Sendable, Equatable {
     public var isAdmin: Bool
 }
 
+/// Which notification kinds are off, and how many phones they go to.
+public struct PushSettings: Codable, Sendable, Equatable {
+    public var off: [String]
+    public var devices: Int
+}
+
+/// The kinds off after changing one.
+public struct PushKindsOff: Codable, Sendable, Equatable {
+    public var off: [String]
+}
+
 /// An answer nobody reads.
 public struct NoAnswer: Codable, Sendable, Equatable {
     public init() {}

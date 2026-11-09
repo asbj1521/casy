@@ -33,4 +33,12 @@ public enum CasyStrings {
     public static var settingsSystem: String { text("settings.system") }
     public static var settingsLight: String { text("settings.light") }
     public static var settingsDark: String { text("settings.dark") }
+
+    public static var pushFailed: String { text("push.failed") }
+    public static var pushTitle: String { text("push.title") }
+    public static var pushTurnOn: String { text("push.turnOn") }
+    public static var pushDeniedTitle: String { text("push.deniedTitle") }
+    public static var pushDenied: String { text("push.denied") }
+    /// A kind of notification, by the server's name for it.
+    public static func pushKind(_ kind: String) -> String { text("push.kind.\(kind)") }
 }

@@ -31,11 +31,13 @@ interface NativeBridgePlugin {
   }): Promise<void>;
   setPreferences(options: Preferences): Promise<void>;
   open(options: { screen: NativeScreen }): Promise<void>;
+  pushResult(options: { answer: "granted" | "denied" | "failed" }): Promise<void>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
   ): Promise<PluginListenerHandle>;
   addListener(event: "needSession", listener: () => void): Promise<PluginListenerHandle>;
+  addListener(event: "enablePush", listener: () => void): Promise<PluginListenerHandle>;
 }
 
 let plugin: NativeBridgePlugin | null = null;
@@ -103,4 +105,19 @@ export async function onNativeChoice(
 export async function onNeedSession(onNeed: () => void): Promise<PluginListenerHandle> {
   const { plugin } = await bridgePlugin();
   return plugin.addListener("needSession", onNeed);
+}
+
+/**
+ * Calls `enable` when a native screen asks to turn notifications on, and tells
+ * it how that went. The page does it: the phone's token reaches only the page.
+ */
+export async function onEnablePush(
+  enable: () => Promise<"granted" | "denied">,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("enablePush", () => {
+    void enable()
+      .catch(() => "failed" as const)
+      .then((answer) => plugin.pushResult({ answer }));
+  });
 }
