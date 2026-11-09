@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 import { type CandidateDate, type EventResponse } from "@/api/events";
 import YourTime from "@/components/time/YourTime";
 import Avatar from "@/components/ui/Avatar";
@@ -53,6 +55,14 @@ export default function CardFace({
   const headline = formatHeadline(event.settings, date, lang, t);
   const others = event.invitees.filter((i) => !i.isYou);
   const clash = clashesOn(date, calendar);
+  // The phone's card has a fixed height (#214), so while a warning's event is
+  // shown, what matters less makes room for it (#254).
+  const reading = compact && !!shownClash;
+  const middle = useRef<HTMLDivElement>(null);
+  // Scrolled down to the event while it was shown: back to the top after.
+  useEffect(() => {
+    if (!reading && middle.current) middle.current.scrollTop = 0;
+  }, [reading]);
 
   return (
     <div
@@ -93,15 +103,17 @@ export default function CardFace({
       </p>
       {/* In the compact card's fixed height, whatever doesn't fit is cut off
           here, so the faces always stay inside the card (#214). */}
-      <div className={cn(compact && "min-h-0 flex-1 overflow-hidden")}>
+      <div ref={middle} className={cn(compact && "min-h-0 flex-1 overflow-hidden")}>
         <p className={cn("text-foreground", compact ? "text-[1.0625rem]" : "mt-1 text-lg")}>
           {headline.time}
           <YourTime kind={event.settings.kind} date={date} />
         </p>
-        <p className={cn("text-sm text-muted-foreground", compact && "short:hidden")}>
-          {t.scheduler.inDays(daysUntil(dayOf(date.start, TZ), TODAY))}
-        </p>
-        {clash && (
+        {!reading && (
+          <p className={cn("text-sm text-muted-foreground", compact && "short:hidden")}>
+            {t.scheduler.inDays(daysUntil(dayOf(date.start, TZ), TODAY))}
+          </p>
+        )}
+        {clash && !reading && (
           <p className="mt-2 text-sm font-medium text-rose-700">
             {t.swipe.clash(clash.label, clash.when, clash.more)}
           </p>
@@ -110,10 +122,11 @@ export default function CardFace({
           clashes={clashes}
           shown={shownClash}
           onShow={onShowClash}
+          focus={compact}
           className="mt-2"
         />
         {/* Only mounted with something to show: the welcome screen's made-up card has neither, and no one signed in. */}
-        {(event.place || event.note) && (
+        {(event.place || event.note) && !reading && (
           <PlaceNote event={event} readOnly className={compact ? "mt-2" : "mt-3"} />
         )}
       </div>
