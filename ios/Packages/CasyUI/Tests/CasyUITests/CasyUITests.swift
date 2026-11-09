@@ -126,3 +126,11 @@ private func containsForbidden(_ text: String) -> Bool {
         #expect(!text.hasPrefix("common."), "\(text) is its key, not its words")
     }
 }
+
+@Test func stringsFollowCasysLanguageNotThePhones() {
+    defer { CasyStrings.language = "da" }
+    CasyStrings.language = "en"
+    #expect(CasyStrings.settingsLanguage == "Language")
+    CasyStrings.language = "da"
+    #expect(CasyStrings.settingsLanguage == "Sprog")
+}

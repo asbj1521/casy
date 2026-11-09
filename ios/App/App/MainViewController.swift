@@ -40,6 +40,8 @@ class MainViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(InvitePlugin())
         // Sign in with Apple (#138).
         bridge?.registerPluginInstance(AppleSignInPlugin())
+        // The bridge to the app's native screens (#198).
+        bridge?.registerPluginInstance(NativeBridgePlugin())
         // A tap at the very top of the screen (by the Dynamic Island) goes to
         // the page (#168): iOS would only scroll the web view itself, and
         // Casy's screens scroll inside the page.

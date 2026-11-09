@@ -144,7 +144,7 @@ Started from `main`, not from `feature/native-spike` (changed 2026-11-08). Peopl
 
 ### Phase 2: the Profil sheet (M)
 
-First, what Phase 1 left for it: the spike's bridge from `feature/native-spike` and the raise to iOS 18, the XCUITest target with the fake backend over HTTP, snapshots on CI, and the look of `FlowButton` (glass with orange text, or solid) compared on a phone.
+Started 2026-11-09 with the bridge and iOS 18 from the spike (its labs left out); a native screen stays Debug-only until it does everything the web's does. First, what Phase 1 left for it: the spike's bridge from `feature/native-spike` and the raise to iOS 18, the XCUITest target with the fake backend over HTTP, snapshots on CI, and the look of `FlowButton` (glass with orange text, or solid) compared on a phone.
 
 Native, behind the home page's Profil button (still the web's button until Phase 5, so the sheet slides up rather than growing out of it): the profile list (`ProfileHubList` in `profile/ProfileHub.tsx`), Indstillinger (Sprog, Udseende, Notifikationer), Grupper and a group (members, invitations, rename, description, picture with the crop, Tid til hinanden switch, invite by link, QR and contacts, leave, delete, report and block), Dine data (with the AI consent rows, blocked people, the export shared as a file), Slet konto, Admin on a phone, Support, Sådan virker det, Vilkår and Privatliv opened in `SFSafariViewController` at casy.app, feedback by mail, share Casy, sign out. Log ind og sikkerhed stays the web's screen until Phase 6 (it is Supabase Auth with codes): its row hands over to the web's sheet. Replaces, in the app: `profile/ProfileSheet` and the phone screens it pushes.
 

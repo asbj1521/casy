@@ -1,6 +1,6 @@
 # The native iPhone app: how it is built
 
-The living half of `docs/native-ios-plan.md`, which says where this is going. Today the packages below sit beside the app in `ios/Packages/` and are **not linked into it**: the App Store app is still the web view, on iOS 15. The first native screen comes in Phase 2 (#198), with the bridge and the raise to iOS 18.
+The living half of `docs/native-ios-plan.md`, which says where this is going. The app is still the web view; since Phase 2 (#198) it needs iOS 18 and links the packages below, and native screens open over the page through a bridge.
 
 ## The packages
 
@@ -17,6 +17,14 @@ Rules for code in them:
 - A successful answer of the wrong shape is an error, never a crash. Words a screen only displays (a provider, a status) stay strings, so a new value from the server can't stop an answer from reading.
 - Dates are written from the names in `Format.swift`, not the system's formatter, whose wording changes between iOS versions.
 - New copy goes into `Localizable.xcstrings` in Danish and English. A test fails on a missing language, a dash, an emoji or "iCloud".
+
+## The bridge
+
+`ios/App/App/Native/` is a synchronized folder: a new Swift file there needs no edit to `project.pbxproj`. `Bridge/NativeBridgePlugin.swift` and `src/lib/nativeBridge.ts` (with `NativeBridgeSync`, mounted in `AppBackground`) are the two ends.
+
+- The web view owns the login. It lends the access token (`SessionBox`, in memory only); one about to run out is asked for again (`needSession`), never refreshed natively, as Supabase rotates refresh tokens.
+- Language and theme are the web view's too: a choice made natively is sent back and applied as its own rows do. Strings follow Casy's language (`CasyStrings.language`), not the phone's.
+- **A screen reaches people only when it does everything the web's does.** `nativeScreens` lists it for `DEBUG` until then, so TestFlight and App Store builds keep the web's. The web asks once which screens exist (`useNativeScreen`), so a web build never opens one its app doesn't have.
 
 ## What keeps it equal to the web
 
