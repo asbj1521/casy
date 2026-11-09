@@ -23,14 +23,15 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "pushResult", returnType: CAPPluginReturnPromise),
     ]
 
-    /// The screens drawn natively in this build. A screen joins only when it
-    /// does everything the web's does; until then, list it under `#if DEBUG`.
+    /// The screens drawn natively in this build. None in a Release build: the
+    /// Swift rewrite reaches people all at once, as its own update, so until
+    /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
-        var screens = ["settings"]
         #if DEBUG
-            screens.append("profile")  // until the whole Profil sheet is native
+            ["settings", "profile"]
+        #else
+            []
         #endif
-        return screens
     }()
 
     private var openScreen: String?
