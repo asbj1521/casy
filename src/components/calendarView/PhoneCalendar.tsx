@@ -41,6 +41,7 @@ import { useFillViewport } from "@/hooks/useFillViewport";
 import { useGlassTop } from "@/hooks/useGlassTop";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
 import { useStatusTap } from "@/hooks/useStatusTap";
+import { askForReview } from "@/lib/appReview";
 import { usePhoneImport } from "@/hooks/usePhoneImport";
 import { usePrimeDates } from "@/hooks/usePrimeDates";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
@@ -102,6 +103,9 @@ const PlanFromCalendar = lazy(() => import("@/components/planFromCalendar/PlanFr
 const SHEETS_AFTER_MS = 1500;
 
 /** "Not now" on the import card (#132), kept until the app is opened again. */
+/** How long after a date flies into the calendar the App Store's rating is asked for (#256). */
+const REVIEW_AFTER_MS = 1600;
+
 const phoneImportPutAway = { done: false };
 /**
  * The month is seen first; the question about the phone's calendar comes after
@@ -659,7 +663,16 @@ export default function PhoneCalendar() {
         />
       )}
       {homeVotes.agreed && (
-        <AgreedCard key={homeVotes.agreed.id} event={homeVotes.agreed} onDone={homeVotes.flyIn} />
+        <AgreedCard
+          key={homeVotes.agreed.id}
+          event={homeVotes.agreed}
+          onDone={(from) => {
+            homeVotes.flyIn(from);
+            // A date agreed, landing in the calendar: the moment to ask for a
+            // rating (#256), once it has landed.
+            window.setTimeout(() => void askForReview(), REVIEW_AFTER_MS);
+          }}
+        />
       )}
       {homeVotes.celebrations > 0 && <Celebration key={homeVotes.celebrations} />}
       {(settled || eventsOpen) && (

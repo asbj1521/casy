@@ -42,6 +42,51 @@ Calendar syncing says more about the idea than the app does (it finds dates, it
 doesn't copy calendars between apps), so the subtitle, "Find the day everyone
 can", is what keeps the page honest; keep it whichever name wins.
 
+## Being found in App Store search (#256, for 1.0.3)
+
+What is live with 1.0.2 (checked 12 Nov 2026): the name is "Casy" alone, the
+subtitle "Find a Date", the Danish App Store shows the English page, and Casy
+has one rating. Searching "Casy" on a phone in Denmark, with nothing
+autocorrected, shows Casy last or not at all, even with the subtitle added.
+
+Why: Apple ranks a new app with almost no downloads or ratings below
+everything else, and a one-word name gives it the least to match (the name is
+the strongest field, then the subtitle, then the hidden keywords). The Danish
+App Store reads the Danish page and the English (U.K.) one, so an English
+(U.S.) page alone may not be searched there at all.
+
+What to change, all at once with 1.0.3 (the name, subtitle and keywords can
+only change with a new version):
+
+1. **Name** "Casy: Find en dato" (Danish) and "Casy: Find a Date" (English):
+   more words to match, the brand still first.
+2. **Danish as the primary language**, with the Danish page below filled in, so
+   Danes see and are searched in Danish.
+3. **An English (U.K.) page** as well as English (U.S.), the same English texts,
+   so the Danish App Store also searches the English words.
+4. **Keywords** without the words already in the name (Apple counts them once):
+   the ones under each language below.
+5. **Ratings**: the app asks for one (1.0.3, `lib/appReview.ts`, iOS's own
+   sheet) after a date is agreed, at most every four months. Ask friends to
+   rate it too: every rating counts most while the app is new.
+6. **Optional, costs money**: Apple Ads (ads.apple.com) on the word "casy" in
+   Denmark puts Casy first for its own name at once, while the rest builds up.
+
+### In App Store Connect, step by step
+
+1. https://appstoreconnect.apple.com/apps, Casy, then the new version (1.0.3,
+   "+" next to iOS App if it isn't there yet).
+2. **App Information** (left menu), **Localizable Information**: at the top
+   right, switch the language to **Danish**; if it isn't listed, add it with
+   the language menu's "+". Fill in the Danish name and subtitle below. Then
+   set **Primary Language** (General Information) to **Danish**.
+3. Still in App Information, add **English (U.K.)** the same way, with the
+   English name and subtitle.
+4. In the 1.0.3 version page, for each language (Danish, English (U.K.),
+   English (U.S.)): the promotional text, description and keywords below,
+   and the same screenshots.
+5. Submit 1.0.3 with the build from `npm run release:ios`.
+
 ## Danish (primary)
 
 **Name** (30): Casy: Find en dato
@@ -51,8 +96,8 @@ can", is what keeps the page honest; keep it whichever name wins.
 **Promotional text** (170):
 Lav en gruppe, læg jeres kalendere oven på hinanden, og lad Casy finde de datoer, der passer alle. Swipe ja eller nej, og aftalen lander i alles kalender.
 
-**Keywords** (100):
-kalender,dato,planlægning,gruppe,venner,aftale,møde,fælles,ledig,invitation,afstemning,tid
+**Keywords** (100, from 1.0.3: no word from the name):
+kalender,planlægning,gruppe,venner,aftale,møde,fælles,ledig,invitation,afstemning,tidspunkt,weekend
 
 **Description** (4000):
 
@@ -90,8 +135,8 @@ Casy er lavet i Danmark og er gratis.
 **Promotional text** (170):
 Make a group, lay your calendars on top of each other, and let Casy find the dates that suit everyone. Swipe yes or no, and the event lands in everyone's calendar.
 
-**Keywords** (100):
-calendar,schedule,group,friends,availability,meeting,date,poll,plan,free time,invite,shared
+**Keywords** (100, from 1.0.3: no word from the name; the same for English (U.K.)):
+calendar,schedule,group,friends,availability,meeting,poll,plan,free,invite,shared,weekend,when
 
 **Description** (4000):
 
