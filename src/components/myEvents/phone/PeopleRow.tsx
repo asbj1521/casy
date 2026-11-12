@@ -73,8 +73,15 @@ export default function PeopleRow({
                 aria-label={`${name}: ${said}${suggested}`}
                 className="flex w-12 flex-col items-center gap-1"
               >
-                <span className={cn("relative", stand === "waiting" && "opacity-50")}>
-                  <Avatar name={p.name} index={invitees.indexOf(p)} size="row" src={p.avatarUrl} />
+                {/* Faded on a solid ground: see-through, the page behind showed in it. */}
+                <span className="relative rounded-full bg-card">
+                  <Avatar
+                    name={p.name}
+                    index={invitees.indexOf(p)}
+                    size="row"
+                    src={p.avatarUrl}
+                    className={cn(stand === "waiting" && "opacity-50")}
+                  />
                   <span
                     aria-hidden
                     className={cn(
@@ -87,7 +94,7 @@ export default function PeopleRow({
                   {p.profileId === suggesterId && (
                     <span
                       aria-hidden
-                      className="absolute -left-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-cta text-white ring-2 ring-background"
+                      className="absolute -bottom-0.5 -left-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-cta text-white ring-2 ring-background"
                     >
                       <Star className="h-2.5 w-2.5" fill="currentColor" strokeWidth={0} />
                     </span>

@@ -25,7 +25,7 @@ test("someone the vote left out is added, the dates found in Planlæg, and sent 
   withoutOliver(backend);
   await asTheApp(page);
   await page.goto("/?events=ev-cinema");
-  const vote = page.getByRole("dialog", { name: "Biograf" });
+  const vote = page.getByRole("dialog", { name: "Løbeklubben" });
 
   await vote.getByRole("button", { name: /1 i gruppen er ikke med/ }).click();
   const picking = page.getByRole("dialog", { name: "Tilføj til afstemningen" });
@@ -57,7 +57,7 @@ test("someone the vote left out is added, the dates found in Planlæg, and sent 
 test("searching again with nobody added opens Planlæg the same way", async ({ page, backend }) => {
   await asTheApp(page);
   await page.goto("/?events=ev-cinema");
-  const vote = page.getByRole("dialog", { name: "Biograf" });
+  const vote = page.getByRole("dialog", { name: "Løbeklubben" });
   await expect(vote.getByRole("button", { name: /i gruppen er ikke med/ })).toHaveCount(0);
   await vote.getByRole("button", { name: "Søg igen" }).click();
 
@@ -84,7 +84,7 @@ test("when the server turns the new dates down, it says so, and nothing has chan
   });
   await page.goto("/?events=ev-cinema");
   await page
-    .getByRole("dialog", { name: "Biograf" })
+    .getByRole("dialog", { name: "Løbeklubben" })
     .getByRole("button", { name: "Søg igen" })
     .click();
   await page.getByRole("button", { name: "Send 2 nye datoer" }).click();
@@ -98,7 +98,7 @@ test("when the server turns the new dates down, it says so, and nothing has chan
 
 test("the website has none of it", async ({ page }) => {
   await page.goto("/?events=ev-cinema");
-  const vote = page.getByRole("dialog", { name: "Biograf" });
+  const vote = page.getByRole("dialog", { name: "Løbeklubben" });
   await expect(vote).toBeVisible();
   await expect(vote.getByRole("button", { name: "Søg igen" })).toHaveCount(0);
 });
@@ -114,7 +114,7 @@ test.describe("with motion", () => {
     await asTheApp(page);
     await page.goto("/?events=ev-cinema");
     await page
-      .getByRole("dialog", { name: "Biograf" })
+      .getByRole("dialog", { name: "Løbeklubben" })
       .getByRole("button", { name: /1 i gruppen er ikke med/ })
       .click();
     await page

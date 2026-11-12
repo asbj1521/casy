@@ -54,8 +54,11 @@ export default function DatedScreen({
       <div className="mt-2 flex items-center gap-4">
         <DateTile start={start} size="hero" />
         <div className="min-w-0">
-          <p className="text-[1.0625rem] font-semibold tabular-nums text-foreground">{when}</p>
-          <p className="truncate text-[0.8125rem] text-muted-foreground">{event.group.name}</p>
+          {/* The group is the sheet's title; here what it is, and when. */}
+          <p className="truncate text-[1.0625rem] font-semibold text-foreground">
+            {eventTitle(event.title, t)}
+          </p>
+          <p className="text-[0.9375rem] tabular-nums text-muted-foreground">{when}</p>
           {/* The time in the viewer's own clock, where it isn't Danish time. */}
           <YourTime
             kind={event.settings.kind}
@@ -79,7 +82,7 @@ export default function DatedScreen({
       </div>
 
       <EdgeWarnings event={event} className="mt-4" />
-      <PlaceNote event={event} className="mt-4" />
+      <PlaceNote event={event} readOnly className="mt-4" />
       <EventImpactDetails event={event} className="mt-4" />
 
       {backOut.error && (

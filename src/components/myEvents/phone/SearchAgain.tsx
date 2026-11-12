@@ -10,7 +10,8 @@ import { useT } from "@/i18n/lang";
 import type { VoteEvent } from "@/lib/vote";
 
 /**
- * Searching an open vote again (#240, the app only), under its dates: the
+ * Searching an open vote again (#240, the app only), as rows in the vote's
+ * last group, above cancelling or leaving (its ListGroup is the caller's): the
  * members of the group it leaves out ("2 i gruppen er ikke med"), who open a
  * sheet to pick them (all ticked), and "Søg igen" for a new look with the same
  * people, when no date suits everyone. Anyone in the group may: a group is
@@ -29,24 +30,22 @@ export default function SearchAgain({ event }: { event: VoteEvent }) {
 
   return (
     <>
-      <ListGroup>
-        {missing.length > 0 && (
-          <ListRow
-            icon={UserPlus}
-            label={words.missing(missing.length)}
-            chevron
-            onClick={() => {
-              setPicked(missing.map((m) => m.profileId));
-              setPicking(true);
-            }}
-          />
-        )}
+      {missing.length > 0 && (
         <ListRow
-          icon={RefreshCw}
-          label={words.button}
-          onClick={ready ? () => searchAgain([]) : undefined}
+          icon={UserPlus}
+          label={words.missing(missing.length)}
+          chevron
+          onClick={() => {
+            setPicked(missing.map((m) => m.profileId));
+            setPicking(true);
+          }}
         />
-      </ListGroup>
+      )}
+      <ListRow
+        icon={RefreshCw}
+        label={words.button}
+        onClick={ready ? () => searchAgain([]) : undefined}
+      />
 
       <Sheet
         open={picking}

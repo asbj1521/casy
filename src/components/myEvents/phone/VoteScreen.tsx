@@ -19,7 +19,8 @@ import { ListGroup, ListRow } from "@/components/ui/ListGroup";
 import Notice from "@/components/ui/Notice";
 import { useEventChange } from "@/hooks/useEventChange";
 import { useLang, useT } from "@/i18n/lang";
-import { formatEventDate } from "@/lib/format";
+import { eventTitle } from "@/i18n/eventTitle";
+import { formatDate, formatEventDate, formatTime } from "@/lib/format";
 import { isNativeApp } from "@/lib/nativeApp";
 import { cn } from "@/lib/utils";
 import {
@@ -70,6 +71,18 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
   const canChoose = mustChoose && event.createdBy.isYou;
   const marked = mustChoose ? bestPick(event) : halfIn ? leader(event) : null;
   const first = dates[0] ? Date.parse(dates[0].start) : null;
+  // A meeting's time, said once at the top when every date shares it; the
+  // rows then say only the day (#258). Dates at different times keep theirs.
+  const clock = (d: { start: string; end: string }) =>
+    `${formatTime(d.start)}-${formatTime(d.end)}`;
+  const sharedTime =
+    event.settings.kind === "single" &&
+    dates.length > 0 &&
+    dates.every((d) => clock(d) === clock(dates[0]))
+      ? clock(dates[0])
+      : null;
+  const dateLabel = (d: { start: string; end: string }) =>
+    sharedTime ? formatDate(d.start, lang) : formatEventDate(event.settings.kind, d, lang);
   // Most yeses first, then most "rather not", then soonest.
   const ranked = dates
     .map((d) => ({ date: d, n: tally(d, event) }))
@@ -83,6 +96,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
           <ExitConfirm event={event} onCancel={() => setExiting(false)} />
         ) : (
           <ListGroup className="mt-0">
+            {isNativeApp && event.status === "pending" && <SearchAgain event={event} />}
             <ReportEventButton event={event} as="row" />
             <ListRow
               icon={LogOut}
@@ -98,9 +112,15 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
         <span className="pr-2 pt-2">
           <DateTile start={first} more={Math.max(0, dates.length - 1)} size="hero" />
         </span>
-        <p className="min-w-0 truncate text-[1.0625rem] font-semibold text-foreground">
-          {event.group.name}
-        </p>
+        {/* The group is the sheet's title; here what it is, and when. */}
+        <div className="min-w-0">
+          <p className="truncate text-[1.0625rem] font-semibold text-foreground">
+            {eventTitle(event.title, t)}
+          </p>
+          {sharedTime && (
+            <p className="text-[0.9375rem] tabular-nums text-muted-foreground">{sharedTime}</p>
+          )}
+        </div>
       </div>
 
       <div className="mt-5">
@@ -128,7 +148,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
           {ranked.map(({ date: d, n }) => {
             const isMarked = d.id === marked?.id;
             const isOpen = d.id === openId;
-            const label = formatEventDate(event.settings.kind, d, lang);
+            const label = dateLabel(d);
             // Shown as given while it saves.
             const yours =
               answer.isPending && answer.variables?.dateId === d.id
@@ -209,7 +229,12 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
         </Notice>
       )}
 
-      {/* Under the dates: the time left on the left, Casy's read on the right. */}
+      {/* The suggester's deadline, and settling now (#179), right under the dates. */}
+      {event.createdBy.isYou && !mustChoose && event.status === "pending" && (
+        <PhoneVoteDeadline event={event} />
+      )}
+
+      {/* Then the time left on the left, Casy's read on the right. */}
       <EventImpactDetails
         event={event}
         className="mt-2 px-1"
@@ -227,14 +252,8 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
         }
       />
 
-      {isNativeApp && event.status === "pending" && <SearchAgain event={event} />}
-
-      <PlaceNote event={event} className="mt-6" />
-
-      {/* The suggester's deadline, and settling now (#179). */}
-      {event.createdBy.isYou && !mustChoose && event.status === "pending" && (
-        <PhoneVoteDeadline event={event} />
-      )}
+      {/* A place or note written when it was planned, shown only. */}
+      <PlaceNote event={event} readOnly className="mt-6" />
     </EventScreen>
   );
 }

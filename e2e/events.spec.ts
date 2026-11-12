@@ -211,7 +211,7 @@ test.describe("a phone's Aftaler (#103, #177)", () => {
     await page.goto("/events");
     await page.getByRole("button", { name: /Biograf/ }).click();
     await expect(page).toHaveURL(/\/\?events=ev-cinema$/);
-    const sheet = page.getByRole("dialog", { name: "Biograf" });
+    const sheet = page.getByRole("dialog", { name: "Løbeklubben" });
     // Your answer on each date, a tick and a cross; nobody chooses while it votes.
     await expect(sheet.getByRole("button", { name: /^Jeg kan ikke: / })).toHaveCount(2);
     await expect(sheet.getByRole("button", { name: "Vælg" })).toHaveCount(0);
@@ -238,14 +238,18 @@ test.describe("a phone's Aftaler (#103, #177)", () => {
     page,
   }) => {
     await page.goto("/?events=ev-cinema");
-    const sheet = page.getByRole("dialog", { name: "Biograf" });
+    const sheet = page.getByRole("dialog", { name: "Løbeklubben" });
+    // The event's name beside its first date, the time said once under it,
+    // and the dates alone in their rows (#258).
+    await expect(sheet.getByText("Biograf", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("20:00-22:30", { exact: true })).toHaveCount(1);
     // Those still to answer stand apart, at the end of the faces.
     const faces = sheet.getByRole("listitem", { name: /: (Har|Kan)/ });
     await expect(faces).toHaveText([/Dig$/, /Freja$/, /Oliver$/]);
     await expect(faces.nth(1)).toHaveAccessibleName(/^Freja: Har ikke svaret endnu/);
 
     // Each date shows who can, as faces; a tap opens who said what.
-    const friday = sheet.getByRole("button", { name: /^fre\. 16\./ });
+    const friday = sheet.getByRole("button", { name: /^fre\. 16\. okt\./ });
     await expect(friday).toHaveAttribute("aria-expanded", "false");
     await expect(friday.getByRole("img", { name: "2 kan" })).toBeVisible();
     await friday.click();
@@ -267,7 +271,7 @@ test.describe("a phone's Aftaler (#103, #177)", () => {
     backend,
   }) => {
     await page.goto("/?events=ev-cinema");
-    const sheet = page.getByRole("dialog", { name: "Biograf" });
+    const sheet = page.getByRole("dialog", { name: "Løbeklubben" });
     // A deadline set: taken away, and the vote then waits for everyone.
     await sheet.getByRole("button", { name: /^Svarfrist/ }).click();
     await page
@@ -292,8 +296,9 @@ test.describe("a phone's Aftaler (#103, #177)", () => {
     // An old link to one event leads to its screen in the sheet.
     await page.goto("/events/ev-party");
     await expect(page).toHaveURL(/\/\?events=ev-party$/);
-    const sheet = page.getByRole("dialog", { name: "Julefrokost" });
-    // The time beside its date (and again on the event in your day).
+    // The group is the title; the event's name and time are beside its date (#258).
+    const sheet = page.getByRole("dialog", { name: "Fredagsbar" });
+    await expect(sheet.getByText("Julefrokost").first()).toBeVisible();
     await expect(sheet.getByText("18:00-23:00").first()).toBeVisible();
     await expect(
       sheet.getByRole("listitem", { name: /^Dig: Har sagt ja\. Du foreslog den$/ }),

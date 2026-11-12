@@ -13,7 +13,6 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import Notice from "@/components/ui/Notice";
 import { PUSH, pushTransition } from "@/components/ui/push";
 import { useSignedInUser } from "@/context/auth";
-import { eventTitle } from "@/i18n/eventTitle";
 import { useT } from "@/i18n/lang";
 import { dayParam } from "@/lib/dayView";
 import { phoneEventGroups } from "@/lib/myEvents";
@@ -85,13 +84,14 @@ export default function EventsSheet({
 
   let screen: { title: string; body: ReactNode };
   if (staged?.stage === "scheduled") {
+    // The group in the header; the event's name is beside its date (#258).
     screen = {
-      title: eventTitle(staged.event.title, t),
+      title: staged.event.group.name,
       body: <DatedScreen event={staged.event} onOpenDay={openDay} />,
     };
   } else if (staged?.stage === "voting" || staged?.stage === "toSwipe") {
     screen = {
-      title: eventTitle(staged.event.title, t),
+      title: staged.event.group.name,
       body: <VoteScreen event={staged.event} />,
     };
   } else {
