@@ -14,7 +14,6 @@ import { useAiConsentGate } from "@/hooks/useAiConsentGate";
 import AiQuestionsSheet from "./AiQuestionsSheet";
 import GroupRow from "./GroupRow";
 import HowManyRow from "./HowManyRow";
-import MoreDetails from "./MoreDetails";
 import NameField from "./NameField";
 import PlanMonths from "./PlanMonths";
 import TimeRows from "./TimeRows";
@@ -57,7 +56,6 @@ export default function PlanSetup({
     updateSettings,
     updateSettingsByHand,
     extras,
-    updateExtras,
     peopleChoice,
   } = planning;
   const members = activeGroup?.members ?? [];
@@ -174,7 +172,6 @@ export default function PlanSetup({
         )}
         {!editor && <HowManyRow planning={planning} />}
         <DanishTimeNote className="mt-3 px-1 text-xs" />
-        <MoreDetails extras={extras} onExtras={updateExtras} lit={fill.lit === "more"} />
       </div>
 
       {consent.sheet}

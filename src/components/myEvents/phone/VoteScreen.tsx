@@ -89,25 +89,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
     .sort((a, b) => b.n.accepted - a.n.accepted || b.n.maybe - a.n.maybe);
 
   return (
-    // Cancelling or leaving stays along the bottom, as a screen's last thing.
-    <EventScreen
-      action={
-        exiting ? (
-          <ExitConfirm event={event} onCancel={() => setExiting(false)} />
-        ) : (
-          <ListGroup className="mt-0">
-            {isNativeApp && event.status === "pending" && <SearchAgain event={event} />}
-            <ReportEventButton event={event} as="row" />
-            <ListRow
-              icon={LogOut}
-              label={event.createdBy.isYou ? t.events.cancelEvent : t.events.leaveEvent}
-              tone="danger"
-              onClick={() => setExiting(true)}
-            />
-          </ListGroup>
-        )
-      }
-    >
+    <EventScreen>
       <div className="mt-2 flex items-center gap-4">
         <span className="pr-2 pt-2">
           <DateTile start={first} more={Math.max(0, dates.length - 1)} size="hero" />
@@ -254,6 +236,25 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
 
       {/* A place or note written when it was planned, shown only. */}
       <PlaceNote event={event} readOnly className="mt-6" />
+
+      {/* Searching again, cancelling or leaving: last, scrolled to, never pinned
+          (nothing invites anyone to call a plan off). */}
+      <div className="mt-8">
+        {exiting ? (
+          <ExitConfirm event={event} onCancel={() => setExiting(false)} />
+        ) : (
+          <ListGroup className="mt-0">
+            {isNativeApp && event.status === "pending" && <SearchAgain event={event} />}
+            <ReportEventButton event={event} as="row" />
+            <ListRow
+              icon={LogOut}
+              label={event.createdBy.isYou ? t.events.cancelEvent : t.events.leaveEvent}
+              tone="danger"
+              onClick={() => setExiting(true)}
+            />
+          </ListGroup>
+        )}
+      </div>
     </EventScreen>
   );
 }

@@ -50,7 +50,7 @@ test("Planlæg opens over the calendar, and the dates found are sent as they wer
   await expect(page.getByRole("button", { name: "Aftaler", exact: true })).toBeVisible();
 });
 
-test("a deadline chosen under Flere detaljer goes with the dates (#179)", async ({
+test("Planlæg has no Flere detaljer: a vote goes with no deadline, set on it after (#258)", async ({
   page,
   backend,
 }) => {
@@ -58,19 +58,14 @@ test("a deadline chosen under Flere detaljer goes with the dates (#179)", async 
   await page.getByRole("button", { name: "Planlæg" }).click();
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
   await pickGroup(page, "Løbeklubben");
-  await sheet.getByRole("button", { name: "Flere detaljer" }).click();
-  await sheet.getByRole("button", { name: /^Svarfrist/ }).click();
-  await page
-    .getByRole("dialog", { name: "Svarfrist" })
-    .getByRole("radio", { name: "2 dage" })
-    .click();
-  await expect(sheet.getByRole("button", { name: /^Svarfrist/ })).toContainText("2 dage");
+  await expect(sheet.getByRole("button", { name: "Flere detaljer" })).toHaveCount(0);
+  await expect(sheet.getByRole("textbox", { name: "Sted" })).toHaveCount(0);
 
   await sheet.getByRole("button", { name: "Find dato" }).click();
   await page.getByRole("button", { name: "Foreslå top 5 datoer" }).click();
   await expect
     .poll(() => backend.calls.find((c) => c.body.action === "suggest")?.body)
-    .toMatchObject({ answerDays: 2 });
+    .toMatchObject({ answerDays: null, place: "", note: "" });
 });
 
 test("a new group made from the plan is invited to, then picked for the plan (#153)", async ({
@@ -171,10 +166,7 @@ test("✨ in the name field asks Casy, its questions drop from the field, and th
   );
 });
 
-test("the sheet's rows: give or take an hour, and the details folded away go along (#173)", async ({
-  page,
-  backend,
-}) => {
+test("the sheet's rows: give or take an hour goes along (#173)", async ({ page, backend }) => {
   await page.goto("/calendar-overview?plan");
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
   // Two half hours either way: ± 1 t.
@@ -182,23 +174,13 @@ test("the sheet's rows: give or take an hour, and the details folded away go alo
   await sheet.getByRole("button", { name: "Mere plads at rykke" }).click();
   await expect(sheet.getByText("± 1 t", { exact: true })).toBeVisible();
 
-  await sheet.getByRole("button", { name: "Flere detaljer" }).click();
   // Nobody is picked out by hand on a phone: how many is up front (#259, #260).
   await expect(sheet.getByRole("button", { name: /^Deltagere/ })).toHaveCount(0);
-  await sheet.getByRole("button", { name: /^Svarfrist/ }).click();
-  // It grows out of its row (#175), and Esc (or a tap outside) closes it, not the sheet.
-  await expect(page.getByRole("dialog", { name: "Svarfrist" })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Svarfrist" })).toHaveCount(0);
-  await expect(sheet).toBeVisible();
-  await sheet.getByRole("textbox", { name: "Sted" }).fill("Hos Sara");
-  await sheet.getByRole("textbox", { name: "Note" }).fill("Tag snacks med");
   await sheet.getByRole("button", { name: "Find dato" }).click();
   await page.getByRole("button", { name: "Foreslå top 5 datoer" }).click();
 
   await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
   const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
-  expect(sent).toMatchObject({ place: "Hos Sara", note: "Tag snacks med" });
   // The start may move an hour either way of the hour picked, the length kept.
   const settings = sent.settings as {
     startHour: number;
@@ -506,24 +488,6 @@ test("the choice over the dates ranks them at once, and it is what is sent (#234
   expect(sent.map((d) => d.start).sort()).toEqual([...soonest].sort());
 });
 
-test("a genvej remembers the choice (#234)", async ({ page, backend }) => {
-  await page.goto("/calendar-overview");
-  await page.getByRole("button", { name: "Planlæg" }).click();
-  const sheet = page.getByRole("dialog", { name: "Planlæg" });
-  await sheet.getByRole("button", { name: "Genveje", exact: true }).click();
-  const shortcuts = page.getByRole("dialog", { name: "Genveje" });
-  await shortcuts.getByRole("button", { name: "Ny genvej" }).first().click();
-  const editor = page.getByRole("dialog", { name: "Ny genvej" });
-  await editor.getByRole("button", { name: "Flere detaljer" }).click();
-  await editor.getByRole("button", { name: /^Prioritér/ }).click();
-  await page.getByRole("radio", { name: "Snarest" }).click({ force: true });
-  await expect(editor.getByRole("button", { name: /^Prioritér/ })).toContainText("Snarest");
-  await editor.getByRole("textbox", { name: /Navn på genvej/ }).fill("Hurtig");
-  await editor.getByRole("button", { name: "Gem genvej" }).click();
-  await expect.poll(() => backend.world.presets.length).toBe(1);
-  expect(backend.world.presets[0].plan).toMatchObject({ extras: { priority: "soon" } });
-});
-
 test.describe("Genveje (#175)", () => {
   /** A genvej as plan-presets keeps it: padel on weekdays, at the times given. */
   const padel = (times: { startHour: number; durationMinutes?: number }[]) => ({
@@ -634,10 +598,9 @@ test.describe("Genveje (#175)", () => {
     const editor = page.getByRole("dialog", { name: "Ny genvej" });
     await expect(editor.getByRole("button", { name: /^Gruppe/ })).toHaveCount(0);
     await expect(editor.getByText("Måneder")).toHaveCount(0);
-    // Nor anyone from a group to choose among (#233); the rest of the details stay.
-    await editor.getByRole("button", { name: "Flere detaljer" }).click();
-    await expect(editor.getByRole("textbox", { name: "Sted" })).toBeVisible();
+    // Nor anyone to choose among (#233), nor Flere detaljer (#258).
     await expect(editor.getByRole("button", { name: /^Deltagere/ })).toHaveCount(0);
+    await expect(editor.getByRole("button", { name: "Flere detaljer" })).toHaveCount(0);
     await expect(editor.getByRole("button", { name: "Gem genvej" })).toBeDisabled();
     await editor.getByRole("textbox", { name: /Navn på genvej/ }).fill("Padel");
     await editor.getByRole("button", { name: "Gem genvej" }).click();

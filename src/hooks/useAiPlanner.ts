@@ -88,6 +88,11 @@ interface AiPlannerPage {
    * only "how many" is taken, so nobody is left out unseen (#260).
    */
   byName?: boolean;
+  /**
+   * Whether a place and note in the text are taken. Not on a phone, whose
+   * Planlæg has no fields to see or change them in.
+   */
+  details?: boolean;
 }
 
 export function useAiPlanner(page: AiPlannerPage) {
@@ -111,7 +116,10 @@ export function useAiPlanner(page: AiPlannerPage) {
         now.setName(plan.title ?? "");
         aiTitle.current = plan.title;
       }
-      if (first) now.setExtras({ place: plan.place ?? "", note: plan.note ?? "" });
+      if (now.details === false) {
+        // Nothing to see them in: none taken, and none left from before.
+        if (first) now.setExtras({ place: "", note: "" });
+      } else if (first) now.setExtras({ place: plan.place ?? "", note: plan.note ?? "" });
       else {
         if (plan.place) now.setExtras({ place: plan.place });
         if (plan.note) now.setExtras({ note: plan.note });

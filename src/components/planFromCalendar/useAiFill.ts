@@ -12,7 +12,7 @@ import { flexOf, flexWindow } from "@/lib/startFlex";
 
 /** The sheet's rows Casy fills in, in the order they stand. */
 export type FillKey =
-  "name" | "kind" | "time" | "flex" | "days" | "tripDays" | "startDay" | "months" | "more";
+  "name" | "kind" | "time" | "flex" | "days" | "tripDays" | "startDay" | "months";
 
 /** A row's own sheet, opened while Casy uses it. */
 export type FillSheet = "time" | "days" | "startDay";
@@ -174,9 +174,6 @@ function script(from: PlanState, to: PlanState): Frame[] {
     push({ period: b.period }, TAP_MS * 1.5, { lit: "months" });
   }
 
-  if (!same(from.extras, to.extras) || !same(from.people, to.people)) {
-    push({}, TAP_MS * 1.5, { lit: "more" });
-  }
   return frames;
 }
 

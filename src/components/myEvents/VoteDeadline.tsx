@@ -14,8 +14,8 @@ import type { VoteEvent } from "@/lib/vote";
 
 /**
  * A vote's deadline (#179). There is none unless the suggester gives it one:
- * when planning (`DeadlinePicker` in Planlæg, a select on a computer), or
- * later on the vote's screen, where the suggester can also settle it now
+ * when planning on a computer (a select), or on the vote's screen (on a
+ * phone the only place, #258: Planlæg has no Flere detaljer), where the suggester can also settle it now
  * with the answers so far ("Afgør nu", asked first). Everyone else reads
  * when it is settled.
  */
@@ -26,7 +26,7 @@ import type { VoteEvent } from "@/lib/vote";
  * none, and undefined for a deadline already set (no row ticked: it is a
  * moment, not a number of days).
  */
-export function DeadlinePicker({
+function DeadlinePicker({
   open,
   onClose,
   anchorId,
