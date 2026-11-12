@@ -21,11 +21,12 @@ const FLY = { type: "spring", stiffness: 380, damping: 32 } as const;
  * corner opening it to change. Plus squares fill the first row, then come
  * one at a time, until there are MAX_SHORTCUTS.
  *
- * A tap doesn't run it: its square flies down to the bottom of the screen
- * and grows to half its width (`selected`), its times listed beside it, so
- * what is about to be searched is seen first; the sheet's "Find dato" under
- * it runs it, for the group in the row under it (Planlæg's own, to change
- * there). A tap on the big square, or on another, sends it back.
+ * A tap doesn't run it: the other squares give way and its square flies to
+ * the top, half the screen wide (`selected`), its times listed beside it, so
+ * what is about to be searched is seen first, with the whole screen for the
+ * rows under it (#259: the group, Hvornår, how many need to come); the
+ * sheet's "Find dato" runs it. A tap on the big square sends it back and
+ * brings the others back.
  *
  * A genvej with a picture (#186) has it filling its square, its name over
  * the picture's foot.
@@ -49,7 +50,7 @@ export default function ShortcutsScreen({
 }: {
   shortcuts: Shortcut[] | undefined;
   error: string | null;
-  /** The genvej shown big at the bottom, to run. */
+  /** The genvej shown big on its own, to run. */
   selected: Shortcut | null;
   onSelect: (shortcut: Shortcut | null) => void;
   onEdit: (shortcut: Shortcut) => void;
@@ -64,6 +65,9 @@ export default function ShortcutsScreen({
   const t = useT();
   const words = t.shortcuts;
   const reduce = useReducedMotion();
+  // The genvej flying back into the grid, kept over the squares after it
+  // (a plus tile's dashed edge showed across its picture) until it lands.
+  const [returning, setReturning] = useState<string | null>(null);
   const list = shortcuts ?? [];
   const n = list.length + (failed ? 1 : 0);
   const adds = n >= MAX_SHORTCUTS ? 0 : n < 3 ? 3 - n : 1;
@@ -75,20 +79,22 @@ export default function ShortcutsScreen({
           {error}
         </Notice>
       )}
-      <ul className="grid grid-cols-3 gap-3">
-        {shortcuts === undefined
-          ? // On their way: the squares, held.
-            [0, 1, 2].map((i) => (
-              <li key={i} className={cn(SQUARE, "animate-pulse bg-secondary")} />
-            ))
-          : list.map((s) => (
-              <li key={s.id} className="relative aspect-square">
-                {/* The one in the preview leaves its place empty, outlined. */}
-                {s.id === selected?.id ? (
-                  <span className="absolute inset-0 rounded-2xl border border-dashed" />
-                ) : (
+      {/* The squares give way to the one about to run (#259). */}
+      {!selected && (
+        <ul className="grid grid-cols-3 gap-3">
+          {shortcuts === undefined
+            ? // On their way: the squares, held.
+              [0, 1, 2].map((i) => (
+                <li key={i} className={cn(SQUARE, "animate-pulse bg-secondary")} />
+              ))
+            : list.map((s) => (
+                <li
+                  key={s.id}
+                  className={cn("relative aspect-square", s.id === returning && "z-10")}
+                >
                   <motion.div
                     layoutId={`shortcut-${s.id}`}
+                    onLayoutAnimationComplete={() => s.id === returning && setReturning(null)}
                     // A genvej just saved pops into its square.
                     initial={s.id === savingId && !reduce ? { scale: 0.85, opacity: 0 } : false}
                     animate={{ scale: 1, opacity: 1 }}
@@ -118,55 +124,55 @@ export default function ShortcutsScreen({
                       </button>
                     )}
                   </motion.div>
-                )}
-              </li>
-            ))}
-        {failed && (
-          <li className={cn(SQUARE, "border-red-300 bg-red-50")}>
-            <button
-              type="button"
-              aria-label={`${failed.name}: ${words.notSaved}`}
-              title={failed.message}
-              onClick={onRetry}
-              className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl p-3 pt-7 transition active:scale-95"
-            >
-              <span className={cn(NAME, "text-[1.0625rem]")}>{failed.name}</span>
-              <span className="text-center text-[0.75rem] leading-tight text-red-700">
-                {words.notSaved}
-              </span>
-            </button>
-            <button
-              type="button"
-              aria-label={words.dismiss(failed.name)}
-              onClick={onDismiss}
-              className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full text-red-700"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </li>
-        )}
-        {shortcuts !== undefined &&
-          Array.from({ length: adds }, (_, i) => (
-            <li key={`add-${i}`} className={cn(SQUARE, "border-dashed bg-transparent")}>
+                </li>
+              ))}
+          {failed && (
+            <li className={cn(SQUARE, "border-red-300 bg-red-50")}>
               <button
                 type="button"
-                aria-label={words.add}
-                onClick={onNew}
-                className="flex h-full w-full items-center justify-center rounded-2xl text-primary transition active:scale-95"
+                aria-label={`${failed.name}: ${words.notSaved}`}
+                title={failed.message}
+                onClick={onRetry}
+                className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl p-3 pt-7 transition active:scale-95"
               >
-                <Plus className="h-7 w-7" />
+                <span className={cn(NAME, "text-[1.0625rem]")}>{failed.name}</span>
+                <span className="text-center text-[0.75rem] leading-tight text-red-700">
+                  {words.notSaved}
+                </span>
+              </button>
+              <button
+                type="button"
+                aria-label={words.dismiss(failed.name)}
+                onClick={onDismiss}
+                className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full text-red-700"
+              >
+                <X className="h-4 w-4" />
               </button>
             </li>
-          ))}
-      </ul>
+          )}
+          {shortcuts !== undefined &&
+            Array.from({ length: adds }, (_, i) => (
+              <li key={`add-${i}`} className={cn(SQUARE, "border-dashed bg-transparent")}>
+                <button
+                  type="button"
+                  aria-label={words.add}
+                  onClick={onNew}
+                  className="flex h-full w-full items-center justify-center rounded-2xl text-primary transition active:scale-95"
+                >
+                  <Plus className="h-7 w-7" />
+                </button>
+              </li>
+            ))}
+        </ul>
+      )}
       {/* With none yet, three bare plus tiles say nothing on their own (#213). */}
       {shortcuts?.length === 0 && !failed && (
         <p className="mt-3 px-1 text-[0.75rem] text-muted-foreground">{words.emptyNote}</p>
       )}
 
-      {/* The genvej about to run, at the bottom: big on the left, what it looks at on the right. */}
+      {/* The genvej about to run, on its own: big on the left, what it looks at on the right. */}
       {selected && (
-        <div className="mt-auto pt-6">
+        <div>
           <section aria-label={selected.name} className="flex items-end gap-4">
             <motion.div
               layoutId={`shortcut-${selected.id}`}
@@ -176,7 +182,10 @@ export default function ShortcutsScreen({
               <button
                 type="button"
                 aria-label={words.back(selected.name)}
-                onClick={() => onSelect(null)}
+                onClick={() => {
+                  setReturning(selected.id);
+                  onSelect(null);
+                }}
                 className="flex h-full w-full items-center justify-center rounded-2xl p-4"
               >
                 <ShortcutFace shortcut={selected} size="text-[1.5rem]" />
