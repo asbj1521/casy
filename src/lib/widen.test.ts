@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { NO_PEOPLE_CHOICE, type SchedulerSettings } from "@/lib/scheduler";
-import { daysSooner, firstDateByCount, widenOptions, type WidenInput } from "@/lib/widen";
+import {
+  daysSooner,
+  firstDateByCount,
+  lowestCount,
+  widenOptions,
+  type WidenInput,
+} from "@/lib/widen";
 import type { Participant } from "@/types";
 
 const TZ = "UTC";
@@ -113,13 +119,21 @@ describe("firstDateByCount (#259)", () => {
   const firstStarts = (i: WidenInput) =>
     firstDateByCount(i).map((o) => [o.count, o.of, o.first?.slot.start ?? null]);
 
-  it("gives each count, from everyone down to two, its first date in the months picked", () => {
+  it("gives each count, from everyone down to the lowest, its first date in the months picked", () => {
     expect(firstStarts(input(group(), DINNER))).toEqual([
       // All four: never in October, Anna is out every evening.
       [4, 4, null],
-      // Three: without Anna, once Bo is back, Friday 16 October.
+      // Three: without Anna, once Bo is back, Friday 16 October. Two of four
+      // is no longer the group (#263), so the slider stops here.
       [3, 4, "2026-10-16T18:00:00.000Z"],
-      // Two: the first Friday.
+    ]);
+  });
+
+  it("keeps a lower count already picked reachable (#263)", () => {
+    const i = input(group(), DINNER);
+    expect(firstStarts({ ...i, choice: { states: {}, atLeast: 2 } })).toEqual([
+      [4, 4, null],
+      [3, 4, "2026-10-16T18:00:00.000Z"],
       [2, 4, "2026-10-02T18:00:00.000Z"],
     ]);
   });
@@ -154,5 +168,17 @@ describe("daysSooner (#259)", () => {
     expect(
       daysSooner("2026-10-24T16:00:00.000Z", "2026-10-26T17:00:00.000Z", "Europe/Copenhagen"),
     ).toBe(2);
+  });
+});
+
+describe("lowestCount (#263)", () => {
+  it("is about two thirds of the group, rounded, never below two", () => {
+    expect([3, 4, 6, 8, 10, 15].map((of) => lowestCount(of))).toEqual([2, 3, 4, 5, 7, 10]);
+  });
+
+  it("goes lower only for a count already picked, never below two", () => {
+    expect(lowestCount(8, 3)).toBe(3);
+    expect(lowestCount(8, 6)).toBe(5);
+    expect(lowestCount(8, 1)).toBe(2);
   });
 });

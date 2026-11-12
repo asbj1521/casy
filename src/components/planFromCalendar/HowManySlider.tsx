@@ -11,9 +11,9 @@ import { APP_TIME_ZONE } from "@/lib/zone";
 const MAX_LABELS = 9;
 
 /**
- * "Hvor mange skal kunne" as a slider (#259): a step per count, two on the
- * left and everyone on the right. The knob follows the finger, a tick is
- * felt at each step it crosses, and let go it springs onto the nearest (a
+ * "Hvor mange skal kunne" as a slider (#259): a step per count, the lowest
+ * (lowestCount, #263) on the left and everyone on the right. The knob
+ * follows the finger, a tick is felt at each step it crosses, and let go it springs onto the nearest (a
  * slight overshoot, so it feels pulled in). Over it rides what the step
  * buys (#255): everyone's month, and below everyone how much sooner, never
  * the date itself, which the pile reveals. So what one fewer buys

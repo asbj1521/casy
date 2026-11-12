@@ -195,6 +195,23 @@ export function requiredCount(members: string[], choice: PeopleChoice): number {
 /** The fewest a "how many need to come" may ask for: below two, nobody meets. */
 export const MIN_COUNT = 2;
 
+/**
+ * The share of those Med the how-many slider goes down to (#263): below it,
+ * it is a few friends meeting, not the group with some missing.
+ */
+const GROUP_SHARE = 0.65;
+
+/**
+ * The slider's lowest step for `of` Med (#263): GROUP_SHARE of them,
+ * rounded, never below MIN_COUNT (8 to 5, 10 to 7, 15 to 10). A lower
+ * count already chosen (Deltagere's "Mindst") stays reachable, so the
+ * slider always shows what is picked.
+ */
+export function lowestCount(of: number, atLeast: number | null = null): number {
+  const floor = Math.max(MIN_COUNT, Math.round(of * GROUP_SHARE));
+  return atLeast === null ? floor : Math.max(MIN_COUNT, Math.min(floor, atLeast));
+}
+
 export interface CountOption {
   /** How many of those Med must be able to come. */
   count: number;
@@ -206,7 +223,7 @@ export interface CountOption {
 
 /**
  * Planlæg's "Hvor mange skal kunne" (#259, #255): for a meeting, each count
- * from everyone Med down to two, with the first date it finds, so what each
+ * from everyone Med down to lowestCount (#263), with the first date it finds, so what each
  * person fewer buys is seen before it is picked. The same search as the
  * page's own (firstDate), within the months picked, so a count with no date
  * there says the period can't hold it. Empty for a trip ("at least" is for
@@ -221,7 +238,7 @@ export function firstDateByCount(
   const of = requiredCount(input.members, input.choice);
   if (of <= MIN_COUNT) return [];
   const options: CountOption[] = [];
-  for (let count = of; count >= MIN_COUNT; count--) {
+  for (let count = of; count >= lowestCount(of, input.choice.atLeast); count--) {
     const choice = { ...input.choice, atLeast: count === of ? null : count };
     const found = [input.settings, ...others]
       .map((settings) => firstDate(input, settings, choice))

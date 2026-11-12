@@ -878,7 +878,8 @@ test("how many need to come is a slider in the sheet, what each step buys over t
   const promise = sheet.getByText("Dem, der ikke kan, bliver stadig inviteret og kan stemme.");
   await expect(promise).toHaveCount(0);
 
-  // Dragged all the way left and let go: two, picked as the finger lifts.
+  // Dragged all the way left and let go: three, picked as the finger lifts.
+  // Two of four is no longer the group, so the slider stops at three (#263).
   // Once the group's picker has faded away from over it.
   await slider.hover();
   const box = (await slider.boundingBox())!;
@@ -886,11 +887,15 @@ test("how many need to come is a slider in the sheet, what each step buys over t
   await page.mouse.down();
   await page.mouse.move(box.x - 400, box.y + box.height / 2, { steps: 8 });
   await page.mouse.up();
-  await expect(slider).toHaveAttribute("aria-valuenow", "2");
+  await expect(slider).toHaveAttribute("aria-valuenow", "3");
+  await expect(slider).toHaveAttribute("aria-valuemin", "3");
   // With fewer than everyone, the promise to the rest is said once.
   await expect(promise).toBeVisible();
   // A step at a time with the keys.
   await slider.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuenow", "4");
+  await expect(promise).toHaveCount(0);
+  await slider.press("ArrowLeft");
   await expect(slider).toHaveAttribute("aria-valuenow", "3");
 
   await sheet.getByRole("button", { name: "Find dato" }).click();

@@ -7,7 +7,13 @@ import { useT } from "@/i18n/lang";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import type { SchedulerSettings } from "@/lib/scheduler";
 import { cn } from "@/lib/utils";
-import { firstDateByCount, MIN_COUNT, requiredCount, type CountOption } from "@/lib/widen";
+import {
+  firstDateByCount,
+  lowestCount,
+  MIN_COUNT,
+  requiredCount,
+  type CountOption,
+} from "@/lib/widen";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
 import HowManySlider from "./HowManySlider";
@@ -16,7 +22,7 @@ import HowManySlider from "./HowManySlider";
  * "Hvor mange skal kunne" (#259), in the Planlæg sheet itself under the
  * months, and under a genvej about to run: a number, not people picked one
  * by one, so nobody is quietly left out. A slider (HowManySlider), a step per
- * count from two to everyone Med, each with the first date it finds in the
+ * count from about two thirds of those Med (lowestCount, #263) to everyone, each with the first date it finds in the
  * months searched (#255, firstDateByCount), following the plan a beat behind
  * (deferred, as the search) so tapping the rows above never stutters.
  * Meetings only, and only with three or more Med; the same choice as Flere
@@ -69,7 +75,11 @@ export default function HowManyRow({
   // While the group's calendars load: the steps, their dates still to come.
   const steps =
     options ??
-    Array.from({ length: of - MIN_COUNT + 1 }, (_, i) => ({ count: of - i, of, first: null }));
+    Array.from({ length: of - lowestCount(of, peopleChoice.atLeast) + 1 }, (_, i) => ({
+      count: of - i,
+      of,
+      first: null,
+    }));
 
   return (
     <section className={className}>
