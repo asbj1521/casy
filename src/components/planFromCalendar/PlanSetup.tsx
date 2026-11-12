@@ -13,6 +13,7 @@ import { flexAround, flexOf } from "@/lib/startFlex";
 import { useAiConsentGate } from "@/hooks/useAiConsentGate";
 import AiQuestionsSheet from "./AiQuestionsSheet";
 import GroupRow from "./GroupRow";
+import HowManyRow from "./HowManyRow";
 import MoreDetails from "./MoreDetails";
 import NameField from "./NameField";
 import PlanMonths from "./PlanMonths";
@@ -173,6 +174,7 @@ export default function PlanSetup({
             lit={fill.lit === "months"}
           />
         )}
+        {!editor && <HowManyRow planning={planning} />}
         <DanishTimeNote className="mt-3 px-1 text-xs" />
         <MoreDetails
           extras={extras}

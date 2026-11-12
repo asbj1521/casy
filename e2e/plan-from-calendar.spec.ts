@@ -819,3 +819,33 @@ test.describe("Genveje (#175)", () => {
     await expect.poll(() => backend.world.presets[0].pictureUrl).toBeNull();
   });
 });
+
+test("how many need to come is picked up front, each count with its first date, and is sent (#259)", async ({
+  page,
+  backend,
+}) => {
+  await page.goto("/calendar-overview?plan");
+  const sheet = page.getByRole("dialog", { name: "Planlæg" });
+  await pickGroup(page, "Fredagsbar");
+  const row = sheet.getByRole("button", { name: /^Hvor mange skal kunne/ });
+  await expect(row).toContainText("Alle 4");
+
+  await row.click();
+  const picker = page.getByRole("dialog", { name: "Hvor mange skal kunne" });
+  // Every count from all four down to two, each beside its first date (#255).
+  await expect(picker.getByRole("radio")).toHaveCount(3);
+  await expect(picker.getByRole("radio", { name: /^Alle 4/ })).toBeChecked();
+  await expect(picker.getByText(/^(Ingen dato|\S+ \d+\. \S+)$/)).toHaveCount(3);
+  await expect(
+    picker.getByText("Dem, der ikke kan, bliver stadig inviteret og kan stemme."),
+  ).toBeVisible();
+  await picker.getByRole("radio", { name: /^3 af 4/ }).click();
+  await expect(picker).toHaveCount(0);
+  await expect(row).toContainText("3 af 4");
+
+  await sheet.getByRole("button", { name: "Find dato" }).click();
+  await page.getByRole("button", { name: /^Foreslå/ }).click();
+  await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+  const settings = backend.calls.find((c) => c.body.action === "suggest")!.body.settings;
+  expect(settings).toMatchObject({ people: { optional: [], atLeast: 3 } });
+});

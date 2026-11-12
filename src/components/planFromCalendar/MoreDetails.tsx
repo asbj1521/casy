@@ -69,7 +69,8 @@ export default function MoreDetails({
       extras.note !== "" ||
       extras.answerDays !== null ||
       extras.priority !== DEFAULT_EXTRAS.priority ||
-      (!!people && !people.everyone),
+      // Someone picked by hand; a count alone is the row up front (#259).
+      (!!people && people.required !== people.total),
   );
 
   return (

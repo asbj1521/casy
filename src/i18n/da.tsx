@@ -1481,6 +1481,14 @@ export const da = {
     sendNew: (n: number) => (n === 1 ? "Send den nye dato" : `Send ${n} nye datoer`),
     reviewingNew: "Finder nye datoer",
     priority: { label: "Prioritér", hassle: "Mindst besvær", soon: "Snarest" },
+    // How many need to come (#259), each count with its first date.
+    howMany: {
+      label: "Hvor mange skal kunne",
+      all: (n: number) => `Alle ${n}`,
+      some: (n: number, of: number) => `${n} af ${of}`,
+      none: "Ingen dato",
+      footnote: "Dem, der ikke kan, bliver stadig inviteret og kan stemme.",
+    },
     noneThrough: "Ingen dag i perioden passer alle. Prøv at ændre planen.",
     suggest: (n: number) => (n === 1 ? "Foreslå datoen" : `Foreslå top ${n} datoer`),
     inviteFriends: "Inviter venner",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { NO_PEOPLE_CHOICE, type SchedulerSettings } from "@/lib/scheduler";
-import { widenOptions, type WidenInput } from "@/lib/widen";
+import { firstDateByCount, widenOptions, type WidenInput } from "@/lib/widen";
 import type { Participant } from "@/types";
 
 const TZ = "UTC";
@@ -99,5 +99,43 @@ describe("widenOptions (#135)", () => {
     const kinds = widenOptions(input([person("Anna", weekends)], trip)).map((o) => o.widening.kind);
     expect(kinds).toContain("startDay");
     expect(kinds).toContain("months");
+  });
+});
+
+describe("firstDateByCount (#259)", () => {
+  // Anna is out every October evening, Bo until the 15th; Carl and Dan are free.
+  const group = () => [
+    person("Anna", octoberEvenings()),
+    person("Bo", octoberEvenings().slice(0, 15)),
+    person("Carl", []),
+    person("Dan", []),
+  ];
+  const firstStarts = (i: WidenInput) =>
+    firstDateByCount(i).map((o) => [o.count, o.of, o.first?.slot.start ?? null]);
+
+  it("gives each count, from everyone down to two, its first date in the months picked", () => {
+    expect(firstStarts(input(group(), DINNER))).toEqual([
+      // All four: never in October, Anna is out every evening.
+      [4, 4, null],
+      // Three: without Anna, once Bo is back, Friday 16 October.
+      [3, 4, "2026-10-16T18:00:00.000Z"],
+      // Two: the first Friday.
+      [2, 4, "2026-10-02T18:00:00.000Z"],
+    ]);
+  });
+
+  it("counts only those Med", () => {
+    const i = input(group(), DINNER);
+    const choice = { states: { anna: "optional" as const }, atLeast: null };
+    // Anna is optional, so she never blocks: all three Med meet once Bo is back.
+    expect(firstStarts({ ...i, choice })).toEqual([
+      [3, 3, "2026-10-16T18:00:00.000Z"],
+      [2, 3, "2026-10-02T18:00:00.000Z"],
+    ]);
+  });
+
+  it("is empty for a trip, or with fewer than three Med", () => {
+    expect(firstDateByCount(input(group(), { ...DINNER, multiDay: true }))).toEqual([]);
+    expect(firstDateByCount(input(group().slice(2), DINNER))).toEqual([]);
   });
 });

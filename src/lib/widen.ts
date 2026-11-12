@@ -143,12 +143,9 @@ export function widenOptions(input: WidenInput): WidenOption[] {
     firstThatWorks(shorter);
 
     // Fewer people: one less needed than now, while at least two still meet.
-    const required = input.members.filter((id) => {
-      const state = choice.states[id] ?? "required";
-      return state === "required";
-    }).length;
+    const required = requiredCount(input.members, choice);
     const atLeast = (choice.atLeast ?? required) - 1;
-    if (atLeast >= 2 && input.participants.length >= 3) {
+    if (atLeast >= MIN_COUNT && input.participants.length >= 3) {
       offer({ kind: "people", atLeast, of: required }, s, { ...choice, atLeast });
     }
   } else {
@@ -188,6 +185,43 @@ export function widenOptions(input: WidenInput): WidenOption[] {
   }
 
   return options.sort(byDate).slice(0, MAX_OPTIONS);
+}
+
+/** The members a choice needs (Med), by the same default as peopleFromChoice. */
+export function requiredCount(members: string[], choice: PeopleChoice): number {
+  return members.filter((id) => (choice.states[id] ?? "required") === "required").length;
+}
+
+/** The fewest a "how many need to come" may ask for: below two, nobody meets. */
+export const MIN_COUNT = 2;
+
+export interface CountOption {
+  /** How many of those Med must be able to come. */
+  count: number;
+  /** Of how many: everyone Med. */
+  of: number;
+  /** The first date it finds in the months picked, or null for none there. */
+  first: FoundDate | null;
+}
+
+/**
+ * Planlæg's "Hvor mange skal kunne" (#259, #255): for a meeting, each count
+ * from everyone Med down to two, with the first date it finds, so what each
+ * person fewer buys is seen before it is picked. The same search as the
+ * page's own (firstDate), within the months picked, so a count with no date
+ * there says the period can't hold it. Empty for a trip ("at least" is for
+ * meetings only) or fewer than three Med.
+ */
+export function firstDateByCount(input: WidenInput): CountOption[] {
+  if (input.settings.multiDay) return [];
+  const of = requiredCount(input.members, input.choice);
+  if (of <= MIN_COUNT) return [];
+  const options: CountOption[] = [];
+  for (let count = of; count >= MIN_COUNT; count--) {
+    const choice = { ...input.choice, atLeast: count === of ? null : count };
+    options.push({ count, of, first: firstDate(input, input.settings, choice) });
+  }
+  return options;
 }
 
 /** Earliest first date first; the order tried breaks a tie. */

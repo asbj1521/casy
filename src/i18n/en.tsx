@@ -1424,6 +1424,13 @@ export const en: Messages = {
     sendNew: (n: number) => (n === 1 ? "Send the new date" : `Send ${n} new dates`),
     reviewingNew: "Finding new dates",
     priority: { label: "Prioritise", hassle: "Least hassle", soon: "Soonest" },
+    howMany: {
+      label: "How many need to make it",
+      all: (n: number) => `All ${n}`,
+      some: (n: number, of: number) => `${n} of ${of}`,
+      none: "No date",
+      footnote: "Those who can't are still invited and can vote.",
+    },
     noneThrough: "No day in the period works for everyone. Try changing the plan.",
     suggest: (n: number) => (n === 1 ? "Suggest the date" : `Suggest the top ${n} dates`),
     inviteFriends: "Invite friends",
