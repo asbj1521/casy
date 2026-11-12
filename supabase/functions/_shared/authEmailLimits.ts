@@ -87,6 +87,6 @@ export function refusal(verdict: "address" | "all", lang: Lang): string {
       : "Many emails have gone to that address lately. Wait an hour and try again.";
   }
   return lang === "da"
-    ? "Casy sender mange e-mails lige nu. Prøv igen senere."
-    : "Casy is sending a lot of emails right now. Try again later.";
+    ? "Vi sender mange e-mails lige nu. Prøv igen senere."
+    : "We're sending a lot of emails right now. Try again later.";
 }

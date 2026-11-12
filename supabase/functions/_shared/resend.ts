@@ -5,7 +5,9 @@
  * RESEND_API_KEY (the dashboard's SMTP password, never a function secret).
  */
 
-export const FROM = "Casy <noreply@casy.app>";
+import { APP_NAME } from "./brand.ts";
+
+export const FROM = `${APP_NAME} <noreply@casy.app>`;
 
 export interface OutgoingEmail {
   to: string;

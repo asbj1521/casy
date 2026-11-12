@@ -30,7 +30,7 @@ const BATCH = 50;
 const CHECK_LIMIT = 200;
 /** What the page shows for a write the phone couldn't do. */
 export const PHONE_WRITE_FAILED =
-  "Couldn't add it to the phone's calendar. Casy will try again next time the app opens.";
+  "Couldn't add it to the phone's calendar. We'll try again next time the app opens.";
 
 /** What the phone writes: the same words as an iCloud entry (eventIcs.ts). */
 export interface PhoneEntry {

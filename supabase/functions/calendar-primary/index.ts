@@ -62,7 +62,7 @@ serve("calendar-primary", async (req, body) => {
         .maybeSingle();
       if (lookupErr) throw lookupErr;
       if (!source) throw new HttpError(404, "Calendar not found");
-      if (!source.writable) throw new HttpError(400, "Casy can't add events to that calendar.");
+      if (!source.writable) throw new HttpError(400, "We can't add events to that calendar.");
       // Changing calendars keeps "Add automatically" as it was; a first
       // choice starts with it off.
       const { error } = await db.from("primary_calendars").upsert(

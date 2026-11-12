@@ -58,12 +58,12 @@ Deno.test("the link is Auth's verify endpoint, like Supabase's own ConfirmationU
 Deno.test("signs in in Danish or English, subject included", () => {
   const [da] = renderAuthEmails(user, data("magiclink"), SUPABASE);
   assertEquals(da.to, "anna@example.com");
-  assertEquals(da.subject, "Dit login-link til Casy");
+  assertEquals(da.subject, "Dit login-link");
   assertStringIncludes(da.html, '<html lang="da">');
-  assertStringIncludes(da.html, "Log ind på Casy");
+  assertStringIncludes(da.html, "Log ind");
 
   const [en] = renderAuthEmails(user, data("magiclink", { redirect_to: back("en") }), SUPABASE);
-  assertEquals(en.subject, "Your Casy sign-in link");
+  assertEquals(en.subject, "Your sign-in link");
   assertStringIncludes(en.html, '<html lang="en">');
 });
 
@@ -73,7 +73,7 @@ Deno.test("the security code shows the code and no link", () => {
     data("reauthentication", { redirect_to: undefined }),
     SUPABASE,
   );
-  assertEquals(email.subject, "Din sikkerhedskode til Casy");
+  assertEquals(email.subject, "Din sikkerhedskode");
   assertStringIncludes(email.html, "123456");
   assertFalse(email.html.includes("/auth/v1/verify"));
 });
@@ -84,7 +84,7 @@ Deno.test("a notice names the account and has no link or code", () => {
     data("password_changed_notification", { redirect_to: undefined }),
     SUPABASE,
   );
-  assertEquals(email.subject, "Your Casy password was changed");
+  assertEquals(email.subject, "Your password was changed");
   assertStringIncludes(email.text, "(anna@example.com)");
   assertFalse(email.html.includes("123456"));
   assertFalse(email.html.includes("/auth/v1/verify"));
@@ -107,7 +107,7 @@ Deno.test("a secure email change sends one link to each address, Auth's way roun
 
 Deno.test("an unknown kind still sends something, with its link", () => {
   const [email] = renderAuthEmails(user, data("something_new"), SUPABASE);
-  assertEquals(email.subject, "En besked fra Casy");
+  assertEquals(email.subject, "En besked fra os");
   assertStringIncludes(email.text, "token=hash-abc");
 });
 

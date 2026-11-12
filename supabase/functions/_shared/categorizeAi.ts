@@ -54,7 +54,7 @@ export const CATEGORIZE_SCHEMA = closed({
   },
 });
 
-export const CATEGORIZE_SYSTEM_PROMPT = `You sort a person's calendars for Casy, a Danish app that finds dates a group of friends are all free. Each calendar gets one category, used to judge what may be planned over its events:
+export const CATEGORIZE_SYSTEM_PROMPT = `You sort a person's calendars for a Danish app that finds dates a group of friends are all free. Each calendar gets one category, used to judge what may be planned over its events:
 
 - work: a job, shifts, a company or workplace, clients, colleagues.
 - school: school, university, courses, lectures, classes, exams, study groups, a timetable (skema).

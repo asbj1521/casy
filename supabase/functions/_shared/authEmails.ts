@@ -17,6 +17,7 @@
  * the site's colours, which is all email clients reliably understand.
  */
 import type { Lang } from "./i18n.ts";
+import { APP_NAME } from "./brand.ts";
 
 /** The parts of Auth's hook payload these emails read. */
 export interface HookUser {
@@ -93,14 +94,14 @@ interface Words {
 
 const SHARED: Record<Lang, { about: string; copyLink: string; brand: string }> = {
   da: {
-    about: "Casy hjælper en gruppe med at finde en dato, der passer alle.",
+    about: `${APP_NAME} hjælper en gruppe med at finde en dato, der passer alle.`,
     copyLink: "Virker knappen ikke, så kopier denne adresse ind i din browser:",
-    brand: "Casy",
+    brand: APP_NAME,
   },
   en: {
-    about: "Casy helps a group of people find a date that works for everyone.",
+    about: `${APP_NAME} helps a group of people find a date that works for everyone.`,
     copyLink: "If the button does not work, copy this address into your browser:",
-    brand: "Casy",
+    brand: APP_NAME,
   },
 };
 
@@ -122,38 +123,38 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
     case "signup":
       return da
         ? {
-            subject: "Bekræft din e-mail til Casy",
-            preview: "Bekræft din e-mail for at gøre din Casy-konto færdig.",
+            subject: "Bekræft din e-mail",
+            preview: "Bekræft din e-mail for at gøre din konto færdig.",
             heading: "Bekræft din e-mail",
-            body: "Nogen, forhåbentlig dig, har oprettet en Casy-konto med denne e-mailadresse. Brug knappen nedenfor til at bekræfte den og logge ind. Linket virker én gang og udløber om en time.",
+            body: "Nogen, forhåbentlig dig, har oprettet en konto hos os med denne e-mailadresse. Brug knappen nedenfor til at bekræfte den og logge ind. Linket virker én gang og udløber om en time.",
             button: "Bekræft e-mail",
             footnote:
-              "Har du ikke oprettet en Casy-konto, kan du se bort fra denne e-mail. Uden linket kan ingen bruge en konto med din adresse.",
+              "Har du ikke oprettet en konto hos os, kan du se bort fra denne e-mail. Uden linket kan ingen bruge en konto med din adresse.",
           }
         : {
-            subject: "Confirm your email for Casy",
-            preview: "Confirm your email to finish creating your Casy account.",
+            subject: "Confirm your email",
+            preview: "Confirm your email to finish creating your account.",
             heading: "Confirm your email",
-            body: "Someone, hopefully you, created a Casy account with this email address. Use the button below to confirm it and sign in. The link works once and expires in one hour.",
+            body: "Someone, hopefully you, created an account with us with this email address. Use the button below to confirm it and sign in. The link works once and expires in one hour.",
             button: "Confirm email",
             footnote:
-              "If you did not create a Casy account, you can ignore this email. Without this link, nobody can use an account with your address.",
+              "If you did not create an account with us, you can ignore this email. Without this link, nobody can use an account with your address.",
           };
     case "magiclink":
       return da
         ? {
-            subject: "Dit login-link til Casy",
-            preview: "Dit login-link til Casy. Det virker én gang og udløber om en time.",
-            heading: "Log ind på Casy",
+            subject: "Dit login-link",
+            preview: "Dit login-link. Det virker én gang og udløber om en time.",
+            heading: "Log ind",
             body: "Brug knappen nedenfor til at logge ind. Linket virker én gang og udløber om en time.",
             button: "Log ind",
             footnote:
               "Har du ikke bedt om at logge ind, kan du se bort fra denne e-mail. Ingen kan komme ind på din konto uden linket.",
           }
         : {
-            subject: "Your Casy sign-in link",
-            preview: "Your sign-in link for Casy. It works once and expires in one hour.",
-            heading: "Sign in to Casy",
+            subject: "Your sign-in link",
+            preview: "Your sign-in link. It works once and expires in one hour.",
+            heading: "Sign in",
             body: "Use the button below to sign in. The link works once and expires in one hour.",
             button: "Sign in",
             footnote:
@@ -162,9 +163,9 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
     case "recovery":
       return da
         ? {
-            subject: "Nulstil din adgangskode til Casy",
+            subject: "Nulstil din adgangskode",
             preview:
-              "Nulstil din adgangskode til Casy. Linket virker én gang og udløber om en time.",
+              "Nulstil din adgangskode. Linket virker én gang og udløber om en time.",
             heading: "Nulstil din adgangskode",
             body: "Brug knappen nedenfor til at vælge en ny adgangskode. Linket virker én gang og udløber om en time.",
             button: "Nulstil adgangskode",
@@ -172,8 +173,8 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
               "Har du ikke bedt om at nulstille din adgangskode, kan du se bort fra denne e-mail. Din adgangskode bliver kun ændret, hvis du åbner linket og vælger en ny.",
           }
         : {
-            subject: "Reset your Casy password",
-            preview: "Reset your Casy password. This link works once and expires in one hour.",
+            subject: "Reset your password",
+            preview: "Reset your password. This link works once and expires in one hour.",
             heading: "Reset your password",
             body: "Use the button below to choose a new password. The link works once and expires in one hour.",
             button: "Reset password",
@@ -183,37 +184,37 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
     case "reauthentication":
       return da
         ? {
-            subject: "Din sikkerhedskode til Casy",
-            preview: "Din kode til at skifte adgangskode på Casy.",
+            subject: "Din sikkerhedskode",
+            preview: "Din kode til at skifte adgangskode.",
             heading: "Din sikkerhedskode",
-            body: "Skriv denne kode på Casy for at skifte din adgangskode. Den virker én gang og udløber om en time.",
+            body: "Skriv denne kode i appen for at skifte din adgangskode. Den virker én gang og udløber om en time.",
             footnote:
               "Har du ikke prøvet at skifte din adgangskode, bruger en anden måske din konto. Log ud på alle enheder fra din profil, og skift så din adgangskode.",
           }
         : {
-            subject: "Your Casy security code",
-            preview: "Your code for changing your Casy password.",
+            subject: "Your security code",
+            preview: "Your code for changing your password.",
             heading: "Your security code",
-            body: "Enter this code on Casy to change your password. It works once and expires in one hour.",
+            body: "Enter this code in the app to change your password. It works once and expires in one hour.",
             footnote:
               "If you did not try to change your password, someone may be using your account: sign out on all devices from your profile, then change your password.",
           };
     case "email_change":
       return da
         ? {
-            subject: "Bekræft din nye e-mail til Casy",
-            preview: "Bekræft, at din Casy-konto skal bruge en ny e-mailadresse.",
+            subject: "Bekræft din nye e-mail",
+            preview: "Bekræft, at din konto skal bruge en ny e-mailadresse.",
             heading: "Bekræft din nye e-mail",
-            body: "Nogen har bedt om at skifte e-mailadressen på en Casy-konto. Brug knappen nedenfor til at bekræfte det. Linket virker én gang og udløber om en time.",
+            body: "Nogen har bedt om at skifte e-mailadressen på en konto hos os. Brug knappen nedenfor til at bekræfte det. Linket virker én gang og udløber om en time.",
             button: "Bekræft e-mail",
             footnote:
               "Har du ikke bedt om det, kan du se bort fra denne e-mail. Adressen bliver kun skiftet, hvis linket bliver åbnet.",
           }
         : {
-            subject: "Confirm your new email for Casy",
-            preview: "Confirm that your Casy account should use a new email address.",
+            subject: "Confirm your new email",
+            preview: "Confirm that your account should use a new email address.",
             heading: "Confirm your new email",
-            body: "Someone asked to change the email address of a Casy account. Use the button below to confirm it. The link works once and expires in one hour.",
+            body: "Someone asked to change the email address of an account with us. Use the button below to confirm it. The link works once and expires in one hour.",
             button: "Confirm email",
             footnote:
               "If you did not ask for this, you can ignore this email. The address only changes if this link is opened.",
@@ -221,36 +222,36 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
     case "password_changed_notification":
       return da
         ? {
-            subject: "Din adgangskode til Casy er ændret",
-            preview: "Adgangskoden til din Casy-konto er lige blevet ændret.",
+            subject: "Din adgangskode er ændret",
+            preview: "Adgangskoden til din konto er lige blevet ændret.",
             heading: "Din adgangskode er ændret",
-            body: `Adgangskoden til din Casy-konto (${email}) er lige blevet ændret, og alle andre enheder, der var logget ind, er blevet logget ud.`,
+            body: `Adgangskoden til din konto (${email}) er lige blevet ændret, og alle andre enheder, der var logget ind, er blevet logget ud.`,
             footnote:
               'Var det ikke dig, så nulstil din adgangskode med det samme med "Glemt adgangskode?" på log ind-siden på casy.app, og log ud på alle enheder fra din profil.',
           }
         : {
-            subject: "Your Casy password was changed",
-            preview: "The password for your Casy account was just changed.",
+            subject: "Your password was changed",
+            preview: "The password for your account was just changed.",
             heading: "Your password was changed",
-            body: `The password for your Casy account (${email}) was just changed, and any other devices signed in to it were signed out.`,
+            body: `The password for your account (${email}) was just changed, and any other devices signed in to it were signed out.`,
             footnote:
               'If this was not you, reset your password straight away with "Forgot password?" on the sign-in page at casy.app, and sign out on all devices from your profile.',
           };
     case "email_changed_notification":
       return da
         ? {
-            subject: "Din e-mail til Casy er ændret",
-            preview: "Din Casy-konto bruger nu en ny e-mailadresse.",
+            subject: "Din e-mail er ændret",
+            preview: "Din konto bruger nu en ny e-mailadresse.",
             heading: "Din e-mail er ændret",
-            body: `Din Casy-konto bruger nu ${email}${data.old_email ? ` i stedet for ${data.old_email}` : ""}.`,
+            body: `Din konto bruger nu ${email}${data.old_email ? ` i stedet for ${data.old_email}` : ""}.`,
             footnote:
               "Var det ikke dig, så nulstil din adgangskode på casy.app, og log ud på alle enheder fra din profil.",
           }
         : {
-            subject: "Your Casy email was changed",
-            preview: "Your Casy account now uses a new email address.",
+            subject: "Your email was changed",
+            preview: "Your account now uses a new email address.",
             heading: "Your email was changed",
-            body: `Your Casy account now uses ${email}${data.old_email ? ` instead of ${data.old_email}` : ""}.`,
+            body: `Your account now uses ${email}${data.old_email ? ` instead of ${data.old_email}` : ""}.`,
             footnote:
               "If this was not you, reset your password at casy.app and sign out on all devices from your profile.",
           };
@@ -261,29 +262,29 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
       return da
         ? {
             subject: linked
-              ? "En ny måde at logge ind på Casy"
-              : "En måde at logge ind på Casy er fjernet",
+              ? "En ny måde at logge ind"
+              : "En måde at logge ind er fjernet",
             preview: linked
-              ? "Din Casy-konto har fået en ny måde at logge ind på."
-              : "En måde at logge ind på din Casy-konto er fjernet.",
+              ? "Din konto har fået en ny måde at logge ind på."
+              : "En måde at logge ind på din konto er fjernet.",
             heading: linked ? "Ny måde at logge ind på" : "En måde at logge ind på er fjernet",
             body: linked
-              ? `Du kan nu logge ind på din Casy-konto (${email}) med ${name}.`
-              : `Du kan ikke længere logge ind på din Casy-konto (${email}) med ${name}.`,
+              ? `Du kan nu logge ind på din konto (${email}) med ${name}.`
+              : `Du kan ikke længere logge ind på din konto (${email}) med ${name}.`,
             footnote:
               "Var det ikke dig, så nulstil din adgangskode på casy.app, og log ud på alle enheder fra din profil.",
           }
         : {
             subject: linked
-              ? "A new way to sign in to Casy"
-              : "A way to sign in to Casy was removed",
+              ? "A new way to sign in"
+              : "A way to sign in was removed",
             preview: linked
-              ? "Your Casy account has a new way to sign in."
-              : "A way to sign in to your Casy account was removed.",
+              ? "Your account has a new way to sign in."
+              : "A way to sign in to your account was removed.",
             heading: linked ? "A new way to sign in" : "A way to sign in was removed",
             body: linked
-              ? `You can now sign in to your Casy account (${email}) with ${name}.`
-              : `You can no longer sign in to your Casy account (${email}) with ${name}.`,
+              ? `You can now sign in to your account (${email}) with ${name}.`
+              : `You can no longer sign in to your account (${email}) with ${name}.`,
             footnote:
               "If this was not you, reset your password at casy.app and sign out on all devices from your profile.",
           };
@@ -294,27 +295,27 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
       return da
         ? {
             subject: added
-              ? "Totrinslogin er slået til på Casy"
-              : "Totrinslogin er slået fra på Casy",
+              ? "Totrinslogin er slået til"
+              : "Totrinslogin er slået fra",
             preview: added
-              ? "Din Casy-konto beder nu om en kode, når du logger ind."
-              : "Din Casy-konto beder ikke længere om en kode, når du logger ind.",
+              ? "Din konto beder nu om en kode, når du logger ind."
+              : "Din konto beder ikke længere om en kode, når du logger ind.",
             heading: added ? "Totrinslogin er slået til" : "Totrinslogin er slået fra",
             body: added
-              ? `Din Casy-konto (${email}) beder nu om en kode fra en godkendelsesapp, når du logger ind.`
-              : `Din Casy-konto (${email}) beder ikke længere om en kode fra en godkendelsesapp, når du logger ind.`,
+              ? `Din konto (${email}) beder nu om en kode fra en godkendelsesapp, når du logger ind.`
+              : `Din konto (${email}) beder ikke længere om en kode fra en godkendelsesapp, når du logger ind.`,
             footnote:
               "Var det ikke dig, så nulstil din adgangskode på casy.app, og log ud på alle enheder fra din profil.",
           }
         : {
-            subject: added ? "Two-step sign-in is on for Casy" : "Two-step sign-in is off for Casy",
+            subject: added ? "Two-step sign-in is on" : "Two-step sign-in is off",
             preview: added
-              ? "Your Casy account now asks for a code when you sign in."
-              : "Your Casy account no longer asks for a code when you sign in.",
+              ? "Your account now asks for a code when you sign in."
+              : "Your account no longer asks for a code when you sign in.",
             heading: added ? "Two-step sign-in is on" : "Two-step sign-in is off",
             body: added
-              ? `Your Casy account (${email}) now asks for a code from an authenticator app when you sign in.`
-              : `Your Casy account (${email}) no longer asks for a code from an authenticator app when you sign in.`,
+              ? `Your account (${email}) now asks for a code from an authenticator app when you sign in.`
+              : `Your account (${email}) no longer asks for a code from an authenticator app when you sign in.`,
             footnote:
               "If this was not you, reset your password at casy.app and sign out on all devices from your profile.",
           };
@@ -324,20 +325,20 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
       // plain email with whatever link or code came with it, never nothing.
       return da
         ? {
-            subject: "En besked fra Casy",
-            preview: "En besked om din Casy-konto.",
-            heading: "En besked om din Casy-konto",
-            body: "Casy har fået besked om at sende dig dette om din konto.",
-            button: "Åbn Casy",
-            footnote: "Har du ikke bedt om noget fra Casy, kan du se bort fra denne e-mail.",
+            subject: "En besked fra os",
+            preview: "En besked om din konto.",
+            heading: "En besked om din konto",
+            body: "Vi har fået besked om at sende dig dette om din konto.",
+            button: "Åbn appen",
+            footnote: "Har du ikke bedt os om noget, kan du se bort fra denne e-mail.",
           }
         : {
-            subject: "A message from Casy",
-            preview: "A message about your Casy account.",
-            heading: "A message about your Casy account",
-            body: "Casy was asked to send you this about your account.",
-            button: "Open Casy",
-            footnote: "If you did not ask Casy for anything, you can ignore this email.",
+            subject: "A message from us",
+            preview: "A message about your account.",
+            heading: "A message about your account",
+            body: "We were asked to send you this about your account.",
+            button: "Open the app",
+            footnote: "If you did not ask us for anything, you can ignore this email.",
           };
   }
 }

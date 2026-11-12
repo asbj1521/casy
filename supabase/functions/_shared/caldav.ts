@@ -430,7 +430,7 @@ export async function putEvent(
   if (res.status === 401) throw new CalDavLoginError(BAD_LOGIN);
   // A calendar shared view-only, or one iCloud won't take events in.
   if (res.status === 403)
-    throw new CalDavError("Apple didn't let Casy add events to that calendar.");
+    throw new CalDavError("Apple didn't let us add events to that calendar.");
   throw new CalDavError(`Apple Calendar responded with HTTP ${res.status}.`);
 }
 
@@ -444,7 +444,7 @@ export async function deleteEvent(
   await res.body?.cancel();
   if (res.ok || res.status === 404 || res.status === 410) return;
   if (res.status === 401) throw new CalDavLoginError(BAD_LOGIN);
-  if (res.status === 403) throw new CalDavError("Apple didn't let Casy remove the event.");
+  if (res.status === 403) throw new CalDavError("Apple didn't let us remove the event.");
   throw new CalDavError(`Apple Calendar responded with HTTP ${res.status}.`);
 }
 

@@ -39,6 +39,7 @@ import { currentDate } from "./events.ts";
 import { type Lang, NO_NAME } from "./i18n.ts";
 import { decryptSecret } from "./secretBox.ts";
 import type { Db } from "./supabaseAdmin.ts";
+import { APP_NAME } from "./brand.ts";
 
 /** Failed tries before a write is left alone; the person can still click again. */
 export const MAX_ATTEMPTS = 6;
@@ -483,7 +484,7 @@ export async function loadWriteContext(
       title: proposal.title,
       place: proposal.place,
       note: proposal.note,
-      groupName: proposal.friend_groups?.name ?? "Casy",
+      groupName: proposal.friend_groups?.name ?? APP_NAME,
       others,
       kind: proposal.settings?.kind ?? "single",
       start: proposal.current!.starts_at,
@@ -629,7 +630,7 @@ export async function processWrites(
       const message =
         err instanceof CalDavError
           ? err.message
-          : "Couldn't reach Apple Calendar. Casy will try again within the hour.";
+          : "Couldn't reach Apple Calendar. We'll try again within the hour.";
       const { error } = await db
         .from("calendar_event_writes")
         .update({

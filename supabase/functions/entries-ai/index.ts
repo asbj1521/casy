@@ -41,10 +41,10 @@ serve("entries-ai", async (req, body) => {
     maxTokens: ENTRIES_MAX_TOKENS,
     retryIfCutOff: true,
     messages: {
-      usedUp: "You've told Casy as much as you can today. Try again tomorrow.",
+      usedUp: "You've told us as much as you can today. Try again tomorrow.",
       allUsedUp: "AI is used up for today. Try again tomorrow.",
-      unavailable: "Casy couldn't read that right now. Try again.",
-      unreadable: "Casy couldn't make a calendar entry of that. Try saying it another way.",
+      unavailable: "We couldn't read that right now. Try again.",
+      unreadable: "We couldn't make a calendar entry of that. Try saying it another way.",
     },
   });
   return { entries: result.entries, message: result.message, left: userLeft };

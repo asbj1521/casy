@@ -69,11 +69,11 @@ export function eventDescription(event: AgreedEvent, lang: Lang): string {
   const agreed =
     lang === "da"
       ? who
-        ? `Aftalt i Casy med ${who}.`
-        : "Aftalt i Casy."
+        ? `Vi fandt en dag med ${who}.`
+        : "Vi fandt en dag."
       : who
-        ? `Agreed in Casy with ${who}.`
-        : "Agreed in Casy.";
+        ? `We found a day with ${who}.`
+        : "We found a day.";
   return event.note ? `${event.note}\n\n${agreed}` : agreed;
 }
 

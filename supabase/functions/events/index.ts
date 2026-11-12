@@ -471,7 +471,7 @@ serve("events", async (req, body) => {
       if (mine?.state === "adding" && !mine.onPhone) {
         throw new HttpError(
           502,
-          mine.error ?? "Couldn't reach Apple Calendar. Casy will try again within the hour.",
+          mine.error ?? "Couldn't reach Apple Calendar. We'll try again within the hour.",
           { events },
         );
       }

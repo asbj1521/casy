@@ -127,4 +127,4 @@ export async function aiContentAllowed(db: Pick<Db, "from">, profileId: string):
 }
 
 /** Refused before anything is read, claimed or asked. */
-export const CONTENT_NOT_ALLOWED = "Casy's AI needs your yes first.";
+export const CONTENT_NOT_ALLOWED = "The AI needs your yes first.";

@@ -127,31 +127,31 @@ export const DANISH: Record<string, string> = {
   "Calendar not found": "Kalenderen blev ikke fundet",
   "Keep the name to 60 characters.": "Navnet må højst være 60 tegn.",
   "Keep the category's name to 30 characters.": "Kategoriens navn må højst være 30 tegn.",
-  "Casy can't add events to that calendar.": "Casy kan ikke lægge aftaler i den kalender.",
+  "We can't add events to that calendar.": "Vi kan ikke lægge aftaler i den kalender.",
   "Choose a primary calendar first.": "Vælg en primær kalender først.",
 
   // Planning with AI
   "Describe the event in a few words.": "Beskriv aftalen med et par ord.",
-  "Casy's AI needs your yes first.": "Casys AI skal have dit ja først.",
-  "That has a word Casy doesn't allow. Try another.":
-    "Det indeholder et ord, Casy ikke tillader. Prøv et andet.",
+  "The AI needs your yes first.": "AI'en skal have dit ja først.",
+  "That has a word we don't allow. Try another.":
+    "Det indeholder et ord, vi ikke tillader. Prøv et andet.",
   "You've used all your AI planning for today. Plan it by hand, or try tomorrow.":
     "Du har brugt al din AI-planlægning for i dag. Planlæg selv, eller prøv i morgen.",
   "AI planning is used up for today. Plan it by hand, or try tomorrow.":
     "AI-planlægningen er brugt op for i dag. Planlæg selv, eller prøv i morgen.",
   "AI planning isn't available right now. Plan it by hand, or try again.":
     "AI-planlægningen virker ikke lige nu. Planlæg selv, eller prøv igen.",
-  "Casy couldn't make an event of that. Try saying it another way.":
-    "Casy kunne ikke få en aftale ud af det. Prøv at sige det på en anden måde.",
+  "We couldn't make an event of that. Try saying it another way.":
+    "Vi kunne ikke få en aftale ud af det. Prøv at sige det på en anden måde.",
 
   // Tell Casy: entries in your own calendar
   "Say when you're away or busy in a few words.":
     "Sig med et par ord, hvornår du er væk eller optaget.",
-  "You've told Casy as much as you can today. Try again tomorrow.":
-    "Du har fortalt Casy så meget, du kan i dag. Prøv igen i morgen.",
-  "Casy couldn't read that right now. Try again.": "Casy kunne ikke læse det lige nu. Prøv igen.",
-  "Casy couldn't make a calendar entry of that. Try saying it another way.":
-    "Casy kunne ikke få en kalenderpost ud af det. Prøv at sige det på en anden måde.",
+  "You've told us as much as you can today. Try again tomorrow.":
+    "Du har fortalt os så meget, du kan i dag. Prøv igen i morgen.",
+  "We couldn't read that right now. Try again.": "Vi kunne ikke læse det lige nu. Prøv igen.",
+  "We couldn't make a calendar entry of that. Try saying it another way.":
+    "Vi kunne ikke få en kalenderpost ud af det. Prøv at sige det på en anden måde.",
   "Those entries aren't valid.": "Posterne er ikke gyldige.",
   "That entry doesn't exist.": "Posten findes ikke.",
   "You can keep at most 100 entries. Delete some first.":
@@ -162,10 +162,10 @@ export const DANISH: Record<string, string> = {
   "You've corrected labels as many times as you can today. Try again tomorrow.":
     "Du har rettet så mange vurderinger, som du kan i dag. Prøv igen i morgen.",
   "AI is used up for today. Try again tomorrow.": "AI er brugt op for i dag. Prøv igen i morgen.",
-  "Casy couldn't label it again right now. Try again.":
-    "Casy kunne ikke vurdere den igen lige nu. Prøv igen.",
-  "Casy couldn't label it again this time. Try saying it another way.":
-    "Casy kunne ikke vurdere den igen denne gang. Prøv at sige det på en anden måde.",
+  "We couldn't label it again right now. Try again.":
+    "Vi kunne ikke vurdere den igen lige nu. Prøv igen.",
+  "We couldn't label it again this time. Try saying it another way.":
+    "Vi kunne ikke vurdere den igen denne gang. Prøv at sige det på en anden måde.",
 
   // iCloud
   "Enter your Apple account email and your app-specific password.":
@@ -186,15 +186,15 @@ export const DANISH: Record<string, string> = {
   "Apple returned an address we couldn't read.": "Apple sendte en adresse, vi ikke kunne læse.",
   "Apple pointed us at an unexpected server, so we stopped.":
     "Apple sendte os til en uventet server, så vi stoppede.",
-  "Apple didn't let Casy add events to that calendar.":
-    "Apple lod ikke Casy lægge aftaler i den kalender.",
-  "Apple didn't let Casy remove the event.": "Apple lod ikke Casy fjerne aftalen.",
+  "Apple didn't let us add events to that calendar.":
+    "Apple lod os ikke lægge aftaler i den kalender.",
+  "Apple didn't let us remove the event.": "Apple lod os ikke fjerne aftalen.",
   "That calendar is no longer in the Apple account.":
     "Den kalender findes ikke længere på Apple-kontoen.",
   "Reconnect your Apple account under Connected calendars.":
     "Forbind din Apple-konto igen under Forbundne kalendere.",
-  "Couldn't reach Apple Calendar. Casy will try again within the hour.":
-    "Kunne ikke nå Apple-kalenderen. Casy prøver igen inden for en time.",
+  "Couldn't reach Apple Calendar. We'll try again within the hour.":
+    "Kunne ikke nå Apple-kalenderen. Vi prøver igen inden for en time.",
 
   // Calendar links
   "That doesn't look like a valid link.": "Det ligner ikke et gyldigt link.",

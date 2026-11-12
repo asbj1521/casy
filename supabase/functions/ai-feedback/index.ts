@@ -20,7 +20,7 @@ serve("ai-feedback", async (req, body) => {
   const db = supabaseAdmin();
   const caller = await requireCaller(req, db);
   if (!(await aiSharesCorrections(db, caller.id))) {
-    throw new HttpError(403, "Sending corrections to Casy is switched off for your account.");
+    throw new HttpError(403, "Sending corrections to us is switched off for your account.");
   }
 
   const feedback = readFeedback(body);

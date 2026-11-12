@@ -32,6 +32,7 @@ import { type Db, supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 // behind it) is imported inside the sync actions, so the everyday calls,
 // "status" above all, don't pay for loading it on a cold start.
 import type { SyncTarget } from "../_shared/sync.ts";
+import { APP_NAME } from "../_shared/brand.ts";
 
 /** Auth's admin API pages users; this many per page, this many pages at most. */
 const USERS_PER_PAGE = 1000;
@@ -222,7 +223,7 @@ serve("admin", async (req, body) => {
     case "pushTest": {
       const lang = body.lang === "en" ? "en" : "da";
       return await pushToProfile(db, caller.id, {
-        title: "Casy",
+        title: APP_NAME,
         body: lang === "en" ? "Notifications work." : "Notifikationer virker.",
         url: "/profile/settings",
       });

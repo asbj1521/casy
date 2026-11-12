@@ -18,6 +18,7 @@ import { HttpError, requireString } from "./http.ts";
 import { sendEmail } from "./resend.ts";
 import type { Db } from "./supabaseAdmin.ts";
 import { cleanText } from "./text.ts";
+import { APP_NAME } from "./brand.ts";
 
 export const REPORT_KINDS = ["group", "event", "member"] as const;
 export const REPORT_REASONS = ["spam", "offensive", "harassment", "other"] as const;
@@ -146,7 +147,7 @@ export function reportAlert(
   const line = `En ny rapport venter: ${kind}, ${reason}.`;
   const link = "https://casy.app/profile/admin";
   return {
-    subject: "Casy: en ny rapport",
+    subject: `${APP_NAME}: en ny rapport`,
     text: `${line}\n\nDen skal ses inden for 24 timer, som vilkårene lover: ${link}`,
     html: `<p>${line}</p><p>Den skal ses inden for 24 timer, som vilkårene lover: <a href="${link}">admin mode</a></p>`,
   };

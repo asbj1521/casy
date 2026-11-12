@@ -67,7 +67,7 @@ Deno.test("without a name, it is someone", () => {
 Deno.test("a group invitation names the group and opens the invitations", () => {
   const message = composePush(facts("group_invitation", { proposalId: null }), "da");
   assertEquals(message, {
-    title: "Casy",
+    title: "Ny invitation",
     body: "Sara inviterede dig til Fredagsholdet.",
     url: "/groups",
   });

@@ -65,8 +65,8 @@ serve("calendar-label", async (req, body) => {
       messages: {
         usedUp: "You've corrected labels as many times as you can today. Try again tomorrow.",
         allUsedUp: "AI is used up for today. Try again tomorrow.",
-        unavailable: "Casy couldn't label it again right now. Try again.",
-        unreadable: "Casy couldn't label it again this time. Try saying it another way.",
+        unavailable: "We couldn't label it again right now. Try again.",
+        unreadable: "We couldn't label it again this time. Try saying it another way.",
       },
     });
     return { labels, left: userLeft };

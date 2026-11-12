@@ -43,7 +43,7 @@ serve("plan-ai", async (req, body) => {
       usedUp: "You've used all your AI planning for today. Plan it by hand, or try tomorrow.",
       allUsedUp: "AI planning is used up for today. Plan it by hand, or try tomorrow.",
       unavailable: "AI planning isn't available right now. Plan it by hand, or try again.",
-      unreadable: "Casy couldn't make an event of that. Try saying it another way.",
+      unreadable: "We couldn't make an event of that. Try saying it another way.",
     },
   });
   return { plan, left: userLeft };

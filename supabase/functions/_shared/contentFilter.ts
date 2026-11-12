@@ -61,7 +61,7 @@ export function hasBlockedWords(text: string): boolean {
   return BLOCKED_PHRASES.some((phrase) => joined.includes(` ${phrase} `));
 }
 
-export const BLOCKED_TEXT = "That has a word Casy doesn't allow. Try another.";
+export const BLOCKED_TEXT = "That has a word we don't allow. Try another.";
 
 /** Refuses the request if any of the texts holds a blocked word. Empty ones pass. */
 export function refuseBlockedWords(...texts: (string | null | undefined)[]): void {

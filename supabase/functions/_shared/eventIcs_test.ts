@@ -40,17 +40,17 @@ Deno.test("a timed event is written in UTC, with a stable UID", () => {
 Deno.test("the title and description are in the reader's language", () => {
   const en = linesOf(buildEventIcs(dinner, "en", NOW));
   assert(en.includes("SUMMARY:Dinner with The friends"));
-  assert(en.includes("DESCRIPTION:Agreed in Casy with Anna\\, Bo and Carl."));
+  assert(en.includes("DESCRIPTION:We found a day with Anna\\, Bo and Carl."));
   const da = linesOf(buildEventIcs(dinner, "da", NOW));
   assert(da.includes("SUMMARY:Middag med The friends"));
-  assert(da.includes("DESCRIPTION:Aftalt i Casy med Anna\\, Bo og Carl."));
+  assert(da.includes("DESCRIPTION:Vi fandt en dag med Anna\\, Bo og Carl."));
 });
 
 Deno.test("a place is the entry's location, and a note leads its description", () => {
   const event = { ...dinner, place: "Hos Sara, Nørrebro", note: "Tag et spil med" };
   const da = linesOf(buildEventIcs(event, "da", NOW));
   assert(da.includes("LOCATION:Hos Sara\\, Nørrebro"));
-  assert(da.includes("DESCRIPTION:Tag et spil med\\n\\nAftalt i Casy med Anna\\, Bo og Carl."));
+  assert(da.includes("DESCRIPTION:Tag et spil med\\n\\nVi fandt en dag med Anna\\, Bo og Carl."));
   // Without them, no LOCATION line at all.
   assert(!linesOf(buildEventIcs(dinner, "da", NOW)).some((l) => l.startsWith("LOCATION")));
 });

@@ -144,7 +144,7 @@ export function composePush(facts: PushFacts, lang: Lang): PushMessage {
       };
     case "group_invitation":
       return {
-        title: "Casy",
+        title: da ? "Ny invitation" : "New invitation",
         body: da ? `${who} inviterede dig til ${group}.` : `${who} invited you to ${group}.`,
         url: facts.groupId ? `/invited/${facts.groupId}` : "/groups",
       };

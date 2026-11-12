@@ -30,7 +30,7 @@ Deno.test("an entry reads as the iCloud one does, in the reader's language", () 
   assertEquals(phoneEntry(dinner, "da"), {
     title: "Middag med Vennerne",
     location: "Hos Anna",
-    notes: "Aftalt i Casy med Anna og Bo.",
+    notes: "Vi fandt en dag med Anna og Bo.",
     allDay: false,
     start: dinner.start,
     end: dinner.end,
