@@ -210,19 +210,27 @@ Read `.env.local` and extract the value after `GitHub repo token=`. Use it as th
 
 ### Step 4 — Present Session Options
 
-Fetch the project board (query below), then greet the user with exactly two options:
+The to-do list is **every open issue in `asbj1521/casy`**, not the board alone: a board card with no Status, or an issue not yet added to the board, would be missed. Fetch them with the REST API (token read inside the command, never printed), leaving out pull requests:
+
+```bash
+GET https://api.github.com/repos/asbj1521/casy/issues?state=open&per_page=100
+# skip any item that has a "pull_request" key; follow the Link header if there are more than 100
+```
+
+Then greet the user with exactly two options:
 
 > **What would you like to work on today?**
 >
 > **Option 1 — Something new:** Tell me what you want to build, fix, or explore and we'll design it together.
 >
-> **Option 2 — Pick a TO-DO:** Here are the open items on the board:
-> 1. #XX — [title]
-> 2. #XX — [title]
-> 3. #XX — [title]
-> *(show up to 3; if none exist, say so and default to Option 1)*
+> **Option 2 — Pick a TO-DO:** Here are all the open issues, grouped by theme (mark the ones In Progress):
+> - #XX — [title]: one or two sentences on what it is for
+> - ...
+> *(list every open issue, never a capped number; if none exist, say so and default to Option 1. Point out issues that overlap and should be designed together.)*
 
-**Query to fetch TO-DO items:**
+The board query below is only for finding a card's item id and Status when moving it (Step 6 and Wrap Up). Issues missing from the board are added with `addProjectV2ItemById` (Step 6).
+
+**Query to fetch board items (for item ids and Status):**
 ```
 POST https://api.github.com/graphql
 Authorization: Bearer <token>
