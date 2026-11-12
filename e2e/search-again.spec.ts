@@ -121,6 +121,8 @@ test("a vote searched again may need fewer people, which goes with its new dates
     .getByRole("button", { name: "Søg igen" })
     .click();
   const plan = page.getByRole("dialog", { name: "Søg igen" });
+  // Over the vote, grown out of the row pressed: still in Aftaler, not Planlæg.
+  await expect(page).toHaveURL(/\?events=ev-cinema$/);
   // The plan's own time and months, and how many need to come: everyone, to start.
   await expect(plan.getByRole("button", { name: /^Tidspunkt/ })).toBeVisible();
   await expect(plan.getByRole("group", { name: "Måneder" })).toBeVisible();

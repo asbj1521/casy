@@ -12,10 +12,11 @@ const MIN_DATES = 2;
 const MAX_DATES = 5;
 
 /**
- * Searching an open vote again (#240): who in its group it leaves out, and a
- * way to search, which opens Planlæg on the vote's plan (#264: what may find
- * an earlier date first, then the pile) with the
- * members picked (`add`, none to only look again) among everyone it is for.
+ * Searching an open vote again (#240): who in its group it leaves out, the
+ * vote's own plan with the
+ * members picked (`add`, none to only look again) among everyone it is for
+ * (`planFor`, loosened in a sheet over the vote first, #264), and the way on
+ * to Planlæg's pile with it (`runPlan`).
  * Their calendars are thrown onto those already searched; sending gives the
  * vote the new dates. Planlæg opens over the home page and closes back onto
  * the vote.
@@ -28,15 +29,16 @@ export function useSearchAgain(event: VoteEvent) {
   const invited = event.invitees.map((i) => i.profileId);
   const missing = group?.members.filter((m) => !invited.includes(m.profileId)) ?? [];
 
-  const searchAgain = (add: string[]) => {
-    if (!group) return;
+  /** The vote's own plan, with the members picked (`add`) among everyone it is for. */
+  const planFor = (add: string[]): PlanStart | null => {
+    if (!group) return null;
     const everyone = [...new Set([...invited, ...add])];
     const plan = planFromVote(
       event.settings,
       everyone,
       group.members.map((m) => m.profileId),
     );
-    const planStart: PlanStart = {
+    return {
       groupId: group.id,
       settings: plan.sched,
       people: plan.people,
@@ -48,8 +50,11 @@ export function useSearchAgain(event: VoteEvent) {
       },
       again: { eventId: event.id, add, before: invited, dates: event.candidates },
     };
-    navigate({ search: "?plan" }, { state: { fromMonth: true, planStart } });
   };
 
-  return { missing, ready: !!group, searchAgain };
+  /** Planlæg's pile, on `plan` as loosened in the sheet (#264). */
+  const runPlan = (plan: PlanStart) =>
+    navigate({ search: "?plan" }, { state: { fromMonth: true, planStart: plan } });
+
+  return { missing, ready: !!group, planFor, runPlan };
 }
