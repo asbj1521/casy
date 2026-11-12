@@ -82,6 +82,12 @@ interface AiPlannerPage {
   setName: (name: string) => void;
   setExtras: (patch: Partial<EventExtras>) => void;
   setPeople: (choice: PeopleChoice) => void;
+  /**
+   * Whether people named in the text are set as coming, optional or left out.
+   * Not on a phone, which has no Deltagere to see or undo it with: there
+   * only "how many" is taken, so nobody is left out unseen (#260).
+   */
+  byName?: boolean;
 }
 
 export function useAiPlanner(page: AiPlannerPage) {
@@ -111,7 +117,7 @@ export function useAiPlanner(page: AiPlannerPage) {
         if (plan.note) now.setExtras({ note: plan.note });
       }
 
-      const matches = matchNames(mentionedNames(plan), now.members);
+      const matches = now.byName === false ? [] : matchNames(mentionedNames(plan), now.members);
       const resolved = Object.fromEntries(
         matches.filter((m) => m.candidates.length === 1).map((m) => [m.written, m.candidates[0]]),
       );

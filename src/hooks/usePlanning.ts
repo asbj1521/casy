@@ -824,6 +824,7 @@ export function usePlanning({
     setName,
     setExtras: updateExtras,
     setPeople: updatePeople,
+    byName: !phone,
   });
   // A setting changed by hand on the AI's screen is no longer its guess.
   const updateSettingsByHand = (patch: Partial<SchedulerSettings>) => {

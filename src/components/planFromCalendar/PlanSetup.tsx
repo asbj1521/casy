@@ -7,7 +7,7 @@ import DanishTimeNote from "@/components/time/DanishTimeNote";
 import type { Planning } from "@/hooks/usePlanning";
 import { useLang, useT } from "@/i18n/lang";
 import { capitalize, dayLabel } from "@/lib/format";
-import { matchNames, mentionedNames, type AiPlan } from "@/lib/aiPlan";
+import type { AiPlan } from "@/lib/aiPlan";
 import { flexAround, flexOf } from "@/lib/startFlex";
 
 import { useAiConsentGate } from "@/hooks/useAiConsentGate";
@@ -59,7 +59,6 @@ export default function PlanSetup({
     extras,
     updateExtras,
     peopleChoice,
-    updatePeople,
   } = planning;
   const members = activeGroup?.members ?? [];
 
@@ -69,9 +68,8 @@ export default function PlanSetup({
   const [asking, setAsking] = useState(false);
   const consent = useAiConsentGate();
   const field = useRef<HTMLDivElement>(null);
-  const needsAnswers = (plan: AiPlan) =>
-    plan.questions.length > 0 ||
-    matchNames(mentionedNames(plan), members).some((m) => m.candidates.length !== 1);
+  // Names aren't asked about here: the phone leaves nobody out by name (#260).
+  const needsAnswers = (plan: AiPlan) => plan.questions.length > 0;
 
   function askAi() {
     consent.guard(() => {
@@ -176,22 +174,7 @@ export default function PlanSetup({
         )}
         {!editor && <HowManyRow planning={planning} />}
         <DanishTimeNote className="mt-3 px-1 text-xs" />
-        <MoreDetails
-          extras={extras}
-          onExtras={updateExtras}
-          lit={fill.lit === "more"}
-          participants={
-            editor
-              ? undefined
-              : {
-                  members,
-                  choice: peopleChoice,
-                  onChange: updatePeople,
-                  meeting: !shown.multiDay,
-                  example: !activeGroup || activeGroup.isExample,
-                }
-          }
-        />
+        <MoreDetails extras={extras} onExtras={updateExtras} lit={fill.lit === "more"} />
       </div>
 
       {consent.sheet}

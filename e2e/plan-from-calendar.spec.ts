@@ -146,7 +146,6 @@ test("✨ in the name field asks Casy, its questions drop from the field, and th
   await page.goto("/calendar-overview");
   await page.getByRole("button", { name: "Planlæg" }).click();
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
-  // Its members are who the names in the text are matched against.
   await pickGroup(page, "Løbeklubben");
   const field = sheet.getByRole("textbox", { name: /Hvad skal I/i });
   // Nothing written, nothing to ask Casy about.
@@ -157,14 +156,19 @@ test("✨ in the name field asks Casy, its questions drop from the field, and th
   await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
   const questions = page.getByRole("dialog", { name: "Lige et spørgsmål" });
   await questions.getByRole("radio", { name: "Kl. 18" }).click();
-  await questions.getByRole("radio", { name: "Ingen af dem" }).nth(0).click();
-  await questions.getByRole("radio", { name: "Ingen af dem" }).nth(1).click();
+  // Names are not asked about: the phone leaves nobody out by name (#260).
+  await expect(questions.getByRole("radio", { name: "Ingen af dem" })).toHaveCount(0);
 
   // The last answer closes the questions, and the sheet holds Casy's plan.
   await expect(questions).toHaveCount(0);
   await expect(field).toHaveValue("Middag");
   await expect(sheet.getByRole("button", { name: /^Dage/ })).toContainText("Fre");
   await expect(sheet.getByRole("button", { name: "Find dato" })).toBeEnabled();
+  // Everyone still needs to come: "uden Jonas og Peter" left nobody out.
+  await expect(sheet.getByRole("slider", { name: "Hvor mange skal kunne" })).toHaveAttribute(
+    "aria-valuenow",
+    "3",
+  );
 });
 
 test("the sheet's rows: give or take an hour, and the details folded away go along (#173)", async ({
@@ -179,11 +183,13 @@ test("the sheet's rows: give or take an hour, and the details folded away go alo
   await expect(sheet.getByText("± 1 t", { exact: true })).toBeVisible();
 
   await sheet.getByRole("button", { name: "Flere detaljer" }).click();
-  await sheet.getByRole("button", { name: /^Deltagere/ }).click();
+  // Nobody is picked out by hand on a phone: how many is up front (#259, #260).
+  await expect(sheet.getByRole("button", { name: /^Deltagere/ })).toHaveCount(0);
+  await sheet.getByRole("button", { name: /^Svarfrist/ }).click();
   // It grows out of its row (#175), and Esc (or a tap outside) closes it, not the sheet.
-  await expect(page.getByRole("dialog", { name: "Deltagere" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Svarfrist" })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Deltagere" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Svarfrist" })).toHaveCount(0);
   await expect(sheet).toBeVisible();
   await sheet.getByRole("textbox", { name: "Sted" }).fill("Hos Sara");
   await sheet.getByRole("textbox", { name: "Note" }).fill("Tag snacks med");
