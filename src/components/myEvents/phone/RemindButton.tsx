@@ -15,7 +15,8 @@ const DAY_MS = 24 * 3_600_000;
 
 /**
  * "Påmind" (a vote's suggester only): a notification to everyone the vote
- * still waits for, the faces apart at the end of the row above. Once a day
+ * still waits for, the faces apart at the end of the row under it, beside the
+ * event's name and time. Once a day
  * at most, as the server keeps it: pressed, the bell rings and the button
  * rests as "Påmindet" until a day has passed. Only for an open vote with
  * someone still to answer (`waiting`).
@@ -23,10 +24,12 @@ const DAY_MS = 24 * 3_600_000;
 export default function RemindButton({
   event,
   waiting,
+  className,
 }: {
   event: VoteEvent;
   /** How many the vote still waits for (stillToAnswer). */
   waiting: number;
+  className?: string;
 }) {
   const t = useT();
   const words = t.remind;
@@ -39,7 +42,7 @@ export default function RemindButton({
   if (!event.createdBy.isYou || event.status !== "pending" || waiting === 0) return null;
 
   return (
-    <div className="mt-3">
+    <div className={className}>
       <GlassButton
         size="sm"
         busy={remind.isPending}
@@ -64,7 +67,8 @@ export default function RemindButton({
           ) : (
             <Bell aria-hidden className="h-4 w-4" />
           ))}
-        {done ? words.done : words.button(waiting)}
+        {/* At the largest text the bell alone, so the event's name keeps its room. */}
+        <span className="large-text:sr-only">{done ? words.done : words.button(waiting)}</span>
       </GlassButton>
       {remind.isError && (
         <Notice tone="error" bare className="mt-2">

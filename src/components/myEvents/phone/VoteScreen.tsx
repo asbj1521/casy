@@ -96,14 +96,20 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
           <DateTile start={first} more={Math.max(0, dates.length - 1)} size="hero" />
         </span>
         {/* The group is the sheet's title; here what it is, and when. */}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-[1.0625rem] font-semibold text-foreground">
             {eventTitle(event.title, t)}
           </p>
           {sharedTime && (
-            <p className="text-[0.9375rem] tabular-nums text-muted-foreground">{sharedTime}</p>
+            <p className="whitespace-nowrap text-[0.9375rem] tabular-nums text-muted-foreground">
+              {sharedTime}
+            </p>
           )}
         </div>
+        {/* The suggester nudges those the vote waits for, once a day. */}
+        {!mustChoose && (
+          <RemindButton event={event} waiting={missing.length} className="shrink-0" />
+        )}
       </div>
 
       <div className="mt-5">
@@ -116,8 +122,6 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
           optional={event.settings.people?.optional}
           split
         />
-        {/* The suggester nudges those the vote waits for, once a day. */}
-        {!mustChoose && <RemindButton event={event} waiting={missing.length} />}
       </div>
 
       {mustChoose && (
