@@ -12,7 +12,7 @@ test.describe("signed out", () => {
     await expect(page.getByRole("heading", { name: "Sara har inviteret dig til" })).toBeVisible();
     await expect(page.getByText("Sommerhuset")).toBeVisible();
     await expect(page.getByText("4 medlemmer indtil videre")).toBeVisible();
-    await expect(page.getByText(/^Casy finder de datoer/)).toBeVisible();
+    await expect(page.getByText(/^Vi finder de datoer/)).toBeVisible();
 
     await page
       .getByRole("link", { name: isMobile ? "Bliv medlem" : "Log ind for at blive medlem" })
@@ -39,7 +39,7 @@ test.describe("signed out", () => {
   test("in English too", async ({ page }) => {
     await page.goto("/join/a-token?lang=en");
     await expect(page.getByRole("heading", { name: "Sara has invited you to" })).toBeVisible();
-    await expect(page.getByText(/^Casy finds the dates/)).toBeVisible();
+    await expect(page.getByText(/^We find the dates/)).toBeVisible();
   });
 
   test("a browser that is no iPhone has no way to the App Store", async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe("signed out", () => {
       test.skip(!isMobile, "a computer keeps its card");
       await page.goto("/join/a-token");
       // A tap to another site, which is what iOS opens the app for.
-      await expect(page.getByRole("link", { name: "Åbn i Casy-appen" })).toHaveAttribute(
+      await expect(page.getByRole("link", { name: "Åbn i appen" })).toHaveAttribute(
         "href",
         "https://casy-red.vercel.app/join/a-token?door=1",
       );
@@ -85,7 +85,7 @@ test.describe("signed out", () => {
       test.skip(!isMobile, "a computer keeps its card");
       await page.goto("/join/a-token?door=1");
       await expect(page.getByText("Sommerhuset")).toBeVisible();
-      await expect(page.getByRole("link", { name: "Åbn i Casy-appen" })).toHaveAttribute(
+      await expect(page.getByRole("link", { name: "Åbn i appen" })).toHaveAttribute(
         "href",
         "https://casy.app/join/a-token?noapp=1",
       );
@@ -103,9 +103,9 @@ test.describe("signed out", () => {
     }) => {
       test.skip(!isMobile, "a computer keeps its card");
       await page.goto("/join/a-token?noapp=1");
-      await expect(page.getByText(/^Casy-appen kunne ikke åbnes\./)).toBeVisible();
+      await expect(page.getByText(/^Appen kunne ikke åbnes\./)).toBeVisible();
       // Tried already: joining here or getting the app are the ways on.
-      await expect(page.getByRole("link", { name: "Åbn i Casy-appen" })).toHaveCount(0);
+      await expect(page.getByRole("link", { name: "Åbn i appen" })).toHaveCount(0);
       await expect(page.getByRole("link", { name: "Bliv medlem" })).toBeVisible();
       await expect(page.getByRole("link", { name: "Hent appen" })).toBeVisible();
     });
@@ -163,7 +163,7 @@ test.describe("in a chat app's own browser", () => {
 test("signed in, one press joins, with no word on what Casy is", async ({ page, backend }) => {
   await page.goto("/join/a-token");
   await expect(page.getByRole("heading", { name: "Sara har inviteret dig til" })).toBeVisible();
-  await expect(page.getByText(/^Casy finder de datoer/)).toHaveCount(0);
+  await expect(page.getByText(/^Vi finder de datoer/)).toHaveCount(0);
   await page.getByRole("button", { name: "Bliv medlem" }).click();
   await expect.poll(() => backend.calls.find((c) => c.body.action === "join")).toBeTruthy();
   await expect(page).toHaveURL(/\/$/);

@@ -3,6 +3,7 @@ import { FaMicrosoft } from "react-icons/fa6";
 import { CheckCircle2, EyeOff, Info } from "lucide-react";
 
 import HelpGuide, { MockPanel, type GuideStep } from "@/components/HelpGuide";
+import { APP_NAME } from "@/i18n/brand";
 import { useLang } from "@/i18n/lang";
 
 /**
@@ -32,7 +33,7 @@ const da = {
     },
     accept: {
       title: "Accepter adgangen, så er du færdig",
-      body: "Se den adgang, Casy beder om, og accepter den. Casy henter dine ledige og optagede tider med det samme og holder dem opdateret hver time.",
+      body: `Se den adgang, ${APP_NAME} beder om, og accepter den. Vi henter dine ledige og optagede tider med det samme og holder dem opdateret hver time.`,
     },
   },
   mock: {
@@ -41,12 +42,12 @@ const da = {
     signIn: "Log på",
     email: "dig@outlook.com",
     next: "Næste",
-    wantsTo: "Casy vil gerne",
+    wantsTo: `${APP_NAME} vil gerne`,
     permission: "Læse dine kalendere",
     accept: "Accepter",
   },
   never:
-    "Casy beder aldrig Microsoft om titler, steder eller gæster. Casy ser kun, hvornår du er optaget.",
+    "Vi beder aldrig Microsoft om titler, steder eller gæster. Vi ser kun, hvornår du er optaget.",
   blocked: (
     <>
       Nogle skoler og arbejdspladser blokerer det her login helt. Kommer du ikke videre efter
@@ -72,7 +73,7 @@ const en: typeof da = {
     },
     accept: {
       title: "Accept the permissions and you're done",
-      body: "Review the access Casy is requesting and accept it. Casy reads your free/busy times right away and keeps them in sync automatically every hour.",
+      body: `Review the access ${APP_NAME} is requesting and accept it. We read your free/busy times right away and keep them in sync automatically every hour.`,
     },
   },
   mock: {
@@ -81,12 +82,11 @@ const en: typeof da = {
     signIn: "Sign in",
     email: "you@outlook.com",
     next: "Next",
-    wantsTo: "Casy would like to",
+    wantsTo: `${APP_NAME} would like to`,
     permission: "Read your calendars",
     accept: "Accept",
   },
-  never:
-    "Casy never asks Microsoft for event titles, places or guests. It only sees when you're busy.",
+  never: "We never ask Microsoft for event titles, places or guests. We only see when you're busy.",
   blocked: (
     <>
       Some schools and workplaces block this sign-in from working at all. If Connect doesn't get you

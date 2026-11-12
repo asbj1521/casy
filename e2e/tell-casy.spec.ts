@@ -22,7 +22,7 @@ test("a description becomes entries, which are kept only when saved", async ({
   await sheet.getByRole("button", { name: "Tilføj", exact: true }).click();
 
   // Casy's reading is shown for checking; nothing is saved yet.
-  await expect(sheet.getByText("Sådan forstod Casy det")).toBeVisible();
+  await expect(sheet.getByText("Sådan forstod vi det")).toBeVisible();
   await expect(sheet.getByText("Rejse", { exact: true })).toBeVisible();
   await expect(sheet.getByText(/12\. okt\. til .*19\. okt\./)).toBeVisible();
   expect(backend.world.entries).toHaveLength(0);
@@ -116,14 +116,14 @@ test("text Casy can't use is said so, and the words come back to fix", async ({ 
   const sheet = page.getByRole("dialog", { name: "Tilføj til kalender" });
   await sheet.getByRole("textbox", { name: PLACEHOLDER }).fill("bare noget vrøvl");
   await sheet.getByRole("button", { name: "Tilføj", exact: true }).click();
-  await expect(sheet.getByText(/Casy kunne ikke få en kalenderpost ud af det/)).toBeVisible();
+  await expect(sheet.getByText(/Vi kunne ikke få en kalenderpost ud af det/)).toBeVisible();
   await expect(sheet.getByRole("textbox", { name: PLACEHOLDER })).toHaveValue("bare noget vrøvl");
 });
 
 test("without a yes, sending asks first (#147)", async ({ page, backend }) => {
   backend.world.aiConsent = false;
   await page.goto("/calendar-overview");
-  const ask = page.getByRole("dialog", { name: "Slå Casys AI til?" });
+  const ask = page.getByRole("dialog", { name: "Slå AI til?" });
   // The home page's own question first, answered for good.
   await ask.getByRole("button", { name: "Ikke nu" }).click();
   await page.getByRole("button", { name: OPEN }).click();

@@ -357,7 +357,7 @@ test("anyone sees what Casy expects an event to involve (#113, #147)", async ({
     reason: "En løbetur udenfor.",
   };
   await page.goto("/events/ev-run");
-  await page.getByRole("button", { name: "Casys vurdering" }).click();
+  await page.getByRole("button", { name: "Vores vurdering" }).click();
   await expect(page.getByText("Lidt krævende · Sikker")).toBeVisible();
   await expect(page.getByText("Hård træning")).toBeVisible();
   await expect(page.getByText("Kræver dagslys")).toBeVisible();

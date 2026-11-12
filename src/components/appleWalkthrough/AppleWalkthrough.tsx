@@ -23,6 +23,7 @@ import {
 import { BEATS, keyBeat } from "@/components/appleWalkthrough/timeline";
 import { useLang } from "@/i18n/lang";
 import { cn } from "@/lib/utils";
+import { APP_NAME } from "@/i18n/brand";
 
 /**
  * Making an app-specific password at Apple, acted out: a drawing of Apple's
@@ -57,7 +58,7 @@ const da = {
       code: "Skriv den kode, Apple sender til din iPhone.",
       security: "Rul ned, og klik på App-specifikke adgang…",
       list: "Klik på +.",
-      generate: "Skriv Casy, og klik på Opret.",
+      generate: `Skriv ${APP_NAME}, og klik på Opret.`,
       confirm: "Beder Apple om din adgangskode igen? Skriv den, og klik på Fortsæt.",
       reveal: "Markér koden ved at klikke tre gange på den, kopiér den med ⌘C, og klik på OK.",
     },
@@ -70,7 +71,7 @@ const da = {
       code: "Skriv den kode, Apple sender dig.",
       security: "Rul langt ned, og tryk på App-specifikke adgang…",
       list: "Tryk på +.",
-      generate: "Skriv Casy, og tryk på Opret.",
+      generate: `Skriv ${APP_NAME}, og tryk på Opret.`,
       confirm: "Beder Apple om din adgangskode igen? Skriv den, og tryk på Fortsæt.",
       reveal:
         "Hold fingeren på koden, og træk de blå prikker ud til hver sin ende, så hele koden er markeret. Tryk på Kopier og så på OK.",
@@ -97,7 +98,7 @@ const en: typeof da = {
       code: "Type the code Apple sends to your iPhone.",
       security: "Scroll down and click App-Specific Passwo…",
       list: "Click +.",
-      generate: "Type Casy and click Create.",
+      generate: `Type ${APP_NAME} and click Create.`,
       confirm: "If Apple asks for your password again, type it and click Continue.",
       reveal: "Select the code by clicking it three times, copy it with ⌘C, and click OK.",
     },
@@ -109,7 +110,7 @@ const en: typeof da = {
       code: "Type the code Apple sends you.",
       security: "Scroll a long way down and tap App-Specific Passwo…",
       list: "Tap +.",
-      generate: "Type Casy and tap Create.",
+      generate: `Type ${APP_NAME} and tap Create.`,
       confirm: "If Apple asks for your password again, type it and tap Continue.",
       reveal:
         "Press and hold the code, then drag the blue dots out to either end so the whole code is selected. Tap Copy, then OK.",

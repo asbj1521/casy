@@ -42,7 +42,7 @@ test.describe("signing in with Apple", () => {
     await page.goto("/sign-in");
     await page.getByRole("button", { name: "Fortsæt med Apple" }).click();
 
-    const ask = page.getByRole("dialog", { name: "Har du allerede en Casy-konto?" });
+    const ask = page.getByRole("dialog", { name: "Har du allerede en konto?" });
     await expect(ask).toBeVisible();
     await ask.getByRole("button", { name: "Ja, jeg har en konto" }).click();
     // The empty account just made is deleted, and the way in told.
@@ -59,7 +59,7 @@ test.describe("signing in with Apple", () => {
     await page.goto("/sign-in");
     await page.getByRole("button", { name: "Fortsæt med Apple" }).click();
     await page
-      .getByRole("dialog", { name: "Har du allerede en Casy-konto?" })
+      .getByRole("dialog", { name: "Har du allerede en konto?" })
       .getByRole("button", { name: "Nej, jeg er ny" })
       .click();
     await expect(page).not.toHaveURL(/\/sign-in/);
@@ -74,9 +74,7 @@ test.describe("signing in with Apple", () => {
     await page.goto("/sign-in");
     await page.getByRole("button", { name: "Fortsæt med Apple" }).click();
     await expect(page).not.toHaveURL(/\/sign-in/);
-    await expect(page.getByRole("dialog", { name: "Har du allerede en Casy-konto?" })).toHaveCount(
-      0,
-    );
+    await expect(page.getByRole("dialog", { name: "Har du allerede en konto?" })).toHaveCount(0);
   });
 });
 
@@ -94,9 +92,7 @@ test("an Apple ID that is another account's way in is said plainly", async ({ pa
   await asTheApp(page);
   await page.goto("/?profile=password");
   await page.getByRole("button", { name: /Log ind med Apple/ }).click();
-  await expect(
-    page.getByText("Det Apple-id hører allerede til en anden Casy-konto."),
-  ).toBeVisible();
+  await expect(page.getByText("Det Apple-id hører allerede til en anden konto.")).toBeVisible();
 });
 
 test("the website has no Apple row", async ({ page }) => {

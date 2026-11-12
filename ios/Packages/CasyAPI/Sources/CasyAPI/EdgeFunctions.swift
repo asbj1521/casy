@@ -62,12 +62,14 @@ public enum APIError: LocalizedError, Equatable, Sendable {
 
 private func offlineWords(_ lang: Lang) -> String {
     lang == .da
-        ? "Ingen forbindelse til Casy. Tjek dit internet, og prøv igen."
-        : "Couldn't reach Casy. Check your connection and try again."
+        ? "Vi kan ikke finde internettet. Tjek din forbindelse, og prøv igen."
+        : "We can't find the internet. Check your connection and try again."
 }
 
 private func timeoutWords(_ lang: Lang) -> String {
-    lang == .da ? "Casy svarede ikke i tide. Prøv igen." : "Casy took too long to answer. Try again."
+    lang == .da
+        ? "Svaret fandt ikke frem i tide. Prøv igen."
+        : "The answer didn't find its way in time. Try again."
 }
 
 private func failedWords(_ name: String, _ status: Int, _ lang: Lang) -> String {

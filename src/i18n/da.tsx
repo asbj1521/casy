@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { APP_LABEL, APP_NAME } from "@/i18n/brand";
+
 /**
  * Danish copy: the default language, and the shape the English file must
  * match key for key (see en.tsx). Website copy rules apply here too: no
@@ -23,7 +25,8 @@ export const da = {
     reportOrBlockDetail: "Hvis noget i gruppen ikke er i orden",
     reportEvent: "Rapportér aftalen",
     title: "Rapportér",
-    intro: "Rapporten går til Casy. Den, du rapporterer, får ikke at vide, hvem der sendte den.",
+    intro:
+      "Rapporten finder sin vej til os. Den, du rapporterer, får ikke at vide, hvem der sendte den.",
     what: "Hvad drejer det sig om?",
     targetGroup: (group: string) => `Gruppen ${group}`,
     targetEvent: (title: string) => `Aftalen ${title}`,
@@ -40,7 +43,7 @@ export const da = {
       `${name} kan ikke invitere dig til flere grupper. I er stadig i de grupper, I deler, til en af jer forlader dem.`,
     leaveToo: (group: string) => `Forlad ${group}`,
     send: "Send",
-    sent: "Tak. Casy kigger på det.",
+    sent: "Tak. Vi kigger på det.",
     blockSender: "Bloker afsenderen",
     blockSenderConfirm: (name: string) =>
       `Bloker ${name}? Invitationen afvises, og du får ikke flere fra ${name}. ${name} får det ikke at vide.`,
@@ -77,8 +80,8 @@ export const da = {
     inEveryones: "Datoen står nu i alles kalender",
   },
   updateRequired: {
-    title: "Opdater Casy",
-    body: "Denne version af Casy er for gammel til at virke sammen med resten af Casy. Hent den nyeste version i App Store for at fortsætte.",
+    title: "Opdater appen",
+    body: "Denne version af appen er for gammel. Find den nyeste i App Store for at fortsætte.",
     button: "Åbn App Store",
   },
   // A page that crashed while drawing (CrashScreen).
@@ -159,13 +162,13 @@ export const da = {
     add: "Tilføj en ven",
     asks: (name: string) => `${name} vil være venner`,
     asksAnon: "Du er inviteret til at blive venner",
-    detail: "på Casy",
+    detail: "så I kan finde dage sammen",
     accept: "Bliv venner",
     about: "Hvad betyder det?",
     promise:
       "I kan invitere hinanden til grupper. Ingen af jer kan se den andens kalender, før I selv siger ja til en gruppe.",
-    message: "Bliv venner med mig på Casy, så kan vi finde en dato, der passer:",
-    shareTitle: "Bliv venner på Casy",
+    message: "Bliv venner med mig, så kan vi finde en dag, der passer:",
+    shareTitle: "Lad os blive venner",
     linkHelp: (expiry: string) =>
       `Alle med linket kan blive din ven, så send det kun til dem, du kender. Det virker i ${expiry}.`,
     qrHelp: "Lad din ven scanne koden med kameraet.",
@@ -214,11 +217,11 @@ export const da = {
     admin: "Admin-tilstand",
     security: "Log ind og sikkerhed",
     feedback: "Send feedback",
-    feedbackSubject: "Feedback på Casy",
+    feedbackSubject: `Feedback på ${APP_NAME}`,
     feedbackPrompt: "Skriv her, hvad du tænker, eller hvad der ikke virker:",
-    share: "Del Casy",
-    shareText: "Casy finder den første dag, hvor alle kan. Prøv den her:",
-    version: (release: string, build: string) => `Casy ${release} · ${build}`,
+    share: "Del appen",
+    shareText: "Appen, der finder den første dag, hvor alle kan. Prøv den her:",
+    version: (release: string, build: string) => `${APP_NAME} ${release} · ${build}`,
   },
   footer: {
     howItWorks: "Sådan virker det",
@@ -284,7 +287,7 @@ export const da = {
       day: (day: string) => `den ${day}`,
       // A Danish short date ends in a full stop already ("25. okt."): no second one.
       daysHint: (period: string) =>
-        `Casy har sat datoerne: ${period}${period.endsWith(".") ? "" : "."} Tryk på en måned for at vælge måneder selv.`,
+        `Vi har fundet datoerne: ${period}${period.endsWith(".") ? "" : "."} Tryk på en måned for at vælge måneder selv.`,
       hint: "Tryk på de måneder, det kan være i. Tryk på en af de yderste igen for at fjerne den.",
       anyButton: "Når som helst",
       done: "Færdig",
@@ -307,8 +310,9 @@ export const da = {
       name ? `${name}: første dato hvor mindst ${n} kan` : `Første dato hvor mindst ${n} kan`,
     absent: (names: string) => `${names} kan ikke.`,
     checkThemselves: (names: string) =>
-      `${names} har ingen kalender i Casy og tjekker selv datoen.`,
-    nobodyHasCalendar: "Ingen i gruppen har en kalender i Casy endnu, så alle tjekker selv datoen.",
+      `${names} har ingen kalender forbundet og tjekker selv datoen.`,
+    nobodyHasCalendar:
+      "Ingen i gruppen har forbundet en kalender endnu, så alle tjekker selv datoen.",
     outdatedOne: (name: string, n: number) =>
       `Kalenderen for ${name} er ikke opdateret i ${days(n)}, så noget kan have ændret sig.`,
     outdatedMany: (names: string) =>
@@ -337,8 +341,7 @@ export const da = {
     sentLink: "Følg svarene under Mine aftaler",
     hintSignIn: "Log ind og lav en gruppe for at foreslå aftaler.",
     hintExample: "Lav en gruppe for at foreslå aftaler til rigtige mennesker.",
-    hintEveryone: (n: number) =>
-      `Casy sender op til ${n} gode datoer, som alle swiper sig igennem.`,
+    hintEveryone: (n: number) => `Vi finder op til ${n} gode datoer, som alle swiper sig igennem.`,
     hintAccept: "Godkend først, at du skal have fri.",
     copyLink: "Kopiér link",
     copiedLink: "Kopieret!",
@@ -510,18 +513,18 @@ export const da = {
     send: "Lav planen",
     update: "Opdater planen",
     updateShort: "Opdater",
-    thinking: "Casy tænker…",
+    thinking: "Vi finder ud af det…",
     addDetails: "Tilføj detaljer",
     cancel: "Annuller",
     again: "Beskriv på ny",
     speak: "Tal",
     stopSpeaking: "Stop",
     listening: "Lytter…",
-    micDenied: "Casy fik ikke lov at bruge mikrofonen. Du kan skrive i stedet.",
+    micDenied: "Appen fik ikke lov at bruge mikrofonen. Du kan skrive i stedet.",
     micFailed: "Talegenkendelsen virkede ikke. Du kan skrive i stedet.",
-    understood: "Sådan forstod Casy det",
+    understood: "Det fandt vi frem til",
     guessed: "gættet",
-    guessedNote: "Det markerede har Casy gættet. Ret det, hvis det ikke passer.",
+    guessedNote: "Det markerede har vi selv fundet på. Ret det, hvis det ikke passer.",
     other: "Andet",
     otherPlaceholder: "Skriv dit svar",
     answer: "Svar",
@@ -539,7 +542,7 @@ export const da = {
     barReturn: (city: string) => `Hjem fra ${city}?`,
     barOutbound: (city: string) => `Afrejse til ${city}?`,
     title: (city: string) => `Rejse til ${city}`,
-    found: "Casy fandt en rejse i din kalender:",
+    found: "Vi fandt en rejse i din kalender:",
     away: (from: string, to: string) => `Du er væk fra ${from} til ${to}.`,
     acceptNote:
       "Siger du ja, står rejsen i din kalender som tid, du er væk. Du kan altid slette den igen.",
@@ -551,13 +554,13 @@ export const da = {
     adding: "Lægger i kalenderen",
     inCalendar: "Står i din kalender",
     addedTo: (calendar: string) => `Lagt i ${calendar}.`,
-    calendarNote: "Lagt ind af Casy.",
+    calendarNote: `Lagt ind af ${APP_NAME}.`,
     returnTitle: (city: string) => `Hvornår kommer du hjem fra ${city}?`,
     returnIntro:
-      "Casy kan se, at du rejser ud, men ikke hvornår du kommer hjem. Måske kører du hjem, eller hjemrejsen står ikke i din kalender.",
+      "Vi kan se, at du rejser ud, men ikke hvornår du kommer hjem. Måske kører du hjem, eller hjemrejsen står ikke i din kalender.",
     outboundTitle: (city: string) => `Hvornår tager du til ${city}?`,
     outboundIntro:
-      "Casy kan se, at du rejser hjem, men ikke hvornår du tog af sted. Måske kørte du derud, eller udrejsen står ikke i din kalender.",
+      "Vi kan se, at du rejser hjem, men ikke hvornår du tog af sted. Måske kørte du derud, eller udrejsen står ikke i din kalender.",
     pickDay: "Vælg dagen",
     confirmReturn: (day: string) => `Hjemme ${day}`,
     confirmOutbound: (day: string) => `Af sted ${day}`,
@@ -566,7 +569,7 @@ export const da = {
     notATrip: "Det er ikke en rejse",
     homeTitle: "Hvor bor du?",
     homeIntro:
-      "Casy fandt en rejse, men kan ikke se, hvilken ende der er hjemme. Svar én gang, så kan Casy se, hvornår du er væk.",
+      "Vi fandt en rejse, men kan ikke finde ud af, hvilken ende der er hjemme. Svar én gang, så kan vi se, hvornår du er væk.",
     noneOfThem: "Ingen af dem",
     route: (from: string, to: string) => `${from} til ${to}`,
     modes: { flight: "Fly", train: "Tog", bus: "Bus" },
@@ -582,10 +585,11 @@ export const da = {
     morePlaceholder: "Tilføj detaljer, eller ret noget",
     send: "Tilføj",
     update: "Opdater",
-    thinking: "Casy læser…",
-    understood: "Sådan forstod Casy det",
+    thinking: "Vi læser med…",
+    understood: "Sådan forstod vi det",
     kinds: { away: "Væk", busy: "Optaget" },
-    nothingFound: "Casy fandt ingen tider i det, du skrev. Prøv at sige det på en anden måde.",
+    nothingFound:
+      "Vi kunne ikke finde nogen tider i det, du skrev. Prøv at sige det på en anden måde.",
     save: (n: number) => (n === 1 ? "Gem 1 post" : `Gem ${n} poster`),
     saving: "Gemmer…",
     addDetails: "Tilføj detaljer",
@@ -595,7 +599,7 @@ export const da = {
     keptNote:
       "Det tæller med, når dine grupper finder en dato, og vises i din kalender. De andre ser kun, at du ikke kan, aldrig hvad du skrev eller sagde.",
     remove: (label: string) => `Slet ${label}`,
-    failed: "Casy kunne ikke læse det lige nu. Prøv igen.",
+    failed: "Vi kunne ikke læse det lige nu. Prøv igen.",
     saveFailed: "Posterne blev ikke gemt. Prøv igen.",
     deleteFailed: "Posten blev ikke slettet. Prøv igen.",
   },
@@ -622,12 +626,12 @@ export const da = {
     members: (n: number) => (n === 1 ? "1 medlem" : `${n} medlemmer`),
     whatMembersSee: "Hvad medlemmer kan se",
     whatMembersSeeBody:
-      "Alle i en gruppe kan se hinandens navne, og hvornår de er optaget, og om en kalender ikke er opdateret i flere dage. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder. Casy gemmer slet ikke titler på aftaler i dine kalendere.",
+      "Alle i en gruppe kan se hinandens navne, og hvornår de er optaget, og om en kalender ikke er opdateret i flere dage. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder. Vi gemmer slet ikke titler på aftaler i dine kalendere.",
     noCalendarYet: "tjekker selv",
     waitingOne: (name: string) =>
-      `${name} har ingen kalender i Casy og tjekker selv de datoer, der bliver foreslået.`,
+      `${name} har ingen kalender forbundet og tjekker selv de datoer, der bliver foreslået.`,
     waitingMany: (n: number) =>
-      `${n} medlemmer har ingen kalender i Casy og tjekker selv de datoer, der bliver foreslået.`,
+      `${n} medlemmer har ingen kalender forbundet og tjekker selv de datoer, der bliver foreslået.`,
     waitingWhy: "Med en kalender bliver de talt med automatisk.",
     invite: "Invitér folk",
     lastMember: (name: string) =>
@@ -679,20 +683,20 @@ export const da = {
     notAnEmail: "Det ligner ikke en e-mailadresse.",
     tooManyEmails: (n: number) => `Højst ${n} adresser ad gangen.`,
     emailHelp:
-      "Har adressen en Casy-konto, får personen en invitation. Du får ikke at vide, om den har.",
+      "Har adressen allerede en konto, får personen en invitation. Du får ikke at vide, om den har.",
     consent: "De bliver først medlemmer, når de selv siger ja.",
     send: (n: number) => (n <= 1 ? "Send invitation" : `Send ${n} invitationer`),
     sent: "Invitationerne er sendt.",
-    sentWithEmail: "Invitationerne er sendt. Har en af adresserne en Casy-konto, får de også en.",
+    sentWithEmail:
+      "Invitationerne er sendt. Har en af adresserne allerede en konto, får de også en.",
     orLink: "Eller del et link",
     linkHelp: (expiry: string) =>
       `Alle med linket kan blive medlem, uden at nogen skal sige ja, så send det kun til dem, du vil have med. Det virker i ${expiry}.`,
     makeLink: "Lav et link",
     makingLink: "Laver et link…",
     fromContacts: "Invitér fra kontakter",
-    message: (group: string) =>
-      `Bliv medlem af ${group} på Casy, så vi kan finde en dato, der passer alle:`,
-    shareTitle: (group: string) => `Bliv medlem af ${group} på Casy`,
+    message: (group: string) => `Bliv medlem af ${group}, så vi kan finde en dag, der passer alle:`,
+    shareTitle: (group: string) => `Bliv medlem af ${group}`,
     texted: "Beskeden er sendt.",
     textFailed: "Beskeden kunne ikke sendes. Prøv igen, eller del linket.",
     shareLink: "Del link",
@@ -711,48 +715,48 @@ export const da = {
   },
   aiConsent: {
     // The row in Your data, and the sheet that asks (#120, #147).
-    group: "Casys AI",
-    row: "Casys AI",
+    group: "AI",
+    row: "AI",
     rowOn: "Slået til",
     rowOff: "Slået fra",
     footnote: (privacy: ReactNode) => (
       <>
-        Slået til sender Casy det, du skriver eller siger til AI&apos;en, det, du planlægger,
-        navnene på dine kalendere og titlerne på dine aftaler til Anthropic, som laver AI-modellen
-        Claude, så Casy kan planlægge med dig, sortere dine kalendere og vurdere, hvad dine aftaler
-        betyder for dig. For fly, tog og busser følger stedet med, så Casy kan finde dine rejser.
-        Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for
-        gruppen. Du kan slå det fra når som helst. Læs mere i {privacy}.
+        Slået til sender vi det, du skriver eller siger til AI&apos;en, det, du planlægger, navnene
+        på dine kalendere og titlerne på dine aftaler til Anthropic, som laver AI-modellen Claude,
+        så vi kan planlægge med dig, sortere dine kalendere og vurdere, hvad dine aftaler betyder
+        for dig. For fly, tog og busser følger stedet med, så vi kan finde dine rejser. Vi deler
+        også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for gruppen. Du kan
+        slå det fra når som helst. Læs mere i {privacy}.
       </>
     ),
     privacyLink: "privatlivspolitikken",
-    title: "Slå Casys AI til?",
+    title: "Slå AI til?",
     intro:
-      "Så kan du planlægge ved at skrive eller sige, hvad I vil, og Casy kan sortere dine kalendere, finde dine rejser og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
+      "Så kan du planlægge ved at skrive eller sige, hvad I vil, og vi kan sortere dine kalendere, finde dine rejser og forstå, hvad dine aftaler betyder, for eksempel at en eksamen er vigtig.",
     sent: "Det, du skriver eller siger til AI'en, og navn, sted og note på det, du planlægger, sendes til Anthropic i USA, som laver AI'en. Det samme gør navnene på dine kalendere og titlerne på dine aftaler (i iPhone-appen), og for fly, tog og busser stedet. Fra din kalender aldrig noter, gæster eller datoer.",
     corrections:
-      "Casy modtager også de rettelser, du skriver til AI'ens vurderinger, med aftalens titel, og de planer, du laver med AI, med det du skrev og det du ændrede, så AI'en kan lære af dem. Du kan slå det fra under Dine data.",
+      "Vi modtager også de rettelser, du skriver til AI'ens vurderinger, med aftalens titel, og de planer, du laver med AI, med det du skrev og det du ændrede, så AI'en kan lære af dem. Du kan slå det fra under Dine data.",
     shared:
-      "Casy deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for gruppen. De andre ser kun en score for hver dato.",
-    safe: "Casy gemmer ikke navne eller titler, Anthropic træner ikke på dem, og du kan slå det fra når som helst under Dine data.",
+      "Vi deler også, uden titler, hvornår noget vigtigt starter, så datoer kan rangeres for gruppen. De andre ser kun en score for hver dato.",
+    safe: "Vi gemmer ikke navne eller titler, Anthropic træner ikke på dem, og du kan slå det fra når som helst under Dine data.",
     privateNote:
-      "Det kan være privat, så sig kun ja, hvis du er tryg ved det. Du kan bruge Casy uden.",
+      "Det kan være privat, så sig kun ja, hvis du er tryg ved det. Alt andet virker også uden.",
     readMore: "Læs mere i",
     allow: "Tillad",
     next: "Næste",
-    pages: ["Hvad det giver", "Hvad der sendes", "Hvad Casy modtager", "Din kontrol"],
+    pages: ["Hvad det giver", "Hvad der sendes", "Hvad vi modtager", "Din kontrol"],
     pageDot: (n: number, of: number) => `Side ${n} af ${of}`,
     notNow: "Ikke nu",
     saving: "Gemmer",
     failed: "Det lykkedes ikke. Prøv igen.",
     turnOffMessage:
-      "Casys AI slås fra, og de mærkater, der er gemt på denne telefon, og det, du har delt om vigtige aftaler og dine sendte rettelser, slettes.",
+      "AI slås fra, og de mærkater, der er gemt på denne telefon, og det, du har delt om vigtige aftaler og dine sendte rettelser, slettes.",
     turnOff: "Slå fra",
   },
   connectPrompt: {
     title: "Forbind din kalender",
-    body: "Indtil da kan Casy ikke se, hvornår du er optaget, så den finder datoer uden dig. Hvor ligger din kalender?",
-    privacy: "Casy ser kun, hvornår du er optaget, aldrig hvad du laver.",
+    body: "Indtil da kan vi ikke se, hvornår du er optaget, så vi finder datoer uden dig. Hvor ligger din kalender?",
+    privacy: "Vi ser kun, hvornår du er optaget, aldrig hvad du laver.",
     hints: {
       apple: "iPhone, iPad og Mac",
       google: "Gmail og Android",
@@ -803,7 +807,7 @@ export const da = {
     connectedCalendars: "Forbundne kalendere",
     onboardingTitle: "Forbind din kalender",
     onboardingIntro:
-      "Så snart du har forbundet en kalender, kan Casy finde datoer, der passer for hele gruppen.",
+      "Så snart du har forbundet en kalender, kan vi finde datoer, der passer for hele gruppen.",
     syncing: "Synkroniserer",
     syncNow: "Synkronisér nu",
     syncAllFresh: "Alt blev synkroniseret inden for det sidste minut.",
@@ -848,11 +852,11 @@ export const da = {
   },
   providerCard: {
     removeIcs: (label: string | null) =>
-      `Fjern ${label ?? "dette link"}? De synkroniserede optagede tidsrum og det gemte link slettes fra Casy. Selve linket virker stadig hos kilden, indtil du laver et nyt der.`,
+      `Fjern ${label ?? "dette link"}? De synkroniserede optagede tidsrum og det gemte link slettes hos os. Selve linket virker stadig hos kilden, indtil du laver et nyt der.`,
     removeApple: (label: string | null) =>
-      `Fjern ${label ?? "denne konto"}? De synkroniserede optagede tidsrum og den gemte adgangskode slettes fra Casy. For også at tilbagekalde selve adgangskoden skal du slette den under App-specifikke adgangskoder på account.apple.com/account/manage.`,
+      `Fjern ${label ?? "denne konto"}? De synkroniserede optagede tidsrum og den gemte adgangskode slettes hos os. For også at tilbagekalde selve adgangskoden skal du slette den under App-specifikke adgangskoder på account.apple.com/account/manage.`,
     removeOauth: (label: string | null, company: string) =>
-      `Fjern ${label ?? "denne konto"}? De synkroniserede optagede tidsrum slettes fra Casy. For også at fjerne Casys adgang skal du fjerne Casy under forbundne apps i din konto hos ${company}.`,
+      `Fjern ${label ?? "denne konto"}? De synkroniserede optagede tidsrum slettes hos os. For også at fjerne vores adgang skal du fjerne ${APP_NAME} under forbundne apps i din konto hos ${company}.`,
     unknownAccount: "ukendt konto",
     lastSyncFailed: "· sidste synkronisering fejlede, prøver igen",
     linkStopped: "Linket virker ikke længere. Fjern det, og tilføj det igen.",
@@ -869,14 +873,14 @@ export const da = {
     lastFailed: (message: string) => `Sidste forsøg fejlede: ${message}`,
     unknownError: "ukendt fejl",
     removeDevice: (label: string | null) =>
-      `Fjern ${label ?? "denne telefon"}? De optagede tidsrum fra telefonen slettes fra Casy, og appen holder op med at sende dem. Casys adgang til kalenderen kan også slås fra under Casy i telefonens Indstillinger.`,
+      `Fjern ${label ?? "denne telefon"}? De optagede tidsrum fra telefonen slettes hos os, og appen holder op med at sende dem. Appens adgang til kalenderen kan også slås fra under ${APP_LABEL} i telefonens Indstillinger.`,
     phoneUpdates: "opdateres, når du åbner appen",
   },
   phoneCalendar: {
     // The import sheet's picture (#215): made-up events, losing their names.
     demo: {
       phone: "Din telefon",
-      casy: "Casy ser kun",
+      casy: "Vi ser kun",
       events: [
         { time: "09:30", title: "Tandlæge" },
         { time: "14:00", title: "Lægen" },
@@ -884,9 +888,8 @@ export const da = {
       ],
     },
     connected: (calendars: string, blocks: string) =>
-      `Telefonen er forbundet: ${calendars} med ${blocks}. Casy opdaterer dem, hver gang du åbner appen.`,
-    denied:
-      "Casy har ikke adgang til telefonens kalendere. Slå Kalendere til under Casy i Indstillinger, og prøv igen.",
+      `Telefonen er forbundet: ${calendars} med ${blocks}. Vi opdaterer dem, hver gang du åbner appen.`,
+    denied: `Appen har ikke adgang til telefonens kalendere. Slå Kalendere til under ${APP_LABEL} i Indstillinger, og prøv igen.`,
     openSettings: "Åbn Indstillinger",
     needTitle: "Link din Apple-kalender",
     // The step that takes the whole screen (#261), and its other calendars.
@@ -925,8 +928,8 @@ export const da = {
     phoneTitle: "Link din Apple-kalender",
     notNow: "Ikke nu",
     needBody:
-      "Importér telefonens kalender, så Casy kan se, hvornår du er optaget. Casy gemmer kun tidspunkterne, aldrig titlerne.",
-    needAsk: "iPhone spørger dig først, om Casy må se kalenderen.",
+      "Importér telefonens kalender, så vi kan se, hvornår du er optaget. Vi gemmer kun tidspunkterne, aldrig titlerne.",
+    needAsk: "iPhone spørger dig først, om appen må se kalenderen.",
     importCalendar: "Importér min kalender",
     continueToIos: "Fortsæt",
     importing: "Importerer",
@@ -935,14 +938,13 @@ export const da = {
     couldntRead: "Kunne ikke læse telefonens kalendere. Prøv igen.",
     couldntSave: "Kunne ikke gemme telefonens kalendere.",
     updatesInApp: (synced: string | null) =>
-      `Telefonens kalendere opdateres, når du åbner Casy-appen på telefonen.${synced ? ` ${synced}.` : ""}`,
+      `Telefonens kalendere opdateres, når du åbner appen på telefonen.${synced ? ` ${synced}.` : ""}`,
   },
   appleForm: {
     email: "Apple-konto (e-mail)",
     password: "App-specifik adgangskode",
     about: "Om app-specifikke adgangskoder",
-    aboutBody:
-      "Apple har ingen login med ét klik til kalendere. Gå til Login og sikkerhed på account.apple.com, åbn App-specifikke adgangskoder, og opret en til Casy. Casy ser aldrig adgangskoden til din Apple-konto. Casy spørger kun Apple om tidspunkter, aldrig titler, og gemmer adgangskoden krypteret. Du kan tilbagekalde den når som helst samme sted.",
+    aboutBody: `Apple har ingen login med ét klik til kalendere. Gå til Login og sikkerhed på account.apple.com, åbn App-specifikke adgangskoder, og opret en til ${APP_NAME}. Vi ser aldrig adgangskoden til din Apple-konto. Vi spørger kun Apple om tidspunkter, aldrig titler, og gemmer adgangskoden krypteret. Du kan tilbagekalde den når som helst samme sted.`,
     reading: "Læser kalendere",
     stepByStep: "Få hjælp trin for trin",
     noPasswordYet: (link: ReactNode) => <>Har du ikke en endnu? {link}</>,
@@ -1003,7 +1005,7 @@ export const da = {
     emailNotConfirmed: "Bekræft din e-mail først. Tjek din indbakke.",
     userExists: "Der findes allerede en konto med den e-mail.",
     codeInvalid: "Koden er forkert eller udløbet. Tjek mailen, eller få en ny kode.",
-    appleTaken: "Det Apple-id hører allerede til en anden Casy-konto.",
+    appleTaken: "Det Apple-id hører allerede til en anden konto.",
     linkingOff: "Apple kan ikke tilføjes lige nu. Prøv igen senere.",
   },
   // Apple as a second way into the account (#245), under Log ind og sikkerhed.
@@ -1022,7 +1024,7 @@ export const da = {
   events: {
     title: "Mine aftaler",
     intro:
-      "Aftaler foreslået i dine grupper. Når nogen siger nej, finder Casy den næste dato, der passer, og spørger alle igen.",
+      "Aftaler foreslået i dine grupper. Når nogen siger nej, finder vi den næste dato, der passer, og spørger alle igen.",
     loading: "Henter dine aftaler…",
     loadFailed: "Kunne ikke hente dine aftaler.",
     invitations: "Invitationer",
@@ -1054,7 +1056,7 @@ export const da = {
     swipeLeave: "Forlad",
     cancelEvent: "Aflys aftale",
     leaveConfirm:
-      "Forlad aftalen? Den fortsætter uden dig, og Casy fjerner den fra din kalender, hvis Casy satte den ind.",
+      "Forlad aftalen? Den fortsætter uden dig, og vi fjerner den fra din kalender, hvis vi satte den ind.",
     leaveEvent: "Forlad aftale",
     stayIn: "Bliv med",
     you: "Dig",
@@ -1136,7 +1138,7 @@ export const da = {
   // A vote's deadline (#179): none by default, set when planning or later.
   // Searching an open vote again (#240).
   // On the profile, in the app (#256): the App Store's page to rate Casy.
-  rateCasy: "Bedøm Casy",
+  rateCasy: "Bedøm appen",
   // "Påmind": the suggester reminds those still to answer a vote.
   remind: {
     button: (n: number) => (n === 1 ? "Påmind 1" : `Påmind ${n}`),
@@ -1204,9 +1206,9 @@ export const da = {
     tapToChange: "Tryk for at rette",
     changeAnswerFor: (date: string) => `Ret dit svar for ${date}`,
     changeAfter:
-      "Kan du ikke alligevel? Ret dit svar til datoen herunder, så finder Casy en ny dato til alle.",
+      "Kan du ikke alligevel? Ret dit svar til datoen herunder, så finder vi en ny dato til alle.",
     moveConfirm:
-      "Det er den dato, der er valgt. Siger du, at du ikke kan, finder Casy en ny dato til alle ud fra jeres svar.",
+      "Det er den dato, der er valgt. Siger du, at du ikke kan, finder vi en ny dato til alle ud fra jeres svar.",
     moveYes: "Jeg kan ikke, find en ny",
     moveKeep: "Behold datoen",
     moved: (date: string) => `Datoen er flyttet til ${date}.`,
@@ -1273,7 +1275,7 @@ export const da = {
   },
   /** What Casy's AI expects a planned event to involve (#113), for admins while it is tested. */
   eventImpact: {
-    toggle: "Casys vurdering",
+    toggle: "Vores vurdering",
     effects: {
       lateNight: "Sen aften",
       alcohol: "Alkohol",
@@ -1287,7 +1289,7 @@ export const da = {
   },
   /** What Casy's AI made of one of your events (#112), under it in the day's list. */
   eventLabel: {
-    toggle: "Casys vurdering",
+    toggle: "Vores vurdering",
     kinds: {
       exam: "Eksamen",
       deadline: "Aflevering",
@@ -1345,10 +1347,10 @@ export const da = {
     onlyYou: "Kun du ser vurderingen. Den og dine rettelser bliver på din telefon.",
     // With sharing on (#122), a correction also goes to Casy.
     onlyYouShared:
-      "Kun du ser vurderingen, og den bliver på din telefon. Din rettelse sendes også til Casy, så AI'en kan blive bedre. Du kan slå det fra under Dine data.",
+      "Kun du ser vurderingen, og den bliver på din telefon. Din rettelse sendes også til os, så AI'en kan blive bedre. Du kan slå det fra under Dine data.",
     wrong: "Forkert?",
     wrongPrompt:
-      "Hvad er forkert? Casy vurderer aftalen igen ud fra det, du skriver, og husker det til lignende aftaler.",
+      "Hvad er forkert? Vi vurderer aftalen igen ud fra det, du skriver, og husker det til lignende aftaler.",
     wrongPlaceholder: "Fx: Det er kun en prøveeksamen, den betyder ikke så meget",
     send: "Vurder igen",
     sending: "Vurderer…",
@@ -1374,17 +1376,17 @@ export const da = {
       never: "Høj prioritet",
     },
     levelsHelp:
-      "Lav prioritet: Casy må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden. Normal prioritet: optaget, men til ture og ferier kan du tage fri fra arbejde og skole. Høj prioritet: optaget, også når der planlægges ture.",
+      "Lav prioritet: vi må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden. Normal prioritet: optaget, men til ture og ferier kan du tage fri fra arbejde og skole. Høj prioritet: optaget, også når der planlægges ture.",
     off: "Tæller ikke med",
     effects: {
-      off: "Casy ser bort fra den, og den vises ikke på din kalender.",
-      skip: "Casy må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden.",
+      off: "Vi ser bort fra den, og den vises ikke på din kalender.",
+      skip: "Vi må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden.",
       normal: "Optaget, men til ture og ferier kan du tage fri fra arbejde og skole.",
       never: "Altid optaget, også når der planlægges ture.",
     },
     doneTitle: "Så er dine kalendere klar",
     doneBody:
-      "Casy leder nu efter datoer ud fra det, du har valgt. Du kan altid ændre det under Kalendere.",
+      "Vi finder nu datoer ud fra det, du har valgt. Du kan altid ændre det under Kalendere.",
     see: "Se min kalender",
     someFailed: (n: number) =>
       n === 1 ? "1 kalender kunne ikke gemmes." : `${n} kalendere kunne ikke gemmes.`,
@@ -1392,7 +1394,7 @@ export const da = {
   },
   calendarView: {
     title: "Min kalender",
-    intro: "Det, Casy ser i dine kalendere: kun hvornår du er optaget, aldrig hvad du laver.",
+    intro: "Det, vi ser i dine kalendere: kun hvornår du er optaget, aldrig hvad du laver.",
     tryAgain: "Prøv igen",
     truncated: "Måneden har flere optagede tidsrum, end der kan vises, så nogle mangler.",
     noCalendars: (link: ReactNode) => (
@@ -1430,11 +1432,11 @@ export const da = {
     newCategoryNo: "Nej",
     newCategorySave: "Gem kategori",
     /** Beside a category Casy's AI picked (#118). */
-    guessedCategory: "Casy har gættet kategorien. Ret den, hvis den ikke passer.",
+    guessedCategory: "Vi har gættet kategorien. Ret den, hvis den ikke passer.",
     holidayCategory: "Helligdag",
     holidayCalendar: "Danske helligdage",
     // What you told Casy (#116), drawn as a calendar of its own.
-    casyCalendar: "Casy",
+    casyCalendar: APP_NAME,
     casyPill: "Tilføjet",
     continuesBoth: "Fortsætter fra dagen før og ind i den næste",
     continuesBefore: "Fortsætter fra dagen før",
@@ -1458,7 +1460,7 @@ export const da = {
     calendarsButton: "Kalendere",
     listTitle: "Dine kalendere",
     listIntro:
-      "Kun kalendere med flueben tæller med, når Casy finder datoer, og vises her. Åbn en gruppe for at give hver kalender en kategori, og sige hvor vigtig den er.",
+      "Kun kalendere med flueben tæller med, når vi finder datoer, og vises her. Åbn en gruppe for at give hver kalender en kategori, og sige hvor vigtig den er.",
     showAll: (brand: string) => `Tæl alle ${brand}-kalendere med`,
     show: (name: string) => `Tæl ${name} med`,
     total: (n: number) => `${n} i alt`,
@@ -1472,7 +1474,7 @@ export const da = {
       never: "Spring aldrig over",
     },
     priorityHelp:
-      "Kan springes over: Casy må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden. Normal: optaget, men til ture og ferier kan du tage fri fra arbejde og skole. Spring aldrig over: optaget, også når der planlægges ture.",
+      "Kan springes over: vi må lægge aftaler oven i den, hvis ingen dato inden for en uge passer uden. Normal: optaget, men til ture og ferier kan du tage fri fra arbejde og skole. Spring aldrig over: optaget, også når der planlægges ture.",
     priorityHelpLabel: "Hvad betyder det?",
     couldntSavePriority: "Kunne ikke gemme, hvor vigtig kalenderen er",
     rename: (name: string) => `Omdøb ${name}`,
@@ -1563,9 +1565,9 @@ export const da = {
     edgesClear: "Intet lige før eller tidligt morgenen efter",
     noSkips: "Ingen skal give noget op",
     matchScore: (n: number) =>
-      `Passer ${n}% for gruppen, ud fra de vigtige aftaler, der er delt med Casy`,
+      `Passer ${n}% for gruppen, ud fra de vigtige aftaler, der er delt med os`,
     picked: "Med i forslaget",
-    notPicked: "Ikke med: Casy vælger de bedste datoer og spreder dem, så de ikke ligger tæt",
+    notPicked: "Ikke med: vi vælger de bedste datoer og spreder dem, så de ikke ligger tæt",
     comfort: {
       you: "Du",
       tightBefore: (who: string) => `${who} har ikke meget tid før`,
@@ -1586,7 +1588,7 @@ export const da = {
     title: "Dine data",
     row: "Dine data",
     intro: (link: ReactNode) => (
-      <>Alt, hvad Casy gemmer om dig lige nu, punkt for punkt som i {link}.</>
+      <>Alt, hvad vi gemmer om dig lige nu, punkt for punkt som i {link}.</>
     ),
     privacyLink: "privatlivspolitikken",
     loading: "Henter dine data…",
@@ -1605,12 +1607,12 @@ export const da = {
     pushOn: (n: number) => (n === 1 ? "Til på 1 telefon" : `Til på ${n} telefoner`),
     pushOff: "Fra",
     pushDetail:
-      "Casy gemmer telefonens nøgle fra Apple og de slags beskeder, du har slået fra, til du logger ud eller sletter kontoen",
+      "Vi gemmer telefonens nøgle fra Apple og de slags beskeder, du har slået fra, til du logger ud eller sletter kontoen",
     appleToken:
       "En nøgle fra Apple gemmes, så dit Apple-login kan afbrydes, når du sletter kontoen",
     emailLanguage: "Sprog i e-mails",
     languages: { da: "Dansk", en: "Engelsk" } as Record<string, string>,
-    languageDefault: "Standard, indtil du har brugt Casy logget ind",
+    languageDefault: "Standard, indtil du har logget ind",
     created: "Oprettet",
     calendars: "Forbundne kalendere",
     noCalendars: "Ingen kalendere forbundet.",
@@ -1653,24 +1655,24 @@ export const da = {
     answers: "Svar, du har givet",
     declined: "Datoer, du har afslået",
     entries: "Aftaler i din kalender",
-    entriesAdded: "Lagt i din kalender af Casy",
+    entriesAdded: "Lagt i din kalender af os",
     entriesDeleted: "Slettet af dig bagefter",
     ai: "AI",
     aiCalls: "Dine AI-kald de sidste 30 dage",
-    aiConsent: "Dit ja til Casys AI",
+    aiConsent: "Dit ja til AI",
     aiConsentOn: (date: string) => `Ja, siden ${date}`,
     aiConsentAgain: "Ja, men du skal sige ja igen",
     aiConsentOff: "Nej",
     labels: "Mærkater på denne telefon",
-    shareCorrections: "Send mine rettelser til Casy",
-    shareOn: "Casy får dine rettelser af AI'en, så den kan blive bedre",
+    shareCorrections: "Send mine rettelser til os",
+    shareOn: "Vi får dine rettelser af AI'en, så den kan blive bedre",
     shareOff: "Slået fra",
-    correctionsKept: "Rettelser sendt til Casy",
+    correctionsKept: "Rettelser sendt til os",
     correctionsDelete: "Slet mine sendte rettelser",
     labelsNote:
       "Mærkater er AI'ens vurdering af dine aftaler. De gemmes kun på telefonen og kommer ikke med i din hentede kopi. Slår du AI og din kalender fra under Profil, slettes de.",
     aiNote:
-      "Casy noterer hvornår og hvor meget, aldrig hvad du skrev. Notatet slettes efter 30 dage.",
+      "Vi noterer hvornår og hvor meget, aldrig hvad du skrev. Notatet slettes efter 30 dage.",
     credentials: "Adgangsoplysninger",
     credentialKinds: {
       oauth: "Adgangsnøgle",
@@ -1686,7 +1688,7 @@ export const da = {
   deleteAccount: {
     title: "Slet konto",
     intro:
-      "Sletter din konto og alt, der hører til den: dine forbundne kalendere og Casys adgang til dem, dine optagede tidsrum og dit navn. Du forlader dine grupper, og grupper, hvor du er det eneste medlem, bliver slettet. Aftaler, Casy har lagt i din kalender, bliver liggende. Det kan ikke fortrydes.",
+      "Sletter din konto og alt, der hører til den: dine forbundne kalendere og vores adgang til dem, dine optagede tidsrum og dit navn. Du forlader dine grupper, og grupper, hvor du er det eneste medlem, bliver slettet. Aftaler, vi har lagt i din kalender, bliver liggende. Det kan ikke fortrydes.",
     button: "Slet min konto",
     word: "SLET",
     prompt: (word: string) => `Skriv ${word} for at bekræfte.`,
@@ -1695,27 +1697,27 @@ export const da = {
     failed: "Kunne ikke slette din konto. Prøv igen.",
   },
   weakPasswordNotice: {
-    message: "Din adgangskode er nemmere at gætte, end Casy tillader nu.",
+    message: "Din adgangskode er nemmere at gætte, end vi tillader nu.",
     action: "Vælg en ny",
     dismiss: "Luk",
   },
   addToCalendar: {
     button: "Tilføj til min kalender",
-    goesInto: (name: string) => `Casy lægger den i ${name}.`,
-    goesIntoFallback: "Casy lægger den i din primære kalender.",
+    goesInto: (name: string) => `Vi lægger den i ${name}.`,
+    goesIntoFallback: "Vi lægger den i din primære kalender.",
     willAsk: "Du vælger, hvilken kalender den skal i.",
     asFile: "Du får en kalenderfil, som din kalender kan åbne.",
     added: (name: string) => `Lagt i ${name}`,
     addedFallback: "Lagt i din kalender",
-    adding: "Casy lægger den i din kalender.",
-    notYet: "Casy kunne ikke lægge den i din kalender endnu og prøver igen inden for en time.",
+    adding: "Vi lægger den i din kalender.",
+    notYet: "Vi kunne ikke lægge den i din kalender endnu og prøver igen inden for en time.",
     tryAgain: "Prøv igen nu",
-    onPhone: "Casy lægger den i kalenderen på din telefon, næste gang du åbner Casy-appen der.",
+    onPhone: "Vi lægger den i kalenderen på din telefon, næste gang du åbner appen der.",
     notYetPhone:
-      "Casy kunne ikke lægge den i telefonens kalender endnu og prøver igen, næste gang appen åbnes.",
+      "Vi kunne ikke lægge den i telefonens kalender endnu og prøver igen, næste gang appen åbnes.",
     gone: "Den er ikke i din kalender længere.",
     addAgain: "Tilføj igen",
-    chooseTitle: "Hvilken kalender skal Casy lægge aftaler i?",
+    chooseTitle: "Hvilken kalender skal vi lægge aftaler i?",
     chooseHelp: "Den bliver din primære kalender. Du kan skifte den under Forbundne kalendere.",
     useAndAdd: "Brug den og tilføj",
     downloadInstead: "Hent en kalenderfil i stedet",
@@ -1723,26 +1725,26 @@ export const da = {
   primaryCalendar: {
     title: "Primær kalender",
     // A phone's shorter words (#219).
-    introShort: "Her lægger Casy de aftaler, I bliver enige om.",
+    introShort: "Her lægger vi de aftaler, I bliver enige om.",
     autoAddShort: "Når alle har sagt ja",
     intro:
-      "Casy lægger de aftaler, I bliver enige om, i denne kalender: når du beder om det, eller af sig selv, hvis Tilføj automatisk er slået til.",
+      "Vi lægger de aftaler, I bliver enige om, i denne kalender: når du beder om det, eller af sig selv, hvis Tilføj automatisk er slået til.",
     noWritable:
-      "Forbind en Apple-kalender ovenfor, eller din telefon i Casy-appen, så kan Casy lægge jeres aftaler direkte i den.",
+      "Forbind en Apple-kalender ovenfor, eller din telefon i appen, så kan vi lægge jeres aftaler direkte i den.",
     waitingForSync:
-      "Casy tjekker, hvilke af dine Apple-kalendere den må lægge aftaler i. Tryk Synkronisér nu, eller vent op til en time.",
+      "Vi tjekker, hvilke af dine Apple-kalendere vi må lægge aftaler i. Tryk Synkronisér nu, eller vent op til en time.",
     selectLabel: "Vælg primær kalender",
     choose: "Vælg en kalender",
-    noneOption: "Ingen (Casy lægger intet i dine kalendere)",
+    noneOption: "Ingen (vi lægger intet i dine kalendere)",
     confirmChange: (name: string, current: string) =>
       `Gør ${name} til din primære kalender? Nye aftaler lægges i ${name}. Aftaler, der allerede er lagt i ${current}, bliver, hvor de er.`,
     confirmClear: (current: string) =>
-      `Stop med at bruge ${current} som primær kalender? Så lægger Casy ingen aftaler i dine kalendere. Aftaler, der allerede er lagt der, bliver.`,
+      `Stop med at bruge ${current} som primær kalender? Så lægger vi ingen aftaler i dine kalendere. Aftaler, der allerede er lagt der, bliver.`,
     yesChange: "Ja, skift",
     yesStop: "Ja, stop",
     autoAdd: "Tilføj automatisk",
     autoAddHelp:
-      "Når alle har sagt ja til en aftale, lægger Casy den i din primære kalender med det samme.",
+      "Når alle har sagt ja til en aftale, lægger vi den i din primære kalender med det samme.",
     autoAddNeedsPrimary: "Vælg en primær kalender først.",
     badge: "Primær",
   },
@@ -1755,9 +1757,9 @@ export const da = {
     apple: "Fortsæt med Apple",
     appleFailed: "Log ind med Apple lykkedes ikke. Prøv igen.",
     // A first Apple sign-in that has made a new account (#245).
-    haveAccountTitle: "Har du allerede en Casy-konto?",
+    haveAccountTitle: "Har du allerede en konto?",
     haveAccountBody:
-      "Du er logget ind med Apple for første gang. Har du brugt Casy før med Google eller e-mail, så log ind på den måde i stedet, så du ikke får to konti.",
+      "Du er logget ind med Apple for første gang. Har du været her før med Google eller e-mail, så log ind på den måde i stedet, så du ikke får to konti.",
     imNew: "Nej, jeg er ny",
     haveAccount: "Ja, jeg har en konto",
     useOldWay:
@@ -1765,7 +1767,7 @@ export const da = {
     or: "eller",
     acceptTerms: (terms: ReactNode, privacy: ReactNode) => (
       <>
-        Når du logger ind, accepterer du Casys {terms} og {privacy}.
+        Når du logger ind, accepterer du vores {terms} og {privacy}.
       </>
     ),
     termsLink: "vilkår",
@@ -1786,7 +1788,7 @@ export const da = {
     confirmResend: "Send det igen",
     confirmResending: "Sender",
     confirmResent: "Sendt igen.",
-    accountDeleted: "Din konto er slettet. Tak, fordi du brugte Casy.",
+    accountDeleted: "Din konto er slettet. Tak for denne gang. Du ved, hvor du finder os.",
     email: "E-mail",
     emailPlaceholder: "dig@eksempel.dk",
     sendingLink: "Sender link",
@@ -1817,23 +1819,23 @@ export const da = {
     broken: "Invitationen virker ikke",
     brokenBody: (reason: string) =>
       `${reason} Invitationslinks virker i syv dage, så bed den, der sendte det, om et nyt.`,
-    goToCasy: "Gå til Casy",
+    goToCasy: "Find en dag",
     invitedTo: "Du er inviteret til",
     invitedBy: (name: string) => `${name} har inviteret dig til`,
-    whatIsCasy: "Casy finder de datoer, hvor alle i en gruppe kan, ud fra jeres kalendere.",
+    whatIsCasy: "Vi finder de datoer, hvor alle i en gruppe kan, ud fra jeres kalendere.",
     membersSoFar: (n: number) =>
       n === 1 ? "1 medlem indtil videre" : `${n} medlemmer indtil videre`,
     privacy:
-      "Medlemmer kan se hinandens navne, og hvornår de er optaget, så Casy kan finde et tidspunkt, der passer alle. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder.",
+      "Medlemmer kan se hinandens navne, og hvornår de er optaget, så vi kan finde et tidspunkt, der passer alle. Ingen kan se din e-mailadresse, navnene på dine kalendere eller hvad dine aftaler hedder.",
     alreadyIn: "Du er allerede med i gruppen.",
     toGroup: "Gå til gruppen",
     findDate: "Find en dato",
     joinGroup: "Bliv medlem",
     getTheApp: "Hent appen",
     // Into the app with the invite (#257), and when that didn't happen.
-    openInApp: "Åbn i Casy-appen",
+    openInApp: "Åbn i appen",
     stayInBrowser: "Fortsæt i browseren",
-    noApp: "Casy-appen kunne ikke åbnes. Hent den, eller opdater den, i App Store.",
+    noApp: "Appen kunne ikke åbnes. Hent den, eller opdater den, i App Store.",
     noAppInside: "Appen kan ikke åbnes herfra. Åbn siden i Safari, eller hent appen.",
     signInToJoin: "Log ind for at blive medlem",
     comeBack: "Du kommer direkte tilbage hertil bagefter.",
@@ -1847,8 +1849,8 @@ export const da = {
     describeGroup: "Kunne ikke gemme beskrivelsen",
     setPrimeDates: "Kunne ikke gemme valget",
     // The request never got an answer (callFunction): no connection, or too slow.
-    offline: "Ingen forbindelse til Casy. Tjek dit internet, og prøv igen.",
-    timeout: "Casy svarede ikke i tide. Prøv igen.",
+    offline: "Vi kan ikke finde internettet. Tjek din forbindelse, og prøv igen.",
+    timeout: "Svaret fandt ikke frem i tide. Prøv igen.",
     loadGroups: "Kunne ikke hente dine grupper",
     report: "Kunne ikke sende rapporten",
     blocked: "Kunne ikke ændre, hvem du har blokeret",
@@ -1911,7 +1913,7 @@ export const da = {
     title: "Notifikationer",
     turnOn: "Slå notifikationer til",
     deniedTitle: "Notifikationer er slået fra",
-    denied: "Slå dem til under Casy i iPhones Indstillinger.",
+    denied: `Slå dem til under ${APP_LABEL} i iPhones Indstillinger.`,
     kinds: {
       vote_invited: "Nogen foreslår datoer til dig",
       vote_decided: "Datoen er fundet",
@@ -1921,15 +1923,14 @@ export const da = {
     } as Record<string, string>,
     testButton: "Send en test-notifikation",
     testSending: "Sender",
-    testDenied:
-      "iPhone siger nej til notifikationer fra Casy. Slå dem til under Casy i Indstillinger.",
+    testDenied: `iPhone siger nej til notifikationer fra appen. Slå dem til under ${APP_LABEL} i Indstillinger.`,
     testSent: (n: number) => (n === 1 ? "Sendt til 1 telefon." : `Sendt til ${n} telefoner.`),
     testNone: (reasons: string) => `Apple tog ikke imod den${reasons ? `: ${reasons}` : "."}`,
   },
   admin: {
     title: "Admin",
     intro:
-      "Hele Casy, kun for dig. Navne, datoer og synkroniseringsstatus, aldrig e-mails, optagede tidsrum eller detaljer om aftaler.",
+      "Hele appen, kun for dig. Navne, datoer og synkroniseringsstatus, aldrig e-mails, optagede tidsrum eller detaljer om aftaler.",
     refresh: "Opdater",
     statUsers: "Brugere",
     statGroups: "Grupper",
@@ -2003,7 +2004,7 @@ export const da = {
     impactSole: (n: number, sole: number) =>
       `${n === 1 ? "1 gruppemedlemskab" : `${n} gruppemedlemskaber`} (${sole === 1 ? "1 af dem en gruppe" : `${sole} af dem grupper`}, kun personen er med i, og som også slettes)`,
     deleteUserConfirm: (name: string, parts: string) =>
-      `Slet ${name}s konto? Det fjerner personens ${parts} og alle optagede tidsrum, Casy har gemt for personen. Grupper med andre medlemmer fortsætter uden personen. Det kan ikke fortrydes, og det er ikke en udelukkelse: personen kan oprette sig igen.`,
+      `Slet ${name}s konto? Det fjerner personens ${parts} og alle optagede tidsrum, vi har gemt for personen. Grupper med andre medlemmer fortsætter uden personen. Det kan ikke fortrydes, og det er ikke en udelukkelse: personen kan oprette sig igen.`,
     and: " og ",
     typeToConfirm: (name: ReactNode) => <>Skriv {name} for at bekræfte</>,
     deleteAccount: "Slet konto",

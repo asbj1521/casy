@@ -155,7 +155,7 @@ struct ProfileScreen: View {
                         ListRow(CasyStrings.profileFeedback, systemImage: "bubble.left")
                     }
                     ShareLink(
-                        item: Self.site, subject: Text("Casy"),
+                        item: Self.site, subject: Text(CasyStrings.appName),
                         message: Text(CasyStrings.profileShareText)
                     ) {
                         ListRow(CasyStrings.profileShare, systemImage: "square.and.arrow.up")
@@ -179,7 +179,7 @@ struct ProfileScreen: View {
                     handOver(
                         CasyStrings.profileDeleteAccount, "trash", "account", tone: .danger)
                 } footer: {
-                    Text("Casy \(release) · \(build)")
+                    Text("\(CasyStrings.appName) \(release) · \(build)")
                         .font(.caption)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 12)
@@ -314,7 +314,7 @@ struct ProfileScreen: View {
     /// An email with the build and device at the bottom, as the web's.
     private func sendFeedback() {
         let text =
-            "\(CasyStrings.profileFeedbackPrompt)\n\n\n\n---\nCasy \(release) · \(build) (app)\n\(userAgent)"
+            "\(CasyStrings.profileFeedbackPrompt)\n\n\n\n---\n\(CasyStrings.appName) \(release) · \(build) (app)\n\(userAgent)"
         // Mail apps read "+" as a plus sign, and "&" would end the field.
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "-._~")

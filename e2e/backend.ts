@@ -283,7 +283,7 @@ export class FakeBackend {
     if (body.text === "bare noget vrøvl") {
       return fail(
         422,
-        "Casy kunne ikke få en kalenderpost ud af det. Prøv at sige det på en anden måde.",
+        "Vi kunne ikke få en kalenderpost ud af det. Prøv at sige det på en anden måde.",
       );
     }
     const trip: CasyEntry = {
@@ -411,10 +411,7 @@ export class FakeBackend {
   private planAi(body: Record<string, unknown>): Answer {
     // Text that isn't about an event, as the real function answers it.
     if (body.text === "bare noget vrøvl") {
-      return fail(
-        422,
-        "Casy kunne ikke få en aftale ud af det. Prøv at sige det på en anden måde.",
-      );
+      return fail(422, "Vi kunne ikke få en aftale ud af det. Prøv at sige det på en anden måde.");
     }
     const nothing: AiPlan = {
       kind: null,

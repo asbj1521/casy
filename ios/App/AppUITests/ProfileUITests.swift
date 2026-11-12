@@ -30,7 +30,7 @@ final class ProfileUITests: XCTestCase {
     func testShowsEveryRow() {
         let app = launch()
         for label in [
-            "Grupper", "Venner", "Log ind og sikkerhed", "Send feedback", "Del Casy", "Dine data",
+            "Grupper", "Venner", "Log ind og sikkerhed", "Send feedback", "Del appen", "Dine data",
             "Hjælp og kontakt", "Sådan virker det", "Vilkår", "Privatliv", "Log ud", "Slet konto",
         ] {
             XCTAssertTrue(row(app, label).waitForExistence(timeout: 10), label)
@@ -80,7 +80,7 @@ final class ProfileUITests: XCTestCase {
     /// where Del Casy seemed dead and the help pages opened only from the icon.
     func testARowAnswersFarFromItsIcon() {
         let app = launch()
-        let share = row(app, "Del Casy")
+        let share = row(app, "Del appen")
         XCTAssertTrue(share.waitForExistence(timeout: 10))
         share.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5)).tap()
         XCTAssertTrue(

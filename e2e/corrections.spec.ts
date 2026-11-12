@@ -10,7 +10,7 @@ import { expect, test } from "./fixtures";
 import { pickOnWheel } from "./wheel";
 import { NOW } from "./world";
 
-const SWITCH = "Send mine rettelser til Casy";
+const SWITCH = "Send mine rettelser til os";
 
 const label = (importance: string) => ({
   kind: "exam",
@@ -51,7 +51,7 @@ test.describe("Your data", () => {
     expect(backend.world.aiShare).toBe(false);
     // The AI itself is still on: only the sending stopped.
     expect(backend.world.aiConsent).toBe(true);
-    await expect(page.getByRole("switch", { name: "Casys AI" })).toHaveAttribute(
+    await expect(page.getByRole("switch", { name: "AI", exact: true })).toHaveAttribute(
       "aria-checked",
       "true",
     );
@@ -64,7 +64,7 @@ test.describe("Your data", () => {
   test("the sent corrections are counted, and can all be deleted", async ({ page, backend }) => {
     backend.world.corrections = sent(2);
     await page.goto("/profile/data");
-    await expect(page.getByText("Rettelser sendt til Casy")).toBeVisible();
+    await expect(page.getByText("Rettelser sendt til os")).toBeVisible();
     const remove = page.getByRole("button", { name: "Slet mine sendte rettelser" });
     await expect(remove).toBeVisible();
 
@@ -76,7 +76,7 @@ test.describe("Your data", () => {
   test("withdrawing the yes takes the sent corrections with it", async ({ page, backend }) => {
     backend.world.corrections = sent(3);
     await page.goto("/profile/data");
-    await page.getByRole("switch", { name: "Casys AI" }).click();
+    await page.getByRole("switch", { name: "AI", exact: true }).click();
     await page.getByRole("button", { name: "Slå fra" }).click();
     await expect.poll(() => backend.world.aiConsent).toBe(false);
     expect(backend.world.corrections).toEqual([]);
@@ -201,7 +201,7 @@ test.describe("Planlæg med AI (computers)", () => {
     await page.getByRole("button", { name: "Indstillinger", exact: true }).click();
     await page.getByRole("tab", { name: "Tidspunkt" }).click();
     await page.getByRole("button", { name: "Til 5. november" }).filter({ visible: true }).click();
-    await expect(page.getByText(/Casy har sat datoerne: til 5\. november/)).toBeVisible();
+    await expect(page.getByText(/Vi har fundet datoerne: til 5\. november/)).toBeVisible();
     await page.getByRole("button", { name: "dec", exact: true }).filter({ visible: true }).click();
     await expect(
       page.getByRole("button", { name: "I december" }).filter({ visible: true }),

@@ -28,6 +28,7 @@ import {
   type AppleWords,
 } from "@/components/appleWalkthrough/words";
 import { cn } from "@/lib/utils";
+import { APP_NAME } from "@/i18n/brand";
 
 /**
  * account.apple.com in Safari on a Mac, one scene at a time, drawn from
@@ -491,7 +492,7 @@ function GenerateModal({ a, phase }: { a: AppleWords; phase: number }) {
         top={168}
         width={210}
         placeholder={a.namePlaceholder}
-        value={phase >= 1 ? "Casy" : undefined}
+        value={phase >= 1 ? APP_NAME : undefined}
         caret={phase >= 1}
       />
       <DialogButton top={208} label={a.create} filled faint={phase < 1} />

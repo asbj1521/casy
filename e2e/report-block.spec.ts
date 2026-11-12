@@ -23,7 +23,7 @@ test("a member is reported and blocked from the group, and unblocked in Your dat
   await dialog.getByLabel("Fortæl mere (valgfrit)").fill("Skriver grimme ting i noterne");
   await dialog.getByRole("switch", { name: /Bloker også Oliver/ }).click();
   await dialog.getByRole("button", { name: "Send" }).click();
-  await expect(dialog.getByText("Tak. Casy kigger på det.")).toBeVisible();
+  await expect(dialog.getByText("Tak. Vi kigger på det.")).toBeVisible();
 
   expect(backend.calls.find((c) => c.body.action === "report")?.body).toMatchObject({
     kind: "member",
@@ -76,7 +76,7 @@ test("someone else's event can be reported, your own can't", async ({
     .filter({ has: page.getByRole("heading", { name: "Rapportér" }) });
   await dialog.getByRole("radio", { name: "Spam eller reklame" }).check();
   await dialog.getByRole("button", { name: "Send" }).click();
-  await expect(dialog.getByText("Tak. Casy kigger på det.")).toBeVisible();
+  await expect(dialog.getByText("Tak. Vi kigger på det.")).toBeVisible();
   expect(backend.calls.find((c) => c.body.action === "report")?.body).toMatchObject({
     kind: "event",
     groupId: "g-friday",

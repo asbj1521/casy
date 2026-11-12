@@ -20,7 +20,7 @@ test("an app older than the oldest supported release must update", async ({ page
   backend.world.minAppVersion = "99.0.0";
   await asTheApp(page);
   await page.goto("/calendar-overview");
-  const screen = page.getByRole("alertdialog", { name: "Opdater Casy" });
+  const screen = page.getByRole("alertdialog", { name: "Opdater appen" });
   await expect(screen).toBeVisible();
   await expect(screen.getByRole("link", { name: "Åbn App Store" })).toHaveAttribute(
     "href",
@@ -33,12 +33,12 @@ test("a supported app, and the website, are never asked", async ({ page, backend
   await asTheApp(page);
   await page.goto("/calendar-overview");
   await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
-  await expect(page.getByRole("alertdialog", { name: "Opdater Casy" })).toHaveCount(0);
+  await expect(page.getByRole("alertdialog", { name: "Opdater appen" })).toHaveCount(0);
 });
 
 test("the website is the latest, whatever the minimum", async ({ page, backend }) => {
   backend.world.minAppVersion = "99.0.0";
   await page.goto("/calendar-overview");
   await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
-  await expect(page.getByRole("alertdialog", { name: "Opdater Casy" })).toHaveCount(0);
+  await expect(page.getByRole("alertdialog", { name: "Opdater appen" })).toHaveCount(0);
 });

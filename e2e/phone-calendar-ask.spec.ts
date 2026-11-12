@@ -183,7 +183,7 @@ test.describe("with other calendars connected, but not this phone", () => {
     backend.world.aiConsent = false;
     await asTheApp(page, "granted", { alreadyAnswered: true });
     await page.goto("/calendar-overview");
-    const ai = page.getByRole("dialog", { name: "Slå Casys AI til?" });
+    const ai = page.getByRole("dialog", { name: "Slå AI til?" });
     await expect(page.getByRole("dialog", { name: "Forbind din kalender" })).toBeVisible();
     // Past the moment the home page settles (1.5 s), it still waits its turn.
     await page.waitForTimeout(2000);

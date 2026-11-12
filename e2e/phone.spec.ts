@@ -485,8 +485,8 @@ test("in the app, the profile has Bedøm Casy beside Del Casy; the website doesn
   // The website has no app to rate.
   await page.goto("/?profile");
   const sheet = page.getByRole("dialog", { name: "Profil" });
-  await expect(sheet.getByRole("button", { name: "Del Casy" })).toBeVisible();
-  await expect(sheet.getByRole("button", { name: "Bedøm Casy" })).toHaveCount(0);
+  await expect(sheet.getByRole("button", { name: "Del appen" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Bedøm appen" })).toHaveCount(0);
 
   await page.addInitScript(() => {
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
@@ -494,6 +494,6 @@ test("in the app, the profile has Bedøm Casy beside Del Casy; the website doesn
   await page.goto("/?profile");
   // Its tap opens the App Store app (an itms-apps link), which a browser can't follow.
   await expect(
-    page.getByRole("dialog", { name: "Profil" }).getByRole("button", { name: "Bedøm Casy" }),
+    page.getByRole("dialog", { name: "Profil" }).getByRole("button", { name: "Bedøm appen" }),
   ).toBeVisible();
 });

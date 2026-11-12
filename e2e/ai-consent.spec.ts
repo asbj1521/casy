@@ -4,8 +4,8 @@
  */
 import { expect, test } from "./fixtures";
 
-const ASK = "Slå Casys AI til?";
-const ROW = "Casys AI";
+const ASK = "Slå AI til?";
+const ROW = "AI";
 
 test("My calendar asks once, and Allow saves the yes", async ({ page, backend }) => {
   backend.world.aiConsent = false;
@@ -50,13 +50,16 @@ test("Not now closes it for good, and nothing is saved", async ({ page, backend 
 test("without a yes the switch waits in Your data, for anyone", async ({ page, backend }) => {
   backend.world.aiConsent = false;
   await page.goto("/profile/data");
-  await expect(page.getByRole("switch", { name: ROW })).toHaveAttribute("aria-checked", "false");
+  await expect(page.getByRole("switch", { name: ROW, exact: true })).toHaveAttribute(
+    "aria-checked",
+    "false",
+  );
 });
 
 test("the profile itself has no switch; it lives in Your data", async ({ page }) => {
   await page.goto("/profile");
   await expect(page.getByRole("link", { name: "Dine data" })).toBeVisible();
-  await expect(page.getByRole("switch", { name: ROW })).toHaveCount(0);
+  await expect(page.getByRole("switch", { name: ROW, exact: true })).toHaveCount(0);
 });
 
 /** How far down the page an element is. */
@@ -68,7 +71,7 @@ test("while it is off the switch is first in Your data; on, it is a row of the A
 }) => {
   backend.world.aiConsent = false;
   await page.goto("/profile/data");
-  const row = page.getByRole("switch", { name: ROW });
+  const row = page.getByRole("switch", { name: ROW, exact: true });
   const account = page.getByRole("heading", { name: "Din konto" });
   await expect(row).toHaveAttribute("aria-checked", "false");
   expect(await top(row)).toBeLessThan(await top(account));
@@ -84,7 +87,7 @@ test("while it is off the switch is first in Your data; on, it is a row of the A
   const aiList = page.locator("section", {
     has: page.getByRole("heading", { name: "AI", exact: true }),
   });
-  await expect(aiList.getByRole("switch", { name: ROW })).toBeVisible();
+  await expect(aiList.getByRole("switch", { name: ROW, exact: true })).toBeVisible();
   await expect(aiList.getByText(/^Ja, siden /)).toBeVisible();
   expect(await top(row)).toBeGreaterThan(await top(account));
 });
@@ -94,7 +97,7 @@ test("turning it off asks first, then the switch goes back to the top", async ({
   backend,
 }) => {
   await page.goto("/profile/data");
-  const row = page.getByRole("switch", { name: ROW });
+  const row = page.getByRole("switch", { name: ROW, exact: true });
   await expect(page.getByText(/^Ja, siden 1\. okt\. 2026$/)).toBeVisible();
 
   // Off asks first: it deletes the labels kept on the phone.
@@ -109,5 +112,5 @@ test("turning it off asks first, then the switch goes back to the top", async ({
 
 test("the policy link opens the AI section", async ({ page }) => {
   await page.goto("/privacy#ai");
-  await expect(page.getByRole("heading", { name: "AI i Casy" })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "AI", exact: true })).toBeInViewport();
 });

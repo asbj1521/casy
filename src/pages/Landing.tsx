@@ -32,18 +32,18 @@ const FACT_ICONS: LucideIcon[] = [Clock, MapPin, Lock, DatabaseZap, Users, Ban];
 
 const da = {
   titleQuestion: "Hvornår kan I?",
-  titleAnswer: "Casy ved det.",
+  titleAnswer: "Vi finder den.",
   intro:
-    "Casy kigger i jeres kalendere og finder den første dag, hvor alle kan. Til vennerne, familien, holdet og alle andre, I gerne vil ses med.",
-  go: "Gå til Casy",
+    "Vi kigger i jeres kalendere og finder den første dag, hvor alle kan. Til vennerne, familien, holdet og alle andre, I gerne vil ses med.",
+  go: "Find en dag",
   signIn: "Log ind",
   dataTitle: "Dine data, kort fortalt",
   dataIntro:
-    "Casy skal kende dine kalendere for at gøre sit arbejde. Så lidt som muligt, og godt passet på.",
+    "Vi skal kende dine kalendere for at gøre vores arbejde. Så lidt som muligt, og godt passet på.",
   facts: [
     {
       title: "Kun hvornår du er optaget",
-      body: "Casy gemmer start og slut på aftalerne i din kalender. Aldrig titler, steder, noter eller gæster.",
+      body: "Vi gemmer start og slut på aftalerne i din kalender. Aldrig titler, steder, noter eller gæster.",
     },
     {
       title: "Servere i EU",
@@ -73,18 +73,17 @@ const da = {
 
 const en: typeof da = {
   titleQuestion: "When is everyone free?",
-  titleAnswer: "Casy knows.",
+  titleAnswer: "We'll find it.",
   intro:
-    "Casy looks at your calendars and finds the first day everyone can make it. For friends, family, the team and anyone else you want to see.",
-  go: "Go to Casy",
+    "We look at your calendars and find the first day everyone can make it. For friends, family, the team and anyone else you want to see.",
+  go: "Find a day",
   signIn: "Sign in",
   dataTitle: "Your data, in short",
-  dataIntro:
-    "Casy needs your calendars to do its job. As little as possible, and well looked after.",
+  dataIntro: "We need your calendars to do our job. As little as possible, and well looked after.",
   facts: [
     {
       title: "Only when you are busy",
-      body: "Casy stores the start and end of the events in your calendar. Never titles, places, notes or guests.",
+      body: "We store the start and end of the events in your calendar. Never titles, places, notes or guests.",
     },
     {
       title: "Servers in the EU",

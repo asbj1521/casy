@@ -90,8 +90,8 @@ const da = {
   progress: (n: number, total: number) => `Trin ${n} af ${total}`,
   back: "Tilbage",
   intro: {
-    title: "Først: en adgangskode kun til Casy",
-    body: "Apple lader ikke andre apps komme ind i din kalender med din almindelige Apple-adgangskode. I stedet laver du en ekstra adgangskode hos Apple og giver den til Casy. Tænk på den som en ekstranøgle: Casy bruger den kun til at se, hvornår du er optaget, og du kan smide den væk når som helst uden at røre din almindelige adgangskode.",
+    title: "Først: en adgangskode kun til appen",
+    body: "Apple lader ikke andre apps komme ind i din kalender med din almindelige Apple-adgangskode. I stedet laver du en ekstra adgangskode hos Apple og giver den til os. Tænk på den som en ekstranøgle: vi bruger den kun til at se, hvornår du er optaget, og du kan smide den væk når som helst uden at røre din almindelige adgangskode.",
     needTitle: "Det skal du bruge",
     need: {
       mac: [
@@ -106,7 +106,7 @@ const da = {
         "Cirka 5 minutter",
       ],
     } satisfies Record<Device, string[]>,
-    safe: "Casy ser aldrig din almindelige Apple-adgangskode. Casy spørger kun Apple om, hvornår du er optaget, aldrig hvad dine aftaler hedder, og gemmer den ekstra adgangskode krypteret.",
+    safe: "Vi ser aldrig din almindelige Apple-adgangskode. Vi spørger kun Apple om, hvornår du er optaget, aldrig hvad dine aftaler hedder, og gemmer den ekstra adgangskode krypteret.",
     start: "Kom i gang",
     haveOne: "Jeg har allerede en",
   },
@@ -143,15 +143,15 @@ const da = {
     next: "Jeg har adgangskoden",
   },
   enter: {
-    title: "Sæt den ind i Casy",
+    title: "Sæt den ind her",
     body: "Sidste trin. Skriv din Apple-e-mail, og sæt den adgangskode ind, som Apple lige har vist dig.",
     emailHint:
       "Den e-mail, du logger ind på din iPhone eller Mac med. På en iPhone kan du se den under Indstillinger, hvor du trykker på dit navn øverst.",
     passwordHint: "Den nye fra Apple, ikke din almindelige Apple-adgangskode.",
     connect: "Forbind min kalender",
     connecting: "Læser dine kalendere",
-    signInBody: "Log ind på Casy først. Bagefter kommer du direkte tilbage til dette trin.",
-    signIn: "Log ind på Casy",
+    signInBody: "Log ind først. Bagefter kommer du direkte tilbage til dette trin.",
+    signIn: "Log ind",
     revoke: (
       <>
         Du kan tilbagekalde adgangskoden når som helst under App-specifikke adgangskoder på {link}.
@@ -161,7 +161,7 @@ const da = {
   done: {
     title: "Din Apple-kalender er forbundet",
     found: (calendars: number, busy: number) =>
-      `Casy fandt ${calendars === 1 ? "1 kalender" : `${calendars} kalendere`} og ${busy === 1 ? "1 optaget tidsrum" : `${busy} optagede tidsrum`}.`,
+      `Vi fandt ${calendars === 1 ? "1 kalender" : `${calendars} kalendere`} og ${busy === 1 ? "1 optaget tidsrum" : `${busy} optagede tidsrum`}.`,
     skipped: (n: number) =>
       n === 1
         ? "1 aftale kunne ikke læses og blev sprunget over."
@@ -170,7 +170,7 @@ const da = {
       "Er din kalender ikke tom? Så kommer aftalerne i din iPhones Kalender-app måske fra en Google- eller Outlook-konto og ikke fra Apple. Forbind den konto under Forbundne kalendere i stedet.",
     nextTitle: "Hvad nu?",
     nextBody:
-      "Fortæl Casy, hvilke kalendere der er arbejde eller skole, så Casy ved, hvad du ville kunne tage fri fra.",
+      "Fortæl os, hvilke kalendere der er arbejde eller skole, så vi ved, hvad du ville kunne tage fri fra.",
     toCalendar: "Gå til Min kalender",
   },
 };
@@ -181,8 +181,8 @@ const en: typeof da = {
   progress: (n: number, total: number) => `Step ${n} of ${total}`,
   back: "Back",
   intro: {
-    title: "First, a password just for Casy",
-    body: "Apple doesn't let other apps into your calendar with your normal Apple password. Instead, you make an extra password at Apple and give it to Casy. Think of it as a spare key: Casy only uses it to see when you're busy, and you can throw it away at any time without touching your normal password.",
+    title: "First, a password just for the app",
+    body: "Apple doesn't let other apps into your calendar with your normal Apple password. Instead, you make an extra password at Apple and give it to us. Think of it as a spare key: we only use it to see when you're busy, and you can throw it away at any time without touching your normal password.",
     needTitle: "What you need",
     need: {
       mac: [
@@ -197,7 +197,7 @@ const en: typeof da = {
         "About 5 minutes",
       ],
     },
-    safe: "Casy never sees your normal Apple password. It only asks Apple when you're busy, never what your events are called, and keeps the extra password encrypted.",
+    safe: "We never see your normal Apple password. We only ask Apple when you're busy, never what your events are called, and keep the extra password encrypted.",
     start: "Let's start",
     haveOne: "I already have one",
   },
@@ -233,21 +233,21 @@ const en: typeof da = {
     next: "I have the password",
   },
   enter: {
-    title: "Paste it into Casy",
+    title: "Paste it in here",
     body: "Last step. Enter your Apple email and paste the password Apple just showed you.",
     emailHint:
       "The email you sign in to your iPhone or Mac with. On an iPhone, open Settings and tap your name at the top to see it.",
     passwordHint: "The new one from Apple, not your normal Apple password.",
     connect: "Connect my calendar",
     connecting: "Reading your calendars",
-    signInBody: "Sign in to Casy first. You'll come straight back to this step afterwards.",
-    signIn: "Sign in to Casy",
+    signInBody: "Sign in first. You'll come straight back to this step afterwards.",
+    signIn: "Sign in",
     revoke: <>You can revoke the password at any time under App-Specific Passwords at {link}.</>,
   },
   done: {
     title: "Your Apple calendar is connected",
     found: (calendars: number, busy: number) =>
-      `Casy found ${calendars === 1 ? "1 calendar" : `${calendars} calendars`} and ${busy === 1 ? "1 busy time" : `${busy} busy times`}.`,
+      `We found ${calendars === 1 ? "1 calendar" : `${calendars} calendars`} and ${busy === 1 ? "1 busy time" : `${busy} busy times`}.`,
     skipped: (n: number) =>
       n === 1
         ? "1 event couldn't be read and was left out."
@@ -256,7 +256,7 @@ const en: typeof da = {
       "Is your calendar not empty? Then the events in your iPhone's Calendar app may come from a Google or Outlook account rather than from Apple. Connect that account under Connected calendars instead.",
     nextTitle: "What's next?",
     nextBody:
-      "Tell Casy which calendars are work or school, so it knows what you could take time off from.",
+      "Tell us which calendars are work or school, so we know what you could take time off from.",
     toCalendar: "Go to My calendar",
   },
 };

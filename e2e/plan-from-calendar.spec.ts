@@ -224,7 +224,7 @@ test("without a yes, Planlæg med AI asks first, and sends only after the yes (#
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
   await sheet.getByRole("textbox").first().fill("Middag på fredag");
   await sheet.getByRole("button", { name: "Planlæg med AI" }).click();
-  const ask = page.getByRole("dialog", { name: "Slå Casys AI til?" });
+  const ask = page.getByRole("dialog", { name: "Slå AI til?" });
   await expect(ask).toBeVisible();
 
   // Not now: nothing is sent, and what was typed stays.

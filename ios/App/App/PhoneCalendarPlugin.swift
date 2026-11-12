@@ -295,14 +295,14 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         guard PhoneCalendarReader.accessState() == "granted" else {
-            call.reject("Casy has no access to the phone's calendars.")
+            call.reject("The app has no access to the phone's calendars.")
             return
         }
         let asked = call.getString("calendarId").flatMap { store.calendar(withIdentifier: $0) }
         guard let target = asked ?? store.defaultCalendarForNewEvents,
               target.allowsContentModifications
         else {
-            call.reject("There is no calendar on the phone Casy can write to.")
+            call.reject("There is no calendar on the phone the app can write to.")
             return
         }
         let event = EKEvent(eventStore: store)

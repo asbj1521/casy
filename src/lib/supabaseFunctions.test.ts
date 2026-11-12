@@ -42,7 +42,7 @@ describe("callFunction", () => {
       vi.fn(async () => Promise.reject(new TypeError("Load failed"))),
     );
     await expect(callFunction("groups", { body: {} })).rejects.toThrow(
-      "Ingen forbindelse til Casy. Tjek dit internet, og prøv igen.",
+      "Vi kan ikke finde internettet. Tjek din forbindelse, og prøv igen.",
     );
   });
 
@@ -55,7 +55,7 @@ describe("callFunction", () => {
     await loadMessages("en");
     setCurrentLang("en");
     await expect(callFunction("groups", { body: {} })).rejects.toThrow(
-      "Casy took too long to answer. Try again.",
+      "The answer didn't find its way in time. Try again.",
     );
   });
 

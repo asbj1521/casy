@@ -18,6 +18,7 @@ import { APP_BUILD, feedbackMailto } from "@/lib/feedback";
 import { isNativeApp } from "@/lib/nativeApp";
 import { shareLink } from "@/lib/share";
 import { SITE_URL } from "@/lib/nativeApp";
+import { APP_NAME } from "@/i18n/brand";
 
 /**
  * The App Store's own page for writing a review of Casy (#256): an itms-apps
@@ -36,8 +37,8 @@ export function FeedbackShareGroup() {
   const [showLink, setShowLink] = useState(false);
 
   function shareCasy() {
-    void shareLink({ title: "Casy", text: t.profileHub.shareText, url: SITE_URL }).then((opened) =>
-      setShowLink(!opened),
+    void shareLink({ title: APP_NAME, text: t.profileHub.shareText, url: SITE_URL }).then(
+      (opened) => setShowLink(!opened),
     );
   }
 

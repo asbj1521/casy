@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { APP_NAME } from "@/i18n/brand";
 
 /**
  * The browser tab's title for a page: "Mine aftaler · Casy", so tabs and the
@@ -7,9 +8,9 @@ import { useEffect } from "react";
  */
 export function useDocumentTitle(title: string): void {
   useEffect(() => {
-    document.title = `${title} · Casy`;
+    document.title = `${title} · ${APP_NAME}`;
     return () => {
-      document.title = "Casy";
+      document.title = APP_NAME;
     };
   }, [title]);
 }

@@ -4,6 +4,8 @@
  * for the message.
  */
 
+import { APP_NAME } from "@/i18n/brand";
+
 /** Where feedback goes. Shown to anyone who taps the row. */
 export const FEEDBACK_EMAIL = "asbjornbay@gmail.com";
 
@@ -26,7 +28,7 @@ export function feedbackMailto({
   platform: string;
   userAgent: string;
 }): string {
-  const body = `${prompt}\n\n\n\n---\nCasy ${build} (${platform})\n${userAgent}`;
+  const body = `${prompt}\n\n\n\n---\n${APP_NAME} ${build} (${platform})\n${userAgent}`;
   // encodeURIComponent rather than URLSearchParams: mail apps read "+" as a
   // plus sign, not a space.
   return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

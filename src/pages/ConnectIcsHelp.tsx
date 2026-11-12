@@ -18,7 +18,7 @@ const da = {
   intro:
     "Et kalenderlink (også kaldet et ICS- eller webcal-link) virker for enhver kalender, der udgiver et: et skoleskema, en arbejdsplan eller en kalender fra Google, Outlook eller Apple. Hvor du finder det, afhænger af, hvor kalenderen ligger, så vælg den, der passer til din.",
   warning:
-    "Alle med linket kan læse kalenderen, så behandl det som en adgangskode. Casy gemmer kun start- og sluttider fra det. Titler, steder og deltagere fjernes, før noget gemmes.",
+    "Alle med linket kan læse kalenderen, så behandl det som en adgangskode. Vi gemmer kun start- og sluttider fra det. Titler, steder og deltagere fjernes, før noget gemmes.",
   sources: {
     subscribed: {
       badge: "Hurtigst, hvis det passer på dig",
@@ -28,7 +28,7 @@ const da = {
     own: {
       badge: "Din egen Apple-kalender",
       title: "Del en kalender, du selv har lavet",
-      body: "Har du selv lavet kalenderen i Apples Kalender-app, så højreklik på den, vælg Delingsindstillinger, og slå Offentlig kalender til. Apple laver et webcal://-link, som du kan kopiere ind i Casy.",
+      body: "Har du selv lavet kalenderen i Apples Kalender-app, så højreklik på den, vælg Delingsindstillinger, og slå Offentlig kalender til. Apple laver et webcal://-link, som du kan kopiere ind i appen.",
     },
     google: {
       badge: "Google Kalender",
@@ -73,7 +73,7 @@ const en: typeof da = {
   intro:
     "A calendar link (also called an ICS or webcal link) works for any calendar that publishes one: a school timetable, a work schedule, or one from Google, Outlook or Apple. Where to find it depends on where the calendar lives, so pick whichever matches yours below.",
   warning:
-    "Anyone who has this link can read the calendar, so treat it like a password. Casy only ever keeps start and end times from it; titles, places and attendees are removed before anything is stored.",
+    "Anyone who has this link can read the calendar, so treat it like a password. We only ever keep start and end times from it; titles, places and attendees are removed before anything is stored.",
   sources: {
     subscribed: {
       badge: "Fastest, if it applies to you",
@@ -83,7 +83,7 @@ const en: typeof da = {
     own: {
       badge: "Your own Apple calendar",
       title: "Sharing a calendar you own",
-      body: "For a calendar you created yourself in Apple's Calendar app, right-click it and choose Sharing Settings, then turn on Public Calendar. Apple generates a webcal:// link there that you can copy into Casy.",
+      body: "For a calendar you created yourself in Apple's Calendar app, right-click it and choose Sharing Settings, then turn on Public Calendar. Apple generates a webcal:// link there that you can copy into the app.",
     },
     google: {
       badge: "Google Calendar",

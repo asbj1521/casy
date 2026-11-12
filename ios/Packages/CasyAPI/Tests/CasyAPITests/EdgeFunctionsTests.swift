@@ -127,7 +127,7 @@ private func failure(_ work: () async throws -> Void) async -> APIError? {
     fake.fails = URLError(.notConnectedToInternet)
     let api = try client(fake)
     let error = await failure { let _: NoAnswer = try await api.call("groups") }
-    #expect(error == .offline("Ingen forbindelse til Casy. Tjek dit internet, og prøv igen."))
+    #expect(error == .offline("Vi kan ikke finde internettet. Tjek din forbindelse, og prøv igen."))
 }
 
 @Test func aCallThatHangsGivesUp() async throws {
@@ -135,7 +135,7 @@ private func failure(_ work: () async throws -> Void) async -> APIError? {
     fake.delay = .seconds(30)
     let api = try client(fake, lang: .en, timeout: .milliseconds(20))
     let error = await failure { let _: NoAnswer = try await api.call("groups") }
-    #expect(error == .timedOut("Casy took too long to answer. Try again."))
+    #expect(error == .timedOut("The answer didn't find its way in time. Try again."))
 }
 
 @Test func aSuccessWithAnUnreadableBodyCountsAsEmpty() async throws {

@@ -43,7 +43,7 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   // The privacy policy is not on the welcome screen: it is under the sign-in
   // card, and on the profile once signed in.
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Sådan passer Casy på dine data" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Sådan passer vi på dine data" })).toHaveCount(0);
   await page.getByRole("link", { name: "Kom i gang" }).click();
   await page.getByRole("link", { name: "privatlivspolitik" }).click();
   await expect(page).toHaveURL(/\/privacy$/);

@@ -37,6 +37,7 @@ import {
   type AppleWords,
 } from "@/components/appleWalkthrough/words";
 import { cn } from "@/lib/utils";
+import { APP_NAME } from "@/i18n/brand";
 
 /**
  * account.apple.com in Safari on an iPhone, one scene at a time, drawn from
@@ -483,7 +484,7 @@ function PhoneGenerate({ a, phase }: { a: AppleWords; phase: number }) {
         top={318}
         width={228}
         placeholder={a.namePlaceholder}
-        value={phase >= 1 ? "Casy" : undefined}
+        value={phase >= 1 ? APP_NAME : undefined}
         caret={phase >= 1}
       />
       <PhoneDialogButton top={378} label={a.create} filled faint={phase < 1} />

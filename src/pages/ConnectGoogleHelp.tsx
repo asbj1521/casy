@@ -2,6 +2,7 @@ import { SiGoogle } from "react-icons/si";
 import { AlertTriangle, CheckCircle2, EyeOff, ShieldCheck } from "lucide-react";
 
 import HelpGuide, { MockPanel, type GuideStep } from "@/components/HelpGuide";
+import { APP_NAME } from "@/i18n/brand";
 import { useLang } from "@/i18n/lang";
 
 /**
@@ -15,7 +16,7 @@ const da = {
   eyebrow: "Sådan virker det",
   title: "Forbind Google Kalender",
   intro:
-    "Ét klik og ingen adgangskode at skrive. Her er præcis, hvad der sker, også den advarsel, Google viser, mens Casy venter på at blive godkendt.",
+    "Ét klik og ingen adgangskode at skrive. Her er præcis, hvad der sker, også den advarsel, Google viser, mens appen venter på at blive godkendt.",
   steps: {
     connect: {
       title: "Tryk på Forbind",
@@ -27,11 +28,11 @@ const da = {
     },
     warning: {
       title: '"Google har ikke bekræftet denne app"? Det er forventet',
-      body: "Casy er en lille app, der venter på Googles gennemgang, så Google viser en advarsel, før du kan fortsætte. Tryk på Avanceret og så Gå til Casy (usikker) for at fortsætte. Casy beder kun om at se, hvornår du er ledig og optaget.",
+      body: `Appen er lille og venter på Googles gennemgang, så Google viser en advarsel, før du kan fortsætte. Tryk på Avanceret og så Gå til ${APP_NAME} (usikker) for at fortsætte. Vi beder kun om at se, hvornår du er ledig og optaget.`,
     },
     allow: {
       title: "Giv adgang, så er du færdig",
-      body: "Bekræft den adgang, Casy beder om. Så snart du har givet adgang, henter Casy dine ledige og optagede tider og holder dem opdateret hver time.",
+      body: `Bekræft den adgang, ${APP_NAME} beder om. Så snart du har givet adgang, henter vi dine ledige og optagede tider og holder dem opdateret hver time.`,
     },
   },
   mock: {
@@ -43,20 +44,20 @@ const da = {
     unverified: "Google har ikke bekræftet denne app",
     unverifiedBody: "Appen anmoder om adgang til følsomme oplysninger på din Google-konto.",
     advanced: "Avanceret",
-    goTo: "Gå til Casy (usikker)",
-    wantsAccess: "Casy vil gerne have adgang til din Google-konto",
+    goTo: `Gå til ${APP_NAME} (usikker)`,
+    wantsAccess: `${APP_NAME} vil gerne have adgang til din Google-konto`,
     permission: "Se oplysninger om ledig og optaget tid i dine kalendere",
     continue: "Fortsæt",
   },
   never:
-    "Casy beder aldrig Google om titler, steder eller gæster. Casy ser kun, hvornår du er optaget.",
+    "Vi beder aldrig Google om titler, steder eller gæster. Vi ser kun, hvornår du er optaget.",
 };
 
 const en: typeof da = {
   eyebrow: "How it works",
   title: "Connect Google Calendar",
   intro:
-    "One click, no password to type. Here's exactly what happens, including the warning screen Google shows while Casy is still awaiting verification.",
+    "One click, no password to type. Here's exactly what happens, including the warning screen Google shows while the app is still awaiting verification.",
   steps: {
     connect: {
       title: "Click Connect",
@@ -68,11 +69,11 @@ const en: typeof da = {
     },
     warning: {
       title: "\"Google hasn't verified this app\"? That's expected",
-      body: "Casy is a small app awaiting Google's review, so Google shows a warning before continuing. Click Advanced, then Go to Casy (unsafe) to continue. Casy only asks for your free and busy times.",
+      body: `The app is small and awaiting Google's review, so Google shows a warning before continuing. Click Advanced, then Go to ${APP_NAME} (unsafe) to continue. We only ask for your free and busy times.`,
     },
     allow: {
       title: "Allow the permissions and you're done",
-      body: "Confirm the access Casy is asking for. Once you allow it, Casy reads your free/busy times right away and keeps them in sync automatically every hour.",
+      body: `Confirm the access ${APP_NAME} is asking for. Once you allow it, we read your free/busy times right away and keep them in sync automatically every hour.`,
     },
   },
   mock: {
@@ -84,13 +85,12 @@ const en: typeof da = {
     unverified: "Google hasn't verified this app",
     unverifiedBody: "The app is requesting access to sensitive info in your Google Account.",
     advanced: "Advanced",
-    goTo: "Go to Casy (unsafe)",
-    wantsAccess: "Casy wants to access your Google Account",
+    goTo: `Go to ${APP_NAME} (unsafe)`,
+    wantsAccess: `${APP_NAME} wants to access your Google Account`,
     permission: "See your calendars' free/busy information",
     continue: "Continue",
   },
-  never:
-    "Casy never asks Google for event titles, places or guests. It only sees when you're busy.",
+  never: "We never ask Google for event titles, places or guests. We only see when you're busy.",
 };
 
 export default function ConnectGoogleHelp() {

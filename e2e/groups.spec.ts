@@ -336,7 +336,7 @@ test.describe("in the app", () => {
     await expect(page.getByText("Beskeden er sendt.")).toBeVisible();
     expect(await texted(page)).toEqual({
       recipients: ["+45 12 34 56 78", "karl@example.com"],
-      body: "Bliv medlem af Løbeklubben på Casy, så vi kan finde en dato, der passer alle: https://casy.app/join/test-invite-token",
+      body: "Bliv medlem af Løbeklubben, så vi kan finde en dag, der passer alle: https://casy.app/join/test-invite-token",
     });
   });
 
@@ -351,7 +351,7 @@ test.describe("in the app", () => {
       .poll(() => texted(page))
       .toEqual({
         recipients: ["+45 12 34 56 78", "karl@example.com"],
-        body: "Bliv medlem af Fredagsfilm på Casy, så vi kan finde en dato, der passer alle: https://casy.app/join/test-invite-token",
+        body: "Bliv medlem af Fredagsfilm, så vi kan finde en dag, der passer alle: https://casy.app/join/test-invite-token",
       });
   });
 });

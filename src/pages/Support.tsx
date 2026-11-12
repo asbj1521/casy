@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { APP_LABEL } from "@/i18n/brand";
 import LegalPage, { ContactEmail, type LegalCopy } from "@/components/LegalPage";
 import { useLang } from "@/i18n/lang";
 
@@ -27,7 +28,7 @@ const da: LegalCopy = {
       title: "Skriv til os",
       body: (
         <p>
-          Casy drives af én person, og du kan altid skrive til {mail}. Fortæl, hvad du prøvede, og
+          Appen drives af én person, og du kan altid skrive til {mail}. Fortæl, hvad du prøvede, og
           hvad der skete i stedet, gerne med et skærmbillede. Jeg svarer så hurtigt, jeg kan,
           normalt inden for et par dage. I appen finder du også Send feedback under Profil.
         </p>
@@ -37,25 +38,25 @@ const da: LegalCopy = {
       title: "Min kalender er tom",
       body: (
         <p>
-          I appen skal Casy have lov til at læse telefonens kalendere. Tryk Importér min kalender på
-          Min kalender, og sig ja, når iPhonen spørger. Sagde du nej, kan det ændres under
-          Indstillinger, Casy, Kalendere. Casy læser alle de kalendere, der ligger på telefonen,
-          også dem fra Google eller Outlook, hvis du har lagt dem ind i iPhonen. Mangler en enkelt
-          kalender, så tjek, at den er sat til under Kalendere øverst til venstre på Min kalender.
-          På hjemmesiden kan du også forbinde en Apple-kalender eller et kalenderlink: se{" "}
+          Appen skal have lov til at læse telefonens kalendere. Tryk Importér min kalender på Min
+          kalender, og sig ja, når iPhonen spørger. Sagde du nej, kan det ændres under
+          Indstillinger, {APP_LABEL}, Kalendere. Vi læser alle de kalendere, der ligger på
+          telefonen, også dem fra Google eller Outlook, hvis du har lagt dem ind i iPhonen. Mangler
+          en enkelt kalender, så tjek, at den er sat til under Kalendere øverst til venstre på Min
+          kalender. På hjemmesiden kan du også forbinde en Apple-kalender eller et kalenderlink: se{" "}
           {link("/help/connect-icloud", "hjælp til Apple-kalender")} og{" "}
           {link("/help/connect-ics", "til kalenderlink")}.
         </p>
       ),
     },
     {
-      title: "Casy finder ingen dato",
+      title: "Vi kan ikke finde en dato",
       body: (
         <p>
           Prøv at gøre søgningen bredere: flere ugedage, et andet tidspunkt på dagen, en kortere
-          aftale eller flere måneder. Når Casy ikke kan finde en dato, foreslår den selv, hvad der
-          vil give en. Står nogen som optaget hele tiden, kan de sætte en kalender til at kunne
-          springes over under Kalendere.
+          aftale eller flere måneder. Når vi ikke kan finde en dato, foreslår vi selv, hvad der vil
+          give en. Står nogen som optaget hele tiden, kan de sætte en kalender til at kunne springes
+          over under Kalendere.
         </p>
       ),
     },
@@ -76,7 +77,7 @@ const da: LegalCopy = {
       body: (
         <p>
           Dem i dine grupper kan se dit navn og hvornår du er optaget, aldrig hvad dine aftaler
-          hedder, og aldrig din e-mailadresse. Alt om, hvad Casy gemmer, står i{" "}
+          hedder, og aldrig din e-mailadresse. Alt om, hvad vi gemmer, står i{" "}
           {link("/privacy", "privatlivspolitikken")}, og under Profil, Dine data kan du se det og
           hente en kopi.
         </p>
@@ -98,7 +99,7 @@ const da: LegalCopy = {
       body: (
         <p>
           Under Profil, Slet konto sletter du din konto og alt, der hører til den, med det samme.
-          Hvad der bliver slettet, og hvor længe Casy gemmer resten, står i{" "}
+          Hvad der bliver slettet, og hvor længe vi gemmer resten, står i{" "}
           {link("/privacy", "privatlivspolitikken")}.
         </p>
       ),
@@ -123,8 +124,8 @@ const en: LegalCopy = {
       title: "Write to us",
       body: (
         <p>
-          Casy is run by one person, and you can always write to {mail}. Tell me what you tried and
-          what happened instead, with a screenshot if you can. I reply as soon as I can, usually
+          The app is run by one person, and you can always write to {mail}. Tell me what you tried
+          and what happened instead, with a screenshot if you can. I reply as soon as I can, usually
           within a couple of days. In the app you will also find Send feedback under Profile.
         </p>
       ),
@@ -133,24 +134,24 @@ const en: LegalCopy = {
       title: "My calendar is empty",
       body: (
         <p>
-          In the app, Casy needs permission to read the phone&apos;s calendars. Tap Import my
-          calendar on My calendar, and say yes when the iPhone asks. If you said no, you can change
-          it under Settings, Casy, Calendars. Casy reads every calendar on the phone, including ones
-          from Google or Outlook if you have added them to the iPhone. If a single calendar is
-          missing, check that it is ticked under Calendars at the top left of My calendar. On the
-          website you can also connect an Apple Calendar or a calendar link: see{" "}
+          The app needs permission to read the phone&apos;s calendars. Tap Import my calendar on My
+          calendar, and say yes when the iPhone asks. If you said no, you can change it under
+          Settings, {APP_LABEL}, Calendars. We read every calendar on the phone, including ones from
+          Google or Outlook if you have added them to the iPhone. If a single calendar is missing,
+          check that it is ticked under Calendars at the top left of My calendar. On the website you
+          can also connect an Apple Calendar or a calendar link: see{" "}
           {link("/help/connect-icloud", "help with Apple Calendar")} and{" "}
           {link("/help/connect-ics", "with a calendar link")}.
         </p>
       ),
     },
     {
-      title: "Casy finds no date",
+      title: "We can't find a date",
       body: (
         <p>
           Try widening the search: more weekdays, another time of day, a shorter event or more
-          months. When Casy can&apos;t find a date, it suggests what would give one. If someone
-          always shows as busy, they can set a calendar to be skippable under Calendars.
+          months. When we can&apos;t find a date, we suggest what would give one. If someone always
+          shows as busy, they can set a calendar to be skippable under Calendars.
         </p>
       ),
     },
@@ -171,7 +172,7 @@ const en: LegalCopy = {
       body: (
         <p>
           People in your groups can see your name and when you are busy, never what your events are
-          called, and never your email address. Everything about what Casy stores is in the{" "}
+          called, and never your email address. Everything about what we store is in the{" "}
           {link("/privacy", "privacy policy")}, and under Profile, Your data you can see it and
           download a copy.
         </p>
@@ -192,7 +193,7 @@ const en: LegalCopy = {
       body: (
         <p>
           Under Profile, Delete account you delete your account and everything that belongs to it,
-          straight away. What is deleted, and how long Casy keeps the rest, is in the{" "}
+          straight away. What is deleted, and how long we keep the rest, is in the{" "}
           {link("/privacy", "privacy policy")}.
         </p>
       ),

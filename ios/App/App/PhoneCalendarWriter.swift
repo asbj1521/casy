@@ -1,3 +1,4 @@
+import CasyUI
 import EventKit
 import Foundation
 
@@ -118,7 +119,7 @@ enum PhoneCalendarWriter {
 
     /// The entry's words and times, as the server wrote them (eventIcs.ts).
     private static func fill(_ event: EKEvent, entry: [String: Any], url: String) throws {
-        event.title = entry["title"] as? String ?? "Casy"
+        event.title = entry["title"] as? String ?? CasyStrings.appName
         event.location = entry["location"] as? String
         event.notes = entry["notes"] as? String
         event.url = URL(string: url)

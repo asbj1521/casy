@@ -65,7 +65,7 @@ const da: Copy = {
   eyebrow: "Sådan virker det",
   title: 'Fra "hvornår kan I?" til en dato, uden gruppechatten.',
   intro:
-    "Casy sammenligner alles kalendere, finder den første dato, hvor hele gruppen kan, og spørger gruppen, om den passer. Sæt det op én gang, så tager hver plan derefter få sekunder.",
+    "Vi sammenligner alles kalendere, finder den første dato, hvor hele gruppen kan, og spørger gruppen, om den passer. Sæt det op én gang, så tager hver plan derefter få sekunder.",
   steps: [
     {
       title: "Log ind",
@@ -73,7 +73,7 @@ const da: Copy = {
     },
     {
       title: "Forbind dine kalendere",
-      body: "Forbind Google, Outlook eller Apple, eller indsæt et kalenderlink, for eksempel et skoleskema. Casy læser kun, hvornår du er optaget, aldrig hvad dine aftaler er, og opdaterer hver time og igen, når din gruppe planlægger noget.",
+      body: "Forbind Google, Outlook eller Apple, eller indsæt et kalenderlink, for eksempel et skoleskema. Vi læser kun, hvornår du er optaget, aldrig hvad dine aftaler er, og opdaterer hver time og igen, når din gruppe planlægger noget.",
     },
     {
       title: "Vælg, hvad der tæller",
@@ -81,7 +81,7 @@ const da: Copy = {
       points: [
         {
           term: "Kan springes over",
-          text: "Casy må planlægge oven i den. Til en enkelt aftale sker det kun, hvis ingen dato inden for en uge passer uden.",
+          text: "Vi må planlægge oven i den. Til en enkelt aftale sker det kun, hvis ingen dato inden for en uge passer uden.",
         },
         {
           term: "Normal",
@@ -95,28 +95,28 @@ const da: Copy = {
     },
     {
       title: "Lav en gruppe, og invitér folk",
-      body: "Giv gruppen et navn, og invitér folk, du er eller har været i en gruppe med, eller skriv en e-mailadresse. De får en invitation under Mine aftaler og bliver først medlemmer, når de siger ja. Alle andre kan du sende gruppens link, som virker i syv dage. En gruppe kan have op til 20 medlemmer. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet. Man kan være med uden en kalender: Casy nævner dem, der ikke har forbundet en, og de tjekker selv de datoer, der bliver foreslået, og svarer under Mine aftaler. Har ingen i gruppen en kalender, foreslår Casy bare den første dato, der passer jeres indstillinger. Indtil du har en gruppe, kan du se, hvordan det virker, på eksempelgrupper med din egen kalender.",
+      body: "Giv gruppen et navn, og invitér folk, du er eller har været i en gruppe med, eller skriv en e-mailadresse. De får en invitation under Mine aftaler og bliver først medlemmer, når de siger ja. Alle andre kan du sende gruppens link, som virker i syv dage. En gruppe kan have op til 20 medlemmer. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet. Man kan være med uden en kalender: vi nævner dem, der ikke har forbundet en, og de tjekker selv de datoer, der bliver foreslået, og svarer under Mine aftaler. Har ingen i gruppen en kalender, foreslår vi bare den første dato, der passer jeres indstillinger. Indtil du har en gruppe, kan du se, hvordan det virker, på eksempelgrupper med din egen kalender.",
     },
     {
       title: "Sig, hvad I skal",
       body: "Skriv, hvad I skal, og vælg, hvornår det starter (eller Når som helst), hvor længe det varer, og hvilke dage der passer. Skal I af sted i flere dage, så slå Tur / ferie til, og vælg antal dage, og hvilken dag I tager af sted, eller Alle dage.",
     },
     {
-      title: "Casy finder datoen",
-      body: "Øverst står den første dato, hvor alle kan, og den skifter med det samme, når du ændrer noget. Pilene ved siden af viser de næste muligheder. Under den ser du måneden dag for dag: hver søjle viser, hvor mange der er ledige, og gul betyder kun ledig, hvis nogen tager fri eller springer noget over. Tryk på en dag for at prøve den. Casy siger også til, hvis nogen kommer lige fra noget andet eller skal tidligt op dagen efter. Ingen er ledige fra 23. til 26. december eller nytårsaften.",
+      title: "Vi finder datoen",
+      body: "Øverst står den første dato, hvor alle kan, og den skifter med det samme, når du ændrer noget. Pilene ved siden af viser de næste muligheder. Under den ser du måneden dag for dag: hver søjle viser, hvor mange der er ledige, og gul betyder kun ledig, hvis nogen tager fri eller springer noget over. Tryk på en dag for at prøve den. Vi siger også til, hvis nogen kommer lige fra noget andet eller skal tidligt op dagen efter. Ingen er ledige fra 23. til 26. december eller nytårsaften.",
     },
     {
       title: "Foreslå datoer",
-      body: "Vælg evt. hvornår aftalen skal ligge, fx i december, og tryk på Foreslå datoer. Casy sender datoen og op til fire andre gode datoer i perioden, og alle i gruppen, også dig, swiper sig igennem dem én gang under Mine aftaler: til højre hvis du kan, til venstre hvis du ikke kan, og op hvis du kan, men helst ikke. Under hver dato ser du din egen kalender dagen før, på dagen og dagen efter. Når alle har svaret, eller efter tre dage, vælger Casy den dato, ingen har sagt nej til, med færrest helst ikke. Har alle datoer et nej, vælger den, der foreslog aftalen. Kræver datoen, at du selv tager fri, godkender du det først. Den, der foreslog aftalen, kan aflyse den, og alle andre kan forlade den.",
+      body: "Vælg evt. hvornår aftalen skal ligge, fx i december, og tryk på Foreslå datoer. Vi sender datoen og op til fire andre gode datoer i perioden, og alle i gruppen, også dig, swiper sig igennem dem én gang under Mine aftaler: til højre hvis du kan, til venstre hvis du ikke kan, og op hvis du kan, men helst ikke. Under hver dato ser du din egen kalender dagen før, på dagen og dagen efter. Når alle har svaret, eller efter tre dage, vælger vi den dato, ingen har sagt nej til, med færrest helst ikke. Har alle datoer et nej, vælger den, der foreslog aftalen. Kræver datoen, at du selv tager fri, godkender du det først. Den, der foreslog aftalen, kan aflyse den, og alle andre kan forlade den.",
     },
     {
       title: "Læg den i kalenderen",
-      body: "Når alle har accepteret, er aftalen planlagt. Tilføj til min kalender lægger den i din primære kalender, og med Tilføj automatisk slået til sker det af sig selv. Indtil videre kan Casy kun lægge aftaler i Apple-kalendere. Bruger du en anden, får du en kalenderfil, som din kalender kan åbne.",
+      body: "Når alle har accepteret, er aftalen planlagt. Tilføj til min kalender lægger den i din primære kalender, og med Tilføj automatisk slået til sker det af sig selv. Indtil videre kan vi kun lægge aftaler i Apple-kalendere. Bruger du en anden, får du en kalenderfil, som din kalender kan åbne.",
     },
   ],
-  neverSeesTitle: "Det ser Casy aldrig",
+  neverSeesTitle: "Det ser vi aldrig",
   neverSeesBody:
-    "Kun start og slut på hvert optaget tidsrum gemmes. Titler, steder, noter og gæster bliver aldrig hentet fra Google eller Microsoft. Apple og kalenderlinks sender altid hele aftaler, så Casy fjerner de oplysninger, før noget gemmes. Gruppemedlemmer ser aldrig navnene på dine kalendere eller hvilke konti, du har forbundet.",
+    "Kun start og slut på hvert optaget tidsrum gemmes. Titler, steder, noter og gæster bliver aldrig hentet fra Google eller Microsoft. Apple og kalenderlinks sender altid hele aftaler, så vi fjerner de oplysninger, før noget gemmes. Gruppemedlemmer ser aldrig navnene på dine kalendere eller hvilke konti, du har forbundet.",
   privacyLink: "Læs privatlivspolitikken",
   findDate: "Find en dato",
   getStarted: "Kom i gang",
@@ -127,7 +127,7 @@ const en: Copy = {
   eyebrow: "How it works",
   title: 'From "when are you free?" to a date, without the group chat.',
   intro:
-    "Casy compares everyone's calendars, finds the first date the whole group is free, and asks the group whether it works. Set it up once, and every plan after that takes seconds.",
+    "We compare everyone's calendars, find the first date the whole group is free, and ask the group whether it works. Set it up once, and every plan after that takes seconds.",
   steps: [
     {
       title: "Sign in",
@@ -135,7 +135,7 @@ const en: Copy = {
     },
     {
       title: "Connect your calendars",
-      body: "Link Google, Outlook or Apple, or paste any calendar link, such as a school timetable. Casy only reads when you are busy, never what your events are, and refreshes every hour, and again when your group plans something.",
+      body: "Link Google, Outlook or Apple, or paste any calendar link, such as a school timetable. We only read when you are busy, never what your events are, and refresh every hour, and again when your group plans something.",
     },
     {
       title: "Choose what counts",
@@ -143,7 +143,7 @@ const en: Copy = {
       points: [
         {
           term: "Can skip",
-          text: "Casy may plan over it. For a single event, only when no date within a week works without it.",
+          text: "We may plan over it. For a single event, only when no date within a week works without it.",
         },
         {
           term: "Normal",
@@ -157,28 +157,28 @@ const en: Copy = {
     },
     {
       title: "Make a group and invite people",
-      body: "Name a group, and invite people you share or have shared a group with, or type an email address. They get an invitation on My events and only join once they say yes. Anyone else you can send the group's link, which works for seven days. A group can have up to 20 members. Everyone in the group sees each other's names and busy times, and nothing more. You can take part without a calendar: Casy names the members who haven't linked one, and they check suggested dates themselves and answer on My events. If nobody in the group has a calendar, Casy simply suggests the first date that fits your settings. Until you have a group, example groups with your own calendar show how it works.",
+      body: "Name a group, and invite people you share or have shared a group with, or type an email address. They get an invitation on My events and only join once they say yes. Anyone else you can send the group's link, which works for seven days. A group can have up to 20 members. Everyone in the group sees each other's names and busy times, and nothing more. You can take part without a calendar: we name the members who haven't linked one, and they check suggested dates themselves and answer on My events. If nobody in the group has a calendar, we simply suggest the first date that fits your settings. Until you have a group, example groups with your own calendar show how it works.",
     },
     {
       title: "Say what you're doing",
       body: "Write what you're doing, and choose when it starts (or Any time), how long it lasts and which days work. Going away for several days? Switch on Trip / holiday, then choose the number of days and the day you leave, or Any day.",
     },
     {
-      title: "Casy finds the date",
-      body: "At the top is the first date everyone is free, and it changes the moment you change anything. The arrows beside it show the next options. Below, you see the month day by day: each bar shows how many people are free, and amber means free only if someone takes time off or skips something. Tap a day to try it. Casy also tells you when someone comes straight from something else or has an early start the next morning. Nobody is free from 23 to 26 December or on New Year's Eve.",
+      title: "We find the date",
+      body: "At the top is the first date everyone is free, and it changes the moment you change anything. The arrows beside it show the next options. Below, you see the month day by day: each bar shows how many people are free, and amber means free only if someone takes time off or skips something. Tap a day to try it. We also tell you when someone comes straight from something else or has an early start the next morning. Nobody is free from 23 to 26 December or on New Year's Eve.",
     },
     {
       title: "Suggest dates",
-      body: "Optionally pick when the event should be, say in December, and tap Suggest dates. Casy sends the date and up to four more good dates in the period, and everyone in the group, you included, swipes through them once on My events: right if you can, left if you can't, and up if you can but would rather not. Under each date you see your own calendar the day before, on the day and the day after. Once everyone has answered, or after three days, Casy picks the date nobody said no to with the fewest rather nots. If every date has a no, whoever suggested the event chooses. If the date needs you to take time off, you approve that first. Whoever suggested the event can cancel it, and anyone else can leave it.",
+      body: "Optionally pick when the event should be, say in December, and tap Suggest dates. We send the date and up to four more good dates in the period, and everyone in the group, you included, swipes through them once on My events: right if you can, left if you can't, and up if you can but would rather not. Under each date you see your own calendar the day before, on the day and the day after. Once everyone has answered, or after three days, we pick the date nobody said no to with the fewest rather nots. If every date has a no, whoever suggested the event chooses. If the date needs you to take time off, you approve that first. Whoever suggested the event can cancel it, and anyone else can leave it.",
     },
     {
       title: "Put it in your calendar",
-      body: "Once everyone has accepted, the event is scheduled. Add to my calendar puts it in your primary calendar, and with Add automatically switched on it happens by itself. For now, Casy can only add events to Apple calendars. If you use another, you get a calendar file your calendar can open.",
+      body: "Once everyone has accepted, the event is scheduled. Add to my calendar puts it in your primary calendar, and with Add automatically switched on it happens by itself. For now, we can only add events to Apple calendars. If you use another, you get a calendar file your calendar can open.",
     },
   ],
-  neverSeesTitle: "What Casy never sees",
+  neverSeesTitle: "What we never see",
   neverSeesBody:
-    "Only the start and end of each busy period is stored. Event titles, places, notes and guests are never requested from Google or Microsoft. Apple and calendar links always send whole events, so Casy removes those details before anything is saved. Group members never see your calendars' names or which accounts you connected.",
+    "Only the start and end of each busy period is stored. Event titles, places, notes and guests are never requested from Google or Microsoft. Apple and calendar links always send whole events, so we remove those details before anything is saved. Group members never see your calendars' names or which accounts you connected.",
   privacyLink: "Read the privacy policy",
   findDate: "Find a date",
   getStarted: "Get started",

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { APP_LABEL, APP_NAME } from "@/i18n/brand";
 import type { Messages } from "@/i18n/da";
 
 /** English copy. Typed as Messages, so a key missing here fails the build. */
@@ -18,7 +19,7 @@ export const en: Messages = {
     reportOrBlockDetail: "If something in the group isn't right",
     reportEvent: "Report the event",
     title: "Report",
-    intro: "The report goes to Casy. Whoever you report isn't told who sent it.",
+    intro: "Your report finds its way to us. Whoever you report isn't told who sent it.",
     what: "What is it about?",
     targetGroup: (group: string) => `The group ${group}`,
     targetEvent: (title: string) => `The event ${title}`,
@@ -35,7 +36,7 @@ export const en: Messages = {
       `${name} can't invite you to any more groups. You stay in the groups you share until one of you leaves.`,
     leaveToo: (group: string) => `Leave ${group}`,
     send: "Send",
-    sent: "Thank you. Casy will look into it.",
+    sent: "Thank you. We'll look into it.",
     blockSender: "Block the sender",
     blockSenderConfirm: (name: string) =>
       `Block ${name}? The invitation is declined, and you won't get more from ${name}. ${name} isn't told.`,
@@ -72,8 +73,8 @@ export const en: Messages = {
     inEveryones: "The date is now in everyone's calendar",
   },
   updateRequired: {
-    title: "Update Casy",
-    body: "This version of Casy is too old to work with the rest of Casy. Get the latest version from the App Store to carry on.",
+    title: "Update the app",
+    body: "This version of the app is too old. Find the latest in the App Store to carry on.",
     button: "Open the App Store",
   },
   // A page that crashed while drawing (CrashScreen).
@@ -150,13 +151,13 @@ export const en: Messages = {
     add: "Add a friend",
     asks: (name: string) => `${name} wants to be friends`,
     asksAnon: "You are invited to be friends",
-    detail: "on Casy",
+    detail: "so you can find days together",
     accept: "Become friends",
     about: "What does this mean?",
     promise:
       "You can invite each other to groups. Neither of you can see the other's calendar until you both say yes to a group.",
-    message: "Be friends with me on Casy, so we can find a date that works:",
-    shareTitle: "Be friends on Casy",
+    message: "Be friends with me, so we can find a day that works:",
+    shareTitle: "Let's be friends",
     linkHelp: (expiry: string) =>
       `Anyone with the link can become your friend, so only send it to people you know. It works for ${expiry}.`,
     qrHelp: "Let your friend scan the code with their camera.",
@@ -204,11 +205,11 @@ export const en: Messages = {
     admin: "Admin mode",
     security: "Sign-in and security",
     feedback: "Send feedback",
-    feedbackSubject: "Feedback on Casy",
+    feedbackSubject: `Feedback on ${APP_NAME}`,
     feedbackPrompt: "Write what you think, or what isn't working:",
-    share: "Share Casy",
-    shareText: "Casy finds the first day everyone can make. Try it here:",
-    version: (release: string, build: string) => `Casy ${release} · ${build}`,
+    share: "Share the app",
+    shareText: "The app that finds the first day everyone can make. Try it here:",
+    version: (release: string, build: string) => `${APP_NAME} ${release} · ${build}`,
   },
   footer: {
     howItWorks: "How it works",
@@ -267,7 +268,7 @@ export const en: Messages = {
       until: (day: string) => `until ${day}`,
       day: (day: string) => `on ${day}`,
       daysHint: (period: string) =>
-        `Casy set the dates: ${period}. Tap a month to pick months yourself.`,
+        `We found the dates: ${period}. Tap a month to pick months yourself.`,
       hint: "Tap the months it could be in. Tap one at either end again to take it off.",
       anyButton: "Any time",
       done: "Done",
@@ -286,9 +287,9 @@ export const en: Messages = {
       name ? `${name}: first date at least ${n} can make` : `First date at least ${n} can make`,
     absent: (names: string) => `${names} can't make it.`,
     checkThemselves: (names: string) =>
-      `${names} ${names.includes(" and ") ? "have" : "has"} no calendar in Casy and will check the date themselves.`,
+      `${names} ${names.includes(" and ") ? "have" : "has"} no calendar connected and will check the date themselves.`,
     nobodyHasCalendar:
-      "Nobody in the group has a calendar in Casy yet, so everyone checks the date themselves.",
+      "Nobody in the group has connected a calendar yet, so everyone checks the date themselves.",
     outdatedOne: (name: string, n: number) =>
       `${name}'s calendar hasn't been updated for ${days(n)}, so something may have changed.`,
     outdatedMany: (names: string) =>
@@ -317,8 +318,7 @@ export const en: Messages = {
     sentLink: "Follow the answers in My events",
     hintSignIn: "Sign in and make a group to suggest events.",
     hintExample: "Make a group to suggest events to real people.",
-    hintEveryone: (n: number) =>
-      `Casy sends up to ${n} good dates, and everyone swipes through them.`,
+    hintEveryone: (n: number) => `We find up to ${n} good dates, and everyone swipes through them.`,
     hintAccept: "First accept taking the time off.",
     copyLink: "Copy link",
     copiedLink: "Copied!",
@@ -473,18 +473,18 @@ export const en: Messages = {
     send: "Make the plan",
     update: "Update the plan",
     updateShort: "Update",
-    thinking: "Casy is thinking…",
+    thinking: "Figuring it out…",
     addDetails: "Add details",
     cancel: "Cancel",
     again: "Describe it again",
     speak: "Speak",
     stopSpeaking: "Stop",
     listening: "Listening…",
-    micDenied: "Casy wasn't allowed to use the microphone. You can type instead.",
+    micDenied: "The app wasn't allowed to use the microphone. You can type instead.",
     micFailed: "Speech recognition didn't work. You can type instead.",
-    understood: "How Casy understood it",
+    understood: "What we found",
     guessed: "guessed",
-    guessedNote: "Casy guessed the marked settings. Change them if they're wrong.",
+    guessedNote: "We came up with the marked settings ourselves. Change them if they're wrong.",
     other: "Other",
     otherPlaceholder: "Type your answer",
     answer: "Answer",
@@ -501,7 +501,7 @@ export const en: Messages = {
     barReturn: (city: string) => `Home from ${city}?`,
     barOutbound: (city: string) => `Leaving for ${city}?`,
     title: (city: string) => `Trip to ${city}`,
-    found: "Casy found a trip in your calendar:",
+    found: "We found a trip in your calendar:",
     away: (from: string, to: string) => `You are away from ${from} to ${to}.`,
     acceptNote:
       "If you say yes, the trip shows in your calendar as time you are away. You can always delete it again.",
@@ -513,13 +513,13 @@ export const en: Messages = {
     adding: "Putting it in your calendar",
     inCalendar: "In your calendar",
     addedTo: (calendar: string) => `Put in ${calendar}.`,
-    calendarNote: "Added by Casy.",
+    calendarNote: `Added by ${APP_NAME}.`,
     returnTitle: (city: string) => `When are you back from ${city}?`,
     returnIntro:
-      "Casy can see you travel out, but not when you come back. Maybe you drive home, or the way back isn't in your calendar.",
+      "We can see you travel out, but not when you come back. Maybe you drive home, or the way back isn't in your calendar.",
     outboundTitle: (city: string) => `When do you leave for ${city}?`,
     outboundIntro:
-      "Casy can see you travel home, but not when you left. Maybe you drove there, or the way out isn't in your calendar.",
+      "We can see you travel home, but not when you left. Maybe you drove there, or the way out isn't in your calendar.",
     pickDay: "Pick the day",
     confirmReturn: (day: string) => `Back ${day}`,
     confirmOutbound: (day: string) => `Leaving ${day}`,
@@ -528,7 +528,7 @@ export const en: Messages = {
     notATrip: "It isn't a trip",
     homeTitle: "Where do you live?",
     homeIntro:
-      "Casy found a trip but can't tell which end is home. Answer once, and Casy can see when you are away.",
+      "We found a trip but can't work out which end is home. Answer once, and we can see when you are away.",
     noneOfThem: "None of them",
     route: (from: string, to: string) => `${from} to ${to}`,
     modes: { flight: "Flight", train: "Train", bus: "Bus" },
@@ -543,10 +543,10 @@ export const en: Messages = {
     morePlaceholder: "Add details, or correct something",
     send: "Add",
     update: "Update",
-    thinking: "Casy is reading…",
-    understood: "What Casy made of it",
+    thinking: "Reading along…",
+    understood: "What we made of it",
     kinds: { away: "Away", busy: "Busy" },
-    nothingFound: "Casy found no times in what you wrote. Try saying it another way.",
+    nothingFound: "We couldn't find any times in what you wrote. Try saying it another way.",
     save: (n: number) => (n === 1 ? "Save 1 entry" : `Save ${n} entries`),
     saving: "Saving…",
     addDetails: "Add details",
@@ -556,7 +556,7 @@ export const en: Messages = {
     keptNote:
       "It counts when your groups look for a date, and shows in your calendar. The others only see that you can't, never what you wrote or said.",
     remove: (label: string) => `Delete ${label}`,
-    failed: "Casy couldn't read that right now. Try again.",
+    failed: "We couldn't read that right now. Try again.",
     saveFailed: "The entries weren't saved. Try again.",
     deleteFailed: "The entry wasn't deleted. Try again.",
   },
@@ -581,12 +581,12 @@ export const en: Messages = {
     members: (n: number) => (n === 1 ? "1 member" : `${n} members`),
     whatMembersSee: "What members can see",
     whatMembersSeeBody:
-      "Everyone in a group can see each other's name, when they are busy, and whether a calendar hasn't been updated for days. Nobody sees your email address, your calendars' names, or what any of your events are called. Casy never stores the titles of events in your calendars at all.",
+      "Everyone in a group can see each other's name, when they are busy, and whether a calendar hasn't been updated for days. Nobody sees your email address, your calendars' names, or what any of your events are called. We never store the titles of events in your calendars at all.",
     noCalendarYet: "checks themselves",
     waitingOne: (name: string) =>
-      `${name} has no calendar in Casy and checks the dates suggested themselves.`,
+      `${name} has no calendar connected and checks the dates suggested themselves.`,
     waitingMany: (n: number) =>
-      `${n} members have no calendar in Casy and check the dates suggested themselves.`,
+      `${n} members have no calendar connected and check the dates suggested themselves.`,
     waitingWhy: "With a calendar, they are counted automatically.",
     invite: "Invite people",
     lastMember: (name: string) => `You are the last member. Leaving deletes "${name}" for good.`,
@@ -638,20 +638,20 @@ export const en: Messages = {
     notAnEmail: "That doesn't look like an email address.",
     tooManyEmails: (n: number) => `At most ${n} addresses at a time.`,
     emailHelp:
-      "If the address has a Casy account, that person gets an invitation. You won't be told whether it does.",
+      "If the address already has an account, that person gets an invitation. You won't be told whether it does.",
     consent: "They only become members once they say yes themselves.",
     send: (n: number) => (n <= 1 ? "Send invitation" : `Send ${n} invitations`),
     sent: "The invitations are sent.",
     sentWithEmail:
-      "The invitations are sent. Any of the addresses with a Casy account gets one too.",
+      "The invitations are sent. Any of the addresses that already has an account gets one too.",
     orLink: "Or share a link",
     linkHelp: (expiry: string) =>
       `Anyone with the link can join without anyone saying yes, so only send it to people you want in. It works for ${expiry}.`,
     makeLink: "Make a link",
     makingLink: "Making a link…",
     fromContacts: "Invite from contacts",
-    message: (group: string) => `Join ${group} on Casy, so we can find a date that suits everyone:`,
-    shareTitle: (group: string) => `Join ${group} on Casy`,
+    message: (group: string) => `Join ${group}, so we can find a day that suits everyone:`,
+    shareTitle: (group: string) => `Join ${group}`,
     texted: "The message is sent.",
     textFailed: "The message couldn't be sent. Try again, or share the link.",
     shareLink: "Share link",
@@ -670,48 +670,48 @@ export const en: Messages = {
   },
   aiConsent: {
     // The row in Your data, and the sheet that asks (#120, #147).
-    group: "Casy's AI",
-    row: "Casy's AI",
+    group: "AI",
+    row: "AI",
     rowOn: "On",
     rowOff: "Off",
     footnote: (privacy: ReactNode) => (
       <>
-        When it is on, Casy sends what you write or say to the AI, what you plan, the names of your
-        calendars and the titles of your events to Anthropic, which makes the AI model Claude, so
-        Casy can plan with you, sort your calendars and judge what your events mean for you. For
-        flights, trains and buses the place goes too, so Casy can find your trips. Casy also shares,
-        without titles, when something important starts, so dates can be ranked for the group. You
-        can turn it off at any time. Read more in the {privacy}.
+        When it is on, we send what you write or say to the AI, what you plan, the names of your
+        calendars and the titles of your events to Anthropic, which makes the AI model Claude, so we
+        can plan with you, sort your calendars and judge what your events mean for you. For flights,
+        trains and buses the place goes too, so we can find your trips. We also share, without
+        titles, when something important starts, so dates can be ranked for the group. You can turn
+        it off at any time. Read more in the {privacy}.
       </>
     ),
     privacyLink: "privacy policy",
-    title: "Turn on Casy's AI?",
+    title: "Turn on AI?",
     intro:
-      "Then you can plan by writing or saying what you want, and Casy can sort your calendars, find your trips and understand what your events mean, for example that an exam is important.",
+      "Then you can plan by writing or saying what you want, and we can sort your calendars, find your trips and understand what your events mean, for example that an exam is important.",
     sent: "What you write or say to the AI, and the name, place and note of what you plan, are sent to Anthropic in the United States, which makes the AI. So are the names of your calendars and the titles of your events (in the iPhone app), and for flights, trains and buses the place. From your calendar never notes, guests or dates.",
     corrections:
-      "Casy also receives the corrections you write to the AI's judgements, with the event's title, and the plans you make with AI, with what you wrote and what you changed, so the AI can learn from them. You can turn that off under Your data.",
+      "We also receive the corrections you write to the AI's judgements, with the event's title, and the plans you make with AI, with what you wrote and what you changed, so the AI can learn from them. You can turn that off under Your data.",
     shared:
-      "Casy also shares, without titles, when something important starts, so dates can be ranked for the group. The others only see a score for each date.",
-    safe: "Casy does not store names or titles, Anthropic does not train on them, and you can turn it off at any time under Your data.",
+      "We also share, without titles, when something important starts, so dates can be ranked for the group. The others only see a score for each date.",
+    safe: "We do not store names or titles, Anthropic does not train on them, and you can turn it off at any time under Your data.",
     privateNote:
-      "This can be private, so only say yes if you are comfortable with it. You can use Casy without it.",
+      "This can be private, so only say yes if you are comfortable with it. Everything else works without it.",
     readMore: "Read more in the",
     allow: "Allow",
     next: "Next",
-    pages: ["What it gives", "What is sent", "What Casy receives", "Your control"],
+    pages: ["What it gives", "What is sent", "What we receive", "Your control"],
     pageDot: (n: number, of: number) => `Page ${n} of ${of}`,
     notNow: "Not now",
     saving: "Saving",
     failed: "That didn't work. Try again.",
     turnOffMessage:
-      "Casy's AI is turned off, and the labels kept on this phone and what you shared about important events and your sent corrections are deleted.",
+      "AI is turned off, and the labels kept on this phone and what you shared about important events and your sent corrections are deleted.",
     turnOff: "Turn off",
   },
   connectPrompt: {
     title: "Connect your calendar",
-    body: "Until you do, Casy can't see when you're busy, so it finds dates without you. Where does your calendar live?",
-    privacy: "Casy only sees when you're busy, never what you're doing.",
+    body: "Until you do, we can't see when you're busy, so we find dates without you. Where does your calendar live?",
+    privacy: "We only see when you're busy, never what you're doing.",
     hints: {
       apple: "iPhone, iPad and Mac",
       google: "Gmail and Android",
@@ -763,7 +763,7 @@ export const en: Messages = {
     connectedCalendars: "Connected calendars",
     onboardingTitle: "Connect your calendar",
     onboardingIntro:
-      "Once you connect a calendar, Casy can find dates that work for the whole group.",
+      "Once you connect a calendar, we can find dates that work for the whole group.",
     syncing: "Syncing",
     syncNow: "Sync now",
     syncAllFresh: "Everything was synced within the last minute.",
@@ -808,11 +808,11 @@ export const en: Messages = {
   },
   providerCard: {
     removeIcs: (label: string | null) =>
-      `Remove ${label ?? "this link"}? Its synced busy times and the saved link are deleted from Casy. The link itself stays valid at its source until you regenerate it there.`,
+      `Remove ${label ?? "this link"}? Its synced busy times and the saved link are deleted on our side. The link itself stays valid at its source until you regenerate it there.`,
     removeApple: (label: string | null) =>
-      `Remove ${label ?? "this account"}? Its synced busy times and the saved password are deleted from Casy. To also revoke the password itself, delete it under App-Specific Passwords at account.apple.com/account/manage.`,
+      `Remove ${label ?? "this account"}? Its synced busy times and the saved password are deleted on our side. To also revoke the password itself, delete it under App-Specific Passwords at account.apple.com/account/manage.`,
     removeOauth: (label: string | null, company: string) =>
-      `Remove ${label ?? "this account"}? Its synced busy times are deleted from Casy. To also revoke Casy's access, remove it in that account's connected-apps settings at ${company}.`,
+      `Remove ${label ?? "this account"}? Its synced busy times are deleted on our side. To also revoke our access, remove ${APP_NAME} in that account's connected-apps settings at ${company}.`,
     unknownAccount: "unknown account",
     lastSyncFailed: "· last sync failed, retrying",
     linkStopped: "This link stopped working. Remove it and add it again.",
@@ -829,13 +829,13 @@ export const en: Messages = {
     lastFailed: (message: string) => `Last attempt failed: ${message}`,
     unknownError: "unknown error",
     removeDevice: (label: string | null) =>
-      `Remove ${label ?? "this phone"}? The busy times from the phone are deleted from Casy, and the app stops sending them. Casy's calendar access can also be turned off under Casy in the phone's Settings.`,
+      `Remove ${label ?? "this phone"}? The busy times from the phone are deleted on our side, and the app stops sending them. The app's calendar access can also be turned off under ${APP_LABEL} in the phone's Settings.`,
     phoneUpdates: "updated whenever you open the app",
   },
   phoneCalendar: {
     demo: {
       phone: "Your phone",
-      casy: "Casy only sees",
+      casy: "We only see",
       events: [
         { time: "09:30", title: "Dentist" },
         { time: "14:00", title: "Doctor" },
@@ -843,9 +843,8 @@ export const en: Messages = {
       ],
     },
     connected: (calendars: string, blocks: string) =>
-      `The phone is connected: ${calendars} with ${blocks}. Casy updates them every time you open the app.`,
-    denied:
-      "Casy can't see the phone's calendars. Turn on Calendars under Casy in Settings, then try again.",
+      `The phone is connected: ${calendars} with ${blocks}. We update them every time you open the app.`,
+    denied: `The app can't see the phone's calendars. Turn on Calendars under ${APP_LABEL} in Settings, then try again.`,
     openSettings: "Open Settings",
     needTitle: "Link your Apple Calendar",
     stepTitle: "Connect your calendar",
@@ -882,8 +881,8 @@ export const en: Messages = {
     phoneTitle: "Link your Apple Calendar",
     notNow: "Not now",
     needBody:
-      "Import the phone's calendar so Casy can see when you are busy. Casy only stores the times, never the titles.",
-    needAsk: "iPhone asks you first whether Casy may see the calendar.",
+      "Import the phone's calendar so we can see when you are busy. We only store the times, never the titles.",
+    needAsk: "iPhone asks you first whether the app may see the calendar.",
     importCalendar: "Import my calendar",
     continueToIos: "Continue",
     importing: "Importing",
@@ -892,14 +891,13 @@ export const en: Messages = {
     couldntRead: "Couldn't read the phone's calendars. Try again.",
     couldntSave: "Couldn't save the phone's calendars.",
     updatesInApp: (synced: string | null) =>
-      `The phone's calendars update when you open the Casy app on the phone.${synced ? ` ${synced}.` : ""}`,
+      `The phone's calendars update when you open the app on the phone.${synced ? ` ${synced}.` : ""}`,
   },
   appleForm: {
     email: "Apple Account email",
     password: "App-specific password",
     about: "About app-specific passwords",
-    aboutBody:
-      "Apple has no one-click sign-in for calendars. In Sign-In and Security at account.apple.com, open App-Specific Passwords and create one for Casy. Casy never sees your main Apple Account password. It only asks Apple for event times, never titles, and stores this password encrypted. You can revoke it at any time in the same place.",
+    aboutBody: `Apple has no one-click sign-in for calendars. In Sign-In and Security at account.apple.com, open App-Specific Passwords and create one for ${APP_NAME}. We never see your main Apple Account password. We only ask Apple for event times, never titles, and store this password encrypted. You can revoke it at any time in the same place.`,
     reading: "Reading calendars",
     stepByStep: "Get step-by-step help",
     noPasswordYet: (link: ReactNode) => <>Don't have one yet? {link}</>,
@@ -960,7 +958,7 @@ export const en: Messages = {
     emailNotConfirmed: "Confirm your email first. Check your inbox.",
     codeInvalid: "That code is wrong or has expired. Check the email, or get a new code.",
     userExists: "There is already an account with that email.",
-    appleTaken: "That Apple ID already belongs to another Casy account.",
+    appleTaken: "That Apple ID already belongs to another account.",
     linkingOff: "Apple can't be added right now. Try again later.",
   },
   // Apple as a second way into the account (#245), under Sign-in and security.
@@ -979,7 +977,7 @@ export const en: Messages = {
   events: {
     title: "My events",
     intro:
-      "Events suggested in your groups. When someone declines, Casy finds the next date that works and asks everyone again.",
+      "Events suggested in your groups. When someone declines, we find the next date that works and asks everyone again.",
     loading: "Loading your events…",
     loadFailed: "Couldn't load your events.",
     invitations: "Invitations",
@@ -1011,7 +1009,7 @@ export const en: Messages = {
     swipeLeave: "Leave",
     cancelEvent: "Cancel event",
     leaveConfirm:
-      "Leave this event? It goes ahead without you, and Casy takes it out of your calendar if Casy put it there.",
+      "Leave this event? It goes ahead without you, and we take it out of your calendar if we put it there.",
     leaveEvent: "Leave event",
     stayIn: "Stay in",
     you: "You",
@@ -1086,7 +1084,7 @@ export const en: Messages = {
     deleteFailed: "Couldn't delete the shortcut",
   },
   // Searching an open vote again (#240).
-  rateCasy: "Rate Casy",
+  rateCasy: "Rate the app",
   remind: {
     button: (n: number) => `Remind ${n}`,
     done: "Reminded",
@@ -1154,9 +1152,9 @@ export const en: Messages = {
     tapToChange: "Tap to change",
     changeAnswerFor: (date: string) => `Change your answer for ${date}`,
     changeAfter:
-      "Can't make it after all? Change your answer for the date below, and Casy finds a new date for everyone.",
+      "Can't make it after all? Change your answer for the date below, and we find a new date for everyone.",
     moveConfirm:
-      "This is the date that was chosen. If you say you can't make it, Casy finds a new date for everyone from your answers.",
+      "This is the date that was chosen. If you say you can't make it, we find a new date for everyone from your answers.",
     moveYes: "I can't, find a new one",
     moveKeep: "Keep the date",
     moved: (date: string) => `The date has moved to ${date}.`,
@@ -1223,7 +1221,7 @@ export const en: Messages = {
     confirmNo: "Back",
   },
   eventImpact: {
-    toggle: "Casy's read",
+    toggle: "Our read",
     effects: {
       lateNight: "Late night",
       alcohol: "Alcohol",
@@ -1236,7 +1234,7 @@ export const en: Messages = {
     testersOnly: "Only admins and AI testers see this while it's tested.",
   },
   eventLabel: {
-    toggle: "Casy's read",
+    toggle: "Our read",
     kinds: {
       exam: "Exam",
       deadline: "Deadline",
@@ -1292,10 +1290,10 @@ export const en: Messages = {
     onlyYou: "Only you see this. It and your corrections stay on your phone.",
     // With sharing on (#122), a correction also goes to Casy.
     onlyYouShared:
-      "Only you see this, and it stays on your phone. Your correction is also sent to Casy, so the AI can get better. You can turn that off under Your data.",
+      "Only you see this, and it stays on your phone. Your correction is also sent to us, so the AI can get better. You can turn that off under Your data.",
     wrong: "Wrong?",
     wrongPrompt:
-      "What's wrong? Casy labels the event again from what you write, and remembers it for events like it.",
+      "What's wrong? We label the event again from what you write, and remembers it for events like it.",
     wrongPlaceholder: "E.g. It's only a mock exam, it doesn't matter much",
     send: "Label again",
     sending: "Labelling…",
@@ -1321,17 +1319,17 @@ export const en: Messages = {
       never: "High priority",
     },
     levelsHelp:
-      "Low priority: Casy may put events on top of it if no date within a week works without. Normal priority: busy, but for trips and holidays you can take time off work and school. High priority: busy, also when trips are being planned.",
+      "Low priority: we may put events on top of it if no date within a week works without. Normal priority: busy, but for trips and holidays you can take time off work and school. High priority: busy, also when trips are being planned.",
     off: "Doesn't count",
     effects: {
-      off: "Casy ignores it, and it isn't shown on your calendar.",
-      skip: "Casy may put events on top of it if no date within a week works without.",
+      off: "We ignore it, and it isn't shown on your calendar.",
+      skip: "We may put events on top of it if no date within a week works without.",
       normal: "Busy, but for trips and holidays you can take time off work and school.",
       never: "Always busy, also when trips are being planned.",
     },
     doneTitle: "Your calendars are ready",
     doneBody:
-      "Casy now looks for dates based on what you chose. You can always change it under Calendars.",
+      "We now find dates based on what you chose. You can always change it under Calendars.",
     see: "See my calendar",
     someFailed: (n: number) =>
       n === 1 ? "1 calendar couldn't be saved." : `${n} calendars couldn't be saved.`,
@@ -1339,7 +1337,7 @@ export const en: Messages = {
   },
   calendarView: {
     title: "My calendar",
-    intro: "What Casy sees in your calendars: only when you're busy, never what you're doing.",
+    intro: "What we see in your calendars: only when you're busy, never what you're doing.",
     tryAgain: "Try again",
     truncated: "This month has more busy blocks than can be shown, so some are missing.",
     noCalendars: (link: ReactNode) => (
@@ -1375,10 +1373,10 @@ export const en: Messages = {
     newCategoryYes: "Yes, but ask me first",
     newCategoryNo: "No",
     newCategorySave: "Save category",
-    guessedCategory: "Casy guessed this category. Change it if it's wrong.",
+    guessedCategory: "We guessed this category. Change it if it's wrong.",
     holidayCategory: "Holiday",
     holidayCalendar: "Danish public holidays",
-    casyCalendar: "Casy",
+    casyCalendar: APP_NAME,
     casyPill: "Added",
     continuesBoth: "Continues from the previous day and into the next",
     continuesBefore: "Continues from the previous day",
@@ -1402,7 +1400,7 @@ export const en: Messages = {
     calendarsButton: "Calendars",
     listTitle: "Your calendars",
     listIntro:
-      "Only ticked calendars count when Casy finds dates, and show here. Open a group to give each calendar a category and say how much it matters.",
+      "Only ticked calendars count when we find dates, and show here. Open a group to give each calendar a category and say how much it matters.",
     showAll: (brand: string) => `Count all ${brand} calendars`,
     show: (name: string) => `Count ${name}`,
     total: (n: number) => `${n} in total`,
@@ -1416,7 +1414,7 @@ export const en: Messages = {
       never: "Never skip",
     },
     priorityHelp:
-      "Can skip: Casy may plan over it when no date within a week works without. Normal: busy, but for trips and vacations you can take time off work and school. Never skip: busy, even when planning trips.",
+      "Can skip: we may plan over it when no date within a week works without. Normal: busy, but for trips and vacations you can take time off work and school. Never skip: busy, even when planning trips.",
     priorityHelpLabel: "What does this mean?",
     couldntSavePriority: "Couldn't save how much the calendar matters",
     rename: (name: string) => `Rename ${name}`,
@@ -1497,9 +1495,9 @@ export const en: Messages = {
     edgesClear: "Nothing right before or early the next morning",
     noSkips: "Nobody has to give anything up",
     matchScore: (n: number) =>
-      `${n}% match for the group, from the important events shared with Casy`,
+      `${n}% match for the group, from the important events shared with us`,
     picked: "In the suggestion",
-    notPicked: "Left out: Casy picks the best dates and spreads them so they aren't close together",
+    notPicked: "Left out: we pick the best dates and spreads them so they aren't close together",
     comfort: {
       you: "you",
       tightBefore: (who: string) => `Little time before for ${who}`,
@@ -1520,7 +1518,7 @@ export const en: Messages = {
     title: "Your data",
     row: "Your data",
     intro: (link: ReactNode) => (
-      <>Everything Casy stores about you right now, point by point as in the {link}.</>
+      <>Everything we store about you right now, point by point as in the {link}.</>
     ),
     privacyLink: "privacy policy",
     loading: "Loading your data…",
@@ -1539,12 +1537,12 @@ export const en: Messages = {
     pushOn: (n: number) => (n === 1 ? "On for 1 phone" : `On for ${n} phones`),
     pushOff: "Off",
     pushDetail:
-      "Casy keeps the phone's key from Apple and the kinds you switched off until you sign out or delete the account",
+      "We keep the phone's key from Apple and the kinds you switched off until you sign out or delete the account",
     appleToken:
       "A key from Apple is kept so your Apple sign-in can be ended when you delete the account",
     emailLanguage: "Language for emails",
     languages: { da: "Danish", en: "English" } as Record<string, string>,
-    languageDefault: "The default, until you use Casy signed in",
+    languageDefault: "The default, until you sign in",
     created: "Created",
     calendars: "Connected calendars",
     noCalendars: "No calendars connected.",
@@ -1587,24 +1585,23 @@ export const en: Messages = {
     answers: "Answers you gave",
     declined: "Dates you declined",
     entries: "Events in your calendar",
-    entriesAdded: "Put in your calendar by Casy",
+    entriesAdded: "Put in your calendar by us",
     entriesDeleted: "Deleted by you afterwards",
     ai: "AI",
     aiCalls: "Your AI calls in the last 30 days",
-    aiConsent: "Your yes to Casy's AI",
+    aiConsent: "Your yes to AI",
     aiConsentOn: (date: string) => `Yes, since ${date}`,
     aiConsentAgain: "Yes, but you need to say yes again",
     aiConsentOff: "No",
     labels: "Labels on this phone",
-    shareCorrections: "Send my corrections to Casy",
-    shareOn: "Casy gets your corrections of the AI, so it can get better",
+    shareCorrections: "Send my corrections to us",
+    shareOn: "We get your corrections of the AI, so it can get better",
     shareOff: "Off",
-    correctionsKept: "Corrections sent to Casy",
+    correctionsKept: "Corrections sent to us",
     correctionsDelete: "Delete my sent corrections",
     labelsNote:
       "Labels are the AI's judgement of your events. They are kept only on the phone and are not part of the copy you download. Turning off AI and your calendar under Profile deletes them.",
-    aiNote:
-      "Casy notes when and how much, never what you wrote. The note is deleted after 30 days.",
+    aiNote: "We note when and how much, never what you wrote. The note is deleted after 30 days.",
     credentials: "Access credentials",
     credentialKinds: {
       oauth: "Access key",
@@ -1620,7 +1617,7 @@ export const en: Messages = {
   deleteAccount: {
     title: "Delete account",
     intro:
-      "Deletes your account and everything that belongs to it: your connected calendars and Casy's access to them, your busy times and your name. You leave your groups, and groups where you are the only member are deleted. Events Casy added to your calendar stay there. This can't be undone.",
+      "Deletes your account and everything that belongs to it: your connected calendars and our access to them, your busy times and your name. You leave your groups, and groups where you are the only member are deleted. Events we added to your calendar stay there. This can't be undone.",
     button: "Delete my account",
     word: "DELETE",
     prompt: (word: string) => `Type ${word} to confirm.`,
@@ -1629,53 +1626,53 @@ export const en: Messages = {
     failed: "Couldn't delete your account. Try again.",
   },
   weakPasswordNotice: {
-    message: "Your password is easier to guess than Casy now allows.",
+    message: "Your password is easier to guess than we now allow.",
     action: "Choose a new one",
     dismiss: "Dismiss",
   },
   addToCalendar: {
     button: "Add to my calendar",
-    goesInto: (name: string) => `Casy adds it to ${name}.`,
-    goesIntoFallback: "Casy adds it to your primary calendar.",
+    goesInto: (name: string) => `We add it to ${name}.`,
+    goesIntoFallback: "We add it to your primary calendar.",
     willAsk: "You choose which calendar it goes into.",
     asFile: "You get a calendar file your calendar app can open.",
     added: (name: string) => `Added to ${name}`,
     addedFallback: "Added to your calendar",
-    adding: "Casy is adding it to your calendar.",
-    notYet: "Casy couldn't add it to your calendar yet and will try again within the hour.",
+    adding: "We're adding it to your calendar.",
+    notYet: "We couldn't add it to your calendar yet and will try again within the hour.",
     tryAgain: "Try again now",
-    onPhone: "Casy adds it to your phone's calendar next time you open the Casy app there.",
+    onPhone: "We add it to your phone's calendar next time you open the app there.",
     notYetPhone:
-      "Casy couldn't add it to the phone's calendar yet, and tries again next time the app opens.",
+      "We couldn't add it to the phone's calendar yet, and will try again next time the app opens.",
     gone: "It's no longer in your calendar.",
     addAgain: "Add it again",
-    chooseTitle: "Which calendar should Casy add events to?",
+    chooseTitle: "Which calendar should we add events to?",
     chooseHelp: "It becomes your primary calendar. You can change it under Connected calendars.",
     useAndAdd: "Use it and add",
     downloadInstead: "Download a calendar file instead",
   },
   primaryCalendar: {
     title: "Primary calendar",
-    introShort: "Where Casy puts the events you agree on.",
+    introShort: "Where we put the events you agree on.",
     autoAddShort: "Once everyone has said yes",
     intro:
-      "Casy adds the events you agree on to this calendar: when you ask it to, or on its own if Add automatically is on.",
+      "We add the events you agree on to this calendar: when you ask us to, or on our own if Add automatically is on.",
     noWritable:
-      "Connect an Apple calendar above, or your phone in the Casy app, and Casy can add your agreed events straight to it.",
+      "Connect an Apple calendar above, or your phone in the app, and we can add your agreed events straight to it.",
     waitingForSync:
-      "Casy is checking which of your Apple calendars it may add events to. Press Sync now, or wait up to an hour.",
+      "We're checking which of your Apple calendars we may add events to. Press Sync now, or wait up to an hour.",
     selectLabel: "Choose primary calendar",
     choose: "Choose a calendar",
-    noneOption: "None (Casy adds nothing to your calendars)",
+    noneOption: "None (we add nothing to your calendars)",
     confirmChange: (name: string, current: string) =>
       `Make ${name} your primary calendar? New events go into ${name}. Events already added to ${current} stay where they are.`,
     confirmClear: (current: string) =>
-      `Stop using ${current} as your primary calendar? Casy then adds no events to your calendars. Events already added stay.`,
+      `Stop using ${current} as your primary calendar? We then add no events to your calendars. Events already added stay.`,
     yesChange: "Yes, change",
     yesStop: "Yes, stop",
     autoAdd: "Add automatically",
     autoAddHelp:
-      "When everyone has accepted an event, Casy adds it to your primary calendar straight away.",
+      "When everyone has accepted an event, we add it to your primary calendar straight away.",
     autoAddNeedsPrimary: "Choose a primary calendar first.",
     badge: "Primary",
   },
@@ -1688,9 +1685,9 @@ export const en: Messages = {
     apple: "Continue with Apple",
     appleFailed: "Signing in with Apple didn't work. Try again.",
     // A first Apple sign-in that has made a new account (#245).
-    haveAccountTitle: "Do you already have a Casy account?",
+    haveAccountTitle: "Do you already have an account?",
     haveAccountBody:
-      "You signed in with Apple for the first time. If you have used Casy before with Google or email, sign in that way instead, so you don't end up with two accounts.",
+      "You signed in with Apple for the first time. If you have been here before with Google or email, sign in that way instead, so you don't end up with two accounts.",
     imNew: "No, I'm new",
     haveAccount: "Yes, I have an account",
     useOldWay:
@@ -1698,7 +1695,7 @@ export const en: Messages = {
     or: "or",
     acceptTerms: (terms: ReactNode, privacy: ReactNode) => (
       <>
-        By signing in, you accept Casy&apos;s {terms} and {privacy}.
+        By signing in, you accept our {terms} and {privacy}.
       </>
     ),
     termsLink: "terms",
@@ -1719,7 +1716,7 @@ export const en: Messages = {
     confirmResend: "Send it again",
     confirmResending: "Sending",
     confirmResent: "Sent again.",
-    accountDeleted: "Your account has been deleted. Thank you for using Casy.",
+    accountDeleted: "Your account has been deleted. Thanks for now. You know where to find us.",
     email: "Email",
     emailPlaceholder: "you@example.com",
     sendingLink: "Sending link",
@@ -1750,21 +1747,21 @@ export const en: Messages = {
     broken: "This invite doesn't work",
     brokenBody: (reason: string) =>
       `${reason} Invite links last seven days, so ask whoever sent it for a fresh one.`,
-    goToCasy: "Go to Casy",
+    goToCasy: "Find a day",
     invitedTo: "You have been invited to",
     invitedBy: (name: string) => `${name} has invited you to`,
-    whatIsCasy: "Casy finds the dates everyone in a group can make, from your calendars.",
+    whatIsCasy: "We find the dates everyone in a group can make, from your calendars.",
     membersSoFar: (n: number) => (n === 1 ? "1 member so far" : `${n} members so far`),
     privacy:
-      "Members can see each other's name and when they are busy, so Casy can find a time that works for everyone. Nobody sees your email address, your calendars' names, or what any of your events are called.",
+      "Members can see each other's name and when they are busy, so we can find a time that works for everyone. Nobody sees your email address, your calendars' names, or what any of your events are called.",
     alreadyIn: "You are already in this group.",
     toGroup: "Go to the group",
     findDate: "Find a date",
     joinGroup: "Join group",
     getTheApp: "Get the app",
-    openInApp: "Open in the Casy app",
+    openInApp: "Open in the app",
     stayInBrowser: "Continue in the browser",
-    noApp: "The Casy app could not be opened. Get it, or update it, in the App Store.",
+    noApp: "The app could not be opened. Get it, or update it, in the App Store.",
     noAppInside: "The app can't be opened from here. Open the page in Safari, or get the app.",
     signInToJoin: "Sign in to join",
     comeBack: "You will come straight back here afterwards.",
@@ -1778,8 +1775,8 @@ export const en: Messages = {
     describeGroup: "Couldn't save the description",
     setPrimeDates: "Couldn't save that",
     // The request never got an answer (callFunction): no connection, or too slow.
-    offline: "Couldn't reach Casy. Check your connection and try again.",
-    timeout: "Casy took too long to answer. Try again.",
+    offline: "We can't find the internet. Check your connection and try again.",
+    timeout: "The answer didn't find its way in time. Try again.",
     loadGroups: "Couldn't load your groups",
     report: "Couldn't send the report",
     blocked: "Couldn't change who you blocked",
@@ -1842,7 +1839,7 @@ export const en: Messages = {
     title: "Notifications",
     turnOn: "Turn on notifications",
     deniedTitle: "Notifications are off",
-    denied: "Turn them on under Casy in the iPhone's Settings.",
+    denied: `Turn them on under ${APP_LABEL} in the iPhone's Settings.`,
     kinds: {
       vote_invited: "Someone suggests dates to you",
       vote_decided: "The date is set",
@@ -1852,15 +1849,14 @@ export const en: Messages = {
     } as Record<string, string>,
     testButton: "Send a test notification",
     testSending: "Sending",
-    testDenied:
-      "The iPhone says no to notifications from Casy. Switch them on under Casy in Settings.",
+    testDenied: `The iPhone says no to notifications from the app. Switch them on under ${APP_LABEL} in Settings.`,
     testSent: (n: number) => (n === 1 ? "Sent to 1 phone." : `Sent to ${n} phones.`),
     testNone: (reasons: string) => `Apple didn't take it${reasons ? `: ${reasons}` : "."}`,
   },
   admin: {
     title: "Admin",
     intro:
-      "All of Casy, for you only. Names, dates and sync health; never emails, busy times or event details.",
+      "All of the app, for you only. Names, dates and sync health; never emails, busy times or event details.",
     refresh: "Refresh",
     statUsers: "Users",
     statGroups: "Groups",
@@ -1933,7 +1929,7 @@ export const en: Messages = {
     impactSole: (n: number, sole: number) =>
       `${n === 1 ? "1 group membership" : `${n} group memberships`} (${sole} of them ${sole === 1 ? "a group" : "groups"} only they are in, deleted too)`,
     deleteUserConfirm: (name: string, parts: string) =>
-      `Delete ${name}'s account? This removes their ${parts}, along with every busy time Casy stored for them. Groups other people are in carry on without them. This can't be undone, and it isn't a ban: they can sign up again.`,
+      `Delete ${name}'s account? This removes their ${parts}, along with every busy time we stored for them. Groups other people are in carry on without them. This can't be undone, and it isn't a ban: they can sign up again.`,
     and: " and ",
     typeToConfirm: (name: ReactNode) => <>Type {name} to confirm</>,
     deleteAccount: "Delete account",

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { APP_LABEL, APP_NAME } from "@/i18n/brand";
 import LegalPage, { ContactEmail, Term, type LegalCopy } from "@/components/LegalPage";
 import { useLang } from "@/i18n/lang";
 
@@ -23,37 +24,37 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 6. november 2026",
+  updated: "Senest opdateret 13. november 2026",
   sections: [
     {
       title: "Kort fortalt",
       body: (
         <p>
-          Casy (en forkortelse af Calendar Syncing) hjælper en gruppe med at finde et tidspunkt, der
-          passer alle. For at gøre det gemmer Casy kun, hvornår du er optaget: aldrig titler,
-          steder, noter eller gæster i dine aftaler. I iPhone-appen kan du selv se dem i din
-          kalender, men de bliver på telefonen. Casy skriver kun i din kalender, når du beder om
-          det: så lægger den aftaler, din gruppe er blevet enige om, i den kalender, du har valgt
-          som primær. Dine data bliver ikke solgt, ikke brugt til reklamer og ikke delt med nogen
-          uden for tjenesten. Med dit ja kan Casys AI læse navnene på dine kalendere og, i
-          iPhone-appen, titlerne på dine aftaler: de sendes til Anthropic, men gemmes ikke hos Casy
-          (se AI i Casy). Casy gemmer kun, hvornår dine vigtige aftaler starter, og hvor vigtige de
-          er, uden titel, så datoer kan rangeres for din gruppe. En rettelse, du skriver til AI'en,
-          og de planer, du laver med AI, sendes til Casy til gennemsyn, medmindre du slår det fra.
+          {APP_NAME} hjælper en gruppe med at finde et tidspunkt, der passer alle. For at gøre det
+          gemmer vi kun, hvornår du er optaget: aldrig titler, steder, noter eller gæster i dine
+          aftaler. I iPhone-appen kan du selv se dem i din kalender, men de bliver på telefonen. Vi
+          skriver kun i din kalender, når du beder om det: så lægger den aftaler, din gruppe er
+          blevet enige om, i den kalender, du har valgt som primær. Dine data bliver ikke solgt,
+          ikke brugt til reklamer og ikke delt med nogen uden for tjenesten. Med dit ja kan AI'en
+          læse navnene på dine kalendere og, i iPhone-appen, titlerne på dine aftaler: de sendes til
+          Anthropic, men gemmes ikke hos os (se AI). Vi gemmer kun, hvornår dine vigtige aftaler
+          starter, og hvor vigtige de er, uden titel, så datoer kan rangeres for din gruppe. En
+          rettelse, du skriver til AI'en, og de planer, du laver med AI, sendes til os til
+          gennemsyn, medmindre du slår det fra.
         </p>
       ),
     },
     {
-      title: "Det gemmer Casy",
+      title: "Det gemmer vi",
       body: (
         <>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <Term>Din konto:</Term> din e-mailadresse og dit navn, hvis du logger ind med Google
               eller Apple, eller et navn, du selv vælger, når du opretter dig eller på din profil.
-              Skjuler du din e-mail, når du logger ind med Apple, får Casy kun den adresse, Apple
-              videresender fra. Logger du ind med din e-mail og ikke har valgt et navn, bruger Casy
-              delen af din e-mailadresse før @. Og det sprog, du bruger Casy på, så e-mails fra Casy
+              Skjuler du din e-mail, når du logger ind med Apple, får vi kun den adresse, Apple
+              videresender fra. Logger du ind med din e-mail og ikke har valgt et navn, bruger vi
+              delen af din e-mailadresse før @. Og det sprog, du bruger appen på, så e-mails fra os
               kommer på det sprog.
             </li>
             <li>
@@ -73,14 +74,14 @@ const da: LegalCopy = {
               giver en af dem, den kategori og prioritet, du giver hver af dem (arbejde, skole,
               privat, andet eller et navn, du selv finder på, som kun du ser; kan springes over,
               normal, spring aldrig over), om den tæller med, hvilken der er din primære kalender,
-              og om Casy må tilføje aftaler automatisk.
+              og om vi må tilføje aftaler automatisk.
             </li>
             <li>
               <Term>Optagede tidsrum:</Term> start og slut på hvert tidsrum, hvor du er optaget, for
               cirka de næste tolv måneder. Aftaler, der overlapper, bliver slået sammen til ét
               tidsrum. Titler, beskrivelser, steder og deltagere bliver aldrig gemt. Google og
               Microsoft bliver aldrig spurgt om dem. Apple og kalenderlinks sender altid hele
-              aftaler, så de oplysninger fjernes, før noget gemmes. I iPhone-appen viser Casy dine
+              aftaler, så de oplysninger fjernes, før noget gemmes. I iPhone-appen viser vi dine
               egne aftalers titler, steder og noter i din kalender, læst direkte fra telefonen. Kun
               tidspunkterne forlader telefonen.
             </li>
@@ -92,7 +93,7 @@ const da: LegalCopy = {
               også når gruppen er væk, indtil en af jer fjerner den anden. Invitationslinks gemmes
               som et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til
               grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev
-              afslået. Slår du en e-mailadresse op for at invitere nogen, noterer Casy kun, at du
+              afslået. Slår du en e-mailadresse op for at invitere nogen, noterer vi kun, at du
               gjorde det, så der kan sættes en grænse for, hvor mange du kan slå op om dagen.
               Adressen gemmes ikke. Den, der har et invitationslink, kan uden at logge ind se
               gruppens navn og beskrivelse, hvor mange der er med, navnet på den, der lavede linket,
@@ -104,18 +105,18 @@ const da: LegalCopy = {
               aftale det er, de datoer, der er tilbudt, hvem der foreslog den, et sted og en note,
               hvis den, der foreslog den, har skrevet dem, og hvad hver enkelt har svaret på hver
               dato: kan, kan men helst ikke, eller kan ikke. Har den, der foreslog den, sagt ja til
-              Casys AI, også hvad Casys AI forventer, at aftalen indebærer (se AI i Casy).
+              AI'en, også hvad AI'en forventer, at aftalen indebærer (se AI).
             </li>
             <li>
-              <Term>Aftaler i din kalender:</Term> hvilke aftaler Casy har lagt i din primære
+              <Term>Aftaler i din kalender:</Term> hvilke aftaler vi har lagt i din primære
               kalender, så den kan fjerne dem igen, hvis en aftale bliver aflyst.
             </li>
             <li>
               <Term>Det, du selv har tilføjet:</Term> tider, hvor du er væk eller optaget, som ikke
-              står i en kalender, og som du har skrevet eller sagt til Casy: en kort overskrift,
+              står i en kalender, og som du har skrevet eller sagt til os: en kort overskrift,
               hvornår det starter og slutter, og om du er væk eller optaget. Den sætning, du skrev
-              eller sagde, gemmes ikke (se AI i Casy). Dine grupper kan se, at du ikke kan i de
-              tidsrum, men aldrig overskriften.
+              eller sagde, gemmes ikke (se AI). Dine grupper kan se, at du ikke kan i de tidsrum,
+              men aldrig overskriften.
             </li>
             <li>
               <Term>Genveje:</Term> planer, du har gemt for at planlægge dem igen med et tryk:
@@ -124,17 +125,17 @@ const da: LegalCopy = {
               du sletter dem.
             </li>
             <li>
-              <Term>Dit ja til AI:</Term> om du har sagt ja til Casys AI, hvornår, og hvilken
-              version af teksten (se AI i Casy). Mærkater, som AI&apos;en laver af dine aftaler,
-              gemmes kun på din telefon. Hvornår dine vigtige aftaler starter og hvor vigtige de er,
-              uden titel, gemmes hos Casy, så datoer kan rangeres for din gruppe. Det gør de
-              rettelser af AI'en, du har sendt til gennemsyn, og om du sender dem (se AI i Casy).
+              <Term>Dit ja til AI:</Term> om du har sagt ja til AI'en, hvornår, og hvilken version
+              af teksten (se AI). Mærkater, som AI&apos;en laver af dine aftaler, gemmes kun på din
+              telefon. Hvornår dine vigtige aftaler starter og hvor vigtige de er, uden titel,
+              gemmes hos os, så datoer kan rangeres for din gruppe. Det gør de rettelser af AI'en,
+              du har sendt til gennemsyn, og om du sender dem (se AI).
             </li>
             <li>
-              <Term>Rapporter og blokeringer:</Term> rapporterer du noget, gemmer Casy, hvad det
+              <Term>Rapporter og blokeringer:</Term> rapporterer du noget, gemmer vi, hvad det
               drejer sig om (en gruppe, en aftale eller et medlem), grunden, din note og en kopi af
-              den tekst, du rapporterede, som den stod i Casy. Den, du rapporterer, får ikke at
-              vide, at det var dig. Blokerer du nogen, gemmer Casy hvem og hvornår, så deres
+              den tekst, du rapporterede, som den stod hos os. Den, du rapporterer, får ikke at
+              vide, at det var dig. Blokerer du nogen, gemmer vi hvem og hvornår, så deres
               invitationer ikke når dig.
             </li>
             <li>
@@ -145,7 +146,7 @@ const da: LegalCopy = {
               før de gemmes, og nøglen opbevares adskilt fra databasen.
             </li>
             <li>
-              <Term>Notifikationer:</Term> slår du notifikationer til i iPhone-appen, gemmer Casy
+              <Term>Notifikationer:</Term> slår du notifikationer til i iPhone-appen, gemmer vi
               telefonens nøgle fra Apple, som beskederne sendes til, det sprog de skrives på, og de
               slags beskeder, du har slået fra. Beskeden selv gemmes ikke, når den er sendt. Den kan
               nævne navnene på en aftale, en gruppe og den, der foreslog noget, og den sendes gennem
@@ -153,9 +154,9 @@ const da: LegalCopy = {
             </li>
           </ul>
           <p className="mt-3">
-            Inviterer du venner fra dine kontakter i iPhone-appen, ser Casy kun de personer, du
+            Inviterer du venner fra dine kontakter i iPhone-appen, ser vi kun de personer, du
             vælger, og kun på telefonen: beskeden med invitationen sendes fra din egen telefon, og
-            Casy gemmer hverken navne, numre eller e-mails fra dine kontakter.
+            vi gemmer hverken navne, numre eller e-mails fra dine kontakter.
           </p>
           <p className="mt-3">
             Er du logget ind, kan du se alt dette om dig selv og hente en kopi under{" "}
@@ -173,21 +174,21 @@ const da: LegalCopy = {
         <>
           <p>
             Optagede tidsrum bruges kun til at vise, hvornår du og dine grupper er ledige, og til at
-            foreslå tidspunkter. Casy opdaterer dem cirka en gang i timen, og igen, når nogen i en
-            af dine grupper planlægger en aftale med gruppen, så de passer. Telefonens kalendere
-            sender iPhone-appen selv, når du åbner den, når kalenderne ændrer sig, mens den er åben,
-            og ind imellem i baggrunden, når iPhonen tillader det. Til det får telefonen sin egen
-            nøgle, som kun kan opdatere telefonens optagede tidsrum.
+            foreslå tidspunkter. Vi opdaterer dem cirka en gang i timen, og igen, når nogen i en af
+            dine grupper planlægger en aftale med gruppen, så de passer. Telefonens kalendere sender
+            iPhone-appen selv, når du åbner den, når kalenderne ændrer sig, mens den er åben, og ind
+            imellem i baggrunden, når iPhonen tillader det. Til det får telefonen sin egen nøgle,
+            som kun kan opdatere telefonens optagede tidsrum.
           </p>
           <p>
-            Har du valgt en primær kalender, bruger Casy din adgang til den til at lægge aftaler, I
-            er blevet enige om, i den: når du trykker Tilføj til min kalender, eller af sig selv,
-            hvis du har slået Tilføj automatisk til. Aftalen får aftalens navn, gruppens navn og
-            navnene på de andre, der er med. Bliver aftalen aflyst, fjerner Casy den igen. Casy
-            ændrer eller sletter aldrig andre aftaler i din kalender. Indtil videre kan det lade sig
-            gøre med Apple-kalendere og med kalenderne på din telefon i iPhone-appen. Dem lægger
-            appen selv aftalerne i, når den er åben eller arbejder i baggrunden, og hver aftale får
-            et link tilbage til aftalen i Casy.
+            Har du valgt en primær kalender, bruger vi din adgang til den til at lægge aftaler, I er
+            blevet enige om, i den: når du trykker Tilføj til min kalender, eller af sig selv, hvis
+            du har slået Tilføj automatisk til. Aftalen får aftalens navn, gruppens navn og navnene
+            på de andre, der er med. Bliver aftalen aflyst, fjerner vi den igen. Vi ændrer eller
+            sletter aldrig andre aftaler i din kalender. Indtil videre kan det lade sig gøre med
+            Apple-kalendere og med kalenderne på din telefon i iPhone-appen. Dem lægger appen selv
+            aftalerne i, når den er åben eller arbejder i baggrunden, og hver aftale får et link
+            tilbage til aftalen i appen.
           </p>
           <p>
             Når du vælger en adgangskode, eller logger ind med en, tjekker din browser den mod Have
@@ -196,7 +197,7 @@ const da: LegalCopy = {
             af adgangskoden bliver sendt, og selve adgangskoden forlader aldrig din browser.
           </p>
           <p>
-            Casys brug og overførsel af oplysninger fra Googles API&apos;er følger{" "}
+            Vores brug og overførsel af oplysninger fra Googles API&apos;er følger{" "}
             {googlePolicyLink("Google API Services User Data Policy")}, herunder kravene om
             begrænset brug (Limited Use).
           </p>
@@ -205,54 +206,54 @@ const da: LegalCopy = {
     },
     {
       id: "ai",
-      title: "AI i Casy",
+      title: "AI",
       body: (
         <>
           <p>
-            Casys AI er Claude, en AI-model fra Anthropic. Intet sendes til Anthropic, før du har
-            sagt ja til Casys AI. Casy spørger på Min kalender og første gang, du bruger en af
-            AI-knapperne. Du kan bruge Casy uden, og du kan altid ændre dit svar under Profil, Dine
+            Vores AI er Claude, en AI-model fra Anthropic. Intet sendes til Anthropic, før du har
+            sagt ja til AI'en. Vi spørger på Min kalender og første gang, du bruger en af
+            AI-knapperne. Du kan bruge appen uden, og du kan altid ændre dit svar under Profil, Dine
             data.
           </p>
 
           <p>
             <Term>Det, du selv skriver eller siger.</Term> Vælger du Planlæg med AI, sendes det, du
             skriver eller siger om aftalen, til Anthropic. Med det følger dagens dato, de måneder,
-            der kan planlægges i, og det sprog, du bruger Casy på. Når du tilføjer detaljer, følger
+            der kan planlægges i, og det sprog, du bruger appen på. Når du tilføjer detaljer, følger
             også det, du skrev før, og de indstillinger, aftalen har nu. Intet andet: ikke dine
             kalendere, ikke hvornår nogen er optaget, og ikke navnene på din gruppe eller dens
-            medlemmer. Nævner du selv et navn, sendes det, som du skrev det, og Casy finder personen
-            i gruppen i din browser. Anthropic svarer med indstillinger til aftalen, som du ser og
-            kan rette, før noget bliver sendt til gruppen.
+            medlemmer. Nævner du selv et navn, sendes det, som du skrev det, og vi finder personen i
+            gruppen i din browser. Anthropic svarer med indstillinger til aftalen, som du ser og kan
+            rette, før noget bliver sendt til gruppen.
           </p>
           <p>
             <Term>Tilføj til kalender.</Term> Bruger du Tilføj til kalender, sendes det, du skriver
             eller siger om, hvornår du er væk eller optaget, til Anthropic. Med det følger dagens
-            dato og det sprog, du bruger Casy på, og når du tilføjer detaljer, også det, du skrev
+            dato og det sprog, du bruger appen på, og når du tilføjer detaljer, også det, du skrev
             før, og de tider, du ser på skærmen. Intet andet: ikke dine kalendere og ikke navne.
             Anthropic svarer med tider, som du ser og kan rette, før noget bliver gemt. Først når du
-            trykker Gem, gemmer Casy tiderne (se Det gemmer Casy), og aldrig den sætning, du skrev
-            eller sagde. AI&apos;en læser intet fra din kalender for at gøre det.
+            trykker Gem, gemmer vi tiderne (se Det gemmer vi), og aldrig den sætning, du skrev eller
+            sagde. AI&apos;en læser intet fra din kalender for at gøre det.
           </p>
           <p>
-            Foreslår du en aftale, beder Casy også Anthropic om at vurdere, hvad den typisk
-            indebærer for dem, der kommer: en sen aften, alkohol, en lang rejse eller hård træning,
-            hvor krævende den er, og om den er udendørs. Med det sendes aftalens navn, sted og note,
-            som du skrev dem, og hvornår på dagen den er, og hvor længe den varer: ikke datoerne,
-            ikke dine kalendere og ikke gruppen. Vurderingen gemmes med aftalen, så Casy kan advare
-            de inviterede, hvis en dato ville gå ud over noget vigtigt for dem, og den slettes
-            sammen med aftalen.
+            Foreslår du en aftale, beder vi også Anthropic om at vurdere, hvad den typisk indebærer
+            for dem, der kommer: en sen aften, alkohol, en lang rejse eller hård træning, hvor
+            krævende den er, og om den er udendørs. Med det sendes aftalens navn, sted og note, som
+            du skrev dem, og hvornår på dagen den er, og hvor længe den varer: ikke datoerne, ikke
+            dine kalendere og ikke gruppen. Vurderingen gemmes med aftalen, så vi kan advare de
+            inviterede, hvis en dato ville gå ud over noget vigtigt for dem, og den slettes sammen
+            med aftalen.
           </p>
 
           <p>
-            <Term>Casys AI læser i din kalender.</Term> Med dit ja sendes også:
+            <Term>AI'en læser i din kalender.</Term> Med dit ja sendes også:
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               navnene på dine kalendere, uden e-mailadresser og links, og hvilken slags konto de
-              ligger i, når en kalender ingen kategori har, så Casy kan gætte den (arbejde, skole,
+              ligger i, når en kalender ingen kategori har, så vi kan gætte den (arbejde, skole,
               privat eller andet). I iPhone-appen følger også et par af kalenderens aftaletitler
-              med. Casy gemmer kun kategorien, markeret som gættet, til du selv vælger en. En
+              med. Vi gemmer kun kategorien, markeret som gættet, til du selv vælger en. En
               kategori, du selv har valgt eller fjernet, bliver aldrig ændret;
             </li>
             <li>
@@ -275,68 +276,68 @@ const da: LegalCopy = {
             <li>
               i iPhone-appen, for hver af dine vigtige aftaler: hvornår den starter, hvor vigtig den
               er, hvad du ikke skal gøre aftenen før, og hvor mange dage den kræver forberedelse.
-              Uden titel, art eller begrundelse. Det gemmes hos Casy, så datoer i en afstemning kan
+              Uden titel, art eller begrundelse. Det gemmes hos os, så datoer i en afstemning kan
               rangeres for hele din gruppe.
             </li>
           </ul>
           <p className="mt-3">
             Aldrig noter, gæster eller datoer, steder kun for fly, tog og busser, og intet om de
             andre i dine grupper. Titler på aftaler kan afsløre private ting, for eksempel om
-            helbred. Casy beder AI&apos;en om aldrig at gætte på helbred, men titlen sendes, som du
-            har skrevet den. Derfor er ja frivilligt, og Casy virker også uden. Grundlaget er dit
+            helbred. Vi beder AI&apos;en om aldrig at gætte på helbred, men titlen sendes, som du
+            har skrevet den. Derfor er ja frivilligt, og appen virker også uden. Grundlaget er dit
             samtykke, og du kan trække det tilbage når som helst; det ændrer ikke det, der allerede
             er sket.
           </p>
           <p>
-            Vurderingerne (mærkaterne) gemmes kun på din telefon, aldrig hos Casy. Casy bruger dem
-            til at advare dig, når en dato ligger lige før noget vigtigt, for eksempel en eksamen.
-            Det samme gælder rejserne og det, du har svaret om dem. Trækker du dit ja tilbage,
-            slettes mærkaterne, rejserne og dine rettelser på telefonen med det samme. De slettes
-            også, når du logger ud eller sletter appen, og de kommer ikke med i den kopi, du kan
-            hente. Under Dine data kan du se, hvor mange mærkater telefonen har. Casy gemmer, at du
-            har sagt ja, hvornår, og hvilken version af denne tekst du sagde ja til. Får Casys AI
-            lov til mere med din kalender, spørger Casy dig igen.
+            Vurderingerne (mærkaterne) gemmes kun på din telefon, aldrig hos os. Vi bruger dem til
+            at advare dig, når en dato ligger lige før noget vigtigt, for eksempel en eksamen. Det
+            samme gælder rejserne og det, du har svaret om dem. Trækker du dit ja tilbage, slettes
+            mærkaterne, rejserne og dine rettelser på telefonen med det samme. De slettes også, når
+            du logger ud eller sletter appen, og de kommer ikke med i den kopi, du kan hente. Under
+            Dine data kan du se, hvor mange mærkater telefonen har. Vi gemmer, at du har sagt ja,
+            hvornår, og hvilken version af denne tekst du sagde ja til. Får AI'en lov til mere med
+            din kalender, spørger vi dig igen.
           </p>
           <p>
             Det, der deles om dine vigtige aftaler, erstattes, hver gang appen sender det, så det,
             telefonen ikke længere nævner, forsvinder med det samme. Det slettes, når du trækker dit
-            ja tilbage, når du sletter din konto, og 30 dage efter, at det sidst blev sendt. Casy
+            ja tilbage, når du sletter din konto, og 30 dage efter, at det sidst blev sendt. Vi
             bruger det kun til at give datoerne i en afstemning en score ud fra gruppens vigtige
             aftaler. De andre i gruppen ser kun scoren for hver dato, aldrig hvem eller hvad der
             påvirkede den; i en lille gruppe kan en lav score dog pege på en af dem.
           </p>
 
           <p>
-            <Term>Rettelser, du sender til Casy.</Term> Skriver du, at AI&apos;ens vurdering af en
-            aftale er forkert, sendes din rettelse også til Casy: aftalens titel, kalenderens navn
+            <Term>Rettelser, du sender til os.</Term> Skriver du, at AI&apos;ens vurdering af en
+            aftale er forkert, sendes din rettelse også til os: aftalens titel, kalenderens navn
             (uden e-mailadresser og links), vurderingen AI&apos;en gav, det, du skrev, og den nye
             vurdering. Aldrig datoer, steder eller andre aftaler. Laver du en aftale med Planlæg med
             AI, sendes også det, du skrev eller sagde, det AI&apos;en gjorde ud af det, hvad du
             ændrede af dens gæt, og hvordan det endte, når aftalen sendes til gruppen; en plan, du
             sender, som AI&apos;en lavede den, tæller som rigtig. Aldrig gruppen eller dens
             medlemmer. Det er slået til, når du siger ja, og du kan slå det fra under Dine data uden
-            at tage dit ja tilbage. Casy gemmer det, så den, der driver Casy, kan gøre en gentaget
-            fejl til en skarpere regel i AI&apos;ens opgave og en ny, opfundet testsag; ingen model
-            trænes. Vedkommende ser kun det, der er sendt, aldrig hvem der sendte det. Det slettes,
-            når det er gennemgået, efter 90 dage, når du sletter dine rettelser under Dine data, når
-            du trækker dit ja tilbage, eller når du sletter din konto.
+            at tage dit ja tilbage. Vi gemmer det, så den, der driver tjenesten, kan gøre en
+            gentaget fejl til en skarpere regel i AI&apos;ens opgave og en ny, opfundet testsag;
+            ingen model trænes. Vedkommende ser kun det, der er sendt, aldrig hvem der sendte det.
+            Det slettes, når det er gennemgået, efter 90 dage, når du sletter dine rettelser under
+            Dine data, når du trækker dit ja tilbage, eller når du sletter din konto.
           </p>
 
           <p>
-            <Term>Hos Anthropic og hos Casy.</Term> Anthropic bruger ikke det, Casy sender, til at
-            træne sine modeller, og sletter det normalt inden for 30 dage. Anthropic ligger i USA,
-            så det bliver behandlet uden for EU. Casy gemmer ikke selv teksten, titlerne eller
-            svarene, bortset fra de rettelser, du sender til gennemsyn (se ovenfor). Casy noterer
-            kun, at et svar blev hentet, til hvem og til hvad (for eksempel Planlæg med AI), og hvor
-            stort det var, så der kan sættes en grænse for, hvor mange svar hver person henter om
-            dagen. Notatet slettes efter 30 dage, eller når du sletter din konto, og du kan se dit
-            antal under Dine data.
+            <Term>Hos Anthropic og hos os.</Term> Anthropic bruger ikke det, vi sender, til at træne
+            sine modeller, og sletter det normalt inden for 30 dage. Anthropic ligger i USA, så det
+            bliver behandlet uden for EU. Vi gemmer ikke selv teksten, titlerne eller svarene,
+            bortset fra de rettelser, du sender til gennemsyn (se ovenfor). Vi noterer kun, at et
+            svar blev hentet, til hvem og til hvad (for eksempel Planlæg med AI), og hvor stort det
+            var, så der kan sættes en grænse for, hvor mange svar hver person henter om dagen.
+            Notatet slettes efter 30 dage, eller når du sletter din konto, og du kan se dit antal
+            under Dine data.
           </p>
           <p>
             Trykker du på Tal, er det din browser, der gør din tale til tekst: Chrome sender lyden
-            til Google, Edge til Microsoft, og Safari til Apple eller gør det på din enhed. I
-            Casy-appen til iPhone er det Apples talegenkendelse, som kører på din telefon, hvor den
-            kan, og ellers hos Apple. Casy får kun teksten. Vil du ikke det, kan du skrive i stedet.
+            til Google, Edge til Microsoft, og Safari til Apple eller gør det på din enhed. I Appen
+            til iPhone er det Apples talegenkendelse, som kører på din telefon, hvor den kan, og
+            ellers hos Apple. Vi får kun teksten. Vil du ikke det, kan du skrive i stedet.
           </p>
         </>
       ),
@@ -347,32 +348,31 @@ const da: LegalCopy = {
         <>
           <p>
             Når du er med i en gruppe, kan de andre medlemmer se dit navn, og hvornår du er optaget.
-            Det er hele pointen med en gruppe: Casy kan ikke finde et tidspunkt, der passer alle,
-            uden det. Optagede tidsrum vises som tidsintervaller og om et tidsrum kom fra en
-            kalender, du har markeret som arbejde eller skole, eller som en, du kan springe over
-            eller aldrig springer over. Det er det, der lader Casy skelne mellem "kunne tage fri" og
-            "ikke muligt". Aftaler, I er blevet enige om i Casy, tæller også som optaget for dem,
-            der skal med, også i dine andre grupper, men kun som tidsrum, aldrig hvad aftalen er. Er
-            din kalender ikke blevet opdateret i to dage eller mere, kan de også se, hvornår den
-            sidst blev det, så de ved, at noget kan have ændret sig. De samme tidsrum bruger Casy på
-            din egen enhed til at markere dage i de næste tre uger, hvor hele gruppen er fri (Tid
-            til hinanden). Det regnes ud på din enhed, gemmes ikke, og ingen får besked om det. Du
-            kan slå det fra for hver gruppe på gruppens side; det valg gemmes på dit medlemskab og
-            slettes med det.
+            Det er hele pointen med en gruppe: vi kan ikke finde et tidspunkt, der passer alle, uden
+            det. Optagede tidsrum vises som tidsintervaller og om et tidsrum kom fra en kalender, du
+            har markeret som arbejde eller skole, eller som en, du kan springe over eller aldrig
+            springer over. Det er det, der lader os skelne mellem "kunne tage fri" og "ikke muligt".
+            Aftaler, I er blevet enige om i appen, tæller også som optaget for dem, der skal med,
+            også i dine andre grupper, men kun som tidsrum, aldrig hvad aftalen er. Er din kalender
+            ikke blevet opdateret i to dage eller mere, kan de også se, hvornår den sidst blev det,
+            så de ved, at noget kan have ændret sig. De samme tidsrum bruger vi på din egen enhed
+            til at markere dage i de næste tre uger, hvor hele gruppen er fri (Tid til hinanden).
+            Det regnes ud på din enhed, gemmes ikke, og ingen får besked om det. Du kan slå det fra
+            for hver gruppe på gruppens side; det valg gemmes på dit medlemskab og slettes med det.
           </p>
           <p>
             Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere (heller ikke dem, du
-            selv har givet dem), hvilke konti du har forbundet eller hvad dine aftaler hedder. Casy
+            selv har givet dem), hvilke konti du har forbundet eller hvad dine aftaler hedder. Vi
             gemmer slet ikke titler på aftaler i dine kalendere, så der er intet at afsløre. Én
             undtagelse: har du logget ind med din e-mail og ikke valgt et navn på din profil, er det
             navn, medlemmer ser, delen af din e-mailadresse før @ (for eksempel "anna.jensen" for
             anna.jensen@example.com). Resten af adressen vises aldrig.
           </p>
           <p>
-            Har du sagt ja til Casys AI, tæller dine vigtige aftaler med, når datoerne i en
-            afstemning får en score. De andre i gruppen ser kun scoren for hver dato, aldrig dine
-            aftaler eller hvem der påvirkede den. I en lille gruppe kan en lav score alligevel pege
-            på en af medlemmerne.
+            Har du sagt ja til AI'en, tæller dine vigtige aftaler med, når datoerne i en afstemning
+            får en score. De andre i gruppen ser kun scoren for hver dato, aldrig dine aftaler eller
+            hvem der påvirkede den. I en lille gruppe kan en lav score alligevel pege på en af
+            medlemmerne.
           </p>
           <p>
             Alle, der har en gruppes invitationslink, kan se gruppens navn, beskrivelse og billede
@@ -383,36 +383,36 @@ const da: LegalCopy = {
             gruppe, kan slette den, hvilket fjerner den for alle medlemmer på én gang.
           </p>
           <p>
-            Andre kan også invitere dig til en gruppe inde i Casy: folk, du er eller har været i en
-            gruppe med, og alle, der kender den e-mailadresse, du bruger til Casy. Du bliver kun
+            Andre kan også invitere dig til en gruppe inde i appen: folk, du er eller har været i en
+            gruppe med, og alle, der kender den e-mailadresse, du bruger hos os. Du bliver kun
             medlem, hvis du selv siger ja under Mine grupper. Den, der inviterer dig med e-mail, får
-            ikke at vide, om adressen har en konto hos Casy, og ser ikke dit navn, før du har sagt
-            ja. Medlemmer af gruppen, der allerede er i en anden gruppe med dig, kan se, at du er
+            ikke at vide, om adressen har en konto hos os, og ser ikke dit navn, før du har sagt ja.
+            Medlemmer af gruppen, der allerede er i en anden gruppe med dig, kan se, at du er
             inviteret. Siger du nej tak, får ingen besked, og gruppen kan ikke invitere dig igen de
             næste seks måneder, men du kan stadig blive medlem med et link.
           </p>
           <p>
             Når nogen foreslår en aftale, kan alle i gruppen se den, de datoer, der er tilbudt, dens
             sted og note, og hvad hver enkelt har svaret på hver dato. Siger du nej til en dato, kan
-            de andre se, at du ikke kunne den. Mens du svarer, viser Casy din egen kalender omkring
+            de andre se, at du ikke kunne den. Mens du svarer, viser vi din egen kalender omkring
             hver dato, men kun for dig, og kun hvornår du er optaget og i hvilken af dine kalendere.
           </p>
         </>
       ),
     },
     {
-      title: "Det kan den, der driver Casy, se",
+      title: "Det kan den, der driver tjenesten, se",
       body: (
         <>
           <p>
-            Casy drives af én person, som har en admin-visning for at holde tjenesten kørende og
-            hjælpe folk, der tager kontakt. Den viser alles navne, hvornår de oprettede sig og sidst
-            loggede ind, hvor mange grupper og kalendere de har, alle grupper med deres medlemmer,
-            og hvilke kalendertjenester hver person har forbundet, og om de synkroniserer. Den viser
-            ikke e-mailadresser, optagede tidsrum eller noget om dine aftaler. Dertil kommer de
-            rettelser af AI'en, folk har sendt til gennemsyn (se AI i Casy), og de rapporter, folk
-            har sendt: hvad der blev rapporteret, hvorfor og teksten, som den stod. Vedkommende ser
-            dem, men aldrig, hvem der sendte dem.
+            Tjenesten drives af én person, som har en admin-visning for at holde tjenesten kørende
+            og hjælpe folk, der tager kontakt. Den viser alles navne, hvornår de oprettede sig og
+            sidst loggede ind, hvor mange grupper og kalendere de har, alle grupper med deres
+            medlemmer, og hvilke kalendertjenester hver person har forbundet, og om de
+            synkroniserer. Den viser ikke e-mailadresser, optagede tidsrum eller noget om dine
+            aftaler. Dertil kommer de rettelser af AI'en, folk har sendt til gennemsyn (se AI), og
+            de rapporter, folk har sendt: hvad der blev rapporteret, hvorfor og teksten, som den
+            stod. Vedkommende ser dem, men aldrig, hvem der sendte dem.
           </p>
           <p>
             Derfra kan vedkommende slette en gruppe, fjerne nogen fra en gruppe, slette en konto
@@ -427,14 +427,14 @@ const da: LegalCopy = {
       title: "Hvor det opbevares",
       body: (
         <p>
-          Data gemmes hos Casys databaseudbyder, Supabase, og hjemmesiden leveres af Vercel.
+          Data gemmes hos vores databaseudbyder, Supabase, og hjemmesiden leveres af Vercel.
           Login-e-mails sendes af Resend, som får din e-mailadresse for at kunne sende dem. Alle tre
-          fører almindelige tekniske logfiler for at drive deres tjenester. For at ingen kan få Casy
-          til at sende mængder af login-e-mails, gemmer Casy i et døgn, hvornår en sådan e-mail blev
+          fører almindelige tekniske logfiler for at drive deres tjenester. For at ingen kan få os
+          til at sende mængder af login-e-mails, gemmer vi i et døgn, hvornår en sådan e-mail blev
           sendt, og en kode lavet ud fra modtagerens adresse, som ikke kan regnes tilbage til
-          adressen. AI i Casy går gennem Anthropic, som beskrevet ovenfor. Notifikationer i
+          adressen. AI i appen går gennem Anthropic, som beskrevet ovenfor. Notifikationer i
           iPhone-appen sendes gennem Apples notifikationstjeneste, som får beskeden for at kunne
-          levere den. Casy bruger ingen analyse- eller reklamesporing. Din browser gemmer din
+          levere den. Vi bruger ingen analyse- eller reklamesporing. Din browser gemmer din
           login-session, så du forbliver logget ind, det sprog, du har valgt, og en kopi af din egen
           gruppeliste, dine kalenderforbindelser og om du har admin-adgang, så siderne åbner med det
           samme. Kopien slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet om
@@ -443,12 +443,10 @@ const da: LegalCopy = {
       ),
     },
     {
-      title: "Hvor længe Casy gemmer det",
+      title: "Hvor længe vi gemmer det",
       body: (
         <>
-          <p>
-            Casy gemmer kun dine oplysninger, så længe der er brug for dem. Hver nat sletter Casy:
-          </p>
+          <p>Vi gemmer kun dine oplysninger, så længe der er brug for dem. Hver nat sletter vi:</p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               foreslåede aftaler 12 måneder efter, at deres sidste dato var slut, sammen med
@@ -456,16 +454,16 @@ const da: LegalCopy = {
             </li>
             <li>
               aflyste aftaler og aftaler, der ikke fandt en dato, 30 dage efter de blev lukket (lidt
-              senere, hvis Casy endnu ikke har fået fjernet en aflyst aftale fra nogens kalender);
+              senere, hvis vi endnu ikke har fået fjernet en aflyst aftale fra nogens kalender);
             </li>
             <li>invitations- og venskabslinks 30 dage efter, at de er holdt op med at virke;</li>
             <li>notatet om, at du har slået en e-mailadresse op, efter et døgn;</li>
-            <li>koden for en adresse, Casy har sendt en login-e-mail til, efter et døgn;</li>
+            <li>koden for en adresse, vi har sendt en login-e-mail til, efter et døgn;</li>
             <li>notatet om dine AI-svar efter 30 dage;</li>
             <li>tider, du selv har tilføjet, 30 dage efter, at de er slut;</li>
             <li>rettelser af AI'en, du har sendt til gennemsyn, efter 90 dage;</li>
             <li>
-              rapporter 180 dage efter, de blev sendt, eller før, når den, der driver Casy, har
+              rapporter 180 dage efter, de blev sendt, eller før, når den, der driver tjenesten, har
               behandlet dem;
             </li>
             <li>oplysningerne om dine vigtige aftaler 30 dage efter, at de sidst blev sendt;</li>
@@ -476,8 +474,8 @@ const da: LegalCopy = {
             </li>
           </ul>
           <p>
-            Optagede tidsrum bliver erstattet, hver gang Casy opdaterer dine kalendere, og dækker
-            kun fra en uge tilbage til tolv måneder frem. Alt andet, altså din konto, dine
+            Optagede tidsrum bliver erstattet, hver gang vi opdaterer dine kalendere, og dækker kun
+            fra en uge tilbage til tolv måneder frem. Alt andet, altså din konto, dine
             kalenderforbindelser, dine grupper og de personer, du har blokeret, gemmes, indtil du
             selv sletter det eller sletter din konto.
           </p>
@@ -487,7 +485,7 @@ const da: LegalCopy = {
             slettes efter højst et døgn.
           </p>
           <p>
-            Dit ja til Casys AI gemmes, så længe du har kontoen, eller til du trækker det tilbage.
+            Dit ja til AI'en gemmes, så længe du har kontoen, eller til du trækker det tilbage.
             Mærkater og rettelser gemmes kun på din telefon, til du trækker dit ja tilbage, logger
             ud eller sletter appen.
           </p>
@@ -500,23 +498,23 @@ const da: LegalCopy = {
         <>
           <p>
             Fjerner du en kalenderkonto under Forbundne kalendere, slettes dens optagede tidsrum og
-            adgangsoplysninger fra Casy med det samme. For også at stoppe det hos udbyderen skal du
-            fjerne Casys adgang i indstillingerne for din Google- eller Microsoft-konto eller slette
+            adgangsoplysninger fra os med det samme. For også at stoppe det hos udbyderen skal du
+            fjerne vores adgang i indstillingerne for din Google- eller Microsoft-konto eller slette
             den app-specifikke adgangskode på account.apple.com/account/manage. Telefonens kalendere
             holder appen op med at læse, når du fjerner telefonen, eller når du slår adgang til
-            Kalendere fra under Casy i telefonens Indstillinger.
+            Kalendere fra under {APP_LABEL} i telefonens Indstillinger.
           </p>
           <p>
             Forlader du en gruppe, bliver du fjernet med det samme, og de andre medlemmer holder op
             med at se noget om dig. Var du det sidste medlem, bliver gruppen slettet sammen med dig.
           </p>
           <p>
-            Vil du slette din Casy-konto helt, så gør det under Slet konto på din profil, eller
-            skriv til {mail}. Alt, der hører til den, bliver slettet med det samme: dine kalendere,
-            optagede tidsrum, adgangsoplysninger og gruppemedlemskaber. Grupper, hvor du var det
-            eneste medlem, bliver også slettet. Grupper med andre medlemmer fortsætter uden dig.
-            Loggede du ind med Apple, afbryder Casy først dit Apple-login hos Apple, så Casy ikke
-            længere står under Log ind med Apple i din Apple-konto.
+            Vil du slette din konto helt, så gør det under Slet konto på din profil, eller skriv til{" "}
+            {mail}. Alt, der hører til den, bliver slettet med det samme: dine kalendere, optagede
+            tidsrum, adgangsoplysninger og gruppemedlemskaber. Grupper, hvor du var det eneste
+            medlem, bliver også slettet. Grupper med andre medlemmer fortsætter uden dig. Loggede du
+            ind med Apple, afbryder vi først dit Apple-login hos Apple, så vi ikke længere står
+            under Log ind med Apple i din Apple-konto.
           </p>
         </>
       ),
@@ -525,8 +523,8 @@ const da: LegalCopy = {
       title: "Kontakt",
       body: (
         <p>
-          Casy drives af Asbjørn Morris Bay, en privatperson i Danmark, som er dataansvarlig for
-          dine oplysninger. Spørgsmål om denne politik eller dine data: {mail}.
+          {APP_NAME} drives af Asbjørn Morris Bay, en privatperson i Danmark, som er dataansvarlig
+          for dine oplysninger. Spørgsmål om denne politik eller dine data: {mail}.
         </p>
       ),
     },
@@ -535,38 +533,38 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 6 November 2026",
+  updated: "Last updated 13 November 2026",
   sections: [
     {
       title: "In short",
       body: (
         <p>
-          Casy (short for Calendar Syncing) helps a group find a time that works for everyone. To do
-          that it stores only when you are busy: never the titles, places, notes or guests of your
-          events. In the iPhone app you can see them yourself in your calendar, but they stay on the
-          phone. Casy only writes to your calendar when you ask it to: it then adds events your
-          group has agreed on to the calendar you chose as your primary calendar. Your data is not
-          sold, not used for advertising, and not shared with anyone outside the service. With your
-          yes, Casy&apos;s AI can read the names of your calendars and, in the iPhone app, the
-          titles of your events: they are sent to Anthropic, but not stored by Casy (see AI in
-          Casy). Casy stores only when your important events start and how important they are,
-          without titles, so dates can be ranked for your group. A correction you write to the AI,
-          and the plans you make with AI, are sent to Casy for review unless you switch that off.
+          {APP_NAME} helps a group find a time that works for everyone. To do that we store only
+          when you are busy: never the titles, places, notes or guests of your events. In the iPhone
+          app you can see them yourself in your calendar, but they stay on the phone. We only write
+          to your calendar when you ask us to: we then add events your group has agreed on to the
+          calendar you chose as your primary calendar. Your data is not sold, not used for
+          advertising, and not shared with anyone outside the service. With your yes, the AI can
+          read the names of your calendars and, in the iPhone app, the titles of your events: they
+          are sent to Anthropic, but not stored by us (see AI). We store only when your important
+          events start and how important they are, without titles, so dates can be ranked for your
+          group. A correction you write to the AI, and the plans you make with AI, are sent to us
+          for review unless you switch that off.
         </p>
       ),
     },
     {
-      title: "What Casy stores",
+      title: "What we store",
       body: (
         <>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <Term>Your account:</Term> your email address, and your name if you sign in with
               Google or Apple, or a name you choose when you sign up or on your profile. If you hide
-              your email when signing in with Apple, Casy only gets the address Apple forwards from.
-              If you sign in with your email and have not chosen a name, Casy uses the part of your
-              email address before the @. And the language you use Casy in, so emails from Casy come
-              in that language.
+              your email when signing in with Apple, we only get the address Apple forwards from. If
+              you sign in with your email and have not chosen a name, we use the part of your email
+              address before the @. And the language you use the app in, so emails from us come in
+              that language.
             </li>
             <li>
               <Term>Your profile picture:</Term> if you choose one. It is made into a small square
@@ -584,7 +582,7 @@ const en: LegalCopy = {
               address of a Google account), the names of their calendars and any name you give one
               yourself, the category and priority you give each one (work, school, personal, other,
               or a name of your own that only you see; can skip, normal, never skip), whether it
-              counts, which one is your primary calendar, and whether Casy may add events
+              counts, which one is your primary calendar, and whether we may add events
               automatically.
             </li>
             <li>
@@ -592,9 +590,9 @@ const en: LegalCopy = {
               twelve months. Overlapping events are merged into one period. Event titles,
               descriptions, locations and attendees are never stored. Google and Microsoft are never
               asked for them. Apple and calendar links always send whole events, so those details
-              are removed before anything is saved. In the iPhone app, Casy shows your own
-              events&apos; titles, places and notes in your calendar, read straight from the phone.
-              Only the times leave the phone.
+              are removed before anything is saved. In the iPhone app, we show your own events&apos;
+              titles, places and notes in your calendar, read straight from the phone. Only the
+              times leave the phone.
             </li>
             <li>
               <Term>Groups:</Term> the name of each group you are in, the short description of what
@@ -604,9 +602,9 @@ const en: LegalCopy = {
               removes the other. Invite links are stored as a fingerprint that cannot be turned back
               into a working link. Invitations to groups: who invited whom, and whether the
               invitation is still open or was declined. When you look up an email address to invite
-              someone, Casy only notes that you did, so it can limit how many you can look up in a
-              day. The address is not stored. Anyone holding an invite link can see, without signing
-              in, the group's name and description, how many are in it, the name of whoever made the
+              someone, we only note that you did, so we can limit how many you can look up in a day.
+              The address is not stored. Anyone holding an invite link can see, without signing in,
+              the group's name and description, how many are in it, the name of whoever made the
               link, and the group's picture or, without one, the picture of whoever made the link.
               Anyone holding a friend link can see, without signing in, the name and picture of
               whoever made it.
@@ -615,19 +613,19 @@ const en: LegalCopy = {
               <Term>Suggested events:</Term> events suggested in your groups: what kind of event it
               is, the dates offered, who suggested it, a place and a note if whoever suggested it
               wrote them, and how each person answered each date: can, can but would rather not, or
-              can't. If whoever suggested it said yes to Casy's AI, also what Casy's AI expects the
-              event to involve (see AI in Casy).
+              can't. If whoever suggested it said yes to the AI, also what the AI expects the event
+              to involve (see AI).
             </li>
             <li>
-              <Term>Events in your calendar:</Term> which events Casy added to your primary
-              calendar, so it can take them out again if an event is cancelled.
+              <Term>Events in your calendar:</Term> which events we added to your primary calendar,
+              so it can take them out again if an event is cancelled.
             </li>
             <li>
               <Term>What you have added yourself:</Term> times when you are away or busy that are
-              not in a calendar, which you wrote or said to Casy: a short heading, when it starts
-              and ends, and whether you are away or busy. The sentence you wrote or said is not kept
-              (see AI in Casy). Your groups can see that you can&apos;t make those times, but never
-              the heading.
+              not in a calendar, which you wrote or said to us: a short heading, when it starts and
+              ends, and whether you are away or busy. The sentence you wrote or said is not kept
+              (see AI). Your groups can see that you can&apos;t make those times, but never the
+              heading.
             </li>
             <li>
               <Term>Shortcuts:</Term> plans you saved to plan again with one tap: the name, the
@@ -636,17 +634,17 @@ const en: LegalCopy = {
               kept until you delete them.
             </li>
             <li>
-              <Term>Your yes to AI:</Term> whether you said yes to Casy&apos;s AI, when, and which
-              version of the text (see AI in Casy). Labels the AI makes of your events are kept only
-              on your phone. When your important events start and how important they are, without
-              titles, is stored by Casy, so dates can be ranked for your group. So are the
-              corrections of the AI you sent for review, and whether you send them (see AI in Casy).
+              <Term>Your yes to AI:</Term> whether you said yes to the AI, when, and which version
+              of the text (see AI). Labels the AI makes of your events are kept only on your phone.
+              When your important events start and how important they are, without titles, is stored
+              by us, so dates can be ranked for your group. So are the corrections of the AI you
+              sent for review, and whether you send them (see AI).
             </li>
             <li>
-              <Term>Reports and blocks:</Term> if you report something, Casy keeps what it is about
-              (a group, an event or a member), the reason, your note and a copy of the text you
-              reported, as it stood in Casy. Whoever you report is not told it was you. If you block
-              someone, Casy keeps who and when, so their invitations don&apos;t reach you.
+              <Term>Reports and blocks:</Term> if you report something, we keep what it is about (a
+              group, an event or a member), the reason, your note and a copy of the text you
+              reported, as it stood in the app. Whoever you report is not told it was you. If you
+              block someone, we keep who and when, so their invitations don&apos;t reach you.
             </li>
             <li>
               <Term>Access credentials:</Term> what is needed to keep your calendars up to date:
@@ -656,7 +654,7 @@ const en: LegalCopy = {
               they are stored, and the key is kept separately from the database.
             </li>
             <li>
-              <Term>Notifications:</Term> if you turn on notifications in the iPhone app, Casy keeps
+              <Term>Notifications:</Term> if you turn on notifications in the iPhone app, we keep
               the phone&apos;s key from Apple that the messages are sent to, the language they are
               written in, and the kinds you switched off. The message itself is not kept once it is
               sent. It can name an event, a group and whoever suggested something, and it is sent
@@ -664,9 +662,9 @@ const en: LegalCopy = {
             </li>
           </ul>
           <p className="mt-3">
-            If you invite friends from your contacts in the iPhone app, Casy only sees the people
-            you pick, and only on the phone: the message with the invitation is sent from your own
-            phone, and Casy keeps no names, numbers or emails from your contacts.
+            If you invite friends from your contacts in the iPhone app, we only see the people you
+            pick, and only on the phone: the message with the invitation is sent from your own
+            phone, and we keep no names, numbers or emails from your contacts.
           </p>
           <p className="mt-3">
             Signed in, you can see all of this about yourself, and download a copy, under{" "}
@@ -684,21 +682,21 @@ const en: LegalCopy = {
         <>
           <p>
             Busy times are used only to show when you and your groups are free and to suggest times.
-            Casy refreshes them about once an hour, and again when someone in one of your groups
-            plans an event with the group, so they stay current. The iPhone app sends the
-            phone&apos;s calendars itself, when you open it, when they change while it is open, and
-            now and then in the background, when the iPhone allows it. For that the phone gets a key
-            of its own, which can only update the phone&apos;s busy times.
+            We refresh them about once an hour, and again when someone in one of your groups plans
+            an event with the group, so they stay current. The iPhone app sends the phone&apos;s
+            calendars itself, when you open it, when they change while it is open, and now and then
+            in the background, when the iPhone allows it. For that the phone gets a key of its own,
+            which can only update the phone&apos;s busy times.
           </p>
           <p>
-            If you chose a primary calendar, Casy uses your access to it to add the events you agree
-            on: when you press Add to my calendar, or on its own if you switched on Add
+            If you chose a primary calendar, we use your access to it to add the events you agree
+            on: when you press Add to my calendar, or on our own if you switched on Add
             automatically. The entry holds the event&apos;s name, the group&apos;s name and the
-            names of the others taking part. If the event is cancelled, Casy takes it out again.
-            Casy never changes or deletes any other event in your calendar. For now this works with
-            Apple calendars, and with the calendars on your phone in the iPhone app. The app adds
-            those entries itself, while it is open or working in the background, and each entry
-            carries a link back to the event in Casy.
+            names of the others taking part. If the event is cancelled, we take it out again. We
+            never change or delete any other event in your calendar. For now this works with Apple
+            calendars, and with the calendars on your phone in the iPhone app. The app adds those
+            entries itself, while it is open or working in the background, and each entry carries a
+            link back to the event in the app.
           </p>
           <p>
             When you choose a password, or sign in with one, your browser checks it against Have I
@@ -707,7 +705,7 @@ const en: LegalCopy = {
             and the password itself never leaves your browser.
           </p>
           <p>
-            Casy&apos;s use and transfer of information received from Google APIs adheres to the{" "}
+            Our use and transfer of information received from Google APIs adheres to the{" "}
             {googlePolicyLink("Google API Services User Data Policy")}, including the Limited Use
             requirements.
           </p>
@@ -716,54 +714,54 @@ const en: LegalCopy = {
     },
     {
       id: "ai",
-      title: "AI in Casy",
+      title: "AI",
       body: (
         <>
           <p>
-            Casy&apos;s AI is Claude, an AI model from Anthropic. Nothing is sent to Anthropic until
-            you have said yes to Casy&apos;s AI. Casy asks on My calendar and the first time you use
-            one of the AI buttons. You can use Casy without it, and you can always change your
-            answer under Profile, Your data.
+            Our AI is Claude, an AI model from Anthropic. Nothing is sent to Anthropic until you
+            have said yes to the AI. We ask on My calendar and the first time you use one of the AI
+            buttons. You can use the app without it, and you can always change your answer under
+            Profile, Your data.
           </p>
 
           <p>
             <Term>What you write or say yourself.</Term> If you choose Plan with AI, what you write
             or say about the event is sent to Anthropic. With it go today&apos;s date, the months
-            that can be planned in, and the language you use Casy in. When you add details, what you
-            wrote before and the event&apos;s settings so far go too. Nothing else: not your
+            that can be planned in, and the language you use the app in. When you add details, what
+            you wrote before and the event&apos;s settings so far go too. Nothing else: not your
             calendars, not when anyone is busy, and not the names of your group or its members. If
-            you name someone yourself, the name is sent as you wrote it, and Casy finds the person
-            in the group in your browser. Anthropic answers with settings for the event, which you
-            see and can change before anything is sent to the group.
+            you name someone yourself, the name is sent as you wrote it, and we find the person in
+            the group in your browser. Anthropic answers with settings for the event, which you see
+            and can change before anything is sent to the group.
           </p>
           <p>
             <Term>Add to calendar.</Term> If you use Add to calendar, what you write or say about
             when you are away or busy is sent to Anthropic. With it go today&apos;s date and the
-            language you use Casy in, and when you add details, what you wrote before and the times
-            you see on screen. Nothing else: not your calendars and not names. Anthropic answers
-            with times, which you see and can change before anything is kept. Only when you press
-            Save does Casy keep the times (see What Casy stores), and never the sentence you wrote
-            or said. The AI reads nothing from your calendar to do this.
+            language you use the app in, and when you add details, what you wrote before and the
+            times you see on screen. Nothing else: not your calendars and not names. Anthropic
+            answers with times, which you see and can change before anything is kept. Only when you
+            press Save do we keep the times (see What we store), and never the sentence you wrote or
+            said. The AI reads nothing from your calendar to do this.
           </p>
           <p>
-            When you suggest an event, Casy also asks Anthropic what it usually involves for the
-            people going: a late night, alcohol, a long journey or hard exercise, how tiring it is,
-            and whether it is outdoors. Only the event&apos;s name, place and note as you wrote them
-            go with it, and the time of day and how long it lasts: not the dates, not your calendars
-            and not the group. The answer is kept with the event, so Casy can warn the people
-            invited when a date would get in the way of something important to them, and it is
-            deleted with the event.
+            When you suggest an event, we also ask Anthropic what it usually involves for the people
+            going: a late night, alcohol, a long journey or hard exercise, how tiring it is, and
+            whether it is outdoors. Only the event&apos;s name, place and note as you wrote them go
+            with it, and the time of day and how long it lasts: not the dates, not your calendars
+            and not the group. The answer is kept with the event, so we can warn the people invited
+            when a date would get in the way of something important to them, and it is deleted with
+            the event.
           </p>
 
           <p>
-            <Term>Casy&apos;s AI reads your calendar.</Term> With your yes, this is sent too:
+            <Term>The AI reads your calendar.</Term> With your yes, this is sent too:
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               the names of your calendars, without email addresses and links, and the kind of
-              account they are in, when a calendar has no category, so Casy can guess it (work,
+              account they are in, when a calendar has no category, so we can guess it (work,
               school, personal or other). In the iPhone app a few of the calendar&apos;s event
-              titles go along. Casy keeps only the category, marked as guessed until you pick one
+              titles go along. We keep only the category, marked as guessed until you pick one
               yourself. A category you picked or removed yourself is never changed;
             </li>
             <li>
@@ -786,57 +784,57 @@ const en: LegalCopy = {
             <li>
               in the iPhone app, for each of your important events: when it starts, how important it
               is, what you should not do the evening before, and how many days it needs to prepare.
-              Without title, kind or reason. It is stored by Casy, so a vote&apos;s dates can be
+              Without title, kind or reason. It is stored by us, so a vote&apos;s dates can be
               ranked for your whole group.
             </li>
           </ul>
           <p className="mt-3">
             Never notes, guests or dates, places only for flights, trains and buses, and nothing
             about the others in your groups. Event titles can reveal private things, for example
-            about health. Casy tells the AI never to guess at health, but the title is sent as you
-            wrote it. That is why yes is voluntary, and Casy works without it. The basis is your
+            about health. We tell the AI never to guess at health, but the title is sent as you
+            wrote it. That is why yes is voluntary, and the app works without it. The basis is your
             consent, and you can withdraw it at any time; that does not change what has already
             happened.
           </p>
           <p>
-            The judgements (labels) are kept only on your phone, never by Casy. Casy uses them to
-            warn you when a date falls right before something important, such as an exam. The same
-            goes for the trips and what you answered about them. If you withdraw your yes, the
-            labels, the trips and your corrections on the phone are deleted at once. They are also
-            deleted when you sign out or delete the app, and they are not part of the copy you can
-            download. Under Your data you can see how many labels the phone holds. Casy stores that
-            you said yes, when, and which version of this text you said yes to. If Casy&apos;s AI is
-            allowed to do more with your calendar, Casy asks you again.
+            The judgements (labels) are kept only on your phone, never by us. We use them to warn
+            you when a date falls right before something important, such as an exam. The same goes
+            for the trips and what you answered about them. If you withdraw your yes, the labels,
+            the trips and your corrections on the phone are deleted at once. They are also deleted
+            when you sign out or delete the app, and they are not part of the copy you can download.
+            Under Your data you can see how many labels the phone holds. We store that you said yes,
+            when, and which version of this text you said yes to. If the AI is allowed to do more
+            with your calendar, we ask you again.
           </p>
           <p>
             What is shared about your important events is replaced every time the app sends it, so
             what the phone no longer lists disappears at once. It is deleted when you withdraw your
-            yes, when you delete your account, and 30 days after it was last sent. Casy uses it only
-            to give the dates of a vote a score from the group&apos;s important events. The others
-            in the group see only the score for each date, never who or what affected it; in a small
+            yes, when you delete your account, and 30 days after it was last sent. We use it only to
+            give the dates of a vote a score from the group&apos;s important events. The others in
+            the group see only the score for each date, never who or what affected it; in a small
             group, though, a low score can point at one of them.
           </p>
 
           <p>
-            <Term>Corrections you send to Casy.</Term> If you write that the AI&apos;s judgement of
-            an event is wrong, your correction is also sent to Casy: the event&apos;s title, the
+            <Term>Corrections you send to us.</Term> If you write that the AI&apos;s judgement of an
+            event is wrong, your correction is also sent to us: the event&apos;s title, the
             calendar&apos;s name (without email addresses and links), the judgement the AI gave,
             what you wrote and the new judgement. Never dates, places or other events. If you make
             an event with Plan with AI, what you wrote or said, what the AI made of it, what you
             changed of its guesses and how it ended up when the event is sent to the group are sent
             too; a plan you send as the AI made it counts as right. Never the group or its members.
             It is on when you say yes, and you can turn it off under Your data without withdrawing
-            your yes. Casy stores it so whoever runs Casy can turn a repeated mistake into a sharper
-            rule in the AI&apos;s task and a new, made-up test case; no model is trained. They see
-            only what was sent, never who sent it. It is deleted once it has been reviewed, after 90
-            days, when you delete your corrections under Your data, when you withdraw your yes, or
-            when you delete your account.
+            your yes. We store it so whoever runs the service can turn a repeated mistake into a
+            sharper rule in the AI&apos;s task and a new, made-up test case; no model is trained.
+            They see only what was sent, never who sent it. It is deleted once it has been reviewed,
+            after 90 days, when you delete your corrections under Your data, when you withdraw your
+            yes, or when you delete your account.
           </p>
 
           <p>
-            <Term>At Anthropic and at Casy.</Term> Anthropic does not use what Casy sends to train
-            its models, and normally deletes it within 30 days. Anthropic is in the United States,
-            so it is processed outside the EU. Casy itself does not keep the text, the titles or the
+            <Term>At Anthropic and with us.</Term> Anthropic does not use what we send to train its
+            models, and normally deletes it within 30 days. Anthropic is in the United States, so it
+            is processed outside the EU. We ourselves do not keep the text, the titles or the
             answers, apart from the corrections you send for review (see above). It only notes that
             an answer was fetched, for whom and for what (such as Plan with AI), and how large it
             was, so the number of answers each person fetches a day can be limited. The note is
@@ -845,10 +843,9 @@ const en: LegalCopy = {
           </p>
           <p>
             If you press Speak, your browser turns your speech into text: Chrome sends the sound to
-            Google, Edge to Microsoft, and Safari to Apple or does it on your device. In the Casy
-            app for iPhone it is Apple&apos;s speech recognition, which runs on your phone where it
-            can, and otherwise at Apple. Casy only gets the text. If you would rather not, you can
-            type instead.
+            Google, Edge to Microsoft, and Safari to Apple or does it on your device. In the app for
+            iPhone it is Apple&apos;s speech recognition, which runs on your phone where it can, and
+            otherwise at Apple. We only get the text. If you would rather not, you can type instead.
           </p>
         </>
       ),
@@ -859,13 +856,13 @@ const en: LegalCopy = {
         <>
           <p>
             Joining a group means the other members can see your name and when you are busy. That is
-            the whole point of a group: Casy cannot find a time that works for everyone without it.
+            the whole point of a group: we cannot find a time that works for everyone without it.
             Busy periods are shown as time ranges, plus whether a range came from a calendar you
-            marked as work or school, or as one you can skip or never skip, which is what lets Casy
-            tell "could take time off" apart from "not possible". Plans agreed in Casy also count as
-            busy for those going, in your other groups too, but only as time ranges, never what the
-            plan is. If your calendar hasn&apos;t been updated for two days or more, they also see
-            when it last was, so they know something may have changed. Casy also uses those same
+            marked as work or school, or as one you can skip or never skip, which is what lets us
+            tell "could take time off" apart from "not possible". Plans agreed in the app also count
+            as busy for those going, in your other groups too, but only as time ranges, never what
+            the plan is. If your calendar hasn&apos;t been updated for two days or more, they also
+            see when it last was, so they know something may have changed. We also use those same
             times on your own device to mark days in the next three weeks when the whole group is
             free (Time for each other). That is worked out on your device, not stored, and nobody is
             told about it. You can switch it off for each group on the group&apos;s page; that
@@ -873,17 +870,17 @@ const en: LegalCopy = {
           </p>
           <p>
             Members do not see your email address, the names of your calendars (including names you
-            gave them), which accounts you connected, or what any of your events are called. Casy
-            never stores the titles of events in your calendars at all, so there is nothing there to
+            gave them), which accounts you connected, or what any of your events are called. We
+            never store the titles of events in your calendars at all, so there is nothing there to
             reveal. One exception to keep in mind: if you signed in with your email and have not
             chosen a name on your profile, the name members see is the part of your email address
             before the @ (for example "anna.jensen" for anna.jensen@example.com). The rest of the
             address is never shown.
           </p>
           <p>
-            If you said yes to Casy&apos;s AI, your important events count when the dates of a vote
-            get a score. The others in the group see only the score for each date, never your events
-            or who affected it. In a small group a low score can still point at one of the members.
+            If you said yes to the AI, your important events count when the dates of a vote get a
+            score. The others in the group see only the score for each date, never your events or
+            who affected it. In a small group a low score can still point at one of the members.
           </p>
           <p>
             Anyone holding a group&apos;s invite link can see the group&apos;s name, description and
@@ -894,10 +891,10 @@ const en: LegalCopy = {
             delete it, which removes it for every member at once.
           </p>
           <p>
-            People can also invite you to a group from inside Casy: anyone you share or have shared
-            a group with, and anyone who knows the email address you use for Casy. You only join if
-            you say yes yourself, on My groups. Someone inviting you by email is not told whether
-            the address has a Casy account, and doesn&apos;t see your name until you say yes.
+            People can also invite you to a group from inside the app: anyone you share or have
+            shared a group with, and anyone who knows the email address you use with us. You only
+            join if you say yes yourself, on My groups. Someone inviting you by email is not told
+            whether the address has an account, and doesn&apos;t see your name until you say yes.
             Members of that group who already share another group with you can see that you were
             invited. If you say no thanks, nobody is told, and that group can&apos;t invite you
             again for six months, though you can still join with a link.
@@ -905,25 +902,25 @@ const en: LegalCopy = {
           <p>
             When someone suggests an event, everyone in the group sees it, the dates on offer, its
             place and note, and how each person answered each date. If you say you can't make a
-            date, the others see that. While you answer, Casy shows your own calendar around each
-            date, to you only, and only when you are busy and in which of your calendars.
+            date, the others see that. While you answer, we show your own calendar around each date,
+            to you only, and only when you are busy and in which of your calendars.
           </p>
         </>
       ),
     },
     {
-      title: "What the person running Casy can see",
+      title: "What the person running the service can see",
       body: (
         <>
           <p>
-            Casy is run by one person, who has an admin view to keep the service working and to help
-            people who get in touch. It shows everyone&apos;s name, when they signed up and last
-            signed in, how many groups and calendars they have, every group with its members, and
-            which calendar services each person connected and whether they are syncing. It does not
-            show email addresses, busy times or anything about your events. In addition there are
-            the corrections of the AI people sent for review (see AI in Casy), and the reports
-            people sent: what was reported, why, and the text as it stood. They see them, but never
-            who sent them.
+            The service is run by one person, who has an admin view to keep the service working and
+            to help people who get in touch. It shows everyone&apos;s name, when they signed up and
+            last signed in, how many groups and calendars they have, every group with its members,
+            and which calendar services each person connected and whether they are syncing. It does
+            not show email addresses, busy times or anything about your events. In addition there
+            are the corrections of the AI people sent for review (see AI), and the reports people
+            sent: what was reported, why, and the text as it stood. They see them, but never who
+            sent them.
           </p>
           <p>
             From that view they can delete a group, remove someone from a group, delete an account,
@@ -938,28 +935,26 @@ const en: LegalCopy = {
       title: "Where it is kept",
       body: (
         <p>
-          Data is stored with Casy&apos;s database provider, Supabase, and the website is served by
-          Vercel. Sign-in emails are delivered by Resend, which receives your email address in order
-          to send them. All three keep standard technical logs to run their services. So that nobody
-          can make Casy send heaps of sign-in emails, Casy keeps, for a day, when such an email was
-          sent and a code made from the recipient&apos;s address, which can&apos;t be turned back
-          into the address. AI in Casy goes through Anthropic, as described above. Notifications in
-          the iPhone app are sent through Apple&apos;s notification service, which receives the
-          message in order to deliver it. Casy uses no analytics or advertising trackers. Your
-          browser keeps your login session so you stay signed in, the language you picked, and a
-          copy of your own group list, your calendar connections and whether you have admin access,
-          so pages open instantly. That copy is deleted when you sign out and is never kept for more
-          than a week. Nothing about other people&apos;s calendars is stored in your browser.
+          Data is stored with our database provider, Supabase, and the website is served by Vercel.
+          Sign-in emails are delivered by Resend, which receives your email address in order to send
+          them. All three keep standard technical logs to run their services. So that nobody can
+          make us send heaps of sign-in emails, we keep, for a day, when such an email was sent and
+          a code made from the recipient&apos;s address, which can&apos;t be turned back into the
+          address. AI in the app goes through Anthropic, as described above. Notifications in the
+          iPhone app are sent through Apple&apos;s notification service, which receives the message
+          in order to deliver it. We use no analytics or advertising trackers. Your browser keeps
+          your login session so you stay signed in, the language you picked, and a copy of your own
+          group list, your calendar connections and whether you have admin access, so pages open
+          instantly. That copy is deleted when you sign out and is never kept for more than a week.
+          Nothing about other people&apos;s calendars is stored in your browser.
         </p>
       ),
     },
     {
-      title: "How long Casy keeps things",
+      title: "How long we keep things",
       body: (
         <>
-          <p>
-            Casy keeps your information only as long as it is needed. Every night, Casy deletes:
-          </p>
+          <p>We keep your information only as long as it is needed. Every night, we delete:</p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               suggested events 12 months after their last date ended, along with their dates, the
@@ -967,12 +962,12 @@ const en: LegalCopy = {
             </li>
             <li>
               cancelled events, and events that found no date, 30 days after they closed (a little
-              later if Casy has not yet managed to take a cancelled event out of someone&apos;s
+              later if we have not yet managed to take a cancelled event out of someone&apos;s
               calendar);
             </li>
             <li>invite and friend links 30 days after they stopped working;</li>
             <li>the note that you looked up an email address, after a day;</li>
-            <li>the code for an address Casy sent a sign-in email to, after a day;</li>
+            <li>the code for an address we sent a sign-in email to, after a day;</li>
             <li>the note about your AI answers after 30 days;</li>
             <li>times you added yourself, 30 days after they end;</li>
             <li>corrections of the AI you sent for review after 90 days;</li>
@@ -988,8 +983,8 @@ const en: LegalCopy = {
             </li>
           </ul>
           <p>
-            Busy times are replaced every time Casy updates your calendars, and only ever cover a
-            week back to twelve months ahead. Everything else, meaning your account, your calendar
+            Busy times are replaced every time we update your calendars, and only ever cover a week
+            back to twelve months ahead. Everything else, meaning your account, your calendar
             connections, your groups and the people you blocked, is kept until you remove it or
             delete your account.
           </p>
@@ -999,9 +994,9 @@ const en: LegalCopy = {
             be sent is deleted after a day at most.
           </p>
           <p>
-            Your yes to Casy&apos;s AI is kept as long as you have the account, or until you
-            withdraw it. Labels and corrections are kept only on your phone, until you withdraw your
-            yes, sign out or delete the app.
+            Your yes to the AI is kept as long as you have the account, or until you withdraw it.
+            Labels and corrections are kept only on your phone, until you withdraw your yes, sign
+            out or delete the app.
           </p>
         </>
       ),
@@ -1012,23 +1007,23 @@ const en: LegalCopy = {
         <>
           <p>
             Removing a calendar account under Connected calendars deletes its busy times and
-            credentials from Casy immediately. To stop the provider&apos;s side as well, remove
-            Casy&apos;s access in your Google or Microsoft account settings, or delete the
-            app-specific password at account.apple.com/account/manage. The app stops reading the
-            phone&apos;s calendars when you remove the phone, or when you turn off Calendars under
-            Casy in the phone&apos;s Settings.
+            credentials from our side immediately. To stop the provider&apos;s side as well, remove
+            our access in your Google or Microsoft account settings, or delete the app-specific
+            password at account.apple.com/account/manage. The app stops reading the phone&apos;s
+            calendars when you remove the phone, or when you turn off Calendars under
+            {APP_LABEL} in the phone&apos;s Settings.
           </p>
           <p>
             Leaving a group removes you from it straight away, and the other members stop seeing
             anything about you. If you were the last member, the group is deleted with you.
           </p>
           <p>
-            To delete your Casy account entirely, use Delete account on your profile, or email
+            To delete your account entirely, use Delete account on your profile, or email
             {mail}. Everything connected to it is deleted straight away: your calendars, busy times,
             credentials and group memberships. Groups where you were the only member are deleted
-            too; groups with other members carry on without you. If you signed in with Apple, Casy
-            first ends your Apple sign-in at Apple, so Casy no longer appears under Sign in with
-            Apple in your Apple account.
+            too; groups with other members carry on without you. If you signed in with Apple, we
+            first end your Apple sign-in at Apple, so {APP_NAME} no longer appears under Sign in
+            with Apple in your Apple account.
           </p>
         </>
       ),
@@ -1037,7 +1032,7 @@ const en: LegalCopy = {
       title: "Contact",
       body: (
         <p>
-          Casy is run by Asbjørn Morris Bay, a private individual in Denmark, who is the data
+          {APP_NAME} is run by Asbjørn Morris Bay, a private individual in Denmark, who is the data
           controller for your information. Questions about this policy or your data: {mail}.
         </p>
       ),

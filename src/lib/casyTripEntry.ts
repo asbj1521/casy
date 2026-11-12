@@ -5,15 +5,22 @@
  * trip all over again (#154). Every such entry carries Casy's note, in the
  * language the app had when it was written, so both are recognised.
  */
+import { APP_NAME } from "@/i18n/brand";
 import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
 
 /**
  * `trips.calendarNote` in Danish and English, copied so this file doesn't pull
  * both languages in; casyTripEntry.test.ts keeps the copy equal.
  */
-export const TRIP_NOTES = ["Lagt ind af Casy.", "Added by Casy."];
+export const TRIP_NOTES = [`Lagt ind af ${APP_NAME}.`, `Added by ${APP_NAME}.`];
 
-const NOTES = new Set(TRIP_NOTES);
+/**
+ * The notes written before Casy was renamed (#267): trips already in people's
+ * calendars keep them, so they are still recognised after launch day.
+ */
+const NOTES_BEFORE_RENAME = ["Lagt ind af Casy.", "Added by Casy."];
+
+const NOTES = new Set([...TRIP_NOTES, ...NOTES_BEFORE_RENAME]);
 
 /** Whether this phone event is a trip Casy wrote into the calendar itself. */
 export function isCasyTripEntry(e: PhoneEventWithDetails): boolean {
