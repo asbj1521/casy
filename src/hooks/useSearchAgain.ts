@@ -13,7 +13,8 @@ const MAX_DATES = 5;
 
 /**
  * Searching an open vote again (#240): who in its group it leaves out, and a
- * way to search, which opens Planlæg's pile with the vote's plan and the
+ * way to search, which opens Planlæg on the vote's plan (#264: what may find
+ * an earlier date first, then the pile) with the
  * members picked (`add`, none to only look again) among everyone it is for.
  * Their calendars are thrown onto those already searched; sending gives the
  * vote the new dates. Planlæg opens over the home page and closes back onto

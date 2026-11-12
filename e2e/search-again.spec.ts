@@ -12,6 +12,17 @@ const asTheApp = (page: Page) =>
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
   });
 
+/**
+ * "Søg igen" opens on the vote's own plan first (#264), named and without its
+ * group; Find dato there runs the pile.
+ */
+async function findAgain(page: Page) {
+  const plan = page.getByRole("dialog", { name: "Søg igen" });
+  await expect(plan.getByText("Biograf", { exact: true })).toBeVisible();
+  await expect(plan.getByRole("button", { name: /^Gruppe/ })).toHaveCount(0);
+  await plan.getByRole("button", { name: "Find dato" }).click();
+}
+
 /** The cinema vote, Oliver having joined Løbeklubben after it was made. */
 const withoutOliver = (backend: FakeBackend) => {
   const cinema = backend.world.events.find((e) => e.id === "ev-cinema")!;
@@ -31,6 +42,7 @@ test("someone the vote left out is added, the dates found in Planlæg, and sent 
   const picking = page.getByRole("dialog", { name: "Tilføj til afstemningen" });
   await expect(picking.getByRole("checkbox", { name: "Oliver" })).toBeChecked();
   await picking.getByRole("button", { name: "Søg igen" }).click();
+  await findAgain(page);
 
   // Planlæg's own pile, straight to its list (reduced motion), saying the dates are new.
   await expect(page).toHaveURL(/\?plan$/);
@@ -60,6 +72,7 @@ test("searching again with nobody added opens Planlæg the same way", async ({ p
   const vote = page.getByRole("dialog", { name: "Løbeklubben" });
   await expect(vote.getByRole("button", { name: /i gruppen er ikke med/ })).toHaveCount(0);
   await vote.getByRole("button", { name: "Søg igen" }).click();
+  await findAgain(page);
 
   await expect(page.getByText("De 2 bedste nye datoer")).toBeVisible();
   await page.getByRole("button", { name: "Send 2 nye datoer" }).click();
@@ -87,6 +100,7 @@ test("when the server turns the new dates down, it says so, and nothing has chan
     .getByRole("dialog", { name: "Løbeklubben" })
     .getByRole("button", { name: "Søg igen" })
     .click();
+  await findAgain(page);
   await page.getByRole("button", { name: "Send 2 nye datoer" }).click();
   await page
     .getByRole("dialog", { name: "Er du sikker?" })
@@ -94,6 +108,38 @@ test("when the server turns the new dates down, it says so, and nothing has chan
     .click();
   await expect(page.getByText("Unknown action: search-again")).toBeVisible();
   expect(backend.calls.some((c) => c.body.action === "search-again")).toBe(false);
+});
+
+test("a vote searched again may need fewer people, which goes with its new dates (#264)", async ({
+  page,
+  backend,
+}) => {
+  await asTheApp(page);
+  await page.goto("/?events=ev-cinema");
+  await page
+    .getByRole("dialog", { name: "Løbeklubben" })
+    .getByRole("button", { name: "Søg igen" })
+    .click();
+  const plan = page.getByRole("dialog", { name: "Søg igen" });
+  // The plan's own time and months, and how many need to come: everyone, to start.
+  await expect(plan.getByRole("button", { name: /^Tidspunkt/ })).toBeVisible();
+  await expect(plan.getByRole("group", { name: "Måneder" })).toBeVisible();
+  const slider = plan.getByRole("slider", { name: "Hvor mange skal kunne" });
+  await expect(slider).toHaveAttribute("aria-valuenow", "3");
+  await slider.press("ArrowLeft");
+  await expect(slider).toHaveAttribute("aria-valuenow", "2");
+  // No starting over: the plan is the vote's.
+  await expect(plan.getByRole("button", { name: "Nulstil planen" })).toHaveCount(0);
+
+  await plan.getByRole("button", { name: "Find dato" }).click();
+  await page.getByRole("button", { name: /^Send \d+ nye? datoe?r?/ }).click();
+  await page
+    .getByRole("dialog", { name: "Er du sikker?" })
+    .getByRole("button", { name: /^Send/ })
+    .click();
+  await expect
+    .poll(() => backend.calls.find((c) => c.body.action === "search-again")?.body)
+    .toMatchObject({ proposalId: "ev-cinema", settings: { people: { atLeast: 2 } } });
 });
 
 test("the website has none of it", async ({ page }) => {
@@ -120,6 +166,10 @@ test.describe("with motion", () => {
     await page
       .getByRole("dialog", { name: "Tilføj til afstemningen" })
       .getByRole("button", { name: "Søg igen" })
+      .click();
+    await page
+      .getByRole("dialog", { name: "Søg igen" })
+      .getByRole("button", { name: "Find dato" })
       .click();
 
     const pile = page.locator("[data-pile]");

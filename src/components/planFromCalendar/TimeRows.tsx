@@ -53,6 +53,7 @@ export default function TimeRows({
   lit = null,
   drive = null,
   anyTimeLabel,
+  fixedKind = false,
 }: {
   settings: SchedulerSettings;
   onChange: (patch: Partial<SchedulerSettings>) => void;
@@ -62,6 +63,8 @@ export default function TimeRows({
   drive?: { sheet: FillSheet | null; press: FillPress | null } | null;
   /** Said for "any time" instead (#243: a starred day's free hours, which it searches within). */
   anyTimeLabel?: string | null;
+  /** No Aftale or Tur / ferie: a vote searched again stays the kind it is (#264). */
+  fixedKind?: boolean;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -140,16 +143,18 @@ export default function TimeRows({
 
   return (
     <section className="mt-4">
-      <div className={cn("rounded-xl", litRing(lit, "kind"))}>
-        <KindChoice
-          fill
-          multiDay={settings.multiDay}
-          onChange={(multiDay) => onChange({ multiDay })}
-        />
-      </div>
+      {!fixedKind && (
+        <div className={cn("mb-3 rounded-xl", litRing(lit, "kind"))}>
+          <KindChoice
+            fill
+            multiDay={settings.multiDay}
+            onChange={(multiDay) => onChange({ multiDay })}
+          />
+        </div>
+      )}
 
       {settings.multiDay ? (
-        <ListGroup className="mt-3">
+        <ListGroup className="mt-0">
           <ListRow
             className={litClass(lit, "tripDays")}
             icon={CalendarDays}
@@ -182,7 +187,7 @@ export default function TimeRows({
           />
         </ListGroup>
       ) : (
-        <ListGroup className="mt-3">
+        <ListGroup className="mt-0">
           <ListRow
             id={ids.time}
             className={litClass(lit, "time")}

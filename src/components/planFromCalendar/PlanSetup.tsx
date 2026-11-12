@@ -120,6 +120,10 @@ export default function PlanSetup({
             />
             {editor.top && <div className="mt-4">{editor.top}</div>}
           </>
+        ) : planning.again ? (
+          // A vote searched again (#264): its group and name are the vote's,
+          // so only what may find an earlier date is here.
+          <p className="px-1 text-[1.0625rem] font-semibold text-foreground">{name}</p>
         ) : (
           <>
             {/* Planning a starred day (#243): which, and when everyone is free, said first. */}
@@ -158,6 +162,7 @@ export default function PlanSetup({
 
         <TimeRows
           anyTimeLabel={primeWhen && capitalize(primeWhen)}
+          fixedKind={!!planning.again}
           settings={shown}
           onChange={updateSettingsByHand}
           lit={fill.lit}

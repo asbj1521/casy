@@ -88,8 +88,9 @@ export default function PlanFromCalendar({
   // Sent, the plan closes onto the home page, the dates having flown into
   // its Aftaler button (#169).
   const planning = usePlanning({ onSent: onClose, start });
-  // A vote searched again (#240) goes straight to the pile: its plan is set.
-  const [stage, setStage] = useState<"setup" | "pile">(start?.again ? "pile" : "setup");
+  // A vote searched again (#240) opens on its own plan first (#264): fewer
+  // people, other months or a wider time may find an earlier date.
+  const [stage, setStage] = useState<"setup" | "pile">("setup");
   // The sheet grows out of the pill and shrinks back into it, but once the
   // pile has begun it slides away and back as before: the pill is hidden
   // behind the plan then. Read by the sheet as it opens and as it closes.
@@ -236,7 +237,9 @@ export default function PlanFromCalendar({
       ? words.title
       : screen.kind === "editor"
         ? (editing?.name ?? words.add)
-        : t.planFromCalendar.button;
+        : planning.again
+          ? t.searchAgain.button
+          : t.planFromCalendar.button;
 
   return (
     <>
@@ -253,7 +256,7 @@ export default function PlanFromCalendar({
         stacked
         // Back to a fresh plan at once (#189), on the plan itself only.
         action={
-          screen.kind === "plan" && stage === "setup"
+          screen.kind === "plan" && stage === "setup" && !planning.again
             ? { label: t.planFromCalendar.reset, icon: RotateCcw, onClick: planning.reset }
             : undefined
         }

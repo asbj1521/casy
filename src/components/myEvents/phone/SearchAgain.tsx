@@ -15,7 +15,8 @@ import type { VoteEvent } from "@/lib/vote";
  * members of the group it leaves out ("2 i gruppen er ikke med"), who open a
  * sheet to pick them (all ticked), and "Søg igen" for a new look with the same
  * people, when no date suits everyone. Anyone in the group may: a group is
- * trusted. Either opens Planlæg's pile with the vote's plan; nothing changes
+ * trusted. Either opens Planlæg on the vote's plan (#264: fewer people,
+ * other months or a wider time first, then the pile); nothing changes
  * until its new dates are sent, which says first that everyone votes again.
  */
 export default function SearchAgain({ event }: { event: VoteEvent }) {
