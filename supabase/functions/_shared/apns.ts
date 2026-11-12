@@ -10,6 +10,12 @@
  * on (production first when there is none), and on the other when Apple says
  * it doesn't know it (BadDeviceToken), or the key is made for the other
  * server only (BadEnvironmentKeyInToken); `deliver` answers which one took it.
+ *
+ * Only a token Apple says is gone (410, Unregistered), or one neither server
+ * knows, counts as gone, and its phone is forgotten. A key one server refuses
+ * is the key's fault, not the phone's (#262: a key made for the sandbox only
+ * silently lost every TestFlight and App Store phone, which registered again
+ * on the next open and never got a thing): that fails, said in the log.
  */
 import { signAppleJwt } from "./appleJwt.ts";
 import { APPLE_CLIENT_ID } from "./appleSignIn.ts";
@@ -75,7 +81,7 @@ export interface PushMessage {
 type Outcome =
   | { result: "sent" }
   | { result: "gone" }
-  | { result: "wrong-server" }
+  | { result: "wrong-server"; reason: "BadDeviceToken" | "BadEnvironmentKeyInToken" }
   | { result: "failed"; reason: string };
 
 async function sendTo(
@@ -115,7 +121,7 @@ async function sendTo(
   if (res.status === 410 || reason === "Unregistered") return { result: "gone" };
   // The token, or the key (made for one server only), belongs to the other server.
   if (reason === "BadDeviceToken" || reason === "BadEnvironmentKeyInToken") {
-    return { result: "wrong-server" };
+    return { result: "wrong-server", reason };
   }
   if (reason === "ExpiredProviderToken" || reason === "InvalidProviderToken") {
     forgetProviderToken();
@@ -139,12 +145,23 @@ export async function deliver(
 > {
   const first = environment ?? "production";
   const order: ApnsEnvironment[] = [first, first === "production" ? "sandbox" : "production"];
+  let keyRefused: ApnsEnvironment | null = null;
   for (const server of order) {
     const outcome = await sendTo(server, deviceToken, message, key);
     if (outcome.result === "sent") return { result: "sent", environment: server };
-    if (outcome.result === "wrong-server") continue;
+    if (outcome.result === "wrong-server") {
+      if (outcome.reason === "BadEnvironmentKeyInToken") keyRefused = server;
+      continue;
+    }
     return outcome;
   }
-  // Neither server knows it: as good as gone.
+  // A server refused the key: the phone may be fine, so it is kept.
+  if (keyRefused) {
+    console.error(
+      `APNs: the key ${key.keyId} is not made for ${keyRefused}; make one for Sandbox & Production`,
+    );
+    return { result: "failed", reason: `BadEnvironmentKeyInToken (${keyRefused})` };
+  }
+  // Neither server knows the token: as good as gone.
   return { result: "gone" };
 }

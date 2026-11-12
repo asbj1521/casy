@@ -110,6 +110,25 @@ Deno.test("a key made for the sandbox only is tried there when production refuse
   );
 });
 
+Deno.test(
+  "a production token with a key for the sandbox only fails and is kept, never gone (#262)",
+  async () => {
+    const key = await newKey();
+    await withFetch(
+      (req) =>
+        req.url.includes("sandbox")
+          ? reason(400, "BadDeviceToken")
+          : reason(403, "BadEnvironmentKeyInToken"),
+      async () => {
+        assertEquals(await deliver("abc123", null, MESSAGE, key), {
+          result: "failed",
+          reason: "BadEnvironmentKeyInToken (production)",
+        });
+      },
+    );
+  },
+);
+
 Deno.test("a token known to work on the sandbox goes there first", async () => {
   const key = await newKey();
   const seen = await withFetch(
