@@ -277,6 +277,35 @@ test.describe("with no groups yet (#210)", () => {
     await expect(sheet.getByRole("textbox", { name: /Hvad skal I/i })).toHaveValue("Fredagsbar");
   });
 
+  test("in the app, the home page also takes an invitation's link (#237); the website does not", async ({
+    page,
+    backend,
+  }) => {
+    // Nobody has invited them by name: that would be the way in.
+    backend.world.invitations = [];
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Lav en gruppe med dine venner" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Jeg har en invitation" })).toHaveCount(0);
+
+    await page.addInitScript(() => {
+      (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+      Object.defineProperty(navigator, "clipboard", {
+        value: { readText: () => Promise.resolve("https://casy.app/join/a-token") },
+      });
+    });
+    await page.goto("/");
+    // The app asks for the phone's calendar first (#215).
+    await page.getByRole("button", { name: "Ikke nu" }).click();
+    await expect(page.getByRole("button", { name: "Lav en gruppe med dine venner" })).toBeVisible();
+    await page.getByRole("button", { name: "Jeg har en invitation" }).click();
+    await page
+      .getByRole("dialog", { name: "Invitation" })
+      .getByRole("button", { name: "Indsæt link" })
+      .click();
+    await expect(page).toHaveURL(/\/join\/a-token$/);
+    await expect(page.getByRole("button", { name: "Bliv medlem" })).toBeVisible();
+  });
+
   test("the home page offers a group, then to invite to it, in the same spot", async ({
     page,
     backend,

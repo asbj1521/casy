@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
@@ -9,13 +9,17 @@ import { rectOfCard, type MorphRect } from "@/components/welcome/phone/morph";
 import { useT } from "@/i18n/lang";
 import { loadPage } from "@/pages/lazyPages";
 
+// Only for the friend who came by an invite (#237): fetched when asked for.
+const InvitePasteSheet = lazy(() => import("@/components/invite/InvitePasteSheet"));
+
 /**
  * The iPhone app's way in, signed out (#151, #228): the welcome screen and
  * sign-in, one place with the same colour in it. It stays open across the two
  * addresses, so the phone can become the sign-in card and the colour spread out
  * behind it, whichever moment of the animation "Kom i gang" was pressed in. Back
  * runs the same thing the other way. Under the phone, never moving, one line and
- * the two ways on, to make an account or to log in. No language switch on the
+ * the two ways on, to make an account or to log in, and for a friend who got
+ * the app from an invite, the way back to it (#237). No language switch on the
  * welcome screen (the app starts in the phone's language). The website keeps its
  * landing page.
  */
@@ -34,6 +38,9 @@ export default function AppWelcome({
   // Opened straight on sign-in there is nothing to morph from: it is simply there.
   const [openedOnSignIn, setOpenedOnSignIn] = useState(signIn);
   const cardOnLeaving = useRef<MorphRect | null>(null);
+  // "Indsæt link" (#237): asked for once, then kept so the sheet can close.
+  const [pasting, setPasting] = useState(false);
+  const [pasteWanted, setPasteWanted] = useState(false);
 
   // The colour reaches up under the clock.
   useEffect(() => {
@@ -89,7 +96,25 @@ export default function AppWelcome({
             {t.nav.signIn}
           </Link>
         </p>
+        <p className="mt-1 text-[0.9375rem] text-muted-foreground">
+          {t.invitePaste.ask}{" "}
+          <button
+            type="button"
+            onClick={() => {
+              setPasteWanted(true);
+              setPasting(true);
+            }}
+            className="hit font-semibold text-foreground"
+          >
+            {t.invitePaste.paste}
+          </button>
+        </p>
       </motion.div>
+      {pasteWanted && (
+        <Suspense fallback={null}>
+          <InvitePasteSheet open={pasting} onClose={() => setPasting(false)} />
+        </Suspense>
+      )}
       {signIn && (
         <>
           <motion.div

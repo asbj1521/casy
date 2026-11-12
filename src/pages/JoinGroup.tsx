@@ -9,12 +9,15 @@ import {
   InviteDetails,
   InviteLoading,
   InviteShell,
+  OpenInApp,
 } from "@/components/invite/InviteScreen";
 import PhoneSubHeader from "@/components/PhoneSubHeader";
 import Notice from "@/components/ui/Notice";
 import { useLinkInvite } from "@/hooks/useLinkInvite";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { fromDoorUrl, inviteLinkUrl } from "@/lib/appLinks";
+import { insideChatBrowser, onIPhoneBrowser } from "@/lib/iphoneBrowser";
 import { sheetAddress } from "@/lib/profileScreens";
 import TopNav from "@/components/TopNav";
 
@@ -46,6 +49,13 @@ function PhoneJoin({ token }: { token: string }) {
   // Back from signing up: they already said yes before the detour, so they are in.
   const [params] = useSearchParams();
   const said = params.has("join");
+  // The door into the app (#257, lib/appLinks.ts): here because the app
+  // didn't open by itself on the way; its one button tries once more, from
+  // this other site.
+  const door = params.has("door");
+  // Back from the door, still in a browser: the app is not on the phone, is
+  // too old to know the door, or this browser hands nothing on.
+  const noApp = params.has("noapp") && onIPhoneBrowser && !user;
   const joining = useRef(false);
   useEffect(() => {
     if (!said || !user || loading || !invited || alreadyIn || joining.current) return;
@@ -67,9 +77,31 @@ function PhoneJoin({ token }: { token: string }) {
       ) : (
         <InviteDetails
           invite={invited}
-          note={alreadyIn ? t.join.alreadyIn : !user ? t.join.whatIsCasy : undefined}
+          note={
+            door
+              ? undefined
+              : alreadyIn
+                ? t.join.alreadyIn
+                : noApp
+                  ? insideChatBrowser
+                    ? t.join.noAppInside
+                    : t.join.noApp
+                  : !user
+                    ? t.join.whatIsCasy
+                    : undefined
+          }
         >
-          {alreadyIn ? (
+          {door ? (
+            <>
+              <InviteAction href={fromDoorUrl(here)}>{t.join.openInApp}</InviteAction>
+              <a
+                href={inviteLinkUrl(here)}
+                className="hit mx-auto mt-3 text-[0.9375rem] font-semibold text-primary"
+              >
+                {t.join.stayInBrowser}
+              </a>
+            </>
+          ) : alreadyIn ? (
             // Into the group itself (#244), in the Profil sheet as everywhere on a phone.
             <InviteAction to={sheetAddress(`groups/${invited.id}`)}>{t.join.toGroup}</InviteAction>
           ) : user ? (
@@ -88,7 +120,9 @@ function PhoneJoin({ token }: { token: string }) {
               <InviteAction to={`/sign-in?signup=1&next=${encodeURIComponent(`${here}?join=1`)}`}>
                 {t.join.joinGroup}
               </InviteAction>
-              <GetTheApp />
+              {/* Tried already when back from the door. */}
+              {!noApp && <OpenInApp path={here} />}
+              <GetTheApp path={here} />
             </>
           )}
         </InviteDetails>

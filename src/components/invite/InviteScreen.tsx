@@ -5,12 +5,10 @@ import { Loader2, XCircle } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import HelpButton from "@/components/ui/HelpButton";
 import { useT } from "@/i18n/lang";
-import { isNativeApp } from "@/lib/nativeApp";
+import { doorUrl, inviteLinkUrl } from "@/lib/appLinks";
+import { onIPhoneBrowser } from "@/lib/iphoneBrowser";
 
 const APP_STORE_URL = "https://apps.apple.com/app/id6830713238";
-
-/** An iPhone's browser, Safari or another; not an iPad, since the app is iPhone only. */
-const onIPhoneBrowser = !isNativeApp && /iPhone/.test(navigator.userAgent);
 
 /** What an invite shows, wherever it came from (a link or a named invitation). */
 export interface InviteFacts {
@@ -97,16 +95,19 @@ export function InviteDetails({
 /**
  * The invite's answer: the one solid orange button besides Planlæg med AI's
  * (CLAUDE.md, design rule 2), since saying yes is what the page is for. A
- * link where it leads somewhere (`to`).
+ * link where it leads somewhere (`to`), a plain one where that is another
+ * site (`href`: the door into the app, #257, which iOS must see tapped).
  */
 export function InviteAction({
   to,
+  href,
   onClick,
   disabled = false,
   busy = false,
   children,
 }: {
   to?: string;
+  href?: string;
   onClick?: () => void;
   disabled?: boolean;
   busy?: boolean;
@@ -114,6 +115,12 @@ export function InviteAction({
 }) {
   const look =
     "inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:opacity-90 disabled:opacity-60";
+  if (href)
+    return (
+      <a href={href} className={look}>
+        {children}
+      </a>
+    );
   if (to)
     return (
       <Link to={to} className={look}>
@@ -128,18 +135,47 @@ export function InviteAction({
   );
 }
 
+const TEXT_LINK = "hit mx-auto mt-3 text-[0.9375rem] font-semibold text-primary";
+
+/**
+ * Into the app with this invite (#257), for a friend on an iPhone's browser
+ * who has Casy: iOS kept the link in the browser, so this leads to the same
+ * invite at the door (lib/appLinks.ts), a tap to another site, which is what
+ * iOS opens the app for. `path`: the invite's own, "/join/…".
+ */
+export function OpenInApp({ path }: { path: string }) {
+  const t = useT();
+  if (!onIPhoneBrowser) return null;
+  return (
+    <a href={doorUrl(path)} className={TEXT_LINK}>
+      {t.join.openInApp}
+    </a>
+  );
+}
+
 /**
  * The way to the App Store under the answer, for a friend on an iPhone's browser
  * who may not have the app. Nothing anywhere else: a computer has no app to get,
- * and the app is already there.
+ * and the app is already there. On the way, the invite's link is copied
+ * (#237), so the app just installed can be handed it with one "Indsæt link"
+ * (InvitePasteSheet): iOS carries nothing through the App Store by itself.
  */
-export function GetTheApp() {
+export function GetTheApp({ path }: { path?: string }) {
   const t = useT();
   if (!onIPhoneBrowser) return null;
   return (
     <a
       href={APP_STORE_URL}
-      className="hit mx-auto mt-3 text-[0.9375rem] font-semibold text-primary"
+      onClick={() => {
+        if (!path) return;
+        // Best effort: a browser without a clipboard just goes to the App Store.
+        try {
+          void navigator.clipboard?.writeText(inviteLinkUrl(path)).catch(() => {});
+        } catch {
+          // No clipboard here.
+        }
+      }}
+      className={TEXT_LINK}
     >
       {t.join.getTheApp}
     </a>

@@ -7,11 +7,14 @@ import { cn } from "@/lib/utils";
 /**
  * The glass capsule just above the home page's bottom buttons: what is
  * waiting for you (VotePill) or the next step (HomeNextStep). Never both.
+ * `raised`: a second, for the one case with two next steps (someone with no
+ * group may make one or have an invitation, #237), standing over the first.
  */
 export default function HomePill({
   icon: Icon,
   hidden,
   zoomingOut = false,
+  raised = false,
   onClick,
   buttonRef,
   children,
@@ -20,6 +23,7 @@ export default function HomePill({
   hidden: boolean;
   /** A day is zooming back into the month: the fade-in takes as long as the zoom. */
   zoomingOut?: boolean;
+  raised?: boolean;
   onClick: () => void;
   buttonRef?: Ref<HTMLButtonElement>;
   children: ReactNode;
@@ -31,7 +35,9 @@ export default function HomePill({
       className={cn(
         "fixed inset-x-0 z-20 flex justify-center px-4 transition-opacity duration-200",
         // Over the bottom buttons (HomeBar), which are 3rem tall.
-        "bottom-[calc(max(env(safe-area-inset-bottom),0.75rem)+3.75rem)]",
+        raised
+          ? "bottom-[calc(max(env(safe-area-inset-bottom),0.75rem)+7rem)]"
+          : "bottom-[calc(max(env(safe-area-inset-bottom),0.75rem)+3.75rem)]",
         hidden && "pointer-events-none opacity-0",
       )}
       style={zoomingOut ? { transitionDuration: `${ZOOM.outMs}ms` } : undefined}

@@ -1442,6 +1442,16 @@ export const da = {
   // the dates it finds.
   // A vote answered over the home page's month (#172).
   // The home page's nudge while nobody else is in (#210).
+  // An invitation handed to the app by its link (#237), in the app only.
+  invitePaste: {
+    ask: "Fik du en invitation?",
+    have: "Jeg har en invitation",
+    title: "Invitation",
+    label: "Invitationslink",
+    paste: "Indsæt link",
+    open: "Åbn invitation",
+    none: "Intet invitationslink fundet. Kopier linket fra din ven, og sæt det ind her.",
+  },
   homeNudge: {
     newGroup: "Lav en gruppe med dine venner",
     invite: (group: string) => `Inviter venner til ${group}`,
@@ -1778,6 +1788,11 @@ export const da = {
     findDate: "Find en dato",
     joinGroup: "Bliv medlem",
     getTheApp: "Hent appen",
+    // Into the app with the invite (#257), and when that didn't happen.
+    openInApp: "Åbn i Casy-appen",
+    stayInBrowser: "Fortsæt i browseren",
+    noApp: "Casy-appen kunne ikke åbnes. Hent den, eller opdater den, i App Store.",
+    noAppInside: "Appen kan ikke åbnes herfra. Åbn siden i Safari, eller hent appen.",
     signInToJoin: "Log ind for at blive medlem",
     comeBack: "Du kommer direkte tilbage hertil bagefter.",
     aboutTitle: "Om invitationen",

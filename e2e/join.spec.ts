@@ -65,6 +65,72 @@ test.describe("signed out", () => {
       await expect(page.getByRole("link", { name: "Get the app" })).toBeVisible();
     });
 
+    test("the browser offers the way into the app, through the door (#257)", async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!isMobile, "a computer keeps its card");
+      await page.goto("/join/a-token");
+      // A tap to another site, which is what iOS opens the app for.
+      await expect(page.getByRole("link", { name: "Åbn i Casy-appen" })).toHaveAttribute(
+        "href",
+        "https://casy-red.vercel.app/join/a-token?door=1",
+      );
+    });
+
+    test("the door page has one way on, back to casy.app and so into any app (#257)", async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!isMobile, "a computer keeps its card");
+      await page.goto("/join/a-token?door=1");
+      await expect(page.getByText("Sommerhuset")).toBeVisible();
+      await expect(page.getByRole("link", { name: "Åbn i Casy-appen" })).toHaveAttribute(
+        "href",
+        "https://casy.app/join/a-token?noapp=1",
+      );
+      await expect(page.getByRole("link", { name: "Fortsæt i browseren" })).toHaveAttribute(
+        "href",
+        "https://casy.app/join/a-token",
+      );
+      await expect(page.getByRole("link", { name: "Bliv medlem" })).toHaveCount(0);
+      await expect(page.getByRole("link", { name: "Hent appen" })).toHaveCount(0);
+    });
+
+    test("back from the door with no app, it says so and offers the App Store (#257)", async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!isMobile, "a computer keeps its card");
+      await page.goto("/join/a-token?noapp=1");
+      await expect(page.getByText(/^Casy-appen kunne ikke åbnes\./)).toBeVisible();
+      // Tried already: joining here or getting the app are the ways on.
+      await expect(page.getByRole("link", { name: "Åbn i Casy-appen" })).toHaveCount(0);
+      await expect(page.getByRole("link", { name: "Bliv medlem" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Hent appen" })).toBeVisible();
+    });
+
+    test("Hent appen copies the invite's link on the way, for the app to be handed (#237)", async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!isMobile, "a computer keeps its card");
+      await page.addInitScript(() => {
+        const w = window as unknown as { copied: string[] };
+        w.copied = [];
+        Object.defineProperty(navigator, "clipboard", {
+          value: { writeText: (text: string) => (w.copied.push(text), Promise.resolve()) },
+        });
+        // The App Store is not for a test to visit.
+        document.addEventListener("click", (e) => e.preventDefault(), true);
+      });
+      await page.goto("/join/a-token");
+      await page.getByRole("link", { name: "Hent appen" }).click();
+      expect(await page.evaluate(() => (window as unknown as { copied: string[] }).copied)).toEqual(
+        ["https://casy.app/join/a-token"],
+      );
+    });
+
     test("the app itself does not", async ({ page, isMobile }) => {
       test.skip(!isMobile, "the app is a phone");
       await page.addInitScript(() => {
@@ -74,6 +140,23 @@ test.describe("signed out", () => {
       await expect(page.getByRole("link", { name: "Bliv medlem" })).toBeVisible();
       await expect(page.getByRole("link", { name: "Hent appen" })).toHaveCount(0);
     });
+  });
+});
+
+test.describe("in a chat app's own browser", () => {
+  test.use({
+    signedIn: false,
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) Mobile/15E148 [FBAN/MessengerLiteForiOS;FBAV/480.0]",
+  });
+
+  test("back from the door, it says to open the page in Safari (#257)", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, "a computer keeps its card");
+    await page.goto("/join/a-token?noapp=1");
+    await expect(page.getByText(/^Appen kan ikke åbnes herfra\. Åbn siden i Safari/)).toBeVisible();
   });
 });
 

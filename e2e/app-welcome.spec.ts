@@ -90,3 +90,49 @@ test("the app's sign-in has Apple, the one-tap way in, on top and the email logi
   expect(Math.abs(forgotBox!.y - linkBox!.y)).toBeLessThan(4);
   expect(forgotBox!.x).toBeLessThan(linkBox!.x);
 });
+
+/** What is copied on the phone, as the app's clipboard would hand it over. */
+async function copied(page: Page, text: string | null) {
+  await page.addInitScript((value) => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        readText: () => (value === null ? Promise.reject(new Error("no")) : Promise.resolve(value)),
+      },
+    });
+  }, text);
+}
+
+test("a friend who got the app from an invite hands it the link, and is at the invite (#237)", async ({
+  page,
+}) => {
+  await asTheApp(page);
+  // What Hent appen copied on the invite page, among a chat's own words.
+  await copied(page, "Kom med: https://casy.app/join/a-token");
+  await page.goto("/");
+  await expect(page.getByText("Fik du en invitation?")).toBeVisible();
+  await page.getByRole("button", { name: "Indsæt link" }).click();
+  const sheet = page.getByRole("dialog", { name: "Invitation" });
+  await sheet.getByRole("button", { name: "Indsæt link" }).click();
+  await expect(page).toHaveURL(/\/join\/a-token$/);
+  await expect(page.getByRole("heading", { name: "Sara har inviteret dig til" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Bliv medlem" })).toBeVisible();
+});
+
+test("with no invite copied, the link is pasted into the field by hand (#237)", async ({
+  page,
+}) => {
+  await asTheApp(page);
+  await copied(page, "noget helt andet");
+  await page.goto("/");
+  await page.getByRole("button", { name: "Indsæt link" }).click();
+  const sheet = page.getByRole("dialog", { name: "Invitation" });
+  await sheet.getByRole("button", { name: "Indsæt link" }).click();
+  // Nothing copied is shown; it only says there was no invite in it.
+  await expect(sheet.getByText(/^Intet invitationslink fundet\./)).toBeVisible();
+  await expect(sheet.getByRole("textbox", { name: "Invitationslink" })).toHaveValue("");
+  await sheet
+    .getByRole("textbox", { name: "Invitationslink" })
+    .fill("https://casy.app/join/a-token");
+  await sheet.getByRole("button", { name: "Åbn invitation" }).click();
+  await expect(page).toHaveURL(/\/join\/a-token$/);
+});

@@ -11,6 +11,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:casy.app</string>
+		<string>applinks:casy-red.vercel.app</string>
 	</array>
 </dict>
 </plist>
