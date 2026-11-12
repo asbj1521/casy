@@ -266,6 +266,35 @@ test.describe("a phone's Aftaler (#103, #177)", () => {
     await expect(sheet.getByText("Mangler svar", { exact: true })).toHaveCount(0);
   });
 
+  test("the suggester reminds those the vote waits for, once a day (Påmind)", async ({
+    page,
+    backend,
+  }) => {
+    await page.goto("/?events=ev-cinema");
+    const sheet = page.getByRole("dialog", { name: "Løbeklubben" });
+    // Freja and Oliver still have dates to answer.
+    const remind = sheet.getByRole("button", { name: "Påmind 2" });
+    await remind.click();
+    await expect
+      .poll(() => backend.calls.find((c) => c.body.action === "remind")?.body)
+      .toMatchObject({ proposalId: "ev-cinema" });
+    // It rests until a day has passed, also after the list comes back.
+    await expect(sheet.getByRole("button", { name: "Påmindet" })).toBeDisabled();
+    await page.reload();
+    await expect(
+      page.getByRole("dialog", { name: "Løbeklubben" }).getByRole("button", { name: "Påmindet" }),
+    ).toBeDisabled();
+  });
+
+  test("only the suggester can remind", async ({ page, backend }) => {
+    const cinema = backend.world.events.find((e) => e.id === "ev-cinema")!;
+    cinema.createdBy = { id: "p-freja", name: "Freja", isYou: false };
+    await page.goto("/?events=ev-cinema");
+    const sheet = page.getByRole("dialog", { name: "Løbeklubben" });
+    await expect(sheet.getByText("Biograf", { exact: true })).toBeVisible();
+    await expect(sheet.getByRole("button", { name: /^Påmind/ })).toHaveCount(0);
+  });
+
   test("the suggester changes a vote's deadline, or settles it now (#179)", async ({
     page,
     backend,

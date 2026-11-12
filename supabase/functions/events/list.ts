@@ -31,6 +31,8 @@ export type ProposalRow = {
   status: string;
   mode: EventMode;
   answer_by: string | null;
+  /** When its suggester last reminded those still to answer ("Påmind"). */
+  reminded_at: string | null;
   /** What the event is likely to cause (#113); null when none came with it. */
   impact: unknown;
   created_at: string;
@@ -77,7 +79,8 @@ export async function listEvents(
   let query = db
     .from("event_proposals")
     .select(
-      "id, group_id, created_by, title, place, note, settings, status, mode, answer_by, impact, " +
+      "id, group_id, created_by, title, place, note, settings, status, mode, answer_by, " +
+        "reminded_at, impact, " +
         "created_at, " +
         "updated_at, friend_groups(name), " +
         "event_proposal_dates(id, starts_at, ends_at, declined_by, declined_at, created_at, " +
@@ -183,6 +186,7 @@ export async function listEvents(
       status: p.status,
       mode: p.mode,
       answerBy: p.answer_by,
+      remindedAt: p.reminded_at,
       // Read through the same cleaner as when it came in, so a profile
       // stored by an older version answers in today's shape.
       impact: p.impact ? cleanProfile(p.impact) : null,

@@ -347,13 +347,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Svarfristen nærmer sig"
+            "value": "Du mangler at svare"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A deadline is coming up"
+            "value": "You haven't answered yet"
           }
         }
       }

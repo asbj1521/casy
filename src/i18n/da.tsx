@@ -1135,6 +1135,11 @@ export const da = {
   },
   // A vote's deadline (#179): none by default, set when planning or later.
   // Searching an open vote again (#240).
+  // "Påmind": the suggester reminds those still to answer a vote.
+  remind: {
+    button: (n: number) => (n === 1 ? "Påmind 1" : `Påmind ${n}`),
+    done: "Påmindet",
+  },
   searchAgain: {
     missing: (n: number) => (n === 1 ? "1 i gruppen er ikke med" : `${n} i gruppen er ikke med`),
     button: "Søg igen",
@@ -1873,6 +1878,7 @@ export const da = {
     chooseDate: "Kunne ikke vælge datoen",
     setDeadline: "Kunne ikke ændre svarfristen",
     settleVote: "Kunne ikke afgøre afstemningen",
+    remind: "Kunne ikke sende påmindelsen",
     notInGroup: "Du er ikke længere med i gruppen.",
     checkAdmin: "Kunne ikke tjekke admin-adgang",
     loadAdmin: "Kunne ikke hente admin-oversigten",
@@ -1909,7 +1915,7 @@ export const da = {
       vote_decided: "Datoen er fundet",
       event_changed: "Datoen ændres, eller aftalen aflyses",
       group_invitation: "Du bliver inviteret til en gruppe",
-      deadline_near: "Svarfristen nærmer sig",
+      deadline_near: "Du mangler at svare",
     } as Record<string, string>,
     testButton: "Send en test-notifikation",
     testSending: "Sender",

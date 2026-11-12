@@ -20,7 +20,8 @@ export type PushTopic =
   | "cancelled"
   | "group_invitation"
   | "deadline"
-  | "new_dates";
+  | "new_dates"
+  | "reminder";
 
 type Lang = "da" | "en";
 
@@ -146,6 +147,16 @@ export function composePush(facts: PushFacts, lang: Lang): PushMessage {
         title: "Casy",
         body: da ? `${who} inviterede dig til ${group}.` : `${who} invited you to ${group}.`,
         url: facts.groupId ? `/invited/${facts.groupId}` : "/groups",
+      };
+    case "reminder":
+      // "Påmind" (the suggester's own nudge): who is waiting, and for what.
+      return {
+        title: event,
+        body: da
+          ? `${who} venter på dit svar. Stem på datoerne.`
+          : `${who} is waiting for your answer. Vote on the dates.`,
+        url: dates,
+        thread,
       };
     case "deadline":
       return {

@@ -106,12 +106,12 @@ test("Settings has a switch for each kind once notifications are on, and keeps a
     "Datoen er fundet",
     "Datoen ændres, eller aftalen aflyses",
     "Du bliver inviteret til en gruppe",
-    "Svarfristen nærmer sig",
+    "Du mangler at svare",
   ];
   for (const kind of kinds) await expect(group.getByRole("switch", { name: kind })).toBeChecked();
 
-  await group.getByRole("switch", { name: "Svarfristen nærmer sig" }).click();
-  await expect(group.getByRole("switch", { name: "Svarfristen nærmer sig" })).not.toBeChecked();
+  await group.getByRole("switch", { name: "Du mangler at svare" }).click();
+  await expect(group.getByRole("switch", { name: "Du mangler at svare" })).not.toBeChecked();
   expect(backend.world.pushOff).toEqual(["deadline_near"]);
   await expect(group.getByRole("switch", { name: "Datoen er fundet" })).toBeChecked();
 });

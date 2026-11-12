@@ -32,6 +32,19 @@ Deno.test("an invitation to vote names who asked and opens the dates", () => {
   assertEquals(composePush(facts("invited"), "en").body, "Sara suggested dates. Tap to answer.");
 });
 
+Deno.test("a reminder names who is waiting and opens the dates (Påmind)", () => {
+  assertEquals(composePush(facts("reminder"), "da"), {
+    title: "Grillaften",
+    body: "Sara venter på dit svar. Stem på datoerne.",
+    url: "/events/e1/dates",
+    thread: "event-e1",
+  });
+  assertEquals(
+    composePush(facts("reminder"), "en").body,
+    "Sara is waiting for your answer. Vote on the dates.",
+  );
+});
+
 Deno.test("a decided vote says the date and opens the event", () => {
   const message = composePush(facts("decided"), "da");
   assertEquals(message.body, "Datoen er fundet: lør. 14. nov. kl. 19:00");
@@ -72,6 +85,7 @@ Deno.test("every notification, in both languages, has no emoji and no long dash"
     "group_invitation",
     "deadline",
     "new_dates",
+    "reminder",
   ];
   for (const topic of topics) {
     for (const lang of ["da", "en"] as const) {

@@ -343,6 +343,30 @@ serve("events", async (req, body) => {
     // New dates for an open vote (#240), searched on the phone with everyone's
     // calendars, the members added among them. Anyone in the group may: a
     // group is trusted, and the warning before it says everyone answers again.
+    case "remind": {
+      // The suggester reminds those who haven't answered an open vote, by a
+      // push notification, at most once a day (remind_vote does it all).
+      const proposalId = requireString(body, "proposalId");
+      const { data: reminded, error } = await db.rpc("remind_vote", {
+        p_proposal_id: proposalId,
+        p_by: profileId,
+      });
+      if (error) {
+        if (error.code === "P0002") throw new HttpError(404, "That event no longer exists.");
+        if (error.code === "42501") {
+          throw new HttpError(403, "Only the person who suggested this event can send a reminder.");
+        }
+        if (error.code === "55000") {
+          throw new HttpError(409, "That event is no longer waiting for answers.");
+        }
+        if (error.code === "55P03") {
+          throw new HttpError(429, "You have already sent a reminder today.");
+        }
+        throw error;
+      }
+      return { reminded: reminded as number, events: (await list()).events };
+    }
+
     case "search-again": {
       const proposalId = requireString(body, "proposalId");
       if (!isEventSettings(body.settings)) {

@@ -61,6 +61,8 @@ export interface SuggestedEvent {
   mode: EventMode;
   /** A vote's deadline: after it, the dates are decided with the answers there are. */
   answerBy: string | null;
+  /** When the suggester last reminded those still to answer ("Påmind"); null for never. */
+  remindedAt?: string | null;
   /**
    * What the event is likely to cause for the people going (#113), whatever
    * the date; read it through impactOn (eventImpact.ts). Null or missing
@@ -232,6 +234,16 @@ export async function setVoteDeadline(
   return await eventsCall(
     { action: "deadline", proposalId, answerDays },
     currentMessages().api.setDeadline,
+  );
+}
+
+/** The suggester reminds those still to answer an open vote, by a notification, once a day. */
+export async function remindVoters(
+  proposalId: string,
+): Promise<{ reminded: number; events: SuggestedEvent[] }> {
+  return await eventsCall<{ reminded: number }>(
+    { action: "remind", proposalId },
+    currentMessages().api.remind,
   );
 }
 

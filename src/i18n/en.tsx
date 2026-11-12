@@ -1086,6 +1086,10 @@ export const en: Messages = {
     deleteFailed: "Couldn't delete the shortcut",
   },
   // Searching an open vote again (#240).
+  remind: {
+    button: (n: number) => `Remind ${n}`,
+    done: "Reminded",
+  },
   searchAgain: {
     missing: (n: number) =>
       n === 1 ? "1 in the group isn't in it" : `${n} in the group aren't in it`,
@@ -1806,6 +1810,7 @@ export const en: Messages = {
     chooseDate: "Couldn't choose the date",
     setDeadline: "Couldn't change the deadline",
     settleVote: "Couldn't settle the vote",
+    remind: "Could not send the reminder",
     notInGroup: "You're no longer in this group.",
     checkAdmin: "Couldn't check admin access",
     loadAdmin: "Couldn't load the admin overview",
@@ -1842,7 +1847,7 @@ export const en: Messages = {
       vote_decided: "The date is set",
       event_changed: "The date changes, or the event is cancelled",
       group_invitation: "You are invited to a group",
-      deadline_near: "A deadline is coming up",
+      deadline_near: "You haven't answered yet",
     } as Record<string, string>,
     testButton: "Send a test notification",
     testSending: "Sending",

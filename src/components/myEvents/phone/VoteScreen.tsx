@@ -10,6 +10,7 @@ import DateTile from "@/components/myEvents/phone/DateTile";
 import { DateFaces, DateVotersOpen } from "@/components/myEvents/phone/DateVoters";
 import EventScreen from "@/components/myEvents/phone/EventScreen";
 import PeopleRow from "@/components/myEvents/phone/PeopleRow";
+import RemindButton from "@/components/myEvents/phone/RemindButton";
 import SearchAgain from "@/components/myEvents/phone/SearchAgain";
 import PlaceNote from "@/components/myEvents/PlaceNote";
 import { PhoneVoteDeadline } from "@/components/myEvents/VoteDeadline";
@@ -115,6 +116,8 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
           optional={event.settings.people?.optional}
           split
         />
+        {/* The suggester nudges those the vote waits for, once a day. */}
+        {!mustChoose && <RemindButton event={event} waiting={missing.length} />}
       </div>
 
       {mustChoose && (

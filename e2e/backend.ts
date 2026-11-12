@@ -840,6 +840,23 @@ export class FakeBackend {
         this.changed();
         return ok(list());
       }
+      case "remind": {
+        // As remind_vote: the suggester's open vote, once a day; the number
+        // still to answer (bar the suggester) is who would get a notification.
+        if (!event.createdBy.isYou)
+          return fail(403, "Only the person who suggested this event can send a reminder.");
+        if (event.status !== "pending")
+          return fail(409, "That event is no longer waiting for answers.");
+        const last = event.remindedAt ? Date.parse(event.remindedAt) : null;
+        if (last !== null && Date.parse(NOW) - last < 24 * 3_600_000)
+          return fail(429, "You have already sent a reminder today.");
+        event.remindedAt = NOW;
+        const reminded = event.invitees.filter(
+          (i) => !i.isYou && event.candidates.some((c) => c.answers[i.profileId] === undefined),
+        ).length;
+        this.changed();
+        return ok({ reminded, ...list() });
+      }
       case "choose": {
         const date = event.candidates.find((c) => c.id === body.dateId);
         if (!date) return fail(400, "Unknown date");

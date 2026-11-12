@@ -57,7 +57,7 @@ final class SettingsUITests: XCTestCase {
         for label in [
             "Nogen foreslår datoer til dig", "Datoen er fundet",
             "Datoen ændres, eller aftalen aflyses", "Du bliver inviteret til en gruppe",
-            "Svarfristen nærmer sig",
+            "Du mangler at svare",
         ] {
             let row = toggle(app, label)
             XCTAssertTrue(row.waitForExistence(timeout: 10), label)
@@ -67,7 +67,7 @@ final class SettingsUITests: XCTestCase {
     /// A switch moves at once, while the fake server takes 8 seconds, and
     /// the save is really there after a fresh start.
     func testASwitchMovesAtOnceAndIsSaved() {
-        let label = "Svarfristen nærmer sig"
+        let label = "Du mangler at svare"
         var app = launch()
         var row = toggle(app, label)
         XCTAssertTrue(row.waitForExistence(timeout: 10))

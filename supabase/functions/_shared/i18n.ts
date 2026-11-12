@@ -102,6 +102,9 @@ export const DANISH: Record<string, string> = {
   "That shortcut no longer exists.": "Genvejen findes ikke længere.",
   "You can keep at most 6 shortcuts. Delete one first.":
     "Du kan højst have 6 genveje. Slet en først.",
+  "Only the person who suggested this event can send a reminder.":
+    "Kun den, der foreslog aftalen, kan sende en påmindelse.",
+  "You have already sent a reminder today.": "Du har allerede sendt en påmindelse i dag.",
   "Only the person who suggested this event can change its deadline.":
     "Kun den, der foreslog aftalen, kan ændre svarfristen.",
   "Only the person who suggested this event can cancel it.":
