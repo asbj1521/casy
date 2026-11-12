@@ -1027,6 +1027,7 @@ export const en: Messages = {
       declined: "Declined",
       none: "No answer yet",
     },
+    voters: { accepted: "Can", maybe: "Rather not", declined: "Can't", missing: "No answer yet" },
     earlierDates: "Dates offered earlier",
     stagePast: "Past",
     stageNoDate: "No date",

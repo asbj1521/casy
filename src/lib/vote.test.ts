@@ -9,6 +9,7 @@ import {
   stillToAnswer,
   tally,
   voteStage,
+  whoOnDate,
   type VoteEvent,
 } from "@/lib/vote";
 
@@ -53,6 +54,23 @@ describe("tally", () => {
     const event = vote([]);
     const d = date("a", 12, { me: "maybe", gone: "declined" });
     expect(tally(d, event)).toEqual({ accepted: 0, maybe: 1, declined: 0, missing: 1 });
+  });
+});
+
+describe("whoOnDate (#258)", () => {
+  it("names the people behind each count, in the event's order, those gone from it left out", () => {
+    const people = [
+      { profileId: "me", name: "Asbjørn" },
+      { profileId: "tessa", name: "Tessa" },
+      { profileId: "bo", name: "Bo" },
+      { profileId: "sara", name: "Sara" },
+    ];
+    const d = date("a", 12, { sara: "accepted", me: "accepted", bo: "declined", gone: "maybe" });
+    const who = whoOnDate(d, people);
+    expect(who.accepted.map((p) => p.name)).toEqual(["Asbjørn", "Sara"]);
+    expect(who.maybe).toEqual([]);
+    expect(who.declined.map((p) => p.name)).toEqual(["Bo"]);
+    expect(who.missing.map((p) => p.name)).toEqual(["Tessa"]);
   });
 });
 

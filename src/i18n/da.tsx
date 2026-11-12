@@ -1069,6 +1069,8 @@ export const da = {
       declined: "Har sagt nej",
       none: "Har ikke svaret endnu",
     },
+    // A vote's date opened to who said what (#258).
+    voters: { accepted: "Kan", maybe: "Helst ikke", declined: "Kan ikke", missing: "Mangler svar" },
     earlierDates: "Datoer tilbudt før",
     stagePast: "Overstået",
     stageNoDate: "Ingen dato",

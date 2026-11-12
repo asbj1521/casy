@@ -234,6 +234,34 @@ test.describe("a phone's Aftaler (#103, #177)", () => {
     await expect(page.getByRole("dialog", { name: "Mine aftaler" })).toBeVisible();
   });
 
+  test("a vote shows who it waits for, and a date opens to who said what (#258)", async ({
+    page,
+  }) => {
+    await page.goto("/?events=ev-cinema");
+    const sheet = page.getByRole("dialog", { name: "Biograf" });
+    // Those still to answer stand apart, at the end of the faces.
+    const faces = sheet.getByRole("listitem", { name: /: (Har|Kan)/ });
+    await expect(faces).toHaveText([/Dig$/, /Freja$/, /Oliver$/]);
+    await expect(faces.nth(1)).toHaveAccessibleName(/^Freja: Har ikke svaret endnu/);
+
+    // Each date shows who can, as faces; a tap opens who said what.
+    const friday = sheet.getByRole("button", { name: /^fre\. 16\./ });
+    await expect(friday).toHaveAttribute("aria-expanded", "false");
+    await expect(friday.getByRole("img", { name: "2 kan" })).toBeVisible();
+    await friday.click();
+    await expect(friday).toHaveAttribute("aria-expanded", "true");
+    await expect(sheet.getByText("Kan", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("Mangler svar", { exact: true })).toBeVisible();
+    // Nobody said no to it: that group is left out.
+    await expect(sheet.getByText("Kan ikke", { exact: true })).toHaveCount(0);
+    await expect(sheet.getByText("Oliver", { exact: true }).last()).toBeVisible();
+    // Your answer on the row still answers, and doesn't open or close it.
+    await sheet.getByRole("button", { name: /^Jeg kan ikke: fre\. 23\./ }).click();
+    await expect(friday).toHaveAttribute("aria-expanded", "true");
+    await friday.click();
+    await expect(sheet.getByText("Mangler svar", { exact: true })).toHaveCount(0);
+  });
+
   test("the suggester changes a vote's deadline, or settles it now (#179)", async ({
     page,
     backend,

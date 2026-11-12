@@ -139,6 +139,27 @@ export function voteStage(event: VoteEvent, now = Date.now()): VoteStage {
   return event.createdBy.isYou ? "choose" : "waitingForChoice";
 }
 
+/** Who said what on one date (#258), each group in the event's own order. */
+export interface DatePeople<P> {
+  accepted: P[];
+  maybe: P[];
+  declined: P[];
+  missing: P[];
+}
+
+/**
+ * Everyone asked, by what they answered on `date` (#258): the people behind
+ * `tally`'s numbers, so a vote can show who can, not just how many.
+ */
+export function whoOnDate<P extends { profileId: string }>(
+  date: CandidateDate,
+  invitees: P[],
+): DatePeople<P> {
+  const out: DatePeople<P> = { accepted: [], maybe: [], declined: [], missing: [] };
+  for (const person of invitees) out[date.answers[person.profileId] ?? "missing"].push(person);
+  return out;
+}
+
 /** The required people (never you) who still owe an answer on some date to come. */
 export function stillToAnswer(event: VoteEvent, now = Date.now()): string[] {
   const dates = upcomingDates(event, now);

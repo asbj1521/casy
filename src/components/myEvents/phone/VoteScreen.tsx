@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { Check, Loader2, LogOut } from "lucide-react";
+import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
+import { Check, ChevronDown, Loader2, LogOut } from "lucide-react";
 
 import { answerDate, chooseDate, type EventResponse } from "@/api/events";
 import EventImpactDetails from "@/components/myEvents/EventImpactDetails";
 import { ExitConfirm } from "@/components/myEvents/parts";
 import Countdown from "@/components/myEvents/phone/Countdown";
 import DateTile from "@/components/myEvents/phone/DateTile";
+import { DateFaces, DateVotersOpen } from "@/components/myEvents/phone/DateVoters";
 import EventScreen from "@/components/myEvents/phone/EventScreen";
 import PeopleRow from "@/components/myEvents/phone/PeopleRow";
 import SearchAgain from "@/components/myEvents/phone/SearchAgain";
@@ -20,6 +21,7 @@ import { useEventChange } from "@/hooks/useEventChange";
 import { useLang, useT } from "@/i18n/lang";
 import { formatEventDate } from "@/lib/format";
 import { isNativeApp } from "@/lib/nativeApp";
+import { cn } from "@/lib/utils";
 import {
   bestPick,
   leader,
@@ -33,8 +35,9 @@ import {
 /**
  * A vote's screen in a phone's Aftaler once you have answered (#177): its
  * dates as a stack, everyone's face (greyed until they have answered every
- * date), and each date as a row with a bar filling as people say yes (a
- * paler part for "rather not", nothing for no), the most yeses at the top,
+ * date; #258: those still to answer apart at the end), and each date as a
+ * row with the faces of those who can (paler for "rather not"), the most
+ * yeses at the top, a tap on it opening who said what (DateVoters),
  * so the leading date is always first, ticked in orange once half the
  * group has answered (before that every date is as good as the next). Your
  * own answer is at each row's end, changed with a tap, the rows gliding to
@@ -51,6 +54,8 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
   const { lang } = useLang();
   const reduce = useReducedMotion();
   const [exiting, setExiting] = useState(false);
+  // The date opened to who said what (#258), one at a time.
+  const [openId, setOpenId] = useState<string | null>(null);
   const choose = useEventChange((dateId: string) => chooseDate(event.id, dateId));
   const answer = useEventChange((v: { dateId: string; response: EventResponse }) =>
     answerDate(event.id, v.dateId, v.response),
@@ -106,6 +111,7 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
             dates.every((d) => d.answers[p.profileId] !== undefined) ? "accepted" : "waiting"
           }
           optional={event.settings.people?.optional}
+          split
         />
       </div>
 
@@ -117,79 +123,86 @@ export default function VoteScreen({ event }: { event: VoteEvent }) {
         </p>
       )}
 
-      <ListGroup>
-        {ranked.map(({ date: d, n }) => {
-          const isMarked = d.id === marked?.id;
-          const label = formatEventDate(event.settings.kind, d, lang);
-          // Shown as given while it saves.
-          const yours =
-            answer.isPending && answer.variables?.dateId === d.id
-              ? answer.variables.response
-              : you
-                ? d.answers[you]
-                : undefined;
-          return (
-            <motion.li
-              key={d.id}
-              layout={!reduce}
-              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-              className="group/row relative bg-card pl-4"
-            >
-              <span className="flex min-h-[3.25rem] min-w-0 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1 text-[0.9375rem] font-medium text-foreground">
-                    {isMarked && (
-                      <Check
-                        aria-label={mustChoose ? t.events.bestPick : t.events.ahead}
-                        className="h-4 w-4 shrink-0 text-primary"
-                        strokeWidth={3}
-                      />
-                    )}
-                    <span className="truncate">{label}</span>
-                  </span>
-                  {/* How many say yes, as a bar filling up (paler for "rather
-                      not", nothing for no); the numbers for screen readers. */}
-                  <span
-                    role="img"
-                    aria-label={`${t.events.canOnDate(n.accepted + n.maybe)}${n.declined > 0 ? `, ${t.events.cantOnDate(n.declined)}` : ""}`}
-                    className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-secondary"
-                  >
-                    <span
-                      className="bg-emerald-500 transition-[width] duration-300"
-                      style={{ width: `${(n.accepted / Math.max(total, 1)) * 100}%` }}
-                    />
-                    <span
-                      className="bg-emerald-500/35 transition-[width] duration-300"
-                      style={{ width: `${(n.maybe / Math.max(total, 1)) * 100}%` }}
-                    />
-                  </span>
-                </span>
-                {you && (
-                  <YourAnswer
-                    yours={yours}
-                    label={label}
-                    disabled={answer.isPending}
-                    onAnswer={(response) => answer.mutate({ dateId: d.id, response })}
-                  />
-                )}
-                {canChoose && (
+      <LayoutGroup>
+        <ListGroup>
+          {ranked.map(({ date: d, n }) => {
+            const isMarked = d.id === marked?.id;
+            const isOpen = d.id === openId;
+            const label = formatEventDate(event.settings.kind, d, lang);
+            // Shown as given while it saves.
+            const yours =
+              answer.isPending && answer.variables?.dateId === d.id
+                ? answer.variables.response
+                : you
+                  ? d.answers[you]
+                  : undefined;
+            return (
+              <motion.li
+                key={d.id}
+                layout={!reduce}
+                transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                className="group/row relative bg-card pl-4"
+              >
+                <span className="flex min-h-[3.25rem] min-w-0 items-center gap-3 border-t py-2.5 pr-4 group-first/row:border-t-0">
+                  {/* The date and its faces open to who said what (#258). */}
                   <button
                     type="button"
-                    onClick={() => choose.mutate(d.id)}
-                    disabled={choose.isPending}
-                    className="flex shrink-0 items-center gap-1 text-[0.9375rem] font-semibold text-primary disabled:opacity-60"
+                    aria-expanded={isOpen}
+                    onClick={() => setOpenId(isOpen ? null : d.id)}
+                    className="min-w-0 flex-1 text-left"
                   >
-                    {choose.isPending && choose.variables === d.id && (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    )}
-                    {t.events.choose}
+                    <span className="flex items-center gap-1 text-[0.9375rem] font-medium text-foreground">
+                      {isMarked && (
+                        <Check
+                          aria-label={mustChoose ? t.events.bestPick : t.events.ahead}
+                          className="h-4 w-4 shrink-0 text-primary"
+                          strokeWidth={3}
+                        />
+                      )}
+                      <span className="truncate">{label}</span>
+                      <ChevronDown
+                        aria-hidden
+                        className={cn(
+                          "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                          isOpen && "rotate-180",
+                        )}
+                      />
+                    </span>
+                    <DateFaces
+                      date={d}
+                      invitees={event.invitees}
+                      open={isOpen}
+                      label={`${t.events.canOnDate(n.accepted + n.maybe)}${n.declined > 0 ? `, ${t.events.cantOnDate(n.declined)}` : ""}`}
+                    />
                   </button>
-                )}
-              </span>
-            </motion.li>
-          );
-        })}
-      </ListGroup>
+                  {you && (
+                    <YourAnswer
+                      yours={yours}
+                      label={label}
+                      disabled={answer.isPending}
+                      onAnswer={(response) => answer.mutate({ dateId: d.id, response })}
+                    />
+                  )}
+                  {canChoose && (
+                    <button
+                      type="button"
+                      onClick={() => choose.mutate(d.id)}
+                      disabled={choose.isPending}
+                      className="flex shrink-0 items-center gap-1 text-[0.9375rem] font-semibold text-primary disabled:opacity-60"
+                    >
+                      {choose.isPending && choose.variables === d.id && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      )}
+                      {t.events.choose}
+                    </button>
+                  )}
+                </span>
+                <DateVotersOpen date={d} invitees={event.invitees} open={isOpen} />
+              </motion.li>
+            );
+          })}
+        </ListGroup>
+      </LayoutGroup>
       {(choose.error ?? answer.error) && (
         <Notice tone="error" bare className="mt-2">
           {(choose.error ?? answer.error)?.message}
