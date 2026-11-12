@@ -889,6 +889,39 @@ export const da = {
       "Casy har ikke adgang til telefonens kalendere. Slå Kalendere til under Casy i Indstillinger, og prøv igen.",
     openSettings: "Åbn Indstillinger",
     needTitle: "Link din Apple-kalender",
+    // The step that takes the whole screen (#261), and its other calendars.
+    stepTitle: "Forbind din kalender",
+    appleCalendar: "Apple-kalender",
+    others: "Andre kalendere",
+    googleCalendar: "Google Kalender",
+    back: "Tilbage",
+    // Adding an account to the iPhone, played on a small iPhone: iOS's own words.
+    addAccount: {
+      title: (account: string) => `Tilføj ${account} på din iPhone`,
+      done: "Det har jeg gjort",
+      spoken: (account: string) =>
+        `Åbn Indstillinger på din iPhone, og tryk på Apps, Kalender, Kalenderkonti, Tilføj konto og så ${account}. Kom tilbage hertil bagefter.`,
+      path: [
+        {
+          title: "Indstillinger",
+          rows: ["Generelt", "Skærm & lysstyrke", "Apps", "Anonymitet & sikkerhed"],
+          tap: "Apps",
+        },
+        { title: "Apps", rows: ["App Store", "Bøger", "Kalender", "Kamera"], tap: "Kalender" },
+        {
+          title: "Kalender",
+          rows: ["Siri", "Søg", "Kalenderkonti", "Tidszone"],
+          tap: "Kalenderkonti",
+        },
+        { title: "Kalenderkonti", rows: ["iCloud", "Tilføj konto"], tap: "Tilføj konto" },
+      ],
+      accounts: {
+        title: "Tilføj konto",
+        rows: ["iCloud", "Microsoft Exchange", "Google", "Outlook.com"],
+        google: "Google",
+        outlook: "Outlook.com",
+      },
+    },
     phoneTitle: "Link din Apple-kalender",
     notNow: "Ikke nu",
     needBody:

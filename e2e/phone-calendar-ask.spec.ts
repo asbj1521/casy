@@ -82,11 +82,11 @@ test("with iOS not asked yet, the card has one way on, and iOS asks on the press
 }) => {
   await asTheApp(page, "granted");
   await page.goto("/calendar-overview");
-  await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Forbind din kalender" })).toBeVisible();
   // Nothing is asked by itself: the person presses.
   expect(await asked(page)).not.toContain("requestAccess");
   await expect(card(page).getByRole("button", { name: "Ikke nu" })).toHaveCount(0);
-  await card(page).getByRole("button", { name: "Fortsæt" }).click();
+  await card(page).getByRole("button", { name: "Apple-kalender" }).click();
   await expect.poll(() => asked(page)).toContain("requestAccess");
   await expect
     .poll(() => backend.calls.find((c) => c.name === "calendar-phone")?.body)
@@ -96,7 +96,7 @@ test("with iOS not asked yet, the card has one way on, and iOS asks on the press
 test("with iOS already allowed, the same card just says Import", async ({ page, backend }) => {
   await asTheApp(page, "granted", { alreadyAnswered: true });
   await page.goto("/calendar-overview");
-  await card(page).getByRole("button", { name: "Importér min kalender" }).click();
+  await card(page).getByRole("button", { name: "Apple-kalender" }).click();
   await expect
     .poll(() => backend.calls.find((c) => c.name === "calendar-phone")?.body)
     .toMatchObject({ create: true });
@@ -105,13 +105,15 @@ test("with iOS already allowed, the same card just says Import", async ({ page, 
 test("a refusal leads to Settings, or to another calendar", async ({ page }) => {
   await asTheApp(page, "denied");
   await page.goto("/calendar-overview");
-  await card(page).getByRole("button", { name: "Fortsæt" }).click();
+  await card(page).getByRole("button", { name: "Apple-kalender" }).click();
   await expect(card(page).getByRole("button", { name: "Åbn Indstillinger" })).toBeVisible();
   await card(page).getByRole("button", { name: "Åbn Indstillinger" }).click();
   await expect.poll(() => asked(page)).toContain("openSettings");
 
-  await card(page).getByRole("link", { name: "Brug en anden kalender" }).click();
-  await expect(page).toHaveURL(/\/\?calendars=accounts$/);
+  // The other calendars, by their marks; a calendar link is the calendars page's own form.
+  await card(page).getByRole("button", { name: "Andre kalendere" }).click();
+  await card(page).getByRole("link", { name: "Kalenderlink" }).click();
+  await expect(page).toHaveURL(/calendars=accounts/);
 });
 
 test("with no calendar at all it can still be put away, until the app is opened again (#215)", async ({
@@ -136,7 +138,7 @@ test("the card is there even when the app remembers a connection the server has 
     `casy-phone-calendar:${ME.id}`,
   );
   await page.goto("/calendar-overview");
-  await card(page).getByRole("button", { name: "Importér min kalender" }).click();
+  await card(page).getByRole("button", { name: "Apple-kalender" }).click();
   await expect
     .poll(() => backend.calls.find((c) => c.name === "calendar-phone" && c.body.create === true))
     .toBeTruthy();
@@ -165,7 +167,7 @@ test.describe("with other calendars connected, but not this phone", () => {
   }) => {
     await asTheApp(page, "granted", { alreadyAnswered: true });
     await page.goto("/calendar-overview");
-    await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Forbind din kalender" })).toBeVisible();
     await card(page).getByRole("button", { name: "Ikke nu" }).click();
     await expect(card(page)).toHaveCount(0);
     // Put away until the app is opened again, not every time the page is.
@@ -182,12 +184,12 @@ test.describe("with other calendars connected, but not this phone", () => {
     await asTheApp(page, "granted", { alreadyAnswered: true });
     await page.goto("/calendar-overview");
     const ai = page.getByRole("dialog", { name: "Slå Casys AI til?" });
-    await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Forbind din kalender" })).toBeVisible();
     // Past the moment the home page settles (1.5 s), it still waits its turn.
     await page.waitForTimeout(2000);
     await expect(ai).toHaveCount(0);
     await card(page).getByRole("button", { name: "Ikke nu" }).click();
-    await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Forbind din kalender" })).toHaveCount(0);
     await expect(ai).toBeVisible();
   });
 
@@ -209,7 +211,29 @@ test("the month shows first; the card comes about three seconds later (#147)", a
   await page.goto("/calendar-overview");
   await expect(page.getByRole("button", { name: "Kalendere" })).toBeVisible();
   await expect(card(page)).toHaveCount(0);
-  await expect(page.getByRole("dialog", { name: "Link din Apple-kalender" })).toBeVisible({
+  await expect(page.getByRole("dialog", { name: "Forbind din kalender" })).toBeVisible({
     timeout: 8000,
   });
+});
+
+test("Andre kalendere shows how to add a Google account to the iPhone, and then reads the phone (#261)", async ({
+  page,
+  backend,
+}) => {
+  await asTheApp(page, "granted");
+  await page.goto("/calendar-overview");
+  await card(page).getByRole("button", { name: "Andre kalendere" }).click();
+  // Before iOS has asked, every way on ends at its question: no link out, no Ikke nu.
+  await expect(card(page).getByRole("link", { name: "Kalenderlink" })).toHaveCount(0);
+  await expect(card(page).getByRole("button", { name: "Ikke nu" })).toHaveCount(0);
+  await expect(card(page).getByRole("button", { name: "Outlook" })).toBeVisible();
+  await card(page).getByRole("button", { name: "Google Kalender" }).click();
+  await expect(page.getByRole("dialog", { name: "Tilføj Google på din iPhone" })).toBeVisible();
+  // Shown, not told: the way through Indstillinger plays; the words are for screen readers.
+  await expect(card(page).getByText(/^Åbn Indstillinger på din iPhone/)).toBeAttached();
+  await card(page).getByRole("button", { name: "Det har jeg gjort" }).click();
+  await expect.poll(() => asked(page)).toContain("requestAccess");
+  await expect
+    .poll(() => backend.calls.find((c) => c.name === "calendar-phone")?.body)
+    .toMatchObject({ create: true });
 });

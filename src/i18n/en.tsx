@@ -848,6 +848,37 @@ export const en: Messages = {
       "Casy can't see the phone's calendars. Turn on Calendars under Casy in Settings, then try again.",
     openSettings: "Open Settings",
     needTitle: "Link your Apple Calendar",
+    stepTitle: "Connect your calendar",
+    appleCalendar: "Apple Calendar",
+    others: "Other calendars",
+    googleCalendar: "Google Calendar",
+    back: "Back",
+    addAccount: {
+      title: (account: string) => `Add ${account} to your iPhone`,
+      done: "I've done that",
+      spoken: (account: string) =>
+        `Open Settings on your iPhone, and tap Apps, Calendar, Calendar Accounts, Add Account and then ${account}. Come back here afterwards.`,
+      path: [
+        {
+          title: "Settings",
+          rows: ["General", "Display & Brightness", "Apps", "Privacy & Security"],
+          tap: "Apps",
+        },
+        { title: "Apps", rows: ["App Store", "Books", "Calendar", "Camera"], tap: "Calendar" },
+        {
+          title: "Calendar",
+          rows: ["Siri", "Search", "Calendar Accounts", "Time Zone"],
+          tap: "Calendar Accounts",
+        },
+        { title: "Calendar Accounts", rows: ["iCloud", "Add Account"], tap: "Add Account" },
+      ],
+      accounts: {
+        title: "Add Account",
+        rows: ["iCloud", "Microsoft Exchange", "Google", "Outlook.com"],
+        google: "Google",
+        outlook: "Outlook.com",
+      },
+    },
     phoneTitle: "Link your Apple Calendar",
     notNow: "Not now",
     needBody:
