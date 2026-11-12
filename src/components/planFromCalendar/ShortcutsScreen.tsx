@@ -45,7 +45,7 @@ export default function ShortcutsScreen({
   failed,
   onRetry,
   onDismiss,
-  groupRow,
+  runRows,
 }: {
   shortcuts: Shortcut[] | undefined;
   error: string | null;
@@ -58,8 +58,8 @@ export default function ShortcutsScreen({
   failed: { name: string; message: string } | null;
   onRetry: () => void;
   onDismiss: () => void;
-  /** The plan's group, under the genvej about to run, to see and change it. */
-  groupRow: ReactNode;
+  /** Under the genvej about to run (#259): its group, how many need to come, and when. */
+  runRows: ReactNode;
 }) {
   const t = useT();
   const words = t.shortcuts;
@@ -184,14 +184,14 @@ export default function ShortcutsScreen({
             </motion.div>
             <ShortcutFacts shortcut={selected} />
           </section>
-          {/* Which group it runs for, seen and changeable before it runs. */}
+          {/* Who and when it runs for, seen and changeable before it runs. */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.25, delay: 0.15 }}
             className="mt-4"
           >
-            {groupRow}
+            {runRows}
           </motion.div>
         </div>
       )}

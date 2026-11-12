@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RotateCcw, Trash2 } from "lucide-react";
@@ -32,9 +32,12 @@ import {
 import PileScreen from "./PileScreen";
 import PlanSetup from "./PlanSetup";
 import GroupRow from "./GroupRow";
+import HowManyRow from "./HowManyRow";
 import ShortcutPicture from "./ShortcutPicture";
 import ShortcutsScreen from "./ShortcutsScreen";
 import ShortcutTimes from "./ShortcutTimes";
+import WhenRow from "./WhenRow";
+import type { Period } from "@/lib/scheduler";
 
 /** A new genvej's id on screen until the server has given it one. */
 const SAVING_ID = "saving";
@@ -123,10 +126,25 @@ export default function PlanFromCalendar({
     enabled: open,
   });
   const fill = (s: Shortcut) => planning.loadPlan({ name: s.name, ...s.plan });
+  // When it searches (#259): Snarest unless months are picked under it, for
+  // this run only (a genvej keeps no months).
+  const [runPeriod, setRunPeriod] = useState<Period | null>(null);
+  // What the selected genvej would search, each time as settings, for its
+  // how-many slider: it is loaded into the plan only as it runs.
+  const runSearch = useMemo(
+    () =>
+      selected?.plan.times.map((time) => ({
+        ...selected.plan.settings,
+        ...time,
+        period: runPeriod,
+      })),
+    [selected, runPeriod],
+  );
   // Run with the group chosen in Planlæg: a genvej has none of its own.
   const runShortcut = (s: Shortcut) => {
     if (!planning.activeGroup) return;
     fill(s);
+    if (runPeriod) planning.updateSettings({ period: runPeriod });
     toPile();
   };
 
@@ -285,7 +303,13 @@ export default function PlanFromCalendar({
                 error={shortcutsError?.message ?? null}
                 selected={selected}
                 onSelect={setSelected}
-                groupRow={<GroupRow planning={planning} className="mt-0" />}
+                runRows={
+                  <>
+                    <GroupRow planning={planning} className="mt-0" />
+                    <WhenRow value={runPeriod} onChange={setRunPeriod} />
+                    <HowManyRow planning={planning} search={runSearch} className="mt-3" />
+                  </>
+                }
                 onEdit={openEditor}
                 onNew={() => openEditor(null)}
                 savingId={save.isPending ? (save.variables.id ?? SAVING_ID) : null}

@@ -1488,7 +1488,16 @@ export const da = {
       some: (n: number, of: number) => `${n} af ${of}`,
       none: "Ingen dato",
       footnote: "Dem, der ikke kan, bliver stadig inviteret og kan stemme.",
+      // How much sooner than with everyone, over the slider's knob.
+      sooner: (days: number) =>
+        days === 1
+          ? "1 dag tidligere"
+          : days < 14
+            ? `${days} dage tidligere`
+            : `${Math.round(days / 7)} uger tidligere`,
     },
+    // When a genvej searches (#259): from today, or the months picked.
+    when: { label: "Hvornår", soonest: "Snarest" },
     noneThrough: "Ingen dag i perioden passer alle. Prøv at ændre planen.",
     suggest: (n: number) => (n === 1 ? "Foreslå datoen" : `Foreslå top ${n} datoer`),
     inviteFriends: "Inviter venner",

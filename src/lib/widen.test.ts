@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { NO_PEOPLE_CHOICE, type SchedulerSettings } from "@/lib/scheduler";
-import { firstDateByCount, widenOptions, type WidenInput } from "@/lib/widen";
+import { daysSooner, firstDateByCount, widenOptions, type WidenInput } from "@/lib/widen";
 import type { Participant } from "@/types";
 
 const TZ = "UTC";
@@ -134,8 +134,25 @@ describe("firstDateByCount (#259)", () => {
     ]);
   });
 
+  it("takes each count's earliest date across a genvej's times", () => {
+    // At 18:00 three can first meet on 16 October; at 09:00 all four already on the 2nd.
+    const morning = { ...DINNER, startHour: 9 };
+    const [all] = firstDateByCount(input(group(), DINNER), [morning]);
+    expect(all.first?.slot.start).toBe("2026-10-02T09:00:00.000Z");
+  });
+
   it("is empty for a trip, or with fewer than three Med", () => {
     expect(firstDateByCount(input(group(), { ...DINNER, multiDay: true }))).toEqual([]);
     expect(firstDateByCount(input(group().slice(2), DINNER))).toEqual([]);
+  });
+});
+
+describe("daysSooner (#259)", () => {
+  it("counts whole days between the two dates' days, across a clock change", () => {
+    expect(daysSooner("2026-10-02T18:00:00.000Z", "2026-10-16T09:00:00.000Z", TZ)).toBe(14);
+    // Copenhagen leaves summer time on 25 October 2026.
+    expect(
+      daysSooner("2026-10-24T16:00:00.000Z", "2026-10-26T17:00:00.000Z", "Europe/Copenhagen"),
+    ).toBe(2);
   });
 });

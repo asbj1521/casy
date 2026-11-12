@@ -20,7 +20,7 @@ import {
   type Period,
   type SchedulerSettings,
 } from "@/lib/scheduler";
-import { startOfMonth } from "@/lib/zone";
+import { startOfDay, startOfMonth } from "@/lib/zone";
 import type { Participant } from "@/types";
 
 /** The parts of the day a meeting may move to, as start windows, earliest first. */
@@ -212,16 +212,32 @@ export interface CountOption {
  * there says the period can't hold it. Empty for a trip ("at least" is for
  * meetings only) or fewer than three Med.
  */
-export function firstDateByCount(input: WidenInput): CountOption[] {
+export function firstDateByCount(
+  input: WidenInput,
+  /** A genvej's other times (#175), searched beside `input.settings`: each count's earliest. */
+  others: SchedulerSettings[] = [],
+): CountOption[] {
   if (input.settings.multiDay) return [];
   const of = requiredCount(input.members, input.choice);
   if (of <= MIN_COUNT) return [];
   const options: CountOption[] = [];
   for (let count = of; count >= MIN_COUNT; count--) {
     const choice = { ...input.choice, atLeast: count === of ? null : count };
-    options.push({ count, of, first: firstDate(input, input.settings, choice) });
+    const found = [input.settings, ...others]
+      .map((settings) => firstDate(input, settings, choice))
+      .filter((f): f is FoundDate => f !== null);
+    options.push({ count, of, first: found.sort(byStart)[0] ?? null });
   }
   return options;
+}
+
+const byStart = (a: FoundDate, b: FoundDate) => Date.parse(a.slot.start) - Date.parse(b.slot.start);
+
+/** Whole days from `first`'s day to `than`'s, as the slider says "5 uger tidligere" (#259). */
+export function daysSooner(first: string, than: string, timeZone: string): number {
+  const day = (iso: string) => startOfDay(Date.parse(iso), timeZone);
+  // Rounded: a day across a clock change is 23 or 25 hours.
+  return Math.round((day(than) - day(first)) / 86_400_000);
 }
 
 /** Earliest first date first; the order tried breaks a tie. */

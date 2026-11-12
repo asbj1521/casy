@@ -1,33 +1,44 @@
-import { useId, useMemo, useState } from "react";
-import { Users } from "lucide-react";
+import { useDeferredValue, useMemo } from "react";
 
 import { TODAY } from "@/hooks/useDateSearch";
 import type { Planning } from "@/hooks/usePlanning";
-import AnchoredPanel from "@/components/ui/AnchoredPanel";
-import { ListGroup, ListPickRow, ListRow } from "@/components/ui/ListGroup";
-import { useLang, useT } from "@/i18n/lang";
+import { FIELD_LABEL } from "@/components/ui/field";
+import { useT } from "@/i18n/lang";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
-import { capitalize, formatDate } from "@/lib/format";
-import { firstDateByCount, MIN_COUNT, requiredCount } from "@/lib/widen";
+import type { SchedulerSettings } from "@/lib/scheduler";
+import { cn } from "@/lib/utils";
+import { firstDateByCount, MIN_COUNT, requiredCount, type CountOption } from "@/lib/widen";
 import { APP_TIME_ZONE } from "@/lib/zone";
 
+import HowManySlider from "./HowManySlider";
+
 /**
- * "Hvor mange skal kunne" (#259), up front in the Planlæg sheet under the
- * months: a number, not people picked one by one, so nobody is quietly left
- * out. Its picker grows out of the row (#175) with every count from everyone
- * Med down to two, each beside the first date it finds in the months picked
- * (#255, firstDateByCount): what one person fewer buys is seen before it is
- * picked, and a count with no date in those months shows what the months can
- * hold. Worked out only while the picker is open. Meetings only, and only
- * with three or more Med; the same choice as Flere detaljer's Deltagere.
+ * "Hvor mange skal kunne" (#259), in the Planlæg sheet itself under the
+ * months, and under a genvej about to run: a number, not people picked one
+ * by one, so nobody is quietly left out. A slider (HowManySlider), a step per
+ * count from two to everyone Med, each with the first date it finds in the
+ * months searched (#255, firstDateByCount), following the plan a beat behind
+ * (deferred, as the search) so tapping the rows above never stutters.
+ * Meetings only, and only with three or more Med; the same choice as Flere
+ * detaljer's Deltagere.
+ *
+ * `search`: what a genvej would search, its times each as settings (#175),
+ * instead of the plan on screen, since a genvej is loaded only as it runs.
  */
-export default function HowManyRow({ planning }: { planning: Planning }) {
+export default function HowManyRow({
+  planning,
+  search,
+  className = "mt-4",
+}: {
+  planning: Planning;
+  search?: SchedulerSettings[];
+  className?: string;
+}) {
   const t = useT();
-  const { lang } = useLang();
   const words = t.planFromCalendar.howMany;
   const { activeGroup, participants, sched, peopleChoice, updatePeople } = planning;
-  const [open, setOpen] = useState(false);
-  const anchorId = useId();
+  const list = useMemo(() => search ?? [sched], [search, sched]);
+  const deferred = useDeferredValue(list);
 
   const members = useMemo(
     () => activeGroup?.members.map((m) => m.profileId) ?? [],
@@ -35,67 +46,45 @@ export default function HowManyRow({ planning }: { planning: Planning }) {
   );
   const of = requiredCount(members, peopleChoice);
   const count = peopleChoice.atLeast === null ? of : Math.min(peopleChoice.atLeast, of);
+  const shown = !!activeGroup && !activeGroup.isExample && !list[0]?.multiDay && of > MIN_COUNT;
 
-  const options = useMemo(
-    () =>
-      open && participants
-        ? firstDateByCount({
-            participants,
-            settings: sched,
-            members,
-            choice: peopleChoice,
-            today: TODAY,
-            limit: SEARCH_WINDOW,
-            timeZone: APP_TIME_ZONE,
-          })
-        : [],
-    [open, participants, sched, members, peopleChoice],
-  );
+  const options = useMemo((): CountOption[] | null => {
+    const [settings, ...others] = deferred;
+    if (!shown || !participants || !settings) return null;
+    return firstDateByCount(
+      {
+        participants,
+        settings,
+        members,
+        choice: peopleChoice,
+        today: TODAY,
+        limit: SEARCH_WINDOW,
+        timeZone: APP_TIME_ZONE,
+      },
+      others,
+    );
+  }, [shown, participants, deferred, members, peopleChoice]);
 
-  if (!activeGroup || activeGroup.isExample || sched.multiDay || of <= MIN_COUNT) return null;
-  const countText = (n: number) => (n === of ? words.all(of) : words.some(n, of));
+  if (!shown) return null;
+  // While the group's calendars load: the steps, their dates still to come.
+  const steps =
+    options ??
+    Array.from({ length: of - MIN_COUNT + 1 }, (_, i) => ({ count: of - i, of, first: null }));
 
   return (
-    <>
-      <ListGroup className="mt-4">
-        <ListRow
-          id={anchorId}
-          icon={Users}
-          label={words.label}
-          value={countText(count)}
-          chevron
-          onClick={() => setOpen(true)}
+    <section className={className}>
+      <span className={FIELD_LABEL}>{words.label}</span>
+      <div className={cn("rounded-2xl border bg-card")}>
+        <HowManySlider
+          options={steps}
+          loading={!options}
+          count={count}
+          onPick={(n) => updatePeople({ ...peopleChoice, atLeast: n === of ? null : n })}
         />
-      </ListGroup>
-      <AnchoredPanel
-        open={open}
-        onClose={() => setOpen(false)}
-        anchorId={anchorId}
-        label={words.label}
-      >
-        <ListGroup className="mt-0" footnote={words.footnote}>
-          {options.map((option) => (
-            <ListPickRow
-              key={option.count}
-              type="radio"
-              name="how-many"
-              checked={option.count === count}
-              onChange={() => {
-                updatePeople({
-                  ...peopleChoice,
-                  atLeast: option.count === option.of ? null : option.count,
-                });
-                setOpen(false);
-              }}
-              label={countText(option.count)}
-              // Under the count: the tick has the row's end.
-              detail={
-                option.first ? capitalize(formatDate(option.first.slot.start, lang)) : words.none
-              }
-            />
-          ))}
-        </ListGroup>
-      </AnchoredPanel>
-    </>
+      </div>
+      {count < of && (
+        <p className="mt-1.5 px-1 text-[0.75rem] text-muted-foreground">{words.footnote}</p>
+      )}
+    </section>
   );
 }

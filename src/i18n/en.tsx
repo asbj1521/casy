@@ -1430,7 +1430,14 @@ export const en: Messages = {
       some: (n: number, of: number) => `${n} of ${of}`,
       none: "No date",
       footnote: "Those who can't are still invited and can vote.",
+      sooner: (days: number) =>
+        days === 1
+          ? "1 day sooner"
+          : days < 14
+            ? `${days} days sooner`
+            : `${Math.round(days / 7)} weeks sooner`,
     },
+    when: { label: "When", soonest: "Soonest" },
     noneThrough: "No day in the period works for everyone. Try changing the plan.",
     suggest: (n: number) => (n === 1 ? "Suggest the date" : `Suggest the top ${n} dates`),
     inviteFriends: "Invite friends",

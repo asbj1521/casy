@@ -631,6 +631,46 @@ test.describe("Genveje (#175)", () => {
       .toMatchObject({ title: "Padel", groupId: "g-running" });
   });
 
+  test("a genvej about to run says how many need to come and when, for this run only (#259)", async ({
+    page,
+    backend,
+  }) => {
+    backend.world.presets.push(padel([{ startHour: 17 }, { startHour: 19 }]));
+    await page.goto("/calendar-overview?plan");
+    await pickGroup(page, "Fredagsbar");
+    await page
+      .getByRole("dialog", { name: "Planlæg" })
+      .getByRole("button", { name: "Genveje", exact: true })
+      .click();
+    const shortcuts = page.getByRole("dialog", { name: "Genveje" });
+    await shortcuts.getByRole("button", { name: "Planlæg Padel" }).click();
+
+    const slider = shortcuts.getByRole("slider", { name: "Hvor mange skal kunne" });
+    await expect(slider).toHaveAttribute("aria-valuenow", "4");
+    await slider.press("ArrowLeft");
+    await expect(slider).toHaveAttribute("aria-valuenow", "3");
+
+    const when = shortcuts.getByRole("button", { name: /^Hvornår/ });
+    await expect(when).toContainText("Snarest");
+    await when.click();
+    await page
+      .getByRole("dialog", { name: "Hvornår" })
+      .getByRole("button", { name: /^December/ })
+      .click();
+    await expect(when).toContainText("December");
+    await page.keyboard.press("Escape");
+
+    await shortcuts.getByRole("button", { name: "Find dato" }).click();
+    await page.getByRole("button", { name: /^Foreslå/ }).click();
+    await expect.poll(() => backend.calls.find((c) => c.body.action === "suggest")).toBeTruthy();
+    const sent = backend.calls.find((c) => c.body.action === "suggest")!.body;
+    expect(sent).toMatchObject({ title: "Padel", settings: { people: { atLeast: 3 } } });
+    // Every date in December; the genvej itself keeps no months.
+    const dates = sent.dates as { start: string }[];
+    expect(dates.every((d) => d.start.startsWith("2026-12"))).toBe(true);
+    expect(backend.world.presets[0].plan).not.toHaveProperty("settings.period");
+  });
+
   test("a genvej looks at up to three times, added and taken away again", async ({
     page,
     backend,
@@ -820,28 +860,38 @@ test.describe("Genveje (#175)", () => {
   });
 });
 
-test("how many need to come is picked up front, each count with its first date, and is sent (#259)", async ({
+test("how many need to come is a slider in the sheet, what each step buys over the knob, and is sent (#259)", async ({
   page,
   backend,
 }) => {
   await page.goto("/calendar-overview?plan");
   const sheet = page.getByRole("dialog", { name: "Planlæg" });
   await pickGroup(page, "Fredagsbar");
-  const row = sheet.getByRole("button", { name: /^Hvor mange skal kunne/ });
-  await expect(row).toContainText("Alle 4");
+  const slider = sheet.getByRole("slider", { name: "Hvor mange skal kunne" });
+  // Everyone to start with, and only the month of their first date (#255):
+  // the date itself is the pile's to reveal.
+  await expect(slider).toHaveAttribute("aria-valuenow", "4");
+  await expect(slider).toHaveAttribute(
+    "aria-valuetext",
+    /^Alle 4, (Ingen dato|[A-ZÆØÅ][a-zæøå]+)$/,
+  );
+  const promise = sheet.getByText("Dem, der ikke kan, bliver stadig inviteret og kan stemme.");
+  await expect(promise).toHaveCount(0);
 
-  await row.click();
-  const picker = page.getByRole("dialog", { name: "Hvor mange skal kunne" });
-  // Every count from all four down to two, each beside its first date (#255).
-  await expect(picker.getByRole("radio")).toHaveCount(3);
-  await expect(picker.getByRole("radio", { name: /^Alle 4/ })).toBeChecked();
-  await expect(picker.getByText(/^(Ingen dato|\S+ \d+\. \S+)$/)).toHaveCount(3);
-  await expect(
-    picker.getByText("Dem, der ikke kan, bliver stadig inviteret og kan stemme."),
-  ).toBeVisible();
-  await picker.getByRole("radio", { name: /^3 af 4/ }).click();
-  await expect(picker).toHaveCount(0);
-  await expect(row).toContainText("3 af 4");
+  // Dragged all the way left and let go: two, picked as the finger lifts.
+  // Once the group's picker has faded away from over it.
+  await slider.hover();
+  const box = (await slider.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 400, box.y + box.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await expect(slider).toHaveAttribute("aria-valuenow", "2");
+  // With fewer than everyone, the promise to the rest is said once.
+  await expect(promise).toBeVisible();
+  // A step at a time with the keys.
+  await slider.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuenow", "3");
 
   await sheet.getByRole("button", { name: "Find dato" }).click();
   await page.getByRole("button", { name: /^Foreslå/ }).click();
