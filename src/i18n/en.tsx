@@ -1086,6 +1086,7 @@ export const en: Messages = {
     deleteFailed: "Couldn't delete the shortcut",
   },
   // Searching an open vote again (#240).
+  rateCasy: "Rate Casy",
   remind: {
     button: (n: number) => `Remind ${n}`,
     done: "Reminded",

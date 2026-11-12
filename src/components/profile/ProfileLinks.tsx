@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { CircleHelp, Database, FileText, LifeBuoy, Lock, MessageSquare, Share } from "lucide-react";
+import {
+  CircleHelp,
+  Database,
+  FileText,
+  LifeBuoy,
+  Lock,
+  MessageSquare,
+  Share,
+  Star,
+} from "lucide-react";
 
 import CopyField from "@/components/ui/CopyField";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
@@ -10,12 +19,17 @@ import { isNativeApp } from "@/lib/nativeApp";
 import { shareLink } from "@/lib/share";
 import { SITE_URL } from "@/lib/nativeApp";
 
-/** What "Share Casy" hands on. */
+/**
+ * The App Store's own page for writing a review of Casy (#256): an itms-apps
+ * link, which iOS hands to the App Store app, never to Safari.
+ */
+const WRITE_REVIEW = "itms-apps://apps.apple.com/app/id6830713238?action=write-review";
 
 /**
  * The profile's "Send feedback" (an email with the build and device filled
- * in) and "Share Casy" (the share sheet; where there is none, the link to
- * copy). The same on a phone and a computer.
+ * in), "Share Casy" (the share sheet; where there is none, the link to
+ * copy) and, in the app, "Rate Casy" (#256: the App Store opens on its page to
+ * rate and review; every rating helps a new app be found).
  */
 export function FeedbackShareGroup() {
   const t = useT();
@@ -44,6 +58,15 @@ export function FeedbackShareGroup() {
           }}
         />
         <ListRow icon={Share} label={t.profileHub.share} onClick={shareCasy} />
+        {isNativeApp && (
+          <ListRow
+            icon={Star}
+            label={t.rateCasy}
+            onClick={() => {
+              window.location.href = WRITE_REVIEW;
+            }}
+          />
+        )}
       </ListGroup>
       {showLink && <CopyField value={SITE_URL} label={t.profileHub.share} className="mt-2" />}
     </>

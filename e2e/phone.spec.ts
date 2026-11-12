@@ -476,3 +476,24 @@ test("someone with no name is offered to choose one, once per opening (#170)", a
   await expect(pill).toHaveCount(0);
   expect(backend.world.name).toBe("Sara");
 });
+
+test("in the app, the profile has Bedøm Casy beside Del Casy; the website doesn't (#256)", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "the app is a phone");
+  // The website has no app to rate.
+  await page.goto("/?profile");
+  const sheet = page.getByRole("dialog", { name: "Profil" });
+  await expect(sheet.getByRole("button", { name: "Del Casy" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Bedøm Casy" })).toHaveCount(0);
+
+  await page.addInitScript(() => {
+    (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
+  });
+  await page.goto("/?profile");
+  // Its tap opens the App Store app (an itms-apps link), which a browser can't follow.
+  await expect(
+    page.getByRole("dialog", { name: "Profil" }).getByRole("button", { name: "Bedøm Casy" }),
+  ).toBeVisible();
+});

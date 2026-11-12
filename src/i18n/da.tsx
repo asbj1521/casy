@@ -1135,6 +1135,8 @@ export const da = {
   },
   // A vote's deadline (#179): none by default, set when planning or later.
   // Searching an open vote again (#240).
+  // On the profile, in the app (#256): the App Store's page to rate Casy.
+  rateCasy: "Bedøm Casy",
   // "Påmind": the suggester reminds those still to answer a vote.
   remind: {
     button: (n: number) => (n === 1 ? "Påmind 1" : `Påmind ${n}`),
