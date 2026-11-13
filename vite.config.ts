@@ -25,6 +25,12 @@ process.env.VITE_APP_BUILD ??= buildId();
 // The release this build is (package.json's version): the iPhone app compares
 // it with the oldest one Casy still supports (lib/appVersion.ts).
 process.env.VITE_APP_VERSION ??= JSON.parse(readFileSync("package.json", "utf8")).version;
+// The app's name for index.html's title and link preview (%VITE_APP_NAME%),
+// read from the one setting the pages use (src/i18n/brand.ts, #268), so launch
+// day (#272) changes it in one place.
+const appName = /APP_NAME = "([^"]+)"/.exec(readFileSync("src/i18n/brand.ts", "utf8"))?.[1];
+if (!appName) throw new Error("vite.config.ts: no APP_NAME in src/i18n/brand.ts");
+process.env.VITE_APP_NAME = appName;
 
 /**
  * Libraries the first page needs, each in a chunk of its own: they change far
