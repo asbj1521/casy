@@ -503,7 +503,7 @@ export default function WelcomeIntro({
                   ...OPEN,
                   scale: { duration: 0.4, times: [0, 0.4, 1] },
                   // Handed over: gone once the growing copy stands over it.
-                  opacity: now >= AT.zoom ? { delay: 0.15, duration: 0 } : { duration: 0 },
+                  opacity: now >= AT.zoom ? { delay: 0.05, duration: 0 } : { duration: 0 },
                 }
           }
         >

@@ -13,8 +13,9 @@ import PhoneVote from "./phone/PhoneVote";
 import TravelBox, { FLIGHT_S, type BoxStage } from "./phone/TravelBox";
 import { dayCell, listScrolls } from "./phone/dayCell";
 import { demoMonth, demoPlan, demoVote, FRIENDS, GROUP_NAME } from "./phone/demo";
-import { DEVICE } from "./phone/geometry";
+import { DEVICE, EDGE } from "./phone/geometry";
 import { rectOfCard, type MorphRect } from "./phone/morph";
+import LogoMark from "@/components/ui/LogoMark";
 import { LinkFace } from "./WelcomeIntro";
 import { STACK_DONE, THROWS } from "./phone/throws";
 
@@ -181,6 +182,8 @@ const SHAPE_COLORS =
   "radial-gradient(circle at 74% 26%, #ffd60a 0, transparent 44%), radial-gradient(circle at 82% 78%, #ff2d78 0, transparent 50%), linear-gradient(135deg, #fb923c, #f43f5e)";
 const MORPH_SPRING = { type: "spring", stiffness: 170, damping: 24 } as const;
 /** The intro's link opening into the phone (#275): one calm sweep, no bounce. */
+/** The phone's metal band, as PhoneDevice draws it. */
+const BAND = 4;
 const GROW = { duration: 0.75, ease: [0.32, 0.72, 0, 1] } as const;
 /** How long the box stands in for the card or the phone, until the real one has appeared over it. */
 const MORPH_S = 0.95;
@@ -480,36 +483,67 @@ export default function WelcomeStage({
           />
         </motion.div>
       )}
-      {morph && (
+      {morph?.link && (
+        // The intro's link opening into the phone like an app launching (#275): the card
+        // grows into an orange screen with the logo in the middle, its white edge turning
+        // into the phone's silver band and black bezel; then it fades into the real phone.
         <motion.div
-          // Over the intro as it fades, so the link card itself seems to open up.
-          className={`fixed overflow-hidden border bg-card shadow-2xl shadow-black/30 ${morph.link ? "z-40" : ""}`}
+          className="fixed z-40 overflow-hidden bg-[#FF4D00] shadow-2xl shadow-black/30"
+          initial={{
+            ...morph.from,
+            borderWidth: 3,
+            borderColor: "#FFFFFF",
+            borderStyle: "solid",
+            opacity: 1,
+          }}
+          animate={{
+            ...morph.to,
+            borderWidth: BAND * (morph.to.width / DEVICE.width),
+            borderColor: "#c4c6c9",
+            opacity: [1, 1, 0],
+          }}
+          transition={{
+            ...GROW,
+            opacity: { duration: MORPH_S, times: [0, 0.62, 1], ease: "easeOut" },
+          }}
+        >
+          {/* The black bezel, inside the band, coming in as it becomes a phone. */}
+          <motion.div
+            className="absolute inset-0 rounded-[inherit]"
+            initial={{ boxShadow: "inset 0 0 0 0px #000000" }}
+            animate={{
+              boxShadow: `inset 0 0 0 ${(EDGE - BAND) * (morph.to.width / DEVICE.width)}px #000000`,
+            }}
+            transition={GROW}
+          />
+          {/* The logo, always in the middle and a share of the width, so it grows with it. */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <LogoMark className="h-auto w-[56%] text-white" label="" />
+          </div>
+          {/* The link's own look, there at the very start, giving way at once. */}
+          <motion.div
+            className="absolute left-0 top-0 bg-white"
+            style={{ width: morph.from.width - 6 }}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
+          >
+            <LinkFace />
+          </motion.div>
+        </motion.div>
+      )}
+      {morph && !morph.link && (
+        <motion.div
+          className="fixed overflow-hidden border bg-card shadow-2xl shadow-black/30"
           initial={{ ...morph.from, opacity: 1 }}
           // Growing into the phone, it fades away over the real one at the end, rather than
           // vanishing all at once.
           animate={{ ...morph.to, opacity: morph.out ? 1 : [1, 1, 0] }}
           transition={{
-            ...(morph.link ? GROW : MORPH_SPRING),
+            ...MORPH_SPRING,
             opacity: { duration: MORPH_S, times: [0, 0.55, 1], ease: "easeOut" },
           }}
         >
-          {morph.link && (
-            // The link card itself, as it was, zooming with the box as it fades into the screen.
-            <motion.div
-              className="absolute left-1/2 top-1/2 flex flex-col overflow-hidden bg-white"
-              style={{
-                width: morph.from.width,
-                height: morph.from.height,
-                marginLeft: -morph.from.width / 2,
-                marginTop: -morph.from.height / 2,
-              }}
-              initial={{ scale: 1, opacity: 1 }}
-              animate={{ scale: morph.to.width / morph.from.width, opacity: 0 }}
-              transition={{ scale: GROW, opacity: { duration: 0.4, delay: 0.15 } }}
-            >
-              <LinkFace />
-            </motion.div>
-          )}
           {/* The phone's metal edge, there only as long as it is still a phone. */}
           <motion.div
             className="absolute inset-0 rounded-[inherit]"
