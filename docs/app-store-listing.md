@@ -183,6 +183,10 @@ screen below it, in the listing's language:
 4. An agreed event: "Datoen lander i alles kalender" / "The date lands in everyone's calendar"
 5. A group: "En gruppe til hver flok" / "A group for every crowd"
 
+Each screen stands in a drawn iPhone 17 Pro Max (titanium band, black border,
+Dynamic Island, iOS's status bar at 9:41), taken with the phone's safe areas
+emulated so the app lays itself out under the island as on a real phone.
+
 `npm run appstore:shots` makes them from the app's own screens with the e2e
 world's made-up data (never real people) and saves them in "Casy App Store
 screenshots light/1.1.0 Dansk" and "1.1.0 English", the folder beside the code
