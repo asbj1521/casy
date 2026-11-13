@@ -1444,6 +1444,9 @@ export const en: Messages = {
     paste: "Paste link",
     open: "Open invitation",
     none: "No invite link found. Copy the link your friend sent, and paste it here.",
+    waiting: "Tap, and we'll find your group.",
+    toGroup: "Go to the group",
+    gone: "We couldn't find the invitation. Tap the link in the chat again and choose Get it on the App Store, or ask for a new link.",
   },
   homeNudge: {
     newGroup: "Make a group with your friends",

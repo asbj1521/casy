@@ -57,13 +57,13 @@ export default function InvitePasteSheet({
   }
   async function paste() {
     try {
-      const found = inviteInText(await navigator.clipboard.readText());
-      if (found) return go(found);
+      const invite = inviteInText(await navigator.clipboard.readText());
+      if (invite) return go(invite);
     } catch {
       // No clipboard here, or the person said no: the field is the way.
     }
     setMissed(true);
-    field.current?.focus();
+    if (!found) field.current?.focus();
   }
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -79,29 +79,45 @@ export default function InvitePasteSheet({
       closeLabel={t.common.cancel}
       onSubmit={submit}
       origin={origin}
-      footer={<FlowButton type="submit">{written ? words.open : words.paste}</FlowButton>}
+      footer={
+        <FlowButton type="submit">
+          {found ? words.toGroup : written ? words.open : words.paste}
+        </FlowButton>
+      }
     >
-      <label htmlFor={fieldId} className={FIELD_LABEL}>
-        {words.label}
-      </label>
-      <input
-        id={fieldId}
-        ref={field}
-        type="text"
-        inputMode="url"
-        autoCapitalize="off"
-        autoCorrect="off"
-        spellCheck={false}
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          setMissed(false);
-        }}
-        placeholder="https://casy.app/join/…"
-        className={FIELD}
-      />
-      {(missed || (text.trim() !== "" && !written)) && (
-        <p className="mt-2 px-1 text-xs text-muted-foreground">{words.none}</p>
+      {found ? (
+        // Opened by itself (#277): they copied nothing themselves, so no link and no field
+        // to fill in; one button, and where the invite is gone, what to do instead.
+        missed ? (
+          <p className="px-1 text-[0.9375rem] text-muted-foreground">{words.gone}</p>
+        ) : (
+          <p className="px-1 text-[0.9375rem] text-muted-foreground">{words.waiting}</p>
+        )
+      ) : (
+        <>
+          <label htmlFor={fieldId} className={FIELD_LABEL}>
+            {words.label}
+          </label>
+          <input
+            id={fieldId}
+            ref={field}
+            type="text"
+            inputMode="url"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              setMissed(false);
+            }}
+            placeholder="https://casy.app/join/…"
+            className={FIELD}
+          />
+          {(missed || (text.trim() !== "" && !written)) && (
+            <p className="mt-2 px-1 text-xs text-muted-foreground">{words.none}</p>
+          )}
+        </>
       )}
     </Sheet>
   );

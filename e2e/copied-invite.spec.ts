@@ -11,9 +11,16 @@ import { expect, test } from "./fixtures";
 
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "the app is a phone"));
 
-async function asTheApp(page: Page, { link, change = 7 }: { link: boolean; change?: number }) {
+async function asTheApp(
+  page: Page,
+  {
+    link,
+    change = 7,
+    copied = "https://casy.app/join/a-token",
+  }: { link: boolean; change?: number; copied?: string },
+) {
   await page.addInitScript(
-    ({ link, change }) => {
+    ({ link, change, copied }) => {
       const w = window as unknown as Record<string, unknown>;
       w.Capacitor = {
         isNativePlatform: () => true,
@@ -23,10 +30,10 @@ async function asTheApp(page: Page, { link, change = 7 }: { link: boolean; chang
       };
       // What iOS hands over once the person allows the paste.
       Object.defineProperty(navigator, "clipboard", {
-        value: { readText: () => Promise.resolve("https://casy.app/join/a-token") },
+        value: { readText: () => Promise.resolve(copied) },
       });
     },
-    { link, change },
+    { link, change, copied },
   );
 }
 
@@ -41,7 +48,10 @@ test.describe("in no group yet", () => {
     await page.goto("/");
     const sheet = page.getByRole("dialog", { name: "Fik du en invitation?" });
     await expect(sheet).toBeVisible();
-    await sheet.getByRole("button", { name: "Indsæt link" }).click();
+    await expect(sheet.getByText("Tryk, så finder vi din gruppe.")).toBeVisible();
+    // Nothing to paste or type: they copied nothing themselves.
+    await expect(sheet.getByRole("textbox")).toHaveCount(0);
+    await sheet.getByRole("button", { name: "Gå til gruppen" }).click();
     await expect.poll(() => backend.calls.find((c) => c.body.action === "join")).toBeTruthy();
   });
 
@@ -64,6 +74,20 @@ test.describe("in no group yet", () => {
     // Then, and only then, the calendar step.
     await expect(page.getByRole("dialog", { name: "Forbind din kalender" })).toBeVisible();
     await expect(page.getByRole("dialog", { name: "Fik du en invitation?" })).toHaveCount(0);
+  });
+});
+
+test.describe("the invite no longer copied", () => {
+  test.use({ world: { calendars: "connected", groups: "none" } });
+
+  test("says what to do instead", async ({ page }) => {
+    await asTheApp(page, { link: true, copied: "https://example.com/something-else" });
+    await page.goto("/");
+    const sheet = page.getByRole("dialog", { name: "Fik du en invitation?" });
+    await sheet.getByRole("button", { name: "Gå til gruppen" }).click();
+    await expect(
+      sheet.getByText(/^Vi kunne ikke finde invitationen\. Tryk på linket/),
+    ).toBeVisible();
   });
 });
 

@@ -1510,6 +1510,10 @@ export const da = {
     paste: "Indsæt link",
     open: "Åbn invitation",
     none: "Intet invitationslink fundet. Kopier linket fra din ven, og sæt det ind her.",
+    // Opened by itself after sign-in (#277): the invite copied on the way to the App Store.
+    waiting: "Tryk, så finder vi din gruppe.",
+    toGroup: "Gå til gruppen",
+    gone: "Vi kunne ikke finde invitationen. Tryk på linket i chatten igen, og vælg Hent i App Store, eller bed om et nyt link.",
   },
   homeNudge: {
     newGroup: "Lav en gruppe med dine venner",
