@@ -51,13 +51,23 @@ const AT = {
   up: 1300,
   bubble: 1800,
   aging: 4300,
-  verdict: 12300,
-  reply: 15300,
-  link: 15900,
-  zoom: 17700,
+  /** The timeline, racing by now, fades away. */
+  fade: 9600,
+  verdict: 10200,
+  /** The line goes back to the middle of the screen, alone there. */
+  alone: 12400,
+  reply: 13900,
+  /** Up again, the old message back beside it. */
+  back: 15700,
+  link: 16300,
+  /** The link pressed, as a finger would. */
+  tap: 17900,
+  zoom: 18350,
 };
 /** How long the message takes to grow old, in s. */
-const AGE_S = 8;
+const AGE_S = 5.3;
+/** How long the timeline runs, faster and faster: past its fading, so it never slows. */
+const RUN_S = 6.2;
 /** How fast the friend's message types itself, per letter. */
 const TYPE_MS = 45;
 /** The timeline's months, apart. */
@@ -209,7 +219,7 @@ function AgingBubble({
  * running past towards now, on and on.
  */
 function Timeline({ lang, run }: { lang: "da" | "en"; run: boolean }) {
-  const months = [...WORDS.months[lang], ...WORDS.months[lang]];
+  const months = Array.from({ length: 4 }, () => WORDS.months[lang]).flat();
   return (
     <div className="relative mt-8 h-14 overflow-hidden" aria-hidden>
       <span className="absolute inset-x-0 top-[5px] h-[2px] bg-white/50" />
@@ -222,7 +232,8 @@ function Timeline({ lang, run }: { lang: "da" | "en"; run: boolean }) {
           className="absolute left-0 top-0 flex items-start"
           initial={{ x: 24 }}
           animate={run ? { x: 24 - months.length * MONTH_PX + 220 } : { x: 24 }}
-          transition={{ duration: AGE_S + 1, ease: [0.4, 0, 0.6, 1] }}
+          // Ever faster, like years flying by.
+          transition={{ duration: RUN_S, ease: [0.55, 0, 1, 1] }}
         >
           <span className="flex shrink-0 flex-col items-start" style={{ width: MONTH_PX * 1.6 }}>
             <span className="h-3 w-3 rounded-full bg-white" />
@@ -260,10 +271,11 @@ function Timeline({ lang, run }: { lang: "da" | "en"; run: boolean }) {
  * phone and no buttons, on orange over the whole screen: "Er det også sket
  * for dig?" alone in the middle, then up to the top; a friend's grey message
  * types itself, ending in "Vi finder lige en dag"; then it grows old (cracks,
- * moss, cobwebs, yellowing, its words blurring away) while the months run past
- * under it; "Vi ved alle, at det aldrig bliver til noget."; then "Næste gang,
- * svar med den her." and the person's own reply, the app's link, from the
- * right. Its place is handed on for the animation's phone to grow out of
+ * cobwebs, yellowing, its words fading) while the months race past under it
+ * and away; "Vi ved alle, at det aldrig bliver til noget."; then that line
+ * alone in the middle again, "Næste gang, svar med den her."; back up beside
+ * the old message, and the person's own reply, the app's link, from the
+ * right, pressed. Its place is handed on for the animation's phone to grow out of
  * (AppWelcome, WelcomeStage).
  */
 export default function WelcomeIntro({
@@ -310,36 +322,41 @@ export default function WelcomeIntro({
 
   const up = now >= AT.up;
   const heading = now >= AT.reply ? WORDS.reply : now >= AT.verdict ? WORDS.verdict : WORDS.relate;
+  // The line alone in the middle: at the start, and again for "Næste gang, svar med den her."
+  const alone = !up || (now >= AT.alone && now < AT.back);
+  const tapped = now >= AT.tap;
   // From the middle of the screen up to the line's own box near the top.
   const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.5 - 130;
+  const move = { duration: 0.7, ease: [0.32, 0.72, 0, 1] } as const;
 
   return (
     <div className="fixed inset-0 z-30 overflow-hidden bg-[#FF4D00] text-white">
       {/* Every part has its own fixed place, so nothing ever moves another. The line at
           the top: each one fades in over the last, in the same box. */}
-      <div
-        className="absolute inset-x-0 h-[9rem] px-8"
+      <motion.div
+        className="absolute inset-x-0 h-[9rem]"
         style={{ top: "max(2.5rem, calc(env(safe-area-inset-top) + 1rem))" }}
+        initial={{ y: middle, scale: 1.12, opacity: 0 }}
+        animate={{
+          y: alone ? middle : 0,
+          scale: alone ? 1.12 : 1,
+          opacity: tapped ? 0 : 1,
+        }}
+        transition={move}
       >
         <AnimatePresence initial={false}>
           <motion.h2
             key={heading.da}
             className="absolute inset-0 flex items-center justify-center text-balance px-8 text-center text-[2.375rem] font-bold leading-[1.1]"
-            initial={
-              heading === WORDS.relate ? { opacity: 0, y: middle, scale: 1.12 } : { opacity: 0 }
-            }
-            animate={
-              up || heading !== WORDS.relate
-                ? { opacity: 1, y: 0, scale: 1 }
-                : { opacity: 1, y: middle, scale: 1.12 }
-            }
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ duration: 0.45 }}
           >
             {heading[lang]}
           </motion.h2>
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* The friend's message, from the left, typing itself; then growing old. */}
       <AnimatePresence>
@@ -347,8 +364,10 @@ export default function WelcomeIntro({
           <motion.div
             className="absolute inset-x-5 top-[34%] flex flex-col"
             initial={{ x: "-110%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+            // Away while the line is alone in the middle; back, still old, after.
+            animate={{ x: 0, opacity: (now >= AT.alone && now < AT.back) || tapped ? 0 : 1 }}
+            // Back only once the line above has made room for it.
+            transition={now >= AT.back && !tapped ? { ...move, delay: 0.35 } : move}
           >
             <AgingBubble text={message} typed={typed} age={age} />
           </motion.div>
@@ -357,13 +376,13 @@ export default function WelcomeIntro({
 
       {/* Time passing, under the message. */}
       <AnimatePresence>
-        {aging && now < AT.reply && (
+        {aging && now < AT.fade && (
           <motion.div
             className="absolute inset-x-5 top-[calc(34%+8.5rem)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.6 }}
           >
             <Timeline lang={lang} run={aging} />
           </motion.div>
@@ -375,10 +394,11 @@ export default function WelcomeIntro({
         {now >= AT.link && (
           <motion.div
             ref={link}
-            className="absolute right-5 top-[calc(34%+9.5rem)] w-[68%] max-w-[17rem] overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
+            className="absolute right-5 top-[calc(34%+8rem)] w-[68%] max-w-[17rem] overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
             initial={{ x: "120%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+            // Pressed, as a finger would, just before it opens into the app.
+            animate={tapped ? { x: 0, opacity: 1, scale: [1, 0.94, 1] } : { x: 0, opacity: 1 }}
+            transition={tapped ? { duration: 0.4, times: [0, 0.4, 1] } : move}
           >
             <img
               src="/og-image.png"

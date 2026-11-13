@@ -179,6 +179,8 @@ const SHAPE_FILL = { x: "-15%", y: "-6%", rotate: -8, scale: 1.7 };
 const SHAPE_COLORS =
   "radial-gradient(circle at 74% 26%, #ffd60a 0, transparent 44%), radial-gradient(circle at 82% 78%, #ff2d78 0, transparent 50%), linear-gradient(135deg, #fb923c, #f43f5e)";
 const MORPH_SPRING = { type: "spring", stiffness: 170, damping: 24 } as const;
+/** The intro's link opening into the phone (#275): one calm sweep, no bounce. */
+const GROW = { duration: 0.75, ease: [0.32, 0.72, 0, 1] } as const;
 /** How long the box stands in for the card or the phone, until the real one has appeared over it. */
 const MORPH_S = 0.95;
 
@@ -355,7 +357,13 @@ export default function WelcomeStage({
       borderRadius: DEVICE.radius * standing.scale,
     };
   };
-  const [morph, setMorph] = useState<{ from: MorphRect; to: MorphRect; out: boolean } | null>(null);
+  const [morph, setMorph] = useState<{
+    from: MorphRect;
+    to: MorphRect;
+    out: boolean;
+    /** Grown from the intro's link card (#275): it starts looking like it. */
+    link?: boolean;
+  } | null>(null);
   // The intro's link card growing into the phone: once, as soon as the stage is measured.
   const [growing, setGrowing] = useState(!!fromIntro && !still);
   const grown = useRef(false);
@@ -363,7 +371,7 @@ export default function WelcomeStage({
     if (!fromIntro || still || grown.current || size.height === 0) return;
     grown.current = true;
     const frame = requestAnimationFrame(() =>
-      setMorph({ from: fromIntro, to: phoneRect(true), out: false }),
+      setMorph({ from: fromIntro, to: phoneRect(true), out: false, link: true }),
     );
     const shown = setTimeout(() => setGrowing(false), MORPH_S * 700);
     const done = setTimeout(() => setMorph(null), MORPH_S * 1000);
@@ -473,11 +481,23 @@ export default function WelcomeStage({
       )}
       {morph && (
         <motion.div
-          className="fixed border bg-card shadow-2xl shadow-black/30"
+          // Over the intro as it fades, so the link card itself seems to open up.
+          className={`fixed overflow-hidden border bg-card shadow-2xl shadow-black/30 ${morph.link ? "z-40" : ""}`}
           initial={morph.from}
           animate={morph.to}
-          transition={MORPH_SPRING}
+          transition={morph.link ? GROW : MORPH_SPRING}
         >
+          {morph.link && (
+            // The link's picture, whole, on its orange: the name stays in the middle as the card grows.
+            <motion.img
+              src="/og-image.png"
+              alt=""
+              className="absolute inset-0 h-full w-full bg-[#FF4D00] object-contain"
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 0 }}
+              transition={{ duration: 0.4, delay: 0.25 }}
+            />
+          )}
           {/* The phone's metal edge, there only as long as it is still a phone. */}
           <motion.div
             className="absolute inset-0 rounded-[inherit]"

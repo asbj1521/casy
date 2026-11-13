@@ -130,7 +130,7 @@ export default function AppWelcome({
             key="intro"
             className="fixed inset-0 z-30"
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
           >
             <WelcomeIntro onDone={introDone} />
           </motion.div>
