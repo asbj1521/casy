@@ -1,10 +1,19 @@
 /**
- * The joke as a scene (#275, #270): a group chat writes itself until someone
- * says "Vi finder lige en dag", the person is asked whether they know that
- * message, and either way they answer it with the app, the friends laugh, and
- * for once the day is found. Kept as plain data, lines and timings, so the
- * app's welcome screen, the computer's ad and later the Swift welcome screen
- * (Native 5, #201) all play the same scene.
+ * The joke as scenes (#275, #270), played in a group chat that looks like the
+ * ones Danes use, without copying any one app. In each, a plan stalls at "Vi
+ * finder lige en dag"; time passes; the person answers with the app's link,
+ * the friends laugh, and one of them sends back the day the app found.
+ *
+ * The phone shows only the chat. What the app says to the person (a cue) is
+ * shown outside it, by whoever holds the phone, and the chat waits while it
+ * stands: line, chat, line, chat.
+ *
+ * The friends write as friends do, with emojis and reactions: the one place
+ * the app shows emojis, since this is their chat, not the app speaking
+ * (CLAUDE.md's no-emoji rule is for what the app says, the cues included).
+ *
+ * Plain data, lines and timings, so the app's welcome screen, the computer's
+ * ad and later the Swift welcome screen (Native 5, #201) play the same scenes.
  */
 
 export interface Words {
@@ -12,93 +21,214 @@ export interface Words {
   en: string;
 }
 
-/** The friends in the chat, each with the colour of their initial. */
+/** The friends in the chat (made up), each with the colour of their initial. */
 export const FRIENDS = {
-  mads: { name: "Mads", color: "#4C8BF5" },
-  ida: { name: "Ida", color: "#B06AF0" },
-  jonas: { name: "Jonas", color: "#3DBB7A" },
+  mads: { name: "Mads", color: "#5B7CF7" },
+  ida: { name: "Ida", color: "#C2649B" },
+  jonas: { name: "Jonas", color: "#3FA47A" },
 } as const;
 
 export type Friend = keyof typeof FRIENDS;
 
-/** One moment of the scene. `ms` is how long it stays before the next one. */
+/** The chat's name at the top. */
+export const GROUP: Words = { da: "Gym-vennerne", en: "School friends" };
+
+/** What the plan is about: each scene is played with one of these. */
+export interface Activity {
+  /** Proposing it, in the scene "idea". */
+  propose: Words;
+  /** Asking whether it ever happened, in the scene "again". */
+  again: Words;
+  /** Its name on the found day's card. */
+  title: Words;
+}
+
+export const ACTIVITIES: Activity[] = [
+  {
+    propose: { da: "Skal vi ikke tage ud og køre gokart? 🏎️", en: "Shall we go karting? 🏎️" },
+    again: {
+      da: "Fandt vi nogensinde en dag til gokart? 😅",
+      en: "Did we ever find a day for karting? 😅",
+    },
+    title: { da: "Gokart", en: "Go-karting" },
+  },
+  {
+    propose: {
+      da: "Skal vi ikke tage på fisketur en dag? 🎣",
+      en: "Shall we go fishing some day? 🎣",
+    },
+    again: {
+      da: "Blev der nogensinde noget af den fisketur?",
+      en: "Did that fishing trip ever happen?",
+    },
+    title: { da: "Fisketur", en: "Fishing trip" },
+  },
+  {
+    propose: { da: "Skal vi ikke tage på vandretur? 🥾", en: "Shall we go hiking? 🥾" },
+    again: {
+      da: "Fandt vi nogensinde en dag til vandreturen?",
+      en: "Did we ever find a day for the hike?",
+    },
+    title: { da: "Vandretur", en: "Hike" },
+  },
+  {
+    propose: {
+      da: "Skal vi ikke tage på camping til sommer? ⛺",
+      en: "Shall we go camping this summer? ⛺",
+    },
+    again: {
+      da: "Blev der nogensinde noget af den campingtur?",
+      en: "Did that camping trip ever happen?",
+    },
+    title: { da: "Camping", en: "Camping" },
+  },
+];
+
+/**
+ * How much slower than the beats' own `ms` the scene plays: one setting for
+ * the whole pace, so reading speed is tuned in one place.
+ */
+export const PACE = 1.5;
+
+/** One moment of a scene. `ms` (times PACE) is how long it stays before the next one. */
 export type Beat =
   /** The friend is typing: three dots, then their message replaces them. */
   | { kind: "typing"; who: Friend; ms: number }
-  /** A message from a friend; `key` is the one the whole scene is about. */
-  | { kind: "text"; who: Friend; text: Words; key?: boolean; ms: number }
-  /** The person's own reply: the app's link, as a chat shows it. */
-  | { kind: "link"; ms: number }
-  /** The day the app found, standing in the chat like a note. */
-  | { kind: "found"; ms: number }
-  /** A line under the chat, from the app to the person. */
-  | { kind: "caption"; text: Words; ms: number }
-  /** The question, waiting for Ja or Nej (or, on the computer, nobody). */
-  | { kind: "ask" };
+  /**
+   * A friend's message: fixed words, or the activity's (`propose`, `again`).
+   * `key` is the line the scene is about; `history` is already there when the
+   * scene opens.
+   */
+  | {
+      kind: "text";
+      who: Friend;
+      text: Words | "propose" | "again";
+      key?: boolean;
+      history?: boolean;
+      /** A reaction someone puts on it a moment later, and how many did. */
+      react?: { emoji: string; count?: number };
+      ms: number;
+    }
+  /** Time passing, as a chat's divider says it. */
+  | { kind: "gap"; text: Words; ms: number }
+  /** A line from the app to the person, outside the phone; the chat waits. */
+  | { kind: "cue"; text: Words; ms: number }
+  /** The person's own turn: the app's link in their field, sent with a tap (or by itself). */
+  | { kind: "send"; ms: number }
+  /** A friend sends back the day the app found. */
+  | { kind: "found"; who: Friend; react?: { emoji: string; count?: number }; ms: number };
 
-/** The chat's name at the top. */
-export const GROUP: Words = { da: "Gymnasiet 3.b", en: "Old school friends" };
-export const MEMBERS: Words = { da: "5 personer", en: "5 people" };
-
-/** The phrase itself: the one line that is never translated into anything else in Danish. */
 const PHRASE: Words = { da: "Vi finder lige en dag", en: "We'll find a day" };
 
-export const OPENING: Beat[] = [
-  { kind: "typing", who: "mads", ms: 700 },
+/** The three things the app says, in order. */
+export const CUES = {
+  familiar: { da: "Er det også sket for dig?", en: "Sound familiar?" },
+  reply: { da: "Næste gang, svar med den her.", en: "Next time, reply with this." },
+  found: { da: "Og så fandt I den.", en: "And then you found it." },
+} satisfies Record<string, Words>;
+
+/** From the phrase on: the same in every scene. */
+const ENDING: Beat[] = [
+  { kind: "cue", text: CUES.familiar, ms: 2200 },
+  { kind: "cue", text: CUES.reply, ms: 1800 },
+  { kind: "send", ms: 1100 },
+  { kind: "typing", who: "ida", ms: 600 },
   {
     kind: "text",
-    who: "mads",
-    text: { da: "Vi skal altså ses snart", en: "We really need to meet up soon" },
+    who: "ida",
+    text: { da: "HAHAHA er det en rigtig app?? 😂😂", en: "HAHAHA is that a real app?? 😂😂" },
+    react: { emoji: "😆" },
     ms: 900,
   },
-  { kind: "typing", who: "ida", ms: 600 },
-  { kind: "text", who: "ida", text: { da: "Jaaa helt sikkert", en: "Yesss definitely" }, ms: 900 },
-  { kind: "typing", who: "jonas", ms: 1100 },
-  { kind: "text", who: "jonas", text: PHRASE, key: true, ms: 1400 },
-  { kind: "ask" },
-];
-
-/** What is asked about Jonas's message, and the two answers. */
-export const QUESTION: Words = {
-  da: "Har du fået den besked?",
-  en: "Ever had that message?",
-};
-export const YES: Words = { da: "Ja", en: "Yes" };
-export const NO: Words = { da: "Nej", en: "No" };
-
-/** The app's reply to each answer: either way, the person answers with the app. */
-export const ANSWERS: Record<"yes" | "no", Words> = {
-  yes: { da: "Så svar med den her.", en: "Then answer with this." },
-  no: { da: "Det får du. Svar med den her.", en: "You will. Answer with this." },
-};
-
-/** After the answer, the same for everyone. */
-export const AFTER: Beat[] = [
-  { kind: "link", ms: 1200 },
-  { kind: "typing", who: "ida", ms: 500 },
-  { kind: "text", who: "ida", text: { da: "HAHA nej", en: "HAHA no" }, ms: 700 },
   { kind: "typing", who: "jonas", ms: 700 },
   {
     kind: "text",
     who: "jonas",
-    text: { da: "ok den er faktisk god", en: "ok that's actually good" },
-    ms: 1300,
+    text: { da: "Okay den virker faktisk 🤯", en: "Okay it actually works 🤯" },
+    ms: 900,
   },
-  { kind: "found", ms: 1500 },
-  { kind: "typing", who: "mads", ms: 600 },
-  { kind: "text", who: "mads", text: { da: "Vi ses på fredag", en: "See you on Friday" }, ms: 900 },
+  { kind: "typing", who: "mads", ms: 900 },
   {
-    kind: "caption",
-    text: { da: "Og så fandt I den.", en: "And for once, you found it." },
-    ms: 2600,
+    kind: "text",
+    who: "mads",
+    text: { da: "Jeg har lige fundet en dag til os 🙏", en: "I just found us a day 🙏" },
+    ms: 800,
   },
+  { kind: "found", who: "mads", react: { emoji: "❤️", count: 4 }, ms: 1600 },
+  { kind: "cue", text: CUES.found, ms: 3400 },
 ];
 
-/** The found day, as the note in the chat says it. */
-export const FOUND: { title: Words; detail: Words } = {
-  title: { da: "Fredag 14. marts", en: "Friday 14 March" },
-  detail: { da: "Alle 5 kan", en: "All 5 can make it" },
+export const SCENES = {
+  /** Someone proposes something, everyone loves it, and it stalls at the phrase. */
+  idea: [
+    { kind: "typing", who: "mads", ms: 800 },
+    { kind: "text", who: "mads", text: "propose", react: { emoji: "❤️", count: 2 }, ms: 900 },
+    { kind: "typing", who: "ida", ms: 600 },
+    {
+      kind: "text",
+      who: "ida",
+      text: { da: "Jaaa det lyder vildt fedt 😍", en: "Yesss that sounds amazing 😍" },
+      react: { emoji: "👍" },
+      ms: 800,
+    },
+    { kind: "typing", who: "jonas", ms: 700 },
+    {
+      kind: "text",
+      who: "jonas",
+      text: { da: "Uh ja, det kunne være så hyggeligt 🙌", en: "Oh yes, that would be so nice 🙌" },
+      ms: 900,
+    },
+    { kind: "typing", who: "mads", ms: 900 },
+    {
+      kind: "text",
+      who: "mads",
+      text: PHRASE,
+      key: true,
+      react: { emoji: "👍", count: 3 },
+      ms: 900,
+    },
+    { kind: "gap", text: { da: "3 uger senere", en: "3 weeks later" }, ms: 700 },
+    ...ENDING,
+  ],
+  /** It was proposed long ago; someone asks whether it ever happened. */
+  again: [
+    { kind: "text", who: "mads", text: "propose", history: true, ms: 0 },
+    {
+      kind: "text",
+      who: "jonas",
+      text: PHRASE,
+      history: true,
+      react: { emoji: "👍", count: 3 },
+      ms: 0,
+    },
+    { kind: "gap", text: { da: "2 måneder senere", en: "2 months later" }, ms: 900 },
+    { kind: "typing", who: "ida", ms: 800 },
+    { kind: "text", who: "ida", text: "again", ms: 1000 },
+    { kind: "typing", who: "jonas", ms: 1100 },
+    { kind: "text", who: "jonas", text: { da: "...nej 🙈", en: "...no 🙈" }, ms: 900 },
+    { kind: "typing", who: "mads", ms: 900 },
+    {
+      kind: "text",
+      who: "mads",
+      text: PHRASE,
+      key: true,
+      react: { emoji: "😂", count: 2 },
+      ms: 1000,
+    },
+    ...ENDING,
+  ],
+} satisfies Record<string, Beat[]>;
+
+export type SceneName = keyof typeof SCENES;
+
+/** The found day, as the app's card says it. */
+export const FOUND = {
+  date: { da: "Lørdag 14. marts", en: "Saturday 14 March" },
+  detail: { da: "kl. 14 · Alle 5 kan", en: "2 pm · All 5 can make it" },
 };
 
 /** The link's small print under the name, as a chat preview has it. */
 export const LINK_DETAIL: Words = { da: "Find en dag · App Store", en: "Find a day · App Store" };
+
+/** The time in the status bar: an evening, when group chats happen. */
+export const CLOCK = "21.12";
