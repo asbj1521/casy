@@ -51,7 +51,8 @@ const C = {
   card: "bg-[#F5F5F7] dark:bg-[#1C1C1E]",
 };
 
-const POP = { type: "spring", stiffness: 420, damping: 30 } as const;
+/** A message arriving, and the others making room: a calm slide, no bounce, as a chat does. */
+const SLIDE = { type: "tween", ease: [0.2, 0.8, 0.2, 1], duration: 0.32 } as const;
 
 function Face({ who, size = 30 }: { who: Friend; size?: number }) {
   return (
@@ -262,9 +263,10 @@ export default function ChatScene({
               return (
                 <motion.div
                   key={it.id}
-                  layout
+                  layout="position"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  transition={SLIDE}
                   className={`shrink-0 py-4 text-center text-[13px] font-medium uppercase tracking-wide ${C.dim}`}
                 >
                   {it.text}
@@ -275,10 +277,10 @@ export default function ChatScene({
               return (
                 <motion.div
                   key={it.id}
-                  layout
-                  initial={{ opacity: 0, y: 24, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={POP}
+                  layout="position"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={SLIDE}
                   className="relative mb-4 mt-2 w-[250px] shrink-0 origin-bottom-right self-end"
                 >
                   <span className={`block overflow-hidden rounded-[18px] ${C.theirs}`}>
@@ -302,10 +304,10 @@ export default function ChatScene({
             return (
               <motion.div
                 key={it.id}
-                layout
-                initial={{ opacity: 0, y: 14, scale: 0.96 }}
-                animate={{ opacity: dim ? 0.3 : 1, y: 0, scale: 1 }}
-                transition={POP}
+                layout="position"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: dim ? 0.3 : 1, y: 0 }}
+                transition={SLIDE}
                 className={`flex shrink-0 origin-bottom-left items-end gap-2 ${first ? "mt-2" : ""} ${it.react ? "mb-4" : ""}`}
               >
                 <span className="w-[30px] shrink-0">{last && <Face who={it.who} />}</span>
@@ -329,25 +331,30 @@ export default function ChatScene({
               </motion.div>
             );
           })}
-          {typing && (
-            <motion.div
-              key={`typing-${at}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="mt-2 flex shrink-0 items-end gap-2"
-            >
-              <Face who={typing} />
-              <span className={`rounded-[18px] px-[13px] py-[10px] ${C.theirs}`}>
-                <Dots />
-              </span>
-            </motion.div>
-          )}
         </AnimatePresence>
+        {/* The typing dots: gone the moment the message takes their place, no fade out. */}
+        {typing && (
+          <motion.div
+            key={`typing-${at}`}
+            layout="position"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={SLIDE}
+            className="mt-2 flex shrink-0 items-end gap-2"
+          >
+            <Face who={typing} />
+            <span className={`rounded-[18px] px-[13px] py-[10px] ${C.theirs}`}>
+              <Dots />
+            </span>
+          </motion.div>
+        )}
         {/* Who has seen the last message, as small faces at the end. */}
-        {!typing && items.length > 0 && (
-          <span className="mt-1 flex shrink-0 justify-end gap-[3px]" aria-hidden>
+        {items.length > 0 && (
+          <span
+            className="mt-1 flex shrink-0 justify-end gap-[3px] transition-opacity"
+            style={{ opacity: typing ? 0 : 1 }}
+            aria-hidden
+          >
             {(Object.keys(FRIENDS) as Friend[]).map((f) => (
               <Face key={f} who={f} size={15} />
             ))}
