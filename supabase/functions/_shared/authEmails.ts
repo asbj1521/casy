@@ -164,8 +164,7 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
       return da
         ? {
             subject: "Nulstil din adgangskode",
-            preview:
-              "Nulstil din adgangskode. Linket virker én gang og udløber om en time.",
+            preview: "Nulstil din adgangskode. Linket virker én gang og udløber om en time.",
             heading: "Nulstil din adgangskode",
             body: "Brug knappen nedenfor til at vælge en ny adgangskode. Linket virker én gang og udløber om en time.",
             button: "Nulstil adgangskode",
@@ -261,9 +260,7 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
       const name = providerName(data.provider, lang);
       return da
         ? {
-            subject: linked
-              ? "En ny måde at logge ind"
-              : "En måde at logge ind er fjernet",
+            subject: linked ? "En ny måde at logge ind" : "En måde at logge ind er fjernet",
             preview: linked
               ? "Din konto har fået en ny måde at logge ind på."
               : "En måde at logge ind på din konto er fjernet.",
@@ -275,9 +272,7 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
               "Var det ikke dig, så nulstil din adgangskode på casy.app, og log ud på alle enheder fra din profil.",
           }
         : {
-            subject: linked
-              ? "A new way to sign in"
-              : "A way to sign in was removed",
+            subject: linked ? "A new way to sign in" : "A way to sign in was removed",
             preview: linked
               ? "Your account has a new way to sign in."
               : "A way to sign in to your account was removed.",
@@ -294,9 +289,7 @@ function wordsFor(type: string, data: EmailData, user: HookUser, lang: Lang): Wo
       const added = type === "mfa_factor_enrolled_notification";
       return da
         ? {
-            subject: added
-              ? "Totrinslogin er slået til"
-              : "Totrinslogin er slået fra",
+            subject: added ? "Totrinslogin er slået til" : "Totrinslogin er slået fra",
             preview: added
               ? "Din konto beder nu om en kode, når du logger ind."
               : "Din konto beder ikke længere om en kode, når du logger ind.",

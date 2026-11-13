@@ -429,8 +429,7 @@ export async function putEvent(
   if (res.ok || res.status === 412) return;
   if (res.status === 401) throw new CalDavLoginError(BAD_LOGIN);
   // A calendar shared view-only, or one iCloud won't take events in.
-  if (res.status === 403)
-    throw new CalDavError("Apple didn't let us add events to that calendar.");
+  if (res.status === 403) throw new CalDavError("Apple didn't let us add events to that calendar.");
   throw new CalDavError(`Apple Calendar responded with HTTP ${res.status}.`);
 }
 
