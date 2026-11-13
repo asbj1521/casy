@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
+import type { MorphRect } from "@/components/welcome/phone/morph";
 import { APP_NAME } from "@/i18n/brand";
 import { useLang } from "@/i18n/lang";
 
@@ -20,7 +21,7 @@ const WORDS = {
 };
 
 /** When each part starts, in ms from the intro's start. */
-const AT = { bubble: 500, aging: 2000, reply: 5200, link: 5800, zoom: 7600, done: 8400 };
+const AT = { bubble: 500, aging: 2000, reply: 5200, link: 5800, zoom: 7600 };
 
 /** A cobweb in a corner, spun thread by thread. */
 function Cobweb({ className }: { className: string }) {
@@ -64,14 +65,30 @@ function Cobweb({ className }: { className: string }) {
  * reply, the app's link, from the right. It zooms into that link, which hands
  * over to the animation's phone (AppWelcome).
  */
-export default function WelcomeIntro({ onDone }: { onDone: () => void }) {
+export default function WelcomeIntro({
+  onDone,
+}: {
+  /** Handed the link card's place on the screen, for the phone to grow out of. */
+  onDone: (from: MorphRect | null) => void;
+}) {
   const { lang } = useLang();
   const still = useReducedMotion() ?? false;
   const [now, setNow] = useState(0);
+  const link = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const times = Object.values(AT);
     const timers = times.map((t) => window.setTimeout(() => setNow(t), still ? t / 2 : t));
-    const end = window.setTimeout(onDone, still ? AT.done / 2 : AT.done);
+    const end = window.setTimeout(
+      () => {
+        const r = link.current?.getBoundingClientRect();
+        onDone(
+          r
+            ? { left: r.left, top: r.top, width: r.width, height: r.height, borderRadius: 22 }
+            : null,
+        );
+      },
+      still ? AT.zoom / 2 : AT.zoom,
+    );
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
       window.clearTimeout(end);
@@ -157,18 +174,11 @@ export default function WelcomeIntro({ onDone }: { onDone: () => void }) {
         <AnimatePresence>
           {now >= AT.link && (
             <motion.div
+              ref={link}
               className="w-[68%] max-w-[17rem] origin-center self-end overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
               initial={{ x: "120%", opacity: 0 }}
-              animate={
-                zooming
-                  ? { x: "-12%", y: "-25%", scale: 3.2, opacity: 0 }
-                  : { x: 0, opacity: 1, scale: 1 }
-              }
-              transition={
-                zooming
-                  ? { duration: 0.8, ease: [0.5, 0, 0.3, 1] }
-                  : { type: "spring", stiffness: 220, damping: 24 }
-              }
+              animate={{ x: 0, opacity: 1, scale: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 24 }}
             >
               <img
                 src="/og-image.png"

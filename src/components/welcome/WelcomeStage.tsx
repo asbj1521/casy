@@ -200,10 +200,16 @@ const MORPH_S = 0.95;
 export default function WelcomeStage({
   leaving = false,
   cardOnLeaving,
+  fromIntro = null,
 }: {
   leaving?: boolean;
   /** Where the card stood as sign-in closed, to shrink back from. */
   cardOnLeaving?: RefObject<MorphRect | null>;
+  /**
+   * Where the intro's link card stood as it handed over (#275): the phone grows
+   * out of it instead of rising from below.
+   */
+  fromIntro?: MorphRect | null;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -350,6 +356,25 @@ export default function WelcomeStage({
     };
   };
   const [morph, setMorph] = useState<{ from: MorphRect; to: MorphRect; out: boolean } | null>(null);
+  // The intro's link card growing into the phone: once, as soon as the stage is measured.
+  const [growing, setGrowing] = useState(!!fromIntro && !still);
+  const grown = useRef(false);
+  useEffect(() => {
+    if (!fromIntro || still || grown.current || size.height === 0) return;
+    grown.current = true;
+    const frame = requestAnimationFrame(() =>
+      setMorph({ from: fromIntro, to: phoneRect(true), out: false }),
+    );
+    const shown = setTimeout(() => setGrowing(false), MORPH_S * 700);
+    const done = setTimeout(() => setMorph(null), MORPH_S * 1000);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(shown);
+      clearTimeout(done);
+    };
+    // Once, when the stage first has a size: the card's place is fixed at the hand-over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [size.height]);
   const wasLeaving = useRef(leaving);
   useEffect(() => {
     if (wasLeaving.current === leaving) return;
@@ -507,16 +532,19 @@ export default function WelcomeStage({
               marginTop: -DEVICE.height / 2,
               transformStyle: "preserve-3d",
             }}
-            initial={still ? false : place(POSE.below)}
-            animate={
-              still
+            initial={
+              still ? false : fromIntro ? { ...place(POSE.flat), opacity: 0 } : place(POSE.below)
+            }
+            animate={{
+              ...(still
                 ? place(POSE.flat)
                 : framedNow
                   ? { ...pose, ...framed }
                   : thud
                     ? { ...place(POSE.flat), scale: scale * 1.05 }
-                    : place(pose)
-            }
+                    : place(pose)),
+              opacity: growing ? 0 : 1,
+            }}
             transition={still ? { duration: 0 } : POSE_SPRING}
           >
             <PhoneDevice

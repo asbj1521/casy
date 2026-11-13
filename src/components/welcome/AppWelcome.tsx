@@ -53,7 +53,9 @@ export default function AppWelcome({
       return !signIn;
     }
   });
-  const introDone = useCallback(() => {
+  const [introCard, setIntroCard] = useState<MorphRect | null>(null);
+  const introDone = useCallback((from: MorphRect | null) => {
+    setIntroCard(from);
     setIntro(false);
     try {
       localStorage.setItem(INTRO_SEEN, "1");
@@ -91,7 +93,9 @@ export default function AppWelcome({
       style={{ height: "calc(100dvh - env(safe-area-inset-top))" }}
     >
       <div className="min-h-0 flex-1">
-        {!intro && <WelcomeStage leaving={signIn} cardOnLeaving={cardOnLeaving} />}
+        {!intro && (
+          <WelcomeStage leaving={signIn} cardOnLeaving={cardOnLeaving} fromIntro={introCard} />
+        )}
       </div>
       <motion.div
         aria-hidden={signIn || intro}
