@@ -24,7 +24,7 @@ public enum CasyStrings {
     /// The app's name as people see it, and the label iOS shows under the icon
     /// and in Settings (#268): `src/i18n/brand.ts`'s two, changed together on
     /// launch day (#272).
-    public static let appName = "Casy"
+    public static let appName = "Vi finder lige en dag"
     public static let appLabel = "Casy"
 
     public static var cancel: String { text("common.cancel") }

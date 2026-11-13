@@ -47,7 +47,7 @@ test("a description becomes entries, which are kept only when saved", async ({
   }
   const day = page.getByRole("dialog", { name: "Mandag 12. oktober" });
   await expect(day.getByText("Rejse")).toBeVisible();
-  await expect(day.getByText(/· Casy$/)).toBeVisible();
+  await expect(day.getByText(/· Vi finder lige en dag$/)).toBeVisible();
   await expect(day.getByText("Tilføjet", { exact: true })).toBeVisible();
 });
 

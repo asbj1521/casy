@@ -6,4 +6,4 @@
  * the native String Catalog together. Code names, the domain (casy.app, the
  * sender address) and every stored id keep "casy" for good.
  */
-export const APP_NAME = "Casy";
+export const APP_NAME = "Vi finder lige en dag";

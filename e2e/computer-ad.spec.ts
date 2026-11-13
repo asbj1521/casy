@@ -24,7 +24,9 @@ test.describe("a computer", () => {
         "href",
         "https://apps.apple.com/app/id6830713238",
       );
-      await expect(page.getByText(/^Har du Android\?/)).toBeVisible();
+      await expect(
+        page.getByText("Ud fra jeres kalendere, gratis på alle telefoner."),
+      ).toBeVisible();
       // The phone plays by itself: the app's first line comes once the plan has stalled.
       await expect(page.getByText("Er det også sket for dig?")).toBeVisible({ timeout: 20_000 });
     });

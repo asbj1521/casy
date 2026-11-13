@@ -13,15 +13,18 @@ import { cn } from "@/lib/utils";
 export default function QrCode({
   value,
   label,
+  border = 4,
   className,
 }: {
   value: string;
+  /** The white edge, in modules: four is the standard; two is enough on a white card. */
+  border?: number;
   /** What the code is, for screen readers. */
   label: string;
   className?: string;
 }) {
   const { size, path } = useMemo(() => {
-    const qr = encode(value, { ecc: "M", border: 4 });
+    const qr = encode(value, { ecc: "M", border });
     let d = "";
     qr.data.forEach((row, y) =>
       row.forEach((dark, x) => {
@@ -29,7 +32,7 @@ export default function QrCode({
       }),
     );
     return { size: qr.size, path: d };
-  }, [value]);
+  }, [value, border]);
 
   return (
     <svg

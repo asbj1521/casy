@@ -149,12 +149,9 @@ export const en: Messages = {
   },
   computerAd: {
     tagline: "Everyone says it. The app actually finds it.",
-    about:
-      "The app looks at your calendars and finds the first day the whole group is free. Free for iPhone.",
+    about: "From your calendars, free on every phone.",
     scan: "Scan with your phone",
-    orGo: "or go to casy.app/app on your phone",
     appStore: "Get it on the App Store",
-    android: "On Android? Open casy.app on your phone and it works in the browser.",
     qrLabel: "QR code for the app",
     signedIn: (name: string) => `Signed in as ${name}. Carry on in the app on your phone.`,
     signOut: "Sign out",

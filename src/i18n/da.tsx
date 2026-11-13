@@ -161,12 +161,9 @@ export const da = {
   // The app's ad: what a computer sees instead of the website (#270).
   computerAd: {
     tagline: "Det siger alle. Appen finder den så.",
-    about:
-      "Appen kigger i jeres kalendere og finder den første dag, hvor hele gruppen kan. Gratis til iPhone.",
+    about: "Ud fra jeres kalendere, gratis på alle telefoner.",
     scan: "Scan med din telefon",
-    orGo: "eller gå til casy.app/app på telefonen",
     appStore: "Hent i App Store",
-    android: "Har du Android? Åbn casy.app på telefonen, så virker det i browseren.",
     qrLabel: "QR-kode til appen",
     signedIn: (name: string) => `Logget ind som ${name}. Fortsæt i appen på telefonen.`,
     signOut: "Log ud",

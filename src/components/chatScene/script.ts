@@ -127,6 +127,16 @@ export const CUES = {
   found: { da: "Og så fandt I den.", en: "And then you found it." },
 } satisfies Record<string, Words>;
 
+/**
+ * What in the chat each cue is about, for its holder to point at (the
+ * computer's arrows): the element carrying `data-cue-target` with this name.
+ */
+export const CUE_TARGETS = new Map<Words, "key" | "field" | "found">([
+  [CUES.familiar, "key"],
+  [CUES.reply, "field"],
+  [CUES.found, "found"],
+]);
+
 /** From the phrase on: the same in every scene. */
 const ENDING: Beat[] = [
   { kind: "cue", text: CUES.familiar, ms: 2200 },

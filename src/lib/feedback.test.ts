@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FEEDBACK_EMAIL, feedbackMailto } from "@/lib/feedback";
+import { APP_NAME } from "@/i18n/brand";
 
 describe("feedbackMailto", () => {
   const link = feedbackMailto({
@@ -25,7 +26,7 @@ describe("feedbackMailto", () => {
   it("puts the build, platform and device under the message", () => {
     const body = decodeURIComponent(link.split("&body=")[1]);
     expect(body.startsWith("Skriv her:\n")).toBe(true);
-    expect(body).toContain("Casy abc1234 (app)");
+    expect(body).toContain(`${APP_NAME} abc1234 (app)`);
     expect(body.trimEnd().endsWith("like Mac OS X)")).toBe(true);
   });
 });

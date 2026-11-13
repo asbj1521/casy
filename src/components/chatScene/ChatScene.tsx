@@ -24,6 +24,7 @@ import {
   ACTIVITIES,
   type Beat,
   CLOCK,
+  CUE_TARGETS,
   CUES,
   FOUND,
   FRIENDS,
@@ -238,6 +239,9 @@ export default function ChatScene({
   const sent = played.some(({ b, i }) => b.kind === "send" && i < at);
   const offering = played.some(({ b }) => b.kind === "cue" && b.text === CUES.reply) && !sent;
   const familiar = beat?.kind === "cue" && !offering && !sent;
+  // What the standing cue is about gets an orange ring, so it is plain what is meant.
+  const highlight = cue ? CUE_TARGETS.get(cue) : undefined;
+  const RING = "ring-2 ring-[#FF4D00] ring-offset-2 ring-offset-white dark:ring-offset-black";
   const typing = beat?.kind === "typing" ? beat.who : null;
   // From the moment the link is in the field, a tap sends it (early taps count).
   const waiting = offering && mode === "tap" && !pressed;
@@ -364,12 +368,18 @@ export default function ChatScene({
                   <span className="relative">
                     {it.kind === "text" ? (
                       <span
-                        className={`block max-w-[270px] rounded-[18px] px-[13px] py-[8px] text-[17px] leading-snug ${C.theirs}`}
+                        data-cue-target={it.key ? "key" : undefined}
+                        className={`block max-w-[270px] rounded-[18px] px-[13px] py-[8px] text-[17px] leading-snug transition-shadow ${C.theirs} ${it.key && highlight === "key" ? RING : ""}`}
                       >
                         {it.text}
                       </span>
                     ) : (
-                      <FoundCard title={plan.title} lang={lang} />
+                      <span
+                        data-cue-target="found"
+                        className={`block rounded-[18px] transition-shadow ${highlight === "found" ? RING : ""}`}
+                      >
+                        <FoundCard title={plan.title} lang={lang} />
+                      </span>
                     )}
                     {it.react && (
                       <Reactions list={it.react} instant={it.kind === "text" && it.history} />
@@ -417,7 +427,8 @@ export default function ChatScene({
         <ImageIcon className="h-7 w-7 shrink-0" aria-hidden />
         <Mic className="h-7 w-7 shrink-0" aria-hidden />
         <span
-          className={`flex h-[40px] min-w-0 flex-1 items-center gap-2 rounded-full px-3 text-[17px] ${C.field} ${C.dim}`}
+          data-cue-target="field"
+          className={`flex h-[40px] min-w-0 flex-1 items-center gap-2 rounded-full px-3 text-[17px] transition-shadow ${C.field} ${C.dim} ${highlight === "field" ? RING : ""}`}
         >
           {offering ? (
             <motion.span
