@@ -62,7 +62,6 @@ export const en: Messages = {
     },
   },
   welcome: {
-    headline: "Find the day everyone can make it.",
     start: "Get started",
     haveAccount: "Already have an account?",
     back: "Back",

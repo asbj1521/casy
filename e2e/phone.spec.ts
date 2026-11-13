@@ -255,7 +255,7 @@ test("the iPhone app has no logo at the top: the pages start there", async ({ pa
   test.skip(!isMobile, "phones only");
   // The website's phone keeps its header with the logo.
   await page.goto("/events");
-  await expect(page.getByRole("link", { name: "casy" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Vi finder lige en dag" })).toBeVisible();
 
   // The bridge the app injects before the page runs (src/lib/nativeApp.ts).
   await page.addInitScript(() => {
@@ -268,7 +268,7 @@ test("the iPhone app has no logo at the top: the pages start there", async ({ pa
   ] as const) {
     await page.goto(path);
     await expect(shown).toBeVisible();
-    await expect(page.getByRole("link", { name: "casy" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Vi finder lige en dag" })).toHaveCount(0);
   }
 });
 

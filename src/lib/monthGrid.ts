@@ -10,8 +10,6 @@ import { addDays, startOfMonth } from "@/lib/zone";
 /** One row of bars under a day's number, and the "+2" under them. */
 export const LANE_PX = 20;
 export const MORE_PX = 14;
-/** How tall a week is with `lanes` rows of bars: the line above it, the number, the bars. */
-export const weekRowPx = (lanes: number) => 1 + 40 + lanes * LANE_PX + MORE_PX;
 
 /** Something to show in the month: a busy block, a holiday, or the suggested date. */
 export interface GridItem {

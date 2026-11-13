@@ -4,8 +4,9 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 
 import GlassButton from "@/components/ui/GlassButton";
-import WelcomeStage from "@/components/welcome/WelcomeStage";
+import JokeStage from "@/components/welcome/JokeStage";
 import { rectOfCard, type MorphRect } from "@/components/welcome/phone/morph";
+import { APP_NAME } from "@/i18n/brand";
 import { useT } from "@/i18n/lang";
 import { loadPage } from "@/pages/lazyPages";
 
@@ -71,7 +72,7 @@ export default function AppWelcome({
       style={{ height: "calc(100dvh - env(safe-area-inset-top))" }}
     >
       <div className="min-h-0 flex-1">
-        <WelcomeStage leaving={signIn} cardOnLeaving={cardOnLeaving} />
+        <JokeStage leaving={signIn} />
       </div>
       <motion.div
         aria-hidden={signIn}
@@ -81,12 +82,11 @@ export default function AppWelcome({
         animate={{ opacity: signIn ? 0 : 1 }}
         transition={signIn ? { duration: 0.18 } : { delay: 0.3, duration: 0.25 }}
       >
-        <h1 className="text-balance text-[2rem] font-bold leading-tight tracking-tight text-foreground">
-          {t.welcome.headline}
-        </h1>
+        {/* The lines above the phone say it all; the name stays for screen readers. */}
+        <h1 className="sr-only">{APP_NAME}</h1>
         <Link
           to="/sign-in?signup=1"
-          className="mt-5 flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
+          className="flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
         >
           {t.welcome.start}
         </Link>

@@ -4,6 +4,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useAuth } from "@/context/auth";
 import { useT } from "@/i18n/lang";
 import { isNativeApp } from "@/lib/nativeApp";
+import Wordmark from "@/components/ui/Wordmark";
 
 /**
  * TopNav on a phone: just the logo (and, signed out, the language switch and
@@ -34,8 +35,8 @@ export default function PhoneHeader() {
       } ${isNativeApp ? "justify-end" : "justify-between"}`}
     >
       {!isNativeApp && (
-        <Link to="/" className="text-xl font-bold tracking-tight">
-          casy
+        <Link to="/" className="flex items-center">
+          <Wordmark className="text-xl" />
         </Link>
       )}
       {showSwitch && (

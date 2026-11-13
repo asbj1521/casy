@@ -23,7 +23,7 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
 }) => {
   await asTheApp(page);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vi finder lige en dag" })).toBeVisible();
   // No tab bar and no website landing page before signing in.
   await expect(page.getByRole("link", { name: "Kalender" })).toHaveCount(0);
   await expect(page.getByText("Dine data, kort fortalt")).toHaveCount(0);
@@ -38,7 +38,7 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await expect(page.getByText("Log ind for at forbinde dine kalendere")).toHaveCount(0);
   await page.getByRole("button", { name: "Tilbage" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vi finder lige en dag" })).toBeVisible();
 
   // The privacy policy is not on the welcome screen: it is under the sign-in
   // card, and on the profile once signed in.
@@ -55,7 +55,7 @@ test("the website keeps its landing page, and its header leads to sign-in (#169)
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Vi finder lige en dag" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
   await page.goto("/privacy");
   await page.getByRole("banner").getByRole("link", { name: "Log ind" }).click();
