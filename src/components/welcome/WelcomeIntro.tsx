@@ -21,10 +21,10 @@ const WORDS = {
   },
   turn: { da: "Men nu sker det!", en: "But now it will!" },
   reply: { da: "Næste gang, svar med den her.", en: "Next time, reply with this." },
-  message: {
-    da: "Det lyder SÅ sjovt! Vi finder lige en dag 😍",
-    en: "That sounds SO fun! We'll find a day 😍",
-  },
+  /** The friend's first message, soon replaced by the second. */
+  first: { da: "Det lyder SÅ sjovt!", en: "That sounds SO fun!" },
+  /** The catchphrase, alone on the screen: the message that grows old. */
+  message: { da: "Vi finder lige en dag 😍", en: "We'll find a day 😍" },
   sent: { da: "Sendt 12. mar.", en: "Sent 12 Mar" },
   now: { da: "nu", en: "now" },
   months: {
@@ -51,19 +51,21 @@ const WORDS = {
 const AT = {
   up: 1300,
   bubble: 1800,
-  aging: 4300,
+  /** The catchphrase takes the first message's place. */
+  second: 3400,
+  aging: 5000,
   /** The timeline, racing by now, fades away. */
-  fade: 7000,
+  fade: 7700,
   /** "Alle ved det ik…", alone in the middle: it goes there as it appears. */
-  verdict: 7400,
+  verdict: 8100,
   /** "Men nu sker det!" */
-  turn: 10700,
+  turn: 11400,
   /** Up again with "Næste gang, svar med den her.", the old message back beside it. */
-  back: 12400,
-  link: 13100,
+  back: 13100,
+  link: 13800,
   /** The link pressed, as a finger would. */
-  tap: 14700,
-  zoom: 15150,
+  tap: 15400,
+  zoom: 15850,
 };
 /** How long the message takes to grow old, in s. */
 const AGE_S = 2.7;
@@ -302,13 +304,14 @@ function Dots() {
 /**
  * Before the welcome's animation (#275), the joke shown rather than told, no
  * phone and no buttons, on orange over the whole screen: "Er det også sket
- * for dig?" alone in the middle, then up to the top; a friend's grey message
- * types itself, ending in "Vi finder lige en dag"; then it grows old (cracks,
- * cobwebs, yellowing, its words fading) while the months race past under it
- * and away; the line goes back to the middle, alone, as it turns into "Alle ved
- * det ik bliver til noget...", then "Men nu sker det!"; back up
- * as "Næste gang, svar med den her.", beside the old message, and the person's own reply, the app's link, from the
- * right, pressed. Its place is handed on for the animation's phone to grow out of
+ * for dig?" alone in the middle, then up to the top; a friend's grey message,
+ * "Det lyder SÅ sjovt!", types itself, then "Vi finder lige en dag" takes its
+ * place, alone; it grows old (cracks, cobwebs, yellowing, its words fading)
+ * while the months race past under it and away; the line goes back to the
+ * middle, alone, as it turns into "Alle ved det ik bliver til noget...", then
+ * "Men nu sker det!"; back up as "Næste gang, svar med den her.", beside the
+ * old message, and the person's own reply, the app's link, from the right,
+ * pressed. Its place is handed on for the animation's phone to grow out of
  * (AppWelcome, WelcomeStage).
  */
 export default function WelcomeIntro({
@@ -321,8 +324,12 @@ export default function WelcomeIntro({
   const still = useReducedMotion() ?? false;
   const [now, setNow] = useState(0);
   const link = useRef<HTMLDivElement>(null);
+  const first = WORDS.first[lang];
   const message = WORDS.message[lang];
+  const [typedFirst, setTypedFirst] = useState(0);
   const [typed, setTyped] = useState(0);
+  const fresh = useMotionValue(0);
+  const second = now >= AT.second;
   const age = useMotionValue(0);
 
   useEffect(() => {
@@ -340,11 +347,16 @@ export default function WelcomeIntro({
     };
   }, [onDone, still]);
 
+  // First "Det lyder SÅ sjovt!" types itself; then, in its place, "Vi finder lige en dag".
   useEffect(() => {
-    if (now < AT.bubble || typed >= message.length) return;
-    const t = window.setTimeout(() => setTyped((n) => n + 1), still ? 0 : TYPE_MS);
+    if (now < AT.bubble) return;
+    const next = second
+      ? typed < message.length && (() => setTyped((n) => n + 1))
+      : typedFirst < first.length && (() => setTypedFirst((n) => n + 1));
+    if (!next) return;
+    const t = window.setTimeout(next, still ? 0 : TYPE_MS);
     return () => window.clearTimeout(t);
-  }, [now, typed, message.length, still]);
+  }, [now, second, typed, typedFirst, message.length, first.length, still]);
 
   const aging = now >= AT.aging;
   useEffect(() => {
@@ -412,7 +424,29 @@ export default function WelcomeIntro({
             // Back only once the line above has made room for it.
             transition={now >= AT.back && !tapped ? { ...move, delay: 0.35 } : move}
           >
-            <AgingBubble text={message} typed={typed} age={age} />
+            {/* One message at a time: the catchphrase replaces the first, so it alone grows old. */}
+            <AnimatePresence mode="wait" initial={false}>
+              {second ? (
+                <motion.div
+                  key="second"
+                  className="flex flex-col"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                >
+                  <AgingBubble text={message} typed={typed} age={age} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="first"
+                  className="flex flex-col"
+                  exit={{ opacity: 0, y: -16 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <AgingBubble text={first} typed={typedFirst} age={fresh} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
