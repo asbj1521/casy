@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+  animate,
+  AnimatePresence,
+  motion,
+  type MotionValue,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+} from "framer-motion";
 
 import type { MorphRect } from "@/components/welcome/phone/morph";
 import { APP_NAME } from "@/i18n/brand";
@@ -7,35 +15,100 @@ import { useLang } from "@/i18n/lang";
 
 const WORDS = {
   relate: { da: "Er det også sket for dig?", en: "Has this ever happened to you?" },
+  verdict: {
+    da: "Vi ved alle, at det aldrig bliver til noget.",
+    en: "We all know it's never going to happen.",
+  },
   reply: { da: "Næste gang, svar med den her.", en: "Next time, reply with this." },
   message: {
     da: "Det lyder SÅ sjovt! Vi finder lige en dag 😍",
     en: "That sounds SO fun! We'll find a day 😍",
   },
-  later: [
-    { da: "1 uge senere", en: "1 week later" },
-    { da: "3 uger senere", en: "3 weeks later" },
-    { da: "2 måneder senere", en: "2 months later" },
-  ],
+  sent: { da: "Sendt 12. mar.", en: "Sent 12 Mar" },
+  now: { da: "nu", en: "now" },
+  months: {
+    da: [
+      "apr.",
+      "maj",
+      "jun.",
+      "jul.",
+      "aug.",
+      "sep.",
+      "okt.",
+      "nov.",
+      "dec.",
+      "jan.",
+      "feb.",
+      "mar.",
+    ],
+    en: ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
+  },
   linkDetail: { da: "Find en dag · App Store", en: "Find a day · App Store" },
 };
 
 /** When each part starts, in ms from the intro's start. */
-const AT = { up: 1300, bubble: 1800, aging: 4300, reply: 10300, link: 10900, zoom: 12700 };
-/** How long each "senere" stands while the message ages. */
-const LATER_MS = 1900;
+const AT = {
+  up: 1300,
+  bubble: 1800,
+  aging: 4300,
+  verdict: 12300,
+  reply: 15300,
+  link: 15900,
+  zoom: 17700,
+};
+/** How long the message takes to grow old, in s. */
+const AGE_S = 8;
 /** How fast the friend's message types itself, per letter. */
 const TYPE_MS = 45;
+/** The timeline's months, apart. */
+const MONTH_PX = 64;
 
-/** A cobweb in a corner, spun thread by thread. */
-function Cobweb({ className }: { className: string }) {
-  const spokes = [0, 22, 45, 68, 90].map((deg) => {
-    const r = (deg * Math.PI) / 180;
-    return `M0 0 L${(Math.cos(r) * 60).toFixed(1)} ${(Math.sin(r) * 60).toFixed(1)}`;
-  });
-  // Each ring sags a little between its spokes, as old threads do.
+/** One thread of a web, a crack or anything drawn as age comes on, between two moments of it. */
+function Grows({
+  d,
+  age,
+  from,
+  to,
+  stroke,
+  width,
+}: {
+  d: string;
+  age: MotionValue<number>;
+  from: number;
+  to: number;
+  stroke: string;
+  width: number;
+}) {
+  const pathLength = useTransform(age, [from, to], [0, 1]);
+  return (
+    <motion.path
+      d={d}
+      stroke={stroke}
+      strokeWidth={width}
+      strokeLinecap="round"
+      fill="none"
+      style={{ pathLength }}
+      vectorEffect="non-scaling-stroke"
+    />
+  );
+}
+
+/** A cobweb in a corner, spun thread by thread as the message ages. */
+function Cobweb({
+  age,
+  start,
+  className,
+}: {
+  age: MotionValue<number>;
+  start: number;
+  className: string;
+}) {
   const angles = [0, 22, 45, 68, 90].map((deg) => (deg * Math.PI) / 180);
-  const rings = [18, 32, 46, 58].map((d) => {
+  const spokes = angles.map(
+    (r) => `M0 0 L${(Math.cos(r) * 60).toFixed(1)} ${(Math.sin(r) * 60).toFixed(1)}`,
+  );
+  // Each ring sags a little between its spokes, as old threads do.
+  const rings = [16, 28, 40, 52].map((d) => {
     const pt = (r: number, k = 1) =>
       `${(Math.cos(r) * d * k).toFixed(1)} ${(Math.sin(r) * d * k).toFixed(1)}`;
     let path = `M${pt(angles[0])}`;
@@ -44,31 +117,154 @@ function Cobweb({ className }: { className: string }) {
     }
     return path;
   });
+  const threads = [...spokes, ...rings];
+  const span = (1 - start) / threads.length;
   return (
-    <svg viewBox="0 0 60 60" className={className} aria-hidden fill="none">
-      {[...spokes, ...rings].map((d, i) => (
-        <motion.path
+    <svg viewBox="0 0 60 60" className={className} aria-hidden>
+      {threads.map((d, i) => (
+        <Grows
           key={d}
           d={d}
-          stroke="rgb(255 255 255 / 0.85)"
-          strokeWidth={1}
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.6, delay: 0.15 * i }}
+          age={age}
+          from={start + i * span * 0.8}
+          to={start + (i + 1) * span * 0.8 + 0.08}
+          stroke="rgb(255 255 255 / 0.9)"
+          width={1}
         />
       ))}
     </svg>
   );
 }
 
+/** The cracks across the bubble, in its own share of width and height, each with when it starts. */
+const CRACKS: [string, number][] = [
+  ["M8 0 L12 9 L9 16 L15 26 L13 34", 0.18],
+  ["M62 50 L58 40 L63 31 L57 22", 0.32],
+  ["M12 9 L22 11 L28 7", 0.42],
+  ["M58 40 L70 42 L76 37 L84 41", 0.5],
+  ["M92 0 L88 8 L91 14", 0.6],
+  ["M9 16 L4 20", 0.68],
+  ["M63 31 L72 27", 0.74],
+];
+
+/** The friend's message: typed, then old, cracked, mossy, spun over and unreadable. */
+function AgingBubble({
+  text,
+  typed,
+  age,
+}: {
+  text: string;
+  typed: number;
+  age: MotionValue<number>;
+}) {
+  const background = useTransform(age, [0, 1], ["#EFEFF1", "#D6CDB6"]);
+  const words = useTransform(age, [0.15, 0.9], [1, 0.45]);
+  const rotate = useTransform(age, [0, 1], [0, -3.5]);
+  const y = useTransform(age, [0, 1], [0, 10]);
+  return (
+    <motion.div className="relative max-w-[82%] self-start" style={{ rotate, y }}>
+      <motion.span
+        className="relative block overflow-hidden rounded-[22px] rounded-bl-[6px] px-4 py-3 text-[1.1875rem] leading-snug text-[#1c1c1e]"
+        style={{ background }}
+      >
+        {/* The whole text holds the bubble's size; what is typed shows over it. */}
+        <span className="invisible">{text}</span>
+        <motion.span className="absolute inset-0 px-4 py-3" style={{ opacity: words }}>
+          {text.slice(0, typed)}
+          {typed < text.length && (
+            <motion.span
+              className="ml-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.15em] bg-[#1c1c1e]"
+              animate={{ opacity: [1, 0, 1] }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+            />
+          )}
+        </motion.span>
+        <svg
+          aria-hidden
+          className="absolute inset-0 h-full w-full"
+          viewBox="0 0 100 50"
+          preserveAspectRatio="none"
+        >
+          {CRACKS.map(([d, start]) => (
+            <Grows
+              key={d}
+              d={d}
+              age={age}
+              from={start}
+              to={start + 0.22}
+              stroke="rgb(60 50 35 / 0.7)"
+              width={1.4}
+            />
+          ))}
+        </svg>
+      </motion.span>
+      <Cobweb age={age} start={0.05} className="absolute -left-3 -top-4 h-16 w-16" />
+      <Cobweb age={age} start={0.4} className="absolute -bottom-4 -right-3 h-14 w-14 rotate-180" />
+    </motion.div>
+  );
+}
+
 /**
- * Before the welcome's animation (#275), the joke in a few seconds, no phone
- * and no buttons, on orange over the whole screen: "Er det også sket for dig?"
- * alone in the middle, then up to the top; a friend's grey message types
- * itself, ending in "Vi finder lige en dag"; it ages (its words blurring away,
- * cobwebs, weeks then months passing); then "Næste gang, svar med den her." and
- * the person's own reply, the app's link, from the right. Its place is handed
- * on for the animation's phone to grow out of (AppWelcome, WelcomeStage).
+ * Time going by, under the message: the day it was sent, then the months
+ * running past towards now, on and on.
+ */
+function Timeline({ lang, run }: { lang: "da" | "en"; run: boolean }) {
+  const months = [...WORDS.months[lang], ...WORDS.months[lang]];
+  return (
+    <div className="relative mt-8 h-14 overflow-hidden" aria-hidden>
+      <span className="absolute inset-x-0 top-[5px] h-[2px] bg-white/50" />
+      {/* The months run out of sight just before "now", which they never reach. */}
+      <div
+        className="absolute inset-y-0 left-0 right-14 overflow-hidden"
+        style={{ maskImage: "linear-gradient(to right, black 85%, transparent)" }}
+      >
+        <motion.div
+          className="absolute left-0 top-0 flex items-start"
+          initial={{ x: 24 }}
+          animate={run ? { x: 24 - months.length * MONTH_PX + 220 } : { x: 24 }}
+          transition={{ duration: AGE_S + 1, ease: [0.4, 0, 0.6, 1] }}
+        >
+          <span className="flex shrink-0 flex-col items-start" style={{ width: MONTH_PX * 1.6 }}>
+            <span className="h-3 w-3 rounded-full bg-white" />
+            <span className="mt-2 whitespace-nowrap text-[0.8125rem] font-semibold">
+              {WORDS.sent[lang]}
+            </span>
+          </span>
+          {months.map((m, i) => (
+            <span
+              key={i}
+              className="flex shrink-0 flex-col items-start"
+              style={{ width: MONTH_PX }}
+            >
+              <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-white/80" />
+              <span className="mt-2.5 text-[0.75rem] text-white/85">{m}</span>
+            </span>
+          ))}
+        </motion.div>
+      </div>
+      {/* "now" at the line's end, never reached. */}
+      <span className="absolute right-5 top-0 flex flex-col items-center">
+        <motion.span
+          className="h-3 w-3 rounded-full border-2 border-white bg-[#FF4D00]"
+          animate={{ scale: [1, 1.3, 1] }}
+          transition={{ duration: 1.2, repeat: Infinity }}
+        />
+        <span className="mt-2 text-[0.8125rem] font-semibold">{WORDS.now[lang]}</span>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Before the welcome's animation (#275), the joke shown rather than told, no
+ * phone and no buttons, on orange over the whole screen: "Er det også sket
+ * for dig?" alone in the middle, then up to the top; a friend's grey message
+ * types itself, ending in "Vi finder lige en dag"; then it grows old (cracks,
+ * moss, cobwebs, yellowing, its words blurring away) while the months run past
+ * under it; "Vi ved alle, at det aldrig bliver til noget."; then "Næste gang,
+ * svar med den her." and the person's own reply, the app's link, from the
+ * right. Its place is handed on for the animation's phone to grow out of
+ * (AppWelcome, WelcomeStage).
  */
 export default function WelcomeIntro({
   onDone,
@@ -81,8 +277,8 @@ export default function WelcomeIntro({
   const [now, setNow] = useState(0);
   const link = useRef<HTMLDivElement>(null);
   const message = WORDS.message[lang];
-  // Letters typed so far: one at a time from when the bubble appears.
   const [typed, setTyped] = useState(0);
+  const age = useMotionValue(0);
 
   useEffect(() => {
     const k = still ? 0.5 : 1;
@@ -105,108 +301,71 @@ export default function WelcomeIntro({
     return () => window.clearTimeout(t);
   }, [now, typed, message.length, still]);
 
-  const up = now >= AT.up;
   const aging = now >= AT.aging;
-  // Which "senere" stands: its own clock, a step every LATER_MS while the message ages.
-  const [later, setLater] = useState(-1);
   useEffect(() => {
     if (!aging) return;
-    const timers = WORDS.later.map((_, i) =>
-      window.setTimeout(() => setLater(i), i * LATER_MS * (still ? 0.5 : 1)),
-    );
-    return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [aging, still]);
+    const run = animate(age, 1, { duration: still ? AGE_S / 2 : AGE_S, ease: "linear" });
+    return () => run.stop();
+  }, [aging, age, still]);
 
+  const up = now >= AT.up;
+  const heading = now >= AT.reply ? WORDS.reply : now >= AT.verdict ? WORDS.verdict : WORDS.relate;
   // From the middle of the screen to its top: about a third of the screen's height.
   const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.34;
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col overflow-hidden bg-[#FF4D00] text-white">
       <div
-        className="flex min-h-[9.5rem] items-end justify-center px-8 pb-6"
+        className="flex min-h-[10.5rem] items-end justify-center px-8 pb-6"
         style={{ paddingTop: "max(3rem, calc(env(safe-area-inset-top) + 1.5rem))" }}
       >
         <AnimatePresence mode="wait">
           <motion.h2
-            key={now >= AT.reply ? "reply" : "relate"}
+            key={heading.da}
             initial={
-              now >= AT.reply ? { opacity: 0, y: 12 } : { opacity: 0, y: middle, scale: 1.15 }
+              heading === WORDS.relate
+                ? { opacity: 0, y: middle, scale: 1.15 }
+                : { opacity: 0, y: 12 }
             }
             animate={up ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, y: middle, scale: 1.15 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: "spring", stiffness: 140, damping: 20 }}
             className="text-balance text-center text-[2rem] font-bold leading-tight"
           >
-            {(now >= AT.reply ? WORDS.reply : WORDS.relate)[lang]}
+            {heading[lang]}
           </motion.h2>
         </AnimatePresence>
       </div>
 
-      <div className="flex flex-1 flex-col gap-5 px-5">
-        {/* The friend's message, from the left, typing itself: the plan that stalled. */}
+      <div className="flex flex-1 flex-col px-5">
+        {/* The friend's message, from the left, typing itself; then growing old. */}
         <AnimatePresence>
           {now >= AT.bubble && (
             <motion.div
-              className="relative max-w-[82%] self-start"
+              className="flex flex-col"
               initial={{ x: "-110%", opacity: 0 }}
-              animate={{ x: 0, opacity: aging ? 0.75 : 1, rotate: aging ? -2 : 0 }}
+              animate={{ x: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 220, damping: 24 }}
             >
-              <span className="relative block rounded-[22px] rounded-bl-[6px] bg-[#EFEFF1] px-4 py-3 text-[1.1875rem] leading-snug text-[#1c1c1e]">
-                {/* The whole text holds the bubble's size; what is typed shows over it. */}
-                <span className="invisible">{message}</span>
-                <motion.span
-                  className="absolute inset-0 px-4 py-3"
-                  animate={{
-                    filter: aging ? "blur(3.5px)" : "blur(0px)",
-                    opacity: aging ? 0.55 : 1,
-                  }}
-                  transition={{ duration: 5.5, ease: "easeIn" }}
-                >
-                  {message.slice(0, typed)}
-                  {typed < message.length && (
-                    <motion.span
-                      className="ml-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.15em] bg-[#1c1c1e]"
-                      animate={{ opacity: [1, 0, 1] }}
-                      transition={{ duration: 0.8, repeat: Infinity }}
-                    />
-                  )}
-                </motion.span>
-              </span>
-              {aging && (
-                <>
-                  <Cobweb className="absolute -left-2 -top-3 h-14 w-14" />
-                  <Cobweb className="absolute -bottom-3 -right-2 h-12 w-12 rotate-180" />
-                </>
-              )}
+              <AgingBubble text={message} typed={typed} age={age} />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Time passing, under it. */}
-        <div className="h-7 self-start pl-2">
-          <AnimatePresence mode="wait">
-            {later >= 0 && now < AT.reply && (
-              <motion.p
-                key={later}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 0.85, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.3 }}
-                className="text-[0.9375rem] font-semibold uppercase tracking-wide"
-              >
-                {WORDS.later[later][lang]}
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
+        <AnimatePresence>
+          {aging && now < AT.reply && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Timeline lang={lang} run={aging} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* The person's own reply, from the right: the app's link. The phone grows out of it. */}
         <AnimatePresence>
           {now >= AT.link && (
             <motion.div
               ref={link}
-              className="w-[68%] max-w-[17rem] self-end overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
+              className="mt-6 w-[68%] max-w-[17rem] self-end overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
               initial={{ x: "120%", opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 220, damping: 24 }}

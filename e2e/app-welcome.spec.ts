@@ -15,8 +15,8 @@ test.beforeEach(({ isMobile }) => test.skip(!isMobile, "the app is a phone"));
 async function asTheApp(page: Page, { intro = false }: { intro?: boolean } = {}) {
   await page.addInitScript((intro) => {
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
-    // The intro (#275) plays only the first time; most tests start after it.
-    if (!intro) localStorage.setItem("casy-welcome-intro-seen", "1");
+    // The intro (#275) plays each time; most tests start after it.
+    if (!intro) (window as unknown as { __casySkipIntro: boolean }).__casySkipIntro = true;
   }, intro);
 }
 

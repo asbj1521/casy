@@ -11,9 +11,6 @@ import { useT } from "@/i18n/lang";
 import { loadPage } from "@/pages/lazyPages";
 
 // Only for the friend who came by an invite (#237): fetched when asked for.
-/** Remembered once the welcome's intro has played (#275). */
-const INTRO_SEEN = "casy-welcome-intro-seen";
-
 const InvitePasteSheet = lazy(() => import("@/components/invite/InvitePasteSheet"));
 
 /**
@@ -45,23 +42,15 @@ export default function AppWelcome({
   // "Indsæt link" (#237): asked for once, then kept so the sheet can close.
   const [pasting, setPasting] = useState(false);
   const [pasteWanted, setPasteWanted] = useState(false);
-  // The intro (#275) plays the first time the welcome opens; after that, straight to the animation.
-  const [intro, setIntro] = useState(() => {
-    try {
-      return localStorage.getItem(INTRO_SEEN) !== "1" && !signIn;
-    } catch {
-      return !signIn;
-    }
-  });
+  // The intro (#275) plays each time the welcome opens, while it is being designed.
+  const [intro, setIntro] = useState(
+    // The browser tests skip it, except the intro's own.
+    !signIn && !(window as unknown as { __casySkipIntro?: boolean }).__casySkipIntro,
+  );
   const [introCard, setIntroCard] = useState<MorphRect | null>(null);
   const introDone = useCallback((from: MorphRect | null) => {
     setIntroCard(from);
     setIntro(false);
-    try {
-      localStorage.setItem(INTRO_SEEN, "1");
-    } catch {
-      // Private mode: it plays again next time, which is fine.
-    }
   }, []);
 
   // The colour reaches up under the clock.
