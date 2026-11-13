@@ -16,8 +16,8 @@ import { useLang } from "@/i18n/lang";
 const WORDS = {
   relate: { da: "Er det også sket for dig?", en: "Has this ever happened to you?" },
   verdict: {
-    da: "Vi ved alle, at det aldrig bliver til noget",
-    en: "We all know it's never going to happen",
+    da: "Alle ved det ik bliver til noget",
+    en: "Everyone knows it won't happen",
   },
   turn: { da: "Men nu sker det!", en: "But now it will!" },
   reply: { da: "Næste gang, svar med den her.", en: "Next time, reply with this." },
@@ -54,7 +54,7 @@ const AT = {
   aging: 4300,
   /** The timeline, racing by now, fades away. */
   fade: 7000,
-  /** "Vi ved alle…", alone in the middle: it goes there as it appears. */
+  /** "Alle ved det ik…", alone in the middle: it goes there as it appears. */
   verdict: 7400,
   /** "Men nu sker det!" */
   turn: 10700,
@@ -281,7 +281,7 @@ export function LinkFace() {
   );
 }
 
-/** "…", a dot at a time, after "Vi ved alle, at det aldrig bliver til noget". */
+/** "…", a dot at a time, after "Alle ved det ik bliver til noget". */
 function Dots() {
   return (
     <>
@@ -305,8 +305,8 @@ function Dots() {
  * for dig?" alone in the middle, then up to the top; a friend's grey message
  * types itself, ending in "Vi finder lige en dag"; then it grows old (cracks,
  * cobwebs, yellowing, its words fading) while the months race past under it
- * and away; the line goes back to the middle, alone, as it turns into "Vi ved
- * alle, at det aldrig bliver til noget...", then "Men nu sker det!"; back up
+ * and away; the line goes back to the middle, alone, as it turns into "Alle ved
+ * det ik bliver til noget...", then "Men nu sker det!"; back up
  * as "Næste gang, svar med den her.", beside the old message, and the person's own reply, the app's link, from the
  * right, pressed. Its place is handed on for the animation's phone to grow out of
  * (AppWelcome, WelcomeStage).
