@@ -11,12 +11,29 @@ import { expect, test } from "./fixtures";
 test.use({ signedIn: false });
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "the app is a phone"));
 
-/** The bridge the app injects before the page runs (src/lib/nativeApp.ts). */
-async function asTheApp(page: Page) {
-  await page.addInitScript(() => {
+/**
+ * The bridge the app injects before the page runs (src/lib/nativeApp.ts). By
+ * default someone who has played the welcome's journey before (#275), so Kom i
+ * gang is there at once.
+ */
+async function asTheApp(page: Page, { seen = true }: { seen?: boolean } = {}) {
+  await page.addInitScript((seen) => {
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
-  });
+    if (seen) localStorage.setItem("casy-welcome-seen", "1");
+  }, seen);
 }
+
+test("the first time, only Log ind shows until the journey has been played (#275)", async ({
+  page,
+}) => {
+  await asTheApp(page, { seen: false });
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Log ind" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Kom i gang" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Indsæt link" })).toHaveCount(0);
+  // It opens on the question, the phone's screen orange.
+  await expect(page.getByText("Er det også sket for dig?")).toBeVisible();
+});
 
 test("the app opens on its welcome screen, which leads to sign-in and the legal pages and back", async ({
   page,

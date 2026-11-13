@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, ChevronRight, MessageCircle } from "lucide-react";
+import { Check, MessageCircle } from "lucide-react";
 
 import ChatScene from "@/components/chatScene/ChatScene";
 import {
   ACTIVITIES,
+  CUES,
   FOUND,
   FRIENDS,
   type Friend,
@@ -12,12 +13,12 @@ import {
   JOURNEY,
   JOURNEY_CHAT,
   JOURNEY_REPLIES,
+  PACE,
   type Words,
 } from "@/components/chatScene/script";
-import LogoMark from "@/components/ui/LogoMark";
+import TapHint from "@/components/chatScene/TapHint";
 import PhoneDevice from "@/components/welcome/phone/PhoneDevice";
 import { DEVICE, SCREEN } from "@/components/welcome/phone/geometry";
-import { APP_NAME } from "@/i18n/brand";
 import { useLang } from "@/i18n/lang";
 import { appRandom, oncePerLoad } from "@/lib/appRandom";
 
@@ -29,7 +30,7 @@ const LINE_ROOM = 84;
  * app finding the day, the found day waiting to be sent, the chat's notice
  * dropping in, and the chat again with the friends answering.
  */
-type Step = "chat" | "groups" | "finding" | "found" | "notice" | "replies";
+type Step = "chat" | "finding" | "found" | "notice" | "replies";
 
 const FACES = Object.keys(FRIENDS) as Friend[];
 
@@ -70,45 +71,6 @@ function Bubbles() {
           transition={{ duration: 14 + i * 3, repeat: Infinity, ease: "easeInOut" }}
         />
       ))}
-    </div>
-  );
-}
-
-/** The app's own first screen, as the welcome draws it: the person's groups, one of them asking. */
-function Groups({ lang, onPick }: { lang: "da" | "en"; onPick: () => void }) {
-  return (
-    <div
-      className="flex flex-col bg-background px-5 pt-[78px] text-foreground"
-      style={{ width: SCREEN.width, height: SCREEN.height }}
-    >
-      <LogoMark label={APP_NAME} className="w-[92px] text-[#FF4D00]" />
-      <p className="mt-6 text-[30px] font-bold leading-tight">{JOURNEY.groupsTitle[lang]}</p>
-      <div className="mt-6 flex flex-col gap-3">
-        <motion.button
-          type="button"
-          onClick={onPick}
-          className="flex items-center gap-3 rounded-2xl bg-card p-4 text-left shadow-sm ring-2 ring-[#FF4D00]"
-          animate={{ scale: [1, 1.03, 1] }}
-          transition={{ duration: 1.3, repeat: Infinity }}
-        >
-          <span className="flex -space-x-3">
-            {FACES.slice(0, 3).map((f) => (
-              <Face key={f} who={f} size={40} />
-            ))}
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="text-[19px] font-semibold">{GROUP[lang]}</span>
-            <span className="text-[15px] text-muted-foreground">{JOURNEY.members[lang]}</span>
-          </span>
-          <ChevronRight className="h-6 w-6 text-[#FF4D00]" aria-hidden />
-        </motion.button>
-        {JOURNEY.otherGroups.map((g) => (
-          <div key={g.da} className="flex items-center gap-3 rounded-2xl bg-card p-4 opacity-45">
-            <span className="h-10 w-10 rounded-full bg-secondary" />
-            <span className="text-[19px] font-semibold">{g[lang]}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -184,16 +146,18 @@ function Found({
           </div>
         </motion.div>
       </div>
-      <motion.button
-        type="button"
-        onClick={onSend}
-        disabled={sending}
-        className="flex h-[58px] items-center justify-center rounded-full bg-cta text-[19px] font-bold text-white"
-        animate={sending ? { opacity: 0 } : { scale: [1, 1.04, 1] }}
-        transition={sending ? { duration: 0.2 } : { duration: 1.3, repeat: Infinity }}
-      >
-        {JOURNEY.send[lang]}
-      </motion.button>
+      <TapHint on={!sending}>
+        <motion.button
+          type="button"
+          onClick={onSend}
+          disabled={sending}
+          className="flex h-[58px] w-[350px] items-center justify-center rounded-full bg-cta text-[19px] font-bold text-white"
+          animate={sending ? { opacity: 0 } : { opacity: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          {JOURNEY.send[lang]}
+        </motion.button>
+      </TapHint>
     </div>
   );
 }
@@ -209,7 +173,14 @@ function Found({
  * (AppWelcome). Which plan is drawn once per launch. `leaving` is sign-in
  * opening over it: it fades back.
  */
-export default function JokeStage({ leaving = false }: { leaving?: boolean }) {
+export default function JokeStage({
+  leaving = false,
+  onDone,
+}: {
+  leaving?: boolean;
+  /** The journey has reached its end ("Og så fandt I den."): the way on can show. */
+  onDone?: () => void;
+}) {
   const { lang } = useLang();
   const box = useRef<HTMLDivElement>(null);
   const [room, setRoom] = useState({ width: 0, height: 0 });
@@ -228,6 +199,45 @@ export default function JokeStage({ leaving = false }: { leaving?: boolean }) {
   const [step, setStep] = useState<Step>("chat");
   const [sending, setSending] = useState(false);
   const [chatCue, setChatCue] = useState<Words | null>(null);
+  // The opening question and "send this" fill the phone in orange for their own
+  // moment only, then step aside for the chat (and the send button) under them.
+  const [shownCard, setShownCard] = useState<Words | null>(null);
+  const cardTimer = useRef(0);
+  const onChatCue = useCallback((next: Words | null) => {
+    setChatCue(next);
+    if (next !== CUES.familiar && next !== CUES.reply) return;
+    window.clearTimeout(cardTimer.current);
+    setShownCard(next);
+    const beat = JOURNEY_CHAT.find((b) => b.kind === "cue" && b.text === next);
+    cardTimer.current = window.setTimeout(() => setShownCard(null), (beat?.ms ?? 2400) * PACE);
+  }, []);
+  useEffect(() => () => window.clearTimeout(cardTimer.current), []);
+  // After the friends' laugh, the sent link waits to be pressed (the second tap).
+  const [linkReady, setLinkReady] = useState(false);
+  const chatEnded = useCallback(() => {
+    setChatCue(null);
+    setLinkReady(true);
+  }, []);
+  // Where the pressed link stands on the phone's screen, for the app to grow out of.
+  const screenRef = useRef<HTMLDivElement>(null);
+  const [origin, setOrigin] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const openLink = () => {
+    const host = screenRef.current;
+    const card = host?.querySelector("[data-link-card]");
+    if (host && card) {
+      const h = host.getBoundingClientRect();
+      const r = card.getBoundingClientRect();
+      const k = h.width / SCREEN.width;
+      setOrigin({
+        x: (r.left - h.left) / k,
+        y: (r.top - h.top) / k,
+        w: r.width / k,
+        h: r.height / k,
+      });
+    }
+    setLinkReady(false);
+    setStep("finding");
+  };
 
   // The steps that move on by themselves.
   useEffect(() => {
@@ -249,22 +259,37 @@ export default function JokeStage({ leaving = false }: { leaving?: boolean }) {
     return () => window.clearTimeout(t);
   }, [sending]);
 
+  // The opening question and "send this" fill the phone's screen in orange; the rest stand under it.
+  const card = step === "chat" ? shownCard : null;
   const cue: Words | null =
-    step === "groups"
-      ? JOURNEY.pickGroup
+    step === "chat" && linkReady
+      ? JOURNEY.openLink
       : step === "found" && !sending
         ? JOURNEY.sendIt
-        : step === "chat" || step === "replies"
+        : step === "replies" ||
+            (step === "chat" && chatCue !== CUES.familiar && chatCue !== CUES.reply)
           ? chatCue
           : null;
+  const ended = step === "replies" && chatCue === CUES.found;
+  useEffect(() => {
+    if (ended) onDone?.();
+  }, [ended, onDone]);
 
   const scale = Math.max(
     0.3,
     Math.min((room.height - LINE_ROOM - 8) / DEVICE.height, (room.width - 32) / DEVICE.width),
   );
-  // The chat and the app are two places: going between them slides, as apps do.
-  const inApp = step === "groups" || step === "finding" || step === "found" || step === "notice";
-  const screen = step === "notice" ? "found" : step;
+  // The app grows out of the link that was pressed, and shrinks back into it.
+  const inApp = step === "finding" || step === "found" || step === "notice";
+  const fromLink = origin
+    ? {
+        x: origin.x,
+        y: origin.y + origin.h / 2 - (SCREEN.height * origin.w) / SCREEN.width / 2,
+        scale: origin.w / SCREEN.width,
+        opacity: 0,
+        borderRadius: 60,
+      }
+    : { opacity: 0, scale: 0.9, x: 0, y: 0, borderRadius: 60 };
 
   return (
     <motion.div
@@ -275,26 +300,7 @@ export default function JokeStage({ leaving = false }: { leaving?: boolean }) {
       transition={{ duration: 0.25 }}
     >
       <Bubbles />
-      <div
-        className="relative flex w-full items-end justify-center px-6"
-        style={{ height: LINE_ROOM, paddingTop: "max(0.5rem, env(safe-area-inset-top))" }}
-      >
-        <AnimatePresence mode="wait">
-          {cue && (
-            <motion.p
-              key={cue.da}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="text-balance text-center text-[1.5rem] font-bold leading-tight"
-              aria-live="polite"
-            >
-              {cue[lang]}
-            </motion.p>
-          )}
-        </AnimatePresence>
-      </div>
+      <div style={{ height: "max(0.75rem, env(safe-area-inset-top))" }} />
       {room.height > 0 && (
         <div
           className="relative"
@@ -305,46 +311,81 @@ export default function JokeStage({ leaving = false }: { leaving?: boolean }) {
             style={{ width: DEVICE.width, height: DEVICE.height, transform: `scale(${scale})` }}
           >
             <PhoneDevice>
-              <AnimatePresence initial={false}>
-                <motion.div
-                  key={screen}
-                  className="absolute inset-0"
-                  initial={{ x: inApp ? "100%" : "-100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: inApp ? "-100%" : "100%" }}
-                  transition={{ type: "tween", ease: [0.2, 0.8, 0.2, 1], duration: 0.45 }}
-                >
-                  {screen === "chat" && (
-                    <ChatScene
-                      beats={JOURNEY_CHAT}
-                      activity={activity}
-                      mode="tap"
-                      onCue={setChatCue}
-                      onEnd={() => {
-                        setChatCue(null);
-                        setStep("groups");
-                      }}
-                    />
-                  )}
-                  {screen === "groups" && <Groups lang={lang} onPick={() => setStep("finding")} />}
-                  {screen === "finding" && <Finding lang={lang} />}
-                  {screen === "found" && (
-                    <Found
-                      lang={lang}
-                      title={plan.title}
-                      sending={sending || step === "notice"}
-                      onSend={() => setSending(true)}
-                    />
-                  )}
-                  {screen === "replies" && (
-                    <ChatScene
-                      beats={JOURNEY_REPLIES}
-                      activity={activity}
-                      mode="auto"
-                      onCue={setChatCue}
-                    />
-                  )}
-                </motion.div>
+              <div ref={screenRef} className="absolute inset-0">
+                {step === "replies" ? (
+                  <ChatScene
+                    key="replies"
+                    beats={JOURNEY_REPLIES}
+                    activity={activity}
+                    mode="auto"
+                    onCue={setChatCue}
+                  />
+                ) : (
+                  <ChatScene
+                    key="chat"
+                    beats={JOURNEY_CHAT}
+                    activity={activity}
+                    mode="tap"
+                    onCue={onChatCue}
+                    onEnd={chatEnded}
+                    onLinkTap={linkReady ? openLink : undefined}
+                  />
+                )}
+              </div>
+              <AnimatePresence>
+                {inApp && (
+                  <motion.div
+                    key="app"
+                    className="absolute inset-0 z-10 origin-top-left overflow-hidden"
+                    initial={fromLink}
+                    animate={{ x: 0, y: 0, scale: 1, opacity: 1, borderRadius: 0 }}
+                    exit={fromLink}
+                    transition={{ type: "tween", ease: [0.2, 0.8, 0.2, 1], duration: 0.5 }}
+                  >
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={step === "finding" ? "finding" : "found"}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                      >
+                        {step === "finding" ? (
+                          <Finding lang={lang} />
+                        ) : (
+                          <Found
+                            lang={lang}
+                            title={plan.title}
+                            sending={sending || step === "notice"}
+                            onSend={() => setSending(true)}
+                          />
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {/* The app's two words to the person, the whole screen orange over the chat. */}
+              <AnimatePresence>
+                {card && (
+                  <motion.div
+                    key={card.da}
+                    className="absolute inset-0 z-30 flex items-center justify-center bg-[#FF4D00] px-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    <motion.p
+                      className="text-balance text-center text-[44px] font-bold leading-[1.05] text-white"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.15, type: "spring", stiffness: 260, damping: 22 }}
+                    >
+                      {card[lang]}
+                    </motion.p>
+                  </motion.div>
+                )}
               </AnimatePresence>
               {/* The chat's notice, dropping in over the app: the friends have seen the vote. */}
               <AnimatePresence>
@@ -371,6 +412,26 @@ export default function JokeStage({ leaving = false }: { leaving?: boolean }) {
           </div>
         </div>
       )}
+      <div
+        className="relative flex w-full items-start justify-center px-6 pt-3"
+        style={{ height: LINE_ROOM }}
+      >
+        <AnimatePresence mode="wait">
+          {cue && (
+            <motion.p
+              key={cue.da}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              className="text-balance text-center text-[1.5rem] font-bold leading-tight"
+              aria-live="polite"
+            >
+              {cue[lang]}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 }

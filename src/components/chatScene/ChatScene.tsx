@@ -16,6 +16,7 @@ import {
   Wifi,
 } from "lucide-react";
 
+import TapHint from "./TapHint";
 import Wordmark from "@/components/ui/Wordmark";
 import { SCREEN } from "@/components/welcome/phone/geometry";
 import { APP_NAME } from "@/i18n/brand";
@@ -180,6 +181,7 @@ export default function ChatScene({
   beats: ownBeats,
   activity = 0,
   mode = "tap",
+  onLinkTap,
   onCue,
   onEnd,
 }: {
@@ -191,6 +193,11 @@ export default function ChatScene({
   mode?: "tap" | "auto";
   onCue?: (cue: Words | null) => void;
   onEnd?: () => void;
+  /**
+   * The welcome's second tap (#275): once the scene has ended, the sent link
+   * is pressed to open the app, which grows out of it (`data-link-card`).
+   */
+  onLinkTap?: () => void;
 }) {
   const { lang } = useLang();
   const beats: Beat[] = ownBeats ?? SCENES[scene];
@@ -359,17 +366,25 @@ export default function ChatScene({
                   transition={SLIDE}
                   className="relative mb-4 mt-2 w-[250px] shrink-0 origin-bottom-right self-end"
                 >
-                  <span className={`block overflow-hidden rounded-[18px] ${C.theirs}`}>
-                    <img
-                      src="/og-image.png"
-                      alt=""
-                      className="block h-[131px] w-full object-cover"
-                    />
-                    <span className="flex flex-col px-3 py-2 leading-tight">
-                      <span className="text-[15px] font-semibold">{APP_NAME}</span>
-                      <span className={`text-[13px] ${C.dim}`}>{LINK_DETAIL[lang]}</span>
-                    </span>
-                  </span>
+                  <TapHint on={!!onLinkTap && !beat}>
+                    <button
+                      type="button"
+                      data-link-card
+                      onClick={onLinkTap}
+                      disabled={!onLinkTap || !!beat}
+                      className={`block w-[250px] overflow-hidden rounded-[18px] text-left ${C.theirs}`}
+                    >
+                      <img
+                        src="/og-image.png"
+                        alt=""
+                        className="block h-[131px] w-full object-cover"
+                      />
+                      <span className="flex flex-col px-3 py-2 leading-tight">
+                        <span className="text-[15px] font-semibold">{APP_NAME}</span>
+                        <span className={`text-[13px] ${C.dim}`}>{LINK_DETAIL[lang]}</span>
+                      </span>
+                    </button>
+                  </TapHint>
                   <Reactions list={["😂", "😆", "😂"]} instant={false} />
                 </motion.div>
               );
@@ -472,27 +487,29 @@ export default function ChatScene({
             </>
           )}
         </span>
-        <motion.button
-          type="button"
-          onClick={press}
-          aria-label="Send"
-          disabled={!waiting}
-          className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${offering ? C.accent : C.dim}`}
-          animate={
-            waiting
-              ? { scale: [1, 1.2, 1] }
-              : pressed || (offering && mode === "auto" && beat?.kind === "send")
-                ? { scale: [1, 0.8, 1] }
-                : { scale: 1 }
-          }
-          transition={
-            waiting
-              ? { duration: 1.1, repeat: Infinity }
-              : { duration: 0.35, delay: mode === "auto" ? 0.6 : 0 }
-          }
-        >
-          <SendHorizontal className="h-7 w-7" fill="currentColor" aria-hidden />
-        </motion.button>
+        <TapHint on={waiting} round>
+          <motion.button
+            type="button"
+            onClick={press}
+            aria-label="Send"
+            disabled={!waiting}
+            className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${offering ? C.accent : C.dim}`}
+            animate={
+              waiting
+                ? { scale: [1, 1.2, 1] }
+                : pressed || (offering && mode === "auto" && beat?.kind === "send")
+                  ? { scale: [1, 0.8, 1] }
+                  : { scale: 1 }
+            }
+            transition={
+              waiting
+                ? { duration: 1.1, repeat: Infinity }
+                : { duration: 0.35, delay: mode === "auto" ? 0.6 : 0 }
+            }
+          >
+            <SendHorizontal className="h-7 w-7" fill="currentColor" aria-hidden />
+          </motion.button>
+        </TapHint>
       </div>
     </div>
   );

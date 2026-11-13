@@ -245,6 +245,8 @@ const LAUGH: Words = {
  * then, back from the app with a day found and sent, the friends answer it.
  */
 export const JOURNEY_CHAT: Beat[] = [
+  // Opens on the question, the phone's whole screen orange (JokeStage).
+  { kind: "cue", text: CUES.familiar, ms: 2600 },
   { kind: "typing", who: "mads", ms: 800 },
   { kind: "text", who: "mads", text: "propose", react: ["❤️", "❤️"], ms: 900 },
   { kind: "typing", who: "ida", ms: 600 },
@@ -256,9 +258,8 @@ export const JOURNEY_CHAT: Beat[] = [
   },
   { kind: "typing", who: "mads", ms: 900 },
   { kind: "text", who: "mads", text: PHRASE, key: true, react: ["👍", "👍", "👍"], ms: 900 },
-  { kind: "gap", text: { da: "3 uger senere", en: "3 weeks later" }, ms: 700 },
-  { kind: "cue", text: CUES.familiar, ms: 2200 },
-  { kind: "cue", text: CUES.reply, ms: 1800 },
+  { kind: "gap", text: { da: "3 uger senere", en: "3 weeks later" }, ms: 900 },
+  { kind: "cue", text: CUES.reply, ms: 2400 },
   { kind: "send", ms: 700 },
   { kind: "typing", who: "ida", ms: 600 },
   { kind: "text", who: "ida", text: LAUGH, react: ["😆"], ms: 1500 },
@@ -290,14 +291,8 @@ export const JOURNEY_REPLIES: Beat[] = [
 
 /** What the welcome says and shows between the two halves, in the app itself. */
 export const JOURNEY = {
-  pickGroup: { da: "Vælg gruppen.", en: "Pick the group." },
+  openLink: { da: "Åbn linket.", en: "Open the link." },
   sendIt: { da: "Send den til gruppen.", en: "Send it to the group." },
-  groupsTitle: { da: "Hvem skal ses?", en: "Who's meeting up?" },
-  members: { da: "5 personer", en: "5 people" },
-  otherGroups: [
-    { da: "Familien", en: "The family" },
-    { da: "Fodboldholdet", en: "The football team" },
-  ],
   finding: { da: "Vi finder dagen for jer…", en: "Finding the day for you…" },
   foundLabel: { da: "Første dag, alle kan", en: "First day everyone can" },
   send: { da: "Send til afstemning", en: "Send to a vote" },
