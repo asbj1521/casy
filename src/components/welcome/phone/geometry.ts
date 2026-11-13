@@ -9,3 +9,9 @@ export const DEVICE = {
   height: SCREEN.height + EDGE * 2,
   radius: SCREEN.radius + EDGE,
 };
+/** Above the first week, on the phone's month and the paper alike, so the weeks line up. */
+export const HEADER_PX = 176;
+/** Where the home page's two capsules sit, under the Dynamic Island. */
+export const HEADER_PILL_TOP = 58;
+/** The group screen's member rows, for the faces that fly into them. */
+export const GROUP_ROWS = { left: 16, top: 300, height: 62, face: 44 };

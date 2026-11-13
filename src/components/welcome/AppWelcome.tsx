@@ -4,15 +4,15 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 
 import GlassButton from "@/components/ui/GlassButton";
-import JokeStage from "@/components/welcome/JokeStage";
+import WelcomeIntro from "@/components/welcome/WelcomeIntro";
+import WelcomeStage from "@/components/welcome/WelcomeStage";
 import { rectOfCard, type MorphRect } from "@/components/welcome/phone/morph";
-import { APP_NAME } from "@/i18n/brand";
 import { useT } from "@/i18n/lang";
 import { loadPage } from "@/pages/lazyPages";
 
 // Only for the friend who came by an invite (#237): fetched when asked for.
-/** Remembered once the welcome's journey has been played through (#275). */
-const SEEN_KEY = "casy-welcome-seen";
+/** Remembered once the welcome's intro has played (#275). */
+const INTRO_SEEN = "casy-welcome-intro-seen";
 
 const InvitePasteSheet = lazy(() => import("@/components/invite/InvitePasteSheet"));
 
@@ -45,21 +45,20 @@ export default function AppWelcome({
   // "Indsæt link" (#237): asked for once, then kept so the sheet can close.
   const [pasting, setPasting] = useState(false);
   const [pasteWanted, setPasteWanted] = useState(false);
-  // Kom i gang and Indsæt link wait until the journey has been played through once (#275);
-  // after that first time, they are there at once. Log ind is always at the bottom.
-  const [seen, setSeen] = useState(() => {
+  // The intro (#275) plays the first time the welcome opens; after that, straight to the animation.
+  const [intro, setIntro] = useState(() => {
     try {
-      return localStorage.getItem(SEEN_KEY) === "1";
+      return localStorage.getItem(INTRO_SEEN) !== "1" && !signIn;
     } catch {
-      return false;
+      return !signIn;
     }
   });
-  const journeyDone = useCallback(() => {
-    setSeen(true);
+  const introDone = useCallback(() => {
+    setIntro(false);
     try {
-      localStorage.setItem(SEEN_KEY, "1");
+      localStorage.setItem(INTRO_SEEN, "1");
     } catch {
-      // Private mode: shown again next time, which is fine.
+      // Private mode: it plays again next time, which is fine.
     }
   }, []);
 
@@ -92,55 +91,57 @@ export default function AppWelcome({
       style={{ height: "calc(100dvh - env(safe-area-inset-top))" }}
     >
       <div className="min-h-0 flex-1">
-        <JokeStage leaving={signIn} onDone={journeyDone} />
+        {!intro && <WelcomeStage leaving={signIn} cardOnLeaving={cardOnLeaving} />}
       </div>
       <motion.div
-        aria-hidden={signIn}
-        inert={signIn}
+        aria-hidden={signIn || intro}
+        inert={signIn || intro}
         className="relative px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 text-center"
         initial={false}
-        animate={{ opacity: signIn ? 0 : 1 }}
+        animate={{ opacity: signIn || intro ? 0 : 1 }}
         transition={signIn ? { duration: 0.18 } : { delay: 0.3, duration: 0.25 }}
       >
-        {/* The phone says it all; the name stays for screen readers. */}
-        <h1 className="sr-only">{APP_NAME}</h1>
-        <AnimatePresence initial={false}>
-          {seen && (
-            <motion.div
-              key="ways-on"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 26 }}
-            >
-              <Link
-                to="/sign-in?signup=1"
-                className="flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
-              >
-                {t.welcome.start}
-              </Link>
-              <p className="mt-4 text-[0.9375rem] text-muted-foreground">
-                {t.invitePaste.ask}{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPasteWanted(true);
-                    setPasting(true);
-                  }}
-                  className="hit font-semibold text-foreground"
-                >
-                  {t.invitePaste.paste}
-                </button>
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <h1 className="text-balance text-[2rem] font-bold leading-tight tracking-tight text-foreground">
+          {t.welcome.headline}
+        </h1>
+        <Link
+          to="/sign-in?signup=1"
+          className="mt-5 flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
+        >
+          {t.welcome.start}
+        </Link>
         <p className="mt-4 text-[0.9375rem] text-muted-foreground">
           {t.welcome.haveAccount}{" "}
           <Link to="/sign-in" className="hit font-semibold text-foreground">
             {t.nav.signIn}
           </Link>
         </p>
+        <p className="mt-1 text-[0.9375rem] text-muted-foreground">
+          {t.invitePaste.ask}{" "}
+          <button
+            type="button"
+            onClick={() => {
+              setPasteWanted(true);
+              setPasting(true);
+            }}
+            className="hit font-semibold text-foreground"
+          >
+            {t.invitePaste.paste}
+          </button>
+        </p>
       </motion.div>
+      <AnimatePresence>
+        {intro && (
+          <motion.div
+            key="intro"
+            className="absolute inset-0 z-30"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <WelcomeIntro onDone={introDone} />
+          </motion.div>
+        )}
+      </AnimatePresence>
       {pasteWanted && (
         <Suspense fallback={null}>
           <InvitePasteSheet open={pasting} onClose={() => setPasting(false)} />

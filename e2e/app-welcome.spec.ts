@@ -11,28 +11,30 @@ import { expect, test } from "./fixtures";
 test.use({ signedIn: false });
 test.beforeEach(({ isMobile }) => test.skip(!isMobile, "the app is a phone"));
 
-/**
- * The bridge the app injects before the page runs (src/lib/nativeApp.ts). By
- * default someone who has played the welcome's journey before (#275), so Kom i
- * gang is there at once.
- */
-async function asTheApp(page: Page, { seen = true }: { seen?: boolean } = {}) {
-  await page.addInitScript((seen) => {
+/** The bridge the app injects before the page runs (src/lib/nativeApp.ts). */
+async function asTheApp(page: Page, { intro = false }: { intro?: boolean } = {}) {
+  await page.addInitScript((intro) => {
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
-    if (seen) localStorage.setItem("casy-welcome-seen", "1");
-  }, seen);
+    // The intro (#275) plays only the first time; most tests start after it.
+    if (!intro) localStorage.setItem("casy-welcome-intro-seen", "1");
+  }, intro);
 }
 
-test("the first time, only Log ind shows until the journey has been played (#275)", async ({
+test("the first time, the intro plays on orange before the animation, with no buttons (#275)", async ({
   page,
 }) => {
-  await asTheApp(page, { seen: false });
+  await asTheApp(page, { intro: true });
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Log ind" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Kom i gang" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Indsæt link" })).toHaveCount(0);
-  // It opens on the question, the phone's screen orange.
-  await expect(page.getByText("Er det også sket for dig?")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Kender du typen?" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Kom i gang" })).not.toBeInViewport();
+  await expect(page.getByRole("heading", { name: "Næste gang, svar med den her." })).toBeVisible({
+    timeout: 10_000,
+  });
+  // Then the animation, with the way on.
+  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByRole("link", { name: "Kom i gang" })).toBeVisible();
 });
 
 test("the app opens on its welcome screen, which leads to sign-in and the legal pages and back", async ({
@@ -40,7 +42,7 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
 }) => {
   await asTheApp(page);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Vi finder lige en dag" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
   // No tab bar and no website landing page before signing in.
   await expect(page.getByRole("link", { name: "Kalender" })).toHaveCount(0);
   await expect(page.getByText("Dine data, kort fortalt")).toHaveCount(0);
@@ -55,7 +57,7 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await expect(page.getByText("Log ind for at forbinde dine kalendere")).toHaveCount(0);
   await page.getByRole("button", { name: "Tilbage" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Vi finder lige en dag" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
 
   // The privacy policy is not on the welcome screen: it is under the sign-in
   // card, and on the profile once signed in.
@@ -72,7 +74,7 @@ test("the website keeps its landing page, and its header leads to sign-in (#169)
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Vi finder lige en dag" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
   await page.goto("/privacy");
   await page.getByRole("banner").getByRole("link", { name: "Log ind" }).click();
