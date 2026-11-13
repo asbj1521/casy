@@ -19,7 +19,8 @@
     "release:ios": "bash scripts/release-ios.sh",
     "review-demo": "deno run --node-modules-dir=none --no-lock --allow-net --allow-env=REVIEW_PASSWORD --allow-read supabase/review/demo.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "appstore:shots": "APPSTORE_SHOTS=1 playwright test e2e/appstore.spec.ts --project=phone --workers=1"
   },
   "dependencies": {
     "@capacitor/app": "8.1.2",
