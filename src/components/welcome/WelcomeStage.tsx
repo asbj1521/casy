@@ -15,6 +15,7 @@ import { dayCell, listScrolls } from "./phone/dayCell";
 import { demoMonth, demoPlan, demoVote, FRIENDS, GROUP_NAME } from "./phone/demo";
 import { DEVICE } from "./phone/geometry";
 import { rectOfCard, type MorphRect } from "./phone/morph";
+import { LinkFace } from "./WelcomeIntro";
 import { STACK_DONE, THROWS } from "./phone/throws";
 
 /** How the phone stands: `y` a share of the stage's height, `scale` of its fitted size, degrees. */
@@ -373,7 +374,7 @@ export default function WelcomeStage({
     const frame = requestAnimationFrame(() =>
       setMorph({ from: fromIntro, to: phoneRect(true), out: false, link: true }),
     );
-    const shown = setTimeout(() => setGrowing(false), MORPH_S * 700);
+    const shown = setTimeout(() => setGrowing(false), MORPH_S * 400);
     const done = setTimeout(() => setMorph(null), MORPH_S * 1000);
     return () => {
       cancelAnimationFrame(frame);
@@ -483,20 +484,31 @@ export default function WelcomeStage({
         <motion.div
           // Over the intro as it fades, so the link card itself seems to open up.
           className={`fixed overflow-hidden border bg-card shadow-2xl shadow-black/30 ${morph.link ? "z-40" : ""}`}
-          initial={morph.from}
-          animate={morph.to}
-          transition={morph.link ? GROW : MORPH_SPRING}
+          initial={{ ...morph.from, opacity: 1 }}
+          // Growing into the phone, it fades away over the real one at the end, rather than
+          // vanishing all at once.
+          animate={{ ...morph.to, opacity: morph.out ? 1 : [1, 1, 0] }}
+          transition={{
+            ...(morph.link ? GROW : MORPH_SPRING),
+            opacity: { duration: MORPH_S, times: [0, 0.55, 1], ease: "easeOut" },
+          }}
         >
           {morph.link && (
-            // The link's picture, whole, on its orange: the name stays in the middle as the card grows.
-            <motion.img
-              src="/og-image.png"
-              alt=""
-              className="absolute inset-0 h-full w-full bg-[#FF4D00] object-contain"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 0 }}
-              transition={{ duration: 0.4, delay: 0.25 }}
-            />
+            // The link card itself, as it was, zooming with the box as it fades into the screen.
+            <motion.div
+              className="absolute left-1/2 top-1/2 flex flex-col overflow-hidden bg-white"
+              style={{
+                width: morph.from.width,
+                height: morph.from.height,
+                marginLeft: -morph.from.width / 2,
+                marginTop: -morph.from.height / 2,
+              }}
+              initial={{ scale: 1, opacity: 1 }}
+              animate={{ scale: morph.to.width / morph.from.width, opacity: 0 }}
+              transition={{ scale: GROW, opacity: { duration: 0.4, delay: 0.15 } }}
+            >
+              <LinkFace />
+            </motion.div>
           )}
           {/* The phone's metal edge, there only as long as it is still a phone. */}
           <motion.div
@@ -565,7 +577,7 @@ export default function WelcomeStage({
                     : place(pose)),
               opacity: growing ? 0 : 1,
             }}
-            transition={still ? { duration: 0 } : POSE_SPRING}
+            transition={still ? { duration: 0 } : { ...POSE_SPRING, opacity: { duration: 0.3 } }}
           >
             <PhoneDevice
               over={

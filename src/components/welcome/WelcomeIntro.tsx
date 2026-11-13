@@ -53,22 +53,22 @@ const AT = {
   bubble: 1800,
   aging: 4300,
   /** The timeline, racing by now, fades away. */
-  fade: 9600,
+  fade: 7000,
   /** "Vi ved alle…", alone in the middle: it goes there as it appears. */
-  verdict: 10000,
+  verdict: 7400,
   /** "Men nu sker det!" */
-  turn: 13300,
+  turn: 10700,
   /** Up again with "Næste gang, svar med den her.", the old message back beside it. */
-  back: 15000,
-  link: 15700,
+  back: 12400,
+  link: 13100,
   /** The link pressed, as a finger would. */
-  tap: 17300,
-  zoom: 17750,
+  tap: 14700,
+  zoom: 15150,
 };
 /** How long the message takes to grow old, in s. */
-const AGE_S = 5.3;
+const AGE_S = 2.7;
 /** How long the timeline runs, faster and faster: past its fading, so it never slows. */
-const RUN_S = 6.2;
+const RUN_S = 3.2;
 /** How fast the friend's message types itself, per letter. */
 const TYPE_MS = 45;
 /** The timeline's months, apart. */
@@ -267,6 +267,20 @@ function Timeline({ lang, run }: { lang: "da" | "en"; run: boolean }) {
   );
 }
 
+/** What the app's link shows: its picture, name and where it leads. Also what the phone grows from. */
+export function LinkFace() {
+  const { lang } = useLang();
+  return (
+    <>
+      <img src="/og-image.png" alt="" className="block aspect-[1200/630] w-full object-cover" />
+      <span className="flex flex-col px-3.5 py-2.5 leading-tight text-[#1c1c1e]">
+        <span className="text-[1rem] font-semibold">{APP_NAME}</span>
+        <span className="text-[0.8125rem] text-[#8A8D91]">{WORDS.linkDetail[lang]}</span>
+      </span>
+    </>
+  );
+}
+
 /** "…", a dot at a time, after "Vi ved alle, at det aldrig bliver til noget". */
 function Dots() {
   return (
@@ -426,18 +440,23 @@ export default function WelcomeIntro({
             className="absolute right-5 top-[calc(34%+8rem)] w-[68%] max-w-[17rem] overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
             initial={{ x: "120%", opacity: 0 }}
             // Pressed, as a finger would, just before it opens into the app.
-            animate={tapped ? { x: 0, opacity: 1, scale: [1, 0.94, 1] } : { x: 0, opacity: 1 }}
-            transition={tapped ? { duration: 0.4, times: [0, 0.4, 1] } : move}
+            animate={
+              now >= AT.zoom
+                ? { x: 0, opacity: 0, scale: 1 }
+                : tapped
+                  ? { x: 0, opacity: 1, scale: [1, 0.94, 1] }
+                  : { x: 0, opacity: 1 }
+            }
+            // Handed over: gone once the growing copy stands over it, so no faded one stays behind.
+            transition={
+              now >= AT.zoom
+                ? { opacity: { delay: 0.15, duration: 0 } }
+                : tapped
+                  ? { duration: 0.4, times: [0, 0.4, 1] }
+                  : move
+            }
           >
-            <img
-              src="/og-image.png"
-              alt=""
-              className="block aspect-[1200/630] w-full object-cover"
-            />
-            <span className="flex flex-col px-3.5 py-2.5 leading-tight">
-              <span className="text-[1rem] font-semibold">{APP_NAME}</span>
-              <span className="text-[0.8125rem] text-[#8A8D91]">{WORDS.linkDetail[lang]}</span>
-            </span>
+            <LinkFace />
           </motion.div>
         )}
       </AnimatePresence>
