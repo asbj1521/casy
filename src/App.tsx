@@ -68,6 +68,9 @@ const MotionPlayground = import.meta.env.DEV
   : null;
 // The app's own first screen (#151): never downloaded by the website.
 const AppWelcome = lazy(() => import("@/components/welcome/AppWelcome"));
+const ChatScenePlayground = import.meta.env.DEV
+  ? lazy(() => import("@/pages/dev/ChatScenePlayground"))
+  : null;
 const TripsPlayground = import.meta.env.DEV
   ? lazy(() => import("@/pages/dev/TripsPlayground"))
   : null;
@@ -177,6 +180,10 @@ function App() {
                   <Route path="/plan" element={<FindDate />} />
                   {MotionPlayground && <Route path="/dev/motion" element={<MotionPlayground />} />}
                   {TripsPlayground && <Route path="/dev/trips" element={<TripsPlayground />} />}
+                  {/* Dev only: the joke's chat scene on the welcome phone (#275, #270). */}
+                  {ChatScenePlayground && (
+                    <Route path="/dev/chat" element={<ChatScenePlayground />} />
+                  )}
                   {/* Dev only: the app's welcome screen in any browser, to tune it (#228). */}
                   {import.meta.env.DEV && <Route path="/dev/welcome" element={<AppWelcome />} />}
                   <Route path="/privacy" element={<Privacy />} />
