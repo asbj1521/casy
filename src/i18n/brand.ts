@@ -15,4 +15,4 @@ export const APP_NAME = "Vi finder lige en dag";
  * (`CFBundleDisplayName`): any line that sends someone to iPhone's Settings
  * names the app by this.
  */
-export const APP_LABEL = "Casy";
+export const APP_LABEL = "Find en dag";

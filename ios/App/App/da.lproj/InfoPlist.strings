@@ -1,10 +1,13 @@
+/* The label under the icon, in Settings and above notifications (#271). */
+"CFBundleDisplayName" = "Find en dag";
+
 /* The permission prompts for talking instead of typing (#100), in the phone's language. */
-"NSMicrophoneUsageDescription" = "Casy bruger mikrofonen, når du trykker på Tal, så du kan sige, hvad I skal, i stedet for at skrive det.";
-"NSSpeechRecognitionUsageDescription" = "Når du trykker på Tal, gør Apples talegenkendelse det, du siger, til tekst. Casy får kun teksten.";
+"NSMicrophoneUsageDescription" = "Vi bruger mikrofonen, når du trykker på Tal, så du kan sige, hvad I skal, i stedet for at skrive det.";
+"NSSpeechRecognitionUsageDescription" = "Når du trykker på Tal, gør Apples talegenkendelse det, du siger, til tekst. Vi får kun teksten.";
 
 /* The permission prompt for the phone's calendars (#63): reading busy times, adding agreed events
    (#105), and, only with the AI consent (#120), titles for the AI (#112, #115). Keep it true (#142). */
-"NSCalendarsFullAccessUsageDescription" = "Casy læser, hvornår du er optaget i dine kalendere, så dine grupper kan finde datoer, der passer dig, og lægger de aftaler, du vælger, i din kalender. Kun start- og sluttider sendes til Casy, medmindre du lader Casys AI læse din kalender.";
-"NSCalendarsUsageDescription" = "Casy læser, hvornår du er optaget i dine kalendere, så dine grupper kan finde datoer, der passer dig, og lægger de aftaler, du vælger, i din kalender. Kun start- og sluttider sendes til Casy, medmindre du lader Casys AI læse din kalender.";
-"NSCameraUsageDescription" = "Casy bruger kameraet, når du vælger Tag billede, så du kan tage et billede til din profil, en gruppe eller en genvej.";
-"NSPhotoLibraryUsageDescription" = "Casy åbner dine billeder, når du vælger et billede til din profil, en gruppe eller en genvej. Kun det billede, du vælger, bruges, gjort til et lille kvadrat.";
+"NSCalendarsFullAccessUsageDescription" = "Vi læser, hvornår du er optaget i dine kalendere, så dine grupper kan finde datoer, der passer dig, og lægger de aftaler, du vælger, i din kalender. Kun start- og sluttider sendes til os, medmindre du lader vores AI læse din kalender.";
+"NSCalendarsUsageDescription" = "Vi læser, hvornår du er optaget i dine kalendere, så dine grupper kan finde datoer, der passer dig, og lægger de aftaler, du vælger, i din kalender. Kun start- og sluttider sendes til os, medmindre du lader vores AI læse din kalender.";
+"NSCameraUsageDescription" = "Vi bruger kameraet, når du vælger Tag billede, så du kan tage et billede til din profil, en gruppe eller en genvej.";
+"NSPhotoLibraryUsageDescription" = "Vi åbner dine billeder, når du vælger et billede til din profil, en gruppe eller en genvej. Kun det billede, du vælger, bruges, gjort til et lille kvadrat.";

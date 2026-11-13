@@ -18,7 +18,7 @@ const liveUrl = process.env.CAP_LIVE_URL;
 
 const config: CapacitorConfig = {
   appId: "app.casy",
-  appName: "Casy",
+  appName: "Find en dag",
   webDir: "dist",
   // A notification arriving while Casy is open still shows as a banner (#139).
   plugins: { PushNotifications: { presentationOptions: ["banner", "sound", "list"] } },

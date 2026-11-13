@@ -25,7 +25,7 @@ public enum CasyStrings {
     /// and in Settings (#268): `src/i18n/brand.ts`'s two, changed together on
     /// launch day (#272).
     public static let appName = "Vi finder lige en dag"
-    public static let appLabel = "Casy"
+    public static let appLabel = "Find en dag"
 
     public static var cancel: String { text("common.cancel") }
     public static var done: String { text("common.done") }

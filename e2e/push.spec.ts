@@ -125,7 +125,7 @@ test("Settings offers to turn notifications on, or says where after a no", async
 test("after a no in iOS, Settings says where to undo it", async ({ page }) => {
   await asTheApp(page, "denied");
   await page.goto("/profile/settings");
-  await expect(page.getByText("Slå dem til under Casy i iPhones Indstillinger.")).toBeVisible();
+  await expect(page.getByText("Slå dem til under Find en dag i iPhones Indstillinger.")).toBeVisible();
 });
 
 test("the website has no notifications group", async ({ page }) => {

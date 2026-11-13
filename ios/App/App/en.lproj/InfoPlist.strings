@@ -1,10 +1,13 @@
+/* The label under the icon, in Settings and above notifications (#271). */
+"CFBundleDisplayName" = "Find en dag";
+
 /* The permission prompts for talking instead of typing (#100), in the phone's language. */
-"NSMicrophoneUsageDescription" = "Casy uses the microphone when you tap Speak, so you can say what you are planning instead of typing it.";
-"NSSpeechRecognitionUsageDescription" = "When you tap Speak, Apple's speech recognition turns what you say into text. Casy only gets the text.";
+"NSMicrophoneUsageDescription" = "We use the microphone when you tap Speak, so you can say what you are planning instead of typing it.";
+"NSSpeechRecognitionUsageDescription" = "When you tap Speak, Apple's speech recognition turns what you say into text. We only get the text.";
 
 /* The permission prompt for the phone's calendars (#63): reading busy times, adding agreed events
    (#105), and, only with the AI consent (#120), titles for the AI (#112, #115). Keep it true (#142). */
-"NSCalendarsFullAccessUsageDescription" = "Casy reads when you are busy in your calendars, so your groups can find dates that suit you, and adds the events you choose to your calendar. Only start and end times are sent to Casy, unless you let Casy's AI read your calendar.";
-"NSCalendarsUsageDescription" = "Casy reads when you are busy in your calendars, so your groups can find dates that suit you, and adds the events you choose to your calendar. Only start and end times are sent to Casy, unless you let Casy's AI read your calendar.";
-"NSCameraUsageDescription" = "Casy uses the camera when you choose Take Photo, to take a picture for your profile, a group or a shortcut.";
-"NSPhotoLibraryUsageDescription" = "Casy opens your photos when you choose a picture for your profile, a group or a shortcut. Only the picture you pick is used, made into a small square.";
+"NSCalendarsFullAccessUsageDescription" = "We read when you are busy in your calendars, so your groups can find dates that suit you, and add the events you choose to your calendar. Only start and end times are sent to us, unless you let our AI read your calendar.";
+"NSCalendarsUsageDescription" = "We read when you are busy in your calendars, so your groups can find dates that suit you, and add the events you choose to your calendar. Only start and end times are sent to us, unless you let our AI read your calendar.";
+"NSCameraUsageDescription" = "We use the camera when you choose Take Photo, to take a picture for your profile, a group or a shortcut.";
+"NSPhotoLibraryUsageDescription" = "We open your photos when you choose a picture for your profile, a group or a shortcut. Only the picture you pick is used, made into a small square.";
