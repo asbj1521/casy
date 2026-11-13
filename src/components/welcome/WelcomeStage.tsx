@@ -443,11 +443,13 @@ export default function WelcomeStage({
                   borderRadius: 0,
                 }
               : {
-                  left: size.left + size.width * 0.05,
-                  top: size.top + 12,
-                  width: size.width * 0.9,
-                  height: size.height - 12,
-                  borderRadius: 28,
+                  // Edge to edge, from the top of the screen down past the phone, fading out
+                  // at the bottom under the headline and buttons.
+                  left: 0,
+                  top: 0,
+                  width: window.innerWidth,
+                  height: size.top + size.height + 40,
+                  borderRadius: 0,
                 }
           }
           transition={MORPH_SPRING}
@@ -476,7 +478,7 @@ export default function WelcomeStage({
             />
           </motion.div>
           <motion.div
-            className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent"
+            className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/70 to-transparent"
             initial={false}
             animate={{ opacity: leaving ? 0 : 1 }}
             transition={{ duration: 0.3 }}
@@ -605,7 +607,11 @@ export default function WelcomeStage({
               ...(still
                 ? place(POSE.flat)
                 : framedNow
-                  ? { ...pose, ...framed }
+                  ? voting
+                    ? // Turned, its near side comes closer and looks bigger: a little smaller and
+                      // lower, so its top never reaches up over the headline.
+                      { ...pose, y: framed.y + framed.scale * 18, scale: framed.scale * 0.92 }
+                    : { ...pose, ...framed }
                   : thud
                     ? { ...place(POSE.flat), scale: scale * 1.05 }
                     : place(pose)),
