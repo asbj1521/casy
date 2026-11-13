@@ -15,7 +15,7 @@ import { displayName, useAuth } from "@/context/auth";
 import { APP_NAME } from "@/i18n/brand";
 import { useLang, useT } from "@/i18n/lang";
 import { APP_STORE_URL } from "@/lib/appStore";
-import { SITE_URL } from "@/lib/nativeApp";
+import { APP_URL, SITE_URL } from "@/lib/nativeApp";
 
 /** Wide enough for the app's lines beside the phone, with arrows; narrower, they stand above it. */
 const BESIDE = "(min-width: 1180px)";
@@ -297,11 +297,7 @@ export default function ComputerAd({ kind = "home" }: { kind?: "home" | "invite"
           )}
 
           {kind === "home" ? (
-            <GetTheApp
-              link={`${SITE_URL}/app`}
-              scanLine={t.computerAd.scan}
-              label={t.computerAd.qrLabel}
-            />
+            <GetTheApp link={APP_URL} scanLine={t.computerAd.scan} label={t.computerAd.qrLabel} />
           ) : (
             <GetTheApp
               link={here}

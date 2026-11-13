@@ -17,7 +17,7 @@ import { APP_VERSION } from "@/lib/appVersion";
 import { APP_BUILD, feedbackMailto } from "@/lib/feedback";
 import { isNativeApp } from "@/lib/nativeApp";
 import { shareLink } from "@/lib/share";
-import { SITE_URL } from "@/lib/nativeApp";
+import { APP_URL } from "@/lib/nativeApp";
 import { APP_NAME } from "@/i18n/brand";
 
 /**
@@ -37,8 +37,8 @@ export function FeedbackShareGroup() {
   const [showLink, setShowLink] = useState(false);
 
   function shareCasy() {
-    void shareLink({ title: APP_NAME, text: t.profileHub.shareText, url: SITE_URL }).then(
-      (opened) => setShowLink(!opened),
+    void shareLink({ title: APP_NAME, text: t.profileHub.shareText, url: APP_URL }).then((opened) =>
+      setShowLink(!opened),
     );
   }
 
@@ -69,7 +69,7 @@ export function FeedbackShareGroup() {
           />
         )}
       </ListGroup>
-      {showLink && <CopyField value={SITE_URL} label={t.profileHub.share} className="mt-2" />}
+      {showLink && <CopyField value={APP_URL} label={t.profileHub.share} className="mt-2" />}
     </>
   );
 }

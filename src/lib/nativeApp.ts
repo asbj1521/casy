@@ -7,6 +7,12 @@ import { listenForStatusTap } from "@/lib/statusTap";
 
 /** The website the app belongs to: where links that leave the app point. */
 export const SITE_URL = "https://casy.app";
+/**
+ * The link to the app itself (AppLink): opens the app on an iPhone that has it, the
+ * App Store on one that hasn't, the phone website elsewhere and the ad on a computer.
+ * What the computer's QR code and "Del appen" send.
+ */
+export const APP_URL = `${SITE_URL}/app`;
 
 /**
  * True inside the iPhone app, false on the website. Read from the bridge the
