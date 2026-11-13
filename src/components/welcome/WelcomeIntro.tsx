@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 
 import type { MorphRect } from "@/components/welcome/phone/morph";
+import LogoMark from "@/components/ui/LogoMark";
 import { APP_NAME } from "@/i18n/brand";
 import { useLang } from "@/i18n/lang";
 
@@ -19,7 +20,8 @@ const WORDS = {
     da: "Alle ved det ik bliver til noget",
     en: "Everyone knows it won't happen",
   },
-  turn: { da: "Men nu sker det!", en: "But now it will!" },
+  turn: { da: "Men nu gør det!", en: "But now it will!" },
+  present: { da: "Introducerer:", en: "Introducing:" },
   reply: { da: "Næste gang, svar med den her.", en: "Next time, reply with this." },
   /** The friend's first message, soon replaced by the second. */
   first: { da: "Det lyder SÅ sjovt!", en: "That sounds SO fun!" },
@@ -58,14 +60,17 @@ const AT = {
   fade: 7700,
   /** "Alle ved det ik…", alone in the middle: it goes there as it appears. */
   verdict: 8100,
-  /** "Men nu sker det!" */
+  /** "Men nu gør det!" */
   turn: 11400,
-  /** Up again with "Næste gang, svar med den her.", the old message back beside it. */
-  back: 13100,
-  link: 13800,
+  /** "Introducerer:", and the app's icon pops up, big, with its name. */
+  present: 12900,
+  /** Up again with "Næste gang, svar med den her.", the old message back beside it; the icon
+   * flies off, shrinking, to where the link lands. */
+  back: 15100,
+  link: 15800,
   /** The link pressed, as a finger would. */
-  tap: 15400,
-  zoom: 15850,
+  tap: 17400,
+  zoom: 17850,
 };
 /** How long the message takes to grow old, in s. */
 const AGE_S = 2.7;
@@ -309,9 +314,10 @@ function Dots() {
  * place, alone; it grows old (cracks, cobwebs, yellowing, its words fading)
  * while the months race past under it and away; the line goes back to the
  * middle, alone, as it turns into "Alle ved det ik bliver til noget...", then
- * "Men nu sker det!"; back up as "Næste gang, svar med den her.", beside the
- * old message, and the person's own reply, the app's link, from the right,
- * pressed. Its place is handed on for the animation's phone to grow out of
+ * "Men nu gør det!"; "Introducerer:" the app's icon, popping up big with its
+ * name; back up as "Næste gang, svar med den her.", beside the old message,
+ * while the icon flies off, shrinking, and lands as the person's own reply,
+ * the app's link, pressed. Its place is handed on for the animation's phone to grow out of
  * (AppWelcome, WelcomeStage).
  */
 export default function WelcomeIntro({
@@ -369,17 +375,32 @@ export default function WelcomeIntro({
   const heading =
     now >= AT.back
       ? WORDS.reply
-      : now >= AT.turn
-        ? WORDS.turn
-        : now >= AT.verdict
-          ? WORDS.verdict
-          : WORDS.relate;
+      : now >= AT.present
+        ? WORDS.present
+        : now >= AT.turn
+          ? WORDS.turn
+          : now >= AT.verdict
+            ? WORDS.verdict
+            : WORDS.relate;
   // The line alone in the middle: at the start, and again for "Næste gang, svar med den her."
   const alone = !up || (now >= AT.verdict && now < AT.back);
   const tapped = now >= AT.tap;
   // From the middle of the screen up to the line's own box near the top.
   const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.5 - 130;
   const move = { duration: 0.7, ease: [0.32, 0.72, 0, 1] } as const;
+  const presenting = now >= AT.present && now < AT.back;
+  // The icon, big in the middle; then off to the middle of the link's picture, at its height.
+  const W = typeof window === "undefined" ? 390 : window.innerWidth;
+  const H = typeof window === "undefined" ? 844 : window.innerHeight;
+  const icon = Math.min(W * 0.56, 230);
+  const iconY = H * 0.5 + 30;
+  const card = Math.min(W * 0.68, 272);
+  const picture = ((card - 6) * 630) / 1200;
+  const landing = {
+    x: W - 20 - card / 2 - W / 2,
+    y: H * 0.34 + 128 + 3 + picture / 2 - iconY,
+    scale: picture / icon,
+  };
 
   return (
     <div className="fixed inset-0 z-30 overflow-hidden bg-[#FF4D00] text-white">
@@ -390,20 +411,22 @@ export default function WelcomeIntro({
         style={{ top: "max(2.5rem, calc(env(safe-area-inset-top) + 1rem))" }}
         initial={{ y: middle, scale: 1.12, opacity: 0 }}
         animate={{
-          y: alone ? middle : 0,
+          // "Introducerer:" stands above the icon; the other lines alone in the middle.
+          y: presenting ? middle - icon / 2 - 60 : alone ? middle : 0,
           scale: alone ? 1.12 : 1,
           opacity: tapped ? 0 : 1,
         }}
         transition={move}
       >
-        <AnimatePresence initial={false}>
+        {/* The old line gone before the new one comes, so they never stand over each other. */}
+        <AnimatePresence initial={false} mode="wait">
           <motion.h2
             key={heading.da}
             className="absolute inset-0 flex items-center justify-center text-balance px-8 text-center text-[2.375rem] font-bold leading-[1.1]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.45 }}
+            transition={{ duration: 0.22 }}
           >
             <span>
               {heading[lang]}
@@ -466,13 +489,58 @@ export default function WelcomeIntro({
         )}
       </AnimatePresence>
 
-      {/* The person's own reply, from the right: the app's link. The phone grows out of it. */}
+      {/* The app, introduced: its icon pops up big, with its name; then flies off, shrinking,
+          and lands as the link. */}
+      <AnimatePresence>
+        {now >= AT.present && now < AT.link + 300 && (
+          <motion.div
+            aria-hidden
+            className="absolute"
+            style={{ left: W / 2 - icon / 2, top: iconY - icon / 2, width: icon, height: icon }}
+            initial={{ scale: 0.3, opacity: 0 }}
+            animate={
+              now >= AT.link
+                ? { ...landing, opacity: 0 }
+                : now >= AT.back
+                  ? { ...landing, opacity: 1 }
+                  : { x: 0, y: 0, scale: 1, opacity: 1 }
+            }
+            transition={
+              now >= AT.link
+                ? { opacity: { delay: 0.1, duration: 0.15 } }
+                : now >= AT.back
+                  ? move
+                  : { type: "spring", stiffness: 260, damping: 18 }
+            }
+          >
+            <span className="flex h-full w-full items-center justify-center rounded-[22%] bg-[#FF4D00] p-[16%] shadow-2xl shadow-black/25 ring-4 ring-white">
+              <LogoMark className="h-full w-full text-white" label="" />
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {presenting && (
+          <motion.p
+            className="absolute inset-x-0 text-center text-[1.75rem] font-bold"
+            style={{ top: iconY + icon / 2 + 22 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+          >
+            {APP_NAME}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      {/* The person's own reply: the app's link, where the icon lands. The phone grows out of it. */}
       <AnimatePresence>
         {now >= AT.link && (
           <motion.div
             ref={link}
             className="absolute right-5 top-[calc(34%+8rem)] w-[68%] max-w-[17rem] overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
-            initial={{ x: "120%", opacity: 0 }}
+            initial={{ x: 0, opacity: 0 }}
             // Pressed, as a finger would, just before it opens into the app.
             animate={
               now >= AT.zoom
@@ -487,7 +555,7 @@ export default function WelcomeIntro({
                 ? { opacity: { delay: 0.15, duration: 0 } }
                 : tapped
                   ? { duration: 0.4, times: [0, 0.4, 1] }
-                  : move
+                  : { duration: 0.2 }
             }
           >
             <LinkFace />
