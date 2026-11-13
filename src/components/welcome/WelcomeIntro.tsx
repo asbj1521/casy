@@ -21,7 +21,9 @@ const WORDS = {
 };
 
 /** When each part starts, in ms from the intro's start. */
-const AT = { up: 1300, bubble: 1800, aging: 4300, reply: 7300, link: 7900, zoom: 9700 };
+const AT = { up: 1300, bubble: 1800, aging: 4300, reply: 10300, link: 10900, zoom: 12700 };
+/** How long each "senere" stands while the message ages. */
+const LATER_MS = 1900;
 /** How fast the friend's message types itself, per letter. */
 const TYPE_MS = 45;
 
@@ -105,7 +107,16 @@ export default function WelcomeIntro({
 
   const up = now >= AT.up;
   const aging = now >= AT.aging;
-  const later = aging ? Math.min(WORDS.later.length - 1, Math.floor((now - AT.aging) / 1000)) : -1;
+  // Which "senere" stands: its own clock, a step every LATER_MS while the message ages.
+  const [later, setLater] = useState(-1);
+  useEffect(() => {
+    if (!aging) return;
+    const timers = WORDS.later.map((_, i) =>
+      window.setTimeout(() => setLater(i), i * LATER_MS * (still ? 0.5 : 1)),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [aging, still]);
+
   // From the middle of the screen to its top: about a third of the screen's height.
   const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.34;
 
@@ -150,7 +161,7 @@ export default function WelcomeIntro({
                     filter: aging ? "blur(3.5px)" : "blur(0px)",
                     opacity: aging ? 0.55 : 1,
                   }}
-                  transition={{ duration: 2.4, ease: "easeIn" }}
+                  transition={{ duration: 5.5, ease: "easeIn" }}
                 >
                   {message.slice(0, typed)}
                   {typed < message.length && (
