@@ -173,20 +173,21 @@ English: The first version of Casy.
 ## Screenshots
 
 6.9 inch iPhone (1320 x 2868) is required; Apple scales it for the smaller
-sizes. Five to six, in light or dark but the same throughout (dark shows the
-glass best). A short line over each, in the language of the listing, set in
-Casy's own type, no device frame needed. In this order, which is also the order
-of the welcome animation:
+sizes, so no other size is made. From 1.1.0 (#271), five slides on the
+app's orange with its bubbles, a short white line over each and the app's
+screen below it, in the listing's language:
 
-1. My calendar, a month with busy time: "Din kalender, som den er"
-2. Planlæg's pile with the free days shining: "Alles kalendere oven på hinanden"
-3. The list of dates ready to send: "De datoer, der passer alle"
-4. The swipe card with the others' answers: "Swipe ja eller nej"
-5. An agreed event with "Tilføj til min kalender": "Aftalt, og i kalenderen"
-6. A group with its members and the QR code: "Inviter med et link eller en QR-kode"
+1. Only the name, "VI FINDER / LIGE EN DAG"
+2. My calendar's month: "Alles kalendere. Én måned." / "Everyone's calendars. One month."
+3. A vote: "Stem på de dage, vi finder" / "Vote on the days we find"
+4. An agreed event: "Datoen lander i alles kalender" / "The date lands in everyone's calendar"
+5. A group: "En gruppe til hver flok" / "A group for every crowd"
 
-Take them in the simulator (iPhone 17 Pro Max or the largest available) with the
-made-up data of the e2e world, never real people.
+`npm run appstore:shots` makes them from the app's own screens with the e2e
+world's made-up data (never real people) and saves them in "Casy App Store
+screenshots light/1.1.0 Dansk" and "1.1.0 English", the folder beside the code
+that git leaves out. Its "Dansk" and "English" hold the 1.0 listing's six, in
+use until 1.1.0 is released.
 
 ## App Store Connect forms (#142)
 

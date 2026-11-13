@@ -4,7 +4,8 @@
  * as the app at a 6.9 inch iPhone's size (440 x 956 points, 1320 x 2868
  * pixels) over the test backend's made-up groups, then each set on a slide
  * with a line above it, in Danish and English. The first slide is only the
- * name. Written to docs/app-store/screenshots/<lang>/.
+ * name. Written to the screenshots folder beside the code ("Casy App Store
+ * screenshots light", kept out of git), as "1.1.0 Dansk" and "1.1.0 English".
  */
 import { mkdirSync, readFileSync } from "node:fs";
 
@@ -18,7 +19,8 @@ test.skip(({ isMobile }) => !isMobile, "the app is a phone");
 
 test.use({ viewport: { width: 440, height: 956 }, deviceScaleFactor: 3 });
 
-const OUT = "docs/app-store/screenshots";
+const OUT = "Casy App Store screenshots light";
+const FOLDER = { da: "1.1.0 Dansk", en: "1.1.0 English" } as const;
 const RAW = "test-results/appstore-raw";
 
 const LINES = {
@@ -86,11 +88,11 @@ for (const lang of ["da", "en"] as const) {
 test.describe.serial("slides", () => {
   for (const lang of ["da", "en"] as const) {
     test(`${lang}`, async ({ page }) => {
-      mkdirSync(`${OUT}/${lang}`, { recursive: true });
+      mkdirSync(`${OUT}/${FOLDER[lang]}`, { recursive: true });
       const logo = readFileSync("docs/brand/icon-letters.svg", "utf8");
       // 1: only the name.
       await page.setContent(slide(`<div class="name">${logo}</div>`));
-      await page.screenshot({ path: `${OUT}/${lang}/1-name.png` });
+      await page.screenshot({ path: `${OUT}/${FOLDER[lang]}/1-name.png` });
       let n = 2;
       for (const { name } of SCREENS) {
         const shot = readFileSync(`${RAW}/${lang}-${name}.png`).toString("base64");
@@ -101,7 +103,7 @@ test.describe.serial("slides", () => {
           ),
         );
         await page.waitForTimeout(100);
-        await page.screenshot({ path: `${OUT}/${lang}/${n++}-${name}.png` });
+        await page.screenshot({ path: `${OUT}/${FOLDER[lang]}/${n++}-${name}.png` });
       }
     });
   }
