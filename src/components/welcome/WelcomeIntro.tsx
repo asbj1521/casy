@@ -16,9 +16,10 @@ import { useLang } from "@/i18n/lang";
 const WORDS = {
   relate: { da: "Er det også sket for dig?", en: "Has this ever happened to you?" },
   verdict: {
-    da: "Vi ved alle, at det aldrig bliver til noget.",
-    en: "We all know it's never going to happen.",
+    da: "Vi ved alle, at det aldrig bliver til noget",
+    en: "We all know it's never going to happen",
   },
+  turn: { da: "Men nu sker det!", en: "But now it will!" },
   reply: { da: "Næste gang, svar med den her.", en: "Next time, reply with this." },
   message: {
     da: "Det lyder SÅ sjovt! Vi finder lige en dag 😍",
@@ -53,16 +54,16 @@ const AT = {
   aging: 4300,
   /** The timeline, racing by now, fades away. */
   fade: 9600,
-  verdict: 10200,
-  /** The line goes back to the middle of the screen, alone there. */
-  alone: 12400,
-  reply: 13900,
-  /** Up again, the old message back beside it. */
-  back: 15700,
-  link: 16300,
+  /** "Vi ved alle…", alone in the middle: it goes there as it appears. */
+  verdict: 10000,
+  /** "Men nu sker det!" */
+  turn: 13300,
+  /** Up again with "Næste gang, svar med den her.", the old message back beside it. */
+  back: 15000,
+  link: 15700,
   /** The link pressed, as a finger would. */
-  tap: 17900,
-  zoom: 18350,
+  tap: 17300,
+  zoom: 17750,
 };
 /** How long the message takes to grow old, in s. */
 const AGE_S = 5.3;
@@ -266,15 +267,33 @@ function Timeline({ lang, run }: { lang: "da" | "en"; run: boolean }) {
   );
 }
 
+/** "…", a dot at a time, after "Vi ved alle, at det aldrig bliver til noget". */
+function Dots() {
+  return (
+    <>
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 + i * 0.45, duration: 0.2 }}
+        >
+          .
+        </motion.span>
+      ))}
+    </>
+  );
+}
+
 /**
  * Before the welcome's animation (#275), the joke shown rather than told, no
  * phone and no buttons, on orange over the whole screen: "Er det også sket
  * for dig?" alone in the middle, then up to the top; a friend's grey message
  * types itself, ending in "Vi finder lige en dag"; then it grows old (cracks,
  * cobwebs, yellowing, its words fading) while the months race past under it
- * and away; "Vi ved alle, at det aldrig bliver til noget."; then that line
- * alone in the middle again, "Næste gang, svar med den her."; back up beside
- * the old message, and the person's own reply, the app's link, from the
+ * and away; the line goes back to the middle, alone, as it turns into "Vi ved
+ * alle, at det aldrig bliver til noget...", then "Men nu sker det!"; back up
+ * as "Næste gang, svar med den her.", beside the old message, and the person's own reply, the app's link, from the
  * right, pressed. Its place is handed on for the animation's phone to grow out of
  * (AppWelcome, WelcomeStage).
  */
@@ -321,9 +340,16 @@ export default function WelcomeIntro({
   }, [aging, age, still]);
 
   const up = now >= AT.up;
-  const heading = now >= AT.reply ? WORDS.reply : now >= AT.verdict ? WORDS.verdict : WORDS.relate;
+  const heading =
+    now >= AT.back
+      ? WORDS.reply
+      : now >= AT.turn
+        ? WORDS.turn
+        : now >= AT.verdict
+          ? WORDS.verdict
+          : WORDS.relate;
   // The line alone in the middle: at the start, and again for "Næste gang, svar med den her."
-  const alone = !up || (now >= AT.alone && now < AT.back);
+  const alone = !up || (now >= AT.verdict && now < AT.back);
   const tapped = now >= AT.tap;
   // From the middle of the screen up to the line's own box near the top.
   const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.5 - 130;
@@ -353,7 +379,10 @@ export default function WelcomeIntro({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45 }}
           >
-            {heading[lang]}
+            <span>
+              {heading[lang]}
+              {heading === WORDS.verdict && <Dots />}
+            </span>
           </motion.h2>
         </AnimatePresence>
       </motion.div>
@@ -365,7 +394,7 @@ export default function WelcomeIntro({
             className="absolute inset-x-5 top-[34%] flex flex-col"
             initial={{ x: "-110%", opacity: 0 }}
             // Away while the line is alone in the middle; back, still old, after.
-            animate={{ x: 0, opacity: (now >= AT.alone && now < AT.back) || tapped ? 0 : 1 }}
+            animate={{ x: 0, opacity: (now >= AT.verdict && now < AT.back) || tapped ? 0 : 1 }}
             // Back only once the line above has made room for it.
             transition={now >= AT.back && !tapped ? { ...move, delay: 0.35 } : move}
           >
