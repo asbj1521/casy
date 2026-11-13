@@ -15,10 +15,10 @@ import { APP_NAME } from "@/i18n/brand";
 import { useLang } from "@/i18n/lang";
 
 const WORDS = {
-  relate: { da: "Er det også sket for dig?", en: "Has this ever happened to you?" },
+  relate: { da: "Vi kender det alle:", en: "We all know this one:" },
   verdict: {
-    da: "Alle ved det ik bliver til noget",
-    en: "Everyone knows it won't happen",
+    da: "Alle ved det ik bliver til noget...",
+    en: "Everyone knows it won't happen...",
   },
   turn: { da: "Men nu gør det!", en: "But now it will!" },
   present: { da: "Introducerer:", en: "Introducing:" },
@@ -67,7 +67,6 @@ const AT = {
   /** Up again with "Næste gang, svar med den her.", the old message back beside it; the icon
    * flies off, shrinking, to where the link lands. */
   back: 15100,
-  link: 15800,
   /** The link pressed, as a finger would. */
   tap: 17400,
   zoom: 17850,
@@ -80,6 +79,8 @@ const RUN_S = 3.2;
 const TYPE_MS = 45;
 /** The timeline's months, apart. */
 const MONTH_PX = 64;
+/** The icon opening into the link: an even ease in and out, so it never seems to jump. */
+const OPEN = { duration: 0.9, ease: [0.65, 0, 0.35, 1] } as const;
 
 /** One thread of a web, a crack or anything drawn as age comes on, between two moments of it. */
 function Grows({
@@ -288,36 +289,17 @@ export function LinkFace() {
   );
 }
 
-/** "…", a dot at a time, after "Alle ved det ik bliver til noget". */
-function Dots() {
-  return (
-    <>
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 + i * 0.45, duration: 0.2 }}
-        >
-          .
-        </motion.span>
-      ))}
-    </>
-  );
-}
-
 /**
  * Before the welcome's animation (#275), the joke shown rather than told, no
- * phone and no buttons, on orange over the whole screen: "Er det også sket
- * for dig?" alone in the middle, then up to the top; a friend's grey message,
+ * phone and no buttons, on orange over the whole screen: "Vi kender det
+ * alle:" alone in the middle, then up to the top; a friend's grey message,
  * "Det lyder SÅ sjovt!", types itself, then "Vi finder lige en dag" takes its
  * place, alone; it grows old (cracks, cobwebs, yellowing, its words fading)
  * while the months race past under it and away; the line goes back to the
  * middle, alone, as it turns into "Alle ved det ik bliver til noget...", then
- * "Men nu gør det!"; "Introducerer:" the app's icon, popping up big with its
- * name; back up as "Næste gang, svar med den her.", beside the old message,
- * while the icon flies off, shrinking, and lands as the person's own reply,
- * the app's link, pressed. Its place is handed on for the animation's phone to grow out of
+ * "Men nu gør det!"; "Introducerer:" the app's icon, popping up big; back up as "Næste gang, svar med den her.", beside the old message,
+ * while the icon itself turns into the person's own reply, the app's
+ * link, pressed. Its place is handed on for the animation's phone to grow out of
  * (AppWelcome, WelcomeStage).
  */
 export default function WelcomeIntro({
@@ -396,11 +378,8 @@ export default function WelcomeIntro({
   const iconY = H * 0.5 + 30;
   const card = Math.min(W * 0.68, 272);
   const picture = ((card - 6) * 630) / 1200;
-  const landing = {
-    x: W - 20 - card / 2 - W / 2,
-    y: H * 0.34 + 128 + 3 + picture / 2 - iconY,
-    scale: picture / icon,
-  };
+  // The picture, then the name and where it leads, inside a 3 px white edge.
+  const cardHeight = picture + 62;
 
   return (
     <div className="fixed inset-0 z-30 overflow-hidden bg-[#FF4D00] text-white">
@@ -428,10 +407,7 @@ export default function WelcomeIntro({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
           >
-            <span>
-              {heading[lang]}
-              {heading === WORDS.verdict && <Dots />}
-            </span>
+            <span>{heading[lang]}</span>
           </motion.h2>
         </AnimatePresence>
       </motion.div>
@@ -489,79 +465,74 @@ export default function WelcomeIntro({
         )}
       </AnimatePresence>
 
-      {/* The app, introduced: its icon pops up big, with its name; then flies off, shrinking,
-          and lands as the link. */}
-      <AnimatePresence>
-        {now >= AT.present && now < AT.link + 300 && (
+      {/* The app, introduced: its icon pops up big; then the icon itself becomes the link,
+          moving and widening into it as the logo gives way to the link's picture and name,
+          one shape the whole way. The phone grows out of it. */}
+      {now >= AT.present && (
+        <motion.div
+          ref={link}
+          aria-hidden={now < AT.back}
+          className="absolute overflow-hidden border-[3px] border-white shadow-xl"
+          initial={{
+            left: W / 2 - icon / 2,
+            top: iconY - icon / 2,
+            width: icon,
+            height: icon,
+            borderRadius: `${icon * 0.22}px ${icon * 0.22}px ${icon * 0.22}px ${icon * 0.22}px`,
+            backgroundColor: "#FF4D00",
+            scale: 0.3,
+            opacity: 0,
+          }}
+          animate={
+            now < AT.back
+              ? { scale: 1, opacity: 1 }
+              : {
+                  left: W - 20 - card,
+                  top: H * 0.34 + 128,
+                  width: card,
+                  height: cardHeight,
+                  borderRadius: "22px 22px 6px 22px",
+                  scale: now >= AT.tap && now < AT.zoom ? [1, 0.94, 1] : 1,
+                  opacity: now >= AT.zoom ? 0 : 1,
+                }
+          }
+          transition={
+            now < AT.back
+              ? { type: "spring", stiffness: 260, damping: 18 }
+              : {
+                  ...OPEN,
+                  scale: { duration: 0.4, times: [0, 0.4, 1] },
+                  // Handed over: gone once the growing copy stands over it.
+                  opacity: now >= AT.zoom ? { delay: 0.15, duration: 0 } : { duration: 0 },
+                }
+          }
+        >
+          {/* The link as it will be, at its own width, showing as the icon opens into it. */}
           <motion.div
-            aria-hidden
-            className="absolute"
-            style={{ left: W / 2 - icon / 2, top: iconY - icon / 2, width: icon, height: icon }}
-            initial={{ scale: 0.3, opacity: 0 }}
-            animate={
-              now >= AT.link
-                ? { ...landing, opacity: 0 }
-                : now >= AT.back
-                  ? { ...landing, opacity: 1 }
-                  : { x: 0, y: 0, scale: 1, opacity: 1 }
-            }
-            transition={
-              now >= AT.link
-                ? { opacity: { delay: 0.1, duration: 0.15 } }
-                : now >= AT.back
-                  ? move
-                  : { type: "spring", stiffness: 260, damping: 18 }
-            }
-          >
-            <span className="flex h-full w-full items-center justify-center rounded-[22%] bg-[#FF4D00] p-[16%] shadow-2xl shadow-black/25 ring-4 ring-white">
-              <LogoMark className="h-full w-full text-white" label="" />
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {presenting && (
-          <motion.p
-            className="absolute inset-x-0 text-center text-[1.75rem] font-bold"
-            style={{ top: iconY + icon / 2 + 22 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, transition: { duration: 0.2 } }}
-            transition={{ duration: 0.4, delay: 0.25 }}
-          >
-            {APP_NAME}
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      {/* The person's own reply: the app's link, where the icon lands. The phone grows out of it. */}
-      <AnimatePresence>
-        {now >= AT.link && (
-          <motion.div
-            ref={link}
-            className="absolute right-5 top-[calc(34%+8rem)] w-[68%] max-w-[17rem] overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
-            initial={{ x: 0, opacity: 0 }}
-            // Pressed, as a finger would, just before it opens into the app.
-            animate={
-              now >= AT.zoom
-                ? { x: 0, opacity: 0, scale: 1 }
-                : tapped
-                  ? { x: 0, opacity: 1, scale: [1, 0.94, 1] }
-                  : { x: 0, opacity: 1 }
-            }
-            // Handed over: gone once the growing copy stands over it, so no faded one stays behind.
-            transition={
-              now >= AT.zoom
-                ? { opacity: { delay: 0.15, duration: 0 } }
-                : tapped
-                  ? { duration: 0.4, times: [0, 0.4, 1] }
-                  : { duration: 0.2 }
-            }
+            className="absolute left-0 top-0 bg-white text-[#1c1c1e]"
+            style={{ width: card - 6 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: now >= AT.back ? 1 : 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
           >
             <LinkFace />
           </motion.div>
-        )}
-      </AnimatePresence>
+          {/* The icon's logo, staying in the middle of what becomes the link's picture. */}
+          <motion.div
+            className="absolute inset-x-0 top-0 flex items-center justify-center"
+            initial={{ height: icon - 6, opacity: 1 }}
+            animate={
+              now >= AT.back ? { height: picture, opacity: 0 } : { height: icon - 6, opacity: 1 }
+            }
+            transition={{
+              height: OPEN,
+              opacity: { duration: 0.35, delay: 0.35 },
+            }}
+          >
+            <LogoMark className="h-[68%] w-auto text-white" label="" />
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

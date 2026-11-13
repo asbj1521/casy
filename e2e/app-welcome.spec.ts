@@ -25,7 +25,7 @@ test("the first time, the intro plays on orange before the animation, with no bu
 }) => {
   await asTheApp(page, { intro: true });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Er det også sket for dig?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vi kender det alle:" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Find en dag" })).not.toBeInViewport();
   await expect(page.getByRole("heading", { name: "Næste gang, svar med den her." })).toBeVisible({
     timeout: 10_000,
