@@ -105,8 +105,8 @@ export type Beat =
       text: Words | "propose" | "again";
       key?: boolean;
       history?: boolean;
-      /** A reaction someone puts on it a moment later, and how many did. */
-      react?: { emoji: string; count?: number };
+      /** The reactions it gets, one friend at a time, in the order they come. */
+      react?: string[];
       ms: number;
     }
   /** Time passing, as a chat's divider says it. */
@@ -116,7 +116,7 @@ export type Beat =
   /** The person's own turn: the app's link in their field, sent with a tap (or by itself). */
   | { kind: "send"; ms: number }
   /** A friend sends back the day the app found. */
-  | { kind: "found"; who: Friend; react?: { emoji: string; count?: number }; ms: number };
+  | { kind: "found"; who: Friend; react?: string[]; ms: number };
 
 const PHRASE: Words = { da: "Vi finder lige en dag", en: "We'll find a day" };
 
@@ -131,13 +131,13 @@ export const CUES = {
 const ENDING: Beat[] = [
   { kind: "cue", text: CUES.familiar, ms: 2200 },
   { kind: "cue", text: CUES.reply, ms: 1800 },
-  { kind: "send", ms: 1100 },
+  { kind: "send", ms: 700 },
   { kind: "typing", who: "ida", ms: 600 },
   {
     kind: "text",
     who: "ida",
     text: { da: "HAHAHA er det en rigtig app?? 😂😂", en: "HAHAHA is that a real app?? 😂😂" },
-    react: { emoji: "😆" },
+    react: ["😆"],
     ms: 900,
   },
   { kind: "typing", who: "jonas", ms: 700 },
@@ -154,7 +154,7 @@ const ENDING: Beat[] = [
     text: { da: "Jeg har lige fundet en dag til os 🙏", en: "I just found us a day 🙏" },
     ms: 800,
   },
-  { kind: "found", who: "mads", react: { emoji: "❤️", count: 4 }, ms: 1600 },
+  { kind: "found", who: "mads", react: ["❤️", "🙌", "❤️", "❤️"], ms: 1600 },
   { kind: "cue", text: CUES.found, ms: 3400 },
 ];
 
@@ -162,13 +162,13 @@ export const SCENES = {
   /** Someone proposes something, everyone loves it, and it stalls at the phrase. */
   idea: [
     { kind: "typing", who: "mads", ms: 800 },
-    { kind: "text", who: "mads", text: "propose", react: { emoji: "❤️", count: 2 }, ms: 900 },
+    { kind: "text", who: "mads", text: "propose", react: ["❤️", "❤️"], ms: 900 },
     { kind: "typing", who: "ida", ms: 600 },
     {
       kind: "text",
       who: "ida",
       text: { da: "Jaaa det lyder vildt fedt 😍", en: "Yesss that sounds amazing 😍" },
-      react: { emoji: "👍" },
+      react: ["👍"],
       ms: 800,
     },
     { kind: "typing", who: "jonas", ms: 700 },
@@ -184,7 +184,7 @@ export const SCENES = {
       who: "mads",
       text: PHRASE,
       key: true,
-      react: { emoji: "👍", count: 3 },
+      react: ["👍", "👍", "👍"],
       ms: 900,
     },
     { kind: "gap", text: { da: "3 uger senere", en: "3 weeks later" }, ms: 700 },
@@ -198,7 +198,7 @@ export const SCENES = {
       who: "jonas",
       text: PHRASE,
       history: true,
-      react: { emoji: "👍", count: 3 },
+      react: ["👍", "👍", "👍"],
       ms: 0,
     },
     { kind: "gap", text: { da: "2 måneder senere", en: "2 months later" }, ms: 900 },
@@ -212,7 +212,7 @@ export const SCENES = {
       who: "mads",
       text: PHRASE,
       key: true,
-      react: { emoji: "😂", count: 2 },
+      react: ["😂", "😂"],
       ms: 1000,
     },
     ...ENDING,

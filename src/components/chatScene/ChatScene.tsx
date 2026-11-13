@@ -82,17 +82,46 @@ function Dots() {
   );
 }
 
-/** A reaction on a message, popping on a moment after it arrives. */
-function Reaction({ react }: { react: { emoji: string; count?: number } }) {
+/**
+ * When each reaction comes, after the one before (the first after the
+ * message): uneven, as friends picking up their phones are.
+ */
+const REACT_GAPS_MS = [900, 1300, 1900, 1100];
+
+/**
+ * A message's reactions, arriving one friend at a time: the first pops on,
+ * each next one bumps the count and may add its own emoji (up to three shown,
+ * as a chat does). Already all there for a message that was in the chat before
+ * the scene opened.
+ */
+function Reactions({ list, instant }: { list: string[]; instant: boolean }) {
+  const [n, setN] = useState(instant ? list.length : 0);
+  useEffect(() => {
+    if (n >= list.length) return;
+    const t = window.setTimeout(() => setN((k) => k + 1), REACT_GAPS_MS[n % REACT_GAPS_MS.length]);
+    return () => window.clearTimeout(t);
+  }, [n, list.length]);
+  if (n === 0) return null;
+  const emojis = [...new Set(list.slice(0, n))].slice(0, 3);
   return (
     <motion.span
-      initial={{ scale: 0, opacity: 0 }}
+      initial={instant ? false : { scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 500, damping: 18, delay: 0.7 }}
+      transition={{ type: "spring", stiffness: 500, damping: 18 }}
       className={`absolute -bottom-[14px] right-2 flex h-[26px] items-center gap-1 rounded-full px-[7px] text-[15px] leading-none ${C.pill} ${C.ring}`}
     >
-      <span>{react.emoji}</span>
-      {react.count && <span className={`text-[13px] font-medium ${C.dim}`}>{react.count}</span>}
+      <span>{emojis.join("")}</span>
+      {n > 1 && (
+        <motion.span
+          key={n}
+          initial={{ scale: 1.5 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20 }}
+          className={`text-[13px] font-medium ${C.dim}`}
+        >
+          {n}
+        </motion.span>
+      )}
     </motion.span>
   );
 }
@@ -120,12 +149,19 @@ function FoundCard({ title, lang }: { title: Words; lang: "da" | "en" }) {
   );
 }
 
-type Reacted = { emoji: string; count?: number };
 type Item =
-  | { id: number; kind: "text"; who: Friend; text: string; key: boolean; react?: Reacted }
+  | {
+      id: number;
+      kind: "text";
+      who: Friend;
+      text: string;
+      key: boolean;
+      react?: string[];
+      history: boolean;
+    }
   | { id: number; kind: "gap"; text: string }
   | { id: number; kind: "link" }
-  | { id: number; kind: "found"; who: Friend; react?: Reacted };
+  | { id: number; kind: "found"; who: Friend; react?: string[] };
 
 /**
  * The joke, played on the welcome phone's screen (#275, #270): one of the
@@ -165,13 +201,22 @@ export default function ChatScene({
       onEnd?.();
       return;
     }
-    if (beat.kind === "send" && mode === "tap" && !pressed) return;
-    const t = window.setTimeout(() => {
-      setAt((n) => n + 1);
-      if (beat.kind === "send") setPressed(false);
-    }, beat.ms * PACE);
+    if (pressed) return;
+    if (beat.kind === "send" && mode === "tap") return;
+    const t = window.setTimeout(() => setAt((n) => n + 1), beat.ms * PACE);
     return () => window.clearTimeout(t);
   }, [beat, mode, pressed, onEnd]);
+
+  // A tap on send: the link goes straight away, just after the button's press.
+  const sendAt = beats.findIndex((b) => b.kind === "send");
+  useEffect(() => {
+    if (!pressed) return;
+    const t = window.setTimeout(() => {
+      setAt(sendAt + 1);
+      setPressed(false);
+    }, 180);
+    return () => window.clearTimeout(t);
+  }, [pressed, sendAt]);
 
   const played = useMemo(() => beats.slice(0, at + 1).map((b, i) => ({ b, i })), [beats, at]);
   // The cue stands from its beat until the next cue, or until the link is sent.
@@ -208,6 +253,7 @@ export default function ChatScene({
         text: words[lang],
         key: !!b.key,
         react: b.react,
+        history: !!b.history,
       });
     } else if (b.kind === "gap") items.push({ id: i, kind: "gap", text: b.text[lang] });
     else if (b.kind === "send" && i < at) items.push({ id: i, kind: "link" });
@@ -294,7 +340,7 @@ export default function ChatScene({
                       <span className={`text-[13px] ${C.dim}`}>{LINK_DETAIL[lang]}</span>
                     </span>
                   </span>
-                  <Reaction react={{ emoji: "😂", count: 3 }} />
+                  <Reactions list={["😂", "😆", "😂"]} instant={false} />
                 </motion.div>
               );
             }
@@ -325,7 +371,9 @@ export default function ChatScene({
                     ) : (
                       <FoundCard title={plan.title} lang={lang} />
                     )}
-                    {it.react && <Reaction react={it.react} />}
+                    {it.react && (
+                      <Reactions list={it.react} instant={it.kind === "text" && it.history} />
+                    )}
                   </span>
                 </span>
               </motion.div>
