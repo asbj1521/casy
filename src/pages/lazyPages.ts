@@ -9,6 +9,9 @@
  */
 export const loadPage = {
   findDate: () => import("@/pages/FindDate"),
+  // What a computer sees instead of the website (#270), and the QR code's address.
+  computerAd: () => import("@/pages/ComputerAd"),
+  appLink: () => import("@/pages/AppLink"),
   profile: () => import("@/pages/Profile"),
   calendarOverview: () => import("@/pages/CalendarOverview"),
   // My calendar's two month views, each fetched only by its own device (#157).

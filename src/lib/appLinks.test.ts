@@ -132,8 +132,14 @@ describe("the association file", () => {
     expect(detail.appIDs).toEqual([`${team}.${bundle}`]);
   });
 
-  it("lists only the invite links, which is all appLinkPath opens", () => {
-    expect(detail.components.map((c) => c["/"])).toEqual(["/join/*", "/friend/*"]);
+  it("lists only the invite links and /app, which is all appLinkPath opens", () => {
+    expect(detail.components.map((c) => c["/"])).toEqual(["/join/*", "/friend/*", "/app"]);
+  });
+
+  it("opens /app, the computer's QR code, on the app's home page (#270)", () => {
+    expect(appLinkPath("https://casy.app/app")).toBe("/");
+    expect(appLinkPath("https://casy.app/app/")).toBe("/");
+    expect(appLinkPath("https://casy.app/apple")).toBeNull();
   });
 
   it("is what the app's entitlement and appLinkPath are about: casy.app", () => {

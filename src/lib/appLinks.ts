@@ -39,6 +39,8 @@ export function appLinkPath(url: string): string | null {
     return null;
   }
   if (parsed.protocol !== "https:" || !HOSTS.includes(parsed.hostname)) return null;
+  // The computer's QR code (#270): an iPhone that has the app opens it on its home page.
+  if (/^\/app\/?$/.test(parsed.pathname)) return "/";
   const link = /^\/(join|friend)\/([^/]+)\/?$/.exec(parsed.pathname);
   return link ? `/${link[1]}/${link[2]}` : null;
 }

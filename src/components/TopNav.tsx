@@ -23,6 +23,7 @@ import { flyOnClick } from "@/lib/cardTransition";
 import { loadPage } from "@/pages/lazyPages";
 import { cn } from "@/lib/utils";
 import Wordmark from "@/components/ui/Wordmark";
+import { showsComputerAd } from "@/lib/computerAd";
 
 /**
  * The top navigation bar on every page: the logo and language switch, a
@@ -170,6 +171,17 @@ export default function TopNav() {
   // On a phone the links are the home page's buttons (HomeBar), so the top is just the
   // logo and, signed out, the language switch.
   if (phone) return <PhoneHeader />;
+  // A computer sees the app's ad (#270): its help and legal pages keep only the name, home to the ad.
+  if (showsComputerAd) {
+    return (
+      <nav className="flex items-center justify-between gap-2 px-4 py-3 sm:px-6 sm:py-5 lg:px-8">
+        <Link to="/" className="flex items-center">
+          <Wordmark className="text-xl sm:text-2xl" />
+        </Link>
+        <LanguageToggle />
+      </nav>
+    );
+  }
 
   return (
     // Edge to edge on every page, with the same responsive gutter as the

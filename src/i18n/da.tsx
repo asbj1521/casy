@@ -158,6 +158,24 @@ export const da = {
     waitingForAnswer: (n: number) => `${n} venter på dit svar`,
   },
   // Friends from groups since gone (#222).
+  // The app's ad: what a computer sees instead of the website (#270).
+  computerAd: {
+    tagline: "Det siger alle. Appen finder den så.",
+    about:
+      "Appen kigger i jeres kalendere og finder den første dag, hvor hele gruppen kan. Gratis til iPhone.",
+    scan: "Scan med din telefon",
+    orGo: "eller gå til casy.app/app på telefonen",
+    appStore: "Hent i App Store",
+    android: "Har du Android? Åbn casy.app på telefonen, så virker det i browseren.",
+    qrLabel: "QR-kode til appen",
+    signedIn: (name: string) => `Logget ind som ${name}. Fortsæt i appen på telefonen.`,
+    signOut: "Log ud",
+    invited: (who: string, group: string) => `${who} har inviteret dig til ${group}`,
+    invitedAnon: (group: string) => `Du er inviteret til ${group}`,
+    inviteScan: "Scan med din telefon for at være med",
+    inviteQrLabel: "QR-kode til invitationen",
+    friendScan: "Scan med din telefon for at blive venner",
+  },
   friendLink: {
     add: "Tilføj en ven",
     asks: (name: string) => `${name} vil være venner`,

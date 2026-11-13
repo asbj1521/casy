@@ -7,8 +7,7 @@ import HelpButton from "@/components/ui/HelpButton";
 import { useT } from "@/i18n/lang";
 import { doorUrl, inviteLinkUrl } from "@/lib/appLinks";
 import { onIPhoneBrowser } from "@/lib/iphoneBrowser";
-
-const APP_STORE_URL = "https://apps.apple.com/app/id6830713238";
+import { APP_STORE_URL } from "@/lib/appStore";
 
 /** What an invite shows, wherever it came from (a link or a named invitation). */
 export interface InviteFacts {

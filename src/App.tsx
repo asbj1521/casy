@@ -15,6 +15,7 @@ import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import AuthProvider from "@/context/AuthProvider";
 import LanguageProvider from "@/i18n/LanguageProvider";
+import { openedFromAuthEmail, showsComputerAd } from "@/lib/computerAd";
 import { isNativeApp } from "@/lib/nativeApp";
 import { persistQueries } from "@/lib/queryPersistence";
 import Landing from "@/pages/Landing";
@@ -29,6 +30,7 @@ import { loadPage } from "@/pages/lazyPages";
  */
 if (
   !isNativeApp &&
+  !showsComputerAd &&
   (window.location.pathname === "/" || window.location.pathname === "/plan") &&
   window.matchMedia("(min-width: 768px)").matches
 ) {
@@ -41,6 +43,8 @@ if (isNativeApp && window.location.pathname === "/") {
   void loadPage.phoneCalendar();
 }
 const FindDate = lazy(loadPage.findDate);
+const ComputerAd = lazy(loadPage.computerAd);
+const AppLink = lazy(loadPage.appLink);
 const Profile = lazy(loadPage.profile);
 const CalendarOverview = lazy(loadPage.calendarOverview);
 const CalendarAccounts = lazy(loadPage.calendarAccounts);
@@ -127,6 +131,45 @@ function AppEntry() {
  * and new calendars given a category by AI in the background
  * (useAutoCategorize). The app's own background work is AppBackground.
  */
+/**
+ * Sign-in on a computer (#270): only to finish an email's link (confirm the
+ * address, a new password, a new email), which most people open on a laptop;
+ * otherwise the ad. Signed in, it lands on the ad, which says to carry on in
+ * the app.
+ */
+function ComputerSignIn() {
+  const { passwordRecovery } = useAuth();
+  return openedFromAuthEmail || passwordRecovery ? <SignIn /> : <ComputerAd />;
+}
+
+/**
+ * A computer's addresses (#270): the help pages, the terms and the privacy
+ * policy as they are (the App Store, Google and the help guides need them),
+ * an invite or friend link as the ad with its own QR code, everything else the
+ * ad. The browser tests keep the old computer site until #273 removes it
+ * (`lib/computerAd.ts`).
+ */
+function ComputerRoutes() {
+  return (
+    <Routes>
+      <Route path="/sign-in" element={<ComputerSignIn />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/support" element={<Support />} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/help/connect-icloud" element={<ConnectIcloudHelp />} />
+      <Route path="/help/connect-ics" element={<ConnectIcsHelp />} />
+      <Route path="/help/connect-google" element={<ConnectGoogleHelp />} />
+      <Route path="/help/connect-outlook" element={<ConnectOutlookHelp />} />
+      <Route path="/join/:token" element={<ComputerAd kind="invite" />} />
+      <Route path="/friend/:token" element={<ComputerAd kind="friend" />} />
+      {MotionPlayground && <Route path="/dev/motion" element={<MotionPlayground />} />}
+      {ChatScenePlayground && <Route path="/dev/chat" element={<ChatScenePlayground />} />}
+      <Route path="*" element={<ComputerAd />} />
+    </Routes>
+  );
+}
+
 function LiveUpdates() {
   useLiveUpdates();
   useAccountLanguage();
@@ -159,7 +202,8 @@ function App() {
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <LiveUpdates />
+            {/* Nothing runs behind the computer's ad (#270): no live updates, no AI sorting. */}
+            {!showsComputerAd && <LiveUpdates />}
             {AppBackground && (
               <Suspense fallback={null}>
                 <AppBackground />
@@ -172,141 +216,148 @@ function App() {
               {/* Plain background rather than a spinner: these chunks are small, and
                 a flash of "Loading…" would read as slower than a beat of nothing. */}
               <Suspense fallback={<div className="min-h-screen bg-background" />}>
-                <Routes>
-                  <Route element={isNativeApp ? <AppEntry /> : <Outlet />}>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/sign-in" element={<SignIn />} />
-                  </Route>
-                  <Route path="/plan" element={<FindDate />} />
-                  {MotionPlayground && <Route path="/dev/motion" element={<MotionPlayground />} />}
-                  {TripsPlayground && <Route path="/dev/trips" element={<TripsPlayground />} />}
-                  {/* Dev only: the joke's chat scene on the welcome phone (#275, #270). */}
-                  {ChatScenePlayground && (
-                    <Route path="/dev/chat" element={<ChatScenePlayground />} />
-                  )}
-                  {/* Dev only: the app's welcome screen in any browser, to tune it (#228). */}
-                  {import.meta.env.DEV && <Route path="/dev/welcome" element={<AppWelcome />} />}
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/support" element={<Support />} />
-                  <Route path="/how-it-works" element={<HowItWorks />} />
-                  <Route path="/help/connect-icloud" element={<ConnectIcloudHelp />} />
-                  <Route path="/help/connect-ics" element={<ConnectIcsHelp />} />
-                  <Route path="/help/connect-google" element={<ConnectGoogleHelp />} />
-                  <Route path="/help/connect-outlook" element={<ConnectOutlookHelp />} />
-                  {/* The invite link. Signing in happens on the page itself, so
+                {showsComputerAd ? (
+                  <ComputerRoutes />
+                ) : (
+                  <Routes>
+                    <Route path="/app" element={<AppLink />} />
+                    <Route element={isNativeApp ? <AppEntry /> : <Outlet />}>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/sign-in" element={<SignIn />} />
+                    </Route>
+                    <Route path="/plan" element={<FindDate />} />
+                    {MotionPlayground && (
+                      <Route path="/dev/motion" element={<MotionPlayground />} />
+                    )}
+                    {TripsPlayground && <Route path="/dev/trips" element={<TripsPlayground />} />}
+                    {/* Dev only: the joke's chat scene on the welcome phone (#275, #270). */}
+                    {ChatScenePlayground && (
+                      <Route path="/dev/chat" element={<ChatScenePlayground />} />
+                    )}
+                    {/* Dev only: the app's welcome screen in any browser, to tune it (#228). */}
+                    {import.meta.env.DEV && <Route path="/dev/welcome" element={<AppWelcome />} />}
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/support" element={<Support />} />
+                    <Route path="/how-it-works" element={<HowItWorks />} />
+                    <Route path="/help/connect-icloud" element={<ConnectIcloudHelp />} />
+                    <Route path="/help/connect-ics" element={<ConnectIcsHelp />} />
+                    <Route path="/help/connect-google" element={<ConnectGoogleHelp />} />
+                    <Route path="/help/connect-outlook" element={<ConnectOutlookHelp />} />
+                    {/* The invite link. Signing in happens on the page itself, so
                     someone can see what they were invited to before deciding. */}
-                  <Route path="/join/:token" element={<JoinGroup />} />
-                  <Route path="/friend/:token" element={<FriendLink />} />
-                  {/* Everything tied to one person's calendars needs a login. */}
-                  <Route
-                    path="/profile"
-                    element={
-                      <RequireAuth>
-                        <Profile />
-                      </RequireAuth>
-                    }
-                  />
-                  <Route
-                    path="/events"
-                    element={
-                      <RequireAuth>
-                        <MyEvents />
-                      </RequireAuth>
-                    }
-                  />
-                  {/* One event open beside the list (a computer; a phone goes back to /events). */}
-                  <Route
-                    path="/events/:eventId"
-                    element={
-                      <RequireAuth>
-                        <MyEvents />
-                      </RequireAuth>
-                    }
-                  />
-                  {/* The old swipe screen's address, in push notifications: to the vote over the month (#172). */}
-                  <Route
-                    path="/events/:eventId/dates"
-                    element={
-                      <RequireAuth>
-                        <SwipeDates />
-                      </RequireAuth>
-                    }
-                  />
-                  {/* Your groups, and one group (both the same page, Groups.tsx). */}
-                  <Route
-                    path="/invited/:groupId"
-                    element={
-                      <RequireAuth>
-                        <Invitation />
-                      </RequireAuth>
-                    }
-                  />
-                  <Route
-                    path="/groups"
-                    element={
-                      <RequireAuth>
-                        <Groups />
-                      </RequireAuth>
-                    }
-                  />
-                  <Route
-                    path="/groups/:groupId"
-                    element={
-                      <RequireAuth>
-                        <Groups />
-                      </RequireAuth>
-                    }
-                  />
-                  {/* Everything Casy holds about you: a screen on a phone, a page on a computer. */}
-                  <Route
-                    path="/profile/data"
-                    element={
-                      <RequireAuth>
-                        <MyData />
-                      </RequireAuth>
-                    }
-                  />
-                  {/* Language and light or dark, under the profile: every device. */}
-                  <Route
-                    path="/profile/settings"
-                    element={
-                      <RequireAuth>
-                        <Settings />
-                      </RequireAuth>
-                    }
-                  />
-                  {/* The phone profile's screens, opened from its hub. */}
-                  <Route
-                    path="/profile/:screen"
-                    element={
-                      <RequireAuth>
-                        <ProfileScreen />
-                      </RequireAuth>
-                    }
-                  />
-                  <Route
-                    path="/calendar-overview"
-                    element={
-                      <RequireAuth>
-                        <CalendarOverview />
-                      </RequireAuth>
-                    }
-                  />
-                  {/* Connecting calendars, opened from My calendar (the Calendar tab). */}
-                  <Route
-                    path="/calendar-overview/accounts"
-                    element={
-                      <RequireAuth>
-                        <CalendarAccounts />
-                      </RequireAuth>
-                    }
-                  />
-                </Routes>
+                    <Route path="/join/:token" element={<JoinGroup />} />
+                    <Route path="/friend/:token" element={<FriendLink />} />
+                    {/* Everything tied to one person's calendars needs a login. */}
+                    <Route
+                      path="/profile"
+                      element={
+                        <RequireAuth>
+                          <Profile />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/events"
+                      element={
+                        <RequireAuth>
+                          <MyEvents />
+                        </RequireAuth>
+                      }
+                    />
+                    {/* One event open beside the list (a computer; a phone goes back to /events). */}
+                    <Route
+                      path="/events/:eventId"
+                      element={
+                        <RequireAuth>
+                          <MyEvents />
+                        </RequireAuth>
+                      }
+                    />
+                    {/* The old swipe screen's address, in push notifications: to the vote over the month (#172). */}
+                    <Route
+                      path="/events/:eventId/dates"
+                      element={
+                        <RequireAuth>
+                          <SwipeDates />
+                        </RequireAuth>
+                      }
+                    />
+                    {/* Your groups, and one group (both the same page, Groups.tsx). */}
+                    <Route
+                      path="/invited/:groupId"
+                      element={
+                        <RequireAuth>
+                          <Invitation />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/groups"
+                      element={
+                        <RequireAuth>
+                          <Groups />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/groups/:groupId"
+                      element={
+                        <RequireAuth>
+                          <Groups />
+                        </RequireAuth>
+                      }
+                    />
+                    {/* Everything Casy holds about you: a screen on a phone, a page on a computer. */}
+                    <Route
+                      path="/profile/data"
+                      element={
+                        <RequireAuth>
+                          <MyData />
+                        </RequireAuth>
+                      }
+                    />
+                    {/* Language and light or dark, under the profile: every device. */}
+                    <Route
+                      path="/profile/settings"
+                      element={
+                        <RequireAuth>
+                          <Settings />
+                        </RequireAuth>
+                      }
+                    />
+                    {/* The phone profile's screens, opened from its hub. */}
+                    <Route
+                      path="/profile/:screen"
+                      element={
+                        <RequireAuth>
+                          <ProfileScreen />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/calendar-overview"
+                      element={
+                        <RequireAuth>
+                          <CalendarOverview />
+                        </RequireAuth>
+                      }
+                    />
+                    {/* Connecting calendars, opened from My calendar (the Calendar tab). */}
+                    <Route
+                      path="/calendar-overview/accounts"
+                      element={
+                        <RequireAuth>
+                          <CalendarAccounts />
+                        </RequireAuth>
+                      }
+                    />
+                  </Routes>
+                )}
               </Suspense>
               <Footer />
               {/* Computers only: asks someone with no calendar to connect one. */}
-              <ConnectCalendarPrompt />
+              {!showsComputerAd && <ConnectCalendarPrompt />}
               {/* The iPhone app only: an app too old for Casy is asked to update (#143). */}
               <UpdateRequired />
               {PushLinks && (

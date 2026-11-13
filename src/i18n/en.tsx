@@ -147,6 +147,23 @@ export const en: Messages = {
     signOut: "Sign out",
     waitingForAnswer: (n: number) => `${n} waiting for your answer`,
   },
+  computerAd: {
+    tagline: "Everyone says it. The app actually finds it.",
+    about:
+      "The app looks at your calendars and finds the first day the whole group is free. Free for iPhone.",
+    scan: "Scan with your phone",
+    orGo: "or go to casy.app/app on your phone",
+    appStore: "Get it on the App Store",
+    android: "On Android? Open casy.app on your phone and it works in the browser.",
+    qrLabel: "QR code for the app",
+    signedIn: (name: string) => `Signed in as ${name}. Carry on in the app on your phone.`,
+    signOut: "Sign out",
+    invited: (who: string, group: string) => `${who} invited you to ${group}`,
+    invitedAnon: (group: string) => `You're invited to ${group}`,
+    inviteScan: "Scan with your phone to join",
+    inviteQrLabel: "QR code for the invitation",
+    friendScan: "Scan with your phone to become friends",
+  },
   friendLink: {
     add: "Add a friend",
     asks: (name: string) => `${name} wants to be friends`,

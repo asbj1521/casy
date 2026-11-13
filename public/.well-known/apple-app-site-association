@@ -2,10 +2,22 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["ZBXDWW8AN3.app.casy"],
+        "appIDs": [
+          "ZBXDWW8AN3.app.casy"
+        ],
         "components": [
-          { "/": "/join/*", "comment": "Invite links open in the Casy app (#140)" },
-          { "/": "/friend/*", "comment": "Friend links open in the Casy app (#226)" }
+          {
+            "/": "/join/*",
+            "comment": "Invite links open in the Casy app (#140)"
+          },
+          {
+            "/": "/friend/*",
+            "comment": "Friend links open in the Casy app (#226)"
+          },
+          {
+            "/": "/app",
+            "comment": "The computer's QR code opens the app when it is installed (#270)"
+          }
         ]
       }
     ]

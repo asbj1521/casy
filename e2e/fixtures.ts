@@ -107,6 +107,11 @@ interface Options {
   signedIn: boolean;
   /** A test that makes the page crash on purpose (the crash screen's). */
   expectPageErrors: boolean;
+  /**
+   * The computer keeps the old website instead of the app's ad (#270), until
+   * its pages are removed (#273); the ad's own tests turn it off.
+   */
+  computerSite: boolean;
 }
 
 interface Fixtures {
@@ -117,13 +122,19 @@ export const test = base.extend<Options & Fixtures>({
   world: [DEFAULT_WORLD, { option: true }],
   signedIn: [true, { option: true }],
   expectPageErrors: [false, { option: true }],
+  computerSite: [true, { option: true }],
 
   backend: async ({ world }, use) => {
     await use(new FakeBackend(makeWorld(world)));
   },
 
-  page: async ({ page, backend, signedIn, expectPageErrors }, use) => {
+  page: async ({ page, backend, signedIn, expectPageErrors, computerSite }, use) => {
     await page.clock.setFixedTime(new Date(NOW));
+    if (computerSite) {
+      await page.addInitScript(() => {
+        (window as unknown as { __casyComputerSite: boolean }).__casyComputerSite = true;
+      });
+    }
     await page.addInitScript(
       ({ key, value }) => {
         // The same "random" numbers on every load (the scheduler's starting
