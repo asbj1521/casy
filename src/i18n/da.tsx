@@ -69,8 +69,8 @@ export const da = {
     },
   },
   welcome: {
-    headline: "Find dagen, hvor alle kan.",
-    start: "Kom i gang",
+    headline: "Vi finder dagen for jer.",
+    start: "Find en dag",
     haveAccount: "Har du allerede en konto?",
     back: "Tilbage",
     you: "Dig",

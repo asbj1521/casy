@@ -310,79 +310,88 @@ export default function WelcomeIntro({
 
   const up = now >= AT.up;
   const heading = now >= AT.reply ? WORDS.reply : now >= AT.verdict ? WORDS.verdict : WORDS.relate;
-  // From the middle of the screen to its top: about a third of the screen's height.
-  const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.34;
+  // From the middle of the screen up to the line's own box near the top.
+  const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.5 - 130;
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col overflow-hidden bg-[#FF4D00] text-white">
+    <div className="fixed inset-0 z-30 overflow-hidden bg-[#FF4D00] text-white">
+      {/* Every part has its own fixed place, so nothing ever moves another. The line at
+          the top: each one fades in over the last, in the same box. */}
       <div
-        className="flex min-h-[10.5rem] items-end justify-center px-8 pb-6"
-        style={{ paddingTop: "max(3rem, calc(env(safe-area-inset-top) + 1.5rem))" }}
+        className="absolute inset-x-0 h-[9rem] px-8"
+        style={{ top: "max(2.5rem, calc(env(safe-area-inset-top) + 1rem))" }}
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence initial={false}>
           <motion.h2
             key={heading.da}
+            className="absolute inset-0 flex items-center justify-center text-balance px-8 text-center text-[2.375rem] font-bold leading-[1.1]"
             initial={
-              heading === WORDS.relate
-                ? { opacity: 0, y: middle, scale: 1.15 }
-                : { opacity: 0, y: 12 }
+              heading === WORDS.relate ? { opacity: 0, y: middle, scale: 1.12 } : { opacity: 0 }
             }
-            animate={up ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, y: middle, scale: 1.15 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ type: "spring", stiffness: 140, damping: 20 }}
-            className="text-balance text-center text-[2rem] font-bold leading-tight"
+            animate={
+              up || heading !== WORDS.relate
+                ? { opacity: 1, y: 0, scale: 1 }
+                : { opacity: 1, y: middle, scale: 1.12 }
+            }
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
           >
             {heading[lang]}
           </motion.h2>
         </AnimatePresence>
       </div>
 
-      <div className="flex flex-1 flex-col px-5">
-        {/* The friend's message, from the left, typing itself; then growing old. */}
-        <AnimatePresence>
-          {now >= AT.bubble && (
-            <motion.div
-              className="flex flex-col"
-              initial={{ x: "-110%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 220, damping: 24 }}
-            >
-              <AgingBubble text={message} typed={typed} age={age} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* The friend's message, from the left, typing itself; then growing old. */}
+      <AnimatePresence>
+        {now >= AT.bubble && (
+          <motion.div
+            className="absolute inset-x-5 top-[34%] flex flex-col"
+            initial={{ x: "-110%", opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+          >
+            <AgingBubble text={message} typed={typed} age={age} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {aging && now < AT.reply && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <Timeline lang={lang} run={aging} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Time passing, under the message. */}
+      <AnimatePresence>
+        {aging && now < AT.reply && (
+          <motion.div
+            className="absolute inset-x-5 top-[calc(34%+8.5rem)]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Timeline lang={lang} run={aging} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* The person's own reply, from the right: the app's link. The phone grows out of it. */}
-        <AnimatePresence>
-          {now >= AT.link && (
-            <motion.div
-              ref={link}
-              className="mt-6 w-[68%] max-w-[17rem] self-end overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
-              initial={{ x: "120%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 220, damping: 24 }}
-            >
-              <img
-                src="/og-image.png"
-                alt=""
-                className="block aspect-[1200/630] w-full object-cover"
-              />
-              <span className="flex flex-col px-3.5 py-2.5 leading-tight">
-                <span className="text-[1rem] font-semibold">{APP_NAME}</span>
-                <span className="text-[0.8125rem] text-[#8A8D91]">{WORDS.linkDetail[lang]}</span>
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {/* The person's own reply, from the right: the app's link. The phone grows out of it. */}
+      <AnimatePresence>
+        {now >= AT.link && (
+          <motion.div
+            ref={link}
+            className="absolute right-5 top-[calc(34%+9.5rem)] w-[68%] max-w-[17rem] overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
+            initial={{ x: "120%", opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+          >
+            <img
+              src="/og-image.png"
+              alt=""
+              className="block aspect-[1200/630] w-full object-cover"
+            />
+            <span className="flex flex-col px-3.5 py-2.5 leading-tight">
+              <span className="text-[1rem] font-semibold">{APP_NAME}</span>
+              <span className="text-[0.8125rem] text-[#8A8D91]">{WORDS.linkDetail[lang]}</span>
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

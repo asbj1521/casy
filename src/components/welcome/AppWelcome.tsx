@@ -17,7 +17,7 @@ const InvitePasteSheet = lazy(() => import("@/components/invite/InvitePasteSheet
  * The iPhone app's way in, signed out (#151, #228): the welcome screen and
  * sign-in, one place with the same colour in it. It stays open across the two
  * addresses, so the phone can become the sign-in card and the colour spread out
- * behind it, whichever moment of the animation "Kom i gang" was pressed in. Back
+ * behind it, whichever moment of the animation "Find en dag" was pressed in. Back
  * runs the same thing the other way. Under the phone, never moving, one line and
  * the two ways on, to make an account or to log in, and for a friend who got
  * the app from an invite, the way back to it (#237). No language switch on the
@@ -95,7 +95,7 @@ export default function AppWelcome({
         animate={{ opacity: signIn || intro ? 0 : 1 }}
         transition={signIn ? { duration: 0.18 } : { delay: 0.3, duration: 0.25 }}
       >
-        <h1 className="text-balance text-[2rem] font-bold leading-tight tracking-tight text-foreground">
+        <h1 className="whitespace-nowrap text-[min(1.75rem,7.2vw)] font-bold leading-tight tracking-tight text-foreground">
           {t.welcome.headline}
         </h1>
         <Link

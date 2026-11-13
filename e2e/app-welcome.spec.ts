@@ -26,15 +26,15 @@ test("the first time, the intro plays on orange before the animation, with no bu
   await asTheApp(page, { intro: true });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Er det også sket for dig?" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Kom i gang" })).not.toBeInViewport();
+  await expect(page.getByRole("link", { name: "Find en dag" })).not.toBeInViewport();
   await expect(page.getByRole("heading", { name: "Næste gang, svar med den her." })).toBeVisible({
     timeout: 10_000,
   });
   // Then the animation, with the way on.
-  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Vi finder dagen for jer." })).toBeVisible({
     timeout: 10_000,
   });
-  await expect(page.getByRole("link", { name: "Kom i gang" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Find en dag" })).toBeVisible();
 });
 
 test("the app opens on its welcome screen, which leads to sign-in and the legal pages and back", async ({
@@ -42,7 +42,7 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
 }) => {
   await asTheApp(page);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vi finder dagen for jer." })).toBeVisible();
   // No tab bar and no website landing page before signing in.
   await expect(page.getByRole("link", { name: "Kalender" })).toHaveCount(0);
   await expect(page.getByText("Dine data, kort fortalt")).toHaveCount(0);
@@ -51,19 +51,19 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await page.getByRole("link", { name: "Log ind" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
   await page.goto("/");
-  await page.getByRole("link", { name: "Kom i gang" }).click();
+  await page.getByRole("link", { name: "Find en dag" }).click();
   await expect(page).toHaveURL(/\/sign-in\?signup=1$/);
   // No sentence about signing in (#138), and a way back to the animation (#228).
   await expect(page.getByText("Log ind for at forbinde dine kalendere")).toHaveCount(0);
   await page.getByRole("button", { name: "Tilbage" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vi finder dagen for jer." })).toBeVisible();
 
   // The privacy policy is not on the welcome screen: it is under the sign-in
   // card, and on the profile once signed in.
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Sådan passer vi på dine data" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Kom i gang" }).click();
+  await page.getByRole("link", { name: "Find en dag" }).click();
   await page.getByRole("link", { name: "privatlivspolitik" }).click();
   await expect(page).toHaveURL(/\/privacy$/);
   await page.getByRole("button", { name: "Tilbage" }).click();
@@ -74,7 +74,7 @@ test("the website keeps its landing page, and its header leads to sign-in (#169)
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Find dagen, hvor alle kan." })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Vi finder dagen for jer." })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
   await page.goto("/privacy");
   await page.getByRole("banner").getByRole("link", { name: "Log ind" }).click();
