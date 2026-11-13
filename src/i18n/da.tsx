@@ -1847,6 +1847,10 @@ export const da = {
     findDate: "Find en dato",
     joinGroup: "Bliv medlem",
     getTheApp: "Hent appen",
+    // The invite page on an iPhone (#277): the App Store, and nothing else but Android's way.
+    appStore: "Hent i App Store",
+    inTheApp: "Hent appen, og log ind. Så venter gruppen på dig.",
+    onAndroid: "Bruger du Android?",
     // Into the app with the invite (#257), and when that didn't happen.
     openInApp: "Åbn i appen",
     stayInBrowser: "Fortsæt i browseren",

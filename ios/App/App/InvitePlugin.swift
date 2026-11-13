@@ -17,6 +17,7 @@ public class InvitePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "pickContacts", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "canText", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "text", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "copiedLink", returnType: CAPPluginReturnPromise),
     ]
 
     /// The call waiting for the picker or the composer to close. One at a time:
@@ -66,6 +67,25 @@ public class InvitePlugin: CAPPlugin, CAPBridgedPlugin {
             composer.recipients = recipients
             composer.body = body
             presenter.present(composer, animated: true)
+        }
+    }
+}
+
+extension InvitePlugin {
+    /// Whether something copied looks like a link (#277), and the clipboard's
+    /// change count, so the page asks once per copy. iOS answers this without
+    /// showing its paste question and without the app seeing what was copied:
+    /// the invite itself is only read when the person taps (InvitePasteSheet).
+    @objc func copiedLink(_ call: CAPPluginCall) {
+        let board = UIPasteboard.general
+        let change = board.changeCount
+        guard board.hasStrings || board.hasURLs else {
+            call.resolve(["link": false, "change": change])
+            return
+        }
+        board.detectPatterns(for: [\.probableWebURL]) { result in
+            let link = (try? result.get())?.contains(\.probableWebURL) ?? false
+            call.resolve(["link": link, "change": change])
         }
     }
 }

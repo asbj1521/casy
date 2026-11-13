@@ -23,6 +23,7 @@ interface InvitePlugin {
   pickContacts(): Promise<{ contacts: PickedContact[] }>;
   canText(): Promise<{ able: boolean }>;
   text(options: { recipients: string[]; body: string }): Promise<{ result: TextResult }>;
+  copiedLink(): Promise<{ link: boolean; change: number }>;
 }
 
 let plugin: InvitePlugin | null = null;
@@ -34,6 +35,20 @@ async function invitePlugin(): Promise<{ plugin: InvitePlugin }> {
   }
   // Wrapped: resolving a promise with the plugin itself would never settle.
   return { plugin };
+}
+
+/**
+ * Whether something copied looks like a link, and which copy it is (#277):
+ * iOS says so without its paste question and without the app seeing it. Null
+ * on the website, and in an app built before it could tell.
+ */
+export async function copiedLink(): Promise<{ link: boolean; change: number } | null> {
+  try {
+    const { plugin } = await invitePlugin();
+    return await plugin.copiedLink();
+  } catch {
+    return null;
+  }
 }
 
 /** The people picked; none when the picker was closed. */

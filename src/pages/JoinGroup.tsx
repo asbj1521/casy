@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { CalendarCheck, Loader2, Users, XCircle } from "lucide-react";
 
@@ -56,6 +56,10 @@ function PhoneJoin({ token }: { token: string }) {
   // Back from the door, still in a browser: the app is not on the phone, is
   // too old to know the door, or this browser hands nothing on.
   const noApp = params.has("noapp") && onIPhoneBrowser && !user;
+  // On an iPhone the profile is made in the app (#277): the App Store is the
+  // one way on, and joining in the browser is for Android, behind its own question.
+  const [android, setAndroid] = useState(false);
+  const toAppStore = onIPhoneBrowser && !user && !android;
   const joining = useRef(false);
   useEffect(() => {
     if (!said || !user || loading || !invited || alreadyIn || joining.current) return;
@@ -82,13 +86,15 @@ function PhoneJoin({ token }: { token: string }) {
               ? undefined
               : alreadyIn
                 ? t.join.alreadyIn
-                : noApp
-                  ? insideChatBrowser
-                    ? t.join.noAppInside
-                    : t.join.noApp
-                  : !user
-                    ? t.join.whatIsCasy
-                    : undefined
+                : toAppStore
+                  ? t.join.inTheApp
+                  : noApp
+                    ? insideChatBrowser
+                      ? t.join.noAppInside
+                      : t.join.noApp
+                    : !user
+                      ? t.join.whatIsCasy
+                      : undefined
           }
         >
           {door ? (
@@ -114,6 +120,17 @@ function PhoneJoin({ token }: { token: string }) {
                   {join.error.message}
                 </Notice>
               )}
+            </>
+          ) : toAppStore ? (
+            <>
+              <GetTheApp path={here} big />
+              <button
+                type="button"
+                onClick={() => setAndroid(true)}
+                className="hit mx-auto mt-4 text-[0.875rem] text-muted-foreground"
+              >
+                {t.join.onAndroid}
+              </button>
             </>
           ) : (
             <>

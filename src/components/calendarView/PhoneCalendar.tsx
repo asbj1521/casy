@@ -27,6 +27,7 @@ import HomeVote, { type VoteView } from "@/components/calendarView/HomeVote";
 import { useHomeVotes } from "@/components/calendarView/useHomeVotes";
 import VotePill from "@/components/calendarView/VotePill";
 import AiConsentPrompt from "@/components/ai/AiConsentPrompt";
+import CopiedInvite from "@/components/invite/CopiedInvite";
 import PhoneCalendarAccess from "@/components/calendarView/PhoneCalendarAccess";
 import TopNav from "@/components/TopNav";
 import DanishTimeNote from "@/components/time/DanishTimeNote";
@@ -145,6 +146,8 @@ export default function PhoneCalendar() {
   const importShown = phoneImport.on && !importLater;
   const importPending = isNativeApp && calendar.loading;
   const [aiAsking, setAiAsking] = useState(false);
+  // An invite copied on the way through the App Store comes first of all (#277).
+  const [inviteAsking, setInviteAsking] = useState(isNativeApp);
   // Trips Casy found (#115, the app only): bars on the month, asking until answered.
   const trips = useTrips();
   // An accepted trip already in the calendar as an event is shown once, as that event.
@@ -721,13 +724,17 @@ export default function PhoneCalendar() {
       )}
 
       {/* Asked once, before Casy's AI reads anything from a calendar (#120). */}
-      <AiConsentPrompt held={!bare || importShown || importPending} onOpenChange={setAiAsking} />
+      <AiConsentPrompt
+        held={!bare || importShown || importPending || inviteAsking}
+        onOpenChange={setAiAsking}
+      />
+      <CopiedInvite onAsking={setInviteAsking} />
 
       {phoneImport.on && (
         <PhoneCalendarAccess
           phone={phoneImport}
           // Never over another sheet or a day: it waits for the bare month.
-          open={importAskDue && !importLater && monthClear}
+          open={importAskDue && !importLater && monthClear && !inviteAsking}
           onNotNow={() => {
             phoneImportPutAway.done = true;
             setImportLater(true);

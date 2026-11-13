@@ -116,7 +116,7 @@ export function InviteAction({
     "inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:opacity-90 disabled:opacity-60";
   if (href)
     return (
-      <a href={href} className={look}>
+      <a href={href} onClick={onClick} className={look}>
         {children}
       </a>
     );
@@ -159,23 +159,27 @@ export function OpenInApp({ path }: { path: string }) {
  * (#237), so the app just installed can be handed it with one "Indsæt link"
  * (InvitePasteSheet): iOS carries nothing through the App Store by itself.
  */
-export function GetTheApp({ path }: { path?: string }) {
+export function GetTheApp({ path, big = false }: { path?: string; big?: boolean }) {
   const t = useT();
   if (!onIPhoneBrowser) return null;
+  const copy = () => {
+    if (!path) return;
+    // Best effort: a browser without a clipboard just goes to the App Store.
+    try {
+      void navigator.clipboard?.writeText(inviteLinkUrl(path)).catch(() => {});
+    } catch {
+      // No clipboard here.
+    }
+  };
+  // The invite page's one way on, on an iPhone (#277): the profile is made in the app.
+  if (big)
+    return (
+      <InviteAction href={APP_STORE_URL} onClick={copy}>
+        {t.join.appStore}
+      </InviteAction>
+    );
   return (
-    <a
-      href={APP_STORE_URL}
-      onClick={() => {
-        if (!path) return;
-        // Best effort: a browser without a clipboard just goes to the App Store.
-        try {
-          void navigator.clipboard?.writeText(inviteLinkUrl(path)).catch(() => {});
-        } catch {
-          // No clipboard here.
-        }
-      }}
-      className={TEXT_LINK}
-    >
+    <a href={APP_STORE_URL} onClick={copy} className={TEXT_LINK}>
       {t.join.getTheApp}
     </a>
   );

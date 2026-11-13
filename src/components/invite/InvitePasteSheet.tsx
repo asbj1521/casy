@@ -23,11 +23,17 @@ export default function InvitePasteSheet({
   open,
   onClose,
   origin,
+  found = false,
 }: {
   open: boolean;
   onClose: () => void;
   /** The button it grows out of. */
   origin?: RefObject<HTMLElement | null>;
+  /**
+   * Opened by itself for a link copied on the way through the App Store
+   * (CopiedInvite, #277): it asks, and the invite is joined at once.
+   */
+  found?: boolean;
 }) {
   const t = useT();
   const words = t.invitePaste;
@@ -46,7 +52,8 @@ export default function InvitePasteSheet({
   }
   function go(path: string) {
     close();
-    navigate(path);
+    // Asked for by name ("Fik du en invitation?"): straight into the group.
+    navigate(found ? `${path}?join=1` : path);
   }
   async function paste() {
     try {
@@ -68,7 +75,7 @@ export default function InvitePasteSheet({
     <Sheet
       open={open}
       onClose={close}
-      title={words.title}
+      title={found ? words.ask : words.title}
       closeLabel={t.common.cancel}
       onSubmit={submit}
       origin={origin}
