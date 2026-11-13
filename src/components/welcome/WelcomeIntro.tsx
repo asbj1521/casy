@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   animate,
   AnimatePresence,
@@ -304,13 +304,28 @@ export function LinkFace() {
  */
 export default function WelcomeIntro({
   onDone,
+  contained = false,
 }: {
   /** Handed the link card's place on the screen, for the phone to grow out of. */
   onDone: (from: MorphRect | null) => void;
+  /**
+   * In a box of its own rather than over the whole screen: the computer's ad
+   * plays it beside its words (#270), then its phone loop.
+   */
+  contained?: boolean;
 }) {
   const { lang } = useLang();
   const still = useReducedMotion() ?? false;
   const [now, setNow] = useState(0);
+  // Its box: the screen, or, contained, its own, measured before it is first drawn.
+  const box = useRef<HTMLDivElement>(null);
+  const [{ W, H }, setBox] = useState({ W: window.innerWidth, H: window.innerHeight });
+  const [measured, setMeasured] = useState(!contained);
+  useLayoutEffect(() => {
+    if (!contained || !box.current) return;
+    setBox({ W: box.current.clientWidth, H: box.current.clientHeight });
+    setMeasured(true);
+  }, [contained]);
   const link = useRef<HTMLDivElement>(null);
   const first = WORDS.first[lang];
   const message = WORDS.message[lang];
@@ -368,12 +383,10 @@ export default function WelcomeIntro({
   const alone = !up || (now >= AT.verdict && now < AT.back);
   const tapped = now >= AT.tap;
   // From the middle of the screen up to the line's own box near the top.
-  const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.5 - 130;
+  const middle = H * 0.5 - 130;
   const move = { duration: 0.7, ease: [0.32, 0.72, 0, 1] } as const;
   const presenting = now >= AT.present && now < AT.back;
   // The icon, big in the middle; then off to the middle of the link's picture, at its height.
-  const W = typeof window === "undefined" ? 390 : window.innerWidth;
-  const H = typeof window === "undefined" ? 844 : window.innerHeight;
   const icon = Math.min(W * 0.56, 230);
   const iconY = H * 0.5 + 30;
   const card = Math.min(W * 0.68, 272);
@@ -382,156 +395,165 @@ export default function WelcomeIntro({
   const cardHeight = picture + 62;
 
   return (
-    <div className="fixed inset-0 z-30 overflow-hidden bg-[#FF4D00] text-white">
-      {/* Every part has its own fixed place, so nothing ever moves another. The line at
+    <div
+      ref={box}
+      className={`${contained ? "absolute" : "fixed z-30 bg-[#FF4D00]"} inset-0 overflow-hidden text-white`}
+    >
+      {measured && (
+        <>
+          {/* Every part has its own fixed place, so nothing ever moves another. The line at
           the top: each one fades in over the last, in the same box. */}
-      <motion.div
-        className="absolute inset-x-0 h-[9rem]"
-        style={{ top: "max(2.5rem, calc(env(safe-area-inset-top) + 1rem))" }}
-        initial={{ y: middle, scale: 1.12, opacity: 0 }}
-        animate={{
-          // "Introducerer:" stands above the icon; the other lines alone in the middle.
-          y: presenting ? middle - icon / 2 - 60 : alone ? middle : 0,
-          scale: alone ? 1.12 : 1,
-          opacity: tapped ? 0 : 1,
-        }}
-        transition={move}
-      >
-        {/* The old line gone before the new one comes, so they never stand over each other. */}
-        <AnimatePresence initial={false} mode="wait">
-          <motion.h2
-            key={heading.da}
-            className="absolute inset-0 flex items-center justify-center text-balance px-8 text-center text-[2.375rem] font-bold leading-[1.1]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22 }}
-          >
-            <span>{heading[lang]}</span>
-          </motion.h2>
-        </AnimatePresence>
-      </motion.div>
-
-      {/* The friend's message, from the left, typing itself; then growing old. */}
-      <AnimatePresence>
-        {now >= AT.bubble && (
           <motion.div
-            className="absolute inset-x-5 top-[34%] flex flex-col"
-            initial={{ x: "-110%", opacity: 0 }}
-            // Away while the line is alone in the middle; back, still old, after.
-            animate={{ x: 0, opacity: (now >= AT.verdict && now < AT.back) || tapped ? 0 : 1 }}
-            // Back only once the line above has made room for it.
-            transition={now >= AT.back && !tapped ? { ...move, delay: 0.35 } : move}
+            className="absolute inset-x-0 h-[9rem]"
+            style={{ top: "max(2.5rem, calc(env(safe-area-inset-top) + 1rem))" }}
+            initial={{ y: middle, scale: 1.12, opacity: 0 }}
+            animate={{
+              // "Introducerer:" stands above the icon; the other lines alone in the middle.
+              y: presenting ? middle - icon / 2 - 60 : alone ? middle : 0,
+              scale: alone ? 1.12 : 1,
+              opacity: tapped ? 0 : 1,
+            }}
+            transition={move}
           >
-            {/* One message at a time: the catchphrase replaces the first, so it alone grows old. */}
-            <AnimatePresence mode="wait" initial={false}>
-              {second ? (
-                <motion.div
-                  key="second"
-                  className="flex flex-col"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                >
-                  <AgingBubble text={message} typed={typed} age={age} />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="first"
-                  className="flex flex-col"
-                  exit={{ opacity: 0, y: -16 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  <AgingBubble text={first} typed={typedFirst} age={fresh} />
-                </motion.div>
-              )}
+            {/* The old line gone before the new one comes, so they never stand over each other. */}
+            <AnimatePresence initial={false} mode="wait">
+              <motion.h2
+                key={heading.da}
+                className="absolute inset-0 flex items-center justify-center text-balance px-8 text-center text-[2.375rem] font-bold leading-[1.1]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+              >
+                <span>{heading[lang]}</span>
+              </motion.h2>
             </AnimatePresence>
           </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Time passing, under the message. */}
-      <AnimatePresence>
-        {aging && now < AT.fade && (
-          <motion.div
-            className="absolute inset-x-5 top-[calc(34%+8.5rem)]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <Timeline lang={lang} run={aging} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {/* The friend's message, from the left, typing itself; then growing old. */}
+          <AnimatePresence>
+            {now >= AT.bubble && (
+              <motion.div
+                className="absolute inset-x-5 top-[34%] flex flex-col"
+                initial={{ x: "-110%", opacity: 0 }}
+                // Away while the line is alone in the middle; back, still old, after.
+                animate={{ x: 0, opacity: (now >= AT.verdict && now < AT.back) || tapped ? 0 : 1 }}
+                // Back only once the line above has made room for it.
+                transition={now >= AT.back && !tapped ? { ...move, delay: 0.35 } : move}
+              >
+                {/* One message at a time: the catchphrase replaces the first, so it alone grows old. */}
+                <AnimatePresence mode="wait" initial={false}>
+                  {second ? (
+                    <motion.div
+                      key="second"
+                      className="flex flex-col"
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                    >
+                      <AgingBubble text={message} typed={typed} age={age} />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="first"
+                      className="flex flex-col"
+                      exit={{ opacity: 0, y: -16 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <AgingBubble text={first} typed={typedFirst} age={fresh} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-      {/* The app, introduced: its icon pops up big; then the icon itself becomes the link,
+          {/* Time passing, under the message. */}
+          <AnimatePresence>
+            {aging && now < AT.fade && (
+              <motion.div
+                className="absolute inset-x-5 top-[calc(34%+8.5rem)]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <Timeline lang={lang} run={aging} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* The app, introduced: its icon pops up big; then the icon itself becomes the link,
           moving and widening into it as the logo gives way to the link's picture and name,
           one shape the whole way. The phone grows out of it. */}
-      {now >= AT.present && (
-        <motion.div
-          ref={link}
-          aria-hidden={now < AT.back}
-          className="absolute overflow-hidden border-[3px] border-white shadow-xl"
-          initial={{
-            left: W / 2 - icon / 2,
-            top: iconY - icon / 2,
-            width: icon,
-            height: icon,
-            borderRadius: `${icon * 0.22}px ${icon * 0.22}px ${icon * 0.22}px ${icon * 0.22}px`,
-            backgroundColor: "#FF4D00",
-            scale: 0.3,
-            opacity: 0,
-          }}
-          animate={
-            now < AT.back
-              ? { scale: 1, opacity: 1 }
-              : {
-                  left: W - 20 - card,
-                  top: H * 0.34 + 128,
-                  width: card,
-                  height: cardHeight,
-                  borderRadius: "22px 22px 6px 22px",
-                  scale: now >= AT.tap && now < AT.zoom ? [1, 0.94, 1] : 1,
-                  opacity: now >= AT.zoom ? 0 : 1,
+          {now >= AT.present && (
+            <motion.div
+              ref={link}
+              aria-hidden={now < AT.back}
+              className="absolute overflow-hidden border-[3px] border-white shadow-xl"
+              initial={{
+                left: W / 2 - icon / 2,
+                top: iconY - icon / 2,
+                width: icon,
+                height: icon,
+                borderRadius: `${icon * 0.22}px ${icon * 0.22}px ${icon * 0.22}px ${icon * 0.22}px`,
+                backgroundColor: "#FF4D00",
+                scale: 0.3,
+                opacity: 0,
+              }}
+              animate={
+                now < AT.back
+                  ? { scale: 1, opacity: 1 }
+                  : {
+                      left: W - 20 - card,
+                      top: H * 0.34 + 128,
+                      width: card,
+                      height: cardHeight,
+                      borderRadius: "22px 22px 6px 22px",
+                      scale: now >= AT.tap && now < AT.zoom ? [1, 0.94, 1] : 1,
+                      opacity: now >= AT.zoom ? 0 : 1,
+                    }
+              }
+              transition={
+                now < AT.back
+                  ? { type: "spring", stiffness: 260, damping: 18 }
+                  : {
+                      ...OPEN,
+                      scale: { duration: 0.4, times: [0, 0.4, 1] },
+                      // Handed over: gone once the growing copy stands over it.
+                      opacity: now >= AT.zoom ? { delay: 0.05, duration: 0 } : { duration: 0 },
+                    }
+              }
+            >
+              {/* The link as it will be, at its own width, showing as the icon opens into it. */}
+              <motion.div
+                className="absolute left-0 top-0 bg-white text-[#1c1c1e]"
+                style={{ width: card - 6 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: now >= AT.back ? 1 : 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                <LinkFace />
+              </motion.div>
+              {/* The icon's logo, staying in the middle of what becomes the link's picture. */}
+              <motion.div
+                className="absolute inset-x-0 top-0 flex items-center justify-center"
+                initial={{ height: icon - 6, opacity: 1 }}
+                animate={
+                  now >= AT.back
+                    ? { height: picture, opacity: 0 }
+                    : { height: icon - 6, opacity: 1 }
                 }
-          }
-          transition={
-            now < AT.back
-              ? { type: "spring", stiffness: 260, damping: 18 }
-              : {
-                  ...OPEN,
-                  scale: { duration: 0.4, times: [0, 0.4, 1] },
-                  // Handed over: gone once the growing copy stands over it.
-                  opacity: now >= AT.zoom ? { delay: 0.05, duration: 0 } : { duration: 0 },
-                }
-          }
-        >
-          {/* The link as it will be, at its own width, showing as the icon opens into it. */}
-          <motion.div
-            className="absolute left-0 top-0 bg-white text-[#1c1c1e]"
-            style={{ width: card - 6 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: now >= AT.back ? 1 : 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <LinkFace />
-          </motion.div>
-          {/* The icon's logo, staying in the middle of what becomes the link's picture. */}
-          <motion.div
-            className="absolute inset-x-0 top-0 flex items-center justify-center"
-            initial={{ height: icon - 6, opacity: 1 }}
-            animate={
-              now >= AT.back ? { height: picture, opacity: 0 } : { height: icon - 6, opacity: 1 }
-            }
-            transition={{
-              height: OPEN,
-              opacity: { duration: 0.35, delay: 0.35 },
-            }}
-          >
-            <LogoMark className="h-[68%] w-auto text-white" label="" />
-          </motion.div>
-        </motion.div>
+                transition={{
+                  height: OPEN,
+                  opacity: { duration: 0.35, delay: 0.35 },
+                }}
+              >
+                <LogoMark className="h-[68%] w-auto text-white" label="" />
+              </motion.div>
+            </motion.div>
+          )}
+        </>
       )}
     </div>
   );

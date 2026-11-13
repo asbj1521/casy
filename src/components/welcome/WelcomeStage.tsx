@@ -207,6 +207,7 @@ export default function WelcomeStage({
   leaving = false,
   cardOnLeaving,
   fromIntro = null,
+  contained = false,
 }: {
   leaving?: boolean;
   /** Where the card stood as sign-in closed, to shrink back from. */
@@ -216,6 +217,11 @@ export default function WelcomeStage({
    * out of it instead of rising from below.
    */
   fromIntro?: MorphRect | null;
+  /**
+   * Only the phone and the faces, in its own box: the computer's ad plays it
+   * beside its words, over colour of its own (#270).
+   */
+  contained?: boolean;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -425,10 +431,10 @@ export default function WelcomeStage({
       ref={stage}
       aria-hidden
       inert
-      className="pointer-events-none relative h-full overflow-hidden"
+      className={`pointer-events-none relative h-full ${contained ? "" : "overflow-hidden"}`}
     >
       {/* The colour shape, in a panel of its own: fixed, so it can spread over the whole screen. */}
-      {scale > 0 && (
+      {scale > 0 && !contained && (
         <motion.div
           className="fixed overflow-hidden"
           initial={false}
