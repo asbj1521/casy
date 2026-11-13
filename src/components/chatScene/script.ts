@@ -41,7 +41,7 @@ export const GROUP: Words = { da: "Gymnasiet 3.b", en: "Old school friends" };
 export const MEMBERS: Words = { da: "5 personer", en: "5 people" };
 
 /** The phrase itself: the one line that is never translated into anything else in Danish. */
-export const PHRASE: Words = { da: "Vi finder lige en dag", en: "We'll find a day" };
+const PHRASE: Words = { da: "Vi finder lige en dag", en: "We'll find a day" };
 
 export const OPENING: Beat[] = [
   { kind: "typing", who: "mads", ms: 700 },
