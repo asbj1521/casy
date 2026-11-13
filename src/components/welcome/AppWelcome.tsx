@@ -67,9 +67,10 @@ export default function AppWelcome({
   // The colour reaches up under the clock.
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle("glass-top", signIn);
+    // The intro's orange, too, reaches up under the clock (#275).
+    root.classList.toggle("glass-top", signIn || intro);
     return () => root.classList.remove("glass-top");
-  }, [signIn]);
+  }, [signIn, intro]);
 
   // Fetched ahead, so the card is there to morph into the moment it is pressed.
   useEffect(() => {
@@ -138,7 +139,7 @@ export default function AppWelcome({
         {intro && (
           <motion.div
             key="intro"
-            className="absolute inset-0 z-30"
+            className="fixed inset-0 z-30"
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >

@@ -6,7 +6,7 @@ import { APP_NAME } from "@/i18n/brand";
 import { useLang } from "@/i18n/lang";
 
 const WORDS = {
-  relate: { da: "Kender du typen?", en: "Sound familiar?" },
+  relate: { da: "Er det også sket for dig?", en: "Has this ever happened to you?" },
   reply: { da: "Næste gang, svar med den her.", en: "Next time, reply with this." },
   message: {
     da: "Det lyder SÅ sjovt! Vi finder lige en dag 😍",
@@ -21,7 +21,9 @@ const WORDS = {
 };
 
 /** When each part starts, in ms from the intro's start. */
-const AT = { bubble: 500, aging: 2000, reply: 5200, link: 5800, zoom: 7600 };
+const AT = { up: 1300, bubble: 1800, aging: 4300, reply: 7300, link: 7900, zoom: 9700 };
+/** How fast the friend's message types itself, per letter. */
+const TYPE_MS = 45;
 
 /** A cobweb in a corner, spun thread by thread. */
 function Cobweb({ className }: { className: string }) {
@@ -59,11 +61,12 @@ function Cobweb({ className }: { className: string }) {
 
 /**
  * Before the welcome's animation (#275), the joke in a few seconds, no phone
- * and no buttons: on orange, "Kender du typen?" and a friend's grey message
- * ending in "Vi finder lige en dag"; it ages (greying, cobwebs, weeks then
- * months passing); then "Næste gang, svar med den her." and the person's own
- * reply, the app's link, from the right. It zooms into that link, which hands
- * over to the animation's phone (AppWelcome).
+ * and no buttons, on orange over the whole screen: "Er det også sket for dig?"
+ * alone in the middle, then up to the top; a friend's grey message types
+ * itself, ending in "Vi finder lige en dag"; it ages (its words blurring away,
+ * cobwebs, weeks then months passing); then "Næste gang, svar med den her." and
+ * the person's own reply, the app's link, from the right. Its place is handed
+ * on for the animation's phone to grow out of (AppWelcome, WelcomeStage).
  */
 export default function WelcomeIntro({
   onDone,
@@ -75,47 +78,52 @@ export default function WelcomeIntro({
   const still = useReducedMotion() ?? false;
   const [now, setNow] = useState(0);
   const link = useRef<HTMLDivElement>(null);
+  const message = WORDS.message[lang];
+  // Letters typed so far: one at a time from when the bubble appears.
+  const [typed, setTyped] = useState(0);
+
   useEffect(() => {
-    const times = Object.values(AT);
-    const timers = times.map((t) => window.setTimeout(() => setNow(t), still ? t / 2 : t));
-    const end = window.setTimeout(
-      () => {
-        const r = link.current?.getBoundingClientRect();
-        onDone(
-          r
-            ? { left: r.left, top: r.top, width: r.width, height: r.height, borderRadius: 22 }
-            : null,
-        );
-      },
-      still ? AT.zoom / 2 : AT.zoom,
-    );
+    const k = still ? 0.5 : 1;
+    const timers = Object.values(AT).map((t) => window.setTimeout(() => setNow(t), t * k));
+    const end = window.setTimeout(() => {
+      const r = link.current?.getBoundingClientRect();
+      onDone(
+        r ? { left: r.left, top: r.top, width: r.width, height: r.height, borderRadius: 22 } : null,
+      );
+    }, AT.zoom * k);
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
       window.clearTimeout(end);
     };
   }, [onDone, still]);
 
+  useEffect(() => {
+    if (now < AT.bubble || typed >= message.length) return;
+    const t = window.setTimeout(() => setTyped((n) => n + 1), still ? 0 : TYPE_MS);
+    return () => window.clearTimeout(t);
+  }, [now, typed, message.length, still]);
+
+  const up = now >= AT.up;
   const aging = now >= AT.aging;
   const later = aging ? Math.min(WORDS.later.length - 1, Math.floor((now - AT.aging) / 1000)) : -1;
-  const zooming = now >= AT.zoom;
+  // From the middle of the screen to its top: about a third of the screen's height.
+  const middle = typeof window === "undefined" ? 300 : window.innerHeight * 0.34;
 
   return (
-    <motion.div
-      className="absolute inset-0 z-30 flex flex-col overflow-hidden bg-[#FF4D00] text-white"
-      initial={{ opacity: 1 }}
-      animate={{ opacity: 1 }}
-    >
+    <div className="fixed inset-0 z-30 flex flex-col overflow-hidden bg-[#FF4D00] text-white">
       <div
-        className="flex min-h-[9rem] items-end justify-center px-8 pb-6"
-        style={{ paddingTop: "max(2.5rem, env(safe-area-inset-top))" }}
+        className="flex min-h-[9.5rem] items-end justify-center px-8 pb-6"
+        style={{ paddingTop: "max(3rem, calc(env(safe-area-inset-top) + 1.5rem))" }}
       >
         <AnimatePresence mode="wait">
           <motion.h2
             key={now >= AT.reply ? "reply" : "relate"}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: zooming ? 0 : 1, y: 0 }}
+            initial={
+              now >= AT.reply ? { opacity: 0, y: 12 } : { opacity: 0, y: middle, scale: 1.15 }
+            }
+            animate={up ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, y: middle, scale: 1.15 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.35 }}
+            transition={{ type: "spring", stiffness: 140, damping: 20 }}
             className="text-balance text-center text-[2rem] font-bold leading-tight"
           >
             {(now >= AT.reply ? WORDS.reply : WORDS.relate)[lang]}
@@ -124,23 +132,35 @@ export default function WelcomeIntro({
       </div>
 
       <div className="flex flex-1 flex-col gap-5 px-5">
-        {/* The friend's message, from the left: the plan that stalled. */}
+        {/* The friend's message, from the left, typing itself: the plan that stalled. */}
         <AnimatePresence>
-          {now >= AT.bubble && !zooming && (
+          {now >= AT.bubble && (
             <motion.div
-              className="relative max-w-[80%] self-start"
-              initial={{ x: "-120%", opacity: 0 }}
-              animate={{
-                x: 0,
-                opacity: aging ? 0.7 : 1,
-                rotate: aging ? -2 : 0,
-                filter: aging ? "grayscale(1) blur(0.3px)" : "grayscale(0)",
-              }}
-              exit={{ opacity: 0, x: -40 }}
+              className="relative max-w-[82%] self-start"
+              initial={{ x: "-110%", opacity: 0 }}
+              animate={{ x: 0, opacity: aging ? 0.75 : 1, rotate: aging ? -2 : 0 }}
               transition={{ type: "spring", stiffness: 220, damping: 24 }}
             >
-              <span className="block rounded-[22px] rounded-bl-[6px] bg-[#EFEFF1] px-4 py-3 text-[1.1875rem] leading-snug text-[#1c1c1e]">
-                {WORDS.message[lang]}
+              <span className="relative block rounded-[22px] rounded-bl-[6px] bg-[#EFEFF1] px-4 py-3 text-[1.1875rem] leading-snug text-[#1c1c1e]">
+                {/* The whole text holds the bubble's size; what is typed shows over it. */}
+                <span className="invisible">{message}</span>
+                <motion.span
+                  className="absolute inset-0 px-4 py-3"
+                  animate={{
+                    filter: aging ? "blur(3.5px)" : "blur(0px)",
+                    opacity: aging ? 0.55 : 1,
+                  }}
+                  transition={{ duration: 2.4, ease: "easeIn" }}
+                >
+                  {message.slice(0, typed)}
+                  {typed < message.length && (
+                    <motion.span
+                      className="ml-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.15em] bg-[#1c1c1e]"
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                    />
+                  )}
+                </motion.span>
               </span>
               {aging && (
                 <>
@@ -170,14 +190,14 @@ export default function WelcomeIntro({
           </AnimatePresence>
         </div>
 
-        {/* The person's own reply, from the right: the app's link. It grows into the phone. */}
+        {/* The person's own reply, from the right: the app's link. The phone grows out of it. */}
         <AnimatePresence>
           {now >= AT.link && (
             <motion.div
               ref={link}
-              className="w-[68%] max-w-[17rem] origin-center self-end overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
+              className="w-[68%] max-w-[17rem] self-end overflow-hidden rounded-[22px] rounded-br-[6px] border-[3px] border-white bg-white text-[#1c1c1e] shadow-xl"
               initial={{ x: "120%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
+              animate={{ x: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 220, damping: 24 }}
             >
               <img
@@ -193,6 +213,6 @@ export default function WelcomeIntro({
           )}
         </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 }
