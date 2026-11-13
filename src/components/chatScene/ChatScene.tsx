@@ -162,7 +162,8 @@ type Item =
     }
   | { id: number; kind: "gap"; text: string }
   | { id: number; kind: "link" }
-  | { id: number; kind: "found"; who: Friend; react?: string[] };
+  | { id: number; kind: "found"; who: Friend; react?: string[] }
+  | { id: number; kind: "vote"; react?: string[]; history: boolean };
 
 /**
  * The joke, played on the welcome phone's screen (#275, #270): one of the
@@ -176,12 +177,15 @@ type Item =
  */
 export default function ChatScene({
   scene = "idea",
+  beats: ownBeats,
   activity = 0,
   mode = "tap",
   onCue,
   onEnd,
 }: {
   scene?: SceneName;
+  /** Beats of the holder's own (the welcome's two halves), instead of a named scene. */
+  beats?: Beat[];
   /** Which of ACTIVITIES the plan is about. */
   activity?: number;
   mode?: "tap" | "auto";
@@ -189,10 +193,10 @@ export default function ChatScene({
   onEnd?: () => void;
 }) {
   const { lang } = useLang();
-  const beats: Beat[] = SCENES[scene];
+  const beats: Beat[] = ownBeats ?? SCENES[scene];
   const plan = ACTIVITIES[activity % ACTIVITIES.length];
   // What was said before the scene opens is simply there.
-  const history = beats.findIndex((b) => !(b.kind === "text" && b.history));
+  const history = beats.findIndex((b) => !("history" in b && b.history));
   const [at, setAt] = useState(Math.max(0, history));
   const [pressed, setPressed] = useState(false);
   const beat = beats[at];
@@ -262,6 +266,8 @@ export default function ChatScene({
     } else if (b.kind === "gap") items.push({ id: i, kind: "gap", text: b.text[lang] });
     else if (b.kind === "send" && i < at) items.push({ id: i, kind: "link" });
     else if (b.kind === "found") items.push({ id: i, kind: "found", who: b.who, react: b.react });
+    else if (b.kind === "vote")
+      items.push({ id: i, kind: "vote", react: b.react, history: !!b.history });
   }
   const from = (it: Item | undefined) =>
     it && (it.kind === "text" || it.kind === "found") ? it.who : null;
@@ -320,6 +326,26 @@ export default function ChatScene({
                   className={`shrink-0 py-4 text-center text-[13px] font-medium uppercase tracking-wide ${C.dim}`}
                 >
                   {it.text}
+                </motion.div>
+              );
+            }
+            if (it.kind === "vote") {
+              return (
+                <motion.div
+                  key={it.id}
+                  layout="position"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={SLIDE}
+                  className="relative mb-4 mt-2 shrink-0 self-end"
+                >
+                  <span
+                    data-cue-target="found"
+                    className={`block rounded-[18px] transition-shadow ${highlight === "found" ? RING : ""}`}
+                  >
+                    <FoundCard title={plan.title} lang={lang} />
+                  </span>
+                  {it.react && <Reactions list={it.react} instant={false} />}
                 </motion.div>
               );
             }
