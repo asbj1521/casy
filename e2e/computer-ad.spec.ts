@@ -1,6 +1,7 @@
 /**
  * What a computer sees instead of the website (#270): the app's ad, with the
- * joke playing on a phone, a QR code and the ways to the app. A phone never
+ * app's own opening playing beside it (the intro, then the welcome animation),
+ * a QR code and the ways to the app. A phone never
  * sees it. The rest of the browser tests keep the old computer site
  * (`computerSite` in fixtures.ts) until #273 removes it.
  */
@@ -10,6 +11,15 @@ test.use({ computerSite: false });
 
 test.describe("a computer", () => {
   test.skip(({ isMobile }) => isMobile, "a phone keeps the website");
+
+  test("after the intro, the app's welcome animation plays on its phone", async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __casySkipIntro: boolean }).__casySkipIntro = true;
+    });
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Vi kender det alle:" })).toHaveCount(0);
+    await expect(page.getByText("Planlæg").first()).toBeVisible({ timeout: 10_000 });
+  });
 
   test.describe("signed out", () => {
     test.use({ signedIn: false });
@@ -27,8 +37,8 @@ test.describe("a computer", () => {
       await expect(
         page.getByText("Ud fra jeres kalendere, gratis på alle telefoner."),
       ).toBeVisible();
-      // The phone plays by itself: the app's first line comes once the plan has stalled.
-      await expect(page.getByText("Er det også sket for dig?")).toBeVisible({ timeout: 20_000 });
+      // The app's opening plays beside it, as in the app after download: first the intro.
+      await expect(page.getByRole("heading", { name: "Vi kender det alle:" })).toBeVisible();
     });
 
     test("keeps the privacy policy, the terms and the help pages as they are", async ({ page }) => {
