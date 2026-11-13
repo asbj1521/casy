@@ -22,6 +22,7 @@ import { useT } from "@/i18n/lang";
 import { flyOnClick } from "@/lib/cardTransition";
 import { loadPage } from "@/pages/lazyPages";
 import { cn } from "@/lib/utils";
+import Wordmark from "@/components/ui/Wordmark";
 
 /**
  * The top navigation bar on every page: the logo and language switch, a
@@ -178,7 +179,7 @@ export default function TopNav() {
     <nav className="vt-top-nav flex items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-5 lg:px-8">
       <div className="flex items-center gap-2 sm:gap-3">
         <Link to="/" className="flex items-center">
-          <span className="text-xl font-bold tracking-tight sm:text-2xl">casy</span>
+          <Wordmark className="text-xl sm:text-2xl" />
         </Link>
         {/* Signed in, language is chosen in Settings (#129). */}
         {!user && !loading && <LanguageToggle />}

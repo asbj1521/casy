@@ -40,6 +40,8 @@ export default {
   ],
   theme: {
     extend: {
+      // The name's own letters (#269): Anton, for the wordmark only; everything else is the system's.
+      fontFamily: { display: ["Anton", "Impact", "Arial Narrow", "sans-serif"] },
       colors: {
         ...themed,
         // The main buttons: deep orange with white text in both themes (theme.css).
