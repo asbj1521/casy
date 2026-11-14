@@ -36,6 +36,8 @@ const ASKED: [file: string, world: WorldOptions, fn: string, body: Record<string
   ["groups-block", DEFAULT_WORLD, "groups", { action: "block", invitationGroupId: "g-badminton" }],
   ["groups-leave", DEFAULT_WORLD, "groups", { action: "leave", groupId: "g-running" }],
   ["groups-friends", DEFAULT_WORLD, "groups", { action: "friends" }],
+  ["groups-friend-link", DEFAULT_WORLD, "groups", { action: "friend-link", app: true }],
+  ["groups-remove-friend", DEFAULT_WORLD, "groups", { action: "remove-friend", profileId: "p-x" }],
   ["groups-invite", DEFAULT_WORLD, "groups", { action: "invite", groupId: "g-friday", app: true }],
   [
     "groups-invite-members",

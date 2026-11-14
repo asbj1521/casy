@@ -98,17 +98,19 @@ struct PictureCropSheet: View {
             }
             .padding()
             .background(Color.black)
-            .navigationTitle(CasyStrings.picturesCropTitle)
-            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.black, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(CasyStrings.cancel, action: onCancel)
+            // As the web's crop sheet: Annuller up top, Færdig the main button (design rule 11).
+            .casySheetBar(CasyStrings.picturesCropTitle, close: CasyStrings.cancel, action: onCancel)
+            .safeAreaInset(edge: .bottom) {
+                FlowButton {
+                    onDone(current)
+                } label: {
+                    Text(CasyStrings.done)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(CasyStrings.done) { onDone(current) }
-                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .environment(\.colorScheme, .dark)
             }
         }
     }

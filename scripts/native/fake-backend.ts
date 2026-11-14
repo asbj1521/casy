@@ -4,7 +4,8 @@
  * Bundled and started by scripts/native/ui-tests.sh. SLOW_ACTIONS (comma
  * separated) answer after a pause, to show what a screen does while it waits.
  * POST /reset starts the world again, for a test that changes it (leaving a
- * group, answering an invitation) so the next one finds it as it was.
+ * group, answering an invitation) so the next one finds it as it was; a body
+ * of `{ friends: [...] }` starts it with those friends from groups since gone.
  */
 import { createServer } from "node:http";
 import process from "node:process";
@@ -28,12 +29,14 @@ createServer((request, response) => {
       response.writeHead(status, { "Content-Type": "application/json" });
       response.end(JSON.stringify(json));
     };
+    const text = Buffer.concat(chunks).toString();
     if (url.pathname === "/reset") {
       backend = new FakeBackend(makeWorld(DEFAULT_WORLD));
+      const seed = (text ? JSON.parse(text) : {}) as { friends?: typeof backend.world.friends };
+      if (seed.friends) backend.world.friends = seed.friends;
       return send(200, {});
     }
     if (!name) return send(404, { error: "Not a function" });
-    const text = Buffer.concat(chunks).toString();
     const body = text ? (JSON.parse(text) as Record<string, unknown>) : {};
     const answer = backend.answer({ name, params: url.searchParams, body });
     console.log(

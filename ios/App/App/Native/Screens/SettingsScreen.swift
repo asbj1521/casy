@@ -35,6 +35,27 @@ struct SettingsScreen: View {
     }
 }
 
+/// Indstillinger's top bar: its own sheet's, or a screen's pushed inside Profil.
+private struct SettingsBar: ViewModifier {
+    let pushed: Bool
+    /// Only so a new language draws the bar again: its words are read from CasyStrings.
+    let lang: String
+    let onDone: () -> Void
+
+    func body(content: Content) -> some View {
+        if pushed {
+            content.casyPushedBar(CasyStrings.settingsTitle, close: CasyStrings.done, action: onDone)
+        } else {
+            content.casySheetBar(CasyStrings.settingsTitle, close: CasyStrings.done, action: onDone)
+        }
+    }
+}
+
+extension EnvironmentValues {
+    /// Closes the whole sheet a screen is pushed inside: its Færdig (design rule 11).
+    @Entry var closeSheet: () -> Void = {}
+}
+
 extension View {
     /// Casy's orange, and Casy's own light or dark choice.
     func nativeSheetLook(_ preferences: NativePreferences) -> some View {
@@ -52,6 +73,8 @@ struct SettingsList: View {
     let onDone: () -> Void
     /// Turns notifications on through the web view: "granted", "denied" or "failed".
     let enablePush: () async -> String
+    /// Pushed inside the Profil sheet rather than the first screen of its own.
+    var pushed = false
 
     private let notifications = NotificationsModel.shared
 
@@ -84,12 +107,7 @@ struct SettingsList: View {
         .task(id: notifications.permission == .granted) {
             if notifications.permission == .granted { await notifications.loadKinds() }
         }
-        .navigationTitle(CasyStrings.settingsTitle)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button(CasyStrings.done, action: onDone)
-            }
-        }
+        .modifier(SettingsBar(pushed: pushed, lang: preferences.lang, onDone: onDone))
     }
 
     private func pick(lang: String? = nil, theme: String? = nil) {

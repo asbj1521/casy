@@ -105,6 +105,17 @@ private struct CreateGroup: Encodable, Sendable {
     let description: String?
 }
 
+private struct FriendLink: Encodable, Sendable {
+    let action = "friend-link"
+    /// The link opens the app when it has it (#277).
+    let app = true
+}
+
+private struct RemoveFriend: Encodable, Sendable {
+    let action = "remove-friend"
+    let profileId: String
+}
+
 private struct BlockSender: Encodable, Sendable {
     let action = "block"
     let invitationGroupId: String
@@ -268,6 +279,18 @@ extension EdgeFunctions {
     public func friends(errorMessage: String? = nil) async throws -> [Friend] {
         let answer: FriendsAnswer = try await call(
             "groups", body: Action(action: "friends"), errorMessage: errorMessage)
+        return answer.friends ?? []
+    }
+
+    /// A link anyone can open to become your friend (#226).
+    public func makeFriendLink(errorMessage: String? = nil) async throws -> InviteLink {
+        try await call("groups", body: FriendLink(), errorMessage: errorMessage)
+    }
+
+    /// No longer friends; answers the friends left.
+    public func removeFriend(_ profileId: String, errorMessage: String? = nil) async throws -> [Friend] {
+        let answer: FriendsAnswer = try await call(
+            "groups", body: RemoveFriend(profileId: profileId), errorMessage: errorMessage)
         return answer.friends ?? []
     }
 

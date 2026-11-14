@@ -20,6 +20,7 @@ struct GroupScreen: View {
 
     private let model = GroupsModel.shared
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.closeSheet) private var closeSheet
     @State private var asking: Asking?
     @State private var removing = false
     @State private var failure: String?
@@ -139,7 +140,7 @@ struct GroupScreen: View {
             }
             .disabled(removing)
         }
-        .navigationBarTitleDisplayMode(.inline)
+        .casyPushedBar(group.name, close: CasyStrings.done, action: closeSheet)
         .confirmationDialog(
             question(group, sole: sole), isPresented: isAsking, titleVisibility: .visible
         ) {
@@ -334,13 +335,8 @@ struct EditGroupSheet: View {
                 .padding(.vertical, 24)
             }
             .background(Theme.background.color)
-            .navigationTitle(CasyStrings.groupEdit)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(CasyStrings.cancel) { dismiss() }
-                        .disabled(saving)
-                }
+            .casySheetBar(CasyStrings.groupEdit, close: CasyStrings.cancel, disabled: saving) {
+                dismiss()
             }
             .safeAreaInset(edge: .bottom) {
                 FlowButton(busy: saving, action: save) {
@@ -432,13 +428,11 @@ struct ReportSheet: View {
                     form(choice)
                 }
             }
-            .navigationTitle(CasyStrings.reportTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(sent ? CasyStrings.close : CasyStrings.cancel) { dismiss() }
-                        .disabled(sending)
-                }
+            .casySheetBar(
+                CasyStrings.reportTitle, close: sent ? CasyStrings.close : CasyStrings.cancel,
+                disabled: sending
+            ) {
+                dismiss()
             }
             .safeAreaInset(edge: .bottom) {
                 if !sent {

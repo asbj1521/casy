@@ -186,6 +186,17 @@ const WEB: Record<string, (t: Messages) => string> = {
   "newGroup.next": (t) => t.newGroup.next,
   "newGroup.pictureLost": (t) => t.newGroup.pictureLost,
   "newGroup.failed": (t) => t.api.createGroup,
+  "friends.empty": (t) => t.friends.empty,
+  "friends.note": (t) => t.friends.note,
+  "friends.remove": (t) => t.friends.remove,
+  "friends.removeAsk": (t) => t.friends.removeAsk("%@"),
+  "friends.failed": (t) => t.api.friends,
+  "friendLink.add": (t) => t.friendLink.add,
+  "friendLink.message": (t) => t.friendLink.message,
+  "friendLink.shareTitle": (t) => t.friendLink.shareTitle,
+  "friendLink.linkHelp": (t) => t.friendLink.linkHelp("%@"),
+  "friendLink.qrHelp": (t) => t.friendLink.qrHelp,
+  "friendLink.failed": (t) => t.api.friendLink,
 };
 
 /**

@@ -171,3 +171,9 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     let made = try readsWithNothingLost("groups-create", as: CreatedGroup.self)
     #expect(made.groups.contains { $0.id == made.createdId })
 }
+
+@Test func friendsRead() throws {
+    let link = try readsWithNothingLost("groups-friend-link", as: InviteLink.self)
+    #expect(link.url.contains("/friend/"))
+    _ = try readsWithNothingLost("groups-remove-friend", as: FriendsAnswer.self)
+}

@@ -119,6 +119,19 @@ final class GroupsModel {
 
     func inviteSent(_ groupId: String) { onInviteSent?(groupId) }
 
+    /// A link anyone can open to become your friend (#226).
+    func makeFriendLink() async throws -> InviteLink {
+        let api = try await signedIn(CasyStrings.friendLinkFailed)
+        return try await api.makeFriendLink(errorMessage: CasyStrings.friendLinkFailed)
+    }
+
+    /// No longer friends (#222): only someone you share no group with.
+    func removeFriend(_ profileId: String) async throws {
+        let api = try await signedIn(CasyStrings.friendsFailed)
+        friends = try await api.removeFriend(profileId, errorMessage: CasyStrings.friendsFailed)
+        changed()
+    }
+
     /// A new group with you in it, then its picture, which needs the group to
     /// exist; without the picture the group is still made (`pictureLost`).
     func create(
@@ -270,6 +283,7 @@ struct GroupsScreen: View {
     let leave: (LeavingProfile) -> Void
 
     private let model = GroupsModel.shared
+    @Environment(\.closeSheet) private var closeSheet
     @State private var asking: CasyAPI.Group?
     @State private var making = false
 
@@ -298,8 +312,7 @@ struct GroupsScreen: View {
                 if model.groups?.isEmpty == true { Text(CasyStrings.groupsEmpty) }
             }
         }
-        .navigationTitle(CasyStrings.groupsTitle)
-        .navigationBarTitleDisplayMode(.inline)
+        .casyPushedBar(CasyStrings.groupsTitle, close: CasyStrings.done, action: closeSheet)
         .task { await model.load() }
         .refreshable { await model.load() }
         .sheet(isPresented: $making) {
@@ -381,6 +394,7 @@ struct InvitationScreen: View {
 
     private let model = GroupsModel.shared
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.closeSheet) private var closeSheet
     @State private var answering: Answer?
     @State private var failure: String?
     @State private var about = false
@@ -444,7 +458,7 @@ struct InvitationScreen: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
         }
-        .navigationBarTitleDisplayMode(.inline)
+        .casyPushedBar(CasyStrings.invitationsTitle, close: CasyStrings.done, action: closeSheet)
         // The question waits for the ? panel to have gone: two can't show at once.
         .onChange(of: about) { _, open in
             if !open, blockAfterAbout {

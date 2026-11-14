@@ -5,11 +5,13 @@ import CoreImage.CIFilterBuiltins
 import SwiftUI
 
 /// One round of inviting to a group (#153), as the web's useInvite: the people
-/// ticked and the emails added, a link once asked for, and what was sent.
-/// A new one each time the sheet opens.
+/// ticked and the emails added, a link once asked for, and what was sent. Or
+/// of adding a friend (#226, `forFriend`), which is only the contacts and a
+/// link. A new one each time the sheet opens.
 @MainActor @Observable
 final class InviteModel {
-    let groupId: String
+    /// The group invited to; nil for a friend link.
+    let groupId: String?
     let groupName: String
 
     var picked: [String] = []
@@ -35,11 +37,25 @@ final class InviteModel {
         self.groupName = groupName
     }
 
+    private init() {
+        groupId = nil
+        groupName = ""
+    }
+
+    /// Tilføj en ven (#226): a link anyone can open to become your friend.
+    static func forFriend() -> InviteModel { InviteModel() }
+
+    var isFriend: Bool { groupId == nil }
     var count: Int { picked.count + emails.count }
-    var people: [KnownPerson] { groups.people(for: groupId) }
-    var invited: Set<String> { Set(groups.indexed(groupId)?.group.invited ?? []) }
-    var message: String { CasyStrings.inviteMessage(groupName) }
-    var shareTitle: String { CasyStrings.inviteShareTitle(groupName) }
+    var people: [KnownPerson] { groupId.map { groups.people(for: $0) } ?? [] }
+    var invited: Set<String> { Set(groupId.flatMap { groups.indexed($0)?.group.invited } ?? []) }
+    var title: String { isFriend ? CasyStrings.friendLinkAdd : CasyStrings.inviteTitle(groupName) }
+    var message: String { isFriend ? CasyStrings.friendLinkMessage : CasyStrings.inviteMessage(groupName) }
+    var shareTitle: String {
+        isFriend ? CasyStrings.friendLinkShareTitle : CasyStrings.inviteShareTitle(groupName)
+    }
+    var qrLabel: String { isFriend ? CasyStrings.friendLinkShareTitle : CasyStrings.inviteQrLabel(groupName) }
+    var qrHelp: String { isFriend ? CasyStrings.friendLinkQrHelp : CasyStrings.inviteQrHelp }
 
     func toggle(_ profileId: String) {
         sentNote = nil
@@ -72,7 +88,7 @@ final class InviteModel {
     func send() async -> Bool {
         // An address still in the field goes too, rather than being dropped.
         if looksLikeEmail(draft) { addEmail() }
-        guard count > 0 else { return false }
+        guard count > 0, let groupId else { return false }
         sending = true
         sendError = nil
         defer { sending = false }
@@ -95,7 +111,12 @@ final class InviteModel {
         linkError = nil
         defer { makingLink = false }
         do {
-            let made = try await groups.makeLink(groupId)
+            let made: InviteLink
+            if let groupId {
+                made = try await groups.makeLink(groupId)
+            } else {
+                made = try await groups.makeFriendLink()
+            }
             link = made
             return made
         } catch {
@@ -105,7 +126,9 @@ final class InviteModel {
     }
 
     /// The link was copied, shared or its QR code shown: someone is probably being invited.
-    func linkUsed() { groups.inviteSent(groupId) }
+    func linkUsed() {
+        if let groupId { groups.inviteSent(groupId) }
+    }
 
     /// Contacts picked, the link made here if there is none yet, and Messages
     /// opened with them; a phone that can't text gets the share sheet.
@@ -135,7 +158,7 @@ final class InviteModel {
         case .hours(let n): left = CasyStrings.inviteExpiry(days: nil, hours: n)
         case .underAnHour: left = CasyStrings.inviteExpiry(days: nil, hours: nil)
         }
-        return CasyStrings.inviteLinkHelp(left)
+        return isFriend ? CasyStrings.friendLinkHelp(left) : CasyStrings.inviteLinkHelp(left)
     }
 }
 
@@ -190,11 +213,13 @@ struct InviteContent: View {
                     .contentShape(Rectangle())
                 }
                 .disabled(model.contactsBusy)
-                Button {
-                    model.emailOpen.toggle()
-                    emailFocused = model.emailOpen
-                } label: {
-                    ListRow(CasyStrings.inviteEmail, systemImage: "envelope").contentShape(Rectangle())
+                if !model.isFriend {
+                    Button {
+                        model.emailOpen.toggle()
+                        emailFocused = model.emailOpen
+                    } label: {
+                        ListRow(CasyStrings.inviteEmail, systemImage: "envelope").contentShape(Rectangle())
+                    }
                 }
                 ForEach(model.emails, id: \.self) { address in
                     HStack {
@@ -247,22 +272,16 @@ struct InviteContent: View {
 
             if model.showQr, let link = model.link {
                 Section {
-                    QrCode(text: link.url, label: CasyStrings.inviteQrLabel(model.groupName))
+                    QrCode(text: link.url, label: model.qrLabel)
                 } footer: {
-                    Text(CasyStrings.inviteQrHelp).frame(maxWidth: .infinity)
+                    Text(model.qrHelp).frame(maxWidth: .infinity)
                 }
                 .listRowBackground(Color.clear)
             }
 
-            people
+            if !model.isFriend { people }
         }
-        .navigationTitle(CasyStrings.inviteTitle(model.groupName))
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button(CasyStrings.done) { dismiss() }
-            }
-        }
+        .casySheetBar(model.title, close: CasyStrings.done) { dismiss() }
         .safeAreaInset(edge: .bottom) {
             if model.count > 0 {
                 FlowButton(busy: model.sending) {
@@ -543,12 +562,8 @@ struct NewGroupSheet: View {
             .padding(.vertical, 24)
         }
         .background(Theme.background.color)
-        .navigationTitle(CasyStrings.newGroupTitle)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button(CasyStrings.cancel) { dismiss() }.disabled(creating)
-            }
+        .casySheetBar(CasyStrings.newGroupTitle, close: CasyStrings.cancel, disabled: creating) {
+            dismiss()
         }
         .safeAreaInset(edge: .bottom) {
             FlowButton(busy: creating, action: create) {

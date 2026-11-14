@@ -8,7 +8,7 @@ The living half of `docs/native-ios-plan.md`, which says where this is going. Th
 |---|---|---|
 | `CasyCore` | Pure logic, no UI: the engine's types, Danish time (`Zone`), dates as text (`Format`), holidays, periods and the viewer's clock, `PhoneBusy`, votes and the event lists (`Events`), what a swipe on a group does and its member line (`Groups`), who can be invited, an email's look, a link's life and whom a text goes to (`Invite`) | `src/lib`, `src/types` |
 | `CasyAPI` | `EdgeFunctions.call` (the web's `callFunction`), and the answers as Codable types | `src/lib/supabaseFunctions.ts`, `src/api` |
-| `CasyUI` | `Theme` (colours), `FlowButton` (glass, or `.solid` orange for an invitation's yes), `GlassButton`, `casyGlass()`, `ListRow`, `ListAvatarRow` (a picture in front), `ListPickRow`, `ListSwitchRow`, `CasyField`, `Avatar`, `Notice`, `ConfirmButton`, the String Catalog | `src/index.css`, `src/theme.css`, `src/components/ui` |
+| `CasyUI` | `Theme` (colours), `casySheetBar` and `casyPushedBar` (every sheet's top bar, design rule 11), `FlowButton` (glass, or `.solid` orange for an invitation's yes), `GlassButton`, `casyGlass()`, `ListRow`, `ListAvatarRow` (a picture in front), `ListPickRow`, `ListSwitchRow`, `CasyField`, `Avatar`, `Notice`, `ConfirmButton`, the String Catalog | `src/index.css`, `src/theme.css`, `src/components/ui` |
 
 Rules for code in them:
 
@@ -30,6 +30,7 @@ Rules for code in them:
 - **Grupper** (`Screens/GroupsScreen.swift`) is pushed inside the Profil list: the invitations, then your groups, each swiped left to leave or delete (asked first when it takes the group from others, `groupSwipe`). An invitation opens its own screen (Bliv medlem, Nej tak, blocking the sender behind the ?); joining closes the sheet with `joined`, and the page offers notifications as its own invitation does. Lav en gruppe opens `NewGroupSheet`: the picture, name and description, Næste makes it, and the same sheet goes on to its invite.
 - **A group** (`Screens/GroupScreen.swift`) is pushed from its row: the picture, name, size and age, the members (what they see behind the ?), Rediger gruppe (picture, name and description in one sheet, only what changed saved), Tid til hinanden for groups of four or more, Rapportér eller bloker (`ReportSheet`: the group or a member, why, a note, blocking and leaving with it), and leaving or deleting, asked first. Left or gone from elsewhere, it goes back to Grupper, though only once a sheet over it has closed.
 - **Inviting** (`Screens/InviteSheet.swift`, `InviteModel`) is the web's InviteBody: from the contacts (`ContactInviter`: iOS's picker, then Messages, or the share sheet on a phone that can't text; what is picked never leaves the phone), by email, a link with copy, share and its QR code (Core Image), and the people from your groups and friends ticked (`knownPeople` in CasyCore), folded past four. After an invite the page is sent `inviteSent`, so its home page's nudge to invite people goes as after its own. Not yet: the notifications ask the web makes after sending (the push ask is Native 4's).
+- **Venner** (`Screens/FriendsScreen.swift`) is pushed from Profil: everyone you share a group with or once did, each with where from, and Fjern for a friend from a group since gone only (anyone else would come back). Tilføj en ven is the invite sheet made for a friend (`InviteModel.forFriend()`): the contacts and a link, no email and no people.
 - `GroupsModel` keeps the Profil row's count, and every change sends `dataChanged`, on which the page fetches its groups, invitations and blocked people again.
 
 ## What keeps it equal to the web
@@ -60,7 +61,7 @@ scripts/native/snapshots.sh            # CasyUI's pictures; --record draws them 
 
 CI's `native.yml` tests all three packages on a Mac (CasyUI through `xcodebuild`, as its Xcode's plain `swift test` doesn't compile the String Catalog) and builds them for the iOS simulator, whenever `ios/Packages` or `src/lib` change.
 
-The app's UI tests (`ios/App/AppUITests`, a synchronized folder) open native screens signed in, against the browser tests' fake backend over HTTP (`scripts/native/fake-backend.ts`; a test that changes its world calls `POST /reset` first), locally before every commit, and on CI (`ios.yml`) on `main` only, after the merge, so a merge doesn't wait the 9 minutes they take on GitHub's Mac:
+The app's UI tests (`ios/App/AppUITests`, a synchronized folder) open native screens signed in, against the browser tests' fake backend over HTTP (`scripts/native/fake-backend.ts`; a test that changes its world calls `POST /reset` first), locally: for each step only the screens it touched (`-only-testing:AppUITests/<Class>`), the whole suite every three or four steps and always before a merge; and on CI (`ios.yml`) on `main` only, after the merge, so a merge doesn't wait the 9 minutes they take on GitHub's Mac:
 
 ```bash
 scripts/native/ui-tests.sh             # UI_TEST_DEVICE picks the simulator

@@ -66,7 +66,7 @@ The bridge files: `ios/App/App/Native/Bridge/NativeBridgePlugin.swift` (the plug
 |---|---|---|
 | 1. Pages | `ui/ListGroup`, `ListRow` | `List` with `.listStyle(.insetGrouped)` |
 | 1. Sheets from where they were pressed | `ui/BottomSheet` `origin`, `edge` | `.sheet` with `.presentationDetents`, the source button marked `matchedTransitionSource(id:in:)` and the sheet `.navigationTransition(.zoom(sourceID:in:))`; iOS 26 sheets are glass at partial heights. A known bug: the zoom misbehaves with a `.medium` detent; test it, use `.fraction` or `.large` if it does |
-| 1. Title left, one text action right | sheet header | `.navigationTitle`, `ToolbarItem(placement: .cancellationAction)` "Annuller", `.confirmationAction` "Færdig" |
+| 11. Title left, one text action right, the main action at the bottom | `ui/Sheet` (`title`, `closeLabel`, `footer`) | CasyUI's `casySheetBar` (a sheet's first screen) and `casyPushedBar` (pushed inside it: back arrow left, the same button right); never a `ToolbarItem` in a screen, which `nativeSheets.test.ts` checks |
 | 1. Pickers grow out of their row | `ui/AnchoredPanel` | `.popover` with `.presentationCompactAdaptation(.popover)`, or a `Menu` where it is a plain choice |
 | 2. One main action, pinned | `ui/FlowButton` | `.safeAreaInset(edge: .bottom)` holding a full-width `Button` with `.buttonStyle(.glassProminent)` tinted Casy's orange (or `.glass` with orange text, decided in Phase 1 by looking at both); `quiet` is `.glass` |
 | 3. Standalone glass capsules | `ui/GlassButton`, `.glass-pill` | `.buttonStyle(.glass)`, orange foreground |

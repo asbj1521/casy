@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { eventsQueryKey } from "@/api/events";
-import { groupsQueryKey, invitationsQueryKey, whoAmIQueryKey } from "@/api/groups";
+import { friendsQueryKey, groupsQueryKey, invitationsQueryKey, whoAmIQueryKey } from "@/api/groups";
 import { blockedQueryKey } from "@/api/safety";
 
 import { useAuth } from "@/context/auth";
@@ -71,7 +71,7 @@ export default function NativeBridgeSync() {
     };
   }, [setLang]);
 
-  // A native screen changed your name, picture, groups or invitations: the
+  // A native screen changed your name, picture, groups, invitations or friends: the
   // page's copies, and the lists they are in, are fetched again.
   const queryClient = useQueryClient();
   const youId = session?.user.id;
@@ -86,6 +86,7 @@ export default function NativeBridgeSync() {
         eventsQueryKey(youId),
         invitationsQueryKey(youId),
         blockedQueryKey(youId),
+        friendsQueryKey(youId),
       ]) {
         void queryClient.invalidateQueries({ queryKey });
       }

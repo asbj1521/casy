@@ -210,6 +210,18 @@ public enum CasyStrings {
     }
     public static var inviteExpired: String { text("expiry.expired") }
 
+    public static var friendsEmpty: String { text("friends.empty") }
+    public static var friendsNote: String { text("friends.note") }
+    public static var friendsRemove: String { text("friends.remove") }
+    public static func friendsRemoveAsk(_ value: String) -> String { String(format: text("friends.removeAsk"), value) }
+    public static var friendsFailed: String { text("friends.failed") }
+    public static var friendLinkAdd: String { text("friendLink.add") }
+    public static var friendLinkMessage: String { text("friendLink.message") }
+    public static var friendLinkShareTitle: String { text("friendLink.shareTitle") }
+    public static func friendLinkHelp(_ value: String) -> String { String(format: text("friendLink.linkHelp"), value) }
+    public static var friendLinkQrHelp: String { text("friendLink.qrHelp") }
+    public static var friendLinkFailed: String { text("friendLink.failed") }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

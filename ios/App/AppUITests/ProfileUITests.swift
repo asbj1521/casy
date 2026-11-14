@@ -103,9 +103,16 @@ final class ProfileUITests: XCTestCase {
 
         app.buttons["Tilføj profilbillede"].firstMatch.tap()
         app.buttons["Fotobibliotek"].firstMatch.tap()
-        let crop = app.navigationBars["Flyt og skalér"]
+        let crop = app.otherElements.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Billedet. Træk")
+        ).firstMatch
         XCTAssertTrue(crop.waitForExistence(timeout: 10))
-        crop.buttons["Færdig"].tap()
+        // Færdig is the crop sheet's main button along the bottom (design rule 11);
+        // the Profil sheet under it has one in its top bar.
+        let done = app.buttons.matching(NSPredicate(format: "label == %@", "Færdig"))
+            .allElementsBoundByIndex.max { $0.frame.minY < $1.frame.minY }
+        XCTAssertGreaterThan(done?.frame.minY ?? 0, app.frame.height / 2)
+        done?.tap()
         XCTAssertTrue(app.buttons["Skift profilbillede"].waitForExistence(timeout: 10), "not saved")
 
         app.buttons["Skift profilbillede"].firstMatch.tap()

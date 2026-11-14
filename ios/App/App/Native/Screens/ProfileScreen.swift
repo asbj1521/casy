@@ -137,7 +137,7 @@ struct ProfileScreen: View {
                     NavigationLink {
                         SettingsList(
                             preferences: preferences, onChoose: onChoose, onDone: onDone,
-                            enablePush: enablePush)
+                            enablePush: enablePush, pushed: true)
                     } label: {
                         ListRow(
                             CasyStrings.settingsTitle, systemImage: "gearshape",
@@ -151,7 +151,11 @@ struct ProfileScreen: View {
                             CountBadge(count: model.invitations)
                         }
                     }
-                    handOver(CasyStrings.profileFriends, "person.crop.square", "friends")
+                    NavigationLink {
+                        FriendsScreen()
+                    } label: {
+                        ListRow(CasyStrings.profileFriends, systemImage: "person.crop.square")
+                    }
                 }
                 Section {
                     handOver(CasyStrings.profileSecurity, "key", "password")
@@ -195,13 +199,7 @@ struct ProfileScreen: View {
                 }
             }
             .task { await model.load() }
-            .navigationTitle(CasyStrings.profileTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(CasyStrings.done, action: onDone)
-                }
-            }
+            .casySheetBar(CasyStrings.profileTitle, close: CasyStrings.done, action: onDone)
             .alert(CasyStrings.profileChangeName, isPresented: $renaming) {
                 TextField(CasyStrings.profileChangeName, text: $newName)
                 Button(CasyStrings.cancel, role: .cancel) {}
@@ -213,6 +211,8 @@ struct ProfileScreen: View {
                 }
             }
         }
+        // Every screen pushed inside keeps Færdig on the right (design rule 11).
+        .environment(\.closeSheet, onDone)
         .nativeSheetLook(preferences)
     }
 

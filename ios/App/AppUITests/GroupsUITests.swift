@@ -256,7 +256,8 @@ final class GroupsUITests: XCTestCase {
         name.typeText("Brætspil")
         next.tap()
         XCTAssertTrue(app.navigationBars["Invitér til Brætspil"].waitForExistence(timeout: 10))
-        app.buttons["Færdig"].tap()
+        // The invite sheet's own Færdig: Grupper's under it has one too (design rule 11).
+        app.navigationBars["Invitér til Brætspil"].buttons["Færdig"].tap()
         XCTAssertTrue(row(app, "Brætspil").waitForExistence(timeout: 10))
     }
 }
