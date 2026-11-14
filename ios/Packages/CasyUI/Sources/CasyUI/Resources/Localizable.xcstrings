@@ -6324,6 +6324,720 @@
           }
         }
       }
+    },
+    "admin.deleteGroupTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet gruppen for alle"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this group for everyone"
+          }
+        }
+      }
+    },
+    "admin.deleteGroup": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet gruppe"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete group"
+          }
+        }
+      }
+    },
+    "admin.deleteGroupConfirm.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet \"%@\"? Alle 1 medlem mister den med det samme, sammen med dens invitationslinks. Det kan ikke fortrydes."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete \"%@\"? All 1 member lose it right away, along with its invite links. This can't be undone."
+          }
+        }
+      }
+    },
+    "admin.deleteGroupConfirm.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet \"%1$@\"? Alle %2$d medlemmer mister den med det samme, sammen med dens invitationslinks. Det kan ikke fortrydes."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete \"%1$@\"? All %2$d members lose it right away, along with its invite links. This can't be undone."
+          }
+        }
+      }
+    },
+    "admin.removeMember": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjern %1$@ fra \"%2$@\"? Personen skal have et nyt invitationslink for at komme ind igen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %1$@ from \"%2$@\"? They'll need a new invite link to get back in."
+          }
+        }
+      }
+    },
+    "admin.removeLast": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjern %1$@? Personen er det eneste medlem, så \"%2$@\" bliver også slettet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %1$@? They are the only member, so \"%2$@\" is deleted too."
+          }
+        }
+      }
+    },
+    "admin.removeAndDelete": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjern og slet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove and delete"
+          }
+        }
+      }
+    },
+    "admin.remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjern"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        }
+      }
+    },
+    "admin.deleteUserConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet %1$@s konto? Det fjerner personens %2$@ og alle optagede tidsrum, vi har gemt for personen. Grupper med andre medlemmer fortsætter uden personen. Det kan ikke fortrydes, og det er ikke en udelukkelse: personen kan oprette sig igen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %1$@'s account? This removes their %2$@, along with every busy time we stored for them. Groups other people are in carry on without them. This can't be undone, and it isn't a ban: they can sign up again."
+          }
+        }
+      }
+    },
+    "admin.and": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " og "
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " and "
+          }
+        }
+      }
+    },
+    "admin.typeToConfirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skriv %@ for at bekræfte"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type %@ to confirm"
+          }
+        }
+      }
+    },
+    "admin.deleteAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet konto"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete account"
+          }
+        }
+      }
+    },
+    "admin.impactAccounts.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 kalenderkonto"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 calendar account"
+          }
+        }
+      }
+    },
+    "admin.impactAccounts.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d kalenderkonti"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d calendar accounts"
+          }
+        }
+      }
+    },
+    "admin.impactNoGroups": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ingen grupper"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no groups"
+          }
+        }
+      }
+    },
+    "admin.impactGroups.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 gruppemedlemskab"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 group membership"
+          }
+        }
+      }
+    },
+    "admin.impactGroups.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d gruppemedlemskaber"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d group memberships"
+          }
+        }
+      }
+    },
+    "admin.impactSole.oneOne": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 gruppemedlemskab (1 af dem en gruppe, kun personen er med i, og som også slettes)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 group membership (1 of them a group only they are in, deleted too)"
+          }
+        }
+      }
+    },
+    "admin.impactSole.oneMany": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 gruppemedlemskab (%d af dem grupper, kun personen er med i, og som også slettes)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 group membership (%d of them groups only they are in, deleted too)"
+          }
+        }
+      }
+    },
+    "admin.impactSole.manyOne": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d gruppemedlemskaber (1 af dem en gruppe, kun personen er med i, og som også slettes)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d group memberships (1 of them a group only they are in, deleted too)"
+          }
+        }
+      }
+    },
+    "admin.impactSole.manyMany": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d gruppemedlemskaber (%2$d af dem grupper, kun personen er med i, og som også slettes)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d group memberships (%2$d of them groups only they are in, deleted too)"
+          }
+        }
+      }
+    },
+    "admin.userDeleted.none": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ blev slettet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ was deleted."
+          }
+        }
+      }
+    },
+    "admin.userDeleted.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ blev slettet, sammen med 1 gruppe, kun personen var med i."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ was deleted, along with 1 group only they were in."
+          }
+        }
+      }
+    },
+    "admin.userDeleted.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ blev slettet, sammen med %2$d grupper, kun personen var med i."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ was deleted, along with %2$d groups only they were in."
+          }
+        }
+      }
+    },
+    "admin.theAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontoen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The account"
+          }
+        }
+      }
+    },
+    "admin.syncedBlocks.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkroniseret: 1 optaget tidsrum."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced: 1 busy block."
+          }
+        }
+      }
+    },
+    "admin.syncedBlocks.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkroniseret: %d optagede tidsrum."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced: %d busy blocks."
+          }
+        }
+      }
+    },
+    "admin.syncedUser.oneOne": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkroniseret: 1 konto, 1 optaget tidsrum."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced: 1 account, 1 busy block."
+          }
+        }
+      }
+    },
+    "admin.syncedUser.oneMany": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkroniseret: 1 konto, %d optagede tidsrum."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced: 1 account, %d busy blocks."
+          }
+        }
+      }
+    },
+    "admin.syncedUser.manyOne": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkroniseret: %d konti, 1 optaget tidsrum."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced: %d accounts, 1 busy block."
+          }
+        }
+      }
+    },
+    "admin.syncedUser.manyMany": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkroniseret: %1$d konti, %2$d optagede tidsrum."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced: %1$d accounts, %2$d busy blocks."
+          }
+        }
+      }
+    },
+    "admin.syncedUser.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d af %2$d konti synkroniseret. Se Kalendersundhed for fejlen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d of %2$d accounts synced. See Calendar health for the error."
+          }
+        }
+      }
+    },
+    "admin.syncFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkroniseringen fejlede."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync failed."
+          }
+        }
+      }
+    },
+    "admin.syncTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkronisér kontoen nu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync this account now"
+          }
+        }
+      }
+    },
+    "admin.syncUserTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synkronisér alle kalendere for %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync all calendars for %@"
+          }
+        }
+      }
+    },
+    "admin.testerOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gør til AI-tester"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make AI tester"
+          }
+        }
+      }
+    },
+    "admin.testerTurnOn": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gør %@ til AI-tester: får alle AI-funktioner, der ellers kun er for administratorer, også vurdering af aftaler, som sender titlerne på aftaler til AI"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make %@ an AI tester: they get every AI feature that is otherwise only for admins, event labels too, which send event titles to AI"
+          }
+        }
+      }
+    },
+    "admin.deleteGroupFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke slette gruppen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't delete the group"
+          }
+        }
+      }
+    },
+    "admin.removeMemberFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke fjerne personen fra gruppen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't remove them from the group"
+          }
+        }
+      }
+    },
+    "admin.deleteAccountFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke slette kontoen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't delete the account"
+          }
+        }
+      }
+    },
+    "admin.syncRequestFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke synkronisere kontoen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't sync that account"
+          }
+        }
+      }
+    },
+    "admin.aiAccessFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke ændre AI-adgangen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't change AI access"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

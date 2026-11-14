@@ -193,3 +193,12 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     let overview = try readsWithNothingLost("admin-overview", as: AdminOverview.self)
     #expect(overview.users.count == 2)
 }
+
+@Test func adminActionsRead() throws {
+    _ = try readsWithNothingLost("admin-delete-group", as: Outcome.self)
+    _ = try readsWithNothingLost("admin-remove-member", as: Outcome.self)
+    _ = try readsWithNothingLost("admin-delete-user", as: AdminDeleted.self)
+    _ = try readsWithNothingLost("admin-sync-user", as: AdminUserSync.self)
+    _ = try readsWithNothingLost("admin-sync-connection", as: AdminConnectionSync.self)
+    #expect(try readsWithNothingLost("admin-set-ai-tester", as: AdminTesterAnswer.self).tester)
+}

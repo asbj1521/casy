@@ -16,7 +16,7 @@ import { DEFAULT_WORLD, makeWorld } from "../../e2e/world";
 
 const PORT = Number(process.env.PORT ?? 4318);
 const SLOW = new Set((process.env.SLOW_ACTIONS ?? "").split(",").filter(Boolean));
-const PAUSE_MS = 8000;
+const PAUSE_MS = 3000;
 
 let backend = new FakeBackend(makeWorld(DEFAULT_WORLD));
 

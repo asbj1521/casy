@@ -15,9 +15,95 @@ final class AdminModel {
     /// Read once per load: "synced 5 min ago" needn't tick while the screen is open.
     private(set) var loadedAt = Date()
 
+    /// What the last deletion of an account took with it, until dismissed.
+    var notice: String?
+    /// How each re-sync from here went, by connection or user id.
+    private(set) var syncResults: [String: (ok: Bool, text: String)] = [:]
+    private(set) var syncing: Set<String> = []
+
     func reset() {
         overview = nil
         failure = nil
+        notice = nil
+        syncResults = [:]
+    }
+
+    private func api() async throws -> EdgeFunctions {
+        if let api = await Native.api() { return api }
+        throw APIError.failed(status: 401, message: CasyStrings.adminLoadFailed)
+    }
+
+    /// After an action: the overview patched at once, then fetched again
+    /// without making anyone wait; it may change the admin's own groups too.
+    private func changed(_ patch: (inout AdminOverview) -> Void) {
+        if var now = overview {
+            patch(&now)
+            overview = now
+        }
+        ProfileModel.shared.onChange?()
+        Task { await load() }
+    }
+
+    func deleteGroup(_ groupId: String) async throws {
+        try await api().adminDeleteGroup(groupId, errorMessage: CasyStrings.adminDeleteGroupFailed)
+        changed { $0.groups.removeAll { $0.id == groupId } }
+    }
+
+    func removeMember(_ profileId: String, from groupId: String) async throws {
+        try await api().adminRemoveMember(profileId, from: groupId, errorMessage: CasyStrings.adminRemoveMemberFailed)
+        changed { o in
+            guard let i = o.groups.firstIndex(where: { $0.id == groupId }) else { return }
+            o.groups[i].members.removeAll { $0.profileId == profileId }
+            if o.groups[i].members.isEmpty { o.groups.remove(at: i) }
+        }
+    }
+
+    func deleteUser(_ user: AdminOverview.User) async throws {
+        let answer = try await api().adminDeleteUser(user.id, errorMessage: CasyStrings.adminDeleteAccountFailed)
+        notice = CasyStrings.adminUserDeleted(user.name, groups: answer.deletedGroups)
+        changed { o in
+            o.users.removeAll { $0.id == user.id }
+            o.connections.removeAll { $0.ownerId == user.id }
+            for i in o.groups.indices { o.groups[i].members.removeAll { $0.profileId == user.id } }
+            o.groups.removeAll { $0.members.isEmpty }
+        }
+    }
+
+    func setTester(_ user: AdminOverview.User, _ on: Bool) async throws {
+        let now = try await api().adminSetAiTester(user.id, allowed: on, errorMessage: CasyStrings.adminAiAccessFailed)
+        changed { o in
+            if let i = o.users.firstIndex(where: { $0.id == user.id }) { o.users[i].tester = now }
+        }
+    }
+
+    /// Each sync spins and reports on its own row; several may run at once.
+    func syncUser(_ userId: String) async {
+        syncing.insert(userId)
+        defer { syncing.remove(userId) }
+        do {
+            let r = try await api().adminSyncUser(userId, errorMessage: CasyStrings.adminSyncRequestFailed)
+            syncResults[userId] = (
+                r.failed == 0, CasyStrings.adminSyncedUser(ok: r.synced, failed: r.failed, blocks: r.busyBlocks)
+            )
+            Task { await load() }
+        } catch {
+            syncResults[userId] = (false, error.localizedDescription)
+        }
+    }
+
+    func syncConnection(_ connectionId: String) async {
+        syncing.insert(connectionId)
+        defer { syncing.remove(connectionId) }
+        do {
+            let r = try await api().adminSyncConnection(connectionId, errorMessage: CasyStrings.adminSyncRequestFailed)
+            syncResults[connectionId] =
+                r.ok
+                ? (true, CasyStrings.adminSyncedBlocks(r.busyBlocks ?? 0))
+                : (false, r.message ?? CasyStrings.adminSyncFailed)
+            Task { await load() }
+        } catch {
+            syncResults[connectionId] = (false, error.localizedDescription)
+        }
     }
 
     func load() async {
@@ -69,6 +155,18 @@ struct AdminScreen: View {
                 Section {
                     // The same answer the uptime monitor gets from the health function (#88).
                     Notice(health(overview.health), tone: overview.health.ok ? .success : .error, bare: true)
+                    if let notice = model.notice {
+                        HStack(alignment: .top) {
+                            Notice(notice, tone: .success, bare: true)
+                            Button {
+                                model.notice = nil
+                            } label: {
+                                Image(systemName: "xmark").foregroundStyle(Theme.mutedForeground.color)
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel(CasyStrings.close)
+                        }
+                    }
                 }
                 stats(overview)
                 lists(overview)
@@ -182,14 +280,18 @@ struct AdminScreen: View {
                     .foregroundStyle(Theme.mutedForeground.color)
             }
             ForEach(shown) { g in
-                ListRow(
-                    g.name,
-                    detail: [
-                        CasyStrings.adminGroupMeta(
-                            CasyStrings.members(g.members.count), formatDate(g.createdAt, lang),
-                            by: g.createdByName),
-                        g.members.map(\.name).joined(separator: ", "),
-                    ].joined(separator: "\n"))
+                NavigationLink {
+                    AdminGroupScreen(groupId: g.id)
+                } label: {
+                    ListRow(
+                        g.name,
+                        detail: [
+                            CasyStrings.adminGroupMeta(
+                                CasyStrings.members(g.members.count), formatDate(g.createdAt, lang),
+                                by: g.createdByName),
+                            g.members.map(\.name).joined(separator: ", "),
+                        ].joined(separator: "\n"))
+                }
             }
         }
     }
@@ -208,6 +310,16 @@ struct AdminScreen: View {
                     .foregroundStyle(Theme.mutedForeground.color)
             }
             ForEach(shown) { u in
+                NavigationLink {
+                    AdminUserScreen(userId: u.id)
+                } label: {
+                    userRow(u)
+                }
+            }
+        }
+    }
+
+    private func userRow(_ u: AdminOverview.User) -> some View {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
@@ -238,8 +350,6 @@ struct AdminScreen: View {
                     .font(.subheadline.monospacedDigit().weight(.semibold))
                     .labelStyle(.titleAndIcon)
                 }
-            }
-        }
     }
 
     @ViewBuilder private func connections(_ overview: AdminOverview) -> some View {
@@ -276,6 +386,26 @@ struct AdminScreen: View {
                         } else if let error = c.syncError {
                             Text(error).font(.footnote).foregroundStyle(Theme.amber700.color)
                         }
+                        if let result = model.syncResults[c.id] {
+                            Text(result.text).font(.footnote.weight(.medium))
+                                .foregroundStyle(result.ok ? Theme.emerald700.color : Theme.red600.color)
+                        }
+                    }
+                    Spacer(minLength: 8)
+                    if c.status == "connected" {
+                        if model.syncing.contains(c.id) {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Button {
+                                Task { await model.syncConnection(c.id) }
+                            } label: {
+                                Image(systemName: "arrow.clockwise")
+                                    .foregroundStyle(Theme.primary.color)
+                                    .frame(minWidth: 44, minHeight: 44)
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel(CasyStrings.adminSyncTitle)
+                        }
                     }
                 }
             }
@@ -303,4 +433,204 @@ struct AdminScreen: View {
             .padding(.vertical, 1)
             .background(Capsule().fill(Theme.primary.color.opacity(0.12)))
     }
+}
+
+/// One group in admin mode: its members, each swiped left to remove, and
+/// deleting it for everyone last, asked first (design rules 8 and 11).
+struct AdminGroupScreen: View {
+    let groupId: String
+
+    private let model = AdminModel.shared
+    @Environment(\.closeSheet) private var closeSheet
+    @Environment(\.dismiss) private var dismiss
+    @State private var removing: AdminOverview.Member?
+    @State private var deleting = false
+    @State private var working = false
+    @State private var failure: String?
+
+    private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
+
+    var body: some View {
+        if let g = model.overview?.groups.first(where: { $0.id == groupId }) {
+            List {
+                Section {
+                    ForEach(Array(g.members.enumerated()), id: \.element.id) { i, m in
+                        ListAvatarRow(m.name, detail: formatDate(m.joinedAt, lang), index: i)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(CasyStrings.adminRemove) { removing = m }
+                                    .tint(Theme.red600.color)
+                            }
+                    }
+                } footer: {
+                    Text(
+                        CasyStrings.adminGroupMeta(
+                            CasyStrings.members(g.members.count), formatDate(g.createdAt, lang), by: g.createdByName))
+                }
+                Section {
+                    Button {
+                        deleting = true
+                    } label: {
+                        ListRow(CasyStrings.adminDeleteGroupTitle, systemImage: "trash", tone: .danger)
+                            .contentShape(Rectangle())
+                    }
+                    if let failure { Notice(failure, tone: .error, bare: true) }
+                }
+            }
+            .disabled(working)
+            .casyPushedBar(g.name, close: CasyStrings.done, action: closeSheet)
+            .confirmationDialog(
+                removing.map { CasyStrings.adminRemoveMember($0.name, from: g.name, last: g.members.count <= 1) } ?? "",
+                isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
+                titleVisibility: .visible, presenting: removing
+            ) { m in
+                Button(
+                    g.members.count <= 1 ? CasyStrings.adminRemoveAndDelete : CasyStrings.adminRemove,
+                    role: .destructive
+                ) {
+                    run { try await model.removeMember(m.profileId, from: g.id) }
+                }
+                Button(CasyStrings.cancel, role: .cancel) {}
+            }
+            .confirmationDialog(
+                CasyStrings.adminDeleteGroupConfirm(g.name, members: g.members.count),
+                isPresented: $deleting, titleVisibility: .visible
+            ) {
+                Button(CasyStrings.adminDeleteGroup, role: .destructive) {
+                    run { try await model.deleteGroup(g.id) }
+                }
+                Button(CasyStrings.cancel, role: .cancel) {}
+            }
+        } else {
+            // Deleted, here or since: back to the list.
+            Color.clear.task { dismiss() }
+        }
+    }
+
+    private func run(_ action: @escaping () async throws -> Void) {
+        working = true
+        failure = nil
+        Task {
+            defer { working = false }
+            do { try await action() } catch { failure = error.localizedDescription }
+        }
+    }
+}
+
+/// One account in admin mode: when it came and was last seen, its groups and
+/// calendars, the AI tester switch, a re-sync of every calendar, and deleting
+/// it last, behind typing the name (the guard against deleting the wrong one).
+struct AdminUserScreen: View {
+    let userId: String
+
+    private let model = AdminModel.shared
+    @Environment(\.closeSheet) private var closeSheet
+    @Environment(\.dismiss) private var dismiss
+    @State private var typed = ""
+    @State private var working = false
+    @State private var failure: String?
+
+    private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
+
+    var body: some View {
+        if let overview = model.overview, let u = overview.users.first(where: { $0.id == userId }) {
+            let isYou = u.id == ProfileModel.shared.userId
+            List {
+                Section {
+                    fact(CasyStrings.adminJoined(formatDate(u.createdAt, lang)), nil)
+                    if let last = u.lastSignInAt {
+                        fact(CasyStrings.adminLastSignIn(formatDate(last, lang)).trimmingCharacters(in: CharacterSet(charactersIn: " ·")), nil)
+                    }
+                    fact(CasyStrings.adminGroupsLabel.capitalizedFirst, "\(u.groups)")
+                    fact(CasyStrings.adminCalendarsLabel.capitalizedFirst, "\(u.calendars)", alert: u.calendars == 0)
+                }
+                Section {
+                    // Admins always have it; anyone else is switched here (#111).
+                    if u.ai == "admin" {
+                        fact(CasyStrings.adminAiAdmin, nil)
+                    } else if let tester = u.tester {
+                        ListSwitchRow(
+                            CasyStrings.adminTesterOn,
+                            isOn: Binding(get: { tester }, set: { on in run { try await model.setTester(u, on) } }),
+                            detail: CasyStrings.adminTesterTurnOn(u.name))
+                    }
+                    Button {
+                        Task { await model.syncUser(u.id) }
+                    } label: {
+                        HStack {
+                            ListRow(CasyStrings.adminSyncUserTitle(u.name), systemImage: "arrow.clockwise", tone: .primary)
+                            if model.syncing.contains(u.id) { ProgressView().controlSize(.small) }
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .disabled(u.calendars == 0 || model.syncing.contains(u.id))
+                    if let result = model.syncResults[u.id] {
+                        Notice(result.text, tone: result.ok ? .success : .warning, bare: true)
+                    }
+                }
+                if !isYou { deleteSection(u, overview) }
+                if let failure { Notice(failure, tone: .error, bare: true) }
+            }
+            .disabled(working)
+            .casyPushedBar(u.name, close: CasyStrings.done, action: closeSheet)
+        } else {
+            Color.clear.task { dismiss() }
+        }
+    }
+
+    /// What goes with the account, spelled out, then the name typed before the red row works.
+    @ViewBuilder private func deleteSection(_ u: AdminOverview.User, _ overview: AdminOverview) -> some View {
+        let theirs = overview.groups.filter { $0.members.contains { $0.profileId == u.id } }
+        let matches = typed.trimmingCharacters(in: .whitespaces).lowercased()
+            == u.name.trimmingCharacters(in: .whitespaces).lowercased()
+        Section {
+            TextField(u.name, text: $typed)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .accessibilityLabel(CasyStrings.adminTypeToConfirm(u.name))
+            Button {
+                // The user leaves the overview, and the screen goes back by
+                // itself (body's else): a second dismiss here would also pop Admin.
+                run { try await model.deleteUser(u) }
+            } label: {
+                ListRow(CasyStrings.adminDeleteAccount, systemImage: "trash", tone: .danger)
+                    .contentShape(Rectangle())
+            }
+            .disabled(!matches)
+        } header: {
+            Text(CasyStrings.adminTypeToConfirm(u.name))
+        } footer: {
+            Text(
+                CasyStrings.adminDeleteUserConfirm(
+                    u.name,
+                    accounts: overview.connections.filter { $0.ownerId == u.id }.count,
+                    groups: theirs.count, soleGroups: theirs.filter { $0.members.count == 1 }.count))
+        }
+    }
+
+    private func fact(_ label: String, _ value: String?, alert: Bool = false) -> some View {
+        HStack {
+            Text(label).font(.subheadline)
+            Spacer()
+            if let value {
+                Text(value)
+                    .font(.subheadline.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(alert ? Theme.amber700.color : Theme.foreground.color)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func run(_ action: @escaping () async throws -> Void) {
+        working = true
+        failure = nil
+        Task {
+            defer { working = false }
+            do { try await action() } catch { failure = error.localizedDescription }
+        }
+    }
+}
+
+extension String {
+    /// "grupper" as a row's label: "Grupper".
+    fileprivate var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }

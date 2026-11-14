@@ -419,6 +419,79 @@ public enum CasyStrings {
         return days == 1 ? text("synced.days.one") : String(format: text("synced.days.many"), days)
     }
 
+    public static var adminDeleteGroupTitle: String { text("admin.deleteGroupTitle") }
+    public static var adminDeleteGroup: String { text("admin.deleteGroup") }
+    public static var adminRemoveAndDelete: String { text("admin.removeAndDelete") }
+    public static var adminRemove: String { text("admin.remove") }
+    public static var adminDeleteAccount: String { text("admin.deleteAccount") }
+    public static var adminTheAccount: String { text("admin.theAccount") }
+    public static var adminSyncFailed: String { text("admin.syncFailed") }
+    public static var adminSyncTitle: String { text("admin.syncTitle") }
+    public static var adminTesterOff: String { text("admin.testerOff") }
+    public static var adminDeleteGroupFailed: String { text("admin.deleteGroupFailed") }
+    public static var adminRemoveMemberFailed: String { text("admin.removeMemberFailed") }
+    public static var adminDeleteAccountFailed: String { text("admin.deleteAccountFailed") }
+    public static var adminSyncRequestFailed: String { text("admin.syncRequestFailed") }
+    public static var adminAiAccessFailed: String { text("admin.aiAccessFailed") }
+    public static func adminSyncUserTitle(_ name: String) -> String { String(format: text("admin.syncUserTitle"), name) }
+    public static func adminTesterTurnOn(_ name: String) -> String { String(format: text("admin.testerTurnOn"), name) }
+    public static func adminTypeToConfirm(_ name: String) -> String { String(format: text("admin.typeToConfirm"), name) }
+    /// Asked before deleting a group for everyone in it.
+    public static func adminDeleteGroupConfirm(_ name: String, members: Int) -> String {
+        members == 1
+            ? String(format: text("admin.deleteGroupConfirm.one"), name)
+            : String(format: text("admin.deleteGroupConfirm.many"), name, members)
+    }
+    /// Asked before taking someone out of a group; the last one out deletes it.
+    public static func adminRemoveMember(_ name: String, from group: String, last: Bool) -> String {
+        String(format: text(last ? "admin.removeLast" : "admin.removeMember"), name, group)
+    }
+    /// What deleting an account takes with it, spelled out before it is asked.
+    public static func adminDeleteUserConfirm(
+        _ name: String, accounts: Int, groups: Int, soleGroups: Int
+    ) -> String {
+        let accountsPart = accounts == 1
+            ? text("admin.impactAccounts.one") : String(format: text("admin.impactAccounts.many"), accounts)
+        let groupsPart: String
+        if groups == 0 {
+            groupsPart = text("admin.impactNoGroups")
+        } else if soleGroups == 0 {
+            groupsPart = groups == 1
+                ? text("admin.impactGroups.one") : String(format: text("admin.impactGroups.many"), groups)
+        } else {
+            switch (groups == 1, soleGroups == 1) {
+            case (true, true): groupsPart = text("admin.impactSole.oneOne")
+            case (true, false): groupsPart = String(format: text("admin.impactSole.oneMany"), soleGroups)
+            case (false, true): groupsPart = String(format: text("admin.impactSole.manyOne"), groups)
+            case (false, false):
+                groupsPart = String(format: text("admin.impactSole.manyMany"), groups, soleGroups)
+            }
+        }
+        return String(
+            format: text("admin.deleteUserConfirm"), name, accountsPart + text("admin.and") + groupsPart)
+    }
+    /// "Sara blev slettet, sammen med 1 gruppe, kun personen var med i."
+    public static func adminUserDeleted(_ who: String, groups: Int) -> String {
+        switch groups {
+        case 0: String(format: text("admin.userDeleted.none"), who)
+        case 1: String(format: text("admin.userDeleted.one"), who)
+        default: String(format: text("admin.userDeleted.many"), who, groups)
+        }
+    }
+    public static func adminSyncedBlocks(_ n: Int) -> String {
+        n == 1 ? text("admin.syncedBlocks.one") : String(format: text("admin.syncedBlocks.many"), n)
+    }
+    /// How a person's re-sync went: every account, or how many of them.
+    public static func adminSyncedUser(ok: Int, failed: Int, blocks: Int) -> String {
+        if failed > 0 { return String(format: text("admin.syncedUser.failed"), ok, ok + failed) }
+        switch (ok == 1, blocks == 1) {
+        case (true, true): return text("admin.syncedUser.oneOne")
+        case (true, false): return String(format: text("admin.syncedUser.oneMany"), blocks)
+        case (false, true): return String(format: text("admin.syncedUser.manyOne"), ok)
+        case (false, false): return String(format: text("admin.syncedUser.manyMany"), ok, blocks)
+        }
+    }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

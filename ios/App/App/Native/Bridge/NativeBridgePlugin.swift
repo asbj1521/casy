@@ -73,6 +73,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         /// The UI tests' way in: a made-up login and a screen open at once.
         private func startTestLaunch() {
             guard let connection = TestLaunch.connection() else { return }
+            // No animations under test: a sheet or a push is there at once, and
+            // the suite runs in a fraction of the time. A test launch only.
+            UIView.setAnimationsEnabled(false)
             Task { @MainActor in
                 await SessionBox.shared.set(connection)
                 if let lang = TestLaunch.lang { NativePreferences.shared.lang = lang }

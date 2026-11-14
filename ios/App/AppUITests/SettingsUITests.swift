@@ -2,6 +2,13 @@ import XCTest
 
 /// Native Indstillinger, signed in against the fake backend (scripts/native/ui-tests.sh).
 final class SettingsUITests: XCTestCase {
+    /// Each test finds the world as it was: one saves a notification switch.
+    override func setUp() async throws {
+        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        reset.httpMethod = "POST"
+        _ = try await URLSession.shared.data(for: reset)
+    }
+
     private func launch(push: String = "granted", lang: String = "da") -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -74,20 +81,17 @@ final class SettingsUITests: XCTestCase {
         let before = isOn(row)
 
         flip(row)
-        // Well inside the fake server's 8 seconds: this is the switch alone.
-        XCTAssertTrue(waitUntil(row, isOn: !before, within: 4), "it waited for the server")
+        // Well inside the fake server's 3 seconds: this is the switch alone.
+        XCTAssertTrue(waitUntil(row, isOn: !before, within: 2), "it waited for the server")
         // Past the fake server's pause, so the save has landed.
-        sleep(10)
+        sleep(4)
 
         app.terminate()
         app = launch()
         row = toggle(app, label)
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         XCTAssertTrue(waitUntil(row, isOn: !before, within: 5), "the save didn't stick")
-
-        // Back as it was, for the other tests.
-        flip(row)
-        sleep(10)
+        // The next test starts from a fresh world (setUp), so nothing is put back.
     }
 
     func testNotAskedYetOffersToTurnThemOn() {

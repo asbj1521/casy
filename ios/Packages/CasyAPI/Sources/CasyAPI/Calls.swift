@@ -126,6 +126,38 @@ private struct Unblock: Encodable, Sendable {
     let profileId: String
 }
 
+private struct AdminGroup: Encodable, Sendable {
+    let action: String
+    let groupId: String
+}
+
+private struct AdminMember: Encodable, Sendable {
+    let action = "removeMember"
+    let groupId: String
+    let profileId: String
+}
+
+private struct AdminUser: Encodable, Sendable {
+    let action = "deleteUser"
+    let profileId: String
+}
+
+private struct AdminSyncUser: Encodable, Sendable {
+    let action = "syncUser"
+    let userId: String
+}
+
+private struct AdminSyncConnection: Encodable, Sendable {
+    let action = "syncConnection"
+    let connectionId: String
+}
+
+private struct AdminTester: Encodable, Sendable {
+    let action = "setAiTester"
+    let profileId: String
+    let allowed: Bool
+}
+
 private struct BlockSender: Encodable, Sendable {
     let action = "block"
     let invitationGroupId: String
@@ -370,6 +402,45 @@ extension EdgeFunctions {
     /// Everything admin mode shows; the server checks who is asking.
     public func adminOverview(errorMessage: String? = nil) async throws -> AdminOverview {
         try await call("admin", body: Action(action: "overview"), errorMessage: errorMessage)
+    }
+
+    public func adminDeleteGroup(_ groupId: String, errorMessage: String? = nil) async throws {
+        let _: Outcome = try await call(
+            "admin", body: AdminGroup(action: "deleteGroup", groupId: groupId), errorMessage: errorMessage)
+    }
+
+    /// Takes someone out of a group; the last one out deletes it.
+    public func adminRemoveMember(
+        _ profileId: String, from groupId: String, errorMessage: String? = nil
+    ) async throws {
+        let _: Outcome = try await call(
+            "admin", body: AdminMember(groupId: groupId, profileId: profileId), errorMessage: errorMessage)
+    }
+
+    /// Deletes an account; answers how many groups went with it.
+    public func adminDeleteUser(_ profileId: String, errorMessage: String? = nil) async throws -> AdminDeleted {
+        try await call("admin", body: AdminUser(profileId: profileId), errorMessage: errorMessage)
+    }
+
+    /// Every calendar account of one person, synced now.
+    public func adminSyncUser(_ userId: String, errorMessage: String? = nil) async throws -> AdminUserSync {
+        try await call("admin", body: AdminSyncUser(userId: userId), errorMessage: errorMessage)
+    }
+
+    public func adminSyncConnection(
+        _ connectionId: String, errorMessage: String? = nil
+    ) async throws -> AdminConnectionSync {
+        try await call(
+            "admin", body: AdminSyncConnection(connectionId: connectionId), errorMessage: errorMessage)
+    }
+
+    /// An AI tester gets every AI feature otherwise only for admins (#111).
+    public func adminSetAiTester(
+        _ profileId: String, allowed: Bool, errorMessage: String? = nil
+    ) async throws -> Bool {
+        let answer: AdminTesterAnswer = try await call(
+            "admin", body: AdminTester(profileId: profileId, allowed: allowed), errorMessage: errorMessage)
+        return answer.tester
     }
 
     public func isAdmin(errorMessage: String? = nil) async throws -> Bool {

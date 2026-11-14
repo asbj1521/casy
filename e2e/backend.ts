@@ -252,7 +252,23 @@ export class FakeBackend {
           }
           return ok({ outcome: "removed" });
         }
-        if (action === "overview") return ok(adminOverview(w));
+        if (action === "overview") {
+          const overview = adminOverview(w);
+          return ok({
+            ...overview,
+            users: overview.users.filter((u) => !w.adminDeleted.has(u.id)),
+          });
+        }
+        // Admin mode's actions (#198's native Admin): what the real function
+        // answers, the world changed as far as the overview shows it.
+        if (action === "deleteGroup") return ok({ outcome: "deleted" });
+        if (action === "removeMember") return ok({ outcome: "left" });
+        if (action === "deleteUser") {
+          w.adminDeleted.add(String(body.profileId));
+          return ok({ outcome: "deleted", leftGroups: 1, deletedGroups: 0 });
+        }
+        if (action === "syncUser") return ok({ synced: 1, failed: 0, busyBlocks: 3 });
+        if (action === "syncConnection") return ok({ ok: true, busyBlocks: 3 });
         if (action === "setAiTester") {
           const id = String(body.profileId);
           if (body.allowed) w.testers.add(id);

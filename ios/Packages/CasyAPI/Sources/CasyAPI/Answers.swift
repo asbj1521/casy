@@ -261,6 +261,28 @@ public struct AdminOverview: Codable, Sendable, Equatable {
     public var connections: [Connection]
 }
 
+public struct AdminDeleted: Codable, Sendable, Equatable {
+    public var outcome: String
+    public var leftGroups: Int
+    public var deletedGroups: Int
+}
+
+public struct AdminUserSync: Codable, Sendable, Equatable {
+    public var synced: Int
+    public var failed: Int
+    public var busyBlocks: Int
+}
+
+public struct AdminConnectionSync: Codable, Sendable, Equatable {
+    public var ok: Bool
+    public var message: String?
+    public var busyBlocks: Int?
+}
+
+public struct AdminTesterAnswer: Codable, Sendable, Equatable {
+    public var tester: Bool
+}
+
 public struct AdminStatus: Codable, Sendable, Equatable {
     public var isAdmin: Bool
 }

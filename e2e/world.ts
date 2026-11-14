@@ -572,6 +572,8 @@ export interface World {
   admin: false | "current" | "beforeAi";
   /** Who an admin marked as an AI tester. */
   testers: Set<string>;
+  /** Accounts admin mode deleted, gone from its overview. */
+  adminDeleted: Set<string>;
   connections: CalendarConnectionStatus[];
   primary: { calendarId: string; autoAdd: boolean } | null;
   /** What Mia told Casy that is in no calendar (#116); none until a test saves some. */
@@ -618,6 +620,7 @@ export function makeWorld(options: WorldOptions): World {
     corrections: [],
     admin: false,
     testers: new Set(),
+    adminDeleted: new Set(),
     connections: connected ? connections() : [],
     primary: connected ? { calendarId: "cal-private", autoAdd: false } : null,
     entries: [],

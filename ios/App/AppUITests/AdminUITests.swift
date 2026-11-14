@@ -40,4 +40,43 @@ final class AdminUITests: XCTestCase {
         list.swipeUp(velocity: .slow)
         XCTAssertTrue(app.staticTexts["Ingen kalenderkonti passer til det."].waitForExistence(timeout: 10))
     }
+
+    /// An account opens on its own screen; deleting it waits for its name,
+    /// then goes back to the list with a note of what went (#198).
+    func testDeletingAnAccountWaitsForItsNameThenSaysWhatWent() {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-casyBackend", "http://localhost:4318",
+            "-casyOpenScreen", "profile",
+            "-casyPushPermission", "granted",
+            "-casyLang", "da",
+        ]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<6 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        row.tap()
+        XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
+        app.segmentedControls.buttons["Brugere"].tap()
+        list.swipeUp(velocity: .slow)
+        let sara = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Sara")).firstMatch
+        XCTAssertTrue(sara.waitForExistence(timeout: 10))
+        sara.tap()
+        XCTAssertTrue(app.navigationBars["Sara"].waitForExistence(timeout: 10))
+
+        let delete = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Slet konto")).firstMatch
+        for _ in 0..<4 where !(delete.exists && delete.isHittable) { list.swipeUp(velocity: .slow) }
+        XCTAssertFalse(delete.isEnabled, "deletable before the name is typed")
+        let field = app.textFields.firstMatch
+        field.tap()
+        field.typeText("sara")
+        XCTAssertTrue(delete.isEnabled)
+        delete.tap()
+
+        XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
+        for _ in 0..<4 { list.swipeDown(velocity: .fast) }
+        XCTAssertTrue(app.staticTexts["Sara blev slettet."].waitForExistence(timeout: 10))
+    }
 }
+

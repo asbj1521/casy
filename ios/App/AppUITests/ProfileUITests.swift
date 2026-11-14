@@ -29,11 +29,16 @@ final class ProfileUITests: XCTestCase {
 
     func testShowsEveryRow() {
         let app = launch()
+        let list = app.collectionViews.firstMatch
+        // The rows on screen first, then one quick swipe for the rest: a list
+        // only draws what is on screen, so a row not there yet is further down.
         for label in [
             "Grupper", "Venner", "Log ind og sikkerhed", "Send feedback", "Del appen", "Dine data",
             "Hjælp og kontakt", "Sådan virker det", "Vilkår", "Privatliv", "Log ud", "Slet konto",
         ] {
-            XCTAssertTrue(row(app, label).waitForExistence(timeout: 10), label)
+            let element = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
+            if !element.waitForExistence(timeout: 3) { list.swipeUp(velocity: .fast) }
+            XCTAssertTrue(element.waitForExistence(timeout: 5), label)
         }
     }
 
