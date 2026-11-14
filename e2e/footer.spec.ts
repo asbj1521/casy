@@ -41,10 +41,12 @@ test.describe("signed in", () => {
 test.describe("signed out", () => {
   test.use({ signedIn: false });
 
-  test("the footer is there, phone and computer alike: the home page needs the privacy link", async ({
+  test("the home page has the privacy link: the footer on a computer, the welcome's on a phone (#278)", async ({
     page,
+    isMobile,
   }) => {
     await page.goto("/");
-    await expect(page.getByRole("contentinfo").getByRole("link", PRIVACY)).toBeVisible();
+    const area = isMobile ? page.getByRole("main") : page.getByRole("contentinfo");
+    await expect(area.getByRole("link", PRIVACY)).toBeVisible();
   });
 });

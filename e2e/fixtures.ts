@@ -151,6 +151,9 @@ export const test = base.extend<Options & Fixtures>({
             return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
           };
         };
+        // The welcome's intro (#275) plays for 15 s: tests start after it, but for the intro's own.
+        const w = window as unknown as { __casySkipIntro?: boolean };
+        if (w.__casySkipIntro === undefined) w.__casySkipIntro = true;
         Math.random = seeded(20261007);
         (window as unknown as { __casyRandom: () => number }).__casyRandom = seeded(20261007);
         // Signed in once per tab, so signing out in a test stays signed out.

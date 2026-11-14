@@ -65,6 +65,7 @@ export const en: Messages = {
     headline: "We'll find the day for you.",
     start: "Find a day",
     haveAccount: "Already have an account?",
+    inTheBrowser: "Or carry on in the browser",
     back: "Back",
     you: "You",
     event: "Board games night",

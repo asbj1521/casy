@@ -2,12 +2,16 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNod
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
+import { SiApple } from "react-icons/si";
 
+import LanguageToggle from "@/components/LanguageToggle";
 import GlassButton from "@/components/ui/GlassButton";
 import WelcomeIntro from "@/components/welcome/WelcomeIntro";
 import WelcomeStage from "@/components/welcome/WelcomeStage";
 import { rectOfCard, type MorphRect } from "@/components/welcome/phone/morph";
 import { useT } from "@/i18n/lang";
+import { APP_STORE_URL } from "@/lib/appStore";
+import { onIPhoneBrowser } from "@/lib/iphoneBrowser";
 import { loadPage } from "@/pages/lazyPages";
 
 // Only for the friend who came by an invite (#237): fetched when asked for.
@@ -21,13 +25,22 @@ const InvitePasteSheet = lazy(() => import("@/components/invite/InvitePasteSheet
  * runs the same thing the other way. Under the phone, never moving, one line and
  * the two ways on, to make an account or to log in, and for a friend who got
  * the app from an invite, the way back to it (#237). No language switch on the
- * welcome screen (the app starts in the phone's language). The website keeps its
- * landing page.
+ * welcome screen (the app starts in the phone's language).
+ *
+ * A phone's website shows it too, signed out, at / (#278), as its own page:
+ * the buttons lead to the website's sign-in page rather than morphing into it.
+ * There an iPhone is sent to the App Store first, with the website as the
+ * small second choice; there is no "Indsæt link" (the app's clipboard), and a
+ * row of small links (how it works, terms, privacy, which Google wants
+ * reachable from the home page) and the language switch take its place.
  */
 export default function AppWelcome({
   signIn = false,
+  website = false,
   children,
 }: {
+  /** The phone website's front page (#278), not the app. */
+  website?: boolean;
   /** At /sign-in: the page (`children`) is open over the colour. */
   signIn?: boolean;
   children?: ReactNode;
@@ -98,31 +111,65 @@ export default function AppWelcome({
         <h1 className="whitespace-nowrap text-[min(1.75rem,7.2vw)] font-bold leading-tight tracking-tight text-foreground">
           {t.welcome.headline}
         </h1>
-        <Link
-          to="/sign-in?signup=1"
-          className="mt-5 flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
-        >
-          {t.welcome.start}
-        </Link>
-        <p className="mt-4 text-[0.9375rem] text-muted-foreground">
-          {t.welcome.haveAccount}{" "}
-          <Link to="/sign-in" className="hit font-semibold text-foreground">
-            {t.nav.signIn}
-          </Link>
-        </p>
-        <p className="mt-1 text-[0.9375rem] text-muted-foreground">
-          {t.invitePaste.ask}{" "}
-          <button
-            type="button"
-            onClick={() => {
-              setPasteWanted(true);
-              setPasting(true);
-            }}
-            className="hit font-semibold text-foreground"
-          >
-            {t.invitePaste.paste}
-          </button>
-        </p>
+        {website && onIPhoneBrowser ? (
+          <>
+            <a
+              href={APP_STORE_URL}
+              className="mt-5 flex h-14 items-center justify-center gap-2.5 rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
+            >
+              <SiApple aria-hidden className="h-5 w-5" />
+              {t.computerAd.appStore}
+            </a>
+            <p className="mt-4 text-[0.9375rem] text-muted-foreground">
+              <Link to="/sign-in?signup=1" className="hit font-semibold text-foreground">
+                {t.welcome.inTheBrowser}
+              </Link>
+            </p>
+          </>
+        ) : (
+          <>
+            <Link
+              to="/sign-in?signup=1"
+              className="mt-5 flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
+            >
+              {t.welcome.start}
+            </Link>
+            <p className="mt-4 text-[0.9375rem] text-muted-foreground">
+              {t.welcome.haveAccount}{" "}
+              <Link to="/sign-in" className="hit font-semibold text-foreground">
+                {t.nav.signIn}
+              </Link>
+            </p>
+          </>
+        )}
+        {website ? (
+          <div className="mt-4 flex items-center justify-center gap-4 text-[0.8125rem] text-muted-foreground">
+            <Link to="/how-it-works" className="hit">
+              {t.footer.howItWorks}
+            </Link>
+            <Link to="/terms" className="hit">
+              {t.footer.terms}
+            </Link>
+            <Link to="/privacy" className="hit">
+              {t.footer.privacy}
+            </Link>
+            <LanguageToggle />
+          </div>
+        ) : (
+          <p className="mt-1 text-[0.9375rem] text-muted-foreground">
+            {t.invitePaste.ask}{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setPasteWanted(true);
+                setPasting(true);
+              }}
+              className="hit font-semibold text-foreground"
+            >
+              {t.invitePaste.paste}
+            </button>
+          </p>
+        )}
       </motion.div>
       <AnimatePresence>
         {intro && (

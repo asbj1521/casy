@@ -70,7 +70,7 @@ const ConnectOutlookHelp = lazy(loadPage.connectOutlook);
 const MotionPlayground = import.meta.env.DEV
   ? lazy(() => import("@/pages/dev/MotionPlayground"))
   : null;
-// The app's own first screen (#151): never downloaded by the website.
+// The app's own first screen (#151), and a signed-out phone's website's (#278).
 const AppWelcome = lazy(() => import("@/components/welcome/AppWelcome"));
 const TripsPlayground = import.meta.env.DEV
   ? lazy(() => import("@/pages/dev/TripsPlayground"))
@@ -103,7 +103,9 @@ function Home() {
   const phone = usePhoneLayout();
   if (loading) return <div className="min-h-screen bg-background" />;
   if (user) return phone ? <CalendarOverview /> : <FindDate />;
-  return isNativeApp ? null : <Landing />;
+  if (isNativeApp) return null;
+  // A phone's website opens like the app (#278); the old landing page is the computer's.
+  return phone ? <AppWelcome website /> : <Landing />;
 }
 
 /**

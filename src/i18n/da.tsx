@@ -72,6 +72,7 @@ export const da = {
     headline: "Vi finder dagen for jer.",
     start: "Find en dag",
     haveAccount: "Har du allerede en konto?",
+    inTheBrowser: "Eller fortsæt på hjemmesiden",
     back: "Tilbage",
     you: "Dig",
     event: "Brætspilsaften",

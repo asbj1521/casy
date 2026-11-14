@@ -187,6 +187,10 @@ for (const { name, path, world, signedIn, phoneSheet } of PAGES) {
         "a computer's open event is event-vote's pane",
       );
       test.skip(isMobile && name.startsWith("scheduler"), "a phone plans from My calendar (#127)");
+      test.skip(
+        isMobile && name === "landing",
+        "a phone's front page is the moving welcome (#278)",
+      );
       await page.goto(path);
       await expectPage(page, name, isMobile, path, phoneSheet);
     });
@@ -226,6 +230,10 @@ test.describe("dark", () => {
         test.skip(
           isMobile && name.startsWith("scheduler"),
           "a phone plans from My calendar (#127)",
+        );
+        test.skip(
+          isMobile && name === "landing",
+          "a phone's front page is the moving welcome (#278)",
         );
         await page.goto(path);
         await expectPage(page, `${name}-dark`, isMobile, path, phoneSheet);

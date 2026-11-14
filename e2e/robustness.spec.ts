@@ -9,12 +9,17 @@ import { expect, test } from "./fixtures";
 test.describe("signed out", () => {
   test.use({ signedIn: false });
 
-  test("switching to English loads it, and the page is drawn in English", async ({ page }) => {
+  test("switching to English loads it, and the page is drawn in English", async ({
+    page,
+    isMobile,
+  }) => {
+    // A phone's front page is the app's welcome (#278), a computer's the landing page.
+    const danish = isMobile ? "Vi finder dagen for jer." : "Hvornår kan I?";
     await page.goto("/");
-    await expect(page.getByText("Hvornår kan I?")).toBeVisible();
+    await expect(page.getByText(danish)).toBeVisible();
     await page.getByRole("radio", { name: "English" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    await expect(page.getByText("Hvornår kan I?")).toHaveCount(0);
+    await expect(page.getByText(danish)).toHaveCount(0);
   });
 
   test("a page opened in English starts in English", async ({ page }) => {

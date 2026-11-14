@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { useAuth } from "@/context/auth";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
@@ -13,15 +13,17 @@ import { isNativeApp } from "@/lib/nativeApp";
  * Not in the iPhone app, whose profile lists all three (HelpGroup), and not
  * on a signed-in phone either: its profile lists them too, and a footer
  * under a page that is shorter than the screen showed up above the old tab
- * bar on some pages and not on others. Signed out, a phone keeps it, for the
- * privacy link the home page must have.
+ * bar on some pages and not on others. Signed out, a phone keeps it, but its
+ * front page has the same links on the welcome screen itself (#278).
  */
 export default function Footer() {
   const t = useT();
   const { lang } = useLang();
   const { user, loading } = useAuth();
   const phone = usePhoneLayout();
-  const hidden = isNativeApp || (phone && (loading || !!user));
+  const { pathname } = useLocation();
+  // Signed out, a phone's front page is the app's welcome (#278), with these links on it.
+  const hidden = isNativeApp || (phone && (loading || !!user || pathname === "/"));
   // Pages sized to the screen leave room for the footer (--footer-height in index.css).
   useEffect(() => {
     document.documentElement.classList.toggle("no-footer", hidden);

@@ -25,6 +25,10 @@ test.describe("a computer", () => {
     test.use({ signedIn: false });
 
     test("sees the ad on every address of the app, with a code to the app", async ({ page }) => {
+      // With its intro, which the other tests skip (fixtures.ts).
+      await page.addInitScript(() => {
+        (window as unknown as { __casySkipIntro: boolean }).__casySkipIntro = false;
+      });
       for (const path of ["/", "/plan", "/groups", "/profile", "/nowhere"]) {
         await page.goto(path);
         await expect(page.getByText("Det siger alle. Appen finder den så.")).toBeVisible();

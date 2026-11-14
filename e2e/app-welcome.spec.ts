@@ -1,8 +1,8 @@
 /**
  * The iPhone app's own first screen (#151): signed out, the app opens on a
  * welcome screen (a phone playing the app, #228; one line, Kom i gang, Log ind)
- * with no tab bar; sign-in leads back to it, the privacy policy to sign-in. The website keeps
- * its landing page.
+ * with no tab bar; sign-in leads back to it, the privacy policy to sign-in. A
+ * phone's website opens on it too (#278).
  */
 import type { Locator, Page } from "@playwright/test";
 
@@ -15,8 +15,8 @@ test.beforeEach(({ isMobile }) => test.skip(!isMobile, "the app is a phone"));
 async function asTheApp(page: Page, { intro = false }: { intro?: boolean } = {}) {
   await page.addInitScript((intro) => {
     (window as unknown as { Capacitor: object }).Capacitor = { isNativePlatform: () => true };
-    // The intro (#275) plays each time; most tests start after it.
-    if (!intro) (window as unknown as { __casySkipIntro: boolean }).__casySkipIntro = true;
+    // The intro (#275) plays each time; most tests start after it (fixtures.ts skips it).
+    (window as unknown as { __casySkipIntro: boolean }).__casySkipIntro = !intro;
   }, intro);
 }
 
@@ -71,15 +71,41 @@ test("the app opens on its welcome screen, which leads to sign-in and the legal 
   await expect(page).toHaveURL(/\/sign-in\?signup=1$/);
 });
 
-test("the website keeps its landing page, and its header leads to sign-in (#169)", async ({
+test("a phone's website opens like the app, with its links and language switch (#278)", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Vi finder dagen for jer." })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Tilbage" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Vi finder dagen for jer." })).toBeVisible();
+  await expect(page.getByText("Dine data, kort fortalt")).toHaveCount(0);
+  // The app's clipboard is the app's: no "Indsæt link" here.
+  await expect(page.getByRole("button", { name: "Indsæt link" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Privatliv" })).toBeVisible();
+  await expect(page.getByRole("contentinfo")).toHaveCount(0);
+  await page.getByRole("radio", { name: "English" }).click();
+  await expect(page.getByRole("heading", { name: "We'll find the day for you." })).toBeVisible();
+  await page.getByRole("radio", { name: "Dansk" }).click();
+  // Its own sign-in page, with the website's header.
+  await page.getByRole("link", { name: "Find en dag" }).click();
+  await expect(page).toHaveURL(/\/sign-in\?signup=1$/);
+  await expect(page.getByRole("banner")).toBeVisible();
   await page.goto("/privacy");
   await page.getByRole("banner").getByRole("link", { name: "Log ind" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test.describe("on an iPhone's browser", () => {
+  test.use({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) Safari/604.1" });
+
+  test("the App Store comes first, the website second (#278)", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: "Hent i App Store" })).toHaveAttribute(
+      "href",
+      "https://apps.apple.com/app/id6830713238",
+    );
+    await expect(page.getByRole("link", { name: "Find en dag" })).toHaveCount(0);
+    await page.getByRole("link", { name: "Eller fortsæt på hjemmesiden" }).click();
+    await expect(page).toHaveURL(/\/sign-in\?signup=1$/);
+  });
 });
 
 test("every page the signed out app can open has a way back", async ({ page }) => {
