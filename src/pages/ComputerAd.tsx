@@ -190,12 +190,11 @@ export default function ComputerAd({ kind = "home" }: { kind?: "home" | "invite"
       </div>
       <main className="relative mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
         {/* Over the colour shapes, which spill out from beside the phone. */}
-        <section className="relative z-10 flex min-w-0 max-w-[30rem] flex-col items-start">
-          <h1>
-            <LogoMark
-              label={appName(lang)}
-              className="block w-[min(21rem,28vw,34vh)] text-[#FF4D00]"
-            />
+        <section className="relative z-10 flex w-fit min-w-0 max-w-[36rem] flex-col items-start">
+          {/* As wide as the column's longest line, so the name spans the text under it;
+              never so tall that the card falls below a short window. */}
+          <h1 className="w-full max-w-[46vh]">
+            <LogoMark label={appName(lang)} className="block h-auto w-full text-[#FF4D00]" />
           </h1>
           <p className="mt-8 text-[1.625rem] font-bold leading-tight">{t.computerAd.tagline}</p>
           <p className="mt-2 text-[1.0625rem] leading-relaxed text-muted-foreground">
