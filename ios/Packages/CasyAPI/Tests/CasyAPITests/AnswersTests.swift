@@ -199,6 +199,26 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     _ = try readsWithNothingLost("admin-remove-member", as: Outcome.self)
     _ = try readsWithNothingLost("admin-delete-user", as: AdminDeleted.self)
     _ = try readsWithNothingLost("admin-sync-user", as: AdminUserSync.self)
+    _ = try readsWithNothingLost("admin-report-handled", as: Outcome.self)
+    _ = try readsWithNothingLost("admin-remove-avatar", as: Outcome.self)
+    _ = try readsWithNothingLost("admin-remove-group-picture", as: Outcome.self)
+    _ = try readsWithNothingLost("admin-correction-handled", as: Outcome.self)
+    _ = try readsWithNothingLost("admin-push-test", as: PushTestAnswer.self)
     _ = try readsWithNothingLost("admin-sync-connection", as: AdminConnectionSync.self)
     #expect(try readsWithNothingLost("admin-set-ai-tester", as: AdminTesterAnswer.self).tester)
+}
+
+@Test func adminReviewsRead() throws {
+    let reports = try readsWithNothingLost("admin-reports", as: AdminReports.self).reports
+    #expect(reports.map(\.kind) == ["group", "member"])
+    #expect(reports[1].content.memberId == "p-kim")
+    let corrections = try readsWithNothingLost("admin-corrections", as: AdminCorrections.self).corrections
+    #expect(corrections.map(\.kind) == ["plan", "label", "plan"])
+    let label = try #require(corrections[1].data.decoded(as: LabelCorrection.self))
+    #expect(label.previous.importance == "normal" && label.label.importance == "critical")
+    let plan = try #require(corrections[2].data.decoded(as: PlanCorrection.self))
+    #expect(plan.overridden == ["startHour"])
+    #expect(plan.plan["startHour"]?.compactJSON == "18" && plan.final["startHour"]?.compactJSON == "16")
+    #expect(plan.plan["weekdays"]?.compactJSON == "[5,6]")
+    #expect(plan.plan["kind"]?.compactJSON == "\"evening\"")
 }

@@ -126,6 +126,9 @@ final class AdminModel {
 struct AdminScreen: View {
     private enum Tab: Hashable { case groups, users, calendars }
 
+    /// For the push test: turns notifications on through the web view.
+    let enablePush: () async -> String
+
     private let model = AdminModel.shared
     @Environment(\.closeSheet) private var closeSheet
     @State private var tab = Tab.groups
@@ -168,6 +171,7 @@ struct AdminScreen: View {
                         }
                     }
                 }
+                AdminReviewRows(enablePush: enablePush)
                 stats(overview)
                 lists(overview)
             } else if model.failure == nil {
@@ -182,7 +186,11 @@ struct AdminScreen: View {
         .casyPushedBar(CasyStrings.adminTitle, close: CasyStrings.done, action: closeSheet)
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: CasyStrings.adminSearch)
         .task { await model.load() }
-        .refreshable { await model.load() }
+        .refreshable {
+            async let overview: Void = model.load()
+            async let reviews: Void = AdminReviewsModel.shared.load()
+            _ = await (overview, reviews)
+        }
     }
 
     private func health(_ health: AdminOverview.Health) -> String {

@@ -142,6 +142,21 @@ private struct AdminUser: Encodable, Sendable {
     let profileId: String
 }
 
+private struct AdminId: Encodable, Sendable {
+    let action: String
+    let id: String
+}
+
+private struct AdminAvatar: Encodable, Sendable {
+    let action = "removeAvatar"
+    let memberId: String
+}
+
+private struct LangAction: Encodable, Sendable {
+    let action: String
+    let lang: String
+}
+
 private struct AdminSyncUser: Encodable, Sendable {
     let action = "syncUser"
     let userId: String
@@ -441,6 +456,50 @@ extension EdgeFunctions {
         let answer: AdminTesterAnswer = try await call(
             "admin", body: AdminTester(profileId: profileId, allowed: allowed), errorMessage: errorMessage)
         return answer.tester
+    }
+
+    /// What people reported, newest first (#142).
+    public func adminReports(errorMessage: String? = nil) async throws -> [AdminReport] {
+        let answer: AdminReports = try await call(
+            "admin", body: Action(action: "reports"), errorMessage: errorMessage)
+        return answer.reports
+    }
+
+    /// One dealt with: deleted (#142).
+    public func adminReportHandled(_ id: String, errorMessage: String? = nil) async throws {
+        let _: Outcome = try await call(
+            "admin", body: AdminId(action: "reportHandled", id: id), errorMessage: errorMessage)
+    }
+
+    /// A reported member's profile picture taken down (#187).
+    public func adminRemoveAvatar(_ memberId: String, errorMessage: String? = nil) async throws {
+        let _: Outcome = try await call(
+            "admin", body: AdminAvatar(memberId: memberId), errorMessage: errorMessage)
+    }
+
+    /// A reported group's picture taken down (#188).
+    public func adminRemoveGroupPicture(_ groupId: String, errorMessage: String? = nil) async throws {
+        let _: Outcome = try await call(
+            "admin", body: AdminGroup(action: "removeGroupPicture", groupId: groupId),
+            errorMessage: errorMessage)
+    }
+
+    /// The corrections of the AI sent for review, newest first (#122).
+    public func adminCorrections(errorMessage: String? = nil) async throws -> [AdminCorrection] {
+        let answer: AdminCorrections = try await call(
+            "admin", body: Action(action: "corrections"), errorMessage: errorMessage)
+        return answer.corrections
+    }
+
+    /// One reviewed: its lesson is in the prompt or the evals now, so it is deleted.
+    public func adminCorrectionHandled(_ id: String, errorMessage: String? = nil) async throws {
+        let _: Outcome = try await call(
+            "admin", body: AdminId(action: "correctionHandled", id: id), errorMessage: errorMessage)
+    }
+
+    /// A test notification to the admin's own phones (#139).
+    public func adminPushTest(lang: String, errorMessage: String? = nil) async throws -> PushTestAnswer {
+        try await call("admin", body: LangAction(action: "pushTest", lang: lang), errorMessage: errorMessage)
     }
 
     public func isAdmin(errorMessage: String? = nil) async throws -> Bool {

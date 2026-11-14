@@ -88,6 +88,14 @@ public func formatDayMonthYear(_ iso: String, _ lang: Lang) -> String {
     return lang == .da ? "\(d.day). \(month) \(d.year)" : "\(d.day) \(month) \(d.year)"
 }
 
+/// "1. sep." / "1 Sept", in Danish time: when a report or correction came (admin).
+public func formatDayMonth(_ iso: String, _ lang: Lang) -> String {
+    guard let ms = parseInstant(iso) else { return "" }
+    let d = localDate(ms, appTimeZone)
+    let month = names(lang).monthsShort[d.month]
+    return lang == .da ? "\(d.day). \(month)" : "\(d.day) \(month)"
+}
+
 /// "1. september 2026" / "1 September 2026", in Danish time.
 public func formatDayLongMonthYear(_ iso: String, _ lang: Lang) -> String {
     guard let ms = parseInstant(iso) else { return "" }

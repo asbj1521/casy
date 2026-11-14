@@ -6,11 +6,13 @@
  * POST /reset starts the world again, for a test that changes it (leaving a
  * group, answering an invitation) so the next one finds it as it was; a body
  * of `{ friends: [...] }` starts it with those friends from groups since gone,
- * and `{ admin: true }` with Mia an admin.
+ * `{ admin: true }` with Mia an admin, and `{ reviews: true }` with reports
+ * and AI corrections waiting for her (e2e/adminReviews.ts).
  */
 import { createServer } from "node:http";
 import process from "node:process";
 
+import { addReviews } from "../../e2e/adminReviews";
 import { FakeBackend } from "../../e2e/backend";
 import { DEFAULT_WORLD, makeWorld } from "../../e2e/world";
 
@@ -36,9 +38,11 @@ createServer((request, response) => {
       const seed = (text ? JSON.parse(text) : {}) as {
         friends?: typeof backend.world.friends;
         admin?: boolean;
+        reviews?: boolean;
       };
       if (seed.friends) backend.world.friends = seed.friends;
       if (seed.admin) backend.world.admin = "current";
+      if (seed.reviews) addReviews(backend.world);
       return send(200, {});
     }
     if (!name) return send(404, { error: "Not a function" });

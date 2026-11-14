@@ -10,6 +10,7 @@ import { resolve } from "node:path";
 import process from "node:process";
 import { describe, expect, it } from "vitest";
 
+import { addReviews } from "./adminReviews";
 import { FakeBackend } from "./backend";
 import { DEFAULT_WORLD, makeWorld, type World, type WorldOptions } from "./world";
 
@@ -19,6 +20,12 @@ const EMPTY: WorldOptions = { calendars: "none", groups: "none" };
 /** Mia as an admin, for admin mode's answers. */
 const asAdmin = (w: World) => {
   w.admin = "current";
+};
+
+/** An admin with reports and AI corrections waiting. */
+const withReviews = (w: World) => {
+  asAdmin(w);
+  addReviews(w);
 };
 
 const ASKED: [
@@ -135,6 +142,37 @@ const ASKED: [
     { action: "deleteUser", profileId: "p-x" },
     asAdmin,
   ],
+  ["admin-reports", DEFAULT_WORLD, "admin", { action: "reports" }, withReviews],
+  [
+    "admin-report-handled",
+    DEFAULT_WORLD,
+    "admin",
+    { action: "reportHandled", id: "r-1" },
+    withReviews,
+  ],
+  [
+    "admin-remove-avatar",
+    DEFAULT_WORLD,
+    "admin",
+    { action: "removeAvatar", memberId: "p-kim" },
+    withReviews,
+  ],
+  [
+    "admin-remove-group-picture",
+    DEFAULT_WORLD,
+    "admin",
+    { action: "removeGroupPicture", groupId: "g-badminton" },
+    withReviews,
+  ],
+  ["admin-corrections", DEFAULT_WORLD, "admin", { action: "corrections" }, withReviews],
+  [
+    "admin-correction-handled",
+    DEFAULT_WORLD,
+    "admin",
+    { action: "correctionHandled", id: "corr-label" },
+    withReviews,
+  ],
+  ["admin-push-test", DEFAULT_WORLD, "admin", { action: "pushTest", lang: "da" }, asAdmin],
   ["admin-sync-user", DEFAULT_WORLD, "admin", { action: "syncUser", userId: "p-x" }, asAdmin],
   [
     "admin-sync-connection",

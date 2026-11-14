@@ -1,0 +1,31 @@
+{
+  "reports": [
+    {
+      "id": "r-1",
+      "kind": "group",
+      "reason": "spam",
+      "note": "Reklamer hele tiden",
+      "content": {
+        "groupName": "Gratis gaver",
+        "groupDescription": "Klik her"
+      },
+      "pictureUrl": null,
+      "groupId": "g-badminton",
+      "createdAt": "2026-10-07T08:00:00.000Z"
+    },
+    {
+      "id": "r-2",
+      "kind": "member",
+      "reason": "offensive",
+      "note": null,
+      "content": {
+        "groupName": "Fredagsbar",
+        "memberName": "Kim",
+        "memberId": "p-kim"
+      },
+      "pictureUrl": "https://example.com/kim.jpg",
+      "groupId": "g-badminton",
+      "createdAt": "2026-10-07T08:00:00.000Z"
+    }
+  ]
+}

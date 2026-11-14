@@ -1,0 +1,128 @@
+{
+  "corrections": [
+    {
+      "id": "corr-plan-right",
+      "kind": "plan",
+      "data": {
+        "texts": [
+          "Middag en fredag"
+        ],
+        "plan": {
+          "kind": "evening",
+          "startHour": 18,
+          "anyTime": false,
+          "startWindow": null,
+          "durationMinutes": 180,
+          "weekdays": [
+            5,
+            6
+          ],
+          "days": null,
+          "startWeekday": null,
+          "months": null,
+          "title": "Middag",
+          "place": null,
+          "note": null,
+          "assumed": []
+        },
+        "overridden": [],
+        "final": {
+          "kind": "evening",
+          "startHour": 18,
+          "anyTime": false,
+          "startWindow": null,
+          "durationMinutes": 180,
+          "weekdays": [
+            5,
+            6
+          ],
+          "days": null,
+          "startWeekday": null,
+          "months": null
+        }
+      },
+      "createdAt": "2026-10-07T08:00:00.000Z"
+    },
+    {
+      "id": "corr-label",
+      "kind": "label",
+      "data": {
+        "title": "Eksamen i statistik",
+        "calendar": "Uni",
+        "previous": {
+          "kind": "exam",
+          "importance": "normal",
+          "prepDays": 3,
+          "avoidBefore": [
+            "lateNight"
+          ],
+          "recoveryDays": 0,
+          "strain": "heavy",
+          "confidence": "high",
+          "reason": ""
+        },
+        "note": "Det er en mundtlig eksamen",
+        "label": {
+          "kind": "exam",
+          "importance": "critical",
+          "prepDays": 3,
+          "avoidBefore": [
+            "lateNight"
+          ],
+          "recoveryDays": 0,
+          "strain": "heavy",
+          "confidence": "high",
+          "reason": ""
+        }
+      },
+      "createdAt": "2026-10-07T08:00:00.000Z"
+    },
+    {
+      "id": "corr-plan",
+      "kind": "plan",
+      "data": {
+        "texts": [
+          "Fredagsbar efter arbejde"
+        ],
+        "plan": {
+          "kind": "evening",
+          "startHour": 18,
+          "anyTime": false,
+          "startWindow": null,
+          "durationMinutes": 180,
+          "weekdays": [
+            5,
+            6
+          ],
+          "days": null,
+          "startWeekday": null,
+          "months": null,
+          "title": "Fredagsbar",
+          "place": null,
+          "note": null,
+          "assumed": [
+            "startHour"
+          ]
+        },
+        "overridden": [
+          "startHour"
+        ],
+        "final": {
+          "kind": "evening",
+          "startHour": 16,
+          "anyTime": false,
+          "startWindow": null,
+          "durationMinutes": 180,
+          "weekdays": [
+            5,
+            6
+          ],
+          "days": null,
+          "startWeekday": null,
+          "months": null
+        }
+      },
+      "createdAt": "2026-10-07T08:00:00.000Z"
+    }
+  ]
+}

@@ -173,7 +173,7 @@ struct ProfileScreen: View {
                     handOver(CasyStrings.profileSecurity, "key", "password")
                     if model.isAdmin {
                         NavigationLink {
-                            AdminScreen()
+                            AdminScreen(enablePush: enablePush)
                         } label: {
                             ListRow(CasyStrings.profileAdmin, systemImage: "checkmark.shield")
                         }

@@ -4,6 +4,8 @@
 // screens only display (a provider, a status) stay strings, so a new value
 // from the server can't stop a whole answer from reading.
 
+import Foundation
+
 public struct WhoAmI: Codable, Sendable, Equatable {
     public var name: String
     public var unnamed: Bool?
@@ -439,4 +441,93 @@ public struct MyData: Codable, Sendable, Equatable {
     public var safety: Safety
     public var friends: Count?
     public var ai: AI
+}
+
+/// A report of what someone wrote (#142): what, why and the text as it was,
+/// never who sent it.
+public struct AdminReport: Codable, Sendable, Equatable, Identifiable {
+    public struct Content: Codable, Sendable, Equatable {
+        public var groupName: String?
+        public var groupDescription: String?
+        public var title: String?
+        public var place: String?
+        public var note: String?
+        public var memberName: String?
+        public var memberId: String?
+    }
+
+    public var id: String
+    /// "group", "event" or "member".
+    public var kind: String
+    public var reason: String
+    public var note: String?
+    public var content: Content
+    /// The reported picture as it was (#187), linked; nil for none.
+    public var pictureUrl: String?
+    /// Nil once the group is gone.
+    public var groupId: String?
+    public var createdAt: String
+}
+
+public struct AdminReports: Codable, Sendable, Equatable {
+    public var reports: [AdminReport]
+}
+
+/// A correction of the AI sent for review (#122), never whose. `data` is a
+/// label correction or a plan's feedback, by `kind`.
+public struct AdminCorrection: Codable, Sendable, Equatable, Identifiable {
+    public var id: String
+    /// "label" or "plan".
+    public var kind: String
+    public var data: JSONValue
+    public var createdAt: String
+}
+
+public struct AdminCorrections: Codable, Sendable, Equatable {
+    public var corrections: [AdminCorrection]
+}
+
+/// A test notification (#139): how many phones got it, and Apple's reasons for the rest.
+public struct PushTestAnswer: Codable, Sendable, Equatable {
+    public var sent: Int
+    public var failed: [String]
+}
+
+extension JSONValue {
+    /// The value read as a type of its own, or nil when it isn't one.
+    public func decoded<T: Decodable>(as type: T.Type) -> T? {
+        guard let data = try? JSONEncoder().encode(self) else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
+    }
+
+    /// As JavaScript's JSON.stringify writes it: `16`, `"evening"`, `[5,6]`.
+    public var compactJSON: String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return (try? encoder.encode(self)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+    }
+}
+
+/// A label correction (`LabelCorrectionView`): the event's title and calendar,
+/// the label the AI gave, what the person wrote, and the label that came of it.
+public struct LabelCorrection: Codable, Sendable, Equatable {
+    public struct Label: Codable, Sendable, Equatable {
+        public var kind: String
+        public var importance: String
+    }
+
+    public var title: String
+    public var calendar: String
+    public var previous: Label
+    public var note: String
+    public var label: Label
+}
+
+/// A plan's feedback (`PlanFeedback`): what was written, what the AI made of
+/// it, the fields changed by hand and what was sent.
+public struct PlanCorrection: Codable, Sendable, Equatable {
+    public var texts: [String]
+    public var plan: [String: JSONValue]
+    public var overridden: [String]
+    public var final: [String: JSONValue]
 }

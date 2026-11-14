@@ -499,4 +499,44 @@ public enum CasyStrings {
     public static var pushDenied: String { text("push.denied") }
     /// A kind of notification, by the server's name for it.
     public static func pushKind(_ kind: String) -> String { text("push.kind.\(kind)") }
+
+    // Admin's reports (#142), AI corrections (#122) and push test (#139).
+    public static var adminReportsTitle: String { text("adminReports.title") }
+    public static var adminReportsIntro: String { text("adminReports.intro") }
+    public static var adminReportsNone: String { text("adminReports.none") }
+    public static var adminReportHandled: String { text("adminReports.handled") }
+    public static var adminReportDeleteGroup: String { text("adminReports.deleteGroup") }
+    public static var adminReportRemovePicture: String { text("adminReports.removePicture") }
+    public static var adminReportPictureRemoved: String { text("adminReports.pictureRemoved") }
+    public static func adminReportDeleteGroupConfirm(_ group: String?) -> String {
+        guard let group, !group.isEmpty else { return text("adminReports.deleteGroupConfirmUnnamed") }
+        return String(format: text("adminReports.deleteGroupConfirm"), group)
+    }
+    /// What a report is about: "group", "event" or "member".
+    public static func adminReportKind(_ kind: String) -> String { named("adminReports.kind", kind) }
+    public static var adminReportsFailed: String { text("adminReports.failed") }
+    public static var adminCorrectionsTitle: String { text("admin.correctionsTitle") }
+    public static var adminCorrectionsIntro: String { text("admin.correctionsIntro") }
+    public static var adminCorrectionsNone: String { text("admin.correctionsNone") }
+    public static var adminCorrectionPlan: String { text("admin.correctionPlan") }
+    public static var adminCorrectionPlanUnchanged: String { text("admin.correctionPlanUnchanged") }
+    public static var adminCorrectionPlanChanged: String { text("admin.correctionPlanChanged") }
+    public static var adminCorrectionBefore: String { text("admin.correctionBefore") }
+    public static var adminCorrectionAfter: String { text("admin.correctionAfter") }
+    public static var adminCorrectionNote: String { text("admin.correctionNote") }
+    public static var adminCorrectionHandled: String { text("admin.correctionHandled") }
+    /// An event label's kind and importance, by the AI's names for them.
+    public static func eventLabelKind(_ kind: String) -> String { named("eventLabel.kind", kind) }
+    public static func eventLabelImportance(_ importance: String) -> String {
+        named("eventLabel.importance", importance)
+    }
+    public static var pushTestButton: String { text("push.testButton") }
+    public static var pushTestSending: String { text("push.testSending") }
+    public static var pushTestDenied: String { text("push.testDenied") }
+    public static func pushTestSent(_ n: Int) -> String {
+        n == 1 ? text("push.testSent.one") : String(format: text("push.testSent.many"), n)
+    }
+    public static func pushTestNone(_ reasons: [String]) -> String {
+        reasons.isEmpty ? text("push.testNone") : String(format: text("push.testNoneWhy"), reasons.joined(separator: ", "))
+    }
 }

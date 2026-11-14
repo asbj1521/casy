@@ -44,6 +44,8 @@ import Testing
     #expect(formatDayMonthYear("2026-08-31T22:30:00Z", .da) == "1. sep. 2026")
     #expect(formatDayMonthYear("2026-08-31T22:30:00Z", .en) == "1 Sept 2026")
     #expect(formatDayMonthYear("2026-05-15T12:00:00Z", .da) == "15. maj 2026")
+    #expect(formatDayMonth("2026-08-31T22:30:00Z", .da) == "1. sep.")
+    #expect(formatDayMonth("2026-08-31T22:30:00Z", .en) == "1 Sept")
     #expect(formatDayLongMonthYear("2026-08-31T22:30:00Z", .da) == "1. september 2026")
     #expect(formatDayLongMonthYear("2026-05-15T12:00:00Z", .en) == "15 May 2026")
 }
