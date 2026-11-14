@@ -5,11 +5,9 @@ import SwiftUI
 
 /// One group (#198), pushed from Grupper: who is in it, and changing,
 /// reporting, leaving or deleting it (`GroupDetails`' phone screen on the
-/// web). Inviting people is still the page's. Left, deleted or gone from
-/// elsewhere, it goes back to Grupper.
+/// web). Left, deleted or gone from elsewhere, it goes back to Grupper.
 struct GroupScreen: View {
     let groupId: String
-    let leave: (LeavingProfile) -> Void
 
     private enum Asking { case leave, delete }
 
@@ -27,6 +25,7 @@ struct GroupScreen: View {
     @State private var failure: String?
     @State private var editing = false
     @State private var reporting = false
+    @State private var inviting = false
     @State private var aboutMembers = false
     /// The switch moves at once while the choice is saved (as the web's).
     @State private var primeSaving: Bool?
@@ -49,13 +48,13 @@ struct GroupScreen: View {
         .onChange(of: found, initial: true) { _, now in
             if let now { kept = now } else { goBackIfGone() }
         }
-        .onChange(of: reporting || editing) { _, open in
+        .onChange(of: reporting || editing || inviting) { _, open in
             if !open { goBackIfGone() }
         }
     }
 
     private func goBackIfGone() {
-        if found == nil, !reporting, !editing { dismiss() }
+        if found == nil, !reporting, !editing, !inviting { dismiss() }
     }
 
     private func content(_ group: CasyAPI.Group, index: Int) -> some View {
@@ -75,7 +74,7 @@ struct GroupScreen: View {
                         index: i, url: member.avatarUrl.flatMap(URL.init(string:)))
                 }
                 Button {
-                    leave(.webScreen("/?profile=groups/\(group.id)&invite=group"))
+                    inviting = true
                 } label: {
                     ListRow(CasyStrings.groupInvitePeople, systemImage: "plus", tone: .primary)
                         .contentShape(Rectangle())
@@ -154,6 +153,10 @@ struct GroupScreen: View {
         }
         .sheet(isPresented: $editing) {
             EditGroupSheet(group: group, index: index)
+                .nativeSheetLook(NativePreferences.shared)
+        }
+        .sheet(isPresented: $inviting) {
+            InviteSheet(group: group)
                 .nativeSheetLook(NativePreferences.shared)
         }
         .sheet(isPresented: $reporting) {

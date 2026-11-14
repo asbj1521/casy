@@ -161,3 +161,13 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     let removed = try readsWithNothingLost("pictures-remove-group-picture", as: GroupPictureAnswer.self)
     #expect(removed.pictureUrl == nil)
 }
+
+@Test func invitingReads() throws {
+    _ = try readsWithNothingLost("groups-friends", as: FriendsAnswer.self)
+    let link = try readsWithNothingLost("groups-invite", as: InviteLink.self)
+    #expect(link.url.contains("/join/"))
+    let invited = try readsWithNothingLost("groups-invite-members", as: GroupsAnswer.self)
+    #expect(invited.groups?.isEmpty == false)
+    let made = try readsWithNothingLost("groups-create", as: CreatedGroup.self)
+    #expect(made.groups.contains { $0.id == made.createdId })
+}

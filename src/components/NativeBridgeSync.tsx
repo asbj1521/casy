@@ -12,9 +12,11 @@ import {
   onEnablePush,
   onNativeChoice,
   onNativeDataChanged,
+  onNativeInviteSent,
   onNeedSession,
   sharePreferences,
 } from "@/lib/nativeBridge";
+import { rememberInviteSent } from "@/lib/groupNudge";
 import { enablePush } from "@/lib/push";
 import { supabaseAuth } from "@/lib/supabase";
 import { chooseTheme, onThemeChange, storedTheme } from "@/lib/theme";
@@ -98,6 +100,24 @@ export default function NativeBridgeSync() {
       void handle?.remove();
     };
   }, [queryClient, youId]);
+
+  // Someone was invited from a native screen: the home page's nudge to invite
+  // people to that group goes, as it does after the page's own Invite.
+  useEffect(() => {
+    if (!youId) return;
+    let handle: { remove: () => Promise<void> } | undefined;
+    let gone = false;
+    onNativeInviteSent((groupId) => rememberInviteSent(youId, groupId))
+      .then((h) => {
+        if (gone) void h.remove();
+        else handle = h;
+      })
+      .catch((err) => console.warn("listening for the app's invites failed", err));
+    return () => {
+      gone = true;
+      void handle?.remove();
+    };
+  }, [youId]);
 
   // A native screen's token ran out: getSession() refreshes it, and the change
   // comes back above through `session`.

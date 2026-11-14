@@ -17,10 +17,16 @@ final class GroupsModel {
     /// The groups being left or deleted right now.
     private(set) var working: Set<String> = []
     var failure: String?
+    /// People from groups since gone (#222), offered in Invitér too.
+    private(set) var friends: [Friend] = []
+    /// Tells the page someone was invited to a group in a way the server
+    /// can't tell it (a link, a text, an email), for its home page's nudge.
+    var onInviteSent: ((String) -> Void)?
 
     func reset() {
         groups = nil
         invitations = []
+        friends = []
         loadFailed = false
         working = []
         failure = nil
@@ -74,6 +80,65 @@ final class GroupsModel {
             : try await api.leaveGroup(group.id, errorMessage: message)
         groups = answer.groups ?? groups?.filter { $0.id != group.id }
         changed()
+    }
+
+    /// Everyone you could invite to `groupId`: your groups' members and your
+    /// friends, without who is in it already (`knownPeople`).
+    func people(for groupId: String) -> [KnownPerson] {
+        let mine = (groups ?? []).map { group in
+            GroupMembers(
+                id: group.id, name: group.name,
+                members: group.members.map {
+                    (profileId: $0.profileId, name: $0.name, isYou: $0.isYou, avatarUrl: $0.avatarUrl)
+                })
+        }
+        return knownPeople(
+            mine, except: groupId,
+            friends: friends.map { (profileId: $0.profileId, name: $0.name, avatarUrl: $0.avatarUrl) })
+    }
+
+    func loadFriends() async {
+        guard let api = await Native.api() else { return }
+        if let answer = try? await api.friends() { friends = answer }
+    }
+
+    /// Invitations sent: the people show as invited once the picks are cleared.
+    func invite(_ groupId: String, profileIds: [String], emails: [String]) async throws {
+        let api = try await signedIn(CasyStrings.inviteSendFailed)
+        groups = try await api.inviteMembers(
+            groupId, profileIds: profileIds, emails: emails, errorMessage: CasyStrings.inviteSendFailed)
+        inviteSent(groupId)
+        changed()
+    }
+
+    /// A fresh link: only a fingerprint is stored, so one can't be shown again.
+    func makeLink(_ groupId: String) async throws -> InviteLink {
+        let api = try await signedIn(CasyStrings.inviteLinkFailed)
+        return try await api.makeInviteLink(groupId, errorMessage: CasyStrings.inviteLinkFailed)
+    }
+
+    func inviteSent(_ groupId: String) { onInviteSent?(groupId) }
+
+    /// A new group with you in it, then its picture, which needs the group to
+    /// exist; without the picture the group is still made (`pictureLost`).
+    func create(
+        name: String, description: String, picture: String?
+    ) async throws -> (id: String, pictureLost: Bool) {
+        let api = try await signedIn(CasyStrings.newGroupFailed)
+        let made = try await api.createGroup(
+            name: name, description: description.isEmpty ? nil : description,
+            errorMessage: CasyStrings.newGroupFailed)
+        groups = made.groups
+        changed()
+        guard let picture else { return (made.createdId, false) }
+        do {
+            _ = try await api.setGroupPicture(made.createdId, picture)
+            await load()
+            changed()
+            return (made.createdId, false)
+        } catch {
+            return (made.createdId, true)
+        }
     }
 
     /// One group and its place in the list, which colours its letter as its row.
@@ -199,13 +264,14 @@ private struct NotSignedIn: LocalizedError {
 }
 
 /// Grupper (#198), pushed inside the Profil sheet: the invitations waiting for
-/// an answer, then your groups (`PhoneGroupsContent` on the web). Making a new
-/// one is still the page's.
+/// an answer, then your groups (`PhoneGroupsContent` on the web), and making
+/// a new one.
 struct GroupsScreen: View {
     let leave: (LeavingProfile) -> Void
 
     private let model = GroupsModel.shared
     @State private var asking: CasyAPI.Group?
+    @State private var making = false
 
     var body: some View {
         List {
@@ -236,6 +302,10 @@ struct GroupsScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.load() }
         .refreshable { await model.load() }
+        .sheet(isPresented: $making) {
+            NewGroupSheet()
+                .nativeSheetLook(NativePreferences.shared)
+        }
         .confirmationDialog(
             asking.map { CasyStrings.groupsDeleteConfirm($0.name, members: $0.members.count) } ?? "",
             isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
@@ -264,7 +334,7 @@ struct GroupsScreen: View {
             }
         }
         Button {
-            leave(.webScreen("/?profile=groups&new=group"))
+            making = true
         } label: {
             ListRow(CasyStrings.groupsMake, systemImage: "plus", tone: .primary)
                 .contentShape(Rectangle())
@@ -276,7 +346,7 @@ struct GroupsScreen: View {
         let busy = model.working.contains(group.id)
         let swipe = model.swipe(for: group)
         return NavigationLink {
-            GroupScreen(groupId: group.id, leave: leave)
+            GroupScreen(groupId: group.id)
         } label: {
             ListAvatarRow(
                 group.name,

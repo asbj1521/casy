@@ -103,6 +103,31 @@ public struct ReportAnswer: Codable, Sendable, Equatable {
     public var reported: Bool
 }
 
+/// Someone you know from a group since gone (#222).
+public struct Friend: Codable, Sendable, Equatable, Identifiable {
+    public var profileId: String
+    public var name: String
+    public var avatarUrl: String?
+
+    public var id: String { profileId }
+}
+
+public struct FriendsAnswer: Codable, Sendable, Equatable {
+    public var friends: [Friend]?
+}
+
+/// A fresh invite link: anyone holding it can join until it runs out.
+public struct InviteLink: Codable, Sendable, Equatable {
+    public var url: String
+    public var expiresAt: String
+}
+
+/// A new group: your groups, the new one among them.
+public struct CreatedGroup: Codable, Sendable, Equatable {
+    public var groups: [Group]
+    public var createdId: String
+}
+
 public struct AdminStatus: Codable, Sendable, Equatable {
     public var isAdmin: Bool
 }

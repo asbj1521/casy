@@ -85,6 +85,26 @@ private struct Report: Encodable, Sendable {
     }
 }
 
+private struct MakeInvite: Encodable, Sendable {
+    let action = "invite"
+    let groupId: String
+    /// The link opens the app when it has it (#277).
+    let app = true
+}
+
+private struct InviteMembers: Encodable, Sendable {
+    let action = "invite-members"
+    let groupId: String
+    let profileIds: [String]
+    let emails: [String]
+}
+
+private struct CreateGroup: Encodable, Sendable {
+    let action = "create"
+    let name: String
+    let description: String?
+}
+
 private struct BlockSender: Encodable, Sendable {
     let action = "block"
     let invitationGroupId: String
@@ -242,6 +262,40 @@ extension EdgeFunctions {
     /// Blocks a member (#142): no more invitations from them.
     public func blockPerson(_ profileId: String, errorMessage: String? = nil) async throws -> BlockAnswer {
         try await call("groups", body: BlockMember(profileId: profileId), errorMessage: errorMessage)
+    }
+
+    /// People from groups since gone (#222).
+    public func friends(errorMessage: String? = nil) async throws -> [Friend] {
+        let answer: FriendsAnswer = try await call(
+            "groups", body: Action(action: "friends"), errorMessage: errorMessage)
+        return answer.friends ?? []
+    }
+
+    /// A fresh link to the group: only a fingerprint is stored, so an old one
+    /// can't be shown again.
+    public func makeInviteLink(_ groupId: String, errorMessage: String? = nil) async throws -> InviteLink {
+        try await call("groups", body: MakeInvite(groupId: groupId), errorMessage: errorMessage)
+    }
+
+    /// Invitations by name and by email; answers your groups, the people now
+    /// marked invited. Never says which emails have an account.
+    public func inviteMembers(
+        _ groupId: String, profileIds: [String], emails: [String], errorMessage: String? = nil
+    ) async throws -> [Group] {
+        let answer: GroupsAnswer = try await call(
+            "groups",
+            body: InviteMembers(groupId: groupId, profileIds: profileIds, emails: emails),
+            errorMessage: errorMessage)
+        return answer.groups ?? []
+    }
+
+    /// A new group with you in it; `description` nil for none.
+    public func createGroup(
+        name: String, description: String?, errorMessage: String? = nil
+    ) async throws -> CreatedGroup {
+        try await call(
+            "groups", body: CreateGroup(name: name, description: description),
+            errorMessage: errorMessage)
     }
 
     public func isAdmin(errorMessage: String? = nil) async throws -> Bool {

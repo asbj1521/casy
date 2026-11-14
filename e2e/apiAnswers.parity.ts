@@ -35,6 +35,15 @@ const ASKED: [file: string, world: WorldOptions, fn: string, body: Record<string
   ],
   ["groups-block", DEFAULT_WORLD, "groups", { action: "block", invitationGroupId: "g-badminton" }],
   ["groups-leave", DEFAULT_WORLD, "groups", { action: "leave", groupId: "g-running" }],
+  ["groups-friends", DEFAULT_WORLD, "groups", { action: "friends" }],
+  ["groups-invite", DEFAULT_WORLD, "groups", { action: "invite", groupId: "g-friday", app: true }],
+  [
+    "groups-invite-members",
+    DEFAULT_WORLD,
+    "groups",
+    { action: "invite-members", groupId: "g-running", profileIds: ["p-jonas"], emails: [] },
+  ],
+  ["groups-create", DEFAULT_WORLD, "groups", { action: "create", name: "Brætspil" }],
   [
     "groups-rename",
     DEFAULT_WORLD,

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlignLeft,
@@ -35,7 +35,6 @@ import { useLang, useT } from "@/i18n/lang";
 import { formatMonthYear } from "@/lib/format";
 import { MAX_GROUP_NAME_LENGTH } from "@/lib/groups";
 import { MIN_GROUP_SIZE } from "@/lib/primeDates";
-import { searchWithout } from "@/lib/profileScreens";
 
 /**
  * One group: who's in it, and inviting, renaming, leaving or deleting it. A
@@ -66,16 +65,6 @@ export default function GroupDetails({
   const [editing, setEditing] = useState(false);
   const membersHelp = useId();
   const [inviteOpen, setInviteOpen] = useState(false);
-  // `?invite=group` holds Invitér open: the app's native group screen hands its
-  // "Invitér folk" over this way (#198). Closing it takes it off the address.
-  const [params] = useSearchParams();
-  const location = useLocation();
-  const askedToInvite = params.get("invite") === "group";
-  function closeInvite() {
-    setInviteOpen(false);
-    if (!askedToInvite) return;
-    navigate({ search: searchWithout(location.search, "invite") }, { replace: true });
-  }
   const [reporting, setReporting] = useState(false);
   // The group's picture (#188): any member sets or removes it; the list is
   // fetched again so every row shows the new one.
@@ -333,7 +322,7 @@ export default function GroupDetails({
           onClose={() => setDescribing(false)}
         />
       )}
-      <InviteDialog group={group} open={inviteOpen || askedToInvite} onClose={closeInvite} />
+      <InviteDialog group={group} open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <ReportDialog
         open={reporting}
         onClose={() => setReporting(false)}

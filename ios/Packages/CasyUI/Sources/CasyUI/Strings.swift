@@ -153,6 +153,63 @@ public enum CasyStrings {
     /// A report's reason, by the server's name: spam, offensive, harassment, other.
     public static func reportReason(_ reason: String) -> String { text("report.reason.\(reason)") }
 
+    public static func inviteTitle(_ value: String) -> String { String(format: text("invite.title"), value) }
+    public static var invitePeople: String { text("invite.people") }
+    public static var invitePeopleEmpty: String { text("invite.peopleEmpty") }
+    public static var inviteAllIn: String { text("invite.allIn") }
+    public static func inviteFrom(_ value: String) -> String { String(format: text("invite.from"), value) }
+    public static var inviteFromPast: String { text("invite.fromPast") }
+    public static var inviteFilter: String { text("invite.filter") }
+    public static var inviteNoMatch: String { text("invite.noMatch") }
+    public static var inviteInvited: String { text("invite.invited") }
+    public static var inviteEmail: String { text("invite.email") }
+    public static var inviteEmailPlaceholder: String { text("invite.emailPlaceholder") }
+    public static var inviteAddEmail: String { text("invite.addEmail") }
+    public static func inviteRemoveEmail(_ value: String) -> String { String(format: text("invite.removeEmail"), value) }
+    public static var inviteNotAnEmail: String { text("invite.notAnEmail") }
+    public static func inviteTooManyEmails(_ n: Int) -> String { String(format: text("invite.tooManyEmails"), n) }
+    public static var inviteEmailHelp: String { text("invite.emailHelp") }
+    public static var inviteConsent: String { text("invite.consent") }
+    public static var inviteSent: String { text("invite.sent") }
+    public static var inviteSentWithEmail: String { text("invite.sentWithEmail") }
+    public static func inviteLinkHelp(_ value: String) -> String { String(format: text("invite.linkHelp"), value) }
+    public static var inviteMakeLink: String { text("invite.makeLink") }
+    public static var inviteMakingLink: String { text("invite.makingLink") }
+    public static var inviteFromContacts: String { text("invite.fromContacts") }
+    public static func inviteMessage(_ value: String) -> String { String(format: text("invite.message"), value) }
+    public static func inviteShareTitle(_ value: String) -> String { String(format: text("invite.shareTitle"), value) }
+    public static var inviteTexted: String { text("invite.texted") }
+    public static var inviteTextFailed: String { text("invite.textFailed") }
+    public static var inviteShareLink: String { text("invite.shareLink") }
+    public static var inviteShowQr: String { text("invite.showQr") }
+    public static var inviteHideQr: String { text("invite.hideQr") }
+    public static func inviteQrLabel(_ value: String) -> String { String(format: text("invite.qrLabel"), value) }
+    public static var inviteQrHelp: String { text("invite.qrHelp") }
+    public static func inviteShowAll(_ n: Int) -> String { String(format: text("invite.showAll"), n) }
+    public static var inviteShowFewer: String { text("invite.showFewer") }
+    public static var inviteLinkFailed: String { text("invite.linkFailed") }
+    public static var inviteSendFailed: String { text("invite.sendFailed") }
+    public static var copy: String { text("common.copy") }
+    public static var copied: String { text("common.copied") }
+    public static var newGroupTitle: String { text("newGroup.title") }
+    public static var newGroupPlaceholder: String { text("newGroup.placeholder") }
+    public static var newGroupNext: String { text("newGroup.next") }
+    public static var newGroupPictureLost: String { text("newGroup.pictureLost") }
+    public static var newGroupFailed: String { text("newGroup.failed") }
+    /// "Send invitation", "Send 3 invitationer".
+    public static func inviteSend(_ n: Int) -> String {
+        n <= 1 ? text("invite.send.one") : String(format: text("invite.send.many"), n)
+    }
+    /// How long a link has left: "7 dage", "5 timer", "under en time".
+    public static func inviteExpiry(days: Int?, hours: Int?) -> String {
+        if let days { return days == 1 ? text("expiry.days.one") : String(format: text("expiry.days.many"), days) }
+        if let hours {
+            return hours == 1 ? text("expiry.hours.one") : String(format: text("expiry.hours.many"), hours)
+        }
+        return text("expiry.underAnHour")
+    }
+    public static var inviteExpired: String { text("expiry.expired") }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

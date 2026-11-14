@@ -189,4 +189,75 @@ final class GroupsUITests: XCTestCase {
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: running)
         XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed)
     }
+
+    // MARK: Inviting and making a group
+
+    private func openInvite() -> XCUIApplication {
+        let app = openGroups()
+        let running = row(app, "Løbeklubben")
+        XCTAssertTrue(running.waitForExistence(timeout: 10))
+        running.tap()
+        let invite = row(app, "Invitér folk")
+        XCTAssertTrue(invite.waitForExistence(timeout: 10))
+        invite.tap()
+        XCTAssertTrue(app.navigationBars["Invitér til Løbeklubben"].waitForExistence(timeout: 10))
+        return app
+    }
+
+    func testPeopleFromYourGroupsAreTickedAndSent() {
+        let app = openInvite()
+        let jonas = row(app, "Jonas")
+        XCTAssertTrue(jonas.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Fra Fredagsbar"].exists)
+        XCTAssertFalse(app.buttons["Send invitation"].exists, "a send button with nobody picked")
+        jonas.tap()
+        XCTAssertTrue(app.staticTexts["De bliver først medlemmer, når de selv siger ja."].waitForExistence(timeout: 10))
+        app.buttons["Send invitation"].tap()
+        XCTAssertTrue(app.staticTexts["Invitationerne er sendt."].waitForExistence(timeout: 10))
+    }
+
+    func testALinkIsMadeAndShownAsAQrCode() {
+        let app = openInvite()
+        row(app, "Lav et link").tap()
+        XCTAssertTrue(row(app, "https://casy.app/join/test-invite-token").waitForExistence(timeout: 10))
+        XCTAssertTrue(row(app, "Del link").exists)
+        XCTAssertTrue(
+            app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Alle med linket kan blive medlem"))
+                .firstMatch.exists)
+        row(app, "Vis QR-kode").tap()
+        XCTAssertTrue(app.images["QR-kode til at blive medlem af Løbeklubben"].waitForExistence(timeout: 10))
+    }
+
+    func testAnEmailIsCheckedThenAdded() {
+        let app = openInvite()
+        row(app, "Med e-mail").tap()
+        let field = app.textFields["Med e-mail"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.typeText("nope")
+        app.buttons["Tilføj"].tap()
+        XCTAssertTrue(app.staticTexts["Det ligner ikke en e-mailadresse."].waitForExistence(timeout: 10))
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 4))
+        field.typeText("ny@eksempel.dk")
+        app.buttons["Tilføj"].tap()
+        XCTAssertTrue(app.buttons["Fjern ny@eksempel.dk"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Send invitation"].exists)
+    }
+
+    func testANewGroupIsMadeThenInvitedTo() {
+        let app = openGroups()
+        let make = row(app, "Lav en gruppe")
+        XCTAssertTrue(make.waitForExistence(timeout: 10))
+        make.tap()
+        XCTAssertTrue(app.navigationBars["Ny gruppe"].waitForExistence(timeout: 10))
+        let next = app.buttons["Næste"]
+        XCTAssertFalse(next.isEnabled, "a group without a name")
+        let name = app.textFields["Gruppenavn"]
+        name.tap()
+        name.typeText("Brætspil")
+        next.tap()
+        XCTAssertTrue(app.navigationBars["Invitér til Brætspil"].waitForExistence(timeout: 10))
+        app.buttons["Færdig"].tap()
+        XCTAssertTrue(row(app, "Brætspil").waitForExistence(timeout: 10))
+    }
 }
+

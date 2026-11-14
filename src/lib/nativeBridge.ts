@@ -61,6 +61,10 @@ interface NativeBridgePlugin {
   addListener(event: "needSession", listener: () => void): Promise<PluginListenerHandle>;
   addListener(event: "dataChanged", listener: () => void): Promise<PluginListenerHandle>;
   addListener(event: "enablePush", listener: () => void): Promise<PluginListenerHandle>;
+  addListener(
+    event: "inviteSent",
+    listener: (sent: { groupId: string }) => void,
+  ): Promise<PluginListenerHandle>;
 }
 
 let plugin: NativeBridgePlugin | null = null;
@@ -134,6 +138,18 @@ export async function onNativeClosed(
 export async function onNativeDataChanged(onChange: () => void): Promise<PluginListenerHandle> {
   const { plugin } = await bridgePlugin();
   return plugin.addListener("dataChanged", onChange);
+}
+
+/**
+ * Calls `onSent` when a native screen invited someone to a group in a way the
+ * server can't tell the page (a link, a text, an email), for the home page's
+ * nudge (groupNudge.ts), which the page keeps on this phone.
+ */
+export async function onNativeInviteSent(
+  onSent: (groupId: string) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("inviteSent", ({ groupId }) => onSent(groupId));
 }
 
 /** Calls `onNeed` when a native screen's login has run out, so the page refreshes it. */
