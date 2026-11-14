@@ -3060,6 +3060,108 @@
           }
         }
       }
+    },
+    "deleteAccount.intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sletter din konto og alt, der hører til den: dine forbundne kalendere og vores adgang til dem, dine optagede tidsrum og dit navn. Du forlader dine grupper, og grupper, hvor du er det eneste medlem, bliver slettet. Aftaler, vi har lagt i din kalender, bliver liggende. Det kan ikke fortrydes."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletes your account and everything that belongs to it: your connected calendars and our access to them, your busy times and your name. You leave your groups, and groups where you are the only member are deleted. Events we added to your calendar stay there. This can't be undone."
+          }
+        }
+      }
+    },
+    "deleteAccount.word": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SLET"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DELETE"
+          }
+        }
+      }
+    },
+    "deleteAccount.prompt": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skriv %@ for at bekræfte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type %@ to confirm."
+          }
+        }
+      }
+    },
+    "deleteAccount.confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet kontoen for altid"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the account for good"
+          }
+        }
+      }
+    },
+    "deleteAccount.deleting": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sletter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleting"
+          }
+        }
+      }
+    },
+    "deleteAccount.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke slette din konto"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't delete your account"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

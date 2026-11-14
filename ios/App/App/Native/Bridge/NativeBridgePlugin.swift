@@ -170,6 +170,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                             self?.dismissOpenScreen(["signOut": true])
                         case .joined:
                             self?.dismissOpenScreen(["joined": true])
+                        case .accountDeleted:
+                            self?.dismissOpenScreen(["accountDeleted": true])
                         }
                     }))
             : AnyView(

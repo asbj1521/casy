@@ -33,6 +33,8 @@ export interface NativeClosed {
   signOut?: boolean;
   /** Joined a group from a native invitation (#198): the moment to offer notifications. */
   joined?: boolean;
+  /** The account was deleted from a native screen (#198): the page drops its login. */
+  accountDeleted?: boolean;
 }
 
 interface Preferences {

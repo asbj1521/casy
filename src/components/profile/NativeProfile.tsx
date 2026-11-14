@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { onNativeClosed, openNativeScreen, type NativeClosed } from "@/lib/nativeBridge";
 import { askForPush } from "@/lib/pushAsk";
+import { supabaseAuth } from "@/lib/supabase";
 
 /**
  * The Profil list when the app draws it (#198): nothing on the page, only the
@@ -19,8 +20,15 @@ export default function NativeProfile({ open, onClose }: { open: boolean; onClos
   const closeNow = useRef(onClose);
   useEffect(() => {
     closeNow.current = onClose;
-    closedNow.current = ({ next, signOut: out, joined }) => {
-      if (out) {
+    closedNow.current = ({ next, signOut: out, joined, accountDeleted }) => {
+      if (accountDeleted) {
+        // As DeleteAccountSection: the server no longer knows the login, so only this
+        // device forgets it, and the sign-in page says the account is gone.
+        void supabaseAuth
+          .signOut({ scope: "local" })
+          .catch(() => undefined)
+          .then(() => navigate("/sign-in?deleted=1", { replace: true }));
+      } else if (out) {
         signOut()
           .then(() => navigate("/"))
           .catch(() => onClose()); // still signed in (offline): back to the page

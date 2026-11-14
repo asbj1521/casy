@@ -222,6 +222,13 @@ public enum CasyStrings {
     public static var friendLinkQrHelp: String { text("friendLink.qrHelp") }
     public static var friendLinkFailed: String { text("friendLink.failed") }
 
+    public static var deleteAccountIntro: String { text("deleteAccount.intro") }
+    public static var deleteAccountWord: String { text("deleteAccount.word") }
+    public static func deleteAccountPrompt(_ value: String) -> String { String(format: text("deleteAccount.prompt"), value) }
+    public static var deleteAccountConfirm: String { text("deleteAccount.confirm") }
+    public static var deleteAccountDeleting: String { text("deleteAccount.deleting") }
+    public static var deleteAccountFailed: String { text("deleteAccount.failed") }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

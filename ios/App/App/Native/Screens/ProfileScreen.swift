@@ -101,6 +101,8 @@ enum LeavingProfile {
     case signOut
     /// Joined a group from its invitation: the sheet closes, as on the web (#230).
     case joined
+    /// The account is gone: the page drops its login and says so.
+    case accountDeleted
 }
 
 /// The Profil list as a native screen (#198), `ProfileHubList` on the web.
@@ -189,8 +191,11 @@ struct ProfileScreen: View {
                             CasyStrings.profileSignOut,
                             systemImage: "rectangle.portrait.and.arrow.right")
                     }
-                    handOver(
-                        CasyStrings.profileDeleteAccount, "trash", "account", tone: .danger)
+                    NavigationLink {
+                        DeleteAccountScreen(leave: leave)
+                    } label: {
+                        ListRow(CasyStrings.profileDeleteAccount, systemImage: "trash", tone: .danger)
+                    }
                 } footer: {
                     Text("\(CasyStrings.appName) \(release) · \(build)")
                         .font(.caption)

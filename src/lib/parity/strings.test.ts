@@ -197,6 +197,12 @@ const WEB: Record<string, (t: Messages) => string> = {
   "friendLink.linkHelp": (t) => t.friendLink.linkHelp("%@"),
   "friendLink.qrHelp": (t) => t.friendLink.qrHelp,
   "friendLink.failed": (t) => t.api.friendLink,
+  "deleteAccount.intro": (t) => t.deleteAccount.intro,
+  "deleteAccount.word": (t) => t.deleteAccount.word,
+  "deleteAccount.prompt": (t) => t.deleteAccount.prompt("%@"),
+  "deleteAccount.confirm": (t) => t.deleteAccount.confirmButton,
+  "deleteAccount.deleting": (t) => t.deleteAccount.deleting,
+  "deleteAccount.failed": (t) => t.api.deleteAccount,
 };
 
 /**
