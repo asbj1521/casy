@@ -3,6 +3,8 @@
  * the same made-up world, so native screens read what the web's tests read.
  * Bundled and started by scripts/native/ui-tests.sh. SLOW_ACTIONS (comma
  * separated) answer after a pause, to show what a screen does while it waits.
+ * POST /reset starts the world again, for a test that changes it (leaving a
+ * group, answering an invitation) so the next one finds it as it was.
  */
 import { createServer } from "node:http";
 import process from "node:process";
@@ -14,7 +16,7 @@ const PORT = Number(process.env.PORT ?? 4318);
 const SLOW = new Set((process.env.SLOW_ACTIONS ?? "").split(",").filter(Boolean));
 const PAUSE_MS = 8000;
 
-const backend = new FakeBackend(makeWorld(DEFAULT_WORLD));
+let backend = new FakeBackend(makeWorld(DEFAULT_WORLD));
 
 createServer((request, response) => {
   const chunks: Buffer[] = [];
@@ -26,6 +28,10 @@ createServer((request, response) => {
       response.writeHead(status, { "Content-Type": "application/json" });
       response.end(JSON.stringify(json));
     };
+    if (url.pathname === "/reset") {
+      backend = new FakeBackend(makeWorld(DEFAULT_WORLD));
+      return send(200, {});
+    }
     if (!name) return send(404, { error: "Not a function" });
     const text = Buffer.concat(chunks).toString();
     const body = text ? (JSON.parse(text) as Record<string, unknown>) : {};

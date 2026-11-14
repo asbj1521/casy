@@ -65,6 +65,34 @@ public struct InvitationsAnswer: Codable, Sendable, Equatable {
     public var invitations: [Invitation]?
 }
 
+/// What leaving or deleting a group answers: your groups as they now are.
+/// `outcome` is "left", "group_deleted" (you were the last) or "deleted".
+public struct LeftGroup: Codable, Sendable, Equatable {
+    public var groups: [Group]?
+    public var outcome: String?
+}
+
+/// Joining answers both lists, the new group in yours.
+public struct JoinedGroup: Codable, Sendable, Equatable {
+    public var groups: [Group]?
+    public var invitations: [Invitation]?
+}
+
+/// Someone you blocked (#142); `name` is null when their account is gone.
+public struct BlockedPerson: Codable, Sendable, Equatable, Identifiable {
+    public var profileId: String
+    public var name: String?
+    public var blockedAt: String
+
+    public var id: String { profileId }
+}
+
+/// Blocking answers whom you block now, and the invitations still open.
+public struct BlockAnswer: Codable, Sendable, Equatable {
+    public var blocked: [BlockedPerson]
+    public var invitations: [Invitation]?
+}
+
 public struct AdminStatus: Codable, Sendable, Equatable {
     public var isAdmin: Bool
 }

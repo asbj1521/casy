@@ -99,7 +99,7 @@ final class SettingsUITests: XCTestCase {
     func testRefusedSaysWhereToUndoIt() {
         let app = launch(push: "denied")
         XCTAssertTrue(
-            app.staticTexts["Slå dem til under Casy i iPhones Indstillinger."]
+            app.staticTexts["Slå dem til under Find en dag i iPhones Indstillinger."]
                 .waitForExistence(timeout: 10))
     }
 

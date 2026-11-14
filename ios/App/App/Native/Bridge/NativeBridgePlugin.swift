@@ -100,6 +100,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 await MainActor.run {
                     NotificationsModel.shared.reset()
                     ProfileModel.shared.reset()
+                    GroupsModel.shared.reset()
                 }
             }
             call.resolve()
@@ -164,6 +165,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                             self?.dismissOpenScreen(["next": address])
                         case .signOut:
                             self?.dismissOpenScreen(["signOut": true])
+                        case .joined:
+                            self?.dismissOpenScreen(["joined": true])
                         }
                     }))
             : AnyView(

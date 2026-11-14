@@ -10,7 +10,8 @@ final class ProfileModel {
 
     private(set) var whoAmI: WhoAmI?
     private(set) var email: String?
-    private(set) var invitations = 0
+    /// The Grupper row's count; Grupper sets it too as invitations are answered.
+    var invitations = 0
     private(set) var isAdmin = false
     fileprivate(set) var failure: String?
     private(set) var saving = false
@@ -98,6 +99,8 @@ enum LeavingProfile {
     /// The page's own screen at this address.
     case webScreen(String)
     case signOut
+    /// Joined a group from its invitation: the sheet closes, as on the web (#230).
+    case joined
 }
 
 /// The Profil list as a native screen (#198), `ProfileHubList` on the web.
@@ -140,9 +143,14 @@ struct ProfileScreen: View {
                             CasyStrings.settingsTitle, systemImage: "gearshape",
                             value: preferences.lang == "da" ? "Dansk" : "English")
                     }
-                    handOver(
-                        CasyStrings.profileGroups, "person.2", "groups",
-                        badge: model.invitations)
+                    NavigationLink {
+                        GroupsScreen(leave: leave)
+                    } label: {
+                        HStack(spacing: 8) {
+                            ListRow(CasyStrings.profileGroups, systemImage: "person.2")
+                            CountBadge(count: model.invitations)
+                        }
+                    }
                     handOver(CasyStrings.profileFriends, "person.crop.square", "friends")
                 }
                 Section {
@@ -295,14 +303,7 @@ struct ProfileScreen: View {
         } label: {
             HStack(spacing: 8) {
                 ListRow(label, systemImage: icon, tone: tone)
-                if badge > 0 {
-                    Text("\(badge)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Theme.primary.color))
-                }
+                CountBadge(count: badge)
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))
@@ -327,6 +328,22 @@ struct ProfileScreen: View {
             string: "mailto:\(Self.feedbackEmail)?subject=\(subject)&body=\(encoded(text))")
         {
             openURL(url)
+        }
+    }
+}
+
+/// How many wait for an answer, in orange at a row's end; nothing for none.
+private struct CountBadge: View {
+    let count: Int
+
+    var body: some View {
+        if count > 0 {
+            Text("\(count)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(Theme.primary.color))
         }
     }
 }

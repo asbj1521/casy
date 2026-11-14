@@ -1,0 +1,33 @@
+{
+  "groups": [
+    {
+      "id": "g-running",
+      "name": "Løbeklubben",
+      "description": null,
+      "createdAt": "2026-09-10T12:00:00.000Z",
+      "createdBy": "p-freja",
+      "members": [
+        {
+          "profileId": "p-freja",
+          "name": "Freja",
+          "isYou": false,
+          "joinedAt": "2026-09-10T12:00:00.000Z"
+        },
+        {
+          "profileId": "p-mia",
+          "name": "Mia Jensen",
+          "isYou": true,
+          "joinedAt": "2026-09-11T12:00:00.000Z"
+        },
+        {
+          "profileId": "p-oliver",
+          "name": "Oliver",
+          "isYou": false,
+          "joinedAt": "2026-09-12T12:00:00.000Z"
+        }
+      ],
+      "invited": []
+    }
+  ],
+  "outcome": "deleted"
+}

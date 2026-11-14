@@ -89,6 +89,42 @@ public struct ListRow: View {
     }
 }
 
+/// A row led by a picture or a letter: a group, an invitation, a person.
+/// At the largest text sizes the picture goes, as a row's icon does.
+public struct ListAvatarRow<Trailing: View>: View {
+    private let label: String
+    private let detail: String?
+    private let index: Int
+    private let url: URL?
+    private let trailing: Trailing
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    public init(
+        _ label: String,
+        detail: String? = nil,
+        index: Int,
+        url: URL? = nil,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) {
+        self.label = label
+        self.detail = detail
+        self.index = index
+        self.url = url
+        self.trailing = trailing()
+    }
+
+    public var body: some View {
+        HStack(spacing: 12) {
+            if !textSize.isAccessibilitySize {
+                Avatar(name: label, index: index, size: .row, url: url)
+            }
+            RowText(label: label, detail: detail, color: Theme.foreground.color)
+            Spacer(minLength: 8)
+            trailing
+        }
+    }
+}
+
 /// A choice: tap to pick it, an orange tick at the end when it is picked.
 /// Disabled, it shows `value` instead of a tick.
 public struct ListPickRow: View {

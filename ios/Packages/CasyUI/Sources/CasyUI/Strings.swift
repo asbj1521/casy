@@ -71,6 +71,49 @@ public enum CasyStrings {
     public static var picturesLibrary: String { text("pictures.library") }
     public static var picturesCamera: String { text("pictures.camera") }
 
+    /// "1 medlem", "5 medlemmer".
+    public static func members(_ n: Int) -> String {
+        n == 1 ? text("counts.members.one") : String(format: text("counts.members.many"), n)
+    }
+
+    public static var groupsTitle: String { text("groups.title") }
+    public static var groupsYours: String { text("groups.yours") }
+    public static var groupsYou: String { text("groups.you") }
+    public static var groupsLoading: String { text("groups.loading") }
+    public static var groupsLoadFailed: String { text("groups.loadFailed") }
+    public static var groupsEmpty: String { text("groups.empty") }
+    public static var groupsMake: String { text("groups.make") }
+    public static var groupsLeave: String { text("groups.leave") }
+    public static var groupsDelete: String { text("groups.delete") }
+    public static var groupsLeaveFailed: String { text("groups.leaveFailed") }
+    public static var groupsDeleteFailed: String { text("groups.deleteFailed") }
+    /// Asked before deleting a group other people are in.
+    public static func groupsDeleteConfirm(_ name: String, members count: Int) -> String {
+        String(format: text("groups.deleteConfirm"), name, members(count))
+    }
+
+    public static var invitationsTitle: String { text("invitations.title") }
+    public static var invitationsInvitedTo: String { text("invitations.invitedTo") }
+    public static func invitationsInvitedBy(_ name: String) -> String {
+        String(format: text("invitations.invitedBy"), name)
+    }
+    public static func invitationsMembersSoFar(_ n: Int) -> String {
+        n == 1
+            ? text("invitations.membersSoFar.one")
+            : String(format: text("invitations.membersSoFar.many"), n)
+    }
+    public static var invitationsAbout: String { text("invitations.about") }
+    public static var invitationsPrivacy: String { text("invitations.privacy") }
+    public static var invitationsJoin: String { text("invitations.join") }
+    public static var invitationsNoThanks: String { text("invitations.noThanks") }
+    public static var invitationsAnswerFailed: String { text("invitations.answerFailed") }
+    public static var invitationsBlockSender: String { text("invitations.blockSender") }
+    public static var invitationsBlock: String { text("invitations.block") }
+    public static var invitationsBlockFailed: String { text("invitations.blockFailed") }
+    public static func invitationsBlockConfirm(_ name: String) -> String {
+        String(format: text("invitations.blockConfirm"), name)
+    }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

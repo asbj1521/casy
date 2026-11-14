@@ -116,3 +116,28 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     let answer = try readsWithNothingLost("account-push-set", as: PushKindsOff.self)
     #expect(answer.off.contains("deadline_near"))
 }
+
+@Test func joiningReadsBothLists() throws {
+    let answer = try readsWithNothingLost("groups-accept-invitation", as: JoinedGroup.self)
+    #expect(answer.groups?.isEmpty == false)
+    #expect(answer.invitations?.contains { $0.groupId == "g-badminton" } == false)
+}
+
+@Test func decliningReads() throws {
+    let answer = try readsWithNothingLost("groups-decline-invitation", as: InvitationsAnswer.self)
+    #expect(answer.invitations?.contains { $0.groupId == "g-badminton" } == false)
+}
+
+@Test func blockingTheSenderReads() throws {
+    let answer = try readsWithNothingLost("groups-block", as: BlockAnswer.self)
+    #expect(answer.blocked.first?.name == "Sara")
+    #expect(answer.invitations?.isEmpty == true)
+}
+
+@Test func leavingAndDeletingRead() throws {
+    let left = try readsWithNothingLost("groups-leave", as: LeftGroup.self)
+    #expect(left.outcome == "left")
+    #expect(left.groups?.contains { $0.id == "g-running" } == false)
+    let deleted = try readsWithNothingLost("groups-delete", as: LeftGroup.self)
+    #expect(deleted.outcome == "deleted")
+}

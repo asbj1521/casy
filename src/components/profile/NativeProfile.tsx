@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/context/auth";
 import { onNativeClosed, openNativeScreen, type NativeClosed } from "@/lib/nativeBridge";
+import { askForPush } from "@/lib/pushAsk";
 
 /**
  * The Profil list when the app draws it (#198): nothing on the page, only the
  * native sheet opened while the address says `?profile`. When it closes, the
  * address steps back, or goes on to a screen still drawn by the page. The page
- * signs out, as it owns the login.
+ * signs out, as it owns the login, and offers notifications after a join.
  */
 export default function NativeProfile({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate();
@@ -18,11 +19,15 @@ export default function NativeProfile({ open, onClose }: { open: boolean; onClos
   const closeNow = useRef(onClose);
   useEffect(() => {
     closeNow.current = onClose;
-    closedNow.current = ({ next, signOut: out }) => {
+    closedNow.current = ({ next, signOut: out, joined }) => {
       if (out) {
         signOut()
           .then(() => navigate("/"))
           .catch(() => onClose()); // still signed in (offline): back to the page
+      } else if (joined) {
+        // As the page's own invitation does (useInvitationAnswers, #139, #230).
+        onClose();
+        askForPush("joined");
       } else if (next) {
         navigate(next, { replace: true });
       } else {

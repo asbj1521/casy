@@ -6,9 +6,9 @@ The living half of `docs/native-ios-plan.md`, which says where this is going. Th
 
 | Package | What it holds | Mirrors |
 |---|---|---|
-| `CasyCore` | Pure logic, no UI: the engine's types, Danish time (`Zone`), dates as text (`Format`), holidays, periods and the viewer's clock, `PhoneBusy`, votes and the event lists (`Events`) | `src/lib`, `src/types` |
+| `CasyCore` | Pure logic, no UI: the engine's types, Danish time (`Zone`), dates as text (`Format`), holidays, periods and the viewer's clock, `PhoneBusy`, votes and the event lists (`Events`), what a swipe on a group does and its member line (`Groups`) | `src/lib`, `src/types` |
 | `CasyAPI` | `EdgeFunctions.call` (the web's `callFunction`), and the answers as Codable types | `src/lib/supabaseFunctions.ts`, `src/api` |
-| `CasyUI` | `Theme` (colours), `FlowButton`, `GlassButton`, `casyGlass()`, `ListRow`, `ListPickRow`, `ListSwitchRow`, `CasyField`, `Avatar`, `Notice`, `ConfirmButton`, the String Catalog | `src/index.css`, `src/theme.css`, `src/components/ui` |
+| `CasyUI` | `Theme` (colours), `FlowButton` (glass, or `.solid` orange for an invitation's yes), `GlassButton`, `casyGlass()`, `ListRow`, `ListAvatarRow` (a picture in front), `ListPickRow`, `ListSwitchRow`, `CasyField`, `Avatar`, `Notice`, `ConfirmButton`, the String Catalog | `src/index.css`, `src/theme.css`, `src/components/ui` |
 
 Rules for code in them:
 
@@ -26,7 +26,8 @@ Rules for code in them:
 - Language and theme are the web view's too: a choice made natively is sent back and applied as its own rows do. Strings follow Casy's language (`CasyStrings.language`), not the phone's.
 - **The rewrite reaches people all at once, as its own update (decided 2026-11-09).** `nativeScreens` is empty in a Release build, so TestFlight and App Store builds keep the web's screens and `main` can ship fixes and features meanwhile; native screens show when running a Debug build from Xcode. The web asks once which screens exist (`useNativeScreen`), so a web build never opens one its app doesn't have.
 
-- **The Profil list** (`Screens/ProfileScreen.swift`, Debug only until the whole sheet is native) opens from `?profile` through `profile/NativeProfile.tsx`. Indstillinger is pushed inside it; a row whose screen is still the web's closes the sheet and `closed` carries `next` (the address), so the page goes there as one step; `signOut` is the page's too, as it owns the login. The web's sheet answers `?profile=<screen>` as before, and its way back to `?profile` opens the native list again. The app never opens Safari: help pages are the page's own screens inside the app until they are rebuilt in Swift. The picture on the name card (add, crop, remove) is not native yet.
+- **The Profil list** (`Screens/ProfileScreen.swift`, Debug only until the whole sheet is native) opens from `?profile` through `profile/NativeProfile.tsx`. Indstillinger is pushed inside it; a row whose screen is still the web's closes the sheet and `closed` carries `next` (the address), so the page goes there as one step; `signOut` is the page's too, as it owns the login. The web's sheet answers `?profile=<screen>` as before, and its way back to `?profile` opens the native list again. The app never opens Safari: help pages are the page's own screens inside the app until they are rebuilt in Swift. The picture on the name card (add, crop, remove) is native too.
+- **Grupper** (`Screens/GroupsScreen.swift`) is pushed inside the Profil list: the invitations, then your groups, each swiped left to leave or delete (asked first when it takes the group from others, `groupSwipe`). An invitation opens its own screen (Bliv medlem, Nej tak, blocking the sender behind the ?); joining closes the sheet with `joined`, and the page offers notifications as its own invitation does. A group's screen and Lav en gruppe are still the page's: `?profile=groups/<id>`, and `?profile=groups&new=group`, which opens New group. `GroupsModel` keeps the Profil row's count, and every change sends `dataChanged`, on which the page fetches its groups, invitations and blocked people again.
 
 ## What keeps it equal to the web
 
@@ -56,7 +57,7 @@ scripts/native/snapshots.sh            # CasyUI's pictures; --record draws them 
 
 CI's `native.yml` tests all three packages on a Mac (CasyUI through `xcodebuild`, as its Xcode's plain `swift test` doesn't compile the String Catalog) and builds them for the iOS simulator, whenever `ios/Packages` or `src/lib` change.
 
-The app's UI tests (`ios/App/AppUITests`, a synchronized folder) open native screens signed in, against the browser tests' fake backend over HTTP (`scripts/native/fake-backend.ts`), locally before every commit, and on CI (`ios.yml`) on `main` only, after the merge, so a merge doesn't wait the 9 minutes they take on GitHub's Mac:
+The app's UI tests (`ios/App/AppUITests`, a synchronized folder) open native screens signed in, against the browser tests' fake backend over HTTP (`scripts/native/fake-backend.ts`; a test that changes its world calls `POST /reset` first), locally before every commit, and on CI (`ios.yml`) on `main` only, after the merge, so a merge doesn't wait the 9 minutes they take on GitHub's Mac:
 
 ```bash
 scripts/native/ui-tests.sh             # UI_TEST_DEVICE picks the simulator

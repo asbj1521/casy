@@ -31,6 +31,8 @@ export interface NativeClosed {
   /** An address in the page: the screen handed over to the page's own. */
   next?: string;
   signOut?: boolean;
+  /** Joined a group from a native invitation (#198): the moment to offer notifications. */
+  joined?: boolean;
 }
 
 interface Preferences {
@@ -128,7 +130,7 @@ export async function onNativeClosed(
   return plugin.addListener("closed", onClose);
 }
 
-/** Calls `onChange` when a native screen changed your name or picture. */
+/** Calls `onChange` when a native screen changed your name, picture, groups or invitations. */
 export async function onNativeDataChanged(onChange: () => void): Promise<PluginListenerHandle> {
   const { plugin } = await bridgePlugin();
   return plugin.addListener("dataChanged", onChange);

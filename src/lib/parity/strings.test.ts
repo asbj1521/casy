@@ -65,6 +65,36 @@ const WEB: Record<string, (t: Messages) => string> = {
   ...Object.fromEntries(
     KINDS.map((kind) => [`push.kind.${kind}`, (t: Messages) => t.push.kinds[kind]]),
   ),
+  // A number or a name filled in by Swift is written as String(format:) has it.
+  "counts.members.one": (t) => t.counts.members(1),
+  "counts.members.many": (t) => t.counts.members(7).replace("7", "%d"),
+  "groups.title": (t) => t.groupsPage.title,
+  "groups.yours": (t) => t.groupsSection.title,
+  "groups.you": (t) => t.groupsPage.you,
+  "groups.loading": (t) => t.groupsSection.loading,
+  "groups.loadFailed": (t) => t.groupsSection.loadFailed,
+  "groups.empty": (t) => t.groupsPage.empty,
+  "groups.make": (t) => t.groupsSection.makeGroup,
+  "groups.leave": (t) => t.groupsSection.swipeLeave,
+  "groups.delete": (t) => t.groupsSection.swipeDelete,
+  "groups.deleteConfirm": (t) =>
+    t.groupsSection.deleteConfirm("%1$@", 7).replace(t.counts.members(7), "%2$@"),
+  "groups.leaveFailed": (t) => t.api.leaveGroup,
+  "groups.deleteFailed": (t) => t.api.deleteGroup,
+  "invitations.title": (t) => t.events.invitations,
+  "invitations.invitedBy": (t) => t.join.invitedBy("%@"),
+  "invitations.invitedTo": (t) => t.join.invitedTo,
+  "invitations.membersSoFar.one": (t) => t.join.membersSoFar(1),
+  "invitations.membersSoFar.many": (t) => t.join.membersSoFar(7).replace("7", "%d"),
+  "invitations.about": (t) => t.join.aboutTitle,
+  "invitations.privacy": (t) => t.join.privacy,
+  "invitations.join": (t) => t.join.joinGroup,
+  "invitations.noThanks": (t) => t.events.noThanks,
+  "invitations.answerFailed": (t) => t.api.answerInvitation,
+  "invitations.blockSender": (t) => t.safety.blockSender,
+  "invitations.block": (t) => t.safety.block,
+  "invitations.blockFailed": (t) => t.api.blocked,
+  "invitations.blockConfirm": (t) => t.safety.blockSenderConfirm("%1$@"),
 };
 
 /**

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 
@@ -36,6 +36,21 @@ export default function GroupList({
   const navigate = useNavigate();
   const { data: groups, isPending, isError } = useQuery(groupsQuery(youId));
   const [newGroupOpen, setNewGroupOpen] = useState(false);
+  // `?new=group` holds New group open: the app's native Grupper hands its
+  // "Lav en gruppe" over this way (#198). Closing it takes it off the address.
+  const [params, setParams] = useSearchParams();
+  const askedForNew = params.get("new") === "group";
+  function closeNewGroup() {
+    setNewGroupOpen(false);
+    if (!askedForNew) return;
+    setParams(
+      (now) => {
+        now.delete("new");
+        return now;
+      },
+      { replace: true },
+    );
+  }
   const phone = usePhoneLayout();
   const queryClient = useQueryClient();
   const [swiped, setSwiped] = useState<string | null>(null);
@@ -151,8 +166,8 @@ export default function GroupList({
 
       {/* Made and invited to in its sheet (#153); the group opens once that closes. */}
       <NewGroupDialog
-        open={newGroupOpen}
-        onClose={() => setNewGroupOpen(false)}
+        open={newGroupOpen || askedForNew}
+        onClose={closeNewGroup}
         onCreated={() => {}}
         // A phone goes home: the group's screen under it would ask for a second Færdig (#227).
         onDone={(id) => navigate(phone ? "/" : `/groups/${id}`)}

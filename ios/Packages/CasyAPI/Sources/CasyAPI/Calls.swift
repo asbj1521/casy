@@ -21,6 +21,16 @@ private struct SetName: Encodable, Sendable {
     let name: String
 }
 
+private struct GroupAction: Encodable, Sendable {
+    let action: String
+    let groupId: String
+}
+
+private struct BlockSender: Encodable, Sendable {
+    let action = "block"
+    let invitationGroupId: String
+}
+
 private struct SetAvatar: Encodable, Sendable {
     let action = "set-avatar"
     let image: String
@@ -75,6 +85,47 @@ extension EdgeFunctions {
         let answer: InvitationsAnswer = try await call(
             "groups", body: Action(action: "invitations"), errorMessage: errorMessage)
         return answer.invitations ?? []
+    }
+
+    /// Yes to an invitation: answers your groups and the invitations left.
+    public func acceptInvitation(
+        _ groupId: String, errorMessage: String? = nil
+    ) async throws -> JoinedGroup {
+        try await call(
+            "groups", body: GroupAction(action: "accept-invitation", groupId: groupId),
+            errorMessage: errorMessage)
+    }
+
+    /// No thanks: answers the invitations left. The group is never told.
+    public func declineInvitation(
+        _ groupId: String, errorMessage: String? = nil
+    ) async throws -> [Invitation] {
+        let answer: InvitationsAnswer = try await call(
+            "groups", body: GroupAction(action: "decline-invitation", groupId: groupId),
+            errorMessage: errorMessage)
+        return answer.invitations ?? []
+    }
+
+    /// Blocks whoever sent this invitation, which is declined with it (#142).
+    public func blockInvitationSender(
+        _ groupId: String, errorMessage: String? = nil
+    ) async throws -> BlockAnswer {
+        try await call(
+            "groups", body: BlockSender(invitationGroupId: groupId), errorMessage: errorMessage)
+    }
+
+    /// Leaves a group; the last one out deletes it.
+    public func leaveGroup(_ groupId: String, errorMessage: String? = nil) async throws -> LeftGroup {
+        try await call(
+            "groups", body: GroupAction(action: "leave", groupId: groupId),
+            errorMessage: errorMessage)
+    }
+
+    /// Deletes a group for everyone: only whoever made it may.
+    public func deleteGroup(_ groupId: String, errorMessage: String? = nil) async throws -> LeftGroup {
+        try await call(
+            "groups", body: GroupAction(action: "delete", groupId: groupId),
+            errorMessage: errorMessage)
     }
 
     public func isAdmin(errorMessage: String? = nil) async throws -> Bool {

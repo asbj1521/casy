@@ -33,6 +33,9 @@ public enum FlowButtonKind: Sendable {
     case quiet
     /// What is lost for good: red.
     case danger
+    /// Solid orange, kept for the one answer a screen is for: an invitation's
+    /// yes (CLAUDE.md, design rule 2; `InviteAction` on the web).
+    case solid
 }
 
 /// A screen's main action, a full-width glass capsule. One per sheet or screen,
@@ -62,6 +65,7 @@ public struct FlowButton<Label: View>: View {
         case .main: Theme.primary.color
         case .quiet: Theme.foreground.color
         case .danger: Theme.red600.color
+        case .solid: Theme.primaryForeground.color
         }
     }
 
@@ -75,7 +79,10 @@ public struct FlowButton<Label: View>: View {
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity, minHeight: height)
             .contentShape(Capsule())
-            .casyGlass()
+            .background {
+                if kind == .solid { Capsule().fill(Theme.cta.color) }
+            }
+            .modifier(GlassUnlessSolid(solid: kind == .solid))
             .opacity(isEnabled && !busy ? 1 : 0.5)
         }
         .buttonStyle(PressStyle(scale: 0.98))
@@ -132,5 +139,14 @@ public struct GlassButton<Label: View>: View {
         }
         .buttonStyle(PressStyle(scale: 0.95))
         .disabled(busy)
+    }
+}
+
+/// The glass under every main button but the solid one.
+private struct GlassUnlessSolid: ViewModifier {
+    let solid: Bool
+
+    func body(content: Content) -> some View {
+        if solid { content } else { content.casyGlass() }
     }
 }
