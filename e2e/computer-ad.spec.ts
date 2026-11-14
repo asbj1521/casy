@@ -63,7 +63,7 @@ test.describe("a computer", () => {
 
     test("speaks English too", async ({ page }) => {
       await page.goto("/?lang=en");
-      await expect(page.getByText("Everyone says it. The app actually finds it.")).toBeVisible();
+      await expect(page.getByText("Everyone says it. The app finds it.")).toBeVisible();
       await expect(page.getByRole("link", { name: "Get it on the App Store" })).toBeVisible();
     });
   });

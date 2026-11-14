@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { SiApple } from "react-icons/si";
 
 import { previewFriend, previewInvite } from "@/api/groups";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -121,22 +122,26 @@ function Bubbles() {
   );
 }
 
-/** The QR code and the ways to the app beside it. */
+/**
+ * The QR code and the way to the App Store as one card: the code on its own
+ * white, and beside it, on one left edge, what to do and the App Store's button.
+ */
 function GetTheApp({ link, scanLine, label }: { link: string; scanLine: string; label: string }) {
   const t = useT();
   return (
-    <div className="flex flex-wrap items-center gap-5">
-      <div className="rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-border">
-        <QrCode value={link} label={label} border={2} className="h-40 w-40" />
+    <div className="flex w-fit items-center gap-5 rounded-[1.75rem] bg-card/90 p-3 pr-6 shadow-sm ring-1 ring-border backdrop-blur">
+      <div className="rounded-[1.25rem] bg-white p-2">
+        <QrCode value={link} label={label} border={1} className="h-32 w-32" />
       </div>
-      <div className="flex min-w-0 flex-col gap-2">
-        <p className="text-[1.0625rem] font-semibold">{scanLine}</p>
+      <div className="flex flex-col items-start gap-3">
+        <p className="max-w-[13rem] text-[1.0625rem] font-semibold leading-snug">{scanLine}</p>
         <a
           href={APP_STORE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="glass-pill mt-1 inline-flex w-fit items-center rounded-full px-5 py-2.5 text-[0.9375rem] font-semibold text-primary"
+          className="inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full bg-foreground px-5 text-[0.9375rem] font-semibold text-background transition active:scale-[0.98]"
         >
+          <SiApple aria-hidden className="h-4 w-4" />
           {t.computerAd.appStore}
         </a>
       </div>
@@ -185,46 +190,45 @@ export default function ComputerAd({ kind = "home" }: { kind?: "home" | "invite"
       </div>
       <main className="relative mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
         {/* Over the colour shapes, which spill out from beside the phone. */}
-        <section className="relative z-10 flex min-w-0 flex-col gap-6">
+        <section className="relative z-10 flex min-w-0 max-w-[30rem] flex-col items-start">
           <h1>
             <LogoMark
               label={appName(lang)}
-              className="block w-[min(24rem,30vw,38vh)] text-[#FF4D00]"
+              className="block w-[min(21rem,28vw,34vh)] text-[#FF4D00]"
             />
           </h1>
-          <p className="text-balance text-[1.75rem] font-bold leading-tight">
-            {t.computerAd.tagline}
-          </p>
-          <p className="max-w-[34rem] text-[1.0625rem] leading-relaxed text-muted-foreground">
+          <p className="mt-8 text-[1.625rem] font-bold leading-tight">{t.computerAd.tagline}</p>
+          <p className="mt-2 text-[1.0625rem] leading-relaxed text-muted-foreground">
             {t.computerAd.about}
           </p>
 
-          {kind === "invite" && group && (
-            <p className="text-[1.25rem] font-semibold">
-              {group.invitedBy
-                ? t.computerAd.invited(group.invitedBy, group.name)
-                : t.computerAd.invitedAnon(group.name)}
+          {(kind === "invite" && group) || kind === "friend" ? (
+            <p className="mt-6 text-[1.0625rem] font-semibold text-primary">
+              {kind === "friend"
+                ? friendName
+                  ? t.friendLink.asks(friendName)
+                  : t.friendLink.asksAnon
+                : group!.invitedBy
+                  ? t.computerAd.invited(group!.invitedBy, group!.name)
+                  : t.computerAd.invitedAnon(group!.name)}
             </p>
-          )}
-          {kind === "friend" && (
-            <p className="text-[1.25rem] font-semibold">
-              {friendName ? t.friendLink.asks(friendName) : t.friendLink.asksAnon}
-            </p>
-          )}
+          ) : null}
 
-          {kind === "home" ? (
-            <GetTheApp link={APP_URL} scanLine={t.computerAd.scan} label={t.computerAd.qrLabel} />
-          ) : (
-            <GetTheApp
-              link={here}
-              scanLine={kind === "invite" ? t.computerAd.inviteScan : t.computerAd.friendScan}
-              label={t.computerAd.inviteQrLabel}
-            />
-          )}
+          <div className="mt-8">
+            {kind === "home" ? (
+              <GetTheApp link={APP_URL} scanLine={t.computerAd.scan} label={t.computerAd.qrLabel} />
+            ) : (
+              <GetTheApp
+                link={here}
+                scanLine={kind === "invite" ? t.computerAd.inviteScan : t.computerAd.friendScan}
+                label={t.computerAd.inviteQrLabel}
+              />
+            )}
+          </div>
 
           {user && (
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.875rem] text-muted-foreground">
-              {t.computerAd.signedIn(displayName(user))}
+            <p className="mt-6 text-[0.875rem] text-muted-foreground">
+              {t.computerAd.signedIn(displayName(user))}{" "}
               <button
                 type="button"
                 onClick={() => void signOut()}

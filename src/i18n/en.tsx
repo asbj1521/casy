@@ -148,7 +148,7 @@ export const en: Messages = {
     waitingForAnswer: (n: number) => `${n} waiting for your answer`,
   },
   computerAd: {
-    tagline: "Everyone says it. The app actually finds it.",
+    tagline: "Everyone says it. The app finds it.",
     about: "From your calendars, free on every phone.",
     scan: "Scan with your phone",
     appStore: "Get it on the App Store",
