@@ -196,10 +196,10 @@ struct ProfileScreen: View {
                     } label: {
                         ListRow(CasyStrings.profileMyData, systemImage: "cylinder")
                     }
-                    handOver(CasyStrings.profileSupport, "lifepreserver", to: "/support")
-                    handOver(CasyStrings.profileHowItWorks, "questionmark.circle", to: "/how-it-works")
-                    handOver(CasyStrings.profileTerms, "doc.text", to: "/terms")
-                    handOver(CasyStrings.profilePrivacy, "lock", to: "/privacy")
+                    page(CasyStrings.profileSupport, "lifepreserver", .support)
+                    page(CasyStrings.profileHowItWorks, "questionmark.circle", .howItWorks)
+                    page(CasyStrings.profileTerms, "doc.text", .terms)
+                    page(CasyStrings.profilePrivacy, "lock", .privacy(section: nil))
                 }
                 Section {
                     Button {
@@ -304,6 +304,15 @@ struct ProfileScreen: View {
                 .accessibilityValue(name)
             }
             if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
+        }
+    }
+
+    /// A help page, pushed inside the sheet.
+    private func page(_ label: String, _ icon: String, _ link: PageLink) -> some View {
+        NavigationLink {
+            PageScreen(page: link, leave: leave)
+        } label: {
+            ListRow(label, systemImage: icon)
         }
     }
 

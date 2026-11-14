@@ -126,6 +126,11 @@ const en: Copy = {
   getStarted: "Get started",
 };
 
+/** Both languages, for the iPhone app's own copy of this page (e2e/helpPages.parity.ts). */
+// The copy stays in the page file (CLAUDE.md, Languages); a change here reloads the page.
+// eslint-disable-next-line react-refresh/only-export-components
+export const COPY = { da, en };
+
 export default function HowItWorks() {
   const { user } = useAuth();
   const { lang } = useLang();

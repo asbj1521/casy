@@ -128,8 +128,8 @@ final class ProfileUITests: XCTestCase {
     /// A screen that is still the page's closes the native sheet.
     func testARowStillOnThePageClosesTheSheet() { leavesForThePage("Grupper") }
 
-    /// Help pages open in the app's own page too, never Safari.
-    func testAHelpPageClosesTheSheet() { leavesForThePage("Hjælp og kontakt") }
+    /// Log ind og sikkerhed is still the page's too, inside the app, never Safari.
+    func testLogInAndSecurityClosesTheSheet() { leavesForThePage("Log ind og sikkerhed") }
 
     private func leavesForThePage(_ label: String) {
         let app = launch()

@@ -1,0 +1,1000 @@
+{
+  "support": {
+    "da": {
+      "title": "Hjælp og kontakt",
+      "updated": "Senest opdateret 23. oktober 2026",
+      "sections": [
+        {
+          "title": "Skriv til os",
+          "blocks": [
+            {
+              "text": "Appen drives af én person, og du kan altid skrive til [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com). Fortæl, hvad du prøvede, og hvad der skete i stedet, gerne med et skærmbillede. Jeg svarer så hurtigt, jeg kan, normalt inden for et par dage. I appen finder du også Send feedback under Profil."
+            }
+          ]
+        },
+        {
+          "title": "Min kalender er tom",
+          "blocks": [
+            {
+              "text": "Appen skal have lov til at læse telefonens kalendere. Tryk Importér min kalender på Min kalender, og sig ja, når iPhonen spørger. Sagde du nej, kan det ændres under Indstillinger, Find en dag, Kalendere. Vi læser alle de kalendere, der ligger på telefonen, også dem fra Google eller Outlook, hvis du har lagt dem ind i iPhonen. Mangler en enkelt kalender, så tjek, at den er sat til under Kalendere øverst til venstre på Min kalender. På hjemmesiden kan du også forbinde en Apple-kalender eller et kalenderlink: se [hjælp til Apple-kalender](/help/connect-icloud) og [til kalenderlink](/help/connect-ics)."
+            }
+          ]
+        },
+        {
+          "title": "Vi kan ikke finde en dato",
+          "blocks": [
+            {
+              "text": "Prøv at gøre søgningen bredere: flere ugedage, et andet tidspunkt på dagen, en kortere aftale eller flere måneder. Når vi ikke kan finde en dato, foreslår vi selv, hvad der vil give en. Står nogen som optaget hele tiden, kan de sætte en kalender til at kunne springes over under Kalendere."
+            }
+          ]
+        },
+        {
+          "title": "Invitationer og grupper",
+          "blocks": [
+            {
+              "text": "Du kan invitere fra dine kontakter, med et link eller med en QR-kode, som du finder under Invitér folk i gruppen. Et link virker i 7 dage. Åbner et link i Safari i stedet for i appen, kan du blive medlem på siden, og gruppen er i appen, når du er logget ind med den samme konto. Forlader du en gruppe, holder de andre op med at se noget om dig med det samme."
+            }
+          ]
+        },
+        {
+          "title": "Hvad kan de andre se?",
+          "blocks": [
+            {
+              "text": "Dem i dine grupper kan se dit navn og hvornår du er optaget, aldrig hvad dine aftaler hedder, og aldrig din e-mailadresse. Alt om, hvad vi gemmer, står i [privatlivspolitikken](/privacy), og under Profil, Dine data kan du se det og hente en kopi."
+            }
+          ]
+        },
+        {
+          "title": "Rapportér og bloker",
+          "blocks": [
+            {
+              "text": "Er der noget i en gruppe eller en aftale, som ikke er i orden, så brug Rapportér eller bloker i gruppen eller Rapportér på aftalen. Den, du rapporterer, får ikke at vide, at det var dig. Du kan blokere en person, så de ikke kan invitere dig til flere grupper, og fjerne blokeringen igen under Dine data."
+            }
+          ]
+        },
+        {
+          "title": "Slet min konto",
+          "blocks": [
+            {
+              "text": "Under Profil, Slet konto sletter du din konto og alt, der hører til den, med det samme. Hvad der bliver slettet, og hvor længe vi gemmer resten, står i [privatlivspolitikken](/privacy)."
+            }
+          ]
+        },
+        {
+          "title": "Mere",
+          "blocks": [
+            {
+              "text": "[Sådan virker det](/how-it-works), [vilkårene](/terms) og [privatlivspolitikken](/privacy)."
+            }
+          ]
+        }
+      ]
+    },
+    "en": {
+      "title": "Help and contact",
+      "updated": "Last updated 23 October 2026",
+      "sections": [
+        {
+          "title": "Write to us",
+          "blocks": [
+            {
+              "text": "The app is run by one person, and you can always write to [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com). Tell me what you tried and what happened instead, with a screenshot if you can. I reply as soon as I can, usually within a couple of days. In the app you will also find Send feedback under Profile."
+            }
+          ]
+        },
+        {
+          "title": "My calendar is empty",
+          "blocks": [
+            {
+              "text": "The app needs permission to read the phone's calendars. Tap Import my calendar on My calendar, and say yes when the iPhone asks. If you said no, you can change it under Settings, Find en dag, Calendars. We read every calendar on the phone, including ones from Google or Outlook if you have added them to the iPhone. If a single calendar is missing, check that it is ticked under Calendars at the top left of My calendar. On the website you can also connect an Apple Calendar or a calendar link: see [help with Apple Calendar](/help/connect-icloud) and [with a calendar link](/help/connect-ics)."
+            }
+          ]
+        },
+        {
+          "title": "We can't find a date",
+          "blocks": [
+            {
+              "text": "Try widening the search: more weekdays, another time of day, a shorter event or more months. When we can't find a date, we suggest what would give one. If someone always shows as busy, they can set a calendar to be skippable under Calendars."
+            }
+          ]
+        },
+        {
+          "title": "Invitations and groups",
+          "blocks": [
+            {
+              "text": "You can invite from your contacts, with a link or with a QR code, which you find under Invite people in the group. A link works for 7 days. If a link opens in Safari instead of the app, you can join on the page, and the group is in the app when you are signed in with the same account. If you leave a group, the others stop seeing anything about you straight away."
+            }
+          ]
+        },
+        {
+          "title": "What can the others see?",
+          "blocks": [
+            {
+              "text": "People in your groups can see your name and when you are busy, never what your events are called, and never your email address. Everything about what we store is in the [privacy policy](/privacy), and under Profile, Your data you can see it and download a copy."
+            }
+          ]
+        },
+        {
+          "title": "Report and block",
+          "blocks": [
+            {
+              "text": "If something in a group or an event isn't right, use Report or block in the group, or Report on the event. Whoever you report is not told it was you. You can block a person so they can't invite you to more groups, and remove the block again under Your data."
+            }
+          ]
+        },
+        {
+          "title": "Delete my account",
+          "blocks": [
+            {
+              "text": "Under Profile, Delete account you delete your account and everything that belongs to it, straight away. What is deleted, and how long we keep the rest, is in the [privacy policy](/privacy)."
+            }
+          ]
+        },
+        {
+          "title": "More",
+          "blocks": [
+            {
+              "text": "[How it works](/how-it-works), the [terms](/terms) and the [privacy policy](/privacy)."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "howItWorks": {
+    "da": {
+      "eyebrow": "Sådan virker det",
+      "title": "Fra \"vi finder lige en dag\" til en dag i kalenderen.",
+      "intro": "Vi lægger jeres kalendere oven på hinanden og viser de dage, hvor alle kan. Gruppen stemmer, og aftalen lander i alles kalender.",
+      "steps": [
+        {
+          "title": "Hent appen, og log ind",
+          "body": "Log ind med din Apple-konto i appen. På en computer eller en Android-telefon bruger du hjemmesiden, med Google eller din e-mail."
+        },
+        {
+          "title": "Forbind din kalender",
+          "body": "I appen bruger vi de kalendere, der allerede ligger på telefonen. På hjemmesiden kan du forbinde Google, Outlook eller Apple eller indsætte et kalenderlink, for eksempel et skoleskema. Vi får kun at vide, hvornår du er optaget, og du bestemmer selv, hvilke kalendere der tæller, og hvor meget."
+        },
+        {
+          "title": "Lav en gruppe",
+          "body": "Giv gruppen et navn, og invitér folk fra dine kontakter, med et link eller med en QR-kode. Ét link er nok: det fører til appen, og efter log ind er man med i gruppen. Linket virker i syv dage, og en gruppe kan have op til 20 medlemmer. I gruppen ser man kun hinandens navne, og hvornår man er optaget."
+        },
+        {
+          "title": "Tryk på Planlæg",
+          "body": "Sig, hvad I skal, hvor længe det varer, og hvilke dage der passer: en aften, en weekend eller en hel tur. Vil du hellere skrive eller sige det med dine egne ord, sætter Planlæg med AI det op for dig. Vi lægger alles kalendere oven på hinanden og viser de dage, hvor alle kan, med op til fem gode datoer at sende til gruppen."
+        },
+        {
+          "title": "Gruppen stemmer",
+          "body": "Alle swiper sig igennem datoerne: til højre hvis du kan, til venstre hvis du ikke kan, og op hvis du kan, men helst ikke. Mangler nogen at svare, kan du trykke på Påmind. Når alle har svaret, eller en svarfrist er nået, vælger vi den dato, ingen har sagt nej til, med færrest \"helst ikke\". Har alle datoer et nej, vælger den, der foreslog aftalen."
+        },
+        {
+          "title": "Datoen lander i kalenderen",
+          "body": "Tryk på Tilføj til min kalender, eller slå Tilføj automatisk til, så sker det af sig selv. I appen lander aftalen i telefonens kalender. På hjemmesiden kan vi lægge den i en Apple-kalender eller give dig en kalenderfil. Vi giver besked, når du skal stemme, og når datoen er på plads."
+        }
+      ],
+      "neverSeesTitle": "Det ser vi aldrig",
+      "neverSeesBody": "Vi gemmer kun start og slut på hvert optaget tidsrum. Fra telefonen sender appen kun tiderne, medmindre du selv lader vores AI læse din kalender. Google og Microsoft giver os aldrig titler, steder, noter eller gæster, og fra Apple og kalenderlinks fjerner vi dem, før noget gemmes. Gruppen ser aldrig navnene på dine kalendere eller hvilke konti, du har forbundet.",
+      "privacyLink": "Læs privatlivspolitikken",
+      "plan": "Planlæg",
+      "getStarted": "Kom i gang"
+    },
+    "en": {
+      "eyebrow": "How it works",
+      "title": "From \"we'll find a day\" to a day in the calendar.",
+      "intro": "We lay your calendars on top of each other and show the days everyone can make. The group votes, and the plan lands in everyone's calendar.",
+      "steps": [
+        {
+          "title": "Get the app and sign in",
+          "body": "Sign in with your Apple account in the app. On a computer or an Android phone you use the website, with Google or your email."
+        },
+        {
+          "title": "Connect your calendar",
+          "body": "In the app we use the calendars already on your phone. On the website you can connect Google, Outlook or Apple, or paste a calendar link, a school timetable for example. We only learn when you are busy, and you decide which calendars count, and how much."
+        },
+        {
+          "title": "Make a group",
+          "body": "Give the group a name and invite people from your contacts, with a link or with a QR code. One link is enough: it leads to the app, and after signing in you are in the group. The link works for seven days, and a group can have up to 20 members. In a group you only see each other's names, and when each of you is busy."
+        },
+        {
+          "title": "Tap Plan",
+          "body": "Say what you are planning, how long it lasts and which days suit: an evening, a weekend or a whole trip. If you would rather write or say it in your own words, Plan with AI sets it up for you. We lay everyone's calendars on top of each other and show the days everyone can make, with up to five good dates to send to the group."
+        },
+        {
+          "title": "The group votes",
+          "body": "Everyone swipes through the dates: right if you can, left if you can't, and up if you can but would rather not. If someone has yet to answer, you can tap Remind. Once everyone has answered, or an answer deadline has passed, we pick the date nobody said no to, with the fewest \"rather not\". If every date has a no, the one who suggested the plan chooses."
+        },
+        {
+          "title": "The date lands in the calendar",
+          "body": "Tap Add to my calendar, or switch on Add automatically and it happens by itself. In the app the plan lands in the phone's calendar. On the website we can put it in an Apple calendar or give you a calendar file. We tell you when it is your turn to vote and when the date is set."
+        }
+      ],
+      "neverSeesTitle": "What we never see",
+      "neverSeesBody": "We only store the start and end of each busy time. From the phone the app sends only the times, unless you yourself let our AI read your calendar. Google and Microsoft never give us titles, places, notes or guests, and from Apple and calendar links we remove them before anything is stored. Your group never sees the names of your calendars or which accounts you have connected.",
+      "privacyLink": "Read the privacy policy",
+      "plan": "Plan",
+      "getStarted": "Get started"
+    }
+  },
+  "terms": {
+    "da": {
+      "title": "Vilkår for brug",
+      "updated": "Senest opdateret 13. november 2026",
+      "sections": [
+        {
+          "title": "Kort fortalt",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag hjælper grupper af venner med at finde en dato, der passer alle. Når du opretter en konto eller logger ind, accepterer du disse vilkår. Sammen med [privatlivspolitikken](/privacy) er de hele aftalen mellem dig og os. De er skrevet, så de er til at læse."
+            }
+          ]
+        },
+        {
+          "title": "Hvem står bag",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag drives af Asbjørn Morris Bay, en privatperson i Danmark, som er \"vi\" i disse vilkår. Du kan altid skrive til [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com). Vi finder lige en dag findes som hjemmeside på casy.app og som app, og vilkårene gælder for dem alle."
+            }
+          ]
+        },
+        {
+          "title": "Din konto",
+          "blocks": [
+            {
+              "list": [
+                "Du skal være mindst 13 år for at bruge tjenesten.",
+                "En konto er til én person, og den er til dig selv. Brug et navn, dine venner kan kende, og giv dig ikke ud for at være en anden.",
+                "Hold din adgangskode og alt andet, du logger ind med, som koder og enheder, for dig selv. Tror du, at en anden har brugt din konto, så skriv til [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com).",
+                "Du står selv for det, der sker fra din konto."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Dine kalendere",
+          "blocks": [
+            {
+              "text": "Vi læser kun, hvornår du er optaget, fra de kalendere, du forbinder eller lader appen læse, og skriver kun i en kalender, når du beder om det. Privatlivspolitikken beskriver præcis hvad."
+            },
+            {
+              "text": "Forbind kun kalendere, du må dele dine optagede tider fra. En kalender fra arbejde eller skole kan have sine egne regler. At forbinde en kalender afhænger af den, der leverer den, som Google, Microsoft eller Apple. Deres vilkår gælder også, og ændrer eller begrænser de adgangen, kan en forbindelse holde op med at virke."
+            }
+          ]
+        },
+        {
+          "title": "Grupper, aftaler og det, du skriver",
+          "blocks": [
+            {
+              "text": "Du skriver selv navne på grupper og aftaler og dit eget navn. Hold dem venlige og lovlige, og skriv ikke andres private oplysninger i dem. Det, du skriver, kan ses af dem, det er til, som de andre i gruppen. Du ejer stadig det, du skriver. Du giver os lov til at gemme og vise det til dem, det er til, og kun for at drive tjenesten."
+            }
+          ]
+        },
+        {
+          "title": "Brug tjenesten ordentligt",
+          "blocks": [
+            {
+              "text": "Du må ikke:"
+            },
+            {
+              "list": [
+                "lægge et billede op, som andre ikke skal se: nøgenhed, vold, had, eller et billede af en anden, der ikke vil være med;",
+                "sende invitationer eller aftaler til folk, der ikke vil have dem, eller bruge tjenesten til at chikanere, true eller narre nogen;",
+                "slå e-mailadresser op for at finde ud af, hvem der bruger tjenesten, eller invitere folk i stor stil;",
+                "prøve at komme til data, der ikke er dine, ødelægge eller overbelaste tjenesten eller komme uden om dens grænser, som hvor mange du kan invitere om dagen;",
+                "bruge automatiske værktøjer til at bruge tjenesten eller kopiere indhold fra den;",
+                "bryde loven med tjenesten."
+              ]
+            },
+            {
+              "text": "Vi har nultolerance over for stødende indhold og krænkende brugere. Ser du noget i tjenesten, der ikke er i orden, kan du rapportere det fra gruppen eller aftalen og blokere den, der står bag. Vi kigger på hver rapport inden for 24 timer og kan fjerne indhold, grupper eller konti, der bryder disse vilkår (se Når en konto slutter)."
+            }
+          ]
+        },
+        {
+          "title": "Datoer er forslag",
+          "blocks": [
+            {
+              "text": "Vi foreslår datoer ud fra de kalendere, folk har forbundet, og de svar, de har givet. Kalendere kan være forældede (vi opdaterer dem cirka en gang i timen, og når nogen planlægger noget), mangle noget eller være forkerte, og meget af det, folk laver, står ikke i nogen kalender."
+            },
+            {
+              "text": "En foreslået dato er derfor et forslag og ikke et løfte om, at alle kan. Tjek den selv, før du regner med den, og især før du bestiller eller betaler noget. Tider står i den tidszone, siden viser, som er dansk tid, medmindre der står andet. Vi er ikke ansvarlige for en aftale, der bliver misset, dobbeltbooket eller aflyst."
+            }
+          ]
+        },
+        {
+          "title": "Beskeder fra os",
+          "blocks": [
+            {
+              "text": "Vi sender dig de e-mails, tjenesten har brug for, som links til at logge ind og beskeder om sikkerhed. Sender vi dig andre beskeder, som påmindelser om dine grupper og aftaler, vælger du selv hvilke, og du kan slå dem fra."
+            }
+          ]
+        },
+        {
+          "title": "Pris",
+          "blocks": [
+            {
+              "text": "Tjenesten er gratis. At finde en dato med din gruppe og at være med i en bliver ved med at være gratis."
+            },
+            {
+              "text": "Tjenesten kan senere få valgfrie funktioner, der koster penge. Før noget koster penge, bliver disse vilkår opdateret med pris, betaling, opsigelse og tilbagebetaling, og du ser prisen, før du køber. Køb i en app fra en appbutik håndteres af appbutikken og dens vilkår."
+            }
+          ]
+        },
+        {
+          "title": "Andre tjenester",
+          "blocks": [
+            {
+              "text": "Tjenesten kan linke til eller arbejde sammen med andre tjenester, som kalenderudbydere og appbutikker. De drives af andre efter deres egne vilkår, og vi er ikke ansvarlige for dem eller for det, de tilbyder."
+            }
+          ]
+        },
+        {
+          "title": "Ændringer i tjenesten",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag er en lille tjeneste, der hele tiden bliver udviklet. Funktioner kan blive ændret, tilføjet eller fjernet, og tjenesten kan være utilgængelig i perioder, for eksempel ved vedligeholdelse eller fejl. Lukker tjenesten, får du besked mindst 30 dage før, så du kan nå at hente dine data under [Profil, Dine data](/profile/data)."
+            }
+          ]
+        },
+        {
+          "title": "Når en konto slutter",
+          "blocks": [
+            {
+              "text": "Du kan slette din konto når som helst under Slet konto på din profil. Hvad der så bliver slettet, står i privatlivspolitikken."
+            },
+            {
+              "text": "Vi kan fjerne en gruppe eller en aftale, fjerne nogen fra en gruppe eller lukke en konto, der bryder disse vilkår eller er til fare for andre eller for tjenesten. Medmindre det haster, eller loven forhindrer det, får du at vide hvorfor og kan svare."
+            }
+          ]
+        },
+        {
+          "title": "Ansvar",
+          "blocks": [
+            {
+              "text": "Tjenesten er gratis og leveres, som den er, uden løfter om, at den altid virker eller er uden fejl. Så vidt loven tillader det, er vi ikke ansvarlige for indirekte tab, som udgifter til en misset aftale, en bestilling eller tabt tid. Intet i vilkårene begrænser et ansvar, loven ikke tillader at begrænse, som for forsæt eller grov uagtsomhed, og intet tager de rettigheder fra dig, du har som forbruger efter ufravigelige regler."
+            }
+          ]
+        },
+        {
+          "title": "Apps fra en appbutik",
+          "blocks": [
+            {
+              "text": "Har du hentet appen i Apples App Store, gælder også dette:"
+            },
+            {
+              "list": [
+                "Vilkårene er en aftale mellem dig og os, ikke Apple. Apple er ikke ansvarlig for appen eller dens indhold og har ingen pligt til at yde support eller vedligeholde den.",
+                "Lever appen ikke op til en garanti, der gælder for den, kan du give Apple besked, og Apple refunderer så en eventuel købspris. Ud over det har Apple ingen pligter efter en garanti.",
+                "Vi, ikke Apple, tager os af krav om appen: om ansvar for produktet, om at den ikke lever op til lovkrav, efter forbrugerbeskyttelsesregler eller fra andre, der mener, at appen krænker deres rettigheder.",
+                "Du bekræfter, at du ikke er i et land, USA har embargo mod, og ikke står på en amerikansk liste over personer, der er forbudt eller begrænset.",
+                "Du skal også følge App Stores regler for brug af apps.",
+                "Apple og Apples datterselskaber er tredjemand, der kan håndhæve disse vilkår over for dig."
+              ]
+            },
+            {
+              "text": "Det samme gælder for andre appbutikker, hvor de kræver det."
+            }
+          ]
+        },
+        {
+          "title": "Lov og uenigheder",
+          "blocks": [
+            {
+              "text": "Vilkårene følger dansk lov, og uenigheder afgøres ved de danske domstole. Bor du som forbruger i et andet EU-land, beholder du beskyttelsen i dit lands ufravigelige regler og kan også gå til domstolene der. Skriv gerne til [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com) først. Det meste kan klares sådan."
+            }
+          ]
+        },
+        {
+          "title": "Ændringer i vilkårene",
+          "blocks": [
+            {
+              "text": "Ændres vilkårene, ændres datoen øverst også. Ændringer, der betyder noget for dig, får du at vide i appen eller på e-mail mindst 30 dage før, de gælder. Vil du ikke acceptere dem, kan du slette din konto inden da. Bruger du tjenesten, efter de er trådt i kraft, accepterer du dem. Små rettelser og ændringer til din fordel kan gælde med det samme."
+            }
+          ]
+        },
+        {
+          "title": "Kontakt",
+          "blocks": [
+            {
+              "text": "Spørgsmål om vilkårene: [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com). Det, vi gemmer om dig, og hvem der kan se det, står i [privatlivspolitikken](/privacy)."
+            }
+          ]
+        }
+      ]
+    },
+    "en": {
+      "title": "Terms of service",
+      "updated": "Last updated 13 November 2026",
+      "sections": [
+        {
+          "title": "In short",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag helps groups of friends find a date that works for everyone. By creating an account or signing in, you accept these terms. Together with the [privacy policy](/privacy), they are the whole agreement between you and us. They are written to be read."
+            }
+          ]
+        },
+        {
+          "title": "Who runs the service",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag is run by Asbjørn Morris Bay, a private person in Denmark, who is \"we\" in these terms. You can always write to [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com). Vi finder lige en dag is available as a website at casy.app and as an app, and these terms cover all of them."
+            }
+          ]
+        },
+        {
+          "title": "Your account",
+          "blocks": [
+            {
+              "list": [
+                "You must be at least 13 years old to use the service.",
+                "An account is for one person, and it is for yourself. Use a name your friends will recognise, and do not pretend to be someone else.",
+                "Keep your password, and anything else you sign in with, such as codes and devices, to yourself. If you think someone else used your account, write to [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com).",
+                "You are responsible for what happens from your account."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Your calendars",
+          "blocks": [
+            {
+              "text": "We only read when you are busy, from the calendars you connect or let the app read, and only writes to a calendar when you ask it to. The privacy policy describes exactly what."
+            },
+            {
+              "text": "Only connect calendars you are allowed to share your busy times from. A work or school calendar may have its own rules. Connecting a calendar depends on whoever provides it, such as Google, Microsoft or Apple. Their terms apply too, and if they change or limit access, a connection may stop working."
+            }
+          ]
+        },
+        {
+          "title": "Groups, events and what you write",
+          "blocks": [
+            {
+              "text": "You write the names of groups and events, and your own name. Keep them friendly and lawful, and do not put other people's private information in them. What you write can be seen by the people it is for, such as the others in the group. You still own what you write. You allow us to store it and show it to the people it is for, only to run the service."
+            }
+          ]
+        },
+        {
+          "title": "Use the service fairly",
+          "blocks": [
+            {
+              "text": "You may not:"
+            },
+            {
+              "list": [
+                "upload a picture others should not see: nudity, violence, hate, or a picture of someone else who does not want to be in it;",
+                "send invitations or events to people who do not want them, or use the service to harass, threaten or deceive anyone;",
+                "look up email addresses to find out who uses the service, or invite people in bulk;",
+                "try to get at data that is not yours, break or overload the service, or get around its limits, such as how many people you can invite in a day;",
+                "use automated tools to use the service or copy content from it;",
+                "break the law with the service."
+              ]
+            },
+            {
+              "text": "We have zero tolerance for objectionable content and abusive users. If you see something in the service that isn't right, you can report it from the group or the event and block whoever is behind it. We look at every report within 24 hours and can remove content, groups or accounts that break these terms (see When an account ends)."
+            }
+          ]
+        },
+        {
+          "title": "Dates are suggestions",
+          "blocks": [
+            {
+              "text": "We suggest dates from the calendars people connected and the answers they gave. Calendars can be out of date (we refresh them about once an hour, and when someone plans something), incomplete or wrong, and much of what people do is not in any calendar."
+            },
+            {
+              "text": "So a suggested date is a suggestion, not a promise that everyone can make it. Check it yourself before you rely on it, and especially before you book or pay for anything. Times are in the time zone the page shows, which is Danish time unless it says otherwise. We are not responsible for an event that is missed, double booked or cancelled."
+            }
+          ]
+        },
+        {
+          "title": "Messages from us",
+          "blocks": [
+            {
+              "text": "We send you the emails the service needs, such as sign-in links and security messages. If we send you other messages, such as reminders about your groups and events, you choose which ones, and you can switch them off."
+            }
+          ]
+        },
+        {
+          "title": "Price",
+          "blocks": [
+            {
+              "text": "The service is free. Finding a date with your group, and taking part in one, will stay free."
+            },
+            {
+              "text": "The service may later offer optional features that cost money. Before anything costs money, these terms will be updated with the price, payment, cancellation and refunds, and you will see the price before you buy. Purchases in an app from an app store are handled by that store and its terms."
+            }
+          ]
+        },
+        {
+          "title": "Other services",
+          "blocks": [
+            {
+              "text": "The service may link to or work with other services, such as calendar providers and app stores. They are run by others under their own terms, and we are not responsible for them or for what they offer."
+            }
+          ]
+        },
+        {
+          "title": "Changes to the service",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag is a small service that keeps being developed. Features may be changed, added or removed, and the service may be unavailable at times, for example for maintenance or because of a fault. If the service closes, you will be told at least 30 days before, so you have time to download your data under [Profile, Your data](/profile/data)."
+            }
+          ]
+        },
+        {
+          "title": "When an account ends",
+          "blocks": [
+            {
+              "text": "You can delete your account at any time with Delete account on your profile. What is deleted then is set out in the privacy policy."
+            },
+            {
+              "text": "We may remove a group or an event, remove someone from a group, or close an account that breaks these terms or puts other people or the service at risk. Unless it is urgent or the law prevents it, you will be told why and can reply."
+            }
+          ]
+        },
+        {
+          "title": "Liability",
+          "blocks": [
+            {
+              "text": "The service is free and provided as it is, without promises that it always works or is free of errors. As far as the law allows, we are not liable for indirect losses, such as the cost of a missed event, a booking or lost time. Nothing in these terms limits a liability the law does not allow to be limited, such as for intent or gross negligence, and nothing takes away the rights you have as a consumer under mandatory rules."
+            }
+          ]
+        },
+        {
+          "title": "Apps from an app store",
+          "blocks": [
+            {
+              "text": "If you got the app from Apple's App Store, this applies too:"
+            },
+            {
+              "list": [
+                "These terms are an agreement between you and us, not Apple. Apple is not responsible for the app or its content and has no duty to provide support for it or maintain it.",
+                "If the app fails to meet a warranty that applies to it, you can tell Apple, and Apple will then refund any purchase price. Beyond that, Apple has no warranty obligations.",
+                "We, not Apple, deal with claims about the app: product liability, the app not meeting legal requirements, consumer protection, or others claiming the app infringes their rights.",
+                "You confirm that you are not in a country under a United States embargo and not on a United States list of prohibited or restricted parties.",
+                "You must also follow the App Store's rules for using apps.",
+                "Apple and its subsidiaries are third parties who may enforce these terms against you."
+              ]
+            },
+            {
+              "text": "The same applies to other app stores where they require it."
+            }
+          ]
+        },
+        {
+          "title": "Law and disputes",
+          "blocks": [
+            {
+              "text": "These terms follow Danish law, and disputes are settled by the Danish courts. If you live in another EU country as a consumer, you keep the protection of your country's mandatory rules and can also go to the courts there. Please write to [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com) first: most things can be sorted out that way."
+            }
+          ]
+        },
+        {
+          "title": "Changes to these terms",
+          "blocks": [
+            {
+              "text": "When these terms change, so does the date at the top. Changes that matter to you are announced in the app or by email at least 30 days before they apply. If you do not accept them, you can delete your account before then. Using the service after they apply means you accept them. Small corrections and changes in your favour can apply straight away."
+            }
+          ]
+        },
+        {
+          "title": "Contact",
+          "blocks": [
+            {
+              "text": "Questions about these terms: [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com). What we store about you, and who can see it, is in the [privacy policy](/privacy)."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "privacy": {
+    "da": {
+      "title": "Privatlivspolitik",
+      "updated": "Senest opdateret 13. november 2026",
+      "sections": [
+        {
+          "title": "Kort fortalt",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag hjælper en gruppe med at finde et tidspunkt, der passer alle. For at gøre det gemmer vi kun, hvornår du er optaget: aldrig titler, steder, noter eller gæster i dine aftaler. I iPhone-appen kan du selv se dem i din kalender, men de bliver på telefonen. Vi skriver kun i din kalender, når du beder om det: så lægger den aftaler, din gruppe er blevet enige om, i den kalender, du har valgt som primær. Dine data bliver ikke solgt, ikke brugt til reklamer og ikke delt med nogen uden for tjenesten. Med dit ja kan AI'en læse navnene på dine kalendere og, i iPhone-appen, titlerne på dine aftaler: de sendes til Anthropic, men gemmes ikke hos os (se AI). Vi gemmer kun, hvornår dine vigtige aftaler starter, og hvor vigtige de er, uden titel, så datoer kan rangeres for din gruppe. En rettelse, du skriver til AI'en, og de planer, du laver med AI, sendes til os til gennemsyn, medmindre du slår det fra."
+            }
+          ]
+        },
+        {
+          "title": "Det gemmer vi",
+          "blocks": [
+            {
+              "list": [
+                "**Din konto:** din e-mailadresse og dit navn, hvis du logger ind med Google eller Apple, eller et navn, du selv vælger, når du opretter dig eller på din profil. Skjuler du din e-mail, når du logger ind med Apple, får vi kun den adresse, Apple videresender fra. Logger du ind med din e-mail og ikke har valgt et navn, bruger vi delen af din e-mailadresse før @. Og det sprog, du bruger appen på, så e-mails fra os kommer på det sprog.",
+                "**Dit profilbillede:** hvis du vælger et. Det gøres til et lille kvadrat på din telefon, før det sendes, og det, et kamera gemmer i et billede, som hvor det er taget, kommer ikke med. Dine grupper kan se det. Det gemmes, til du skifter det eller fjerner det, og slettes med din konto.",
+                "**Gruppebilleder:** et billede, et medlem har valgt til en gruppe, lavet på samme måde, og hvem der valgte det. Alle i gruppen kan se det og skifte eller fjerne det. Det slettes med gruppen.",
+                "**Forbundne kalendere:** hvilke konti du har forbundet (for eksempel e-mailadressen på en Google-konto), navnene på deres kalendere og et navn, du selv giver en af dem, den kategori og prioritet, du giver hver af dem (arbejde, skole, privat, andet eller et navn, du selv finder på, som kun du ser; kan springes over, normal, spring aldrig over), om den tæller med, hvilken der er din primære kalender, og om vi må tilføje aftaler automatisk.",
+                "**Optagede tidsrum:** start og slut på hvert tidsrum, hvor du er optaget, for cirka de næste tolv måneder. Aftaler, der overlapper, bliver slået sammen til ét tidsrum. Titler, beskrivelser, steder og deltagere bliver aldrig gemt. Google og Microsoft bliver aldrig spurgt om dem. Apple og kalenderlinks sender altid hele aftaler, så de oplysninger fjernes, før noget gemmes. I iPhone-appen viser vi dine egne aftalers titler, steder og noter i din kalender, læst direkte fra telefonen. Kun tidspunkterne forlader telefonen.",
+                "**Grupper:** navnet på hver gruppe, du er med i, den korte beskrivelse af, hvad gruppen er til, hvis nogen har skrevet en, hvem der ellers er med, hvem der lavede den, og de invitationslinks, der er lavet til den. Hvem du har været i en gruppe med, eller er blevet venner med gennem et link, så I kan invitere hinanden, også når gruppen er væk, indtil en af jer fjerner den anden. Invitationslinks gemmes som et fingeraftryk, der ikke kan laves om til et link, der virker. Invitationer til grupper: hvem der inviterede hvem, og om invitationen stadig er åben eller blev afslået. Slår du en e-mailadresse op for at invitere nogen, noterer vi kun, at du gjorde det, så der kan sættes en grænse for, hvor mange du kan slå op om dagen. Adressen gemmes ikke. Den, der har et invitationslink, kan uden at logge ind se gruppens navn og beskrivelse, hvor mange der er med, navnet på den, der lavede linket, og gruppens billede eller, uden et, billedet af den, der lavede linket. Den, der har et venskabslink, kan uden at logge ind se navnet og billedet på den, der lavede det.",
+                "**Foreslåede aftaler:** aftaler foreslået i dine grupper: hvilken slags aftale det er, de datoer, der er tilbudt, hvem der foreslog den, et sted og en note, hvis den, der foreslog den, har skrevet dem, og hvad hver enkelt har svaret på hver dato: kan, kan men helst ikke, eller kan ikke. Har den, der foreslog den, sagt ja til AI'en, også hvad AI'en forventer, at aftalen indebærer (se AI).",
+                "**Aftaler i din kalender:** hvilke aftaler vi har lagt i din primære kalender, så den kan fjerne dem igen, hvis en aftale bliver aflyst.",
+                "**Det, du selv har tilføjet:** tider, hvor du er væk eller optaget, som ikke står i en kalender, og som du har skrevet eller sagt til os: en kort overskrift, hvornår det starter og slutter, og om du er væk eller optaget. Den sætning, du skrev eller sagde, gemmes ikke (se AI). Dine grupper kan se, at du ikke kan i de tidsrum, men aldrig overskriften.",
+                "**Genveje:** planer, du har gemt for at planlægge dem igen med et tryk: navnet, tidspunkterne, dagene, længden, stedet, noten og svarfristen, og et billede, hvis du vælger et, lavet som dit profilbillede. Kun du kan se dem, og de gemmes, til du sletter dem.",
+                "**Dit ja til AI:** om du har sagt ja til AI'en, hvornår, og hvilken version af teksten (se AI). Mærkater, som AI'en laver af dine aftaler, gemmes kun på din telefon. Hvornår dine vigtige aftaler starter og hvor vigtige de er, uden titel, gemmes hos os, så datoer kan rangeres for din gruppe. Det gør de rettelser af AI'en, du har sendt til gennemsyn, og om du sender dem (se AI).",
+                "**Rapporter og blokeringer:** rapporterer du noget, gemmer vi, hvad det drejer sig om (en gruppe, en aftale eller et medlem), grunden, din note og en kopi af den tekst, du rapporterede, som den stod hos os. Den, du rapporterer, får ikke at vide, at det var dig. Blokerer du nogen, gemmer vi hvem og hvornår, så deres invitationer ikke når dig.",
+                "**Adgangsoplysninger:** det, der skal til for at holde dine kalendere opdateret: adgangsnøgler fra Google eller Microsoft, en app-specifik adgangskode til din Apple-konto eller et kalenderlink, og logger du ind med Apple, en nøgle fra Apple, som kun bruges til at afbryde dit Apple-login, når du sletter din konto. De krypteres, før de gemmes, og nøglen opbevares adskilt fra databasen.",
+                "**Notifikationer:** slår du notifikationer til i iPhone-appen, gemmer vi telefonens nøgle fra Apple, som beskederne sendes til, det sprog de skrives på, og de slags beskeder, du har slået fra. Beskeden selv gemmes ikke, når den er sendt. Den kan nævne navnene på en aftale, en gruppe og den, der foreslog noget, og den sendes gennem Apples notifikationstjeneste."
+              ]
+            },
+            {
+              "text": "Inviterer du venner fra dine kontakter i iPhone-appen, ser vi kun de personer, du vælger, og kun på telefonen: beskeden med invitationen sendes fra din egen telefon, og vi gemmer hverken navne, numre eller e-mails fra dine kontakter."
+            },
+            {
+              "text": "Er du logget ind, kan du se alt dette om dig selv og hente en kopi under [Profil, Dine data](/profile/data)."
+            }
+          ]
+        },
+        {
+          "title": "Sådan bruges det",
+          "blocks": [
+            {
+              "text": "Optagede tidsrum bruges kun til at vise, hvornår du og dine grupper er ledige, og til at foreslå tidspunkter. Vi opdaterer dem cirka en gang i timen, og igen, når nogen i en af dine grupper planlægger en aftale med gruppen, så de passer. Telefonens kalendere sender iPhone-appen selv, når du åbner den, når kalenderne ændrer sig, mens den er åben, og ind imellem i baggrunden, når iPhonen tillader det. Til det får telefonen sin egen nøgle, som kun kan opdatere telefonens optagede tidsrum."
+            },
+            {
+              "text": "Har du valgt en primær kalender, bruger vi din adgang til den til at lægge aftaler, I er blevet enige om, i den: når du trykker Tilføj til min kalender, eller af sig selv, hvis du har slået Tilføj automatisk til. Aftalen får aftalens navn, gruppens navn og navnene på de andre, der er med. Bliver aftalen aflyst, fjerner vi den igen. Vi ændrer eller sletter aldrig andre aftaler i din kalender. Indtil videre kan det lade sig gøre med Apple-kalendere og med kalenderne på din telefon i iPhone-appen. Dem lægger appen selv aftalerne i, når den er åben eller arbejder i baggrunden, og hver aftale får et link tilbage til aftalen i appen."
+            },
+            {
+              "text": "Når du vælger en adgangskode, eller logger ind med en, tjekker din browser den mod Have I Been Pwned, en offentlig liste over adgangskoder fra kendte datalæk, så en adgangskode, der er let at gætte, bliver opdaget. Kun de første 5 tegn af en hashværdi af adgangskoden bliver sendt, og selve adgangskoden forlader aldrig din browser."
+            },
+            {
+              "text": "Vores brug og overførsel af oplysninger fra Googles API'er følger [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), herunder kravene om begrænset brug (Limited Use)."
+            }
+          ]
+        },
+        {
+          "id": "ai",
+          "title": "AI",
+          "blocks": [
+            {
+              "text": "Vores AI er Claude, en AI-model fra Anthropic. Intet sendes til Anthropic, før du har sagt ja til AI'en. Vi spørger på Min kalender og første gang, du bruger en af AI-knapperne. Du kan bruge appen uden, og du kan altid ændre dit svar under Profil, Dine data."
+            },
+            {
+              "text": "**Det, du selv skriver eller siger.** Vælger du Planlæg med AI, sendes det, du skriver eller siger om aftalen, til Anthropic. Med det følger dagens dato, de måneder, der kan planlægges i, og det sprog, du bruger appen på. Når du tilføjer detaljer, følger også det, du skrev før, og de indstillinger, aftalen har nu. Intet andet: ikke dine kalendere, ikke hvornår nogen er optaget, og ikke navnene på din gruppe eller dens medlemmer. Nævner du selv et navn, sendes det, som du skrev det, og vi finder personen i gruppen i din browser. Anthropic svarer med indstillinger til aftalen, som du ser og kan rette, før noget bliver sendt til gruppen."
+            },
+            {
+              "text": "**Tilføj til kalender.** Bruger du Tilføj til kalender, sendes det, du skriver eller siger om, hvornår du er væk eller optaget, til Anthropic. Med det følger dagens dato og det sprog, du bruger appen på, og når du tilføjer detaljer, også det, du skrev før, og de tider, du ser på skærmen. Intet andet: ikke dine kalendere og ikke navne. Anthropic svarer med tider, som du ser og kan rette, før noget bliver gemt. Først når du trykker Gem, gemmer vi tiderne (se Det gemmer vi), og aldrig den sætning, du skrev eller sagde. AI'en læser intet fra din kalender for at gøre det."
+            },
+            {
+              "text": "Foreslår du en aftale, beder vi også Anthropic om at vurdere, hvad den typisk indebærer for dem, der kommer: en sen aften, alkohol, en lang rejse eller hård træning, hvor krævende den er, og om den er udendørs. Med det sendes aftalens navn, sted og note, som du skrev dem, og hvornår på dagen den er, og hvor længe den varer: ikke datoerne, ikke dine kalendere og ikke gruppen. Vurderingen gemmes med aftalen, så vi kan advare de inviterede, hvis en dato ville gå ud over noget vigtigt for dem, og den slettes sammen med aftalen."
+            },
+            {
+              "text": "**AI'en læser i din kalender.** Med dit ja sendes også:"
+            },
+            {
+              "list": [
+                "navnene på dine kalendere, uden e-mailadresser og links, og hvilken slags konto de ligger i, når en kalender ingen kategori har, så vi kan gætte den (arbejde, skole, privat eller andet). I iPhone-appen følger også et par af kalenderens aftaletitler med. Vi gemmer kun kategorien, markeret som gættet, til du selv vælger en. En kategori, du selv har valgt eller fjernet, bliver aldrig ændret;",
+                "i iPhone-appen titlerne på dine aftaler, læst på telefonen, sammen med kalenderens navn, om aftalen varer hele dagen, hvornår på dagen den plejer at starte, hvor længe den varer og hvor ofte den kommer igen. AI'en vurderer, hvad aftalen er, hvor vigtig den er, og hvad den ikke skal ligge lige efter, for eksempel at en eksamen er vigtig. Skriver du, at en vurdering er forkert, følger din forklaring med, og dine tidligere rettelser (aftalens titel, kalenderens navn, din forklaring og den nye vurdering) følger med de næste gange;",
+                "i iPhone-appen, for de aftaler, AI'en har vurderet som et fly eller en rejse: titlen, stedet, kalenderens navn og om aftalen varer hele dagen. AI'en svarer, om det er et fly, et tog eller en bus, og mellem hvilke byer. Telefonen parrer turen ud med turen hjem og spørger dig om hver rejse, den finder, og om det, den ikke kan parre, for eksempel et fly ud uden et fly hjem. En rejse tæller først med, når du har sagt ja til den. Byerne og rejserne gemmes kun på din telefon;",
+                "i iPhone-appen, for hver af dine vigtige aftaler: hvornår den starter, hvor vigtig den er, hvad du ikke skal gøre aftenen før, og hvor mange dage den kræver forberedelse. Uden titel, art eller begrundelse. Det gemmes hos os, så datoer i en afstemning kan rangeres for hele din gruppe."
+              ]
+            },
+            {
+              "text": "Aldrig noter, gæster eller datoer, steder kun for fly, tog og busser, og intet om de andre i dine grupper. Titler på aftaler kan afsløre private ting, for eksempel om helbred. Vi beder AI'en om aldrig at gætte på helbred, men titlen sendes, som du har skrevet den. Derfor er ja frivilligt, og appen virker også uden. Grundlaget er dit samtykke, og du kan trække det tilbage når som helst; det ændrer ikke det, der allerede er sket."
+            },
+            {
+              "text": "Vurderingerne (mærkaterne) gemmes kun på din telefon, aldrig hos os. Vi bruger dem til at advare dig, når en dato ligger lige før noget vigtigt, for eksempel en eksamen. Det samme gælder rejserne og det, du har svaret om dem. Trækker du dit ja tilbage, slettes mærkaterne, rejserne og dine rettelser på telefonen med det samme. De slettes også, når du logger ud eller sletter appen, og de kommer ikke med i den kopi, du kan hente. Under Dine data kan du se, hvor mange mærkater telefonen har. Vi gemmer, at du har sagt ja, hvornår, og hvilken version af denne tekst du sagde ja til. Får AI'en lov til mere med din kalender, spørger vi dig igen."
+            },
+            {
+              "text": "Det, der deles om dine vigtige aftaler, erstattes, hver gang appen sender det, så det, telefonen ikke længere nævner, forsvinder med det samme. Det slettes, når du trækker dit ja tilbage, når du sletter din konto, og 30 dage efter, at det sidst blev sendt. Vi bruger det kun til at give datoerne i en afstemning en score ud fra gruppens vigtige aftaler. De andre i gruppen ser kun scoren for hver dato, aldrig hvem eller hvad der påvirkede den; i en lille gruppe kan en lav score dog pege på en af dem."
+            },
+            {
+              "text": "**Rettelser, du sender til os.** Skriver du, at AI'ens vurdering af en aftale er forkert, sendes din rettelse også til os: aftalens titel, kalenderens navn (uden e-mailadresser og links), vurderingen AI'en gav, det, du skrev, og den nye vurdering. Aldrig datoer, steder eller andre aftaler. Laver du en aftale med Planlæg med AI, sendes også det, du skrev eller sagde, det AI'en gjorde ud af det, hvad du ændrede af dens gæt, og hvordan det endte, når aftalen sendes til gruppen; en plan, du sender, som AI'en lavede den, tæller som rigtig. Aldrig gruppen eller dens medlemmer. Det er slået til, når du siger ja, og du kan slå det fra under Dine data uden at tage dit ja tilbage. Vi gemmer det, så den, der driver tjenesten, kan gøre en gentaget fejl til en skarpere regel i AI'ens opgave og en ny, opfundet testsag; ingen model trænes. Vedkommende ser kun det, der er sendt, aldrig hvem der sendte det. Det slettes, når det er gennemgået, efter 90 dage, når du sletter dine rettelser under Dine data, når du trækker dit ja tilbage, eller når du sletter din konto."
+            },
+            {
+              "text": "**Hos Anthropic og hos os.** Anthropic bruger ikke det, vi sender, til at træne sine modeller, og sletter det normalt inden for 30 dage. Anthropic ligger i USA, så det bliver behandlet uden for EU. Vi gemmer ikke selv teksten, titlerne eller svarene, bortset fra de rettelser, du sender til gennemsyn (se ovenfor). Vi noterer kun, at et svar blev hentet, til hvem og til hvad (for eksempel Planlæg med AI), og hvor stort det var, så der kan sættes en grænse for, hvor mange svar hver person henter om dagen. Notatet slettes efter 30 dage, eller når du sletter din konto, og du kan se dit antal under Dine data."
+            },
+            {
+              "text": "Trykker du på Tal, er det din browser, der gør din tale til tekst: Chrome sender lyden til Google, Edge til Microsoft, og Safari til Apple eller gør det på din enhed. I Appen til iPhone er det Apples talegenkendelse, som kører på din telefon, hvor den kan, og ellers hos Apple. Vi får kun teksten. Vil du ikke det, kan du skrive i stedet."
+            }
+          ]
+        },
+        {
+          "title": "Det kan de andre i dine grupper se",
+          "blocks": [
+            {
+              "text": "Når du er med i en gruppe, kan de andre medlemmer se dit navn, og hvornår du er optaget. Det er hele pointen med en gruppe: vi kan ikke finde et tidspunkt, der passer alle, uden det. Optagede tidsrum vises som tidsintervaller og om et tidsrum kom fra en kalender, du har markeret som arbejde eller skole, eller som en, du kan springe over eller aldrig springer over. Det er det, der lader os skelne mellem \"kunne tage fri\" og \"ikke muligt\". Aftaler, I er blevet enige om i appen, tæller også som optaget for dem, der skal med, også i dine andre grupper, men kun som tidsrum, aldrig hvad aftalen er. Er din kalender ikke blevet opdateret i to dage eller mere, kan de også se, hvornår den sidst blev det, så de ved, at noget kan have ændret sig. De samme tidsrum bruger vi på din egen enhed til at markere dage i de næste tre uger, hvor hele gruppen er fri (Tid til hinanden). Det regnes ud på din enhed, gemmes ikke, og ingen får besked om det. Du kan slå det fra for hver gruppe på gruppens side; det valg gemmes på dit medlemskab og slettes med det."
+            },
+            {
+              "text": "Medlemmer kan ikke se din e-mailadresse, navnene på dine kalendere (heller ikke dem, du selv har givet dem), hvilke konti du har forbundet eller hvad dine aftaler hedder. Vi gemmer slet ikke titler på aftaler i dine kalendere, så der er intet at afsløre. Én undtagelse: har du logget ind med din e-mail og ikke valgt et navn på din profil, er det navn, medlemmer ser, delen af din e-mailadresse før @ (for eksempel \"anna.jensen\" for anna.jensen@example.com). Resten af adressen vises aldrig."
+            },
+            {
+              "text": "Har du sagt ja til AI'en, tæller dine vigtige aftaler med, når datoerne i en afstemning får en score. De andre i gruppen ser kun scoren for hver dato, aldrig dine aftaler eller hvem der påvirkede den. I en lille gruppe kan en lav score alligevel pege på en af medlemmerne."
+            },
+            {
+              "text": "Alle, der har en gruppes invitationslink, kan se gruppens navn, beskrivelse og billede (eller, uden et, billedet af den, der lavede linket), og hvor mange medlemmer den har, og kan blive medlem, i de syv dage linket virker. Behandl et invitationslink som en adresse, du kun sender til dem, du vil have med i gruppen. Når du forlader en gruppe, holder de andre medlemmer op med at se noget om dig fra da af. Den, der lavede en gruppe, kan slette den, hvilket fjerner den for alle medlemmer på én gang."
+            },
+            {
+              "text": "Andre kan også invitere dig til en gruppe inde i appen: folk, du er eller har været i en gruppe med, og alle, der kender den e-mailadresse, du bruger hos os. Du bliver kun medlem, hvis du selv siger ja under Mine grupper. Den, der inviterer dig med e-mail, får ikke at vide, om adressen har en konto hos os, og ser ikke dit navn, før du har sagt ja. Medlemmer af gruppen, der allerede er i en anden gruppe med dig, kan se, at du er inviteret. Siger du nej tak, får ingen besked, og gruppen kan ikke invitere dig igen de næste seks måneder, men du kan stadig blive medlem med et link."
+            },
+            {
+              "text": "Når nogen foreslår en aftale, kan alle i gruppen se den, de datoer, der er tilbudt, dens sted og note, og hvad hver enkelt har svaret på hver dato. Siger du nej til en dato, kan de andre se, at du ikke kunne den. Mens du svarer, viser vi din egen kalender omkring hver dato, men kun for dig, og kun hvornår du er optaget og i hvilken af dine kalendere."
+            }
+          ]
+        },
+        {
+          "title": "Det kan den, der driver tjenesten, se",
+          "blocks": [
+            {
+              "text": "Tjenesten drives af én person, som har en admin-visning for at holde tjenesten kørende og hjælpe folk, der tager kontakt. Den viser alles navne, hvornår de oprettede sig og sidst loggede ind, hvor mange grupper og kalendere de har, alle grupper med deres medlemmer, og hvilke kalendertjenester hver person har forbundet, og om de synkroniserer. Den viser ikke e-mailadresser, optagede tidsrum eller noget om dine aftaler. Dertil kommer de rettelser af AI'en, folk har sendt til gennemsyn (se AI), og de rapporter, folk har sendt: hvad der blev rapporteret, hvorfor og teksten, som den stod. Vedkommende ser dem, men aldrig, hvem der sendte dem."
+            },
+            {
+              "text": "Derfra kan vedkommende slette en gruppe, fjerne nogen fra en gruppe, slette en konto eller opdatere en kalender, der er holdt op med at synkronisere. Som den, der driver tjenesten, kan vedkommende også tilgå databasen direkte, når det er nødvendigt for at drive eller reparere tjenesten. Vedkommende kigger ikke på dine data af andre grunde."
+            }
+          ]
+        },
+        {
+          "title": "Hvor det opbevares",
+          "blocks": [
+            {
+              "text": "Data gemmes hos vores databaseudbyder, Supabase, og hjemmesiden leveres af Vercel. Login-e-mails sendes af Resend, som får din e-mailadresse for at kunne sende dem. Alle tre fører almindelige tekniske logfiler for at drive deres tjenester. For at ingen kan få os til at sende mængder af login-e-mails, gemmer vi i et døgn, hvornår en sådan e-mail blev sendt, og en kode lavet ud fra modtagerens adresse, som ikke kan regnes tilbage til adressen. AI i appen går gennem Anthropic, som beskrevet ovenfor. Notifikationer i iPhone-appen sendes gennem Apples notifikationstjeneste, som får beskeden for at kunne levere den. Vi bruger ingen analyse- eller reklamesporing. Din browser gemmer din login-session, så du forbliver logget ind, det sprog, du har valgt, og en kopi af din egen gruppeliste, dine kalenderforbindelser og om du har admin-adgang, så siderne åbner med det samme. Kopien slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet om andres kalendere gemmes i din browser."
+            }
+          ]
+        },
+        {
+          "title": "Hvor længe vi gemmer det",
+          "blocks": [
+            {
+              "text": "Vi gemmer kun dine oplysninger, så længe der er brug for dem. Hver nat sletter vi:"
+            },
+            {
+              "list": [
+                "foreslåede aftaler 12 måneder efter, at deres sidste dato var slut, sammen med datoerne, svarene og hvem der var inviteret;",
+                "aflyste aftaler og aftaler, der ikke fandt en dato, 30 dage efter de blev lukket (lidt senere, hvis vi endnu ikke har fået fjernet en aflyst aftale fra nogens kalender);",
+                "invitations- og venskabslinks 30 dage efter, at de er holdt op med at virke;",
+                "notatet om, at du har slået en e-mailadresse op, efter et døgn;",
+                "koden for en adresse, vi har sendt en login-e-mail til, efter et døgn;",
+                "notatet om dine AI-svar efter 30 dage;",
+                "tider, du selv har tilføjet, 30 dage efter, at de er slut;",
+                "rettelser af AI'en, du har sendt til gennemsyn, efter 90 dage;",
+                "rapporter 180 dage efter, de blev sendt, eller før, når den, der driver tjenesten, har behandlet dem;",
+                "oplysningerne om dine vigtige aftaler 30 dage efter, at de sidst blev sendt;",
+                "forsøg på at forbinde en kalender, der aldrig blev færdige, efter 7 dage;",
+                "afslåede invitationer til en gruppe 6 måneder efter, at de blev sendt. Derefter kan gruppen invitere dig igen."
+              ]
+            },
+            {
+              "text": "Optagede tidsrum bliver erstattet, hver gang vi opdaterer dine kalendere, og dækker kun fra en uge tilbage til tolv måneder frem. Alt andet, altså din konto, dine kalenderforbindelser, dine grupper og de personer, du har blokeret, gemmes, indtil du selv sletter det eller sletter din konto."
+            },
+            {
+              "text": "Telefonens nøgle til notifikationer gemmes, til du logger ud, Apple melder, at appen er fjernet fra telefonen, eller du sletter kontoen. En besked, der ikke kunne sendes, slettes efter højst et døgn."
+            },
+            {
+              "text": "Dit ja til AI'en gemmes, så længe du har kontoen, eller til du trækker det tilbage. Mærkater og rettelser gemmes kun på din telefon, til du trækker dit ja tilbage, logger ud eller sletter appen."
+            }
+          ]
+        },
+        {
+          "title": "Sletning af dine data",
+          "blocks": [
+            {
+              "text": "Fjerner du en kalenderkonto under Forbundne kalendere, slettes dens optagede tidsrum og adgangsoplysninger fra os med det samme. For også at stoppe det hos udbyderen skal du fjerne vores adgang i indstillingerne for din Google- eller Microsoft-konto eller slette den app-specifikke adgangskode på account.apple.com/account/manage. Telefonens kalendere holder appen op med at læse, når du fjerner telefonen, eller når du slår adgang til Kalendere fra under Find en dag i telefonens Indstillinger."
+            },
+            {
+              "text": "Forlader du en gruppe, bliver du fjernet med det samme, og de andre medlemmer holder op med at se noget om dig. Var du det sidste medlem, bliver gruppen slettet sammen med dig."
+            },
+            {
+              "text": "Vil du slette din konto helt, så gør det under Slet konto på din profil, eller skriv til [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com). Alt, der hører til den, bliver slettet med det samme: dine kalendere, optagede tidsrum, adgangsoplysninger og gruppemedlemskaber. Grupper, hvor du var det eneste medlem, bliver også slettet. Grupper med andre medlemmer fortsætter uden dig. Loggede du ind med Apple, afbryder vi først dit Apple-login hos Apple, så vi ikke længere står under Log ind med Apple i din Apple-konto."
+            }
+          ]
+        },
+        {
+          "title": "Kontakt",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag drives af Asbjørn Morris Bay, en privatperson i Danmark, som er dataansvarlig for dine oplysninger. Spørgsmål om denne politik eller dine data: [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com)."
+            }
+          ]
+        }
+      ]
+    },
+    "en": {
+      "title": "Privacy policy",
+      "updated": "Last updated 13 November 2026",
+      "sections": [
+        {
+          "title": "In short",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag helps a group find a time that works for everyone. To do that we store only when you are busy: never the titles, places, notes or guests of your events. In the iPhone app you can see them yourself in your calendar, but they stay on the phone. We only write to your calendar when you ask us to: we then add events your group has agreed on to the calendar you chose as your primary calendar. Your data is not sold, not used for advertising, and not shared with anyone outside the service. With your yes, the AI can read the names of your calendars and, in the iPhone app, the titles of your events: they are sent to Anthropic, but not stored by us (see AI). We store only when your important events start and how important they are, without titles, so dates can be ranked for your group. A correction you write to the AI, and the plans you make with AI, are sent to us for review unless you switch that off."
+            }
+          ]
+        },
+        {
+          "title": "What we store",
+          "blocks": [
+            {
+              "list": [
+                "**Your account:** your email address, and your name if you sign in with Google or Apple, or a name you choose when you sign up or on your profile. If you hide your email when signing in with Apple, we only get the address Apple forwards from. If you sign in with your email and have not chosen a name, we use the part of your email address before the @. And the language you use the app in, so emails from us come in that language.",
+                "**Your profile picture:** if you choose one. It is made into a small square on your phone before it is sent, and what a camera stores in a photo, such as where it was taken, is left out. Your groups can see it. It is kept until you change or remove it, and deleted with your account.",
+                "**Group pictures:** a picture a member chose for a group, made the same way, and who chose it. Everyone in the group can see it and change or remove it. It is deleted with the group.",
+                "**Connected calendars:** which accounts you connected (for example the email address of a Google account), the names of their calendars and any name you give one yourself, the category and priority you give each one (work, school, personal, other, or a name of your own that only you see; can skip, normal, never skip), whether it counts, which one is your primary calendar, and whether we may add events automatically.",
+                "**Busy times:** the start and end of each busy period, for roughly the next twelve months. Overlapping events are merged into one period. Event titles, descriptions, locations and attendees are never stored. Google and Microsoft are never asked for them. Apple and calendar links always send whole events, so those details are removed before anything is saved. In the iPhone app, we show your own events' titles, places and notes in your calendar, read straight from the phone. Only the times leave the phone.",
+                "**Groups:** the name of each group you are in, the short description of what the group is for if anyone wrote one, who else is in it, who made it, and the invite links made for it. Who you have shared a group with, or become friends with through a link, so you can invite each other, even once the group is gone, until one of you removes the other. Invite links are stored as a fingerprint that cannot be turned back into a working link. Invitations to groups: who invited whom, and whether the invitation is still open or was declined. When you look up an email address to invite someone, we only note that you did, so we can limit how many you can look up in a day. The address is not stored. Anyone holding an invite link can see, without signing in, the group's name and description, how many are in it, the name of whoever made the link, and the group's picture or, without one, the picture of whoever made the link. Anyone holding a friend link can see, without signing in, the name and picture of whoever made it.",
+                "**Suggested events:** events suggested in your groups: what kind of event it is, the dates offered, who suggested it, a place and a note if whoever suggested it wrote them, and how each person answered each date: can, can but would rather not, or can't. If whoever suggested it said yes to the AI, also what the AI expects the event to involve (see AI).",
+                "**Events in your calendar:** which events we added to your primary calendar, so it can take them out again if an event is cancelled.",
+                "**What you have added yourself:** times when you are away or busy that are not in a calendar, which you wrote or said to us: a short heading, when it starts and ends, and whether you are away or busy. The sentence you wrote or said is not kept (see AI). Your groups can see that you can't make those times, but never the heading.",
+                "**Shortcuts:** plans you saved to plan again with one tap: the name, the times, the days, the length, the place, the note and the deadline, and a picture if you choose one, made like your profile picture. Only you can see them, and they are kept until you delete them.",
+                "**Your yes to AI:** whether you said yes to the AI, when, and which version of the text (see AI). Labels the AI makes of your events are kept only on your phone. When your important events start and how important they are, without titles, is stored by us, so dates can be ranked for your group. So are the corrections of the AI you sent for review, and whether you send them (see AI).",
+                "**Reports and blocks:** if you report something, we keep what it is about (a group, an event or a member), the reason, your note and a copy of the text you reported, as it stood in the app. Whoever you report is not told it was you. If you block someone, we keep who and when, so their invitations don't reach you.",
+                "**Access credentials:** what is needed to keep your calendars up to date: access tokens from Google or Microsoft, an app-specific password for your Apple account, or a calendar link, and if you sign in with Apple, a key from Apple used only to end your Apple sign-in when you delete your account. These are encrypted before they are stored, and the key is kept separately from the database.",
+                "**Notifications:** if you turn on notifications in the iPhone app, we keep the phone's key from Apple that the messages are sent to, the language they are written in, and the kinds you switched off. The message itself is not kept once it is sent. It can name an event, a group and whoever suggested something, and it is sent through Apple's notification service."
+              ]
+            },
+            {
+              "text": "If you invite friends from your contacts in the iPhone app, we only see the people you pick, and only on the phone: the message with the invitation is sent from your own phone, and we keep no names, numbers or emails from your contacts."
+            },
+            {
+              "text": "Signed in, you can see all of this about yourself, and download a copy, under [Profile, Your data](/profile/data)."
+            }
+          ]
+        },
+        {
+          "title": "How it is used",
+          "blocks": [
+            {
+              "text": "Busy times are used only to show when you and your groups are free and to suggest times. We refresh them about once an hour, and again when someone in one of your groups plans an event with the group, so they stay current. The iPhone app sends the phone's calendars itself, when you open it, when they change while it is open, and now and then in the background, when the iPhone allows it. For that the phone gets a key of its own, which can only update the phone's busy times."
+            },
+            {
+              "text": "If you chose a primary calendar, we use your access to it to add the events you agree on: when you press Add to my calendar, or on our own if you switched on Add automatically. The entry holds the event's name, the group's name and the names of the others taking part. If the event is cancelled, we take it out again. We never change or delete any other event in your calendar. For now this works with Apple calendars, and with the calendars on your phone in the iPhone app. The app adds those entries itself, while it is open or working in the background, and each entry carries a link back to the event in the app."
+            },
+            {
+              "text": "When you choose a password, or sign in with one, your browser checks it against Have I Been Pwned, a public list of passwords from known data leaks, so a password that is easy to guess gets caught. Only the first 5 characters of a hash of the password are sent, and the password itself never leaves your browser."
+            },
+            {
+              "text": "Our use and transfer of information received from Google APIs adheres to the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements."
+            }
+          ]
+        },
+        {
+          "id": "ai",
+          "title": "AI",
+          "blocks": [
+            {
+              "text": "Our AI is Claude, an AI model from Anthropic. Nothing is sent to Anthropic until you have said yes to the AI. We ask on My calendar and the first time you use one of the AI buttons. You can use the app without it, and you can always change your answer under Profile, Your data."
+            },
+            {
+              "text": "**What you write or say yourself.** If you choose Plan with AI, what you write or say about the event is sent to Anthropic. With it go today's date, the months that can be planned in, and the language you use the app in. When you add details, what you wrote before and the event's settings so far go too. Nothing else: not your calendars, not when anyone is busy, and not the names of your group or its members. If you name someone yourself, the name is sent as you wrote it, and we find the person in the group in your browser. Anthropic answers with settings for the event, which you see and can change before anything is sent to the group."
+            },
+            {
+              "text": "**Add to calendar.** If you use Add to calendar, what you write or say about when you are away or busy is sent to Anthropic. With it go today's date and the language you use the app in, and when you add details, what you wrote before and the times you see on screen. Nothing else: not your calendars and not names. Anthropic answers with times, which you see and can change before anything is kept. Only when you press Save do we keep the times (see What we store), and never the sentence you wrote or said. The AI reads nothing from your calendar to do this."
+            },
+            {
+              "text": "When you suggest an event, we also ask Anthropic what it usually involves for the people going: a late night, alcohol, a long journey or hard exercise, how tiring it is, and whether it is outdoors. Only the event's name, place and note as you wrote them go with it, and the time of day and how long it lasts: not the dates, not your calendars and not the group. The answer is kept with the event, so we can warn the people invited when a date would get in the way of something important to them, and it is deleted with the event."
+            },
+            {
+              "text": "**The AI reads your calendar.** With your yes, this is sent too:"
+            },
+            {
+              "list": [
+                "the names of your calendars, without email addresses and links, and the kind of account they are in, when a calendar has no category, so we can guess it (work, school, personal or other). In the iPhone app a few of the calendar's event titles go along. We keep only the category, marked as guessed until you pick one yourself. A category you picked or removed yourself is never changed;",
+                "in the iPhone app, the titles of your events, read on the phone, together with the calendar's name, whether the event lasts all day, the time of day it usually starts, how long it lasts and how often it repeats. The AI judges what the event is, how important it is and what should not come right before it, for example that an exam is important. If you write that a judgement is wrong, your explanation goes along, and your earlier corrections (the event's title, the calendar's name, your explanation and the new judgement) go along with later ones;",
+                "in the iPhone app, for the events the AI judged a flight or a journey: the title, the place, the calendar's name and whether the event lasts all day. The AI answers whether it is a flight, a train or a bus, and between which cities. The phone pairs the way out with the way home and asks you about every trip it finds, and about what it can't pair, such as a flight out with no flight home. A trip only counts once you have said yes to it. The cities and trips are kept only on your phone;",
+                "in the iPhone app, for each of your important events: when it starts, how important it is, what you should not do the evening before, and how many days it needs to prepare. Without title, kind or reason. It is stored by us, so a vote's dates can be ranked for your whole group."
+              ]
+            },
+            {
+              "text": "Never notes, guests or dates, places only for flights, trains and buses, and nothing about the others in your groups. Event titles can reveal private things, for example about health. We tell the AI never to guess at health, but the title is sent as you wrote it. That is why yes is voluntary, and the app works without it. The basis is your consent, and you can withdraw it at any time; that does not change what has already happened."
+            },
+            {
+              "text": "The judgements (labels) are kept only on your phone, never by us. We use them to warn you when a date falls right before something important, such as an exam. The same goes for the trips and what you answered about them. If you withdraw your yes, the labels, the trips and your corrections on the phone are deleted at once. They are also deleted when you sign out or delete the app, and they are not part of the copy you can download. Under Your data you can see how many labels the phone holds. We store that you said yes, when, and which version of this text you said yes to. If the AI is allowed to do more with your calendar, we ask you again."
+            },
+            {
+              "text": "What is shared about your important events is replaced every time the app sends it, so what the phone no longer lists disappears at once. It is deleted when you withdraw your yes, when you delete your account, and 30 days after it was last sent. We use it only to give the dates of a vote a score from the group's important events. The others in the group see only the score for each date, never who or what affected it; in a small group, though, a low score can point at one of them."
+            },
+            {
+              "text": "**Corrections you send to us.** If you write that the AI's judgement of an event is wrong, your correction is also sent to us: the event's title, the calendar's name (without email addresses and links), the judgement the AI gave, what you wrote and the new judgement. Never dates, places or other events. If you make an event with Plan with AI, what you wrote or said, what the AI made of it, what you changed of its guesses and how it ended up when the event is sent to the group are sent too; a plan you send as the AI made it counts as right. Never the group or its members. It is on when you say yes, and you can turn it off under Your data without withdrawing your yes. We store it so whoever runs the service can turn a repeated mistake into a sharper rule in the AI's task and a new, made-up test case; no model is trained. They see only what was sent, never who sent it. It is deleted once it has been reviewed, after 90 days, when you delete your corrections under Your data, when you withdraw your yes, or when you delete your account."
+            },
+            {
+              "text": "**At Anthropic and with us.** Anthropic does not use what we send to train its models, and normally deletes it within 30 days. Anthropic is in the United States, so it is processed outside the EU. We ourselves do not keep the text, the titles or the answers, apart from the corrections you send for review (see above). It only notes that an answer was fetched, for whom and for what (such as Plan with AI), and how large it was, so the number of answers each person fetches a day can be limited. The note is deleted after 30 days, or when you delete your account, and you can see your count under Your data."
+            },
+            {
+              "text": "If you press Speak, your browser turns your speech into text: Chrome sends the sound to Google, Edge to Microsoft, and Safari to Apple or does it on your device. In the app for iPhone it is Apple's speech recognition, which runs on your phone where it can, and otherwise at Apple. We only get the text. If you would rather not, you can type instead."
+            }
+          ]
+        },
+        {
+          "title": "What other people in your groups can see",
+          "blocks": [
+            {
+              "text": "Joining a group means the other members can see your name and when you are busy. That is the whole point of a group: we cannot find a time that works for everyone without it. Busy periods are shown as time ranges, plus whether a range came from a calendar you marked as work or school, or as one you can skip or never skip, which is what lets us tell \"could take time off\" apart from \"not possible\". Plans agreed in the app also count as busy for those going, in your other groups too, but only as time ranges, never what the plan is. If your calendar hasn't been updated for two days or more, they also see when it last was, so they know something may have changed. We also use those same times on your own device to mark days in the next three weeks when the whole group is free (Time for each other). That is worked out on your device, not stored, and nobody is told about it. You can switch it off for each group on the group's page; that choice is kept on your membership and deleted with it."
+            },
+            {
+              "text": "Members do not see your email address, the names of your calendars (including names you gave them), which accounts you connected, or what any of your events are called. We never store the titles of events in your calendars at all, so there is nothing there to reveal. One exception to keep in mind: if you signed in with your email and have not chosen a name on your profile, the name members see is the part of your email address before the @ (for example \"anna.jensen\" for anna.jensen@example.com). The rest of the address is never shown."
+            },
+            {
+              "text": "If you said yes to the AI, your important events count when the dates of a vote get a score. The others in the group see only the score for each date, never your events or who affected it. In a small group a low score can still point at one of the members."
+            },
+            {
+              "text": "Anyone holding a group's invite link can see the group's name, description and picture (or, without one, the picture of whoever made the link) and how many members it has, and can join it, for the seven days the link works. Treat an invite link like an address you would only send to people you want in the group. Leaving a group stops the other members seeing anything about you from then on. The person who made a group can delete it, which removes it for every member at once."
+            },
+            {
+              "text": "People can also invite you to a group from inside the app: anyone you share or have shared a group with, and anyone who knows the email address you use with us. You only join if you say yes yourself, on My groups. Someone inviting you by email is not told whether the address has an account, and doesn't see your name until you say yes. Members of that group who already share another group with you can see that you were invited. If you say no thanks, nobody is told, and that group can't invite you again for six months, though you can still join with a link."
+            },
+            {
+              "text": "When someone suggests an event, everyone in the group sees it, the dates on offer, its place and note, and how each person answered each date. If you say you can't make a date, the others see that. While you answer, we show your own calendar around each date, to you only, and only when you are busy and in which of your calendars."
+            }
+          ]
+        },
+        {
+          "title": "What the person running the service can see",
+          "blocks": [
+            {
+              "text": "The service is run by one person, who has an admin view to keep the service working and to help people who get in touch. It shows everyone's name, when they signed up and last signed in, how many groups and calendars they have, every group with its members, and which calendar services each person connected and whether they are syncing. It does not show email addresses, busy times or anything about your events. In addition there are the corrections of the AI people sent for review (see AI), and the reports people sent: what was reported, why, and the text as it stood. They see them, but never who sent them."
+            },
+            {
+              "text": "From that view they can delete a group, remove someone from a group, delete an account, or refresh a calendar that has stopped syncing. As the operator they can also reach the database directly when that is needed to run or repair the service. They do not look at your data for any other reason."
+            }
+          ]
+        },
+        {
+          "title": "Where it is kept",
+          "blocks": [
+            {
+              "text": "Data is stored with our database provider, Supabase, and the website is served by Vercel. Sign-in emails are delivered by Resend, which receives your email address in order to send them. All three keep standard technical logs to run their services. So that nobody can make us send heaps of sign-in emails, we keep, for a day, when such an email was sent and a code made from the recipient's address, which can't be turned back into the address. AI in the app goes through Anthropic, as described above. Notifications in the iPhone app are sent through Apple's notification service, which receives the message in order to deliver it. We use no analytics or advertising trackers. Your browser keeps your login session so you stay signed in, the language you picked, and a copy of your own group list, your calendar connections and whether you have admin access, so pages open instantly. That copy is deleted when you sign out and is never kept for more than a week. Nothing about other people's calendars is stored in your browser."
+            }
+          ]
+        },
+        {
+          "title": "How long we keep things",
+          "blocks": [
+            {
+              "text": "We keep your information only as long as it is needed. Every night, we delete:"
+            },
+            {
+              "list": [
+                "suggested events 12 months after their last date ended, along with their dates, the answers and who was invited;",
+                "cancelled events, and events that found no date, 30 days after they closed (a little later if we have not yet managed to take a cancelled event out of someone's calendar);",
+                "invite and friend links 30 days after they stopped working;",
+                "the note that you looked up an email address, after a day;",
+                "the code for an address we sent a sign-in email to, after a day;",
+                "the note about your AI answers after 30 days;",
+                "times you added yourself, 30 days after they end;",
+                "corrections of the AI you sent for review after 90 days;",
+                "reports 180 days after they were sent, or sooner once the operator has dealt with them;",
+                "the information about your important events 30 days after it was last sent;",
+                "attempts to connect a calendar that never finished, after 7 days;",
+                "declined group invitations 6 months after they were sent. The group can then invite you again."
+              ]
+            },
+            {
+              "text": "Busy times are replaced every time we update your calendars, and only ever cover a week back to twelve months ahead. Everything else, meaning your account, your calendar connections, your groups and the people you blocked, is kept until you remove it or delete your account."
+            },
+            {
+              "text": "The phone's key for notifications is kept until you sign out, Apple reports that the app was removed from the phone, or you delete your account. A message that could not be sent is deleted after a day at most."
+            },
+            {
+              "text": "Your yes to the AI is kept as long as you have the account, or until you withdraw it. Labels and corrections are kept only on your phone, until you withdraw your yes, sign out or delete the app."
+            }
+          ]
+        },
+        {
+          "title": "Removing your data",
+          "blocks": [
+            {
+              "text": "Removing a calendar account under Connected calendars deletes its busy times and credentials from our side immediately. To stop the provider's side as well, remove our access in your Google or Microsoft account settings, or delete the app-specific password at account.apple.com/account/manage. The app stops reading the phone's calendars when you remove the phone, or when you turn off Calendars underFind en dag in the phone's Settings."
+            },
+            {
+              "text": "Leaving a group removes you from it straight away, and the other members stop seeing anything about you. If you were the last member, the group is deleted with you."
+            },
+            {
+              "text": "To delete your account entirely, use Delete account on your profile, or email[asbjornbay@gmail.com](mailto:asbjornbay@gmail.com). Everything connected to it is deleted straight away: your calendars, busy times, credentials and group memberships. Groups where you were the only member are deleted too; groups with other members carry on without you. If you signed in with Apple, we first end your Apple sign-in at Apple, so Vi finder lige en dag no longer appears under Sign in with Apple in your Apple account."
+            }
+          ]
+        },
+        {
+          "title": "Contact",
+          "blocks": [
+            {
+              "text": "Vi finder lige en dag is run by Asbjørn Morris Bay, a private individual in Denmark, who is the data controller for your information. Questions about this policy or your data: [asbjornbay@gmail.com](mailto:asbjornbay@gmail.com)."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

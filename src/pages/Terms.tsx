@@ -560,6 +560,11 @@ const en: LegalCopy = {
   ],
 };
 
+/** Both languages, for the iPhone app's own copy of this page (e2e/helpPages.parity.ts). */
+// The copy stays in the page file (CLAUDE.md, Languages); a change here reloads the page.
+// eslint-disable-next-line react-refresh/only-export-components
+export const COPY = { da, en };
+
 export default function Terms() {
   const { lang } = useLang();
   return <LegalPage copy={lang === "da" ? da : en} />;

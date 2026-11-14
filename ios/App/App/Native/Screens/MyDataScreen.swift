@@ -202,6 +202,7 @@ struct MyDataScreen: View {
             if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
         }
         .casyPushedBar(CasyStrings.myDataTitle, close: CasyStrings.done, action: closeSheet)
+        .pageLinks(leave: leave)
         .task { await model.load() }
         .refreshable { await model.load() }
         .confirmationDialog(
@@ -540,21 +541,15 @@ struct MyDataScreen: View {
         .accessibilityValue(open.wrappedValue ? "open" : "")
     }
 
-    /// Words with the privacy policy linked inside, which opens in the app, never Safari.
+    /// Words with the privacy policy linked inside, opened in Swift by `pageLinks`.
     private func linked(_ words: String, _ linkWords: String, to address: String) -> some View {
         var text = AttributedString(words)
         // The last mention is the link: the words may name the policy earlier too.
         if let range = text.range(of: linkWords, options: .backwards) {
-            text[range].link = URL(string: "casy-page:\(address)")
+            text[range].link = URL(string: address)
             text[range].underlineStyle = .single
         }
         return Text(text)
-            .environment(
-                \.openURL,
-                OpenURLAction { url in
-                    leave(.webScreen(String(url.absoluteString.dropFirst("casy-page:".count))))
-                    return .handled
-                })
     }
 }
 
