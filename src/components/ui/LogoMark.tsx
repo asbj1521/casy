@@ -30,16 +30,14 @@ export default function LogoMark({ className = "", label }: { className?: string
 }
 
 /**
- * The English name's mark, tried on a branch (try/english-name): "OMG LET'S"
- * over "FIND A DATE" in the same tall Anton capitals, each line stretched to
- * the same width as the Danish mark's are, with the top line the bigger.
- * Live text in the self-hosted Anton (font-display) for now; drawn as shapes
- * like the Danish one if the name stays.
+ * The English name's mark, tried on a branch (try/english-name): "WE'LL" over
+ * "FIND A DAY" in the same tall Anton capitals as the Danish mark, both lines
+ * the same width, the short top line the bigger. Live text in the
+ * self-hosted Anton for now; drawn as shapes like the Danish one if it stays.
  */
 function EnglishMark({ className, label }: { className: string; label: string }) {
-  // Anton at 100 px: each line's width and capital height, measured. The Danish
-  // mark's letters are stretched upward 2.29 times their width on the top line
-  // and 1.74 on the bottom one; these are too, to the same 800 wide.
+  // Anton at 100 px: each line's measured width; capitals stand 87 high. Each
+  // line is stretched to 800 wide and then upward by `tall` times that.
   const line = (text: string, width: number, tall: number, top: number) => {
     const sx = 800 / width;
     const sy = sx * tall;
@@ -58,12 +56,12 @@ function EnglishMark({ className, label }: { className: string; label: string })
     <svg
       role="img"
       aria-label={label}
-      viewBox="0 0 800 740"
+      viewBox="0 0 800 876"
       className={className}
       fill="currentColor"
     >
-      {line("OMG LET\u2019S", 383, 2.29, 0)}
-      {line("FIND A DATE", 434, 1.74, 462)}
+      {line("WE\u2019LL", 215, 1.5, 0)}
+      {line("FIND A DAY", 397, 2, 529)}
     </svg>
   );
 }
