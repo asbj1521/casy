@@ -167,8 +167,11 @@ New: remind the ones who haven't voted yet. And one invitation now works all the
 
 ## Screenshots
 
-6.9 inch iPhone (1320 x 2868) is required; Apple scales it for the smaller
-sizes, so no other size is made. From 1.1.0 (#271), five slides on the
+Since October 2026 App Store Connect requires "iPhone with Dynamic Island
+(medium display)", 1206 x 2622 (6.3 inch); 6.9 inch is optional. The script
+draws 1320 x 2868, and the 1206 x 2622 copies uploaded for 1.1.0 ("1.1.0 Dansk
+(6.3)", "1.1.0 English (6.3)") were scaled from them with
+`sips -z 2622 1206` (the two shapes differ by under 0.1 %). From 1.1.0 (#271), five slides on the
 app's orange with its bubbles, a short white line over each and the app's
 screen below it, in the listing's language:
 
@@ -237,34 +240,43 @@ nonce), which is exempt; no encryption of its own.
 
 Paste into the review notes field:
 
-> Casy helps groups of friends find a date everyone can make. Sign in with the
-> demo account below (email and password, no email code is needed). The demo
-> account, Alex, already has a calendar with sample events and is in the group
-> "Friday dinners" with two other demo accounts, Sara and Jonas, so every
-> screen can be tried. The app follows the phone's language; the Danish names
-> are in brackets. On the home page (My calendar): "Plan" (Planlæg) plans
-> with the group; "Events" (Aftaler) has Sara's vote "Dinner at Sara's"
-> waiting for your answer and the agreed "Sunday brunch" with "Add to my
-> calendar"; "Profile" (Profil) has the group. On first opening, a sheet says why
-> Casy wants the calendar, and "Continue" (Fortsæt) leads to iOS's own
-> question; the app works whichever answer is given. Notifications are asked
-> the same way, after dates are sent. The review device may have no events, which is why the demo account's own calendar is a
-> connected calendar link with sample events. Casy's AI is Claude from
+> We'll find a day (Danish: Vi finder lige en dag; formerly Casy) helps groups
+> of friends find a date everyone can make. Version 1.1.0 renames the app; it
+> is the same app and account system as before. Sign in with the demo account
+> below (email and password, no email code is needed). The demo account, Alex,
+> already has a calendar with sample events and is in the group "Friday
+> dinners" with two other demo accounts, Sara and Jonas, so every screen can be
+> tried. The app follows the phone's language; the Danish names are in
+> brackets. On the home page (My calendar): "Plan" (Planlæg) plans with the
+> group; "Events" (Aftaler) has Sara's vote "Dinner at Sara's" waiting for your
+> answer and the agreed "Sunday brunch" with "Add to my calendar"; "Profile"
+> (Profil) has the group. Whoever sent dates can tap "Remind" (Påmind) to nudge
+> those who have not voted. On first opening, a sheet says why the app wants
+> the calendar, and "Continue" (Fortsæt) leads to iOS's own question; the app
+> works whichever answer is given. Notifications are asked the same way, after
+> dates are sent. The review device may have no events, which is why the demo
+> account's own calendar is a connected calendar link with sample events.
+> Invites: someone without the app who taps an invite link is sent to the App
+> Store, and the link is copied as they go. After installing and signing in,
+> the app checks once whether the clipboard holds a web link, using iOS's
+> pattern detection (UIPasteboard.detectPatterns, so nothing is read and no
+> paste prompt appears), and only on a tap of "Go to group" (Gå til gruppen)
+> does it read that link and open the group. The app's AI is Claude from
 > Anthropic, a third party, and is optional. Nothing is sent to it until the
-> person says yes on the sheet "Turn on Casy's AI?" (Slå Casys AI til?), which
-> says what is sent and to whom. It appears on the home page and when an AI
-> button is pressed, such as "Plan with AI" (Planlæg med AI); "Not now" leaves
-> the app fully usable, and the yes can be withdrawn under Profile, Your data.
-> With the yes, the AI plans from what the person writes or says, sorts their
-> calendars, labels their events and finds their trips. Casy is built around
-> the iPhone: it reads the phone's calendars with EventKit, also in the
-> background, writes agreed events back to them, sends push notifications,
-> signs in with Sign in with Apple, recognises speech with Apple's speech
-> service, and opens invite links in the app. Words that break the terms are
-> refused when text is saved, and a report alerts the developer by email.
-> Reporting and blocking are under the group's "Report or block" (Rapportér eller bloker)
-> and "Report" (Rapportér) on an event. Deleting the account is under Profile
-> and works on the demo account too. Contact: asbjornbay@gmail.com
+> person says yes on the sheet "Turn on AI?" (Slå AI til?), which says what is
+> sent and to whom. It appears on the home page and when an AI button is
+> pressed, such as "Plan with AI" (Planlæg med AI); "Not now" leaves the app
+> fully usable, and the yes can be withdrawn under Profile, Your data. With the
+> yes, the AI plans from what the person writes or says, sorts their calendars,
+> labels their events and finds their trips. The app is built around the
+> iPhone: it reads the phone's calendars with EventKit, also in the background,
+> writes agreed events back to them, sends push notifications, signs in with
+> Sign in with Apple, recognises speech with Apple's speech service, and opens
+> invite links in the app. Words that break the terms are refused when text is
+> saved, and a report alerts the developer by email. Reporting and blocking are
+> under the group's "Report or block" (Rapportér eller bloker) and "Report"
+> (Rapportér) on an event. Deleting the account is under Profile and works on
+> the demo account too. Contact: asbjornbay@gmail.com
 
 ### The demo accounts
 
