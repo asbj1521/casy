@@ -8,6 +8,7 @@
  * screenshots light", kept out of git), as "1.1.0 Dansk" and "1.1.0 English".
  */
 import { mkdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 
 import type { Page } from "@playwright/test";
 
@@ -95,9 +96,13 @@ test.describe.serial("slides", () => {
   for (const lang of ["da", "en"] as const) {
     test(`${lang}`, async ({ page }) => {
       mkdirSync(`${OUT}/${FOLDER[lang]}`, { recursive: true });
-      const logo = readFileSync("docs/brand/icon-letters.svg", "utf8");
+      // The name in the listing's language: the Danish letters as drawn, the English
+      // ones as the site's LogoMark sets them (Anton, stretched upward as the Danish).
+      const logo =
+        lang === "da" ? readFileSync("docs/brand/icon-letters.svg", "utf8") : ENGLISH_MARK;
       // 1: only the name.
       await page.setContent(slide(`<div class="name">${logo}</div>`));
+      await page.evaluate(() => document.fonts.ready);
       await page.screenshot({ path: `${OUT}/${FOLDER[lang]}/1-name.png` });
       let n = 2;
       for (const { name } of SCREENS) {
@@ -142,8 +147,24 @@ function iphone(shot: string) {
   </div>`;
 }
 
+/** "WE'LL" over "FIND A DAY", as LogoMark's English mark draws it. */
+const ENGLISH_MARK = (() => {
+  const line = (text: string, width: number, tall: number, top: number) => {
+    const sx = 800 / width;
+    const sy = sx * tall;
+    return `<text transform="translate(0 ${top + 87 * sy}) scale(${sx} ${sy})" textLength="${width}" lengthAdjust="spacing" style="font-family: Anton; font-size: 100px">${text}</text>`;
+  };
+  return `<svg viewBox="0 0 800 876" fill="#fff" style="width: 62%">${line("WE\u2019LL", 215, 1.5, 0)}${line("FIND A DAY", 397, 2, 529)}</svg>`;
+})();
+
+/** Anton, for the English name's letters, from the package the site serves it from. */
+const ANTON = readFileSync(
+  createRequire(import.meta.url).resolve("@fontsource/anton/files/anton-latin-400-normal.woff2"),
+).toString("base64");
+
 function slide(body: string) {
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>
+    @font-face { font-family: Anton; src: url(data:font/woff2;base64,${ANTON}) format("woff2"); }
     html, body { margin: 0; width: 440px; height: 956px; overflow: hidden; }
     body { position: relative; background: #FF4D00; font-family: -apple-system, system-ui, sans-serif; }
     .b { position: absolute; border-radius: 50%; }

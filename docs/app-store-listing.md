@@ -1,8 +1,11 @@
 # App Store listing (#146, #271)
 
 The texts for the App Store page, in both languages, ready to paste into App
-Store Connect. From 1.1.0 the app is "Vi finder lige en dag" (#267): it speaks
-as "vi", and "Casy" stays only as the company, the domain and code names.
+Store Connect. From 1.1.0 the app is "Vi finder lige en dag" in Danish and "We'll find a day"
+in English (#267, #271): it speaks as "vi" / "we", and "Casy" stays only as
+the company, the domain and code names. Apple asks for a name unique on the
+whole store per language: if "We'll find a day" is taken, try "We'll find a
+day: group dates".
 Danish is the primary localization, English the second (U.S. and U.K. the
 same texts). No emojis and no long dashes. Limits are Apple's: name 30,
 subtitle 30, promotional text 170, keywords 100 (comma separated, no spaces
@@ -36,7 +39,8 @@ Apple ranks a new app with few downloads or ratings low, and the name is the
 strongest field, then the subtitle, then the hidden keywords. So:
 
 1. **The name** is the whole phrase people already say, "Vi finder lige en
-   dag", in both languages: a Dane searching the phrase finds it.
+   dag" in Danish and "We'll find a day" in English: searching the phrase
+   finds it.
 2. **Keywords** hold no word that is already in the name (Apple counts each
    once) and keep **casy** for a few months, so people searching the old name
    still find it.
@@ -112,9 +116,9 @@ Nyt: Påmind dem, der mangler at stemme. Og én invitation virker nu hele vejen:
 
 ## English (U.S. and U.K.)
 
-**Name** (21/30): Vi finder lige en dag
+**Name** (16/30): We'll find a day
 
-**Subtitle** (30/30): Danish for: We will find a day
+**Subtitle** (25/30): Find the day everyone can
 
 **Promotional text** (162/170):
 Make a group and let us lay your calendars on top of each other. We find the dates that suit everyone. Swipe yes or no, and the plan lands in everyone's calendar.
@@ -122,11 +126,9 @@ Make a group and let us lay your calendars on top of each other. We find the dat
 **Keywords** (94/100):
 casy,calendar,schedule,group,friends,availability,meeting,poll,plan,invite,shared,weekend,date
 
-**Description** (2042/4000):
+**Description** (1980/4000):
 
 "We'll find a day." Everyone says it in the group chat, and then nothing happens. Now it does. The app lays your calendars on top of each other and shows the days everyone can make.
-
-Vi finder lige en dag is Danish for "we'll just find a day".
 
 How it works
 1. Make a group and invite your friends from your contacts, with a link or with a QR code. One link is enough: it leads to the app, and after signing in you are in the group.
@@ -152,9 +154,9 @@ We only learn when you are busy, not what your events are called. The names stay
 
 Made in Denmark, and free.
 
-**What's New** (240/4000):
+**What's New** (204/4000):
 
-Casy is now called Vi finder lige en dag, Danish for "we'll find a day". Same app, same groups, new name.
+Casy is now called We'll find a day. Same app, same groups, new name.
 
 New: remind the ones who haven't voted yet. And one invitation now works all the way: get the app, sign in, and you are in the group.
 
