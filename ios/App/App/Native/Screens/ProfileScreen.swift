@@ -10,6 +10,8 @@ final class ProfileModel {
 
     private(set) var whoAmI: WhoAmI?
     private(set) var email: String?
+    /// Who is signed in, for marking "Dig" in admin mode's lists.
+    private(set) var userId: String?
     /// The Grupper row's count; Grupper sets it too as invitations are answered.
     var invitations = 0
     private(set) var isAdmin = false
@@ -30,7 +32,9 @@ final class ProfileModel {
     }
 
     func load() async {
-        email = await SessionBox.shared.current()?.email
+        let session = await SessionBox.shared.current()
+        email = session?.email
+        userId = session?.userId
         guard let api = await Native.api() else { return }
         async let who = try? api.whoAmI()
         async let waiting = try? api.invitations()
@@ -168,7 +172,11 @@ struct ProfileScreen: View {
                 Section {
                     handOver(CasyStrings.profileSecurity, "key", "password")
                     if model.isAdmin {
-                        handOver(CasyStrings.profileAdmin, "checkmark.shield", "admin")
+                        NavigationLink {
+                            AdminScreen()
+                        } label: {
+                            ListRow(CasyStrings.profileAdmin, systemImage: "checkmark.shield")
+                        }
                     }
                 }
                 Section {

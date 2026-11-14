@@ -178,6 +178,89 @@ public indirect enum JSONValue: Codable, Sendable, Equatable {
     }
 }
 
+/// Everything admin mode shows (`AdminOverview` in src/api/admin.ts).
+public struct AdminOverview: Codable, Sendable, Equatable {
+    public struct Health: Codable, Sendable, Equatable {
+        public var ok: Bool
+        /// "stale" or "failing" when not ok.
+        public var reason: String?
+    }
+
+    public struct Skill: Codable, Sendable, Equatable {
+        public var skill: String
+        public var today: Int
+        public var last30Days: Int
+        public var costToday: Double
+        public var cost30Days: Double
+    }
+
+    public struct AI: Codable, Sendable, Equatable {
+        public var today: Int
+        public var limit: Int
+        public var skills: [Skill]?
+    }
+
+    public struct Stats: Codable, Sendable, Equatable {
+        public var users: Int
+        public var groups: Int
+        public var connectedAccounts: Int
+        public var failingSyncs: Int
+        public var busyBlocks: Int
+    }
+
+    public struct Member: Codable, Sendable, Equatable, Identifiable {
+        public var profileId: String
+        public var name: String
+        public var joinedAt: String
+
+        public var id: String { profileId }
+    }
+
+    public struct Group: Codable, Sendable, Equatable, Identifiable {
+        public var id: String
+        public var name: String
+        public var createdAt: String
+        public var createdBy: String?
+        public var createdByName: String?
+        public var members: [Member]
+    }
+
+    public struct User: Codable, Sendable, Equatable, Identifiable {
+        public var id: String
+        public var name: String
+        public var createdAt: String
+        public var lastSignInAt: String?
+        public var groups: Int
+        public var calendars: Int
+        /// "admin", "allowed" or "off".
+        public var ai: String?
+        public var tester: Bool?
+    }
+
+    public struct Connection: Codable, Sendable, Equatable, Identifiable {
+        public var id: String
+        public var ownerId: String
+        public var ownerName: String
+        public var provider: String
+        /// "pending", "connected" or "error".
+        public var status: String
+        public var calendars: Int
+        public var createdAt: String
+        public var lastSyncedAt: String?
+        public var lastSyncAttemptAt: String?
+        public var syncError: String?
+        public var needsReconnect: Bool
+    }
+
+    public var health: Health
+    public var ai: AI?
+    public var stats: Stats
+    public var groups: [Group]
+    public var users: [User]
+    public var usersTruncated: Bool
+    public var connections: [Connection]
+}
+
 public struct AdminStatus: Codable, Sendable, Equatable {
     public var isAdmin: Bool
 }

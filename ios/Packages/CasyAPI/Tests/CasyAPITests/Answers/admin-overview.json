@@ -1,0 +1,50 @@
+{
+  "health": {
+    "ok": true
+  },
+  "ai": {
+    "today": 3,
+    "limit": 500,
+    "skills": [
+      {
+        "skill": "plan-ai",
+        "today": 3,
+        "last30Days": 40,
+        "costToday": 0.002,
+        "cost30Days": 0.03
+      }
+    ]
+  },
+  "stats": {
+    "users": 2,
+    "groups": 0,
+    "connectedAccounts": 0,
+    "failingSyncs": 0,
+    "busyBlocks": 0
+  },
+  "groups": [],
+  "users": [
+    {
+      "id": "p-mia",
+      "name": "Mia Jensen",
+      "createdAt": "2026-09-01T10:00:00.000Z",
+      "lastSignInAt": "2026-10-07T08:00:00.000Z",
+      "groups": 1,
+      "calendars": 1,
+      "ai": "admin",
+      "tester": true
+    },
+    {
+      "id": "p-sara",
+      "name": "Sara",
+      "createdAt": "2026-09-01T10:00:00.000Z",
+      "lastSignInAt": "2026-10-07T08:00:00.000Z",
+      "groups": 1,
+      "calendars": 1,
+      "ai": "allowed",
+      "tester": false
+    }
+  ],
+  "usersTruncated": false,
+  "connections": []
+}

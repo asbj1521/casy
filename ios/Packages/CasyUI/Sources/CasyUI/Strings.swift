@@ -359,6 +359,66 @@ public enum CasyStrings {
         return found == key ? name : found
     }
 
+    public static var adminTitle: String { text("admin.title") }
+    public static var adminIntro: String { text("admin.intro") }
+    public static var adminRefresh: String { text("admin.refresh") }
+    public static var adminStatUsers: String { text("admin.statUsers") }
+    public static var adminStatGroups: String { text("admin.statGroups") }
+    public static var adminStatAccounts: String { text("admin.statAccounts") }
+    public static var adminStatFailing: String { text("admin.statFailing") }
+    public static var adminStatBusy: String { text("admin.statBusy") }
+    public static var adminHealthOk: String { text("admin.healthOk") }
+    public static var adminHealthStale: String { text("admin.healthStale") }
+    public static var adminHealthFailing: String { text("admin.healthFailing") }
+    public static var adminTabGroups: String { text("admin.tabGroups") }
+    public static var adminTabUsers: String { text("admin.tabUsers") }
+    public static var adminTabCalendars: String { text("admin.tabCalendars") }
+    public static var adminOnlyNoCalendar: String { text("admin.onlyNoCalendar") }
+    public static var adminOnlyProblems: String { text("admin.onlyProblems") }
+    public static var adminSearch: String { text("admin.search") }
+    public static var adminLoading: String { text("admin.loading") }
+    public static var adminNoGroupMatch: String { text("admin.noGroupMatch") }
+    public static var adminNoGroups: String { text("admin.noGroups") }
+    public static var adminNoUserMatch: String { text("admin.noUserMatch") }
+    public static var adminNoProblems: String { text("admin.noProblems") }
+    public static var adminNoAccountMatch: String { text("admin.noAccountMatch") }
+    public static var adminYou: String { text("admin.you") }
+    public static var adminGroupsLabel: String { text("admin.groupsLabel") }
+    public static var adminCalendarsLabel: String { text("admin.calendarsLabel") }
+    public static var adminNeverSynced: String { text("admin.neverSynced") }
+    public static var adminConnectingNeverFinished: String { text("admin.connectingNeverFinished") }
+    public static var adminConnectingFailed: String { text("admin.connectingFailed") }
+    public static var adminNeedsReconnect: String { text("admin.needsReconnect") }
+    public static var adminAiAdmin: String { text("admin.aiAdmin") }
+    public static var adminTesterOn: String { text("admin.testerOn") }
+    public static func adminFirstOnly(_ value: String) -> String { String(format: text("admin.firstOnly"), value) }
+    public static func adminJoined(_ value: String) -> String { String(format: text("admin.joined"), value) }
+    public static func adminLastSignIn(_ value: String) -> String { String(format: text("admin.lastSignIn"), value) }
+    public static var syncedJustNow: String { text("synced.justNow") }
+    public static var adminLoadFailed: String { text("admin.loadFailed") }
+    /// "AI i dag: 12 af 500 kald brugt."
+    public static func adminAiToday(_ used: Int, of limit: Int) -> String {
+        String(format: text("admin.aiToday"), used, limit)
+    }
+    /// "Planlæg med AI: 3 i dag, 40 på 30 dage, cirka 0,12 US$".
+    public static func adminAiSkill(_ name: String, today: Int, month: Int, cost: String) -> String {
+        String(format: text("admin.aiSkill"), name, today, month, cost)
+    }
+    /// "4 medlemmer · lavet 9. okt.", with "af Mia" when who made it is known.
+    public static func adminGroupMeta(_ members: String, _ date: String, by: String?) -> String {
+        by.map { String(format: text("admin.groupMetaBy"), members, date, $0) }
+            ?? String(format: text("admin.groupMeta"), members, date)
+    }
+    /// "Synkroniseret for 5 min siden", from minutes ago (`syncedAgo`).
+    public static func syncedAgo(minutes: Int) -> String {
+        if minutes < 1 { return text("synced.justNow") }
+        if minutes < 60 { return String(format: text("synced.minutes"), minutes) }
+        let hours = minutes / 60
+        if hours < 24 { return String(format: text("synced.hours"), hours) }
+        let days = hours / 24
+        return days == 1 ? text("synced.days.one") : String(format: text("synced.days.many"), days)
+    }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

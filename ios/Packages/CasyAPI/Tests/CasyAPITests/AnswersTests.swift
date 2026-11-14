@@ -188,3 +188,8 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     guard case .object(let fields) = export else { Issue.record("not an object"); return }
     #expect(fields["account"] != nil)
 }
+
+@Test func theAdminOverviewReads() throws {
+    let overview = try readsWithNothingLost("admin-overview", as: AdminOverview.self)
+    #expect(overview.users.count == 2)
+}

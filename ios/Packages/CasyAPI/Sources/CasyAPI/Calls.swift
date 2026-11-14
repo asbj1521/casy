@@ -367,6 +367,11 @@ extension EdgeFunctions {
         return answer.blocked
     }
 
+    /// Everything admin mode shows; the server checks who is asking.
+    public func adminOverview(errorMessage: String? = nil) async throws -> AdminOverview {
+        try await call("admin", body: Action(action: "overview"), errorMessage: errorMessage)
+    }
+
     public func isAdmin(errorMessage: String? = nil) async throws -> Bool {
         let answer: AdminStatus = try await call(
             "admin", body: Action(action: "status"), errorMessage: errorMessage)

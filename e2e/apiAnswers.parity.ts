@@ -11,12 +11,23 @@ import process from "node:process";
 import { describe, expect, it } from "vitest";
 
 import { FakeBackend } from "./backend";
-import { DEFAULT_WORLD, makeWorld, type WorldOptions } from "./world";
+import { DEFAULT_WORLD, makeWorld, type World, type WorldOptions } from "./world";
 
 const ANSWERS = resolve(process.cwd(), "ios/Packages/CasyAPI/Tests/CasyAPITests/Answers");
 const EMPTY: WorldOptions = { calendars: "none", groups: "none" };
 
-const ASKED: [file: string, world: WorldOptions, fn: string, body: Record<string, unknown>][] = [
+/** Mia as an admin, for admin mode's answers. */
+const asAdmin = (w: World) => {
+  w.admin = "current";
+};
+
+const ASKED: [
+  file: string,
+  world: WorldOptions,
+  fn: string,
+  body: Record<string, unknown>,
+  setup?: (w: World) => void,
+][] = [
   ["whoami", DEFAULT_WORLD, "groups", { action: "whoami" }],
   ["groups-list", DEFAULT_WORLD, "groups", { action: "list" }],
   ["groups-list-empty", EMPTY, "groups", { action: "list" }],
@@ -102,6 +113,7 @@ const ASKED: [file: string, world: WorldOptions, fn: string, body: Record<string
     { action: "push-set", kind: "deadline_near", on: false },
   ],
   ["admin-status", DEFAULT_WORLD, "admin", { action: "status" }],
+  ["admin-overview", DEFAULT_WORLD, "admin", { action: "overview" }, asAdmin],
   ["account-export", DEFAULT_WORLD, "account", { action: "export" }],
   ["account-ai-consent", DEFAULT_WORLD, "account", { action: "ai-consent", on: false }],
   ["account-corrections-delete", DEFAULT_WORLD, "account", { action: "corrections-delete" }],
@@ -109,8 +121,10 @@ const ASKED: [file: string, world: WorldOptions, fn: string, body: Record<string
   ["groups-unblock", DEFAULT_WORLD, "groups", { action: "unblock", profileId: "p-x" }],
 ];
 
-describe.each(ASKED)("%s", (file, world, name, body) => {
-  const answer = new FakeBackend(makeWorld(world)).answer({
+describe.each(ASKED)("%s", (file, options, name, body, setup) => {
+  const world = makeWorld(options);
+  setup?.(world);
+  const answer = new FakeBackend(world).answer({
     name,
     params: new URLSearchParams(),
     body,

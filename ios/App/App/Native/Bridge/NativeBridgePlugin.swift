@@ -114,6 +114,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     ProfileModel.shared.reset()
                     GroupsModel.shared.reset()
                     MyDataModel.shared.reset()
+                    AdminModel.shared.reset()
                 }
             }
             call.resolve()
