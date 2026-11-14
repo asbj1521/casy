@@ -12,10 +12,14 @@ import {
   onEnablePush,
   onNativeChoice,
   onNativeDataChanged,
+  onNativeAiConsent,
   onNativeInviteSent,
+  onNeedPhoneFacts,
   onNeedSession,
   sharePreferences,
 } from "@/lib/nativeBridge";
+import { afterAiConsent } from "@/hooks/useAiConsentSetting";
+import { labelBookQuery } from "@/hooks/useEventLabels";
 import { rememberInviteSent } from "@/lib/groupNudge";
 import { enablePush } from "@/lib/push";
 import { supabaseAuth } from "@/lib/supabase";
@@ -119,6 +123,31 @@ export default function NativeBridgeSync() {
       void handle?.remove();
     };
   }, [youId]);
+
+  // Native Dine data (#198): its AI switch is followed up here, where the
+  // labels and trips live, and it asks how many labels this phone keeps.
+  useEffect(() => {
+    if (!youId) return;
+    const handles: { remove: () => Promise<void> }[] = [];
+    let gone = false;
+    const keep = (h: { remove: () => Promise<void> }) => {
+      if (gone) void h.remove();
+      else handles.push(h);
+    };
+    onNativeAiConsent((on) => afterAiConsent(queryClient, youId, on))
+      .then(keep)
+      .catch((err) => console.warn("listening for the app's AI switch failed", err));
+    onNeedPhoneFacts(async () => {
+      const book = await queryClient.fetchQuery(labelBookQuery(youId));
+      return { labels: Object.keys(book ?? {}).length };
+    })
+      .then(keep)
+      .catch((err) => console.warn("answering the app's Dine data failed", err));
+    return () => {
+      gone = true;
+      for (const h of handles) void h.remove();
+    };
+  }, [queryClient, youId]);
 
   // A native screen's token ran out: getSession() refreshes it, and the change
   // comes back above through `session`.

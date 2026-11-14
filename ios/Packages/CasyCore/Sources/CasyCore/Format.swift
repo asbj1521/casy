@@ -80,6 +80,22 @@ public func monthYear(_ ms: Int64, _ lang: Lang) -> String {
     return "\(names(lang).monthsShort[d.month]) \(d.year)"
 }
 
+/// "1. sep. 2026" / "1 Sept 2026", in Danish time: when something was kept (Dine data).
+public func formatDayMonthYear(_ iso: String, _ lang: Lang) -> String {
+    guard let ms = parseInstant(iso) else { return "" }
+    let d = localDate(ms, appTimeZone)
+    let month = names(lang).monthsShort[d.month]
+    return lang == .da ? "\(d.day). \(month) \(d.year)" : "\(d.day) \(month) \(d.year)"
+}
+
+/// "1. september 2026" / "1 September 2026", in Danish time.
+public func formatDayLongMonthYear(_ iso: String, _ lang: Lang) -> String {
+    guard let ms = parseInstant(iso) else { return "" }
+    let d = localDate(ms, appTimeZone)
+    let month = names(lang).months[d.month]
+    return lang == .da ? "\(d.day). \(month) \(d.year)" : "\(d.day) \(month) \(d.year)"
+}
+
 /// "tirs." / "Tue".
 public func weekdayShortName(_ ms: Int64, _ lang: Lang) -> String {
     names(lang).weekdaysShort[localDate(ms, appTimeZone).dow]

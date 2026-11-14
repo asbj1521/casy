@@ -102,6 +102,11 @@ const ASKED: [file: string, world: WorldOptions, fn: string, body: Record<string
     { action: "push-set", kind: "deadline_near", on: false },
   ],
   ["admin-status", DEFAULT_WORLD, "admin", { action: "status" }],
+  ["account-export", DEFAULT_WORLD, "account", { action: "export" }],
+  ["account-ai-consent", DEFAULT_WORLD, "account", { action: "ai-consent", on: false }],
+  ["account-corrections-delete", DEFAULT_WORLD, "account", { action: "corrections-delete" }],
+  ["groups-blocked", DEFAULT_WORLD, "groups", { action: "blocked" }],
+  ["groups-unblock", DEFAULT_WORLD, "groups", { action: "unblock", profileId: "p-x" }],
 ];
 
 describe.each(ASKED)("%s", (file, world, name, body) => {

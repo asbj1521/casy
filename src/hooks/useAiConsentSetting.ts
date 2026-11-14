@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 import { setAiConsent } from "@/api/account";
 import { whoAmIQueryKey, type WhoAmI } from "@/api/groups";
@@ -24,23 +24,7 @@ export function useAiConsentSetting() {
 
   const mutation = useMutation({
     mutationFn: setAiConsent,
-    onSuccess: (_done, on) => {
-      queryClient.setQueryData<WhoAmI>(whoAmIQueryKey(userId), (old) =>
-        old ? { ...old, aiConsent: on, aiShare: on ? old.aiShare : false } : old,
-      );
-      // Whether corrections are shared comes with the yes (on unless the
-      // person switched it off before): the server knows.
-      if (on) void queryClient.invalidateQueries({ queryKey: whoAmIQueryKey(userId) });
-      if (!on) {
-        clearLabelsFor(userId);
-        forgetAskedTitles();
-        forgetAskedTrips();
-        queryClient.setQueryData(labelBookQuery(userId).queryKey, {});
-        queryClient.setQueryData(legBookQuery(userId).queryKey, {});
-        queryClient.setQueryData(tripAnswersQuery(userId).queryKey, NO_ANSWERS);
-      }
-      void queryClient.invalidateQueries({ queryKey: ["my-data", userId] });
-    },
+    onSuccess: (_done, on) => afterAiConsent(queryClient, userId, on),
   });
 
   return {
@@ -65,3 +49,27 @@ export function useAiConsentControl() {
 }
 
 export type AiConsentControl = ReturnType<typeof useAiConsentControl>;
+
+/**
+ * What follows a yes or a no to the AI once the server has it, on this phone:
+ * a no deletes the labels and trips kept here, made from titles the AI may no
+ * longer read. The page's own switch and the app's native Dine data (#198,
+ * through NativeBridgeSync) both run it.
+ */
+export function afterAiConsent(queryClient: QueryClient, userId: string, on: boolean): void {
+  queryClient.setQueryData<WhoAmI>(whoAmIQueryKey(userId), (old) =>
+    old ? { ...old, aiConsent: on, aiShare: on ? old.aiShare : false } : old,
+  );
+  // Whether corrections are shared comes with the yes (on unless the
+  // person switched it off before): the server knows.
+  if (on) void queryClient.invalidateQueries({ queryKey: whoAmIQueryKey(userId) });
+  if (!on) {
+    clearLabelsFor(userId);
+    forgetAskedTitles();
+    forgetAskedTrips();
+    queryClient.setQueryData(labelBookQuery(userId).queryKey, {});
+    queryClient.setQueryData(legBookQuery(userId).queryKey, {});
+    queryClient.setQueryData(tripAnswersQuery(userId).queryKey, NO_ANSWERS);
+  }
+  void queryClient.invalidateQueries({ queryKey: ["my-data", userId] });
+}

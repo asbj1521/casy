@@ -116,6 +116,16 @@ private struct RemoveFriend: Encodable, Sendable {
     let profileId: String
 }
 
+private struct Switch: Encodable, Sendable {
+    let action: String
+    let on: Bool
+}
+
+private struct Unblock: Encodable, Sendable {
+    let action = "unblock"
+    let profileId: String
+}
+
 private struct BlockSender: Encodable, Sendable {
     let action = "block"
     let invitationGroupId: String
@@ -319,6 +329,42 @@ extension EdgeFunctions {
         try await call(
             "groups", body: CreateGroup(name: name, description: description),
             errorMessage: errorMessage)
+    }
+
+    /// Your yes to the AI reading your calendars' names and events' titles
+    /// (#120), given or taken back; taking it back deletes what was sent for review.
+    public func setAiConsent(_ on: Bool, errorMessage: String? = nil) async throws {
+        let _: Outcome = try await call(
+            "account", body: Switch(action: "ai-consent", on: on), errorMessage: errorMessage)
+    }
+
+    /// Whether your corrections of the AI are sent to us for review (#122).
+    public func setAiShare(_ on: Bool, errorMessage: String? = nil) async throws {
+        let _: Outcome = try await call(
+            "account", body: Switch(action: "ai-share", on: on), errorMessage: errorMessage)
+    }
+
+    /// Deletes every correction you sent (#122).
+    public func deleteMyCorrections(errorMessage: String? = nil) async throws {
+        let _: Outcome = try await call(
+            "account", body: Action(action: "corrections-delete"), errorMessage: errorMessage)
+    }
+
+    /// Everything we hold about you, whole, for Hent en kopi.
+    public func exportMyData(errorMessage: String? = nil) async throws -> JSONValue {
+        try await call("account", body: Action(action: "export"), errorMessage: errorMessage)
+    }
+
+    public func blocked(errorMessage: String? = nil) async throws -> [BlockedPerson] {
+        let answer: BlockedAnswer = try await call(
+            "groups", body: Action(action: "blocked"), errorMessage: errorMessage)
+        return answer.blocked
+    }
+
+    public func unblock(_ profileId: String, errorMessage: String? = nil) async throws -> [BlockedPerson] {
+        let answer: BlockedAnswer = try await call(
+            "groups", body: Unblock(profileId: profileId), errorMessage: errorMessage)
+        return answer.blocked
     }
 
     public func isAdmin(errorMessage: String? = nil) async throws -> Bool {

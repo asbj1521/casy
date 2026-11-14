@@ -21,6 +21,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "setPreferences", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "open", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "pushResult", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "phoneFacts", returnType: CAPPluginReturnPromise),
     ]
 
     /// The screens drawn natively in this build. None in a Release build: the
@@ -37,6 +38,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     private var openScreen: String?
     /// A native screen waiting for the web view to turn notifications on.
     private var pushAnswer: CheckedContinuation<String, Never>?
+    /// Native Dine data waiting for the page to count what it keeps on the phone.
+    private var factsAnswer: CheckedContinuation<Int, Never>?
 
     override public func load() {
         let askWeb: @Sendable () -> Void = { [weak self] in
@@ -49,6 +52,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
             GroupsModel.shared.onInviteSent = { [weak self] groupId in
                 self?.notifyListeners("inviteSent", data: ["groupId": groupId])
+            }
+            MyDataModel.shared.onAiConsent = { [weak self] on in
+                self?.notifyListeners("aiConsent", data: ["on": on])
+            }
+            MyDataModel.shared.askLabels = { [weak self] in
+                await self?.askLabels() ?? 0
             }
         }
         #if DEBUG
@@ -104,6 +113,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     NotificationsModel.shared.reset()
                     ProfileModel.shared.reset()
                     GroupsModel.shared.reset()
+                    MyDataModel.shared.reset()
                 }
             }
             call.resolve()
@@ -185,6 +195,29 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         host.presentationController?.delegate = self
         openScreen = screen
         presenter.present(host, animated: true)
+    }
+
+    /// `{ labels }`: how many labels the page keeps on this phone (#112).
+    @objc func phoneFacts(_ call: CAPPluginCall) {
+        let labels = call.getInt("labels") ?? 0
+        DispatchQueue.main.async {
+            self.factsAnswer?.resume(returning: labels)
+            self.factsAnswer = nil
+            call.resolve()
+        }
+    }
+
+    /// The labels are the page's, kept in its storage: it counts them.
+    @MainActor private func askLabels() async -> Int {
+        factsAnswer?.resume(returning: 0)
+        factsAnswer = nil
+        #if DEBUG
+            if TestLaunch.isActive { return 0 }
+        #endif
+        return await withCheckedContinuation { continuation in
+            factsAnswer = continuation
+            notifyListeners("needPhoneFacts", data: [:])
+        }
     }
 
     /// `{ answer }`: how turning notifications on went, from the web view.

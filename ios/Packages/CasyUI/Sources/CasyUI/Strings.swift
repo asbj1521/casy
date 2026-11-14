@@ -210,6 +210,8 @@ public enum CasyStrings {
     }
     public static var inviteExpired: String { text("expiry.expired") }
 
+    public static var friendsLinksInData: String { text("friends.linksInData") }
+    public static var friendsInData: String { text("friends.inData") }
     public static var friendsEmpty: String { text("friends.empty") }
     public static var friendsNote: String { text("friends.note") }
     public static var friendsRemove: String { text("friends.remove") }
@@ -228,6 +230,134 @@ public enum CasyStrings {
     public static var deleteAccountConfirm: String { text("deleteAccount.confirm") }
     public static var deleteAccountDeleting: String { text("deleteAccount.deleting") }
     public static var deleteAccountFailed: String { text("deleteAccount.failed") }
+
+    public static var myDataTitle: String { text("myData.title") }
+    public static var myDataRow: String { text("myData.row") }
+    public static var myDataPrivacyLink: String { text("myData.privacyLink") }
+    public static var myDataLoading: String { text("myData.loading") }
+    public static var myDataAccount: String { text("myData.account") }
+    public static var myDataEmail: String { text("myData.email") }
+    public static var myDataName: String { text("myData.name") }
+    public static var myDataNameCustom: String { text("myData.nameCustom") }
+    public static var myDataNameFromLogin: String { text("myData.nameFromLogin") }
+    public static var myDataPicture: String { text("myData.picture") }
+    public static var myDataPictureKept: String { text("myData.pictureKept") }
+    public static var myDataPictureNone: String { text("myData.pictureNone") }
+    public static var myDataNameNotYet: String { text("myData.nameNotYet") }
+    public static var myDataSignIn: String { text("myData.signIn") }
+    public static var myDataSignInMethodsEmail: String { text("myData.signInMethods.email") }
+    public static var myDataSignInMethodsGoogle: String { text("myData.signInMethods.google") }
+    public static var myDataSignInMethodsApple: String { text("myData.signInMethods.apple") }
+    public static var myDataPush: String { text("myData.push") }
+    public static var myDataPushOff: String { text("myData.pushOff") }
+    public static var myDataPushDetail: String { text("myData.pushDetail") }
+    public static var myDataAppleToken: String { text("myData.appleToken") }
+    public static var myDataEmailLanguage: String { text("myData.emailLanguage") }
+    public static var myDataLanguagesDa: String { text("myData.languages.da") }
+    public static var myDataLanguagesEn: String { text("myData.languages.en") }
+    public static var myDataLanguageDefault: String { text("myData.languageDefault") }
+    public static var myDataCreated: String { text("myData.created") }
+    public static var myDataCalendars: String { text("myData.calendars") }
+    public static var myDataNoCalendars: String { text("myData.noCalendars") }
+    public static var myDataNotCounted: String { text("myData.notCounted") }
+    public static var myDataPrimary: String { text("myData.primary") }
+    public static var myDataPrimaryNone: String { text("myData.primaryNone") }
+    public static var myDataAutoAdd: String { text("myData.autoAdd") }
+    public static var myDataOn: String { text("myData.on") }
+    public static var myDataOff: String { text("myData.off") }
+    public static var myDataBusy: String { text("myData.busy") }
+    public static var myDataToldCasy: String { text("myData.toldCasy") }
+    public static var myDataShortcuts: String { text("myData.shortcuts") }
+    public static var myDataShortcutPictures: String { text("myData.shortcutPictures") }
+    public static var myDataGroupPictures: String { text("myData.groupPictures") }
+    public static var myDataReportsSent: String { text("myData.reportsSent") }
+    public static var myDataBusyCount: String { text("myData.busyCount") }
+    public static var myDataBusyFrom: String { text("myData.busyFrom") }
+    public static var myDataBusyTo: String { text("myData.busyTo") }
+    public static var myDataBusyNext: String { text("myData.busyNext") }
+    public static var myDataBusyNote: String { text("myData.busyNote") }
+    public static var myDataGroups: String { text("myData.groups") }
+    public static var myDataNoGroups: String { text("myData.noGroups") }
+    public static var myDataInviteLinks: String { text("myData.inviteLinks") }
+    public static var myDataInvitationsToYou: String { text("myData.invitationsToYou") }
+    public static var myDataInvitationsSent: String { text("myData.invitationsSent") }
+    public static var myDataEmailLookups: String { text("myData.emailLookups") }
+    public static var myDataEmailLookupsDetail: String { text("myData.emailLookupsDetail") }
+    public static var myDataEvents: String { text("myData.events") }
+    public static var myDataInvitedTo: String { text("myData.invitedTo") }
+    public static var myDataSuggested: String { text("myData.suggested") }
+    public static var myDataAnswers: String { text("myData.answers") }
+    public static var myDataDeclined: String { text("myData.declined") }
+    public static var myDataEntries: String { text("myData.entries") }
+    public static var myDataEntriesAdded: String { text("myData.entriesAdded") }
+    public static var myDataEntriesDeleted: String { text("myData.entriesDeleted") }
+    public static var myDataAi: String { text("myData.ai") }
+    public static var myDataAiCalls: String { text("myData.aiCalls") }
+    public static var myDataAiConsent: String { text("myData.aiConsent") }
+    public static var myDataAiConsentAgain: String { text("myData.aiConsentAgain") }
+    public static var myDataAiConsentOff: String { text("myData.aiConsentOff") }
+    public static var myDataLabels: String { text("myData.labels") }
+    public static var myDataShareCorrections: String { text("myData.shareCorrections") }
+    public static var myDataShareOn: String { text("myData.shareOn") }
+    public static var myDataShareOff: String { text("myData.shareOff") }
+    public static var myDataCorrectionsKept: String { text("myData.correctionsKept") }
+    public static var myDataCorrectionsDelete: String { text("myData.correctionsDelete") }
+    public static var myDataLabelsNote: String { text("myData.labelsNote") }
+    public static var myDataAiNote: String { text("myData.aiNote") }
+    public static var myDataCredentials: String { text("myData.credentials") }
+    public static var myDataCredentialKindsOauth: String { text("myData.credentialKinds.oauth") }
+    public static var myDataCredentialKindsPassword: String { text("myData.credentialKinds.password") }
+    public static var myDataCredentialKindsLink: String { text("myData.credentialKinds.link") }
+    public static var myDataCredentialNone: String { text("myData.credentialNone") }
+    public static var myDataCredentialsNote: String { text("myData.credentialsNote") }
+    public static var myDataDownload: String { text("myData.download") }
+    public static var myDataDownloadDetail: String { text("myData.downloadDetail") }
+    public static var myDataDownloading: String { text("myData.downloading") }
+    public static func myDataIntro(_ value: String) -> String { String(format: text("myData.intro"), value) }
+    public static func myDataConnectedOn(_ value: String) -> String { String(format: text("myData.connectedOn"), value) }
+    public static func myDataGroupDetailYours(_ value: String) -> String { String(format: text("myData.groupDetailYours"), value) }
+    public static func myDataAiConsentOn(_ value: String) -> String { String(format: text("myData.aiConsentOn"), value) }
+    public static var myDataLoadFailed: String { text("myData.loadFailed") }
+    public static var aiConsentRowOn: String { text("aiConsent.rowOn") }
+    public static var aiConsentRowOff: String { text("aiConsent.rowOff") }
+    public static var aiConsentRow: String { text("aiConsent.row") }
+    public static func aiConsentFootnote(_ value: String) -> String { String(format: text("aiConsent.footnote"), value) }
+    public static var aiConsentPrivacyLink: String { text("aiConsent.privacyLink") }
+    public static var aiConsentTurnOffMessage: String { text("aiConsent.turnOffMessage") }
+    public static var aiConsentTurnOff: String { text("aiConsent.turnOff") }
+    public static var aiConsentFailed: String { text("aiConsent.failed") }
+    public static var blockedTitle: String { text("blocked.title") }
+    public static var blockedFootnote: String { text("blocked.footnote") }
+    public static func blockedSince(_ value: String) -> String { String(format: text("blocked.since"), value) }
+    public static var blockedUnblock: String { text("blocked.unblock") }
+    public static var blockedUnknownName: String { text("blocked.unknownName") }
+    public static var guessed: String { text("words.guessed") }
+    public static var primeOff: String { text("words.primeOff") }
+    /// "1 konto" / "3 konti", and the other counts Dine data shows.
+    private static func count(_ key: String, _ n: Int) -> String {
+        n == 1 ? text("\(key).one") : String(format: text("\(key).many"), n)
+    }
+    public static func myDataPushOn(_ n: Int) -> String { count("myData.pushOn", n) }
+    public static func myDataAccountsCount(_ n: Int) -> String { count("myData.accountsCount", n) }
+    public static func myDataGroupsCount(_ n: Int) -> String { count("myData.groupsCount", n) }
+    public static func calendarsCount(_ n: Int) -> String { count("counts.calendars", n) }
+    public static func busyBlocks(_ n: Int) -> String { count("counts.busyBlocks", n) }
+    /// "3 (1 gyldige)".
+    public static func myDataInviteLinksValue(made: Int, active: Int) -> String {
+        String(format: text("myData.inviteLinksValue"), made, active)
+    }
+    /// "1 åbne, 2 afslået".
+    public static func myDataInvitationsToYouValue(pending: Int, declined: Int) -> String {
+        String(format: text("myData.invitationsToYouValue"), pending, declined)
+    }
+    /// A word by the server's own name for it, with the catalog's prefix:
+    /// `category.work`, `priority.never`, `provider.apple`, `myData.signInMethods.google`.
+    /// Falls back to the name itself for one the catalog doesn't know yet.
+    public static func named(_ prefix: String, _ name: String) -> String {
+        let key = "\(prefix).\(name)"
+        let found = text(key)
+        return found == key ? name : found
+    }
 
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }

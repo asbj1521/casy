@@ -52,6 +52,7 @@ interface NativeBridgePlugin {
   setPreferences(options: Preferences): Promise<void>;
   open(options: { screen: NativeScreen; build: string; userAgent: string }): Promise<void>;
   pushResult(options: { answer: "granted" | "denied" | "failed" }): Promise<void>;
+  phoneFacts(options: { labels: number }): Promise<void>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
@@ -63,6 +64,11 @@ interface NativeBridgePlugin {
   addListener(event: "needSession", listener: () => void): Promise<PluginListenerHandle>;
   addListener(event: "dataChanged", listener: () => void): Promise<PluginListenerHandle>;
   addListener(event: "enablePush", listener: () => void): Promise<PluginListenerHandle>;
+  addListener(
+    event: "aiConsent",
+    listener: (change: { on: boolean }) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(event: "needPhoneFacts", listener: () => void): Promise<PluginListenerHandle>;
   addListener(
     event: "inviteSent",
     listener: (sent: { groupId: string }) => void,
@@ -152,6 +158,33 @@ export async function onNativeInviteSent(
 ): Promise<PluginListenerHandle> {
   const { plugin } = await bridgePlugin();
   return plugin.addListener("inviteSent", ({ groupId }) => onSent(groupId));
+}
+
+/**
+ * Calls `onChange` when native Dine data gave or took back the yes to the AI
+ * (#120): the page does what its own switch does after (afterAiConsent),
+ * since the labels and trips it deletes are kept in the page.
+ */
+export async function onNativeAiConsent(
+  onChange: (on: boolean) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("aiConsent", ({ on }) => onChange(on));
+}
+
+/**
+ * Answers native Dine data's question about what is kept only on this phone,
+ * in the page (`count` of labels, #112).
+ */
+export async function onNeedPhoneFacts(
+  count: () => Promise<{ labels: number }>,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("needPhoneFacts", () => {
+    void count()
+      .catch(() => ({ labels: 0 }))
+      .then((facts) => plugin.phoneFacts(facts));
+  });
 }
 
 /** Calls `onNeed` when a native screen's login has run out, so the page refreshes it. */

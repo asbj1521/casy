@@ -41,6 +41,12 @@ final class ProfileModel {
         if let adminAnswer { isAdmin = adminAnswer }
     }
 
+    /// A yes or a no to the AI saved elsewhere (Dine data): a no stops sharing too.
+    func noteAiConsent(_ on: Bool) {
+        whoAmI?.aiConsent = on
+        if !on { whoAmI?.aiShare = false }
+    }
+
     func rename(to name: String) {
         saving = true
         failure = nil
@@ -177,7 +183,11 @@ struct ProfileScreen: View {
                     }
                 }
                 Section {
-                    handOver(CasyStrings.profileMyData, "cylinder", "data")
+                    NavigationLink {
+                        MyDataScreen(leave: leave)
+                    } label: {
+                        ListRow(CasyStrings.profileMyData, systemImage: "cylinder")
+                    }
                     handOver(CasyStrings.profileSupport, "lifepreserver", to: "/support")
                     handOver(CasyStrings.profileHowItWorks, "questionmark.circle", to: "/how-it-works")
                     handOver(CasyStrings.profileTerms, "doc.text", to: "/terms")

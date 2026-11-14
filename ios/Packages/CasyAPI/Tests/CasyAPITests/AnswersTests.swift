@@ -177,3 +177,14 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     #expect(link.url.contains("/friend/"))
     _ = try readsWithNothingLost("groups-remove-friend", as: FriendsAnswer.self)
 }
+
+@Test func dineDataActionsRead() throws {
+    _ = try readsWithNothingLost("account-ai-consent", as: Outcome.self)
+    _ = try readsWithNothingLost("account-corrections-delete", as: Outcome.self)
+    _ = try readsWithNothingLost("groups-blocked", as: BlockedAnswer.self)
+    _ = try readsWithNothingLost("groups-unblock", as: BlockedAnswer.self)
+    // The export is handed on whole: every field comes back out.
+    let export = try readsWithNothingLost("account-export", as: JSONValue.self)
+    guard case .object(let fields) = export else { Issue.record("not an object"); return }
+    #expect(fields["account"] != nil)
+}
