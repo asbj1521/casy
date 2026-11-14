@@ -1,3 +1,5 @@
+import { useLang } from "@/i18n/lang";
+
 /**
  * The logo (#269): the icon's own letters, "VI FINDER" over "LIGE EN DAG", as
  * shapes, without the icon's orange square and margin, in the text's colour.
@@ -5,6 +7,8 @@
  * the point; the name typed on one line is `Wordmark`.
  */
 export default function LogoMark({ className = "", label }: { className?: string; label: string }) {
+  const { lang } = useLang();
+  if (lang === "en") return <EnglishMark className={className} label={label} />;
   return (
     <svg
       role="img"
@@ -21,6 +25,45 @@ export default function LogoMark({ className = "", label }: { className?: string
         d="M792 0L78 0L78-1760L430-1760L430-300L792-300L792 0ZM1216 0L876 0L876-1760L1216-1760L1216 0ZM1719 16L1719 16Q1342 16 1342-524L1342-524L1342-1283Q1342-1776 1774-1776L1774-1776Q1952-1776 2047-1704.5Q2142-1633 2178-1496Q2214-1359 2214-1162L2214-1162L1870-1162L1870-1318Q1870-1375 1854.5-1413.5Q1839-1452 1790-1452L1790-1452Q1729-1452 1709.5-1411Q1690-1370 1690-1321L1690-1321L1690-468Q1690-397 1708.5-352.5Q1727-308 1781-308L1781-308Q1837-308 1855.5-352.5Q1874-397 1874-470L1874-470L1874-721L1780-721L1780-1025L2210-1025L2210 0L2069 0L2009-148Q1917 16 1719 16ZM3076 0L2349 0L2349-1760L3053-1760L3053-1420L2707-1420L2707-1077L3039-1077L3039-746L2707-746L2707-343L3076-343L3076 0ZM4183 0L3456 0L3456-1760L4160-1760L4160-1420L3814-1420L3814-1077L4146-1077L4146-746L3814-746L3814-343L4183-343L4183 0ZM4643 0L4299 0L4299-1760L4661-1760L4823-917L4823-1760L5163-1760L5163 0L4819 0L4643-880L4643 0ZM6055 0L5583 0L5583-1760L6067-1760Q6257-1760 6353-1654.5Q6449-1549 6449-1346L6449-1346L6449-522Q6449-272 6361.5-136Q6274 0 6055 0L6055 0ZM5937-1452L5937-311L5998-311Q6095-311 6095-405L6095-405L6095-1313Q6095-1401 6071.5-1426.5Q6048-1452 5976-1452L5976-1452L5937-1452ZM6887 0L6545 0L6715-1760L7312-1760L7479 0L7146 0L7121-284L6909-284L6887 0ZM7001-1460L6934-565L7094-565L7017-1460L7001-1460ZM7950 16L7950 16Q7573 16 7573-524L7573-524L7573-1283Q7573-1776 8005-1776L8005-1776Q8183-1776 8278-1704.5Q8373-1633 8409-1496Q8445-1359 8445-1162L8445-1162L8101-1162L8101-1318Q8101-1375 8085.5-1413.5Q8070-1452 8021-1452L8021-1452Q7960-1452 7940.5-1411Q7921-1370 7921-1321L7921-1321L7921-468Q7921-397 7939.5-352.5Q7958-308 8012-308L8012-308Q8068-308 8086.5-352.5Q8105-397 8105-470L8105-470L8105-721L8011-721L8011-1025L8441-1025L8441 0L8300 0L8240-148Q8148 16 7950 16Z"
         transform="translate(94.76 923.99) scale(0.09791 0.17033)"
       />
+    </svg>
+  );
+}
+
+/**
+ * The English name's mark, tried on a branch (try/english-name): "OMG LET'S"
+ * over "FIND A DATE" in the same tall Anton capitals, each line stretched to
+ * the same width as the Danish mark's are, with the top line the bigger.
+ * Live text in the self-hosted Anton (font-display) for now; drawn as shapes
+ * like the Danish one if the name stays.
+ */
+function EnglishMark({ className, label }: { className: string; label: string }) {
+  // Anton at 100 px: each line's width and capital height, measured. The Danish
+  // mark's letters are stretched upward 2.29 times their width on the top line
+  // and 1.74 on the bottom one; these are too, to the same 800 wide.
+  const line = (text: string, width: number, tall: number, top: number) => {
+    const sx = 800 / width;
+    const sy = sx * tall;
+    return (
+      <text
+        transform={`translate(0 ${top + 87 * sy}) scale(${sx} ${sy})`}
+        textLength={width}
+        lengthAdjust="spacing"
+        style={{ fontFamily: "Anton, Impact, sans-serif", fontSize: 100 }}
+      >
+        {text}
+      </text>
+    );
+  };
+  return (
+    <svg
+      role="img"
+      aria-label={label}
+      viewBox="0 0 800 740"
+      className={className}
+      fill="currentColor"
+    >
+      {line("OMG LET\u2019S", 383, 2.29, 0)}
+      {line("FIND A DATE", 434, 1.74, 462)}
     </svg>
   );
 }

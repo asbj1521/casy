@@ -16,3 +16,14 @@ export const APP_NAME = "Vi finder lige en dag";
  * names the app by this.
  */
 export const APP_LABEL = "Find en dag";
+
+/**
+ * The English name, tried on a branch (try/english-name): the English pages
+ * and the English logo say it; Danish keeps "Vi finder lige en dag".
+ */
+export const APP_NAME_EN = "OMG, let's find a date";
+
+/** The name in a language: the one thing that reads the language from brand.ts. */
+export function appName(lang: "da" | "en"): string {
+  return lang === "en" ? APP_NAME_EN : APP_NAME;
+}

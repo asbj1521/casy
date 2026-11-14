@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { APP_NAME } from "@/i18n/brand";
+import { appName } from "@/i18n/brand";
+import { useLang } from "@/i18n/lang";
 
 /**
  * The browser tab's title for a page: "Mine aftaler · Casy", so tabs and the
@@ -7,10 +8,11 @@ import { APP_NAME } from "@/i18n/brand";
  * pages that don't set one (the landing page).
  */
 export function useDocumentTitle(title: string): void {
+  const { lang } = useLang();
   useEffect(() => {
-    document.title = `${title} · ${APP_NAME}`;
+    document.title = `${title} · ${appName(lang)}`;
     return () => {
-      document.title = APP_NAME;
+      document.title = appName(lang);
     };
-  }, [title]);
+  }, [title, lang]);
 }

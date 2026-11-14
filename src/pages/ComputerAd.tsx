@@ -11,8 +11,8 @@ import WelcomeIntro from "@/components/welcome/WelcomeIntro";
 import WelcomeStage from "@/components/welcome/WelcomeStage";
 import type { MorphRect } from "@/components/welcome/phone/morph";
 import { displayName, useAuth } from "@/context/auth";
-import { APP_NAME } from "@/i18n/brand";
-import { useT } from "@/i18n/lang";
+import { appName } from "@/i18n/brand";
+import { useLang, useT } from "@/i18n/lang";
 import { APP_STORE_URL } from "@/lib/appStore";
 import { APP_URL, SITE_URL } from "@/lib/nativeApp";
 
@@ -154,6 +154,7 @@ function GetTheApp({ link, scanLine, label }: { link: string; scanLine: string; 
  */
 export default function ComputerAd({ kind = "home" }: { kind?: "home" | "invite" | "friend" }) {
   const t = useT();
+  const { lang } = useLang();
   const { token } = useParams();
   const { user, signOut } = useAuth();
 
@@ -186,7 +187,10 @@ export default function ComputerAd({ kind = "home" }: { kind?: "home" | "invite"
         {/* Over the colour shapes, which spill out from beside the phone. */}
         <section className="relative z-10 flex min-w-0 flex-col gap-6">
           <h1>
-            <LogoMark label={APP_NAME} className="block w-[min(24rem,30vw,38vh)] text-[#FF4D00]" />
+            <LogoMark
+              label={appName(lang)}
+              className="block w-[min(24rem,30vw,38vh)] text-[#FF4D00]"
+            />
           </h1>
           <p className="text-balance text-[1.75rem] font-bold leading-tight">
             {t.computerAd.tagline}

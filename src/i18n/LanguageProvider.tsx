@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { isLoaded, loadMessages, setCurrentLang } from "@/i18n/current";
+import { APP_NAME, APP_NAME_EN } from "@/i18n/brand";
 import { initialLang, LANG_STORAGE_KEY, LanguageContext, phoneLang, type Lang } from "@/i18n/lang";
 import { isNativeApp } from "@/lib/nativeApp";
 import { readStored, writeStored } from "@/lib/storage";
@@ -41,6 +42,12 @@ export default function LanguageProvider({ children }: { children: ReactNode }) 
         setLangState("da");
       },
     );
+  }, [lang]);
+
+  // The tab's title names the app in the page's language (try/english-name).
+  useEffect(() => {
+    const [from, to] = lang === "en" ? [APP_NAME, APP_NAME_EN] : [APP_NAME_EN, APP_NAME];
+    document.title = document.title.replace(from, to);
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => {

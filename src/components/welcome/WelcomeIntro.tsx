@@ -11,7 +11,7 @@ import {
 
 import type { MorphRect } from "@/components/welcome/phone/morph";
 import LogoMark from "@/components/ui/LogoMark";
-import { APP_NAME } from "@/i18n/brand";
+import { appName } from "@/i18n/brand";
 import { useLang } from "@/i18n/lang";
 
 const WORDS = {
@@ -280,9 +280,12 @@ export function LinkFace() {
   const { lang } = useLang();
   return (
     <>
-      <img src="/og-image.png" alt="" className="block aspect-[1200/630] w-full object-cover" />
+      {/* The link's picture: the logo on the icon's orange, in the page's language. */}
+      <span className="flex aspect-[1200/630] w-full items-center justify-center bg-[#FF4D00]">
+        <LogoMark label="" className="h-[74%] w-auto text-white" />
+      </span>
       <span className="flex flex-col px-3.5 py-2.5 leading-tight text-[#1c1c1e]">
-        <span className="text-[1rem] font-semibold">{APP_NAME}</span>
+        <span className="text-[1rem] font-semibold">{appName(lang)}</span>
         <span className="text-[0.8125rem] text-[#8A8D91]">{WORDS.linkDetail[lang]}</span>
       </span>
     </>
