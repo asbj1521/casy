@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { APP_LABEL, APP_NAME_EN as APP_NAME } from "@/i18n/brand";
+import { APP_LABEL_EN as APP_LABEL, APP_NAME_EN as APP_NAME } from "@/i18n/brand";
 import type { Messages } from "@/i18n/da";
 
 /** English copy. Typed as Messages, so a key missing here fails the build. */

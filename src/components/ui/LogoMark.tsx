@@ -30,7 +30,7 @@ export default function LogoMark({ className = "", label }: { className?: string
 }
 
 /**
- * The English name's mark, tried on a branch (try/english-name): "WE'LL" over
+ * The English name's mark (#271): "WE'LL" over
  * "FIND A DAY" in the same tall Anton capitals as the Danish mark, both lines
  * the same width, the short top line the bigger. Live text in the
  * self-hosted Anton for now; drawn as shapes like the Danish one if it stays.

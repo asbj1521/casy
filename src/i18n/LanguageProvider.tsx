@@ -44,7 +44,7 @@ export default function LanguageProvider({ children }: { children: ReactNode }) 
     );
   }, [lang]);
 
-  // The tab's title names the app in the page's language (try/english-name).
+  // The tab's title names the app in the page's language (#271).
   useEffect(() => {
     const [from, to] = lang === "en" ? [APP_NAME, APP_NAME_EN] : [APP_NAME_EN, APP_NAME];
     document.title = document.title.replace(from, to);

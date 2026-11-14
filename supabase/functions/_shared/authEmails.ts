@@ -17,7 +17,7 @@
  * the site's colours, which is all email clients reliably understand.
  */
 import type { Lang } from "./i18n.ts";
-import { APP_NAME } from "./brand.ts";
+import { APP_NAME, APP_NAME_EN } from "./brand.ts";
 
 /** The parts of Auth's hook payload these emails read. */
 export interface HookUser {
@@ -99,9 +99,9 @@ const SHARED: Record<Lang, { about: string; copyLink: string; brand: string }> =
     brand: APP_NAME,
   },
   en: {
-    about: `${APP_NAME} helps a group of people find a date that works for everyone.`,
+    about: `${APP_NAME_EN} helps a group of people find a date that works for everyone.`,
     copyLink: "If the button does not work, copy this address into your browser:",
-    brand: APP_NAME,
+    brand: APP_NAME_EN,
   },
 };
 

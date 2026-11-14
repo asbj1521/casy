@@ -7,3 +7,6 @@
  * sender address) and every stored id keep "casy" for good.
  */
 export const APP_NAME = "Vi finder lige en dag";
+
+/** The English name, in what the server writes in English (src/i18n/brand.ts's APP_NAME_EN). */
+export const APP_NAME_EN = "We'll find a day";

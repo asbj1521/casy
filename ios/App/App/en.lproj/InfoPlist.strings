@@ -1,5 +1,5 @@
 /* The label under the icon, in Settings and above notifications (#271). */
-"CFBundleDisplayName" = "Find en dag";
+"CFBundleDisplayName" = "Find a day";
 
 /* The permission prompts for talking instead of typing (#100), in the phone's language. */
 "NSMicrophoneUsageDescription" = "We use the microphone when you tap Speak, so you can say what you are planning instead of typing it.";
