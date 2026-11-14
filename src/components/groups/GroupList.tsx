@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 
@@ -13,6 +13,7 @@ import SwipeReveal from "@/components/ui/SwipeReveal";
 import { useSignedInUser } from "@/context/auth";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
+import { searchWithout } from "@/lib/profileScreens";
 import { groupSwipe } from "@/lib/groups";
 
 /**
@@ -38,18 +39,13 @@ export default function GroupList({
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   // `?new=group` holds New group open: the app's native Grupper hands its
   // "Lav en gruppe" over this way (#198). Closing it takes it off the address.
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
+  const location = useLocation();
   const askedForNew = params.get("new") === "group";
   function closeNewGroup() {
     setNewGroupOpen(false);
     if (!askedForNew) return;
-    setParams(
-      (now) => {
-        now.delete("new");
-        return now;
-      },
-      { replace: true },
-    );
+    navigate({ search: searchWithout(location.search, "new") }, { replace: true });
   }
   const phone = usePhoneLayout();
   const queryClient = useQueryClient();

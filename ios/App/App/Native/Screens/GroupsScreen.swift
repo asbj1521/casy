@@ -56,17 +56,80 @@ final class GroupsModel {
         Task {
             defer { working.remove(group.id) }
             do {
-                guard let api = await Native.api() else { return }
-                let answer =
-                    forAll
-                    ? try await api.deleteGroup(group.id, errorMessage: CasyStrings.groupsDeleteFailed)
-                    : try await api.leaveGroup(group.id, errorMessage: CasyStrings.groupsLeaveFailed)
-                groups = answer.groups ?? groups?.filter { $0.id != group.id }
-                changed()
+                try await remove(group, forAll: forAll)
             } catch {
                 failure = error.localizedDescription
             }
         }
+    }
+
+    /// Leaves the group (the last one out deletes it), or deletes it for
+    /// everyone: only whoever made it may.
+    func remove(_ group: CasyAPI.Group, forAll: Bool) async throws {
+        let message = forAll ? CasyStrings.groupsDeleteFailed : CasyStrings.groupsLeaveFailed
+        let api = try await signedIn(message)
+        let answer =
+            forAll
+            ? try await api.deleteGroup(group.id, errorMessage: message)
+            : try await api.leaveGroup(group.id, errorMessage: message)
+        groups = answer.groups ?? groups?.filter { $0.id != group.id }
+        changed()
+    }
+
+    /// One group and its place in the list, which colours its letter as its row.
+    func indexed(_ id: String) -> (group: CasyAPI.Group, index: Int)? {
+        guard let index = groups?.firstIndex(where: { $0.id == id }), let groups else { return nil }
+        return (groups[index], index)
+    }
+
+    /// Tid til hinanden (#171), your own choice for this group.
+    func setPrimeDates(_ group: CasyAPI.Group, on: Bool) async throws {
+        let api = try await signedIn(CasyStrings.groupPrimeFailed)
+        groups = try await api.setPrimeDates(group.id, on: on, errorMessage: CasyStrings.groupPrimeFailed)
+        changed()
+    }
+
+    /// Rediger gruppe's Gem: only what changed, one call each, as the web.
+    /// The list is fetched again either way, as part may have been saved.
+    func save(
+        _ group: CasyAPI.Group, name: String, description: String, picture: PictureChange
+    ) async throws {
+        defer {
+            Task {
+                await load()
+                changed()
+            }
+        }
+        let api = try await signedIn(CasyStrings.groupRenameFailed)
+        if name != group.name {
+            groups = try await api.renameGroup(group.id, to: name, errorMessage: CasyStrings.groupRenameFailed)
+        }
+        if description != (group.description ?? "") {
+            groups = try await api.describeGroup(
+                group.id, as: description, errorMessage: CasyStrings.groupDescribeFailed)
+        }
+        switch picture {
+        case .keep: break
+        case .set(let jpeg):
+            _ = try await api.setGroupPicture(group.id, jpeg, errorMessage: CasyStrings.picturesSaveFailed)
+        case .remove:
+            try await api.removeGroupPicture(group.id, errorMessage: CasyStrings.picturesRemoveFailed)
+        }
+    }
+
+    /// A report to us (#142), then blocking the member and leaving the group
+    /// if those were switched on, in that order, as the web.
+    func report(
+        _ target: ReportTarget, reason: String, note: String, block member: String?,
+        leave group: CasyAPI.Group?
+    ) async throws {
+        let api = try await signedIn(CasyStrings.reportFailed)
+        try await api.report(target, reason: reason, note: note, errorMessage: CasyStrings.reportFailed)
+        if let member {
+            _ = try await api.blockPerson(member, errorMessage: CasyStrings.invitationsBlockFailed)
+            changed()
+        }
+        if let group { try await remove(group, forAll: false) }
     }
 
     /// Yes: returns once you are in the group, throws with words to show.
@@ -124,13 +187,20 @@ final class GroupsModel {
     private func changed() { ProfileModel.shared.onChange?() }
 }
 
+/// What Rediger gruppe does with the picture: leaves it, sets a new one, or takes it away.
+enum PictureChange: Equatable {
+    case keep
+    case set(String)
+    case remove
+}
+
 private struct NotSignedIn: LocalizedError {
     let errorDescription: String?
 }
 
 /// Grupper (#198), pushed inside the Profil sheet: the invitations waiting for
-/// an answer, then your groups (`PhoneGroupsContent` on the web). A group's own
-/// screen and making a new one are still the page's.
+/// an answer, then your groups (`PhoneGroupsContent` on the web). Making a new
+/// one is still the page's.
 struct GroupsScreen: View {
     let leave: (LeavingProfile) -> Void
 
@@ -201,13 +271,12 @@ struct GroupsScreen: View {
         }
     }
 
-    /// Opens the group's screen, still the page's (step 2 makes it native);
-    /// swiped left, leaves or deletes it, as on the web (#223).
+    /// Opens the group's screen; swiped left, leaves or deletes it, as on the web (#223).
     private func groupRow(_ group: CasyAPI.Group, index: Int) -> some View {
         let busy = model.working.contains(group.id)
         let swipe = model.swipe(for: group)
-        return Button {
-            leave(.webScreen("/?profile=groups/\(group.id)"))
+        return NavigationLink {
+            GroupScreen(groupId: group.id, leave: leave)
         } label: {
             ListAvatarRow(
                 group.name,
@@ -215,14 +284,7 @@ struct GroupsScreen: View {
                     group.members.map { (name: $0.name, isYou: $0.isYou) }, you: CasyStrings.groupsYou),
                 index: index, url: group.pictureUrl.flatMap(URL.init(string:))
             ) {
-                if busy {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))
-                        .accessibilityHidden(true)
-                }
+                if busy { ProgressView().controlSize(.small) }
             }
             .contentShape(Rectangle())
         }

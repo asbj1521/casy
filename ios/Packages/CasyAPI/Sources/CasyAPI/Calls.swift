@@ -26,6 +26,65 @@ private struct GroupAction: Encodable, Sendable {
     let groupId: String
 }
 
+private struct RenameGroup: Encodable, Sendable {
+    let action = "rename"
+    let groupId: String
+    let name: String
+}
+
+private struct DescribeGroup: Encodable, Sendable {
+    let action = "describe"
+    let groupId: String
+    let description: String
+}
+
+private struct SetPrimeDates: Encodable, Sendable {
+    let action = "set-prime-dates"
+    let groupId: String
+    let on: Bool
+}
+
+private struct SetGroupPicture: Encodable, Sendable {
+    let action = "set-group-picture"
+    let groupId: String
+    let image: String
+}
+
+private struct BlockMember: Encodable, Sendable {
+    let action = "block"
+    let profileId: String
+}
+
+/// What a report is about: the group, or a member of it (#142).
+public enum ReportTarget: Sendable, Equatable {
+    case group(groupId: String)
+    case member(groupId: String, memberId: String)
+}
+
+private struct Report: Encodable, Sendable {
+    let action = "report"
+    let kind: String
+    let groupId: String
+    let memberId: String?
+    let reason: String
+    let note: String
+
+    init(_ target: ReportTarget, reason: String, note: String) {
+        switch target {
+        case .group(let groupId):
+            kind = "group"
+            self.groupId = groupId
+            memberId = nil
+        case .member(let groupId, let memberId):
+            kind = "member"
+            self.groupId = groupId
+            self.memberId = memberId
+        }
+        self.reason = reason
+        self.note = note
+    }
+}
+
 private struct BlockSender: Encodable, Sendable {
     let action = "block"
     let invitationGroupId: String
@@ -126,6 +185,63 @@ extension EdgeFunctions {
         try await call(
             "groups", body: GroupAction(action: "delete", groupId: groupId),
             errorMessage: errorMessage)
+    }
+
+    /// A group's new name; answers your groups.
+    public func renameGroup(
+        _ groupId: String, to name: String, errorMessage: String? = nil
+    ) async throws -> [Group] {
+        let answer: GroupsAnswer = try await call(
+            "groups", body: RenameGroup(groupId: groupId, name: name), errorMessage: errorMessage)
+        return answer.groups ?? []
+    }
+
+    /// What the group is for (#152), empty for none; answers your groups.
+    public func describeGroup(
+        _ groupId: String, as description: String, errorMessage: String? = nil
+    ) async throws -> [Group] {
+        let answer: GroupsAnswer = try await call(
+            "groups", body: DescribeGroup(groupId: groupId, description: description),
+            errorMessage: errorMessage)
+        return answer.groups ?? []
+    }
+
+    /// Tid til hinanden (#171) on or off for you; answers your groups.
+    public func setPrimeDates(
+        _ groupId: String, on: Bool, errorMessage: String? = nil
+    ) async throws -> [Group] {
+        let answer: GroupsAnswer = try await call(
+            "groups", body: SetPrimeDates(groupId: groupId, on: on), errorMessage: errorMessage)
+        return answer.groups ?? []
+    }
+
+    /// A group's new picture (#188), a base64 JPEG; answers a link to it.
+    public func setGroupPicture(
+        _ groupId: String, _ image: String, errorMessage: String? = nil
+    ) async throws -> String? {
+        let answer: GroupPictureAnswer = try await call(
+            "pictures", body: SetGroupPicture(groupId: groupId, image: image),
+            errorMessage: errorMessage)
+        return answer.pictureUrl
+    }
+
+    public func removeGroupPicture(_ groupId: String, errorMessage: String? = nil) async throws {
+        let _: GroupPictureAnswer = try await call(
+            "pictures", body: GroupAction(action: "remove-group-picture", groupId: groupId),
+            errorMessage: errorMessage)
+    }
+
+    /// A report to us (#142): `reason` is spam, offensive, harassment or other.
+    public func report(
+        _ target: ReportTarget, reason: String, note: String, errorMessage: String? = nil
+    ) async throws {
+        let _: ReportAnswer = try await call(
+            "groups", body: Report(target, reason: reason, note: note), errorMessage: errorMessage)
+    }
+
+    /// Blocks a member (#142): no more invitations from them.
+    public func blockPerson(_ profileId: String, errorMessage: String? = nil) async throws -> BlockAnswer {
+        try await call("groups", body: BlockMember(profileId: profileId), errorMessage: errorMessage)
     }
 
     public func isAdmin(errorMessage: String? = nil) async throws -> Bool {

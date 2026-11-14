@@ -279,6 +279,19 @@ test("the app's native Grupper opens New group through the address (#198)", asyn
   await expect(page).toHaveURL(/\?profile=groups$/);
 });
 
+test("the app's native group screen opens Invitér through the address (#198)", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "the app's Profil sheet is the phone layout's");
+  await page.goto("/?profile=groups/g-running&invite=group");
+  const sheet = page.getByRole("dialog", { name: "Invitér til Løbeklubben" });
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("button", { name: "Færdig" }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page).toHaveURL(/\?profile=groups\/g-running$/);
+});
+
 test("people picked in the invite get an invitation, and show as invited", async ({
   page,
   backend,

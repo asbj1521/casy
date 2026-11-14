@@ -93,6 +93,16 @@ public struct BlockAnswer: Codable, Sendable, Equatable {
     public var invitations: [Invitation]?
 }
 
+/// A group's new picture: a link to it, null once removed.
+public struct GroupPictureAnswer: Codable, Sendable, Equatable {
+    public var pictureUrl: String?
+}
+
+/// A report has arrived.
+public struct ReportAnswer: Codable, Sendable, Equatable {
+    public var reported: Bool
+}
+
 public struct AdminStatus: Codable, Sendable, Equatable {
     public var isAdmin: Bool
 }

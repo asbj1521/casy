@@ -74,6 +74,12 @@ public func monthShortName(_ ms: Int64, _ lang: Lang) -> String {
     names(lang).monthsShort[localDate(ms, appTimeZone).month]
 }
 
+/// "sep. 2026" / "Sep 2026": how long a group has existed (`formatMonthYear`).
+public func monthYear(_ ms: Int64, _ lang: Lang) -> String {
+    let d = localDate(ms, appTimeZone)
+    return "\(names(lang).monthsShort[d.month]) \(d.year)"
+}
+
 /// "tirs." / "Tue".
 public func weekdayShortName(_ ms: Int64, _ lang: Lang) -> String {
     names(lang).weekdaysShort[localDate(ms, appTimeZone).dow]

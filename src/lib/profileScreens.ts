@@ -32,6 +32,21 @@ export function parentScreen(key: string): string {
 }
 
 /**
+ * The address's query without `key`, keeping a sheet key's slash readable as
+ * `sheetAddress` writes it: how a screen opened for the app's native one
+ * (`?new=group`, `?invite=group`, #198) forgets that it was asked.
+ */
+export function searchWithout(search: string, key: string): string {
+  const params = new URLSearchParams(search);
+  params.delete(key);
+  const query = params
+    .toString()
+    .replace(/%2F/g, "/")
+    .replace(/profile=(&|$)/, "profile$1");
+  return query ? `?${query}` : "";
+}
+
+/**
  * The home page's address for a sheet screen, keeping what else the link
  * carried (`?password=new` opens the new password form).
  */

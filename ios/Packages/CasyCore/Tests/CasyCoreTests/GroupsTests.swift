@@ -24,3 +24,17 @@ import Testing
         you: "Dig")
     #expect(line == "Dig, Freja, Oliver")
 }
+
+// What the web's formatMonthYear says for the same moments, in Danish time.
+@Test func aGroupsAgeReadsAsTheWebSaysIt() throws {
+    let cases: [(String, String, String)] = [
+        ("2026-08-31T22:30:00Z", "sep. 2026", "Sept 2026"),
+        ("2026-05-15T12:00:00Z", "maj 2026", "May 2026"),
+        ("2025-12-31T23:30:00Z", "jan. 2026", "Jan 2026"),
+    ]
+    for (iso, da, en) in cases {
+        let ms = try #require(parseInstant(iso))
+        #expect(monthYear(ms, .da) == da)
+        #expect(monthYear(ms, .en) == en)
+    }
+}

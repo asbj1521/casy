@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { parentScreen, screenDepth, sheetAddress, sheetScreenFor } from "@/lib/profileScreens";
+import {
+  parentScreen,
+  screenDepth,
+  searchWithout,
+  sheetAddress,
+  sheetScreenFor,
+} from "@/lib/profileScreens";
 
 describe("the Profil sheet's screens (#174)", () => {
   it("finds the screen for the profile's old addresses, and none for the help pages", () => {
@@ -32,5 +38,16 @@ describe("an invitation in the sheet (#224)", () => {
     expect(screenDepth("invited/g1")).toBe(2);
     expect(parentScreen("invited/g1")).toBe("groups");
     expect(sheetAddress("invited/g1")).toBe("/?profile=invited/g1");
+  });
+});
+
+describe("searchWithout (#198)", () => {
+  it("drops the flag and keeps the sheet's key as sheetAddress writes it", () => {
+    expect(searchWithout("?profile=groups/g1&invite=group", "invite")).toBe("?profile=groups/g1");
+    expect(searchWithout("?profile=groups&new=group", "new")).toBe("?profile=groups");
+    expect(searchWithout("?profile&new=group", "new")).toBe("?profile");
+  });
+  it("leaves nothing when nothing is left", () => {
+    expect(searchWithout("?new=group", "new")).toBe("");
   });
 });

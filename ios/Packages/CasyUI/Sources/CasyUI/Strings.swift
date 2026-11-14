@@ -114,6 +114,45 @@ public enum CasyStrings {
         String(format: text("invitations.blockConfirm"), name)
     }
 
+    public static var groupMembers: String { text("group.members") }
+    public static var groupWhatMembersSee: String { text("group.whatMembersSee") }
+    public static var groupWhatMembersSeeBody: String { text("group.whatMembersSeeBody") }
+    public static var groupInvitePeople: String { text("group.invitePeople") }
+    public static var groupEdit: String { text("group.edit") }
+    public static func groupMade(_ value: String) -> String { String(format: text("group.made"), value) }
+    public static func groupWithYou(_ value: String) -> String { String(format: text("group.withYou"), value) }
+    public static var groupLeave: String { text("group.leave") }
+    public static var groupDeleteGroup: String { text("group.deleteGroup") }
+    public static func groupLeaveConfirm(_ value: String) -> String { String(format: text("group.leaveConfirm"), value) }
+    public static func groupLeaveSole(_ value: String) -> String { String(format: text("group.leaveSole"), value) }
+    public static var groupDeleteForAll: String { text("group.deleteForAll") }
+    public static var groupPrimeTitle: String { text("group.primeTitle") }
+    public static var groupPrimeFootnote: String { text("group.primeFootnote") }
+    public static var groupRenameFailed: String { text("group.renameFailed") }
+    public static var groupDescribeFailed: String { text("group.describeFailed") }
+    public static var groupPrimeFailed: String { text("group.primeFailed") }
+    public static var groupNameLabel: String { text("group.nameLabel") }
+    public static var groupDescriptionLabel: String { text("group.descriptionLabel") }
+    public static var groupDescriptionPlaceholder: String { text("group.descriptionPlaceholder") }
+    public static var groupPictureChange: String { text("group.pictureChange") }
+    public static var groupPictureAdd: String { text("group.pictureAdd") }
+    public static var reportOrBlock: String { text("report.reportOrBlock") }
+    public static var reportTitle: String { text("report.title") }
+    public static var reportSend: String { text("report.send") }
+    public static var reportSent: String { text("report.sent") }
+    public static var reportWhat: String { text("report.what") }
+    public static var reportWhy: String { text("report.why") }
+    public static var reportNote: String { text("report.note") }
+    public static func reportBlockToo(_ value: String) -> String { String(format: text("report.blockToo"), value) }
+    public static func reportBlockHelp(_ value: String) -> String { String(format: text("report.blockHelp"), value) }
+    public static func reportLeaveToo(_ value: String) -> String { String(format: text("report.leaveToo"), value) }
+    public static var reportIntro: String { text("report.intro") }
+    public static func reportTargetGroup(_ value: String) -> String { String(format: text("report.targetGroup"), value) }
+    public static var reportFailed: String { text("report.failed") }
+    public static var close: String { text("common.close") }
+    /// A report's reason, by the server's name: spam, offensive, harassment, other.
+    public static func reportReason(_ reason: String) -> String { text("report.reason.\(reason)") }
+
     public static var pushFailed: String { text("push.failed") }
     public static var pushTitle: String { text("push.title") }
     public static var pushTurnOn: String { text("push.turnOn") }

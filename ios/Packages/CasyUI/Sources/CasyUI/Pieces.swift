@@ -61,6 +61,8 @@ public enum AvatarSize: CGFloat, Sendable {
     /// In front of a list row.
     case row = 40
     case large = 56
+    /// At the top of a group's screen.
+    case extraLarge = 96
     /// Alone at the top of a screen: an invitation's group.
     case hero = 112
 }

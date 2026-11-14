@@ -141,3 +141,23 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     let deleted = try readsWithNothingLost("groups-delete", as: LeftGroup.self)
     #expect(deleted.outcome == "deleted")
 }
+
+@Test func groupChangesAnswerYourGroups() throws {
+    for name in ["groups-rename", "groups-describe", "groups-set-prime-dates"] {
+        let answer = try readsWithNothingLost(name, as: GroupsAnswer.self)
+        #expect(answer.groups?.contains { $0.id == "g-friday" } == true, "\(name)")
+    }
+}
+
+@Test func aReportAndABlockRead() throws {
+    #expect(try readsWithNothingLost("groups-report", as: ReportAnswer.self).reported)
+    let blocked = try readsWithNothingLost("groups-block-member", as: BlockAnswer.self)
+    #expect(blocked.blocked.first?.profileId == "p-jonas")
+}
+
+@Test func aGroupPictureIsALinkOrNone() throws {
+    let set = try readsWithNothingLost("pictures-set-group-picture", as: GroupPictureAnswer.self)
+    #expect(set.pictureUrl != nil)
+    let removed = try readsWithNothingLost("pictures-remove-group-picture", as: GroupPictureAnswer.self)
+    #expect(removed.pictureUrl == nil)
+}

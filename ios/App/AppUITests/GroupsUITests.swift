@@ -107,4 +107,86 @@ final class GroupsUITests: XCTestCase {
         sleep(2)
         XCTAssertTrue(friday.exists, "cancelling deleted it anyway")
     }
+
+    // MARK: A group's own screen
+
+    private func openFriday() -> XCUIApplication {
+        let app = openGroups()
+        let friday = row(app, "Fredagsbar")
+        XCTAssertTrue(friday.waitForExistence(timeout: 10))
+        friday.tap()
+        XCTAssertTrue(app.staticTexts["4 medlemmer · lavet sep. 2026"].waitForExistence(timeout: 10))
+        return app
+    }
+
+    func testAGroupShowsWhoIsInItAndWhatItIsFor() {
+        let app = openFriday()
+        XCTAssertTrue(app.staticTexts["En øl efter arbejde, når det passer de fleste"].exists)
+        XCTAssertTrue(app.staticTexts["Mia Jensen (dig)"].exists)
+        for name in ["Jonas", "Sara", "Emil"] { XCTAssertTrue(app.staticTexts[name].exists, name) }
+        app.buttons["Hvad kan medlemmerne se?"].tap()
+        XCTAssertTrue(
+            app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Alle i en gruppe kan se"))
+                .firstMatch.waitForExistence(timeout: 10))
+    }
+
+    func testRenamingIsSavedAndShownAtOnce() {
+        let app = openFriday()
+        row(app, "Rediger gruppe").tap()
+        let field = app.textFields["Gruppenavn"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20))
+        field.typeText("Fredagsøl")
+        app.buttons["Gem"].tap()
+        XCTAssertTrue(app.staticTexts["Fredagsøl"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.textFields["Gruppenavn"].exists, "the sheet stayed open")
+    }
+
+    func testTimeForEachOtherIsASwitchThatSticks() {
+        let app = openFriday()
+        let toggle = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Tid til hinanden"))
+            .firstMatch
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<4 where !toggle.isHittable { list.swipeUp(velocity: .slow) }
+        XCTAssertEqual(toggle.value as? String, "1")
+        toggle.switches.firstMatch.tap()
+        let off = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '0'"), object: toggle)
+        XCTAssertEqual(XCTWaiter.wait(for: [off], timeout: 10), .completed)
+    }
+
+    func testAReportCanBlockAndSaysThankYou() {
+        let app = openFriday()
+        let report = row(app, "Rapportér eller bloker")
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<4 where !report.isHittable { list.swipeUp(velocity: .slow) }
+        report.tap()
+        XCTAssertTrue(app.navigationBars["Rapportér"].waitForExistence(timeout: 10))
+        let send = app.buttons["Send"]
+        XCTAssertFalse(send.isEnabled, "sent without a reason")
+        app.buttons["Jonas"].tap()
+        app.buttons["Spam eller reklame"].tap()
+        XCTAssertTrue(app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Bloker også Jonas"))
+            .firstMatch.exists)
+        send.tap()
+        XCTAssertTrue(app.staticTexts["Tak. Vi kigger på det."].waitForExistence(timeout: 10))
+        app.buttons["Luk"].tap()
+        XCTAssertTrue(app.staticTexts["Mia Jensen (dig)"].waitForExistence(timeout: 10))
+    }
+
+    func testLeavingFromTheGroupGoesBackToTheList() {
+        let app = openGroups()
+        let running = row(app, "Løbeklubben")
+        XCTAssertTrue(running.waitForExistence(timeout: 10))
+        running.tap()
+        let leave = row(app, "Forlad gruppe")
+        XCTAssertTrue(leave.waitForExistence(timeout: 10))
+        leave.tap()
+        let confirm = app.buttons.matching(NSPredicate(format: "label == %@", "Forlad gruppe")).element(boundBy: 1)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10))
+        confirm.tap()
+        XCTAssertTrue(app.navigationBars["Grupper"].waitForExistence(timeout: 10))
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: running)
+        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed)
+    }
 }
