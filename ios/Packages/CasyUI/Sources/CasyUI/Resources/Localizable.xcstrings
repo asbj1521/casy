@@ -551,13 +551,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Appen, der finder den første dag, hvor alle kan. Prøv den her:"
+            "value": "Til næste gang nogen skriver \"vi finder lige en dag\":"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The app that finds the first day everyone can make. Try it here:"
+            "value": "For the next time someone says \"we'll find a day\":"
           }
         }
       }

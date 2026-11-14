@@ -12,6 +12,10 @@
 	<array>
 		<string>applinks:casy.app</string>
 		<string>applinks:casy-red.vercel.app</string>
+		<string>applinks:vifinderligeendag.dk</string>
+		<string>applinks:www.vifinderligeendag.dk</string>
+		<string>applinks:vifinderligeendag.com</string>
+		<string>applinks:www.vifinderligeendag.com</string>
 	</array>
 </dict>
 </plist>

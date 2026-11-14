@@ -222,7 +222,7 @@ export const en: Messages = {
     feedbackSubject: `Feedback on ${APP_NAME}`,
     feedbackPrompt: "Write what you think, or what isn't working:",
     share: "Share the app",
-    shareText: "The app that finds the first day everyone can make. Try it here:",
+    shareText: 'For the next time someone says "we\'ll find a day":',
     version: (release: string, build: string) => `${APP_NAME} ${release} · ${build}`,
   },
   footer: {

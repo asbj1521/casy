@@ -12,13 +12,13 @@ import {
 
 import CopyField from "@/components/ui/CopyField";
 import { ListGroup, ListRow } from "@/components/ui/ListGroup";
-import { useT } from "@/i18n/lang";
+import { useLang, useT } from "@/i18n/lang";
 import { APP_VERSION } from "@/lib/appVersion";
 import { APP_BUILD, feedbackMailto } from "@/lib/feedback";
 import { isNativeApp } from "@/lib/nativeApp";
 import { shareLink } from "@/lib/share";
-import { APP_URL } from "@/lib/nativeApp";
-import { APP_NAME } from "@/i18n/brand";
+import { shareAppUrl } from "@/lib/nativeApp";
+import { appName } from "@/i18n/brand";
 
 /**
  * The App Store's own page for writing a review of Casy (#256): an itms-apps
@@ -34,12 +34,15 @@ const WRITE_REVIEW = "itms-apps://apps.apple.com/app/id6830713238?action=write-r
  */
 export function FeedbackShareGroup() {
   const t = useT();
+  const { lang } = useLang();
   const [showLink, setShowLink] = useState(false);
 
   function shareCasy() {
-    void shareLink({ title: APP_NAME, text: t.profileHub.shareText, url: APP_URL }).then((opened) =>
-      setShowLink(!opened),
-    );
+    void shareLink({
+      title: appName(lang),
+      text: t.profileHub.shareText,
+      url: shareAppUrl(lang),
+    }).then((opened) => setShowLink(!opened));
   }
 
   return (
@@ -69,7 +72,9 @@ export function FeedbackShareGroup() {
           />
         )}
       </ListGroup>
-      {showLink && <CopyField value={APP_URL} label={t.profileHub.share} className="mt-2" />}
+      {showLink && (
+        <CopyField value={shareAppUrl(lang)} label={t.profileHub.share} className="mt-2" />
+      )}
     </>
   );
 }

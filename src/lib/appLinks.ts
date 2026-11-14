@@ -28,7 +28,15 @@ export const APP_LINK_HOST = "casy.app";
 /** The second address the app answers to: the door from casy.app into the app. */
 export const APP_DOOR_HOST = "casy-red.vercel.app";
 
-const HOSTS: readonly string[] = [APP_LINK_HOST, APP_DOOR_HOST];
+/** The name's own domains (#271), which serve the app's link, /app, that "Del appen" sends. */
+const NAME_HOSTS = [
+  "vifinderligeendag.dk",
+  "www.vifinderligeendag.dk",
+  "vifinderligeendag.com",
+  "www.vifinderligeendag.com",
+];
+
+const HOSTS: readonly string[] = [APP_LINK_HOST, APP_DOOR_HOST, ...NAME_HOSTS];
 
 /** The in-app path a URL leads to, or null when it isn't a link the app opens. */
 export function appLinkPath(url: string): string | null {

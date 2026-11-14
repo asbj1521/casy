@@ -235,7 +235,7 @@ export const da = {
     feedbackSubject: `Feedback på ${APP_NAME}`,
     feedbackPrompt: "Skriv her, hvad du tænker, eller hvad der ikke virker:",
     share: "Del appen",
-    shareText: "Appen, der finder den første dag, hvor alle kan. Prøv den her:",
+    shareText: 'Til næste gang nogen skriver "vi finder lige en dag":',
     version: (release: string, build: string) => `${APP_NAME} ${release} · ${build}`,
   },
   footer: {

@@ -3,6 +3,19 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/:path((?!app$|app/|\\.well-known/|assets/).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "(www\\.)?vifinderligeendag\\.(dk|com)"
+        }
+      ],
+      "destination": "https://casy.app/:path",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

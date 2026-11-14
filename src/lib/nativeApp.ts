@@ -15,6 +15,16 @@ export const SITE_URL = "https://casy.app";
 export const APP_URL = `${SITE_URL}/app`;
 
 /**
+ * The same link on the name's own domain (#271), what "Del appen" sends: the
+ * Danish one to Danish, the .com to English. Those domains serve only /app
+ * (and the app's association file); anything else goes on to casy.app
+ * (vercel.json), and the app opens their /app links as casy.app's.
+ */
+export function shareAppUrl(lang: "da" | "en"): string {
+  return lang === "en" ? "https://vifinderligeendag.com/app" : "https://vifinderligeendag.dk/app";
+}
+
+/**
  * True inside the iPhone app, false on the website. Read from the bridge the
  * app injects before the page runs (`window.Capacitor`) rather than through
  * @capacitor/core, which would add 3 kB to every website visitor's first load.

@@ -112,7 +112,8 @@ struct ProfileScreen: View {
     let leave: (LeavingProfile) -> Void
 
     private let model = ProfileModel.shared
-    private static let site = URL(string: "https://casy.app")!
+    /// What "Del appen" sends, as the web app does (shareAppUrl, #271).
+    private static let site = URL(string: "https://vifinderligeendag.dk/app")!
     private static let feedbackEmail = "asbjornbay@gmail.com"
     private static let maxNameLength = 40
 
