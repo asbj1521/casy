@@ -1,14 +1,17 @@
-# App Store listing (#146)
+# App Store listing (#146, #271)
 
-The texts for Casy's App Store page, in both languages, ready to paste into App
-Store Connect. Danish is the app's main language (set it as the primary
-localization), English the second. No emojis and no long dashes, as everywhere
-on Casy. Limits are Apple's: name 30, subtitle 30, promotional text 170,
-keywords 100 (comma separated, no spaces after the commas), description 4000.
+The texts for the App Store page, in both languages, ready to paste into App
+Store Connect. From 1.1.0 the app is "Vi finder lige en dag" (#267): it speaks
+as "vi", and "Casy" stays only as the company, the domain and code names.
+Danish is the primary localization, English the second (U.S. and U.K. the
+same texts). No emojis and no long dashes. Limits are Apple's: name 30,
+subtitle 30, promotional text 170, keywords 100 (comma separated, no spaces
+after the commas), description 4000.
 
-Written to be true to what v1 does today (the data paragraph follows the
-calendar permission text and the privacy policy: change all three together). Google and Outlook calendars are not mentioned: in
-the app they come in through the phone's own calendars.
+Written to be true to what 1.1.0 does (the data paragraph follows the calendar
+permission text and the privacy policy: change all three together). Google and
+Outlook calendars are not mentioned: in the app they come in through the
+phone's own calendars.
 
 ## Basics
 
@@ -16,7 +19,8 @@ the app they come in through the phone's own calendars.
 |---|---|
 | Bundle id | app.casy |
 | Devices | iPhone only (`TARGETED_DEVICE_FAMILY = 1`, #147), so no iPad screenshots |
-| Version | 1.0.1, the same as the build; App Store Connect's version field must read this, not 1.0 |
+| Version | 1.1.0, the same as the build. 1.0.3 was never sent to review: its changes ship in 1.1.0 |
+| Release | **Manually release this version**, so Apple's approval doesn't set the launch day (#272) |
 | Primary category | Productivity |
 | Secondary category | Lifestyle |
 | Price | Free |
@@ -26,149 +30,138 @@ the app they come in through the phone's own calendars.
 | Privacy policy URL | https://casy.app/privacy |
 | Age rating | 4+, as Apple worked it out from the questionnaire on 2026-11-04 (answered truthfully: user generated content yes, no messaging or chat, no advertising, violence, mature or gambling content, web browsing or purchases; no override). Answer it again the same way if the app changes what people can share. |
 
-Support URL: /support is built (#146) and linked from the profile's help list
-("Hjælp og kontakt"); it opens signed out, in Danish or English.
+## Being found in App Store search (#256)
 
-Name: Apple requires it to be unique on the whole store, and says so when the
-app record is made. Try them in this order, in the language of the listing:
+Apple ranks a new app with few downloads or ratings low, and the name is the
+strongest field, then the subtitle, then the hidden keywords. So:
 
-1. Danish: "Casy: Find en dato", English: "Casy: Find a Date" (below)
-2. What Casy stands for: "Casy: Calendar Syncing" (22) in English,
-   "Casy: Kalender Sync" (19) in Danish
-3. "Casy: Sync Your Calendar" (24) in English, "Casy: Synk din kalender" (23)
-   in Danish
+1. **The name** is the whole phrase people already say, "Vi finder lige en
+   dag", in both languages: a Dane searching the phrase finds it.
+2. **Keywords** hold no word that is already in the name (Apple counts each
+   once) and keep **casy** for a few months, so people searching the old name
+   still find it.
+3. **Danish is primary**, with an English (U.K.) page as well as English
+   (U.S.), so the Danish App Store searches both languages.
+4. **Ratings**: the app asks for one after a date is agreed (`lib/appReview.ts`).
+5. **Optional, costs money**: Apple Ads on "vi finder lige en dag" and "casy"
+   in Denmark.
 
-Calendar syncing says more about the idea than the app does (it finds dates, it
-doesn't copy calendars between apps), so the subtitle, "Find the day everyone
-can", is what keeps the page honest; keep it whichever name wins.
+The name, subtitle and keywords only change with a new version.
 
-## Being found in App Store search (#256, for 1.0.3)
+### In App Store Connect, step by step (1.1.0)
 
-What is live with 1.0.2 (checked 12 Nov 2026): the name is "Casy" alone, the
-subtitle "Find a Date", the Danish App Store shows the English page, and Casy
-has one rating. Searching "Casy" on a phone in Denmark, with nothing
-autocorrected, shows Casy last or not at all, even with the subtitle added.
-
-Why: Apple ranks a new app with almost no downloads or ratings below
-everything else, and a one-word name gives it the least to match (the name is
-the strongest field, then the subtitle, then the hidden keywords). The Danish
-App Store reads the Danish page and the English (U.K.) one, so an English
-(U.S.) page alone may not be searched there at all.
-
-What to change, all at once with 1.0.3 (the name, subtitle and keywords can
-only change with a new version):
-
-1. **Name** "Casy: Find en dato" (Danish) and "Casy: Find a Date" (English):
-   more words to match, the brand still first.
-2. **Danish as the primary language**, with the Danish page below filled in, so
-   Danes see and are searched in Danish.
-3. **An English (U.K.) page** as well as English (U.S.), the same English texts,
-   so the Danish App Store also searches the English words.
-4. **Keywords** without the words already in the name (Apple counts them once):
-   the ones under each language below.
-5. **Ratings**: the app asks for one (1.0.3, `lib/appReview.ts`, iOS's own
-   sheet) after a date is agreed, at most every four months. Ask friends to
-   rate it too: every rating counts most while the app is new.
-6. **Optional, costs money**: Apple Ads (ads.apple.com) on the word "casy" in
-   Denmark puts Casy first for its own name at once, while the rest builds up.
-
-### In App Store Connect, step by step
-
-1. https://appstoreconnect.apple.com/apps, Casy, then the new version (1.0.3,
-   "+" next to iOS App if it isn't there yet).
-2. **App Information** (left menu), **Localizable Information**: at the top
-   right, switch the language to **Danish**; if it isn't listed, add it with
-   the language menu's "+". Fill in the Danish name and subtitle below. Then
-   set **Primary Language** (General Information) to **Danish**.
-3. Still in App Information, add **English (U.K.)** the same way, with the
-   English name and subtitle.
-4. In the 1.0.3 version page, for each language (Danish, English (U.K.),
-   English (U.S.)): the promotional text, description and keywords below,
-   and the same screenshots.
-5. Submit 1.0.3 with the build from `npm run release:ios`.
+1. https://appstoreconnect.apple.com/apps, the app, then "+" next to iOS App
+   for version **1.1.0**.
+2. **App Information** (left menu), **Localizable Information**: for each of
+   Danish, English (U.K.) and English (U.S.) (switch at the top right, "+" to
+   add one), the name and subtitle below. **Primary Language**: Danish.
+3. In the 1.1.0 version page, for each language: the screenshots, the
+   promotional text, the description, the keywords and What's New below.
+   Screenshots: the five in "Casy App Store screenshots light/1.1.0 Dansk"
+   (Danish) and "1.1.0 English" (both English pages).
+4. **Build**: the 1.1.0 build from `npm run release:ios` on `release/1.1.0`.
+5. **Version Release**: "Manually release this version".
+6. **Add for Review**, then **Submit**. When Apple has approved it, it waits
+   for launch day's "Release This Version".
 
 ## Danish (primary)
 
-**Name** (30): Casy: Find en dato
+**Name** (21/30): Vi finder lige en dag
 
-**Subtitle** (30): Find dagen, hvor alle kan
+**Subtitle** (25/30): Find dagen, hvor alle kan
 
-**Promotional text** (170):
-Lav en gruppe, læg jeres kalendere oven på hinanden, og lad Casy finde de datoer, der passer alle. Swipe ja eller nej, og aftalen lander i alles kalender.
+**Promotional text** (158/170):
+Lav en gruppe, og lad os lægge jeres kalendere oven på hinanden. Vi finder de datoer, der passer alle. Swipe ja eller nej, og aftalen lander i alles kalender.
 
-**Keywords** (100, from 1.0.3: no word from the name):
-kalender,planlægning,gruppe,venner,aftale,møde,fælles,ledig,invitation,afstemning,tidspunkt,weekend
+**Keywords** (99/100):
+casy,kalender,planlægning,gruppe,venner,aftale,møde,fælles,ledig,invitation,afstemning,dato,weekend
 
-**Description** (4000):
+**Description** (1985/4000):
 
-Hvornår kan I alle sammen? Casy finder den første dag, hvor alle kan, så I slipper for at skrive frem og tilbage i gruppechatten.
+"Vi finder lige en dag." Det siger alle i gruppechatten, og så sker der ikke mere. Nu gør der. Appen lægger jeres kalendere oven på hinanden og viser de dage, hvor alle kan.
 
 Sådan virker det
-1. Lav en gruppe, og inviter dine venner fra dine kontakter, med et link eller med en QR-kode.
-2. Alle lader Casy se, hvornår de er optaget, i de kalendere, der allerede ligger på telefonen.
-3. Du beskriver, hvad I skal: en aften, en weekend eller en hel ferie. Casy lægger alles kalendere oven på hinanden og viser de datoer, der passer alle.
-4. Datoerne sendes til gruppen, og vennerne swiper ja eller nej. Casy vælger den dato, ingen har sagt nej til.
-5. Når aftalen er landet, lægger Casy den i din kalender.
+1. Lav en gruppe, og inviter dine venner fra dine kontakter, med et link eller med en QR-kode. Ét link er nok: det fører til appen, og efter log ind er man med i gruppen.
+2. Alle lader os se, hvornår de er optaget, i de kalendere, der allerede ligger på telefonen.
+3. Du beskriver, hvad I skal: en aften, en weekend eller en hel ferie. Vi lægger alles kalendere oven på hinanden og viser de datoer, der passer alle.
+4. Datoerne sendes til gruppen, og vennerne swiper ja eller nej. Vi vælger den dato, ingen har sagt nej til.
+5. Når aftalen er landet, kommer den i din kalender.
 
-Det kan Casy
-- Finde den første dato, hvor alle kan, for et møde, en weekend eller en tur.
+Det kan appen
+- Vise de første datoer, hvor alle kan, til en middag, en weekend eller en tur.
 - Vise måneden dag for dag, så du ser, hvor der er plads.
-- Lade gruppen stemme ved at swipe, ligesom du kender det: ja til højre, nej til venstre, og op for "helst ikke".
+- Lade gruppen stemme ved at swipe: ja til højre, nej til venstre, og op for "helst ikke".
+- Påminde dem, der mangler at stemme, med et enkelt tryk.
 - Tage hensyn til, hvem der er med, hvem der gerne må være med, og hvor mange der mindst skal kunne.
-- Planlægge med AI: skriv eller sig, hvad I vil, og Casy sætter det op for dig.
+- Planlægge med AI: skriv eller sig, hvad I vil, og vi sætter det op for dig.
 - Sortere dine kalendere, forstå hvad dine aftaler betyder, og finde dine rejser med AI. Det hele er valgfrit: AI'en gør intet, før du siger ja.
 - Lægge den aftalte dato i din kalender, eller gøre det af sig selv.
 - Give dig besked, når du skal stemme, og når datoen er på plads. Du vælger selv, hvad du får besked om.
 - Logge dig ind med din Apple-konto, så du er i gang på et øjeblik.
 
 Dine data
-Casy sender kun, hvornår du er optaget, ikke hvad dine aftaler hedder. Navnene bliver på din telefon, medmindre du selv siger ja til Casys AI. Dine venner ser kun, at du ikke kan, og hvornår. Der er ingen reklamer og ingen sporing. Du kan se alt, Casy har om dig, hente en kopi og slette din konto i appen.
+Vi får kun at vide, hvornår du er optaget, ikke hvad dine aftaler hedder. Navnene bliver på din telefon, medmindre du selv siger ja til vores AI. Dine venner ser kun, at du ikke kan, og hvornår. Der er ingen reklamer og ingen sporing. Du kan se alt, vi har om dig, hente en kopi og slette din konto i appen.
 
-Casy er lavet i Danmark og er gratis.
+Lavet i Danmark, og gratis.
 
-## English
+**What's New** (194/4000):
 
-**Name** (30): Casy: Find a Date
+Casy hedder nu Vi finder lige en dag. Samme app, samme grupper, nyt navn.
 
-**Subtitle** (30): Find the day everyone can
+Nyt: Påmind dem, der mangler at stemme. Og én invitation virker nu hele vejen: hent appen, log ind, og du er i gruppen.
 
-**Promotional text** (170):
-Make a group, lay your calendars on top of each other, and let Casy find the dates that suit everyone. Swipe yes or no, and the event lands in everyone's calendar.
+## English (U.S. and U.K.)
 
-**Keywords** (100, from 1.0.3: no word from the name; the same for English (U.K.)):
-calendar,schedule,group,friends,availability,meeting,poll,plan,free,invite,shared,weekend,when
+**Name** (21/30): Vi finder lige en dag
 
-**Description** (4000):
+**Subtitle** (30/30): Danish for: We will find a day
 
-When can you all make it? Casy finds the first day everyone is free, so you can stop writing back and forth in the group chat.
+**Promotional text** (162/170):
+Make a group and let us lay your calendars on top of each other. We find the dates that suit everyone. Swipe yes or no, and the plan lands in everyone's calendar.
+
+**Keywords** (94/100):
+casy,calendar,schedule,group,friends,availability,meeting,poll,plan,invite,shared,weekend,date
+
+**Description** (2042/4000):
+
+"We'll find a day." Everyone says it in the group chat, and then nothing happens. Now it does. The app lays your calendars on top of each other and shows the days everyone can make.
+
+Vi finder lige en dag is Danish for "we'll just find a day".
 
 How it works
-1. Make a group and invite your friends from your contacts, with a link or with a QR code.
-2. Everyone lets Casy see when they are busy, in the calendars already on their phone.
-3. You describe what you are planning: an evening, a weekend or a whole holiday. Casy lays everyone's calendars on top of each other and shows the dates that suit everyone.
-4. The dates go to the group, and your friends swipe yes or no. Casy picks the date nobody said no to.
-5. Once the event is agreed, Casy puts it in your calendar.
+1. Make a group and invite your friends from your contacts, with a link or with a QR code. One link is enough: it leads to the app, and after signing in you are in the group.
+2. Everyone lets us see when they are busy, in the calendars already on their phone.
+3. You describe what you are planning: an evening, a weekend or a whole holiday. We lay everyone's calendars on top of each other and show the dates that suit everyone.
+4. The dates go to the group, and your friends swipe yes or no. We pick the date nobody said no to.
+5. Once the plan is agreed, it goes into your calendar.
 
-What Casy can do
-- Find the first date everyone can make, for a meeting, a weekend or a trip.
+What the app can do
+- Show the first dates everyone can make, for a dinner, a weekend or a trip.
 - Show the month day by day, so you can see where there is room.
-- Let the group vote by swiping, the way you know it: yes to the right, no to the left, and up for "rather not".
+- Let the group vote by swiping: yes to the right, no to the left, and up for "rather not".
+- Remind the ones who haven't voted yet, with one tap.
 - Take into account who is coming, who may come, and how many at least must be able to.
-- Plan with AI: write or say what you want, and Casy sets it up for you.
+- Plan with AI: write or say what you want, and we set it up for you.
 - Sort your calendars, understand what your events mean and find your trips with AI. All of it is optional: the AI does nothing until you say yes.
 - Add the agreed date to your calendar, or do it by itself.
 - Tell you when it is your turn to vote and when the date is set. You choose what you hear about.
 - Sign you in with your Apple account, so you are up and running in a moment.
 
 Your data
-Casy only sends when you are busy, not what your events are called. The names stay on your phone unless you yourself say yes to Casy's AI. Your friends only see that you can't, and when. There are no ads and no tracking. You can see everything Casy has about you, download a copy and delete your account in the app.
+We only learn when you are busy, not what your events are called. The names stay on your phone unless you yourself say yes to our AI. Your friends only see that you can't, and when. There are no ads and no tracking. You can see everything we have about you, download a copy and delete your account in the app.
 
-Casy is made in Denmark and is free.
+Made in Denmark, and free.
 
-## What's new (first version)
+**What's New** (240/4000):
 
-Danish: Casys første version.
-English: The first version of Casy.
+Casy is now called Vi finder lige en dag, Danish for "we'll find a day". Same app, same groups, new name.
+
+New: remind the ones who haven't voted yet. And one invitation now works all the way: get the app, sign in, and you are in the group.
+
+## What's New, earlier versions
+
+- 1.0: "Casys første version." / "The first version of Casy."
+- 1.0.1 to 1.0.3: fixes; 1.0.3 was never released (its changes are in 1.1.0).
 
 ## Screenshots
 
