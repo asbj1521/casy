@@ -5,10 +5,8 @@ import {
   CalendarCheck,
   CalendarPlus,
   EyeOff,
+  Hand,
   LogIn,
-  PencilLine,
-  Send,
-  SlidersHorizontal,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -16,36 +14,26 @@ import {
 import ProfilePageTop from "@/components/ProfilePageTop";
 import AppBackLink from "@/components/welcome/AppBackLink";
 import { useAuth } from "@/context/auth";
-import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useLang } from "@/i18n/lang";
 
 /**
- * What Casy does, from signing in to an event in your calendar, in eight steps.
+ * How the app works (#271), from signing in to a date in everyone's calendar,
+ * in six steps, as the app does it today: the iPhone app first, the website
+ * (computers and Android) where it differs.
  *
- * Every claim here describes what the code actually does (the engine's
- * soft/hard rules and calendar priorities, the 7-day invite links, the hourly
- * sync, the blocked holidays, iCloud as the only calendar Casy writes to), so
- * update it when those change, the same way as the privacy policy. Button and
- * page names are quoted as the app shows them. The copy lives here rather
- * than in the shared dictionaries: it is only ever used on this page.
+ * Every claim here describes what the code actually does (seven-day invite
+ * links, 20 members a group, no answer deadline unless one is chosen, Påmind,
+ * how a vote is settled, what is stored and what never is), so update it when
+ * those change, the same way as the privacy policy. Button names are quoted as
+ * the app shows them. The copy lives here rather than in the shared
+ * dictionaries: it is only ever used on this page.
  */
 
-const ICONS: LucideIcon[] = [
-  LogIn,
-  CalendarPlus,
-  SlidersHorizontal,
-  Users,
-  PencilLine,
-  Sparkles,
-  Send,
-  CalendarCheck,
-];
+const ICONS: LucideIcon[] = [LogIn, CalendarPlus, Users, Sparkles, Hand, CalendarCheck];
 
 interface Step {
   title: string;
   body: string;
-  /** Named options under the body, such as the three calendar priorities. */
-  points?: { term: string; text: string }[];
 }
 
 interface Copy {
@@ -56,195 +44,142 @@ interface Copy {
   neverSeesTitle: string;
   neverSeesBody: string;
   privacyLink: string;
-  findDate: string;
+  plan: string;
   getStarted: string;
-  connect: string;
 }
 
 const da: Copy = {
   eyebrow: "Sådan virker det",
-  title: 'Fra "hvornår kan I?" til en dato, uden gruppechatten.',
+  title: 'Fra "vi finder lige en dag" til en dag i kalenderen.',
   intro:
-    "Vi sammenligner alles kalendere, finder den første dato, hvor hele gruppen kan, og spørger gruppen, om den passer. Sæt det op én gang, så tager hver plan derefter få sekunder.",
+    "Vi lægger jeres kalendere oven på hinanden og viser de dage, hvor alle kan. Gruppen stemmer, og aftalen lander i alles kalender.",
   steps: [
     {
-      title: "Log ind",
-      body: "Fortsæt med Google, eller brug din e-mail med en adgangskode eller et login-link, der kun virker én gang.",
+      title: "Hent appen, og log ind",
+      body: "Log ind med din Apple-konto i appen. På en computer eller en Android-telefon bruger du hjemmesiden, med Google eller din e-mail.",
     },
     {
-      title: "Forbind dine kalendere",
-      body: "Forbind Google, Outlook eller Apple, eller indsæt et kalenderlink, for eksempel et skoleskema. Vi læser kun, hvornår du er optaget, aldrig hvad dine aftaler er, og opdaterer hver time og igen, når din gruppe planlægger noget.",
+      title: "Forbind din kalender",
+      body: "I appen bruger vi de kalendere, der allerede ligger på telefonen. På hjemmesiden kan du forbinde Google, Outlook eller Apple eller indsætte et kalenderlink, for eksempel et skoleskema. Vi får kun at vide, hvornår du er optaget, og du bestemmer selv, hvilke kalendere der tæller, og hvor meget.",
     },
     {
-      title: "Vælg, hvad der tæller",
-      body: "Under Min kalender tæller kun kalendere med flueben med. Giv hver kalender en kategori (Arbejde, Skole, Privat eller Andet), og sig, hvor vigtig den er:",
-      points: [
-        {
-          term: "Kan springes over",
-          text: "Vi må planlægge oven i den. Til en enkelt aftale sker det kun, hvis ingen dato inden for en uge passer uden.",
-        },
-        {
-          term: "Normal",
-          text: "Optaget. Til en tur eller ferie tæller arbejde og skole som tid, du kan tage fri fra, og korte planer som en middag står ikke i vejen, men at være væk hele dagen gør.",
-        },
-        {
-          term: "Spring aldrig over",
-          text: "Altid optaget, også når I planlægger en tur.",
-        },
-      ],
+      title: "Lav en gruppe",
+      body: "Giv gruppen et navn, og invitér folk fra dine kontakter, med et link eller med en QR-kode. Ét link er nok: det fører til appen, og efter log ind er man med i gruppen. Linket virker i syv dage, og en gruppe kan have op til 20 medlemmer. I gruppen ser man kun hinandens navne, og hvornår man er optaget.",
     },
     {
-      title: "Lav en gruppe, og invitér folk",
-      body: "Giv gruppen et navn, og invitér folk, du er eller har været i en gruppe med, eller skriv en e-mailadresse. De får en invitation under Mine aftaler og bliver først medlemmer, når de siger ja. Alle andre kan du sende gruppens link, som virker i syv dage. En gruppe kan have op til 20 medlemmer. Alle i gruppen kan se hinandens navne, og hvornår de er optaget, og intet andet. Man kan være med uden en kalender: vi nævner dem, der ikke har forbundet en, og de tjekker selv de datoer, der bliver foreslået, og svarer under Mine aftaler. Har ingen i gruppen en kalender, foreslår vi bare den første dato, der passer jeres indstillinger. Indtil du har en gruppe, kan du se, hvordan det virker, på eksempelgrupper med din egen kalender.",
+      title: "Tryk på Planlæg",
+      body: "Sig, hvad I skal, hvor længe det varer, og hvilke dage der passer: en aften, en weekend eller en hel tur. Vil du hellere skrive eller sige det med dine egne ord, sætter Planlæg med AI det op for dig. Vi lægger alles kalendere oven på hinanden og viser de dage, hvor alle kan, med op til fem gode datoer at sende til gruppen.",
     },
     {
-      title: "Sig, hvad I skal",
-      body: "Skriv, hvad I skal, og vælg, hvornår det starter (eller Når som helst), hvor længe det varer, og hvilke dage der passer. Skal I af sted i flere dage, så slå Tur / ferie til, og vælg antal dage, og hvilken dag I tager af sted, eller Alle dage.",
+      title: "Gruppen stemmer",
+      body: 'Alle swiper sig igennem datoerne: til højre hvis du kan, til venstre hvis du ikke kan, og op hvis du kan, men helst ikke. Mangler nogen at svare, kan du trykke på Påmind. Når alle har svaret, eller en svarfrist er nået, vælger vi den dato, ingen har sagt nej til, med færrest "helst ikke". Har alle datoer et nej, vælger den, der foreslog aftalen.',
     },
     {
-      title: "Vi finder datoen",
-      body: "Øverst står den første dato, hvor alle kan, og den skifter med det samme, når du ændrer noget. Pilene ved siden af viser de næste muligheder. Under den ser du måneden dag for dag: hver søjle viser, hvor mange der er ledige, og gul betyder kun ledig, hvis nogen tager fri eller springer noget over. Tryk på en dag for at prøve den. Vi siger også til, hvis nogen kommer lige fra noget andet eller skal tidligt op dagen efter. Ingen er ledige fra 23. til 26. december eller nytårsaften.",
-    },
-    {
-      title: "Foreslå datoer",
-      body: "Vælg evt. hvornår aftalen skal ligge, fx i december, og tryk på Foreslå datoer. Vi sender datoen og op til fire andre gode datoer i perioden, og alle i gruppen, også dig, swiper sig igennem dem én gang under Mine aftaler: til højre hvis du kan, til venstre hvis du ikke kan, og op hvis du kan, men helst ikke. Under hver dato ser du din egen kalender dagen før, på dagen og dagen efter. Når alle har svaret, eller efter tre dage, vælger vi den dato, ingen har sagt nej til, med færrest helst ikke. Har alle datoer et nej, vælger den, der foreslog aftalen. Kræver datoen, at du selv tager fri, godkender du det først. Den, der foreslog aftalen, kan aflyse den, og alle andre kan forlade den.",
-    },
-    {
-      title: "Læg den i kalenderen",
-      body: "Når alle har accepteret, er aftalen planlagt. Tilføj til min kalender lægger den i din primære kalender, og med Tilføj automatisk slået til sker det af sig selv. Indtil videre kan vi kun lægge aftaler i Apple-kalendere. Bruger du en anden, får du en kalenderfil, som din kalender kan åbne.",
+      title: "Datoen lander i kalenderen",
+      body: "Tryk på Tilføj til min kalender, eller slå Tilføj automatisk til, så sker det af sig selv. I appen lander aftalen i telefonens kalender. På hjemmesiden kan vi lægge den i en Apple-kalender eller give dig en kalenderfil. Vi giver besked, når du skal stemme, og når datoen er på plads.",
     },
   ],
   neverSeesTitle: "Det ser vi aldrig",
   neverSeesBody:
-    "Kun start og slut på hvert optaget tidsrum gemmes. Titler, steder, noter og gæster bliver aldrig hentet fra Google eller Microsoft. Apple og kalenderlinks sender altid hele aftaler, så vi fjerner de oplysninger, før noget gemmes. Gruppemedlemmer ser aldrig navnene på dine kalendere eller hvilke konti, du har forbundet.",
+    "Vi gemmer kun start og slut på hvert optaget tidsrum. Fra telefonen sender appen kun tiderne, medmindre du selv lader vores AI læse din kalender. Google og Microsoft giver os aldrig titler, steder, noter eller gæster, og fra Apple og kalenderlinks fjerner vi dem, før noget gemmes. Gruppen ser aldrig navnene på dine kalendere eller hvilke konti, du har forbundet.",
   privacyLink: "Læs privatlivspolitikken",
-  findDate: "Find en dato",
+  plan: "Planlæg",
   getStarted: "Kom i gang",
-  connect: "Forbind kalendere",
 };
 
 const en: Copy = {
   eyebrow: "How it works",
-  title: 'From "when are you free?" to a date, without the group chat.',
+  title: 'From "we\'ll find a day" to a day in the calendar.',
   intro:
-    "We compare everyone's calendars, find the first date the whole group is free, and ask the group whether it works. Set it up once, and every plan after that takes seconds.",
+    "We lay your calendars on top of each other and show the days everyone can make. The group votes, and the plan lands in everyone's calendar.",
   steps: [
     {
-      title: "Sign in",
-      body: "Continue with Google, or use your email with a password or a one-time sign-in link.",
+      title: "Get the app and sign in",
+      body: "Sign in with your Apple account in the app. On a computer or an Android phone you use the website, with Google or your email.",
     },
     {
-      title: "Connect your calendars",
-      body: "Link Google, Outlook or Apple, or paste any calendar link, such as a school timetable. We only read when you are busy, never what your events are, and refresh every hour, and again when your group plans something.",
+      title: "Connect your calendar",
+      body: "In the app we use the calendars already on your phone. On the website you can connect Google, Outlook or Apple, or paste a calendar link, a school timetable for example. We only learn when you are busy, and you decide which calendars count, and how much.",
     },
     {
-      title: "Choose what counts",
-      body: "On My calendar, only ticked calendars count. Give each calendar a category (Work, School, Personal or Other), and say how much it matters:",
-      points: [
-        {
-          term: "Can skip",
-          text: "We may plan over it. For a single event, only when no date within a week works without it.",
-        },
-        {
-          term: "Normal",
-          text: "Busy. For a trip or a holiday, work and school count as time you could take off, and short plans like a dinner don't stand in the way, but being away all day does.",
-        },
-        {
-          term: "Never skip",
-          text: "Always busy, trips included.",
-        },
-      ],
+      title: "Make a group",
+      body: "Give the group a name and invite people from your contacts, with a link or with a QR code. One link is enough: it leads to the app, and after signing in you are in the group. The link works for seven days, and a group can have up to 20 members. In a group you only see each other's names, and when each of you is busy.",
     },
     {
-      title: "Make a group and invite people",
-      body: "Name a group, and invite people you share or have shared a group with, or type an email address. They get an invitation on My events and only join once they say yes. Anyone else you can send the group's link, which works for seven days. A group can have up to 20 members. Everyone in the group sees each other's names and busy times, and nothing more. You can take part without a calendar: we name the members who haven't linked one, and they check suggested dates themselves and answer on My events. If nobody in the group has a calendar, we simply suggest the first date that fits your settings. Until you have a group, example groups with your own calendar show how it works.",
+      title: "Tap Plan",
+      body: "Say what you are planning, how long it lasts and which days suit: an evening, a weekend or a whole trip. If you would rather write or say it in your own words, Plan with AI sets it up for you. We lay everyone's calendars on top of each other and show the days everyone can make, with up to five good dates to send to the group.",
     },
     {
-      title: "Say what you're doing",
-      body: "Write what you're doing, and choose when it starts (or Any time), how long it lasts and which days work. Going away for several days? Switch on Trip / holiday, then choose the number of days and the day you leave, or Any day.",
+      title: "The group votes",
+      body: 'Everyone swipes through the dates: right if you can, left if you can\'t, and up if you can but would rather not. If someone has yet to answer, you can tap Remind. Once everyone has answered, or an answer deadline has passed, we pick the date nobody said no to, with the fewest "rather not". If every date has a no, the one who suggested the plan chooses.',
     },
     {
-      title: "We find the date",
-      body: "At the top is the first date everyone is free, and it changes the moment you change anything. The arrows beside it show the next options. Below, you see the month day by day: each bar shows how many people are free, and amber means free only if someone takes time off or skips something. Tap a day to try it. We also tell you when someone comes straight from something else or has an early start the next morning. Nobody is free from 23 to 26 December or on New Year's Eve.",
-    },
-    {
-      title: "Suggest dates",
-      body: "Optionally pick when the event should be, say in December, and tap Suggest dates. We send the date and up to four more good dates in the period, and everyone in the group, you included, swipes through them once on My events: right if you can, left if you can't, and up if you can but would rather not. Under each date you see your own calendar the day before, on the day and the day after. Once everyone has answered, or after three days, we pick the date nobody said no to with the fewest rather nots. If every date has a no, whoever suggested the event chooses. If the date needs you to take time off, you approve that first. Whoever suggested the event can cancel it, and anyone else can leave it.",
-    },
-    {
-      title: "Put it in your calendar",
-      body: "Once everyone has accepted, the event is scheduled. Add to my calendar puts it in your primary calendar, and with Add automatically switched on it happens by itself. For now, we can only add events to Apple calendars. If you use another, you get a calendar file your calendar can open.",
+      title: "The date lands in the calendar",
+      body: "Tap Add to my calendar, or switch on Add automatically and it happens by itself. In the app the plan lands in the phone's calendar. On the website we can put it in an Apple calendar or give you a calendar file. We tell you when it is your turn to vote and when the date is set.",
     },
   ],
   neverSeesTitle: "What we never see",
   neverSeesBody:
-    "Only the start and end of each busy period is stored. Event titles, places, notes and guests are never requested from Google or Microsoft. Apple and calendar links always send whole events, so we remove those details before anything is saved. Group members never see your calendars' names or which accounts you connected.",
+    "We only store the start and end of each busy time. From the phone the app sends only the times, unless you yourself let our AI read your calendar. Google and Microsoft never give us titles, places, notes or guests, and from Apple and calendar links we remove them before anything is stored. Your group never sees the names of your calendars or which accounts you have connected.",
   privacyLink: "Read the privacy policy",
-  findDate: "Find a date",
+  plan: "Plan",
   getStarted: "Get started",
-  connect: "Connect calendars",
 };
 
 export default function HowItWorks() {
   const { user } = useAuth();
-  const calendarsHome = useCalendarsHome();
   const { lang } = useLang();
   const c = lang === "da" ? da : en;
 
   return (
     <div className="min-h-screen bg-background">
       <ProfilePageTop />
-      <main className="mx-auto max-w-3xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
+      <main className="mx-auto max-w-2xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6">
         <AppBackLink className="mb-4" />
-        <p className="text-sm font-semibold uppercase tracking-wide text-primary">{c.eyebrow}</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
+        <p className="text-[0.8125rem] font-semibold uppercase tracking-wide text-primary">
+          {c.eyebrow}
+        </p>
+        <h1 className="mt-2 text-balance text-[1.75rem] font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
           {c.title}
         </h1>
-        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{c.intro}</p>
+        <p className="mt-3 text-[1rem] leading-relaxed text-muted-foreground">{c.intro}</p>
 
-        <ol className="mt-8 space-y-3 sm:mt-10">
+        {/* The steps as a line down the left, each with its number on it. */}
+        <ol className="relative mt-8 sm:mt-10">
           {c.steps.map((step, i) => {
             const Icon = ICONS[i];
+            const last = i === c.steps.length - 1;
             return (
-              <li
-                key={step.title}
-                className="flex gap-3 rounded-2xl border bg-card p-4 shadow-sm sm:gap-4 sm:p-5"
-              >
-                <div className="flex shrink-0 flex-col items-center">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-10 sm:w-10">
-                    <Icon className="h-5 w-5" />
+              <li key={step.title} className="relative flex gap-4 pb-7 last:pb-0">
+                {!last && (
+                  <span
+                    aria-hidden
+                    className="absolute left-[1.375rem] top-12 h-[calc(100%-3rem)] w-[2px] -translate-x-1/2 rounded-full bg-primary/15"
+                  />
+                )}
+                <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Icon aria-hidden className="h-5 w-5" />
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-cta text-[0.6875rem] font-bold text-white">
+                    {i + 1}
                   </span>
-                </div>
-                <div className="min-w-0">
-                  <h2 className="flex items-baseline gap-2 text-base font-semibold text-foreground">
-                    <span className="text-sm font-medium tabular-nums text-muted-foreground">
-                      {i + 1}
-                    </span>
-                    {step.title}
-                  </h2>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
-                  {step.points && (
-                    <dl className="mt-3 space-y-2 border-l-2 border-primary/20 pl-3">
-                      {step.points.map((point) => (
-                        <div key={point.term} className="text-sm leading-relaxed">
-                          <dt className="font-medium text-foreground">{point.term}</dt>
-                          <dd className="text-muted-foreground">{point.text}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  )}
+                </span>
+                <div className="min-w-0 pt-1.5">
+                  <h2 className="text-[1.0625rem] font-semibold text-foreground">{step.title}</h2>
+                  <p className="mt-1 text-[0.9375rem] leading-relaxed text-muted-foreground">
+                    {step.body}
+                  </p>
                 </div>
               </li>
             );
           })}
         </ol>
 
-        <section className="mt-8 rounded-2xl bg-secondary p-5">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <EyeOff className="h-5 w-5 text-primary" />
+        <section className="mt-10 rounded-2xl bg-secondary p-5">
+          <h2 className="flex items-center gap-2 text-[1.0625rem] font-semibold text-foreground">
+            <EyeOff aria-hidden className="h-5 w-5 text-primary" />
             {c.neverSeesTitle}
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-[0.9375rem] leading-relaxed text-muted-foreground">
             {c.neverSeesBody}{" "}
             <Link
               to="/privacy"
@@ -256,22 +191,14 @@ export default function HowItWorks() {
           </p>
         </section>
 
-        <div className="mt-10 flex flex-wrap items-center gap-3">
+        <div className="mt-10 flex justify-center">
           <Link
             to={user ? "/" : "/sign-in"}
-            className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            className="glass-pill inline-flex items-center gap-2 rounded-full px-6 py-3 text-[1.0625rem] font-semibold text-primary"
           >
-            {user ? c.findDate : c.getStarted}
-            <ArrowRight className="h-4 w-4" />
+            {user ? c.plan : c.getStarted}
+            <ArrowRight aria-hidden className="h-5 w-5" />
           </Link>
-          {user && (
-            <Link
-              to={calendarsHome.to}
-              className="rounded-full border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary"
-            >
-              {c.connect}
-            </Link>
-          )}
         </div>
       </main>
     </div>
