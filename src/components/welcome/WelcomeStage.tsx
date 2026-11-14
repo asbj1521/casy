@@ -16,7 +16,6 @@ import { demoMonth, demoPlan, demoVote, FRIENDS, GROUP_NAME } from "./phone/demo
 import { DEVICE, EDGE } from "./phone/geometry";
 import { rectOfCard, type MorphRect } from "./phone/morph";
 import LogoMark from "@/components/ui/LogoMark";
-import { LinkFace } from "./WelcomeIntro";
 import { STACK_DONE, THROWS } from "./phone/throws";
 
 /** How the phone stands: `y` a share of the stage's height, `scale` of its fitted size, degrees. */
@@ -492,7 +491,7 @@ export default function WelcomeStage({
         </motion.div>
       )}
       {morph?.link && (
-        // The intro's link opening into the phone like an app launching (#275): the card
+        // The intro's icon opening into the phone like an app launching (#275): the icon
         // grows into an orange screen with the logo in the middle, its white edge turning
         // into the phone's silver band and black bezel; then it fades into the real phone.
         <motion.div
@@ -526,18 +525,8 @@ export default function WelcomeStage({
           />
           {/* The logo, always in the middle and a share of the width, so it grows with it. */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <LogoMark className="h-auto w-[56%] text-white" label="" />
+            <LogoMark className="h-auto w-[62%] text-white" label="" />
           </div>
-          {/* The link's own look, there at the very start, giving way at once. */}
-          <motion.div
-            className="absolute left-0 top-0 bg-white"
-            style={{ width: morph.from.width - 6 }}
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
-          >
-            <LinkFace />
-          </motion.div>
         </motion.div>
       )}
       {morph && !morph.link && (
