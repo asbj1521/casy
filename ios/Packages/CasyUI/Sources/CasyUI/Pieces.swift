@@ -124,13 +124,10 @@ public struct Avatar: View {
     public var body: some View {
         Group {
             if let url {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image.resizable().scaledToFill().clipShape(Circle())
-                    } else {
-                        letter
-                    }
-                }
+                // Kept once fetched, so it doesn't flash its letter each time (#199).
+                RemoteImage(url: url) { letter }
+                    .scaledToFill()
+                    .clipShape(Circle())
             } else {
                 letter
             }

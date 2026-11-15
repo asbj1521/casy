@@ -183,9 +183,12 @@ struct ProfileScreen: View {
                     Button(action: sendFeedback) {
                         ListRow(CasyStrings.profileFeedback, systemImage: "bubble.left")
                     }
+                    // The preview given here: without one, iOS fetches the page
+                    // first, which held up the share sheet the first time.
                     ShareLink(
                         item: Self.site, subject: Text(CasyStrings.appName),
-                        message: Text(CasyStrings.profileShareText)
+                        message: Text(CasyStrings.profileShareText),
+                        preview: SharePreview(CasyStrings.appName, image: Image("ShareIcon"))
                     ) {
                         ListRow(CasyStrings.profileShare, systemImage: "square.and.arrow.up")
                     }
