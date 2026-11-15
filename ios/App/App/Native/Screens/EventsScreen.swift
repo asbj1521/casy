@@ -97,6 +97,13 @@ final class EventsModel {
         }
     }
 
+    /// One of the vote's own changes (choose, deadline, settle, remind), then the list as it is now.
+    func change(_ failure: String, _ action: (EdgeFunctions) async throws -> [SuggestedEvent]) async throws {
+        guard let api = await Native.api() else { throw APIError.failed(status: 401, message: failure) }
+        show(try await action(api))
+        ProfileModel.shared.onChange?()
+    }
+
     func leave(_ id: String) async throws {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.eventsLeaveFailed) }
         show(try await api.leaveEvent(id, errorMessage: CasyStrings.eventsLeaveFailed))
@@ -194,6 +201,12 @@ struct EventsScreen: View {
                                 } label: {
                                     EventRow(staged: s, cue: nil, chevron: false)
                                 }
+                            } else if s.stage == .voting {
+                                NavigationLink {
+                                    VoteScreen(eventId: s.event.id, leave: leave)
+                                } label: {
+                                    EventRow(staged: s, cue: cue(s), chevron: false)
+                                }
                             } else {
                                 Button {
                                     open(s)
@@ -229,13 +242,9 @@ struct EventsScreen: View {
         model.groups?.answer.contains { $0.event.id == event.id } ?? false
     }
 
-    /// A vote to answer is answered over the day view; a vote's screen is the page's for now.
+    /// A vote to answer is answered over the day view, still the page's.
     private func open(_ s: StagedEvent) {
-        if s.stage == .toSwipe {
-            leave(.webScreen("/?vote=\(s.event.id)"))
-        } else {
-            leave(.webScreen("/?events=\(s.event.id)"))
-        }
+        leave(.webScreen("/?vote=\(s.event.id)"))
     }
 
     /// Nothing yet: what it is, one line, and the way to plan.

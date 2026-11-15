@@ -151,4 +151,55 @@ final class EventsUITests: XCTestCase {
         slice.tap()
         XCTAssertTrue(app.navigationBars["Løbeklubben"].waitForNonExistence(timeout: 10))
     }
+
+    /// A vote's dates, each with your answer at its end, and the suggester's tools.
+    func testYourOwnVoteShowsItsDatesAndTools() {
+        let app = launch()
+        openEvent(app, "Biograf", group: "Løbeklubben")
+        let yes = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Jeg kan:")).firstMatch
+        XCTAssertTrue(yes.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Svarfrist")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["vote.settle"].exists)
+        XCTAssertFalse(app.buttons["Rapportér aftalen"].exists)
+    }
+
+    /// A tap on the cross changes your answer for that date.
+    func testChangingYourAnswerIsSaved() {
+        let app = launch()
+        openEvent(app, "Biograf", group: "Løbeklubben")
+        let no = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Jeg kan ikke:")).firstMatch
+        XCTAssertTrue(no.waitForExistence(timeout: 10))
+        no.tap()
+        let chosen = NSPredicate(format: "isSelected == true")
+        expectation(for: chosen, evaluatedWith: no)
+        waitForExpectations(timeout: 10)
+    }
+
+    /// A deadline picked from the sheet shows as a day and a time.
+    func testADeadlineIsPicked() {
+        let app = launch()
+        openEvent(app, "Biograf", group: "Løbeklubben")
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Svarfrist")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        app.buttons["3 dage"].tap()
+        let set = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND label CONTAINS %@", "Svarfrist", "kl."))
+            .firstMatch
+        XCTAssertTrue(set.waitForExistence(timeout: 10))
+    }
+
+    /// Settling now is asked first, then the vote leaves its screen, decided.
+    func testSettlingNowIsAskedFirst() {
+        let app = launch()
+        openEvent(app, "Biograf", group: "Løbeklubben")
+        let settle = app.buttons["vote.settle"]
+        XCTAssertTrue(settle.waitForExistence(timeout: 10))
+        settle.tap()
+        XCTAssertTrue(
+            app.staticTexts["Afgør nu med de svar, der er kommet? Kan ingen dato vinde, vælger du."]
+                .waitForExistence(timeout: 5))
+        app.buttons.matching(NSPredicate(format: "label == %@ AND identifier != %@", "Afgør nu", "vote.settle"))
+            .firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Mine aftaler"].waitForExistence(timeout: 10))
+    }
 }

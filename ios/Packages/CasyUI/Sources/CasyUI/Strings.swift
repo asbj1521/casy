@@ -603,6 +603,34 @@ public enum CasyStrings {
     public static var addToCalendarSetPrimaryFailed: String { text("addToCalendar.setPrimaryFailed") }
     public static var addToCalendarLoadStatusFailed: String { text("addToCalendar.loadStatusFailed") }
     public static var eventsOpenDay: String { text("events.openDay") }
+    /// Who answered what on a date: "accepted", "maybe", "declined", "missing".
+    public static func eventsVoters(_ group: String) -> String { text("events.voters.\(group)") }
+    public static var eventsAhead: String { text("events.ahead") }
+    public static var eventsBestPick: String { text("events.bestPick") }
+    public static func eventsCanOnDate(_ n: Int) -> String { String(format: text("events.canOnDate"), n) }
+    public static func eventsCantOnDate(_ n: Int) -> String { String(format: text("events.cantOnDate"), n) }
+    public static var eventsSettlesIn: String { text("events.settlesIn") }
+    public static var eventsChooseNow: String { text("events.chooseNow") }
+    public static func eventsWaitingForChoice(_ name: String) -> String { String(format: text("events.waitingForChoice"), name) }
+    public static var eventsICan: String { text("events.answerLong.accepted") }
+    public static var eventsICant: String { text("events.answerLong.declined") }
+    public static var voteDeadlineLabel: String { text("voteDeadline.label") }
+    public static var voteDeadlineNone: String { text("voteDeadline.none") }
+    public static func voteDeadlineAt(_ day: String, _ time: String) -> String { String(format: text("voteDeadline.at"), day, time) }
+    public static var voteDeadlineUntilAll: String { text("voteDeadline.untilAll") }
+    public static var voteDeadlineSettleNow: String { text("voteDeadline.settleNow") }
+    public static var voteDeadlineSettleAsk: String { text("voteDeadline.settleAsk") }
+    public static func days(_ n: Int) -> String {
+        n == 1 ? text("common.days.one") : String(format: text("common.days.many"), n)
+    }
+    public static func remindButton(_ n: Int) -> String {
+        n == 1 ? text("remind.button.one") : String(format: text("remind.button.many"), n)
+    }
+    public static var remindDone: String { text("remind.done") }
+    public static var eventsChooseFailed: String { text("events.chooseFailed") }
+    public static var eventsDeadlineFailed: String { text("events.deadlineFailed") }
+    public static var eventsSettleFailed: String { text("events.settleFailed") }
+    public static var eventsRemindFailed: String { text("events.remindFailed") }
 
     /// The stored English names of event types (STORED_TITLES in eventTitle.ts):
     /// "Evening" is shown in the reader's language; any other title as written.

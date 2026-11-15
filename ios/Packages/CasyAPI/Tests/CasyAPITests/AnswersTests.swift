@@ -232,6 +232,9 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     _ = try readsWithNothingLost("events-cancel", as: EventsAnswer.self)
     _ = try readsWithNothingLost("events-leave", as: EventsAnswer.self)
     #expect(try readsWithNothingLost("events-answer", as: AnswerOutcome.self).outcome == "answered")
+    _ = try readsWithNothingLost("events-settle", as: EventsAnswer.self)
+    _ = try readsWithNothingLost("events-deadline", as: EventsAnswer.self)
+    _ = try readsWithNothingLost("events-remind", as: RemindAnswer.self)
 }
 
 @Test func calendarsRead() throws {

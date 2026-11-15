@@ -617,3 +617,9 @@ public struct OverviewData: Codable, Sendable, Equatable {
     public var truncated: Bool
     public var entries: [StoredEntry]?
 }
+
+/// How many were reminded, and the events after it.
+public struct RemindAnswer: Codable, Sendable, Equatable {
+    public var reminded: Int
+    public var events: [SuggestedEvent]
+}

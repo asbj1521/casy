@@ -59,7 +59,7 @@ struct DatedScreen: View {
                     optional: event.settings.people?.optional ?? [])
             }
             if event.place != nil || event.note != nil {
-                Section { placeNote(event) }
+                Section { PlaceNoteView(event: event) }
             }
             Section {
                 if event.mode == .vote {
@@ -148,25 +148,6 @@ struct DatedScreen: View {
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private func placeNote(_ event: SuggestedEvent) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if let place = event.place {
-                Label {
-                    Text(place)
-                } icon: {
-                    Image(systemName: "mappin").foregroundStyle(Theme.primary.color)
-                }
-                .accessibilityLabel("\(CasyStrings.eventPlace): \(place)")
-            }
-            if let note = event.note {
-                Label(note, systemImage: "note.text")
-                    .foregroundStyle(Theme.mutedForeground.color)
-                    .accessibilityLabel("\(CasyStrings.eventNote): \(note)")
-            }
-        }
-        .font(.subheadline)
     }
 
     private func run(_ action: @escaping () async throws -> Void) {

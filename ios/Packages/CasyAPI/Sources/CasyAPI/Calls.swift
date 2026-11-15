@@ -158,6 +158,28 @@ private struct EventAction: Encodable, Sendable {
     let proposalId: String
 }
 
+private struct EventChoice: Encodable, Sendable {
+    let action = "choose"
+    let proposalId: String
+    let dateId: String
+}
+
+private struct EventDeadline: Encodable, Sendable {
+    let action = "deadline"
+    let proposalId: String
+    let answerDays: Int?
+
+    // `null` sent as such: no deadline at all.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(action, forKey: .action)
+        try c.encode(proposalId, forKey: .proposalId)
+        try c.encode(answerDays, forKey: .answerDays)
+    }
+
+    private enum CodingKeys: String, CodingKey { case action, proposalId, answerDays }
+}
+
 private struct EventAnswer: Encodable, Sendable {
     let action = "answer"
     let proposalId: String
@@ -544,6 +566,32 @@ extension EdgeFunctions {
         let answer: PrimaryAnswer = try await call(
             "calendar-primary", body: SetPrimary(calendarId: calendarId), errorMessage: errorMessage)
         return answer.primary
+    }
+
+    /// The suggester picks the date of a vote no date could win.
+    public func chooseDate(_ id: String, dateId: String, errorMessage: String? = nil) async throws -> [SuggestedEvent] {
+        let answer: EventsAnswer = try await call(
+            "events", body: EventChoice(proposalId: id, dateId: dateId), errorMessage: errorMessage)
+        return answer.events
+    }
+
+    /// The suggester's deadline: 1 to 7 days from now, or nil for none (#179).
+    public func setVoteDeadline(_ id: String, days: Int?, errorMessage: String? = nil) async throws -> [SuggestedEvent] {
+        let answer: EventsAnswer = try await call(
+            "events", body: EventDeadline(proposalId: id, answerDays: days), errorMessage: errorMessage)
+        return answer.events
+    }
+
+    /// The suggester settles an open vote now, with the answers so far (#179).
+    public func settleVote(_ id: String, errorMessage: String? = nil) async throws -> [SuggestedEvent] {
+        let answer: EventsAnswer = try await call(
+            "events", body: EventAction(action: "settle", proposalId: id), errorMessage: errorMessage)
+        return answer.events
+    }
+
+    /// A notification to those still to answer, once a day at most.
+    public func remindVoters(_ id: String, errorMessage: String? = nil) async throws -> RemindAnswer {
+        try await call("events", body: EventAction(action: "remind", proposalId: id), errorMessage: errorMessage)
     }
 
     /// Someone else's event, left: you're no longer asked or counted.

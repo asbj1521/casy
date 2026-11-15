@@ -148,6 +148,14 @@ const ASKED: [
     "calendar-primary",
     { action: "set", calendarId: "cal-work" },
   ],
+  ["events-settle", DEFAULT_WORLD, "events", { action: "settle", proposalId: "ev-cinema" }],
+  [
+    "events-deadline",
+    DEFAULT_WORLD,
+    "events",
+    { action: "deadline", proposalId: "ev-cinema", answerDays: 3 },
+  ],
+  ["events-remind", DEFAULT_WORLD, "events", { action: "remind", proposalId: "ev-cinema" }],
   [
     "events-answer",
     DEFAULT_WORLD,
