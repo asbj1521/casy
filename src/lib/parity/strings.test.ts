@@ -369,6 +369,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "addToCalendar.loadPrimaryFailed": (t) => t.api.loadPrimaryCalendar,
   "addToCalendar.setPrimaryFailed": (t) => t.api.setPrimaryCalendar,
   "addToCalendar.loadStatusFailed": (t) => t.api.loadStatus,
+  "events.openDay": (t) => t.events.openDay,
   "admin.deleteGroupFailed": (t) => t.api.adminDeleteGroup,
   "admin.removeMemberFailed": (t) => t.api.adminRemoveMember,
   "admin.deleteAccountFailed": (t) => t.api.adminDeleteAccount,

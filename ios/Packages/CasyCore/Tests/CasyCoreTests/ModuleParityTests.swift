@@ -302,3 +302,44 @@ private func idOrNull(_ date: CandidateDate?) -> JSONValue { date.map { .string(
         }
     }
 }
+
+private struct SpanAnswer: Encodable {
+    var top: Double
+    var height: Double
+}
+
+@Test func calendarDayGivesTheTypeScriptAnswers() throws {
+    try check("calendarDay", atLeast: 300) { fn, a in
+        switch fn {
+        case "segmentByDay":
+            return try json(
+                segmentByDay(
+                    try a["blocks"].decoded(), from: try milliseconds(a, "from"), to: try milliseconds(a, "to"),
+                    try text(a, "timeZone")))
+        case "dayKey": return try json(dayKey(try milliseconds(a), try text(a, "timeZone")))
+        case "calendarColors":
+            return try json(calendarColors(try a["calendars"].decoded(), own: try a["own"].decoded()))
+        case "phoneCalendarIds":
+            return try json(phoneCalendarIds(try a["calendars"].decoded(), connectionId: try text(a, "connectionId")))
+        case "withPhoneEvents":
+            return try json(
+                withPhoneEvents(
+                    try a["blocks"].decoded(), try a["events"].decoded(), serverIdOf: try a["serverIdOf"].decoded(),
+                    from: try milliseconds(a, "from"), to: try milliseconds(a, "to")))
+        case "placeSpan":
+            let span = placeSpan(
+                try milliseconds(a, "start"), try milliseconds(a, "end"), midnight: try milliseconds(a, "midnight"),
+                try text(a, "timeZone"))
+            return try json(SpanAnswer(top: span.top, height: span.height))
+        case "placeBlocks":
+            let together: Double? = a["together"] == .null ? nil : try a["together"].decoded()
+            return try json(
+                placeBlocks(
+                    try a["segments"].decoded(), midnight: try milliseconds(a, "midnight"), try text(a, "timeZone"),
+                    minHeight: try a["minHeight"].decoded(), together: together))
+        case "tint": return try json(tint(try text(a, "rgb"), dark: try a["dark"].decoded()))
+        case "shade": return try json(shade(try text(a, "rgb"), dark: try a["dark"].decoded()))
+        default: return unknown(fn)
+        }
+    }
+}

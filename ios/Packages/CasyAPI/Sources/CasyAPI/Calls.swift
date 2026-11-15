@@ -527,6 +527,11 @@ extension EdgeFunctions {
         return answer.connections ?? []
     }
 
+    /// Your calendar's busy blocks over [from, to), ISO instants.
+    public func calendarBusy(from: String, to: String, errorMessage: String? = nil) async throws -> OverviewData {
+        try await call("calendar-busy", params: ["from": from, "to": to], errorMessage: errorMessage)
+    }
+
     /// Your primary calendar, or nil if you haven't chosen one.
     public func primaryCalendar(errorMessage: String? = nil) async throws -> PrimaryCalendar? {
         let answer: PrimaryAnswer = try await call(

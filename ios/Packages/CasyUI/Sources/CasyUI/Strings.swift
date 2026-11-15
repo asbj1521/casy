@@ -602,6 +602,7 @@ public enum CasyStrings {
     public static var addToCalendarLoadPrimaryFailed: String { text("addToCalendar.loadPrimaryFailed") }
     public static var addToCalendarSetPrimaryFailed: String { text("addToCalendar.setPrimaryFailed") }
     public static var addToCalendarLoadStatusFailed: String { text("addToCalendar.loadStatusFailed") }
+    public static var eventsOpenDay: String { text("events.openDay") }
 
     /// The stored English names of event types (STORED_TITLES in eventTitle.ts):
     /// "Evening" is shown in the reader's language; any other title as written.

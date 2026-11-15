@@ -137,4 +137,18 @@ final class EventsUITests: XCTestCase {
         XCTAssertTrue(added.waitForExistence(timeout: 10))
         XCTAssertFalse(added.isEnabled)
     }
+
+    /// Your own day around it, opening the day view at a tap (#199).
+    func testTheSliceOfYourDayOpensTheDay() {
+        let app = launch()
+        openEvent(app, "Løbetur", group: "Løbeklubben")
+        let slice = app.buttons["Åbn dagen i din kalender"]
+        _ = slice.waitForExistence(timeout: 10)
+        if let shots = ProcessInfo.processInfo.environment["CASY_SHOTS"] {
+            try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(shots)/dated.png"))
+        }
+        XCTAssertTrue(slice.exists)
+        slice.tap()
+        XCTAssertTrue(app.navigationBars["Løbeklubben"].waitForNonExistence(timeout: 10))
+    }
 }

@@ -242,4 +242,6 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     let added = try readsWithNothingLost("events-add-to-calendar", as: EventsAnswer.self).events
     #expect(added.first { $0.id == "ev-run" }?.myCalendar?.state == "added")
     #expect(try readsWithNothingLost("events-ics", as: EventFile.self).filename == "casy.ics")
+    let busy = try readsWithNothingLost("calendar-busy", as: OverviewData.self)
+    #expect(!busy.calendars.isEmpty && !busy.blocks.isEmpty)
 }

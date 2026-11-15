@@ -598,3 +598,22 @@ public struct EventFile: Codable, Sendable, Equatable {
     public var filename: String
     public var ics: String
 }
+
+/// Something you told Casy that is in no calendar (#116), drawn in Casy's own calendar.
+public struct StoredEntry: Codable, Sendable, Equatable {
+    public var id: String
+    public var kind: String
+    public var label: String
+    public var start: String
+    public var end: String
+    public var allDay: Bool
+}
+
+/// Your own calendar over a range (`OverviewData`): every calendar, its busy
+/// blocks, and what you told Casy.
+public struct OverviewData: Codable, Sendable, Equatable {
+    public var calendars: [OverviewCalendar]
+    public var blocks: [OverviewBlock]
+    public var truncated: Bool
+    public var entries: [StoredEntry]?
+}

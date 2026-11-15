@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 
 // Read as text through Vite (?raw): the app's TypeScript settings have no
 // Node types for node:fs.
+import calendarDayFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/calendarDay.json?raw";
 import eventsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/events.json?raw";
 import formatFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/format.json?raw";
 import holidaysFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/holidays.json?raw";
@@ -17,6 +18,7 @@ import pictureCropFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTes
 import phoneBusyFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/phoneBusy.json?raw";
 import zoneFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/zone.json?raw";
 
+import { calendarDayCases } from "./calendarDay.cases";
 import type { ParityCase } from "./cases";
 import { eventsCases } from "./events.cases";
 import { formatCases } from "./format.cases";
@@ -41,6 +43,7 @@ describe.each([
   ["phoneBusy", phoneBusyCases(), phoneBusyFixture],
   ["events", eventsCases(), eventsFixture],
   ["pictureCrop", pictureCropCases(), pictureCropFixture],
+  ["calendarDay", calendarDayCases(), calendarDayFixture],
 ] as const)("%s", (module, cases, fixture) => {
   it.runIf(import.meta.env.UPDATE_PARITY)("writes the fixtures", async () => {
     // Named through a variable so the type check doesn't look for Node's types.

@@ -34,6 +34,8 @@ const ASKED: [
   fn: string,
   body: Record<string, unknown>,
   setup?: (w: World) => void,
+  /** The address's own parameters, for a function read with GET (calendar-busy). */
+  params?: Record<string, string>,
 ][] = [
   ["whoami", DEFAULT_WORLD, "groups", { action: "whoami" }],
   ["groups-list", DEFAULT_WORLD, "groups", { action: "list" }],
@@ -133,6 +135,14 @@ const ASKED: [
   ["calendar-status", DEFAULT_WORLD, "calendar-status", {}],
   ["calendar-primary", DEFAULT_WORLD, "calendar-primary", { action: "get" }],
   [
+    "calendar-busy",
+    DEFAULT_WORLD,
+    "calendar-busy",
+    {},
+    undefined,
+    { from: "2026-10-05T00:00:00.000Z", to: "2026-10-20T00:00:00.000Z" },
+  ],
+  [
     "calendar-primary-set",
     DEFAULT_WORLD,
     "calendar-primary",
@@ -220,12 +230,12 @@ const ASKED: [
   ["groups-unblock", DEFAULT_WORLD, "groups", { action: "unblock", profileId: "p-x" }],
 ];
 
-describe.each(ASKED)("%s", (file, options, name, body, setup) => {
+describe.each(ASKED)("%s", (file, options, name, body, setup, params) => {
   const world = makeWorld(options);
   setup?.(world);
   const answer = new FakeBackend(world).answer({
     name,
-    params: new URLSearchParams(),
+    params: new URLSearchParams(params),
     body,
   });
   const text = `${JSON.stringify(answer.json, null, 2)}\n`;

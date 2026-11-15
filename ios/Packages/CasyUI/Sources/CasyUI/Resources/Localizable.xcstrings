@@ -9299,6 +9299,23 @@
           }
         }
       }
+    },
+    "events.openDay": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åbn dagen i din kalender"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the day in your calendar"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

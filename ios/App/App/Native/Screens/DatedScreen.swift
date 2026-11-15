@@ -43,6 +43,15 @@ struct DatedScreen: View {
                 header(event, date)
             }
             .listRowBackground(Color.clear)
+            if let start = parseInstant(date.start), let end = parseInstant(date.end) {
+                Section {
+                    DaySlice(start: start, end: end, label: CasyStrings.eventTitle(event.title)) { day in
+                        leave(.webScreen("/?day=\(dayKey(day, appTimeZone))"))
+                    }
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
             Section {
                 PeopleRow(
                     invitees: event.invitees, suggesterId: event.createdBy.id,

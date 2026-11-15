@@ -1,0 +1,188 @@
+{
+  "calendars": [
+    {
+      "id": "cal-work",
+      "name": "Arbejde",
+      "originalName": "Arbejde",
+      "renamed": false,
+      "writable": true,
+      "purpose": "work",
+      "categoryName": null,
+      "purposeGuessed": false,
+      "priority": "normal",
+      "included": true,
+      "total": 87,
+      "provider": "apple",
+      "account": "mia@icloud.com",
+      "connectionId": "conn-apple"
+    },
+    {
+      "id": "cal-private",
+      "name": "Privat",
+      "originalName": "Privat",
+      "renamed": false,
+      "writable": true,
+      "purpose": "personal",
+      "categoryName": null,
+      "purposeGuessed": false,
+      "priority": "normal",
+      "included": true,
+      "total": 26,
+      "provider": "apple",
+      "account": "mia@icloud.com",
+      "connectionId": "conn-apple"
+    },
+    {
+      "id": "cal-family",
+      "name": "Familie",
+      "originalName": "Familie",
+      "renamed": false,
+      "writable": false,
+      "purpose": null,
+      "categoryName": null,
+      "purposeGuessed": false,
+      "priority": "normal",
+      "included": true,
+      "total": 9,
+      "provider": "apple",
+      "account": "mia@icloud.com",
+      "connectionId": "conn-apple"
+    },
+    {
+      "id": "cal-google",
+      "name": "Kor",
+      "originalName": "mia@example.com",
+      "renamed": true,
+      "writable": false,
+      "purpose": "personal",
+      "categoryName": null,
+      "purposeGuessed": false,
+      "priority": "normal",
+      "included": true,
+      "total": 18,
+      "provider": "google",
+      "account": "mia@example.com",
+      "connectionId": "conn-google"
+    },
+    {
+      "id": "cal-football",
+      "name": "Fodbold",
+      "originalName": "Fodbold",
+      "renamed": false,
+      "writable": false,
+      "purpose": "other",
+      "categoryName": null,
+      "purposeGuessed": false,
+      "priority": "skip",
+      "included": true,
+      "total": 17,
+      "provider": "ics",
+      "account": "Fodbold",
+      "connectionId": "conn-ics"
+    }
+  ],
+  "blocks": [
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-05T06:30:00.000Z",
+      "end": "2026-10-05T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-football",
+      "start": "2026-10-05T15:00:00.000Z",
+      "end": "2026-10-05T16:30:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-06T06:30:00.000Z",
+      "end": "2026-10-06T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-private",
+      "start": "2026-10-06T16:00:00.000Z",
+      "end": "2026-10-06T18:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-07T06:30:00.000Z",
+      "end": "2026-10-07T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-08T06:30:00.000Z",
+      "end": "2026-10-08T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-google",
+      "start": "2026-10-08T17:00:00.000Z",
+      "end": "2026-10-08T19:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-09T06:30:00.000Z",
+      "end": "2026-10-09T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-12T06:30:00.000Z",
+      "end": "2026-10-12T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-football",
+      "start": "2026-10-12T15:00:00.000Z",
+      "end": "2026-10-12T16:30:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-13T06:30:00.000Z",
+      "end": "2026-10-13T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-private",
+      "start": "2026-10-13T16:00:00.000Z",
+      "end": "2026-10-13T18:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-14T06:30:00.000Z",
+      "end": "2026-10-14T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-15T06:30:00.000Z",
+      "end": "2026-10-15T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-google",
+      "start": "2026-10-15T17:00:00.000Z",
+      "end": "2026-10-15T19:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-16T06:30:00.000Z",
+      "end": "2026-10-16T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-private",
+      "start": "2026-10-17T09:00:00.000Z",
+      "end": "2026-10-17T11:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-family",
+      "start": "2026-10-18T10:00:00.000Z",
+      "end": "2026-10-18T13:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-work",
+      "start": "2026-10-19T06:30:00.000Z",
+      "end": "2026-10-19T14:00:00.000Z"
+    },
+    {
+      "calendarId": "cal-football",
+      "start": "2026-10-19T15:00:00.000Z",
+      "end": "2026-10-19T16:30:00.000Z"
+    }
+  ],
+  "truncated": false,
+  "entries": []
+}
