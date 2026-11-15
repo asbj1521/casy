@@ -1,0 +1,99 @@
+{
+  "connections": [
+    {
+      "id": "conn-apple",
+      "provider": "apple",
+      "status": "connected",
+      "account_label": "mia@icloud.com",
+      "error_message": null,
+      "created_at": "2026-09-01T10:00:00.000Z",
+      "last_synced_at": "2026-10-07T07:40:00.000Z",
+      "last_sync_attempt_at": "2026-10-07T07:40:00.000Z",
+      "sync_error": null,
+      "needs_reconnect": false,
+      "calendar_sources": [
+        {
+          "id": "cal-work",
+          "display_name": "Arbejde",
+          "custom_name": null,
+          "purpose": "work",
+          "priority": "normal",
+          "writable": true,
+          "purpose_source": "user",
+          "external_id": null
+        },
+        {
+          "id": "cal-private",
+          "display_name": "Privat",
+          "custom_name": null,
+          "purpose": "personal",
+          "priority": "normal",
+          "writable": true,
+          "purpose_source": "user",
+          "external_id": null
+        },
+        {
+          "id": "cal-family",
+          "display_name": "Familie",
+          "custom_name": null,
+          "purpose": null,
+          "priority": "normal",
+          "writable": false,
+          "purpose_source": "user",
+          "external_id": null
+        }
+      ],
+      "busyCount": 122
+    },
+    {
+      "id": "conn-google",
+      "provider": "google",
+      "status": "connected",
+      "account_label": "mia@example.com",
+      "error_message": null,
+      "created_at": "2026-09-05T10:00:00.000Z",
+      "last_synced_at": "2026-10-07T07:40:00.000Z",
+      "last_sync_attempt_at": "2026-10-07T07:40:00.000Z",
+      "sync_error": null,
+      "needs_reconnect": false,
+      "calendar_sources": [
+        {
+          "id": "cal-google",
+          "display_name": "mia@example.com",
+          "custom_name": "Kor",
+          "purpose": "personal",
+          "priority": "normal",
+          "writable": false,
+          "purpose_source": "user",
+          "external_id": null
+        }
+      ],
+      "busyCount": 18
+    },
+    {
+      "id": "conn-ics",
+      "provider": "ics",
+      "status": "connected",
+      "account_label": "Fodbold",
+      "error_message": null,
+      "created_at": "2026-09-10T10:00:00.000Z",
+      "last_synced_at": "2026-10-07T07:40:00.000Z",
+      "last_sync_attempt_at": "2026-10-07T07:40:00.000Z",
+      "sync_error": null,
+      "needs_reconnect": false,
+      "calendar_sources": [
+        {
+          "id": "cal-football",
+          "display_name": "Fodbold",
+          "custom_name": null,
+          "purpose": "other",
+          "priority": "skip",
+          "writable": false,
+          "purpose_source": "user",
+          "external_id": null
+        }
+      ],
+      "busyCount": 17
+    }
+  ]
+}

@@ -580,6 +580,28 @@ public enum CasyStrings {
     public static func reportTargetEvent(_ title: String) -> String { String(format: text("report.targetEvent"), title) }
     public static var eventPlace: String { text("eventDetails.place") }
     public static var eventNote: String { text("eventDetails.note") }
+    public static var addToCalendar: String { text("addToCalendar.button") }
+    public static func addToCalendarGoesInto(_ name: String) -> String { String(format: text("addToCalendar.goesInto"), name) }
+    public static var addToCalendarGoesIntoFallback: String { text("addToCalendar.goesIntoFallback") }
+    public static var addToCalendarWillAsk: String { text("addToCalendar.willAsk") }
+    public static var addToCalendarAsFile: String { text("addToCalendar.asFile") }
+    public static func addToCalendarAdded(_ name: String) -> String { String(format: text("addToCalendar.added"), name) }
+    public static var addToCalendarAddedFallback: String { text("addToCalendar.addedFallback") }
+    public static var addToCalendarAdding: String { text("addToCalendar.adding") }
+    public static var addToCalendarNotYet: String { text("addToCalendar.notYet") }
+    public static var addToCalendarTryAgain: String { text("addToCalendar.tryAgain") }
+    public static var addToCalendarNotYetPhone: String { text("addToCalendar.notYetPhone") }
+    public static var addToCalendarGone: String { text("addToCalendar.gone") }
+    public static var addToCalendarAddAgain: String { text("addToCalendar.addAgain") }
+    public static var addToCalendarChooseTitle: String { text("addToCalendar.chooseTitle") }
+    public static var addToCalendarChooseHelp: String { text("addToCalendar.chooseHelp") }
+    public static var addToCalendarUseAndAdd: String { text("addToCalendar.useAndAdd") }
+    public static var addToCalendarDownloadInstead: String { text("addToCalendar.downloadInstead") }
+    public static var addToCalendarFailed: String { text("addToCalendar.failed") }
+    public static var addToCalendarDownloadFailed: String { text("addToCalendar.downloadFailed") }
+    public static var addToCalendarLoadPrimaryFailed: String { text("addToCalendar.loadPrimaryFailed") }
+    public static var addToCalendarSetPrimaryFailed: String { text("addToCalendar.setPrimaryFailed") }
+    public static var addToCalendarLoadStatusFailed: String { text("addToCalendar.loadStatusFailed") }
 
     /// The stored English names of event types (STORED_TITLES in eventTitle.ts):
     /// "Evening" is shown in the reader's language; any other title as written.

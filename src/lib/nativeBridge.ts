@@ -53,6 +53,7 @@ interface NativeBridgePlugin {
   open(options: { screen: NativeScreen; build: string; userAgent: string }): Promise<void>;
   pushResult(options: { answer: "granted" | "denied" | "failed" }): Promise<void>;
   phoneFacts(options: { labels: number }): Promise<void>;
+  phoneWritten(): Promise<void>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
@@ -69,6 +70,7 @@ interface NativeBridgePlugin {
     listener: (change: { on: boolean }) => void,
   ): Promise<PluginListenerHandle>;
   addListener(event: "needPhoneFacts", listener: () => void): Promise<PluginListenerHandle>;
+  addListener(event: "needPhoneWrite", listener: () => void): Promise<PluginListenerHandle>;
   addListener(
     event: "inviteSent",
     listener: (sent: { groupId: string }) => void,
@@ -185,6 +187,22 @@ export async function onNeedPhoneFacts(
       .catch(() => ({ labels: 0 }))
       .then((facts) => plugin.phoneFacts(facts))
       // The app stops waiting by itself after a few seconds.
+      .catch(() => {});
+  });
+}
+
+/**
+ * Calls `write` when a native screen put an event into a calendar on this
+ * phone (#199): the page writes the phone's calendar, as it does for its own
+ * Tilføj til min kalender, then tells the app it is done.
+ */
+export async function onNeedPhoneWrite(write: () => Promise<void>): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("needPhoneWrite", () => {
+    void write()
+      .catch((err) => console.warn("writing the phone's calendar failed", err))
+      .then(() => plugin.phoneWritten())
+      // The app stops waiting by itself.
       .catch(() => {});
   });
 }

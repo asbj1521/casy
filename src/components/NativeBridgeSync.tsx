@@ -15,12 +15,15 @@ import {
   onNativeAiConsent,
   onNativeInviteSent,
   onNeedPhoneFacts,
+  onNeedPhoneWrite,
   onNeedSession,
   sharePreferences,
 } from "@/lib/nativeBridge";
 import { afterAiConsent } from "@/hooks/useAiConsentSetting";
 import { labelBookQuery } from "@/hooks/useEventLabels";
+import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { rememberInviteSent } from "@/lib/groupNudge";
+import { phoneConnectionId } from "@/lib/phoneCalendar";
 import { enablePush } from "@/lib/push";
 import { supabaseAuth } from "@/lib/supabase";
 import { chooseTheme, onThemeChange, storedTheme } from "@/lib/theme";
@@ -143,6 +146,13 @@ export default function NativeBridgeSync() {
     })
       .then(keep)
       .catch((err) => console.warn("answering the app's Dine data failed", err));
+    // Native Aftaler (#199) put an event into a calendar on this phone: the
+    // page writes the phone's calendar, as its own Tilføj til min kalender does.
+    onNeedPhoneWrite(async () => {
+      if (phoneConnectionId(youId)) await syncPhone(queryClient, youId, { create: false });
+    })
+      .then(keep)
+      .catch((err) => console.warn("listening for the app's calendar writes failed", err));
     return () => {
       gone = true;
       for (const h of handles) void h.remove();

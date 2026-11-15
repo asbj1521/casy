@@ -9,7 +9,7 @@ import UIKit
 /// address and the cached data, and native screens borrow what they need:
 /// `setSession`, `setPreferences`, `screens` (which screens this build draws),
 /// `open`. Back to the web: `preferences` when a native screen changed a
-/// choice, `closed` when one closes (with where to go next, if anywhere), `dataChanged` when one changed what the page has cached, `inviteSent` when someone was invited to a group, `needSession` for a fresh login.
+/// choice, `closed` when one closes (with where to go next, if anywhere), `dataChanged` when one changed what the page has cached, `inviteSent` when someone was invited to a group, `needSession` for a fresh login, `needPhoneWrite` to write the phone's calendar.
 public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     UIAdaptivePresentationControllerDelegate
 {
@@ -22,6 +22,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "open", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "pushResult", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "phoneFacts", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "phoneWritten", returnType: CAPPluginReturnPromise),
     ]
 
     /// The screens drawn natively in this build. None in a Release build: the
@@ -42,6 +43,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     private var factsAnswer: CheckedContinuation<Int, Never>?
     /// Which question `factsAnswer` waits on, so a late timeout can't end a newer one.
     private var factsAsked = 0
+    /// A native screen waiting for the page to write the phone's calendar.
+    private var writeAnswer: CheckedContinuation<Void, Never>?
+    private var writesAsked = 0
 
     override public func load() {
         let askWeb: @Sendable () -> Void = { [weak self] in
@@ -60,6 +64,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
             MyDataModel.shared.askLabels = { [weak self] in
                 await self?.askLabels() ?? 0
+            }
+            EventsModel.shared.writeOnPhone = { [weak self] in
+                await self?.writeOnPhone()
             }
         }
         #if DEBUG
@@ -236,6 +243,37 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 guard let self, self.factsAsked == asked else { return }
                 self.factsAnswer?.resume(returning: 0)
                 self.factsAnswer = nil
+            }
+        }
+    }
+
+    /// The page has written what Casy keeps in the phone's calendar.
+    @objc func phoneWritten(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.writeAnswer?.resume()
+            self.writeAnswer = nil
+            call.resolve()
+        }
+    }
+
+    /// The phone's calendar is written by the page's sync (usePhoneCalendarSync):
+    /// it asks, and waits up to 15 seconds for it to be done.
+    @MainActor private func writeOnPhone() async {
+        writeAnswer?.resume()
+        writeAnswer = nil
+        #if DEBUG
+            if TestLaunch.isActive { return }
+        #endif
+        await withCheckedContinuation { continuation in
+            writeAnswer = continuation
+            writesAsked += 1
+            let asked = writesAsked
+            notifyListeners("needPhoneWrite", data: [:])
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(15))
+                guard let self, self.writesAsked == asked else { return }
+                self.writeAnswer?.resume()
+                self.writeAnswer = nil
             }
         }
     }

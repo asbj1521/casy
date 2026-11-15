@@ -12,6 +12,8 @@ final class EventsModel {
     private(set) var events: [SuggestedEvent]?
     private(set) var failure: String?
     private var deciding: Task<Void, Never>?
+    /// Asks the page to write the phone's calendar (the bridge sets it).
+    var writeOnPhone: (() async -> Void)?
 
     func reset() {
         events = nil
@@ -70,6 +72,29 @@ final class EventsModel {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.eventsAnswerFailed) }
         show(try await api.answerDate(id, dateId: dateId, response: response, errorMessage: CasyStrings.eventsAnswerFailed).events)
         ProfileModel.shared.onChange?()
+    }
+
+    /// Into your primary calendar; one on this phone is written by the page
+    /// right after, and the list is fetched again once it is in.
+    func addToCalendar(_ id: String, choosing calendarId: String? = nil) async throws {
+        guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.addToCalendarFailed) }
+        do {
+            if let calendarId {
+                _ = try await api.setPrimaryCalendar(calendarId, errorMessage: CasyStrings.addToCalendarSetPrimaryFailed)
+            }
+            let events = try await api.addToMyCalendar(id, errorMessage: CasyStrings.addToCalendarFailed)
+            show(events)
+            ProfileModel.shared.onChange?()
+            let mine = events.first { $0.id == id }?.myCalendar
+            if mine?.state == "adding", mine?.onPhone == true, let writeOnPhone {
+                await writeOnPhone()
+                await load()
+            }
+        } catch {
+            // A failure still changed something (it is waiting to be added now).
+            await load()
+            throw error
+        }
     }
 
     func leave(_ id: String) async throws {

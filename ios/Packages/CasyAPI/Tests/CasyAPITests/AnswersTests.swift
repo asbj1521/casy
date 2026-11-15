@@ -233,3 +233,13 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     _ = try readsWithNothingLost("events-leave", as: EventsAnswer.self)
     #expect(try readsWithNothingLost("events-answer", as: AnswerOutcome.self).outcome == "answered")
 }
+
+@Test func calendarsRead() throws {
+    let connections = try readsWithNothingLost("calendar-status", as: CalendarConnections.self).connections ?? []
+    #expect(!connections.isEmpty)
+    #expect(try readsWithNothingLost("calendar-primary", as: PrimaryAnswer.self).primary?.calendarId == "cal-private")
+    #expect(try readsWithNothingLost("calendar-primary-set", as: PrimaryAnswer.self).primary?.calendarId == "cal-work")
+    let added = try readsWithNothingLost("events-add-to-calendar", as: EventsAnswer.self).events
+    #expect(added.first { $0.id == "ev-run" }?.myCalendar?.state == "added")
+    #expect(try readsWithNothingLost("events-ics", as: EventFile.self).filename == "casy.ics")
+}

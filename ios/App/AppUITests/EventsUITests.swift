@@ -119,4 +119,22 @@ final class EventsUITests: XCTestCase {
         app.buttons["Send"].tap()
         XCTAssertTrue(app.staticTexts["Tak. Vi kigger på det."].waitForExistence(timeout: 10))
     }
+
+    /// With a primary calendar it says where, and goes straight in (#199).
+    func testAnAgreedEventGoesIntoThePrimaryCalendar() {
+        let app = launch()
+        openEvent(app, "Løbetur", group: "Løbeklubben")
+        XCTAssertTrue(app.staticTexts["Vi lægger den i Privat."].waitForExistence(timeout: 10))
+        app.buttons["Tilføj til min kalender"].tap()
+        XCTAssertTrue(app.buttons["Lagt i Privat"].waitForExistence(timeout: 10))
+    }
+
+    /// One already in says so, and can't be added twice.
+    func testOneAlreadyInSaysWhere() {
+        let app = launch()
+        openEvent(app, "Julefrokost", group: "Fredagsbar")
+        let added = app.buttons["Lagt i Privat"]
+        XCTAssertTrue(added.waitForExistence(timeout: 10))
+        XCTAssertFalse(added.isEnabled)
+    }
 }

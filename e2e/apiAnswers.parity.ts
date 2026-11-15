@@ -124,6 +124,21 @@ const ASKED: [
   ["events-cancel", DEFAULT_WORLD, "events", { action: "cancel", proposalId: "ev-run" }],
   ["events-leave", DEFAULT_WORLD, "events", { action: "leave", proposalId: "ev-boardgames" }],
   [
+    "events-add-to-calendar",
+    DEFAULT_WORLD,
+    "events",
+    { action: "add-to-calendar", proposalId: "ev-run" },
+  ],
+  ["events-ics", DEFAULT_WORLD, "events", { action: "ics", proposalId: "ev-run" }],
+  ["calendar-status", DEFAULT_WORLD, "calendar-status", {}],
+  ["calendar-primary", DEFAULT_WORLD, "calendar-primary", { action: "get" }],
+  [
+    "calendar-primary-set",
+    DEFAULT_WORLD,
+    "calendar-primary",
+    { action: "set", calendarId: "cal-work" },
+  ],
+  [
     "events-answer",
     DEFAULT_WORLD,
     "events",

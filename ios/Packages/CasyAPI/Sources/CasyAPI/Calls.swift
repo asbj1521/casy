@@ -165,6 +165,11 @@ private struct EventAnswer: Encodable, Sendable {
     let response: EventResponse
 }
 
+private struct SetPrimary: Encodable, Sendable {
+    let action = "set"
+    let calendarId: String
+}
+
 private struct AdminId: Encodable, Sendable {
     let action: String
     let id: String
@@ -502,6 +507,38 @@ extension EdgeFunctions {
         try await call(
             "events", body: EventAnswer(proposalId: id, dateId: dateId, response: response),
             errorMessage: errorMessage)
+    }
+
+    /// Into your primary calendar now; on a phone calendar, "adding" until the app writes it.
+    public func addToMyCalendar(_ id: String, errorMessage: String? = nil) async throws -> [SuggestedEvent] {
+        let answer: EventsAnswer = try await call(
+            "events", body: EventAction(action: "add-to-calendar", proposalId: id), errorMessage: errorMessage)
+        return answer.events
+    }
+
+    /// A scheduled event as a calendar file, for adding by hand.
+    public func eventFile(_ id: String, errorMessage: String? = nil) async throws -> EventFile {
+        try await call("events", body: EventAction(action: "ics", proposalId: id), errorMessage: errorMessage)
+    }
+
+    /// Every account you linked, with its calendars.
+    public func calendarConnections(errorMessage: String? = nil) async throws -> [CalendarConnection] {
+        let answer: CalendarConnections = try await call("calendar-status", errorMessage: errorMessage)
+        return answer.connections ?? []
+    }
+
+    /// Your primary calendar, or nil if you haven't chosen one.
+    public func primaryCalendar(errorMessage: String? = nil) async throws -> PrimaryCalendar? {
+        let answer: PrimaryAnswer = try await call(
+            "calendar-primary", body: Action(action: "get"), errorMessage: errorMessage)
+        return answer.primary
+    }
+
+    /// A calendar chosen as primary.
+    public func setPrimaryCalendar(_ calendarId: String, errorMessage: String? = nil) async throws -> PrimaryCalendar? {
+        let answer: PrimaryAnswer = try await call(
+            "calendar-primary", body: SetPrimary(calendarId: calendarId), errorMessage: errorMessage)
+        return answer.primary
     }
 
     /// Someone else's event, left: you're no longer asked or counted.

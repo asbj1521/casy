@@ -7,7 +7,8 @@ import SwiftUI
 /// its date as a tile with the time beside it, everyone's face with where
 /// they stand, its place and note, and what you can do last, as rows: say
 /// you can't after all (an agreed vote, moving it for everyone), report it,
-/// cancel or leave, each asked first.
+/// cancel or leave, each asked first. Tilføj til min kalender is pinned along
+/// the bottom.
 struct DatedScreen: View {
     let eventId: String
     let leave: (LeavingProfile) -> Void
@@ -83,6 +84,8 @@ struct DatedScreen: View {
             .disabled(working)
         }
         .casyPushedBar(event.group.name, close: CasyStrings.done, action: closeSheet)
+        // Its one main action, pinned along the bottom.
+        .safeAreaInset(edge: .bottom) { AddToCalendar(event: event) }
         .refreshable { await model.load() }
         .confirmationDialog(
             asking == .backOut

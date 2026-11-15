@@ -8925,6 +8925,380 @@
           }
         }
       }
+    },
+    "addToCalendar.button": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tilføj til min kalender"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to my calendar"
+          }
+        }
+      }
+    },
+    "addToCalendar.goesInto": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi lægger den i %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We add it to %@."
+          }
+        }
+      }
+    },
+    "addToCalendar.goesIntoFallback": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi lægger den i din primære kalender."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We add it to your primary calendar."
+          }
+        }
+      }
+    },
+    "addToCalendar.willAsk": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du vælger, hvilken kalender den skal i."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You choose which calendar it goes into."
+          }
+        }
+      }
+    },
+    "addToCalendar.asFile": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du får en kalenderfil, som din kalender kan åbne."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You get a calendar file your calendar app can open."
+          }
+        }
+      }
+    },
+    "addToCalendar.added": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lagt i %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to %@"
+          }
+        }
+      }
+    },
+    "addToCalendar.addedFallback": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lagt i din kalender"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to your calendar"
+          }
+        }
+      }
+    },
+    "addToCalendar.adding": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi lægger den i din kalender."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We're adding it to your calendar."
+          }
+        }
+      }
+    },
+    "addToCalendar.notYet": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi kunne ikke lægge den i din kalender endnu og prøver igen inden for en time."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't add it to your calendar yet and will try again within the hour."
+          }
+        }
+      }
+    },
+    "addToCalendar.tryAgain": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv igen nu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again now"
+          }
+        }
+      }
+    },
+    "addToCalendar.notYetPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi kunne ikke lægge den i telefonens kalender endnu og prøver igen, næste gang appen åbnes."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't add it to the phone's calendar yet, and will try again next time the app opens."
+          }
+        }
+      }
+    },
+    "addToCalendar.gone": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den er ikke i din kalender længere."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's no longer in your calendar."
+          }
+        }
+      }
+    },
+    "addToCalendar.addAgain": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tilføj igen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add it again"
+          }
+        }
+      }
+    },
+    "addToCalendar.chooseTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hvilken kalender skal vi lægge aftaler i?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which calendar should we add events to?"
+          }
+        }
+      }
+    },
+    "addToCalendar.chooseHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den bliver din primære kalender. Du kan skifte den under Forbundne kalendere."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It becomes your primary calendar. You can change it under Connected calendars."
+          }
+        }
+      }
+    },
+    "addToCalendar.useAndAdd": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brug den og tilføj"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use it and add"
+          }
+        }
+      }
+    },
+    "addToCalendar.downloadInstead": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hent en kalenderfil i stedet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download a calendar file instead"
+          }
+        }
+      }
+    },
+    "addToCalendar.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke lægge aftalen i din kalender"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't add the event to your calendar"
+          }
+        }
+      }
+    },
+    "addToCalendar.downloadFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke hente kalenderfilen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't get the calendar file"
+          }
+        }
+      }
+    },
+    "addToCalendar.loadPrimaryFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke hente din primære kalender"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load your primary calendar"
+          }
+        }
+      }
+    },
+    "addToCalendar.setPrimaryFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke gemme din primære kalender"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't save your primary calendar"
+          }
+        }
+      }
+    },
+    "addToCalendar.loadStatusFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke hente dine kalenderforbindelser"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load your calendar connections"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

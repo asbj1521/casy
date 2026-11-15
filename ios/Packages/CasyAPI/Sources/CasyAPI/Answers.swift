@@ -544,3 +544,57 @@ public struct AnswerOutcome: Codable, Sendable, Equatable {
     public var events: [SuggestedEvent]
     public var outcome: String
 }
+
+/// One calendar of a linked account (`CalendarSourceStatus` in src/api/calendars.ts).
+public struct CalendarSource: Codable, Sendable, Equatable, Identifiable {
+    public var id: String
+    public var display_name: String?
+    public var custom_name: String?
+    public var purpose: String?
+    public var purpose_source: String?
+    public var priority: String
+    public var writable: Bool
+    public var external_id: String?
+    /// A category its owner named, for purpose "custom".
+    public var category_name: String?
+
+    /// Its name as the owner sees it (`calendarSourceName`).
+    public var name: String { custom_name ?? display_name ?? id }
+}
+
+/// A linked account (`CalendarConnectionStatus`).
+public struct CalendarConnection: Codable, Sendable, Equatable, Identifiable {
+    public var id: String
+    public var provider: String
+    /// "pending", "connected" or "error".
+    public var status: String
+    public var account_label: String?
+    public var error_message: String?
+    public var created_at: String
+    public var last_synced_at: String?
+    public var last_sync_attempt_at: String?
+    public var sync_error: String?
+    public var needs_reconnect: Bool
+    public var calendar_sources: [CalendarSource]
+    public var busyCount: Int
+}
+
+public struct CalendarConnections: Codable, Sendable, Equatable {
+    public var connections: [CalendarConnection]?
+}
+
+/// Your primary calendar: where agreed events go.
+public struct PrimaryCalendar: Codable, Sendable, Equatable {
+    public var calendarId: String
+    public var autoAdd: Bool
+}
+
+public struct PrimaryAnswer: Codable, Sendable, Equatable {
+    public var primary: PrimaryCalendar?
+}
+
+/// A scheduled event as a calendar file.
+public struct EventFile: Codable, Sendable, Equatable {
+    public var filename: String
+    public var ics: String
+}
