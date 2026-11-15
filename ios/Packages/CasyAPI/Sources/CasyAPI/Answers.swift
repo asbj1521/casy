@@ -537,3 +537,10 @@ public struct PlanCorrection: Codable, Sendable, Equatable {
 public struct EventsAnswer: Codable, Sendable, Equatable {
     public var events: [SuggestedEvent]
 }
+
+/// The events after an answer, and what it did: "answered", "scheduled",
+/// "moved", "undecided" or "no_date".
+public struct AnswerOutcome: Codable, Sendable, Equatable {
+    public var events: [SuggestedEvent]
+    public var outcome: String
+}

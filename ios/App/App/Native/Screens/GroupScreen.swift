@@ -389,7 +389,29 @@ struct EditGroupSheet: View {
 /// the web's ReportDialog: the group or a member, why, and a note; a member
 /// can be blocked with it, and the group left. Whoever is reported isn't told.
 struct ReportSheet: View {
-    let group: CasyAPI.Group
+    /// The group a report is about, with its members to choose from and to leave; nil for an event.
+    private let group: CasyAPI.Group?
+    private let choices: [Choice]
+
+    /// A group, or one of its members (#142).
+    init(group: CasyAPI.Group) {
+        self.group = group
+        choices =
+            [Choice(label: CasyStrings.reportTargetGroup(group.name), target: .group(groupId: group.id), person: nil)]
+            + group.members.filter { !$0.isYou }.map {
+                Choice(label: $0.name, target: .member(groupId: group.id, memberId: $0.profileId), person: $0)
+            }
+    }
+
+    /// Someone else's event: only the event itself, as the web's ReportEventButton.
+    init(event: SuggestedEvent) {
+        group = nil
+        choices = [
+            Choice(
+                label: CasyStrings.reportTargetEvent(CasyStrings.eventTitle(event.title)),
+                target: .event(groupId: event.group.id, eventId: event.id), person: nil)
+        ]
+    }
 
     private struct Choice {
         let label: String
@@ -411,14 +433,6 @@ struct ReportSheet: View {
     @State private var sending = false
     @State private var sent = false
     @State private var failure: String?
-
-    private var choices: [Choice] {
-        [Choice(label: CasyStrings.reportTargetGroup(group.name), target: .group(groupId: group.id), person: nil)]
-            + group.members.filter { !$0.isYou }.map {
-                Choice(
-                    label: $0.name, target: .member(groupId: group.id, memberId: $0.profileId), person: $0)
-            }
-    }
 
     var body: some View {
         let choice = choices[min(picked, choices.count - 1)]
@@ -478,17 +492,21 @@ struct ReportSheet: View {
                     if now.count > Self.maxNote { note = String(now.prefix(Self.maxNote)) }
                 }
         }
-        Section {
-            if let person = choice.person {
-                ListSwitchRow(
-                    CasyStrings.reportBlockToo(person.name), isOn: $block, systemImage: "nosign",
-                    detail: CasyStrings.reportBlockHelp(person.name))
+        if choice.person != nil || group != nil {
+            Section {
+                if let person = choice.person {
+                    ListSwitchRow(
+                        CasyStrings.reportBlockToo(person.name), isOn: $block, systemImage: "nosign",
+                        detail: CasyStrings.reportBlockHelp(person.name))
+                }
+                if let group {
+                    ListSwitchRow(
+                        CasyStrings.reportLeaveToo(group.name), isOn: $leaveToo,
+                        systemImage: "rectangle.portrait.and.arrow.right")
+                }
+            } footer: {
+                Text(CasyStrings.reportIntro)
             }
-            ListSwitchRow(
-                CasyStrings.reportLeaveToo(group.name), isOn: $leaveToo,
-                systemImage: "rectangle.portrait.and.arrow.right")
-        } footer: {
-            Text(CasyStrings.reportIntro)
         }
         if let failure { Notice(failure, tone: .error, bare: true) }
     }

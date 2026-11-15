@@ -65,6 +65,13 @@ final class EventsModel {
         ProfileModel.shared.onChange?()
     }
 
+    /// Your answer on one date; for an agreed vote, a no moves it for everyone (#74).
+    func answer(_ id: String, dateId: String, _ response: EventResponse) async throws {
+        guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.eventsAnswerFailed) }
+        show(try await api.answerDate(id, dateId: dateId, response: response, errorMessage: CasyStrings.eventsAnswerFailed).events)
+        ProfileModel.shared.onChange?()
+    }
+
     func leave(_ id: String) async throws {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.eventsLeaveFailed) }
         show(try await api.leaveEvent(id, errorMessage: CasyStrings.eventsLeaveFailed))
@@ -155,11 +162,21 @@ struct EventsScreen: View {
                     if past {
                         EventRow(staged: s, past: true)
                     } else {
-                        Button {
-                            open(s)
-                        } label: {
-                            EventRow(staged: s, cue: cue(s))
-                                .contentShape(Rectangle())
+                        Group {
+                            if s.stage == .scheduled {
+                                NavigationLink {
+                                    DatedScreen(eventId: s.event.id, leave: leave)
+                                } label: {
+                                    EventRow(staged: s, cue: nil, chevron: false)
+                                }
+                            } else {
+                                Button {
+                                    open(s)
+                                } label: {
+                                    EventRow(staged: s, cue: cue(s))
+                                        .contentShape(Rectangle())
+                                }
+                            }
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             let mine = s.event.createdBy.isYou
@@ -187,7 +204,7 @@ struct EventsScreen: View {
         model.groups?.answer.contains { $0.event.id == event.id } ?? false
     }
 
-    /// A vote to answer is answered over the day view; an event's screen is the page's for now.
+    /// A vote to answer is answered over the day view; a vote's screen is the page's for now.
     private func open(_ s: StagedEvent) {
         if s.stage == .toSwipe {
             leave(.webScreen("/?vote=\(s.event.id)"))
@@ -233,6 +250,8 @@ struct EventRow: View {
     let staged: StagedEvent
     var cue: String?
     var past = false
+    /// Its own chevron; off inside a NavigationLink, which draws one.
+    var chevron = true
 
     private var start: Int64? {
         let event = staged.event
@@ -269,7 +288,7 @@ struct EventRow: View {
                     Image(systemName: "chevron.right").font(.footnote.weight(.semibold))
                 }
                 .foregroundStyle(Theme.primary.color)
-            } else if !past {
+            } else if !past && chevron {
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))

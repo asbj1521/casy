@@ -560,6 +560,26 @@ public enum CasyStrings {
     public static var eventsCancelFailed: String { text("events.cancelFailed") }
     public static var eventsLeaveFailed: String { text("events.leaveFailed") }
     public static var timeZoneNote: String { text("timeZone.note") }
+    public static func timeZoneYours(_ time: String) -> String { String(format: text("timeZone.yours"), time) }
+    public static var eventsYou: String { text("events.you") }
+    /// Where someone stands: "accepted", "maybe", "declined", or "none" for no answer yet.
+    public static func eventsAnswered(_ standing: String) -> String { text("events.answered.\(standing)") }
+    public static var eventsYouSuggested: String { text("events.youSuggested") }
+    public static func eventsSuggestedBy(_ name: String) -> String { String(format: text("events.suggestedBy"), name) }
+    public static func eventsOptionalAre(_ names: String) -> String { String(format: text("events.optionalAre"), names) }
+    public static var eventsCantAfterAll: String { text("events.cantAfterAll") }
+    public static var eventsMoveConfirm: String { text("events.moveConfirm") }
+    public static var eventsMoveYes: String { text("events.moveYes") }
+    public static var eventsMoveKeep: String { text("events.moveKeep") }
+    public static var eventsLeaveConfirm: String { text("events.leaveConfirm") }
+    public static var eventsLeaveEvent: String { text("events.leaveEvent") }
+    public static var eventsKeepIt: String { text("events.keepIt") }
+    public static var eventsStayIn: String { text("events.stayIn") }
+    public static var eventsAnswerFailed: String { text("events.answerFailed") }
+    public static var reportEvent: String { text("report.reportEvent") }
+    public static func reportTargetEvent(_ title: String) -> String { String(format: text("report.targetEvent"), title) }
+    public static var eventPlace: String { text("eventDetails.place") }
+    public static var eventNote: String { text("eventDetails.note") }
 
     /// The stored English names of event types (STORED_TITLES in eventTitle.ts):
     /// "Evening" is shown in the reader's language; any other title as written.

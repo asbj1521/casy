@@ -1,0 +1,431 @@
+{
+  "events": [
+    {
+      "declinedDates": [],
+      "candidates": [
+        {
+          "id": "d-bg-1",
+          "start": "2026-10-14T17:00:00.000Z",
+          "end": "2026-10-14T20:00:00.000Z",
+          "answers": {
+            "p-jonas": "accepted",
+            "p-sara": "accepted",
+            "p-mia": "declined"
+          }
+        },
+        {
+          "id": "d-bg-2",
+          "start": "2026-10-17T17:00:00.000Z",
+          "end": "2026-10-17T20:00:00.000Z",
+          "answers": {
+            "p-jonas": "accepted",
+            "p-sara": "maybe"
+          }
+        },
+        {
+          "id": "d-bg-3",
+          "start": "2026-10-21T17:00:00.000Z",
+          "end": "2026-10-21T20:00:00.000Z",
+          "answers": {
+            "p-jonas": "declined"
+          }
+        }
+      ],
+      "answerBy": "2026-10-09T08:00:00.000Z",
+      "myCalendar": null,
+      "place": "Hos Jonas, Nørrebrogade 12",
+      "note": "Tag dit yndlingsspil med",
+      "id": "ev-boardgames",
+      "group": {
+        "id": "g-friday",
+        "name": "Fredagsbar"
+      },
+      "title": "Brætspilsaften",
+      "settings": {
+        "kind": "single",
+        "durationMinutes": 180,
+        "startHour": 19
+      },
+      "status": "pending",
+      "mode": "vote",
+      "createdBy": {
+        "id": "p-jonas",
+        "name": "Jonas",
+        "isYou": false
+      },
+      "createdAt": "2026-10-06T08:00:00.000Z",
+      "updatedAt": "2026-10-06T20:00:00.000Z",
+      "currentDate": null,
+      "invitees": [
+        {
+          "profileId": "p-mia",
+          "name": "Mia Jensen",
+          "isYou": true,
+          "response": null
+        },
+        {
+          "profileId": "p-jonas",
+          "name": "Jonas",
+          "isYou": false,
+          "response": null
+        },
+        {
+          "profileId": "p-sara",
+          "name": "Sara",
+          "isYou": false,
+          "response": null
+        },
+        {
+          "profileId": "p-emil",
+          "name": "Emil",
+          "isYou": false,
+          "response": null
+        }
+      ]
+    },
+    {
+      "declinedDates": [],
+      "candidates": [
+        {
+          "id": "d-cin-1",
+          "start": "2026-10-16T18:00:00.000Z",
+          "end": "2026-10-16T20:30:00.000Z",
+          "answers": {
+            "p-mia": "accepted",
+            "p-freja": "accepted"
+          }
+        },
+        {
+          "id": "d-cin-2",
+          "start": "2026-10-23T18:00:00.000Z",
+          "end": "2026-10-23T20:30:00.000Z",
+          "answers": {
+            "p-mia": "maybe"
+          }
+        }
+      ],
+      "answerBy": "2026-10-10T08:00:00.000Z",
+      "myCalendar": null,
+      "place": null,
+      "note": null,
+      "id": "ev-cinema",
+      "group": {
+        "id": "g-running",
+        "name": "Løbeklubben"
+      },
+      "title": "Biograf",
+      "settings": {
+        "kind": "single",
+        "durationMinutes": 150,
+        "startHour": 20
+      },
+      "status": "pending",
+      "mode": "vote",
+      "createdBy": {
+        "id": "p-mia",
+        "name": "Mia Jensen",
+        "isYou": true
+      },
+      "createdAt": "2026-10-07T07:00:00.000Z",
+      "updatedAt": "2026-10-07T07:30:00.000Z",
+      "currentDate": null,
+      "invitees": [
+        {
+          "profileId": "p-mia",
+          "name": "Mia Jensen",
+          "isYou": true,
+          "response": null
+        },
+        {
+          "profileId": "p-freja",
+          "name": "Freja",
+          "isYou": false,
+          "response": null
+        },
+        {
+          "profileId": "p-oliver",
+          "name": "Oliver",
+          "isYou": false,
+          "response": null
+        }
+      ]
+    },
+    {
+      "declinedDates": [],
+      "candidates": [],
+      "answerBy": null,
+      "myCalendar": null,
+      "place": null,
+      "note": null,
+      "id": "ev-run",
+      "group": {
+        "id": "g-running",
+        "name": "Løbeklubben"
+      },
+      "title": "Løbetur",
+      "settings": {
+        "kind": "single",
+        "durationMinutes": 90,
+        "startHour": 9
+      },
+      "status": "scheduled",
+      "mode": "single",
+      "createdBy": {
+        "id": "p-freja",
+        "name": "Freja",
+        "isYou": false
+      },
+      "createdAt": "2026-10-04T08:00:00.000Z",
+      "updatedAt": "2026-10-05T08:00:00.000Z",
+      "currentDate": {
+        "id": "d-run-1",
+        "start": "2026-10-11T07:00:00.000Z",
+        "end": "2026-10-11T08:30:00.000Z"
+      },
+      "invitees": [
+        {
+          "profileId": "p-mia",
+          "name": "Mia Jensen",
+          "isYou": true,
+          "response": "accepted"
+        },
+        {
+          "profileId": "p-freja",
+          "name": "Freja",
+          "isYou": false,
+          "response": "accepted"
+        },
+        {
+          "profileId": "p-oliver",
+          "name": "Oliver",
+          "isYou": false,
+          "response": "accepted"
+        }
+      ]
+    },
+    {
+      "declinedDates": [],
+      "candidates": [],
+      "answerBy": null,
+      "myCalendar": {
+        "state": "added"
+      },
+      "place": "Mikkeller Bar",
+      "note": null,
+      "id": "ev-party",
+      "group": {
+        "id": "g-friday",
+        "name": "Fredagsbar"
+      },
+      "title": "Julefrokost",
+      "settings": {
+        "kind": "single",
+        "durationMinutes": 300,
+        "startHour": 18
+      },
+      "status": "scheduled",
+      "mode": "single",
+      "createdBy": {
+        "id": "p-mia",
+        "name": "Mia Jensen",
+        "isYou": true
+      },
+      "createdAt": "2026-09-20T08:00:00.000Z",
+      "updatedAt": "2026-09-25T08:00:00.000Z",
+      "currentDate": {
+        "id": "d-party-1",
+        "start": "2026-11-28T17:00:00.000Z",
+        "end": "2026-11-28T22:00:00.000Z"
+      },
+      "invitees": [
+        {
+          "profileId": "p-mia",
+          "name": "Mia Jensen",
+          "isYou": true,
+          "response": "accepted"
+        },
+        {
+          "profileId": "p-jonas",
+          "name": "Jonas",
+          "isYou": false,
+          "response": "accepted"
+        },
+        {
+          "profileId": "p-sara",
+          "name": "Sara",
+          "isYou": false,
+          "response": "accepted"
+        },
+        {
+          "profileId": "p-emil",
+          "name": "Emil",
+          "isYou": false,
+          "response": "accepted"
+        }
+      ]
+    },
+    {
+      "declinedDates": [],
+      "candidates": [],
+      "answerBy": null,
+      "myCalendar": null,
+      "place": null,
+      "note": null,
+      "id": "ev-birthday",
+      "group": {
+        "id": "g-friday",
+        "name": "Fredagsbar"
+      },
+      "title": "Fødselsdag",
+      "settings": {
+        "kind": "single",
+        "durationMinutes": 180,
+        "startHour": 19
+      },
+      "status": "scheduled",
+      "mode": "single",
+      "createdBy": {
+        "id": "p-jonas",
+        "name": "Jonas",
+        "isYou": false
+      },
+      "createdAt": "2026-09-10T08:00:00.000Z",
+      "updatedAt": "2026-09-12T08:00:00.000Z",
+      "currentDate": {
+        "id": "d-bday-1",
+        "start": "2026-09-26T17:00:00.000Z",
+        "end": "2026-09-26T20:00:00.000Z"
+      },
+      "invitees": [
+        {
+          "profileId": "p-mia",
+          "name": "Mia Jensen",
+          "isYou": true,
+          "response": "accepted"
+        },
+        {
+          "profileId": "p-jonas",
+          "name": "Jonas",
+          "isYou": false,
+          "response": "accepted"
+        },
+        {
+          "profileId": "p-sara",
+          "name": "Sara",
+          "isYou": false,
+          "response": "accepted"
+        },
+        {
+          "profileId": "p-emil",
+          "name": "Emil",
+          "isYou": false,
+          "response": "accepted"
+        }
+      ]
+    },
+    {
+      "declinedDates": [],
+      "candidates": [],
+      "answerBy": null,
+      "myCalendar": null,
+      "place": null,
+      "note": null,
+      "id": "ev-trip",
+      "group": {
+        "id": "g-running",
+        "name": "Løbeklubben"
+      },
+      "title": "Hyttetur",
+      "settings": {
+        "kind": "vacation",
+        "days": 3
+      },
+      "status": "no_date",
+      "mode": "single",
+      "createdBy": {
+        "id": "p-oliver",
+        "name": "Oliver",
+        "isYou": false
+      },
+      "createdAt": "2026-09-15T08:00:00.000Z",
+      "updatedAt": "2026-10-04T08:00:00.000Z",
+      "currentDate": null,
+      "invitees": [
+        {
+          "profileId": "p-mia",
+          "name": "Mia Jensen",
+          "isYou": true,
+          "response": null
+        },
+        {
+          "profileId": "p-freja",
+          "name": "Freja",
+          "isYou": false,
+          "response": null
+        },
+        {
+          "profileId": "p-oliver",
+          "name": "Oliver",
+          "isYou": false,
+          "response": null
+        }
+      ]
+    },
+    {
+      "declinedDates": [],
+      "candidates": [],
+      "answerBy": null,
+      "myCalendar": null,
+      "place": null,
+      "note": null,
+      "id": "ev-cancelled",
+      "group": {
+        "id": "g-friday",
+        "name": "Fredagsbar"
+      },
+      "title": "Aflyst",
+      "settings": {
+        "kind": "single",
+        "durationMinutes": 180,
+        "startHour": 19
+      },
+      "status": "cancelled",
+      "mode": "single",
+      "createdBy": {
+        "id": "p-mia",
+        "name": "Mia Jensen",
+        "isYou": true
+      },
+      "createdAt": "2026-09-15T08:00:00.000Z",
+      "updatedAt": "2026-09-16T08:00:00.000Z",
+      "currentDate": null,
+      "invitees": [
+        {
+          "profileId": "p-mia",
+          "name": "Mia Jensen",
+          "isYou": true,
+          "response": null
+        },
+        {
+          "profileId": "p-jonas",
+          "name": "Jonas",
+          "isYou": false,
+          "response": null
+        },
+        {
+          "profileId": "p-sara",
+          "name": "Sara",
+          "isYou": false,
+          "response": null
+        },
+        {
+          "profileId": "p-emil",
+          "name": "Emil",
+          "isYou": false,
+          "response": null
+        }
+      ]
+    }
+  ],
+  "outcome": "answered"
+}

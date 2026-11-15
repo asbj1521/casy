@@ -231,4 +231,5 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     #expect(try readsWithNothingLost("events-list-empty", as: EventsAnswer.self).events.isEmpty)
     _ = try readsWithNothingLost("events-cancel", as: EventsAnswer.self)
     _ = try readsWithNothingLost("events-leave", as: EventsAnswer.self)
+    #expect(try readsWithNothingLost("events-answer", as: AnswerOutcome.self).outcome == "answered")
 }

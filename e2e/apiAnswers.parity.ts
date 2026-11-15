@@ -123,6 +123,12 @@ const ASKED: [
   ["events-list-empty", EMPTY, "events", { action: "list" }],
   ["events-cancel", DEFAULT_WORLD, "events", { action: "cancel", proposalId: "ev-run" }],
   ["events-leave", DEFAULT_WORLD, "events", { action: "leave", proposalId: "ev-boardgames" }],
+  [
+    "events-answer",
+    DEFAULT_WORLD,
+    "events",
+    { action: "answer", proposalId: "ev-boardgames", dateId: "d-bg-1", response: "declined" },
+  ],
   ["admin-status", DEFAULT_WORLD, "admin", { action: "status" }],
   ["admin-overview", DEFAULT_WORLD, "admin", { action: "overview" }, asAdmin],
   [

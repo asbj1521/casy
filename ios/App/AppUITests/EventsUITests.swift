@@ -73,4 +73,50 @@ final class EventsUITests: XCTestCase {
         vote.tap()
         XCTAssertTrue(app.navigationBars["Mine aftaler"].waitForNonExistence(timeout: 10))
     }
+
+    private func openEvent(_ app: XCUIApplication, _ title: String, group: String) {
+        let target = row(app, title)
+        XCTAssertTrue(target.waitForExistence(timeout: 10))
+        target.tap()
+        XCTAssertTrue(app.navigationBars[group].waitForExistence(timeout: 10))
+    }
+
+    /// An agreed event says what and when, and who is coming, the suggester starred.
+    func testAnAgreedEventShowsWhatWhenAndWho() {
+        let app = launch()
+        openEvent(app, "Løbetur", group: "Løbeklubben")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Løbetur")).firstMatch.exists)
+        let freja = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Freja:")).firstMatch
+        XCTAssertTrue(freja.exists)
+        XCTAssertTrue(freja.label.contains("Foreslået af Freja"), freja.label)
+        XCTAssertTrue(app.buttons["Rapportér aftalen"].exists)
+        XCTAssertTrue(app.buttons["Forlad aftale"].exists)
+    }
+
+    /// Your own has no report, and cancelling it is asked first.
+    func testYourOwnIsCancelledFromItsScreenAfterAsking() {
+        let app = launch()
+        openEvent(app, "Julefrokost", group: "Fredagsbar")
+        XCTAssertFalse(app.buttons["Rapportér aftalen"].exists)
+        app.buttons["dated.exit"].tap()
+        XCTAssertTrue(app.staticTexts["Aflys aftalen for alle?"].waitForExistence(timeout: 5))
+        app.buttons.matching(NSPredicate(format: "label == %@ AND identifier != %@", "Aflys aftale", "dated.exit"))
+            .firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Mine aftaler"].waitForExistence(timeout: 10))
+        XCTAssertTrue(row(app, "Julefrokost").waitForNonExistence(timeout: 10))
+    }
+
+    /// Reporting an event is the report sheet with only the event to choose.
+    func testReportingAnEventSaysThankYou() {
+        let app = launch()
+        openEvent(app, "Løbetur", group: "Løbeklubben")
+        app.buttons["Rapportér aftalen"].tap()
+        let spam = app.buttons["Spam eller reklame"]
+        XCTAssertTrue(spam.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Hvad drejer det sig om?"].exists, "only one thing to report")
+        spam.tap()
+        app.buttons["Send"].tap()
+        XCTAssertTrue(app.staticTexts["Tak. Vi kigger på det."].waitForExistence(timeout: 10))
+    }
 }

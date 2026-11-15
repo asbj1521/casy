@@ -61,6 +61,7 @@ private struct BlockMember: Encodable, Sendable {
 public enum ReportTarget: Sendable, Equatable {
     case group(groupId: String)
     case member(groupId: String, memberId: String)
+    case event(groupId: String, eventId: String)
 }
 
 private struct Report: Encodable, Sendable {
@@ -68,6 +69,7 @@ private struct Report: Encodable, Sendable {
     let kind: String
     let groupId: String
     let memberId: String?
+    let eventId: String?
     let reason: String
     let note: String
 
@@ -77,10 +79,17 @@ private struct Report: Encodable, Sendable {
             kind = "group"
             self.groupId = groupId
             memberId = nil
+            eventId = nil
         case .member(let groupId, let memberId):
             kind = "member"
             self.groupId = groupId
             self.memberId = memberId
+            eventId = nil
+        case .event(let groupId, let eventId):
+            kind = "event"
+            self.groupId = groupId
+            memberId = nil
+            self.eventId = eventId
         }
         self.reason = reason
         self.note = note
@@ -147,6 +156,13 @@ private struct AdminUser: Encodable, Sendable {
 private struct EventAction: Encodable, Sendable {
     let action: String
     let proposalId: String
+}
+
+private struct EventAnswer: Encodable, Sendable {
+    let action = "answer"
+    let proposalId: String
+    let dateId: String
+    let response: EventResponse
 }
 
 private struct AdminId: Encodable, Sendable {
@@ -477,6 +493,15 @@ extension EdgeFunctions {
         let answer: EventsAnswer = try await call(
             "events", body: EventAction(action: "cancel", proposalId: id), errorMessage: errorMessage)
         return answer.events
+    }
+
+    /// Your answer for one date; `outcome` says whether that settled the vote.
+    public func answerDate(
+        _ id: String, dateId: String, response: EventResponse, errorMessage: String? = nil
+    ) async throws -> AnswerOutcome {
+        try await call(
+            "events", body: EventAnswer(proposalId: id, dateId: dateId, response: response),
+            errorMessage: errorMessage)
     }
 
     /// Someone else's event, left: you're no longer asked or counted.
