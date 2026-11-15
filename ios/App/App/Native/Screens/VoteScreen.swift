@@ -10,7 +10,8 @@ import SwiftUI
 /// at each row's end, changed with a tap. Only when no date can win does the
 /// suggester choose, with "Vælg" on each. Then the time left, the
 /// suggester's deadline and "Afgør nu", the place and note, and reporting,
-/// cancelling or leaving last. Searching again stays on the page (Planlæg).
+/// cancelling or leaving last. Søg igen hands over to the page's own vote
+/// screen, where it lives with Planlæg.
 struct VoteScreen: View {
     let eventId: String
     let leave: (LeavingProfile) -> Void
@@ -91,6 +92,12 @@ struct VoteScreen: View {
                 Section { PlaceNoteView(event: event) }
             }
             Section {
+                // Searching again is Planlæg's, still the page's: its own vote screen there.
+                Button {
+                    leave(.webScreen("/?events=\(event.id)"))
+                } label: {
+                    ListRow(CasyStrings.searchAgain, systemImage: "arrow.clockwise").contentShape(Rectangle())
+                }
                 if !mine {
                     Button {
                         reporting = true

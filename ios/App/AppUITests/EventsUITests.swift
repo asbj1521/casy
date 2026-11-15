@@ -161,6 +161,9 @@ final class EventsUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Svarfrist")).firstMatch.exists)
         XCTAssertTrue(app.buttons["vote.settle"].exists)
         XCTAssertFalse(app.buttons["Rapportér aftalen"].exists)
+        // Søg igen is the page's: the sheet closes for it.
+        app.buttons["Søg igen"].tap()
+        XCTAssertTrue(app.navigationBars["Løbeklubben"].waitForNonExistence(timeout: 10))
     }
 
     /// A tap on the cross changes your answer for that date.

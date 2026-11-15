@@ -631,6 +631,7 @@ public enum CasyStrings {
     public static var eventsDeadlineFailed: String { text("events.deadlineFailed") }
     public static var eventsSettleFailed: String { text("events.settleFailed") }
     public static var eventsRemindFailed: String { text("events.remindFailed") }
+    public static var searchAgain: String { text("searchAgain.button") }
 
     /// The stored English names of event types (STORED_TITLES in eventTitle.ts):
     /// "Evening" is shown in the reader's language; any other title as written.

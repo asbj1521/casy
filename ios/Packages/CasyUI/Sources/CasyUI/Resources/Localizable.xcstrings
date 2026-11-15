@@ -9792,6 +9792,23 @@
           }
         }
       }
+    },
+    "searchAgain.button": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Søg igen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search again"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

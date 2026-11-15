@@ -398,6 +398,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "events.deadlineFailed": (t) => t.api.setDeadline,
   "events.settleFailed": (t) => t.api.settleVote,
   "events.remindFailed": (t) => t.api.remind,
+  "searchAgain.button": (t) => t.searchAgain.button,
   "admin.deleteGroupFailed": (t) => t.api.adminDeleteGroup,
   "admin.removeMemberFailed": (t) => t.api.adminRemoveMember,
   "admin.deleteAccountFailed": (t) => t.api.adminDeleteAccount,
