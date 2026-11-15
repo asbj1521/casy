@@ -29,7 +29,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
         #if DEBUG
-            ["settings", "profile"]
+            ["settings", "profile", "events"]
         #else
             []
         #endif
@@ -121,6 +121,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     MyDataModel.shared.reset()
                     AdminModel.shared.reset()
                     AdminReviewsModel.shared.reset()
+                    EventsModel.shared.reset()
                 }
             }
             call.resolve()
@@ -173,24 +174,26 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         let enablePush: () async -> String = { [weak self] in
             await self?.enablePush() ?? "failed"
         }
+        let leave: (LeavingProfile) -> Void = { [weak self] leaving in
+            switch leaving {
+            case .webScreen(let address):
+                self?.dismissOpenScreen(["next": address])
+            case .signOut:
+                self?.dismissOpenScreen(["signOut": true])
+            case .joined:
+                self?.dismissOpenScreen(["joined": true])
+            case .accountDeleted:
+                self?.dismissOpenScreen(["accountDeleted": true])
+            }
+        }
         let root: AnyView =
-            screen == "profile"
+            screen == "events"
+            ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
+            : screen == "profile"
             ? AnyView(
                 ProfileScreen(
                     preferences: NativePreferences.shared, build: build, userAgent: userAgent,
-                    onChoose: onChoose, onDone: onDone, enablePush: enablePush,
-                    leave: { [weak self] leaving in
-                        switch leaving {
-                        case .webScreen(let address):
-                            self?.dismissOpenScreen(["next": address])
-                        case .signOut:
-                            self?.dismissOpenScreen(["signOut": true])
-                        case .joined:
-                            self?.dismissOpenScreen(["joined": true])
-                        case .accountDeleted:
-                            self?.dismissOpenScreen(["accountDeleted": true])
-                        }
-                    }))
+                    onChoose: onChoose, onDone: onDone, enablePush: enablePush, leave: leave))
             : AnyView(
                 SettingsScreen(
                     preferences: NativePreferences.shared, onChoose: onChoose, onDone: onDone,

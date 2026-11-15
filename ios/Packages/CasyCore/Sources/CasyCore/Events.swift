@@ -27,16 +27,70 @@ public struct PeopleSettings: Codable, Sendable, Equatable {
 }
 
 /// What these rules read of an event's settings; the rest arrives with the engine.
+/// When a meeting may start (#133): whole half hours, `from` before `to`.
+public struct StartWindow: Codable, Sendable, Equatable {
+    public var from: Double
+    public var to: Double
+}
+
+/// A trip's shape: the weekday it starts, the days it touches, its first and last hour.
+public struct WeeklySpanShape: Codable, Sendable, Equatable {
+    public var anchorDow: Int
+    public var spanDays: Int
+    public var startHour: Double
+    public var endHour: Double
+}
+
+/// An event's settings (`EventSettings` in eventSearch.ts): a meeting's
+/// length and hour, a trip's shape, a vacation's days, and who it is for.
 public struct EventSettings: Codable, Sendable, Equatable {
     public var kind: EventKind
+    public var durationMinutes: Int?
+    public var startHour: Double?
+    public var anyTime: Bool?
+    public var startWindow: StartWindow?
+    public var allowedDays: [Int]?
+    public var shape: WeeklySpanShape?
     public var days: Int?
     public var people: PeopleSettings?
 
-    public init(kind: EventKind, days: Int? = nil, people: PeopleSettings? = nil) {
+    public init(
+        kind: EventKind, durationMinutes: Int? = nil, startHour: Double? = nil, days: Int? = nil,
+        people: PeopleSettings? = nil
+    ) {
         self.kind = kind
+        self.durationMinutes = durationMinutes
+        self.startHour = startHour
         self.days = days
         self.people = people
     }
+}
+
+/// What an event is likely to cause for the people going (#113).
+public struct EventImpact: Codable, Sendable, Equatable {
+    public var v: Int
+    public var effects: [String]
+    public var runsLate: Bool
+    public var strain: String
+    public var recoveryDays: Int
+    public var outdoors: Bool
+    public var daylight: Bool
+    public var confidence: String
+    public var reason: String
+}
+
+/// A date someone said no to after it was agreed (#74).
+public struct DeclinedDate: Codable, Sendable, Equatable {
+    public var start: String
+    public var end: String
+    public var declinedBy: String
+}
+
+/// Whether Casy put the event into your own calendar: "added", "adding" or "gone".
+public struct MyCalendarState: Codable, Sendable, Equatable {
+    public var state: String
+    public var error: String?
+    public var onPhone: Bool?
 }
 
 public struct CandidateDate: Codable, Sendable, Equatable {
@@ -127,12 +181,16 @@ public struct SuggestedEvent: Codable, Sendable, Equatable {
     public var status: EventStatus
     public var mode: EventMode
     public var answerBy: String?
+    public var remindedAt: String?
+    public var impact: EventImpact?
     public var createdBy: EventCreator
     public var createdAt: String
     public var updatedAt: String
     public var currentDate: EventDate?
     public var candidates: [CandidateDate]
     public var invitees: [EventInvitee]
+    public var declinedDates: [DeclinedDate]?
+    public var myCalendar: MyCalendarState?
 
     public init(
         id: String,

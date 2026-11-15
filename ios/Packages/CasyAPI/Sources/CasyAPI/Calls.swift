@@ -1,6 +1,8 @@
 // The calls the first native screens need: the same functions and actions the
 // web's src/api makes. `errorMessage` is the screen's own fallback.
 
+import CasyCore
+
 private struct Action: Encodable, Sendable {
     let action: String
 }
@@ -140,6 +142,11 @@ private struct AdminMember: Encodable, Sendable {
 private struct AdminUser: Encodable, Sendable {
     let action = "deleteUser"
     let profileId: String
+}
+
+private struct EventAction: Encodable, Sendable {
+    let action: String
+    let proposalId: String
 }
 
 private struct AdminId: Encodable, Sendable {
@@ -456,6 +463,27 @@ extension EdgeFunctions {
         let answer: AdminTesterAnswer = try await call(
             "admin", body: AdminTester(profileId: profileId, allowed: allowed), errorMessage: errorMessage)
         return answer.tester
+    }
+
+    /// Every event you were asked about.
+    public func events(errorMessage: String? = nil) async throws -> [SuggestedEvent] {
+        let answer: EventsAnswer = try await call(
+            "events", body: Action(action: "list"), errorMessage: errorMessage)
+        return answer.events
+    }
+
+    /// Your own event, cancelled for everyone; the events as they are now.
+    public func cancelEvent(_ id: String, errorMessage: String? = nil) async throws -> [SuggestedEvent] {
+        let answer: EventsAnswer = try await call(
+            "events", body: EventAction(action: "cancel", proposalId: id), errorMessage: errorMessage)
+        return answer.events
+    }
+
+    /// Someone else's event, left: you're no longer asked or counted.
+    public func leaveEvent(_ id: String, errorMessage: String? = nil) async throws -> [SuggestedEvent] {
+        let answer: EventsAnswer = try await call(
+            "events", body: EventAction(action: "leave", proposalId: id), errorMessage: errorMessage)
+        return answer.events
     }
 
     /// What people reported, newest first (#142).

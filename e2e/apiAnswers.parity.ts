@@ -119,6 +119,10 @@ const ASKED: [
     "account",
     { action: "push-set", kind: "deadline_near", on: false },
   ],
+  ["events-list", DEFAULT_WORLD, "events", { action: "list" }],
+  ["events-list-empty", EMPTY, "events", { action: "list" }],
+  ["events-cancel", DEFAULT_WORLD, "events", { action: "cancel", proposalId: "ev-run" }],
+  ["events-leave", DEFAULT_WORLD, "events", { action: "leave", proposalId: "ev-boardgames" }],
   ["admin-status", DEFAULT_WORLD, "admin", { action: "status" }],
   ["admin-overview", DEFAULT_WORLD, "admin", { action: "overview" }, asAdmin],
   [

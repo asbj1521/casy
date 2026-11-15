@@ -4,6 +4,7 @@
 // screens only display (a provider, a status) stay strings, so a new value
 // from the server can't stop a whole answer from reading.
 
+import CasyCore
 import Foundation
 
 public struct WhoAmI: Codable, Sendable, Equatable {
@@ -530,4 +531,9 @@ public struct PlanCorrection: Codable, Sendable, Equatable {
     public var plan: [String: JSONValue]
     public var overridden: [String]
     public var final: [String: JSONValue]
+}
+
+/// Every event you were asked about (`eventsCall` in src/api/events.ts).
+public struct EventsAnswer: Codable, Sendable, Equatable {
+    public var events: [SuggestedEvent]
 }

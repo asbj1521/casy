@@ -16,7 +16,7 @@ import { isNativeApp } from "@/lib/nativeApp";
 import type { ThemeChoice } from "@/lib/theme";
 
 /** A screen the app may draw natively in place of the page's own. */
-export type NativeScreen = "settings" | "profile";
+export type NativeScreen = "settings" | "profile" | "events";
 
 interface LentSession {
   accessToken: string;

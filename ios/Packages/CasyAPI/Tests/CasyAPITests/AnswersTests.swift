@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 
+import CasyCore
 @testable import CasyAPI
 
 // The answers the fake backend gives the browser tests (e2e/apiAnswers.parity.ts).
@@ -221,4 +222,13 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     #expect(plan.plan["startHour"]?.compactJSON == "18" && plan.final["startHour"]?.compactJSON == "16")
     #expect(plan.plan["weekdays"]?.compactJSON == "[5,6]")
     #expect(plan.plan["kind"]?.compactJSON == "\"evening\"")
+}
+
+@Test func eventsRead() throws {
+    let events = try readsWithNothingLost("events-list", as: EventsAnswer.self).events
+    #expect(events.count == 7)
+    #expect(events.first { $0.id == "ev-boardgames" }?.mode == .vote)
+    #expect(try readsWithNothingLost("events-list-empty", as: EventsAnswer.self).events.isEmpty)
+    _ = try readsWithNothingLost("events-cancel", as: EventsAnswer.self)
+    _ = try readsWithNothingLost("events-leave", as: EventsAnswer.self)
 }

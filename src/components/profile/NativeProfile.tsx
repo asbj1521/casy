@@ -1,8 +1,7 @@
-import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/context/auth";
-import { onNativeClosed, openNativeScreen, type NativeClosed } from "@/lib/nativeBridge";
+import { useNativeSheet } from "@/hooks/useNativeSheet";
 import { askForPush } from "@/lib/pushAsk";
 import { supabaseAuth } from "@/lib/supabase";
 
@@ -15,12 +14,10 @@ import { supabaseAuth } from "@/lib/supabase";
 export default function NativeProfile({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate();
   const { signOut } = useAuth();
-
-  const closedNow = useRef<(closed: NativeClosed) => void>(() => {});
-  const closeNow = useRef(onClose);
-  useEffect(() => {
-    closeNow.current = onClose;
-    closedNow.current = ({ next, signOut: out, joined, accountDeleted }) => {
+  useNativeSheet(
+    "profile",
+    open,
+    ({ next, signOut: out, joined, accountDeleted }) => {
       if (accountDeleted) {
         // As DeleteAccountSection: the server no longer knows the login, so only this
         // device forgets it, and the sign-in page says the account is gone.
@@ -41,30 +38,8 @@ export default function NativeProfile({ open, onClose }: { open: boolean; onClos
       } else {
         onClose();
       }
-    };
-  });
-
-  useEffect(() => {
-    if (!open) return;
-    let handle: { remove: () => Promise<void> } | undefined;
-    let gone = false;
-    onNativeClosed((closed) => {
-      if (closed.screen === "profile") closedNow.current(closed);
-    })
-      .then(async (h) => {
-        if (gone) return void h.remove();
-        handle = h;
-        await openNativeScreen("profile");
-      })
-      .catch((err) => {
-        console.warn("opening the native Profil failed", err);
-        closeNow.current();
-      });
-    return () => {
-      gone = true;
-      void handle?.remove();
-    };
-  }, [open]);
-
+    },
+    onClose,
+  );
   return null;
 }

@@ -540,4 +540,36 @@ public enum CasyStrings {
     public static func pushTestNone(_ reasons: [String]) -> String {
         reasons.isEmpty ? text("push.testNone") : String(format: text("push.testNoneWhy"), reasons.joined(separator: ", "))
     }
+
+    // Aftaler (#199).
+    public static var eventsTitle: String { text("events.title") }
+    public static var eventsLoading: String { text("events.loading") }
+    public static var eventsLoadFailed: String { text("events.loadFailed") }
+    public static var eventsGroupAnswer: String { text("events.groupAnswer") }
+    public static var eventsGroupComing: String { text("events.groupComing") }
+    public static var eventsGroupPast: String { text("events.groupPast") }
+    public static var eventsAnswerNow: String { text("events.answerNow") }
+    public static var eventsChoose: String { text("events.choose") }
+    public static var eventsSwipeCancel: String { text("events.swipeCancel") }
+    public static var eventsSwipeLeave: String { text("events.swipeLeave") }
+    public static var eventsCancelConfirm: String { text("events.cancelConfirm") }
+    public static var eventsCancelEvent: String { text("events.cancelEvent") }
+    public static var eventsEmptyTitle: String { text("events.emptyTitle") }
+    public static var eventsEmptyBody: String { text("events.emptyBody") }
+    public static var eventsPlan: String { text("events.plan") }
+    public static var eventsCancelFailed: String { text("events.cancelFailed") }
+    public static var eventsLeaveFailed: String { text("events.leaveFailed") }
+    public static var timeZoneNote: String { text("timeZone.note") }
+
+    /// The stored English names of event types (STORED_TITLES in eventTitle.ts):
+    /// "Evening" is shown in the reader's language; any other title as written.
+    private static let storedTitles = [
+        "Evening": "evening", "Lunch": "lunch", "Dinner": "dinner", "Gaming": "gaming",
+        "Night out": "nightout", "Weekend trip": "weekend", "Vacation": "vacation",
+        "Hangout": "meeting", "Gaming session": "gaming",
+    ]
+
+    public static func eventTitle(_ stored: String) -> String {
+        storedTitles[stored].map { text("eventTypes.\($0)") } ?? stored
+    }
 }

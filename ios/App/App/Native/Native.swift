@@ -18,4 +18,13 @@ enum Native {
             session: SessionBox.shared,
             language: { CasyStrings.language == "en" ? Lang.en : Lang.da })
     }
+
+    /// Now, as epoch ms: the clock every event rule reads. A UI test fixes it
+    /// (`-casyNow`) to the fake backend's moment, as the browser tests do.
+    static var now: Int64 {
+        #if DEBUG
+            if let fixed = TestLaunch.now { return fixed }
+        #endif
+        return Int64(Date().timeIntervalSince1970 * 1000)
+    }
 }

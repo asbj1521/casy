@@ -1,4 +1,5 @@
 #if DEBUG
+    import CasyCore
     import CasyUI
     import Foundation
     import UIKit
@@ -9,7 +10,8 @@
     ///
     /// `-casyBackend <url>` lends a made-up login, `-casyOpenScreen <name>`
     /// opens a screen, `-casyPushPermission <prompt|granted|denied>` answers
-    /// for iOS, whose real prompt shows once, and `-casyLang <da|en>`.
+    /// for iOS, whose real prompt shows once, `-casyLang <da|en>`, and
+    /// `-casyNow <ISO instant>` fixes the clock the event rules read.
     enum TestLaunch {
         private static let defaults = UserDefaults.standard
 
@@ -20,6 +22,7 @@
         static var screen: String? { defaults.string(forKey: "casyOpenScreen") }
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
         static var lang: String? { defaults.string(forKey: "casyLang") }
+        static var now: Int64? { defaults.string(forKey: "casyNow").flatMap(parseInstant) }
 
         /// `-casyTestPicture YES`: Fotobibliotek hands over a made-up photo, as
         /// the system's photo picker runs outside the app, where tests can't reach.

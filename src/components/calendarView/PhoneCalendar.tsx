@@ -1,3 +1,4 @@
+import NativeEvents from "@/components/myEvents/phone/NativeEvents";
 import NativeProfile from "@/components/profile/NativeProfile";
 import { useNativeScreen } from "@/hooks/useNativeScreen";
 import {
@@ -264,6 +265,8 @@ export default function PhoneCalendar() {
   // The app may draw the profile list itself (#198); its screens that aren't
   // native yet are still the sheet's, at `?profile=<screen>`.
   const nativeProfile = useNativeScreen("profile");
+  // And Aftaler's list (#199); an event's screen is still the sheet's, at `?events=<id>`.
+  const nativeEvents = useNativeScreen("events");
   const openProfile = () => navigate({ search: "?profile" }, { state: { fromMonth: true } });
   // What pickDay (stable, below) needs to know of the votes (#172), set further down.
   const waitingNow = useRef<VoteEvent[]>([]);
@@ -678,15 +681,19 @@ export default function PhoneCalendar() {
         />
       )}
       {homeVotes.celebrations > 0 && <Celebration key={homeVotes.celebrations} />}
-      {(settled || eventsOpen) && (
-        <Suspense fallback={null}>
-          <EventsSheet
-            open={eventsOpen}
-            onClose={closeOverlay}
-            origin={eventsButton}
-            arrived={arrived.has("events")}
-          />
-        </Suspense>
+      {nativeEvents && !params.get("events") ? (
+        <NativeEvents open={eventsOpen} onClose={closeOverlay} />
+      ) : (
+        (settled || eventsOpen) && (
+          <Suspense fallback={null}>
+            <EventsSheet
+              open={eventsOpen}
+              onClose={closeOverlay}
+              origin={eventsButton}
+              arrived={arrived.has("events")}
+            />
+          </Suspense>
+        )
       )}
       {nativeProfile && !params.get("profile") ? (
         <NativeProfile open={profileOpen} onClose={closeOverlay} />
