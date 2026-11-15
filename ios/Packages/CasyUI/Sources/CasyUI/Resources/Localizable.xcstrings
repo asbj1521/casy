@@ -8092,6 +8092,23 @@
           }
         }
       }
+    },
+    "admin.testerTurnOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ skal ikke længere være AI-tester"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is no longer an AI tester"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

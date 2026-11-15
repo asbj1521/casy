@@ -84,7 +84,9 @@ final class GroupsModel {
 
     /// Everyone you could invite to `groupId`: your groups' members and your
     /// friends, without who is in it already (`knownPeople`).
-    func people(for groupId: String) -> [KnownPerson] {
+    /// Everyone you know, from your groups and your friends; `groupId`'s own
+    /// members left out when inviting to it (Venner passes none).
+    func people(for groupId: String? = nil) -> [KnownPerson] {
         let mine = (groups ?? []).map { group in
             GroupMembers(
                 id: group.id, name: group.name,

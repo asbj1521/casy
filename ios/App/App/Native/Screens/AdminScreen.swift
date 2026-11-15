@@ -559,7 +559,7 @@ struct AdminUserScreen: View {
                         ListSwitchRow(
                             CasyStrings.adminTesterOn,
                             isOn: Binding(get: { tester }, set: { on in run { try await model.setTester(u, on) } }),
-                            detail: CasyStrings.adminTesterTurnOn(u.name))
+                            detail: tester ? CasyStrings.adminTesterTurnOff(u.name) : CasyStrings.adminTesterTurnOn(u.name))
                     }
                     Button {
                         Task { await model.syncUser(u.id) }

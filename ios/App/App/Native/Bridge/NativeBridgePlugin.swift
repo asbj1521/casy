@@ -40,6 +40,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     private var pushAnswer: CheckedContinuation<String, Never>?
     /// Native Dine data waiting for the page to count what it keeps on the phone.
     private var factsAnswer: CheckedContinuation<Int, Never>?
+    /// Which question `factsAnswer` waits on, so a late timeout can't end a newer one.
+    private var factsAsked = 0
 
     override public func load() {
         let askWeb: @Sendable () -> Void = { [weak self] in
@@ -221,7 +223,17 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         #endif
         return await withCheckedContinuation { continuation in
             factsAnswer = continuation
+            factsAsked += 1
+            let asked = factsAsked
             notifyListeners("needPhoneFacts", data: [:])
+            // A page that doesn't answer (reloading, not listening yet) must
+            // not keep Dine data loading for ever: no count after 3 seconds.
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(3))
+                guard let self, self.factsAsked == asked else { return }
+                self.factsAnswer?.resume(returning: 0)
+                self.factsAnswer = nil
+            }
         }
     }
 

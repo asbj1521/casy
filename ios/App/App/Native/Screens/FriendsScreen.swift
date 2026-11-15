@@ -16,17 +16,7 @@ struct FriendsScreen: View {
     @State private var failure: String?
 
     /// Everyone you know: your groups' members and your friends.
-    private var people: [KnownPerson] {
-        let mine = (model.groups ?? []).map { group in
-            GroupMembers(
-                id: group.id, name: group.name,
-                members: group.members.map {
-                    (profileId: $0.profileId, name: $0.name, isYou: $0.isYou, avatarUrl: $0.avatarUrl)
-                })
-        }
-        return knownPeople(
-            mine, friends: model.friends.map { (profileId: $0.profileId, name: $0.name, avatarUrl: $0.avatarUrl) })
-    }
+    private var people: [KnownPerson] { model.people() }
 
     var body: some View {
         let everyone = people

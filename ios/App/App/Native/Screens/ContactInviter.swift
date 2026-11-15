@@ -30,12 +30,13 @@ final class ContactInviter: NSObject {
             default: return .failed
             }
         }
-        share(text: message, url: url, title: shareTitle)
+        await present(share: message, url: url, title: shareTitle)
         return .shared
     }
 
-    /// The share sheet, for Del link's fallback.
-    func share(text: String, url: String, title: String) {
+    /// The share sheet, on a phone that can't text.
+    private func present(share text: String, url: String, title: String) async {
+        await Self.settled()
         guard let top = Self.top(), let link = URL(string: url) else { return }
         let sheet = UIActivityViewController(activityItems: [text, link], applicationActivities: nil)
         sheet.setValue(title, forKey: "subject")
@@ -56,6 +57,7 @@ final class ContactInviter: NSObject {
     }
 
     private func text(_ recipients: [String], body: String) async -> MessageComposeResult {
+        await Self.settled()
         guard let top = Self.top() else { return .failed }
         return await withCheckedContinuation { continuation in
             texting = continuation
@@ -83,8 +85,26 @@ final class ContactInviter: NSObject {
             .compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive }
         var top = scene?.keyWindow?.rootViewController
-        while let next = top?.presentedViewController { top = next }
+        while let next = top?.presentedViewController, !next.isBeingDismissed { top = next }
         return top
+    }
+
+    /// Until nothing is sliding in or out: the contact picker is still closing
+    /// itself when it hands back the people, and UIKit won't present on a screen
+    /// mid-way. Gives up after two seconds rather than wait for ever.
+    private static func settled() async {
+        for _ in 0..<40 {
+            var screen = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first { $0.activationState == .foregroundActive }?.keyWindow?.rootViewController
+            var moving = false
+            while let s = screen {
+                if s.isBeingDismissed || s.isBeingPresented || s.transitionCoordinator != nil { moving = true }
+                screen = s.presentedViewController
+            }
+            if !moving { return }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
     }
 }
 

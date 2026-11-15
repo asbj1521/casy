@@ -458,7 +458,7 @@ private struct QrCode: View {
 
     var body: some View {
         Group {
-            if let image = Self.image(text) {
+            if let image = Self.image(for: text) {
                 Image(uiImage: image)
                     .interpolation(.none)
                     .resizable()
@@ -472,14 +472,21 @@ private struct QrCode: View {
         .frame(maxWidth: .infinity)
     }
 
-    private static func image(_ text: String) -> UIImage? {
+    /// Drawn once per link: the sheet redraws on every keystroke and tick.
+    private static let context = CIContext()
+    private static var drawn: (text: String, image: UIImage)?
+
+    private static func image(for text: String) -> UIImage? {
+        if let drawn, drawn.text == text { return drawn.image }
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(text.utf8)
         filter.correctionLevel = "M"
         guard let output = filter.outputImage,
-            let cg = CIContext().createCGImage(output, from: output.extent)
+            let cg = context.createCGImage(output, from: output.extent)
         else { return nil }
-        return UIImage(cgImage: cg)
+        let image = UIImage(cgImage: cg)
+        drawn = (text, image)
+        return image
     }
 }
 

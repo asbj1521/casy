@@ -435,6 +435,7 @@ public enum CasyStrings {
     public static var adminAiAccessFailed: String { text("admin.aiAccessFailed") }
     public static func adminSyncUserTitle(_ name: String) -> String { String(format: text("admin.syncUserTitle"), name) }
     public static func adminTesterTurnOn(_ name: String) -> String { String(format: text("admin.testerTurnOn"), name) }
+    public static func adminTesterTurnOff(_ name: String) -> String { String(format: text("admin.testerTurnOff"), name) }
     public static func adminTypeToConfirm(_ name: String) -> String { String(format: text("admin.typeToConfirm"), name) }
     /// Asked before deleting a group for everyone in it.
     public static func adminDeleteGroupConfirm(_ name: String, members: Int) -> String {

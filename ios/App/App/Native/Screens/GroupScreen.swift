@@ -60,8 +60,8 @@ struct GroupScreen: View {
 
     private func content(_ group: CasyAPI.Group, index: Int) -> some View {
         let sole = group.members.count <= 1
-        let canDelete = !sole && group.createdBy != nil
-            && group.createdBy == group.members.first(where: \.isYou)?.profileId
+        // The same rule as Grupper's swipe, so the two never offer different things.
+        let canDelete = model.swipe(for: group) == .deleteForAll
         return List {
             Section {
                 header(group, index: index)
@@ -142,13 +142,15 @@ struct GroupScreen: View {
         }
         .casyPushedBar(group.name, close: CasyStrings.done, action: closeSheet)
         .confirmationDialog(
-            question(group, sole: sole), isPresented: isAsking, titleVisibility: .visible
-        ) {
+            question(group, sole: sole), isPresented: isAsking, titleVisibility: .visible,
+            presenting: asking
+        ) { asked in
+            // `asked`, not `asking`: the dialog clears `asking` before its button runs.
             Button(
-                asking == .delete || sole ? CasyStrings.groupDeleteGroup : CasyStrings.groupLeave,
+                asked == .delete || sole ? CasyStrings.groupDeleteGroup : CasyStrings.groupLeave,
                 role: .destructive
             ) {
-                remove(group, forAll: asking == .delete)
+                remove(group, forAll: asked == .delete)
             }
             Button(CasyStrings.cancel, role: .cancel) {}
         }

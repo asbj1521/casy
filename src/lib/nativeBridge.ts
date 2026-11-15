@@ -183,7 +183,9 @@ export async function onNeedPhoneFacts(
   return plugin.addListener("needPhoneFacts", () => {
     void count()
       .catch(() => ({ labels: 0 }))
-      .then((facts) => plugin.phoneFacts(facts));
+      .then((facts) => plugin.phoneFacts(facts))
+      // The app stops waiting by itself after a few seconds.
+      .catch(() => {});
   });
 }
 

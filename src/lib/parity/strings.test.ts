@@ -298,6 +298,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "admin.syncUserTitle": (t) => t.admin.syncUserTitle("%@"),
   "admin.testerOff": (t) => t.admin.testerOff,
   "admin.testerTurnOn": (t) => t.admin.testerTurnOn("%@"),
+  "admin.testerTurnOff": (t) => t.admin.testerTurnOff("%@"),
   "admin.deleteGroupFailed": (t) => t.api.adminDeleteGroup,
   "admin.removeMemberFailed": (t) => t.api.adminRemoveMember,
   "admin.deleteAccountFailed": (t) => t.api.adminDeleteAccount,
