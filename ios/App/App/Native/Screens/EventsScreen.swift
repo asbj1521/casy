@@ -26,7 +26,10 @@ final class EventsModel {
     var groups: PhoneEventGroups? { events.map { phoneEventGroups($0, now: Self.now) } }
 
     func load() async {
-        guard let api = await Native.api() else { return }
+        guard let api = await Native.api() else {
+            failure = CasyStrings.eventsLoadFailed
+            return
+        }
         do {
             show(try await api.events(errorMessage: CasyStrings.eventsLoadFailed))
             failure = nil
@@ -44,11 +47,7 @@ final class EventsModel {
     /// the database the moment the last answer arrives (#74): ask a few times
     /// in quick succession until the decided date is here (useDecidingRefresh).
     private func askWhileDeciding() {
-        let now = Self.now
-        let waiting = (events ?? []).contains {
-            $0.status == .pending && isVote($0) && allAnswered($0, now: now) && leader($0, now: now) != nil
-        }
-        guard waiting, deciding == nil else { return }
+        guard (events ?? []).contains(where: Self.isDeciding), deciding == nil else { return }
         deciding = Task {
             defer { deciding = nil }
             for _ in 0..<6 {
@@ -56,9 +55,14 @@ final class EventsModel {
                 if Task.isCancelled { return }
                 guard let api = await Native.api(), let fresh = try? await api.events() else { continue }
                 events = fresh
-                if !fresh.contains(where: { $0.status == .pending && allAnswered($0, now: Self.now) }) { return }
+                if !fresh.contains(where: Self.isDeciding) { return }
             }
         }
+    }
+
+    /// A vote everyone has answered with a date nobody declined: the database decides it now.
+    private static func isDeciding(_ event: SuggestedEvent) -> Bool {
+        event.status == .pending && isVote(event) && allAnswered(event, now: now) && leader(event, now: now) != nil
     }
 
     func cancel(_ id: String) async throws {
@@ -151,7 +155,7 @@ struct EventsScreen: View {
                 if groups.answer.isEmpty && groups.coming.isEmpty && groups.past.isEmpty {
                     empty
                 } else {
-                    section(CasyStrings.eventsGroupAnswer, groups.answer)
+                    section(CasyStrings.eventsGroupAnswer, groups.answer, answering: true)
                     section(CasyStrings.eventsGroupComing, groups.coming)
                     section(CasyStrings.eventsGroupPast, groups.past, past: true)
                 }
@@ -187,7 +191,9 @@ struct EventsScreen: View {
         return !sameClock(TimeZone.current.identifier, appTimeZone, year)
     }
 
-    @ViewBuilder private func section(_ title: String, _ staged: [StagedEvent], past: Bool = false) -> some View {
+    @ViewBuilder private func section(
+        _ title: String, _ staged: [StagedEvent], past: Bool = false, answering: Bool = false
+    ) -> some View {
         if !staged.isEmpty {
             Section(title) {
                 ForEach(staged, id: \.event.id) { s in
@@ -205,13 +211,13 @@ struct EventsScreen: View {
                                 NavigationLink {
                                     VoteScreen(eventId: s.event.id, leave: leave)
                                 } label: {
-                                    EventRow(staged: s, cue: cue(s), chevron: false)
+                                    EventRow(staged: s, cue: cue(s, answering: answering), chevron: false)
                                 }
                             } else {
                                 Button {
                                     open(s)
                                 } label: {
-                                    EventRow(staged: s, cue: cue(s))
+                                    EventRow(staged: s, cue: cue(s, answering: answering))
                                         .contentShape(Rectangle())
                                 }
                             }
@@ -229,17 +235,11 @@ struct EventsScreen: View {
         }
     }
 
-    private func cue(_ s: StagedEvent) -> String? {
-        switch s.stage {
-        case .toSwipe: CasyStrings.eventsAnswerNow
-        case .voting where needsYourChoice(s.event): CasyStrings.eventsChoose
-        default: nil
-        }
-    }
-
-    /// In Svar nu without a vote to answer: the suggester must choose a date.
-    private func needsYourChoice(_ event: SuggestedEvent) -> Bool {
-        model.groups?.answer.contains { $0.event.id == event.id } ?? false
+    /// What a press does, in Svar nu: answer, or (a vote in Svar nu that isn't
+    /// yours to answer) choose its date.
+    private func cue(_ s: StagedEvent, answering: Bool) -> String? {
+        guard answering else { return nil }
+        return s.stage == .toSwipe ? CasyStrings.eventsAnswerNow : CasyStrings.eventsChoose
     }
 
     /// A vote to answer is answered over the day view, still the page's.

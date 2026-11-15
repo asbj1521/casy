@@ -19,12 +19,16 @@ struct AddToCalendar: View {
     @State private var choosing = false
     @State private var file: EventFileToShare?
     @State private var failure: String?
+    /// Why the calendars couldn't be read; nothing is offered until they are.
+    @State private var loadFailure: String?
 
     /// The calendars that can take it, by account (`primaryOptions`).
-    private var options: [(account: String, calendars: [CalendarSource])] {
+    private var options: [CalendarChoices] {
         connections.filter { $0.status == "connected" }
             .map { c in
-                (c.account_label ?? c.provider, c.calendar_sources.filter { $0.writable || $0.id == primary?.calendarId })
+                CalendarChoices(
+                    id: c.id, account: c.account_label ?? c.provider,
+                    calendars: c.calendar_sources.filter { $0.writable || $0.id == primary?.calendarId })
             }
             .filter { !$0.calendars.isEmpty }
     }
@@ -107,6 +111,15 @@ struct AddToCalendar: View {
 
     private func press() {
         failure = nil
+        // Unknown whether there is a primary calendar: ask again rather than
+        // offer a choice that would replace one already chosen.
+        if loadFailure != nil {
+            Task {
+                await loadCalendars()
+                failure = loadFailure
+            }
+            return
+        }
         if writesDirectly {
             add()
         } else if canChoose {
@@ -117,11 +130,18 @@ struct AddToCalendar: View {
     }
 
     private func loadCalendars() async {
-        guard let api = await Native.api() else { return }
-        async let primary = try? api.primaryCalendar(errorMessage: CasyStrings.addToCalendarLoadPrimaryFailed)
-        async let connections = try? api.calendarConnections(errorMessage: CasyStrings.addToCalendarLoadStatusFailed)
-        self.primary = await primary ?? nil
-        self.connections = await connections ?? []
+        guard let api = await Native.api() else {
+            loadFailure = CasyStrings.addToCalendarLoadPrimaryFailed
+            return
+        }
+        do {
+            async let primary = api.primaryCalendar(errorMessage: CasyStrings.addToCalendarLoadPrimaryFailed)
+            async let connections = api.calendarConnections(errorMessage: CasyStrings.addToCalendarLoadStatusFailed)
+            (self.primary, self.connections) = try await (primary, connections)
+            loadFailure = nil
+        } catch {
+            loadFailure = error.localizedDescription
+        }
     }
 
     private func add(choosing calendarId: String? = nil) {
@@ -158,8 +178,15 @@ struct AddToCalendar: View {
 }
 
 /// Which calendar agreed events go into: the choice becomes the primary calendar.
+/// One account's calendars that can take an event.
+private struct CalendarChoices: Identifiable {
+    let id: String
+    let account: String
+    let calendars: [CalendarSource]
+}
+
 private struct ChooseCalendarSheet: View {
-    let options: [(account: String, calendars: [CalendarSource])]
+    let options: [CalendarChoices]
     let choose: (String) -> Void
     let download: () -> Void
 
@@ -173,7 +200,7 @@ private struct ChooseCalendarSheet: View {
                 } footer: {
                     Text(CasyStrings.addToCalendarChooseHelp)
                 }
-                ForEach(options, id: \.account) { group in
+                ForEach(options) { group in
                     Section(group.account) {
                         ForEach(group.calendars) { c in
                             ListPickRow(c.name, isSelected: chosen == c.id) { chosen = c.id }

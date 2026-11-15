@@ -248,10 +248,15 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }
 
     /// The page has written what Casy keeps in the phone's calendar.
+    /// `{ id }`: which ask it answers, so a late answer to one that timed out
+    /// can't end a newer wait before its write is done.
     @objc func phoneWritten(_ call: CAPPluginCall) {
+        let id = call.getInt("id")
         DispatchQueue.main.async {
-            self.writeAnswer?.resume()
-            self.writeAnswer = nil
+            if id == self.writesAsked {
+                self.writeAnswer?.resume()
+                self.writeAnswer = nil
+            }
             call.resolve()
         }
     }
@@ -268,7 +273,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             writeAnswer = continuation
             writesAsked += 1
             let asked = writesAsked
-            notifyListeners("needPhoneWrite", data: [:])
+            notifyListeners("needPhoneWrite", data: ["id": asked])
             Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(15))
                 guard let self, self.writesAsked == asked else { return }

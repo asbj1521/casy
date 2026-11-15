@@ -53,7 +53,7 @@ interface NativeBridgePlugin {
   open(options: { screen: NativeScreen; build: string; userAgent: string }): Promise<void>;
   pushResult(options: { answer: "granted" | "denied" | "failed" }): Promise<void>;
   phoneFacts(options: { labels: number }): Promise<void>;
-  phoneWritten(): Promise<void>;
+  phoneWritten(options: { id: number }): Promise<void>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
@@ -70,7 +70,10 @@ interface NativeBridgePlugin {
     listener: (change: { on: boolean }) => void,
   ): Promise<PluginListenerHandle>;
   addListener(event: "needPhoneFacts", listener: () => void): Promise<PluginListenerHandle>;
-  addListener(event: "needPhoneWrite", listener: () => void): Promise<PluginListenerHandle>;
+  addListener(
+    event: "needPhoneWrite",
+    listener: (asked: { id: number }) => void,
+  ): Promise<PluginListenerHandle>;
   addListener(
     event: "inviteSent",
     listener: (sent: { groupId: string }) => void,
@@ -198,10 +201,11 @@ export async function onNeedPhoneFacts(
  */
 export async function onNeedPhoneWrite(write: () => Promise<void>): Promise<PluginListenerHandle> {
   const { plugin } = await bridgePlugin();
-  return plugin.addListener("needPhoneWrite", () => {
+  return plugin.addListener("needPhoneWrite", ({ id }) => {
     void write()
       .catch((err) => console.warn("writing the phone's calendar failed", err))
-      .then(() => plugin.phoneWritten())
+      // Which ask this answers, so the app ignores one that comes too late.
+      .then(() => plugin.phoneWritten({ id }))
       // The app stops waiting by itself.
       .catch(() => {});
   });

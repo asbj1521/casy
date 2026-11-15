@@ -60,7 +60,6 @@ struct DaySlice: View {
 
     private func slice(_ day: DayOfCalendar) -> some View {
         let allDay = day.segments.filter(\.allDay)
-        let top = allDay.isEmpty ? 0 : CGFloat(min(allDay.count, 2)) * Self.allDayRow + 6
         return VStack(alignment: .leading, spacing: 0) {
             if !allDay.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
@@ -82,7 +81,6 @@ struct DaySlice: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card.color))
         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.border.color))
         .contentShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.top, top == 0 ? 0 : 0)
     }
 
     private func hours(_ day: DayOfCalendar, size: CGSize) -> some View {
@@ -90,10 +88,13 @@ struct DaySlice: View {
         let hourPx = size.height / hours
         let width = size.width - Self.gutter - 6
         let y = { (fraction: Double) in (fraction * 24 - from) * hourPx }
+        let at = { (h: Int) in placeSpan(atHour(midnight, Double(h), appTimeZone), atHour(midnight, Double(h), appTimeZone) + 1, midnight: midnight, appTimeZone).top * 24 }
         return ZStack(alignment: .topLeading) {
             // The hour lines and their times.
-            ForEach(Array(stride(from: Int(from.rounded(.up)), through: Int(from + hours), by: 1)), id: \.self) { h in
-                let top = (Double(h) - from) * hourPx
+            // Each clock hour where the blocks' own measure puts it, so on the
+            // two days a year of 23 or 25 hours the lines and blocks agree.
+            ForEach(Array((0...24).filter { (from...(from + hours)).contains(at($0)) }), id: \.self) { h in
+                let top = y(at(h) / 24)
                 // A time cut by the card's edge is left out; its line stays.
                 let fits = top >= 8 && top <= size.height - 8
                 HStack(spacing: 4) {
@@ -184,7 +185,9 @@ struct DayOfCalendar {
         guard let data = try? await api.calendarBusy(from: isoString(midnight), to: isoString(next)) else {
             return nil
         }
-        let (blocks, own) = phoneDrawn(data, from: midnight, to: next)
+        let (blocks, own) = await Task.detached(priority: .userInitiated) {
+            phoneDrawn(data, from: midnight, to: next)
+        }.value
         let included = Set(data.calendars.filter(\.included).map(\.id))
         // What you told Casy has no tick: it always counts, so it is always drawn.
         let counted =
@@ -217,9 +220,14 @@ struct DayOfCalendar {
 
     /// This phone's calendars drawn from the phone: their events with titles,
     /// in Apple's colours. Its calendars are those whose EventKit ids are here.
-    private static func phoneDrawn(_ data: OverviewData, from: Int64, to: Int64) -> ([OverviewBlock], [String: String]) {
+    /// One store for the app's life: making one is costly.
+    nonisolated(unsafe) private static let store = EKEventStore()
+
+    /// Read off the main thread: EventKit's fetch can take a moment.
+    nonisolated private static func phoneDrawn(
+        _ data: OverviewData, from: Int64, to: Int64
+    ) -> ([OverviewBlock], [String: String]) {
         guard PhoneCalendarReader.accessState() == "granted" else { return (data.blocks, [:]) }
-        let store = EKEventStore()
         let here = Dictionary(
             PhoneCalendarReader.readable(store).map { ($0.calendarIdentifier, $0) }, uniquingKeysWith: { a, _ in a })
         guard let connection = data.calendars.first(where: { $0.externalId.map { here[$0] != nil } ?? false })?.connectionId

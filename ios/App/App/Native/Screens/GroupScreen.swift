@@ -492,21 +492,20 @@ struct ReportSheet: View {
                     if now.count > Self.maxNote { note = String(now.prefix(Self.maxNote)) }
                 }
         }
-        if choice.person != nil || group != nil {
-            Section {
-                if let person = choice.person {
-                    ListSwitchRow(
-                        CasyStrings.reportBlockToo(person.name), isOn: $block, systemImage: "nosign",
-                        detail: CasyStrings.reportBlockHelp(person.name))
-                }
-                if let group {
-                    ListSwitchRow(
-                        CasyStrings.reportLeaveToo(group.name), isOn: $leaveToo,
-                        systemImage: "rectangle.portrait.and.arrow.right")
-                }
-            } footer: {
-                Text(CasyStrings.reportIntro)
+        // The promise that whoever is reported isn't told, always (rule 7).
+        Section {
+            if let person = choice.person {
+                ListSwitchRow(
+                    CasyStrings.reportBlockToo(person.name), isOn: $block, systemImage: "nosign",
+                    detail: CasyStrings.reportBlockHelp(person.name))
             }
+            if let group {
+                ListSwitchRow(
+                    CasyStrings.reportLeaveToo(group.name), isOn: $leaveToo,
+                    systemImage: "rectangle.portrait.and.arrow.right")
+            }
+        } footer: {
+            Text(CasyStrings.reportIntro)
         }
         if let failure { Notice(failure, tone: .error, bare: true) }
     }
