@@ -18,7 +18,16 @@ import type { TripMark } from "@/lib/tripView";
 
 /** A screen the app may draw natively in place of the page's own. */
 export type NativeScreen =
-  "settings" | "profile" | "events" | "calendars" | "tell" | "trip" | "prime";
+  | "settings"
+  | "profile"
+  | "events"
+  | "calendars"
+  | "tell"
+  | "trip"
+  | "prime"
+  | "aiConsent"
+  | "push"
+  | "update";
 
 interface LentSession {
   accessToken: string;

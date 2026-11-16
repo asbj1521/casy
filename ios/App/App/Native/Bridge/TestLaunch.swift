@@ -24,6 +24,8 @@
         static var isActive: Bool { backend != nil }
         static var screen: String? { defaults.string(forKey: "casyOpenScreen") }
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
+        /// `-casyPushAnswer <granted|denied|failed>`: how turning notifications on goes, without the page.
+        static var pushAnswer: String? { defaults.string(forKey: "casyPushAnswer") }
         static var lang: String? { defaults.string(forKey: "casyLang") }
         static var phoneSync: String { defaults.string(forKey: "casyPhoneSync") ?? "synced" }
 

@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { CircleArrowUp } from "lucide-react";
 
 import { appVersionQuery } from "@/api/appVersion";
+import { useNativeScreen } from "@/hooks/useNativeScreen";
+import { useNativeSheet } from "@/hooks/useNativeSheet";
 import { useT } from "@/i18n/lang";
 import { APP_VERSION, isOutdated } from "@/lib/appVersion";
 import { isNativeApp } from "@/lib/nativeApp";
@@ -20,7 +22,14 @@ export default function UpdateRequired() {
     staleTime: 30 * 60_000,
     retry: false,
   });
-  if (!isNativeApp || !data || !isOutdated(APP_VERSION, data.minVersion)) return null;
+  const outdated = isNativeApp && !!data && isOutdated(APP_VERSION, data.minVersion);
+  // The app may draw it natively (#200): over everything, with no way out.
+  const native = useNativeScreen("update");
+  const nothing = () => {};
+  useNativeSheet("update", outdated && native, nothing, nothing, () => ({
+    storeUrl: data?.storeUrl ?? null,
+  }));
+  if (!outdated || native || !data) return null;
 
   const words = t.updateRequired;
   return (

@@ -56,9 +56,12 @@ import SwiftUI
                             SheetTitle(title)
                         }
                     }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(close, action: action)
-                            .disabled(disabled)
+                    // Empty: nothing to close yet (the push ask until iOS's question failed).
+                    if !close.isEmpty {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(close, action: action)
+                                .disabled(disabled)
+                        }
                     }
                 }
         }

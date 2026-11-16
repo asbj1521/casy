@@ -37,7 +37,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
         #if DEBUG
-            ["settings", "profile", "events", "calendars", "tell", "trip", "prime"]
+            ["settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update"]
         #else
             []
         #endif
@@ -244,6 +244,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             ? AnyView(TellSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "trip"
             ? AnyView(tripSheet(state, onDone: onDone))
+            : screen == "aiConsent"
+            ? AnyView(
+                AiConsentSheet(leave: leave, yes: onDone, close: onDone).nativeSheetLook(NativePreferences.shared))
+            : screen == "push"
+            ? AnyView(
+                PushAskSheet(
+                    preferences: NativePreferences.shared, reason: state["reason"] as? String ?? "sent",
+                    enablePush: enablePush, onDone: onDone))
+            : screen == "update"
+            ? AnyView(
+                UpdateRequiredScreen(
+                    preferences: NativePreferences.shared,
+                    storeURL: (state["storeUrl"] as? String).flatMap(URL.init(string:))))
             : screen == "prime"
             ? AnyView(
                 PrimeDateSheet(
@@ -261,8 +274,24 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     preferences: NativePreferences.shared, onChoose: onChoose, onDone: onDone,
                     enablePush: enablePush))
         let host = UIHostingController(rootView: root)
-        host.modalPresentationStyle = .pageSheet
-        host.sheetPresentationController?.prefersGrabberVisible = true
+        if screen == "update" {
+            // Over everything, with no way out but the App Store.
+            host.modalPresentationStyle = .fullScreen
+            host.isModalInPresentation = true
+        } else {
+            host.modalPresentationStyle = .pageSheet
+            host.sheetPresentationController?.prefersGrabberVisible = true
+        }
+        // The push ask leads only to iOS's question: no swipe puts it away.
+        if screen == "push" { host.isModalInPresentation = true }
+        // The small asks, as the web's: half the screen, larger if the text needs it.
+        if ["aiConsent", "prime"].contains(screen) {
+            host.sheetPresentationController?.detents = [.medium(), .large()]
+        }
+        // The push ask says one sentence: only as tall as that and its button.
+        if screen == "push" {
+            host.sheetPresentationController?.detents = [.custom { _ in 300 }, .large()]
+        }
         // A swipe down closes it too: tell the web either way.
         host.presentationController?.delegate = self
         openScreen = screen
@@ -471,6 +500,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// The web view turns them on: the phone's token reaches only the page.
     @MainActor private func enablePush() async -> String {
         finishPush("failed")
+        #if DEBUG
+            if let answer = TestLaunch.pushAnswer { return answer }
+        #endif
         return await withCheckedContinuation { continuation in
             pushAnswer = continuation
             notifyListeners("enablePush", data: [:])

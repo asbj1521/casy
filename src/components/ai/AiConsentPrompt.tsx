@@ -5,6 +5,8 @@ import { calendarStatusQuery } from "@/api/calendars";
 import { whoAmIQuery } from "@/api/groups";
 import AiConsentSheet from "@/components/ai/AiConsentSheet";
 import { useAuth } from "@/context/auth";
+import { useNativeScreen } from "@/hooks/useNativeScreen";
+import { useNativeSheet } from "@/hooks/useNativeSheet";
 import { useAiAllowed, useAiConsent } from "@/hooks/useAiAllowed";
 import { rememberAskedAboutAi, wasAskedAboutAi } from "@/lib/aiConsent";
 import { hasConnectedCalendar } from "@/lib/calendarPrompt";
@@ -60,14 +62,13 @@ function Prompt({ userId, held = false, onOpenChange }: Props & { userId: string
   useEffect(() => {
     onOpenChange?.(open);
   }, [open, onOpenChange]);
+  const answered = () => {
+    rememberAskedAboutAi(userId);
+    setAsked(true);
+  };
+  // The app may ask it natively (#200); either answer is final here too.
+  const native = useNativeScreen("aiConsent");
+  useNativeSheet("aiConsent", open && native, answered, answered);
 
-  return (
-    <AiConsentSheet
-      open={open}
-      onClose={() => {
-        rememberAskedAboutAi(userId);
-        setAsked(true);
-      }}
-    />
-  );
+  return <AiConsentSheet open={open && !native} onClose={answered} />;
 }

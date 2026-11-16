@@ -58,6 +58,8 @@ private struct AiConsentGate: ViewModifier {
 struct AiConsentSheet: View {
     let leave: (LeavingProfile) -> Void
     let yes: () -> Void
+    /// Ikke nu, when the sheet is a screen of its own (the home page's question).
+    var close: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var page = 0
@@ -122,7 +124,9 @@ struct AiConsentSheet: View {
                 }
             }
             .padding(.top, 8)
-            .casySheetBar(CasyStrings.aiConsentTitle, close: CasyStrings.aiConsentNotNow, disabled: saving) { dismiss() }
+            .casySheetBar(CasyStrings.aiConsentTitle, close: CasyStrings.aiConsentNotNow, disabled: saving) {
+                if let close { close() } else { dismiss() }
+            }
             .pageLinks(leave: leave)
             .safeAreaInset(edge: .bottom) {
                 FlowButton(busy: saving, action: { last ? allow() : withAnimation { page += 1 } }) {

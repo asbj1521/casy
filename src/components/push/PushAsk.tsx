@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import BottomSheet from "@/components/ui/BottomSheet";
 import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
+import { useNativeScreen } from "@/hooks/useNativeScreen";
+import { useNativeSheet } from "@/hooks/useNativeSheet";
 import { useLang, useT } from "@/i18n/lang";
 import { enablePush, pushPermission } from "@/lib/push";
 import {
@@ -63,6 +65,11 @@ export default function PushAsk() {
     markPushAskOpen(false);
   }
 
+  // The app may draw it natively (#200): when is still decided here, and
+  // its button turns notifications on through the page, as this one does.
+  const native = useNativeScreen("push");
+  useNativeSheet("push", reason !== null && native, close, close, () => ({ reason }));
+
   async function enable() {
     setBusy(true);
     setError(null);
@@ -78,7 +85,7 @@ export default function PushAsk() {
 
   return (
     <BottomSheet
-      open={reason !== null}
+      open={reason !== null && !native}
       onClose={error ? close : () => undefined}
       title={t.push.askTitle[reason ?? "sent"]}
       doneLabel={error ? t.push.askLater : undefined}

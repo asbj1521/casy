@@ -839,6 +839,16 @@ public enum CasyStrings {
     public static var aiCancel: String { text("aiPlan.cancel") }
     public static func aiLeft(_ n: Int) -> String { count("aiPlan.left", n) }
 
+    // The push ask (#139) and an app too old (#143), natively (#200).
+    /// By why it is asked: "sent", "answered" or "joined".
+    public static func pushAskTitle(_ reason: String) -> String { named("push.askTitle", reason) }
+    public static var pushAskEnable: String { text("push.askEnable") }
+    public static var pushAskLater: String { text("push.askLater") }
+    public static var pushAskNote: String { text("push.askNote") }
+    public static var updateTitle: String { text("updateRequired.title") }
+    public static var updateBody: String { text("updateRequired.body") }
+    public static var updateButton: String { text("updateRequired.button") }
+
     // Tid til hinanden (#171, #200): a starred day.
     public static var primeTitle: String { text("prime.title") }
     public static func primeAllFree(_ n: Int) -> String { format("prime.allFree", n) }
