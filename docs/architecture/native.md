@@ -18,6 +18,10 @@ Rules for code in them:
 - Dates are written from the names in `Format.swift`, not the system's formatter, whose wording changes between iOS versions.
 - New copy goes into `Localizable.xcstrings` in Danish and English. A test fails on a missing language, a dash, an emoji or "iCloud".
 
+## How a screen is ported
+
+As a translation of its web screen, checked against the web's screenshot in the same simulator until they match: `docs/native-visual-parity.md` (#280). The screens below predate it and are being brought back through it.
+
 ## The bridge
 
 `ios/App/App/Native/` is a synchronized folder: a new Swift file there needs no edit to `project.pbxproj`. `Bridge/NativeBridgePlugin.swift` and `src/lib/nativeBridge.ts` (with `NativeBridgeSync`, mounted in `AppBackground`) are the two ends.

@@ -94,6 +94,8 @@ The animations that make Casy Casy (the sheet growing out of its button, the day
 
 ## Testing the native app
 
+**The look:** every native screen is a translation of its web screen and is done only when its screenshot matches the web's, following `docs/native-visual-parity.md` (decided 2026-11-16, #280, after the first native screens drifted from the web's design).
+
 - **CasyCore and CasyAPI:** Swift Testing, run by `xcodebuild test` on the packages; the parity and the answers fixtures above.
 - **The API contract:** `e2e/apiAnswers.parity.ts`, run by Vitest in the ordinary CI so a change to an answer's shape fails there, asks `e2e/backend.ts`'s `FakeBackend` (the same made-up world as the browser tests, Mia and her groups) for every function and action and writes each answer to `CasyAPI/Tests/CasyAPITests/Answers/`; a Swift test decodes all of them. `backend.ts` is typed with `src/api`'s types, so a change to an answer's shape on the web reaches the Swift decoders. Each answer must read and write back with nothing lost, so a field the web's types have and Swift's don't fails. The fake is not the real server: a screen's first run against the live functions is still the real test.
 - **Screens:** snapshot tests (pointfreeco's `swift-snapshot-testing`) of each screen in light and dark at one pinned iPhone simulator, fed by the decoded answers, so they show the same world as the web's screenshots. Reference images are made on CI's macOS runner only, like the Linux screenshots, by the same `[screenshots]` commit.
