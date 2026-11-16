@@ -42,6 +42,8 @@ final class CalendarsModel {
     private(set) var tourSeen: Set<String> = []
     /// This phone's own connection, once it sends its calendars.
     private(set) var thisPhone: String?
+    /// A provider picked before arriving (`?connect=apple`): its form opens once.
+    private var connectOnce: String?
 
     /// The bridge's: tell the page a choice it keeps, that the calendars changed,
     /// ask it to send the phone's calendars, and that this phone was removed.
@@ -61,11 +63,18 @@ final class CalendarsModel {
     }
 
     /// What the page handed over as the sheet opened.
-    func begin(holidaysHidden: Bool, tourSeen: [String], thisPhone: String?) {
+    func begin(holidaysHidden: Bool, tourSeen: [String], thisPhone: String?, connect: String?) {
+        connectOnce = connect
         self.holidaysHidden = holidaysHidden
         self.tourSeen = Set(tourSeen)
         self.thisPhone = thisPhone
         visibilityFailure = nil
+    }
+
+    /// The provider picked before arriving, the first time it is asked for.
+    func takeConnect() -> String? {
+        defer { connectOnce = nil }
+        return connectOnce
     }
 
     /// Every calendar with its tick: the built-in holidays first, named in the reader's language.

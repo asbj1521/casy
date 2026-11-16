@@ -81,7 +81,8 @@ struct ConnectedCalendarsScreen: View {
         }
         .casyPushedBar(CasyStrings.accountsTitle, close: CasyStrings.done, action: closeSheet)
         .pageLinks(leave: leave)
-        .task { await model.load() }
+        // Kalendere has just fetched the list: only the accounts may have moved on.
+        .task { if model.data == nil { await model.load() } else { await model.loadAccounts() } }
         .refreshable { await model.load() }
         .safeAreaInset(edge: .bottom) {
             if importFirst {
@@ -124,7 +125,11 @@ struct ConnectedCalendarsScreen: View {
         .onAppear {
             guard !arrived else { return }
             arrived = true
-            if connect == "apple" { form = .apple } else if connect == "ics" { form = .link }
+            switch model.takeConnect() {
+            case "apple": form = .apple
+            case "ics": form = .link
+            default: break
+            }
         }
     }
 

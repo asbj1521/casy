@@ -255,7 +255,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CalendarsModel.shared.begin(
             holidaysHidden: state["holidaysHidden"] as? Bool ?? false,
             tourSeen: state["tourSeen"] as? [String] ?? [],
-            thisPhone: state["thisPhone"] as? String)
+            thisPhone: state["thisPhone"] as? String, connect: state["connect"] as? String)
         let start: CalendarsPage? =
             switch state["start"] as? String {
             case "accounts": .accounts
