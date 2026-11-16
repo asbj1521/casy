@@ -445,7 +445,8 @@ const WEB: Record<string, (t: Messages) => string> = {
   "aiConsent.pages.1": (t) => t.aiConsent.pages[1],
   "aiConsent.pages.2": (t) => t.aiConsent.pages[2],
   "aiConsent.pages.3": (t) => t.aiConsent.pages[3],
-  "aiConsent.pageDot": (t) => t.aiConsent.pageDot(71, 72).replace("71", "%1$d").replace("72", "%2$d"),
+  "aiConsent.pageDot": (t) =>
+    t.aiConsent.pageDot(71, 72).replace("71", "%1$d").replace("72", "%2$d"),
   "aiConsent.notNow": (t) => t.aiConsent.notNow,
   "aiConsent.saving": (t) => t.aiConsent.saving,
   "calendarView.listTitle": (t) => t.calendarView.listTitle,
