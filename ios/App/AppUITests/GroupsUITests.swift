@@ -182,7 +182,7 @@ final class GroupsUITests: XCTestCase {
         let leave = row(app, "Forlad gruppe")
         XCTAssertTrue(leave.waitForExistence(timeout: 10))
         leave.tap()
-        let confirm = app.buttons.matching(NSPredicate(format: "label == %@", "Forlad gruppe")).element(boundBy: 1)
+        let confirm = app.alerts.buttons["Forlad gruppe"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10))
         confirm.tap()
         XCTAssertTrue(app.navigationBars["Grupper"].waitForExistence(timeout: 10))
