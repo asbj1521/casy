@@ -27,6 +27,8 @@
         /// `-casyPushAnswer <granted|denied|failed>`: how turning notifications on goes, without the page.
         static var pushAnswer: String? { defaults.string(forKey: "casyPushAnswer") }
         static var lang: String? { defaults.string(forKey: "casyLang") }
+        /// `-casyTheme <light|dark>`: Casy's own light or dark, for screenshots.
+        static var theme: String? { defaults.string(forKey: "casyTheme") }
         static var phoneSync: String { defaults.string(forKey: "casyPhoneSync") ?? "synced" }
 
         /// `-casyTrip <trip|return|home>`: the trip sheet on a made-up trip, as

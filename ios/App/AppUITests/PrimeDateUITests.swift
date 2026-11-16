@@ -16,6 +16,7 @@ final class PrimeDateUITests: XCTestCase {
             "-casyBackend", "http://localhost:4318",
             "-casyOpenScreen", "prime",
             "-casyPrime", "g-friday",
+            "-casyTheme", "dark", "-casy.appearance", "dark",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",
         ]

@@ -121,6 +121,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             Task { @MainActor in
                 await SessionBox.shared.set(connection)
                 if let lang = TestLaunch.lang { NativePreferences.shared.lang = lang }
+                if let theme = TestLaunch.theme { NativePreferences.shared.theme = theme }
                 guard let screen = TestLaunch.screen else { return }
                 // The web view's own controller has to be on screen first.
                 while bridge?.viewController?.view.window == nil {
@@ -280,9 +281,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // SwiftUI: tell it Casy's own light or dark, not only the phone's.
         let theme = NativePreferences.shared.theme
         host.overrideUserInterfaceStyle = theme == "dark" ? .dark : theme == "light" ? .light : .unspecified
-        // Solid at every height, as at the top: iOS 26 makes a half-height
-        // sheet see-through glass, grey over the month behind it.
-        host.view.backgroundColor = .systemGroupedBackground
+        // Dark as the page, not the lighter grey iOS gives a raised sheet.
+        host.traitOverrides.userInterfaceLevel = .base
         if screen == "update" {
             // Over everything, with no way out but the App Store.
             host.modalPresentationStyle = .fullScreen
