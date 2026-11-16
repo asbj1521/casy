@@ -467,6 +467,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             homeHost = host
         }
         homeHost?.view.isHidden = !wanted
+        // The page's own home page is under it, unseen: not for VoiceOver either.
+        bridge?.webView?.accessibilityElementsHidden = wanted
         // Casy's own light or dark, which the page may choose apart from the phone's.
         let theme = NativePreferences.shared.theme
         homeHost?.overrideUserInterfaceStyle = theme == "dark" ? .dark : theme == "light" ? .light : .unspecified

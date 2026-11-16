@@ -35,6 +35,7 @@ struct HomeScreen: View {
                 .scrollTargetLayout()
             }
             .scrollPosition(id: $position, anchor: .top)
+            .refreshable { await model.load() }
             .accessibilityIdentifier("home.months")
             .safeAreaInset(edge: .top, spacing: 0) { header }
             .safeAreaInset(edge: .bottom, spacing: 0) { bottom }
