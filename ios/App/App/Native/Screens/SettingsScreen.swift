@@ -61,14 +61,39 @@ extension EnvironmentValues {
 extension View {
     /// Casy's orange, and Casy's own light or dark choice.
     func nativeSheetLook(_ preferences: NativePreferences) -> some View {
-        tint(Theme.primary.color)
-            // Solid at every height, as the whole-screen sheets: iOS 26 gives a
-            // half-height sheet's lists a see-through glass background, so the
-            // lists' own is hidden and the sheet painted underneath.
-            .scrollContentBackground(.hidden)
-            .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        modifier(NativeSheetLook(preferences: preferences))
+    }
+}
+
+/// A modifier of its own rather than a chain on every sheet's type, which
+/// keeps the sheets' view types small.
+private struct NativeSheetLook: ViewModifier {
+    let preferences: NativePreferences
+
+    func body(content: Content) -> some View {
+        content
+            .tint(Theme.primary.color)
             .preferredColorScheme(
                 preferences.theme == "light" ? .light : preferences.theme == "dark" ? .dark : nil)
+    }
+}
+
+extension View {
+    /// A half-height sheet as solid as a whole-screen one: iOS 26 makes a
+    /// half-height sheet's list see-through glass, so the list's own
+    /// background is hidden and the whole-screen sheet's colour (a raised
+    /// sheet's) painted underneath.
+    func solidHalfSheet() -> some View {
+        scrollContentBackground(.hidden)
+            .background(Color(uiColor: .raisedSheet).ignoresSafeArea())
+    }
+}
+
+extension UIColor {
+    /// What a whole-screen sheet's grouped list sits on, light or dark.
+    static let raisedSheet = UIColor { traits in
+        UIColor.systemGroupedBackground.resolvedColor(
+            with: traits.modifyingTraits { $0.userInterfaceLevel = .elevated })
     }
 }
 

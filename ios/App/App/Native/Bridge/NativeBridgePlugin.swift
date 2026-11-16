@@ -276,13 +276,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 SettingsScreen(
                     preferences: NativePreferences.shared, onChoose: onChoose, onDone: onDone,
                     enablePush: enablePush))
-        let host = UIHostingController(rootView: root)
+        // The half-height ones, solid rather than iOS 26's glass.
+        let halfHeight = ["aiConsent", "prime", "tell", "push"].contains(screen)
+        let host = UIHostingController(rootView: halfHeight ? AnyView(root.solidHalfSheet()) : root)
         // The sheet's frame and its glass at half height are iOS's, outside
         // SwiftUI: tell it Casy's own light or dark, not only the phone's.
         let theme = NativePreferences.shared.theme
         host.overrideUserInterfaceStyle = theme == "dark" ? .dark : theme == "light" ? .light : .unspecified
-        // Dark as the page, not the lighter grey iOS gives a raised sheet.
-        host.traitOverrides.userInterfaceLevel = .base
         if screen == "update" {
             // Over everything, with no way out but the App Store.
             host.modalPresentationStyle = .fullScreen
