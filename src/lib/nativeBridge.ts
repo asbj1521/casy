@@ -8,6 +8,7 @@
  * As in phoneCalendar.ts, @capacitor/core loads on first use and only the
  * module goes through promises, never the plugin (it answers to `then` too).
  */
+import type { GridItem } from "@/lib/monthGrid";
 import type { PluginListenerHandle } from "@capacitor/core";
 
 import type { Lang } from "@/i18n/locale";
@@ -27,7 +28,35 @@ export type NativeScreen =
   | "prime"
   | "aiConsent"
   | "push"
-  | "update";
+  | "update"
+  | "home";
+
+/** What the page tells the native home page (#201), and what it adds to the month. */
+export interface NativeHomeState {
+  /** On the home page at all. */
+  shown: boolean;
+  /** Something only the page draws is over the month: the native one steps aside. */
+  covered: boolean;
+  /** The votes' pencilled dates and chips, the trips' bars. */
+  extras: GridItem[];
+  /** Their colours, "r, g, b", by calendar id. */
+  colors: Record<string, string>;
+  /** Starred days (Tid til hinanden), local midnights. */
+  starred: number[];
+  /** The vote pill's words, when votes are waiting. */
+  pill: string | null;
+  /** Tilføj til kalender is offered. */
+  tell: boolean;
+  holidaysHidden: boolean;
+  /** Changes when the page fetched your calendars again: the app reads them again too. */
+  dataAt: number;
+}
+
+/** A press on the native home page, done by the page as from its own buttons. */
+export interface NativeHomeAction {
+  action: "day" | "calendars" | "tell" | "events" | "plan" | "profile" | "pill";
+  day?: number;
+}
 
 interface LentSession {
   accessToken: string;
@@ -76,6 +105,7 @@ interface NativeBridgePlugin {
   phoneWritten(options: { id: number }): Promise<void>;
   phoneSynced(options: { id: number; outcome: NativePhoneSync }): Promise<void>;
   setTrip(options: { mark: TripMark | null; addedTo?: string; error?: string }): Promise<void>;
+  setHome(options: NativeHomeState): Promise<void>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
@@ -109,6 +139,10 @@ interface NativeBridgePlugin {
   addListener(
     event: "tripAction",
     listener: (action: NativeTripAction) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    event: "homeAction",
+    listener: (action: NativeHomeAction) => void,
   ): Promise<PluginListenerHandle>;
   addListener(
     event: "inviteSent",
@@ -225,6 +259,20 @@ export async function sendTrip(
 ): Promise<void> {
   const { plugin } = await bridgePlugin();
   await plugin.setTrip({ mark, ...outcome });
+}
+
+/** The home page as the page has it, for the native one drawn over it (#201). */
+export async function sendHome(state: NativeHomeState): Promise<void> {
+  const { plugin } = await bridgePlugin();
+  await plugin.setHome(state);
+}
+
+/** Calls `onAction` for each press on the native home page. */
+export async function onNativeHomeAction(
+  onAction: (action: NativeHomeAction) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("homeAction", onAction);
 }
 
 /** Calls `onForget` when native Forbundne kalendere removed this phone's own connection. */

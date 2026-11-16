@@ -5,6 +5,7 @@ import NativeTell from "@/components/tellCasy/NativeTell";
 import NativeTrip from "@/components/trips/NativeTrip";
 import NativeProfile from "@/components/profile/NativeProfile";
 import { useNativeScreen } from "@/hooks/useNativeScreen";
+import { useNativeHome } from "@/components/calendarView/useNativeHome";
 import {
   lazy,
   Suspense,
@@ -560,6 +561,55 @@ export default function PhoneCalendar() {
     setTodayPressed(true);
     months.current?.glideToMonth(Date.now());
   };
+
+  // The home page drawn in Swift while it is built (#201): what the page adds
+  // to the month, and anything only the page draws over it, for it to step aside.
+  const importCardOpen =
+    phoneImport.on && importAskDue && !importLater && monthClear && !inviteAsking;
+  const homeExtras = useMemo(
+    () => month.items.slice(0, month.items.length - calendar.items.length),
+    [month.items, calendar.items],
+  );
+  const homeColors = useMemo(
+    () => Object.fromEntries(homeExtras.map((i) => [i.calendarId, month.colorOf(i.calendarId)])),
+    [homeExtras, month],
+  );
+  const starredDays = useMemo(() => [...starred], [starred]);
+  const firstWaiting = homeVotes.waiting[0];
+  useNativeHome(
+    {
+      covered:
+        dayShown !== null ||
+        voteOpen ||
+        plan.shown ||
+        !!params.get("events") ||
+        !!params.get("profile") ||
+        importCardOpen ||
+        !!homeVotes.agreed ||
+        inviteAsking,
+      extras: homeExtras,
+      colors: homeColors,
+      starred: starredDays,
+      pill:
+        firstWaiting && !votesPutAway
+          ? homeVotes.waiting.length > 1
+            ? t.homeVote.waiting(homeVotes.waiting.length)
+            : t.homeVote.answer(eventTitle(firstWaiting.title, t))
+          : null,
+      tell: aiAllowed,
+      holidaysHidden: !calendars.find((c) => c.id === HOLIDAY_CALENDAR_ID)?.included,
+    },
+    calendar.items,
+    ({ action, day }) => {
+      if (action === "day" && day !== undefined) pickDay(day);
+      else if (action === "calendars") openList();
+      else if (action === "tell") setTellOpen(true);
+      else if (action === "events") openEvents();
+      else if (action === "plan") openPlan();
+      else if (action === "profile") openProfile();
+      else if (action === "pill" && firstWaiting) openVote(firstWaiting.id);
+    },
+  );
 
   return (
     <div className="min-h-screen bg-background">

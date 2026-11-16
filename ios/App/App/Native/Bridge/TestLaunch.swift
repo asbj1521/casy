@@ -30,6 +30,24 @@
         /// `-casyTheme <light|dark>`: Casy's own light or dark, for screenshots.
         static var theme: String? { defaults.string(forKey: "casyTheme") }
         static var phoneSync: String { defaults.string(forKey: "casyPhoneSync") ?? "synced" }
+        /// `-casyNativeHome YES`: the native home page, the page's part played
+        /// here (a vote's pencilled date, a starred day, the vote pill), and
+        /// each press written where the test can read it (`home.lastAction`).
+        static var nativeHome: Bool { defaults.bool(forKey: "casyNativeHome") }
+
+        @MainActor static var homePage: HomeFromPage {
+            var page = HomeFromPage()
+            page.shown = true
+            page.tell = true
+            page.dataAt = 1
+            page.extras = [
+                MonthItem(calendarId: "vote:v1", start: day(14, 17), end: day(14, 19), label: "Fredagsbar", pencil: true)
+            ]
+            page.colors = ["vote:v1": "234, 88, 12"]
+            page.starred = [startOfDay(day(16, 12), appTimeZone)]
+            page.pill = CasyStrings.homeVoteAnswer("Fredagsbar")
+            return page
+        }
 
         /// `-casyTrip <trip|return|home>`: the trip sheet on a made-up trip, as
         /// the page would send it; its answers change it here as the page would.

@@ -400,6 +400,15 @@ const WEB: Record<string, (t: Messages) => string> = {
   "events.remindFailed": (t) => t.api.remind,
   "searchAgain.button": (t) => t.searchAgain.button,
   "calendarView.calendarsButton": (t) => t.calendarView.calendarsButton,
+  "calendarView.today": (t) => t.calendarView.today,
+  "nav.home": (t) => t.nav.home,
+  "nav.eventsShort": (t) => t.nav.eventsShort,
+  "nav.profileShort": (t) => t.nav.profileShort,
+  "planFromCalendar.button": (t) => t.planFromCalendar.button,
+  "tellCasy.button": (t) => t.tellCasy.button,
+  "prime.dayMark": (t) => t.prime.dayMark,
+  "homeVote.answer": (t) => t.homeVote.answer("%@"),
+  "homeVote.waiting.many": (t) => t.homeVote.waiting(7).replace("7", "%d"),
   "tellCasy.title": (t) => t.tellCasy.title,
   "trips.title": (t) => t.trips.title("%@"),
   "prime.title": (t) => t.prime.title,
@@ -887,6 +896,11 @@ const WEB: Record<string, (t: Messages) => string> = {
 const NATIVE_ONLY: Record<string, { da: string; en: string }> = {
   "pictures.library": { da: "Fotobibliotek", en: "Photo Library" },
   "pictures.camera": { da: "Tag billede", en: "Take Photo" },
+  "admin.nativeHome": { da: "Native forside", en: "Native home page" },
+  "admin.nativeHomeDetail": {
+    da: "Forsiden tegnet i Swift, kun på denne telefon",
+    en: "The home page drawn in Swift, on this phone only",
+  },
 };
 
 interface Catalog {

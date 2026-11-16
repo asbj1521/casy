@@ -30,6 +30,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "phoneWritten", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "phoneSynced", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
     ]
 
     /// The screens drawn natively in this build. None in a Release build: the
@@ -37,7 +38,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
         #if DEBUG
-            ["settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update"]
+            [
+                "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
+                "home",
+            ]
         #else
             []
         #endif
@@ -101,6 +105,16 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 #endif
                 self?.notifyListeners("tripAction", data: Self.tripAction(action))
             }
+            HomeModel.shared.onAction = { [weak self] action, day in
+                var data: [String: Any] = ["action": action]
+                if let day { data["day"] = Double(day) }
+                self?.notifyListeners("homeAction", data: data)
+            }
+            NotificationCenter.default.addObserver(
+                forName: NativeHome.switched, object: nil, queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated { self?.placeHome() }
+            }
         }
         #if DEBUG
             startTestLaunch()
@@ -122,6 +136,17 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 await SessionBox.shared.set(connection)
                 if let lang = TestLaunch.lang { NativePreferences.shared.lang = lang }
                 if let theme = TestLaunch.theme { NativePreferences.shared.theme = theme }
+                if TestLaunch.nativeHome {
+                    let model = HomeModel.shared
+                    model.onAction = { action, day in
+                        model.testAction = action + (day.map { " " + dayKey($0, appTimeZone) } ?? "")
+                    }
+                    while bridge?.viewController?.view.window == nil {
+                        try? await Task.sleep(for: .milliseconds(100))
+                    }
+                    model.update(TestLaunch.homePage)
+                    placeHome()
+                }
                 guard let screen = TestLaunch.screen else { return }
                 // The web view's own controller has to be on screen first.
                 while bridge?.viewController?.view.window == nil {
@@ -164,6 +189,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     AdminReviewsModel.shared.reset()
                     EventsModel.shared.reset()
                     CalendarsModel.shared.reset()
+                    HomeModel.shared.reset()
                 }
             }
             call.resolve()
@@ -181,6 +207,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             let preferences = NativePreferences.shared
             if let lang { preferences.lang = lang }
             if let theme { preferences.theme = theme }
+            self.placeHome()
             call.resolve()
         }
     }
@@ -380,6 +407,75 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if let addedTo { model.addedTo = addedTo }
             model.failure = error
             call.resolve()
+        }
+    }
+
+    /// The home page as the page has it (#201): whether it is shown, whether
+    /// something of the page's is over it, and what it adds to the month.
+    @objc func setHome(_ call: CAPPluginCall) {
+        let extrasRaw: Any? = call.getArray("extras")
+        let extras: [MonthItem] = Self.decode([MonthItem].self, extrasRaw) ?? []
+        let colorsRaw: Any? = call.getObject("colors")
+        let colors: [String: String] = colorsRaw as? [String: String] ?? [:]
+        let starredRaw: Any? = call.getArray("starred")
+        let starredList: [Double] = starredRaw as? [Double] ?? []
+        let starred: Set<Int64> = Set(starredList.map { Int64($0) })
+        let shown = call.getBool("shown") ?? false
+        let covered = call.getBool("covered") ?? false
+        let pill = call.getString("pill")
+        let tell = call.getBool("tell") ?? false
+        let holidaysHidden = call.getBool("holidaysHidden") ?? false
+        let dataAt = call.getDouble("dataAt") ?? 0
+        DispatchQueue.main.async {
+            var fresh = HomeFromPage()
+            fresh.shown = shown
+            fresh.covered = covered
+            fresh.extras = extras
+            fresh.colors = colors
+            fresh.starred = starred
+            fresh.pill = pill
+            fresh.tell = tell
+            fresh.holidaysHidden = holidaysHidden
+            fresh.dataAt = dataAt
+            HomeModel.shared.update(fresh)
+            self.placeHome()
+            call.resolve()
+        }
+    }
+
+    /// The native home over the web view, while the switch is on, the page is
+    /// on its home page and nothing only the page draws is over the month.
+    private var homeHost: UIHostingController<HomeScreen>?
+
+    @MainActor private func placeHome() {
+        let page = HomeModel.shared.page
+        let wanted = NativeHome.on && page.shown && !page.covered
+        guard let main = bridge?.viewController else { return }
+        if wanted && homeHost == nil {
+            let host = UIHostingController(rootView: HomeScreen(preferences: NativePreferences.shared))
+            host.view.backgroundColor = .clear
+            main.addChild(host)
+            host.view.translatesAutoresizingMaskIntoConstraints = false
+            main.view.addSubview(host.view)
+            NSLayoutConstraint.activate([
+                host.view.topAnchor.constraint(equalTo: main.view.topAnchor),
+                host.view.bottomAnchor.constraint(equalTo: main.view.bottomAnchor),
+                host.view.leadingAnchor.constraint(equalTo: main.view.leadingAnchor),
+                host.view.trailingAnchor.constraint(equalTo: main.view.trailingAnchor),
+            ])
+            host.didMove(toParent: main)
+            homeHost = host
+        }
+        homeHost?.view.isHidden = !wanted
+        // Casy's own light or dark, which the page may choose apart from the phone's.
+        let theme = NativePreferences.shared.theme
+        homeHost?.overrideUserInterfaceStyle = theme == "dark" ? .dark : theme == "light" ? .light : .unspecified
+        if wanted { HomeModel.shared.loadIfNeeded() }
+        if !NativeHome.on, let host = homeHost {
+            host.willMove(toParent: nil)
+            host.view.removeFromSuperview()
+            host.removeFromParent()
+            homeHost = nil
         }
     }
 

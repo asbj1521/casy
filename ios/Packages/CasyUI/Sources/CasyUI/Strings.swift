@@ -638,6 +638,20 @@ public enum CasyStrings {
         String(format: text(key), arguments: args)
     }
     public static var calendarsTitle: String { text("calendarView.calendarsButton") }
+
+    // MARK: The home page (#201)
+
+    public static var homeToday: String { text("calendarView.today") }
+    public static var homeTitle: String { text("nav.home") }
+    public static var homeEvents: String { text("nav.eventsShort") }
+    public static var homeProfile: String { text("nav.profileShort") }
+    public static var homePlan: String { text("planFromCalendar.button") }
+    public static var homeTell: String { text("tellCasy.button") }
+    public static var homeStarred: String { text("prime.dayMark") }
+    public static func homeVoteAnswer(_ title: String) -> String { format("homeVote.answer", title) }
+    public static func homeVotesWaiting(_ n: Int) -> String { format("homeVote.waiting.many", n) }
+    public static var adminNativeHome: String { text("admin.nativeHome") }
+    public static var adminNativeHomeDetail: String { text("admin.nativeHomeDetail") }
     public static var calendarsListTitle: String { text("calendarView.listTitle") }
     public static var calendarsListIntro: String { text("calendarView.listIntro") }
     public static var calendarsHelpLabel: String { text("calendarView.priorityHelpLabel") }

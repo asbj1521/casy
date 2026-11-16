@@ -134,6 +134,7 @@ struct AdminScreen: View {
     @State private var tab = Tab.groups
     @State private var query = ""
     @State private var problemsOnly = false
+    @State private var nativeHome = NativeHome.on
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
@@ -153,6 +154,15 @@ struct AdminScreen: View {
             } footer: {
                 Text(CasyStrings.adminIntro)
             }
+            #if DEBUG
+                // The home page drawn in Swift while it is built (#201), on this phone only.
+                Section {
+                    ListSwitchRow(
+                        CasyStrings.adminNativeHome, isOn: $nativeHome, detail: CasyStrings.adminNativeHomeDetail)
+                        .accessibilityIdentifier("admin.nativeHome")
+                        .onChange(of: nativeHome) { _, on in NativeHome.on = on }
+                }
+            #endif
             if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
             if let overview = model.overview {
                 Section {

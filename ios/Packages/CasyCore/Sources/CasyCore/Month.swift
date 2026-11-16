@@ -11,7 +11,7 @@ public let monthMorePoints: Double = 14
 public let monthLanes = 3
 
 /// Something to show in the month: a busy block, a holiday, or a pencilled date.
-public struct GridItem: Codable, Sendable, Equatable, Hashable {
+public struct MonthItem: Codable, Sendable, Equatable, Hashable {
     public var calendarId: String
     public var start: Int64
     public var end: Int64
@@ -39,7 +39,7 @@ public struct GridItem: Codable, Sendable, Equatable, Hashable {
 
 /// One item placed in a week: its row, and the days (0 = Monday) it covers.
 public struct PlacedItem: Codable, Sendable, Equatable {
-    public var item: GridItem
+    public var item: MonthItem
     public var lane: Int
     public var from: Int
     public var to: Int
@@ -58,7 +58,7 @@ public struct WeekLayout: Codable, Sendable, Equatable {
 /// `layoutWeek`): the pencilled date first, then the longest, then the
 /// earliest, each in the first row free for all its days. `days` are the
 /// week's seven local midnights, Monday first; `weekEnd` the midnight after.
-public func layoutWeek(_ items: [GridItem], days: [Int64], weekEnd: Int64, lanes: Int) -> WeekLayout {
+public func layoutWeek(_ items: [MonthItem], days: [Int64], weekEnd: Int64, lanes: Int) -> WeekLayout {
     func column(_ t: Int64) -> Int {
         var c = 0
         while c < 6 && days[c + 1] <= t { c += 1 }
@@ -148,14 +148,14 @@ public func isoWeekNumber(_ ms: Int64, _ timeZone: String) -> Int {
 public func calendarItems(
     _ counted: [OverviewBlock], names: [String: String], from: Int64, to: Int64, _ timeZone: String,
     _ lang: Lang
-) -> [GridItem] {
+) -> [MonthItem] {
     let firstYear = localDate(from, timeZone).year
     let lastYear = localDate(to - 1, timeZone).year
-    var items: [GridItem] = []
+    var items: [MonthItem] = []
     for year in firstYear...max(firstYear, lastYear) {
         for h in danishHolidays(year, timeZone) where h.date >= from && h.date < to {
             items.append(
-                GridItem(
+                MonthItem(
                     calendarId: holidayCalendarId, start: h.date, end: addDays(h.date, 1, timeZone),
                     label: lang == .da ? h.name : h.englishName))
         }
@@ -164,7 +164,7 @@ public func calendarItems(
         guard let start = parseInstant(b.start), let end = parseInstant(b.end) else { continue }
         let title = b.details?.title ?? ""
         items.append(
-            GridItem(calendarId: b.calendarId, start: start, end: end, label: title.isEmpty ? names[b.calendarId] ?? "" : title))
+            MonthItem(calendarId: b.calendarId, start: start, end: end, label: title.isEmpty ? names[b.calendarId] ?? "" : title))
     }
     return items
 }

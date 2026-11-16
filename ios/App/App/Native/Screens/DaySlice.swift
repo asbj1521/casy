@@ -240,7 +240,7 @@ struct DayOfCalendar {
     }
 
     /// Read off the main thread: EventKit's fetch can take a moment.
-    nonisolated private static func phoneDrawn(
+    nonisolated static func phoneDrawn(
         _ data: OverviewData, from: Int64, to: Int64
     ) -> ([OverviewBlock], [String: String]) {
         guard PhoneCalendarReader.accessState() == "granted" else { return (data.blocks, [:]) }
