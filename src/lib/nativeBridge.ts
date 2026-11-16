@@ -17,7 +17,8 @@ import type { ThemeChoice } from "@/lib/theme";
 import type { TripMark } from "@/lib/tripView";
 
 /** A screen the app may draw natively in place of the page's own. */
-export type NativeScreen = "settings" | "profile" | "events" | "calendars" | "tell" | "trip";
+export type NativeScreen =
+  "settings" | "profile" | "events" | "calendars" | "tell" | "trip" | "prime";
 
 interface LentSession {
   accessToken: string;
@@ -38,6 +39,8 @@ export interface NativeClosed {
   accountDeleted?: boolean;
   /** Tilføj til kalender kept something (#200): where the first of it starts, to glide to. */
   added?: string;
+  /** Tid til hinanden's Planlæg was pressed (#200): the page's own, with the group and the day. */
+  plan?: boolean;
 }
 
 interface Preferences {

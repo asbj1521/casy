@@ -37,7 +37,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
         #if DEBUG
-            ["settings", "profile", "events", "calendars", "tell", "trip"]
+            ["settings", "profile", "events", "calendars", "tell", "trip", "prime"]
         #else
             []
         #endif
@@ -233,6 +233,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self?.dismissOpenScreen(["accountDeleted": true])
             case .added(let start):
                 self?.dismissOpenScreen(["added": start])
+            case .plan:
+                self?.dismissOpenScreen(["plan": true])
             }
         }
         let root: AnyView =
@@ -242,6 +244,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             ? AnyView(TellSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "trip"
             ? AnyView(tripSheet(state, onDone: onDone))
+            : screen == "prime"
+            ? AnyView(
+                PrimeDateSheet(
+                    preferences: NativePreferences.shared, prime: Self.decode(PrimeDate.self, state["prime"]) ?? Self.testPrime,
+                    onDone: onDone, leave: leave))
             : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "profile"
@@ -294,11 +301,22 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         return TripSheet(preferences: NativePreferences.shared, onDone: onDone)
     }
 
-    private static func decodeMark(_ object: Any?) -> TripMark? {
+    private static func decodeMark(_ object: Any?) -> TripMark? { decode(TripMark.self, object) }
+
+    private static var testPrime: PrimeDate? {
+        #if DEBUG
+            TestLaunch.prime
+        #else
+            nil
+        #endif
+    }
+
+    /// What the page sent as a JSON object, read as `type`.
+    private static func decode<T: Decodable>(_ type: T.Type, _ object: Any?) -> T? {
         guard let object, JSONSerialization.isValidJSONObject(object),
             let data = try? JSONSerialization.data(withJSONObject: object)
         else { return nil }
-        return try? JSONDecoder().decode(TripMark.self, from: data)
+        return try? JSONDecoder().decode(type, from: data)
     }
 
     private static func tripAction(_ action: TripAction) -> [String: Any] {

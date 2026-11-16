@@ -1,4 +1,5 @@
 import NativeCalendars from "@/components/calendarView/NativeCalendars";
+import NativePrimeDate from "@/components/calendarView/NativePrimeDate";
 import NativeEvents from "@/components/myEvents/phone/NativeEvents";
 import NativeTell from "@/components/tellCasy/NativeTell";
 import NativeTrip from "@/components/trips/NativeTrip";
@@ -228,6 +229,8 @@ export default function PhoneCalendar() {
   const nativeTell = useNativeScreen("tell");
   // And a trip's sheet.
   const nativeTrip = useNativeScreen("trip");
+  // And Tid til hinanden's.
+  const nativePrime = useNativeScreen("prime");
   // Planlæg (#126), in the address too, so the phone's back closes it.
   const planOpen = params.has("plan");
   // Planlæg stays on the page until its sheet has shrunk back into the pill
@@ -779,15 +782,24 @@ export default function PhoneCalendar() {
         )
       )}
 
-      {prime.date && (
-        <Suspense fallback={null}>
-          <PrimeDateSheet
-            open={prime.open}
-            prime={prime.date}
-            onClose={() => setPrime((p) => ({ ...p, open: false }))}
-            onPlan={planPrime}
-          />
-        </Suspense>
+      {nativePrime ? (
+        <NativePrimeDate
+          open={prime.open}
+          prime={prime.date}
+          onClose={() => setPrime((p) => ({ ...p, open: false }))}
+          onPlan={planPrime}
+        />
+      ) : (
+        prime.date && (
+          <Suspense fallback={null}>
+            <PrimeDateSheet
+              open={prime.open}
+              prime={prime.date}
+              onClose={() => setPrime((p) => ({ ...p, open: false }))}
+              onPlan={planPrime}
+            />
+          </Suspense>
+        )
       )}
 
       {/* On the page ahead of its first press, like the home page's sheets (#169). */}

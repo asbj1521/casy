@@ -115,6 +115,8 @@ enum LeavingProfile {
     case accountDeleted
     /// Tilføj til kalender kept something (#200): the month glides to its first day.
     case added(String)
+    /// Tid til hinanden's Planlæg (#200): the page's own, with the group and the day.
+    case plan
 }
 
 /// The Profil list as a native screen (#198), `ProfileHubList` on the web.

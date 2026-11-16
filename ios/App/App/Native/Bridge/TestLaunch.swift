@@ -59,6 +59,14 @@
             }
         }
 
+        /// `-casyPrime <group id>`: Tid til hinanden's sheet on Friday 16 October, 18:00 to 22:00.
+        static var prime: PrimeDate? {
+            defaults.string(forKey: "casyPrime").map {
+                PrimeDate(
+                    groupId: $0, kind: "hours", day: day(16, 0), start: day(16, 18), end: day(16, 22), value: 1)
+            }
+        }
+
         /// 10:00 on that day of October 2026, Danish time.
         private static func day(_ d: Int, _ hour: Double) -> Int64 { wallTime(2026, 9, d, hour, appTimeZone) }
 

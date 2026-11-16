@@ -839,6 +839,17 @@ public enum CasyStrings {
     public static var aiCancel: String { text("aiPlan.cancel") }
     public static func aiLeft(_ n: Int) -> String { count("aiPlan.left", n) }
 
+    // Tid til hinanden (#171, #200): a starred day.
+    public static var primeTitle: String { text("prime.title") }
+    public static func primeAllFree(_ n: Int) -> String { format("prime.allFree", n) }
+    public static var primeYou: String { text("prime.you") }
+    public static var primeWeekend: String { text("prime.weekend") }
+    public static var primeAllDay: String { text("prime.allDay") }
+    public static func primeFrom(_ time: String) -> String { format("prime.from", time) }
+    public static func primeUntil(_ from: String, _ to: String) -> String { format("prime.until", from, to) }
+    public static var primePlan: String { text("prime.plan") }
+    public static var primeFootnote: String { text("prime.footnote") }
+
     // A trip found in the calendar (#115, #200).
     public static func tripTitle(_ city: String) -> String { format("trips.title", city) }
     public static var tripFound: String { text("trips.found") }

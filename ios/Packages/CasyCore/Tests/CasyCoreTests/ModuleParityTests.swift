@@ -382,6 +382,8 @@ private struct SpanAnswer: Encodable {
         case "cityName":
             return try json(cityName(try text(a, "key"), legs: try a["legs"].decoded(), try lang(a)))
         case "dayOptions": return try json(dayOptions(try a["question"].decoded(), now: try milliseconds(a, "now")))
+        case "stretchShape": return try json(stretchShape(try a["prime"].decoded(), appTimeZone))
+        case "everyone": return try json(everyone(try a["names"].decoded(), try lang(a)))
         case "entryWhen": return try json(entryWhen(try a["entry"].decoded(), try lang(a)))
         case "holidaysInYearAhead":
             return try json(holidaysInYearAhead(try text(a, "timeZone"), now: try milliseconds(a, "now")))

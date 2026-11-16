@@ -8,6 +8,8 @@ import {
   transcriptText,
   type Transcript,
 } from "@/lib/speechTranscript";
+import { LOCALE } from "@/i18n/locale";
+import { stretchShape, type PrimeDate } from "@/lib/primeDates";
 import { dayOptions, type Leg } from "@/lib/trips";
 import { cityName } from "@/lib/tripView";
 import { addDays, startOfDay } from "@/lib/zone";
@@ -247,6 +249,31 @@ export function calendarsCases(): ParityCase[] {
       ? { kind: "return" as const, id: "q", legs: [], earliest: at, latest: bound }
       : { kind: "outbound" as const, id: "q", legs: [], earliest: bound, latest: at };
     add("dayOptions", { question, now: TRIP_NOW }, dayOptions(question, TRIP_NOW));
+  }
+  // primeDates.ts, for Tid til hinanden's sheet: how a stretch is said, and everyone named.
+  for (let i = 0; i < 40; i++) {
+    const day = startOfDay(Date.UTC(2026, 9, 20) + int(0, 14) * 86_400_000, TZ);
+    const hour = (h: number) => day + h * 3_600_000;
+    const prime: PrimeDate = {
+      groupId: "g",
+      kind: flag(0.2) ? "weekend" : "hours",
+      day,
+      start: pick([day, hour(10), hour(14), hour(17)]),
+      end: pick([hour(22), hour(20), hour(23)]),
+      value: 1,
+    };
+    add("stretchShape", { prime }, stretchShape(prime, TZ));
+  }
+  const PEOPLE = ["Ana", "Bo", "Cille", "Dan", "dig"];
+  for (let n = 0; n <= PEOPLE.length; n++) {
+    for (const lang of ["da", "en"] as const) {
+      const names = PEOPLE.slice(0, n);
+      add(
+        "everyone",
+        { names, lang },
+        new Intl.ListFormat(LOCALE[lang], { type: "conjunction" }).format(names),
+      );
+    }
   }
   return cases;
 }
