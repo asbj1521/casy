@@ -205,8 +205,8 @@ struct MyDataScreen: View {
         .pageLinks(leave: leave)
         .task { await model.load() }
         .refreshable { await model.load() }
-        .confirmationDialog(
-            CasyStrings.aiConsentTurnOffMessage, isPresented: $askingOff, titleVisibility: .visible
+        .casyConfirm(
+            CasyStrings.aiConsentTurnOffMessage, isPresented: $askingOff
         ) {
             Button(CasyStrings.aiConsentTurnOff, role: .destructive) {
                 Task { await model.setConsent(false) }

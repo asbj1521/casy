@@ -119,12 +119,11 @@ struct VoteScreen: View {
         .disabled(working != nil)
         .casyPushedBar(event.group.name, close: CasyStrings.done, action: closeSheet)
         .refreshable { await model.load() }
-        .confirmationDialog(
+        .casyConfirm(
             asking == .settle
                 ? CasyStrings.voteDeadlineSettleAsk
                 : mine ? CasyStrings.eventsCancelConfirm : CasyStrings.eventsLeaveConfirm,
-            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
-            titleVisibility: .visible, presenting: asking
+            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }), presenting: asking
         ) { asked in
             if asked == .settle {
                 Button(CasyStrings.voteDeadlineSettleNow) {

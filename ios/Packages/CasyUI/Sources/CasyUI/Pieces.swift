@@ -273,9 +273,32 @@ public struct ConfirmButton<Label: View>: View {
         } label: {
             label
         }
-        .confirmationDialog(message, isPresented: $asking, titleVisibility: .visible) {
+        .casyConfirm(message, isPresented: $asking) {
             Button(confirmLabel, role: destructive ? .destructive : nil, action: action)
             Button(CasyStrings.cancel, role: .cancel) {}
         }
+    }
+}
+
+// MARK: - Asking first
+
+extension View {
+    /// "Are you sure?" as a centred alert with the question as its text: wide
+    /// enough to read in a few lines, where iOS 26's confirmation dialog is a
+    /// narrow bubble by the row that was tapped.
+    public func casyConfirm<A: View>(
+        _ message: String, isPresented: Binding<Bool>, @ViewBuilder actions: @escaping () -> A
+    ) -> some View {
+        alert(Text(verbatim: ""), isPresented: isPresented, actions: actions, message: { Text(message) })
+    }
+
+    /// The same, about one thing (`presenting`).
+    public func casyConfirm<T, A: View>(
+        _ message: String, isPresented: Binding<Bool>, presenting data: T?,
+        @ViewBuilder actions: @escaping (T) -> A
+    ) -> some View {
+        alert(
+            Text(verbatim: ""), isPresented: isPresented, presenting: data, actions: actions,
+            message: { _ in Text(message) })
     }
 }

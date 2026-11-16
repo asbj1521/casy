@@ -486,10 +486,9 @@ struct AdminGroupScreen: View {
             }
             .disabled(working)
             .casyPushedBar(g.name, close: CasyStrings.done, action: closeSheet)
-            .confirmationDialog(
+            .casyConfirm(
                 removing.map { CasyStrings.adminRemoveMember($0.name, from: g.name, last: g.members.count <= 1) } ?? "",
-                isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
-                titleVisibility: .visible, presenting: removing
+                isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing
             ) { m in
                 Button(
                     g.members.count <= 1 ? CasyStrings.adminRemoveAndDelete : CasyStrings.adminRemove,
@@ -499,9 +498,9 @@ struct AdminGroupScreen: View {
                 }
                 Button(CasyStrings.cancel, role: .cancel) {}
             }
-            .confirmationDialog(
+            .casyConfirm(
                 CasyStrings.adminDeleteGroupConfirm(g.name, members: g.members.count),
-                isPresented: $deleting, titleVisibility: .visible
+                isPresented: $deleting
             ) {
                 Button(CasyStrings.adminDeleteGroup, role: .destructive) {
                     run { try await model.deleteGroup(g.id) }

@@ -223,10 +223,9 @@ struct AdminReportsScreen: View {
         }
         .casyPushedBar(CasyStrings.adminReportsTitle, close: CasyStrings.done, action: closeSheet)
         .refreshable { await model.loadReports() }
-        .confirmationDialog(
+        .casyConfirm(
             CasyStrings.adminReportDeleteGroupConfirm(deleting?.content.groupName),
-            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
-            titleVisibility: .visible, presenting: deleting
+            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), presenting: deleting
         ) { report in
             Button(CasyStrings.adminReportDeleteGroup, role: .destructive) {
                 run { try await model.deleteGroup(report) }

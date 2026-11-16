@@ -114,10 +114,9 @@ struct ConnectedCalendarsScreen: View {
             }
             .nativeSheetLook(NativePreferences.shared)
         }
-        .confirmationDialog(
+        .casyConfirm(
             removing.map { CasyStrings.removeAccountNote(provider: $0.provider, label: $0.account_label) } ?? "",
-            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
-            titleVisibility: .visible, presenting: removing
+            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing
         ) { account in
             Button(CasyStrings.removeAccount, role: .destructive) { remove(account) }
             Button(CasyStrings.cancel, role: .cancel) {}
@@ -572,14 +571,13 @@ struct PrimaryCalendarScreen: View {
             await model.loadAccounts()
             if !model.primaryKnown { failure = model.primaryFailure ?? CasyStrings.addToCalendarLoadPrimaryFailed }
         }
-        .confirmationDialog(
+        .casyConfirm(
             asking.map { ask in
                 ask.calendarId.map {
                     CasyStrings.primaryConfirmChange(primaryName(connections, $0) ?? $0, from: current)
                 } ?? CasyStrings.primaryConfirmClear(current)
             } ?? "",
-            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
-            titleVisibility: .visible, presenting: asking
+            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }), presenting: asking
         ) { ask in
             Button(ask.calendarId == nil ? CasyStrings.primaryYesStop : CasyStrings.primaryYesChange) {
                 save(ask.calendarId)

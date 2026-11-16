@@ -60,10 +60,9 @@ struct FriendsScreen: View {
             _ = await (groups, friends)
         }
         .refreshable { await model.loadFriends() }
-        .confirmationDialog(
+        .casyConfirm(
             removing.map { CasyStrings.friendsRemoveAsk($0.name) } ?? "",
-            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
-            titleVisibility: .visible, presenting: removing
+            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing
         ) { person in
             Button(CasyStrings.friendsRemove, role: .destructive) { remove(person) }
             Button(CasyStrings.cancel, role: .cancel) {}

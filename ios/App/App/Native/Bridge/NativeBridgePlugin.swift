@@ -280,6 +280,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // SwiftUI: tell it Casy's own light or dark, not only the phone's.
         let theme = NativePreferences.shared.theme
         host.overrideUserInterfaceStyle = theme == "dark" ? .dark : theme == "light" ? .light : .unspecified
+        // Solid at every height, as at the top: iOS 26 makes a half-height
+        // sheet see-through glass, grey over the month behind it.
+        host.view.backgroundColor = .systemGroupedBackground
         if screen == "update" {
             // Over everything, with no way out but the App Store.
             host.modalPresentationStyle = .fullScreen

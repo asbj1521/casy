@@ -96,12 +96,11 @@ struct DatedScreen: View {
         // Its one main action, pinned along the bottom.
         .safeAreaInset(edge: .bottom) { AddToCalendar(event: event) }
         .refreshable { await model.load() }
-        .confirmationDialog(
+        .casyConfirm(
             asking == .backOut
                 ? CasyStrings.eventsMoveConfirm
                 : mine ? CasyStrings.eventsCancelConfirm : CasyStrings.eventsLeaveConfirm,
-            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
-            titleVisibility: .visible, presenting: asking
+            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }), presenting: asking
         ) { asked in
             // `asked`, not `asking`: the dialog clears `asking` before its button runs.
             if asked == .backOut {

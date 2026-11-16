@@ -141,8 +141,8 @@ struct GroupScreen: View {
             .disabled(removing)
         }
         .casyPushedBar(group.name, close: CasyStrings.done, action: closeSheet)
-        .confirmationDialog(
-            question(group, sole: sole), isPresented: isAsking, titleVisibility: .visible,
+        .casyConfirm(
+            question(group, sole: sole), isPresented: isAsking,
             presenting: asking
         ) { asked in
             // `asked`, not `asking`: the dialog clears `asking` before its button runs.

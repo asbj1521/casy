@@ -173,10 +173,9 @@ struct EventsScreen: View {
         .casySheetBar(CasyStrings.eventsTitle, close: CasyStrings.done, action: closeSheet)
         .task { await model.load() }
         .refreshable { await model.load() }
-        .confirmationDialog(
+        .casyConfirm(
             CasyStrings.eventsCancelConfirm,
-            isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }),
-            titleVisibility: .visible, presenting: cancelling
+            isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }), presenting: cancelling
         ) { event in
             Button(CasyStrings.eventsCancelEvent, role: .destructive) {
                 run { try await model.cancel(event.id) }

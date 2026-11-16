@@ -321,10 +321,9 @@ struct GroupsScreen: View {
             NewGroupSheet()
                 .nativeSheetLook(NativePreferences.shared)
         }
-        .confirmationDialog(
+        .casyConfirm(
             asking.map { CasyStrings.groupsDeleteConfirm($0.name, members: $0.members.count) } ?? "",
             isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
-            titleVisibility: .visible,
             presenting: asking
         ) { group in
             Button(CasyStrings.groupsDelete, role: .destructive) { model.leaveOrDelete(group) }
@@ -468,9 +467,9 @@ struct InvitationScreen: View {
                 blocking = true
             }
         }
-        .confirmationDialog(
+        .casyConfirm(
             invitation.invitedBy.map(CasyStrings.invitationsBlockConfirm) ?? "",
-            isPresented: $blocking, titleVisibility: .visible
+            isPresented: $blocking
         ) {
             Button(CasyStrings.invitationsBlock, role: .destructive) { answer(.block) }
             Button(CasyStrings.cancel, role: .cancel) {}
