@@ -367,7 +367,6 @@ struct ConnectedCalendarsScreen: View {
                         CasyStrings.primaryTitle,
                         value: primaryName(accounts, model.primary?.calendarId) ?? CasyStrings.primaryChoose)
                 }
-                .disabled(!model.primaryKnown)
                 .accessibilityIdentifier("accounts.primary")
                 ListSwitchRow(
                     CasyStrings.primaryAutoAdd,
@@ -564,8 +563,15 @@ struct PrimaryCalendarScreen: View {
             if let failure { Notice(failure, tone: .error, bare: true) }
         }
         .casyPushedBar(CasyStrings.primaryTitle, close: CasyStrings.done, action: closeSheet)
-        .disabled(saving)
-        .overlay { if saving { ProgressView() } }
+        // Until the current choice is known, a tap can't tell a first choice
+        // from a change, which asks first.
+        .disabled(saving || !model.primaryKnown)
+        .overlay { if saving || (!model.primaryKnown && failure == nil) { ProgressView() } }
+        .task {
+            guard !model.primaryKnown else { return }
+            await model.loadAccounts()
+            if !model.primaryKnown { failure = CasyStrings.addToCalendarLoadPrimaryFailed }
+        }
         .confirmationDialog(
             asking.map { ask in
                 ask.calendarId.map {

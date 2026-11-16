@@ -59,6 +59,19 @@ struct CalendarsScreen: View {
                         detail: CasyStrings.accountsRowDetail, value: model.connectedCount.map(String.init))
                 }
                 .accessibilityIdentifier("calendars.accounts")
+                // Where Casy writes, on the first screen, so it isn't only at
+                // the bottom of Forbundne kalendere.
+                if let connections = model.connections,
+                    !calendarChoices(connections, primaryId: model.primary?.calendarId).isEmpty
+                {
+                    NavigationLink(value: CalendarsPage.primary) {
+                        ListRow(
+                            CasyStrings.primaryTitle, systemImage: "star",
+                            detail: CasyStrings.primaryIntro,
+                            value: primaryName(connections, model.primary?.calendarId) ?? CasyStrings.primaryChoose)
+                    }
+                    .accessibilityIdentifier("calendars.primary")
+                }
                 if model.toSort == 0 && model.data != nil { tourRow }
             }
             if model.data != nil {

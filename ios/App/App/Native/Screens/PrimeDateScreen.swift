@@ -52,7 +52,6 @@ struct PrimeDateSheet: View {
             }
             .task { await load() }
         }
-        .presentationDetents([.medium, .large])
         .nativeSheetLook(preferences)
     }
 

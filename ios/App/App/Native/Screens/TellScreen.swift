@@ -28,6 +28,7 @@ struct TellScreen: View {
 
     private let calendars = CalendarsModel.shared
     @Environment(\.closeSheet) private var closeSheet
+    @Environment(\.growSheet) private var growSheet
     /// What has been written, oldest first.
     @State private var texts: [String] = []
     /// The proposal: the whole list as it stands.
@@ -163,6 +164,8 @@ struct TellScreen: View {
             }
         }
         .casySheetBar(CasyStrings.tellTitle, close: CasyStrings.tellDone, action: closeSheet)
+        // What we made of it needs the room.
+        .onChange(of: started) { _, now in if now { growSheet() } }
         .safeAreaInset(edge: .bottom) {
             if proposing {
                 FlowButton(busy: saving, action: save) {

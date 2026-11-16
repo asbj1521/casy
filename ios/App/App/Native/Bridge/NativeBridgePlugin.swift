@@ -241,7 +241,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             screen == "calendars"
             ? AnyView(calendarsSheet(state, onDone: onDone, leave: leave))
             : screen == "tell"
-            ? AnyView(TellSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
+            ? AnyView(
+                TellSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave)
+                    .environment(\.growSheet) { [weak self] in self?.growOpenSheet() })
             : screen == "trip"
             ? AnyView(tripSheet(state, onDone: onDone))
             : screen == "aiConsent"
@@ -285,7 +287,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // The push ask leads only to iOS's question: no swipe puts it away.
         if screen == "push" { host.isModalInPresentation = true }
         // The small asks, as the web's: half the screen, larger if the text needs it.
-        if ["aiConsent", "prime"].contains(screen) {
+        // The plus, too, as the web's small box: whole once Casy has answered.
+        if ["aiConsent", "prime", "tell"].contains(screen) {
             host.sheetPresentationController?.detents = [.medium(), .large()]
         }
         // The push ask says one sentence: only as tall as that and its button.
@@ -516,6 +519,14 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// `then` goes with `closed`: what the page does next, as one message, so
     /// it can't step the address back before hearing where to go.
+    /// The open sheet, if half height, pulled up to the whole screen.
+    private func growOpenSheet() {
+        guard let sheet = bridge?.viewController?.presentedViewController?.sheetPresentationController,
+            sheet.selectedDetentIdentifier != .large
+        else { return }
+        sheet.animateChanges { sheet.selectedDetentIdentifier = .large }
+    }
+
     private func dismissOpenScreen(_ then: [String: Any] = [:]) {
         bridge?.viewController?.presentedViewController?.dismiss(animated: true) { [weak self] in
             self?.closed(then)
