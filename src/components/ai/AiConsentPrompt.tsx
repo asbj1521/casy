@@ -68,7 +68,10 @@ function Prompt({ userId, held = false, onOpenChange }: Props & { userId: string
   };
   // The app may ask it natively (#200); either answer is final here too.
   const native = useNativeScreen("aiConsent");
-  useNativeSheet("aiConsent", open && native, answered, answered);
+  // Couldn't be shown natively: the page's own sheet asks instead.
+  const [nativeFailed, setNativeFailed] = useState(false);
+  const drawnNatively = native && !nativeFailed;
+  useNativeSheet("aiConsent", open && drawnNatively, answered, () => setNativeFailed(true));
 
-  return <AiConsentSheet open={open && !native} onClose={answered} />;
+  return <AiConsentSheet open={open && !drawnNatively} onClose={answered} />;
 }

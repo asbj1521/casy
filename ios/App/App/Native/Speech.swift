@@ -43,11 +43,16 @@ final class SpeechInput {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
-            if #available(iOS 26, *), let dictation = try await startDictation() {
-                stopping = dictation
-            } else {
-                stopping = try startRecognizer()
+            // iOS 26's dictation where it has the language and its model loads;
+            // the older recognizer otherwise, from a clean microphone.
+            if #available(iOS 26, *) {
+                do {
+                    stopping = try await startDictation()
+                } catch {
+                    releaseMicrophone()
+                }
             }
+            if stopping == nil { stopping = try startRecognizer() }
             listening = true
         } catch {
             failure = CasyStrings.micFailed
@@ -56,15 +61,18 @@ final class SpeechInput {
     }
 
     func stop() async {
-        if audio.isRunning {
-            audio.inputNode.removeTap(onBus: 0)
-            audio.stop()
-        }
+        releaseMicrophone()
         let finish = stopping
         stopping = nil
         listening = false
         await finish?()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    /// The microphone's tap off and the engine stopped, whatever got that far.
+    private func releaseMicrophone() {
+        audio.inputNode.removeTap(onBus: 0)
+        if audio.isRunning { audio.stop() }
     }
 
     private static func speechAllowed() async -> Bool {

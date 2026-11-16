@@ -68,7 +68,18 @@ export default function PushAsk() {
   // The app may draw it natively (#200): when is still decided here, and
   // its button turns notifications on through the page, as this one does.
   const native = useNativeScreen("push");
-  useNativeSheet("push", reason !== null && native, close, close, () => ({ reason }));
+  // Couldn't be shown natively: the page's own sheet asks instead.
+  const [nativeFailed, setNativeFailed] = useState(false);
+  const drawnNatively = native && !nativeFailed;
+  useNativeSheet(
+    "push",
+    reason !== null && drawnNatively,
+    close,
+    () => setNativeFailed(true),
+    () => ({
+      reason,
+    }),
+  );
 
   async function enable() {
     setBusy(true);
@@ -85,7 +96,7 @@ export default function PushAsk() {
 
   return (
     <BottomSheet
-      open={reason !== null && !native}
+      open={reason !== null && !drawnNatively}
       onClose={error ? close : () => undefined}
       title={t.push.askTitle[reason ?? "sent"]}
       doneLabel={error ? t.push.askLater : undefined}
