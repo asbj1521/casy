@@ -62,9 +62,6 @@ extension View {
     /// Casy's orange, and Casy's own light or dark choice.
     func nativeSheetLook(_ preferences: NativePreferences) -> some View {
         tint(Theme.primary.color)
-            // Solid at every height: a half-height sheet is otherwise see-through
-            // on iOS 26 and turns from the page's white to dark as it is pulled up.
-            .presentationBackground(Color(uiColor: .systemGroupedBackground))
             .preferredColorScheme(
                 preferences.theme == "light" ? .light : preferences.theme == "dark" ? .dark : nil)
     }

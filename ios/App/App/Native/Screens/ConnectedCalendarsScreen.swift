@@ -570,7 +570,7 @@ struct PrimaryCalendarScreen: View {
         .task {
             guard !model.primaryKnown else { return }
             await model.loadAccounts()
-            if !model.primaryKnown { failure = CasyStrings.addToCalendarLoadPrimaryFailed }
+            if !model.primaryKnown { failure = model.primaryFailure ?? CasyStrings.addToCalendarLoadPrimaryFailed }
         }
         .confirmationDialog(
             asking.map { ask in

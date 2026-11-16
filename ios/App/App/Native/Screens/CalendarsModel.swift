@@ -30,6 +30,8 @@ final class CalendarsModel {
     private(set) var connections: [CalendarConnection]?
     private(set) var primary: PrimaryCalendar?
     private(set) var primaryKnown = false
+    /// Why the primary calendar didn't load, as the server said it.
+    private(set) var primaryFailure: String?
     private(set) var failure: String?
     /// This phone's calendars in Apple Calendar's colours, which win (#220).
     private(set) var phoneColors: [String: String] = [:]
@@ -125,9 +127,13 @@ final class CalendarsModel {
             if data == nil { failure = error.localizedDescription }
         }
         if let fresh = try? await status { connections = fresh }
-        if let fresh = try? await chosen {
-            primary = fresh
+        do {
+            primary = try await chosen
             primaryKnown = true
+            primaryFailure = nil
+        } catch {
+            primaryFailure = error.localizedDescription
+            print("calendar-primary failed:", error)
         }
     }
 
@@ -137,9 +143,13 @@ final class CalendarsModel {
         async let status = api.calendarConnections()
         async let chosen = api.primaryCalendar()
         if let fresh = try? await status { connections = fresh }
-        if let fresh = try? await chosen {
-            primary = fresh
+        do {
+            primary = try await chosen
             primaryKnown = true
+            primaryFailure = nil
+        } catch {
+            primaryFailure = error.localizedDescription
+            print("calendar-primary failed:", error)
         }
     }
 
