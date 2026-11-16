@@ -62,7 +62,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             self?.notifyListeners("needSession", data: [:])
         }
         Task { await SessionBox.shared.setAskWeb(askWeb) }
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
             ProfileModel.shared.onChange = { [weak self] in
                 self?.notifyListeners("dataChanged", data: [:])
             }

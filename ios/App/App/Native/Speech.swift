@@ -40,9 +40,12 @@ final class SpeechInput {
             return
         }
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
+            // Off the main thread: switching the audio session on can take a moment.
+            try await Task.detached(priority: .userInitiated) {
+                let session = AVAudioSession.sharedInstance()
+                try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+                try session.setActive(true, options: .notifyOthersOnDeactivation)
+            }.value
             // iOS 26's dictation where it has the language and its model loads;
             // the older recognizer otherwise, from a clean microphone.
             if #available(iOS 26, *) {
@@ -66,7 +69,9 @@ final class SpeechInput {
         stopping = nil
         listening = false
         await finish?()
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        await Task.detached {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }.value
     }
 
     /// The microphone's tap off and the engine stopped, whatever got that far.
