@@ -1,4 +1,5 @@
 import Capacitor
+import CasyCore
 import CasyUI
 import SwiftUI
 import UIKit
@@ -28,6 +29,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "phoneFacts", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "phoneWritten", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "phoneSynced", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
     ]
 
     /// The screens drawn natively in this build. None in a Release build: the
@@ -35,7 +37,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
         #if DEBUG
-            ["settings", "profile", "events", "calendars", "tell"]
+            ["settings", "profile", "events", "calendars", "tell", "trip"]
         #else
             []
         #endif
@@ -92,6 +94,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
             calendars.onPhoneForgotten = { [weak self] in
                 self?.notifyListeners("phoneForgotten", data: [:])
+            }
+            TripModel.shared.onAction = { [weak self] action in
+                #if DEBUG
+                    if TestLaunch.isActive { return TestLaunch.answer(action) }
+                #endif
+                self?.notifyListeners("tripAction", data: Self.tripAction(action))
             }
         }
         #if DEBUG
@@ -232,6 +240,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             ? AnyView(calendarsSheet(state, onDone: onDone, leave: leave))
             : screen == "tell"
             ? AnyView(TellSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
+            : screen == "trip"
+            ? AnyView(tripSheet(state, onDone: onDone))
             : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "profile"
@@ -269,6 +279,51 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         return CalendarsSheet(
             preferences: NativePreferences.shared, start: start, connect: state["connect"] as? String,
             onDone: onDone, leave: leave)
+    }
+
+    /// The trip sheet, on the trip the page sent (or a test's own).
+    private func tripSheet(_ state: [String: Any], onDone: @escaping () -> Void) -> some View {
+        let model = TripModel.shared
+        model.mark = nil
+        model.addedTo = nil
+        model.failure = nil
+        model.show(Self.decodeMark(state["mark"]))
+        #if DEBUG
+            if let sample = TestLaunch.trip { model.show(sample) }
+        #endif
+        return TripSheet(preferences: NativePreferences.shared, onDone: onDone)
+    }
+
+    private static func decodeMark(_ object: Any?) -> TripMark? {
+        guard let object, JSONSerialization.isValidJSONObject(object),
+            let data = try? JSONSerialization.data(withJSONObject: object)
+        else { return nil }
+        return try? JSONDecoder().decode(TripMark.self, from: data)
+    }
+
+    private static func tripAction(_ action: TripAction) -> [String: Any] {
+        switch action {
+        case .accept(let id): ["action": "accept", "id": id]
+        case .decline(let id): ["action": "decline", "id": id]
+        case .home(let city): ["action": "home", "city": city]
+        case .returned(let id, let day): ["action": "return", "id": id, "day": day]
+        case .left(let id, let day): ["action": "outbound", "id": id, "day": day]
+        case .addToCalendar(let id): ["action": "addToCalendar", "id": id]
+        }
+    }
+
+    /// `{ mark, addedTo?, error? }`: the trip as the page has it now, after an answer.
+    @objc func setTrip(_ call: CAPPluginCall) {
+        let mark = Self.decodeMark(call.getObject("mark"))
+        let addedTo = call.getString("addedTo")
+        let error = call.getString("error")
+        DispatchQueue.main.async {
+            let model = TripModel.shared
+            model.show(mark)
+            if let addedTo { model.addedTo = addedTo }
+            model.failure = error
+            call.resolve()
+        }
     }
 
     /// `{ id, outcome }`: how the page's send of the phone's calendars went.

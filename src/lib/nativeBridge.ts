@@ -14,9 +14,10 @@ import type { Lang } from "@/i18n/locale";
 import { APP_BUILD } from "@/lib/feedback";
 import { isNativeApp } from "@/lib/nativeApp";
 import type { ThemeChoice } from "@/lib/theme";
+import type { TripMark } from "@/lib/tripView";
 
 /** A screen the app may draw natively in place of the page's own. */
-export type NativeScreen = "settings" | "profile" | "events" | "calendars" | "tell";
+export type NativeScreen = "settings" | "profile" | "events" | "calendars" | "tell" | "trip";
 
 interface LentSession {
   accessToken: string;
@@ -62,6 +63,7 @@ interface NativeBridgePlugin {
   phoneFacts(options: { labels: number }): Promise<void>;
   phoneWritten(options: { id: number }): Promise<void>;
   phoneSynced(options: { id: number; outcome: NativePhoneSync }): Promise<void>;
+  setTrip(options: { mark: TripMark | null; addedTo?: string; error?: string }): Promise<void>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
@@ -92,6 +94,10 @@ interface NativeBridgePlugin {
     listener: (asked: { id: number; create: boolean }) => void,
   ): Promise<PluginListenerHandle>;
   addListener(event: "phoneForgotten", listener: () => void): Promise<PluginListenerHandle>;
+  addListener(
+    event: "tripAction",
+    listener: (action: NativeTripAction) => void,
+  ): Promise<PluginListenerHandle>;
   addListener(
     event: "inviteSent",
     listener: (sent: { groupId: string }) => void,
@@ -181,6 +187,32 @@ export async function onNeedPhoneSync(
       // The app stops waiting by itself.
       .catch(() => {});
   });
+}
+
+/** An answer given on the native trip sheet (#200), for the page, which keeps the trips. */
+export type NativeTripAction =
+  | { action: "accept" | "decline" | "addToCalendar"; id: string }
+  | { action: "home"; city: string }
+  | { action: "return" | "outbound"; id: string; day: number };
+
+/** Calls `onAction` for each answer on the native trip sheet. */
+export async function onNativeTripAction(
+  onAction: (action: NativeTripAction) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("tripAction", onAction);
+}
+
+/**
+ * The trip as the page has it now, after an answer (null once it is gone), with
+ * the calendar it was just put in or why that failed.
+ */
+export async function sendTrip(
+  mark: TripMark | null,
+  outcome: { addedTo?: string; error?: string } = {},
+): Promise<void> {
+  const { plugin } = await bridgePlugin();
+  await plugin.setTrip({ mark, ...outcome });
 }
 
 /** Calls `onForget` when native Forbundne kalendere removed this phone's own connection. */

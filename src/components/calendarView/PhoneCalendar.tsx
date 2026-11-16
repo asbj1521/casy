@@ -1,6 +1,7 @@
 import NativeCalendars from "@/components/calendarView/NativeCalendars";
 import NativeEvents from "@/components/myEvents/phone/NativeEvents";
 import NativeTell from "@/components/tellCasy/NativeTell";
+import NativeTrip from "@/components/trips/NativeTrip";
 import NativeProfile from "@/components/profile/NativeProfile";
 import { useNativeScreen } from "@/hooks/useNativeScreen";
 import {
@@ -225,6 +226,8 @@ export default function PhoneCalendar() {
   const nativeCalendars = useNativeScreen("calendars");
   // And Tilføj til kalender.
   const nativeTell = useNativeScreen("tell");
+  // And a trip's sheet.
+  const nativeTrip = useNativeScreen("trip");
   // Planlæg (#126), in the address too, so the phone's back closes it.
   const planOpen = params.has("plan");
   // Planlæg stays on the page until its sheet has shrunk back into the pill
@@ -756,15 +759,24 @@ export default function PhoneCalendar() {
         />
       )}
 
-      {tripWanted && (
-        <Suspense fallback={null}>
-          <TripSheet
-            mark={tripMark}
-            open={tripOpen}
-            onClose={() => setTripOpen(false)}
-            trips={trips}
-          />
-        </Suspense>
+      {nativeTrip ? (
+        <NativeTrip
+          mark={tripMark}
+          open={tripOpen}
+          onClose={() => setTripOpen(false)}
+          trips={trips}
+        />
+      ) : (
+        tripWanted && (
+          <Suspense fallback={null}>
+            <TripSheet
+              mark={tripMark}
+              open={tripOpen}
+              onClose={() => setTripOpen(false)}
+              trips={trips}
+            />
+          </Suspense>
+        )
       )}
 
       {prime.date && (

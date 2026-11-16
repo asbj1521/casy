@@ -839,6 +839,38 @@ public enum CasyStrings {
     public static var aiCancel: String { text("aiPlan.cancel") }
     public static func aiLeft(_ n: Int) -> String { count("aiPlan.left", n) }
 
+    // A trip found in the calendar (#115, #200).
+    public static func tripTitle(_ city: String) -> String { format("trips.title", city) }
+    public static var tripFound: String { text("trips.found") }
+    public static func tripAway(from: String, to: String) -> String { format("trips.away", from, to) }
+    public static var tripAcceptNote: String { text("trips.acceptNote") }
+    public static var tripAccept: String { text("trips.accept") }
+    public static var tripDecline: String { text("trips.decline") }
+    public static var tripAcceptedNote: String { text("trips.acceptedNote") }
+    public static var tripRemove: String { text("trips.remove") }
+    public static var tripAddToCalendar: String { text("trips.addToCalendar") }
+    public static var tripAdding: String { text("trips.adding") }
+    public static var tripInCalendar: String { text("trips.inCalendar") }
+    public static func tripAddedTo(_ calendar: String) -> String { format("trips.addedTo", calendar) }
+    public static func tripReturnTitle(_ city: String) -> String { format("trips.returnTitle", city) }
+    public static var tripReturnIntro: String { text("trips.returnIntro") }
+    public static func tripOutboundTitle(_ city: String) -> String { format("trips.outboundTitle", city) }
+    public static var tripOutboundIntro: String { text("trips.outboundIntro") }
+    public static var tripPickDay: String { text("trips.pickDay") }
+    public static func tripConfirmReturn(_ day: String) -> String { format("trips.confirmReturn", day) }
+    public static func tripConfirmOutbound(_ day: String) -> String { format("trips.confirmOutbound", day) }
+    public static var tripPreviousMonth: String { text("trips.previousMonth") }
+    public static var tripNextMonth: String { text("trips.nextMonth") }
+    public static var tripNotATrip: String { text("trips.notATrip") }
+    public static var tripHomeTitle: String { text("trips.homeTitle") }
+    public static var tripHomeIntro: String { text("trips.homeIntro") }
+    public static var tripNoneOfThem: String { text("trips.noneOfThem") }
+    public static func tripRoute(_ from: String, _ to: String) -> String { format("trips.route", from, to) }
+    /// Fly, Tog, Bus.
+    public static func tripMode(_ mode: String) -> String { named("trips.modes", mode) }
+    /// "tirs. 20. okt. kl. 16:00".
+    public static func tripAt(_ date: String, _ time: String) -> String { format("trips.at", date, time) }
+
     // The one question before the AI does anything (#120, #147).
     public static var aiConsentTitle: String { text("aiConsent.title") }
     public static var aiConsentIntro: String { text("aiConsent.intro") }

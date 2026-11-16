@@ -8,6 +8,8 @@ import {
   transcriptText,
   type Transcript,
 } from "@/lib/speechTranscript";
+import { dayOptions, type Leg } from "@/lib/trips";
+import { cityName } from "@/lib/tripView";
 import { addDays, startOfDay } from "@/lib/zone";
 import {
   categoryLabel,
@@ -199,6 +201,52 @@ export function calendarsCases(): ParityCase[] {
       transcript = hearSpeech(transcript, text);
     }
     add("hearSpeech", { heard }, { ...transcript, text: transcriptText(transcript) });
+  }
+  // trips.ts and tripView.ts, for the trip sheet: a city's name, the days a question offers.
+  const CITY_KEYS = [
+    "copenhagen",
+    "oslo",
+    "new york",
+    "the hague",
+    "'s-hertogenbosch",
+    "aarhus",
+    "rome",
+  ];
+  const leg = (n: number): Leg => {
+    const from = pick(CITY_KEYS);
+    const to = pick(CITY_KEYS);
+    const start = Date.UTC(2026, 9, 10) + int(0, 40) * 86_400_000;
+    return {
+      id: `leg${n}`,
+      mode: pick(["flight", "train", "bus"] as const),
+      from,
+      to,
+      start,
+      end: start + int(1, 10) * 3_600_000,
+      count: 1,
+      ...(flag(0.6) && {
+        names: {
+          from: flag(0.2) ? from : from.toUpperCase(),
+          to: flag(0.2) ? to : `${to[0].toUpperCase()}${to.slice(1)}`,
+        },
+      }),
+    };
+  };
+  for (let i = 0; i < 30; i++) {
+    const legs = Array.from({ length: int(0, 4) }, (_, n) => leg(n));
+    const key = pick(CITY_KEYS);
+    for (const lang of ["da", "en"] as const) {
+      add("cityName", { key, legs, lang }, cityName(key, legs, lang));
+    }
+  }
+  const TRIP_NOW = Date.UTC(2026, 9, 20, 9);
+  for (let i = 0; i < 30; i++) {
+    const at = TRIP_NOW + int(-20, 20) * 86_400_000 + int(0, 23) * 3_600_000;
+    const bound = flag(0.3) ? null : at + int(-10, 70) * 86_400_000;
+    const question = flag(0.5)
+      ? { kind: "return" as const, id: "q", legs: [], earliest: at, latest: bound }
+      : { kind: "outbound" as const, id: "q", legs: [], earliest: bound, latest: at };
+    add("dayOptions", { question, now: TRIP_NOW }, dayOptions(question, TRIP_NOW));
   }
   return cases;
 }

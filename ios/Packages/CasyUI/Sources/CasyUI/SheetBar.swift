@@ -74,8 +74,15 @@ import SwiftUI
             Text(title)
                 .font(.headline)
                 .foregroundStyle(Theme.foreground.color)
-                .lineLimit(1)
+                // A long one (a trip's question) gets two lines and shrinks a
+                // little, rather than pushing the sheet's button off the bar.
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .multilineTextAlignment(.leading)
                 .accessibilityAddTraits(.isHeader)
+                // The bar sizes an item by its own width: a fixed one, with
+                // the close button's room left over on the smallest iPhone.
+                .frame(width: 230, alignment: .leading)
                 .fixedSize()
         }
     }
