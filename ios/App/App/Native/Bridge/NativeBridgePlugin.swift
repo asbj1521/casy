@@ -303,9 +303,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 SettingsScreen(
                     preferences: NativePreferences.shared, onChoose: onChoose, onDone: onDone,
                     enablePush: enablePush))
-        // The half-height ones, solid rather than iOS 26's glass.
-        let halfHeight = ["aiConsent", "prime", "tell", "push"].contains(screen)
-        let host = UIHostingController(rootView: halfHeight ? AnyView(root.solidHalfSheet()) : root)
+        let host = UIHostingController(rootView: root)
         // The sheet's frame and its glass at half height are iOS's, outside
         // SwiftUI: tell it Casy's own light or dark, not only the phone's.
         let theme = NativePreferences.shared.theme
@@ -413,6 +411,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// The home page as the page has it (#201): whether it is shown, whether
     /// something of the page's is over it, and what it adds to the month.
     @objc func setHome(_ call: CAPPluginCall) {
+        #if DEBUG
+            // Under a UI test the test plays the page; a page signed in on the simulator mustn't.
+            if TestLaunch.isActive && TestLaunch.nativeHome { return call.resolve() }
+        #endif
         let extrasRaw: Any? = call.getArray("extras")
         let extras: [MonthItem] = Self.decode([MonthItem].self, extrasRaw) ?? []
         let colorsRaw: Any? = call.getObject("colors")

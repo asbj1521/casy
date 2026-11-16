@@ -11,14 +11,15 @@ final class TellUITests: XCTestCase {
         _ = try await URLSession.shared.data(for: reset)
     }
 
-    func launch() -> XCUIApplication {
+    func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
-            "-casyOpenScreen", "tell",
-            "-casyLang", "da",
-            "-casyNow", "2026-10-07T08:00:00.000Z",
-        ]
+        app.launchArguments =
+            [
+                "-casyBackend", "http://localhost:4318",
+                "-casyOpenScreen", "tell",
+                "-casyLang", "da",
+                "-casyNow", "2026-10-07T08:00:00.000Z",
+            ] + extra
         app.launch()
         XCTAssertTrue(app.navigationBars["Tilføj til kalender"].waitForExistence(timeout: 20))
         return app
@@ -34,6 +35,34 @@ final class TellUITests: XCTestCase {
 
     func text(_ app: XCUIApplication, containing words: String) -> XCUIElement {
         app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", words)).firstMatch
+    }
+
+    /// The same in light.
+    func testTheHalfSheetLooksLikeTheWholeInLight() {
+        let app = launch(["-casy.appearance", "light"])
+        XCTAssertTrue(app.navigationBars["Tilføj til kalender"].waitForExistence(timeout: 10))
+        sleep(1)
+        shot("tell-half-light")
+        let half = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
+        app.navigationBars["Tilføj til kalender"].swipeUp()
+        sleep(1)
+        let full = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
+        XCTAssertEqual(half, full)
+        XCTAssertEqual(full, [255, 255, 255])
+    }
+
+    /// At half height the sheet is the same colour as pulled all the way up.
+    func testTheHalfSheetLooksLikeTheWhole() {
+        // Dark as a phone set to dark, Casy following it.
+        let app = launch(["-casy.appearance", "dark"])
+        shot("tell-half")
+        let half = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
+        app.navigationBars["Tilføj til kalender"].swipeUp()
+        sleep(1)
+        shot("tell-full")
+        let full = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
+        XCTAssertEqual(half, full)
+        XCTAssertEqual(full, [28, 28, 30])
     }
 
     /// Said, checked and kept: the sheet closes on it.

@@ -124,6 +124,7 @@ struct AiConsentSheet: View {
                 }
             }
             .padding(.top, 8)
+            .solidHalfSheet(plain: true)
             .casySheetBar(CasyStrings.aiConsentTitle, close: CasyStrings.aiConsentNotNow, disabled: saving) {
                 if let close { close() } else { dismiss() }
             }

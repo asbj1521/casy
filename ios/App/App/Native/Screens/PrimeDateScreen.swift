@@ -24,15 +24,20 @@ struct PrimeDateSheet: View {
                 if let prime, let group {
                     Section {
                         ListAvatarRow(group.name, index: 0, url: group.pictureUrl.flatMap(URL.init(string:)))
+                            .halfSheetRow()
                         ListRow(
                             formatLongDate(isoString(prime.day), lang), systemImage: "calendar",
-                            value: when(prime))
+                            value: when(prime)
+                        )
+                        .halfSheetRow()
                         ListRow(
                             CasyStrings.primeAllFree(group.members.count), systemImage: "person.2",
                             detail: everyone(
                                 group.members.filter { !$0.isYou }.map(\.name)
                                     + (group.members.contains(where: \.isYou) ? [CasyStrings.primeYou] : []),
-                                lang))
+                                lang)
+                        )
+                        .halfSheetRow()
                     } footer: {
                         Text(CasyStrings.primeFootnote)
                     }
@@ -42,6 +47,7 @@ struct PrimeDateSheet: View {
                     ProgressView()
                 }
             }
+            .solidHalfSheet()
             .casySheetBar(CasyStrings.primeTitle, close: CasyStrings.done, action: onDone)
             .safeAreaInset(edge: .bottom) {
                 FlowButton(action: { leave(.plan) }) { Text(CasyStrings.primePlan) }

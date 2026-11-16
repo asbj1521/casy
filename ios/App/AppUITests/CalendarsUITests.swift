@@ -1,6 +1,19 @@
 import XCTest
 
 /// With CASY_SHOTS set (TEST_RUNNER_CASY_SHOTS for xcodebuild), the screen as it is now, to look at.
+/// The colour (r, g, b) of the screen at a point given as fractions of its size.
+func colour(_ shot: XCUIScreenshot, x: Double, y: Double) -> [Int] {
+    guard let image = shot.image.cgImage,
+        let data = image.dataProvider?.data, let bytes = CFDataGetBytePtr(data)
+    else { return [] }
+    let px = Int(Double(image.width) * x)
+    let py = Int(Double(image.height) * y)
+    let at = py * image.bytesPerRow + px * (image.bitsPerPixel / 8)
+    // BGRA or RGBA: told apart by the bitmap's byte order.
+    let bgra = image.bitmapInfo.contains(.byteOrder32Little)
+    return bgra ? [Int(bytes[at + 2]), Int(bytes[at + 1]), Int(bytes[at])] : [Int(bytes[at]), Int(bytes[at + 1]), Int(bytes[at + 2])]
+}
+
 func shot(_ name: String) {
     guard let shots = ProcessInfo.processInfo.environment["CASY_SHOTS"] else { return }
     try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(shots)/\(name).png"))

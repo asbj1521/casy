@@ -322,7 +322,15 @@ public class PhoneCalendarPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// The theme chosen in Casy's own Settings: "light", "dark" or "system".
     @objc func setAppearance(_ call: CAPPluginCall) {
-        let choice = call.getString("choice") ?? "system"
+        var choice = call.getString("choice") ?? "system"
+        #if DEBUG
+            // A UI test's `-casy.appearance` stands, as a phone set to it would.
+            if let forced = UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[AppAppearance.key]
+                as? String
+            {
+                choice = forced
+            }
+        #endif
         UserDefaults.standard.set(choice, forKey: AppAppearance.key)
         DispatchQueue.main.async {
             let style = AppAppearance.style(choice)

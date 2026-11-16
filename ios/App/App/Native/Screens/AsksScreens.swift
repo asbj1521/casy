@@ -26,6 +26,7 @@ struct PushAskSheet: View {
                     .listRowBackground(Color.clear)
                 if failed { Notice(CasyStrings.pushFailed, tone: .error) }
             }
+            .solidHalfSheet()
             .casySheetBar(
                 CasyStrings.pushAskTitle(reason),
                 // Only after a failure is there anything to put away.
