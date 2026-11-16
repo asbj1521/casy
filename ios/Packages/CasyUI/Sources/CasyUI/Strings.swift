@@ -808,6 +808,54 @@ public enum CasyStrings {
     public static var linkNamePlaceholder: String { text("icsForm.namePlaceholder") }
     public static var linkReading: String { text("icsForm.reading") }
 
+    // Tilføj til kalender (#200, Tell Casy in the code) and its speech.
+    public static var tellTitle: String { text("tellCasy.title") }
+    public static var tellDone: String { text("tellCasy.done") }
+    public static var tellPlaceholder: String { text("tellCasy.placeholder") }
+    public static var tellMorePlaceholder: String { text("tellCasy.morePlaceholder") }
+    public static var tellSend: String { text("tellCasy.send") }
+    public static var tellUpdate: String { text("tellCasy.update") }
+    public static var tellThinking: String { text("tellCasy.thinking") }
+    public static var tellUnderstood: String { text("tellCasy.understood") }
+    /// Væk or Optaget.
+    public static func tellKind(_ kind: String) -> String { named("tellCasy.kinds", kind) }
+    public static var tellNothingFound: String { text("tellCasy.nothingFound") }
+    public static func tellSave(_ n: Int) -> String { count("tellCasy.save", n) }
+    public static var tellSaving: String { text("tellCasy.saving") }
+    public static var tellAddDetails: String { text("tellCasy.addDetails") }
+    public static var tellAgain: String { text("tellCasy.again") }
+    public static func tellLeaveOut(_ label: String) -> String { format("tellCasy.leaveOut", label) }
+    public static var tellKept: String { text("tellCasy.kept") }
+    public static var tellKeptNote: String { text("tellCasy.keptNote") }
+    public static func tellRemove(_ label: String) -> String { format("tellCasy.remove", label) }
+    public static var tellFailed: String { text("tellCasy.failed") }
+    public static var tellSaveFailed: String { text("tellCasy.saveFailed") }
+    public static var tellDeleteFailed: String { text("tellCasy.deleteFailed") }
+    public static var speak: String { text("aiPlan.speak") }
+    public static var stopSpeaking: String { text("aiPlan.stopSpeaking") }
+    public static var listening: String { text("aiPlan.listening") }
+    public static var micDenied: String { text("aiPlan.micDenied") }
+    public static var micFailed: String { text("aiPlan.micFailed") }
+    public static var aiCancel: String { text("aiPlan.cancel") }
+    public static func aiLeft(_ n: Int) -> String { count("aiPlan.left", n) }
+
+    // The one question before the AI does anything (#120, #147).
+    public static var aiConsentTitle: String { text("aiConsent.title") }
+    public static var aiConsentIntro: String { text("aiConsent.intro") }
+    public static var aiConsentSent: String { text("aiConsent.sent") }
+    public static var aiConsentCorrections: String { text("aiConsent.corrections") }
+    public static var aiConsentShared: String { text("aiConsent.shared") }
+    public static var aiConsentSafe: String { text("aiConsent.safe") }
+    public static var aiConsentPrivateNote: String { text("aiConsent.privateNote") }
+    public static var aiConsentReadMore: String { text("aiConsent.readMore") }
+    public static var aiConsentAllow: String { text("aiConsent.allow") }
+    public static var aiConsentNext: String { text("aiConsent.next") }
+    /// Hvad det giver, Hvad der sendes, Hvad vi modtager, Din kontrol.
+    public static var aiConsentPages: [String] { (0..<4).map { text("aiConsent.pages.\($0)") } }
+    public static func aiConsentPageDot(_ n: Int, of total: Int) -> String { format("aiConsent.pageDot", n, total) }
+    public static var aiConsentNotNow: String { text("aiConsent.notNow") }
+    public static var aiConsentSaving: String { text("aiConsent.saving") }
+
     /// The stored English names of event types (STORED_TITLES in eventTitle.ts):
     /// "Evening" is shown in the reader's language; any other title as written.
     private static let storedTitles = [

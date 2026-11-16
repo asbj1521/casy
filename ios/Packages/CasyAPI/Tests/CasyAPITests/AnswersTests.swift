@@ -270,3 +270,10 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     #expect(try body(.name(nil))["name"] is NSNull)
     #expect(try body(.included(false))["included"] as? Bool == false)
 }
+
+@Test func entriesRead() throws {
+    let proposal = try readsWithNothingLost("entries-ai", as: EntriesProposal.self)
+    #expect(proposal.entries.first?.label == "Rejse" && proposal.left == 29)
+    let saved = try readsWithNothingLost("calendar-entries-add", as: EntriesAnswer.self).entries
+    #expect(saved.first?.entry.allDay == true)
+}

@@ -607,6 +607,23 @@ public struct StoredEntry: Codable, Sendable, Equatable {
     public var start: String
     public var end: String
     public var allDay: Bool
+
+    /// The entry itself, as it is shown.
+    public var entry: CasyEntry { CasyEntry(kind: kind, label: label, start: start, end: end, allDay: allDay) }
+}
+
+/// What the AI made of a description (`EntriesProposal`).
+public struct EntriesProposal: Codable, Sendable, Equatable {
+    /// The whole list as it should be now.
+    public var entries: [CasyEntry]
+    /// A question or remark, in the person's language.
+    public var message: String?
+    /// AI answers left today.
+    public var left: Int
+}
+
+public struct EntriesAnswer: Codable, Sendable, Equatable {
+    public var entries: [StoredEntry]
 }
 
 /// Your own calendar over a range (`OverviewData`): every calendar, its busy

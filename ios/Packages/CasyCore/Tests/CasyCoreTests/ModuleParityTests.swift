@@ -375,6 +375,11 @@ private struct SpanAnswer: Encodable {
                     }
                 })
         case "looksLikeAppSpecificPassword": return try json(looksLikeAppSpecificPassword(try text(a, "value")))
+        case "hearSpeech":
+            let heard: [String] = try a["heard"].decoded()
+            let transcript = heard.reduce(Transcript()) { hearSpeech($0, $1) }
+            return try json(["done": transcript.done, "current": transcript.current, "text": transcript.text])
+        case "entryWhen": return try json(entryWhen(try a["entry"].decoded(), try lang(a)))
         case "holidaysInYearAhead":
             return try json(holidaysInYearAhead(try text(a, "timeZone"), now: try milliseconds(a, "now")))
         default: return unknown(fn)

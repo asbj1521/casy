@@ -180,6 +180,24 @@ const ASKED: [
   ],
   ["calendar-sync", DEFAULT_WORLD, "calendar-sync", {}],
   ["calendar-disconnect", DEFAULT_WORLD, "calendar-disconnect", { connectionId: "conn-ics" }],
+  ["entries-ai", DEFAULT_WORLD, "entries-ai", { text: "Jeg rejser", earlier: [], current: null }],
+  [
+    "calendar-entries-add",
+    DEFAULT_WORLD,
+    "calendar-entries",
+    {
+      action: "add",
+      entries: [
+        {
+          kind: "away",
+          label: "Rejse",
+          start: "2026-10-11T22:00:00.000Z",
+          end: "2026-10-19T22:00:00.000Z",
+          allDay: true,
+        },
+      ],
+    },
+  ],
   ["events-settle", DEFAULT_WORLD, "events", { action: "settle", proposalId: "ev-cinema" }],
   [
     "events-deadline",

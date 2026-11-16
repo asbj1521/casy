@@ -8,7 +8,8 @@
  * of `{ friends: [...] }` starts it with those friends from groups since gone,
  * `{ admin: true }` with Mia an admin, and `{ reviews: true }` with reports
  * and AI corrections waiting for her (e2e/adminReviews.ts), and
- * `{ calendars: "none" }` with nothing connected (#200).
+ * `{ calendars: "none" }` with nothing connected and `{ aiConsent: false }`
+ * without the yes to the AI (#200).
  */
 import { createServer } from "node:http";
 import process from "node:process";
@@ -40,6 +41,7 @@ createServer((request, response) => {
         admin?: boolean;
         reviews?: boolean;
         calendars?: "none";
+        aiConsent?: boolean;
       };
       backend = new FakeBackend(
         makeWorld(seed.calendars ? { ...DEFAULT_WORLD, calendars: seed.calendars } : DEFAULT_WORLD),
@@ -47,6 +49,7 @@ createServer((request, response) => {
       if (seed.friends) backend.world.friends = seed.friends;
       if (seed.admin) backend.world.admin = "current";
       if (seed.reviews) addReviews(backend.world);
+      if (seed.aiConsent === false) backend.world.aiConsent = false;
       return send(200, {});
     }
     if (!name) return send(404, { error: "Not a function" });

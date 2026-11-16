@@ -35,7 +35,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
         #if DEBUG
-            ["settings", "profile", "events", "calendars"]
+            ["settings", "profile", "events", "calendars", "tell"]
         #else
             []
         #endif
@@ -223,11 +223,15 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self?.dismissOpenScreen(["joined": true])
             case .accountDeleted:
                 self?.dismissOpenScreen(["accountDeleted": true])
+            case .added(let start):
+                self?.dismissOpenScreen(["added": start])
             }
         }
         let root: AnyView =
             screen == "calendars"
             ? AnyView(calendarsSheet(state, onDone: onDone, leave: leave))
+            : screen == "tell"
+            ? AnyView(TellSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "profile"

@@ -1,6 +1,14 @@
 /** calendarOverview.ts's list rules, calendarTour.ts, syncedAgo and the Apple password check, for Calendars.swift (#200). */
 import { syncedAgo } from "@/lib/accountSummary";
 import { looksLikeAppSpecificPassword } from "@/lib/appleCredentials";
+import { entryWhen, type CasyEntry } from "@/lib/casyEntries";
+import {
+  EMPTY_TRANSCRIPT,
+  hearSpeech,
+  transcriptText,
+  type Transcript,
+} from "@/lib/speechTranscript";
+import { addDays, startOfDay } from "@/lib/zone";
 import {
   categoryLabel,
   groupCalendarsByBrand,
@@ -148,6 +156,49 @@ export function calendarsCases(): ParityCase[] {
   for (let i = 0; i < 20; i++) {
     const now = Date.UTC(2025, 0, 1) + int(0, 900) * 86_400_000 + int(0, 86_399) * 1000;
     add("holidaysInYearAhead", { timeZone: TZ, now }, holidaysInYearAhead(TZ, now));
+  }
+  // Around the autumn's clock change, whole days, an evening, and across midnight.
+  for (let i = 0; i < 60; i++) {
+    const day = startOfDay(Date.UTC(2026, 9, 20) + int(0, 14) * 86_400_000, TZ);
+    const allDay = flag(0.5);
+    const start = allDay ? day : day + int(0, 23 * 4) * 900_000;
+    const end = allDay ? addDays(day, int(1, 9), TZ) : start + int(1, 40) * 900_000;
+    const entry: CasyEntry = {
+      kind: pick(["away", "busy"] as const),
+      label: "Rejse",
+      start: new Date(start).toISOString(),
+      end: new Date(end).toISOString(),
+      allDay,
+    };
+    for (const lang of ["da", "en"] as const)
+      add("entryWhen", { entry, lang }, entryWhen(entry, lang));
+  }
+  // speechTranscript.ts: what is heard across a pause (Tilføj til kalender's microphone).
+  const SAID = [
+    "jeg",
+    "rejser",
+    "fra",
+    "den",
+    "12.",
+    "til",
+    "19.",
+    "oktober",
+    "og",
+    "har",
+    "kursus",
+  ];
+  for (let i = 0; i < 30; i++) {
+    let transcript: Transcript = EMPTY_TRANSCRIPT;
+    const heard: string[] = [];
+    let words = int(1, 6);
+    for (let step = 0; step < 6; step++) {
+      // Mostly growing; now and then a correction, or a start-over after a pause.
+      words = flag(0.25) ? int(1, 2) : Math.min(SAID.length, words + int(0, 2));
+      const text = SAID.slice(0, words).join(" ");
+      heard.push(text);
+      transcript = hearSpeech(transcript, text);
+    }
+    add("hearSpeech", { heard }, { ...transcript, text: transcriptText(transcript) });
   }
   return cases;
 }

@@ -1,5 +1,6 @@
 import NativeCalendars from "@/components/calendarView/NativeCalendars";
 import NativeEvents from "@/components/myEvents/phone/NativeEvents";
+import NativeTell from "@/components/tellCasy/NativeTell";
 import NativeProfile from "@/components/profile/NativeProfile";
 import { useNativeScreen } from "@/hooks/useNativeScreen";
 import {
@@ -222,6 +223,8 @@ export default function PhoneCalendar() {
   };
   // The app may draw Kalendere itself (#200), its screens and the tour too.
   const nativeCalendars = useNativeScreen("calendars");
+  // And Tilføj til kalender.
+  const nativeTell = useNativeScreen("tell");
   // Planlæg (#126), in the address too, so the phone's back closes it.
   const planOpen = params.has("plan");
   // Planlæg stays on the page until its sheet has shrunk back into the pill
@@ -776,19 +779,28 @@ export default function PhoneCalendar() {
       )}
 
       {/* On the page ahead of its first press, like the home page's sheets (#169). */}
-      {aiAllowed && (settled || tellOpen) && (
-        <Suspense fallback={null}>
-          <TellCasySheet
-            open={tellOpen}
-            onClose={() => setTellOpen(false)}
-            kept={entries}
-            origin={tellButton}
-            // Kept (#193): the month glides to the first day added, to show it landed.
-            onSaved={(added) =>
-              added[0] && months.current?.glideToDay(startOfDay(Date.parse(added[0].start), TZ))
-            }
-          />
-        </Suspense>
+      {nativeTell ? (
+        <NativeTell
+          open={tellOpen}
+          onClose={() => setTellOpen(false)}
+          onSaved={(start) => months.current?.glideToDay(startOfDay(Date.parse(start), TZ))}
+        />
+      ) : (
+        aiAllowed &&
+        (settled || tellOpen) && (
+          <Suspense fallback={null}>
+            <TellCasySheet
+              open={tellOpen}
+              onClose={() => setTellOpen(false)}
+              kept={entries}
+              origin={tellButton}
+              // Kept (#193): the month glides to the first day added, to show it landed.
+              onSaved={(added) =>
+                added[0] && months.current?.glideToDay(startOfDay(Date.parse(added[0].start), TZ))
+              }
+            />
+          </Suspense>
+        )
       )}
 
       {dayShown !== null && (

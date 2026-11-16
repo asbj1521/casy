@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "kind": "away",
+      "label": "Rejse",
+      "start": "2026-10-11T22:00:00.000Z",
+      "end": "2026-10-19T22:00:00.000Z",
+      "allDay": true
+    }
+  ],
+  "message": null,
+  "left": 29
+}

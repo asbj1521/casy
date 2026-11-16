@@ -113,6 +113,8 @@ enum LeavingProfile {
     case joined
     /// The account is gone: the page drops its login and says so.
     case accountDeleted
+    /// Tilføj til kalender kept something (#200): the month glides to its first day.
+    case added(String)
 }
 
 /// The Profil list as a native screen (#198), `ProfileHubList` on the web.

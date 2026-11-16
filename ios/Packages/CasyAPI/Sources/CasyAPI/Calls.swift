@@ -236,6 +236,32 @@ private struct Disconnect: Encodable, Sendable {
 
 private struct Empty: Encodable, Sendable {}
 
+private struct ProposeEntries: Encodable, Sendable {
+    let text: String
+    let earlier: [String]
+    let current: [CasyEntry]?
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(text, forKey: .text)
+        try c.encode(earlier, forKey: .earlier)
+        // A first description sends null: there is no proposal yet.
+        try c.encode(current, forKey: .current)
+    }
+
+    enum CodingKeys: String, CodingKey { case text, earlier, current }
+}
+
+private struct AddEntries: Encodable, Sendable {
+    let action = "add"
+    let entries: [CasyEntry]
+}
+
+private struct DeleteEntry: Encodable, Sendable {
+    let action = "delete"
+    let id: String
+}
+
 private struct AdminId: Encodable, Sendable {
     let action: String
     let id: String
@@ -642,6 +668,27 @@ extension EdgeFunctions {
     public func syncCalendars(errorMessage: String? = nil) async throws -> [SyncResult] {
         let answer: SyncAnswer = try await call("calendar-sync", body: Empty(), errorMessage: errorMessage)
         return answer.results
+    }
+
+    /// What was said or written about time in no calendar, as entries (`entries-ai`):
+    /// a first description, or more details with what was written before and the proposal so far.
+    public func proposeEntries(
+        text: String, earlier: [String], current: [CasyEntry]?, errorMessage: String? = nil
+    ) async throws -> EntriesProposal {
+        try await call(
+            "entries-ai", body: ProposeEntries(text: text, earlier: earlier, current: current),
+            errorMessage: errorMessage)
+    }
+
+    /// The entries kept.
+    public func saveEntries(_ entries: [CasyEntry], errorMessage: String? = nil) async throws -> [StoredEntry] {
+        let answer: EntriesAnswer = try await call(
+            "calendar-entries", body: AddEntries(entries: entries), errorMessage: errorMessage)
+        return answer.entries
+    }
+
+    public func deleteEntry(_ id: String, errorMessage: String? = nil) async throws {
+        let _: Ignored = try await call("calendar-entries", body: DeleteEntry(id: id), errorMessage: errorMessage)
     }
 
     /// A calendar chosen as primary, or nil to stop using one.

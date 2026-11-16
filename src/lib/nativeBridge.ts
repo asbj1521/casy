@@ -16,7 +16,7 @@ import { isNativeApp } from "@/lib/nativeApp";
 import type { ThemeChoice } from "@/lib/theme";
 
 /** A screen the app may draw natively in place of the page's own. */
-export type NativeScreen = "settings" | "profile" | "events" | "calendars";
+export type NativeScreen = "settings" | "profile" | "events" | "calendars" | "tell";
 
 interface LentSession {
   accessToken: string;
@@ -35,6 +35,8 @@ export interface NativeClosed {
   joined?: boolean;
   /** The account was deleted from a native screen (#198): the page drops its login. */
   accountDeleted?: boolean;
+  /** Tilføj til kalender kept something (#200): where the first of it starts, to glide to. */
+  added?: string;
 }
 
 interface Preferences {
