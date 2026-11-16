@@ -223,6 +223,22 @@ struct DayOfCalendar {
     /// One store for the app's life: making one is costly.
     nonisolated(unsafe) private static let store = EKEventStore()
 
+    /// This phone's calendars' colours in Apple Calendar (#220), by their ids
+    /// here; none without access. Read off the main thread.
+    nonisolated static func phoneColors(_ calendars: [OverviewCalendar]) -> [String: String] {
+        guard PhoneCalendarReader.accessState() == "granted" else { return [:] }
+        let here = Dictionary(
+            PhoneCalendarReader.readable(store).map { ($0.calendarIdentifier, $0) }, uniquingKeysWith: { a, _ in a })
+        guard let connection = calendars.first(where: { $0.externalId.map { here[$0] != nil } ?? false })?.connectionId
+        else { return [:] }
+        var own: [String: String] = [:]
+        for (external, id) in phoneCalendarIds(calendars, connectionId: connection) {
+            let rgb = PhoneCalendarReader.rgb(of: here[external]?.cgColor)
+            if !rgb.isEmpty { own[id] = rgb }
+        }
+        return own
+    }
+
     /// Read off the main thread: EventKit's fetch can take a moment.
     nonisolated private static func phoneDrawn(
         _ data: OverviewData, from: Int64, to: Int64

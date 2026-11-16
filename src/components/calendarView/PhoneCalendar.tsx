@@ -1,3 +1,4 @@
+import NativeCalendars from "@/components/calendarView/NativeCalendars";
 import NativeEvents from "@/components/myEvents/phone/NativeEvents";
 import NativeProfile from "@/components/profile/NativeProfile";
 import { useNativeScreen } from "@/hooks/useNativeScreen";
@@ -69,6 +70,7 @@ import {
 } from "@/lib/tripView";
 import { primeDatePlan, type PrimeDate } from "@/lib/primeDates";
 import { APP_TIME_ZONE, startOfDay } from "@/lib/zone";
+import { HOLIDAY_CALENDAR_ID } from "@/lib/calendarOverview";
 import { useOnceTrue } from "@/hooks/useOnceTrue";
 
 // Sheets fetched the first time they open (#157).
@@ -218,6 +220,8 @@ export default function PhoneCalendar() {
     setTourSeen(seen);
     rememberTourSeen(userId, seen);
   };
+  // The app may draw Kalendere itself (#200), its screens and the tour too.
+  const nativeCalendars = useNativeScreen("calendars");
   // Planlæg (#126), in the address too, so the phone's back closes it.
   const planOpen = params.has("plan");
   // Planlæg stays on the page until its sheet has shrunk back into the pill
@@ -833,20 +837,34 @@ export default function PhoneCalendar() {
         }
       />
 
-      <CalendarsSheet
-        open={listOpen}
-        onClose={closeOverlay}
-        origin={listButton}
-        arrived={arrived.has("calendars")}
-        calendars={calendars}
-        colorOf={calendar.colorOf}
-        connectedCount={calendar.loading ? null : connectedCount}
-        onSetVisible={setCalendarsVisible}
-        visibilityError={visibilityError}
-        toSort={toSort}
-        tourSeen={tourSeen}
-        onTourSeen={seeInTour}
-      />
+      {nativeCalendars ? (
+        <NativeCalendars
+          open={listOpen}
+          onClose={closeOverlay}
+          holidaysHidden={!calendars.find((c) => c.id === HOLIDAY_CALENDAR_ID)?.included}
+          onHolidaysHidden={(hidden) => setCalendarsVisible([HOLIDAY_CALENDAR_ID], !hidden)}
+          tourSeen={tourSeen}
+          onTourSeen={(seen) => {
+            setTourSeen(seen);
+            rememberTourSeen(userId, seen);
+          }}
+        />
+      ) : (
+        <CalendarsSheet
+          open={listOpen}
+          onClose={closeOverlay}
+          origin={listButton}
+          arrived={arrived.has("calendars")}
+          calendars={calendars}
+          colorOf={calendar.colorOf}
+          connectedCount={calendar.loading ? null : connectedCount}
+          onSetVisible={setCalendarsVisible}
+          visibilityError={visibilityError}
+          toSort={toSort}
+          tourSeen={tourSeen}
+          onTourSeen={seeInTour}
+        />
+      )}
     </div>
   );
 }

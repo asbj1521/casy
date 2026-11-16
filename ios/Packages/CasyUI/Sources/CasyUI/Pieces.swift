@@ -4,11 +4,13 @@
 import SwiftUI
 
 /// A text field as the Planlæg sheet has it: tall, 17 point, rounded, with a
-/// small uppercase label above. `lines` over 1 makes it grow.
+/// small uppercase label above. `lines` over 1 makes it grow; `secure` hides
+/// what is typed (a password).
 public struct CasyField: View {
     private let label: String
     private let placeholder: String
     private let lines: Int
+    private let secure: Bool
     @Binding private var text: String
     @FocusState private var focused: Bool
     @ScaledMetric(relativeTo: .body) private var height: CGFloat = 48
@@ -17,12 +19,14 @@ public struct CasyField: View {
         _ label: String,
         text: Binding<String>,
         placeholder: String = "",
-        lines: Int = 1
+        lines: Int = 1,
+        secure: Bool = false
     ) {
         self.label = label
         self._text = text
         self.placeholder = placeholder
         self.lines = lines
+        self.secure = secure
     }
 
     public var body: some View {
@@ -33,8 +37,7 @@ public struct CasyField: View {
                 .foregroundStyle(Theme.mutedForeground.color)
                 .padding(.horizontal, 4)
                 .accessibilityHidden(true)
-            TextField(placeholder, text: $text, axis: lines > 1 ? .vertical : .horizontal)
-                .lineLimit(lines > 1 ? lines...(lines * 3) : 1...1)
+            field
                 .font(.body)
                 .foregroundStyle(Theme.foreground.color)
                 .textFieldStyle(.plain)
@@ -50,6 +53,15 @@ public struct CasyField: View {
                             lineWidth: 1)
                 }
                 .accessibilityLabel(label)
+        }
+    }
+
+    @ViewBuilder private var field: some View {
+        if secure {
+            SecureField(placeholder, text: $text)
+        } else {
+            TextField(placeholder, text: $text, axis: lines > 1 ? .vertical : .horizontal)
+                .lineLimit(lines > 1 ? lines...(lines * 3) : 1...1)
         }
     }
 }

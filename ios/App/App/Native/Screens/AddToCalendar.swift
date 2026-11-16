@@ -23,21 +23,10 @@ struct AddToCalendar: View {
     @State private var loadFailure: String?
 
     /// The calendars that can take it, by account (`primaryOptions`).
-    private var options: [CalendarChoices] {
-        connections.filter { $0.status == "connected" }
-            .map { c in
-                CalendarChoices(
-                    id: c.id, account: c.account_label ?? c.provider,
-                    calendars: c.calendar_sources.filter { $0.writable || $0.id == primary?.calendarId })
-            }
-            .filter { !$0.calendars.isEmpty }
-    }
+    private var options: [CalendarChoices] { calendarChoices(connections, primaryId: primary?.calendarId) }
 
     /// The primary calendar's name (`primaryName`).
-    private var primaryLabel: String? {
-        guard let id = primary?.calendarId else { return nil }
-        return connections.lazy.flatMap(\.calendar_sources).first { $0.id == id }?.name
-    }
+    private var primaryLabel: String? { primaryName(connections, primary?.calendarId) }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -178,13 +167,6 @@ struct AddToCalendar: View {
 }
 
 /// Which calendar agreed events go into: the choice becomes the primary calendar.
-/// One account's calendars that can take an event.
-private struct CalendarChoices: Identifiable {
-    let id: String
-    let account: String
-    let calendars: [CalendarSource]
-}
-
 private struct ChooseCalendarSheet: View {
     let options: [CalendarChoices]
     let choose: (String) -> Void

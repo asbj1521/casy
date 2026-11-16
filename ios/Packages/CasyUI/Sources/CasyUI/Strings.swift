@@ -633,6 +633,181 @@ public enum CasyStrings {
     public static var eventsRemindFailed: String { text("events.remindFailed") }
     public static var searchAgain: String { text("searchAgain.button") }
 
+    // Kalendere (#200): the list, its pickers, the connected calendars and the tour.
+    private static func format(_ key: String, _ args: CVarArg...) -> String {
+        String(format: text(key), arguments: args)
+    }
+    public static var calendarsTitle: String { text("calendarView.calendarsButton") }
+    public static var calendarsListTitle: String { text("calendarView.listTitle") }
+    public static var calendarsListIntro: String { text("calendarView.listIntro") }
+    public static var calendarsHelpLabel: String { text("calendarView.priorityHelpLabel") }
+    public static func calendarsShowAll(_ brand: String) -> String { format("calendarView.showAll", brand) }
+    public static func calendarsShow(_ name: String) -> String { format("calendarView.show", name) }
+    public static func calendarsTotal(_ n: Int) -> String { format("calendarView.total", n) }
+    public static var calendarsBuiltInNoAccount: String { text("calendarView.builtInNoAccount") }
+    public static func calendarsNotCounted(_ n: Int) -> String { format("calendarView.notCounted", n) }
+    public static var calendarsHolidayCategory: String { text("calendarView.holidayCategory") }
+    public static var calendarsHolidayCalendar: String { text("calendarView.holidayCalendar") }
+    public static var calendarsNoCategory: String { text("calendarView.noCategory") }
+    public static var calendarsNewCategory: String { text("calendarView.newCategory") }
+    public static var calendarsNewCategoryName: String { text("calendarView.newCategoryName") }
+    public static var calendarsNewCategoryPlaceholder: String { text("calendarView.newCategoryPlaceholder") }
+    public static var calendarsNewCategoryAsk: String { text("calendarView.newCategoryAsk") }
+    public static var calendarsNewCategoryYes: String { text("calendarView.newCategoryYes") }
+    public static var calendarsNewCategoryNo: String { text("calendarView.newCategoryNo") }
+    public static var calendarsNewCategorySave: String { text("calendarView.newCategorySave") }
+    public static var calendarsGuessedCategory: String { text("calendarView.guessedCategory") }
+    public static func calendarsCategoryFor(_ name: String) -> String { format("calendarView.categoryFor", name) }
+    public static func calendarsPriorityFor(_ name: String) -> String { format("calendarView.priorityFor", name) }
+    public static func calendarsRename(_ name: String) -> String { format("calendarView.rename", name) }
+    public static func calendarsOriginally(_ name: String) -> String { format("calendarView.originally", name) }
+    public static func calendarsUseOriginalName(_ name: String) -> String { format("calendarView.useOriginalName", name) }
+    public static var calendarsSaveCategoryFailed: String { text("calendarView.couldntSaveCategory") }
+    public static var calendarsSaveIncludedFailed: String { text("calendarView.couldntSaveIncluded") }
+    public static var calendarsSavePriorityFailed: String { text("calendarView.couldntSavePriority") }
+    public static var calendarsSaveNameFailed: String { text("calendarView.couldntSaveName") }
+    public static var calendarsTryAgain: String { text("calendarView.tryAgain") }
+    /// A group of the list by its provider: Google, Apple, Særlige, Telefon, Indbygget.
+    public static func calendarsBrand(_ provider: String) -> String { named("calendarView.brands", provider) }
+    public static var calendarsAppleName: String { text("calendarView.providerNames.apple") }
+    public static var calendarsLinkName: String { text("calendarView.providerNames.ics") }
+    /// Arbejde, Skole, Privat, Andet.
+    public static func category(_ purpose: String) -> String { named("category", purpose) }
+    /// Lav, Normal or Høj prioritet: the app's names for a calendar's priority (#221).
+    public static func priorityLevel(_ priority: String) -> String { named("calendarTour.levels", priority) }
+    public static var priorityLevelsHelp: String { text("calendarTour.levelsHelp") }
+    /// Apple-kalender, Denne telefon, Kalenderlink (ICS), Google Kalender, Outlook-kalender.
+    public static func provider(_ id: String) -> String { named("provider", id) }
+
+    public static var tourTitle: String { text("calendarTour.title") }
+    public static var tourRow: String { text("calendarTour.row") }
+    public static var tourRowDetail: String { text("calendarTour.rowDetail") }
+    public static func tourRowUnsorted(_ n: Int) -> String { count("calendarTour.rowUnsorted", n) }
+    public static var tourNext: String { text("calendarTour.next") }
+    public static var tourFinish: String { text("calendarTour.finish") }
+    public static func tourStep(_ i: Int, of n: Int) -> String { format("calendarTour.step", i, n) }
+    public static func tourEvents(_ n: Int) -> String { count("calendarTour.events", n) }
+    public static var tourCategory: String { text("calendarTour.category") }
+    public static var tourImportance: String { text("calendarTour.importance") }
+    public static var tourImportanceHelp: String { text("calendarTour.importanceHelp") }
+    public static var tourOff: String { text("calendarTour.off") }
+    public static var tourOffEffect: String { text("calendarTour.effects.off") }
+    public static var tourDoneTitle: String { text("calendarTour.doneTitle") }
+    public static var tourDoneBody: String { text("calendarTour.doneBody") }
+    public static var tourSee: String { text("calendarTour.see") }
+    public static func tourSomeFailed(_ n: Int) -> String { count("calendarTour.someFailed", n) }
+    public static var tourRetry: String { text("calendarTour.retry") }
+
+    public static var primaryTitle: String { text("primaryCalendar.title") }
+    public static var primaryBadge: String { text("primaryCalendar.badge") }
+    public static var primaryIntro: String { text("primaryCalendar.introShort") }
+    public static var primaryAutoAddDetail: String { text("primaryCalendar.autoAddShort") }
+    public static var primaryNoWritable: String { text("primaryCalendar.noWritable") }
+    public static var primaryWaitingForSync: String { text("primaryCalendar.waitingForSync") }
+    public static var primarySelectLabel: String { text("primaryCalendar.selectLabel") }
+    public static var primaryChoose: String { text("primaryCalendar.choose") }
+    public static var primaryNone: String { text("primaryCalendar.noneOption") }
+    public static func primaryConfirmChange(_ name: String, from current: String) -> String {
+        format("primaryCalendar.confirmChange", name, current)
+    }
+    public static func primaryConfirmClear(_ current: String) -> String { format("primaryCalendar.confirmClear", current) }
+    public static var primaryYesChange: String { text("primaryCalendar.yesChange") }
+    public static var primaryYesStop: String { text("primaryCalendar.yesStop") }
+    public static var primaryAutoAdd: String { text("primaryCalendar.autoAdd") }
+    public static var primaryAutoAddNeedsPrimary: String { text("primaryCalendar.autoAddNeedsPrimary") }
+    public static var primaryAutoAddFailed: String { text("api.setAutoAdd") }
+
+    public static var accountsRow: String { text("calendarAccounts.row") }
+    public static var accountsRowDetail: String { text("calendarAccounts.rowDetail") }
+    public static var accountsTitle: String { text("profile.connectedCalendars") }
+    public static var accountsYours: String { text("calendarAccounts.accounts") }
+    public static var accountsAdd: String { text("calendarAccounts.add") }
+    public static var accountsHelp: String { text("calendarAccounts.help") }
+    public static var accountsMore: String { text("calendarAccounts.more") }
+    public static var accountsMoreDetail: String { text("calendarAccounts.moreDetail") }
+    public static var accountsAppleElsewhere: String { text("calendarAccounts.appleElsewhere") }
+    public static var accountsPhoneHint: String { text("connectPrompt.hints.device") }
+    public static var accountsLinkHint: String { text("connectPrompt.hints.ics") }
+    public static var syncing: String { text("profile.syncing") }
+    public static var syncNow: String { text("profile.syncNow") }
+    public static var syncAllFresh: String { text("profile.syncAllFresh") }
+    public static func syncedAccounts(_ n: Int) -> String { count("profile.syncedAccounts", n) }
+    public static func syncSomeFailed(_ failed: Int, of n: Int) -> String {
+        n == 1 ? format("profile.syncSomeFailed.one", failed) : format("profile.syncSomeFailed.many", failed, n)
+    }
+    public static func linkAdded(_ label: String, blocks: Int) -> String { format("profile.icsAdded", label, busyBlocks(blocks)) }
+    public static func appleConnected(_ label: String, calendars: Int, blocks: Int, skipped: Int) -> String {
+        format("profile.appleConnected", label, calendarsCount(calendars), busyBlocks(blocks))
+            + (skipped > 0 ? count("profile.appleConnected.skipped", skipped) : "")
+    }
+    public static var syncFailed: String { text("profile.couldntSync") }
+    public static var addLinkFailed: String { text("profile.couldntAddLink") }
+    public static var removeAccountFailed: String { text("profile.couldntRemove") }
+    public static var connectAppleFailed: String { text("profile.couldntIcloud") }
+    public static var loadCalendarsFailed: String { text("api.loadCalendars") }
+    /// What removing an account deletes, and where its access is revoked.
+    public static func removeAccountNote(provider: String, label: String?) -> String {
+        switch provider {
+        case "ics": label.map { format("providerCard.removeIcs", $0) } ?? text("providerCard.removeIcs.none")
+        case "device": label.map { format("providerCard.removeDevice", $0) } ?? text("providerCard.removeDevice.none")
+        case "apple": label.map { format("providerCard.removeApple", $0) } ?? text("providerCard.removeApple.none")
+        default:
+            label.map { format("providerCard.removeOauth", $0, provider == "google" ? "Google" : "Microsoft") }
+                ?? format("providerCard.removeOauth.none", provider == "google" ? "Google" : "Microsoft")
+        }
+    }
+    public static var unknownAccount: String { text("providerCard.unknownAccount") }
+    public static var lastSyncFailed: String { text("providerCard.lastSyncFailed") }
+    public static var linkStopped: String { text("providerCard.linkStopped") }
+    public static var accessExpired: String { text("providerCard.accessExpired") }
+    public static var reconnect: String { text("providerCard.reconnectTitle") }
+    public static var removeAccountTitle: String { text("providerCard.removeTitle") }
+    public static var removeAccount: String { text("providerCard.remove") }
+    public static var connect: String { text("providerCard.connect") }
+    public static var addLink: String { text("providerCard.addLink") }
+    public static func lastFailed(_ message: String) -> String { format("providerCard.lastFailed", message) }
+    public static var unknownError: String { text("providerCard.unknownError") }
+    /// "for 5 min siden", a phone's short `syncedAgo` (#219).
+    public static func syncedShort(minutes: Int) -> String {
+        if minutes < 1 { return text("syncedShort.justNow") }
+        if minutes < 60 { return format("syncedShort.minutes", minutes) }
+        let hours = minutes / 60
+        if hours < 24 { return format("syncedShort.hours", hours) }
+        return count("syncedShort.days", hours / 24)
+    }
+
+    public static func phoneConnected(calendars: Int, blocks: Int) -> String {
+        format("phoneCalendar.connected", calendarsCount(calendars), busyBlocks(blocks))
+    }
+    public static var phoneDenied: String { text("phoneCalendar.denied") }
+    public static var phoneOpenSettings: String { text("phoneCalendar.openSettings") }
+    public static var phoneNeedTitle: String { text("phoneCalendar.needTitle") }
+    public static var phoneNeedBody: String { text("phoneCalendar.needBody") }
+    public static var phoneImport: String { text("phoneCalendar.importCalendar") }
+    public static var phoneImporting: String { text("phoneCalendar.importing") }
+    public static var phoneSaveFailed: String { text("phoneCalendar.couldntSave") }
+    public static var demoPhone: String { text("phoneCalendar.demo.phone") }
+    public static var demoWeSee: String { text("phoneCalendar.demo.casy") }
+    /// The made-up events of the import screen's picture: Tandlæge, Lægen, Middag.
+    public static var demoTitles: [String] { (0..<3).map { text("phoneCalendar.demo.title\($0)") } }
+
+    public static var appleEmail: String { text("appleForm.email") }
+    public static var applePassword: String { text("appleForm.password") }
+    public static var appleAbout: String { text("appleForm.about") }
+    public static var appleAboutBody: String { text("appleForm.aboutBody") }
+    public static var appleReading: String { text("appleForm.reading") }
+    public static var appleStepByStep: String { text("appleForm.stepByStep") }
+    public static func appleNoPasswordYet(_ link: String) -> String { format("appleForm.noPasswordYet", link) }
+    public static func appleStuck(_ link: String) -> String { format("appleForm.stuck", link) }
+    public static func appleLooksWrong(_ example: String) -> String { format("appleForm.looksWrong", example) }
+    public static var linkLabel: String { text("icsForm.link") }
+    public static var linkAbout: String { text("icsForm.about") }
+    public static var linkAboutBody: String { text("icsForm.aboutBody") }
+    public static var linkLikePassword: String { text("icsForm.likePassword") }
+    public static var linkName: String { text("icsForm.name") }
+    public static var linkNamePlaceholder: String { text("icsForm.namePlaceholder") }
+    public static var linkReading: String { text("icsForm.reading") }
+
     /// The stored English names of event types (STORED_TITLES in eventTitle.ts):
     /// "Evening" is shown in the reader's language; any other title as written.
     private static let storedTitles = [

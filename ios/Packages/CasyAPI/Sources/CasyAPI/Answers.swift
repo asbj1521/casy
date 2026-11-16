@@ -623,3 +623,33 @@ public struct RemindAnswer: Codable, Sendable, Equatable {
     public var reminded: Int
     public var events: [SuggestedEvent]
 }
+
+/// An answer whose contents nothing reads (a set, a removal).
+public struct Ignored: Codable, Sendable, Equatable {}
+
+/// What a calendar link added (calendar-add-ics).
+public struct LinkAdded: Codable, Sendable, Equatable {
+    public var connectionId: String?
+    public var label: String
+    public var busyBlocks: Int
+}
+
+/// What connecting an Apple account found (`AppleConnectResult`).
+public struct AppleConnected: Codable, Sendable, Equatable {
+    public var connectionId: String
+    /// The Apple Account email, which the account is listed as.
+    public var label: String
+    public var calendars: Int
+    public var busyBlocks: Int
+    /// Events Apple sent that couldn't be read, and were left out.
+    public var skippedEvents: Int
+}
+
+/// One account's sync.
+public struct SyncResult: Codable, Sendable, Equatable {
+    public var ok: Bool
+}
+
+public struct SyncAnswer: Codable, Sendable, Equatable {
+    public var results: [SyncResult]
+}

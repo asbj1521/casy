@@ -189,8 +189,52 @@ private struct EventAnswer: Encodable, Sendable {
 
 private struct SetPrimary: Encodable, Sendable {
     let action = "set"
-    let calendarId: String
+    let calendarId: String?
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(action, forKey: .action)
+        // Null clears the choice, so it is written out.
+        try c.encode(calendarId, forKey: .calendarId)
+    }
+
+    enum CodingKeys: String, CodingKey { case action, calendarId }
 }
+
+private struct AutoAdd: Encodable, Sendable {
+    let action = "auto-add"
+    let autoAdd: Bool
+}
+
+/// One change to one calendar: its id with the change's own keys.
+private struct CalendarUpdate: Encodable, Sendable {
+    let calendarId: String
+    let change: CalendarChange
+
+    func encode(to encoder: Encoder) throws {
+        try change.encode(to: encoder)
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(calendarId, forKey: .calendarId)
+    }
+
+    enum CodingKeys: String, CodingKey { case calendarId }
+}
+
+private struct AddLink: Encodable, Sendable {
+    let url: String
+    let name: String
+}
+
+private struct AddApple: Encodable, Sendable {
+    let username: String
+    let password: String
+}
+
+private struct Disconnect: Encodable, Sendable {
+    let connectionId: String
+}
+
+private struct Empty: Encodable, Sendable {}
 
 private struct AdminId: Encodable, Sendable {
     let action: String
@@ -561,8 +605,47 @@ extension EdgeFunctions {
         return answer.primary
     }
 
-    /// A calendar chosen as primary.
-    public func setPrimaryCalendar(_ calendarId: String, errorMessage: String? = nil) async throws -> PrimaryCalendar? {
+    /// Agreed events added by themselves once everyone has said yes, or not.
+    public func setAutoAdd(_ on: Bool, errorMessage: String? = nil) async throws -> PrimaryCalendar? {
+        let answer: PrimaryAnswer = try await call(
+            "calendar-primary", body: AutoAdd(autoAdd: on), errorMessage: errorMessage)
+        return answer.primary
+    }
+
+    /// One change to one of your calendars: its category, priority, name, or whether it counts.
+    public func updateCalendar(_ calendarId: String, _ change: CalendarChange, errorMessage: String? = nil) async throws {
+        let _: Ignored = try await call(
+            "calendar-set-purpose", body: CalendarUpdate(calendarId: calendarId, change: change),
+            errorMessage: errorMessage)
+    }
+
+    /// A calendar added by its link (a timetable, a shared feed).
+    public func addCalendarLink(url: String, name: String, errorMessage: String? = nil) async throws -> LinkAdded {
+        try await call("calendar-add-ics", body: AddLink(url: url, name: name), errorMessage: errorMessage)
+    }
+
+    /// An Apple account signed in with an app-specific password, its busy times copied.
+    public func connectApple(username: String, password: String, errorMessage: String? = nil) async throws
+        -> AppleConnected
+    {
+        try await call(
+            "calendar-add-apple", body: AddApple(username: username, password: password), errorMessage: errorMessage)
+    }
+
+    /// One linked account removed, with everything synced from it.
+    public func disconnectCalendar(_ connectionId: String, errorMessage: String? = nil) async throws {
+        let _: Ignored = try await call(
+            "calendar-disconnect", body: Disconnect(connectionId: connectionId), errorMessage: errorMessage)
+    }
+
+    /// Every account's busy times fetched now; one synced in the last minute is left out.
+    public func syncCalendars(errorMessage: String? = nil) async throws -> [SyncResult] {
+        let answer: SyncAnswer = try await call("calendar-sync", body: Empty(), errorMessage: errorMessage)
+        return answer.results
+    }
+
+    /// A calendar chosen as primary, or nil to stop using one.
+    public func setPrimaryCalendar(_ calendarId: String?, errorMessage: String? = nil) async throws -> PrimaryCalendar? {
         let answer: PrimaryAnswer = try await call(
             "calendar-primary", body: SetPrimary(calendarId: calendarId), errorMessage: errorMessage)
         return answer.primary

@@ -12,6 +12,9 @@
     /// opens a screen, `-casyPushPermission <prompt|granted|denied>` answers
     /// for iOS, whose real prompt shows once, `-casyLang <da|en>`, and
     /// `-casyNow <ISO instant>` fixes the clock the event rules read.
+    /// `-casyOpenScreen calendars:accounts` opens Kalendere on one of its
+    /// screens, and `-casyPhoneSync <synced|denied>` answers for the page when
+    /// it is asked to send the phone's calendars.
     enum TestLaunch {
         private static let defaults = UserDefaults.standard
 
@@ -22,6 +25,7 @@
         static var screen: String? { defaults.string(forKey: "casyOpenScreen") }
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
         static var lang: String? { defaults.string(forKey: "casyLang") }
+        static var phoneSync: String { defaults.string(forKey: "casyPhoneSync") ?? "synced" }
         static var now: Int64? { defaults.string(forKey: "casyNow").flatMap(parseInstant) }
 
         /// `-casyTestPicture YES`: Fotobibliotek hands over a made-up photo, as

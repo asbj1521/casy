@@ -248,3 +248,25 @@ private func readsWithNothingLost<T: Codable>(_ name: String, as type: T.Type) t
     let busy = try readsWithNothingLost("calendar-busy", as: OverviewData.self)
     #expect(!busy.calendars.isEmpty && !busy.blocks.isEmpty)
 }
+
+@Test func calendarChangesRead() throws {
+    #expect(try readsWithNothingLost("calendar-primary-clear", as: PrimaryAnswer.self).primary == nil)
+    #expect(try readsWithNothingLost("calendar-primary-auto-add", as: PrimaryAnswer.self).primary?.autoAdd == true)
+    _ = try readsWithNothingLost("calendar-set-purpose", as: Ignored.self)
+    _ = try readsWithNothingLost("calendar-disconnect", as: Ignored.self)
+    #expect(try readsWithNothingLost("calendar-add-ics", as: LinkAdded.self).label == "Skema")
+    let apple = try readsWithNothingLost("calendar-add-apple", as: AppleConnected.self)
+    #expect(apple.label == "mia@icloud.com" && apple.calendars == 1)
+    #expect(try readsWithNothingLost("calendar-sync", as: SyncAnswer.self).results.allSatisfy(\.ok))
+}
+
+@Test func aCalendarChangeIsSentWithTheKeysTheServerReads() throws {
+    func body(_ change: CalendarChange) throws -> [String: Any] {
+        try JSONSerialization.jsonObject(with: JSONEncoder().encode(change)) as? [String: Any] ?? [:]
+    }
+    #expect(try body(.purpose(nil)).keys.sorted() == ["purpose"])
+    #expect(try body(.purpose(nil))["purpose"] is NSNull)
+    #expect(try body(.purpose("work", categoryName: "Fodbold"))["categoryName"] as? String == "Fodbold")
+    #expect(try body(.name(nil))["name"] is NSNull)
+    #expect(try body(.included(false))["included"] as? Bool == false)
+}

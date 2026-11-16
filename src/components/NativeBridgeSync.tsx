@@ -13,8 +13,11 @@ import {
   onNativeChoice,
   onNativeDataChanged,
   onNativeAiConsent,
+  onNativeCalendarsChanged,
   onNativeInviteSent,
+  onNativePhoneForgotten,
   onNeedPhoneFacts,
+  onNeedPhoneSync,
   onNeedPhoneWrite,
   onNeedSession,
   sharePreferences,
@@ -23,7 +26,8 @@ import { afterAiConsent } from "@/hooks/useAiConsentSetting";
 import { labelBookQuery } from "@/hooks/useEventLabels";
 import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { rememberInviteSent } from "@/lib/groupNudge";
-import { phoneConnectionId } from "@/lib/phoneCalendar";
+import { calendarsChanged } from "@/api/calendars";
+import { forgetPhone, phoneConnectionId } from "@/lib/phoneCalendar";
 import { enablePush } from "@/lib/push";
 import { supabaseAuth } from "@/lib/supabase";
 import { chooseTheme, onThemeChange, storedTheme } from "@/lib/theme";
@@ -153,6 +157,32 @@ export default function NativeBridgeSync() {
     })
       .then(keep)
       .catch((err) => console.warn("listening for the app's calendar writes failed", err));
+    // Native Kalendere (#200): what it changed is fetched again here, the
+    // phone's calendars are sent by the page, and this phone removed is forgotten.
+    onNativeCalendarsChanged(() => {
+      void calendarsChanged(queryClient);
+      void queryClient.invalidateQueries({ queryKey: ["primary-calendar"] });
+      void queryClient.invalidateQueries({ queryKey: eventsQueryKey(youId) });
+    })
+      .then(keep)
+      .catch((err) => console.warn("listening for the app's calendars failed", err));
+    onNeedPhoneSync(async (create) => {
+      try {
+        const outcome = await syncPhone(queryClient, youId, { create });
+        return { ...outcome, connectionId: phoneConnectionId(youId) };
+      } catch (err) {
+        return {
+          state: "failed" as const,
+          error: err instanceof Error ? err.message : String(err),
+          connectionId: phoneConnectionId(youId),
+        };
+      }
+    })
+      .then(keep)
+      .catch((err) => console.warn("listening for the app's phone sync failed", err));
+    onNativePhoneForgotten(() => forgetPhone(youId))
+      .then(keep)
+      .catch((err) => console.warn("listening for the app's phone removal failed", err));
     return () => {
       gone = true;
       for (const h of handles) void h.remove();

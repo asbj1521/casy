@@ -148,6 +148,38 @@ const ASKED: [
     "calendar-primary",
     { action: "set", calendarId: "cal-work" },
   ],
+  [
+    "calendar-primary-clear",
+    DEFAULT_WORLD,
+    "calendar-primary",
+    { action: "set", calendarId: null },
+  ],
+  [
+    "calendar-primary-auto-add",
+    DEFAULT_WORLD,
+    "calendar-primary",
+    { action: "auto-add", autoAdd: true },
+  ],
+  [
+    "calendar-set-purpose",
+    DEFAULT_WORLD,
+    "calendar-set-purpose",
+    { calendarId: "cal-work", name: "Job" },
+  ],
+  [
+    "calendar-add-ics",
+    DEFAULT_WORLD,
+    "calendar-add-ics",
+    { url: "https://example.com/feed.ics", name: "Skema" },
+  ],
+  [
+    "calendar-add-apple",
+    EMPTY,
+    "calendar-add-apple",
+    { username: "mia@icloud.com", password: "abcd-efgh-ijkl-mnop" },
+  ],
+  ["calendar-sync", DEFAULT_WORLD, "calendar-sync", {}],
+  ["calendar-disconnect", DEFAULT_WORLD, "calendar-disconnect", { connectionId: "conn-ics" }],
   ["events-settle", DEFAULT_WORLD, "events", { action: "settle", proposalId: "ev-cinema" }],
   [
     "events-deadline",

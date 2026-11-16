@@ -343,3 +343,41 @@ private struct SpanAnswer: Encodable {
         }
     }
 }
+
+@Test func calendarsGiveTheTypeScriptAnswers() throws {
+    try check("calendars", atLeast: 400) { fn, a in
+        switch fn {
+        case "groupCalendarsByBrand": return try json(groupCalendarsByBrand(try a["calendars"].decoded()))
+        case "groupVisibility": return try json(groupVisibility(try a["group"].decoded()))
+        case "ownCategories": return try json(ownCategories(try a["calendars"].decoded()))
+        case "unsortedCalendars":
+            return try json(unsortedCalendars(try a["calendars"].decoded(), seen: Set(try a["seen"].decoded([String].self))))
+        case "tourSteps":
+            return try json(tourSteps(try a["calendars"].decoded(), seen: Set(try a["seen"].decoded([String].self))))
+        case "categoryLabel":
+            let words = ["work": "W", "school": "S", "personal": "P", "other": "O"]
+            return try json(
+                categoryLabel(
+                    purpose: a["purpose"].string, categoryName: a["categoryName"].string,
+                    categories: { words[$0] ?? $0 }, none: "none"))
+        case "choiceOf": return try json(choiceOf(try a["calendar"].decoded()))
+        case "changesFrom": return try json(changesFrom(try a["calendar"].decoded(), try a["choice"].decoded()))
+        case "textOn": return try json(textOn(try text(a, "rgb")))
+        case "syncedAgo":
+            let ago = syncedAgo(a["iso"].string, now: try milliseconds(a, "now"))
+            return try json(
+                ago.map { ago -> String in
+                    switch ago {
+                    case .justNow: "now"
+                    case .minutes(let n): "m\(n)"
+                    case .hours(let n): "h\(n)"
+                    case .days(let n): "d\(n)"
+                    }
+                })
+        case "looksLikeAppSpecificPassword": return try json(looksLikeAppSpecificPassword(try text(a, "value")))
+        case "holidaysInYearAhead":
+            return try json(holidaysInYearAhead(try text(a, "timeZone"), now: try milliseconds(a, "now")))
+        default: return unknown(fn)
+        }
+    }
+}

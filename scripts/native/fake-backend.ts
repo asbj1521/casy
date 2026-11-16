@@ -7,7 +7,8 @@
  * group, answering an invitation) so the next one finds it as it was; a body
  * of `{ friends: [...] }` starts it with those friends from groups since gone,
  * `{ admin: true }` with Mia an admin, and `{ reviews: true }` with reports
- * and AI corrections waiting for her (e2e/adminReviews.ts).
+ * and AI corrections waiting for her (e2e/adminReviews.ts), and
+ * `{ calendars: "none" }` with nothing connected (#200).
  */
 import { createServer } from "node:http";
 import process from "node:process";
@@ -34,12 +35,15 @@ createServer((request, response) => {
     };
     const text = Buffer.concat(chunks).toString();
     if (url.pathname === "/reset") {
-      backend = new FakeBackend(makeWorld(DEFAULT_WORLD));
       const seed = (text ? JSON.parse(text) : {}) as {
         friends?: typeof backend.world.friends;
         admin?: boolean;
         reviews?: boolean;
+        calendars?: "none";
       };
+      backend = new FakeBackend(
+        makeWorld(seed.calendars ? { ...DEFAULT_WORLD, calendars: seed.calendars } : DEFAULT_WORLD),
+      );
       if (seed.friends) backend.world.friends = seed.friends;
       if (seed.admin) backend.world.admin = "current";
       if (seed.reviews) addReviews(backend.world);

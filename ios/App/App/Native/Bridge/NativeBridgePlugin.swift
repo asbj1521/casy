@@ -10,6 +10,10 @@ import UIKit
 /// `setSession`, `setPreferences`, `screens` (which screens this build draws),
 /// `open`. Back to the web: `preferences` when a native screen changed a
 /// choice, `closed` when one closes (with where to go next, if anywhere), `dataChanged` when one changed what the page has cached, `inviteSent` when someone was invited to a group, `needSession` for a fresh login, `needPhoneWrite` to write the phone's calendar.
+/// Kalendere (#200) opens with what the page keeps on this phone (`open`'s
+/// `state`), and answers with `calendarPrefs` when it changes one,
+/// `calendarsChanged`, `needPhoneSync` to send the phone's calendars (answered
+/// by `phoneSynced`) and `phoneForgotten` when this phone's connection went.
 public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     UIAdaptivePresentationControllerDelegate
 {
@@ -23,6 +27,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "pushResult", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "phoneFacts", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "phoneWritten", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "phoneSynced", returnType: CAPPluginReturnPromise),
     ]
 
     /// The screens drawn natively in this build. None in a Release build: the
@@ -30,7 +35,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
         #if DEBUG
-            ["settings", "profile", "events"]
+            ["settings", "profile", "events", "calendars"]
         #else
             []
         #endif
@@ -46,6 +51,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// A native screen waiting for the page to write the phone's calendar.
     private var writeAnswer: CheckedContinuation<Void, Never>?
     private var writesAsked = 0
+    /// Native Kalendere waiting for the page to send the phone's calendars.
+    private var syncAnswer: CheckedContinuation<PhoneSyncOutcome, Never>?
+    private var syncsAsked = 0
 
     override public func load() {
         let askWeb: @Sendable () -> Void = { [weak self] in
@@ -67,6 +75,23 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
             EventsModel.shared.writeOnPhone = { [weak self] in
                 await self?.writeOnPhone()
+            }
+            let calendars = CalendarsModel.shared
+            calendars.onPrefs = { [weak self] hidden, seen in
+                var data: [String: Any] = [:]
+                if let hidden { data["holidaysHidden"] = hidden }
+                if let seen { data["tourSeen"] = seen }
+                self?.notifyListeners("calendarPrefs", data: data)
+            }
+            calendars.onChanged = { [weak self] in
+                self?.notifyListeners("calendarsChanged", data: [:])
+            }
+            calendars.syncPhone = { [weak self] create in
+                await self?.syncPhone(create: create)
+                    ?? PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed)
+            }
+            calendars.onPhoneForgotten = { [weak self] in
+                self?.notifyListeners("phoneForgotten", data: [:])
             }
         }
         #if DEBUG
@@ -129,6 +154,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     AdminModel.shared.reset()
                     AdminReviewsModel.shared.reset()
                     EventsModel.shared.reset()
+                    CalendarsModel.shared.reset()
                 }
             }
             call.resolve()
@@ -156,6 +182,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         let screen = call.getString("screen") ?? ""
         let build = call.getString("build") ?? "dev"
         let userAgent = call.getString("userAgent") ?? ""
+        let state = call.getObject("state") ?? [:]
         guard Self.nativeScreens.contains(screen) else {
             call.reject("No native screen \(screen)")
             return
@@ -165,15 +192,20 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 call.reject("Nothing to show the screen on")
                 return
             }
-            self.present(screen, on: presenter, build: build, userAgent: userAgent)
+            self.present(screen, on: presenter, build: build, userAgent: userAgent, state: state)
             call.resolve()
         }
     }
 
     private func present(
         _ screen: String, on presenter: UIViewController, build: String = "dev",
-        userAgent: String = ""
+        userAgent: String = "", state: [String: Any] = [:]
     ) {
+        // "calendars:accounts" in a test launch: the sheet on one of its screens.
+        let parts = screen.split(separator: ":", maxSplits: 1).map(String.init)
+        let screen = parts.first ?? screen
+        var state = state
+        if parts.count > 1 { state["start"] = parts[1] }
         let onChoose: (String, String) -> Void = { [weak self] lang, theme in
             self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
         }
@@ -194,7 +226,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
         }
         let root: AnyView =
-            screen == "events"
+            screen == "calendars"
+            ? AnyView(calendarsSheet(state, onDone: onDone, leave: leave))
+            : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "profile"
             ? AnyView(
@@ -212,6 +246,71 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         host.presentationController?.delegate = self
         openScreen = screen
         presenter.present(host, animated: true)
+    }
+
+    /// Kalendere, with what the page keeps on this phone.
+    private func calendarsSheet(
+        _ state: [String: Any], onDone: @escaping () -> Void, leave: @escaping (LeavingProfile) -> Void
+    ) -> some View {
+        CalendarsModel.shared.begin(
+            holidaysHidden: state["holidaysHidden"] as? Bool ?? false,
+            tourSeen: state["tourSeen"] as? [String] ?? [],
+            thisPhone: state["thisPhone"] as? String)
+        let start: CalendarsPage? =
+            switch state["start"] as? String {
+            case "accounts": .accounts
+            case "tour": .tour
+            default: nil
+            }
+        return CalendarsSheet(
+            preferences: NativePreferences.shared, start: start, connect: state["connect"] as? String,
+            onDone: onDone, leave: leave)
+    }
+
+    /// `{ id, outcome }`: how the page's send of the phone's calendars went.
+    @objc func phoneSynced(_ call: CAPPluginCall) {
+        let id = call.getInt("id")
+        let outcome = call.getObject("outcome") ?? [:]
+        DispatchQueue.main.async {
+            if id == self.syncsAsked {
+                self.syncAnswer?.resume(
+                    returning: PhoneSyncOutcome(
+                        state: outcome["state"] as? String ?? "failed",
+                        calendars: outcome["calendars"] as? Int ?? 0,
+                        busyBlocks: outcome["busyBlocks"] as? Int ?? 0,
+                        error: outcome["error"] as? String,
+                        connectionId: outcome["connectionId"] as? String))
+                self.syncAnswer = nil
+            }
+            call.resolve()
+        }
+    }
+
+    /// The phone's calendars are read and sent by the page (usePhoneCalendarSync):
+    /// it asks, and waits up to two minutes, iOS's own question included.
+    @MainActor private func syncPhone(create: Bool) async -> PhoneSyncOutcome {
+        syncAnswer?.resume(returning: PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed))
+        syncAnswer = nil
+        #if DEBUG
+            if TestLaunch.isActive {
+                return TestLaunch.phoneSync == "denied"
+                    ? PhoneSyncOutcome(state: "denied")
+                    : PhoneSyncOutcome(state: "synced", calendars: 2, busyBlocks: 5, connectionId: "c-phone")
+            }
+        #endif
+        return await withCheckedContinuation { continuation in
+            syncAnswer = continuation
+            syncsAsked += 1
+            let asked = syncsAsked
+            notifyListeners("needPhoneSync", data: ["id": asked, "create": create])
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(120))
+                guard let self, self.syncsAsked == asked else { return }
+                self.syncAnswer?.resume(
+                    returning: PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed))
+                self.syncAnswer = nil
+            }
+        }
     }
 
     /// `{ labels }`: how many labels the page keeps on this phone (#112).

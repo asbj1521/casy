@@ -501,8 +501,8 @@ export function groupVisibility(group: CalendarGroup): "all" | "none" | "some" {
  * beside the built-in holiday calendar, over the range the connected
  * calendars are synced for.
  */
-export function holidaysInYearAhead(timeZone: string): number {
-  const today = new Date();
+export function holidaysInYearAhead(timeZone: string, now = Date.now()): number {
+  const today = new Date(now);
   const { year, month, day } = localDate(today.getTime(), timeZone);
   const yearAhead = new Date(wallTime(year + 1, month, day, 0, timeZone));
   return [...holidaySegmentsByDay(today, yearAhead, timeZone).values()].reduce(

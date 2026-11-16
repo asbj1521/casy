@@ -5,6 +5,7 @@
  * the live site. Anything it doesn't know is reported, and fails the test
  * (fixtures.ts), rather than quietly answering nothing.
  */
+import type { CalendarConnectionStatus } from "@/api/calendars";
 import type { EventResponse, SuggestedEvent } from "@/api/events";
 import type { PlanAnswer } from "@/api/planAi";
 import type { EntriesProposal } from "@/api/entries";
@@ -25,6 +26,39 @@ export interface FunctionCall {
 export type Answer = { status: number; json: unknown };
 
 const ok = (json: unknown): Answer => ({ status: 200, json });
+
+/** An account just connected (a link, an Apple account): one calendar, synced now, nothing busy yet. */
+function connectionOf(
+  provider: "ics" | "apple",
+  label: string,
+  n: number,
+): CalendarConnectionStatus {
+  return {
+    id: `conn-${provider}-${n + 1}`,
+    provider,
+    status: "connected",
+    account_label: label,
+    error_message: null,
+    created_at: NOW,
+    last_synced_at: NOW,
+    last_sync_attempt_at: NOW,
+    sync_error: null,
+    needs_reconnect: false,
+    calendar_sources: [
+      {
+        id: `cal-${provider}-${n + 1}`,
+        display_name: provider === "apple" ? "Kalender" : label,
+        custom_name: null,
+        purpose: null,
+        purpose_source: null,
+        priority: "normal",
+        writable: provider === "apple",
+        external_id: null,
+      },
+    ],
+    busyCount: 0,
+  };
+}
 const fail = (status: number, error: string): Answer => ({ status, json: { error } });
 
 /** A vote's deadline as the server sets it (#179): none for null, 3 days for an older app. */
@@ -108,7 +142,38 @@ export class FakeBackend {
           (source as { included?: boolean }).included = body.included as boolean;
           this.changed();
         }
+        if (source && "name" in body) {
+          const name = typeof body.name === "string" ? body.name.trim() : "";
+          source.custom_name = name || null;
+          this.changed();
+        }
         return ok({});
+      }
+      case "calendar-add-ics": {
+        // As the real one, without fetching: a link that starts like a feed is
+        // one calendar with nothing busy yet, anything else is refused.
+        const url = typeof body.url === "string" ? body.url.trim() : "";
+        if (!/^(https?|webcal):\/\//i.test(url))
+          return fail(400, "That doesn't look like a calendar link.");
+        const label = (typeof body.name === "string" && body.name.trim()) || "Kalenderlink";
+        w.connections.push(connectionOf("ics", label, w.connections.length));
+        this.changed();
+        return ok({ connectionId: `conn-ics-${w.connections.length}`, label, busyBlocks: 0 });
+      }
+      case "calendar-add-apple": {
+        const username = typeof body.username === "string" ? body.username.trim() : "";
+        if (body.password !== "abcd-efgh-ijkl-mnop") {
+          return fail(400, "Apple didn't accept that password.");
+        }
+        w.connections.push(connectionOf("apple", username, w.connections.length));
+        this.changed();
+        return ok({
+          connectionId: `conn-apple-${w.connections.length}`,
+          label: username,
+          calendars: 1,
+          busyBlocks: 0,
+          skippedEvents: 0,
+        });
       }
       case "calendar-categorize": {
         // As the real one, without the AI: every untouched calendar in a

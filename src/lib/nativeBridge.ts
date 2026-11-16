@@ -16,7 +16,7 @@ import { isNativeApp } from "@/lib/nativeApp";
 import type { ThemeChoice } from "@/lib/theme";
 
 /** A screen the app may draw natively in place of the page's own. */
-export type NativeScreen = "settings" | "profile" | "events";
+export type NativeScreen = "settings" | "profile" | "events" | "calendars";
 
 interface LentSession {
   accessToken: string;
@@ -50,10 +50,16 @@ interface NativeBridgePlugin {
     session: LentSession | null;
   }): Promise<void>;
   setPreferences(options: Preferences): Promise<void>;
-  open(options: { screen: NativeScreen; build: string; userAgent: string }): Promise<void>;
+  open(options: {
+    screen: NativeScreen;
+    build: string;
+    userAgent: string;
+    state?: Record<string, unknown>;
+  }): Promise<void>;
   pushResult(options: { answer: "granted" | "denied" | "failed" }): Promise<void>;
   phoneFacts(options: { labels: number }): Promise<void>;
   phoneWritten(options: { id: number }): Promise<void>;
+  phoneSynced(options: { id: number; outcome: NativePhoneSync }): Promise<void>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
@@ -74,6 +80,16 @@ interface NativeBridgePlugin {
     event: "needPhoneWrite",
     listener: (asked: { id: number }) => void,
   ): Promise<PluginListenerHandle>;
+  addListener(
+    event: "calendarPrefs",
+    listener: (prefs: NativeCalendarPrefs) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(event: "calendarsChanged", listener: () => void): Promise<PluginListenerHandle>;
+  addListener(
+    event: "needPhoneSync",
+    listener: (asked: { id: number; create: boolean }) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(event: "phoneForgotten", listener: () => void): Promise<PluginListenerHandle>;
   addListener(
     event: "inviteSent",
     listener: (sent: { groupId: string }) => void,
@@ -106,10 +122,69 @@ export function nativeScreens(): Promise<ReadonlySet<string>> {
   return screens;
 }
 
-/** Show a native screen over the page. */
-export async function openNativeScreen(screen: NativeScreen): Promise<void> {
+/**
+ * Show a native screen over the page, with what only the page knows that the
+ * screen needs (`state`, Kalendere's choices kept in the page's storage).
+ */
+export async function openNativeScreen(
+  screen: NativeScreen,
+  state?: Record<string, unknown>,
+): Promise<void> {
   const { plugin } = await bridgePlugin();
-  await plugin.open({ screen, build: APP_BUILD, userAgent: navigator.userAgent });
+  await plugin.open({ screen, build: APP_BUILD, userAgent: navigator.userAgent, state });
+}
+
+/** Kalendere's choices kept on this phone by the page (#200), changed on the native screen. */
+export interface NativeCalendarPrefs {
+  /** The built-in holidays' tick, off. */
+  holidaysHidden?: boolean;
+  /** The calendars the guided setup has been through. */
+  tourSeen?: string[];
+}
+
+/** How the page's send of the phone's calendars went, for native Forbundne kalendere. */
+export type NativePhoneSync =
+  | { state: "synced"; calendars: number; busyBlocks: number; connectionId: string | null }
+  | { state: "denied" | "gone" | "skipped"; connectionId: string | null }
+  | { state: "failed"; error: string; connectionId: string | null };
+
+/** Calls `onChange` when native Kalendere changed a choice the page keeps (#200). */
+export async function onNativeCalendarPrefs(
+  onChange: (prefs: NativeCalendarPrefs) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("calendarPrefs", onChange);
+}
+
+/** Calls `onChange` when native Kalendere changed your calendars: the page's copies are fetched again. */
+export async function onNativeCalendarsChanged(
+  onChange: () => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("calendarsChanged", onChange);
+}
+
+/**
+ * Answers native Forbundne kalendere's asks to send the phone's calendars
+ * (#200): the page reads and sends them, as its own Importér and Synkronisér
+ * nu do, and says how it went. `create` connects the phone if it isn't yet.
+ */
+export async function onNeedPhoneSync(
+  sync: (create: boolean) => Promise<NativePhoneSync>,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("needPhoneSync", ({ id, create }) => {
+    void sync(create)
+      .then((outcome) => plugin.phoneSynced({ id, outcome }))
+      // The app stops waiting by itself.
+      .catch(() => {});
+  });
+}
+
+/** Calls `onForget` when native Forbundne kalendere removed this phone's own connection. */
+export async function onNativePhoneForgotten(onForget: () => void): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("phoneForgotten", onForget);
 }
 
 /**
