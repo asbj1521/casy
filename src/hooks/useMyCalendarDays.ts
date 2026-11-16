@@ -18,6 +18,7 @@ import {
 } from "@/lib/calendarOverview";
 import { APP_CALENDAR_END, SEARCH_WINDOW } from "@/lib/eventSearch";
 import type { GridItem } from "@/lib/monthGrid";
+import { calendarItems } from "@/lib/monthItems";
 import { isNativeApp } from "@/lib/nativeApp";
 import {
   onPhoneCalendarChange,
@@ -175,21 +176,15 @@ export function useMyCalendarDays(
   );
   const names = useMemo(() => new Map((data?.calendars ?? []).map((c) => [c.id, c.name])), [data]);
   const items = useMemo(
-    (): GridItem[] => [
-      ...[...holidays.values()].flat().map((s) => ({
-        calendarId: s.calendarId,
-        start: s.start.getTime(),
-        end: s.end.getTime(),
-        label: s.holiday ? (lang === "da" ? s.holiday.name : s.holiday.englishName) : "",
-      })),
-      ...counted.map((b) => ({
-        calendarId: b.calendarId,
-        start: Date.parse(b.start),
-        end: Date.parse(b.end),
-        label: b.details?.title || (names.get(b.calendarId) ?? ""),
-      })),
-    ],
-    [counted, holidays, names, lang],
+    (): GridItem[] =>
+      calendarItems(
+        counted,
+        names,
+        { from: Date.parse(SEARCH_WINDOW.start), to: Date.parse(end) },
+        TZ,
+        lang,
+      ),
+    [counted, names, end, lang],
   );
 
   const segmentsOn = useCallback((date: Date) => byDay.get(dayKey(date, TZ)) ?? [], [byDay]);

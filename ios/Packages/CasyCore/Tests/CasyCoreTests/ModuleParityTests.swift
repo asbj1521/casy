@@ -391,3 +391,24 @@ private struct SpanAnswer: Encodable {
         }
     }
 }
+
+@Test func monthGivesTheTypeScriptAnswers() throws {
+    try check("month", atLeast: 350) { fn, a in
+        switch fn {
+        case "monthLayout":
+            return try json(monthLayout(try #require(a["year"].int), try #require(a["month"].int), try text(a, "timeZone")))
+        case "isoWeekNumber": return try json(isoWeekNumber(try milliseconds(a), try text(a, "timeZone")))
+        case "layoutWeek":
+            return try json(
+                layoutWeek(
+                    try a["items"].decoded(), days: try a["days"].decoded(), weekEnd: try milliseconds(a, "weekEnd"),
+                    lanes: try #require(a["lanes"].int)))
+        case "calendarItems":
+            return try json(
+                calendarItems(
+                    try a["counted"].decoded(), names: try a["names"].decoded(), from: try milliseconds(a, "from"),
+                    to: try milliseconds(a, "to"), try text(a, "timeZone"), try lang(a)))
+        default: return unknown(fn)
+        }
+    }
+}

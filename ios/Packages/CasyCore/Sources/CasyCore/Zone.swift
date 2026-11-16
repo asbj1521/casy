@@ -39,12 +39,12 @@ private struct OffsetCache: ~Copyable {
 
 private let offsetCache = Mutex(OffsetCache())
 
-private func floorDivide(_ a: Int64, _ b: Int64) -> Int64 {
+func floorDivide(_ a: Int64, _ b: Int64) -> Int64 {
     let quotient = a / b
     return (a % b != 0 && (a < 0) != (b < 0)) ? quotient - 1 : quotient
 }
 
-private func positiveModulo(_ a: Int64, _ b: Int64) -> Int64 {
+func positiveModulo(_ a: Int64, _ b: Int64) -> Int64 {
     a - floorDivide(a, b) * b
 }
 
@@ -74,7 +74,7 @@ private func civilFromDays(_ days: Int64) -> (year: Int64, month: Int64, day: In
 }
 
 /// JavaScript's `Date.UTC(year, month, day)`: a 0-based month, and out-of-range values roll over.
-private func utcMilliseconds(year: Int, month: Int, day: Int) -> Int64 {
+func utcMilliseconds(year: Int, month: Int, day: Int) -> Int64 {
     let wholeYears = floorDivide(Int64(month), 12)
     let days = daysFromCivil(
         year: Int64(year) + wholeYears,
