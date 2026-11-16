@@ -305,8 +305,14 @@ private struct DayColumn: View {
                 }
                 ForEach(Array(extras.enumerated()), id: \.offset) { _, item in
                     let span = placeSpan(max(item.start, midnight), item.end, midnight: midnight, appTimeZone)
+                    // A vote's date or a trip waiting for an answer opens the page's
+                    // own; anything else of the page's (an agreed date, a trip
+                    // already answered) is only shown: handed over, the page would
+                    // open its day view over this one.
+                    let asks = item.pencil == true || item.pulse == true
                     Button { pageTap(midnight) } label: { extra(item) }
                         .buttonStyle(.plain)
+                        .disabled(!asks)
                         .frame(width: width, height: max(18, span.height * 24 * hour - 2))
                         .offset(x: 2, y: span.top * 24 * hour)
                         .accessibilityLabel(item.label)
