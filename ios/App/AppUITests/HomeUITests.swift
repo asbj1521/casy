@@ -54,13 +54,64 @@ final class HomeUITests: XCTestCase {
         shot("home-dark")
     }
 
-    /// A tap on a day is the page's: a trip, a vote, a starred day or the day view.
-    func testADayIsHandedToThePage() {
+    /// A day with something of the page's on it is the page's: a vote's date, a starred day.
+    func testADayOfThePagesIsHandedToIt() {
         let app = launch()
-        let day = app.buttons["day.2026-10-14"]
+        let vote = app.buttons["day.2026-10-14"]
+        XCTAssertTrue(vote.waitForExistence(timeout: 10))
+        vote.tap()
+        XCTAssertEqual(pressed(app), "day 2026-10-14")
+        app.buttons["day.2026-10-16"].tap()
+        XCTAssertEqual(pressed(app), "day 2026-10-16")
+        XCTAssertFalse(app.buttons["day.back"].exists)
+    }
+
+    /// Any other day zooms into the day view: its hours, its events, and back.
+    func testADayOpensInTheDayView() {
+        let app = launch()
+        let day = app.buttons["day.2026-10-15"]
         XCTAssertTrue(day.waitForExistence(timeout: 10))
         day.tap()
-        XCTAssertEqual(pressed(app), "day 2026-10-14")
+        XCTAssertTrue(app.buttons["day.back"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.otherElements["column.2026-10-15"].exists)
+        XCTAssertTrue(app.buttons["week.2026-10-15"].isSelected)
+        shot("home-day")
+        // Mia's Arbejde, opened in its sheet.
+        let work = app.otherElements["column.2026-10-15"].buttons
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Arbejde")).firstMatch
+        XCTAssertTrue(work.waitForExistence(timeout: 5))
+        work.tap()
+        XCTAssertTrue(app.navigationBars["Arbejde"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Torsdag 15. oktober"].exists)
+        shot("home-event")
+        app.buttons["Luk"].tap()
+        XCTAssertTrue(app.navigationBars["Arbejde"].waitForNonExistence(timeout: 5))
+        app.buttons["day.back"].tap()
+        XCTAssertTrue(app.buttons["day.back"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(title(app).exists)
+        XCTAssertEqual(pressed(app), "")
+    }
+
+    /// A swipe turns the day, the week row a week; two days side by side; I dag.
+    func testMovingThroughTheDays() {
+        let app = launch()
+        app.buttons["day.2026-10-15"].tap()
+        let hours = app.scrollViews["day.hours"]
+        XCTAssertTrue(hours.waitForExistence(timeout: 5))
+        hours.swipeLeft()
+        XCTAssertTrue(app.buttons["week.2026-10-16"].waitForExistence(timeout: 5))
+        let picked = NSPredicate(format: "isSelected == true")
+        expectation(for: picked, evaluatedWith: app.buttons["week.2026-10-16"])
+        waitForExpectations(timeout: 5)
+        app.buttons["week.2026-10-12"].tap()
+        expectation(for: picked, evaluatedWith: app.buttons["week.2026-10-12"])
+        waitForExpectations(timeout: 5)
+        app.buttons["day.span"].tap()
+        XCTAssertTrue(app.otherElements["column.2026-10-13"].waitForExistence(timeout: 5))
+        app.buttons["day.span"].tap()
+        app.buttons["day.today"].tap()
+        expectation(for: picked, evaluatedWith: app.buttons["week.2026-10-07"])
+        waitForExpectations(timeout: 5)
     }
 
     /// Each button along the top and the bottom asks the page for its sheet.

@@ -15,30 +15,34 @@ struct HomeScreen: View {
     private let model = HomeModel.shared
     @State private var position: Int64?
     @Environment(\.colorScheme) private var scheme
+    /// The day open in the day view, and whether it has zoomed out of its cell.
+    @State private var shownDay: Int64?
+    @State private var dayOpen = false
+    /// The cell it zooms out of and back into; nil fades instead.
+    @State private var cell: CGRect?
+    @State private var dayFrame: CGRect = .zero
+    /// One day or two, kept on this phone as the web's toggle is.
+    @AppStorage("casy.daySpan") private var span = 1
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
     var body: some View {
         GeometryReader { box in
             let column = box.size.width / 7
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(model.months) { month in
-                        MonthBlock(
-                            month: month, column: column, today: startOfDay(Native.now, appTimeZone),
-                            starred: model.page.starred, lang: lang, dark: scheme == .dark,
-                            color: model.color, pick: { model.onAction?("day", $0) }
-                        )
-                        .equatable()
+            ZStack(alignment: .top) {
+                months(column)
+                if let day = shownDay {
+                    VStack(spacing: 0) {
+                        dayHeader(day)
+                            .opacity(dayOpen ? 1 : 0)
+                        dayContent(day)
                     }
+                    // Down to the screen's edge, so the month doesn't show under it once open.
+                    .background(Theme.background.color.ignoresSafeArea().opacity(dayOpen ? 1 : 0))
+                    .zIndex(1)
+
                 }
-                .scrollTargetLayout()
             }
-            .scrollPosition(id: $position, anchor: .top)
-            .refreshable { await model.load() }
-            .accessibilityIdentifier("home.months")
-            .safeAreaInset(edge: .top, spacing: 0) { header }
-            .safeAreaInset(edge: .bottom, spacing: 0) { bottom }
         }
         .background(Theme.background.color.ignoresSafeArea())
         .overlay {
@@ -57,6 +61,151 @@ struct HomeScreen: View {
         .tint(Theme.primary.color)
         .preferredColorScheme(
             preferences.theme == "light" ? .light : preferences.theme == "dark" ? .dark : nil)
+    }
+
+    private func months(_ column: CGFloat) -> some View {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(model.months) { month in
+                        MonthBlock(
+                            month: month, column: column, today: startOfDay(Native.now, appTimeZone),
+                            starred: model.page.starred, lang: lang, dark: scheme == .dark,
+                            color: model.color, pick: pick
+                        )
+                        .equatable()
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollPosition(id: $position, anchor: .top)
+            .refreshable { await model.load() }
+            .accessibilityIdentifier("home.months")
+            .safeAreaInset(edge: .top, spacing: 0) { header }
+            .safeAreaInset(edge: .bottom, spacing: 0) { bottom }
+            .accessibilityHidden(shownDay != nil)
+            // Under an open day nothing reaches it: no tap, no swipe, no pull to refresh.
+            .allowsHitTesting(shownDay == nil)
+    }
+
+    // MARK: The day view
+
+    /// A tap on a day: the page's when it has something there (a trip
+    /// waiting, a vote's date, a starred day), else its day view, zoomed out of its cell.
+    private func pick(_ day: Int64, _ from: CGRect?) {
+        if model.dayIsThePages(day) {
+            model.onAction?("day", day)
+            return
+        }
+        cell = from
+        dayOpen = false
+        shownDay = day
+        Task { @MainActor in
+            withAnimation(.smooth(duration: 0.38)) { dayOpen = true }
+        }
+    }
+
+    /// Back to the month, shrinking into the cell of the day it is on now,
+    /// brought into view first; faded if it can't be found.
+    private func closeDay() {
+        guard let day = shownDay else { return }
+        let month = startOfMonth(day, appTimeZone)
+        if HomeFrames.shared.cell(of: day) == nil { position = month }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(30))
+            cell = HomeFrames.shared.cell(of: day)
+            withAnimation(.smooth(duration: 0.32)) { dayOpen = false } completion: { shownDay = nil }
+        }
+    }
+
+    private func dayHeader(_ day: Int64) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Button(action: closeDay) {
+                    Label(capitalize(monthName(day, lang)), systemImage: "chevron.left")
+                        .font(.body.weight(.medium))
+                        .padding(.horizontal, 14)
+                        .frame(height: 40)
+                        .casyGlass()
+                }
+                .accessibilityLabel(CasyStrings.dayShowMonth(capitalize(monthName(day, lang))))
+                .accessibilityIdentifier("day.back")
+                Spacer()
+                HStack(spacing: 0) {
+                    Button { span = span == 1 ? 2 : 1 } label: {
+                        Text(span == 1 ? CasyStrings.dayOne : CasyStrings.dayTwo)
+                            .font(.body.weight(.medium))
+                            .padding(.horizontal, 12)
+                            .frame(height: 40)
+                    }
+                    .accessibilityLabel(span == 1 ? CasyStrings.dayShowTwo : CasyStrings.dayShowOne)
+                    .accessibilityIdentifier("day.span")
+                    Divider().frame(height: 22)
+                    if model.page.tell {
+                        Button { model.onAction?("tell", nil) } label: {
+                            Image(systemName: "plus")
+                                .font(.title3.weight(.semibold))
+                                .frame(width: 44, height: 40)
+                        }
+                        .accessibilityLabel(CasyStrings.homeTell)
+                        Divider().frame(height: 22)
+                    }
+                    Button {
+                        withAnimation(.snappy) { shownDay = startOfDay(Native.now, appTimeZone) }
+                    } label: {
+                        Text(CasyStrings.homeToday)
+                            .font(.body.weight(.medium))
+                            .padding(.horizontal, 14)
+                            .frame(height: 40)
+                    }
+                    .accessibilityIdentifier("day.today")
+                }
+                .casyGlass()
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.primary.color)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+            weekdays
+        }
+        .background(.bar)
+    }
+
+    /// The day view, scaled evenly down into its cell and clipped to it until open.
+    private func dayContent(_ day: Int64) -> some View {
+        let from = cell ?? .zero
+        let scale = cell == nil || dayFrame.width == 0 ? 1 : from.width / dayFrame.width
+        return HomeDayView(
+            day: Binding(get: { shownDay ?? day }, set: { shownDay = $0 }), span: span,
+            pageTap: { model.onAction?("day", $0) }
+        )
+        // Down to the screen's edge, so the month doesn't show under it.
+        .background(Theme.background.color.ignoresSafeArea(edges: .bottom))
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { dayFrame = $0 }
+        .mask(alignment: .topLeading) {
+            Rectangle().frame(
+                width: dayOpen || cell == nil ? nil : dayFrame.width,
+                height: dayOpen || cell == nil ? nil : from.height / max(scale, 0.01))
+        }
+        .scaleEffect(dayOpen || cell == nil ? 1 : scale, anchor: .topLeading)
+        .offset(
+            x: dayOpen || cell == nil ? 0 : from.minX - dayFrame.minX,
+            y: dayOpen || cell == nil ? 0 : from.minY - dayFrame.minY)
+        .opacity(cell == nil && !dayOpen ? 0 : 1)
+    }
+
+    private var weekdays: some View {
+        HStack(spacing: 0) {
+            ForEach(0..<7, id: \.self) { c in
+                // Monday first; 5 January 2026 was a Monday.
+                let day = wallTime(2026, 0, 5 + c, 12, appTimeZone)
+                Text(verbatim: String(weekdayShortName(day, lang).prefix(1)).uppercased())
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
+            }
+        }
+        .font(.caption.weight(.medium))
+        .frame(height: 24)
+        .accessibilityHidden(true)
     }
 
     // MARK: The header
@@ -209,7 +358,7 @@ private struct MonthBlock: View, Equatable {
     let lang: Lang
     let dark: Bool
     let color: (String) -> String
-    let pick: (Int64) -> Void
+    let pick: (Int64, CGRect?) -> Void
 
     static func == (a: MonthBlock, b: MonthBlock) -> Bool {
         a.month == b.month && a.column == b.column && a.today == b.today && a.starred == b.starred
@@ -227,8 +376,8 @@ private struct MonthBlock: View, Equatable {
                 .accessibilityHidden(true)
             ForEach(month.weeks) { week in
                 WeekRow(
-                    week: week, column: column, today: today, starred: starred, lang: lang, dark: dark,
-                    color: color, pick: pick)
+                    month: month.id, week: week, column: column, today: today, starred: starred, lang: lang,
+                    dark: dark, color: color, pick: pick)
             }
         }
         .id(month.id)
@@ -237,6 +386,7 @@ private struct MonthBlock: View, Equatable {
 
 /// One week: the numbers, the items under them, and a tap on any day.
 private struct WeekRow: View {
+    let month: Int64
     let week: HomeWeek
     let column: CGFloat
     let today: Int64
@@ -244,7 +394,7 @@ private struct WeekRow: View {
     let lang: Lang
     let dark: Bool
     let color: (String) -> String
-    let pick: (Int64) -> Void
+    let pick: (Int64, CGRect?) -> Void
 
     private var first: Int { week.days.firstIndex(where: \.inMonth) ?? 0 }
     private var last: Int { week.days.lastIndex(where: \.inMonth) ?? 6 }
@@ -252,6 +402,7 @@ private struct WeekRow: View {
     var body: some View {
         VStack(spacing: 0) {
             Rectangle().fill(Theme.border.color.opacity(0.7)).frame(height: 1)
+                .frame(maxWidth: .infinity)
             ZStack(alignment: .topLeading) {
                 VStack(spacing: 0) {
                     HStack(spacing: 0) {
@@ -289,7 +440,7 @@ private struct WeekRow: View {
                 HStack(spacing: 0) {
                     ForEach(Array(week.days.enumerated()), id: \.offset) { _, day in
                         if day.inMonth {
-                            Button { pick(day.date) } label: {
+                            Button { pick(day.date, HomeFrames.shared.cell(of: day.date)) } label: {
                                 Color.clear.contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -304,6 +455,11 @@ private struct WeekRow: View {
                 }
             }
         }
+        // Where it is, for the day view to zoom out of and back into (not observed: no redraw).
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+            HomeFrames.shared.rows[HomeFrames.key(month, week.id)] = (frame, column)
+        }
+        .onDisappear { HomeFrames.shared.rows[HomeFrames.key(month, week.id)] = nil }
     }
 
     @ViewBuilder private func number(_ day: MonthDay, _ c: Int) -> some View {
@@ -375,5 +531,25 @@ private struct Pulse<S: Shape>: View {
             .opacity(on ? 0.9 : 0.15)
             .animation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true), value: on)
             .onAppear { on = true }
+    }
+}
+
+/// Where each week row of the month is on screen, kept outside SwiftUI's
+/// state so that scrolling redraws nothing: the day view reads it as it zooms.
+final class HomeFrames {
+    @MainActor static let shared = HomeFrames()
+    var rows: [String: (frame: CGRect, column: CGFloat)] = [:]
+
+    static func key(_ month: Int64, _ week: Int64) -> String { "\(month):\(week)" }
+
+    /// A day's cell, in the screen's coordinates, if it is drawn and in sight.
+    @MainActor func cell(of day: Int64) -> CGRect? {
+        let dow = localDate(day, appTimeZone).dow
+        let monday = addDays(day, -((dow + 6) % 7), appTimeZone)
+        guard let row = rows[Self.key(startOfMonth(day, appTimeZone), monday)] else { return nil }
+        let c = CGFloat((dow + 6) % 7)
+        let rect = CGRect(x: row.frame.minX + row.column * c, y: row.frame.minY, width: row.column, height: row.frame.height)
+        let screen = UIScreen.main.bounds
+        return rect.minY > 0 && rect.maxY < screen.height ? rect : nil
     }
 }

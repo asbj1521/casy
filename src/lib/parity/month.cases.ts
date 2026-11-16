@@ -1,5 +1,11 @@
 /** monthGrid.ts, the month layout and week numbers, and monthItems.ts, for Month.swift (#201). */
-import { buildMonthLayout, isoWeekNumber, type OverviewBlock } from "@/lib/calendarOverview";
+import {
+  buildMonthLayout,
+  formatDuration,
+  formatSegmentRange,
+  isoWeekNumber,
+  type OverviewBlock,
+} from "@/lib/calendarOverview";
 import { layoutWeek, type GridItem } from "@/lib/monthGrid";
 import { calendarItems } from "@/lib/monthItems";
 import { addDays, startOfDay, startOfMonth } from "@/lib/zone";
@@ -82,6 +88,29 @@ export function monthCases(): ParityCase[] {
         calendarItems(counted, new Map(Object.entries(names)), { from, to }, TZ, lang),
       );
     }
+  }
+  // The day view's words: a segment's time, and how long it lasts.
+  for (let i = 0; i < 80; i++) {
+    const day = startOfDay(Date.UTC(2026, int(0, 11), int(1, 28)), TZ);
+    const start = day + int(0, 95) * 15 * 60_000;
+    const end = flag(0.2)
+      ? addDays(day, 1, TZ)
+      : Math.min(start + int(1, 40) * 15 * 60_000, addDays(day, 1, TZ));
+    const allDay = flag(0.15);
+    const seg = {
+      calendarId: "a",
+      start: new Date(start),
+      end: new Date(end),
+      allDay,
+      continuesBefore: false,
+      continuesAfter: false,
+    };
+    add(
+      "formatSegmentRange",
+      { start, end, allDay, timeZone: TZ },
+      formatSegmentRange(seg, TZ, "Hele dagen"),
+    );
+    add("formatDuration", { start, end }, formatDuration(new Date(start), new Date(end), "t"));
   }
   return cases;
 }

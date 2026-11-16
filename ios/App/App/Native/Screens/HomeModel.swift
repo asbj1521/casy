@@ -71,6 +71,10 @@ final class HomeModel {
 
     /// Your own calendar's items, before the page's are added.
     private var own: [MonthItem] = []
+    /// What they were made from, for a day's view: the counted blocks with
+    /// their titles, places and notes, and your calendars.
+    private var counted: [OverviewBlock] = []
+    private(set) var calendars: [OverviewCalendar] = []
     private var loadedAt: Double = -1
     private var layoutTask: Task<Void, Never>?
 
@@ -107,7 +111,7 @@ final class HomeModel {
             let data = try await api.calendarBusy(
                 from: isoString(from), to: isoString(to), errorMessage: CasyStrings.loadCalendarsFailed)
             let lang = CasyStrings.language == "en" ? Lang.en : Lang.da
-            let (items, palette) = await Task.detached(priority: .userInitiated) {
+            let (items, palette, blocks) = await Task.detached(priority: .userInitiated) {
                 let (blocks, phoneColors) = DayOfCalendar.phoneDrawn(data, from: from, to: to)
                 let included = Set(data.calendars.filter(\.included).map(\.id))
                 // What you told Casy has no tick: it always counts, so it is always drawn.
@@ -121,10 +125,13 @@ final class HomeModel {
                 let names = Dictionary(data.calendars.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
                 return (
                     calendarItems(counted, names: names, from: from, to: to, appTimeZone, lang),
-                    calendarColors(data.calendars, own: phoneColors)
+                    calendarColors(data.calendars, own: phoneColors),
+                    counted
                 )
             }.value
             own = items
+            counted = blocks
+            calendars = data.calendars
             colors = palette
             failure = nil
             layOut()
@@ -168,9 +175,48 @@ final class HomeModel {
         }
     }
 
+    /// One day as the day view draws it (the web's useDayCalendar): your
+    /// blocks cut at its midnights, the holidays first as whole days, and what
+    /// the page adds on top (a vote's date, a trip) as items of their own.
+    func day(_ midnight: Int64) -> (calendar: DayOfCalendar, extras: [MonthItem]) {
+        let next = addDays(midnight, 1, appTimeZone)
+        let near = counted.filter {
+            guard let start = parseInstant($0.start), let end = parseInstant($0.end) else { return false }
+            return end > midnight && start < next
+        }
+        var segments = segmentByDay(near, from: midnight, to: next, appTimeZone)[dayKey(midnight, appTimeZone)] ?? []
+        let lang = CasyStrings.language == "en" ? Lang.en : Lang.da
+        var holidayNames: [String: String] = [:]
+        if !page.holidaysHidden {
+            let holidays = danishHolidays(localDate(midnight, appTimeZone).year, appTimeZone).filter { $0.date == midnight }
+            for h in holidays { holidayNames[h.key] = lang == .da ? h.name : h.englishName }
+            segments =
+                holidays.map {
+                    DaySegment(
+                        calendarId: holidayCalendarId, start: $0.date, end: next, allDay: true,
+                        continuesBefore: false, continuesAfter: false)
+                } + segments
+        }
+        let names = Dictionary(calendars.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
+        return (
+            DayOfCalendar(segments: segments, colors: colors, names: names, holidays: holidayNames, none: calendars.isEmpty),
+            page.extras.filter { $0.end > midnight && $0.start < next }
+        )
+    }
+
+    /// Whether a tap on this day is the page's: a trip waiting for an answer,
+    /// a vote's pencilled date, or a starred day each open something of theirs.
+    func dayIsThePages(_ midnight: Int64) -> Bool {
+        if page.starred.contains(midnight) { return true }
+        let next = addDays(midnight, 1, appTimeZone)
+        return page.extras.contains { ($0.pencil == true || $0.pulse == true) && $0.end > midnight && $0.start < next }
+    }
+
     func reset() {
         months = []
         own = []
+        counted = []
+        calendars = []
         colors = [:]
         failure = nil
         loadedAt = -1

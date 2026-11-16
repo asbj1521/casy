@@ -650,6 +650,21 @@ public enum CasyStrings {
     public static var homeStarred: String { text("prime.dayMark") }
     public static func homeVoteAnswer(_ title: String) -> String { format("homeVote.answer", title) }
     public static func homeVotesWaiting(_ n: Int) -> String { format("homeVote.waiting.many", n) }
+    public static var dayAllDay: String { text("calendarView.allDay") }
+    public static var dayHourUnit: String { text("calendarView.hourUnit") }
+    public static var dayCalendarFallback: String { text("calendarView.calendarFallback") }
+    public static var dayContinuesBoth: String { text("calendarView.continuesBoth") }
+    public static var dayContinuesBefore: String { text("calendarView.continuesBefore") }
+    public static var dayContinuesAfter: String { text("calendarView.continuesAfter") }
+    public static var dayPublicHoliday: String { text("calendarView.publicHoliday") }
+    public static var dayObservedDay: String { text("calendarView.observedDay") }
+    public static var dayDenmark: String { text("calendarView.denmark") }
+    public static var dayCasyPill: String { text("calendarView.casyPill") }
+    public static var dayOne: String { text("calendarView.oneDay") }
+    public static var dayTwo: String { text("calendarView.twoDays") }
+    public static var dayShowOne: String { text("calendarView.showOneDay") }
+    public static var dayShowTwo: String { text("calendarView.showTwoDays") }
+    public static func dayShowMonth(_ month: String) -> String { format("swipe.showMonth", month) }
     public static var adminNativeHome: String { text("admin.nativeHome") }
     public static var adminNativeHomeDetail: String { text("admin.nativeHomeDetail") }
     public static var calendarsListTitle: String { text("calendarView.listTitle") }

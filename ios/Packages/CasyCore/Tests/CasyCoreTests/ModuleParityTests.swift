@@ -408,6 +408,13 @@ private struct SpanAnswer: Encodable {
                 calendarItems(
                     try a["counted"].decoded(), names: try a["names"].decoded(), from: try milliseconds(a, "from"),
                     to: try milliseconds(a, "to"), try text(a, "timeZone"), try lang(a)))
+        case "formatSegmentRange":
+            let seg = DaySegment(
+                calendarId: "a", start: try milliseconds(a, "start"), end: try milliseconds(a, "end"),
+                allDay: a["allDay"] == .bool(true), continuesBefore: false, continuesAfter: false, details: nil)
+            return try json(formatSegmentRange(seg, try text(a, "timeZone"), allDay: "Hele dagen"))
+        case "formatDuration":
+            return try json(formatDuration(try milliseconds(a, "start"), try milliseconds(a, "end"), hourUnit: "t"))
         default: return unknown(fn)
         }
     }

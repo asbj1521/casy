@@ -168,3 +168,23 @@ public func calendarItems(
     }
     return items
 }
+
+// MARK: - The day view's words (calendarOverview.ts)
+
+/// "09:15-11:20", the word for a whole day, or "22:00-24:00" for a segment
+/// ending at midnight (`formatSegmentRange`).
+public func formatSegmentRange(_ seg: DaySegment, _ timeZone: String, allDay: String) -> String {
+    if seg.allDay { return allDay }
+    let endsAtMidnight = seg.end > seg.start && startOfDay(seg.end, timeZone) == seg.end
+    let time = { (ms: Int64) in formatTime(isoString(ms), timeZone) }
+    return "\(time(seg.start))-\(endsAtMidnight ? "24:00" : time(seg.end))"
+}
+
+/// "2 t 35 min", "45 min", "3 t" (`formatDuration`; `hourUnit` is "t" in Danish).
+public func formatDuration(_ start: Int64, _ end: Int64, hourUnit: String) -> String {
+    let minutes = Int((Double(end - start) / 60_000).rounded(.toNearestOrAwayFromZero))
+    let h = minutes / 60
+    let m = minutes % 60
+    if h == 0 { return "\(m) min" }
+    return m == 0 ? "\(h) \(hourUnit)" : "\(h) \(hourUnit) \(m) min"
+}
