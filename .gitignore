@@ -25,6 +25,7 @@ dist-ssr
 
 # Browser tests (Playwright): the test build and its results
 dist-e2e
+dist-parity
 test-results
 playwright-report
 

@@ -19,7 +19,8 @@ const liveUrl = process.env.CAP_LIVE_URL;
 const config: CapacitorConfig = {
   appId: "app.casy",
   appName: "Find en dag",
-  webDir: "dist",
+  // `npm run ios:parity` (#280) copies in a test build from dist-parity/ instead.
+  webDir: process.env.CAP_WEB_DIR ?? "dist",
   // A notification arriving while Casy is open still shows as a banner (#139).
   plugins: { PushNotifications: { presentationOptions: ["banner", "sound", "list"] } },
   // The app's lowest iOS (#198), which `cap sync` copies from the Xcode project

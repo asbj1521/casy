@@ -16,6 +16,7 @@ supabase/templates
 
 # Browser test output
 dist-e2e
+dist-parity
 test-results
 playwright-report
 e2e/__screenshots__

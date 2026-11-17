@@ -10,12 +10,18 @@
  * and AI corrections waiting for her (e2e/adminReviews.ts), and
  * `{ calendars: "none" }` with nothing connected and `{ aiConsent: false }`
  * without the yes to the AI (#200).
+ *
+ * It also stands in for Supabase Auth (#280): the web build the parity shots
+ * compare against (`npm run ios:parity`) talks to this server from the app's
+ * page, so it answers Mia's user, her token and signing out, with the CORS
+ * headers a page on capacitor://localhost needs.
  */
 import { createServer } from "node:http";
 import process from "node:process";
 
 import { addReviews } from "../../e2e/adminReviews";
 import { FakeBackend } from "../../e2e/backend";
+import { CORS, session, user } from "../../e2e/session";
 import { DEFAULT_WORLD, makeWorld } from "../../e2e/world";
 
 const PORT = Number(process.env.PORT ?? 4318);
@@ -30,10 +36,11 @@ createServer((request, response) => {
   request.on("end", () => {
     const url = new URL(request.url ?? "/", `http://localhost:${PORT}`);
     const name = /^\/functions\/v1\/([^/]+)$/.exec(url.pathname)?.[1];
-    const send = (status: number, json: unknown) => {
-      response.writeHead(status, { "Content-Type": "application/json" });
-      response.end(JSON.stringify(json));
+    const send = (status: number, json?: unknown) => {
+      response.writeHead(status, { ...CORS, "Content-Type": "application/json" });
+      response.end(json === undefined ? "" : JSON.stringify(json));
     };
+    if (request.method === "OPTIONS") return send(204);
     const text = Buffer.concat(chunks).toString();
     if (url.pathname === "/reset") {
       const seed = (text ? JSON.parse(text) : {}) as {
@@ -52,6 +59,9 @@ createServer((request, response) => {
       if (seed.aiConsent === false) backend.world.aiConsent = false;
       return send(200, {});
     }
+    if (url.pathname === "/auth/v1/user") return send(200, user);
+    if (url.pathname === "/auth/v1/logout") return send(204);
+    if (url.pathname === "/auth/v1/token") return send(200, session());
     if (!name) return send(404, { error: "Not a function" });
     const body = text ? (JSON.parse(text) as Record<string, unknown>) : {};
     const answer = backend.answer({ name, params: url.searchParams, body });

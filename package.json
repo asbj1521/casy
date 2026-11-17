@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "ios": "npm run build && cap sync ios",
     "ios:live": "bash scripts/ios-live.sh",
+    "ios:parity": "bash scripts/native/parity-build.sh",
     "test": "vitest",
     "test:run": "vitest run",
     "e2e": "playwright test",
