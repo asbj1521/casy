@@ -19,7 +19,9 @@ import {
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 
+import { invitationsQuery } from "@/api/groups";
 import AgreedCard from "@/components/calendarView/AgreedCard";
 import { readTourSeen, rememberTourSeen, unsortedCalendars } from "@/lib/calendarTour";
 import CalendarsSheet from "@/components/calendarView/CalendarsSheet";
@@ -42,6 +44,7 @@ import MonthView, { type MonthViewHandle } from "@/components/swipe/MonthView";
 import { ZOOM } from "@/components/swipe/morph";
 import Notice from "@/components/ui/Notice";
 import { useSignedInUser } from "@/context/auth";
+import { useEventsBadge } from "@/hooks/useEventsBadge";
 import { useAiAllowed } from "@/hooks/useAiAllowed";
 import { useCalendarsHome } from "@/hooks/useCalendarsHome";
 import { useFillViewport } from "@/hooks/useFillViewport";
@@ -575,6 +578,9 @@ export default function PhoneCalendar() {
     [homeExtras, month],
   );
   const starredDays = useMemo(() => [...starred], [starred]);
+  // HomeBar's counts, the same queries, for the native home page's buttons.
+  const eventsBadge = useEventsBadge();
+  const { data: invitations } = useQuery(invitationsQuery(userId));
   const firstWaiting = homeVotes.waiting[0];
   useNativeHome(
     {
@@ -598,6 +604,7 @@ export default function PhoneCalendar() {
           : null,
       tell: aiAllowed,
       holidaysHidden: !calendars.find((c) => c.id === HOLIDAY_CALENDAR_ID)?.included,
+      badges: { calendars: toSort, events: eventsBadge ?? 0, profile: invitations?.length ?? 0 },
     },
     calendar.items,
     ({ action, day }) => {

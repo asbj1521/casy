@@ -48,6 +48,12 @@ export interface NativeHomeState {
   /** Tilføj til kalender is offered. */
   tell: boolean;
   holidaysHidden: boolean;
+  /**
+   * The counts on the home page's buttons (#281), as the page draws them:
+   * calendars not set up yet on Kalendere, votes waiting on Aftaler,
+   * invitations on Profil. 0 draws none.
+   */
+  badges: { calendars: number; events: number; profile: number };
   /** Changes when the page fetched your calendars again: the app reads them again too. */
   dataAt: number;
 }

@@ -645,6 +645,12 @@ public enum CasyStrings {
     public static var homeTitle: String { text("nav.home") }
     public static var homeEvents: String { text("nav.eventsShort") }
     public static var homeProfile: String { text("nav.profileShort") }
+    /// "2 venter på dit svar": Aftaler's and Profil's badge, read with the button.
+    public static func homeWaiting(_ n: Int) -> String { String(format: text("nav.waitingForAnswer"), n) }
+    /// "1 kalender er ikke sat op": Kalendere's badge, read with the button.
+    public static func homeToSort(_ n: Int) -> String {
+        n == 1 ? text("calendarTour.badge.one") : String(format: text("calendarTour.badge.many"), n)
+    }
     public static var homePlan: String { text("planFromCalendar.button") }
     public static var homeTell: String { text("tellCasy.button") }
     public static var homeStarred: String { text("prime.dayMark") }

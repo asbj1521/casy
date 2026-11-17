@@ -41,8 +41,18 @@ struct HomeFromPage: Equatable {
     /// Tilføj til kalender is offered (the AI is there for this person).
     var tell = false
     var holidaysHidden = false
+    /// The counts on the buttons, as the page draws them (#281).
+    var badges = HomeBadges()
     /// When the page last fetched your calendars: a new one means read again.
     var dataAt: Double = 0
+}
+
+/// The home page's counts: calendars not set up yet (Kalendere), votes waiting
+/// on you (Aftaler), invitations (Profil). 0 draws none.
+struct HomeBadges: Equatable {
+    var calendars = 0
+    var events = 0
+    var profile = 0
 }
 
 /// The native home page's data (#201): your calendar over the year searched,

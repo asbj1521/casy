@@ -95,6 +95,10 @@ const WEB: Record<string, (t: Messages) => string> = {
   "invitations.invitedTo": (t) => t.join.invitedTo,
   "invitations.membersSoFar.one": (t) => t.join.membersSoFar(1),
   "invitations.membersSoFar.many": (t) => t.join.membersSoFar(7).replace("7", "%d"),
+  // The home page's counts (#281): read with the button, as the web's badges are.
+  "nav.waitingForAnswer": (t) => t.nav.waitingForAnswer(7).replace("7", "%d"),
+  "calendarTour.badge.one": (t) => t.calendarTour.badge(1),
+  "calendarTour.badge.many": (t) => t.calendarTour.badge(7).replace("7", "%d"),
   "invitations.about": (t) => t.join.aboutTitle,
   "invitations.privacy": (t) => t.join.privacy,
   "invitations.join": (t) => t.join.joinGroup,

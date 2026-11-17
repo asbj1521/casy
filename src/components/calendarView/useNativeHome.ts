@@ -33,6 +33,8 @@ export function useNativeHome(
   const dataAt = seen.dataAt;
 
   const { covered, extras, colors, starred, pill, tell, holidaysHidden } = state;
+  // By value: a new object with the same counts sends nothing.
+  const { calendars, events, profile } = state.badges;
   useEffect(() => {
     if (!native) return;
     void sendHome({
@@ -44,9 +46,23 @@ export function useNativeHome(
       pill,
       tell,
       holidaysHidden,
+      badges: { calendars, events, profile },
       dataAt,
     });
-  }, [native, covered, extras, colors, starred, pill, tell, holidaysHidden, dataAt]);
+  }, [
+    native,
+    covered,
+    extras,
+    colors,
+    starred,
+    pill,
+    tell,
+    holidaysHidden,
+    calendars,
+    events,
+    profile,
+    dataAt,
+  ]);
   // Gone from the home page (signed out, another page): the app's goes too.
   useEffect(() => {
     if (!native) return;
@@ -60,6 +76,7 @@ export function useNativeHome(
         pill: null,
         tell: false,
         holidaysHidden: false,
+        badges: { calendars: 0, events: 0, profile: 0 },
         dataAt: 0,
       });
   }, [native]);

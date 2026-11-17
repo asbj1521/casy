@@ -30,7 +30,7 @@ struct HomeScreen: View {
         GeometryReader { box in
             let column = box.size.width / 7
             ZStack(alignment: .top) {
-                months(column)
+                months(column, bottomSafe: box.safeAreaInsets.bottom)
                 if let day = shownDay {
                     VStack(spacing: 0) {
                         dayHeader(day)
@@ -63,25 +63,38 @@ struct HomeScreen: View {
             preferences.theme == "light" ? .light : preferences.theme == "dark" ? .dark : nil)
     }
 
-    private func months(_ column: CGFloat) -> some View {
+    private func months(_ column: CGFloat, bottomSafe: CGFloat) -> some View {
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    ForEach(model.months) { month in
-                        MonthBlock(
-                            month: month, column: column, today: startOfDay(Native.now, appTimeZone),
-                            starred: model.page.starred, lang: lang, dark: scheme == .dark,
-                            color: model.color, pick: pick
-                        )
-                        .equatable()
+                    // Each month as two scroll targets, its short name and its weeks
+                    // (ids -month and month): opening on a month opens on its first
+                    // week, the name tucked under the header as on the web
+                    // (monthScrollTop, MONTH_LABEL_PX).
+                    ForEach(model.months.flatMap { [MonthRow(month: $0, label: true), MonthRow(month: $0, label: false)] }) {
+                        row in
+                        if row.label {
+                            MonthLabel(month: row.month.id, firstColumn: row.month.firstColumn, column: column, lang: lang)
+                        } else {
+                            MonthBlock(
+                                month: row.month, column: column, today: startOfDay(Native.now, appTimeZone),
+                                starred: model.page.starred, lang: lang, dark: scheme == .dark,
+                                color: model.color, pick: pick
+                            )
+                            .equatable()
+                        }
                     }
                 }
                 .scrollTargetLayout()
             }
             .scrollPosition(id: $position, anchor: .top)
+            .onChange(of: model.months.first?.id, initial: true) { _, first in
+                // Opened on this month's first week, once the months are there.
+                if position == nil, let first { position = first }
+            }
             .refreshable { await model.load() }
             .accessibilityIdentifier("home.months")
             .safeAreaInset(edge: .top, spacing: 0) { header }
-            .safeAreaInset(edge: .bottom, spacing: 0) { bottom }
+            .safeAreaInset(edge: .bottom, spacing: 0) { bottom(safe: bottomSafe) }
             .accessibilityHidden(shownDay != nil)
             // Under an open day nothing reaches it: no tap, no swipe, no pull to refresh.
             .allowsHitTesting(shownDay == nil)
@@ -210,39 +223,56 @@ struct HomeScreen: View {
 
     // MARK: The header
 
-    /// The month on screen: the one whose top is under the header.
+    /// The month on screen, as the web's `track`: the last whose first week has
+    /// reached the header. A month's name row at the top (id -month) means its
+    /// weeks haven't yet, so the title still names the month before.
     private var titleMonth: Int64 {
-        position ?? model.months.first?.id ?? startOfMonth(Native.now, appTimeZone)
+        let first = model.months.first?.id ?? startOfMonth(Native.now, appTimeZone)
+        guard let position else { return first }
+        if position >= 0 { return position }
+        let month = -position
+        return month <= first ? first : startOfMonth(addDays(month, -1, appTimeZone), appTimeZone)
     }
 
+    /// MonthView's floating header with HomeToolbar on its stand-in row: the row
+    /// 8 points under the safe area (APP_TOP_GAP), 40 tall, 4 under it, 16 at the
+    /// sides; the title 30 bold, tight (-0.75), its line 37.5, 4 above and under,
+    /// 12 at the sides; the weekdays 24 tall in 12 medium; 6 under the block.
     private var header: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
+            HStack(alignment: .top) {
                 Button { model.onAction?("calendars", nil) } label: {
-                    Label(CasyStrings.calendarsTitle, systemImage: "square.3.layers.3d")
-                        .font(.body.weight(.medium))
-                        .padding(.horizontal, 14)
-                        .frame(height: 40)
-                        .casyGlass()
+                    HStack(spacing: 6) {
+                        LucideIcon("layers", size: 20)
+                        Text(CasyStrings.calendarsTitle).font(.system(size: 17))
+                    }
+                    .padding(.leading, 14)
+                    .padding(.trailing, 16)
+                    .frame(height: 40)
+                    .casyGlass()
                 }
+                .overlay(alignment: .topTrailing) { badge(model.page.badges.calendars) }
+                .accessibilityValue(
+                    model.page.badges.calendars > 0 ? CasyStrings.homeToSort(model.page.badges.calendars) : "")
                 .accessibilityIdentifier("home.calendars")
                 Spacer()
                 HStack(spacing: 0) {
                     if model.page.tell {
                         Button { model.onAction?("tell", nil) } label: {
-                            Image(systemName: "plus")
-                                .font(.title3.weight(.semibold))
+                            LucideIcon("plus", size: 24, stroke: 2.25)
                                 .frame(width: 44, height: 40)
+                                .contentShape(Rectangle())
                         }
                         .accessibilityLabel(CasyStrings.homeTell)
                         .accessibilityIdentifier("home.tell")
-                        Divider().frame(height: 22)
+                        Rectangle().fill(Theme.primary.color.opacity(0.3)).frame(width: 1, height: 20)
                     }
                     Button(action: goToday) {
                         Text(CasyStrings.homeToday)
-                            .font(.body.weight(.medium))
-                            .padding(.horizontal, 14)
+                            .font(.system(size: 17))
+                            .padding(.horizontal, 16)
                             .frame(height: 40)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityIdentifier("home.today")
                 }
@@ -250,17 +280,19 @@ struct HomeScreen: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.primary.color)
-            .padding(.horizontal, 12)
-            .padding(.top, 4)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
             .padding(.bottom, 4)
             if let failure = model.failure {
-                Notice(failure, tone: .error).padding(.horizontal, 16).padding(.bottom, 6)
+                Notice(failure, tone: .error).padding(.horizontal, 16).padding(.bottom, 8)
             }
             Text(verbatim: monthTitle(titleMonth))
                 .font(.system(size: 30, weight: .bold))
+                .tracking(-0.75)
                 .foregroundStyle(Theme.foreground.color)
+                .frame(height: 37.5)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 2)
+                .padding(.vertical, 4)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("home.title")
             HStack(spacing: 0) {
@@ -272,12 +304,17 @@ struct HomeScreen: View {
                         .foregroundStyle(c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
                 }
             }
-            .font(.caption.weight(.medium))
+            .font(.system(size: 12, weight: .medium))
             .frame(height: 24)
             .padding(.bottom, 6)
             .accessibilityHidden(true)
         }
         .background(.bar)
+    }
+
+    /// The web's count, 4 points outside the button's top right corner; none for 0.
+    @ViewBuilder private func badge(_ count: Int) -> some View {
+        if count > 0 { CountBadge(count).offset(x: 4, y: -4).allowsHitTesting(false) }
     }
 
     private func monthTitle(_ month: Int64) -> String {
@@ -292,64 +329,106 @@ struct HomeScreen: View {
 
     // MARK: Along the bottom
 
-    private var bottom: some View {
-        VStack(spacing: 10) {
+    /// HomeBar: max(safe area, 12) from the bottom, 16 at the sides, 12 between;
+    /// Aftaler and Profil 48 round with a 24 icon, Planlæg 48 tall, 16 at its
+    /// sides, a 20 icon 8 from 17 semibold. Over it HomePill (the vote pill):
+    /// 12 above the bar, 44 tall, 16 left and 12 right, a 20 icon, 15 semibold,
+    /// a 16 chevron, 8 between.
+    private func bottom(safe: CGFloat) -> some View {
+        VStack(spacing: 12) {
             if let pill = model.page.pill {
                 Button { model.onAction?("pill", nil) } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle")
+                        LucideIcon("vote", size: 20)
                         Text(pill).lineLimit(1)
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold))
+                        LucideIcon("chevron-right", size: 16)
                     }
-                    .font(.body.weight(.semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.primary.color)
-                    .padding(.horizontal, 18)
+                    .padding(.leading, 16)
+                    .padding(.trailing, 12)
                     .frame(height: 44)
                     .casyGlass()
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("home.pill")
             }
-            HStack(spacing: 10) {
-                round("calendar.badge.checkmark", label: CasyStrings.homeEvents, id: "home.events") {
+            HStack(spacing: 12) {
+                round("calendar-check", label: CasyStrings.homeEvents, badge: model.page.badges.events, id: "home.events") {
                     model.onAction?("events", nil)
                 }
                 Button { model.onAction?("plan", nil) } label: {
-                    Label(CasyStrings.homePlan, systemImage: "magnifyingglass")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Theme.primary.color)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .casyGlass()
+                    HStack(spacing: 8) {
+                        LucideIcon("calendar-search", size: 20)
+                        Text(CasyStrings.homePlan).lineLimit(1)
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.primary.color)
+                    .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .casyGlass()
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("home.plan")
-                round("person", label: CasyStrings.homeProfile, id: "home.profile") {
+                round("user", label: CasyStrings.homeProfile, badge: model.page.badges.profile, id: "home.profile") {
                     model.onAction?("profile", nil)
                 }
             }
         }
         .padding(.horizontal, 16)
-        .padding(.bottom, 4)
+        // The safe area is under it already; a phone without one keeps 12.
+        .padding(.bottom, max(0, 12 - safe))
     }
 
-    private func round(_ image: String, label: String, id: String, action: @escaping () -> Void) -> some View {
+    private func round(
+        _ icon: String, label: String, badge count: Int, id: String, action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
-            Image(systemName: image)
-                .font(.title3.weight(.medium))
+            LucideIcon(icon, size: 24)
                 .foregroundStyle(Theme.primary.color)
                 .frame(width: 48, height: 48)
                 .casyGlass()
         }
         .buttonStyle(.plain)
+        .overlay(alignment: .topTrailing) { badge(count) }
         .accessibilityLabel(label)
+        .accessibilityValue(count > 0 ? CasyStrings.homeWaiting(count) : "")
         .accessibilityIdentifier(id)
+    }
+}
+
+/// A row of the months' list: a month's short name, or its weeks.
+private struct MonthRow: Identifiable {
+    let month: HomeMonth
+    let label: Bool
+    var id: Int64 { label ? -month.id : month.id }
+}
+
+/// A month's short name ("Nov"), 17 bold, over the column of its first day,
+/// in a 28 point row (MONTH_LABEL_PX).
+private struct MonthLabel: View {
+    let month: Int64
+    let firstColumn: Int
+    let column: CGFloat
+    let lang: Lang
+
+    var body: some View {
+        Text(verbatim: capitalize(monthShortName(month, lang)).replacingOccurrences(of: ".", with: ""))
+            .font(.system(size: 17, weight: .bold))
+            .foregroundStyle(Theme.foreground.color)
+            .lineLimit(1)
+            .frame(width: column)
+            .offset(x: column * CGFloat(firstColumn))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 28, alignment: .top)
+            .accessibilityHidden(true)
     }
 }
 
 // MARK: - A month
 
-/// One month: its short name over the column of its first day, then its weeks.
+/// One month's weeks (its short name is a row of its own, `MonthLabel`).
 private struct MonthBlock: View, Equatable {
     let month: HomeMonth
     let column: CGFloat
@@ -367,13 +446,6 @@ private struct MonthBlock: View, Equatable {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(verbatim: capitalize(monthShortName(month.id, lang)).replacingOccurrences(of: ".", with: ""))
-                .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(Theme.foreground.color)
-                .frame(width: column)
-                .offset(x: column * CGFloat(month.firstColumn))
-                .frame(height: 28, alignment: .top)
-                .accessibilityHidden(true)
             ForEach(month.weeks) { week in
                 WeekRow(
                     month: month.id, week: week, column: column, today: today, starred: starred, lang: lang,
@@ -499,11 +571,16 @@ private struct WeekRow: View {
                 bottomTrailingRadius: after ? 0 : 4, topTrailingRadius: after ? 0 : 4)
             let pencil = p.item.pencil == true
             let rgb = color(p.item.calendarId)
+            // The web's chip: 11 semibold on a 16 point line, 4 at the sides; the
+            // pencil's 1 point dashed border is inside the box, as CSS draws it,
+            // so its words have a point less room each side and sit a point lower.
             Text(verbatim: p.item.label)
                 .font(.system(size: 11, weight: .semibold))
                 .lineLimit(1)
-                .padding(.horizontal, 4)
-                .frame(width: max(0, width), height: monthLanePoints - 3, alignment: .leading)
+                .frame(height: 16)
+                .padding(.horizontal, pencil ? 5 : 4)
+                .padding(.top, pencil ? 1 : 0)
+                .frame(width: max(0, width), height: monthLanePoints - 3, alignment: .topLeading)
                 .foregroundStyle(pencil ? Theme.primary.color : Color(rgb: CasyCore.shade(rgb, dark: dark)))
                 .background {
                     if pencil {

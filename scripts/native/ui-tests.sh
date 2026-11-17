@@ -17,4 +17,4 @@ trap 'kill "$SERVER" 2>/dev/null || true' EXIT
 # The app reads what is built into it: never the live project in these tests.
 xcodebuild test -project ios/App/App.xcodeproj -scheme App -configuration Debug \
   -destination "platform=iOS Simulator,name=$DEVICE" \
-  -only-testing:AppUITests -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+  -only-testing:"${UI_TESTS:-AppUITests}" -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO

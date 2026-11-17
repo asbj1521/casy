@@ -14586,6 +14586,57 @@
           }
         }
       }
+    },
+    "nav.waitingForAnswer": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d venter på dit svar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d waiting for your answer"
+          }
+        }
+      }
+    },
+    "calendarTour.badge.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 kalender er ikke sat op"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 calendar isn't set up"
+          }
+        }
+      }
+    },
+    "calendarTour.badge.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d kalendere er ikke sat op"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d calendars aren't set up"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

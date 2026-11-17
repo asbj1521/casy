@@ -430,6 +430,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         let tell = call.getBool("tell") ?? false
         let holidaysHidden = call.getBool("holidaysHidden") ?? false
         let dataAt = call.getDouble("dataAt") ?? 0
+        let badgesRaw: [String: Any] = call.getObject("badges") ?? [:]
+        let badges = HomeBadges(
+            calendars: badgesRaw["calendars"] as? Int ?? 0, events: badgesRaw["events"] as? Int ?? 0,
+            profile: badgesRaw["profile"] as? Int ?? 0)
         DispatchQueue.main.async {
             var fresh = HomeFromPage()
             fresh.shown = shown
@@ -440,6 +444,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             fresh.pill = pill
             fresh.tell = tell
             fresh.holidaysHidden = holidaysHidden
+            fresh.badges = badges
             fresh.dataAt = dataAt
             HomeModel.shared.update(fresh)
             self.placeHome()
