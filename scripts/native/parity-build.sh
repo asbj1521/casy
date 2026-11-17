@@ -19,4 +19,4 @@ VITE_SUPABASE_URL=http://localhost:4318 \
 
 env -u CAP_LIVE_URL CAP_WEB_DIR=dist-parity npx cap sync ios
 echo "ios:parity: the app now holds the test build (fake backend on port 4318)."
-echo "ios:parity: run 'npm run ios' to put the real site back."
+echo "ios:parity: run 'npm run ios' to put the real site back (parity.sh does it itself)."

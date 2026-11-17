@@ -11,7 +11,11 @@
 # <name>-pair.png and <name>-diff.png to PARITY_OUT (default
 # $TMPDIR/casy-parity), and prints the share of pixels that differ.
 #
-# Afterwards the app holds the test build: `npm run ios` puts the real site back.
+# Afterwards the real site is put back into the app (npm run ios), even when a
+# test fails, so a build run from Xcode or ui-tests.sh signs in to the live
+# project again: left in, the test build signed in against a server that is
+# gone, and sign-in failed with "Load failed". PARITY_KEEP_TEST_BUILD=1 keeps
+# it, for several runs in a row.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -33,7 +37,14 @@ npx esbuild scripts/native/fake-backend.ts --bundle --platform=node --format=esm
   --outfile="$BUNDLE" --log-level=warning
 node "$BUNDLE" >/dev/null &
 SERVER=$!
-trap 'kill "$SERVER" 2>/dev/null || true' EXIT
+finish() {
+  kill "$SERVER" 2>/dev/null || true
+  if [ "${PARITY_KEEP_TEST_BUILD:-}" != 1 ]; then
+    echo "parity: putting the real site back into the app"
+    npm run --silent ios >/dev/null 2>&1 || echo "parity: npm run ios failed; run it by hand" >&2
+  fi
+}
+trap finish EXIT
 # Ready before the first test resets it.
 for _ in $(seq 50); do
   curl -sf -o /dev/null -X POST http://localhost:4318/reset && break

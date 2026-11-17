@@ -106,7 +106,9 @@ Its pieces:
    `<name>-native.png`, `<name>-pair.png` (side by side, web left) and `<name>-diff.png` (the web
    shot faded, every pixel more than 2 of 255 apart in red; the status bar and home indicator left
    out) to `PARITY_OUT` (default `$TMPDIR/casy-parity`), and prints the share that differs
-   (`scripts/native/parity-compare.py`). `PARITY_NO_WEB_BUILD=1` skips step 1.
+   (`scripts/native/parity-compare.py`). `PARITY_NO_WEB_BUILD=1` skips step 1. When it ends,
+   failed or not, it puts the real site back into the app (`npm run ios`), so the next build from
+   Xcode signs in to the live project; `PARITY_KEEP_TEST_BUILD=1` keeps the test build in.
 6. **The parity tests** (`ios/App/AppUITests/ParityUITests.swift`): one test per screen, state and
    theme, written once for both modes: `launch(path, theme:)`, then `shoot(app, name, when:)`,
    which waits for a text both draw and lets the screen settle. Skipped in the ordinary UI test run.
