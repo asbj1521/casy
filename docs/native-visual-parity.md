@@ -14,7 +14,30 @@ lost the details that make Casy look like Casy: the exact sizes, borders, separa
 icons, capsules, one-line titles cut with "...", header rows. Swift can draw all of it; the method
 dropped it. This guide is the method.
 
+## What is native on purpose: the frame is iOS's, the content is the web's
+
+Casy is rewritten in Swift *for* a few things the web view can only imitate (#192). Those are
+the one place where the native screen is meant to differ from the web, and there the native
+version wins: never copy the web's imitation of them.
+
+- **Liquid Glass:** Apple's real glass (`.casyGlass()`, with the iOS 18 fallback chosen in
+  CasyUI), not the web's CSS glass, its blur, rim or shine.
+- **Sheets:** the system's sheet: how it opens (growing out of its button on iOS 26), its
+  heights, grabber, corner, dimming behind it and dragging it away.
+- **Navigation:** pushing a screen and going back, the system back arrow, swiping back.
+- **Scrolling:** the system's scrolling, its bounce and its edge effects.
+- **System pieces:** the keyboard, alerts, menus, the switch (`Toggle`), date and time pickers,
+  haptics, the status bar.
+
+Everything those frames hold matches the web, value for value: the layout, sizes, spacing,
+fonts, colours, borders, separators, icons, header rows, capsules, text and where it is cut.
+Where a screen's frame is native on purpose, its comparison masks or ignores that area, and
+the screen's section of `docs/architecture/native.md` says what differs and why. Anything not
+on this list that differs is a mistake.
+
 ## The rules
+
+These hold for everything inside the frame above.
 
 1. **The web screen is the specification.** Not the plan, not iOS's defaults, not taste. If the web
    draws a 1-point border at 10 % opacity, so does Swift. If the web has a header row, a week
@@ -26,7 +49,7 @@ dropped it. This guide is the method.
    themes, shadows, blur, opacity, icons (lucide name and size), truncation and line limits. Then
    write the Swift with those values. Keep the list in the commit message or the PR, so a reviewer
    can check it.
-3. **No system defaults where the web chose something.** A SwiftUI `List`, `Form`, `Label`,
+3. **No system defaults where the web chose something**, except the frame above. A SwiftUI `List`, `Form`, `Label`,
    navigation bar or sheet brings Apple's own spacing, colours, fonts and backgrounds, which change
    with iOS versions and sheet heights. Use them only where the web looks the same; otherwise draw
    the piece explicitly (stacks, shapes, fixed sizes) so nothing depends on iOS's taste.
