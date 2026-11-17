@@ -61,6 +61,8 @@ The phone and the iPhone app follow one design language, taken from the newest s
 npm run dev              # Dev server on port 8080 (the user runs this in their own terminal)
 npm run ios              # Build the site and copy it into the iPhone app; then ▶ in Xcode (npx cap open ios)
 npm run ios:live         # Dev server + iOS Simulator with live reload (#125): edits show in the real iOS web view in about a second; run again only after Swift changes. `-- "iPhone Air"` picks another simulator, `-- --device` points a real phone at the Mac (then ▶ once in Xcode). Builds into Xcode's default DerivedData (never `cap run`, whose ios/DerivedData fails code signing in iCloud). Xcode 27 has no Simulator.app; DeviceHub.app shows the screen
+npm run ios:parity       # The site built against the fake backend into the app (#280): the web reference for native parity shots; `npm run ios` puts the real site back
+scripts/native/parity.sh # Native screens vs the web's (#280): every ParityUITests shot web-only and native on iPhone 17e, pair + diff images (docs/native-visual-parity.md)
 npm run build            # Type-check + production build
 npm run check            # CI's quick checks here in about 35 s (#208): tsc, ESLint, knip, Prettier, Vitest, Deno; finish runs it first
 npm run release:ios      # The iPhone app to TestFlight (#143): checks, archive, tag, upload; docs/releases.md

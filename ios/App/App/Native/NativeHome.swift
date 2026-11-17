@@ -11,6 +11,7 @@ enum NativeHome {
     static var on: Bool {
         get {
             #if DEBUG
+                if TestLaunch.isActive, TestLaunch.webOnly { return false }
                 if TestLaunch.isActive, TestLaunch.nativeHome { return true }
                 return UserDefaults.standard.bool(forKey: key)
             #else

@@ -34,6 +34,15 @@ class MainViewController: CAPBridgeViewController {
                 )
             )
         }
+        #if DEBUG
+            // A parity shot's web reference (#280): signed in, its clock stopped,
+            // on the screen asked for, before the page's first line runs.
+            if let script = TestLaunch.webScript {
+                webView?.configuration.userContentController.addUserScript(
+                    WKUserScript(source: script, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+                )
+            }
+        #endif
         // The app's own plugin (not an npm package), so it is registered here.
         bridge?.registerPluginInstance(PhoneCalendarPlugin())
         // Inviting friends from the contacts, by message (#149).

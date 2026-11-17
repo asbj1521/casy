@@ -76,36 +76,51 @@ Chromium with other fonts and the website's phone layout. They are only a quick 
 
 The simulator is **iPhone 17e** (390 x 844 points, the e2e phone size) for every parity shot.
 
-### Setting it up (once, before the first screen is compared)
+### The setup
 
-These pieces do not exist yet; build them first, in this order, each tested:
+Run `scripts/native/parity.sh` (every parity test) or `scripts/native/parity.sh
+ParityUITests/<test>` (one). It needs Python's image library (`python3 -m pip install pillow`).
+Its pieces:
 
-1. **The web build against the fake backend.** `npm run ios:parity`: builds the site with
-   `VITE_SUPABASE_URL=http://localhost:4318` and the e2e publishable key, and copies it into the
-   app (`npx cap sync ios`). Debug only; never released. The fake backend already answers
-   `/auth/v1/*` and every function (`scripts/native/fake-backend.ts`).
-2. **`-casyWebOnly YES`** (TestLaunch): `NativeBridge.screens()` answers `[]`, so the page draws
-   every screen itself, as it did before the rewrite.
-3. **The page signed in and its clock frozen** under a test launch: a `WKUserScript` added by the
-   app before the page loads that puts the fake session in `localStorage` (the auth storage key in
-   `src/lib/supabase.ts`) and fixes `Date` at `-casyNow`, as `e2e/fixtures.ts` does in Playwright.
-   The page's theme follows `-casy.appearance` (already honoured under a test launch).
-4. **Opening a screen on the page:** `-casyWebPath <path and query>` (for example `/?day=2026-10-15`,
-   `/?profile`, `/?events`) loads that address, so the web reference opens on the same screen and
-   state as the native test.
-5. **`scripts/native/parity.sh <Test class>/<test> <shot name>`**: runs the UI test twice on iPhone
-   17e, once with `-casyWebOnly YES -casyWebPath ...` and once native, saves both screenshots,
-   and writes three images to the scratchpad: `<name>-web.png`, `<name>-native.png`,
-   `<name>-pair.png` (side by side) and `<name>-diff.png` (what differs, in red), plus the share
-   of pixels that differ.
-6. **The parity tests** (`ios/App/AppUITests/ParityUITests.swift`): one test per screen and state
-   that opens it and takes `shot(name)`, written so the same test runs in both modes.
+1. **The web build against the fake backend.** `npm run ios:parity`
+   (`scripts/native/parity-build.sh`) builds the site with `VITE_SUPABASE_URL=http://localhost:4318`
+   and the e2e publishable key into `dist-parity/`, never `dist/`, and copies it into the app.
+   Debug only, never released: `npm run ios` and `npm run release:ios` put the real site back.
+   The fake backend (`scripts/native/fake-backend.ts`) answers every function and Supabase Auth
+   (`/auth/v1/user`, `token`, `logout`), with the CORS headers the app's page needs.
+2. **`-casyWebOnly YES`** (TestLaunch): `NativeBridge.screens()` answers `[]`, the native home page
+   stays off and no native screen opens, so the page draws every screen itself.
+3. **The page signed in and its clock frozen:** with `-casyWebSession <base64>` (the fake backend's
+   `/parity/session`: the storage key and Mia's session from `e2e/session.ts`, which the browser
+   tests use too), the app adds a `WKUserScript` before the page's first line that empties the
+   page's storage once per launch, puts the session in, stops `Date` at `-casyNow`, seeds
+   `Math.random` and `appRandom` as `e2e/fixtures.ts` does, and sets the theme (`-casyTheme`) and
+   language (`-casyLang`). It runs in **both** modes: web only, the page draws the screen; native,
+   the page hands the native screen its data over the bridge as in real use, so both shots show the
+   same world (the native run turns the home page on with `-casy.nativeHome YES`, Admin's switch,
+   not the made-up page of `HomeUITests`).
+4. **Opening a screen on the page:** `-casyWebPath <path and query>` (`/?day=2026-10-15`,
+   `/?profile`) is put in place with `history.replaceState` before the router reads it.
+5. **`parity.sh`** builds the app once, starts the fake backend, runs the tests on iPhone 17e with
+   `CASY_PARITY_MODE=web` and then `native`, and for each shot writes `<name>-web.png`,
+   `<name>-native.png`, `<name>-pair.png` (side by side, web left) and `<name>-diff.png` (the web
+   shot faded, every pixel more than 2 of 255 apart in red; the status bar and home indicator left
+   out) to `PARITY_OUT` (default `$TMPDIR/casy-parity`), and prints the share that differs
+   (`scripts/native/parity-compare.py`). `PARITY_NO_WEB_BUILD=1` skips step 1.
+6. **The parity tests** (`ios/App/AppUITests/ParityUITests.swift`): one test per screen, state and
+   theme, written once for both modes: `launch(path, theme:)`, then `shoot(app, name, when:)`,
+   which waits for a text both draw and lets the screen settle. Skipped in the ordinary UI test run.
+   **The reference is never a Swift screen.** `shoot` takes an element only the Swift screen has
+   (`native: "home.title"`): in the web run the text must be found inside the web view and that
+   element must be absent, before and after settling, or the test fails and no web shot is saved;
+   in the native run it must be there. The web screens are the ones the App Store build shows
+   (a Release build has no native screens), so the reference is the original, as people have it.
 
 ## The loop, for each screen
 
 1. **List the screen's states**: light and dark, empty and full, each sheet height, loading,
    errors that can show, large text. Each is a parity shot.
-2. **Take the web reference** of each state (`parity.sh`, web mode). Look at it closely; write down
+2. **Take the web reference** of each state (`parity.sh`; the `-web.png` shots). Look at it closely; write down
    every element top to bottom.
 3. **Write down the web's values** (rule 2) for every element in the list.
 4. **Write the Swift** from those values.

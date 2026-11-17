@@ -33,7 +33,87 @@
         /// `-casyNativeHome YES`: the native home page, the page's part played
         /// here (a vote's pencilled date, a starred day, the vote pill), and
         /// each press written where the test can read it (`home.lastAction`).
-        static var nativeHome: Bool { defaults.bool(forKey: "casyNativeHome") }
+        static var nativeHome: Bool { defaults.bool(forKey: "casyNativeHome") && !webOnly }
+        /// `-casyWebOnly YES` (#280): no screen is native, so the page draws every
+        /// one itself, as before the rewrite: the reference a parity shot
+        /// compares the native screen with (docs/native-visual-parity.md).
+        static var webOnly: Bool { defaults.bool(forKey: "casyWebOnly") }
+
+        /// What a parity launch (#280) puts in the page before its first line
+        /// runs, as e2e/fixtures.ts does in Playwright: the page's storage
+        /// (`-casyWebSession`: the fake backend's `/parity/session` JSON in base64,
+        /// Mia's session and her phone's connection), the
+        /// clock stopped at `-casyNow`, Casy's "random" choices seeded, the theme
+        /// and language, and the address `-casyWebPath` (`/?day=2026-10-15`) put
+        /// in place before the router reads it. Both modes of a parity shot run
+        /// it: web only, the page draws the screen; native, it hands the native
+        /// screen its data as in real use. Nil without a session handed over.
+        static var webScript: String? {
+            guard isActive, defaults.string(forKey: "casyWebSession") != nil else { return nil }
+            var lines = ["window.__casySkipIntro = true;", seededRandom]
+            if let now {
+                // Date() and Date.now() say `now`; timers and animations still run.
+                lines.append(
+                    """
+                    (() => {
+                      const fixed = \(now);
+                      const Real = Date;
+                      class Stopped extends Real {
+                        constructor(...args) { if (args.length === 0) super(fixed); else super(...args); }
+                        static now() { return fixed; }
+                      }
+                      window.Date = Stopped;
+                    })();
+                    """)
+            }
+            var stored: [String: String] = [:]
+            if let encoded = defaults.string(forKey: "casyWebSession"),
+                let data = Data(base64Encoded: encoded),
+                let given = try? JSONSerialization.jsonObject(with: data) as? [String: String]
+            {
+                stored = given
+            }
+            if let theme { stored["casy-theme"] = theme }
+            if let lang { stored["casy-lang"] = lang }
+            // Once per launch (a reload inside the test keeps what it changed): the
+            // simulator keeps the page's storage between runs, remembered queries
+            // too, so it starts empty and holds only what this shot asks for.
+            var fresh = ["localStorage.clear();"]
+            for (key, value) in stored.sorted(by: { $0.key < $1.key }) {
+                fresh.append("localStorage.setItem(\(literal(key)), \(literal(value)));")
+            }
+            if let path = defaults.string(forKey: "casyWebPath") {
+                fresh.append("history.replaceState(null, \"\", \(literal(path)));")
+            }
+            fresh.append("sessionStorage.setItem(\"parity-seeded\", \"1\");")
+            lines.append(
+                "if (!sessionStorage.getItem(\"parity-seeded\")) {\n  \(fresh.joined(separator: "\n  "))\n}")
+            return lines.joined(separator: "\n")
+        }
+
+        /// The browser tests' seeded generator (e2e/fixtures.ts), for Math.random
+        /// and Casy's own choices (src/lib/appRandom.ts), so every load is the same.
+        private static let seededRandom = """
+            (() => {
+              const seeded = (start) => {
+                let seed = start;
+                return () => {
+                  seed = (seed + 0x6d2b79f5) | 0;
+                  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                };
+              };
+              Math.random = seeded(20261007);
+              window.__casyRandom = seeded(20261007);
+            })();
+            """
+
+        /// `text` as a JavaScript string literal.
+        private static func literal(_ text: String) -> String {
+            let data = (try? JSONSerialization.data(withJSONObject: [text])) ?? Data("[\"\"]".utf8)
+            return String(String(decoding: data, as: UTF8.self).dropFirst().dropLast())
+        }
 
         @MainActor static var homePage: HomeFromPage {
             var page = HomeFromPage()

@@ -59,6 +59,17 @@ createServer((request, response) => {
       if (seed.aiConsent === false) backend.world.aiConsent = false;
       return send(200, {});
     }
+    // What a parity test (#280) hands the app (-casyWebSession) to put in the
+    // page's storage before it loads: Mia's session under the web build's key
+    // (authOptions in src/lib/supabase.ts, for http://localhost:4318), and her
+    // Apple account remembered as this phone's (src/lib/phoneCalendar.ts), as
+    // after connecting it, so the page shows her month, not the import step.
+    if (url.pathname === "/parity/session") {
+      return send(200, {
+        "sb-localhost-auth-token": JSON.stringify(session()),
+        [`casy-phone-calendar:${user.id}`]: "conn-apple",
+      });
+    }
     if (url.pathname === "/auth/v1/user") return send(200, user);
     if (url.pathname === "/auth/v1/logout") return send(204);
     if (url.pathname === "/auth/v1/token") return send(200, session());

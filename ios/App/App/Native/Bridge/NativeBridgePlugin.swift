@@ -38,12 +38,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// then App Store releases carry only the web's screens and its fixes.
     private static let nativeScreens: [String] = {
         #if DEBUG
-            [
+            if TestLaunch.isActive, TestLaunch.webOnly { return [] }
+            return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home",
             ]
         #else
-            []
+            return []
         #endif
     }()
 
@@ -147,7 +148,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     model.update(TestLaunch.homePage)
                     placeHome()
                 }
-                guard let screen = TestLaunch.screen else { return }
+                // Web only (#280): the page opens its own screen (`-casyWebPath`).
+                guard !TestLaunch.webOnly, let screen = TestLaunch.screen else { return }
                 // The web view's own controller has to be on screen first.
                 while bridge?.viewController?.view.window == nil {
                     try? await Task.sleep(for: .milliseconds(100))
