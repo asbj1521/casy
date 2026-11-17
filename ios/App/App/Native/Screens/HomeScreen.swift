@@ -15,6 +15,7 @@ struct HomeScreen: View {
     private let model = HomeModel.shared
     @State private var position: Int64?
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// The day open in the day view, and whether it has zoomed out of its cell.
     @State private var shownDay: Int64?
     @State private var dayOpen = false
@@ -93,7 +94,7 @@ struct HomeScreen: View {
             }
             .refreshable { await model.load() }
             .accessibilityIdentifier("home.months")
-            .safeAreaInset(edge: .top, spacing: 0) { header }
+            .casyTopBar { header }
             .safeAreaInset(edge: .bottom, spacing: 0) { bottom(safe: bottomSafe) }
             .accessibilityHidden(shownDay != nil)
             // Under an open day nothing reaches it: no tap, no swipe, no pull to refresh.
@@ -130,57 +131,76 @@ struct HomeScreen: View {
         }
     }
 
+    /// HomeToolbar in the day view, on the same row as the month's: "‹ <month>"
+    /// (lucide ChevronLeft 24, 2 between, 8 left 16 right, 17 regular; the arrow
+    /// alone with large text), and on the right the 1/2 day switch (15 semibold,
+    /// 16 left 12 right) and a divider before the plus and I dag. On the page's
+    /// own colour, as the web's day view, not a bar.
     private func dayHeader(_ day: Int64) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Button(action: closeDay) {
-                    Label(capitalize(monthName(day, lang)), systemImage: "chevron.left")
-                        .font(.body.weight(.medium))
-                        .padding(.horizontal, 14)
-                        .frame(height: 40)
-                        .casyGlass()
+        let month = capitalize(monthName(day, lang))
+        return HStack(alignment: .top) {
+            Button(action: closeDay) {
+                HStack(spacing: 2) {
+                    LucideIcon("chevron-left", size: 24)
+                    if !dynamicTypeSize.isAccessibilitySize {
+                        Text(verbatim: month).font(.system(size: 17))
+                    }
                 }
-                .accessibilityLabel(CasyStrings.dayShowMonth(capitalize(monthName(day, lang))))
-                .accessibilityIdentifier("day.back")
-                Spacer()
-                HStack(spacing: 0) {
-                    Button { span = span == 1 ? 2 : 1 } label: {
-                        Text(span == 1 ? CasyStrings.dayOne : CasyStrings.dayTwo)
-                            .font(.body.weight(.medium))
-                            .padding(.horizontal, 12)
-                            .frame(height: 40)
-                    }
-                    .accessibilityLabel(span == 1 ? CasyStrings.dayShowTwo : CasyStrings.dayShowOne)
-                    .accessibilityIdentifier("day.span")
-                    Divider().frame(height: 22)
-                    if model.page.tell {
-                        Button { model.onAction?("tell", nil) } label: {
-                            Image(systemName: "plus")
-                                .font(.title3.weight(.semibold))
-                                .frame(width: 44, height: 40)
-                        }
-                        .accessibilityLabel(CasyStrings.homeTell)
-                        Divider().frame(height: 22)
-                    }
-                    Button {
-                        withAnimation(.snappy) { shownDay = startOfDay(Native.now, appTimeZone) }
-                    } label: {
-                        Text(CasyStrings.homeToday)
-                            .font(.body.weight(.medium))
-                            .padding(.horizontal, 14)
-                            .frame(height: 40)
-                    }
-                    .accessibilityIdentifier("day.today")
-                }
+                .padding(.leading, 8)
+                .padding(.trailing, 16)
+                .frame(height: 40)
                 .casyGlass()
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Theme.primary.color)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
-            weekdays
+            .accessibilityLabel(CasyStrings.dayShowMonth(month))
+            .accessibilityIdentifier("day.back")
+            Spacer()
+            HStack(spacing: 0) {
+                Button { span = span == 1 ? 2 : 1 } label: {
+                    // What a press shows, in words, as the web's.
+                    Text(span == 1 ? CasyStrings.dayTwo : CasyStrings.dayOne)
+                        .font(.system(size: 15, weight: .semibold))
+                        .padding(.leading, 16)
+                        .padding(.trailing, 12)
+                        .frame(height: 40)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(span == 1 ? CasyStrings.dayShowTwo : CasyStrings.dayShowOne)
+                .accessibilityIdentifier("day.span")
+                divider
+                if model.page.tell {
+                    Button { model.onAction?("tell", nil) } label: {
+                        LucideIcon("plus", size: 24, stroke: 2.25)
+                            .frame(width: 44, height: 40)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel(CasyStrings.homeTell)
+                    divider
+                }
+                Button {
+                    withAnimation(.snappy) { shownDay = startOfDay(Native.now, appTimeZone) }
+                } label: {
+                    Text(CasyStrings.homeToday)
+                        .font(.system(size: 17))
+                        .padding(.horizontal, 16)
+                        .frame(height: 40)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityIdentifier("day.today")
+            }
+            .casyGlass()
         }
-        .background(.bar)
+        .buttonStyle(.plain)
+        .foregroundStyle(Theme.primary.color)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        // The web's room under the toolbar: its bottom and 8 (PhoneCalendar's dayFrame).
+        .padding(.bottom, 8)
+        .background(Theme.background.color)
+    }
+
+    /// The toolbar capsule's divider: 1 by 20 in the orange at 30 %.
+    private var divider: some View {
+        Rectangle().fill(Theme.primary.color.opacity(0.3)).frame(width: 1, height: 20)
     }
 
     /// The day view, scaled evenly down into its cell and clipped to it until open.
@@ -195,30 +215,19 @@ struct HomeScreen: View {
         .background(Theme.background.color.ignoresSafeArea(edges: .bottom))
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { dayFrame = $0 }
         .mask(alignment: .topLeading) {
-            Rectangle().frame(
-                width: dayOpen || cell == nil ? nil : dayFrame.width,
-                height: dayOpen || cell == nil ? nil : from.height / max(scale, 0.01))
+            if dayOpen || cell == nil {
+                // Open: nothing clipped, the hours down under the home indicator
+                // included (a mask the view's own size ends at its frame).
+                Rectangle().frame(width: 10_000, height: 10_000)
+            } else {
+                Rectangle().frame(width: dayFrame.width, height: from.height / max(scale, 0.01))
+            }
         }
         .scaleEffect(dayOpen || cell == nil ? 1 : scale, anchor: .topLeading)
         .offset(
             x: dayOpen || cell == nil ? 0 : from.minX - dayFrame.minX,
             y: dayOpen || cell == nil ? 0 : from.minY - dayFrame.minY)
         .opacity(cell == nil && !dayOpen ? 0 : 1)
-    }
-
-    private var weekdays: some View {
-        HStack(spacing: 0) {
-            ForEach(0..<7, id: \.self) { c in
-                // Monday first; 5 January 2026 was a Monday.
-                let day = wallTime(2026, 0, 5 + c, 12, appTimeZone)
-                Text(verbatim: String(weekdayShortName(day, lang).prefix(1)).uppercased())
-                    .frame(maxWidth: .infinity)
-                    .foregroundStyle(c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
-            }
-        }
-        .font(.caption.weight(.medium))
-        .frame(height: 24)
-        .accessibilityHidden(true)
     }
 
     // MARK: The header
@@ -265,7 +274,7 @@ struct HomeScreen: View {
                         }
                         .accessibilityLabel(CasyStrings.homeTell)
                         .accessibilityIdentifier("home.tell")
-                        Rectangle().fill(Theme.primary.color.opacity(0.3)).frame(width: 1, height: 20)
+                                divider
                     }
                     Button(action: goToday) {
                         Text(CasyStrings.homeToday)
@@ -309,7 +318,6 @@ struct HomeScreen: View {
             .padding(.bottom, 6)
             .accessibilityHidden(true)
         }
-        .background(.bar)
     }
 
     /// The web's count, 4 points outside the button's top right corner; none for 0.

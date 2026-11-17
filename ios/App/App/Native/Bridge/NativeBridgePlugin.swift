@@ -130,6 +130,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         /// The UI tests' way in: a made-up login and a screen open at once.
         private func startTestLaunch() {
             guard let connection = TestLaunch.connection() else { return }
+            // Every test starts on one day: the 1/2 day choice is kept on the phone,
+            // and a test that left it on two would turn the next test's days by two.
+            UserDefaults.standard.removeObject(forKey: "casy.daySpan")
             // No animations under test: a sheet or a push is there at once, and
             // the suite runs in a fraction of the time. A test launch only.
             UIView.setAnimationsEnabled(false)

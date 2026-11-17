@@ -15,6 +15,22 @@ extension View {
     }
 }
 
+extension View {
+    /// A bar over a scroll view's top, as the web's glass header (#281): the
+    /// page's own colour at rest, never a grey band. On iOS 26 what scrolls
+    /// under it is softened by the system's scroll edge (native on purpose);
+    /// before it, the bar is the page's colour.
+    @ViewBuilder
+    public func casyTopBar<Bar: View>(@ViewBuilder _ bar: () -> Bar) -> some View {
+        if #available(iOS 26, macOS 26, *) {
+            safeAreaBar(edge: .top, spacing: 0) { bar() }
+                .scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            safeAreaInset(edge: .top, spacing: 0) { bar().background(Theme.background.color) }
+        }
+    }
+}
+
 /// How a pressed capsule answers: a small shrink, as on the web.
 private struct PressStyle: ButtonStyle {
     let scale: CGFloat

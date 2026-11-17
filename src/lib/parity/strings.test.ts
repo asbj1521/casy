@@ -99,6 +99,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "nav.waitingForAnswer": (t) => t.nav.waitingForAnswer(7).replace("7", "%d"),
   "calendarTour.badge.one": (t) => t.calendarTour.badge(1),
   "calendarTour.badge.many": (t) => t.calendarTour.badge(7).replace("7", "%d"),
+  "swipe.week": (t) => t.swipe.week(7).replace("7", "%d"),
   "invitations.about": (t) => t.join.aboutTitle,
   "invitations.privacy": (t) => t.join.privacy,
   "invitations.join": (t) => t.join.joinGroup,

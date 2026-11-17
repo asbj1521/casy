@@ -86,6 +86,14 @@ final class HomeModel {
     private var counted: [OverviewBlock] = []
     private(set) var calendars: [OverviewCalendar] = []
     private var loadedAt: Double = -1
+    /// Your blocks cut at each day's midnights, made once off the main thread
+    /// as your calendar loads (#281): the day view only looks a day up.
+    private var byDay: [String: [DaySegment]] = [:]
+    private var names: [String: String] = [:]
+    /// Each day as the day view draws it, made once and kept until something
+    /// it shows changes; never observed, so filling it redraws nothing.
+    @ObservationIgnored private var dayCache: [Int64: HomeDay] = [:]
+    @ObservationIgnored private var holidayYears: [Int: [Holiday]] = [:]
     private var layoutTask: Task<Void, Never>?
 
     func color(_ calendarId: String) -> String {
@@ -97,6 +105,9 @@ final class HomeModel {
         let relayout = fresh.extras != page.extras || fresh.holidaysHidden != page.holidaysHidden
         // Only while it is drawn: with the switch off it reads nothing.
         let reload = fresh.shown && NativeHome.on && fresh.dataAt != loadedAt
+        if fresh.extras != page.extras || fresh.holidaysHidden != page.holidaysHidden || fresh.colors != page.colors {
+            dayCache = [:]
+        }
         page = fresh
         if reload {
             Task { await load() }
@@ -121,7 +132,7 @@ final class HomeModel {
             let data = try await api.calendarBusy(
                 from: isoString(from), to: isoString(to), errorMessage: CasyStrings.loadCalendarsFailed)
             let lang = CasyStrings.language == "en" ? Lang.en : Lang.da
-            let (items, palette, blocks) = await Task.detached(priority: .userInitiated) {
+            let (items, palette, blocks, cut) = await Task.detached(priority: .userInitiated) {
                 let (blocks, phoneColors) = DayOfCalendar.phoneDrawn(data, from: from, to: to)
                 let included = Set(data.calendars.filter(\.included).map(\.id))
                 // What you told Casy has no tick: it always counts, so it is always drawn.
@@ -136,12 +147,16 @@ final class HomeModel {
                 return (
                     calendarItems(counted, names: names, from: from, to: to, appTimeZone, lang),
                     calendarColors(data.calendars, own: phoneColors),
-                    counted
+                    counted,
+                    segmentByDay(counted, from: from, to: to, appTimeZone)
                 )
             }.value
             own = items
             counted = blocks
+            byDay = cut
             calendars = data.calendars
+            names = Dictionary(data.calendars.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
+            dayCache = [:]
             colors = palette
             failure = nil
             layOut()
@@ -189,16 +204,25 @@ final class HomeModel {
     /// blocks cut at its midnights, the holidays first as whole days, and what
     /// the page adds on top (a vote's date, a trip) as items of their own.
     func day(_ midnight: Int64) -> (calendar: DayOfCalendar, extras: [MonthItem]) {
+        let shown = laidOut(midnight)
+        return (shown.calendar, shown.extras)
+    }
+
+    /// A day's timed blocks placed in its hours, as Apple Calendar does.
+    func placed(_ midnight: Int64) -> [PlacedBlock] { laidOut(midnight).placed }
+
+    /// A day, from the cut made as your calendar loaded: a lookup, its
+    /// holidays (worked out once a year) and the page's few items.
+    private func laidOut(_ midnight: Int64) -> HomeDay {
+        if let kept = dayCache[midnight] { return kept }
         let next = addDays(midnight, 1, appTimeZone)
-        let near = counted.filter {
-            guard let start = parseInstant($0.start), let end = parseInstant($0.end) else { return false }
-            return end > midnight && start < next
-        }
-        var segments = segmentByDay(near, from: midnight, to: next, appTimeZone)[dayKey(midnight, appTimeZone)] ?? []
+        var segments = byDay[dayKey(midnight, appTimeZone)] ?? []
         let lang = CasyStrings.language == "en" ? Lang.en : Lang.da
         var holidayNames: [String: String] = [:]
         if !page.holidaysHidden {
-            let holidays = danishHolidays(localDate(midnight, appTimeZone).year, appTimeZone).filter { $0.date == midnight }
+            let year = localDate(midnight, appTimeZone).year
+            if holidayYears[year] == nil { holidayYears[year] = danishHolidays(year, appTimeZone) }
+            let holidays = (holidayYears[year] ?? []).filter { $0.date == midnight }
             for h in holidays { holidayNames[h.key] = lang == .da ? h.name : h.englishName }
             segments =
                 holidays.map {
@@ -207,15 +231,16 @@ final class HomeModel {
                         continuesBefore: false, continuesAfter: false)
                 } + segments
         }
-        let names = Dictionary(calendars.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
-        return (
-            DayOfCalendar(segments: segments, colors: colors, names: names, holidays: holidayNames, none: calendars.isEmpty),
-            page.extras.filter { $0.end > midnight && $0.start < next }
-        )
+        let calendar = DayOfCalendar(
+            segments: segments, colors: colors, names: names, holidays: holidayNames, none: calendars.isEmpty)
+        let day = HomeDay(
+            calendar: calendar,
+            extras: page.extras.filter { $0.end > midnight && $0.start < next },
+            placed: placeBlocks(segments.filter { !$0.allDay }, midnight: midnight, appTimeZone, minHeight: DayHours.linePoints / DayHours.dayPoints))
+        dayCache[midnight] = day
+        return day
     }
 
-    /// Whether a tap on this day is the page's: a trip waiting for an answer,
-    /// a vote's pencilled date, or a starred day each open something of theirs.
     func dayIsThePages(_ midnight: Int64) -> Bool {
         if page.starred.contains(midnight) { return true }
         let next = addDays(midnight, 1, appTimeZone)
@@ -226,10 +251,20 @@ final class HomeModel {
         months = []
         own = []
         counted = []
+        byDay = [:]
+        names = [:]
+        dayCache = [:]
         calendars = []
         colors = [:]
         failure = nil
         loadedAt = -1
         page = HomeFromPage()
     }
+}
+
+/// One day of the day view, worked out once (`HomeModel.laidOut`).
+struct HomeDay {
+    let calendar: DayOfCalendar
+    let extras: [MonthItem]
+    let placed: [PlacedBlock]
 }

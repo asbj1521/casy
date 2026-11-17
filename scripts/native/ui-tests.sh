@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The app's UI tests (#198) on a simulator, against the fake backend. Run from
-# anywhere. UI_TEST_DEVICE picks the simulator's name.
+# anywhere. UI_TEST_DEVICE picks the simulator's name, UI_TESTS one class or test
+# (AppUITests/HomeUITests), CASY_SHOTS_DIR a folder for the tests' shot() images.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -15,6 +16,6 @@ SERVER=$!
 trap 'kill "$SERVER" 2>/dev/null || true' EXIT
 
 # The app reads what is built into it: never the live project in these tests.
-xcodebuild test -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+TEST_RUNNER_CASY_SHOTS="${CASY_SHOTS_DIR:-}" xcodebuild test -project ios/App/App.xcodeproj -scheme App -configuration Debug \
   -destination "platform=iOS Simulator,name=$DEVICE" \
   -only-testing:"${UI_TESTS:-AppUITests}" -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO

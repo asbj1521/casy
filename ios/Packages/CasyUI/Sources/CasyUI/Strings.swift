@@ -666,6 +666,8 @@ public enum CasyStrings {
     public static var dayObservedDay: String { text("calendarView.observedDay") }
     public static var dayDenmark: String { text("calendarView.denmark") }
     public static var dayCasyPill: String { text("calendarView.casyPill") }
+    /// "U41": the week number in the day view's corner.
+    public static func dayWeek(_ n: Int) -> String { String(format: text("swipe.week"), n) }
     public static var dayOne: String { text("calendarView.oneDay") }
     public static var dayTwo: String { text("calendarView.twoDays") }
     public static var dayShowOne: String { text("calendarView.showOneDay") }

@@ -26,6 +26,7 @@ export const ICONS = {
   "calendar-search": [2],
   "chevron-left": [2],
   "chevron-right": [2],
+  clock: [2],
   layers: [2],
   plus: [2.25],
   star: [2],

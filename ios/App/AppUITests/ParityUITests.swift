@@ -54,7 +54,7 @@ final class ParityUITests: XCTestCase {
     /// visible. Visible means on top, where a tap would reach it (`isHittable`):
     /// an element merely present can be covered by something else.
     private func shoot(_ app: XCUIApplication, _ name: String, when words: String, native: String) {
-        let containing = NSPredicate(format: "label CONTAINS %@", words)
+        let containing = NSPredicate(format: "label CONTAINS[c] %@", words)
         let swift = app.descendants(matching: .any)[native]
         let shown: XCUIElement
         if mode == "web" {
@@ -62,7 +62,14 @@ final class ParityUITests: XCTestCase {
         } else {
             shown = swift
         }
-        XCTAssertTrue(visible(shown), "\(mode == "web" ? words : native) never showed on top")
+        if !visible(shown) {
+            // What was on screen instead, to look at: `<name>-<mode>-failed.png`.
+            shot("\(name)-\(mode)-failed")
+            XCTFail(
+                "\(mode == "web" ? words : native) never showed on top"
+                    + " (exists: \(shown.exists), frame: \(shown.exists ? shown.frame : .zero))")
+            return
+        }
         if mode == "web" { XCTAssertFalse(swift.exists, "a native screen (\(native)) is in the web reference") }
         _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
         XCTAssertTrue(shown.isHittable, "\(mode == "web" ? words : native) was covered while settling")
@@ -86,5 +93,28 @@ final class ParityUITests: XCTestCase {
     func testHomeMonthDark() async throws {
         let app = try await launch("/", theme: "dark")
         shoot(app, "home-month-dark", when: "Oktober", native: "home.title")
+    }
+
+    // MARK: The day view (#281)
+
+    /// Thursday 8 October: the web opens it from its address, the native month
+    /// zooms it out of the day's cell, as a tap does.
+    private func openDay(theme: String) async throws -> XCUIApplication {
+        if mode == "web" { return try await launch("/?day=2026-10-08", theme: theme) }
+        let app = try await launch("/", theme: theme)
+        let cell = app.buttons["day.2026-10-08"]
+        XCTAssertTrue(cell.waitForExistence(timeout: 30))
+        cell.tap()
+        return app
+    }
+
+    func testHomeDayLight() async throws {
+        let app = try await openDay(theme: "light")
+        shoot(app, "home-day-light", when: "torsdag", native: "day.back")
+    }
+
+    func testHomeDayDark() async throws {
+        let app = try await openDay(theme: "dark")
+        shoot(app, "home-day-dark", when: "torsdag", native: "day.back")
     }
 }

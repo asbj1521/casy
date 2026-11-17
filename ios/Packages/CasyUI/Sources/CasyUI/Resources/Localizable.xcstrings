@@ -14637,6 +14637,23 @@
           }
         }
       }
+    },
+    "swipe.week": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "U%d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W%d"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
