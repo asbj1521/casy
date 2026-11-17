@@ -135,7 +135,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             UserDefaults.standard.removeObject(forKey: "casy.daySpan")
             // No animations under test: a sheet or a push is there at once, and
             // the suite runs in a fraction of the time. A test launch only.
-            UIView.setAnimationsEnabled(false)
+            // `-casyMotion YES` keeps them, for filming a moving part (#281).
+            if !UserDefaults.standard.bool(forKey: "casyMotion") { UIView.setAnimationsEnabled(false) }
             Task { @MainActor in
                 await SessionBox.shared.set(connection)
                 if let lang = TestLaunch.lang { NativePreferences.shared.lang = lang }

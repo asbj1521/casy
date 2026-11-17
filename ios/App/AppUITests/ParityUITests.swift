@@ -25,7 +25,7 @@ final class ParityUITests: XCTestCase {
     }
 
     /// The app on `path` (`/`, `/?day=2026-10-15`), in `theme`, in this run's mode.
-    private func launch(_ path: String, theme: String) async throws -> XCUIApplication {
+    private func launch(_ path: String, theme: String, extra: [String] = []) async throws -> XCUIApplication {
         let (session, _) = try await URLSession.shared.data(from: URL(string: "\(Self.backend)/parity/session")!)
         let app = XCUIApplication()
         app.launchArguments = [
@@ -39,6 +39,7 @@ final class ParityUITests: XCTestCase {
             "-casyWebPath", path,
         ]
         app.launchArguments += mode == "web" ? ["-casyWebOnly", "YES"] : ["-casy.nativeHome", "YES"]
+        app.launchArguments += extra
         app.launch()
         return app
     }
@@ -111,6 +112,28 @@ final class ParityUITests: XCTestCase {
     func testHomeDayLight() async throws {
         let app = try await openDay(theme: "light")
         shoot(app, "home-day-light", when: "torsdag", native: "day.back")
+    }
+
+    /// The zoom out of the day's cell and back, with animations on and pauses
+    /// between, for filming both modes (`xcrun simctl io recordVideo`): the
+    /// moving part compared as the guide's rule 6 asks. Takes no shot.
+    func testHomeDayZoom() async throws {
+        let app = try await launch("/", theme: "light", extra: ["-casyMotion", "YES"])
+        let cell =
+            mode == "web"
+            ? app.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] %@", "torsdag 8. oktober")).firstMatch
+            : app.buttons["day.2026-10-08"]
+        XCTAssertTrue(cell.waitForExistence(timeout: 30))
+        _ = XCTWaiter.wait(for: [expectation(description: "still")], timeout: 2)
+        cell.tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
+        let back =
+            mode == "web"
+            ? app.buttons.matching(NSPredicate(format: "label ==[c] %@", "vis oktober")).firstMatch
+            : app.buttons["day.back"]
+        XCTAssertTrue(back.waitForExistence(timeout: 10))
+        back.tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "closed")], timeout: 2)
     }
 
     func testHomeDayDark() async throws {

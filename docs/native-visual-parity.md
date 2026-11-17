@@ -109,6 +109,11 @@ Its pieces:
    (`scripts/native/parity-compare.py`). `PARITY_NO_WEB_BUILD=1` skips step 1. When it ends,
    failed or not, it puts the real site back into the app (`npm run ios`), so the next build from
    Xcode signs in to the live project; `PARITY_KEEP_TEST_BUILD=1` keeps the test build in.
+   `PARITY_VIDEO=1` films each run (`<mode>.mp4`) and prints every motion's length and gaps
+   (`parity-frames.swift`), for rule 6; a test that films passes `-casyMotion YES`, which keeps the
+   animations a test launch otherwise turns off (`testHomeDayZoom`). The simulator's recorder drops
+   frames of its own (the web's too), so a film compares timings, not smoothness: that is judged
+   on the phone.
 6. **The parity tests** (`ios/App/AppUITests/ParityUITests.swift`): one test per screen, state and
    theme, written once for both modes: `launch(path, theme:)`, then `shoot(app, name, when:)`,
    which waits for a text both draw and lets the screen settle. Skipped in the ordinary UI test run.

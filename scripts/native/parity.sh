@@ -72,8 +72,29 @@ for node in json.load(sys.stdin)["testNodes"]:
 ' >&2
 }
 
+# PARITY_VIDEO=1 films each run (rule 6, moving parts): <mode>.mp4, and the
+# timing of every motion in it (parity-frames.swift).
+DEVICE_ID="$(xcrun simctl list devices available | grep -m1 "    $DEVICE (" | grep -oE '[0-9A-F-]{36}')"
+RECORDER=""
+film() {
+  [ "${PARITY_VIDEO:-}" = 1 ] || return 0
+  xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+  xcrun simctl io "$DEVICE_ID" recordVideo --force "$OUT/$1.mp4" >/dev/null 2>&1 &
+  RECORDER=$!
+  sleep 2
+}
+cut() {
+  [ -n "$RECORDER" ] || return 0
+  kill -INT "$RECORDER" 2>/dev/null || true
+  wait "$RECORDER" 2>/dev/null || true
+  RECORDER=""
+  echo "parity: $1 film:"
+  swift -suppress-warnings scripts/native/parity-frames.swift "$OUT/$1.mp4" | sed 's/^/parity:   /'
+}
+
 for mode in web native; do
   echo "parity: $mode"
+  film "$mode"
   if ! TEST_RUNNER_CASY_PARITY_MODE=$mode TEST_RUNNER_CASY_SHOTS="$OUT" \
     xcodebuild test-without-building -project ios/App/App.xcodeproj -scheme App \
     -configuration Debug -destination "$DESTINATION" -only-testing:"$TESTS" \
@@ -83,6 +104,7 @@ for mode in web native; do
     failures "$OUT/$mode.xcresult"
     exit 1
   fi
+  cut "$mode"
 done
 
 shopt -s nullglob
@@ -96,5 +118,5 @@ for web in "$OUT"/*-web.png; do
     echo "parity: $name: no native shot" >&2
   fi
 done
-[ "$compared" -gt 0 ] || { echo "parity: no shots were taken" >&2; exit 1; }
+[ "$compared" -gt 0 ] || [ "${PARITY_VIDEO:-}" = 1 ] || { echo "parity: no shots were taken" >&2; exit 1; }
 echo "parity: images in $OUT"

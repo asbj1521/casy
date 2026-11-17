@@ -114,9 +114,14 @@ struct HomeScreen: View {
         dayOpen = false
         shownDay = day
         Task { @MainActor in
-            withAnimation(.smooth(duration: 0.38)) { dayOpen = true }
+            withAnimation(Self.zoomIn) { dayOpen = true }
         }
     }
+
+    /// The web's zoom (morph.ts's ZOOM): cubic-bezier(0.32, 0.72, 0, 1), 380 ms
+    /// out of the cell and 320 ms back into it.
+    private static let zoomIn = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.38)
+    private static let zoomOut = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.32)
 
     /// Back to the month, shrinking into the cell of the day it is on now,
     /// brought into view first; faded if it can't be found.
@@ -127,7 +132,7 @@ struct HomeScreen: View {
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(30))
             cell = HomeFrames.shared.cell(of: day)
-            withAnimation(.smooth(duration: 0.32)) { dayOpen = false } completion: { shownDay = nil }
+            withAnimation(Self.zoomOut) { dayOpen = false } completion: { shownDay = nil }
         }
     }
 
@@ -203,31 +208,43 @@ struct HomeScreen: View {
         Rectangle().fill(Theme.primary.color.opacity(0.3)).frame(width: 1, height: 20)
     }
 
-    /// The day view, scaled evenly down into its cell and clipped to it until open.
+    /// The day view, scaled evenly down into its cell and clipped to it until
+    /// open (the web's DayView zoom): clipped to the cell's height with 12
+    /// rounded corners at the cell's scale, faded in over the first 30 % of the
+    /// way out and out over the last 30 % of the way back.
+    ///
+    /// Where it sits open is measured on a still layer beside it, never on the
+    /// view being scaled and moved: measured there, every frame of the zoom
+    /// moved its own target, and the zoom chased it, redrawing the screen.
     private func dayContent(_ day: Int64) -> some View {
         let from = cell ?? .zero
-        let scale = cell == nil || dayFrame.width == 0 ? 1 : from.width / dayFrame.width
-        return HomeDayView(
-            day: Binding(get: { shownDay ?? day }, set: { shownDay = $0 }), span: span,
-            pageTap: { model.onAction?("day", $0) }
-        )
-        // Down to the screen's edge, so the month doesn't show under it.
-        .background(Theme.background.color.ignoresSafeArea(edges: .bottom))
-        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { dayFrame = $0 }
-        .mask(alignment: .topLeading) {
-            if dayOpen || cell == nil {
-                // Open: nothing clipped, the hours down under the home indicator
-                // included (a mask the view's own size ends at its frame).
-                Rectangle().frame(width: 10_000, height: 10_000)
-            } else {
-                Rectangle().frame(width: dayFrame.width, height: from.height / max(scale, 0.01))
+        let zooms = cell != nil && dayFrame.width > 0
+        let scale = zooms ? from.width / dayFrame.width : 1
+        return ZStack(alignment: .topLeading) {
+            Color.clear
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { dayFrame = $0 }
+            HomeDayView(
+                day: Binding(get: { shownDay ?? day }, set: { shownDay = $0 }), span: span,
+                pageTap: { model.onAction?("day", $0) }
+            )
+            // Down to the screen's edge, so the month doesn't show under it.
+            .background(Theme.background.color.ignoresSafeArea(edges: .bottom))
+            .mask(alignment: .topLeading) {
+                // Open, nothing is clipped, the hours under the home indicator included.
+                RoundedRectangle(cornerRadius: dayOpen || !zooms ? 0 : 12 / max(scale, 0.01))
+                    .frame(
+                        width: dayFrame.width,
+                        height: dayOpen || !zooms ? dayFrame.height + 200 : from.height / max(scale, 0.01))
             }
+            .scaleEffect(dayOpen || !zooms ? 1 : scale, anchor: .topLeading)
+            .offset(
+                x: dayOpen || !zooms ? 0 : from.minX - dayFrame.minX,
+                y: dayOpen || !zooms ? 0 : from.minY - dayFrame.minY)
+            .opacity(dayOpen ? 1 : 0)
+            .animation(
+                dayOpen ? .linear(duration: 0.38 * 0.3) : .linear(duration: 0.32 * 0.3).delay(0.32 * 0.7),
+                value: dayOpen)
         }
-        .scaleEffect(dayOpen || cell == nil ? 1 : scale, anchor: .topLeading)
-        .offset(
-            x: dayOpen || cell == nil ? 0 : from.minX - dayFrame.minX,
-            y: dayOpen || cell == nil ? 0 : from.minY - dayFrame.minY)
-        .opacity(cell == nil && !dayOpen ? 0 : 1)
     }
 
     // MARK: The header
