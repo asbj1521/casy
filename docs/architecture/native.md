@@ -20,7 +20,7 @@ Rules for code in them:
 
 ## How a screen is ported
 
-As a translation of its web screen, checked against the web's screenshot in the same simulator until they match: `docs/native-visual-parity.md` (#280). The screens below predate it and are being brought back through it.
+As a translation of its web screen, checked against the web's screenshot in the same simulator until they match: `docs/native-visual-parity.md` (#280; the screens below are being redone that way in #281). The screens below predate it and are being brought back through it.
 
 ## The bridge
 

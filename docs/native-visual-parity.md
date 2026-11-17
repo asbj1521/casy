@@ -142,9 +142,15 @@ When a difference is on purpose (iOS's own sheet, keyboard or alert, real Liquid
 down in the screen's section of `docs/architecture/native.md` with the reason. Nothing differs by
 accident.
 
-## Where the rewrite stands (#280)
+## Where the rewrite stands
 
-Everything native before this guide was written must be brought back through the loop, screen by
-screen, before new screens are ported: the home page's month and day view (#201), Profil and its
-screens (#198), Aftaler (#199), Kalendere and the small sheets (#200). Phase 5 continues with step 3
-(votes) only after that.
+The setup was built in #280. Two issues hold the rest, in this order:
+
+1. **#281, redo the Swift screens already built** until each matches the web: the home page's
+   month and day view, Profil and its screens, Aftaler, Kalendere and the small sheets. The
+   issue lists every screen as a checkbox. First pairs (17 Nov 2026): the month differs by 49 %.
+2. **#282, port the remaining screens from the web** through the same loop from the start:
+   votes on the home page, Planlæg, the paper pile and the send flight, the background work,
+   the signed-out screens (`docs/native-ios-plan.md`, Phase 5 steps 3 to 7).
+
+Then #202 switches over and releases 2.0.
