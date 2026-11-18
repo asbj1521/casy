@@ -51,6 +51,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "profile.feedbackPrompt": (t) => t.profileHub.feedbackPrompt,
   "profile.share": (t) => t.profileHub.share,
   "profile.shareText": (t) => t.profileHub.shareText,
+  "profile.rate": (t) => t.rateCasy,
   "profile.myData": (t) => t.myData.row,
   "profile.support": (t) => t.footer.support,
   "profile.howItWorks": (t) => t.footer.howItWorks,

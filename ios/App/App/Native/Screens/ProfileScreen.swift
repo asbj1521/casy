@@ -133,6 +133,9 @@ struct ProfileScreen: View {
     private let model = ProfileModel.shared
     /// What "Del appen" sends, as the web app does (shareAppUrl, #271).
     private static let site = URL(string: "https://vifinderligeendag.dk/app")!
+    /// The App Store's page for writing a review (the web's WRITE_REVIEW, #256).
+    private static let writeReview = URL(
+        string: "itms-apps://apps.apple.com/app/id6830713238?action=write-review")!
     private static let feedbackEmail = "asbjornbay@gmail.com"
     private static let maxNameLength = 40
 
@@ -147,87 +150,97 @@ struct ProfileScreen: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                nameCard
-                Section {
-                    NavigationLink {
-                        SettingsList(
+            // The web's ProfileHubList, drawn as the web draws it (#281): cards
+            // in the sheet's own scrolling, px-4, the build line at the end.
+            ScrollView {
+                VStack(spacing: 0) {
+                    nameCard
+                    CardList {
+                        link(SettingsList(
                             preferences: preferences, onChoose: onChoose, onDone: onDone,
                             enablePush: enablePush, pushed: true)
-                    } label: {
-                        ListRow(
-                            CasyStrings.settingsTitle, systemImage: "gearshape",
-                            value: preferences.lang == "da" ? "Dansk" : "English")
-                    }
-                    NavigationLink {
-                        GroupsScreen(leave: leave)
-                    } label: {
-                        HStack(spacing: 8) {
-                            ListRow(CasyStrings.profileGroups, systemImage: "person.2")
-                            CountBadge(count: model.invitations)
+                        ) {
+                            CardRow(
+                                CasyStrings.settingsTitle, icon: "settings",
+                                value: preferences.lang == "da" ? "Dansk" : "English", chevron: true)
+                        }
+                        link(GroupsScreen(leave: leave)) {
+                            CardRow(CasyStrings.profileGroups, icon: "users", chevron: true) {
+                                CardRowCount(model.invitations)
+                            }
+                        }
+                        link(FriendsScreen()) {
+                            CardRow(CasyStrings.profileFriends, icon: "contact", chevron: true)
                         }
                     }
-                    NavigationLink {
-                        FriendsScreen()
-                    } label: {
-                        ListRow(CasyStrings.profileFriends, systemImage: "person.crop.square")
+                    CardList {
+                        handOver(CasyStrings.profileSecurity, "key-round", "password")
+                        if model.isAdmin {
+                            link(AdminScreen(enablePush: enablePush)) {
+                                CardRow(CasyStrings.profileAdmin, icon: "shield-check", chevron: true)
+                            }
+                        }
                     }
-                }
-                Section {
-                    handOver(CasyStrings.profileSecurity, "key", "password")
-                    if model.isAdmin {
-                        NavigationLink {
-                            AdminScreen(enablePush: enablePush)
+                    CardList {
+                        Button(action: sendFeedback) {
+                            CardRow(CasyStrings.profileFeedback, icon: "message-square")
+                        }
+                        .buttonStyle(.cardRow)
+                        // The preview given here: without one, iOS fetches the page
+                        // first, which held up the share sheet the first time.
+                        ShareLink(
+                            item: Self.site, subject: Text(CasyStrings.appName),
+                            message: Text(CasyStrings.profileShareText),
+                            preview: SharePreview(CasyStrings.appName, image: Image("ShareIcon"))
+                        ) {
+                            CardRow(CasyStrings.profileShare, icon: "share")
+                        }
+                        .buttonStyle(.cardRow)
+                        // The App Store's own page for a review (#256), never Safari.
+                        Button {
+                            openURL(Self.writeReview)
                         } label: {
-                            ListRow(CasyStrings.profileAdmin, systemImage: "checkmark.shield")
+                            CardRow(CasyStrings.profileRate, icon: "star")
+                        }
+                        .buttonStyle(.cardRow)
+                    }
+                    CardList {
+                        link(MyDataScreen(leave: leave)) {
+                            CardRow(CasyStrings.profileMyData, icon: "database", chevron: true)
+                        }
+                        page(CasyStrings.profileSupport, "life-buoy", .support)
+                        page(CasyStrings.profileHowItWorks, "circle-question-mark", .howItWorks)
+                        page(CasyStrings.profileTerms, "file-text", .terms)
+                        page(CasyStrings.profilePrivacy, "lock", .privacy(section: nil))
+                    }
+                    CardList {
+                        Button {
+                            leave(.signOut)
+                        } label: {
+                            CardRow(CasyStrings.profileSignOut, icon: "log-out")
+                        }
+                        .buttonStyle(.cardRow)
+                        link(DeleteAccountScreen(leave: leave)) {
+                            CardRow(
+                                CasyStrings.profileDeleteAccount, icon: "trash", tone: .danger,
+                                chevron: true)
                         }
                     }
-                }
-                Section {
-                    Button(action: sendFeedback) {
-                        ListRow(CasyStrings.profileFeedback, systemImage: "bubble.left")
-                    }
-                    // The preview given here: without one, iOS fetches the page
-                    // first, which held up the share sheet the first time.
-                    ShareLink(
-                        item: Self.site, subject: Text(CasyStrings.appName),
-                        message: Text(CasyStrings.profileShareText),
-                        preview: SharePreview(CasyStrings.appName, image: Image("ShareIcon"))
-                    ) {
-                        ListRow(CasyStrings.profileShare, systemImage: "square.and.arrow.up")
-                    }
-                }
-                Section {
-                    NavigationLink {
-                        MyDataScreen(leave: leave)
-                    } label: {
-                        ListRow(CasyStrings.profileMyData, systemImage: "cylinder")
-                    }
-                    page(CasyStrings.profileSupport, "lifepreserver", .support)
-                    page(CasyStrings.profileHowItWorks, "questionmark.circle", .howItWorks)
-                    page(CasyStrings.profileTerms, "doc.text", .terms)
-                    page(CasyStrings.profilePrivacy, "lock", .privacy(section: nil))
-                }
-                Section {
-                    Button {
-                        leave(.signOut)
-                    } label: {
-                        ListRow(
-                            CasyStrings.profileSignOut,
-                            systemImage: "rectangle.portrait.and.arrow.right")
-                    }
-                    NavigationLink {
-                        DeleteAccountScreen(leave: leave)
-                    } label: {
-                        ListRow(CasyStrings.profileDeleteAccount, systemImage: "trash", tone: .danger)
-                    }
-                } footer: {
-                    Text("\(CasyStrings.appName) \(release) · \(build)")
-                        .font(.caption)
+                    // BuildLine: mt-6, 12 muted, in the middle.
+                    Text(verbatim: "\(CasyStrings.appName) \(release) · \(build)")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.mutedForeground.color)
                         .frame(maxWidth: .infinity)
-                        .padding(.top, 12)
+                        .padding(.top, 24)
                 }
+                .padding(.horizontal, 16)
+                // The name card where the web's is, 59 points under the sheet's
+                // top: the system's bar is 23 taller than the web's header and
+                // its mb-3, so the content starts that much up under it.
+                .padding(.top, -11)
+                .padding(.bottom, 16)
             }
+            .accessibilityIdentifier("profile.list")
             .task { await model.load() }
             .casySheetBar(CasyStrings.profileTitle, close: CasyStrings.done, action: onDone)
             .alert(CasyStrings.profileChangeName, isPresented: $renaming) {
@@ -246,110 +259,128 @@ struct ProfileScreen: View {
         .nativeSheetLook(preferences)
     }
 
-    /// Who you are: tap the picture to pick another, the name to change the
-    /// name your groups see. Two buttons in one row, so each borderless.
+    /// A row that pushes `screen` inside the sheet.
+    private func link<Screen: View, Row: View>(
+        _ screen: Screen, @ViewBuilder row: () -> Row
+    ) -> some View {
+        NavigationLink {
+            screen
+        } label: {
+            row()
+        }
+        .buttonStyle(.cardRow)
+    }
+
+    /// Who you are (the web's NameCard): rounded-2xl, 1 border, bg-card, p-4,
+    /// gap-4. The picture (56, "lg") with the camera badge, tap it to pick
+    /// another; the name (18 bold, leading-tight) over the email (14 muted),
+    /// a 16 point pencil 12 points after them, tap them to rename; "Fjern
+    /// billede" (13 medium, orange, mt-1) under them when there is a picture.
     private var nameCard: some View {
-        Section {
-            HStack(spacing: 16) {
-                PictureMenu(
-                    hasPicture: model.whoAmI?.avatarUrl != nil,
-                    addLabel: CasyStrings.picturesAdd,
-                    changeLabel: CasyStrings.picturesChange,
-                    onPicked: model.setPicture,
-                    onRemove: model.removePicture,
-                    onUnreadable: model.unreadable
-                ) {
-                    Avatar(
-                        name: name, index: 0, size: .large,
-                        url: model.whoAmI?.avatarUrl.flatMap(URL.init(string:))
-                    )
-                    .overlay(alignment: .bottomTrailing) {
-                        ZStack {
-                            Circle().fill(Theme.background.color)
+        HStack(spacing: 16) {
+            PictureMenu(
+                hasPicture: model.whoAmI?.avatarUrl != nil,
+                addLabel: CasyStrings.picturesAdd,
+                changeLabel: CasyStrings.picturesChange,
+                onPicked: model.setPicture,
+                onRemove: model.removePicture,
+                onUnreadable: model.unreadable
+            ) {
+                Avatar(
+                    name: name, index: 0, size: .large,
+                    url: model.whoAmI?.avatarUrl.flatMap(URL.init(string:))
+                )
+                // PictureButton's badge: 24, -bottom-0.5 -right-0.5, a 2 point
+                // ring in the card's colour, bg-secondary, a 14 point camera.
+                .overlay(alignment: .bottomTrailing) {
+                    ZStack {
+                        Circle().fill(Theme.secondary.color)
+                        Circle().strokeBorder(Theme.card.color, lineWidth: 2)
+                        Group {
                             if model.pictureBusy {
                                 ProgressView().controlSize(.mini)
                             } else {
-                                Image(systemName: "camera.fill")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Theme.primary.color)
+                                LucideIcon("camera", size: 14)
                             }
                         }
-                        .frame(width: 24, height: 24)
-                        .offset(x: 2, y: 2)
+                        .foregroundStyle(Theme.foreground.color)
                     }
+                    .frame(width: 24, height: 24)
+                    .offset(x: 2, y: 2)
                 }
-                .buttonStyle(.borderless)
-                .disabled(model.pictureBusy)
+            }
+            .buttonStyle(.plain)
+            .disabled(model.pictureBusy)
+            VStack(alignment: .leading, spacing: 0) {
                 Button {
                     newName = name
                     renaming = true
                 } label: {
-                    HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(name)
-                            .font(.title3.bold())
-                            .foregroundStyle(Theme.foreground.color)
-                            .lineLimit(1)
-                        // When the email is already the name, it would only repeat it.
-                        if let email = model.email, email != name {
-                            Text(email)
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.mutedForeground.color)
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(name)
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(Theme.foreground.color)
                                 .lineLimit(1)
+                            // When the email is already the name, it would only repeat it.
+                            if let email = model.email, email != name {
+                                Text(email)
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Theme.mutedForeground.color)
+                                    .lineLimit(1)
+                            }
                         }
-                    }
-                    Spacer(minLength: 8)
-                    Image(systemName: "pencil")
-                        .foregroundStyle(Theme.mutedForeground.color)
-                        .accessibilityHidden(true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        LucideIcon("pencil", size: 16)
+                            .foregroundStyle(Theme.mutedForeground.color)
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.plain)
                 .disabled(model.saving)
                 .accessibilityLabel(CasyStrings.profileChangeName)
                 .accessibilityValue(name)
+                if model.whoAmI?.avatarUrl != nil {
+                    Button(CasyStrings.picturesRemove, action: model.removePicture)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Theme.primary.color)
+                        .buttonStyle(.plain)
+                        .disabled(model.pictureBusy)
+                        .padding(.top, 4)
+                }
+                if let failure = model.failure {
+                    Text(failure)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.red600.color)
+                        .padding(.top, 4)
+                }
             }
-            if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
+        }
+        // p-4 inside a 1 point border.
+        .padding(17)
+        .background(Theme.card.color, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Theme.border.color, lineWidth: 1)
         }
     }
 
     /// A help page, pushed inside the sheet.
     private func page(_ label: String, _ icon: String, _ link: PageLink) -> some View {
-        NavigationLink {
-            PageScreen(page: link, leave: leave)
-        } label: {
-            ListRow(label, systemImage: icon)
+        self.link(PageScreen(page: link, leave: leave)) {
+            CardRow(label, icon: icon, chevron: true)
         }
     }
 
-    /// A row whose screen is one of the Profil sheet's, still the page's.
-    private func handOver(
-        _ label: String, _ icon: String, _ screen: String, badge: Int = 0,
-        tone: RowTone = .standard
-    ) -> some View {
-        handOver(label, icon, to: "/?profile=\(screen)", badge: badge, tone: tone)
-    }
-
-    /// A row whose screen is still the page's, inside the app: the app never
-    /// leaves for Safari.
-    private func handOver(
-        _ label: String, _ icon: String, to address: String, badge: Int = 0,
-        tone: RowTone = .standard
-    ) -> some View {
+    /// A row whose screen is one of the Profil sheet's, still the page's,
+    /// inside the app: the app never leaves for Safari.
+    private func handOver(_ label: String, _ icon: String, _ screen: String) -> some View {
         Button {
-            leave(.webScreen(address))
+            leave(.webScreen("/?profile=\(screen)"))
         } label: {
-            HStack(spacing: 8) {
-                ListRow(label, systemImage: icon, tone: tone)
-                CountBadge(count: badge)
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))
-                    .accessibilityHidden(true)
-            }
-            .contentShape(Rectangle())
+            CardRow(label, icon: icon, chevron: true)
         }
+        .buttonStyle(.cardRow)
     }
 
     /// An email with the build and device at the bottom, as the web's.
@@ -367,22 +398,6 @@ struct ProfileScreen: View {
             string: "mailto:\(Self.feedbackEmail)?subject=\(subject)&body=\(encoded(text))")
         {
             openURL(url)
-        }
-    }
-}
-
-/// How many wait for an answer, in orange at a row's end; nothing for none.
-private struct CountBadge: View {
-    let count: Int
-
-    var body: some View {
-        if count > 0 {
-            Text("\(count)")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 2)
-                .background(Capsule().fill(Theme.primary.color))
         }
     }
 }

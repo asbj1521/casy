@@ -79,6 +79,21 @@ public enum AvatarSize: CGFloat, Sendable {
     case hero = 112
 }
 
+extension AvatarSize {
+    /// The letter's size, as the web's Avatar sizes it (`text-xl` in `lg`);
+    /// the sizes the web doesn't have keep 42 % of the circle.
+    var letterSize: CGFloat {
+        switch self {
+        case .extraSmall: 10
+        case .small: 11
+        case .medium: 12
+        case .row: 16
+        case .large: 20
+        case .extraLarge, .hero: rawValue * 0.42
+        }
+    }
+}
+
 /// The letter shown without a picture: a name's first, in capitals.
 func avatarLetter(_ name: String) -> String {
     let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -128,7 +143,7 @@ public struct Avatar: View {
         return ZStack {
             Circle().fill(colors.background.color)
             Text(avatarLetter(name))
-                .font(.system(size: size.rawValue * 0.42, weight: .semibold))
+                .font(.system(size: size.letterSize, weight: .semibold))
                 .foregroundStyle(colors.text.color)
         }
     }

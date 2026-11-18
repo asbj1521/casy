@@ -29,7 +29,10 @@ version wins: never copy the web's imitation of them.
   `HomeDay.swift`: to glass where it stands, swelling, an even glide, back to its colour as it
   arrives).
 - **Sheets:** the system's sheet: how it opens (growing out of its button on iOS 26), its
-  heights, grabber, corner, dimming behind it and dragging it away.
+  heights, grabber, corner, dimming behind it and dragging it away. Where the web chose a height
+  (Profil's 85 %), the native sheet takes it as a custom detent; below full height iOS 26
+  floats it inset and slightly smaller, in its glass, so its pair is compared in the sheet's
+  own points, not by the diff's share.
 - **Navigation:** pushing a screen and going back, the system back arrow, swiping back.
 - **Scrolling:** the system's scrolling, its bounce and its edge effects.
 - **System pieces:** the keyboard, alerts, menus, the switch (`Toggle`), date and time pickers,

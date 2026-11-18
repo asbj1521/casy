@@ -75,7 +75,8 @@ import SwiftUI
 
         var body: some View {
             Text(title)
-                .font(.headline)
+                // BottomSheet's title: 17 bold.
+                .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(Theme.foreground.color)
                 // A long one (a trip's question) gets two lines and shrinks a
                 // little, rather than pushing the sheet's button off the bar.

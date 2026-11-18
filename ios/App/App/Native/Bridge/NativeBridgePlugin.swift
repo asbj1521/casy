@@ -329,6 +329,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         if ["aiConsent", "prime", "tell"].contains(screen) {
             host.sheetPresentationController?.detents = [.medium(), .large()]
         }
+        // Profil, as the web's stacked BottomSheet (h-[85dvh], #169): 85 % of the
+        // screen, the calendar still showing above it; below full height, iOS 26
+        // draws the sheet in its own glass, as the web imitates (#281).
+        if screen == "profile" {
+            // Nothing painted over the glass: the hosting view's own white hid it.
+            host.view.backgroundColor = .clear
+            let height = presenter.view.window?.bounds.height ?? presenter.view.bounds.height
+            host.sheetPresentationController?.detents = [
+                .custom(identifier: .init("casy.stacked")) { context in
+                    min(context.maximumDetentValue, height * 0.85)
+                }
+            ]
+        }
         // The push ask says one sentence: only as tall as that and its button.
         if screen == "push" {
             host.sheetPresentationController?.detents = [.custom { _ in 300 }, .large()]

@@ -181,4 +181,16 @@ final class ParityUITests: XCTestCase {
         let app = try await openDay(theme: "dark")
         shoot(app, "home-day-dark", when: "torsdag", native: "day.back")
     }
+
+    // MARK: Profil (#281)
+
+    func testProfileLight() async throws {
+        let app = try await launch("/?profile", theme: "light")
+        shoot(app, "profile-light", when: "Indstillinger", native: "profile.list")
+    }
+
+    func testProfileDark() async throws {
+        let app = try await launch("/?profile", theme: "dark")
+        shoot(app, "profile-dark", when: "Indstillinger", native: "profile.list")
+    }
 }

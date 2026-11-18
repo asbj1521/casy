@@ -52,6 +52,7 @@ public enum CasyStrings {
     public static var profileFeedbackPrompt: String { text("profile.feedbackPrompt") }
     public static var profileShare: String { text("profile.share") }
     public static var profileShareText: String { text("profile.shareText") }
+    public static var profileRate: String { text("profile.rate") }
     public static var profileMyData: String { text("profile.myData") }
     public static var profileSupport: String { text("profile.support") }
     public static var profileHowItWorks: String { text("profile.howItWorks") }

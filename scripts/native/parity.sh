@@ -3,6 +3,7 @@
 #
 #   scripts/native/parity.sh                                  # every parity test
 #   scripts/native/parity.sh ParityUITests/testHomeMonthLight # one
+#   scripts/native/parity.sh ParityUITests/testProfileLight ParityUITests/testProfileDark # several
 #
 # Builds the website against the fake backend into the app (npm run ios:parity;
 # PARITY_NO_WEB_BUILD=1 copies the last one in when the page hasn't changed), starts the fake
@@ -21,7 +22,8 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 DEVICE="iPhone 17e"
-TESTS="AppUITests/${1:-ParityUITests}"
+ONLY=()
+for test in "${@:-ParityUITests}"; do ONLY+=(-only-testing:"AppUITests/$test"); done
 OUT="${PARITY_OUT:-${TMPDIR:-/tmp}/casy-parity}"
 DESTINATION="platform=iOS Simulator,name=$DEVICE"
 
@@ -105,7 +107,7 @@ for mode in web native; do
   film "$mode"
   if ! TEST_RUNNER_CASY_PARITY_MODE=$mode TEST_RUNNER_CASY_SHOTS="$OUT" \
     xcodebuild test-without-building -project ios/App/App.xcodeproj -scheme App \
-    -configuration Debug -destination "$DESTINATION" -only-testing:"$TESTS" \
+    -configuration Debug -destination "$DESTINATION" "${ONLY[@]}" \
     -resultBundlePath "$OUT/$mode.xcresult" \
     -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO -quiet >"$OUT/$mode.log" 2>&1; then
     echo "parity: the $mode run failed:" >&2

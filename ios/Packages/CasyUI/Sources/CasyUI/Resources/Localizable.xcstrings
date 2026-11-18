@@ -443,6 +443,23 @@
         }
       }
     },
+    "profile.rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bedøm appen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate the app"
+          }
+        }
+      }
+    },
     "profile.security": {
       "extractionState": "manual",
       "localizations": {

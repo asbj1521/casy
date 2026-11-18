@@ -210,11 +210,27 @@
         }
 
         static func connection() -> SessionBox.Connection? {
-            backend.map {
+            let person = webPerson
+            return backend.map {
                 SessionBox.Connection(
                     projectURL: $0, apiKey: "test-key", accessToken: "test-token",
-                    expiresAt: .distantFuture, userId: "test-user", email: "test@example.com")
+                    expiresAt: .distantFuture, userId: person?.id ?? "test-user",
+                    email: person?.email ?? "test@example.com")
             }
+        }
+
+        /// Who the page is signed in as in a parity launch (#281): Mia, from the
+        /// session handed over, so a native screen shows her email as the web's does.
+        private static var webPerson: (id: String, email: String?)? {
+            guard let encoded = defaults.string(forKey: "casyWebSession"),
+                let data = Data(base64Encoded: encoded),
+                let stored = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+                let token = stored.first(where: { $0.key.hasSuffix("-auth-token") })?.value,
+                let session = try? JSONSerialization.jsonObject(with: Data(token.utf8)) as? [String: Any],
+                let user = session["user"] as? [String: Any],
+                let id = user["id"] as? String
+            else { return nil }
+            return (id, user["email"] as? String)
         }
     }
 #endif

@@ -1,4 +1,5 @@
-// A screen's rows, for use inside a `List`: choices are rows, picking puts an
+// A screen's rows, for use inside a `List` (screens not yet redone in #281; the
+// redone ones use CardList and CardRow, the web's own list): choices are rows, picking puts an
 // orange tick at the end, on or off is a switch. At the largest text sizes the
 // icon goes, so the words fit.
 
