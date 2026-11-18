@@ -13,7 +13,8 @@
 //              hairline part: min-h 52, py-2.5 (10), pr-4 (16), gap-3 (12),
 //              1 border on top except the first row's; label 15 medium, one
 //              line cut with "..."; detail 13 muted, one line; value 14 muted;
-//              chevron 16 muted at 60 %. Pressed: bg-secondary.
+//              chevron 16 muted at 60 %. Pressed: bg-secondary. `wrap`: the
+//              detail runs over several lines (ListSwitchRow's).
 
 import SwiftUI
 
@@ -38,7 +39,11 @@ public struct CardList<Content: View>: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let title {
-                Text(title.uppercased())
+                // Capitals drawn only, as the web's CSS `uppercase`: VoiceOver
+                // reads the word as written.
+                Text(title)
+                    .textCase(.uppercase)
+                    .accessibilityLabel(title)
                     .font(.system(size: 12, weight: .medium))
                     .tracking(0.3)
                     .foregroundStyle(Theme.mutedForeground.color)
@@ -89,6 +94,7 @@ public struct CardRow<Leading: View, Trailing: View>: View {
     private let value: String?
     private let tone: RowTone
     private let chevron: Bool
+    private let wrap: Bool
     private let leading: Leading
     private let trailing: Trailing
     @Environment(\.cardRowIsFirst) private var isFirst
@@ -100,6 +106,7 @@ public struct CardRow<Leading: View, Trailing: View>: View {
         value: String? = nil,
         tone: RowTone = .standard,
         chevron: Bool = false,
+        wrap: Bool = false,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing = { EmptyView() }
     ) {
@@ -108,6 +115,7 @@ public struct CardRow<Leading: View, Trailing: View>: View {
         self.value = value
         self.tone = tone
         self.chevron = chevron
+        self.wrap = wrap
         self.leading = leading()
         self.trailing = trailing()
     }
@@ -125,7 +133,8 @@ public struct CardRow<Leading: View, Trailing: View>: View {
                         Text(detail)
                             .font(.system(size: 13))
                             .foregroundStyle(Theme.mutedForeground.color)
-                            .lineLimit(1)
+                            .lineLimit(wrap ? nil : 1)
+                            .fixedSize(horizontal: false, vertical: wrap)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -164,10 +173,11 @@ extension CardRow where Leading == CardRowIcon {
         value: String? = nil,
         tone: RowTone = .standard,
         chevron: Bool = false,
+        wrap: Bool = false,
         @ViewBuilder trailing: () -> Trailing = { EmptyView() }
     ) {
         self.init(
-            label, detail: detail, value: value, tone: tone, chevron: chevron,
+            label, detail: detail, value: value, tone: tone, chevron: chevron, wrap: wrap,
             leading: { CardRowIcon(icon, tone: tone) }, trailing: trailing)
     }
 }

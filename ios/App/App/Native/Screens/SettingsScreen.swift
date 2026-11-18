@@ -143,28 +143,35 @@ struct SettingsList: View {
 
     private let notifications = NotificationsModel.shared
 
+    /// The web's SettingsGroups (#281): Sprog, Udseende and Notifikationer as
+    /// its ListGroups, each titled; a choice is a row with the 16 point orange
+    /// tick as its value (LanguageGroup, AppearanceGroup), each language by
+    /// its own name, whatever the screen is in.
     var body: some View {
-        List {
-            Section(CasyStrings.settingsLanguage) {
-                // Each language by its own name, whatever the screen is in.
-                ListPickRow("Dansk", isSelected: preferences.lang == "da") { pick(lang: "da") }
-                ListPickRow("English", isSelected: preferences.lang == "en") {
-                    pick(lang: "en")
+        ScrollView {
+            VStack(spacing: 0) {
+                CardList(CasyStrings.settingsLanguage) {
+                    choice("Dansk", "languages", preferences.lang == "da") { pick(lang: "da") }
+                    choice("English", "languages", preferences.lang == "en") { pick(lang: "en") }
                 }
-            }
-            Section(CasyStrings.settingsAppearance) {
-                ListPickRow(
-                    CasyStrings.settingsSystem, isSelected: preferences.theme == "system"
-                ) { pick(theme: "system") }
-                ListPickRow(
-                    CasyStrings.settingsLight, isSelected: preferences.theme == "light"
-                ) { pick(theme: "light") }
-                ListPickRow(CasyStrings.settingsDark, isSelected: preferences.theme == "dark") {
-                    pick(theme: "dark")
+                CardList(CasyStrings.settingsAppearance) {
+                    choice(CasyStrings.settingsSystem, "monitor", preferences.theme == "system") {
+                        pick(theme: "system")
+                    }
+                    choice(CasyStrings.settingsLight, "sun", preferences.theme == "light") {
+                        pick(theme: "light")
+                    }
+                    choice(CasyStrings.settingsDark, "moon", preferences.theme == "dark") {
+                        pick(theme: "dark")
+                    }
                 }
+                NotificationsSection(model: notifications, enablePush: enablePush)
             }
-            NotificationsSection(model: notifications, enablePush: enablePush)
+            // px-4; the first group's mt-6 is its own; pb-4 at the end.
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("settings.list")
         // New words at once, without leaving the screen: on the stack instead,
         // this id would throw a pushed Indstillinger back to Profil.
         .id(preferences.lang)
@@ -173,6 +180,21 @@ struct SettingsList: View {
             if notifications.permission == .granted { await notifications.loadKinds() }
         }
         .modifier(SettingsBar(pushed: pushed, lang: preferences.lang, onDone: onDone))
+    }
+
+    /// A choice's row: the tick at its end when it is the one in use.
+    private func choice(
+        _ label: String, _ icon: String, _ chosen: Bool, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            CardRow(label, icon: icon) {
+                if chosen {
+                    LucideIcon("check", size: 16).foregroundStyle(Theme.primary.color)
+                }
+            }
+        }
+        .buttonStyle(.cardRow)
+        .accessibilityAddTraits(chosen ? .isSelected : [])
     }
 
     private func pick(lang: String? = nil, theme: String? = nil) {
@@ -296,44 +318,49 @@ private struct NotificationsSection: View {
         "vote_invited", "vote_decided", "event_changed", "group_invitation", "deadline_near",
     ]
 
+    /// NotificationsGroup: a switch row for each kind (the bell, 15 medium,
+    /// iOS's own switch at the end, native on purpose); until iOS has allowed
+    /// them one row that asks, after a no one that says where to undo it.
     var body: some View {
         switch model.permission {
         case .granted:
-            Section(CasyStrings.pushTitle) {
+            CardList(CasyStrings.pushTitle) {
                 if let off = model.off {
                     ForEach(Self.kinds, id: \.self) { kind in
-                        ListSwitchRow(
-                            CasyStrings.pushKind(kind),
-                            isOn: Binding(
-                                get: { !off.contains(kind) },
-                                set: { on in model.change(kind, on: on) }),
-                            systemImage: "bell"
-                        )
+                        CardRow(CasyStrings.pushKind(kind), icon: "bell") {
+                            Toggle(
+                                CasyStrings.pushKind(kind),
+                                isOn: Binding(
+                                    get: { !off.contains(kind) },
+                                    set: { on in model.change(kind, on: on) })
+                            )
+                            .labelsHidden()
+                            .tint(Theme.primary.color)
+                        }
+                        .accessibilityElement(children: .contain)
                     }
                 } else if model.failure == nil {
-                    HStack(spacing: 8) {
-                        ProgressView().controlSize(.small)
-                        Text(CasyStrings.loading)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.mutedForeground.color)
-                    }
+                    CardRow(CasyStrings.loading, icon: "bell") { ProgressView().controlSize(.small) }
                 }
-                if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
+                if let failure = model.failure {
+                    CardRow(failure, icon: "bell", tone: .danger)
+                }
             }
         case .prompt:
-            Section(CasyStrings.pushTitle) {
+            CardList(CasyStrings.pushTitle) {
                 Button {
                     model.turnOn(enablePush)
                 } label: {
-                    ListRow(CasyStrings.pushTurnOn, systemImage: "bell", detail: model.failure)
+                    CardRow(CasyStrings.pushTurnOn, icon: "bell", detail: model.failure)
                 }
+                .buttonStyle(.cardRow)
                 .disabled(model.turningOn)
             }
         case .denied:
-            Section(CasyStrings.pushTitle) {
-                ListRow(
-                    CasyStrings.pushDeniedTitle, systemImage: "bell",
-                    detail: CasyStrings.pushDenied)
+            CardList(CasyStrings.pushTitle) {
+                CardRow(
+                    CasyStrings.pushDeniedTitle, icon: "bell", detail: CasyStrings.pushDenied,
+                    wrap: true)
             }
         case nil:
             EmptyView()

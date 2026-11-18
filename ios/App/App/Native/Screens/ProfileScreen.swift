@@ -164,6 +164,7 @@ struct ProfileScreen: View {
                                 CasyStrings.settingsTitle, icon: "settings",
                                 value: preferences.lang == "da" ? "Dansk" : "English", chevron: true)
                         }
+                        .accessibilityIdentifier("profile.settings")
                         link(GroupsScreen(leave: leave)) {
                             CardRow(CasyStrings.profileGroups, icon: "users", chevron: true) {
                                 CardRowCount(model.invitations)

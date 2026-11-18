@@ -193,4 +193,27 @@ final class ParityUITests: XCTestCase {
         let app = try await launch("/?profile", theme: "dark")
         shoot(app, "profile-dark", when: "Indstillinger", native: "profile.list")
     }
+
+    // MARK: Indstillinger (#281)
+
+    /// Pushed inside Profil: the web opens it from its address, the native
+    /// list pushes it, as a tap on its row does.
+    private func openSettings(theme: String) async throws -> XCUIApplication {
+        if mode == "web" { return try await launch("/?profile=settings", theme: theme) }
+        let app = try await launch("/?profile", theme: theme)
+        let row = app.buttons["profile.settings"]
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "the Indstillinger row never showed")
+        row.tap()
+        return app
+    }
+
+    func testSettingsLight() async throws {
+        let app = try await openSettings(theme: "light")
+        shoot(app, "settings-light", when: "Udseende", native: "settings.list")
+    }
+
+    func testSettingsDark() async throws {
+        let app = try await openSettings(theme: "dark")
+        shoot(app, "settings-dark", when: "Udseende", native: "settings.list")
+    }
 }
