@@ -234,10 +234,12 @@ struct ProfileScreen: View {
                         .padding(.top, 24)
                 }
                 .padding(.horizontal, 16)
-                // The name card where the web's is, 59 points under the sheet's
-                // top: the system's bar is 23 taller than the web's header and
-                // its mb-3, so the content starts that much up under it.
-                .padding(.top, -11)
+                // Nothing above the name card: the system's bar ends about 12
+                // points under its Færdig capsule, the web's header's mb-3. The
+                // capsule is taller than the web's plain Færdig, so the card
+                // stands about 11 points lower than the web's (tucked up under
+                // the bar to match, the capsule touched it, 18 Nov 2026).
+                .padding(.top, 0)
                 .padding(.bottom, 16)
             }
             .accessibilityIdentifier("profile.list")
