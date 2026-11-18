@@ -21,7 +21,13 @@ the one place where the native screen is meant to differ from the web, and there
 version wins: never copy the web's imitation of them.
 
 - **Liquid Glass:** Apple's real glass (`.casyGlass()`, with the iOS 18 fallback chosen in
-  CasyUI), not the web's CSS glass, its blur, rim or shine.
+  CasyUI), not the web's CSS glass, its blur, rim or shine. **"Liquid Glass" means Apple's clear
+  glass** (`casyGlass(clear: true)`, `casyGlass(in: shape, clear: true)`), as the home page's
+  toolbar and the day view's moving selection have it (approved 18 Nov 2026): never tinted, never
+  given a shadow of ours (both made it murky), never clipped by its row. A selection that moves is
+  its plain colour at rest and turns into that glass only while it moves (`WeekStrip.glide` in
+  `HomeDay.swift`: to glass where it stands, swelling, an even glide, back to its colour as it
+  arrives).
 - **Sheets:** the system's sheet: how it opens (growing out of its button on iOS 26), its
   heights, grabber, corner, dimming behind it and dragging it away.
 - **Navigation:** pushing a screen and going back, the system back arrow, swiping back.
