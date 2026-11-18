@@ -88,14 +88,25 @@ private struct WeekStrip: View {
 
     /// Which way the week last turned, for its slide.
     @State private var turn: CGFloat = 0
-    /// The glass lens that carries the selection from one date to another
-    /// (asked for on 18 Nov 2026): it pops up over the old date, glides to
-    /// the new one and dissolves, the plain circle and band appearing there.
-    /// Never there at rest. `lensAt` is the column of its left edge.
+    /// The selection turns to glass while it moves (asked for on 18 Nov 2026,
+    /// after a weather app's slider): the day's circle becomes a clear lens
+    /// where it stands, swells, glides to the new date and turns back into
+    /// that date's circle. Plain colour at rest, glass only on the way.
+    /// `lensAt` is the column it is over.
     @State private var lensAt: CGFloat = 0
     @State private var lensOn = false
     @State private var lensUp = false
+    @State private var lensToday = false
     @State private var lensRun = 0
+    /// The date whose circle shows: the day, except while the glass is on its
+    /// way there (so the new date's circle never shows before it arrives).
+    @State private var settled: Int64
+
+    init(day: Binding<Int64>, span: Int) {
+        _day = day
+        self.span = span
+        _settled = State(initialValue: day.wrappedValue)
+    }
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
     /// The web's SLIDE: damping 38, stiffness 380, mass 0.8.
@@ -142,7 +153,11 @@ private struct WeekStrip: View {
         .onChange(of: monday) { old, new in turn = new > old ? 1 : -1 }
         .onChange(of: day) { old, new in
             // Within the week the lens carries it; a week turned slides instead.
-            if mondayOf(old) == mondayOf(new) { glide(from: column(old), to: column(new)) }
+            if mondayOf(old) == mondayOf(new) {
+                glide(to: new, from: column(old), today: new == startOfDay(Native.now, appTimeZone))
+            } else {
+                settled = new
+            }
         }
     }
 
@@ -152,19 +167,24 @@ private struct WeekStrip: View {
 
     private func column(_ d: Int64) -> CGFloat { CGFloat((localDate(d, appTimeZone).dow + 6) % 7) }
 
-    /// The lens: up over the old date (a quick pop), across on a soft spring,
-    /// and gone as it settles, the selection appearing under it.
-    private func glide(from: CGFloat, to: CGFloat) {
+    /// The circle to glass where it stands (0.12 s) and swelling (0.16 s),
+    /// across on an even curve (0.32 s), then back to a circle, the new
+    /// date's (0.2 s), as it arrives. A newer change takes over.
+    private func glide(to day: Int64, from: CGFloat, today: Bool) {
         lensRun += 1
         let run = lensRun
         if !lensOn { lensAt = from }
-        lensOn = true
-        withAnimation(.spring(duration: 0.18, bounce: 0.3)) { lensUp = true }
-        withAnimation(.spring(duration: 0.42, bounce: 0.18)) { lensAt = to }
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(380))
+        lensToday = today
+        withAnimation(.easeOut(duration: 0.12)) { lensOn = true }
+        withAnimation(.spring(duration: 0.16, bounce: 0.3)) { lensUp = true }
+        // Even in and out, so it arrives as it turns back (a front-loaded curve
+        // arrived early and sat on the new date as glass).
+        withAnimation(.timingCurve(0.35, 0, 0.25, 1, duration: 0.32)) {
+            lensAt = column(day)
+        } completion: {
             guard run == lensRun else { return }
-            withAnimation(.easeOut(duration: 0.22)) {
+            settled = day
+            withAnimation(.easeOut(duration: 0.2)) {
                 lensUp = false
                 lensOn = false
             }
@@ -190,8 +210,6 @@ private struct WeekStrip: View {
                     .offset(x: column * CGFloat(first))
                     .animation(Self.slide, value: first)
                     .animation(Self.slide, value: shown.count)
-                    .opacity(lensOn ? 0 : 1)
-                    .animation(lensOn ? nil : .easeOut(duration: 0.22), value: lensOn)
             }
             HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { c in
@@ -199,13 +217,18 @@ private struct WeekStrip: View {
                     number(d, today: today, weekend: c >= 5)
                 }
             }
-            // Over the numbers, which show through it bent by the glass.
-            Capsule()
+            // The day's circle turned to glass, over the numbers, which show
+            // through it bent; a faint tint of its colour and a soft shadow, so
+            // it reads as that circle.
+            Circle()
                 .fill(.clear)
-                .frame(width: column * CGFloat(span), height: 40)
-                .casyGlass(in: Capsule())
-                .scaleEffect(lensUp ? 1.12 : 0.9)
-                .offset(x: column * lensAt)
+                .frame(width: 36, height: 36)
+                .casyGlass(
+                    in: Circle(),
+                    tint: (lensToday ? Theme.cta.color : Theme.foreground.color).opacity(0.18))
+                .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+                .scaleEffect(lensUp ? 1.28 : 1)
+                .offset(x: column * lensAt + (column - 36) / 2, y: 2)
                 .opacity(lensOn ? 1 : 0)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
@@ -213,8 +236,8 @@ private struct WeekStrip: View {
     }
 
     private func number(_ d: Int64, today: Int64, weekend: Bool) -> some View {
-        // Under the moving lens no date is filled; it appears as the lens goes.
-        let center = d == day && !lensOn
+        // The settled date's circle, hidden while it is glass.
+        let center = d == settled && !lensOn
         let isToday = d == today
         return Button {
             withAnimation(Self.slide) { day = d }
@@ -228,12 +251,12 @@ private struct WeekStrip: View {
                 )
                 .frame(width: 36, height: 36)
                 .background {
-                    // Taken into the lens at once as it rises; fading in as it goes.
+                    // Turning to glass as the lens appears; back from it as it goes.
                     Circle()
                         .fill(isToday ? Theme.cta.color : Theme.foreground.color)
                         .opacity(center ? 1 : 0)
                         .animation(nil, value: day)
-                        .animation(lensOn ? nil : .easeOut(duration: 0.22), value: lensOn)
+                        .animation(.easeOut(duration: lensOn ? 0.12 : 0.2), value: lensOn)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
