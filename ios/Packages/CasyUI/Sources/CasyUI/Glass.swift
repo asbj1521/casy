@@ -5,12 +5,14 @@ import SwiftUI
 
 extension View {
     /// A capsule of glass behind the view: real on iOS 26, frosted before it.
+    /// `clear` is Apple's clear glass, which shows what is behind it (the home
+    /// page's toolbar, being tried, #281).
     @ViewBuilder
-    public func casyGlass() -> some View {
+    public func casyGlass(clear: Bool = false) -> some View {
         if #available(iOS 26, macOS 26, *) {
-            glassEffect(.regular.interactive(), in: .capsule)
+            glassEffect(clear ? .clear.interactive() : .regular.interactive(), in: .capsule)
         } else {
-            background(.regularMaterial, in: Capsule())
+            background(clear ? .ultraThinMaterial : .regularMaterial, in: Capsule())
         }
     }
 }

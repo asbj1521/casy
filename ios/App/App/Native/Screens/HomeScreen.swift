@@ -198,7 +198,7 @@ struct HomeScreen: View {
                 .frame(width: (day ? backWidth : listWidth).nonZero, height: 40, alignment: .leading)
                 .clipped()
                 .contentShape(Capsule())
-                .casyGlass()
+                .casyGlass(clear: true)
             }
             .overlay(alignment: .topTrailing) { if !day { badge(model.page.badges.calendars) } }
             .accessibilityLabel(day ? CasyStrings.dayShowMonth(month) : CasyStrings.calendarsTitle)
@@ -265,7 +265,7 @@ struct HomeScreen: View {
             // moved the buttons: I dag slid over the plus.)
             .mask(alignment: .trailing) { Capsule().frame(width: rightWidth) }
             .background(alignment: .trailing) {
-                Color.clear.frame(width: rightWidth, height: 40).casyGlass()
+                Color.clear.frame(width: rightWidth, height: 40).casyGlass(clear: true)
             }
         }
         .buttonStyle(.plain)

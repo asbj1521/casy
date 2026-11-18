@@ -138,7 +138,9 @@ private struct WeekStrip: View {
                             insertion: .offset(x: turn * box.size.width), removal: .offset(x: -turn * box.size.width)))
             }
             .frame(height: 40)
-            .clipped()
+            // Clipped at the sides only, for the week's slide: the glass, swelling
+            // past the row's 40 points, isn't cut at its top and bottom.
+            .mask { Rectangle().padding(.vertical, -12) }
             .contentShape(Rectangle())
             // Beside the numbers' own taps, not instead of them.
             .simultaneousGesture(
@@ -220,6 +222,7 @@ private struct WeekStrip: View {
             Color.clear
                 .frame(width: 36, height: 36)
                 .casyGlass(in: Circle(), clear: true)
+                .zIndex(1)
                 .scaleEffect(lensUp ? 1.28 : 1)
                 .offset(x: column * lensAt + (column - 36) / 2, y: 2)
                 .opacity(lensOn ? 1 : 0)
