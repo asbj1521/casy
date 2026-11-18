@@ -153,6 +153,30 @@ final class ParityUITests: XCTestCase {
         _ = XCTWaiter.wait(for: [expectation(description: "closed")], timeout: 2)
     }
 
+    /// Drags across the week row with the real page underneath, two days in
+    /// view and animations on (the app froze so on 18 Nov 2026), native only.
+    func testHomeWeekDrag() async throws {
+        try XCTSkipUnless(mode == "native", "the native app's own")
+        let app = try await launch("/", theme: "dark", extra: ["-casyMotion", "YES"])
+        // Today (the world's 7 October), as when it froze: the time now in view.
+        let cell = app.buttons["day.2026-10-07"]
+        XCTAssertTrue(cell.waitForExistence(timeout: 30), "today's cell never showed")
+        cell.tap()
+        XCTAssertTrue(app.buttons["day.span"].waitForExistence(timeout: 10))
+        app.buttons["day.span"].tap()
+        // Each drag turns the week (right: the one before, left: the next), so
+        // each starts in the week the last one turned to.
+        for (a, b) in [("week.2026-10-07", "week.2026-10-09"), ("week.2026-09-30", "week.2026-09-28"),
+                       ("week.2026-10-07", "week.2026-10-05"), ("week.2026-10-15", "week.2026-10-17"),
+                       ("week.2026-10-08", "week.2026-10-06")] {
+            let start = app.buttons[a]
+            XCTAssertTrue(start.waitForExistence(timeout: 10), "\(a) never showed (frozen?)")
+            start.press(forDuration: 0.6, thenDragTo: app.buttons[b], withVelocity: .slow, thenHoldForDuration: 0.4)
+        }
+        app.buttons["day.back"].tap()
+        XCTAssertTrue(app.buttons["day.back"].waitForNonExistence(timeout: 10), "never closed (frozen?)")
+    }
+
     func testHomeDayDark() async throws {
         let app = try await openDay(theme: "dark")
         shoot(app, "home-day-dark", when: "torsdag", native: "day.back")

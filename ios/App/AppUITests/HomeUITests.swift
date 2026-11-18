@@ -114,6 +114,32 @@ final class HomeUITests: XCTestCase {
         waitForExpectations(timeout: 5)
     }
 
+    /// A finger pressed on a date in the week row and dragged across it (a week
+    /// turned by the drag): the app stays alive and answers (it froze, the
+    /// hours' pager and the day chasing each other, 18 Nov 2026).
+    func testDraggingAcrossTheWeekRowKeepsTheAppAlive() {
+        // With the animations on, as on a phone: the freeze needed the animated scroll.
+        let app = launch(["-casyMotion", "YES"])
+        app.buttons["day.2026-10-15"].tap()
+        let from = app.buttons["week.2026-10-15"]
+        XCTAssertTrue(from.waitForExistence(timeout: 5))
+        // Two days side by side, as when it froze: the pages step by two.
+        app.buttons["day.span"].tap()
+        from.press(forDuration: 0.2, thenDragTo: app.buttons["week.2026-10-18"])
+        // The week before is in view, and the app still answers a press.
+        XCTAssertTrue(app.buttons["week.2026-10-08"].waitForExistence(timeout: 5))
+        // Slowly, a finger held and moved across the dates, both ways, a few times.
+        for (a, b) in [("week.2026-10-08", "week.2026-10-05"), ("week.2026-10-15", "week.2026-10-18"),
+                       ("week.2026-10-08", "week.2026-10-11"), ("week.2026-10-01", "week.2026-09-28")] {
+            let start = app.buttons[a]
+            XCTAssertTrue(start.waitForExistence(timeout: 5), a)
+            start.press(forDuration: 0.6, thenDragTo: app.buttons[b], withVelocity: .slow, thenHoldForDuration: 0.4)
+        }
+        app.buttons["day.back"].tap()
+        XCTAssertTrue(title(app).waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["day.back"].waitForNonExistence(timeout: 5))
+    }
+
     /// Each button along the top and the bottom asks the page for its sheet.
     func testEveryButtonAsksThePage() {
         let app = launch()

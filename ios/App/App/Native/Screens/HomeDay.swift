@@ -96,7 +96,6 @@ private struct WeekStrip: View {
     @State private var lensAt: CGFloat = 0
     @State private var lensOn = false
     @State private var lensUp = false
-    @State private var lensToday = false
     @State private var lensRun = 0
     /// The date whose circle shows: the day, except while the glass is on its
     /// way there (so the new date's circle never shows before it arrives).
@@ -154,7 +153,7 @@ private struct WeekStrip: View {
         .onChange(of: day) { old, new in
             // Within the week the lens carries it; a week turned slides instead.
             if mondayOf(old) == mondayOf(new) {
-                glide(to: new, from: column(old), today: new == startOfDay(Native.now, appTimeZone))
+                glide(to: new, from: column(old))
             } else {
                 settled = new
             }
@@ -170,11 +169,10 @@ private struct WeekStrip: View {
     /// The circle to glass where it stands (0.12 s) and swelling (0.16 s),
     /// across on an even curve (0.32 s), then back to a circle, the new
     /// date's (0.2 s), as it arrives. A newer change takes over.
-    private func glide(to day: Int64, from: CGFloat, today: Bool) {
+    private func glide(to day: Int64, from: CGFloat) {
         lensRun += 1
         let run = lensRun
         if !lensOn { lensAt = from }
-        lensToday = today
         withAnimation(.easeOut(duration: 0.12)) { lensOn = true }
         withAnimation(.spring(duration: 0.16, bounce: 0.3)) { lensUp = true }
         // Even in and out, so it arrives as it turns back (a front-loaded curve
@@ -217,16 +215,11 @@ private struct WeekStrip: View {
                     number(d, today: today, weekend: c >= 5)
                 }
             }
-            // The day's circle turned to glass, over the numbers, which show
-            // through it bent; a faint tint of its colour and a soft shadow, so
-            // it reads as that circle.
-            Circle()
-                .fill(.clear)
+            // The day's circle turned to Apple's clear glass, over the numbers,
+            // which show through it bent.
+            Color.clear
                 .frame(width: 36, height: 36)
-                .casyGlass(
-                    in: Circle(),
-                    tint: (lensToday ? Theme.cta.color : Theme.foreground.color).opacity(0.18))
-                .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+                .casyGlass(in: Circle(), clear: true)
                 .scaleEffect(lensUp ? 1.28 : 1)
                 .offset(x: column * lensAt + (column - 36) / 2, y: 2)
                 .opacity(lensOn ? 1 : 0)
@@ -426,6 +419,11 @@ struct DayHours: View {
     @State private var pages: [Int64]
     /// The day a sideways swipe just paged to: the hours stay where they are.
     @State private var paged: Int64?
+    /// A jump is on its way (a number, a week, I dag): the pages it passes
+    /// aren't the day, so what the pager reports is ignored until it is there.
+    /// Taken as the day, they retargeted the jump, which reported again: the
+    /// pager and the day chased each other and the app froze (18 Nov 2026).
+    @State private var jumping = false
     @State private var now = Native.now
     /// Where the hours are scrolled to, set to the web's opening (`openingOf`).
     @State private var vertical = ScrollPosition(edge: .top)
@@ -443,8 +441,17 @@ struct DayHours: View {
         _pages = State(initialValue: Self.pages(from: day.wrappedValue, span: span))
     }
 
-    private static func pages(from first: Int64, span: Int) -> [Int64] {
-        (-reach...reach).map { addDays(first, $0 * span, appTimeZone) }
+    /// Worked out once per first day and span, and kept: the view is made
+    /// afresh on every redraw, and the State keeps only its first value.
+    @MainActor private static var made: [String: [Int64]] = [:]
+
+    @MainActor private static func pages(from first: Int64, span: Int) -> [Int64] {
+        let key = "\(first):\(span)"
+        if let kept = made[key] { return kept }
+        if made.count > 16 { made = [:] }
+        let pages = (-reach...reach).map { addDays(first, $0 * span, appTimeZone) }
+        made[key] = pages
+        return pages
     }
 
     private func pages(from first: Int64) -> [Int64] { Self.pages(from: first, span: span) }
@@ -477,7 +484,12 @@ struct DayHours: View {
                             id: Binding(
                                 get: { Optional(day) },
                                 set: {
-                                    guard let d = $0, d != day else { return }
+                                    guard let d = $0 else { return }
+                                    if jumping {
+                                        if d == day { jumping = false }
+                                        return
+                                    }
+                                    guard d != day else { return }
                                     paged = d
                                     day = d
                                 })
@@ -517,6 +529,12 @@ struct DayHours: View {
                         return
                     }
                     // Jumped to (a number, a week, I dag): a day not among the pages starts them again.
+                    jumping = true
+                    Task { @MainActor in
+                        // However it goes, the pager answers again soon.
+                        try? await Task.sleep(for: .milliseconds(700))
+                        jumping = false
+                    }
                     if !pages.contains(new) { pages = pages(from: new) }
                     open(height: box.size.height)
                 }

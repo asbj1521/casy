@@ -83,26 +83,14 @@ struct HomeScreen: View {
 
     private func months(_ column: CGFloat, bottomSafe: CGFloat) -> some View {
             ScrollView {
-                LazyVStack(spacing: 0) {
-                    // Each month as two scroll targets, its short name and its weeks
-                    // (ids -month and month): opening on a month opens on its first
-                    // week, the name tucked under the header as on the web
-                    // (monthScrollTop, MONTH_LABEL_PX).
-                    ForEach(model.months.flatMap { [MonthRow(month: $0, label: true), MonthRow(month: $0, label: false)] }) {
-                        row in
-                        if row.label {
-                            MonthLabel(month: row.month.id, firstColumn: row.month.firstColumn, column: column, lang: lang)
-                        } else {
-                            MonthBlock(
-                                month: row.month, column: column, today: startOfDay(Native.now, appTimeZone),
-                                starred: model.page.starred, lang: lang, dark: scheme == .dark,
-                                color: model.color, pick: pick
-                            )
-                            .equatable()
-                        }
-                    }
-                }
-                .scrollTargetLayout()
+                // Its own view, drawn again only when what it shows changes: never
+                // as an open day moves (every day changed redrew a year of months
+                // under it, part of the 18 Nov 2026 freeze).
+                MonthList(
+                    months: model.months, column: column, today: startOfDay(Native.now, appTimeZone),
+                    starred: model.page.starred, lang: lang, dark: scheme == .dark, color: model.color, pick: pick
+                )
+                .equatable()
             }
             .scrollPosition(id: $position, anchor: .top)
             .onChange(of: model.months.first?.id, initial: true) { _, first in
@@ -474,6 +462,42 @@ struct HomeScreen: View {
         .accessibilityLabel(label)
         .accessibilityValue(count > 0 ? CasyStrings.homeWaiting(count) : "")
         .accessibilityIdentifier(id)
+    }
+}
+
+/// The months, each as two scroll targets, its short name and its weeks (ids
+/// -month and month): opening on a month opens on its first week, the name
+/// tucked under the header as on the web (monthScrollTop, MONTH_LABEL_PX).
+private struct MonthList: View, Equatable {
+    let months: [HomeMonth]
+    let column: CGFloat
+    let today: Int64
+    let starred: Set<Int64>
+    let lang: Lang
+    let dark: Bool
+    let color: (String) -> String
+    let pick: (Int64, CGRect?) -> Void
+
+    static func == (a: MonthList, b: MonthList) -> Bool {
+        a.months == b.months && a.column == b.column && a.today == b.today && a.starred == b.starred
+            && a.lang == b.lang && a.dark == b.dark
+    }
+
+    var body: some View {
+        LazyVStack(spacing: 0) {
+            ForEach(months.flatMap { [MonthRow(month: $0, label: true), MonthRow(month: $0, label: false)] }) { row in
+                if row.label {
+                    MonthLabel(month: row.month.id, firstColumn: row.month.firstColumn, column: column, lang: lang)
+                } else {
+                    MonthBlock(
+                        month: row.month, column: column, today: today, starred: starred, lang: lang, dark: dark,
+                        color: color, pick: pick
+                    )
+                    .equatable()
+                }
+            }
+        }
+        .scrollTargetLayout()
     }
 }
 

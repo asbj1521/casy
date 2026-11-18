@@ -32,14 +32,16 @@ extension View {
 }
 
 extension View {
-    /// Glass in any shape, faintly tinted (a selection turned to glass while it
-    /// moves, #281): real on iOS 26, frosted before it.
+    /// Glass in any shape (a selection turned to glass while it moves, #281):
+    /// Apple's real Liquid Glass on iOS 26, `clear` for the kind that floats
+    /// over content and shows it (no tint, no shadow of ours: both made it
+    /// murky), frosted before iOS 26.
     @ViewBuilder
-    public func casyGlass<S: Shape>(in shape: S, tint: Color = .clear) -> some View {
+    public func casyGlass<S: Shape>(in shape: S, clear: Bool = false) -> some View {
         if #available(iOS 26, macOS 26, *) {
-            glassEffect(.regular.tint(tint).interactive(), in: shape)
+            glassEffect(clear ? .clear.interactive() : .regular.interactive(), in: shape)
         } else {
-            background { shape.fill(tint).background(.ultraThinMaterial, in: shape) }
+            background(clear ? .ultraThinMaterial : .regularMaterial, in: shape)
         }
     }
 }
