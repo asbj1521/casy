@@ -5,7 +5,7 @@
 #   scripts/native/parity.sh ParityUITests/testHomeMonthLight # one
 #
 # Builds the website against the fake backend into the app (npm run ios:parity;
-# PARITY_NO_WEB_BUILD=1 skips it when the page hasn't changed), starts the fake
+# PARITY_NO_WEB_BUILD=1 copies the last one in when the page hasn't changed), starts the fake
 # backend, builds the app once, then runs the tests on iPhone 17e twice: web only
 # and native. For each shot it writes <name>-web.png, <name>-native.png,
 # <name>-pair.png and <name>-diff.png to PARITY_OUT (default
@@ -30,7 +30,13 @@ python3 -c "import PIL" 2>/dev/null || {
   exit 1
 }
 
-[ "${PARITY_NO_WEB_BUILD:-}" = 1 ] || npm run --silent ios:parity
+# The test build into the app: built afresh, or (PARITY_NO_WEB_BUILD=1, the page
+# unchanged) the last one copied back in, since every run ends with the real site.
+if [ "${PARITY_NO_WEB_BUILD:-}" = 1 ] && [ -d dist-parity ]; then
+  env -u CAP_LIVE_URL CAP_WEB_DIR=dist-parity npx cap sync ios >/dev/null
+else
+  npm run --silent ios:parity
+fi
 
 BUNDLE="$(mktemp -d)/fake-backend.mjs"
 npx esbuild scripts/native/fake-backend.ts --bundle --platform=node --format=esm \
@@ -39,6 +45,8 @@ node "$BUNDLE" >/dev/null &
 SERVER=$!
 finish() {
   kill "$SERVER" 2>/dev/null || true
+  # A film still running (a test failed): ended, so it is a readable file.
+  [ -z "${RECORDER:-}" ] || { kill -INT "$RECORDER" 2>/dev/null; wait "$RECORDER" 2>/dev/null; } || true
   if [ "${PARITY_KEEP_TEST_BUILD:-}" != 1 ]; then
     echo "parity: putting the real site back into the app"
     npm run --silent ios >/dev/null 2>&1 || echo "parity: npm run ios failed; run it by hand" >&2

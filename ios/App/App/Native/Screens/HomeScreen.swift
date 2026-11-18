@@ -15,7 +15,6 @@ struct HomeScreen: View {
     private let model = HomeModel.shared
     @State private var position: Int64?
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// The day open in the day view, and whether it has zoomed out of its cell.
     @State private var shownDay: Int64?
     @State private var dayOpen = false
@@ -24,6 +23,22 @@ struct HomeScreen: View {
     @State private var dayFrame: CGRect = .zero
     /// One day or two, kept on this phone as the web's toggle is.
     @AppStorage("casy.daySpan") private var span = 1
+    /// The toolbar shows the day view's buttons: as the growing day reaches it
+    /// (40 % into the zoom), and the month's again as the day starts closing.
+    @State private var toolbarDay = false
+    /// The toolbar's pieces as wide as they draw, measured, for its capsules to
+    /// morph between (HomeToolbar's layout animation).
+    @State private var listWidth: CGFloat = 0
+    @State private var backWidth: CGFloat = 0
+    @State private var spanWidth: CGFloat = 0
+    @State private var pinnedWidth: CGFloat = 0
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// The toolbar's row (HomeToolbar's stand-in): 8 under the safe area, 40
+    /// tall; the day view leaves its bottom and 8 (PhoneCalendar's dayFrame.room).
+    static let toolbarRoom: CGFloat = 8 + 40 + 8
+    /// HomeToolbar's MORPH: damping 34, stiffness 420, mass 0.7.
+    private static let morph = Animation.interpolatingSpring(mass: 0.7, stiffness: 420, damping: 34)
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
@@ -34,15 +49,17 @@ struct HomeScreen: View {
                 months(column, bottomSafe: box.safeAreaInsets.bottom)
                 if let day = shownDay {
                     VStack(spacing: 0) {
-                        dayHeader(day)
+                        // The toolbar's room: it stays where it is, over the day growing in.
+                        Theme.background.color
+                            .frame(height: Self.toolbarRoom)
                             .opacity(dayOpen ? 1 : 0)
                         dayContent(day)
                     }
                     // Down to the screen's edge, so the month doesn't show under it once open.
                     .background(Theme.background.color.ignoresSafeArea().opacity(dayOpen ? 1 : 0))
                     .zIndex(1)
-
                 }
+                toolbar.zIndex(2)
             }
         }
         .background(Theme.background.color.ignoresSafeArea())
@@ -115,6 +132,8 @@ struct HomeScreen: View {
         shownDay = day
         Task { @MainActor in
             withAnimation(Self.zoomIn) { dayOpen = true }
+            try? await Task.sleep(for: .milliseconds(Int(380 * 0.4)))
+            if shownDay != nil, dayOpen { withAnimation(Self.morph) { toolbarDay = true } }
         }
     }
 
@@ -127,8 +146,16 @@ struct HomeScreen: View {
     /// brought into view first; faded if it can't be found.
     private func closeDay() {
         guard let day = shownDay else { return }
-        let month = startOfMonth(day, appTimeZone)
-        if HomeFrames.shared.cell(of: day) == nil { position = month }
+        // The toolbar is the month's again at once, as the day starts closing.
+        withAnimation(Self.morph) { toolbarDay = false }
+        if let visible = HomeFrames.shared.cell(of: day) {
+            // In sight: the zoom starts on this very frame, no wait.
+            cell = visible
+            withAnimation(Self.zoomOut) { dayOpen = false } completion: { shownDay = nil }
+            return
+        }
+        // Out of sight: its month brought into view first, then into its cell.
+        position = startOfMonth(day, appTimeZone)
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(30))
             cell = HomeFrames.shared.cell(of: day)
@@ -136,71 +163,129 @@ struct HomeScreen: View {
         }
     }
 
-    /// HomeToolbar in the day view, on the same row as the month's: "‹ <month>"
-    /// (lucide ChevronLeft 24, 2 between, 8 left 16 right, 17 regular; the arrow
-    /// alone with large text), and on the right the 1/2 day switch (15 semibold,
-    /// 16 left 12 right) and a divider before the plus and I dag. On the page's
-    /// own colour, as the web's day view, not a bar.
-    private func dayHeader(_ day: Int64) -> some View {
-        let month = capitalize(monthName(day, lang))
+    /// HomeToolbar (#180, #281): one toolbar over the month and the day view
+    /// alike, so its buttons never move as a day opens, they morph into their
+    /// use there. "Kalendere" (lucide Layers 20, 6 between, 14 left 16 right)
+    /// becomes "‹ <month>" (ChevronLeft 24, 2 between, 8 left 16 right), its
+    /// words crossfading as the capsule's width follows; the right capsule
+    /// takes the 1/2 day switch (15 semibold, 16 left 12 right, a divider) in
+    /// on its left, so the plus and I dag stay put. 17 regular, 16 at the
+    /// sides, 8 under the safe area, on HomeToolbar's MORPH spring.
+    /// How much of the right capsule shows: I dag and the plus, and the 1/2
+    /// day switch beside them in the day view; nil until measured (all of it).
+    private var rightWidth: CGFloat? {
+        pinnedWidth > 0 ? pinnedWidth + (toolbarDay && shownDay != nil ? spanWidth : 0) : nil
+    }
+
+    private var toolbar: some View {
+        let day = toolbarDay && shownDay != nil
+        let month = shownDay.map { capitalize(monthName($0, lang)) } ?? ""
         return HStack(alignment: .top) {
-            Button(action: closeDay) {
-                HStack(spacing: 2) {
-                    LucideIcon("chevron-left", size: 24)
-                    if !dynamicTypeSize.isAccessibilitySize {
-                        Text(verbatim: month).font(.system(size: 17))
+            Button(action: day ? closeDay : { model.onAction?("calendars", nil) }) {
+                // Both words always laid out, one faded in (0.18 s, the web's
+                // crossfade); the capsule's width morphs from one to the other.
+                ZStack(alignment: .leading) {
+                    HStack(spacing: 6) {
+                        LucideIcon("layers", size: 20)
+                        Text(CasyStrings.calendarsTitle).font(.system(size: 17))
                     }
+                    .padding(.leading, 14)
+                    .padding(.trailing, 16)
+                    .fixedSize()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { listWidth = $0 }
+                    .opacity(day ? 0 : 1)
+                    HStack(spacing: 2) {
+                        LucideIcon("chevron-left", size: 24)
+                        if !dynamicTypeSize.isAccessibilitySize {
+                            Text(verbatim: month).font(.system(size: 17))
+                        }
+                    }
+                    .padding(.leading, 8)
+                    .padding(.trailing, 16)
+                    .fixedSize()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { backWidth = $0 }
+                    .opacity(day ? 1 : 0)
                 }
-                .padding(.leading, 8)
-                .padding(.trailing, 16)
-                .frame(height: 40)
+                .animation(.linear(duration: 0.18), value: day)
+                .frame(width: (day ? backWidth : listWidth).nonZero, height: 40, alignment: .leading)
+                .clipped()
+                .contentShape(Capsule())
                 .casyGlass()
             }
-            .accessibilityLabel(CasyStrings.dayShowMonth(month))
-            .accessibilityIdentifier("day.back")
+            .overlay(alignment: .topTrailing) { if !day { badge(model.page.badges.calendars) } }
+            .accessibilityLabel(day ? CasyStrings.dayShowMonth(month) : CasyStrings.calendarsTitle)
+            .accessibilityValue(
+                !day && model.page.badges.calendars > 0 ? CasyStrings.homeToSort(model.page.badges.calendars) : "")
+            .accessibilityIdentifier(day ? "day.back" : "home.calendars")
             Spacer()
+            // The plus and I dag never move: pinned to the capsule's right edge,
+            // with the 1/2 day switch laid out to their left. Only the capsule's
+            // width (its clip and glass) morphs, revealing the switch leftward
+            // as it widens (the web's width 0 to auto) and hiding it as it
+            // narrows; nothing slides over anything.
             HStack(spacing: 0) {
-                Button { span = span == 1 ? 2 : 1 } label: {
-                    // What a press shows, in words, as the web's.
-                    Text(span == 1 ? CasyStrings.dayTwo : CasyStrings.dayOne)
-                        .font(.system(size: 15, weight: .semibold))
-                        .padding(.leading, 16)
-                        .padding(.trailing, 12)
-                        .frame(height: 40)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel(span == 1 ? CasyStrings.dayShowTwo : CasyStrings.dayShowOne)
-                .accessibilityIdentifier("day.span")
-                divider
-                if model.page.tell {
-                    Button { model.onAction?("tell", nil) } label: {
-                        LucideIcon("plus", size: 24, stroke: 2.25)
-                            .frame(width: 44, height: 40)
+                HStack(spacing: 0) {
+                    Button { span = span == 1 ? 2 : 1 } label: {
+                        // What a press shows, in words, as the web's.
+                        Text(span == 1 ? CasyStrings.dayTwo : CasyStrings.dayOne)
+                            .font(.system(size: 15, weight: .semibold))
+                            .padding(.leading, 16)
+                            .padding(.trailing, 12)
+                            .frame(height: 40)
                             .contentShape(Rectangle())
                     }
-                    .accessibilityLabel(CasyStrings.homeTell)
+                    .accessibilityLabel(span == 1 ? CasyStrings.dayShowTwo : CasyStrings.dayShowOne)
+                    .accessibilityIdentifier("day.span")
                     divider
                 }
-                Button {
-                    withAnimation(.snappy) { shownDay = startOfDay(Native.now, appTimeZone) }
-                } label: {
-                    Text(CasyStrings.homeToday)
-                        .font(.system(size: 17))
-                        .padding(.horizontal, 16)
-                        .frame(height: 40)
-                        .contentShape(Rectangle())
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { spanWidth = $0 }
+                .opacity(day ? 1 : 0)
+                .allowsHitTesting(day)
+                .accessibilityHidden(!day)
+                HStack(spacing: 0) {
+                    if model.page.tell {
+                        Button { model.onAction?("tell", nil) } label: {
+                            LucideIcon("plus", size: 24, stroke: 2.25)
+                                .frame(width: 44, height: 40)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityLabel(CasyStrings.homeTell)
+                        .accessibilityIdentifier("home.tell")
+                        divider
+                    }
+                    Button {
+                        if shownDay != nil {
+                            withAnimation(.snappy) { shownDay = startOfDay(Native.now, appTimeZone) }
+                        } else {
+                            goToday()
+                        }
+                    } label: {
+                        Text(CasyStrings.homeToday)
+                            .font(.system(size: 17))
+                            .padding(.horizontal, 16)
+                            .frame(height: 40)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityIdentifier(day ? "day.today" : "home.today")
                 }
-                .accessibilityIdentifier("day.today")
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { pinnedWidth = $0 }
             }
-            .casyGlass()
+            .fixedSize()
+            // The layout above never changes; only the window onto it does: a
+            // capsule pinned to the right, as wide as what shows, the glass
+            // drawn in the same shape behind it. (Animating the layout's frame
+            // moved the buttons: I dag slid over the plus.)
+            .mask(alignment: .trailing) { Capsule().frame(width: rightWidth) }
+            .background(alignment: .trailing) {
+                Color.clear.frame(width: rightWidth, height: 40).casyGlass()
+            }
         }
         .buttonStyle(.plain)
         .foregroundStyle(Theme.primary.color)
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        // The web's room under the toolbar: its bottom and 8 (PhoneCalendar's dayFrame).
-        .padding(.bottom, 8)
-        .background(Theme.background.color)
+        .animation(Self.morph, value: day)
+        .animation(Self.morph, value: span)
     }
 
     /// The toolbar capsule's divider: 1 by 20 in the orange at 30 %.
@@ -240,10 +325,12 @@ struct HomeScreen: View {
             .offset(
                 x: dayOpen || !zooms ? 0 : from.minX - dayFrame.minX,
                 y: dayOpen || !zooms ? 0 : from.minY - dayFrame.minY)
-            .opacity(dayOpen ? 1 : 0)
+            // The fade's own timing, for the fade alone: an `.animation` here would
+            // also take over the scale and the move above it (it did: the zoom
+            // ran in 0.11 s, and waited 0.22 s before closing).
             .animation(
-                dayOpen ? .linear(duration: 0.38 * 0.3) : .linear(duration: 0.32 * 0.3).delay(0.32 * 0.7),
-                value: dayOpen)
+                dayOpen ? .linear(duration: 0.38 * 0.3) : .linear(duration: 0.32 * 0.3).delay(0.32 * 0.7)
+            ) { $0.opacity(dayOpen ? 1 : 0) }
         }
     }
 
@@ -266,49 +353,11 @@ struct HomeScreen: View {
     /// 12 at the sides; the weekdays 24 tall in 12 medium; 6 under the block.
     private var header: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                Button { model.onAction?("calendars", nil) } label: {
-                    HStack(spacing: 6) {
-                        LucideIcon("layers", size: 20)
-                        Text(CasyStrings.calendarsTitle).font(.system(size: 17))
-                    }
-                    .padding(.leading, 14)
-                    .padding(.trailing, 16)
-                    .frame(height: 40)
-                    .casyGlass()
-                }
-                .overlay(alignment: .topTrailing) { badge(model.page.badges.calendars) }
-                .accessibilityValue(
-                    model.page.badges.calendars > 0 ? CasyStrings.homeToSort(model.page.badges.calendars) : "")
-                .accessibilityIdentifier("home.calendars")
-                Spacer()
-                HStack(spacing: 0) {
-                    if model.page.tell {
-                        Button { model.onAction?("tell", nil) } label: {
-                            LucideIcon("plus", size: 24, stroke: 2.25)
-                                .frame(width: 44, height: 40)
-                                .contentShape(Rectangle())
-                        }
-                        .accessibilityLabel(CasyStrings.homeTell)
-                        .accessibilityIdentifier("home.tell")
-                                divider
-                    }
-                    Button(action: goToday) {
-                        Text(CasyStrings.homeToday)
-                            .font(.system(size: 17))
-                            .padding(.horizontal, 16)
-                            .frame(height: 40)
-                            .contentShape(Rectangle())
-                    }
-                    .accessibilityIdentifier("home.today")
-                }
-                .casyGlass()
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Theme.primary.color)
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
+            // The toolbar's row: the toolbar itself floats over it (`toolbar`).
+            Color.clear
+                .frame(height: 40)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
             if let failure = model.failure {
                 Notice(failure, tone: .error).padding(.horizontal, 16).padding(.bottom, 8)
             }
@@ -654,4 +703,9 @@ final class HomeFrames {
         let screen = UIScreen.main.bounds
         return rect.minY > 0 && rect.maxY < screen.height ? rect : nil
     }
+}
+
+private extension CGFloat {
+    /// Nil until measured, so a piece is drawn at its own size meanwhile.
+    var nonZero: CGFloat? { self > 0 ? self : nil }
 }

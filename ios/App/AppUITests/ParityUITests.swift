@@ -123,7 +123,7 @@ final class ParityUITests: XCTestCase {
             mode == "web"
             ? app.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] %@", "torsdag 8. oktober")).firstMatch
             : app.buttons["day.2026-10-08"]
-        XCTAssertTrue(cell.waitForExistence(timeout: 30))
+        XCTAssertTrue(cell.waitForExistence(timeout: 30), "the 8 October cell never showed")
         _ = XCTWaiter.wait(for: [expectation(description: "still")], timeout: 2)
         cell.tap()
         _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
@@ -131,7 +131,7 @@ final class ParityUITests: XCTestCase {
             mode == "web"
             ? app.buttons.matching(NSPredicate(format: "label ==[c] %@", "vis oktober")).firstMatch
             : app.buttons["day.back"]
-        XCTAssertTrue(back.waitForExistence(timeout: 10))
+        XCTAssertTrue(back.waitForExistence(timeout: 10), "the way back never showed")
         back.tap()
         _ = XCTWaiter.wait(for: [expectation(description: "closed")], timeout: 2)
     }
