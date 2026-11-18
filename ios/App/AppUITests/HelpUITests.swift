@@ -14,15 +14,14 @@ final class HelpUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<6 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .fast) }
+        for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .fast) }
         row.tap()
         return app
     }
 
     private func scroll(_ app: XCUIApplication, to element: XCUIElement) {
         for _ in 0..<12 where !(element.exists && element.isHittable) {
-            app.scrollViews.firstMatch.swipeUp(velocity: .fast)
+            app.pageScroll.swipeUp(velocity: .fast)
         }
     }
 
@@ -63,7 +62,15 @@ final class HelpUITests: XCTestCase {
         let app = open("Dine data")
         let link = app.links["privatlivspolitikken"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: 20))
-        link.tap()
+        // Tapped where the word is drawn, as a finger does: in the Profil sheet
+        // below full height, which iOS 26 draws slightly scaled, a link inside
+        // a sentence is reported at the sentence's start with no size, and
+        // XCUITest's own tap (scroll it into view first) fails. The word is
+        // on the sentence's last line, a quarter of the way in.
+        let sentence = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Alt, hvad vi gemmer"))
+            .firstMatch
+        XCTAssertTrue(sentence.exists)
+        sentence.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 1)).withOffset(CGVector(dx: 0, dy: -10)).tap()
         XCTAssertTrue(app.navigationBars["Privatlivspolitik"].waitForExistence(timeout: 10))
     }
 }

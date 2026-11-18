@@ -89,7 +89,9 @@ extension AvatarSize {
         case .medium: 12
         case .row: 16
         case .large: 20
-        case .extraLarge, .hero: rawValue * 0.42
+        // A group's screen: h-24 with text-[2rem].
+        case .extraLarge: 32
+        case .hero: rawValue * 0.42
         }
     }
 }

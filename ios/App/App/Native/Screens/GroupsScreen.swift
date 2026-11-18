@@ -288,32 +288,43 @@ struct GroupsScreen: View {
     @Environment(\.closeSheet) private var closeSheet
     @State private var asking: CasyAPI.Group?
     @State private var making = false
+    /// The group row swiped open: one at a time, as on the web.
+    @State private var swiped: String?
 
+    /// The web's PhoneGroupsContent (#281): the invitations, then your groups
+    /// with Lav en gruppe last, as its ListGroups; each row led by its 40
+    /// point picture, its line under it the members (you first) or who
+    /// invited you and how many are in it.
     var body: some View {
-        List {
-            if !model.invitations.isEmpty {
-                Section(CasyStrings.invitationsTitle) {
-                    ForEach(Array(model.invitations.enumerated()), id: \.element.id) { i, invitation in
-                        NavigationLink {
-                            InvitationScreen(invitation: invitation, index: i, leave: leave)
-                        } label: {
-                            ListAvatarRow(
-                                invitation.groupName,
-                                detail: [invitation.invitedBy, CasyStrings.members(invitation.memberCount)]
-                                    .compactMap { $0 }.joined(separator: " · "),
-                                index: i, url: invitation.pictureUrl.flatMap(URL.init(string:)))
+        ScrollView {
+            VStack(spacing: 0) {
+                if !model.invitations.isEmpty {
+                    CardList(CasyStrings.invitationsTitle) {
+                        ForEach(Array(model.invitations.enumerated()), id: \.element.id) { i, invitation in
+                            NavigationLink {
+                                InvitationScreen(invitation: invitation, index: i, leave: leave)
+                            } label: {
+                                CardRow(
+                                    invitation.groupName,
+                                    detail: [invitation.invitedBy, CasyStrings.members(invitation.memberCount)]
+                                        .compactMap { $0 }.joined(separator: " · "),
+                                    chevron: true
+                                ) {
+                                    Avatar(
+                                        name: invitation.groupName, index: i, size: .row,
+                                        url: invitation.pictureUrl.flatMap(URL.init(string:)))
+                                }
+                            }
+                            .buttonStyle(.cardRow)
                         }
                     }
                 }
-            }
-            Section {
                 yourGroups
-            } header: {
-                Text(CasyStrings.groupsYours)
-            } footer: {
-                if model.groups?.isEmpty == true { Text(CasyStrings.groupsEmpty) }
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("groups.list")
         .casyPushedBar(CasyStrings.groupsTitle, close: CasyStrings.done, action: closeSheet)
         .task { await model.load() }
         .refreshable { await model.load() }
@@ -323,7 +334,7 @@ struct GroupsScreen: View {
         }
         .casyConfirm(
             asking.map { CasyStrings.groupsDeleteConfirm($0.name, members: $0.members.count) } ?? "",
-            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
+            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil; swiped = nil } }),
             presenting: asking
         ) { group in
             Button(CasyStrings.groupsDelete, role: .destructive) { model.leaveOrDelete(group) }
@@ -331,27 +342,40 @@ struct GroupsScreen: View {
         }
     }
 
+    /// GroupList: loading and failing as a line of their own (mt-6), else
+    /// the groups and Lav en gruppe, the footnote when there are none.
     @ViewBuilder private var yourGroups: some View {
         if let groups = model.groups {
-            ForEach(Array(groups.enumerated()), id: \.element.id) { i, group in
-                groupRow(group, index: i)
+            CardList(
+                CasyStrings.groupsYours, footnote: groups.isEmpty ? CasyStrings.groupsEmpty : nil
+            ) {
+                ForEach(Array(groups.enumerated()), id: \.element.id) { i, group in
+                    groupRow(group, index: i)
+                }
+                Button {
+                    making = true
+                } label: {
+                    CardRow(CasyStrings.groupsMake, icon: "plus", tone: .primary)
+                }
+                .buttonStyle(.cardRow)
             }
-            if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
+            if let failure = model.failure {
+                Notice(failure, tone: .error, bare: true).padding(.top, 12)
+            }
         } else if model.loadFailed {
             Notice(CasyStrings.groupsLoadFailed, tone: .error, bare: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 24)
         } else {
+            // 14 muted with a 16 point spinner, 8 between.
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
                 Text(CasyStrings.groupsLoading)
-                    .font(.subheadline)
+                    .font(.system(size: 14))
                     .foregroundStyle(Theme.mutedForeground.color)
             }
-        }
-        Button {
-            making = true
-        } label: {
-            ListRow(CasyStrings.groupsMake, systemImage: "plus", tone: .primary)
-                .contentShape(Rectangle())
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 24)
         }
     }
 
@@ -359,26 +383,33 @@ struct GroupsScreen: View {
     private func groupRow(_ group: CasyAPI.Group, index: Int) -> some View {
         let busy = model.working.contains(group.id)
         let swipe = model.swipe(for: group)
-        return NavigationLink {
-            GroupScreen(groupId: group.id)
-        } label: {
-            ListAvatarRow(
-                group.name,
-                detail: memberLine(
-                    group.members.map { (name: $0.name, isYou: $0.isYou) }, you: CasyStrings.groupsYou),
-                index: index, url: group.pictureUrl.flatMap(URL.init(string:))
-            ) {
-                if busy { ProgressView().controlSize(.small) }
-            }
-            .contentShape(Rectangle())
-        }
-        .disabled(busy)
-        // Not .destructive: the row stays until the server has said yes.
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(swipe == .leave ? CasyStrings.groupsLeave : CasyStrings.groupsDelete) {
+        return SwipeReveal(
+            swipe == .leave ? CasyStrings.groupsLeave : CasyStrings.groupsDelete,
+            isOpen: Binding(
+                get: { swiped == group.id },
+                set: { open in swiped = open ? group.id : (swiped == group.id ? nil : swiped) }),
+            onPress: {
                 if swipe == .deleteForAll { asking = group } else { model.leaveOrDelete(group) }
             }
-            .tint(Theme.red600.color)
+        ) {
+            NavigationLink {
+                GroupScreen(groupId: group.id)
+            } label: {
+                CardRow(
+                    group.name,
+                    detail: memberLine(
+                        group.members.map { (name: $0.name, isYou: $0.isYou) }, you: CasyStrings.groupsYou),
+                    chevron: true
+                ) {
+                    Avatar(
+                        name: group.name, index: index, size: .row,
+                        url: group.pictureUrl.flatMap(URL.init(string:)))
+                } trailing: {
+                    if busy { ProgressView().controlSize(.small) }
+                }
+            }
+            .buttonStyle(.cardRow)
+            .disabled(busy)
         }
     }
 }

@@ -13,8 +13,7 @@ final class DeleteAccountUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Slet konto")).firstMatch
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<6 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         row.tap()
         XCTAssertTrue(app.navigationBars["Slet konto"].waitForExistence(timeout: 10))
 

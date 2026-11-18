@@ -170,6 +170,7 @@ struct ProfileScreen: View {
                                 CardRowCount(model.invitations)
                             }
                         }
+                        .accessibilityIdentifier("profile.groups")
                         link(FriendsScreen()) {
                             CardRow(CasyStrings.profileFriends, icon: "contact", chevron: true)
                         }

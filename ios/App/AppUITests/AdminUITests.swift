@@ -23,23 +23,22 @@ final class AdminUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<6 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         row.tap()
         XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Kalendersynkroniseringen virker."].waitForExistence(timeout: 10))
 
         // The lists are under the tabs, at the bottom: a list only draws what is on screen.
         let tabs = app.segmentedControls.firstMatch
-        for _ in 0..<4 where !(tabs.exists && tabs.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<4 where !(tabs.exists && tabs.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         XCTAssertTrue(app.staticTexts["Ingen har lavet en gruppe endnu."].waitForExistence(timeout: 5))
         app.segmentedControls.buttons["Brugere"].tap()
-        list.swipeUp(velocity: .slow)
+        app.screenList.swipeUp(velocity: .slow)
         XCTAssertTrue(app.staticTexts["Sara"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Mia Jensen"].exists)
 
         app.segmentedControls.buttons["Kalendersundhed"].tap()
-        list.swipeUp(velocity: .slow)
+        app.screenList.swipeUp(velocity: .slow)
         XCTAssertTrue(app.staticTexts["Ingen kalenderkonti passer til det."].waitForExistence(timeout: 10))
     }
 
@@ -56,21 +55,20 @@ final class AdminUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<6 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         row.tap()
         XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
         let tabs = app.segmentedControls.firstMatch
-        for _ in 0..<4 where !(tabs.exists && tabs.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<4 where !(tabs.exists && tabs.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         app.segmentedControls.buttons["Brugere"].tap()
-        list.swipeUp(velocity: .slow)
+        app.screenList.swipeUp(velocity: .slow)
         let sara = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Sara")).firstMatch
         XCTAssertTrue(sara.waitForExistence(timeout: 10))
         sara.tap()
         XCTAssertTrue(app.navigationBars["Sara"].waitForExistence(timeout: 10))
 
         let delete = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Slet konto")).firstMatch
-        for _ in 0..<4 where !(delete.exists && delete.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<4 where !(delete.exists && delete.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         XCTAssertFalse(delete.isEnabled, "deletable before the name is typed")
         let field = app.textFields.firstMatch
         field.tap()
@@ -79,7 +77,7 @@ final class AdminUITests: XCTestCase {
         delete.tap()
 
         XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
-        for _ in 0..<4 { list.swipeDown(velocity: .fast) }
+        for _ in 0..<4 { app.screenList.swipeDown(velocity: .fast) }
         XCTAssertTrue(app.staticTexts["Sara blev slettet."].waitForExistence(timeout: 10))
     }
 
@@ -94,8 +92,7 @@ final class AdminUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<6 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         row.tap()
         XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
         return app
@@ -117,12 +114,11 @@ final class AdminUITests: XCTestCase {
         XCTAssertTrue(any(app, containing: "Reklamer hele tiden").exists)
 
         let picture = app.buttons["Fjern billedet"]
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<3 where !(picture.exists && picture.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<3 where !(picture.exists && picture.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         picture.tap()
         XCTAssertTrue(app.buttons["Billedet er fjernet"].waitForExistence(timeout: 10))
 
-        list.swipeDown(velocity: .fast)
+        app.screenList.swipeDown(velocity: .fast)
         app.buttons["Klaret"].firstMatch.tap()
         XCTAssertTrue(
             any(app, containing: "Reklamer hele tiden").waitForNonExistence(timeout: 10), "still listed")

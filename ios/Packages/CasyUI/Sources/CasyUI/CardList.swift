@@ -23,16 +23,21 @@ public struct CardList<Content: View>: View {
     private let title: String?
     private let footnote: String?
     private let spaced: Bool
+    private let accessory: AnyView?
     private let content: Content
 
     /// `spaced: false` leaves out the 24 points above (the web's `mt-0`).
+    /// `accessory` follows the heading, 8 points after it (a group's
+    /// Medlemmer and its ?).
     public init(
         _ title: String? = nil, footnote: String? = nil, spaced: Bool = true,
+        accessory: AnyView? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.footnote = footnote
         self.spaced = spaced
+        self.accessory = accessory
         self.content = content()
     }
 
@@ -41,15 +46,19 @@ public struct CardList<Content: View>: View {
             if let title {
                 // Capitals drawn only, as the web's CSS `uppercase`: VoiceOver
                 // reads the word as written.
-                Text(title)
-                    .textCase(.uppercase)
-                    .accessibilityLabel(title)
-                    .font(.system(size: 12, weight: .medium))
-                    .tracking(0.3)
-                    .foregroundStyle(Theme.mutedForeground.color)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 6)
-                    .accessibilityAddTraits(.isHeader)
+                HStack(spacing: 8) {
+                    Text(title)
+                        .textCase(.uppercase)
+                        .accessibilityLabel(title)
+                        .font(.system(size: 12, weight: .medium))
+                        .tracking(0.3)
+                        .foregroundStyle(Theme.mutedForeground.color)
+                        .cssLineHeight(16, size: 12)
+                        .accessibilityAddTraits(.isHeader)
+                    if let accessory { accessory }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 6)
             }
             VStack(spacing: 0) {
                 Group(subviews: content) { rows in
@@ -57,6 +66,12 @@ public struct CardList<Content: View>: View {
                         row.environment(\.cardRowIsFirst, index == 0)
                     }
                 }
+            }
+            // The first row's hairline covered by the card: the environment
+            // above reaches a row inside a button, not a plain one (a member,
+            // a switch row), whose line then sat on the card's top edge.
+            .overlay(alignment: .top) {
+                Rectangle().fill(Theme.card.color).frame(height: 1).allowsHitTesting(false)
             }
             // The border is outside the rows, as the web's (its rows are 52
             // inside a 1 point border, the card 2 taller than its rows).
@@ -71,6 +86,8 @@ public struct CardList<Content: View>: View {
                 Text(footnote)
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.mutedForeground.color)
+                    .cssLineHeight(16, size: 12)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 16)
                     .padding(.top, 6)
             }
@@ -124,16 +141,20 @@ public struct CardRow<Leading: View, Trailing: View>: View {
         HStack(spacing: 12) {
             leading
             HStack(spacing: 12) {
+                // The web's lines are 1.5 high (22.5 for the label, 19.5 for
+                // the detail): the room above and under each line added.
                 VStack(alignment: .leading, spacing: 0) {
                     Text(label)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(tone.color)
                         .lineLimit(1)
+                        .cssLineHeight(22.5, size: 15)
                     if let detail {
                         Text(detail)
                             .font(.system(size: 13))
                             .foregroundStyle(Theme.mutedForeground.color)
                             .lineLimit(wrap ? nil : 1)
+                            .cssLineHeight(19.5, size: 13)
                             .fixedSize(horizontal: false, vertical: wrap)
                     }
                 }
@@ -233,4 +254,15 @@ public struct CardRowPress: ButtonStyle {
 
 extension ButtonStyle where Self == CardRowPress {
     public static var cardRow: CardRowPress { CardRowPress() }
+}
+
+extension View {
+    /// The web's CSS line height for text of `size` points: the system font's
+    /// own line is `size * 1.193`; the rest goes between lines and, halved,
+    /// above the first and under the last, as CSS puts it.
+    public func cssLineHeight(_ height: CGFloat, size: CGFloat) -> some View {
+        let natural = size * 1.193
+        let extra = max(0, height - natural)
+        return lineSpacing(extra).padding(.vertical, extra / 2)
+    }
 }

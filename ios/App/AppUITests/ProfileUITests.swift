@@ -20,16 +20,14 @@ final class ProfileUITests: XCTestCase {
         // BEGINSWITH: a row's badge is part of what VoiceOver reads ("Grupper, 1").
         let element = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label))
             .firstMatch
-        let list = app.collectionViews.firstMatch
         for _ in 0..<6 where !(element.exists && element.isHittable) {
-            list.swipeUp(velocity: .slow)
+            app.screenList.swipeUp(velocity: .slow)
         }
         return element
     }
 
     func testShowsEveryRow() {
         let app = launch()
-        let list = app.collectionViews.firstMatch
         // The rows on screen first, then one quick swipe for the rest: a list
         // only draws what is on screen, so a row not there yet is further down.
         for label in [
@@ -37,7 +35,7 @@ final class ProfileUITests: XCTestCase {
             "Hjælp og kontakt", "Sådan virker det", "Vilkår", "Privatliv", "Log ud", "Slet konto",
         ] {
             let element = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
-            if !element.waitForExistence(timeout: 3) { list.swipeUp(velocity: .fast) }
+            if !element.waitForExistence(timeout: 3) { app.screenList.swipeUp(velocity: .fast) }
             XCTAssertTrue(element.waitForExistence(timeout: 5), label)
         }
     }
@@ -74,6 +72,9 @@ final class ProfileUITests: XCTestCase {
         // The field starts with the name now: delete keys clear it on any iOS.
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 50))
         field.typeText(name)
+        // With the on-screen keyboard (iPhone 17e) the alert moves up as it
+        // comes: Gem is pressed once it stands still, not where it was.
+        _ = XCTWaiter.wait(for: [expectation(description: "settled")], timeout: 1)
         app.alerts.buttons["Gem"].tap()
 
         let saved = NSPredicate(format: "value == %@", name)

@@ -62,84 +62,92 @@ struct GroupScreen: View {
         let sole = group.members.count <= 1
         // The same rule as Grupper's swipe, so the two never offer different things.
         let canDelete = model.swipe(for: group) == .deleteForAll
-        return List {
-            Section {
+        // GroupDetails' phone screen (#281): its ListGroups under the centred
+        // heading, px-4 as the sheet's, pb-4 at the end.
+        return ScrollView {
+            VStack(spacing: 0) {
                 header(group, index: index)
-            }
-            .listRowBackground(Color.clear)
 
-            Section {
-                ForEach(Array(group.members.enumerated()), id: \.element.id) { i, member in
-                    ListAvatarRow(
-                        member.isYou ? CasyStrings.groupWithYou(member.name) : member.name,
-                        index: i, url: member.avatarUrl.flatMap(URL.init(string:)))
-                }
-                Button {
-                    inviting = true
-                } label: {
-                    ListRow(CasyStrings.groupInvitePeople, systemImage: "plus", tone: .primary)
-                        .contentShape(Rectangle())
-                }
-            } header: {
-                membersHeader
-            }
-
-            Section {
-                Button {
-                    editing = true
-                } label: {
-                    ListRow(CasyStrings.groupEdit, systemImage: "pencil")
-                        .contentShape(Rectangle())
-                }
-            }
-
-            if group.members.count >= Self.primeMinimum {
-                Section {
-                    ListSwitchRow(
-                        CasyStrings.groupPrimeTitle,
-                        isOn: Binding(
-                            get: { primeSaving ?? (group.primeDates != false) },
-                            set: { setPrime(group, on: $0) }),
-                        systemImage: "star")
-                    .disabled(primeSaving != nil)
-                } footer: {
-                    Text(primeFailure ?? CasyStrings.groupPrimeFootnote)
-                        .foregroundStyle(primeFailure == nil ? Theme.mutedForeground.color : Theme.red600.color)
-                }
-            }
-
-            Section {
-                // Report or block (#142): only once there is someone else to report.
-                if !sole {
+                CardList(CasyStrings.groupMembers, accessory: AnyView(membersHelp)) {
+                    ForEach(Array(group.members.enumerated()), id: \.element.id) { i, member in
+                        CardRow(member.isYou ? CasyStrings.groupWithYou(member.name) : member.name) {
+                            Avatar(
+                                name: member.name, index: i, size: .row,
+                                url: member.avatarUrl.flatMap(URL.init(string:)))
+                        }
+                    }
                     Button {
-                        reporting = true
+                        inviting = true
                     } label: {
-                        ListRow(CasyStrings.reportOrBlock, systemImage: "flag")
-                            .contentShape(Rectangle())
+                        CardRow(CasyStrings.groupInvitePeople, icon: "plus", tone: .primary)
+                    }
+                    .buttonStyle(.cardRow)
+                }
+
+                CardList {
+                    Button {
+                        editing = true
+                    } label: {
+                        CardRow(CasyStrings.groupEdit, icon: "pencil")
+                    }
+                    .buttonStyle(.cardRow)
+                }
+
+                // Stars are the home page's (#171), only for groups of four or more.
+                if group.members.count >= Self.primeMinimum {
+                    CardList(footnote: primeFailure ?? CasyStrings.groupPrimeFootnote) {
+                        CardRow(CasyStrings.groupPrimeTitle, icon: "calendar-heart") {
+                            Toggle(
+                                CasyStrings.groupPrimeTitle,
+                                isOn: Binding(
+                                    get: { primeSaving ?? (group.primeDates != false) },
+                                    set: { setPrime(group, on: $0) })
+                            )
+                            .labelsHidden()
+                            .tint(Theme.primary.color)
+                            .disabled(primeSaving != nil)
+                        }
                     }
                 }
-                Button {
-                    asking = .leave
-                } label: {
-                    ListRow(
-                        sole ? CasyStrings.groupDeleteGroup : CasyStrings.groupLeave,
-                        systemImage: sole ? "trash" : "rectangle.portrait.and.arrow.right",
-                        tone: .danger
-                    )
-                    .contentShape(Rectangle())
-                }
-                if canDelete {
+
+                CardList {
+                    // Report or block (#142): only once there is someone else to report.
+                    if !sole {
+                        Button {
+                            reporting = true
+                        } label: {
+                            CardRow(CasyStrings.reportOrBlock, icon: "flag")
+                        }
+                        .buttonStyle(.cardRow)
+                    }
                     Button {
-                        asking = .delete
+                        asking = .leave
                     } label: {
-                        ListRow(CasyStrings.groupDeleteForAll, systemImage: "trash", tone: .danger)
-                            .contentShape(Rectangle())
+                        CardRow(
+                            sole ? CasyStrings.groupDeleteGroup : CasyStrings.groupLeave,
+                            icon: sole ? "trash" : "log-out", tone: .danger)
+                    }
+                    .buttonStyle(.cardRow)
+                    if canDelete {
+                        Button {
+                            asking = .delete
+                        } label: {
+                            CardRow(CasyStrings.groupDeleteForAll, icon: "trash", tone: .danger)
+                        }
+                        .buttonStyle(.cardRow)
                     }
                 }
-                if let failure { Notice(failure, tone: .error, bare: true) }
+                .disabled(removing)
+                if let failure {
+                    Notice(failure, tone: .error, bare: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 12)
+                }
             }
-            .disabled(removing)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("group.screen")
         .casyPushedBar(group.name, close: CasyStrings.done, action: closeSheet)
         .casyConfirm(
             question(group, sole: sole), isPresented: isAsking,
@@ -168,28 +176,36 @@ struct GroupScreen: View {
         }
     }
 
-    /// The picture, the name, how big and how old, and what it is for.
+    /// The picture, the name, how big and how old, and what it is for: mt-2,
+    /// centred; the picture 96 (its letter 32); the name mt-3, 20 bold (its
+    /// line 28), wrapping; the facts 14 muted (20); the description mt-1,
+    /// 15 in the text's colour (22.5).
     private func header(_ group: CasyAPI.Group, index: Int) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 0) {
             Avatar(
                 name: group.name, index: index, size: .extraLarge,
                 url: group.pictureUrl.flatMap(URL.init(string:)))
             Text(group.name)
-                .font(.title3.bold())
+                .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Theme.foreground.color)
-                .padding(.top, 8)
+                .cssLineHeight(28, size: 20)
+                .padding(.top, 12)
             Text(facts(group))
-                .font(.subheadline)
+                .font(.system(size: 14))
                 .foregroundStyle(Theme.mutedForeground.color)
+                .cssLineHeight(20, size: 14)
             if let description = group.description, !description.isEmpty {
                 Text(description)
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .foregroundStyle(Theme.foreground.color)
-                    .padding(.top, 2)
+                    .cssLineHeight(22.5, size: 15)
+                    .padding(.top, 4)
             }
         }
         .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity)
+        .padding(.top, 8)
     }
 
     /// "4 medlemmer · lavet sep. 2026".
@@ -200,17 +216,18 @@ struct GroupScreen: View {
         return "\(members) · \(CasyStrings.groupMade(monthYear(made, lang)))"
     }
 
-    /// "Medlemmer", and behind the ? what they can see of each other.
-    private var membersHeader: some View {
-        HStack(spacing: 6) {
-            Text(CasyStrings.groupMembers)
+    /// Medlemmer's ? (HelpButton): a 20 point circle-help in orange, a 44
+    /// point touch area that moves nothing; what members see of each other
+    /// in the system's popover.
+    private var membersHelp: some View {
+        HStack(spacing: 0) {
             Button {
                 aboutMembers = true
             } label: {
-                Image(systemName: "questionmark.circle")
+                LucideIcon("circle-question-mark", size: 20)
                     .foregroundStyle(Theme.primary.color)
-                    .frame(minWidth: 44, minHeight: 32)
-                    .contentShape(Rectangle())
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle().inset(by: -12))
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(CasyStrings.groupWhatMembersSee)

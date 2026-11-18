@@ -6,7 +6,11 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-DEVICE="${UI_TEST_DEVICE:-iPhone 17}"
+# iPhone 17e by default, the parity shots' simulator: never the one a person
+# uses with the real app (iPhone 17 here), where the page is signed in for real
+# and draws its own home page under the native sheets (a trip test found two
+# "lørdag 17. oktober", 18 Nov 2026), and where the run replaces their app.
+DEVICE="${UI_TEST_DEVICE:-iPhone 17e}"
 BUNDLE="$(mktemp -d)/fake-backend.mjs"
 
 npx esbuild scripts/native/fake-backend.ts --bundle --platform=node --format=esm \

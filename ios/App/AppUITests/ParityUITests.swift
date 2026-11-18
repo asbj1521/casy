@@ -216,4 +216,45 @@ final class ParityUITests: XCTestCase {
         let app = try await openSettings(theme: "dark")
         shoot(app, "settings-dark", when: "Udseende", native: "settings.list")
     }
+
+    // MARK: Grupper (#281)
+
+    private func openGroups(theme: String) async throws -> XCUIApplication {
+        if mode == "web" { return try await launch("/?profile=groups", theme: theme) }
+        let app = try await launch("/?profile", theme: theme)
+        let row = app.buttons["profile.groups"]
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "the Grupper row never showed")
+        row.tap()
+        return app
+    }
+
+    func testGroupsLight() async throws {
+        let app = try await openGroups(theme: "light")
+        shoot(app, "groups-light", when: "Lav en gruppe", native: "groups.list")
+    }
+
+    func testGroupsDark() async throws {
+        let app = try await openGroups(theme: "dark")
+        shoot(app, "groups-dark", when: "Lav en gruppe", native: "groups.list")
+    }
+
+    /// Fredagsbar (four members: Tid til hinanden shows), pushed from Grupper.
+    private func openGroup(theme: String) async throws -> XCUIApplication {
+        if mode == "web" { return try await launch("/?profile=groups/g-friday", theme: theme) }
+        let app = try await openGroups(theme: theme)
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Fredagsbar")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "Fredagsbar's row never showed")
+        row.tap()
+        return app
+    }
+
+    func testGroupLight() async throws {
+        let app = try await openGroup(theme: "light")
+        shoot(app, "group-light", when: "Rediger gruppe", native: "group.screen")
+    }
+
+    func testGroupDark() async throws {
+        let app = try await openGroup(theme: "dark")
+        shoot(app, "group-dark", when: "Rediger gruppe", native: "group.screen")
+    }
 }

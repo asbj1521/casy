@@ -26,9 +26,8 @@ final class SettingsUITests: XCTestCase {
 
     private func toggle(_ app: XCUIApplication, _ label: String) -> XCUIElement {
         let element = app.switches[label].firstMatch
-        let list = app.collectionViews.firstMatch
         for _ in 0..<6 where !(element.exists && element.isHittable) {
-            list.swipeUp(velocity: .slow)
+            app.screenList.swipeUp(velocity: .slow)
         }
         return element
     }

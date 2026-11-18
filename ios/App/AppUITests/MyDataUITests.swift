@@ -27,8 +27,7 @@ final class MyDataUITests: XCTestCase {
     }
 
     private func scroll(_ app: XCUIApplication, to element: XCUIElement) {
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<12 where !(element.exists && element.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<12 where !(element.exists && element.isHittable) { app.screenList.swipeUp(velocity: .slow) }
     }
 
     func testEverythingKeptIsListedInThePolicysOrder() {
@@ -55,8 +54,7 @@ final class MyDataUITests: XCTestCase {
         off.tap()
         // Off, the switch moves to the top of the list, which a list only draws on screen.
         sleep(3)
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<6 { list.swipeDown(velocity: .fast) }
+        for _ in 0..<6 { app.screenList.swipeDown(velocity: .fast) }
         let top = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "AI")).firstMatch
         XCTAssertTrue(top.waitForExistence(timeout: 10))
         XCTAssertEqual(top.value as? String, "0")

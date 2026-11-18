@@ -147,8 +147,7 @@ final class GroupsUITests: XCTestCase {
         let app = openFriday()
         let toggle = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Tid til hinanden"))
             .firstMatch
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<4 where !toggle.isHittable { list.swipeUp(velocity: .slow) }
+        for _ in 0..<4 where !toggle.isHittable { app.screenList.swipeUp(velocity: .slow) }
         XCTAssertEqual(toggle.value as? String, "1")
         toggle.switches.firstMatch.tap()
         let off = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '0'"), object: toggle)
@@ -158,8 +157,7 @@ final class GroupsUITests: XCTestCase {
     func testAReportCanBlockAndSaysThankYou() {
         let app = openFriday()
         let report = row(app, "Rapportér eller bloker")
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<4 where !report.isHittable { list.swipeUp(velocity: .slow) }
+        for _ in 0..<4 where !report.isHittable { app.screenList.swipeUp(velocity: .slow) }
         report.tap()
         XCTAssertTrue(app.navigationBars["Rapportér"].waitForExistence(timeout: 10))
         let send = app.buttons["Send"]
