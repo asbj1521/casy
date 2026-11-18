@@ -31,6 +31,18 @@ extension View {
     }
 }
 
+extension View {
+    /// Glass in any shape (a moving lens, #281): real on iOS 26, frosted before it.
+    @ViewBuilder
+    public func casyGlass<S: Shape>(in shape: S) -> some View {
+        if #available(iOS 26, macOS 26, *) {
+            glassEffect(.regular.interactive(), in: shape)
+        } else {
+            background(.ultraThinMaterial, in: shape)
+        }
+    }
+}
+
 /// How a pressed capsule answers: a small shrink, as on the web.
 private struct PressStyle: ButtonStyle {
     let scale: CGFloat

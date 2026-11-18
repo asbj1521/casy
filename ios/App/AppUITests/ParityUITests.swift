@@ -136,6 +136,23 @@ final class ParityUITests: XCTestCase {
         _ = XCTWaiter.wait(for: [expectation(description: "closed")], timeout: 2)
     }
 
+    /// The week row's glass lens and the zoom back into the date's circle,
+    /// native only (asked for on 18 Nov 2026; the web has neither), for filming.
+    func testHomeWeekLens() async throws {
+        try XCTSkipUnless(mode == "native", "the lens is the native app's own")
+        let app = try await launch("/", theme: "light", extra: ["-casyMotion", "YES"])
+        let cell = app.buttons["day.2026-10-08"]
+        XCTAssertTrue(cell.waitForExistence(timeout: 30), "the 8 October cell never showed")
+        cell.tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
+        app.buttons["week.2026-10-06"].tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "lens")], timeout: 2)
+        app.buttons["week.2026-10-10"].tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "lens")], timeout: 2)
+        app.buttons["day.back"].tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "closed")], timeout: 2)
+    }
+
     func testHomeDayDark() async throws {
         let app = try await openDay(theme: "dark")
         shoot(app, "home-day-dark", when: "torsdag", native: "day.back")

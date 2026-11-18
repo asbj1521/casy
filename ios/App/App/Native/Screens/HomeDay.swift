@@ -88,6 +88,14 @@ private struct WeekStrip: View {
 
     /// Which way the week last turned, for its slide.
     @State private var turn: CGFloat = 0
+    /// The glass lens that carries the selection from one date to another
+    /// (asked for on 18 Nov 2026): it pops up over the old date, glides to
+    /// the new one and dissolves, the plain circle and band appearing there.
+    /// Never there at rest. `lensAt` is the column of its left edge.
+    @State private var lensAt: CGFloat = 0
+    @State private var lensOn = false
+    @State private var lensUp = false
+    @State private var lensRun = 0
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
     /// The web's SLIDE: damping 38, stiffness 380, mass 0.8.
@@ -132,6 +140,35 @@ private struct WeekStrip: View {
         .padding(.horizontal, 4)
         .padding(.bottom, 8)
         .onChange(of: monday) { old, new in turn = new > old ? 1 : -1 }
+        .onChange(of: day) { old, new in
+            // Within the week the lens carries it; a week turned slides instead.
+            if mondayOf(old) == mondayOf(new) { glide(from: column(old), to: column(new)) }
+        }
+    }
+
+    private func mondayOf(_ d: Int64) -> Int64 {
+        addDays(d, -((localDate(d, appTimeZone).dow + 6) % 7), appTimeZone)
+    }
+
+    private func column(_ d: Int64) -> CGFloat { CGFloat((localDate(d, appTimeZone).dow + 6) % 7) }
+
+    /// The lens: up over the old date (a quick pop), across on a soft spring,
+    /// and gone as it settles, the selection appearing under it.
+    private func glide(from: CGFloat, to: CGFloat) {
+        lensRun += 1
+        let run = lensRun
+        if !lensOn { lensAt = from }
+        lensOn = true
+        withAnimation(.spring(duration: 0.18, bounce: 0.3)) { lensUp = true }
+        withAnimation(.spring(duration: 0.42, bounce: 0.18)) { lensAt = to }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(380))
+            guard run == lensRun else { return }
+            withAnimation(.easeOut(duration: 0.22)) {
+                lensUp = false
+                lensOn = false
+            }
+        }
     }
 
     private func turnWeek(_ direction: Int) {
@@ -153,6 +190,8 @@ private struct WeekStrip: View {
                     .offset(x: column * CGFloat(first))
                     .animation(Self.slide, value: first)
                     .animation(Self.slide, value: shown.count)
+                    .opacity(lensOn ? 0 : 1)
+                    .animation(lensOn ? nil : .easeOut(duration: 0.22), value: lensOn)
             }
             HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { c in
@@ -160,11 +199,22 @@ private struct WeekStrip: View {
                     number(d, today: today, weekend: c >= 5)
                 }
             }
+            // Over the numbers, which show through it bent by the glass.
+            Capsule()
+                .fill(.clear)
+                .frame(width: column * CGFloat(span), height: 40)
+                .casyGlass(in: Capsule())
+                .scaleEffect(lensUp ? 1.12 : 0.9)
+                .offset(x: column * lensAt)
+                .opacity(lensOn ? 1 : 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
     }
 
     private func number(_ d: Int64, today: Int64, weekend: Bool) -> some View {
-        let center = d == day
+        // Under the moving lens no date is filled; it appears as the lens goes.
+        let center = d == day && !lensOn
         let isToday = d == today
         return Button {
             withAnimation(Self.slide) { day = d }
@@ -177,13 +227,20 @@ private struct WeekStrip: View {
                         : isToday ? Theme.primary.color : weekend ? Theme.mutedForeground.color : Theme.foreground.color
                 )
                 .frame(width: 36, height: 36)
-                .background(center ? (isToday ? Theme.cta.color : Theme.foreground.color) : .clear, in: Circle())
+                .background {
+                    // Taken into the lens at once as it rises; fading in as it goes.
+                    Circle()
+                        .fill(isToday ? Theme.cta.color : Theme.foreground.color)
+                        .opacity(center ? 1 : 0)
+                        .animation(nil, value: day)
+                        .animation(lensOn ? nil : .easeOut(duration: 0.22), value: lensOn)
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(dayLabel(d, lang))
-        .accessibilityAddTraits(center ? .isSelected : [])
+        .accessibilityAddTraits(d == day ? .isSelected : [])
         .accessibilityIdentifier("week.\(dayKey(d, appTimeZone))")
     }
 }

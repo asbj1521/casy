@@ -293,16 +293,19 @@ struct HomeScreen: View {
         Rectangle().fill(Theme.primary.color.opacity(0.3)).frame(width: 1, height: 20)
     }
 
-    /// The day view, scaled evenly down into its cell and clipped to it until
-    /// open (the web's DayView zoom): clipped to the cell's height with 12
-    /// rounded corners at the cell's scale, faded in over the first 30 % of the
-    /// way out and out over the last 30 % of the way back.
+    /// The day view grows out of the date's circle and shrinks back into it:
+    /// scaled evenly down to the 32 point circle round the date's number (1
+    /// point line, then 4, centred in its column) as its corners round off,
+    /// the square of the page turning into that circle (asked for on 18 Nov
+    /// 2026: the web shrinks into the whole cell, square, and fades). Faded in
+    /// over the first 30 % of the way out and out over the last 30 % back.
     ///
     /// Where it sits open is measured on a still layer beside it, never on the
     /// view being scaled and moved: measured there, every frame of the zoom
     /// moved its own target, and the zoom chased it, redrawing the screen.
     private func dayContent(_ day: Int64) -> some View {
-        let from = cell ?? .zero
+        // The date's circle in its cell: 32 wide, under the row's 1 point line and 4.
+        let from = cell.map { CGRect(x: $0.midX - 16, y: $0.minY + 5, width: 32, height: 32) } ?? .zero
         let zooms = cell != nil && dayFrame.width > 0
         let scale = zooms ? from.width / dayFrame.width : 1
         return ZStack(alignment: .topLeading) {
@@ -315,11 +318,13 @@ struct HomeScreen: View {
             // Down to the screen's edge, so the month doesn't show under it.
             .background(Theme.background.color.ignoresSafeArea(edges: .bottom))
             .mask(alignment: .topLeading) {
-                // Open, nothing is clipped, the hours under the home indicator included.
-                RoundedRectangle(cornerRadius: dayOpen || !zooms ? 0 : 12 / max(scale, 0.01))
+                // Open, nothing is clipped, the hours under the home indicator
+                // included; in the circle, a square as wide as the page with
+                // corners of half of it: a circle, scaled down to the date's.
+                RoundedRectangle(cornerRadius: dayOpen || !zooms ? 0 : dayFrame.width / 2)
                     .frame(
                         width: dayFrame.width,
-                        height: dayOpen || !zooms ? dayFrame.height + 200 : from.height / max(scale, 0.01))
+                        height: dayOpen || !zooms ? dayFrame.height + 200 : dayFrame.width)
             }
             .scaleEffect(dayOpen || !zooms ? 1 : scale, anchor: .topLeading)
             .offset(
