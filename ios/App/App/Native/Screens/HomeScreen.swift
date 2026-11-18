@@ -14,6 +14,8 @@ struct HomeScreen: View {
 
     private let model = HomeModel.shared
     @State private var position: Int64?
+    /// How far the header reaches into the months (their scroll view's top inset).
+    @State private var headerHeight: CGFloat = 0
     @Environment(\.colorScheme) private var scheme
     /// The day open in the day view, and whether it has zoomed out of its cell.
     @State private var shownDay: Int64?
@@ -88,11 +90,15 @@ struct HomeScreen: View {
                 // under it, part of the 18 Nov 2026 freeze).
                 MonthList(
                     months: model.months, column: column, today: startOfDay(Native.now, appTimeZone),
-                    starred: model.page.starred, lang: lang, dark: scheme == .dark, color: model.color, pick: pick
+                    starred: model.page.starred, lang: lang, dark: scheme == .dark, color: model.color,
+                    headerHeight: headerHeight, pick: pick
                 )
                 .equatable()
             }
             .scrollPosition(id: $position, anchor: .top)
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { _, top in
+                headerHeight = top
+            }
             .onChange(of: model.months.first?.id, initial: true) { _, first in
                 // Opened on this month's first week, once the months are there.
                 if position == nil, let first { position = first }
@@ -476,18 +482,21 @@ private struct MonthList: View, Equatable {
     let lang: Lang
     let dark: Bool
     let color: (String) -> String
+    let headerHeight: CGFloat
     let pick: (Int64, CGRect?) -> Void
 
     static func == (a: MonthList, b: MonthList) -> Bool {
         a.months == b.months && a.column == b.column && a.today == b.today && a.starred == b.starred
-            && a.lang == b.lang && a.dark == b.dark
+            && a.lang == b.lang && a.dark == b.dark && a.headerHeight == b.headerHeight
     }
 
     var body: some View {
         LazyVStack(spacing: 0) {
             ForEach(months.flatMap { [MonthRow(month: $0, label: true), MonthRow(month: $0, label: false)] }) { row in
                 if row.label {
-                    MonthLabel(month: row.month.id, firstColumn: row.month.firstColumn, column: column, lang: lang)
+                    MonthLabel(
+                        month: row.month.id, firstColumn: row.month.firstColumn, column: column, lang: lang,
+                        headerHeight: headerHeight)
                 } else {
                     MonthBlock(
                         month: row.month, column: column, today: today, starred: starred, lang: lang, dark: dark,
@@ -509,12 +518,16 @@ private struct MonthRow: Identifiable {
 }
 
 /// A month's short name ("Nov"), 17 bold, over the column of its first day,
-/// in a 28 point row (MONTH_LABEL_PX).
+/// in a 28 point row (MONTH_LABEL_PX). It fades as it slides under the header
+/// and is gone once tucked there (a month opened, I dag): the web's header
+/// blurs it away (22 point blur), iOS 26's soft scroll edge only softens it,
+/// and it showed through the weekdays (18 Nov 2026).
 private struct MonthLabel: View {
     let month: Int64
     let firstColumn: Int
     let column: CGFloat
     let lang: Lang
+    let headerHeight: CGFloat
 
     var body: some View {
         Text(verbatim: capitalize(monthShortName(month, lang)).replacingOccurrences(of: ".", with: ""))
@@ -525,6 +538,11 @@ private struct MonthLabel: View {
             .offset(x: column * CGFloat(firstColumn))
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 28, alignment: .top)
+            .visualEffect { [headerHeight] content, proxy in
+                // 1 with the whole row below the header, 0 with it under it.
+                let below = proxy.frame(in: .scrollView).minY - headerHeight + 28
+                return content.opacity(min(1, max(0, below / 28)))
+            }
             .accessibilityHidden(true)
     }
 }
