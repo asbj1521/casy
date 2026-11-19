@@ -826,6 +826,7 @@ public enum CasyStrings {
     public static var removeAccountFailed: String { text("profile.couldntRemove") }
     public static var connectAppleFailed: String { text("profile.couldntIcloud") }
     public static var loadCalendarsFailed: String { text("api.loadCalendars") }
+    public static var loadGroupCalendarsFailed: String { text("api.loadGroupCalendars") }
     /// What removing an account deletes, and where its access is revoked.
     public static func removeAccountNote(provider: String, label: String?) -> String {
         switch provider {

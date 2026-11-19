@@ -14893,6 +14893,23 @@
         }
       }
     },
+    "api.loadGroupCalendars": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke hente gruppens kalendere"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load the group's calendars"
+          }
+        }
+      }
+    },
     "homeVote.answer": {
       "extractionState": "manual",
       "localizations": {

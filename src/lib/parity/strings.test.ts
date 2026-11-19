@@ -101,6 +101,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "calendarTour.badge.one": (t) => t.calendarTour.badge(1),
   "calendarTour.badge.many": (t) => t.calendarTour.badge(7).replace("7", "%d"),
   "swipe.week": (t) => t.swipe.week(7).replace("7", "%d"),
+  "api.loadGroupCalendars": (t) => t.api.loadGroupCalendars,
   "swipe.dateOf": (t) => t.swipe.dateOf(7, 8).replace("7", "%1$d").replace("8", "%2$d"),
   "swipe.matchScore": (t) => t.swipe.matchScore(7).replace("%", "%%").replace("7", "%d"),
   "swipe.can": (t) => t.swipe.can,
