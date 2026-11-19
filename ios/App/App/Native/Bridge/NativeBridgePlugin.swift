@@ -286,7 +286,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
             : screen == "aiConsent"
             ? AnyView(
-                AiConsentSheet(leave: leave, yes: onDone, close: onDone).nativeSheetLook(NativePreferences.shared))
+                AiConsentSheet(leave: leave, yes: onDone, close: onDone)
+                    .nativeSheetLook(NativePreferences.shared)
+                    .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
             : screen == "push"
             ? AnyView(
                 PushAskSheet(
@@ -332,9 +334,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         if screen == "push" { host.isModalInPresentation = true }
         // The small asks, as the web's: half the screen, larger if the text needs it.
         // The plus, too, as the web's small box: whole once Casy has answered.
-        if screen == "aiConsent" {
-            host.sheetPresentationController?.detents = [.medium(), .large()]
-        }
         // Profil, as the web's stacked BottomSheet (h-[85dvh], #169): 85 % of the
         // screen, the calendar still showing above it; below full height, iOS 26
         // draws the sheet in its own glass, as the web imitates (#281).
@@ -354,7 +353,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
         // A trip's sheet, as the web's BottomSheet: as tall as what is in it,
         // in iOS's glass, never whole (where iOS would draw it solid).
-        if screen == "trip" || screen == "prime" {
+        if ["trip", "prime", "aiConsent"].contains(screen) {
             host.view.backgroundColor = .clear
             host.sheetPresentationController?.detents = [
                 .custom(identifier: .init("casy.fit")) { context in

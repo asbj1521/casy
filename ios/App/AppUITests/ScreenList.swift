@@ -2,7 +2,7 @@ import XCTest
 
 extension XCUIApplication {
     /// The redone screens' scroll views (#281), deepest first.
-    static let redoneLists = ["prime.screen", "trip.screen", "tour.screen", "accounts.screen", "calendars.screen", "vote.screen", "dated.screen", "events.list", "admin.screen", "account.screen", "mydata.list", "friends.list", "group.screen", "groups.list", "settings.list", "profile.list"]
+    static let redoneLists = ["aiConsent.screen", "prime.screen", "trip.screen", "tour.screen", "accounts.screen", "calendars.screen", "vote.screen", "dated.screen", "events.list", "admin.screen", "account.screen", "mydata.list", "friends.list", "group.screen", "groups.list", "settings.list", "profile.list"]
 
     /// The open screen's list, to scroll it as a person would: a screen redone
     /// on CasyUI's CardList (#281) is a scroll view with its own identifier,

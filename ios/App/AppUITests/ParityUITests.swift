@@ -535,6 +535,30 @@ final class ParityUITests: XCTestCase {
 
     func testPrimeDark() async throws { try await shootPrime(theme: "dark") }
 
+    // MARK: The AI's question (#281)
+
+    /// Without the yes to the AI, the month asks for it as it opens (the web's
+    /// AiConsentPrompt, the app's own sheet for it), in both modes: its first
+    /// page, and its last.
+    private func shootConsent(theme: String) async throws {
+        var reset = URLRequest(url: URL(string: "\(Self.backend)/reset")!)
+        reset.httpMethod = "POST"
+        reset.httpBody = Data(#"{"aiConsent":false}"#.utf8)
+        _ = try await URLSession.shared.data(for: reset)
+        let app = try await launch("/", theme: theme)
+        shoot(app, "consent-\(theme)", when: "Hvad det giver", native: "aiConsent.screen")
+        let next = mode == "web" ? app.webViews.buttons["Næste"].firstMatch : app.buttons["aiConsent.next"]
+        for _ in 0..<3 {
+            next.tap()
+            _ = XCTWaiter.wait(for: [expectation(description: "turn")], timeout: 1)
+        }
+        shoot(app, "consent-last-\(theme)", when: "Tillad", native: "aiConsent.screen")
+    }
+
+    func testConsentLight() async throws { try await shootConsent(theme: "light") }
+
+    func testConsentDark() async throws { try await shootConsent(theme: "dark") }
+
     // MARK: Aftaler (#281)
 
     private func shootEvents(theme: String) async throws {
