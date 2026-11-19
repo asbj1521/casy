@@ -17,6 +17,7 @@ import widenFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Par
 import monthAvailabilityFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/monthAvailability.json?raw";
 import shortcutsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/shortcuts.json?raw";
 import aiPlanFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/aiPlan.json?raw";
+import earlyMorningFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/earlyMorning.json?raw";
 import calendarsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/calendars.json?raw";
 import calendarDayFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/calendarDay.json?raw";
 import eventsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/events.json?raw";
@@ -34,6 +35,7 @@ import { candidatesCases } from "./candidates.cases";
 import { comfortCases } from "./comfort.cases";
 import { monthAvailabilityCases } from "./monthAvailability.cases";
 import { aiPlanCases } from "./aiPlan.cases";
+import { earlyMorningCases } from "./earlyMorning.cases";
 import { shortcutsCases } from "./shortcuts.cases";
 import { widenCases } from "./widen.cases";
 import { eventSearchCases } from "./eventSearch.cases";
@@ -74,6 +76,7 @@ describe.each([
   ["monthAvailability", monthAvailabilityCases(), monthAvailabilityFixture],
   ["shortcuts", shortcutsCases(), shortcutsFixture],
   ["aiPlan", aiPlanCases(), aiPlanFixture],
+  ["earlyMorning", earlyMorningCases(), earlyMorningFixture],
 ] as const)("%s", (module, cases, fixture) => {
   it.runIf(import.meta.env.UPDATE_PARITY)("writes the fixtures", async () => {
     // Named through a variable so the type check doesn't look for Node's types.

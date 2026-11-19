@@ -693,3 +693,33 @@ private struct DateRange: Decodable {
         }
     }
 }
+
+@Test func edgeWarningsGiveTheTypeScriptAnswers() throws {
+    let zone = "Europe/Copenhagen"
+    let backToBack = BackToBackWords(you: "YOU", oneYou: "B2B-YOU", one: { "B2B-ONE \($0)" }, many: { "B2B-MANY \($0)" })
+    let early = EarlyMorningWords(
+        you: "YOU", oneYou: { "EARLY-YOU \($0)" }, one: { "EARLY-ONE \($0) \($1)" }, many: { "EARLY-MANY \($0)" })
+    let clash = ClashWords(
+        and: "AND", when: { "WHEN\($0)" }, nightBefore: { "NIGHT \($0) \($1) \($2)" }, prepDayBefore: { "PREPDAY \($0) \($1)" },
+        prep: { "PREP \($0) \($1)" }, recovery: { "RECOVER \($0) \($1)" },
+        kinds: ["exam": "EXAM", "deadline": "DEADLINE", "flight": "FLIGHT", "wedding": "WEDDING"],
+        avoid: ["lateNight": "LATE", "alcohol": "DRINK", "travel": "TRAVEL", "exercise": "SPORT"])
+    try check("earlyMorning", atLeast: 150) { fn, a in
+        switch fn {
+        case "edge":
+            let slot: DateRange = try a["slot"].decoded()
+            return try json(
+                edgeWarnings(
+                    try a["participants"].decoded(), start: slot.start, end: slot.end, zone, you: a["you"].string,
+                    try lang(a), backToBack: backToBack, earlyMorning: early, newYearsDay: "NEW-YEAR"))
+        case "clashes":
+            let clashes = importantClashes(try a["impact"].decoded(), try a["mine"].decoded(), zone)
+            return .object([
+                "clashes": try json(clashes),
+                "sentences": .array(clashes.map { .string(clashSentence($0, clash)) }),
+            ])
+        default:
+            return unknown(fn)
+        }
+    }
+}
