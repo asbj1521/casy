@@ -37,6 +37,7 @@ export const ICONS = {
   "chevron-down": [2],
   "chevron-left": [2],
   "chevron-right": [2],
+  "circle-arrow-up": [1.5],
   "circle-check": [2],
   "circle-question-mark": [2],
   "circle-x": [2],

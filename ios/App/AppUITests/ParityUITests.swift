@@ -572,6 +572,23 @@ final class ParityUITests: XCTestCase {
 
     func testPushDark() async throws { try await shootPush(theme: "dark") }
 
+    // MARK: Opdater (#281)
+
+    /// An app too old: every app is after a reset with `{ outdated: true }`,
+    /// and the page asks it to update as it opens, in both modes.
+    private func shootUpdate(theme: String) async throws {
+        var reset = URLRequest(url: URL(string: "\(Self.backend)/reset")!)
+        reset.httpMethod = "POST"
+        reset.httpBody = Data(#"{"outdated":true}"#.utf8)
+        _ = try await URLSession.shared.data(for: reset)
+        let app = try await launch("/", theme: theme)
+        shoot(app, "update-\(theme)", when: "Opdater", native: "update.screen")
+    }
+
+    func testUpdateLight() async throws { try await shootUpdate(theme: "light") }
+
+    func testUpdateDark() async throws { try await shootUpdate(theme: "dark") }
+
     // MARK: Aftaler (#281)
 
     private func shootEvents(theme: String) async throws {

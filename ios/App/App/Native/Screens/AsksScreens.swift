@@ -76,30 +76,48 @@ struct UpdateRequiredScreen: View {
 
     @Environment(\.openURL) private var openURL
 
+    /// The web's UpdateRequired (#281): over everything on the page's
+    /// background, 16 apart and centred, circle-arrow-up (56, stroke 1.5,
+    /// orange), the title (24 bold), the words (15 muted, at most 384 wide),
+    /// and Åbn App Store as the web's solid orange capsule, as wide as its words.
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "arrow.up.circle")
-                .font(.system(size: 56, weight: .light))
+            LucideIcon("circle-arrow-up", size: 56, stroke: 1.5)
                 .foregroundStyle(Theme.primary.color)
-                .accessibilityHidden(true)
             Text(CasyStrings.updateTitle)
-                .font(.title.bold())
+                .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(Theme.foreground.color)
+                .cssLineHeight(32, size: 24)
                 .accessibilityAddTraits(.isHeader)
             Text(CasyStrings.updateBody)
-                .font(.subheadline)
+                .font(.system(size: 15))
                 .foregroundStyle(Theme.mutedForeground.color)
-                .frame(maxWidth: 360)
+                .cssLineHeight(22.5, size: 15)
+                .frame(maxWidth: 384)
+                .fixedSize(horizontal: false, vertical: true)
             if let storeURL {
-                FlowButton(kind: .solid, action: { openURL(storeURL) }) { Text(CasyStrings.updateButton) }
-                    .frame(maxWidth: 360)
-                    .padding(.top, 8)
+                Button { openURL(storeURL) } label: {
+                    Text(CasyStrings.updateButton)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .cssLineHeight(22.5, size: 15)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Theme.cta.color, in: Capsule(style: .circular))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
             }
         }
         .multilineTextAlignment(.center)
         .padding(.horizontal, 32)
+        // The web's `fixed inset-0`: centred in the whole screen, not under the clock.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
         .background(Theme.background.color.ignoresSafeArea())
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("update.screen")
         .interactiveDismissDisabled()
         .nativeSheetLook(preferences)
     }
