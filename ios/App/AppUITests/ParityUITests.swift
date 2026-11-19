@@ -513,6 +513,85 @@ final class ParityUITests: XCTestCase {
 
     func testNewGroupDark() async throws { try await shootNewGroup(theme: "dark") }
 
+    // MARK: Rediger gruppe, Rapportér, an invitation, the crop, an event (#281)
+
+    /// The first button on top whose words begin with `words`, in either mode.
+    private func pressShown(_ app: XCUIApplication, _ words: String) {
+        // A web row that leads somewhere is a link.
+        let all = (mode == "web" ? app.webViews.descendants(matching: .any) : app.buttons)
+            .matching(
+                NSPredicate(
+                    format: "(elementType == %d OR elementType == %d) AND label BEGINSWITH %@",
+                    XCUIElement.ElementType.button.rawValue, XCUIElement.ElementType.link.rawValue, words))
+        XCTAssertTrue(all.firstMatch.waitForExistence(timeout: 30), "no \(words)")
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 1)
+        let shown = all.allElementsBoundByIndex.first { $0.isHittable } ?? all.firstMatch
+        shown.tap()
+    }
+
+    /// Fredagsbar's Rediger gruppe.
+    private func shootEditGroup(theme: String) async throws {
+        let app = try await openGroup(theme: theme)
+        pressShown(app, "Rediger gruppe")
+        shoot(app, "editgroup-\(theme)", when: "Gruppenavn", native: "editGroup.screen")
+    }
+
+    func testEditGroupLight() async throws { try await shootEditGroup(theme: "light") }
+
+    func testEditGroupDark() async throws { try await shootEditGroup(theme: "dark") }
+
+    /// Fredagsbar's Rapportér eller bloker, scrolled to.
+    private func shootReport(theme: String) async throws {
+        let app = try await openGroup(theme: theme)
+        let row = (mode == "web" ? app.webViews.buttons : app.buttons)
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Rapportér eller bloker")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        for _ in 0..<8 where !row.isHittable { app.swipeUp() }
+        row.tap()
+        shoot(app, "report-\(theme)", when: "Hvad drejer det sig om?", native: "report.screen")
+    }
+
+    func testReportLight() async throws { try await shootReport(theme: "light") }
+
+    func testReportDark() async throws { try await shootReport(theme: "dark") }
+
+    /// Badminton's invitation, from its row in Grupper.
+    private func shootInvitation(theme: String) async throws {
+        let app = try await openGroups(theme: theme)
+        pressShown(app, "Badminton")
+        shoot(app, "invitation-\(theme)", when: "Bliv medlem", native: "invitation.screen")
+    }
+
+    func testInvitationLight() async throws { try await shootInvitation(theme: "light") }
+
+    func testInvitationDark() async throws { try await shootInvitation(theme: "dark") }
+
+    /// Profil's picture, the made-up photo picked: its crop. Natively the
+    /// picture is a menu first (Fotobibliotek); the web's parity build skips
+    /// iOS's photo picker.
+    private func shootCrop(theme: String) async throws {
+        let app = try await launch("/?profile", theme: theme, extra: ["-casyTestPicture", "YES"])
+        pressShown(app, "Tilføj profilbillede")
+        if mode == "native" { pressShown(app, "Fotobibliotek") }
+        shoot(app, "crop-\(theme)", when: "Færdig", native: "crop.screen")
+    }
+
+    func testCropLight() async throws { try await shootCrop(theme: "light") }
+
+    func testCropDark() async throws { try await shootCrop(theme: "dark") }
+
+    /// Thursday 8 October's Arbejde, tapped in the day.
+    private func shootEventSheet(theme: String) async throws {
+        let app = try await openDay(theme: theme)
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
+        pressShown(app, "Arbejde")
+        shoot(app, "eventsheet-\(theme)", when: "Torsdag 8. oktober", native: "event.sheet")
+    }
+
+    func testEventSheetLight() async throws { try await shootEventSheet(theme: "light") }
+
+    func testEventSheetDark() async throws { try await shootEventSheet(theme: "dark") }
+
     // MARK: Tilføj til kalender (#281)
 
     /// The plus at the top of the month, in both modes: the web has no address for it.

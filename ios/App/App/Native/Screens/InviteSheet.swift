@@ -205,45 +205,45 @@ struct InviteContent: View {
 
     var body: some View {
         @Bindable var model = model
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if let note { Notice(note, tone: .error, bare: true).padding(.bottom, 12) }
-                if let sent = model.sentNote { Notice(sent, tone: .success).padding(.bottom, 16) }
-                if let error = model.sendError { Notice(error, tone: .error).padding(.bottom, 16) }
+        // The send button under the list, not over it (the web's footer row).
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if let note { Notice(note, tone: .error, bare: true).padding(.bottom, 12) }
+                    if let sent = model.sentNote { Notice(sent, tone: .success).padding(.bottom, 16) }
+                    if let error = model.sendError { Notice(error, tone: .error).padding(.bottom, 16) }
 
-                CardList(spaced: false) {
-                    contactsRow
-                    if !model.isFriend { emailRows }
-                    linkRows
-                }
-                if let contacts = model.contactsNote {
-                    Notice(contacts.text, tone: contacts.ok ? .success : .error).padding(.top, 8)
-                }
-                if model.emailOpen { emailField }
-                if let help = model.linkHelp { footnote(help).padding(.horizontal, 16).padding(.top, 6) }
-                if model.showQr, let link = model.link {
-                    VStack(spacing: 8) {
-                        QrCode(text: link.url, label: model.qrLabel)
-                        Text(model.qrHelp)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Theme.mutedForeground.color)
-                            .cssLineHeight(16, size: 12)
-                            .multilineTextAlignment(.center)
+                    CardList(spaced: false) {
+                        contactsRow
+                        if !model.isFriend { emailRows }
+                        linkRows
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 12)
+                    if let contacts = model.contactsNote {
+                        Notice(contacts.text, tone: contacts.ok ? .success : .error).padding(.top, 8)
+                    }
+                    if model.emailOpen { emailField }
+                    if let help = model.linkHelp { footnote(help).padding(.horizontal, 16).padding(.top, 6) }
+                    if model.showQr, let link = model.link {
+                        VStack(spacing: 8) {
+                            QrCode(text: link.url, label: model.qrLabel)
+                            Text(model.qrHelp)
+                                .font(.system(size: 12))
+                                .foregroundStyle(Theme.mutedForeground.color)
+                                .cssLineHeight(16, size: 12)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 12)
+                    }
+                    if let error = model.linkError { Notice(error, tone: .error, bare: true).padding(.top, 8) }
+                    if !model.isFriend { people }
                 }
-                if let error = model.linkError { Notice(error, tone: .error, bare: true).padding(.top, 8) }
-                if !model.isFriend { people }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
-        }
-        .scrollBounceBehavior(.basedOnSize)
-        .accessibilityIdentifier(model.isFriend ? "addFriend.screen" : "invite.screen")
-        .casySheetBar(model.title, close: CasyStrings.done) { dismiss() }
-        .safeAreaInset(edge: .bottom) {
+            .scrollBounceBehavior(.basedOnSize)
+            .accessibilityIdentifier(model.isFriend ? "addFriend.screen" : "invite.screen")
             if model.count > 0 {
                 FlowButton(busy: model.sending) {
                     Task {
@@ -253,9 +253,11 @@ struct InviteContent: View {
                     Text(CasyStrings.inviteSend(model.count))
                 }
                 .padding(.horizontal, 16)
+                .padding(.top, 12)
                 .padding(.bottom, 8)
             }
         }
+        .casySheetBar(model.title, close: CasyStrings.done) { dismiss() }
         // Without its button, the bar alone over the words.
         .sheetFits(contentHeight, chrome: model.count > 0 ? 150 : 90)
         .task { await GroupsModel.shared.loadFriends() }

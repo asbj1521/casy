@@ -314,26 +314,42 @@ struct EditGroupSheet: View {
         }
     }
 
+    @State private var contentHeight: CGFloat = 380
+
+    /// The web's EditGroupSheet (#281): the picture (112, the camera badge)
+    /// 20 above the fields, Fjern billede under it while there is one; the
+    /// name (semibold) and what the group is for, 16 apart; Gem along the
+    /// bottom; as tall as that, in iOS's glass.
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    PictureMenu(
-                        hasPicture: hasPicture,
-                        addLabel: CasyStrings.groupPictureAdd,
-                        changeLabel: CasyStrings.groupPictureChange,
-                        onPicked: { jpeg in
-                            failure = nil
-                            picture = .set(jpeg)
-                        },
-                        onRemove: { picture = .remove },
-                        onUnreadable: { failure = CasyStrings.picturesUnreadable }
-                    ) {
-                        shownPicture
+                VStack(alignment: .leading, spacing: 0) {
+                    VStack(spacing: 0) {
+                        PictureMenu(
+                            hasPicture: hasPicture,
+                            addLabel: CasyStrings.groupPictureAdd,
+                            changeLabel: CasyStrings.groupPictureChange,
+                            onPicked: { jpeg in
+                                failure = nil
+                                picture = .set(jpeg)
+                            },
+                            onRemove: { picture = .remove },
+                            onUnreadable: { failure = CasyStrings.picturesUnreadable }
+                        ) {
+                            shownPicture.cameraBadge()
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(hasPicture ? CasyStrings.groupPictureChange : CasyStrings.groupPictureAdd)
+                        if hasPicture {
+                            Button(CasyStrings.picturesRemove) { picture = .remove }
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Theme.primary.color)
+                                .frame(minHeight: 44)
+                        }
                     }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel(hasPicture ? CasyStrings.groupPictureChange : CasyStrings.groupPictureAdd)
-                    CasyField(CasyStrings.groupNameLabel, text: $name)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 20)
+                    CasyField(CasyStrings.groupNameLabel, text: $name, weight: .semibold)
                         .onChange(of: name) { _, now in
                             if now.count > Self.maxName { name = String(now.prefix(Self.maxName)) }
                         }
@@ -346,12 +362,15 @@ struct EditGroupSheet: View {
                             description = String(now.prefix(Self.maxDescription))
                         }
                     }
-                    if let failure { Notice(failure, tone: .error) }
+                    .padding(.top, 16)
+                    if let failure { Notice(failure, tone: .error).padding(.top, 12) }
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 24)
+                .padding(.bottom, 16)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
             }
-            .background(Theme.background.color)
+            .scrollBounceBehavior(.basedOnSize)
+            .accessibilityIdentifier("editGroup.screen")
             .casySheetBar(CasyStrings.groupEdit, close: CasyStrings.cancel, disabled: saving) {
                 dismiss()
             }
@@ -364,6 +383,7 @@ struct EditGroupSheet: View {
                 .padding(.bottom, 8)
             }
         }
+        .sheetFits(contentHeight)
         .interactiveDismissDisabled(saving)
     }
 
@@ -449,23 +469,33 @@ struct ReportSheet: View {
     @State private var sent = false
     @State private var failure: String?
 
+    @State private var contentHeight: CGFloat = 500
+
+    /// The web's ReportDialog sheet (#281): what (when there is a choice) and
+    /// why as lists of ticked rows, the note under them, then blocking the
+    /// person and leaving the group as switches with the promise under them;
+    /// Send along the bottom; once sent, only that it was. As tall as it is,
+    /// in iOS's glass.
     var body: some View {
         let choice = choices[min(picked, choices.count - 1)]
         return NavigationStack {
-            List {
-                if sent {
-                    Notice(CasyStrings.reportSent, tone: .success, bare: true)
-                } else {
-                    form(choice)
+            // The button under the list, not over it: a long form scrolls
+            // above it, as the web's footer is its own row.
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if sent {
+                            Notice(CasyStrings.reportSent, tone: .success)
+                        } else {
+                            form(choice)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
                 }
-            }
-            .casySheetBar(
-                CasyStrings.reportTitle, close: sent ? CasyStrings.close : CasyStrings.cancel,
-                disabled: sending
-            ) {
-                dismiss()
-            }
-            .safeAreaInset(edge: .bottom) {
+                .scrollBounceBehavior(.basedOnSize)
+                .accessibilityIdentifier("report.screen")
                 if !sent {
                     FlowButton(busy: sending) {
                         send(choice)
@@ -474,55 +504,74 @@ struct ReportSheet: View {
                     }
                     .disabled(reason == nil)
                     .padding(.horizontal, 16)
+                    .padding(.top, 12)
                     .padding(.bottom, 8)
                 }
             }
+            .casySheetBar(
+                CasyStrings.reportTitle, close: sent ? CasyStrings.close : CasyStrings.cancel,
+                disabled: sending
+            ) {
+                dismiss()
+            }
         }
+        .sheetFits(contentHeight, chrome: sent ? 90 : 150)
         .interactiveDismissDisabled(sending)
     }
 
     @ViewBuilder private func form(_ choice: Choice) -> some View {
         if choices.count > 1 {
-            Section(CasyStrings.reportWhat) {
+            CardList(CasyStrings.reportWhat, spaced: false) {
                 ForEach(Array(choices.enumerated()), id: \.offset) { i, option in
-                    ListPickRow(option.label, isSelected: picked == i) {
+                    PickRow(option.label, picked: picked == i) {
                         picked = i
                         block = false
                     }
                 }
             }
         }
-        Section(CasyStrings.reportWhy) {
+        CardList(CasyStrings.reportWhy, spaced: choices.count > 1) {
             ForEach(Self.reasons, id: \.self) { option in
-                ListPickRow(CasyStrings.reportReason(option), isSelected: reason == option) {
-                    reason = option
-                }
+                PickRow(CasyStrings.reportReason(option), picked: reason == option) { reason = option }
             }
         }
-        Section(CasyStrings.reportNote) {
-            TextField("", text: $note, axis: .vertical)
-                .lineLimit(3...6)
-                .accessibilityLabel(CasyStrings.reportNote)
-                .onChange(of: note) { _, now in
-                    if now.count > Self.maxNote { note = String(now.prefix(Self.maxNote)) }
-                }
-        }
+        CasyField(CasyStrings.reportNote, text: $note, lines: 3)
+            .onChange(of: note) { _, now in
+                if now.count > Self.maxNote { note = String(now.prefix(Self.maxNote)) }
+            }
+            .padding(.top, 24)
         // The promise that whoever is reported isn't told, always (rule 7).
-        Section {
-            if let person = choice.person {
-                ListSwitchRow(
-                    CasyStrings.reportBlockToo(person.name), isOn: $block, systemImage: "nosign",
-                    detail: CasyStrings.reportBlockHelp(person.name))
+        if choice.person != nil || group != nil {
+            CardList(footnote: CasyStrings.reportIntro) {
+                if let person = choice.person {
+                    switchRow(
+                        CasyStrings.reportBlockToo(person.name), icon: "ban",
+                        detail: CasyStrings.reportBlockHelp(person.name), isOn: $block)
+                }
+                if let group {
+                    switchRow(CasyStrings.reportLeaveToo(group.name), icon: "log-out", detail: nil, isOn: $leaveToo)
+                }
             }
-            if let group {
-                ListSwitchRow(
-                    CasyStrings.reportLeaveToo(group.name), isOn: $leaveToo,
-                    systemImage: "rectangle.portrait.and.arrow.right")
-            }
-        } footer: {
+        } else {
             Text(CasyStrings.reportIntro)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.mutedForeground.color)
+                .cssLineHeight(16, size: 12)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
         }
-        if let failure { Notice(failure, tone: .error, bare: true) }
+        if let failure { Notice(failure, tone: .error).padding(.top, 12) }
+    }
+
+    /// ListSwitchRow: its icon, the words (the detail over several lines), the switch.
+    private func switchRow(_ label: String, icon: String, detail: String?, isOn: Binding<Bool>) -> some View {
+        CardRow(label, icon: icon, detail: detail, wrap: true) {
+            Toggle(label, isOn: isOn)
+                .labelsHidden()
+                .tint(Theme.primary.color)
+        }
+        .accessibilityElement(children: .contain)
     }
 
     private func send(_ choice: Choice) {

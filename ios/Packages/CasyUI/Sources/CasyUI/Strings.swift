@@ -710,6 +710,13 @@ public enum CasyStrings {
     public static func calendarsBrand(_ provider: String) -> String { named("calendarView.brands", provider) }
     public static var calendarsAppleName: String { text("calendarView.providerNames.apple") }
     public static var calendarsLinkName: String { text("calendarView.providerNames.ics") }
+    /// A calendar's provider, as the web's `providerNames` ("Google", "Telefon").
+    public static func providerName(_ provider: String) -> String? {
+        switch provider {
+        case "builtin", "google", "outlook", "apple", "ics", "device": text("calendarView.providerNames.\(provider)")
+        default: nil
+        }
+    }
     /// Arbejde, Skole, Privat, Andet.
     public static func category(_ purpose: String) -> String { named("category", purpose) }
     /// Lav, Normal or Høj prioritet: the app's names for a calendar's priority (#221).

@@ -80,58 +80,6 @@ private struct NativeSheetLook: ViewModifier {
     }
 }
 
-extension View {
-    /// A half-height sheet the same colour as a whole-screen one. iOS 26 gives
-    /// a half-height sheet a see-through glass background, and the system's own
-    /// colours inside it come out lighter than on a whole-screen sheet, so the
-    /// whole-screen sheet's colours are painted here as they are, measured
-    /// (#200): under the list, and on its rows.
-    func solidHalfSheet(plain: Bool = false) -> some View {
-        modifier(SolidHalfSheet(plain: plain))
-    }
-
-    /// A row of a half-height sheet's list, as on a whole-screen sheet.
-    func halfSheetRow() -> some View {
-        modifier(HalfSheetRow())
-    }
-}
-
-/// The colours a whole-screen sheet has, light and dark.
-enum SheetColors {
-    /// Under a grouped list: iOS's raised grouped background.
-    static func ground(_ scheme: ColorScheme, plain: Bool) -> Color {
-        scheme == .dark
-            ? Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255)
-            : plain ? .white : Color(red: 242 / 255, green: 242 / 255, blue: 247 / 255)
-    }
-
-    /// A row of a grouped list.
-    static func row(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(red: 44 / 255, green: 44 / 255, blue: 46 / 255) : .white
-    }
-}
-
-private struct SolidHalfSheet: ViewModifier {
-    let plain: Bool
-    @Environment(\.colorScheme) private var scheme
-
-    func body(content: Content) -> some View {
-        // On the list itself, inside the navigation stack: under the stack,
-        // its own glass is drawn over it at half height (measured, #201).
-        content
-            .scrollContentBackground(.hidden)
-            .background(SheetColors.ground(scheme, plain: plain).ignoresSafeArea())
-    }
-}
-
-private struct HalfSheetRow: ViewModifier {
-    @Environment(\.colorScheme) private var scheme
-
-    func body(content: Content) -> some View {
-        content.listRowBackground(SheetColors.row(scheme))
-    }
-}
-
 /// Indstillinger (#198): Sprog, Udseende and Notifikationer. Needs a
 /// navigation stack around it.
 struct SettingsList: View {

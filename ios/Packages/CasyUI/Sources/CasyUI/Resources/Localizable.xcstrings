@@ -10456,6 +10456,74 @@
         }
       }
     },
+    "calendarView.providerNames.builtin": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indbygget"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built in"
+          }
+        }
+      }
+    },
+    "calendarView.providerNames.device": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefon"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phone"
+          }
+        }
+      }
+    },
+    "calendarView.providerNames.google": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google"
+          }
+        }
+      }
+    },
+    "calendarView.providerNames.outlook": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outlook"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outlook"
+          }
+        }
+      }
+    },
     "calendarView.providerNames.apple": {
       "extractionState": "manual",
       "localizations": {

@@ -741,60 +741,116 @@ private struct DayColumn: View {
 
 // MARK: - An event
 
-/// One of your events, opened (the web's DayRow in its sheet): its name, its
-/// time and calendar, where it is, its notes, and whether it carries on.
+/// One of your events, opened: the web's DayView sheet (#281), its title
+/// the day, Færdig to close, one DayRow in it. A 4 point bar in the
+/// calendar's colour; the title (14 medium, with a holiday's other name or
+/// the length beside it, muted), where it comes from (14 muted), where it is
+/// with a 14 point pin, its notes and whether it carries on (12 muted); the
+/// category as a pill at the end. As tall as that, in iOS's glass.
 private struct EventSheet: View {
     let event: ShownEvent
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var scheme
+    @State private var contentHeight: CGFloat = 80
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
     var body: some View {
         let s = event.segment
         let calendar = HomeModel.shared.calendars.first { $0.id == s.calendarId }
-        let holiday = s.calendarId == holidayCalendarId
+        let holiday =
+            s.calendarId == holidayCalendarId
+            ? danishHolidays(localDate(s.start, appTimeZone).year, appTimeZone).first {
+                dayKey($0.date, appTimeZone) == dayKey(s.start, appTimeZone)
+            } : nil
+        let details = holiday == nil ? s.details : nil
         let range = formatSegmentRange(s, appTimeZone, allDay: CasyStrings.dayAllDay)
         let duration = s.allDay ? "" : formatDuration(s.start, s.end, hourUnit: CasyStrings.dayHourUnit)
-        NavigationStack {
-            List {
-                Section {
-                    ListRow(
-                        formatLongDate(isoString(startOfDay(s.start, appTimeZone)), lang), systemImage: "calendar",
-                        detail: [range, duration].filter { !$0.isEmpty }.joined(separator: " "))
-                    if holiday {
-                        ListRow(CasyStrings.dayPublicHoliday, systemImage: "flag", detail: CasyStrings.dayDenmark)
-                    } else {
-                        ListRow(
-                            calendar?.name ?? (s.calendarId == casyCalendarId ? CasyStrings.dayCasyPill : CasyStrings.dayCalendarFallback),
-                            systemImage: "square.3.layers.3d",
-                            value: calendar.map {
-                                categoryLabel(
-                                    purpose: $0.purpose, categoryName: $0.categoryName, categories: CasyStrings.category,
-                                    none: CasyStrings.calendarsNoCategory)
-                            })
-                    }
-                    if let location = s.details?.location, !location.isEmpty {
-                        ListRow(location, systemImage: "mappin.and.ellipse")
-                    }
-                    if let carries = continues(s) {
-                        ListRow(carries, systemImage: "arrow.left.and.right")
-                    }
-                }
-                .halfSheetRow()
-                if let notes = s.details?.notes, !notes.isEmpty {
-                    Section {
-                        Text(notes)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.mutedForeground.color)
-                    }
-                    .halfSheetRow()
-                }
+        let fallback = CasyStrings.dayCalendarFallback
+        let title: String =
+            if let holiday { lang == .da ? holiday.name : holiday.englishName } else if let details {
+                details.title.isEmpty ? (calendar?.name ?? fallback) : details.title
+            } else { range }
+        let aside: String =
+            if let holiday { lang == .da ? holiday.englishName : holiday.name } else if details != nil { "" } else {
+                duration
             }
-            .solidHalfSheet()
-            .casySheetBar(event.calendar.label(s), close: CasyStrings.close) { dismiss() }
+        let source: String =
+            if let holiday {
+                "\(holiday.kind == .public ? CasyStrings.dayPublicHoliday : CasyStrings.dayObservedDay) · \(CasyStrings.dayDenmark)"
+            } else if details != nil {
+                [[range, duration].filter { !$0.isEmpty }.joined(separator: " "), calendar?.name ?? ""]
+                    .filter { !$0.isEmpty }.joined(separator: " · ")
+            } else {
+                [calendar?.name ?? fallback, calendar?.account ?? "", calendar.flatMap { CasyStrings.providerName($0.provider) } ?? ""]
+                    .filter { !$0.isEmpty }.joined(separator: " · ")
+            }
+        let pill =
+            holiday != nil
+            ? CasyStrings.calendarsHolidayCategory
+            : s.calendarId == casyCalendarId
+                ? CasyStrings.dayCasyPill
+                : calendar.map {
+                    categoryLabel(
+                        purpose: $0.purpose, categoryName: $0.categoryName, categories: CasyStrings.category,
+                        none: CasyStrings.calendarsNoCategory)
+                } ?? CasyStrings.calendarsNoCategory
+        let rgb = event.calendar.color(s.calendarId)
+        let muted = Theme.mutedForeground.color
+        NavigationStack {
+            ScrollView {
+                HStack(alignment: .top, spacing: 12) {
+                    Capsule()
+                        .fill(Color(rgb: rgb))
+                        .frame(width: 4, height: 32)
+                        .padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 0) {
+                        (Text(title).fontWeight(.medium).foregroundStyle(Theme.foreground.color)
+                            + Text(aside.isEmpty ? "" : "  \(aside)").foregroundStyle(muted))
+                            .cssLineHeight(20, size: 14)
+                        Text(source).foregroundStyle(muted).cssLineHeight(20, size: 14)
+                        if let location = details?.location, !location.isEmpty {
+                            HStack(alignment: .top, spacing: 4) {
+                                LucideIcon("map-pin", size: 14).padding(.top, 3)
+                                Text(location).cssLineHeight(20, size: 14)
+                            }
+                            .foregroundStyle(muted)
+                            .padding(.top, 2)
+                        }
+                        if let notes = details?.notes, !notes.isEmpty {
+                            Text(notes)
+                                .font(.system(size: 12))
+                                .foregroundStyle(muted)
+                                .lineLimit(4)
+                                .cssLineHeight(16, size: 12)
+                                .padding(.top, 4)
+                        }
+                        if holiday == nil, let carries = continues(s) {
+                            Text(carries).font(.system(size: 12)).foregroundStyle(muted).cssLineHeight(16, size: 12)
+                        }
+                    }
+                    .font(.system(size: 14))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(pill)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color(rgb: scheme == .dark ? CasyCore.shade(rgb, dark: true) : rgb))
+                        .cssLineHeight(16, size: 12)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Color(rgb: rgb).opacity(0.16), in: Capsule())
+                        .fixedSize()
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .accessibilityIdentifier("event.sheet")
+            .casySheetBar(capitalize(dayLabel(s.start, lang)), close: CasyStrings.done) { dismiss() }
         }
-        .presentationDetents([.medium, .large])
-        .tint(Theme.primary.color)
+        .sheetFits(contentHeight, chrome: 90)
+        .nativeSheetLook(NativePreferences.shared)
     }
 
     private func continues(_ s: DaySegment) -> String? {

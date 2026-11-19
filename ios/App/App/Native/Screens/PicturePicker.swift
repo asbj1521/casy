@@ -68,38 +68,45 @@ struct PictureCropSheet: View {
     private var height: Double { image.size.height }
     private var current: Square { square ?? centredSquare(width, height) }
 
+    @State private var frame: CGFloat = 358
+
+    /// The web's PictureCropSheet (#281): a glass sheet, the photo in a square
+    /// as wide as the sheet (rounded-2xl, black behind it), the circle it
+    /// becomes ringed in white at 70 % with the rest dimmed by half; Færdig
+    /// along the bottom; as tall as that.
     var body: some View {
         NavigationStack {
-            GeometryReader { geometry in
-                let frame = min(geometry.size.width, geometry.size.height)
+            VStack(spacing: 0) {
                 let k = frame / current.side
                 Image(uiImage: image)
                     .resizable()
                     .frame(width: width * k, height: height * k)
                     .offset(x: -current.left * k, y: -current.top * k)
                     .frame(width: frame, height: frame, alignment: .topLeading)
-                    .clipped()
+                    .background(Color.black)
                     .overlay {
                         Rectangle()
-                            .fill(.black.opacity(0.55))
+                            .fill(.black.opacity(0.5))
                             .mask {
                                 Rectangle()
                                     .overlay { Circle().blendMode(.destinationOut) }
                                     .compositingGroup()
                             }
-                            .overlay { Circle().stroke(.white.opacity(0.8), lineWidth: 1) }
+                            .overlay { Circle().strokeBorder(.white.opacity(0.7), lineWidth: 1) }
                             .allowsHitTesting(false)
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .contentShape(Rectangle())
                     .gesture(drag(frame).simultaneously(with: zoom(frame)))
                     .accessibilityElement()
                     .accessibilityLabel(CasyStrings.picturesCropFrame)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityIdentifier("crop.screen")
             }
-            .padding()
-            .background(Color.black)
-            .toolbarBackground(.black, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .frame(maxWidth: .infinity)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { frame = $0 }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            .frame(maxHeight: .infinity, alignment: .top)
             // As the web's crop sheet: Annuller up top, Færdig the main button (design rule 11).
             .casySheetBar(CasyStrings.picturesCropTitle, close: CasyStrings.cancel, action: onCancel)
             .safeAreaInset(edge: .bottom) {
@@ -110,9 +117,9 @@ struct PictureCropSheet: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
-                .environment(\.colorScheme, .dark)
             }
         }
+        .sheetFits(frame + 16)
     }
 
     private func drag(_ frame: Double) -> some Gesture {
@@ -240,7 +247,9 @@ struct PictureMenu<Label: View>: View {
                     } else {
                         onUnreadable()
                     }
-                })
+                }
+            )
+            .nativeSheetLook(NativePreferences.shared)
         }
     }
 

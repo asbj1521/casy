@@ -434,63 +434,75 @@ struct InvitationScreen: View {
     @State private var blockAfterAbout = false
     @State private var blocking = false
 
+    /// The web's InvitationContent (#281): centred in the sheet, py-6, the
+    /// group's picture (112, its letter 40, shadow-sm), 20 under it who
+    /// invited you (15 medium muted), the name (28 bold, tight), what it is
+    /// for (15), how many are in it so far (13 muted) with the ? beside it,
+    /// then 32 under that the answers: Bliv medlem solid orange, Nej tak quiet.
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                Avatar(
-                    name: invitation.groupName, index: index, size: .hero,
-                    url: invitation.pictureUrl.flatMap(URL.init(string:)))
-                Text(
-                    invitation.invitedBy.map(CasyStrings.invitationsInvitedBy)
-                        ?? CasyStrings.invitationsInvitedTo
-                )
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Theme.mutedForeground.color)
-                .padding(.top, 20)
-                Text(invitation.groupName)
-                    .font(.title.bold())
-                    .foregroundStyle(Theme.foreground.color)
-                    .padding(.top, 2)
-                if let description = invitation.groupDescription, !description.isEmpty {
-                    Text(description)
-                        .font(.subheadline)
+        GeometryReader { outer in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Avatar(
+                        name: invitation.groupName, index: 0, size: .hero,
+                        url: invitation.pictureUrl.flatMap(URL.init(string:))
+                    )
+                    .shadow(color: .black.opacity(0.05), radius: 1, y: 1)
+                    Text(
+                        invitation.invitedBy.map(CasyStrings.invitationsInvitedBy)
+                            ?? CasyStrings.invitationsInvitedTo
+                    )
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Theme.mutedForeground.color)
+                    .cssLineHeight(22.5, size: 15)
+                    .padding(.top, 20)
+                    Text(invitation.groupName)
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(Theme.foreground.color)
-                        .padding(.top, 8)
+                        .cssLineHeight(35, size: 28)
+                        .padding(.top, 2)
+                    if let description = invitation.groupDescription, !description.isEmpty {
+                        Text(description)
+                            .font(.system(size: 15))
+                            .foregroundStyle(Theme.foreground.color)
+                            .cssLineHeight(22.5, size: 15)
+                            .padding(.top, 8)
+                    }
+                    HStack(spacing: 8) {
+                        Text(CasyStrings.invitationsMembersSoFar(invitation.memberCount))
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.mutedForeground.color)
+                        aboutButton
+                    }
+                    .padding(.top, 8)
+                    VStack(spacing: 8) {
+                        FlowButton(kind: .solid, busy: answering == .join) {
+                            answer(.join)
+                        } label: {
+                            Text(CasyStrings.invitationsJoin)
+                        }
+                        FlowButton(kind: .quiet, busy: answering == .decline) {
+                            answer(.decline)
+                        } label: {
+                            Text(CasyStrings.invitationsNoThanks)
+                        }
+                        if let failure {
+                            Notice(failure, tone: .error, bare: true).padding(.top, 4)
+                        }
+                    }
+                    .disabled(answering != nil)
+                    .padding(.top, 32)
                 }
-                HStack(spacing: 6) {
-                    Text(CasyStrings.invitationsMembersSoFar(invitation.memberCount))
-                    aboutButton
-                }
-                .font(.footnote)
-                .foregroundStyle(Theme.mutedForeground.color)
-                .padding(.top, 8)
-                if let failure {
-                    Notice(failure, tone: .error, bare: true).padding(.top, 16)
-                }
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 24)
+                // Centred in the sheet, as the web's justify-center.
+                .frame(minHeight: outer.size.height)
             }
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 40)
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .background(Theme.background.color)
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 8) {
-                FlowButton(kind: .solid, busy: answering == .join) {
-                    answer(.join)
-                } label: {
-                    Text(CasyStrings.invitationsJoin)
-                }
-                FlowButton(kind: .quiet, busy: answering == .decline) {
-                    answer(.decline)
-                } label: {
-                    Text(CasyStrings.invitationsNoThanks)
-                }
-            }
-            .disabled(answering != nil)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
-        }
+        .accessibilityIdentifier("invitation.screen")
         .casyPushedBar(CasyStrings.invitationsTitle, close: CasyStrings.done, action: closeSheet)
         // The question waits for the ? panel to have gone: two can't show at once.
         .onChange(of: about) { _, open in
@@ -512,16 +524,16 @@ struct InvitationScreen: View {
         Button {
             about = true
         } label: {
-            Image(systemName: "questionmark.circle")
+            LucideIcon("circle-question-mark", size: 20)
                 .foregroundStyle(Theme.primary.color)
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Rectangle())
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle().inset(by: -12))
         }
         .accessibilityLabel(CasyStrings.invitationsAbout)
         .popover(isPresented: $about) {
             VStack(alignment: .leading, spacing: 16) {
                 Text(CasyStrings.invitationsPrivacy)
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .foregroundStyle(Theme.foreground.color)
                     .fixedSize(horizontal: false, vertical: true)
                 if invitation.invitedBy != nil {
@@ -529,8 +541,8 @@ struct InvitationScreen: View {
                         blockAfterAbout = true
                         about = false
                     }
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Theme.red600.color)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Theme.red700.color)
                     .disabled(answering != nil)
                 }
             }

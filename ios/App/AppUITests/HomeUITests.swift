@@ -81,11 +81,13 @@ final class HomeUITests: XCTestCase {
             .matching(NSPredicate(format: "label BEGINSWITH %@", "Arbejde")).firstMatch
         XCTAssertTrue(work.waitForExistence(timeout: 5))
         work.tap()
-        XCTAssertTrue(app.navigationBars["Arbejde"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Torsdag 15. oktober"].exists)
+        // The web's DayRow sheet: the day as its title, Færdig to close (#281).
+        let sheet = app.navigationBars["Torsdag 15. oktober"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["event.sheet"].staticTexts["Arbejde"].exists)
         shot("home-event")
-        app.buttons["Luk"].tap()
-        XCTAssertTrue(app.navigationBars["Arbejde"].waitForNonExistence(timeout: 5))
+        sheet.buttons["Færdig"].tap()
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 5))
         app.buttons["day.back"].tap()
         XCTAssertTrue(app.buttons["day.back"].waitForNonExistence(timeout: 5))
         XCTAssertTrue(title(app).exists)

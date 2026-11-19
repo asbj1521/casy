@@ -122,7 +122,8 @@ extension AvatarSize {
         case .large: 20
         // A group's screen: h-24 with text-[2rem].
         case .extraLarge: 32
-        case .hero: rawValue * 0.42
+        // An invitation's or a group's sheet: h-28 with text-[2.5rem].
+        case .hero: 40
         }
     }
 }

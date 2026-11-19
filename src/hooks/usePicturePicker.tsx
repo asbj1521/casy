@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import PictureCropSheet from "@/components/pictures/PictureCropSheet";
 import { useT } from "@/i18n/lang";
+import { APP_BUILD } from "@/lib/feedback";
 import type { Square } from "@/lib/pictureCrop";
 import { openPicture, squarePicture } from "@/lib/pictureFile";
 
@@ -69,5 +70,28 @@ export function usePicturePicker({
       />
     </>
   );
-  return { open: () => ref.current?.click(), input };
+  const open = async () => {
+    // The parity build (#281): iOS's photo picker runs outside the page, where
+    // a UI test can't reach, so it crops the native tests' made-up photo.
+    if (APP_BUILD === "parity") {
+      setPhoto(await parityPhoto());
+      setCropping(true);
+      return;
+    }
+    ref.current?.click();
+  };
+  return { open: () => void open(), input };
+}
+
+/** The native UI tests' sample photo (`-casyTestPicture`): orange, a blue square in it. */
+async function parityPhoto(): Promise<ImageBitmap> {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1200;
+  canvas.height = 800;
+  const draw = canvas.getContext("2d")!;
+  draw.fillStyle = "#ff9500";
+  draw.fillRect(0, 0, 1200, 800);
+  draw.fillStyle = "#007aff";
+  draw.fillRect(400, 200, 400, 400);
+  return createImageBitmap(canvas);
 }
