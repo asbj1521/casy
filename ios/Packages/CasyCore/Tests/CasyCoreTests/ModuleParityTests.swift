@@ -596,3 +596,28 @@ private struct DateRange: Decodable {
         ])
     }
 }
+
+@Test func widenGivesTheTypeScriptAnswers() throws {
+    let zone = "Europe/Copenhagen"
+    let now = parseInstant("2026-10-07T08:00:00.000Z")!
+    try check("widen", atLeast: 100) { fn, a in
+        switch fn {
+        case "widen":
+            let input = WidenInput(
+                participants: try a["participants"].decoded(), settings: try a["settings"].decoded(),
+                members: try a["members"].decoded(), choice: try a["choice"].decoded(),
+                today: isoString(startOfDay(now, zone)), limitEnd: monthIso(12), timeZone: zone, now: now)
+            return .object([
+                "options": try json(widenOptions(input)),
+                "counts": try json(firstDateByCount(input, others: try a["others"].decoded())),
+            ])
+        case "counts":
+            return .object([
+                "lowest": .number(Double(lowestCount(try #require(a["of"].int), a["atLeast"].int))),
+                "sooner": .number(Double(daysSooner(try text(a, "first"), than: try text(a, "than"), zone))),
+            ])
+        default:
+            return unknown(fn)
+        }
+    }
+}
