@@ -103,6 +103,13 @@ private func check(
     for item in items {
         let answer = try run(item.input.fn, item.input.args)
         #expect(answer.withoutNulls == item.output.withoutNulls, "\(item.name)")
+        // PARITY_DIFF=1 prints what differs, to read beside the fixture.
+        if answer.withoutNulls != item.output.withoutNulls, ProcessInfo.processInfo.environment["PARITY_DIFF"] != nil {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .sortedKeys
+            print("PARITYDIFF", String(decoding: try encoder.encode(answer.withoutNulls), as: UTF8.self))
+            print("PARITYWANT", String(decoding: try encoder.encode(item.output.withoutNulls), as: UTF8.self))
+        }
     }
 }
 
@@ -526,4 +533,44 @@ private func dayList(_ label: DayListLabel) -> JSONValue {
 
 private func monthIso(_ n: Int) -> String {
     isoString(startOfMonth(parseInstant("2026-10-07T08:00:00.000Z")!, "Europe/Copenhagen", n))
+}
+
+private struct DateRange: Decodable {
+    var start: String
+    var end: String
+}
+
+@Test func comfortGivesTheTypeScriptAnswers() throws {
+    let zone = "Europe/Copenhagen"
+    let now = parseInstant("2026-10-07T08:00:00.000Z")!
+    try check("comfort", atLeast: 250) { fn, a in
+        let profile: EventImpact? = try? a["profile"].decoded()
+        switch fn {
+        case "comfort":
+            let settings: EventSettings = try a["settings"].decoded()
+            let rate = comfortRater(
+                participants: try a["participants"].decoded(), settings: settings, profile: profile, timeZone: zone,
+                now: now)
+            let dates: [DateRange] = try a["dates"].decoded()
+            let scores: [Double?] = try a["scores"].decoded()
+            return .array(
+                try dates.enumerated().map { k, d in
+                    .object([
+                        "comfort": try json(rate(d.start, d.end, scores[k])),
+                        "impact": try json(impactOn(profile, start: d.start, end: d.end, settings, zone)),
+                    ])
+                })
+        case "day":
+            let day = try milliseconds(a, "day")
+            let date: DateRange = try a["date"].decoded()
+            let settings = EventSettings(kind: .single, durationMinutes: 180, startHour: 18)
+            let rate = comfortRater(participants: [], settings: settings, profile: profile, timeZone: zone, now: now)
+            return .object([
+                "sunset": .number(Double(sunset(day, zone) / 60_000)),
+                "comfort": try json(rate(date.start, date.end, nil)),
+            ])
+        default:
+            return unknown(fn)
+        }
+    }
 }

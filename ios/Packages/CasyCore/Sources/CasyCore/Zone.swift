@@ -49,7 +49,7 @@ func positiveModulo(_ a: Int64, _ b: Int64) -> Int64 {
 }
 
 /// Days since 1970-01-01 of a proleptic Gregorian date (month 1...12).
-private func daysFromCivil(year: Int64, month: Int64, day: Int64) -> Int64 {
+func daysFromCivil(year: Int64, month: Int64, day: Int64) -> Int64 {
     let y = month <= 2 ? year - 1 : year
     let era = floorDivide(y, 400)
     let yearOfEra = y - era * 400

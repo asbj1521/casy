@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 // Node types for node:fs.
 import availabilityFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/availability.json?raw";
 import eventSearchFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/eventSearch.json?raw";
+import comfortFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/comfort.json?raw";
 import calendarsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/calendars.json?raw";
 import calendarDayFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/calendarDay.json?raw";
 import eventsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/events.json?raw";
@@ -24,6 +25,7 @@ import zoneFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Pari
 
 import { availabilityCases } from "./availability.cases";
 import { calendarDayCases } from "./calendarDay.cases";
+import { comfortCases } from "./comfort.cases";
 import { eventSearchCases } from "./eventSearch.cases";
 import { calendarsCases } from "./calendars.cases";
 import type { ParityCase } from "./cases";
@@ -56,6 +58,7 @@ describe.each([
   ["month", monthCases(), monthFixture],
   ["availability", availabilityCases(), availabilityFixture],
   ["eventSearch", eventSearchCases(), eventSearchFixture],
+  ["comfort", comfortCases(), comfortFixture],
 ] as const)("%s", (module, cases, fixture) => {
   it.runIf(import.meta.env.UPDATE_PARITY)("writes the fixtures", async () => {
     // Named through a variable so the type check doesn't look for Node's types.
