@@ -419,3 +419,38 @@ private struct SpanAnswer: Encodable {
         }
     }
 }
+
+@Test func availabilityGivesTheTypeScriptAnswers() throws {
+    try check("availability", atLeast: 500) { fn, a in
+        switch fn {
+        case "findMeetingSlot":
+            return try json(findMeetingSlot(try a["search"].decoded()))
+        case "findBestDaySpan":
+            return try json(
+                findBestDaySpan(
+                    try a["participants"].decoded(), try #require(a["days"].int), try text(a, "searchStart"),
+                    try text(a, "searchEnd"), try text(a, "timeZone")))
+        case "findVacationSuggestions":
+            return try json(
+                findVacationSuggestions(
+                    try a["participants"].decoded(), try #require(a["days"].int), try text(a, "searchStart"),
+                    try text(a, "searchEnd"), try text(a, "timeZone")))
+        case "findWeeklySpan":
+            return try json(
+                findWeeklySpan(
+                    try a["participants"].decoded(), try a["shape"].decoded(), try text(a, "searchStart"),
+                    try text(a, "searchEnd"), try text(a, "timeZone")))
+        case "spanAvailability":
+            let people: [Participant] = try a["participants"].decoded()
+            let found = spanAvailability(people, try milliseconds(a, "start"), try milliseconds(a, "end"))
+            return .object([
+                "free": .number(Double(found.free)),
+                "conditional": .number(Double(found.conditional)),
+                "hard": try json(people.map { $0.busy.map(isHardBlock) }),
+                "soft": try json(people.map { $0.busy.map(isSoftBlock) }),
+            ])
+        default:
+            return unknown(fn)
+        }
+    }
+}
