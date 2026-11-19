@@ -326,7 +326,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         if screen == "push" { host.isModalInPresentation = true }
         // The small asks, as the web's: half the screen, larger if the text needs it.
         // The plus, too, as the web's small box: whole once Casy has answered.
-        if ["aiConsent", "prime", "tell"].contains(screen) {
+        if ["aiConsent", "prime"].contains(screen) {
             host.sheetPresentationController?.detents = [.medium(), .large()]
         }
         // Profil, as the web's stacked BottomSheet (h-[85dvh], #169): 85 % of the
@@ -334,15 +334,17 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // draws the sheet in its own glass, as the web imitates (#281).
         // Aftaler and Kalendere too: the web's EventsSheet and CalendarsSheet
         // are the same stacked BottomSheet.
-        if ["profile", "events", "calendars"].contains(screen) {
+        // Tilføj til kalender in the same glass (#281): half height, then the
+        // 85 % once there is an answer (`growOpenSheet`), never whole, where
+        // iOS would draw the sheet solid.
+        if ["profile", "events", "calendars", "tell"].contains(screen) {
             // Nothing painted over the glass: the hosting view's own white hid it.
             host.view.backgroundColor = .clear
             let height = presenter.view.window?.bounds.height ?? presenter.view.bounds.height
-            host.sheetPresentationController?.detents = [
-                .custom(identifier: .init("casy.stacked")) { context in
-                    min(context.maximumDetentValue, height * 0.85)
-                }
-            ]
+            let stacked = UISheetPresentationController.Detent.custom(identifier: Self.stacked) { context in
+                min(context.maximumDetentValue, height * 0.85)
+            }
+            host.sheetPresentationController?.detents = screen == "tell" ? [.medium(), stacked] : [stacked]
         }
         // The push ask says one sentence: only as tall as that and its button.
         if screen == "push" {
@@ -653,11 +655,18 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// `then` goes with `closed`: what the page does next, as one message, so
     /// it can't step the address back before hearing where to go.
     /// The open sheet, if half height, pulled up to the whole screen.
+    /// The 85 % sheet's detent, below full height so iOS keeps its glass.
+    private static let stacked = UISheetPresentationController.Detent.Identifier("casy.stacked")
+
+    /// The open sheet as tall as it goes: the 85 % where it has it, else whole.
     private func growOpenSheet() {
-        guard let sheet = bridge?.viewController?.presentedViewController?.sheetPresentationController,
-            sheet.selectedDetentIdentifier != .large
-        else { return }
-        sheet.animateChanges { sheet.selectedDetentIdentifier = .large }
+        guard let sheet = bridge?.viewController?.presentedViewController?.sheetPresentationController else {
+            return
+        }
+        let tallest: UISheetPresentationController.Detent.Identifier =
+            sheet.detents.contains { $0.identifier == Self.stacked } ? Self.stacked : .large
+        guard sheet.selectedDetentIdentifier != tallest else { return }
+        sheet.animateChanges { sheet.selectedDetentIdentifier = tallest }
     }
 
     private func dismissOpenScreen(_ then: [String: Any] = [:]) {

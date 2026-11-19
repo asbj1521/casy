@@ -145,7 +145,6 @@ struct TellScreen: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
         }
-        .solidHalfSheet(plain: true)
         .casySheetBar(CasyStrings.tellTitle, close: CasyStrings.tellDone, action: closeSheet)
         // What we made of it needs the room.
         .onChange(of: started) { _, now in if now { growSheet() } }

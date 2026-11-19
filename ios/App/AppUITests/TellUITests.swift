@@ -41,33 +41,28 @@ final class TellUITests: XCTestCase {
         app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", words)).firstMatch
     }
 
-    /// The same in light.
-    func testTheHalfSheetLooksLikeTheWholeInLight() {
-        let app = launch(["-casy.appearance", "light"])
-        XCTAssertTrue(app.navigationBars["Tilføj til kalender"].waitForExistence(timeout: 10))
+    /// Pulled up, the sheet stops at the web's 85 %, never whole, where iOS
+    /// would draw it solid: it stays Apple's glass, as Profil (#281).
+    func neverWhole(_ theme: String) {
+        let app = launch(["-casy.appearance", theme])
+        let bar = app.navigationBars["Tilføj til kalender"]
         sleep(1)
-        shot("tell-half-light")
-        let half = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
-        app.navigationBars["Tilføj til kalender"].swipeUp()
-        sleep(1)
-        let full = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
-        XCTAssertEqual(half, full)
-        XCTAssertEqual(full, [255, 255, 255])
+        shot("tell-half-\(theme)")
+        let half = bar.frame.minY
+        // A swipe while the sheet is still settling can be lost: again, a few times.
+        for _ in 0..<3 where bar.frame.minY >= half {
+            bar.swipeUp()
+            sleep(2)
+        }
+        shot("tell-full-\(theme)")
+        let screen = app.windows.firstMatch.frame.height
+        XCTAssertLessThan(bar.frame.minY, half, "it grows")
+        XCTAssertGreaterThan(bar.frame.minY, screen * 0.12, "and stops short of the whole screen")
     }
 
-    /// At half height the sheet is the same colour as pulled all the way up.
-    func testTheHalfSheetLooksLikeTheWhole() {
-        // Dark as a phone set to dark, Casy following it.
-        let app = launch(["-casy.appearance", "dark"])
-        shot("tell-half")
-        let half = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
-        app.navigationBars["Tilføj til kalender"].swipeUp()
-        sleep(1)
-        shot("tell-full")
-        let full = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
-        XCTAssertEqual(half, full)
-        XCTAssertEqual(full, [28, 28, 30])
-    }
+    func testTheSheetStaysGlassInLight() { neverWhole("light") }
+
+    func testTheSheetStaysGlass() { neverWhole("dark") }
 
     /// Said, checked and kept: the sheet closes on it.
     func testADescriptionIsReadCheckedAndKept() {
