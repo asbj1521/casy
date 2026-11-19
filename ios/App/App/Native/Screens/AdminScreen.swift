@@ -120,9 +120,30 @@ final class AdminModel {
     }
 }
 
-/// Admin (#198), pushed inside the Profil sheet, as the web's AdminPanel on a
-/// phone: health, the numbers and the AI's use, then groups, users and
-/// calendar health, each searchable, the last two filterable to problems.
+/// What waits for a yes in admin mode, in the "Er du sikker?" sheet.
+enum AdminAsk: Identifiable {
+    case deleteGroup(AdminOverview.Group)
+    case removeMember(AdminOverview.Group, AdminOverview.Member)
+    case deleteUser(AdminOverview.User)
+    case deleteReportGroup(AdminReport)
+
+    var id: String {
+        switch self {
+        case .deleteGroup(let g): "group-\(g.id)"
+        case .removeMember(let g, let m): "member-\(g.id)-\(m.profileId)"
+        case .deleteUser(let u): "user-\(u.id)"
+        case .deleteReportGroup(let r): "report-\(r.id)"
+        }
+    }
+}
+
+/// Admin (#198), pushed inside the Profil sheet, drawn as the web's
+/// AdminPanel on a phone (#281): the heading and Opdater, health, the push
+/// test, the numbers and the AI's use, then one card with the tabs for
+/// groups, users and calendar health (searchable, the last two filterable
+/// to problems), each row with its own small buttons; then the reports and
+/// the AI's corrections, folded away until opened. Every "yes?" is the
+/// small "Er du sikker?" sheet, as the web's ConfirmPanel on a phone.
 struct AdminScreen: View {
     private enum Tab: Hashable { case groups, users, calendars }
 
@@ -130,76 +151,97 @@ struct AdminScreen: View {
     let enablePush: () async -> String
 
     private let model = AdminModel.shared
+    private let reviews = AdminReviewsModel.shared
     @Environment(\.closeSheet) private var closeSheet
     @State private var tab = Tab.groups
     @State private var query = ""
     @State private var problemsOnly = false
     @State private var nativeHome = NativeHome.on
+    @State private var asking: AdminAsk?
+    @State private var removingMember: String?
+    @State private var testerSaving: Set<String> = []
+    @State private var testerFailure: [String: String] = [:]
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
     var body: some View {
-        List {
-            Section {
-                Button {
-                    Task { await model.load() }
-                } label: {
-                    HStack {
-                        ListRow(CasyStrings.adminRefresh, systemImage: "arrow.clockwise", tone: .primary)
-                        if model.loading { ProgressView().controlSize(.small) }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .disabled(model.loading)
-            } footer: {
-                Text(CasyStrings.adminIntro)
-            }
-            #if DEBUG
-                // The home page drawn in Swift while it is built (#201), on this phone only.
-                Section {
-                    ListSwitchRow(
-                        CasyStrings.adminNativeHome, isOn: $nativeHome, detail: CasyStrings.adminNativeHomeDetail)
-                        .accessibilityIdentifier("admin.nativeHome")
-                        .onChange(of: nativeHome) { _, on in NativeHome.on = on }
-                }
-            #endif
-            if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
-            if let overview = model.overview {
-                Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                if let overview = model.overview {
                     // The same answer the uptime monitor gets from the health function (#88).
-                    Notice(health(overview.health), tone: overview.health.ok ? .success : .error, bare: true)
-                    if let notice = model.notice {
-                        HStack(alignment: .top) {
-                            Notice(notice, tone: .success, bare: true)
-                            Button {
-                                model.notice = nil
-                            } label: {
-                                Image(systemName: "xmark").foregroundStyle(Theme.mutedForeground.color)
-                            }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel(CasyStrings.close)
+                    Notice(health(overview.health), tone: overview.health.ok ? .success : .error)
+                        .padding(.top, 16)
+                }
+                AdminPushTest(enablePush: enablePush).padding(.top, 16)
+                stats.padding(.top, 16)
+                if let ai = model.overview?.ai { aiUse(ai).padding(.top, 8) }
+                if let failure = model.failure {
+                    Notice(failure, tone: .error).padding(.top, 16)
+                }
+                if let notice = model.notice { deletedNotice(notice).padding(.top, 16) }
+                listsCard.padding(.top, 24)
+                AdminReviewCards(asking: $asking)
+                #if DEBUG
+                    // The home page drawn in Swift while it is built (#201), on this
+                    // phone only: the app's own switch, not on the web.
+                    CardList {
+                        CardRow(CasyStrings.adminNativeHome, detail: CasyStrings.adminNativeHomeDetail) {
+                            EmptyView()
+                        } trailing: {
+                            Toggle(CasyStrings.adminNativeHome, isOn: $nativeHome)
+                                .labelsHidden()
+                                .tint(Theme.primary.color)
                         }
+                        .accessibilityElement(children: .contain)
                     }
-                }
-                AdminReviewRows(enablePush: enablePush)
-                stats(overview)
-                lists(overview)
-            } else if model.failure == nil {
-                HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
-                    Text(CasyStrings.adminLoading)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.mutedForeground.color)
-                }
+                    .accessibilityIdentifier("admin.nativeHome")
+                    .onChange(of: nativeHome) { _, on in NativeHome.on = on }
+                #endif
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.top, 32)
+            .padding(.bottom, 16)
         }
-        .casyPushedBar(CasyStrings.adminTitle, close: CasyStrings.done, action: closeSheet)
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: CasyStrings.adminSearch)
+        .accessibilityIdentifier("admin.screen")
+        .casyPushedBar(CasyStrings.profileAdmin, close: CasyStrings.done, action: closeSheet)
         .task { await model.load() }
         .refreshable {
             async let overview: Void = model.load()
             async let reviews: Void = AdminReviewsModel.shared.load()
             _ = await (overview, reviews)
+        }
+        .sheet(item: $asking) { ask in
+            confirm(ask).nativeSheetLook(NativePreferences.shared)
+        }
+    }
+
+    // MARK: The top
+
+    /// The shield and "Admin" (18 semibold), what it is (14 muted), and Opdater under them.
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                LucideIcon("shield-check", size: 20).foregroundStyle(Theme.primary.color)
+                Text(CasyStrings.adminTitle)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Theme.foreground.color)
+                    .cssLineHeight(28, size: 18)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            Text(CasyStrings.adminIntro)
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.mutedForeground.color)
+                .cssLineHeight(20, size: 14)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 2)
+            OutlineCapsule(label: CasyStrings.adminRefresh, icon: "refresh-cw", spinning: model.loading) {
+                Task { await model.load() }
+            }
+            .disabled(model.loading)
+            .opacity(model.loading ? 0.6 : 1)
+            .padding(.top, 12)
         }
     }
 
@@ -208,41 +250,65 @@ struct AdminScreen: View {
         return health.reason == "stale" ? CasyStrings.adminHealthStale : CasyStrings.adminHealthFailing
     }
 
+    /// What deleting an account took with it, until its cross is pressed.
+    private func deletedNotice(_ text: String) -> some View {
+        ZStack(alignment: .topTrailing) {
+            Notice(text, tone: .success)
+            Button {
+                model.notice = nil
+            } label: {
+                LucideIcon("x", size: 16)
+                    .foregroundStyle(Theme.emerald900.color.opacity(0.7))
+                    .padding(12)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(CasyStrings.close)
+        }
+    }
+
     // MARK: The numbers
 
-    @ViewBuilder private func stats(_ overview: AdminOverview) -> some View {
-        let s = overview.stats
-        Section {
-            fact(CasyStrings.adminStatUsers, s.users)
-            fact(CasyStrings.adminStatGroups, s.groups)
-            fact(CasyStrings.adminStatAccounts, s.connectedAccounts)
-            fact(CasyStrings.adminStatFailing, s.failingSyncs, alert: s.failingSyncs > 0)
-            fact(CasyStrings.adminStatBusy, s.busyBlocks)
-        } footer: {
-            if let ai = overview.ai {
-                // Each skill's calls and estimated cost (#111): counts only, never who.
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(CasyStrings.adminAiToday(ai.today, of: ai.limit))
-                    ForEach(ai.skills ?? [], id: \.skill) { s in
+    /// Two tiles a row, the last across both, as the web's grid on a phone;
+    /// "..." until the overview has come, never a false 0.
+    private var stats: some View {
+        let s = model.overview?.stats
+        return VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                StatTileView(label: CasyStrings.adminStatUsers, value: s?.users)
+                StatTileView(label: CasyStrings.adminStatGroups, value: s?.groups)
+            }
+            HStack(spacing: 12) {
+                StatTileView(label: CasyStrings.adminStatAccounts, value: s?.connectedAccounts)
+                StatTileView(
+                    label: CasyStrings.adminStatFailing, value: s?.failingSyncs, alert: (s?.failingSyncs ?? 0) > 0)
+            }
+            StatTileView(label: CasyStrings.adminStatBusy, value: s?.busyBlocks)
+        }
+    }
+
+    /// The AI's calls today (14 muted), then each skill's (12): counts only, never who (#111).
+    private func aiUse(_ ai: AdminOverview.AI) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(CasyStrings.adminAiToday(ai.today, of: ai.limit))
+                .font(.system(size: 14))
+                .cssLineHeight(20, size: 14)
+            if let skills = ai.skills, !skills.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(skills, id: \.skill) { s in
                         Text(
                             CasyStrings.adminAiSkill(
                                 CasyStrings.named("admin.aiSkills", s.skill), today: s.today,
                                 month: s.last30Days, cost: dollars(s.cost30Days)))
+                            .font(.system(size: 12))
+                            .cssLineHeight(16, size: 12)
                     }
                 }
+                .padding(.top, 4)
             }
         }
-    }
-
-    private func fact(_ label: String, _ value: Int, alert: Bool = false) -> some View {
-        HStack {
-            Text(label).font(.subheadline.weight(.medium))
-            Spacer()
-            Text(value.formatted(.number.locale(Locale(identifier: lang == .da ? "da_DK" : "en_GB"))))
-                .font(.subheadline.monospacedDigit().weight(.semibold))
-                .foregroundStyle(alert ? Theme.red600.color : Theme.foreground.color)
-        }
-        .accessibilityElement(children: .combine)
+        .foregroundStyle(Theme.mutedForeground.color)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     /// "0,03 US$", or "< 0,01 US$" for less: an estimate, so two decimals is plenty.
@@ -254,32 +320,106 @@ struct AdminScreen: View {
 
     // MARK: The lists
 
-    @ViewBuilder private func lists(_ overview: AdminOverview) -> some View {
-        Section {
-            // No counts beside the names: the numbers above have them, and
-            // "Kalendersundhed" with one would not fit a phone.
-            Picker(selection: $tab) {
-                Text(CasyStrings.adminTabGroups).tag(Tab.groups)
-                Text(CasyStrings.adminTabUsers).tag(Tab.users)
-                Text(CasyStrings.adminTabCalendars).tag(Tab.calendars)
-            } label: {
-                EmptyView()
+    /// The card: the tabs (each with its count), the filter and the search,
+    /// then the tab's rows under a line.
+    private var listsCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            tabs
+            VStack(alignment: .leading, spacing: 12) {
+                if tab != .groups {
+                    CheckboxRow(
+                        label: tab == .users ? CasyStrings.adminOnlyNoCalendar : CasyStrings.adminOnlyProblems,
+                        isOn: $problemsOnly)
+                }
+                searchField
             }
-            .pickerStyle(.segmented)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
-            .onChange(of: tab) { _, _ in problemsOnly = false }
-            if tab != .groups {
-                ListSwitchRow(
-                    tab == .users ? CasyStrings.adminOnlyNoCalendar : CasyStrings.adminOnlyProblems,
-                    isOn: $problemsOnly)
+            .padding(.top, 12)
+            if let overview = model.overview {
+                switch tab {
+                case .groups: groups(overview)
+                case .users: users(overview)
+                case .calendars: connections(overview)
+                }
+            } else if model.failure == nil {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text(CasyStrings.adminLoading)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.mutedForeground.color)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 16)
+                .hairlineAbove()
+                .padding(.top, 16)
             }
         }
-        switch tab {
-        case .groups: groups(overview)
-        case .users: users(overview)
-        case .calendars: connections(overview)
+        .padding(12)
+        .adminCard()
+    }
+
+    /// Three tabs in a grey capsule, the chosen one white with a soft shadow,
+    /// each its name (13 medium) and count (12 muted).
+    private var tabs: some View {
+        let o = model.overview
+        let items: [(Tab, String, Int?)] = [
+            (.groups, CasyStrings.adminTabGroups, o?.groups.count),
+            (.users, CasyStrings.adminTabUsers, o?.users.count),
+            (.calendars, CasyStrings.adminTabCalendars, o?.connections.count),
+        ]
+        return FlexAutoRow {
+            ForEach(items, id: \.0) { id, label, count in
+                let chosen = tab == id
+                Button {
+                    tab = id
+                    problemsOnly = false
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(label)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(chosen ? Theme.foreground.color : Theme.mutedForeground.color)
+                            .lineLimit(1)
+                            .fixedSize()
+                        if let count {
+                            Text(verbatim: "\(count)")
+                                .font(.system(size: 12).monospacedDigit())
+                                .foregroundStyle(Theme.mutedForeground.color)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        if chosen {
+                            Capsule().fill(Theme.card.color)
+                                .shadow(color: .black.opacity(0.05), radius: 1, y: 1)
+                        }
+                    }
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(chosen ? .isSelected : [])
+            }
         }
+        .padding(4)
+        .background(Theme.secondary.color, in: Capsule())
+    }
+
+    /// The web's search box: a capsule on the page's background, the
+    /// magnifier 12 in, the words at 36.
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            LucideIcon("search", size: 16).foregroundStyle(Theme.mutedForeground.color)
+            TextField(CasyStrings.adminSearch, text: $query)
+                .font(.system(size: 14))
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .submitLabel(.search)
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 12)
+        .padding(.vertical, 6)
+        .background(Theme.background.color, in: Capsule())
+        .overlay(Capsule().strokeBorder(Theme.border.color, lineWidth: 1))
     }
 
     private func matches(_ fields: String?...) -> Bool {
@@ -287,87 +427,258 @@ struct AdminScreen: View {
         return q.isEmpty || fields.contains { $0?.lowercased().contains(q) == true }
     }
 
+    /// Nothing to list: 14 muted under the line.
+    private func empty(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 14))
+            .foregroundStyle(Theme.mutedForeground.color)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 16)
+            .hairlineAbove()
+            .padding(.top, 16)
+    }
+
+    /// Rows split by lines, a line above the first too (`divide-y border-t`).
+    private func rows<Item: Identifiable, Row: View>(
+        _ items: [Item], @ViewBuilder row: @escaping (Int, Item) -> Row
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
+                row(i, item).hairlineAbove()
+            }
+        }
+        .padding(.top, 16)
+    }
+
     @ViewBuilder private func groups(_ overview: AdminOverview) -> some View {
         let shown = overview.groups.filter { g in
-            g.members.contains { matches($0.name) } || matches(g.name, g.createdByName)
+            matches(g.name, g.createdByName) || g.members.contains { matches($0.name) }
         }
-        Section {
-            if shown.isEmpty {
-                Text(query.isEmpty ? CasyStrings.adminNoGroups : CasyStrings.adminNoGroupMatch)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.mutedForeground.color)
-            }
-            ForEach(shown) { g in
-                NavigationLink {
-                    AdminGroupScreen(groupId: g.id)
-                } label: {
-                    ListRow(
-                        g.name,
-                        detail: [
-                            CasyStrings.adminGroupMeta(
-                                CasyStrings.members(g.members.count), formatDate(g.createdAt, lang),
-                                by: g.createdByName),
-                            g.members.map(\.name).joined(separator: ", "),
-                        ].joined(separator: "\n"))
+        if shown.isEmpty {
+            empty(query.isEmpty ? CasyStrings.adminNoGroups : CasyStrings.adminNoGroupMatch)
+        } else {
+            rows(shown) { _, g in groupRow(g) }
+        }
+    }
+
+    /// A group: its name (14 semibold), size, age and maker (12 muted), then
+    /// every member as a chip with a cross to remove them; the bin deletes it.
+    private func groupRow(_ g: AdminOverview.Group) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(g.name)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.foreground.color)
+                    .lineLimit(1)
+                    .cssLineHeight(20, size: 14)
+                Text(
+                    CasyStrings.adminGroupMeta(
+                        CasyStrings.members(g.members.count), formatDate(g.createdAt, lang), by: g.createdByName)
+                )
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.mutedForeground.color)
+                .cssLineHeight(16, size: 12)
+                .padding(.top, 2)
+                WrapLayout(spacing: 6) {
+                    ForEach(Array(g.members.enumerated()), id: \.element.id) { i, m in
+                        memberChip(m, index: i, in: g)
+                    }
                 }
+                .padding(.top, 8)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            RoundIconButton(icon: "trash", label: CasyStrings.adminDeleteGroupTitle) {
+                asking = .deleteGroup(g)
             }
         }
+        .padding(.vertical, 16)
+    }
+
+    private func memberChip(_ m: AdminOverview.Member, index: Int, in g: AdminOverview.Group) -> some View {
+        HStack(spacing: 6) {
+            Avatar(name: m.name, index: index, size: .extraSmall)
+            Text(m.name)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.foreground.color)
+                .lineLimit(1)
+            Button {
+                asking = .removeMember(g, m)
+            } label: {
+                Group {
+                    if removingMember == m.profileId {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        LucideIcon("x", size: 12).foregroundStyle(Theme.mutedForeground.color)
+                    }
+                }
+                .frame(width: 16, height: 16)
+                .contentShape(Rectangle().inset(by: -8))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(CasyStrings.adminRemove) \(m.name)")
+        }
+        .padding(.leading, 2)
+        .padding(.trailing, 6)
+        .padding(.vertical, 2)
+        .background(Theme.background.color, in: Capsule())
+        .overlay(Capsule().strokeBorder(Theme.border.color, lineWidth: 1))
     }
 
     @ViewBuilder private func users(_ overview: AdminOverview) -> some View {
         let shown = overview.users.filter { matches($0.name) && (!problemsOnly || $0.calendars == 0) }
-        Section {
-            if overview.usersTruncated {
-                Text(CasyStrings.adminFirstOnly("\(overview.users.count)"))
-                    .font(.footnote)
-                    .foregroundStyle(Theme.amber700.color)
-            }
-            if shown.isEmpty {
-                Text(CasyStrings.adminNoUserMatch)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.mutedForeground.color)
-            }
-            ForEach(shown) { u in
-                NavigationLink {
-                    AdminUserScreen(userId: u.id)
-                } label: {
-                    userRow(u)
-                }
-            }
+        if overview.usersTruncated {
+            Text(CasyStrings.adminFirstOnly("\(overview.users.count)"))
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.amber700.color)
+                .padding(.top, 16)
+        }
+        if shown.isEmpty {
+            empty(CasyStrings.adminNoUserMatch)
+        } else {
+            rows(shown) { i, u in userRow(u, index: i) }
         }
     }
 
-    private func userRow(_ u: AdminOverview.User) -> some View {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(u.name).font(.subheadline.weight(.medium))
-                            if u.id == ProfileModel.shared.userId { tag(CasyStrings.adminYou) }
-                            if u.ai == "admin" {
-                                tag(CasyStrings.adminAiAdmin)
-                            } else if u.tester == true {
-                                tag(CasyStrings.adminTesterOn)
-                            }
-                        }
-                        Text(
-                            CasyStrings.adminJoined(formatDate(u.createdAt, lang))
-                                + (u.lastSignInAt.map { CasyStrings.adminLastSignIn(formatDate($0, lang)) } ?? "")
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(Theme.mutedForeground.color)
+    /// A person on a phone: their picture and name (and "Dig"), when they came
+    /// and were last seen across the whole width, then one line with the AI
+    /// switch from the left and their groups, calendars, re-sync and bin from
+    /// the right; how a re-sync went under it.
+    private func userRow(_ u: AdminOverview.User, index: Int) -> some View {
+        let isYou = u.id == ProfileModel.shared.userId
+        let syncing = model.syncing.contains(u.id)
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
+                Avatar(name: u.name, index: index, size: .medium)
+                HStack(spacing: 8) {
+                    Text(u.name)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Theme.foreground.color)
+                        .lineLimit(1)
+                    if isYou {
+                        Text(CasyStrings.adminYou)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Theme.primary.color)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Theme.primary.color.opacity(0.1), in: Capsule())
                     }
-                    Spacer(minLength: 8)
-                    // Groups and calendars, as the web's phone row: the icon and the number.
-                    HStack(spacing: 10) {
-                        Label("\(u.groups)", systemImage: "person.2")
-                            .accessibilityLabel("\(u.groups) \(CasyStrings.adminGroupsLabel)")
-                        Label("\(u.calendars)", systemImage: "calendar")
-                            .foregroundStyle(u.calendars == 0 ? Theme.amber700.color : Theme.foreground.color)
-                            .accessibilityLabel("\(u.calendars) \(CasyStrings.adminCalendarsLabel)")
-                    }
-                    .font(.subheadline.monospacedDigit().weight(.semibold))
-                    .labelStyle(.titleAndIcon)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Text(
+                CasyStrings.adminJoined(formatDate(u.createdAt, lang))
+                    + (u.lastSignInAt.map { CasyStrings.adminLastSignIn(formatDate($0, lang)) } ?? "")
+            )
+            .font(.system(size: 12))
+            .foregroundStyle(Theme.mutedForeground.color)
+            .cssLineHeight(16, size: 12)
+            .padding(.top, 6)
+            HStack(spacing: 8) {
+                aiAccess(u)
+                Spacer(minLength: 0)
+                counts(u)
+                RoundIconButton(
+                    icon: "refresh-cw", size: 28, spinning: syncing,
+                    label: CasyStrings.adminSyncUserTitle(u.name)
+                ) {
+                    Task { await model.syncUser(u.id) }
+                }
+                .disabled(syncing || u.calendars == 0)
+                .opacity(syncing || u.calendars == 0 ? 0.4 : 1)
+                // Never on your own row: the server refuses it too.
+                if isYou {
+                    Color.clear.frame(width: 28, height: 28)
+                } else {
+                    RoundIconButton(
+                        icon: "trash", size: 28, label: "\(CasyStrings.adminDeleteAccount) \(u.name)"
+                    ) {
+                        asking = .deleteUser(u)
+                    }
+                }
+            }
+            .padding(.top, 8)
+            if let result = model.syncResults[u.id] {
+                Text(result.text)
+                    .font(.system(size: 12))
+                    .foregroundStyle(result.ok ? Theme.emerald700.color : Theme.amber700.color)
+                    .padding(.top, 2)
+            }
+            if let failure = testerFailure[u.id] {
+                Text(failure)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.red700.color)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(.vertical, 12)
+    }
+
+    /// AI-admin as a grey pill; anyone else's tester switch as a pill that
+    /// is green while on (#111). Nothing from a server too old to say.
+    @ViewBuilder private func aiAccess(_ u: AdminOverview.User) -> some View {
+        if u.ai == "admin" {
+            pill(CasyStrings.adminAiAdmin)
+                .foregroundStyle(Theme.mutedForeground.color)
+                .background(Theme.secondary.color, in: Capsule())
+        } else if u.ai != nil, let tester = u.tester {
+            let saving = testerSaving.contains(u.id)
+            Button {
+                setTester(u, !tester)
+            } label: {
+                HStack(spacing: 4) {
+                    if saving { ProgressView().controlSize(.mini) }
+                    pill(tester ? CasyStrings.adminTesterOn : CasyStrings.adminTesterOff)
+                }
+                .foregroundStyle(tester ? Theme.emerald800.color : Theme.mutedForeground.color)
+                .background(tester ? Theme.emerald50.color : Theme.background.color, in: Capsule())
+                .overlay(
+                    Capsule().strokeBorder(tester ? Theme.emerald200.color : Theme.border.color, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .disabled(saving)
+            .opacity(saving ? 0.5 : 1)
+            .accessibilityLabel(tester ? CasyStrings.adminTesterTurnOff(u.name) : CasyStrings.adminTesterTurnOn(u.name))
+        }
+    }
+
+    private func pill(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .medium))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+    }
+
+    private func setTester(_ u: AdminOverview.User, _ on: Bool) {
+        testerSaving.insert(u.id)
+        testerFailure[u.id] = nil
+        Task {
+            defer { testerSaving.remove(u.id) }
+            do { try await model.setTester(u, on) } catch { testerFailure[u.id] = error.localizedDescription }
+        }
+    }
+
+    /// Their groups and calendars as an icon and a number (14 semibold); no
+    /// calendar at all in amber.
+    private func counts(_ u: AdminOverview.User) -> some View {
+        let none = u.calendars == 0
+        return HStack(spacing: 10) {
+            HStack(spacing: 4) {
+                LucideIcon("users", size: 14).foregroundStyle(Theme.mutedForeground.color)
+                Text(verbatim: "\(u.groups)")
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(u.groups) \(CasyStrings.adminGroupsLabel)")
+            HStack(spacing: 4) {
+                LucideIcon("calendar-days", size: 14)
+                    .foregroundStyle(none ? Theme.amber700.color : Theme.mutedForeground.color)
+                Text(verbatim: "\(u.calendars)")
+                    .foregroundStyle(none ? Theme.amber700.color : Theme.foreground.color)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(u.calendars) \(CasyStrings.adminCalendarsLabel)")
+        }
+        .font(.system(size: 14, weight: .semibold).monospacedDigit())
+        .foregroundStyle(Theme.foreground.color)
     }
 
     @ViewBuilder private func connections(_ overview: AdminOverview) -> some View {
@@ -375,59 +686,65 @@ struct AdminScreen: View {
             matches(c.ownerName, CasyStrings.named("admin.providers", c.provider))
                 && (!problemsOnly || c.status != "connected" || c.needsReconnect || c.syncError != nil)
         }
-        Section {
-            if shown.isEmpty {
-                Text(problemsOnly ? CasyStrings.adminNoProblems : CasyStrings.adminNoAccountMatch)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.mutedForeground.color)
-            }
-            ForEach(shown) { c in
-                let broken = c.status == "connected" && (c.needsReconnect || c.syncError != nil)
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Image(
-                        systemName: c.status != "connected"
-                            ? "xmark.circle" : broken ? "exclamationmark.triangle" : "checkmark.circle"
-                    )
-                    .foregroundStyle(
-                        c.status != "connected"
-                            ? Theme.mutedForeground.color
-                            : broken ? Theme.amber700.color : Theme.emerald700.color)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(c.ownerName) · \(CasyStrings.named("admin.providers", c.provider))")
-                            .font(.subheadline.weight(.medium))
-                        Text(connectionLine(c))
-                            .font(.footnote)
-                            .foregroundStyle(Theme.mutedForeground.color)
-                        if c.needsReconnect {
-                            Text(CasyStrings.adminNeedsReconnect).font(.footnote.weight(.medium))
-                                .foregroundStyle(Theme.amber700.color)
-                        } else if let error = c.syncError {
-                            Text(error).font(.footnote).foregroundStyle(Theme.amber700.color)
-                        }
-                        if let result = model.syncResults[c.id] {
-                            Text(result.text).font(.footnote.weight(.medium))
-                                .foregroundStyle(result.ok ? Theme.emerald700.color : Theme.red600.color)
-                        }
-                    }
-                    Spacer(minLength: 8)
-                    if c.status == "connected" {
-                        if model.syncing.contains(c.id) {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Button {
-                                Task { await model.syncConnection(c.id) }
-                            } label: {
-                                Image(systemName: "arrow.clockwise")
-                                    .foregroundStyle(Theme.primary.color)
-                                    .frame(minWidth: 44, minHeight: 44)
-                            }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel(CasyStrings.adminSyncTitle)
-                        }
-                    }
+        if shown.isEmpty {
+            empty(problemsOnly ? CasyStrings.adminNoProblems : CasyStrings.adminNoAccountMatch)
+        } else {
+            rows(shown) { _, c in connectionRow(c) }
+        }
+    }
+
+    /// A calendar account: how it is (a tick, a warning or a cross), whose and
+    /// which, its calendars and last sync, what is wrong, and its re-sync.
+    private func connectionRow(_ c: AdminOverview.Connection) -> some View {
+        let broken = c.status == "connected" && (c.needsReconnect || c.syncError != nil)
+        let syncing = model.syncing.contains(c.id)
+        return HStack(spacing: 12) {
+            Group {
+                if c.status != "connected" {
+                    LucideIcon("circle-x", size: 16).foregroundStyle(Theme.mutedForeground.color)
+                } else if broken {
+                    LucideIcon("triangle-alert", size: 16).foregroundStyle(Theme.amber600.color)
+                } else {
+                    LucideIcon("circle-check", size: 16).foregroundStyle(Theme.emerald600.color)
                 }
             }
+            VStack(alignment: .leading, spacing: 0) {
+                (Text(c.ownerName).font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Theme.foreground.color)
+                    + Text(" · \(CasyStrings.named("admin.providers", c.provider))").font(.system(size: 14))
+                    .foregroundStyle(Theme.mutedForeground.color))
+                    .lineLimit(1)
+                Text(connectionLine(c))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.mutedForeground.color)
+                if c.needsReconnect {
+                    Text(CasyStrings.adminNeedsReconnect)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Theme.amber700.color)
+                        .padding(.top, 2)
+                } else if let error = c.syncError {
+                    Text(error)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.amber700.color)
+                        .padding(.top, 2)
+                }
+                if let result = model.syncResults[c.id] {
+                    Text(result.text)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(result.ok ? Theme.emerald700.color : Theme.red700.color)
+                        .padding(.top, 2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if c.status == "connected" {
+                RoundIconButton(icon: "refresh-cw", spinning: syncing, label: CasyStrings.adminSyncTitle) {
+                    Task { await model.syncConnection(c.id) }
+                }
+                .disabled(syncing)
+                .opacity(syncing ? 0.6 : 1)
+            }
         }
+        .padding(.vertical, 12)
     }
 
     private func connectionLine(_ c: AdminOverview.Connection) -> String {
@@ -443,211 +760,105 @@ struct AdminScreen: View {
         }
     }
 
-    private func tag(_ text: String) -> some View {
-        Text(text)
-            .font(.caption2.weight(.medium))
-            .foregroundStyle(Theme.primary.color)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 1)
-            .background(Capsule().fill(Theme.primary.color.opacity(0.12)))
-    }
-}
+    // MARK: The yes
 
-/// One group in admin mode: its members, each swiped left to remove, and
-/// deleting it for everyone last, asked first (design rules 8 and 11).
-struct AdminGroupScreen: View {
-    let groupId: String
-
-    private let model = AdminModel.shared
-    @Environment(\.closeSheet) private var closeSheet
-    @Environment(\.dismiss) private var dismiss
-    @State private var removing: AdminOverview.Member?
-    @State private var deleting = false
-    @State private var working = false
-    @State private var failure: String?
-
-    private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
-
-    var body: some View {
-        if let g = model.overview?.groups.first(where: { $0.id == groupId }) {
-            List {
-                Section {
-                    ForEach(Array(g.members.enumerated()), id: \.element.id) { i, m in
-                        ListAvatarRow(m.name, detail: formatDate(m.joinedAt, lang), index: i)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(CasyStrings.adminRemove) { removing = m }
-                                    .tint(Theme.red600.color)
-                            }
-                    }
-                } footer: {
-                    Text(
-                        CasyStrings.adminGroupMeta(
-                            CasyStrings.members(g.members.count), formatDate(g.createdAt, lang), by: g.createdByName))
-                }
-                Section {
-                    Button {
-                        deleting = true
-                    } label: {
-                        ListRow(CasyStrings.adminDeleteGroupTitle, systemImage: "trash", tone: .danger)
-                            .contentShape(Rectangle())
-                    }
-                    if let failure { Notice(failure, tone: .error, bare: true) }
-                }
-            }
-            .disabled(working)
-            .casyPushedBar(g.name, close: CasyStrings.done, action: closeSheet)
-            .casyConfirm(
-                removing.map { CasyStrings.adminRemoveMember($0.name, from: g.name, last: g.members.count <= 1) } ?? "",
-                isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing
-            ) { m in
-                Button(
-                    g.members.count <= 1 ? CasyStrings.adminRemoveAndDelete : CasyStrings.adminRemove,
-                    role: .destructive
-                ) {
-                    run { try await model.removeMember(m.profileId, from: g.id) }
-                }
-                Button(CasyStrings.cancel, role: .cancel) {}
-            }
-            .casyConfirm(
-                CasyStrings.adminDeleteGroupConfirm(g.name, members: g.members.count),
-                isPresented: $deleting
+    @ViewBuilder private func confirm(_ ask: AdminAsk) -> some View {
+        switch ask {
+        case .deleteGroup(let g):
+            ConfirmAsk(
+                message: CasyStrings.adminDeleteGroupConfirm(g.name, members: g.members.count),
+                confirmLabel: CasyStrings.adminDeleteGroup
             ) {
-                Button(CasyStrings.adminDeleteGroup, role: .destructive) {
-                    run { try await model.deleteGroup(g.id) }
-                }
-                Button(CasyStrings.cancel, role: .cancel) {}
+                try await model.deleteGroup(g.id)
             }
-        } else {
-            // Deleted, here or since: back to the list.
-            Color.clear.task { dismiss() }
-        }
-    }
-
-    private func run(_ action: @escaping () async throws -> Void) {
-        working = true
-        failure = nil
-        Task {
-            defer { working = false }
-            do { try await action() } catch { failure = error.localizedDescription }
+        case .removeMember(let g, let m):
+            let last = g.members.count <= 1
+            ConfirmAsk(
+                message: CasyStrings.adminRemoveMember(m.name, from: g.name, last: last),
+                confirmLabel: last ? CasyStrings.adminRemoveAndDelete : CasyStrings.adminRemove
+            ) {
+                removingMember = m.profileId
+                defer { removingMember = nil }
+                try await model.removeMember(m.profileId, from: g.id)
+            }
+        case .deleteUser(let u):
+            let overview = model.overview
+            let theirs = overview?.groups.filter { $0.members.contains { $0.profileId == u.id } } ?? []
+            ConfirmAsk(
+                message: CasyStrings.adminDeleteUserConfirm(
+                    u.name, accounts: overview?.connections.filter { $0.ownerId == u.id }.count ?? 0,
+                    groups: theirs.count, soleGroups: theirs.filter { $0.members.count == 1 }.count),
+                confirmLabel: CasyStrings.adminDeleteAccount,
+                typeToConfirm: (CasyStrings.adminTypeToConfirm(u.name), u.name)
+            ) {
+                try await model.deleteUser(u)
+            }
+        case .deleteReportGroup(let r):
+            ConfirmAsk(
+                message: CasyStrings.adminReportDeleteGroupConfirm(r.content.groupName),
+                confirmLabel: CasyStrings.adminReportDeleteGroup
+            ) {
+                try await reviews.deleteGroup(r)
+            }
         }
     }
 }
 
-/// One account in admin mode: when it came and was last seen, its groups and
-/// calendars, the AI tester switch, a re-sync of every calendar, and deleting
-/// it last, behind typing the name (the guard against deleting the wrong one).
-struct AdminUserScreen: View {
-    let userId: String
-
-    private let model = AdminModel.shared
-    @Environment(\.closeSheet) private var closeSheet
-    @Environment(\.dismiss) private var dismiss
-    @State private var typed = ""
-    @State private var working = false
-    @State private var failure: String?
-
-    private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
+/// One number over its label, as the web's StatTile: a grey rounded box,
+/// 24 bold and 12 muted under it, centred; red while it needs attention.
+private struct StatTileView: View {
+    let label: String
+    let value: Int?
+    var alert = false
 
     var body: some View {
-        if let overview = model.overview, let u = overview.users.first(where: { $0.id == userId }) {
-            let isYou = u.id == ProfileModel.shared.userId
-            List {
-                Section {
-                    fact(CasyStrings.adminJoined(formatDate(u.createdAt, lang)), nil)
-                    if let last = u.lastSignInAt {
-                        fact(CasyStrings.adminLastSignIn(formatDate(last, lang)).trimmingCharacters(in: CharacterSet(charactersIn: " ·")), nil)
-                    }
-                    fact(CasyStrings.adminGroupsLabel.capitalizedFirst, "\(u.groups)")
-                    fact(CasyStrings.adminCalendarsLabel.capitalizedFirst, "\(u.calendars)", alert: u.calendars == 0)
-                }
-                Section {
-                    // Admins always have it; anyone else is switched here (#111).
-                    if u.ai == "admin" {
-                        fact(CasyStrings.adminAiAdmin, nil)
-                    } else if let tester = u.tester {
-                        ListSwitchRow(
-                            CasyStrings.adminTesterOn,
-                            isOn: Binding(get: { tester }, set: { on in run { try await model.setTester(u, on) } }),
-                            detail: tester ? CasyStrings.adminTesterTurnOff(u.name) : CasyStrings.adminTesterTurnOn(u.name))
-                    }
-                    Button {
-                        Task { await model.syncUser(u.id) }
-                    } label: {
-                        HStack {
-                            ListRow(CasyStrings.adminSyncUserTitle(u.name), systemImage: "arrow.clockwise", tone: .primary)
-                            if model.syncing.contains(u.id) { ProgressView().controlSize(.small) }
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .disabled(u.calendars == 0 || model.syncing.contains(u.id))
-                    if let result = model.syncResults[u.id] {
-                        Notice(result.text, tone: result.ok ? .success : .warning, bare: true)
-                    }
-                }
-                if !isYou { deleteSection(u, overview) }
-                if let failure { Notice(failure, tone: .error, bare: true) }
-            }
-            .disabled(working)
-            .casyPushedBar(u.name, close: CasyStrings.done, action: closeSheet)
-        } else {
-            Color.clear.task { dismiss() }
+        VStack(spacing: 2) {
+            Text(value.map { $0.formatted(.number.locale(Locale(identifier: "en_GB"))) } ?? "...")
+                .font(.system(size: 24, weight: .bold).monospacedDigit())
+                .foregroundStyle(alert ? Theme.red700.color : Theme.foreground.color)
+                .cssLineHeight(32, size: 24)
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundStyle(alert ? Theme.red800.color.opacity(0.8) : Theme.mutedForeground.color)
+                .cssLineHeight(16, size: 12)
+                .multilineTextAlignment(.center)
         }
-    }
-
-    /// What goes with the account, spelled out, then the name typed before the red row works.
-    @ViewBuilder private func deleteSection(_ u: AdminOverview.User, _ overview: AdminOverview) -> some View {
-        let theirs = overview.groups.filter { $0.members.contains { $0.profileId == u.id } }
-        let matches = typed.trimmingCharacters(in: .whitespaces).lowercased()
-            == u.name.trimmingCharacters(in: .whitespaces).lowercased()
-        Section {
-            TextField(u.name, text: $typed)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .accessibilityLabel(CasyStrings.adminTypeToConfirm(u.name))
-            Button {
-                // The user leaves the overview, and the screen goes back by
-                // itself (body's else): a second dismiss here would also pop Admin.
-                run { try await model.deleteUser(u) }
-            } label: {
-                ListRow(CasyStrings.adminDeleteAccount, systemImage: "trash", tone: .danger)
-                    .contentShape(Rectangle())
-            }
-            .disabled(!matches)
-        } header: {
-            Text(CasyStrings.adminTypeToConfirm(u.name))
-        } footer: {
-            Text(
-                CasyStrings.adminDeleteUserConfirm(
-                    u.name,
-                    accounts: overview.connections.filter { $0.ownerId == u.id }.count,
-                    groups: theirs.count, soleGroups: theirs.filter { $0.members.count == 1 }.count))
-        }
-    }
-
-    private func fact(_ label: String, _ value: String?, alert: Bool = false) -> some View {
-        HStack {
-            Text(label).font(.subheadline)
-            Spacer()
-            if let value {
-                Text(value)
-                    .font(.subheadline.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(alert ? Theme.amber700.color : Theme.foreground.color)
-            }
-        }
+        .frame(maxWidth: .infinity)
+        .padding(12)
+        .background(alert ? Theme.red50.color : Theme.secondary.color, in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
     }
-
-    private func run(_ action: @escaping () async throws -> Void) {
-        working = true
-        failure = nil
-        Task {
-            defer { working = false }
-            do { try await action() } catch { failure = error.localizedDescription }
-        }
-    }
 }
 
-extension String {
-    /// "grupper" as a row's label: "Grupper".
-    fileprivate var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
+/// The web's checkbox for a filter (admin only, not a person's choice): a 16
+/// point square, orange with a tick while on, and its words (14 muted).
+private struct CheckboxRow: View {
+    let label: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button {
+            isOn.toggle()
+        } label: {
+            HStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(isOn ? Theme.primary.color : Theme.background.color)
+                    .overlay {
+                        if isOn {
+                            LucideIcon("check", size: 12).foregroundStyle(Theme.primaryForeground.color)
+                        } else {
+                            RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.mutedForeground.color, lineWidth: 1)
+                        }
+                    }
+                    .frame(width: 16, height: 16)
+                Text(label)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.mutedForeground.color)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(isOn ? "1" : "0")
+    }
 }

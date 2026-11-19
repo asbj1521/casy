@@ -170,12 +170,13 @@ public struct Avatar: View {
 public enum NoticeTone: Sendable {
     case error, success, warning, info
 
-    var systemImage: String {
+    /// The web's lucide icon for the tone (Notice.tsx).
+    var icon: String {
         switch self {
-        case .error: "xmark.circle"
-        case .success: "checkmark.circle"
-        case .warning: "exclamationmark.triangle"
-        case .info: "info.circle"
+        case .error: "circle-x"
+        case .success: "circle-check"
+        case .warning: "triangle-alert"
+        case .info: "info"
         }
     }
 
@@ -230,12 +231,19 @@ public struct Notice: View {
         self.bare = bare
     }
 
+    /// The web's Notice: a 16 point icon 2 below the top, 8 before 14 point
+    /// words (20 high lines).
     private var line: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Image(systemName: tone.systemImage).accessibilityHidden(true)
-            Text(text).frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .top, spacing: 8) {
+            LucideIcon(tone.icon, size: 16)
+                .padding(.top, 2)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.system(size: 14))
+                .cssLineHeight(20, size: 14)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .font(.subheadline)
     }
 
     public var body: some View {
@@ -246,9 +254,9 @@ public struct Notice: View {
                 line
                     .foregroundStyle(tone.boxText)
                     .padding(12)
-                    .background(tone.boxBackground, in: RoundedRectangle(cornerRadius: 12))
+                    .background(tone.boxBackground, in: RoundedRectangle(cornerRadius: 8))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 12).stroke(tone.boxBorder, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 8).strokeBorder(tone.boxBorder, lineWidth: 1)
                     }
             }
         }

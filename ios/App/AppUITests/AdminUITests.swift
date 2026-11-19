@@ -12,75 +12,6 @@ final class AdminUITests: XCTestCase {
         _ = try await URLSession.shared.data(for: reset)
     }
 
-    func testTheOverviewShowsHealthNumbersAndEveryList() {
-        let app = XCUIApplication()
-        app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
-            "-casyOpenScreen", "profile",
-            "-casyPushPermission", "granted",
-            "-casyLang", "da",
-        ]
-        app.launch()
-        XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
-        for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .slow) }
-        row.tap()
-        XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["Kalendersynkroniseringen virker."].waitForExistence(timeout: 10))
-
-        // The lists are under the tabs, at the bottom: a list only draws what is on screen.
-        let tabs = app.segmentedControls.firstMatch
-        for _ in 0..<4 where !(tabs.exists && tabs.isHittable) { app.screenList.swipeUp(velocity: .slow) }
-        XCTAssertTrue(app.staticTexts["Ingen har lavet en gruppe endnu."].waitForExistence(timeout: 5))
-        app.segmentedControls.buttons["Brugere"].tap()
-        app.screenList.swipeUp(velocity: .slow)
-        XCTAssertTrue(app.staticTexts["Sara"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["Mia Jensen"].exists)
-
-        app.segmentedControls.buttons["Kalendersundhed"].tap()
-        app.screenList.swipeUp(velocity: .slow)
-        XCTAssertTrue(app.staticTexts["Ingen kalenderkonti passer til det."].waitForExistence(timeout: 10))
-    }
-
-    /// An account opens on its own screen; deleting it waits for its name,
-    /// then goes back to the list with a note of what went (#198).
-    func testDeletingAnAccountWaitsForItsNameThenSaysWhatWent() {
-        let app = XCUIApplication()
-        app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
-            "-casyOpenScreen", "profile",
-            "-casyPushPermission", "granted",
-            "-casyLang", "da",
-        ]
-        app.launch()
-        XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
-        for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .slow) }
-        row.tap()
-        XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
-        let tabs = app.segmentedControls.firstMatch
-        for _ in 0..<4 where !(tabs.exists && tabs.isHittable) { app.screenList.swipeUp(velocity: .slow) }
-        app.segmentedControls.buttons["Brugere"].tap()
-        app.screenList.swipeUp(velocity: .slow)
-        let sara = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Sara")).firstMatch
-        XCTAssertTrue(sara.waitForExistence(timeout: 10))
-        sara.tap()
-        XCTAssertTrue(app.navigationBars["Sara"].waitForExistence(timeout: 10))
-
-        let delete = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Slet konto")).firstMatch
-        for _ in 0..<4 where !(delete.exists && delete.isHittable) { app.screenList.swipeUp(velocity: .slow) }
-        XCTAssertFalse(delete.isEnabled, "deletable before the name is typed")
-        let field = app.textFields.firstMatch
-        field.tap()
-        field.typeText("sara")
-        XCTAssertTrue(delete.isEnabled)
-        delete.tap()
-
-        XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
-        for _ in 0..<4 { app.screenList.swipeDown(velocity: .fast) }
-        XCTAssertTrue(app.staticTexts["Sara blev slettet."].waitForExistence(timeout: 10))
-    }
-
     private func openAdmin() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -94,8 +25,57 @@ final class AdminUITests: XCTestCase {
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
         for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         row.tap()
-        XCTAssertTrue(app.navigationBars["Admin"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.navigationBars["Admin-tilstand"].waitForExistence(timeout: 10))
         return app
+    }
+
+    /// A button by the start of its words, scrolled to until a tap reaches it.
+    private func button(_ app: XCUIApplication, _ start: String) -> XCUIElement {
+        let found = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", start)).firstMatch
+        for _ in 0..<6 where !(found.exists && found.isHittable) { app.screenList.swipeUp(velocity: .slow) }
+        return found
+    }
+
+    func testTheOverviewShowsHealthNumbersAndEveryList() {
+        let app = openAdmin()
+        XCTAssertTrue(app.staticTexts["Kalendersynkroniseringen virker."].waitForExistence(timeout: 10))
+
+        // The tabs, as the web's: each a button with its count.
+        _ = button(app, "Grupper")
+        XCTAssertTrue(any(app, containing: "Ingen har lavet en gruppe endnu.").waitForExistence(timeout: 5))
+        button(app, "Brugere").tap()
+        XCTAssertTrue(app.staticTexts["Sara"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Mia Jensen"].exists)
+
+        button(app, "Kalendersundhed").tap()
+        XCTAssertTrue(any(app, containing: "Ingen kalenderkonti passer til det.").waitForExistence(timeout: 10))
+    }
+
+    /// Deleting an account is asked in "Er du sikker?", which waits for its
+    /// name, then says what went (#198, the web's UserRow).
+    func testDeletingAnAccountWaitsForItsNameThenSaysWhatWent() {
+        let app = openAdmin()
+        button(app, "Brugere").tap()
+        let bin = button(app, "Slet konto Sara")
+        XCTAssertTrue(bin.waitForExistence(timeout: 10))
+        bin.tap()
+        let ask = app.staticTexts["Er du sikker?"]
+        XCTAssertTrue(ask.waitForExistence(timeout: 10))
+
+        let delete = app.buttons.matching(NSPredicate(format: "label == %@", "Slet konto")).firstMatch
+        XCTAssertTrue(delete.exists)
+        XCTAssertFalse(delete.isEnabled, "deletable before the name is typed")
+        let field = app.textFields.firstMatch
+        field.tap()
+        field.typeText("sara")
+        // The iPhone 17e simulator's keyboard swallows the first tap after typing.
+        ask.tap()
+        XCTAssertTrue(delete.isEnabled)
+        delete.tap()
+
+        XCTAssertTrue(ask.waitForNonExistence(timeout: 10))
+        for _ in 0..<6 { app.screenList.swipeDown(velocity: .fast) }
+        XCTAssertTrue(any(app, containing: "Sara blev slettet.").waitForExistence(timeout: 10))
     }
 
     private func any(_ app: XCUIApplication, containing text: String) -> XCUIElement {
@@ -106,10 +86,10 @@ final class AdminUITests: XCTestCase {
     /// Klaret makes it go (#142, #187).
     func testAReportIsReadThenDealtWith() {
         let app = openAdmin()
-        let reports = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Rapporter")).firstMatch
+        // Folded away until opened, as on the web.
+        let reports = button(app, "Rapporter")
         XCTAssertTrue(reports.waitForExistence(timeout: 10))
         reports.tap()
-        XCTAssertTrue(app.navigationBars["Rapporter"].waitForExistence(timeout: 10))
         XCTAssertTrue(any(app, containing: "Gruppe · Spam eller reklame").waitForExistence(timeout: 10))
         XCTAssertTrue(any(app, containing: "Reklamer hele tiden").exists)
 
@@ -118,8 +98,7 @@ final class AdminUITests: XCTestCase {
         picture.tap()
         XCTAssertTrue(app.buttons["Billedet er fjernet"].waitForExistence(timeout: 10))
 
-        app.screenList.swipeDown(velocity: .fast)
-        app.buttons["Klaret"].firstMatch.tap()
+        button(app, "Klaret").tap()
         XCTAssertTrue(
             any(app, containing: "Reklamer hele tiden").waitForNonExistence(timeout: 10), "still listed")
         XCTAssertTrue(any(app, containing: "Medlem · Stødende eller upassende").exists)
@@ -128,11 +107,10 @@ final class AdminUITests: XCTestCase {
     /// Where the AI was wrong comes first, in words; Håndteret deletes it (#122).
     func testACorrectionSaysWhatTheAiSaidAndIsHandled() {
         let app = openAdmin()
-        let corrections = app.buttons.matching(
-            NSPredicate(format: "label BEGINSWITH %@", "Rettelser til AI'en")).firstMatch
+        let corrections = button(app, "Rettelser til AI'en")
         XCTAssertTrue(corrections.waitForExistence(timeout: 10))
         corrections.tap()
-        XCTAssertTrue(app.navigationBars["Rettelser til AI'en"].waitForExistence(timeout: 10))
+        for _ in 0..<2 { app.screenList.swipeUp(velocity: .slow) }
         // The label correction was sent second, but a plan sent as it was goes last.
         let label = any(app, containing: "Eksamen i statistik")
         let right = any(app, containing: "Sendt, som AI'en lavede den")
@@ -142,14 +120,14 @@ final class AdminUITests: XCTestCase {
             any(app, containing: "AI'en sagde: Eksamen · Almindelig. Efter rettelsen: Eksamen · Meget vigtig.").exists)
         XCTAssertTrue(any(app, containing: "startHour: 18 → 16").exists)
 
-        app.buttons["Håndteret"].firstMatch.tap()
+        button(app, "Håndteret").tap()
         XCTAssertTrue(any(app, containing: "Eksamen i statistik").waitForNonExistence(timeout: 10))
     }
 
     /// The push test goes the whole way and says how many phones got it (#139).
     func testThePushTestSaysHowManyPhonesGotIt() {
         let app = openAdmin()
-        let test = app.buttons["Send en test-notifikation"]
+        let test = button(app, "Send en test-notifikation")
         XCTAssertTrue(test.waitForExistence(timeout: 10))
         test.tap()
         XCTAssertTrue(any(app, containing: "Sendt til 1 telefon.").waitForExistence(timeout: 10))

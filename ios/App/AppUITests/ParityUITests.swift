@@ -310,6 +310,64 @@ final class ParityUITests: XCTestCase {
 
     func testAccountDark() async throws { try await shootAccount(theme: "dark") }
 
+    /// Admin, with Mia an admin and reports and corrections waiting: its top, then its end.
+    private func openAdmin(theme: String) async throws -> XCUIApplication {
+        var reset = URLRequest(url: URL(string: "\(Self.backend)/reset")!)
+        reset.httpMethod = "POST"
+        reset.httpBody = Data(#"{"admin":true,"reviews":true}"#.utf8)
+        _ = try await URLSession.shared.data(for: reset)
+        if mode == "web" { return try await launch("/?profile=admin", theme: theme) }
+        let app = try await launch("/?profile", theme: theme)
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "the Admin row never showed")
+        for _ in 0..<4 where !row.isHittable { app.screenList.swipeUp() }
+        row.tap()
+        return app
+    }
+
+    private func shootAdmin(theme: String) async throws {
+        let app = try await openAdmin(theme: theme)
+        shoot(app, "admin-\(theme)", when: "Kalendersynkroniseringen virker", native: "admin.screen")
+        for _ in 0..<12 { app.swipeUp(velocity: .fast) }
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        shot("admin-end-\(theme)-\(mode)")
+    }
+
+    /// Admin's other states, each pushed to the end: the Brugere tab, then
+    /// Rapporter opened, then Rettelser til AI'en opened.
+    private func shootAdminParts(theme: String) async throws {
+        let app = try await openAdmin(theme: theme)
+        shoot(app, "admin-parts-\(theme)", when: "Kalendersynkroniseringen virker", native: "admin.screen")
+        func toEnd() {
+            for _ in 0..<12 { app.swipeUp(velocity: .fast) }
+            _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        }
+        func tap(_ label: String) {
+            let button = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
+            XCTAssertTrue(button.waitForExistence(timeout: 10), "\(label) never showed")
+            button.tap()
+        }
+        toEnd()
+        tap("Brugere")
+        toEnd()
+        shot("admin-users-\(theme)-\(mode)")
+        tap("Rapporter")
+        toEnd()
+        shot("admin-reports-\(theme)-\(mode)")
+        tap("Rapporter")
+        tap("Rettelser")
+        toEnd()
+        shot("admin-corrections-\(theme)-\(mode)")
+    }
+
+    func testAdminPartsLight() async throws { try await shootAdminParts(theme: "light") }
+
+    func testAdminPartsDark() async throws { try await shootAdminParts(theme: "dark") }
+
+    func testAdminLight() async throws { try await shootAdmin(theme: "light") }
+
+    func testAdminDark() async throws { try await shootAdmin(theme: "dark") }
+
     private func openGroup(theme: String) async throws -> XCUIApplication {
         if mode == "web" { return try await launch("/?profile=groups/g-friday", theme: theme) }
         let app = try await openGroups(theme: theme)

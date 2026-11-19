@@ -150,6 +150,8 @@ final class CalendarsUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.tap()
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "Job")
+        // The iPhone 17e simulator's keyboard swallows the first tap after typing.
+        app.alerts.staticTexts.firstMatch.tap()
         app.alerts.buttons["Gem"].tap()
         XCTAssertTrue(text(app, containing: "Oprindeligt navn: Arbejde").waitForExistence(timeout: 10))
     }

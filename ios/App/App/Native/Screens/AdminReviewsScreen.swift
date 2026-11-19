@@ -110,70 +110,49 @@ final class AdminReviewsModel {
     }
 }
 
-/// Admin's entries to the reviews, and the push test (#139), as one section.
-struct AdminReviewRows: View {
+/// The push test (#139), as the web's PushTest: notifications switched on for
+/// this phone, then a test the whole way through Apple and back, which proves
+/// pushes work before anything real is sent; how it went under the button.
+struct AdminPushTest: View {
     /// Turns notifications on through the web view: "granted", "denied" or "failed".
     let enablePush: () async -> String
 
-    private let model = AdminReviewsModel.shared
     @State private var pushing = false
-    @State private var pushAnswer: (ok: Bool, text: String)?
+    @State private var answer: (ok: Bool, text: String)?
 
     var body: some View {
-        Section {
-            NavigationLink {
-                AdminReportsScreen()
-            } label: {
-                ListRow(
-                    CasyStrings.adminReportsTitle, systemImage: "flag",
-                    value: model.reports.map { "\($0.count)" })
-            }
-            NavigationLink {
-                AdminCorrectionsScreen()
-            } label: {
-                ListRow(
-                    CasyStrings.adminCorrectionsTitle, systemImage: "sparkles",
-                    value: model.corrections.map { "\($0.count)" })
-            }
-            Button {
-                pushTest()
-            } label: {
-                HStack {
-                    ListRow(
-                        pushing ? CasyStrings.pushTestSending : CasyStrings.pushTestButton,
-                        systemImage: "bell.badge", tone: .primary)
-                    if pushing { ProgressView().controlSize(.small) }
-                }
-                .contentShape(Rectangle())
+        VStack(alignment: .leading, spacing: 8) {
+            OutlineCapsule(label: pushing ? CasyStrings.pushTestSending : CasyStrings.pushTestButton) {
+                send()
             }
             .disabled(pushing)
-            if let pushAnswer {
-                Notice(pushAnswer.text, tone: pushAnswer.ok ? .success : .error, bare: true)
+            .opacity(pushing ? 0.6 : 1)
+            if let answer {
+                Notice(answer.text, tone: answer.ok ? .success : .error)
             }
         }
-        .task { await model.load() }
     }
 
-    /// Notifications switched on for this phone, then a test the whole way
-    /// through Apple and back: proves pushes work before anything real is sent.
-    private func pushTest() {
+    private func send() {
         pushing = true
-        pushAnswer = nil
+        answer = nil
         Task {
             defer { pushing = false }
             if await permission() == "denied" {
-                pushAnswer = (false, CasyStrings.pushTestDenied)
+                answer = (false, CasyStrings.pushTestDenied)
                 return
             }
             do {
-                guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.pushFailed) }
-                let answer = try await api.adminPushTest(lang: CasyStrings.language, errorMessage: CasyStrings.pushFailed)
-                pushAnswer =
-                    answer.sent > 0
-                    ? (true, CasyStrings.pushTestSent(answer.sent))
-                    : (false, CasyStrings.pushTestNone(answer.failed))
+                guard let api = await Native.api() else {
+                    throw APIError.failed(status: 401, message: CasyStrings.pushFailed)
+                }
+                let sent = try await api.adminPushTest(lang: CasyStrings.language, errorMessage: CasyStrings.pushFailed)
+                answer =
+                    sent.sent > 0
+                    ? (true, CasyStrings.pushTestSent(sent.sent))
+                    : (false, CasyStrings.pushTestNone(sent.failed))
             } catch {
-                pushAnswer = (false, error.localizedDescription)
+                answer = (false, error.localizedDescription)
             }
         }
     }
@@ -187,182 +166,219 @@ struct AdminReviewRows: View {
     }
 }
 
-/// Rapporter: each report as it was sent, then what can be done about it,
-/// deleting last and asked first.
-struct AdminReportsScreen: View {
+/// Rapporter and Rettelser til AI'en (#142, #122), as the web's AdminReports
+/// and AdminCorrections: a card each, folded away until opened, its title
+/// (14 semibold) and count after a chevron that turns down; open, what it is
+/// for (12 muted), then each one as it was sent, never who sent it, with
+/// Klaret (dealing with one deletes it) and, for a report, taking a picture
+/// down or deleting the group, asked first.
+struct AdminReviewCards: View {
+    @Binding var asking: AdminAsk?
+
     private let model = AdminReviewsModel.shared
-    @Environment(\.closeSheet) private var closeSheet
-    @State private var deleting: AdminReport?
+    @State private var reportsOpen = false
+    @State private var correctionsOpen = false
     @State private var failure: String?
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
     var body: some View {
-        List {
-            if let failure = model.reportsFailure ?? failure { Notice(failure, tone: .error, bare: true) }
-            if let reports = model.reports {
-                if reports.isEmpty {
-                    Section {
-                        Text(CasyStrings.adminReportsNone).foregroundStyle(Theme.mutedForeground.color)
-                    } footer: {
-                        Text(CasyStrings.adminReportsIntro)
-                    }
-                }
-                ForEach(Array(reports.enumerated()), id: \.element.id) { i, report in
-                    Section {
-                        content(report)
-                        actions(report)
-                    } footer: {
-                        if i == reports.count - 1 { Text(CasyStrings.adminReportsIntro) }
-                    }
-                    .disabled(model.working.contains(report.id))
-                }
-            } else if model.reportsFailure == nil {
-                ProgressView()
+        VStack(spacing: 16) {
+            fold(CasyStrings.adminReportsTitle, count: model.reports?.count, open: $reportsOpen) {
+                reports
+            }
+            fold(CasyStrings.adminCorrectionsTitle, count: model.sortedCorrections?.count, open: $correctionsOpen) {
+                corrections
             }
         }
-        .casyPushedBar(CasyStrings.adminReportsTitle, close: CasyStrings.done, action: closeSheet)
-        .refreshable { await model.loadReports() }
-        .casyConfirm(
-            CasyStrings.adminReportDeleteGroupConfirm(deleting?.content.groupName),
-            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), presenting: deleting
-        ) { report in
-            Button(CasyStrings.adminReportDeleteGroup, role: .destructive) {
-                run { try await model.deleteGroup(report) }
-            }
-            Button(CasyStrings.cancel, role: .cancel) {}
-        }
+        .padding(.top, 16)
+        .task { await model.load() }
     }
 
-    /// What it was about and why, the words as they were, and the reporter's note.
-    private func content(_ r: AdminReport) -> some View {
-        let c = r.content
-        return VStack(alignment: .leading, spacing: 2) {
-            Text("\(CasyStrings.adminReportKind(r.kind)) · \(CasyStrings.reportReason(r.reason))")
-                .font(.subheadline.weight(.semibold))
-            ForEach(
-                [c.groupName, c.groupDescription].compactMap { $0 }.filter { !$0.isEmpty }, id: \.self
-            ) { line in
-                Text(line).font(.subheadline).foregroundStyle(Theme.mutedForeground.color)
+    private func fold<Content: View>(
+        _ title: String, count: Int?, open: Binding<Bool>, @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                open.wrappedValue.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    LucideIcon("chevron-right", size: 16)
+                        .foregroundStyle(Theme.mutedForeground.color)
+                        .rotationEffect(.degrees(open.wrappedValue ? 90 : 0))
+                        .animation(.easeOut(duration: 0.15), value: open.wrappedValue)
+                    Text(title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.foreground.color)
+                        .cssLineHeight(20, size: 14)
+                    if let count {
+                        Text(verbatim: "\(count)")
+                            .font(.system(size: 12).monospacedDigit())
+                            .foregroundStyle(Theme.mutedForeground.color)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
             }
-            if let name = c.memberName { Text(name).font(.subheadline) }
-            if let picture = r.pictureUrl.flatMap(URL.init(string:)), !model.picturesRemoved.contains(r.id) {
-                Avatar(name: c.memberName ?? c.groupName ?? "", index: 0, size: .large, url: picture)
-                    .padding(.vertical, 2)
+            .buttonStyle(.plain)
+            .accessibilityValue(open.wrappedValue ? "open" : "")
+            if open.wrappedValue {
+                VStack(alignment: .leading, spacing: 0) { content() }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
+                    .hairlineAbove()
             }
-            if let title = c.title { Text(title).font(.subheadline) }
-            ForEach([c.place, c.note].compactMap { $0 }.filter { !$0.isEmpty }, id: \.self) { line in
-                Text(line).font(.subheadline).foregroundStyle(Theme.mutedForeground.color)
+        }
+        .adminCard()
+    }
+
+    /// What it is for (12 muted), and the list's state when there is no list.
+    @ViewBuilder private func opening(intro: String, loaded: Bool, error: String?, none: String?) -> some View {
+        Text(intro)
+            .font(.system(size: 12))
+            .foregroundStyle(Theme.mutedForeground.color)
+            .cssLineHeight(16, size: 12)
+            .fixedSize(horizontal: false, vertical: true)
+        if let error {
+            Notice(error, tone: .error).padding(.top, 12)
+        } else if !loaded {
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text(CasyStrings.adminLoading).font(.system(size: 14))
             }
-            if let note = r.note, !note.isEmpty {
-                Text("“\(note)”").font(.subheadline).italic().padding(.top, 2)
-            }
-            Text(formatDayMonth(r.createdAt, lang))
-                .font(.caption2)
+            .foregroundStyle(Theme.mutedForeground.color)
+            .padding(.top, 12)
+        } else if let none {
+            Text(none)
+                .font(.system(size: 14))
                 .foregroundStyle(Theme.mutedForeground.color)
-                .padding(.top, 2)
-        }
-        .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder private func actions(_ r: AdminReport) -> some View {
-        Button {
-            run { try await model.handleReport(r.id) }
-        } label: {
-            HStack {
-                ListRow(CasyStrings.adminReportHandled, systemImage: "checkmark", tone: .primary)
-                if model.working.contains(r.id) { ProgressView().controlSize(.small) }
-            }
-            .contentShape(Rectangle())
-        }
-        if r.pictureUrl != nil, r.content.memberId != nil || r.groupId != nil {
-            let removed = model.picturesRemoved.contains(r.id)
-            Button {
-                run { try await model.removePicture(r) }
-            } label: {
-                ListRow(
-                    removed ? CasyStrings.adminReportPictureRemoved : CasyStrings.adminReportRemovePicture,
-                    systemImage: removed ? "checkmark.circle" : "person.crop.circle.badge.xmark",
-                    tone: removed ? .standard : .danger)
-                    .contentShape(Rectangle())
-            }
-            .disabled(removed)
-        }
-        if r.groupId != nil {
-            Button {
-                deleting = r
-            } label: {
-                ListRow(CasyStrings.adminReportDeleteGroup, systemImage: "trash", tone: .danger)
-                    .contentShape(Rectangle())
-            }
+                .padding(.top, 12)
         }
     }
 
-    private func run(_ action: @escaping () async throws -> Void) {
-        failure = nil
-        Task {
-            do { try await action() } catch { failure = error.localizedDescription }
+    // MARK: Reports
+
+    @ViewBuilder private var reports: some View {
+        let list = model.reports
+        opening(
+            intro: CasyStrings.adminReportsIntro, loaded: list != nil, error: model.reportsFailure,
+            none: list?.isEmpty == true ? CasyStrings.adminReportsNone : nil)
+        if let list, !list.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(list) { r in reportRow(r).hairlineAbove() }
+            }
+            .padding(.top, 12)
         }
+        if let failure { Notice(failure, tone: .error, bare: true).padding(.top, 8) }
     }
-}
 
-/// Rettelser til AI'en: what the AI said, what the person wrote and what came
-/// of it, where it was wrong first. Marking one handled deletes it.
-struct AdminCorrectionsScreen: View {
-    private let model = AdminReviewsModel.shared
-    @Environment(\.closeSheet) private var closeSheet
-    @State private var failure: String?
-
-    private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
-
-    var body: some View {
-        List {
-            if let failure = model.correctionsFailure ?? failure { Notice(failure, tone: .error, bare: true) }
-            if let corrections = model.sortedCorrections {
-                if corrections.isEmpty {
-                    Section {
-                        Text(CasyStrings.adminCorrectionsNone).foregroundStyle(Theme.mutedForeground.color)
-                    } footer: {
-                        Text(CasyStrings.adminCorrectionsIntro)
+    /// A report: what it was about and why (14 medium), the words as they
+    /// were, the picture, the reporter's note in quotes, the day (11 muted);
+    /// its buttons down the right.
+    private func reportRow(_ r: AdminReport) -> some View {
+        let c = r.content
+        let busy = model.working.contains(r.id)
+        let removed = model.picturesRemoved.contains(r.id)
+        return HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("\(CasyStrings.adminReportKind(r.kind)) · \(CasyStrings.reportReason(r.reason))")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Theme.foreground.color)
+                ForEach([c.groupName, c.groupDescription].compactMap { $0 }.filter { !$0.isEmpty }, id: \.self) {
+                    Text($0).foregroundStyle(Theme.mutedForeground.color)
+                }
+                if let name = c.memberName { Text(name).foregroundStyle(Theme.foreground.color) }
+                if let picture = r.pictureUrl.flatMap(URL.init(string:)), !removed {
+                    AsyncImage(url: picture) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        Theme.secondary.color
+                    }
+                    .frame(width: 64, height: 64)
+                    .clipShape(Circle())
+                    .padding(.top, 4)
+                }
+                if let title = c.title { Text(title).foregroundStyle(Theme.foreground.color) }
+                ForEach([c.place, c.note].compactMap { $0 }.filter { !$0.isEmpty }, id: \.self) {
+                    Text($0).foregroundStyle(Theme.mutedForeground.color)
+                }
+                if let note = r.note, !note.isEmpty {
+                    Text("“\(note)”").italic().foregroundStyle(Theme.foreground.color).padding(.top, 4)
+                }
+                Text(formatDayMonth(r.createdAt, lang))
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.mutedForeground.color)
+                    .padding(.top, 4)
+            }
+            .font(.system(size: 14))
+            .lineSpacing(20 - 14 * 1.193)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .trailing, spacing: 6) {
+                OutlineCapsule(label: CasyStrings.adminReportHandled, icon: "check", small: true) {
+                    run { try await model.handleReport(r.id) }
+                }
+                if r.pictureUrl != nil, c.memberId != nil || r.groupId != nil {
+                    OutlineCapsule(
+                        label: removed ? CasyStrings.adminReportPictureRemoved : CasyStrings.adminReportRemovePicture,
+                        icon: "trash", small: true, color: Theme.red700.color
+                    ) {
+                        run { try await model.removePicture(r) }
+                    }
+                    .disabled(removed)
+                    .opacity(removed ? 0.6 : 1)
+                }
+                if r.groupId != nil {
+                    OutlineCapsule(
+                        label: CasyStrings.adminReportDeleteGroup, icon: "trash", small: true,
+                        color: Theme.red700.color
+                    ) {
+                        asking = .deleteReportGroup(r)
                     }
                 }
-                ForEach(Array(corrections.enumerated()), id: \.element.id) { i, c in
-                    Section {
-                        VStack(alignment: .leading, spacing: 2) {
+            }
+            .disabled(busy)
+            .opacity(busy ? 0.6 : 1)
+        }
+        .padding(.vertical, 12)
+    }
+
+    // MARK: Corrections
+
+    @ViewBuilder private var corrections: some View {
+        let list = model.sortedCorrections
+        opening(
+            intro: CasyStrings.adminCorrectionsIntro, loaded: list != nil, error: model.correctionsFailure,
+            none: list?.isEmpty == true ? CasyStrings.adminCorrectionsNone : nil)
+        if let list, !list.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(list) { c in
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 0) {
                             correction(c)
                             Text(formatDayMonth(c.createdAt, lang))
-                                .font(.caption2)
+                                .font(.system(size: 11))
                                 .foregroundStyle(Theme.mutedForeground.color)
-                                .padding(.top, 2)
+                                .padding(.top, 4)
                         }
-                        .padding(.vertical, 2)
-                        .accessibilityElement(children: .combine)
-                        Button {
-                            failure = nil
-                            Task {
-                                do { try await model.handleCorrection(c.id) } catch {
-                                    failure = error.localizedDescription
-                                }
-                            }
-                        } label: {
-                            HStack {
-                                ListRow(CasyStrings.adminCorrectionHandled, systemImage: "checkmark", tone: .primary)
-                                if model.working.contains(c.id) { ProgressView().controlSize(.small) }
-                            }
-                            .contentShape(Rectangle())
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        OutlineCapsule(label: CasyStrings.adminCorrectionHandled, icon: "check", small: true) {
+                            run { try await model.handleCorrection(c.id) }
                         }
-                    } footer: {
-                        if i == corrections.count - 1 { Text(CasyStrings.adminCorrectionsIntro) }
+                        .disabled(model.working.contains(c.id))
+                        .opacity(model.working.contains(c.id) ? 0.6 : 1)
                     }
-                    .disabled(model.working.contains(c.id))
+                    .padding(.vertical, 12)
+                    .hairlineAbove()
                 }
-            } else if model.correctionsFailure == nil {
-                ProgressView()
             }
+            .padding(.top, 12)
         }
-        .casyPushedBar(CasyStrings.adminCorrectionsTitle, close: CasyStrings.done, action: closeSheet)
-        .refreshable { await model.loadCorrections() }
     }
 
     /// One correction in words: what the AI said, what the person wrote, what came of it.
@@ -371,34 +387,58 @@ struct AdminCorrectionsScreen: View {
             let label = { (l: LabelCorrection.Label) in
                 "\(CasyStrings.eventLabelKind(l.kind)) · \(CasyStrings.eventLabelImportance(l.importance))"
             }
-            (Text(d.title).font(.subheadline.weight(.semibold))
-                + Text(" · \(d.calendar)").font(.subheadline).foregroundStyle(Theme.mutedForeground.color))
+            (Text(d.title).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.foreground.color)
+                + Text(" · \(d.calendar)").font(.system(size: 14)).foregroundStyle(Theme.mutedForeground.color))
             Text(
                 "\(CasyStrings.adminCorrectionBefore): \(label(d.previous)). \(CasyStrings.adminCorrectionAfter): \(label(d.label))."
             )
-            .font(.footnote)
+            .font(.system(size: 12))
             .foregroundStyle(Theme.mutedForeground.color)
-            Text("\(CasyStrings.adminCorrectionNote): “\(d.note)”").font(.footnote)
+            .cssLineHeight(16, size: 12)
+            .padding(.top, 2)
+            Text("\(CasyStrings.adminCorrectionNote): “\(d.note)”")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.foreground.color)
+                .cssLineHeight(16, size: 12)
+                .padding(.top, 2)
         } else if let d = c.data.decoded(as: PlanCorrection.self) {
             let show = { (v: JSONValue?) in v == nil || v == .null ? "-" : v!.compactJSON }
-            Text(CasyStrings.adminCorrectionPlan).font(.subheadline.weight(.semibold))
+            Text(CasyStrings.adminCorrectionPlan)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Theme.foreground.color)
             ForEach(Array(d.texts.enumerated()), id: \.offset) { _, text in
-                Text("\(CasyStrings.adminCorrectionNote): “\(text)”").font(.footnote)
+                Text("\(CasyStrings.adminCorrectionNote): “\(text)”")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.foreground.color)
+                    .cssLineHeight(16, size: 12)
+                    .padding(.top, 2)
             }
             if d.overridden.isEmpty {
                 Text(CasyStrings.adminCorrectionPlanUnchanged)
-                    .font(.footnote)
+                    .font(.system(size: 12))
                     .foregroundStyle(Theme.mutedForeground.color)
+                    .cssLineHeight(16, size: 12)
+                    .padding(.top, 2)
             } else {
                 Text("\(CasyStrings.adminCorrectionPlanChanged):")
-                    .font(.footnote)
+                    .font(.system(size: 12))
                     .foregroundStyle(Theme.mutedForeground.color)
+                    .cssLineHeight(16, size: 12)
+                    .padding(.top, 2)
                 ForEach(d.overridden, id: \.self) { field in
                     Text("\(field): \(show(d.plan[field])) → \(show(d.final[field]))")
-                        .font(.footnote.monospaced())
+                        .font(.system(size: 12))
                         .foregroundStyle(Theme.mutedForeground.color)
+                        .cssLineHeight(16, size: 12)
                 }
             }
+        }
+    }
+
+    private func run(_ action: @escaping () async throws -> Void) {
+        failure = nil
+        Task {
+            do { try await action() } catch { failure = error.localizedDescription }
         }
     }
 }
