@@ -47,38 +47,46 @@ struct ConnectedCalendarsScreen: View {
     /// Nothing yet: the phone is the one button, not a row among the others.
     private var importFirst: Bool { !statusPending && !hasConnected }
 
+    /// The web's CalendarsSection on a phone (#281): ListGroups as the other
+    /// screens draw them, Dine konti, adding a calendar, the primary calendar.
     var body: some View {
-        List {
-            phoneNote
-            if importFirst {
-                Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                phoneNote
+                if importFirst {
                     VStack(alignment: .leading, spacing: 12) {
                         Text(CasyStrings.phoneNeedTitle)
-                            .font(.title2.weight(.heavy))
+                            .font(.system(size: 24, weight: .heavy))
                             .foregroundStyle(Theme.foreground.color)
                         OnlyTimesDemo()
                         Text(CasyStrings.phoneNeedBody)
-                            .font(.subheadline)
+                            .font(.system(size: 14))
+                            .cssLineHeight(20, size: 14)
                             .foregroundStyle(Theme.mutedForeground.color)
                     }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 8, trailing: 4))
+                    .padding(.top, 8)
                 }
+                if hasConnected { accountsSection }
+                addSection
+                failures
+                if let linkAdded {
+                    Notice(CasyStrings.linkAdded(linkAdded.label, blocks: linkAdded.busyBlocks), tone: .success)
+                        .padding(.top, 12)
+                }
+                if let appleAdded {
+                    Notice(
+                        CasyStrings.appleConnected(
+                            appleAdded.label, calendars: appleAdded.calendars, blocks: appleAdded.busyBlocks,
+                            skipped: appleAdded.skippedEvents), tone: .success
+                    )
+                    .padding(.top, 12)
+                }
+                if hasConnected { primarySection }
             }
-            if hasConnected { accountsSection }
-            addSection
-            failures
-            if let linkAdded {
-                Notice(CasyStrings.linkAdded(linkAdded.label, blocks: linkAdded.busyBlocks), tone: .success)
-            }
-            if let appleAdded {
-                Notice(
-                    CasyStrings.appleConnected(
-                        appleAdded.label, calendars: appleAdded.calendars, blocks: appleAdded.busyBlocks,
-                        skipped: appleAdded.skippedEvents), tone: .success)
-            }
-            if hasConnected { primarySection }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("accounts.screen")
         .casyPushedBar(CasyStrings.accountsTitle, close: CasyStrings.done, action: closeSheet)
         .pageLinks(leave: leave)
         // Kalendere has just fetched the list: only the accounts may have moved on.
@@ -138,14 +146,17 @@ struct ConnectedCalendarsScreen: View {
         if let outcome = phoneOutcome {
             switch outcome.state {
             case "denied":
-                Section {
+                VStack(alignment: .leading, spacing: 8) {
                     Notice(CasyStrings.phoneDenied, tone: .error)
-                    Button(CasyStrings.phoneOpenSettings, action: openSettings)
+                    OutlineCapsule(label: CasyStrings.phoneOpenSettings, action: openSettings)
                 }
+                .padding(.top, 12)
             case "synced":
                 Notice(CasyStrings.phoneConnected(calendars: outcome.calendars, blocks: outcome.busyBlocks), tone: .success)
+                    .padding(.top, 12)
             case "failed":
                 Notice(outcome.error ?? CasyStrings.phoneSaveFailed, tone: .error)
+                    .padding(.top, 12)
             default:
                 EmptyView()
             }
@@ -167,36 +178,33 @@ struct ConnectedCalendarsScreen: View {
 
     // MARK: Your accounts
 
+    /// The web's AccountList: Dine konti, each account, then Synkronisér nu
+    /// (refresh-cw, orange) as the last row, how it went as the footnote.
     private var accountsSection: some View {
-        Section {
+        CardList(
+            CasyStrings.accountsYours,
+            footnoteText: syncNote.map {
+                Text($0.text).foregroundStyle($0.ok ? Theme.emerald700.color : Theme.red700.color)
+            }
+        ) {
             ForEach(accounts) { account in
                 AccountRow(
                     account: account, failure: removeFailures[account.id],
                     reconnect: { form = .apple }, remove: { removing = account })
             }
             Button(action: sync) {
-                HStack(spacing: 12) {
-                    Image(systemName: "arrow.clockwise")
+                CardRow(syncing ? CasyStrings.syncing : CasyStrings.syncNow, tone: .primary) {
+                    LucideIcon("refresh-cw", size: 20)
                         .foregroundStyle(Theme.primary.color)
-                        .symbolEffect(.rotate, isActive: syncing)
-                        .frame(width: 36)
-                    Text(syncing ? CasyStrings.syncing : CasyStrings.syncNow)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Theme.primary.color)
-                    Spacer()
+                        .rotationEffect(.degrees(syncing ? 360 : 0))
+                        .animation(
+                            syncing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default,
+                            value: syncing)
                 }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.cardRow)
             .disabled(syncing)
             .accessibilityIdentifier("accounts.sync")
-        } header: {
-            Text(CasyStrings.accountsYours)
-        } footer: {
-            if let syncNote {
-                Text(syncNote.text)
-                    .foregroundStyle(syncNote.ok ? Theme.emerald700.color : Theme.red700.color)
-            }
         }
     }
 
@@ -265,70 +273,60 @@ struct ConnectedCalendarsScreen: View {
         form?.provider ?? (hasConnected ? nil : connect)
     }
 
+    /// The web's AddCalendar on a phone: Tilføj en kalender (this phone),
+    /// Andre måder at forbinde folding the Apple account and the link open
+    /// under it (its chevron turning down), the guides as the footnote.
     private var addSection: some View {
-        Section {
+        CardList(
+            main.isEmpty ? nil : CasyStrings.accountsAdd,
+            footnoteText: showMore
+                ? Text(
+                    HelpPages.text(
+                        "\(CasyStrings.accountsHelp) [\(CasyStrings.calendarsAppleName)](/help/connect-icloud), [\(CasyStrings.calendarsLinkName)](/help/connect-ics)",
+                        size: 12))
+                : nil
+        ) {
             ForEach(main, id: \.self, content: providerRow)
             Button {
-                moreOpen = !showMore
+                withAnimation(.easeOut(duration: 0.2)) { moreOpen = !showMore }
             } label: {
-                HStack {
-                    ListRow(CasyStrings.accountsMore, systemImage: "ellipsis", detail: CasyStrings.accountsMoreDetail)
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.mutedForeground.color)
-                        .rotationEffect(.degrees(showMore ? 180 : 0))
+                CardRow(CasyStrings.accountsMore, detail: CasyStrings.accountsMoreDetail, expanded: showMore) {
+                    CardRowIcon("ellipsis")
                 }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.cardRow)
             .accessibilityIdentifier("accounts.more")
             .accessibilityAddTraits(showMore ? .isSelected : [])
             if showMore { ForEach(Self.more, id: \.self, content: providerRow) }
-        } header: {
-            if !main.isEmpty { Text(CasyStrings.accountsAdd) }
-        } footer: {
-            if showMore {
-                Text(
-                    HelpPages.text(
-                        "\(CasyStrings.accountsHelp) [\(CasyStrings.calendarsAppleName)](/help/connect-icloud), [\(CasyStrings.calendarsLinkName)](/help/connect-ics)"
-                    ))
-            }
         }
+        .tint(Theme.foreground.color)
     }
 
+    /// A way to connect: its mark in its 36 point badge, its name and a line
+    /// on what it takes, a chevron (a spinner while it waits); picked before
+    /// arriving, the web's bg-secondary.
     private func providerRow(_ provider: String) -> some View {
         let waiting = statusPending || pending(provider)
         return Button {
             add(provider)
         } label: {
-            HStack(spacing: 12) {
+            CardRow(
+                CasyStrings.provider(provider),
+                detail: provider == "apple"
+                    ? CasyStrings.accountsAppleElsewhere
+                    : provider == "ics" ? CasyStrings.accountsLinkHint : CasyStrings.accountsPhoneHint,
+                chevron: true
+            ) {
                 ProviderBadge(provider: provider)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(CasyStrings.provider(provider))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Theme.foreground.color)
-                    Text(
-                        provider == "apple"
-                            ? CasyStrings.accountsAppleElsewhere
-                            : provider == "ics" ? CasyStrings.accountsLinkHint : CasyStrings.accountsPhoneHint
-                    )
-                    .font(.footnote)
-                    .foregroundStyle(Theme.mutedForeground.color)
-                }
-                Spacer(minLength: 8)
+            } trailing: {
                 if waiting {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))
+                    LucideIcon("loader-circle", size: 16).foregroundStyle(Theme.mutedForeground.color)
                 }
             }
-            .contentShape(Rectangle())
+            .background(chosen == provider ? Theme.secondary.color : .clear)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.cardRow)
         .disabled(waiting)
-        .listRowBackground(chosen == provider ? Theme.primary.color.opacity(0.08) : nil)
         .accessibilityIdentifier("accounts.add.\(provider)")
     }
 
@@ -346,40 +344,55 @@ struct ConnectedCalendarsScreen: View {
         ForEach(main + Self.more, id: \.self) { provider in
             if let failure = failed(provider) {
                 Notice("\(CasyStrings.provider(provider)): \(CasyStrings.lastFailed(failure))", tone: .error)
+                    .padding(.top, 12)
             }
         }
     }
 
     // MARK: The primary calendar
 
+    /// The web's PrimaryCalendarCard on a phone: a ListGroup with the
+    /// picker's row and Tilføj automatisk (iOS's own switch, native on
+    /// purpose), what the primary calendar is for as its footnote.
     private var primarySection: some View {
         let choices = calendarChoices(accounts, primaryId: model.primary?.calendarId)
         let hasApple = accounts.contains { $0.provider == "apple" }
-        return Section {
-            if choices.isEmpty {
-                Text(hasApple ? CasyStrings.primaryWaitingForSync : CasyStrings.primaryNoWritable)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.mutedForeground.color)
-            } else {
-                NavigationLink(value: CalendarsPage.primary) {
-                    ListRow(
-                        CasyStrings.primaryTitle,
-                        value: primaryName(accounts, model.primary?.calendarId) ?? CasyStrings.primaryChoose)
+        return VStack(alignment: .leading, spacing: 0) {
+            CardList(footnote: CasyStrings.primaryIntro) {
+                if choices.isEmpty {
+                    CardRow(hasApple ? CasyStrings.primaryWaitingForSync : CasyStrings.primaryNoWritable)
+                } else {
+                    NavigationLink(value: CalendarsPage.primary) {
+                        CardRow(
+                            CasyStrings.primaryTitle,
+                            value: primaryName(accounts, model.primary?.calendarId) ?? CasyStrings.primaryChoose,
+                            chevron: true)
+                    }
+                    .buttonStyle(.cardRow)
+                    .accessibilityIdentifier("accounts.primary")
+                    CardRow(
+                        CasyStrings.primaryAutoAdd,
+                        detail: model.primary == nil
+                            ? CasyStrings.primaryAutoAddNeedsPrimary : CasyStrings.primaryAutoAddDetail,
+                        wrap: true
+                    ) {
+                        EmptyView()
+                    } trailing: {
+                        Toggle(
+                            CasyStrings.primaryAutoAdd,
+                            isOn: Binding(
+                                get: { model.primary?.autoAdd ?? false },
+                                set: { on in setAutoAdd(on) })
+                        )
+                        .labelsHidden()
+                        .tint(Theme.primary.color)
+                        .disabled(model.primary == nil || savingAutoAdd)
+                    }
+                    .accessibilityElement(children: .contain)
                 }
-                .accessibilityIdentifier("accounts.primary")
-                ListSwitchRow(
-                    CasyStrings.primaryAutoAdd,
-                    isOn: Binding(
-                        get: { model.primary?.autoAdd ?? false },
-                        set: { on in setAutoAdd(on) }),
-                    detail: model.primary == nil ? CasyStrings.primaryAutoAddNeedsPrimary : CasyStrings.primaryAutoAddDetail
-                )
-                .disabled(model.primary == nil || savingAutoAdd)
             }
-        } footer: {
-            VStack(alignment: .leading, spacing: 6) {
-                if let autoAddFailure { Notice(autoAddFailure, tone: .error, bare: true) }
-                Text(CasyStrings.primaryIntro)
+            if let autoAddFailure {
+                Notice(autoAddFailure, tone: .error, bare: true).padding(.top, 8)
             }
         }
     }
@@ -405,92 +418,126 @@ private enum ProviderForm: String, Identifiable {
     var provider: String { self == .apple ? "apple" : "ics" }
 }
 
-/// One account: its mark, its name, what it holds and when it last synced, a
-/// warning when it needs one, and signing in again (Apple) or removing it.
+/// One account (the web's AccountRow, drawn like a CardRow with room for a
+/// second line that wraps): its mark (36, 12 from the top), its name (15
+/// medium), what it holds and when it last synced (13 muted), a warning when
+/// it needs one, and its round buttons, signing in again (Apple) and removing.
 private struct AccountRow: View {
     let account: CalendarConnection
     let failure: String?
     let reconnect: () -> Void
     let remove: () -> Void
+    @Environment(\.cardRowIsFirst) private var isFirst
 
     var body: some View {
         let needsReconnect = account.needs_reconnect
         let synced = syncedAgo(account.last_synced_at, now: Native.now).map { CasyStrings.syncedShort(minutes: $0.minutes) }
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 12) {
-                ProviderBadge(provider: account.provider)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(account.account_label ?? CasyStrings.unknownAccount)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Theme.foreground.color)
-                        .lineLimit(1)
-                    (Text([CasyStrings.calendarsCount(account.calendar_sources.count), synced].compactMap { $0 }.joined(separator: " · "))
-                        + Text(account.sync_error != nil && !needsReconnect ? " \(CasyStrings.lastSyncFailed)" : "")
-                        .foregroundStyle(Theme.amber700.color))
-                        .font(.footnote)
-                        .foregroundStyle(Theme.mutedForeground.color)
-                    if needsReconnect {
-                        Text(account.provider == "ics" ? CasyStrings.linkStopped : CasyStrings.accessExpired)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(Theme.amber700.color)
+        HStack(alignment: .top, spacing: 12) {
+            ProviderBadge(provider: account.provider)
+                .padding(.top, 12)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(account.account_label ?? CasyStrings.unknownAccount)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(Theme.foreground.color)
+                            .cssLineHeight(22.5, size: 15)
+                            .lineLimit(1)
+                        (Text(
+                            [CasyStrings.calendarsCount(account.calendar_sources.count), synced].compactMap { $0 }
+                                .joined(separator: " · "))
+                            + Text(account.sync_error != nil && !needsReconnect ? " \(CasyStrings.lastSyncFailed)" : "")
+                            .foregroundStyle(Theme.amber700.color))
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.mutedForeground.color)
+                            .cssLineHeight(19.5, size: 13)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if needsReconnect {
+                            Text(account.provider == "ics" ? CasyStrings.linkStopped : CasyStrings.accessExpired)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(Theme.amber700.color)
+                                .cssLineHeight(16, size: 12)
+                                .padding(.top, 2)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: 8) {
+                        // Only an Apple account signs in again in the app: a link and a
+                        // phone have nothing to sign in to, Google and Outlook aren't offered.
+                        if account.provider == "apple" {
+                            RoundIcon(icon: "refresh-cw", warn: needsReconnect, action: reconnect)
+                                .accessibilityLabel(CasyStrings.reconnect)
+                        }
+                        RoundIcon(icon: "trash", warn: false, action: remove)
+                            .accessibilityLabel(CasyStrings.removeAccountTitle)
+                            .accessibilityIdentifier("accounts.remove.\(account.id)")
                     }
                 }
-                Spacer(minLength: 4)
-                // Only an Apple account signs in again in the app: a link and a
-                // phone have nothing to sign in to, Google and Outlook aren't offered.
-                if account.provider == "apple" {
-                    RoundIcon(systemImage: "arrow.clockwise", warn: needsReconnect, action: reconnect)
-                        .accessibilityLabel(CasyStrings.reconnect)
-                }
-                RoundIcon(systemImage: "trash", warn: false, action: remove)
-                    .accessibilityLabel(CasyStrings.removeAccountTitle)
-                    .accessibilityIdentifier("accounts.remove.\(account.id)")
+                if let failure { Notice(failure, tone: .error, bare: true) }
             }
-            if let failure { Notice(failure, tone: .error, bare: true) }
+            .padding(.vertical, 12)
+            .padding(.trailing, 16)
+            .overlay(alignment: .top) {
+                if !isFirst { Rectangle().fill(Theme.border.color).frame(height: 1) }
+            }
         }
+        .padding(.leading, 16)
     }
 }
 
+/// An account's 32 point round button (`rounded-full border bg-background`,
+/// a 14 point icon, muted; amber while the account needs signing in again).
 private struct RoundIcon: View {
-    let systemImage: String
+    let icon: String
     let warn: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.footnote)
+            LucideIcon(icon, size: 14)
                 .foregroundStyle(warn ? Theme.amber700.color : Theme.mutedForeground.color)
                 .frame(width: 32, height: 32)
                 .background(warn ? Theme.amber50.color : Theme.background.color, in: Circle())
-                .overlay(Circle().stroke(warn ? Theme.amber200.color : Theme.border.color))
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
+                .overlay(Circle().strokeBorder(warn ? Theme.amber200.color : Theme.border.color, lineWidth: 1))
+                .contentShape(Circle().inset(by: -6))
         }
         .buttonStyle(.plain)
     }
 }
 
-/// A provider's mark in its round badge, as the web's PROVIDER_BRANDS draws it.
+/// A provider's mark in its 36 point round badge, as the web's
+/// PROVIDER_BRANDS draws it: 16 points, the brand's own mark and colours.
 struct ProviderBadge: View {
     let provider: String
 
     var body: some View {
-        let (symbol, fg, bg): (String, CasyColor, CasyColor) =
+        Group {
             switch provider {
-            case "device": ("iphone", Theme.emerald700, Theme.emerald100)
-            case "apple": ("apple.logo", Theme.foreground, Theme.secondary)
-            case "ics": ("link", Theme.violet700, Theme.violet100)
-            case "outlook": ("envelope.fill", Theme.sky700, Theme.sky100)
-            case "google": ("g.circle.fill", Theme.sky700, Theme.sky100)
-            default: ("globe", Theme.sky700, Theme.sky100)
+            case "device":
+                LucideIcon("smartphone", size: 16).foregroundStyle(Theme.emerald700.color)
+            case "apple":
+                LucideIcon(brand: "apple", size: 16).foregroundStyle(Theme.neutral800.color)
+            case "ics":
+                LucideIcon("link-2", size: 16).foregroundStyle(Theme.violet700.color)
+            case "google":
+                LucideIcon(brand: "google", size: 16).foregroundStyle(Color(red: 66 / 255, green: 133 / 255, blue: 244 / 255))
+            default:
+                LucideIcon(brand: "microsoft", size: 16).foregroundStyle(Color(red: 0, green: 120 / 255, blue: 212 / 255))
             }
-        Image(systemName: symbol)
-            .font(.subheadline)
-            .foregroundStyle(fg.color)
-            .frame(width: 36, height: 36)
-            .background(bg.color, in: Circle())
-            .accessibilityHidden(true)
+        }
+        .frame(width: 36, height: 36)
+        .background(badge.color, in: Circle())
+        .accessibilityHidden(true)
+    }
+
+    private var badge: CasyColor {
+        switch provider {
+        case "device": Theme.emerald100
+        case "apple": Theme.neutral200
+        case "ics": Theme.violet100
+        case "google": Theme.blue100
+        default: Theme.sky100
+        }
     }
 }
 

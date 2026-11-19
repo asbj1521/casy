@@ -423,6 +423,40 @@ final class ParityUITests: XCTestCase {
         try await shootHelp("/privacy", row: "Privatliv", name: "privacy", words: "Privatliv", theme: "light")
     }
 
+    // MARK: Kalendere (#281)
+
+    /// A Kalendere screen by its address, the same in both modes; its top, then its end.
+    private func shootCalendars(_ path: String, name: String, words: String, theme: String) async throws {
+        let app = try await launch(path, theme: theme)
+        shoot(app, "\(name)-\(theme)", when: words, native: "\(name).screen")
+        for _ in 0..<12 {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+                .press(forDuration: 0.01, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)))
+        }
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        shot("\(name)-end-\(theme)-\(mode)")
+    }
+
+    func testCalendarsLight() async throws {
+        try await shootCalendars("/?calendars", name: "calendars", words: "Forbundne kalendere", theme: "light")
+    }
+
+    func testCalendarsDark() async throws {
+        try await shootCalendars("/?calendars", name: "calendars", words: "Forbundne kalendere", theme: "dark")
+    }
+
+    func testAccountsLight() async throws {
+        try await shootCalendars("/?calendars=accounts", name: "accounts", words: "Primær kalender", theme: "light")
+    }
+
+    func testAccountsDark() async throws {
+        try await shootCalendars("/?calendars=accounts", name: "accounts", words: "Primær kalender", theme: "dark")
+    }
+
+    func testTourLight() async throws {
+        try await shootCalendars("/?calendars=tour", name: "tour", words: "Familie", theme: "light")
+    }
+
     // MARK: Aftaler (#281)
 
     private func shootEvents(theme: String) async throws {

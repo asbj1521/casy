@@ -332,8 +332,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // Profil, as the web's stacked BottomSheet (h-[85dvh], #169): 85 % of the
         // screen, the calendar still showing above it; below full height, iOS 26
         // draws the sheet in its own glass, as the web imitates (#281).
-        // Aftaler too: the web's EventsSheet is the same stacked BottomSheet.
-        if screen == "profile" || screen == "events" {
+        // Aftaler and Kalendere too: the web's EventsSheet and CalendarsSheet
+        // are the same stacked BottomSheet.
+        if ["profile", "events", "calendars"].contains(screen) {
             // Nothing painted over the glass: the hosting view's own white hid it.
             host.view.backgroundColor = .clear
             let height = presenter.view.window?.bounds.height ?? presenter.view.bounds.height

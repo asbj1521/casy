@@ -18,10 +18,18 @@ public struct LucideIcon: View {
         self.size = size
     }
 
+    /// A calendar provider's mark as the web draws it from react-icons
+    /// (`"apple"`, `"google"`, `"microsoft"`), `size` high, as wide as it is drawn.
+    public init(brand: String, size: CGFloat) {
+        asset = "brand.\(brand)"
+        self.size = size
+    }
+
     public var body: some View {
         Image(asset, bundle: .module)
             .renderingMode(.template)
             .resizable()
+            .scaledToFit()
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }

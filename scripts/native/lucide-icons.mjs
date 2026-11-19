@@ -13,7 +13,7 @@
  * (src/lib/parity/lucideIcons.test.ts) fails when the assets differ from what
  * this writes, so a lucide update or a new icon is written here first.
  */
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -44,6 +44,7 @@ export const ICONS = {
   database: [2],
   download: [2],
   "eye-off": [2],
+  ellipsis: [2],
   "face-neutral": [3],
   "file-text": [2],
   flag: [2],
@@ -53,12 +54,15 @@ export const ICONS = {
   "key-round": [2],
   languages: [2],
   layers: [2],
+  "link-2": [2],
+  "list-checks": [2],
   "life-buoy": [2],
   "loader-circle": [2],
   lock: [2],
   "log-in": [2],
   "log-out": [2],
   "message-square": [2],
+  minus: [3],
   monitor: [2],
   moon: [2],
   pencil: [2],
@@ -69,6 +73,7 @@ export const ICONS = {
   share: [2],
   "shield-check": [2],
   sparkles: [2],
+  smartphone: [2],
   star: [2],
   sun: [2],
   timer: [2],
@@ -80,6 +85,17 @@ export const ICONS = {
   users: [2],
   vote: [2],
   x: [2, 2.5, 3],
+};
+
+/**
+ * The calendar providers' marks the web draws from react-icons (#281,
+ * src/components/calendarProviders.tsx): `brand.<name>`, filled, in their
+ * own viewBox. In Swift: `LucideIcon(brand: "google", size: 16)`.
+ */
+export const BRANDS = {
+  apple: ["si", "SiApple"],
+  google: ["si", "SiGoogle"],
+  microsoft: ["fa6", "FaMicrosoft"],
 };
 
 /** The asset's name for an icon at a stroke width. */
@@ -113,6 +129,38 @@ export async function svg(icon, stroke) {
   ].join("\n");
 }
 
+/** A brand mark's SVG, from react-icons' own module (its GenIcon tree), drawn black. */
+export function brandSvg(brand) {
+  const [set, name] = BRANDS[brand];
+  const source = readFileSync(join(ROOT, `node_modules/react-icons/${set}/index.mjs`), "utf8");
+  const start = source.indexOf(`export function ${name} (props)`);
+  const call = source.slice(start).match(/GenIcon\((\{.*\})\)\(props\)/);
+  if (start < 0 || !call) throw new Error(`react-icons has no ${name}`);
+  const tree = JSON.parse(call[1]);
+  const paths = tree.child.map((child) => `  <path d="${escape(child.attr.d)}"/>`);
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="${tree.attr.viewBox}" fill="#000000">`,
+    ...paths,
+    "</svg>",
+    "",
+  ].join("\n");
+}
+
+/** An image set's Contents.json: a vector template, tinted where it is used. */
+const contents = (name) =>
+  JSON.stringify(
+    {
+      images: [{ filename: `${name}.svg`, idiom: "universal" }],
+      info: { author: "xcode", version: 1 },
+      properties: {
+        "preserves-vector-representation": true,
+        "template-rendering-intent": "template",
+      },
+    },
+    null,
+    2,
+  ) + "\n";
+
 /** Every file of the catalog, by its path inside it. */
 export async function catalogFiles() {
   const files = {
@@ -122,20 +170,13 @@ export async function catalogFiles() {
     for (const stroke of strokes) {
       const name = assetName(icon, stroke);
       files[`${name}.imageset/${name}.svg`] = await svg(icon, stroke);
-      files[`${name}.imageset/Contents.json`] =
-        JSON.stringify(
-          {
-            images: [{ filename: `${name}.svg`, idiom: "universal" }],
-            info: { author: "xcode", version: 1 },
-            properties: {
-              "preserves-vector-representation": true,
-              "template-rendering-intent": "template",
-            },
-          },
-          null,
-          2,
-        ) + "\n";
+      files[`${name}.imageset/Contents.json`] = contents(name);
     }
+  }
+  for (const brand of Object.keys(BRANDS)) {
+    const name = `brand.${brand}`;
+    files[`${name}.imageset/${name}.svg`] = brandSvg(brand);
+    files[`${name}.imageset/Contents.json`] = contents(name);
   }
   return files;
 }

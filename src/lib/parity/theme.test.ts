@@ -73,7 +73,9 @@ function colors(): Record<string, { light: Rgb; dark: Rgb }> {
   const shades: [string, number[]][] = [
     ["emerald", [50, 100, 200, 500, 600, 700, 800, 900]],
     ["sky", [100, 700]],
-    ["amber", [50, 100, 200, 400, 600, 700, 800, 900]],
+    ["amber", [50, 100, 200, 400, 500, 600, 700, 800, 900]],
+    ["blue", [100]],
+    ["neutral", [200, 800]],
     ["violet", [100, 700]],
     ["rose", [100, 500, 600, 700]],
     ["zinc", [400, 500]],

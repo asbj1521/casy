@@ -109,7 +109,7 @@ public struct CardList<Content: View>: View {
 
 extension EnvironmentValues {
     /// The first row of a `CardList` has no hairline above it.
-    @Entry var cardRowIsFirst = false
+    @Entry public var cardRowIsFirst = false
 }
 
 /// One row of a `CardList`, as the web's `ListRow`: an icon (the web's lucide

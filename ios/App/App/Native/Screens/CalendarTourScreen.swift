@@ -41,7 +41,7 @@ struct CalendarTourScreen: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .accessibilityIdentifier("tour.screen")
         .casyPushedBar(CasyStrings.tourTitle, close: CasyStrings.done, action: closeSheet)
         .safeAreaInset(edge: .bottom) {
             if ids != nil {
@@ -130,7 +130,8 @@ struct CalendarTourScreen: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .disabled(i >= index)
+                        // Not `disabled`: that dims the bar, and the one you're on is the web's foreground.
+                        .allowsHitTesting(i < index)
                         .accessibilityLabel(CasyStrings.tourStep(i + 1, of: steps.count))
                     }
                 }
@@ -155,11 +156,14 @@ struct CalendarTourScreen: View {
                 .frame(height: 100)
                 .padding(.top, 12)
 
+                // The web's `mb-2 mt-4 px-1`, 12 semibold, capitals drawn only.
                 Text(CasyStrings.tourCategory)
-                    .font(.caption.weight(.semibold))
+                    .font(.system(size: 12, weight: .semibold))
+                    .tracking(0.3)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.mutedForeground.color)
-                    .padding(.top, 20)
+                    .cssLineHeight(16, size: 12)
+                    .padding(.top, 16)
                     .padding(.bottom, 8)
                     .padding(.horizontal, 4)
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
@@ -181,22 +185,25 @@ struct CalendarTourScreen: View {
                     Button {
                         creating = true
                     } label: {
-                        Label(CasyStrings.calendarsNewCategory, systemImage: "plus")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Theme.primary.color)
-                            .lineLimit(1)
-                            .padding(.horizontal, 12)
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .strokeBorder(Theme.border.color, style: StrokeStyle(lineWidth: 1, dash: [5, 3])))
-                            .contentShape(Rectangle())
+                        // The web's `border-dashed rounded-2xl px-3`, 15 medium orange, a 16 point plus.
+                        HStack(spacing: 6) {
+                            LucideIcon("plus", size: 16)
+                            Text(CasyStrings.calendarsNewCategory).lineLimit(1)
+                        }
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Theme.primary.color)
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(Theme.border.color, style: StrokeStyle(lineWidth: 1, dash: [3, 3])))
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
 
                 TourSlider(stop: chosen.stop, helping: $helping) { stop in setChoice { $0.stop = stop } }
-                    .padding(.top, 20)
+                    .padding(.top, 16)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
@@ -255,12 +262,14 @@ private struct TourCard: View {
         let text = textOn(color) == "#ffffff" ? Color.white : Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255)
         VStack(alignment: .leading, spacing: 4) {
             Spacer(minLength: 0)
+            // 26 extrabold at 1.1, tracking-tight; then 13 medium at 90 %.
             Text(calendar.name)
                 .font(.system(size: 26, weight: .heavy))
+                .tracking(-0.65)
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
             Text([calendar.account, CasyStrings.tourEvents(calendar.total)].compactMap { $0 }.joined(separator: " · "))
-                .font(.footnote.weight(.medium))
+                .font(.system(size: 13, weight: .medium))
                 .lineLimit(1)
                 .opacity(0.9)
         }
@@ -286,23 +295,25 @@ private struct CategoryChoice: View {
             HStack(spacing: 6) {
                 Text(label).lineLimit(1)
                 if guessed {
-                    HStack(spacing: 2) {
-                        Image(systemName: "sparkles").foregroundStyle(Theme.amber700.color)
+                    HStack(spacing: 4) {
+                        LucideIcon("sparkles", size: 12).foregroundStyle(Theme.amber500.color)
                         Text(CasyStrings.guessed)
                     }
-                    .font(.caption)
+                    .font(.system(size: 12))
                     .fontWeight(.regular)
                     .foregroundStyle(Theme.mutedForeground.color)
                 }
                 Spacer(minLength: 0)
-                if checked { Image(systemName: "checkmark").font(.footnote.weight(.bold)) }
+                if checked { LucideIcon("check", size: 16, stroke: 3) }
             }
-            .font(.subheadline.weight(checked ? .semibold : .regular))
+            .font(.system(size: 15, weight: checked ? .semibold : .regular))
             .foregroundStyle(checked ? Theme.primary.color : Theme.foreground.color)
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .background(checked ? Theme.primary.color.opacity(0.1) : Theme.card.color, in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(checked ? Theme.primary.color : Theme.border.color))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16).strokeBorder(
+                    checked ? Theme.primary.color : Theme.border.color, lineWidth: 1))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -325,19 +336,19 @@ private struct TourSlider: View {
     var body: some View {
         let at = Double(tourStops.firstIndex(of: stop) ?? 2)
         VStack(spacing: 6) {
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 Text(CasyStrings.tourImportance)
-                    .font(.caption.weight(.semibold))
+                    .font(.system(size: 12, weight: .semibold))
+                    .tracking(0.3)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.mutedForeground.color)
+                // The web's HelpButton: circle-help, 20, orange.
                 Button {
                     helping = true
                 } label: {
-                    Image(systemName: "questionmark.circle")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.mutedForeground.color)
-                        .frame(width: 32, height: 32)
-                        .contentShape(Rectangle())
+                    LucideIcon("circle-question-mark", size: 20)
+                        .foregroundStyle(Theme.primary.color)
+                        .contentShape(Rectangle().inset(by: -12))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(CasyStrings.tourImportanceHelp)
@@ -346,8 +357,9 @@ private struct TourSlider: View {
                         Text(CasyStrings.priorityLevelsHelp)
                         Text("\(CasyStrings.tourOff): \(CasyStrings.tourOffEffect)")
                     }
-                    .font(.footnote)
-                    .padding()
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.foreground.color)
+                    .padding(16)
                     .frame(idealWidth: 320)
                     .fixedSize(horizontal: false, vertical: true)
                     .presentationCompactAdaptation(.popover)
@@ -382,7 +394,7 @@ private struct TourSlider: View {
             .accessibilityIdentifier("tour.slider")
             .sensoryFeedback(.selection, trigger: stop)
             Text(name(stop))
-                .font(.subheadline.weight(.semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.foreground.color)
                 .accessibilityHidden(true)
         }
