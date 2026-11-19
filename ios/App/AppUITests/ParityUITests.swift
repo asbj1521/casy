@@ -457,6 +457,39 @@ final class ParityUITests: XCTestCase {
         try await shootCalendars("/?calendars=tour", name: "tour", words: "Familie", theme: "light")
     }
 
+    // MARK: Tilføj til kalender (#281)
+
+    /// The plus at the top of the month, in both modes: the web has no address for it.
+    private func openTell(theme: String) async throws -> XCUIApplication {
+        let app = try await launch("/", theme: theme)
+        let plus =
+            mode == "web"
+            ? app.webViews.buttons["Tilføj til kalender"].firstMatch : app.buttons["home.tell"]
+        XCTAssertTrue(plus.waitForExistence(timeout: 30))
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        plus.tap()
+        return app
+    }
+
+    private func shootTell(theme: String) async throws {
+        let app = try await openTell(theme: theme)
+        shoot(app, "tell-\(theme)", when: "Fx jeg rejser", native: "tell.box")
+        // Said, and what the AI made of it.
+        let box = mode == "web" ? app.webViews.textViews.firstMatch : app.textViews["tell.box"]
+        XCTAssertTrue(box.waitForExistence(timeout: 10))
+        box.tap()
+        box.typeText("Jeg rejser fra den 12. til den 19. oktober")
+        // The 17e's keyboard swallows the first tap after typing (TellUITests.write).
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
+        let send = mode == "web" ? app.webViews.buttons["Tilføj"].firstMatch : app.buttons["tell.send"]
+        send.tap()
+        shoot(app, "tell-proposal-\(theme)", when: "Sådan forstod vi det", native: "tell.save")
+    }
+
+    func testTellLight() async throws { try await shootTell(theme: "light") }
+
+    func testTellDark() async throws { try await shootTell(theme: "dark") }
+
     // MARK: Aftaler (#281)
 
     private func shootEvents(theme: String) async throws {

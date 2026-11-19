@@ -84,6 +84,8 @@ public enum Theme {
     public static let blue100 = CasyColor([219, 234, 254], [30, 58, 138])
     public static let neutral200 = CasyColor([229, 229, 229], [38, 38, 38])
     public static let neutral800 = CasyColor([38, 38, 38], [229, 229, 229])
+    public static let orange50 = CasyColor([255, 247, 237], [67, 20, 7])
+    public static let orange200 = CasyColor([254, 215, 170], [154, 52, 18])
     public static let amber600 = CasyColor([217, 119, 6], [251, 191, 36])
     public static let amber700 = CasyColor([180, 83, 9], [252, 211, 77])
     public static let amber800 = CasyColor([146, 64, 14], [253, 230, 138])
@@ -136,6 +138,8 @@ public enum Theme {
         "blue100": blue100,
         "neutral200": neutral200,
         "neutral800": neutral800,
+        "orange50": orange50,
+        "orange200": orange200,
         "amber600": amber600,
         "amber700": amber700,
         "amber800": amber800,

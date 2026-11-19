@@ -130,6 +130,7 @@ public enum GlassButtonSize: Sendable {
 /// A button on its own: a glass capsule with orange text and icon.
 public struct GlassButton<Label: View>: View {
     private let systemImage: String?
+    private let icon: String?
     private let size: GlassButtonSize
     private let busy: Bool
     private let action: () -> Void
@@ -138,12 +139,14 @@ public struct GlassButton<Label: View>: View {
 
     public init(
         systemImage: String? = nil,
+        icon: String? = nil,
         size: GlassButtonSize = .medium,
         busy: Bool = false,
         action: @escaping () -> Void,
         @ViewBuilder label: () -> Label
     ) {
         self.systemImage = systemImage
+        self.icon = icon
         self.size = size
         self.busy = busy
         self.action = action
@@ -155,6 +158,9 @@ public struct GlassButton<Label: View>: View {
             HStack(spacing: 8) {
                 if busy {
                     ProgressView().controlSize(.small)
+                } else if let icon {
+                    // The web's lucide icon: 20 on the medium button, 16 on the small.
+                    LucideIcon(icon, size: size == .medium ? 20 : 16)
                 } else if let systemImage {
                     Image(systemName: systemImage)
                 }

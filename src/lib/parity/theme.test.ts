@@ -76,6 +76,7 @@ function colors(): Record<string, { light: Rgb; dark: Rgb }> {
     ["amber", [50, 100, 200, 400, 500, 600, 700, 800, 900]],
     ["blue", [100]],
     ["neutral", [200, 800]],
+    ["orange", [50, 200]],
     ["violet", [100, 700]],
     ["rose", [100, 500, 600, 700]],
     ["zinc", [400, 500]],
