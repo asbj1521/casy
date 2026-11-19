@@ -25,8 +25,7 @@ struct DaySlice: View {
     private static let leastHours = 5.0
     private static let aroundHours = 1.0
     private static let height: CGFloat = 260
-    private static let gutter: CGFloat = 40
-    private static let allDayRow: CGFloat = 22
+    private static let gutter: CGFloat = 52
 
     private var midnight: Int64 { startOfDay(start, appTimeZone) }
 
@@ -48,28 +47,56 @@ struct DaySlice: View {
         .task(id: start) { day = await DayOfCalendar.load(midnight) }
     }
 
-    /// The hours shown: the event with an hour either side, as one window of the day.
+    /// The hours shown: the event with an hour either side (five at the
+    /// least), centred on the event as the web's slice is (DayColumns' `aim`);
+    /// an event of most of the day opens at 08:00.
     private var window: (from: Double, hours: Double) {
         let next = addDays(midnight, 1, appTimeZone)
         let onDay = Double(min(end, next) - start) / 3_600_000
         let hours = min(24, max(Self.leastHours, onDay + 2 * Self.aroundHours))
-        let startHour = placeSpan(start, start + 1, midnight: midnight, appTimeZone).top * 24
-        let from = min(max(0, startHour - Self.aroundHours), 24 - hours)
+        let span = placeSpan(start, end, midnight: midnight, appTimeZone)
+        let centre = span.height > 0.8 ? 8 + hours / 2 : (span.top + span.height / 2) * 24
+        let from = min(max(0, centre - hours / 2), 24 - hours)
         return (from, hours)
     }
 
+    private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
+
+    /// The web's DayColumns for one day (size "full", `fitHours`): the
+    /// names row (44 high: the week in the 52 point gutter, 15 muted; the
+    /// day, 15 semibold, orange as the event is on it), the whole days
+    /// under a line, then the hours fitted into what is left.
     private func slice(_ day: DayOfCalendar) -> some View {
         let allDay = day.segments.filter(\.allDay)
+        let local = localDate(midnight, appTimeZone)
+        let sep = lang == .da ? "." : ""
         return VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 0) {
+                Text(verbatim: CasyStrings.dayWeek(isoWeekNumber(midnight, appTimeZone)))
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.mutedForeground.color)
+                    .frame(width: Self.gutter)
+                Text(
+                    verbatim:
+                        "\(weekdayName(midnight, lang)) \(local.day)\(sep) \(monthShortName(midnight, lang)) \(local.year)"
+                )
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.primary.color)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+            }
+            .frame(height: 44)
+            .overlay(alignment: .bottom) { Rectangle().fill(Theme.border.color).frame(height: 1) }
             if !allDay.isEmpty {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(Array(allDay.prefix(2).enumerated()), id: \.offset) { _, s in
                         chip(day.label(s), rgb: day.color(s.calendarId))
                     }
                 }
-                .padding(.horizontal, 6)
-                .padding(.top, 6)
-                .padding(.leading, Self.gutter - 6)
+                .padding(.horizontal, 2)
+                .padding(.vertical, 1)
+                .padding(.leading, Self.gutter)
+                .overlay(alignment: .bottom) { Rectangle().fill(Theme.border.color).frame(height: 1) }
             }
             GeometryReader { geo in
                 hours(day, size: geo.size)
@@ -77,88 +104,133 @@ struct DaySlice: View {
         }
         .frame(height: Self.height)
         .frame(maxWidth: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card.color))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.border.color))
+        .background(Theme.card.color)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.border.color))
         .contentShape(RoundedRectangle(cornerRadius: 16))
     }
 
+    /// Hour lines from the gutter (the border at 80 %), labelled "08:00" (12
+    /// muted, right-aligned 6 in), every other hour when an hour is under 18
+    /// points; the day's column edged at the gutter; your blocks as the day
+    /// view draws them; the event pencilled in over them.
     private func hours(_ day: DayOfCalendar, size: CGSize) -> some View {
         let (from, hours) = window
         let hourPx = size.height / hours
-        let width = size.width - Self.gutter - 6
+        let width = size.width - Self.gutter
         let y = { (fraction: Double) in (fraction * 24 - from) * hourPx }
-        let at = { (h: Int) in placeSpan(atHour(midnight, Double(h), appTimeZone), atHour(midnight, Double(h), appTimeZone) + 1, midnight: midnight, appTimeZone).top * 24 }
+        let at = { (h: Int) in
+            placeSpan(
+                atHour(midnight, Double(h), appTimeZone), atHour(midnight, Double(h), appTimeZone) + 1,
+                midnight: midnight, appTimeZone
+            ).top * 24
+        }
+        let step = hourPx < 18 ? 2 : 1
         return ZStack(alignment: .topLeading) {
-            // The hour lines and their times.
-            // Each clock hour where the blocks' own measure puts it, so on the
-            // two days a year of 23 or 25 hours the lines and blocks agree.
-            ForEach(Array((0...24).filter { (from...(from + hours)).contains(at($0)) }), id: \.self) { h in
+            ForEach(Array((1...23).filter { $0 % step == 0 }), id: \.self) { h in
                 let top = y(at(h) / 24)
-                // A time cut by the card's edge is left out; its line stays.
-                let fits = top >= 8 && top <= size.height - 8
-                HStack(spacing: 4) {
-                    Text(fits ? formatClockMinutes(h * 60) : "")
-                        .font(.system(size: 10).monospacedDigit())
-                        .foregroundStyle(Theme.mutedForeground.color)
-                        .frame(width: Self.gutter - 6, alignment: .trailing)
-                    Rectangle().fill(Theme.border.color).frame(height: 0.5)
-                }
-                .offset(y: top - 6)
+                Rectangle()
+                    .fill(Theme.border.color.opacity(0.8))
+                    .frame(width: width, height: 1)
+                    .offset(x: Self.gutter, y: top)
+                Text(verbatim: formatClockMinutes(h * 60))
+                    .font(.system(size: 12).monospacedDigit())
+                    .foregroundStyle(Theme.mutedForeground.color)
+                    .frame(width: Self.gutter - 6, height: 16, alignment: .trailing)
+                    .offset(y: top - 8)
             }
+            Rectangle()
+                .fill(Theme.border.color.opacity(0.6))
+                .frame(width: 1, height: size.height)
+                .offset(x: Self.gutter)
             // Your own blocks, placed as Apple Calendar does.
-            ForEach(Array(placeBlocks(day.segments, midnight: midnight, appTimeZone, minHeight: 0.6 / 24).enumerated()), id: \.offset) { _, p in
-                let rgb = day.color(p.segment.calendarId)
-                block(day.label(p.segment), rgb: rgb)
-                    .frame(width: max(0, width * p.width - 2), height: max(0, p.height * 24 * hourPx - 2))
-                    .offset(x: Self.gutter + width * p.left, y: y(p.top))
+            ForEach(
+                Array(placeBlocks(day.segments, midnight: midnight, appTimeZone, minHeight: 22.0 / (24 * hourPx)).enumerated()),
+                id: \.offset
+            ) { _, p in
+                let px = p.height * 24 * hourPx
+                block(
+                    day.label(p.segment),
+                    time: px >= 40 ? formatSegmentRange(p.segment, appTimeZone, allDay: CasyStrings.dayAllDay) : nil,
+                    rgb: day.color(p.segment.calendarId)
+                )
+                .frame(width: max(0, width * p.width - 4), height: max(0, px - 2))
+                .offset(x: Self.gutter + width * p.left + 2, y: y(p.top) + 1)
             }
-            // The event itself, solid in Casy's orange.
+            // The event, pencilled in as the web's lit pencil: a 2 point orange
+            // border, the orange at 20 %, its name 13 bold and its time in orange.
             let span = placeSpan(start, end, midnight: midnight, appTimeZone)
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Theme.cta.color)
+            let px = max(span.height * 24 * hourPx, 22)
+            RoundedRectangle(cornerRadius: 5)
+                .fill(Theme.primary.color.opacity(0.2))
+                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.primary.color, lineWidth: 2))
                 .overlay(alignment: .topLeading) {
-                    Text(label)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .lineLimit(2)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(label)
+                            .font(.system(size: 13, weight: .bold))
+                            .lineLimit(1)
+                            .frame(height: 18)
+                        if px >= 40 {
+                            Text(verbatim: "\(formatTime(isoString(start)))-\(formatTime(isoString(end)))")
+                                .font(.system(size: 12).monospacedDigit())
+                        }
+                    }
+                    .foregroundStyle(Theme.primary.color)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 2)
                 }
-                .frame(width: width, height: max(18, span.height * 24 * hourPx - 2))
-                .offset(x: Self.gutter, y: y(span.top))
+                .frame(width: width - 4, height: px)
+                .offset(x: Self.gutter + 2, y: y(span.top))
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .clipped()
     }
 
-    private func block(_ name: String, rgb: String) -> some View {
+    /// The day view's block: the calendar's tint, rounded 5, a 3 point bar of
+    /// its colour 2 in; the name 13 semibold, from two lines a clock and the
+    /// time (12), in the calendar's darker shade.
+    private func block(_ name: String, time: String?, rgb: String) -> some View {
         let dark = scheme == .dark
-        return RoundedRectangle(cornerRadius: 5)
-            .fill(Color(rgb: CasyCore.tint(rgb, dark: dark)))
+        let shape = RoundedRectangle(cornerRadius: 5)
+        return shape.fill(Color(rgb: CasyCore.tint(rgb, dark: dark)))
             .overlay(alignment: .leading) {
-                Rectangle().fill(Color(rgb: rgb)).frame(width: 3)
+                Capsule().fill(Color(rgb: rgb)).frame(width: 3).padding(.vertical, 2).padding(.leading, 2)
             }
             .overlay(alignment: .topLeading) {
-                Text(name)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color(rgb: CasyCore.shade(rgb, dark: dark)))
-                    .padding(.leading, 7)
-                    .padding(.top, 2)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(verbatim: name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                        .frame(height: 17)
+                    if let time {
+                        HStack(spacing: 2) {
+                            LucideIcon("clock", size: 12)
+                            Text(verbatim: time).font(.system(size: 12).monospacedDigit()).lineLimit(1)
+                        }
+                        .frame(height: 18)
+                        .opacity(0.9)
+                    }
+                }
+                .foregroundStyle(Color(rgb: CasyCore.shade(rgb, dark: dark)))
+                .padding(.leading, 8)
+                .padding(.trailing, 4)
+                .padding(.top, 2)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .clipShape(shape)
     }
 
+    /// A whole day's entry: 12 semibold on a 20 line, its colour's bar on the left.
     private func chip(_ name: String, rgb: String) -> some View {
         let dark = scheme == .dark
         return Text(name)
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(Color(rgb: CasyCore.shade(rgb, dark: dark)))
             .lineLimit(1)
-            .padding(.horizontal, 6)
-            .frame(maxWidth: .infinity, minHeight: Self.allDayRow - 2, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 5).fill(Color(rgb: CasyCore.tint(rgb, dark: dark))))
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
+            .background(Color(rgb: CasyCore.tint(rgb, dark: dark)))
+            .overlay(alignment: .leading) { Rectangle().fill(Color(rgb: rgb)).frame(width: 3) }
+            .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }
 

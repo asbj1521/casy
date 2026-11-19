@@ -12,7 +12,9 @@ public struct LucideIcon: View {
     /// `stroke` other than 2 picks the asset drawn at that width (`strokeWidth={2.25}`).
     public init(_ name: String, size: CGFloat, stroke: Double = 2) {
         // "\(2.25)", never the phone's own number format ("2,25" in Danish).
-        asset = stroke == 2 ? "lucide.\(name)" : "lucide.\(name).\(stroke)"
+        // A whole width without its ".0" (3, not 3.0), as the script names the asset.
+        let width = stroke == stroke.rounded() ? "\(Int(stroke))" : "\(stroke)"
+        asset = stroke == 2 ? "lucide.\(name)" : "lucide.\(name).\(width)"
         self.size = size
     }
 

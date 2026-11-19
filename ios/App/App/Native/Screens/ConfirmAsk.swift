@@ -96,6 +96,10 @@ struct ConfirmAsk: View {
 /// web's `flex flex-wrap`), `spacing` apart both ways.
 struct WrapLayout: Layout {
     var spacing: CGFloat = 6
+    /// Between lines, when it differs from `spacing`.
+    var lineSpacing: CGFloat?
+
+    private var between: CGFloat { lineSpacing ?? spacing }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? .infinity
@@ -103,7 +107,7 @@ struct WrapLayout: Layout {
         for view in subviews {
             let size = view.sizeThatFits(.unspecified)
             if x > 0, x + size.width > width {
-                y += line + spacing
+                y += line + between
                 x = 0
                 line = 0
             }
@@ -119,7 +123,7 @@ struct WrapLayout: Layout {
         for view in subviews {
             let size = view.sizeThatFits(.unspecified)
             if x > bounds.minX, x + size.width > bounds.maxX {
-                y += line + spacing
+                y += line + between
                 x = bounds.minX
                 line = 0
             }

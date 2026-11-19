@@ -71,11 +71,12 @@ function colors(): Record<string, { light: Rgb; dark: Rgb }> {
     everyone: hsl("everyone"),
   };
   const shades: [string, number[]][] = [
-    ["emerald", [50, 100, 200, 600, 700, 800, 900]],
+    ["emerald", [50, 100, 200, 500, 600, 700, 800, 900]],
     ["sky", [100, 700]],
-    ["amber", [50, 100, 200, 600, 700, 800, 900]],
+    ["amber", [50, 100, 200, 400, 600, 700, 800, 900]],
     ["violet", [100, 700]],
-    ["rose", [100, 700]],
+    ["rose", [100, 500, 700]],
+    ["zinc", [400, 500]],
     ["red", [50, 200, 600, 700, 800, 900]],
   ];
   for (const [family, list] of shades) {

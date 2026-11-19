@@ -433,6 +433,34 @@ final class ParityUITests: XCTestCase {
         shot("events-end-\(theme)-\(mode)")
     }
 
+    /// An event's own screen, pushed from its row in Aftaler; its top, then its end.
+    private func shootEvent(_ id: String, row: String, name: String, words: String, theme: String) async throws {
+        let app: XCUIApplication
+        if mode == "web" {
+            app = try await launch("/?events=\(id)", theme: theme)
+        } else {
+            app = try await launch("/?events", theme: theme)
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", row)).firstMatch
+            XCTAssertTrue(link.waitForExistence(timeout: 30), "the \(row) row never showed")
+            link.tap()
+        }
+        shoot(app, "\(name)-\(theme)", when: words, native: "\(name).screen")
+        for _ in 0..<12 {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+                .press(forDuration: 0.01, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)))
+        }
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        shot("\(name)-end-\(theme)-\(mode)")
+    }
+
+    func testDatedLight() async throws {
+        try await shootEvent("ev-run", row: "Løbetur", name: "dated", words: "Tilføj til min kalender", theme: "light")
+    }
+
+    func testDatedDark() async throws {
+        try await shootEvent("ev-run", row: "Løbetur", name: "dated", words: "Tilføj til min kalender", theme: "dark")
+    }
+
     func testEventsLight() async throws { try await shootEvents(theme: "light") }
 
     func testEventsDark() async throws { try await shootEvents(theme: "dark") }

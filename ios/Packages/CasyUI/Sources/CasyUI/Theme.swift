@@ -69,6 +69,7 @@ public enum Theme {
     public static let emerald50 = CasyColor([236, 253, 245], [2, 44, 34])
     public static let emerald100 = CasyColor([209, 250, 229], [6, 78, 59])
     public static let emerald200 = CasyColor([167, 243, 208], [6, 95, 70])
+    public static let emerald500 = CasyColor([16, 185, 129], [16, 185, 129])
     public static let emerald600 = CasyColor([5, 150, 105], [52, 211, 153])
     public static let emerald700 = CasyColor([4, 120, 87], [110, 231, 183])
     public static let emerald800 = CasyColor([6, 95, 70], [167, 243, 208])
@@ -78,6 +79,7 @@ public enum Theme {
     public static let amber50 = CasyColor([255, 251, 235], [69, 26, 3])
     public static let amber100 = CasyColor([254, 243, 199], [120, 53, 15])
     public static let amber200 = CasyColor([253, 230, 138], [146, 64, 14])
+    public static let amber400 = CasyColor([251, 191, 36], [217, 119, 6])
     public static let amber600 = CasyColor([217, 119, 6], [251, 191, 36])
     public static let amber700 = CasyColor([180, 83, 9], [252, 211, 77])
     public static let amber800 = CasyColor([146, 64, 14], [253, 230, 138])
@@ -85,7 +87,10 @@ public enum Theme {
     public static let violet100 = CasyColor([237, 233, 254], [76, 29, 149])
     public static let violet700 = CasyColor([109, 40, 217], [196, 181, 253])
     public static let rose100 = CasyColor([255, 228, 230], [136, 19, 55])
+    public static let rose500 = CasyColor([244, 63, 94], [244, 63, 94])
     public static let rose700 = CasyColor([190, 18, 60], [253, 164, 175])
+    public static let zinc400 = CasyColor([161, 161, 170], [82, 82, 91])
+    public static let zinc500 = CasyColor([113, 113, 122], [113, 113, 122])
     public static let red50 = CasyColor([254, 242, 242], [69, 10, 10])
     public static let red200 = CasyColor([254, 202, 202], [153, 27, 27])
     public static let red600 = CasyColor([220, 38, 38], [248, 113, 113])
@@ -111,6 +116,7 @@ public enum Theme {
         "emerald50": emerald50,
         "emerald100": emerald100,
         "emerald200": emerald200,
+        "emerald500": emerald500,
         "emerald600": emerald600,
         "emerald700": emerald700,
         "emerald800": emerald800,
@@ -120,6 +126,7 @@ public enum Theme {
         "amber50": amber50,
         "amber100": amber100,
         "amber200": amber200,
+        "amber400": amber400,
         "amber600": amber600,
         "amber700": amber700,
         "amber800": amber800,
@@ -127,7 +134,10 @@ public enum Theme {
         "violet100": violet100,
         "violet700": violet700,
         "rose100": rose100,
+        "rose500": rose500,
         "rose700": rose700,
+        "zinc400": zinc400,
+        "zinc500": zinc500,
         "red50": red50,
         "red200": red200,
         "red600": red600,

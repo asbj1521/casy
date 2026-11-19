@@ -55,9 +55,11 @@ struct AddToCalendar: View {
         let state = event.myCalendar?.state
         if state == "added" {
             FlowButton(kind: .quiet, action: {}) {
-                Label(
-                    primaryLabel.map(CasyStrings.addToCalendarAdded) ?? CasyStrings.addToCalendarAddedFallback,
-                    systemImage: "checkmark")
+                // The web's: lucide check (20) in emerald 600, then the words.
+                HStack(spacing: 8) {
+                    LucideIcon("check", size: 20).foregroundStyle(Theme.emerald600.color)
+                    Text(primaryLabel.map(CasyStrings.addToCalendarAdded) ?? CasyStrings.addToCalendarAddedFallback)
+                }
             }
             .disabled(true)
         } else if state == "adding" && !adding {
@@ -72,9 +74,10 @@ struct AddToCalendar: View {
         } else {
             if state == "gone" { footnote(CasyStrings.addToCalendarGone) }
             FlowButton(busy: adding || downloading, action: press) {
-                Label(
-                    state == "gone" ? CasyStrings.addToCalendarAddAgain : CasyStrings.addToCalendar,
-                    systemImage: "calendar.badge.plus")
+                HStack(spacing: 8) {
+                    if !(adding || downloading) { LucideIcon("calendar-plus", size: 20) }
+                    Text(state == "gone" ? CasyStrings.addToCalendarAddAgain : CasyStrings.addToCalendar)
+                }
             }
             footnote(destination)
         }

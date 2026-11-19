@@ -36,62 +36,65 @@ struct DatedScreen: View {
         }
     }
 
+    /// The web's DatedScreen (#281): the hero tile with what and when (8
+    /// below the bar), the day slice and the faces 20 apart, the place and
+    /// note, then what you can do as a CardList.
     private func content(_ event: SuggestedEvent, _ date: EventDate) -> some View {
         let mine = event.createdBy.isYou
-        return List {
-            Section {
-                header(event, date)
-            }
-            .listRowBackground(Color.clear)
-            if let start = parseInstant(date.start), let end = parseInstant(date.end) {
-                Section {
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header(event, date).padding(.top, 8)
+                if let start = parseInstant(date.start), let end = parseInstant(date.end) {
                     DaySlice(start: start, end: end, label: CasyStrings.eventTitle(event.title)) { day in
                         leave(.webScreen("/?day=\(dayKey(day, appTimeZone))"))
                     }
+                    .padding(.top, 20)
                 }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-            }
-            Section {
                 PeopleRow(
                     invitees: event.invitees, suggesterId: event.createdBy.id,
                     standing: { $0.response?.rawValue ?? "none" },
-                    optional: event.settings.people?.optional ?? [])
-            }
-            if event.place != nil || event.note != nil {
-                Section { PlaceNoteView(event: event) }
-            }
-            Section {
-                if event.mode == .vote {
-                    Button {
-                        asking = .backOut
-                    } label: {
-                        ListRow(CasyStrings.eventsCantAfterAll, systemImage: "calendar.badge.minus", tone: .primary)
-                            .contentShape(Rectangle())
+                    optional: event.settings.people?.optional ?? []
+                )
+                .padding(.top, 20)
+                if event.place != nil || event.note != nil {
+                    PlaceNoteView(event: event).padding(.top, 16)
+                }
+                if let failure { Notice(failure, tone: .error, bare: true).padding(.top, 16) }
+                CardList {
+                    if event.mode == .vote {
+                        Button {
+                            asking = .backOut
+                        } label: {
+                            CardRow(CasyStrings.eventsCantAfterAll, icon: "calendar-x", tone: .primary)
+                        }
+                        .buttonStyle(.cardRow)
                     }
-                }
-                if !mine {
-                    Button {
-                        reporting = true
-                    } label: {
-                        ListRow(CasyStrings.reportEvent, systemImage: "flag")
-                            .contentShape(Rectangle())
+                    if !mine {
+                        Button {
+                            reporting = true
+                        } label: {
+                            CardRow(CasyStrings.reportEvent, icon: "flag")
+                        }
+                        .buttonStyle(.cardRow)
                     }
+                    Button {
+                        asking = .exit
+                    } label: {
+                        CardRow(
+                            mine ? CasyStrings.eventsCancelEvent : CasyStrings.eventsLeaveEvent, icon: "log-out",
+                            tone: .danger)
+                    }
+                    .buttonStyle(.cardRow)
+                    // Its words are the question's button's too.
+                    .accessibilityIdentifier("dated.exit")
                 }
-                Button {
-                    asking = .exit
-                } label: {
-                    ListRow(
-                        mine ? CasyStrings.eventsCancelEvent : CasyStrings.eventsLeaveEvent,
-                        systemImage: "rectangle.portrait.and.arrow.right", tone: .danger)
-                        .contentShape(Rectangle())
-                }
-                // Its words are the question's button's too.
-                .accessibilityIdentifier("dated.exit")
-                if let failure { Notice(failure, tone: .error, bare: true) }
+                .disabled(working)
             }
-            .disabled(working)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("dated.screen")
         .casyPushedBar(event.group.name, close: CasyStrings.done, action: closeSheet)
         // Its one main action, pinned along the bottom.
         .safeAreaInset(edge: .bottom) { AddToCalendar(event: event) }
@@ -131,16 +134,20 @@ struct DatedScreen: View {
             event.settings.kind, start: date.start, end: date.end, lang, viewerZone: TimeZone.current.identifier)
         return HStack(spacing: 16) {
             DateTile(start: parseInstant(date.start), size: .hero)
-            VStack(alignment: .leading, spacing: 2) {
+            // The web's: the name 17 semibold, the time 15 muted, the viewer's own 13.
+            VStack(alignment: .leading, spacing: 0) {
                 Text(CasyStrings.eventTitle(event.title))
-                    .font(.headline)
-                    .lineLimit(2)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.foreground.color)
+                    .lineLimit(1)
+                    .cssLineHeight(25.5, size: 17)
                 Text(when)
-                    .font(.subheadline.monospacedDigit())
+                    .font(.system(size: 15).monospacedDigit())
                     .foregroundStyle(Theme.mutedForeground.color)
+                    .cssLineHeight(22.5, size: 15)
                 if let yours {
                     Text(CasyStrings.timeZoneYours(yours))
-                        .font(.footnote)
+                        .font(.system(size: 13))
                         .foregroundStyle(Theme.mutedForeground.color)
                 }
             }
@@ -164,6 +171,7 @@ struct DatedScreen: View {
 /// answer greyed. With `split` (a vote), those still to answer stand apart at
 /// the end, after a thin line.
 struct PeopleRow: View {
+    @Environment(\.colorScheme) private var scheme
     let invitees: [EventInvitee]
     let suggesterId: String?
     /// "accepted", "maybe", "declined", or "none" for not yet.
@@ -188,21 +196,21 @@ struct PeopleRow: View {
         let people = people
         let firstWaiting = split ? people.firstIndex { standing($0) == "none" } : nil
         let optionalNames = people.filter { optional.contains($0.profileId) }.map { $0.isYou ? CasyStrings.eventsYou : $0.name }
+        // The web's: faces 12 apart, wrapping 8 under; a thin line before
+        // those still to answer; the members whose answer decides nothing named
+        // under it (12 muted).
         VStack(alignment: .leading, spacing: 6) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 12) {
-                    ForEach(Array(people.enumerated()), id: \.element.profileId) { i, p in
-                        if i == firstWaiting && i > 0 {
-                            Rectangle().fill(Theme.border.color).frame(width: 1, height: 40)
-                        }
-                        face(p)
+            WrapLayout(spacing: 12, lineSpacing: 8) {
+                ForEach(Array(people.enumerated()), id: \.element.profileId) { i, p in
+                    if i == firstWaiting && i > 0 {
+                        Rectangle().fill(Theme.border.color).frame(width: 1, height: 52).padding(.horizontal, 4)
                     }
+                    face(p)
                 }
-                .padding(.top, 2)
             }
             if !optionalNames.isEmpty {
                 Text(CasyStrings.eventsOptionalAre(nameList(optionalNames, lang)))
-                    .font(.caption)
+                    .font(.system(size: 12))
                     .foregroundStyle(Theme.mutedForeground.color)
             }
         }
@@ -220,20 +228,27 @@ struct PeopleRow: View {
                 url: p.avatarUrl.flatMap(URL.init(string:))
             )
             .opacity(stand == "none" ? 0.5 : 1)
+            // Faded on a solid ground, as the web's: the page behind never shows in it.
+            .background(Circle().fill(Theme.card.color))
             .overlay(alignment: .bottomTrailing) { badge(stand).offset(x: 2, y: 2) }
             .overlay(alignment: .bottomLeading) {
                 if p.profileId == suggesterId {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 16, height: 16)
-                        .background(Circle().fill(Theme.cta.color))
-                        .overlay(Circle().strokeBorder(Theme.background.color, lineWidth: 2))
-                        .offset(x: -2, y: 2)
+                    // The web's: an orange 16 point circle in a 2 point ring of the
+                    // page's colour, a filled white star (10) in it.
+                    ZStack {
+                        Circle().fill(Theme.background.color).frame(width: 20, height: 20)
+                        Circle().fill(Theme.cta.color).frame(width: 16, height: 16)
+                        Image(systemName: "star.fill")
+                            .symbolRenderingMode(.monochrome)
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.white)
+                    }
+                    .frame(width: 16, height: 16)
+                    .offset(x: -2, y: 2)
                 }
             }
             Text(name)
-                .font(.caption2)
+                .font(.system(size: 11))
                 .foregroundStyle(Theme.mutedForeground.color)
                 .lineLimit(1)
                 .frame(width: 48)
@@ -243,15 +258,15 @@ struct PeopleRow: View {
     }
 
     private func badge(_ stand: String) -> some View {
+        // The web's BADGES: lucide check, meh, x and clock at 10 on 16 point circles.
         let (icon, color): (String, Color) =
             switch stand {
-            case "accepted": ("checkmark", Theme.emerald700.color)
-            case "maybe": ("face.smiling", Theme.amber700.color)
-            case "declined": ("xmark", Theme.red600.color)
-            default: ("clock", Theme.mutedForeground.color)
+            case "accepted": ("check", Theme.emerald500.color)
+            case "maybe": ("face-neutral", Theme.amber400.color)
+            case "declined": ("x", Theme.rose500.color)
+            default: ("clock", scheme == .dark ? Theme.zinc500.color : Theme.zinc400.color)
             }
-        return Image(systemName: icon)
-            .font(.system(size: 8, weight: .heavy))
+        return LucideIcon(icon, size: 10, stroke: 3)
             .foregroundStyle(.white)
             .frame(width: 16, height: 16)
             .background(Circle().fill(color))
