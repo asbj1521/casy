@@ -315,3 +315,39 @@ public func flexAround(_ window: StartWindow) -> (startHour: Double, startWindow
     let flex = flexMinutes.first { $0 > 0 && covers($0) } ?? flexMinutes[flexMinutes.count - 1]
     return (startHour, flexWindow(startHour, flex))
 }
+
+// MARK: - The answer on screen (useDateSearch's findAnswer)
+
+/// Where a step's search begins: the day stepped to, but never before the window.
+private func startWithin(_ from: String?, _ windowStart: String) -> String {
+    if let from, (parseInstant(from) ?? 0) > (parseInstant(windowStart) ?? 0) { return from }
+    return windowStart
+}
+
+/// Where a search begins: the day asked for, but a meeting never at a moment
+/// already gone; trips and holidays are whole days and keep today.
+private func searchStart(_ search: EventSettings, _ base: String, now: Int64) -> String {
+    search.kind == .single ? isoString(max(parseInstant(base) ?? 0, now)) : base
+}
+
+/// The first date for the step on screen: the day picked is searched on its own
+/// first (searching on from it would skip a day someone must skip something for
+/// whenever a clean date follows within a week); a big plan on 1 January is
+/// stepped past once (at most one lies in a year).
+public func findAnswer(
+    _ participants: [Participant], _ search: EventSettings, from: String?, day: Bool, windowStart: String,
+    windowEnd: String, now: Int64, _ timeZone: String, isBig: (TimeSlot) -> Bool = { _ in false }
+) -> MultiDayResult {
+    let start = startWithin(from, windowStart)
+    if day, from != nil, search.kind == .single {
+        let dayEnd = isoString(addDays(parseInstant(start) ?? 0, 1, timeZone))
+        let onDay = findEventSlot(participants, search, searchStart(search, start, now: now), dayEnd, timeZone)
+        if onDay.slot != nil { return onDay }
+    }
+    var found = findEventSlot(participants, search, searchStart(search, start, now: now), windowEnd, timeZone)
+    if let slot = found.slot, isBig(slot) {
+        let next = isoString(addDays(startOfDay(parseInstant(slot.start) ?? 0, timeZone), 1, timeZone))
+        found = findEventSlot(participants, search, searchStart(search, next, now: now), windowEnd, timeZone)
+    }
+    return found
+}

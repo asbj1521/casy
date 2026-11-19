@@ -1,4 +1,5 @@
 /** eventSearch.ts, startFlex.ts and scheduler.ts's pure helpers, for EventSearch.swift (#282). */
+import { findAnswer } from "@/hooks/useDateSearch";
 import { findEventSlot, peopleForSearch, type EventSettings } from "@/lib/eventSearch";
 import {
   ALL_DOWS,
@@ -26,6 +27,17 @@ const NOW = Date.UTC(2026, 9, 7, 8);
 const HOUR = 3_600_000;
 const TZ = "Europe/Copenhagen";
 const iso = (ms: number) => new Date(ms).toISOString();
+
+/** Runs `body` with Date.now() as `now`, which findAnswer reads for "never a moment already gone". */
+function withNow<T>(now: number, body: () => T): T {
+  const real = Date.now;
+  Date.now = () => now;
+  try {
+    return body();
+  } finally {
+    Date.now = real;
+  }
+}
 
 export function eventSearchCases(): ParityCase[] {
   const { cases, add, int, pick, random } = caseBook(20261120);
@@ -103,6 +115,29 @@ export function eventSearchCases(): ParityCase[] {
         review: reviewAnswer(found, search, you, accepted),
       },
     );
+  }
+
+  for (let i = 0; i < 70; i++) {
+    const participants = group();
+    const s = settings();
+    const search = settingsToSearch(s);
+    const windowStart = iso(NOW + int(0, 5) * 24 * HOUR);
+    const windowEnd = iso(NOW + int(20, 60) * 24 * HOUR);
+    const from = flag(0.3) ? null : iso(NOW + int(0, 30) * 24 * HOUR);
+    const day = flag(0.4);
+    const bigOn = flag(0.5) ? pick([4, 11, 18]) : null;
+    const now = NOW + int(0, 3) * HOUR;
+    // The date's day, as Planlæg's Date.now() is the case's own `now`.
+    const found = withNow(now, () =>
+      findAnswer(
+        participants,
+        search,
+        { from, day },
+        { start: windowStart, end: windowEnd },
+        (slot) => bigOn !== null && new Date(slot.start).getUTCDate() === bigOn,
+      ),
+    );
+    add("answer", { participants, search, from, day, windowStart, windowEnd, bigOn, now }, found);
   }
 
   for (let i = 0; i < 80; i++) {

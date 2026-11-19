@@ -525,6 +525,16 @@ private func dayList(_ label: DayListLabel) -> JSONValue {
             ])
         case "daysUntil":
             return .number(Double(daysUntil(try text(a, "day"), try text(a, "today"))))
+        case "answer":
+            let bigOn = a["bigOn"].int
+            return try json(
+                findAnswer(
+                    try a["participants"].decoded(), try a["search"].decoded(), from: a["from"].string,
+                    day: a["day"] == .bool(true), windowStart: try text(a, "windowStart"),
+                    windowEnd: try text(a, "windowEnd"), now: try milliseconds(a, "now"), zone,
+                    isBig: { slot in
+                        bigOn.map { localDay(slot.start) == $0 } ?? false
+                    }))
         default:
             return unknown(fn)
         }
@@ -722,4 +732,9 @@ private struct DateRange: Decodable {
             return unknown(fn)
         }
     }
+}
+
+/// The UTC day of month of an ISO instant, as the cases' `bigOn` reads it.
+private func localDay(_ iso: String) -> Int {
+    Calendar(identifier: .gregorian).dateComponents(in: TimeZone(identifier: "UTC")!, from: Date(timeIntervalSince1970: Double(parseInstant(iso) ?? 0) / 1000)).day ?? 0
 }
