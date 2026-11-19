@@ -461,6 +461,14 @@ final class ParityUITests: XCTestCase {
         try await shootEvent("ev-run", row: "Løbetur", name: "dated", words: "Tilføj til min kalender", theme: "dark")
     }
 
+    func testVoteLight() async throws {
+        try await shootEvent("ev-cinema", row: "Biograf", name: "vote", words: "Biograf", theme: "light")
+    }
+
+    func testVoteDark() async throws {
+        try await shootEvent("ev-cinema", row: "Biograf", name: "vote", words: "Biograf", theme: "dark")
+    }
+
     func testEventsLight() async throws { try await shootEvents(theme: "light") }
 
     func testEventsDark() async throws { try await shootEvents(theme: "dark") }

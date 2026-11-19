@@ -52,70 +52,89 @@ struct VoteScreen: View {
         let marked = mustChoose ? bestPick(event, now: now) : halfIn ? leader(event, now: now) : nil
         let ranked = Self.ranked(event, dates)
         let sharedTime = Self.sharedTime(event, dates)
-        return List {
-            Section {
+        // The web's VoteScreen (#281): the hero stack with what and when and
+        // Påmind (8 below the bar), the faces 20 under, the dates as a
+        // CardList, the deadline right under them, the time left, the place
+        // and note, then searching again, reporting and leaving, 32 apart.
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
                 header(event, dates: dates, sharedTime: sharedTime, waiting: mustChoose ? 0 : missing.count)
-            }
-            .listRowBackground(Color.clear)
-            Section {
+                    .padding(.top, 8)
                 PeopleRow(
                     invitees: event.invitees, suggesterId: event.createdBy.id,
                     standing: { p in dates.allSatisfy { $0.answers[p.profileId] != nil } ? "accepted" : "none" },
-                    optional: event.settings.people?.optional ?? [], split: true)
-            } footer: {
+                    optional: event.settings.people?.optional ?? [], split: true
+                )
+                .padding(.top, 20)
                 if mustChoose {
                     Text(mine ? CasyStrings.eventsChooseNow : CasyStrings.eventsWaitingForChoice(event.createdBy.name))
-                        .font(.subheadline.weight(.medium))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Theme.foreground.color)
+                        .padding(.top, 16)
                 }
-            }
-            Section {
-                ForEach(ranked, id: \.date.id) { item in
-                    dateRow(event, item.date, item.n, marked: item.date.id == marked?.id, mustChoose: mustChoose,
-                            canChoose: mustChoose && mine, label: dateLabel(event, item.date, sharedTime: sharedTime))
+                CardList {
+                    ForEach(Array(ranked.enumerated()), id: \.element.date.id) { i, item in
+                        dateRow(event, item.date, item.n, marked: item.date.id == marked?.id, mustChoose: mustChoose,
+                                canChoose: mustChoose && mine, label: dateLabel(event, item.date, sharedTime: sharedTime))
+                            .overlay(alignment: .top) {
+                                if i > 0 {
+                                    Rectangle().fill(Theme.border.color).frame(height: 1).padding(.leading, 16)
+                                }
+                            }
+                    }
                 }
-            } footer: {
+                .animation(.snappy, value: ranked.map { $0.date.id })
+                if let failure { Notice(failure, tone: .error, bare: true).padding(.top, 8) }
+                if mine && !mustChoose { deadlineList(event) }
                 if !mustChoose && !missing.isEmpty {
-                    if let answerBy = event.answerBy, let end = parseInstant(answerBy) {
-                        Countdown(until: end)
-                    } else {
-                        Text(CasyStrings.voteDeadlineUntilAll)
+                    Group {
+                        if let answerBy = event.answerBy, let end = parseInstant(answerBy) {
+                            Countdown(until: end)
+                        } else {
+                            Text(CasyStrings.voteDeadlineUntilAll)
+                                .font(.system(size: 13))
+                                .foregroundStyle(Theme.mutedForeground.color)
+                        }
                     }
+                    .padding(.horizontal, 4)
+                    .padding(.top, 8)
                 }
-            }
-            .animation(.snappy, value: ranked.map { $0.date.id })
-            if let failure { Notice(failure, tone: .error, bare: true) }
-            if mine && !mustChoose {
-                deadlineSection(event)
-            }
-            if event.place != nil || event.note != nil {
-                Section { PlaceNoteView(event: event) }
-            }
-            Section {
-                // Searching again is Planlæg's, still the page's: its own vote screen there.
-                Button {
-                    leave(.webScreen("/?events=\(event.id)"))
-                } label: {
-                    ListRow(CasyStrings.searchAgain, systemImage: "arrow.clockwise").contentShape(Rectangle())
+                if event.place != nil || event.note != nil {
+                    PlaceNoteView(event: event).padding(.top, 24)
                 }
-                if !mine {
+                CardList(spaced: false) {
+                    // Searching again is Planlæg's, still the page's: its own vote screen there.
                     Button {
-                        reporting = true
+                        leave(.webScreen("/?events=\(event.id)"))
                     } label: {
-                        ListRow(CasyStrings.reportEvent, systemImage: "flag").contentShape(Rectangle())
+                        CardRow(CasyStrings.searchAgain, icon: "refresh-cw")
                     }
+                    .buttonStyle(.cardRow)
+                    if !mine {
+                        Button {
+                            reporting = true
+                        } label: {
+                            CardRow(CasyStrings.reportEvent, icon: "flag")
+                        }
+                        .buttonStyle(.cardRow)
+                    }
+                    Button {
+                        asking = .exit
+                    } label: {
+                        CardRow(
+                            mine ? CasyStrings.eventsCancelEvent : CasyStrings.eventsLeaveEvent, icon: "log-out",
+                            tone: .danger)
+                    }
+                    .buttonStyle(.cardRow)
+                    .accessibilityIdentifier("vote.exit")
                 }
-                Button {
-                    asking = .exit
-                } label: {
-                    ListRow(
-                        mine ? CasyStrings.eventsCancelEvent : CasyStrings.eventsLeaveEvent,
-                        systemImage: "rectangle.portrait.and.arrow.right", tone: .danger)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityIdentifier("vote.exit")
+                .padding(.top, 32)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("vote.screen")
         .disabled(working != nil)
         .casyPushedBar(event.group.name, close: CasyStrings.done, action: closeSheet)
         .refreshable { await model.load() }
@@ -193,12 +212,19 @@ struct VoteScreen: View {
             DateTile(start: dates.first.flatMap { parseInstant($0.start) }, more: max(0, dates.count - 1), size: .hero)
                 .padding(.trailing, 8)
                 .padding(.top, 8)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(CasyStrings.eventTitle(event.title)).font(.headline).lineLimit(2)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(CasyStrings.eventTitle(event.title))
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.foreground.color)
+                    .lineLimit(1)
+                    .cssLineHeight(25.5, size: 17)
                 if let sharedTime {
                     Text(sharedTime)
-                        .font(.subheadline.monospacedDigit())
+                        .font(.system(size: 15).monospacedDigit())
                         .foregroundStyle(Theme.mutedForeground.color)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .cssLineHeight(22.5, size: 15)
                 }
             }
             Spacer(minLength: 0)
@@ -212,9 +238,7 @@ struct VoteScreen: View {
     private func remindButton(_ event: SuggestedEvent, waiting: Int) -> some View {
         let last = event.remindedAt.flatMap(parseInstant)
         let done = reminded || (last.map { Native.now - $0 < 86_400_000 } ?? false)
-        return GlassButton(
-            systemImage: done ? "bell.badge" : "bell", size: .small, busy: working == "remind"
-        ) {
+        return GlassButton(size: .small, busy: working == "remind") {
             run("remind") {
                 try await model.change(CasyStrings.eventsRemindFailed) {
                     try await $0.remindVoters(event.id, errorMessage: CasyStrings.eventsRemindFailed).events
@@ -222,7 +246,14 @@ struct VoteScreen: View {
                 reminded = true
             }
         } label: {
-            Text(done ? CasyStrings.remindDone : CasyStrings.remindButton(waiting))
+            // The web's GlassButton "sm": the bell (16), the words, never wrapped.
+            HStack(spacing: 8) {
+                LucideIcon(done ? "bell-ring" : "bell", size: 16)
+                Text(done ? CasyStrings.remindDone : CasyStrings.remindButton(waiting))
+                    .font(.system(size: 15, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
         }
         .disabled(done)
     }
@@ -241,14 +272,16 @@ struct VoteScreen: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 4) {
                             if marked {
-                                Image(systemName: "checkmark")
-                                    .font(.footnote.weight(.heavy))
+                                LucideIcon("check", size: 16, stroke: 3)
                                     .foregroundStyle(Theme.primary.color)
                                     .accessibilityLabel(mustChoose ? CasyStrings.eventsBestPick : CasyStrings.eventsAhead)
                             }
-                            Text(label).font(.subheadline.weight(.medium)).lineLimit(1)
-                            Image(systemName: "chevron.down")
-                                .font(.caption.weight(.semibold))
+                            Text(label)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Theme.foreground.color)
+                                .lineLimit(1)
+                                .cssLineHeight(22.5, size: 15)
+                            LucideIcon("chevron-down", size: 16)
                                 .foregroundStyle(Theme.mutedForeground.color)
                                 .rotationEffect(.degrees(isOpen ? 180 : 0))
                                 .accessibilityHidden(true)
@@ -274,32 +307,37 @@ struct VoteScreen: View {
                         }
                     }
                     .buttonStyle(.borderless)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.primary.color)
                 }
             }
-            if isOpen { DateVoters(date: d, invitees: event.invitees).padding(.top, 10) }
+            .padding(.vertical, 10)
+            .frame(minHeight: 52)
+            if isOpen { DateVoters(date: d, invitees: event.invitees).padding(.bottom, 12) }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
     }
 
-    private func deadlineSection(_ event: SuggestedEvent) -> some View {
-        Section {
+    /// The suggester's deadline and settling now, right under the dates (the web's PhoneVoteDeadline).
+    private func deadlineList(_ event: SuggestedEvent) -> some View {
+        CardList {
             Button {
                 picking = true
             } label: {
-                ListRow(
-                    CasyStrings.voteDeadlineLabel, systemImage: "hourglass",
+                CardRow(
+                    CasyStrings.voteDeadlineLabel, icon: "hourglass",
                     value: event.answerBy.map {
                         CasyStrings.voteDeadlineAt(formatLongDate($0, lang), formatTime($0))
-                    } ?? CasyStrings.voteDeadlineNone)
-                    .contentShape(Rectangle())
+                    } ?? CasyStrings.voteDeadlineNone,
+                    chevron: true)
             }
+            .buttonStyle(.cardRow)
             Button {
                 asking = .settle
             } label: {
-                ListRow(CasyStrings.voteDeadlineSettleNow, tone: .primary).contentShape(Rectangle())
+                CardRow(CasyStrings.voteDeadlineSettleNow, tone: .primary)
             }
+            .buttonStyle(.cardRow)
             // Its words are the question's button's too.
             .accessibilityIdentifier("vote.settle")
         }
@@ -324,28 +362,32 @@ private struct YourAnswer: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            circle("xmark", on: yours == .declined, fill: Theme.red600.color) { answer(.declined) }
+            circle("x", on: yours == .declined, fill: Theme.rose600.color) { answer(.declined) }
                 .accessibilityLabel("\(CasyStrings.eventsICant): \(label)")
                 .accessibilityAddTraits(yours == .declined ? .isSelected : [])
-            circle(
-                "checkmark", on: yours == .accepted || yours == .maybe,
-                fill: yours == .maybe ? Theme.amber700.color : Theme.emerald700.color
-            ) { answer(.accepted) }
+            circle("check", on: yours == .accepted, fill: Theme.emerald600.color, maybe: yours == .maybe) {
+                answer(.accepted)
+            }
                 .accessibilityLabel("\(CasyStrings.eventsICan): \(label)")
                 .accessibilityAddTraits(yours == .accepted || yours == .maybe ? .isSelected : [])
         }
+
     }
 
-    private func circle(_ icon: String, on: Bool, fill: Color, action: @escaping () -> Void) -> some View {
+    /// The web's YourAnswer: 32 point circles 6 apart, lucide x and check
+    /// (16, stroke 2.5); given, rose or emerald 600 with white; "rather not"
+    /// amber 400 round amber 100 with an amber 700 tick.
+    private func circle(
+        _ icon: String, on: Bool, fill: Color, maybe: Bool = false, action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(on ? .white : Theme.mutedForeground.color)
+            LucideIcon(icon, size: 16, stroke: 2.5)
+                .foregroundStyle(on ? .white : maybe ? Theme.amber700.color : Theme.mutedForeground.color)
                 .frame(width: 32, height: 32)
-                .background(Circle().fill(on ? fill : Theme.card.color))
-                .overlay(Circle().strokeBorder(on ? fill : Theme.border.color))
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
+                .background(Circle().fill(on ? fill : maybe ? Theme.amber100.color : Theme.card.color))
+                .overlay(Circle().strokeBorder(on ? fill : maybe ? Theme.amber400.color : Theme.border.color))
+                // 44 to touch, drawn 32 and 6 apart as the web's.
+                .contentShape(Rectangle().inset(by: -6))
         }
         .buttonStyle(.borderless)
     }
@@ -445,14 +487,16 @@ private struct Countdown: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let now = Int64(context.date.timeIntervalSince1970 * 1000) + skew
+            // The web's: lucide timer (14), 13 muted, the time left semibold.
             HStack(spacing: 6) {
-                Image(systemName: "timer").accessibilityHidden(true)
+                LucideIcon("timer", size: 14).accessibilityHidden(true)
                 Text(CasyStrings.eventsSettlesIn)
                 Text(formatCountdown(until - now))
-                    .font(.footnote.weight(.semibold).monospacedDigit())
+                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
                     .foregroundStyle(Theme.foreground.color)
             }
-            .font(.footnote)
+            .font(.system(size: 13))
+            .foregroundStyle(Theme.mutedForeground.color)
         }
     }
 }
