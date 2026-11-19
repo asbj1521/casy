@@ -48,6 +48,65 @@ public struct Group: Codable, Sendable, Equatable, Identifiable {
     public var invited: [String]
 }
 
+/// What a group's members are busy with, as far as anyone else may know (the web's GroupBusy).
+public struct GroupBusy: Codable, Sendable, Equatable {
+    public struct Block: Codable, Sendable, Equatable {
+        public var start: String
+        public var end: String
+        public var category: EventCategory?
+    }
+
+    /// Busy blocks per member; one with no calendar linked has none.
+    public var busy: [String: [Block]]
+    /// Whether each member has a working calendar at all.
+    public var connected: [String: Bool]
+    /// Members whose calendar hasn't been updated for two days or more, and when it last was.
+    public var outdated: [String: String]?
+    /// The backend stopped early because there were too many blocks.
+    public var truncated: Bool
+}
+
+public struct GroupRefresh: Codable, Sendable, Equatable {
+    public var complete: Bool
+    public var synced: Bool
+}
+
+/// A group in the shape the search wants (the web's participantsFromGroup, #82):
+/// members with a calendar are searched, with Christmas and New Year blocked
+/// for everyone; those without are named in `waitingFor`, who check dates
+/// themselves. With no calendar in the group at all everyone is searched as
+/// free, so it still gets dates to answer by hand. While the busy times load
+/// (`data` nil) nobody is searched.
+public struct GroupPeople: Sendable, Equatable {
+    public var participants: [Participant]
+    public var waitingFor: [GroupMember]
+    /// Searched members whose calendar is days old, and since when.
+    public var outdated: [(member: GroupMember, since: String)]
+
+    public static func == (a: GroupPeople, b: GroupPeople) -> Bool {
+        a.participants == b.participants && a.waitingFor == b.waitingFor
+            && a.outdated.map(\.since) == b.outdated.map(\.since)
+    }
+}
+
+public func participantsFromGroup(
+    _ group: Group, _ data: GroupBusy?, markYou: (String) -> String = { $0 }, now: Int64, _ timeZone: String
+) -> GroupPeople {
+    let connected = group.members.filter { data?.connected[$0.profileId] == true }
+    let searched = !connected.isEmpty || data == nil ? connected : group.members
+    let people = searched.map { m in
+        Participant(
+            profileId: m.profileId, name: m.isYou ? markYou(m.name) : m.name,
+            busy: (data?.busy[m.profileId] ?? []).map {
+                BusyInterval(start: $0.start, end: $0.end, category: $0.category)
+            })
+    }
+    return GroupPeople(
+        participants: withHolidayBlocks(people, timeZone, now: now),
+        waitingFor: group.members.filter { data?.connected[$0.profileId] != true },
+        outdated: connected.compactMap { m in data?.outdated?[m.profileId].map { (m, $0) } })
+}
+
 public struct Invitation: Codable, Sendable, Equatable, Identifiable {
     public var groupId: String
     public var groupName: String

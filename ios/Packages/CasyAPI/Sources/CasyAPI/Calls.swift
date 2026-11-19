@@ -7,6 +7,19 @@ private struct Action: Encodable, Sendable {
     let action: String
 }
 
+private struct GroupBusyAsk: Encodable, Sendable {
+    let action = "busy"
+    let groupId: String
+    let from: String
+    let to: String
+}
+
+private struct GroupRefreshAsk: Encodable, Sendable {
+    let action = "refresh"
+    let groupId: String
+    let freshForSeconds: Int
+}
+
 private struct ConfirmedAction: Encodable, Sendable {
     let action: String
     let confirm: Bool
@@ -346,6 +359,23 @@ extension EdgeFunctions {
         let answer: GroupsAnswer = try await call(
             "groups", body: Action(action: "list"), errorMessage: errorMessage)
         return answer.groups ?? []
+    }
+
+    /// Everyone's busy time in one group across [from, to).
+    public func groupBusy(
+        _ groupId: String, from: String, to: String, errorMessage: String? = nil
+    ) async throws -> GroupBusy {
+        try await call("groups", body: GroupBusyAsk(groupId: groupId, from: from, to: to), errorMessage: errorMessage)
+    }
+
+    /// Syncs the members' calendars not synced for a while, so the next search is fresh;
+    /// `complete` is false if some syncs were still running after about ten seconds.
+    public func refreshGroup(
+        _ groupId: String, freshForSeconds: Int, errorMessage: String? = nil
+    ) async throws -> GroupRefresh {
+        try await call(
+            "groups", body: GroupRefreshAsk(groupId: groupId, freshForSeconds: freshForSeconds),
+            errorMessage: errorMessage)
     }
 
     public func invitations(errorMessage: String? = nil) async throws -> [Invitation] {
