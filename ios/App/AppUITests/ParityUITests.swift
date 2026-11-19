@@ -368,6 +368,61 @@ final class ParityUITests: XCTestCase {
 
     func testAdminDark() async throws { try await shootAdmin(theme: "dark") }
 
+    /// A help page: the web's own page (/support), the Swift one pushed from
+    /// its Profil row; its top, then its end.
+    private func shootHelp(_ path: String, row: String, name: String, words: String, theme: String) async throws {
+        let app: XCUIApplication
+        if mode == "web" {
+            app = try await launch(path, theme: theme)
+        } else {
+            app = try await launch("/?profile", theme: theme)
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", row)).firstMatch
+            XCTAssertTrue(link.waitForExistence(timeout: 30), "the \(row) row never showed")
+            for _ in 0..<6 where !link.isHittable { app.screenList.swipeUp() }
+            link.tap()
+        }
+        shoot(app, "\(name)-\(theme)", when: words, native: "help.\(name)")
+        if mode == "web" {
+            for _ in 0..<40 { app.swipeUp(velocity: .fast) }
+        } else {
+            // Drags in the sheet's upper half: a swipe starting on Planlæg
+            // at the end would press it, and it closes the sheet.
+            let page = app.scrollViews["help.\(name)"]
+            for _ in 0..<40 {
+                page.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+                    .press(forDuration: 0.01, thenDragTo: page.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.0)))
+            }
+        }
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        shot("\(name)-end-\(theme)-\(mode)")
+    }
+
+    func testSupportLight() async throws {
+        try await shootHelp("/support", row: "Hjælp og kontakt", name: "support", words: "Hjælp og kontakt", theme: "light")
+    }
+
+    func testSupportDark() async throws {
+        try await shootHelp("/support", row: "Hjælp og kontakt", name: "support", words: "Hjælp og kontakt", theme: "dark")
+    }
+
+    func testHowItWorksLight() async throws {
+        try await shootHelp(
+            "/how-it-works", row: "Sådan virker det", name: "how", words: "Sådan virker det", theme: "light")
+    }
+
+    func testHowItWorksDark() async throws {
+        try await shootHelp(
+            "/how-it-works", row: "Sådan virker det", name: "how", words: "Sådan virker det", theme: "dark")
+    }
+
+    func testTermsLight() async throws {
+        try await shootHelp("/terms", row: "Vilkår", name: "terms", words: "Vilkår", theme: "light")
+    }
+
+    func testPrivacyLight() async throws {
+        try await shootHelp("/privacy", row: "Privatliv", name: "privacy", words: "Privatliv", theme: "light")
+    }
+
     private func openGroup(theme: String) async throws -> XCUIApplication {
         if mode == "web" { return try await launch("/?profile=groups/g-friday", theme: theme) }
         let app = try await openGroups(theme: theme)

@@ -22,10 +22,12 @@ export const CATALOG = join(ROOT, "ios/Packages/CasyUI/Sources/CasyUI/Resources/
 
 /** The icons the native screens use: the lucide name, and the stroke widths drawn (2 by default). */
 export const ICONS = {
+  "arrow-right": [2],
   bell: [2],
   "calendar-check": [2],
   "calendar-days": [2],
   "calendar-heart": [2],
+  "calendar-plus": [2],
   "calendar-search": [2],
   camera: [2],
   check: [2],
@@ -38,8 +40,10 @@ export const ICONS = {
   contact: [2],
   database: [2],
   download: [2],
+  "eye-off": [2],
   "file-text": [2],
   flag: [2],
+  hand: [2],
   info: [2],
   "key-round": [2],
   languages: [2],
@@ -47,6 +51,7 @@ export const ICONS = {
   "life-buoy": [2],
   "loader-circle": [2],
   lock: [2],
+  "log-in": [2],
   "log-out": [2],
   "message-square": [2],
   monitor: [2],

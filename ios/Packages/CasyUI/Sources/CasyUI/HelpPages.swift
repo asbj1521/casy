@@ -85,7 +85,9 @@ public struct HelpPages: Decodable, Sendable {
 
     /// Markdown as text, its links kept for the app's own pages and Mail; a
     /// link to a site outside goes, since the app never opens Safari.
-    public static func text(_ markdown: String) -> AttributedString {
+    /// `size`: the words' size, for the web's links and highlighted words
+    /// (`**word**`): medium, in the text's own colour, as `Term` and `Link`.
+    public static func text(_ markdown: String, size: CGFloat? = nil) -> AttributedString {
         let inApp = markdown.replacingOccurrences(
             of: #"\[([^\]]*)\]\(https?://[^)]*\)"#, with: "$1", options: .regularExpression)
         var text =
@@ -95,6 +97,14 @@ public struct HelpPages: Decodable, Sendable {
             ?? AttributedString(inApp)
         for run in text.runs where run.link != nil {
             text[run.range].underlineStyle = .single
+        }
+        if let size {
+            for run in text.runs
+            where run.link != nil || run.inlinePresentationIntent?.contains(.stronglyEmphasized) == true {
+                text[run.range].font = .system(size: size, weight: .medium)
+                text[run.range].foregroundColor = Theme.foreground.color
+                text[run.range].inlinePresentationIntent = nil
+            }
         }
         return text
     }
