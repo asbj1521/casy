@@ -44,7 +44,7 @@ struct DaySlice: View {
                 Color.clear.frame(height: 1)
             }
         }
-        .task(id: start) { day = await DayOfCalendar.load(midnight) }
+        .task(id: start) { day = await DayOfCalendar.load(midnight)?.without(start: start, end: end, midnight: midnight) }
     }
 
     /// The hours shown: the event with an hour either side (five at the
@@ -244,6 +244,18 @@ struct DayOfCalendar {
     let none: Bool
 
     func color(_ calendarId: String) -> String { colors[calendarId] ?? "113, 113, 122" }
+
+    /// Without the copy of an event already in your calendar: a block of
+    /// yours at exactly the event's times on this day is the one written
+    /// there for it (as homeVotes' scheduledItems reads it), so the event is
+    /// drawn once, in its own colour, never over its copy.
+    func without(start: Int64, end: Int64, midnight: Int64) -> DayOfCalendar {
+        let from = max(start, midnight)
+        let to = min(end, addDays(midnight, 1, appTimeZone))
+        return DayOfCalendar(
+            segments: segments.filter { $0.allDay || !($0.start == from && $0.end == to) },
+            colors: colors, names: names, holidays: holidays, none: none)
+    }
 
     func label(_ s: DaySegment) -> String {
         if s.calendarId == holidayCalendarId { return holidays[dayKey(s.start, appTimeZone)] ?? "" }
