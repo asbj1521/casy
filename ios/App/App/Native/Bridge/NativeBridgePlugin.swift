@@ -271,6 +271,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self?.dismissOpenScreen(["plan": true])
             }
         }
+        // A sheet as tall as what is in it (the trip's, #281), told by the screen.
+        let fit = SheetFit()
         let root: AnyView =
             screen == "calendars"
             ? AnyView(calendarsSheet(state, onDone: onDone, leave: leave))
@@ -279,7 +281,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 TellSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave)
                     .environment(\.growSheet) { [weak self] in self?.growOpenSheet() })
             : screen == "trip"
-            ? AnyView(tripSheet(state, onDone: onDone))
+            ? AnyView(
+                tripSheet(state, onDone: onDone)
+                    .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
             : screen == "aiConsent"
             ? AnyView(
                 AiConsentSheet(leave: leave, yes: onDone, close: onDone).nativeSheetLook(NativePreferences.shared))
@@ -345,6 +349,16 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 min(context.maximumDetentValue, height * 0.85)
             }
             host.sheetPresentationController?.detents = screen == "tell" ? [.medium(), stacked] : [stacked]
+        }
+        // A trip's sheet, as the web's BottomSheet: as tall as what is in it,
+        // in iOS's glass, never whole (where iOS would draw it solid).
+        if screen == "trip" {
+            host.view.backgroundColor = .clear
+            host.sheetPresentationController?.detents = [
+                .custom(identifier: .init("casy.fit")) { context in
+                    min(context.maximumDetentValue - 1, fit.height)
+                }
+            ]
         }
         // The push ask says one sentence: only as tall as that and its button.
         if screen == "push" {
@@ -655,6 +669,17 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// `then` goes with `closed`: what the page does next, as one message, so
     /// it can't step the address back before hearing where to go.
     /// The open sheet, if half height, pulled up to the whole screen.
+    /// The open sheet as tall as `height` (its bar and content, the screen's
+    /// own measure), up to just short of the whole screen.
+    private func fitOpenSheet(_ height: CGFloat, _ fit: SheetFit) {
+        guard abs(fit.height - height) > 0.5 else { return }
+        fit.height = height
+        guard let sheet = bridge?.viewController?.presentedViewController?.sheetPresentationController else {
+            return
+        }
+        sheet.animateChanges { sheet.invalidateDetents() }
+    }
+
     /// The 85 % sheet's detent, below full height so iOS keeps its glass.
     private static let stacked = UISheetPresentationController.Detent.Identifier("casy.stacked")
 
@@ -687,4 +712,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         openScreen = nil
         notifyListeners("closed", data: then.merging(["screen": screen]) { $1 })
     }
+}
+
+/// How tall a sheet that fits its content wants to be, as its screen measured it.
+final class SheetFit {
+    var height: CGFloat = 420
 }

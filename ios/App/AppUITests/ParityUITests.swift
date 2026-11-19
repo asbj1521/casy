@@ -490,6 +490,31 @@ final class ParityUITests: XCTestCase {
 
     func testTellDark() async throws { try await shootTell(theme: "dark") }
 
+    // MARK: A trip's sheet (#281)
+
+    /// A tap on a day of a trip in the parity world's October (src/lib/parityTrips.ts),
+    /// in both modes, as a person opens it: Rome (a trip to say yes to) on the
+    /// 13th, Berlin (when are you back?) on the 27th.
+    private func shootTrip(_ day: Int, name: String, when words: String, theme: String) async throws {
+        let app = try await launch("/", theme: theme)
+        let cell =
+            mode == "web"
+            ? app.webViews.buttons.matching(NSPredicate(format: "label CONTAINS %@", "\(day). oktober")).firstMatch
+            : app.buttons["day.2026-10-\(day)"]
+        XCTAssertTrue(cell.waitForExistence(timeout: 30))
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        cell.tap()
+        shoot(app, "\(name)-\(theme)", when: words, native: "trip.screen")
+    }
+
+    func testTripLight() async throws { try await shootTrip(13, name: "trip", when: "Rom", theme: "light") }
+
+    func testTripDark() async throws { try await shootTrip(13, name: "trip", when: "Rom", theme: "dark") }
+
+    func testTripReturnLight() async throws {
+        try await shootTrip(27, name: "trip-return", when: "Berlin", theme: "light")
+    }
+
     // MARK: Aftaler (#281)
 
     private func shootEvents(theme: String) async throws {

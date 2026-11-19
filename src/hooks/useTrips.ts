@@ -24,6 +24,8 @@ import {
   writeTripAnswers,
   type LegBook,
 } from "@/lib/tripLegBook";
+import { APP_BUILD } from "@/lib/feedback";
+import { parityLegs } from "@/lib/parityTrips";
 import { detectTrips, NO_ANSWERS, type Detected, type TripAnswers } from "@/lib/trips";
 import { tripMarks, type TripMark } from "@/lib/tripView";
 import { useLang, useT } from "@/i18n/lang";
@@ -225,14 +227,17 @@ export function useTrips(): Trips {
 
   const detected = useMemo(
     () =>
-      on && names && events && labels && book && answers
-        ? detectTrips(
-            phoneLegs(events, labels, book, names, answers),
-            answers,
-            now,
-            casyTripSpans(events),
-          )
-        : NOTHING,
+      // The parity build's made-up journeys (#281): no phone calendars there.
+      APP_BUILD === "parity"
+        ? detectTrips(parityLegs(), answers ?? NO_ANSWERS, now)
+        : on && names && events && labels && book && answers
+          ? detectTrips(
+              phoneLegs(events, labels, book, names, answers),
+              answers,
+              now,
+              casyTripSpans(events),
+            )
+          : NOTHING,
     [on, names, events, labels, book, answers, now],
   );
 

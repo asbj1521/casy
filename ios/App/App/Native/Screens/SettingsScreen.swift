@@ -56,6 +56,8 @@ extension EnvironmentValues {
     @Entry var closeSheet: () -> Void = {}
     /// Pulls a half-height sheet up to the whole screen, once it has more to show.
     @Entry var growSheet: () -> Void = {}
+    /// Makes the sheet as tall as its bar and content measure (a trip's).
+    @Entry var fitSheet: (CGFloat) -> Void = { _ in }
 }
 
 extension View {

@@ -57,39 +57,58 @@ struct TripSheet: View {
     }
 }
 
-/// What we found about a trip: the journeys and the time away they make, with
-/// yes or no; or, where the journeys don't pair, a question answered with a
-/// city or a day. No and deleting close the sheet; every other answer keeps it
-/// open on the same trip as it now is.
+/// What we found about a trip, as the web's TripSheet (#281): the journeys
+/// and the time away they make, with yes or no; or, where the journeys don't
+/// pair, a question answered with a city or a day. No and deleting close the
+/// sheet; every other answer keeps it open on the same trip as it now is.
+/// One column with its buttons at the end, the sheet as tall as it is.
 struct TripScreen: View {
     private let model = TripModel.shared
     @Environment(\.closeSheet) private var closeSheet
+    @Environment(\.fitSheet) private var fitSheet
     @State private var picked: Int64?
     /// Which days to offer: fixed while the sheet is open.
     @State private var now = Native.now
+    @State private var bar: CGFloat = 0
+    @State private var content: CGFloat = 0
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
     var body: some View {
         let mark = model.mark
-        List {
-            if let mark {
-                if let trip = mark.trip {
-                    tripBody(mark, trip)
-                } else if let question = mark.question {
-                    if question.kind == "home" {
-                        homeBody(mark, question)
-                    } else {
-                        dayBody(mark, question)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if let mark {
+                    if let trip = mark.trip {
+                        tripBody(mark, trip)
+                    } else if let question = mark.question {
+                        if question.kind == "home" {
+                            homeBody(mark, question)
+                        } else {
+                            dayBody(mark, question)
+                        }
                     }
                 }
+                if let failure = model.failure {
+                    Text(failure)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.red600.color)
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 8)
+                }
             }
-            if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { content = $0 }
         }
+        .scrollBounceBehavior(.basedOnSize)
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { bar = $0 }
+        .onChange(of: bar + content, initial: true) { _, height in
+            if bar > 0, content > 0 { fitSheet(height) }
+        }
+        .accessibilityIdentifier("trip.screen")
         .casySheetBar(title(mark), close: CasyStrings.done, action: closeSheet)
-        .safeAreaInset(edge: .bottom) {
-            if let mark { buttons(mark).padding(.horizontal, 16).padding(.bottom, 8) }
-        }
         .onChange(of: mark?.id) { picked = nil }
     }
 
@@ -108,52 +127,69 @@ struct TripScreen: View {
         return CasyStrings.tripAt(formatDate(iso, lang), formatTime(iso))
     }
 
+    /// 14 point muted words (`text-sm text-muted-foreground`).
+    private func small(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 14))
+            .foregroundStyle(Theme.mutedForeground.color)
+            .cssLineHeight(20, size: 14)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
     @ViewBuilder private func tripBody(_ mark: TripMark, _ trip: Trip) -> some View {
         // A day the person answered ends at midnight: say the day, not 00:00.
         let end =
             startOfDay(trip.end, appTimeZone) == trip.end ? formatDate(isoString(trip.end - 1), lang) : at(trip.end)
-        Section {
-            LegRows(legs: trip.legs, lang: lang, at: at)
-        } header: {
-            Text(CasyStrings.tripFound).textCase(nil)
-        } footer: {
-            VStack(alignment: .leading, spacing: 8) {
-                // A date ending the sentence may end in its own period: one is enough.
-                Text(CasyStrings.tripAway(from: at(trip.start), to: end.hasSuffix(".") ? String(end.dropLast()) : end))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.foreground.color)
-                Text(trip.accepted ? CasyStrings.tripAcceptedNote : CasyStrings.tripAcceptNote)
+        Text(CasyStrings.tripFound)
+            .font(.system(size: 15))
+            .foregroundStyle(Theme.mutedForeground.color)
+            .padding(.bottom, 12)
+        LegList(legs: trip.legs, lang: lang, at: at)
+        // A date ending the sentence may end in its own period: one is enough.
+        Text(CasyStrings.tripAway(from: at(trip.start), to: end.hasSuffix(".") ? String(end.dropLast()) : end))
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(Theme.foreground.color)
+            .cssLineHeight(22.5, size: 15)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+        small(trip.accepted ? CasyStrings.tripAcceptedNote : CasyStrings.tripAcceptNote)
+            .padding(.bottom, 16)
+        if trip.accepted {
+            if trip.inCalendar == true {
+                HStack(spacing: 8) {
+                    LucideIcon("calendar-check", size: 20)
+                    Text(model.addedTo.map(CasyStrings.tripAddedTo) ?? CasyStrings.tripInCalendar)
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.emerald600.color)
+                .frame(maxWidth: .infinity, minHeight: 48)
+            } else {
+                FlowButton(busy: model.adding, action: { model.act(.addToCalendar(mark.id)) }) {
+                    Text(model.adding ? CasyStrings.tripAdding : CasyStrings.tripAddToCalendar)
+                }
             }
-            .padding(.top, 4)
+            secondary(CasyStrings.tripRemove) { decline(mark) }
+        } else {
+            FlowButton(action: { model.act(.accept(mark.id)) }) { Text(CasyStrings.tripAccept) }
+                .accessibilityIdentifier("trip.accept")
+            secondary(CasyStrings.tripDecline) { decline(mark) }
         }
     }
 
     @ViewBuilder private func homeBody(_ mark: TripMark, _ question: TripQuestion) -> some View {
         // The answer first, then what it is about.
-        Section {
+        VStack(spacing: 8) {
             ForEach(question.cities ?? [], id: \.self) { city in
-                Button {
-                    model.act(.home(city))
-                } label: {
-                    HStack {
-                        Text(cityName(city, legs: question.legs, lang))
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(Theme.primary.color)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))
-                    }
-                    .contentShape(Rectangle())
+                FlowButton(action: { model.act(.home(city)) }) {
+                    Text(cityName(city, legs: question.legs, lang))
                 }
-                .buttonStyle(.plain)
             }
         }
-        Section {
-            LegRows(legs: question.legs, lang: lang, at: at)
-        } footer: {
-            Text(CasyStrings.tripHomeIntro)
-        }
+        .padding(.bottom, 16)
+        LegList(legs: question.legs, lang: lang, at: at)
+        small(CasyStrings.tripHomeIntro).padding(.top, 12)
+        secondary(CasyStrings.tripNoneOfThem) { decline(mark) }
     }
 
     @ViewBuilder private func dayBody(_ mark: TripMark, _ question: TripQuestion) -> some View {
@@ -161,65 +197,47 @@ struct TripScreen: View {
         let legs = question.legs
         // The journey's own day: where the stretch away starts (or, asked when they left, ends).
         let journey = startOfDay((back ? legs.first : legs.last)?.start ?? now, appTimeZone)
-        Section {
-            LegRows(legs: legs, lang: lang, at: at)
-        } footer: {
-            Text(back ? CasyStrings.tripReturnIntro : CasyStrings.tripOutboundIntro)
+        LegList(legs: legs, lang: lang, at: at)
+        small(back ? CasyStrings.tripReturnIntro : CasyStrings.tripOutboundIntro)
+            .padding(.top, 12)
+            .padding(.bottom, 16)
+        DayPicker(allowed: dayOptions(question, now: now), journey: journey, picked: $picked, lang: lang)
+        FlowButton(action: {
+            guard let picked else { return }
+            model.act(back ? .returned(mark.id, picked) : .left(mark.id, picked))
+        }) {
+            Text(
+                picked.map {
+                    let day = shortDay($0)
+                    return back ? CasyStrings.tripConfirmReturn(day) : CasyStrings.tripConfirmOutbound(day)
+                } ?? CasyStrings.tripPickDay)
         }
-        Section {
-            DayPicker(allowed: dayOptions(question, now: now), journey: journey, picked: $picked, lang: lang)
-        }
+        .disabled(picked == nil)
+        .accessibilityIdentifier("trip.confirm")
+        .padding(.top, 16)
+        secondary(CasyStrings.tripNotATrip) { decline(mark) }
     }
 
-    /// The answer along the bottom: the main one, and the other beside it.
-    @ViewBuilder private func buttons(_ mark: TripMark) -> some View {
-        VStack(spacing: 8) {
-            if let trip = mark.trip {
-                if trip.accepted {
-                    if trip.inCalendar == true {
-                        Label(
-                            model.addedTo.map(CasyStrings.tripAddedTo) ?? CasyStrings.tripInCalendar,
-                            systemImage: "calendar.badge.checkmark"
-                        )
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.emerald700.color)
-                        .frame(minHeight: 48)
-                    } else {
-                        FlowButton(busy: model.adding, action: { model.act(.addToCalendar(mark.id)) }) {
-                            Text(model.adding ? CasyStrings.tripAdding : CasyStrings.tripAddToCalendar)
-                        }
-                    }
-                    quiet(CasyStrings.tripRemove) { decline(mark) }
-                } else {
-                    FlowButton(action: { model.act(.accept(mark.id)) }) { Text(CasyStrings.tripAccept) }
-                        .accessibilityIdentifier("trip.accept")
-                    quiet(CasyStrings.tripDecline) { decline(mark) }
-                }
-            } else if let question = mark.question {
-                if question.kind == "home" {
-                    quiet(CasyStrings.tripNoneOfThem) { decline(mark) }
-                } else {
-                    let back = question.kind == "return"
-                    FlowButton(action: {
-                        guard let picked else { return }
-                        model.act(back ? .returned(mark.id, picked) : .left(mark.id, picked))
-                    }) {
-                        Text(
-                            picked.map {
-                                let day = formatDate(isoString($0), lang)
-                                return back ? CasyStrings.tripConfirmReturn(day) : CasyStrings.tripConfirmOutbound(day)
-                            } ?? CasyStrings.tripPickDay)
-                    }
-                    .disabled(picked == nil)
-                    .accessibilityIdentifier("trip.confirm")
-                    quiet(CasyStrings.tripNotATrip) { decline(mark) }
-                }
-            }
-        }
+    /// The day picked as the web's button says it: "man. 26. okt.".
+    private func shortDay(_ day: Int64) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: lang == .en ? "en_GB" : "da_DK")
+        formatter.timeZone = TimeZone(identifier: appTimeZone)
+        formatter.setLocalizedDateFormatFromTemplate("EEE d MMM")
+        return formatter.string(from: Date(timeIntervalSince1970: Double(day) / 1000))
     }
 
-    private func quiet(_ title: String, action: @escaping () -> Void) -> some View {
-        FlowButton(kind: .quiet, action: action) { Text(title) }
+    /// The web's SecondaryButton: 48 high, 15 semibold orange words, nothing behind them.
+    private func secondary(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.primary.color)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 8)
     }
 
     private func decline(_ mark: TripMark) {
@@ -228,37 +246,60 @@ struct TripScreen: View {
     }
 }
 
-/// The journeys read from the calendar: how, from where to where, and when.
-private struct LegRows: View {
+/// The journeys read from the calendar (the web's LegList: `divide-y
+/// rounded-xl border`, each `px-3 py-2.5`): how (plane, train, bus in orange,
+/// 20), from where to where (15 medium), and when (14 muted).
+private struct LegList: View {
     let legs: [Leg]
     let lang: Lang
     let at: (Int64) -> String
 
     var body: some View {
-        ForEach(legs) { leg in
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: leg.mode == "train" ? "tram.fill" : leg.mode == "bus" ? "bus.fill" : "airplane")
-                    .foregroundStyle(Theme.primary.color)
-                    .frame(width: 24)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(
-                        "\(CasyStrings.tripMode(leg.mode)): \(CasyStrings.tripRoute(cityName(leg.from, legs: legs, lang), cityName(leg.to, legs: legs, lang)))"
-                    )
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Theme.foreground.color)
-                    Text(at(leg.start))
-                        .font(.footnote)
-                        .foregroundStyle(Theme.mutedForeground.color)
+        VStack(spacing: 0) {
+            ForEach(Array(legs.enumerated()), id: \.element.id) { index, leg in
+                HStack(alignment: .top, spacing: 12) {
+                    LucideIcon(leg.mode == "train" ? "train-front" : leg.mode == "bus" ? "bus" : "plane", size: 20)
+                        .foregroundStyle(Theme.primary.color)
+                        .padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(
+                            "\(CasyStrings.tripMode(leg.mode)): \(CasyStrings.tripRoute(cityName(leg.from, legs: legs, lang), cityName(leg.to, legs: legs, lang)))"
+                        )
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Theme.foreground.color)
+                        .cssLineHeight(22.5, size: 15)
+                        Text(at(leg.start))
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.mutedForeground.color)
+                            .cssLineHeight(20, size: 14)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .modifier(TopLine(shown: index > 0))
             }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.border.color, lineWidth: 1)
         }
     }
 }
 
-/// Picking the day a trip ends (or began) on a month like the phone's own date
-/// picker: the journey's day marked, the days that can be picked not greyed,
-/// and the stretch away shaded from the journey to the day picked.
+/// `divide-y`: a hairline above every row but the first.
+private struct TopLine: ViewModifier {
+    let shown: Bool
+
+    func body(content: Content) -> some View {
+        if shown { content.hairlineAbove() } else { content }
+    }
+}
+
+/// Picking the day a trip ends (or began), as the web's DayPicker
+/// (`rounded-xl border p-2`): the month and its arrows (36, orange), the
+/// weekdays (12 medium muted), the days (17 in 40 point circles, 44 high),
+/// the journey's day orange with a small plane, the days that can't be picked
+/// faint, and the stretch away shaded from the journey to the day picked.
 private struct DayPicker: View {
     let allowed: [Int64]
     let journey: Int64
@@ -274,44 +315,38 @@ private struct DayPicker: View {
         let last = startOfMonth(days.max() ?? journey, appTimeZone)
         let shown = month == 0 ? startOfMonth(allowed.first ?? journey, appTimeZone) : month
         let (from, to) = picked.map { (min(journey, $0), max(journey, $0)) } ?? (journey, journey)
-        VStack(spacing: 4) {
+        VStack(spacing: 0) {
             HStack {
-                Button {
+                arrow("chevron-left", label: CasyStrings.tripPreviousMonth, enabled: shown > first) {
                     month = startOfMonth(shown, appTimeZone, -1)
-                } label: {
-                    Image(systemName: "chevron.left").frame(width: 44, height: 44)
                 }
-                .disabled(shown <= first)
-                .accessibilityLabel(CasyStrings.tripPreviousMonth)
                 Spacer()
                 Text(verbatim: "\(capitalize(monthName(shown, lang))) \(localDate(shown, appTimeZone).year)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.foreground.color)
                 Spacer()
-                Button {
+                arrow("chevron-right", label: CasyStrings.tripNextMonth, enabled: shown < last) {
                     month = startOfMonth(shown, appTimeZone, 1)
-                } label: {
-                    Image(systemName: "chevron.right").frame(width: 44, height: 44)
                 }
-                .disabled(shown >= last)
-                .accessibilityLabel(CasyStrings.tripNextMonth)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Theme.primary.color)
-            Grid(horizontalSpacing: 0, verticalSpacing: 2) {
+            .padding(.horizontal, 4)
+            .padding(.bottom, 4)
+            Grid(horizontalSpacing: 0, verticalSpacing: 0) {
                 GridRow {
                     ForEach(0..<7, id: \.self) { i in
                         // From a Monday: 5 Oct 2026.
                         Text(String(weekdayShortName(addDays(Self.monday, i, appTimeZone), lang).prefix(1)).uppercased())
-                            .font(.caption.weight(.medium))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(Theme.mutedForeground.color)
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
                     }
                 }
                 ForEach(weeks(shown), id: \.self) { week in
                     GridRow {
                         ForEach(0..<7, id: \.self) { i in
                             if let day = week[i] {
-                                cell(day, canPick: canPick.contains(day), away: picked != nil && day >= from && day <= to)
+                                cell(day, canPick: canPick.contains(day), from: from, to: to)
                             } else {
                                 Color.clear.frame(height: 44)
                             }
@@ -320,7 +355,22 @@ private struct DayPicker: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(8)
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.border.color, lineWidth: 1)
+        }
+    }
+
+    private func arrow(_ icon: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            LucideIcon(icon, size: 20)
+                .foregroundStyle(enabled ? Theme.primary.color : Theme.mutedForeground.color.opacity(0.4))
+                .frame(width: 36, height: 36)
+                .contentShape(Circle().inset(by: -4))
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityLabel(label)
     }
 
     private static let monday = wallTime(2026, 9, 5, 0, appTimeZone)
@@ -338,15 +388,16 @@ private struct DayPicker: View {
         return stride(from: 0, to: days.count, by: 7).map { Array(days[$0..<$0 + 7]) }
     }
 
-    private func cell(_ day: Int64, canPick: Bool, away: Bool) -> some View {
+    private func cell(_ day: Int64, canPick: Bool, from: Int64, to: Int64) -> some View {
         let isPicked = day == picked
         let isJourney = day == journey
+        let away = picked != nil && day >= from && day <= to
         return Button {
             picked = day
         } label: {
             ZStack(alignment: .bottom) {
                 Text("\(localDate(day, appTimeZone).day)")
-                    .font(.body.weight(isPicked || isJourney ? .semibold : .regular))
+                    .font(.system(size: 17, weight: isPicked || isJourney ? .semibold : .regular))
                     .foregroundStyle(
                         isPicked
                             ? Theme.primaryForeground.color
@@ -357,17 +408,28 @@ private struct DayPicker: View {
                     .frame(width: 40, height: 40)
                     .background(isPicked ? Theme.primary.color : .clear, in: Circle())
                 if isJourney && !isPicked {
-                    Image(systemName: "airplane")
-                        .font(.system(size: 8))
+                    LucideIcon("plane", size: 10)
                         .foregroundStyle(Theme.primary.color)
-                        .offset(y: -2)
+                        .padding(.bottom, 2)
                 }
             }
+            .frame(width: 40, height: 40)
             .frame(maxWidth: .infinity, minHeight: 44)
-            .background(away ? Theme.primary.color.opacity(0.15) : .clear)
+            .background {
+                // The stretch away, its ends rounded (`rounded-l-full`, `rounded-r-full`).
+                if away {
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: day == from ? 22 : 0, bottomLeadingRadius: day == from ? 22 : 0,
+                        bottomTrailingRadius: day == to ? 22 : 0, topTrailingRadius: day == to ? 22 : 0
+                    )
+                    .fill(Theme.primary.color.opacity(0.15))
+                }
+            }
         }
         .buttonStyle(.plain)
-        .disabled(!canPick)
+        // Not `disabled`, which would fade the journey's own orange day further.
+        .allowsHitTesting(canPick)
+        .accessibilityAddTraits(canPick ? [] : .isStaticText)
         .accessibilityLabel(dayLabel(day, lang))
         .accessibilityAddTraits(isPicked ? .isSelected : [])
     }
