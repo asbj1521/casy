@@ -14876,6 +14876,23 @@
         }
       }
     },
+    "primaryCalendar.autoAddHelp": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Når alle har sagt ja til en aftale, lægger vi den i din primære kalender med det samme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When everyone has accepted an event, we add it to your primary calendar straight away."
+          }
+        }
+      }
+    },
     "homeVote.answer": {
       "extractionState": "manual",
       "localizations": {

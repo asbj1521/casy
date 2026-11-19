@@ -114,6 +114,21 @@ final class HomeUITests: XCTestCase {
         XCTAssertTrue(title(app).waitForExistence(timeout: 5))
     }
 
+    /// A date agreed since this phone last looked is said over the month,
+    /// then flies into its day; it is said once.
+    func testAnAgreedDateIsSaidThenFliesIn() {
+        let app = launch(["-casyAgreed", "ev-run"])
+        let show = app.buttons["agreed.show"]
+        XCTAssertTrue(show.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Løbetur"].exists)
+        show.tap()
+        XCTAssertTrue(show.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(title(app).waitForExistence(timeout: 5))
+        app.terminate()
+        let again = launch()
+        XCTAssertFalse(again.buttons["agreed.show"].waitForExistence(timeout: 4), "said once")
+    }
+
     /// Any other day zooms into the day view: its hours, its events, and back.
     func testADayOpensInTheDayView() {
         let app = launch()

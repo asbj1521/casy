@@ -165,10 +165,16 @@ final class HomeModel {
         }
     }
 
+    /// An agreed date being said and flown in: its chip waits on the month until it lands.
+    var landing: (start: Int64, end: Int64)? {
+        didSet { if landing?.start != oldValue?.start || landing?.end != oldValue?.end { dayCache = [:]; layOut() } }
+    }
+
     /// Every month laid out again, off the main thread; the newest wins.
     private func layOut() {
+        let shown = landing.map { l in page.extras.filter { !($0.start == l.start && $0.end == l.end && $0.pencil != true) } } ?? page.extras
         let items =
-            page.extras + (page.holidaysHidden ? own.filter { $0.calendarId != holidayCalendarId } : own)
+            shown + (page.holidaysHidden ? own.filter { $0.calendarId != holidayCalendarId } : own)
         let first = startOfMonth(Native.now, appTimeZone)
         layoutTask?.cancel()
         layoutTask = Task {

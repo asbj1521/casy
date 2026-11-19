@@ -27,6 +27,8 @@
         /// `-casyPushAnswer <granted|denied|failed>`: how turning notifications on goes, without the page.
         static var pushAnswer: String? { defaults.string(forKey: "casyPushAnswer") }
         static var lang: String? { defaults.string(forKey: "casyLang") }
+        /// `-casyAgreed <event id>`: that agreed event said on the home page however often it has been (#282).
+        static var agreed: String? { defaults.string(forKey: "casyAgreed") }
         /// `-casyTheme <light|dark>`: Casy's own light or dark, for screenshots.
         static var theme: String? { defaults.string(forKey: "casyTheme") }
         static var phoneSync: String { defaults.string(forKey: "casyPhoneSync") ?? "synced" }

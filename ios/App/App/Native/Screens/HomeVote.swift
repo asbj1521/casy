@@ -179,6 +179,10 @@ struct HomeVotePanel: View {
     let later: () -> Void
     /// How much of the screen it covers, for the day view to keep clear.
     let onClear: (CGFloat) -> Void
+    /// A finger on the calendar folds it down to the card alone, so the day
+    /// is nearly all in sight (the web's `folded`); a tap on the card unfolds it.
+    var folded = false
+    var onUnfold: () -> Void = {}
 
     @Environment(\.colorScheme) private var scheme
     /// Cards on their way out, each flying the way it was answered.
@@ -194,6 +198,7 @@ struct HomeVotePanel: View {
             let short = screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom <= 700
             // h-[min(34dvh,14.75rem)], short:h-[11rem].
             let height = short ? 176 : min((screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom) * 0.34, 236)
+            let glass = UnevenRoundedRectangle(topLeadingRadius: 28, topTrailingRadius: 28, style: .continuous)
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 panel(cardHeight: height, short: short)
@@ -201,10 +206,14 @@ struct HomeVotePanel: View {
                     .padding(.top, 12)
                     .padding(.bottom, 8)
                     .background {
-                        UnevenRoundedRectangle(topLeadingRadius: 28, topTrailingRadius: 28, style: .continuous)
-                            .fill(.clear)
-                            .casyGlass(in: UnevenRoundedRectangle(topLeadingRadius: 28, topTrailingRadius: 28, style: .continuous))
-                            .ignoresSafeArea(edges: .bottom)
+                        // The glass behind it all, gone while it is folded down to the card.
+                        GeometryReader { box in
+                            glass.fill(.clear)
+                                .casyGlass(in: glass)
+                                .offset(y: isFolded ? box.size.height / 4 : 0)
+                                .opacity(isFolded ? 0 : 1)
+                        }
+                        .ignoresSafeArea(edges: .bottom)
                     }
                     .onGeometryChange(for: CGFloat.self) { $0.size.height + screen.safeAreaInsets.bottom } action: {
                         onClear($0)
@@ -225,26 +234,54 @@ struct HomeVotePanel: View {
         ) { deck.answer(.declined, confirmed: true) }
     }
 
+    /// Folded only while there is a card to swipe and nothing to ask.
+    private var isFolded: Bool { folded && !deck.done && !deck.confirmMove }
+
     @ViewBuilder private func panel(cardHeight: CGFloat, short: Bool) -> some View {
         VStack(spacing: 0) {
-            titleRow
-            segments.padding(.top, 8)
+            VStack(spacing: 0) {
+                titleRow
+                segments.padding(.top, 8)
+            }
+            .collapsed(isFolded)
             if deck.done || deck.current == nil {
                 thanks.frame(height: cardHeight)
             } else if let current = deck.current {
                 cards(current)
                     .frame(height: cardHeight)
-                    .padding(.top, short ? 8 : 12)
-                AnswerButtons(tight: short) { deck.answer($0) }
-                if !deck.hintSeen && deck.index == 0 && deck.givenNone {
-                    Text(CasyStrings.voteHint)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.mutedForeground.color)
-                        .multilineTextAlignment(.center)
-                        .cssLineHeight(16, size: 12)
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 4)
+                    .padding(.top, isFolded ? 0 : short ? 8 : 12)
+                    // A tap on the folded card, not a swipe, unfolds it.
+                    .simultaneousGesture(TapGesture().onEnded { if isFolded { onUnfold() } }, including: isFolded ? .all : .subviews)
+                    // Folded, the card alone: still a way to put it away without answering.
+                    .overlay(alignment: .topTrailing) {
+                        if isFolded {
+                            Button(action: later) {
+                                Text(CasyStrings.voteLater)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Theme.primary.color)
+                                    .padding(.horizontal, 16)
+                                    .frame(minHeight: 44)
+                                    .casyGlass()
+                            }
+                            .buttonStyle(.plain)
+                            .offset(y: -56)
+                            .transition(.opacity)
+                            .accessibilityIdentifier("vote.later")
+                        }
+                    }
+                VStack(spacing: 0) {
+                    AnswerButtons(tight: short) { deck.answer($0) }
+                    if !deck.hintSeen && deck.index == 0 && deck.givenNone {
+                        Text(CasyStrings.voteHint)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.mutedForeground.color)
+                            .multilineTextAlignment(.center)
+                            .cssLineHeight(16, size: 12)
+                            .padding(.horizontal, 8)
+                            .padding(.bottom, 4)
+                    }
                 }
+                .collapsed(isFolded)
             }
             if let error = deck.error {
                 Notice(error, tone: .error).padding(.top, 4)
@@ -384,6 +421,20 @@ struct HomeVotePanel: View {
         VoteCardFace(
             event: deck.event, date: deck.latest(date), position: position, total: deck.dates.count,
             yours: deck.answerOf(date))
+    }
+}
+
+extension View {
+    /// The web's Collapse: grown to its height when open, shrunk away and
+    /// faded when not.
+    func collapsed(_ shut: Bool) -> some View {
+        fixedSize(horizontal: false, vertical: true)
+            .frame(height: shut ? 0 : nil, alignment: .top)
+            .opacity(shut ? 0 : 1)
+            // Clipped only on the way shut: open, the buttons' shadows show.
+            .clipShape(Rectangle().inset(by: shut ? 0 : -24))
+            .allowsHitTesting(!shut)
+            .accessibilityHidden(shut)
     }
 }
 

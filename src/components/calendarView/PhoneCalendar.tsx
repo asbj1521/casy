@@ -198,7 +198,8 @@ export default function PhoneCalendar() {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   // Anything over the month in the address; `?lang=en` is none of that (#215).
-  const overMonth = [...params.keys()].some((key) => key !== "lang");
+  // `agreed` is the parity build's (useHomeVotes): nothing over the month.
+  const overMonth = [...params.keys()].some((key) => key !== "lang" && key !== "agreed");
   const listOpen = params.has("calendars");
   // The buttons each sheet grows out of and shrinks back into (#169).
   const listButton = useRef<HTMLButtonElement>(null);
@@ -431,10 +432,12 @@ export default function PhoneCalendar() {
   // Nothing over the month: settled, no sheet, no open day. Only then is
   // something asked (#205), one thing at a time.
   const bare = settled && !overMonth && dayShown === null;
+  // The app's own home page says an agreed date itself (#282).
+  const nativeHome = useNativeScreen("home");
   const homeVotes = useHomeVotes({
     calendar,
     months,
-    idle: bare && !importShown && !aiAsking,
+    idle: bare && !importShown && !aiAsking && !nativeHome,
   });
   // Times a whole group is free (#171), once the page has settled.
   const primeDates = usePrimeDates(settled);

@@ -9,6 +9,7 @@ import { useIsDark } from "@/hooks/useIsDark";
 import { eventTitle } from "@/i18n/eventTitle";
 import { useT } from "@/i18n/lang";
 import { flyIntoDay } from "@/lib/dateFlight";
+import { APP_BUILD } from "@/lib/feedback";
 import {
   CASY_CALENDAR,
   CASY_RGB,
@@ -33,6 +34,16 @@ const SETTLE_MS = 1500;
 const GLIDE_FIRST_MS = 650;
 
 const NO_EVENTS: SuggestedEvent[] = [];
+
+/**
+ * The parity build (#282) says one agreed event from its address
+ * (`?agreed=<id>`) on a first visit, so a test sees AgreedCard on the web and
+ * natively alike.
+ */
+function parityAgreed(): string | null {
+  if (APP_BUILD !== "parity") return null;
+  return new URLSearchParams(location.search).get("agreed");
+}
 
 function readSeen(): ReadonlySet<string> | null {
   const raw = readStored(SEEN_KEY);
@@ -77,9 +88,20 @@ export function useHomeVotes({
 
   // What this device has seen land: null until known, on a first visit
   // everything decided by then (React's pattern for state set from data).
-  const [seen, setSeen] = useState(readSeen);
+  const [seen, setSeen] = useState(() => {
+    const stored = readSeen();
+    const fresh = parityAgreed();
+    return stored && fresh ? new Set([...stored].filter((id) => id !== fresh)) : stored;
+  });
   if (seen === null && isSuccess) {
-    setSeen(new Set(sectionEvents(events).scheduled.map((e) => e.id)));
+    const fresh = parityAgreed();
+    setSeen(
+      new Set(
+        sectionEvents(events)
+          .scheduled.map((e) => e.id)
+          .filter((id) => id !== fresh),
+      ),
+    );
   }
   useEffect(() => {
     if (seen) writeStored(SEEN_KEY, JSON.stringify([...seen]));

@@ -782,6 +782,7 @@ public enum CasyStrings {
     public static var primaryBadge: String { text("primaryCalendar.badge") }
     public static var primaryIntro: String { text("primaryCalendar.introShort") }
     public static var primaryAutoAddDetail: String { text("primaryCalendar.autoAddShort") }
+    public static var primaryAutoAddHelp: String { text("primaryCalendar.autoAddHelp") }
     public static var primaryNoWritable: String { text("primaryCalendar.noWritable") }
     public static var primaryWaitingForSync: String { text("primaryCalendar.waitingForSync") }
     public static var primarySelectLabel: String { text("primaryCalendar.selectLabel") }

@@ -39,6 +39,17 @@ struct HomeScreen: View {
     /// screen its card covers.
     @State private var deck: VoteDeck?
     @State private var voteClear: CGFloat = 0
+    /// Its card folded down while the calendar is touched; "‹ Oktober" takes
+    /// it out onto the whole month, folded, free to look anywhere (the web's
+    /// `folded` and `month`).
+    @State private var voteFolded = false
+    /// An agreed date said over the month, then flown into its day, with
+    /// confetti as it lands (the web's AgreedCard, flyIntoDay, Celebration).
+    @State private var agreed: SuggestedEvent?
+    @State private var flight: DateFlight?
+    @State private var celebrations = 0
+    @State private var settled = false
+    @State private var voteOnMonth = false
     /// Færdig on a vote (#241): the pill stays away until the app is opened
     /// again, or back after half an hour away (the web's voteLater.ts).
     @State private var votesAway = false
@@ -71,10 +82,23 @@ struct HomeScreen: View {
                     .zIndex(1)
                 }
                 toolbar.zIndex(2)
+                if let agreed {
+                    AgreedCard(event: agreed) { from in flyIn(agreed, from: from) }
+                        .transition(.opacity)
+                        .zIndex(4)
+                }
+                if let flight {
+                    FlyingDate(flight: flight) { landed() }
+                        .id(flight.id)
+                        .zIndex(5)
+                }
+                if celebrations > 0 {
+                    Celebration().id(celebrations).zIndex(6)
+                }
                 if let deck {
                     HomeVotePanel(
                         deck: deck, close: { closeVote(away: false) }, later: { closeVote(away: true) },
-                        onClear: { voteClear = $0 }
+                        onClear: { voteClear = $0 }, folded: voteFolded, onUnfold: unfoldVote
                     )
                     .id(deck.eventId)
                     .transition(.move(edge: .bottom))
@@ -83,7 +107,15 @@ struct HomeScreen: View {
             }
         }
         .background(Theme.background.color.ignoresSafeArea())
-        .task { if EventsModel.shared.events == nil { await EventsModel.shared.load() } }
+        .task {
+            if EventsModel.shared.events == nil { await EventsModel.shared.load() }
+            // As the web's SHEETS_AFTER_MS: the home page settles before anything is said over it.
+            try? await Task.sleep(for: .milliseconds(1200))
+            settled = true
+            sayAgreed()
+        }
+        .onChange(of: EventsModel.shared.events) { _, _ in sayAgreed() }
+        .onChange(of: idle) { _, _ in sayAgreed() }
         .onChange(of: model.page.dataAt) { _, _ in Task { await EventsModel.shared.load() } }
         .onChange(of: deck?.view) { _, view in showVote(view) }
         .onChange(of: voteClear) { _, clear in model.voting?.clear = clear }
@@ -146,6 +178,12 @@ struct HomeScreen: View {
     /// A tap on a day: the page's when it has something there (a trip
     /// waiting, a vote's date, a starred day), else its day view, zoomed out of its cell.
     private func pick(_ day: Int64, _ from: CGRect?) {
+        // While a vote is answered, a day opens in the day view, the vote still on.
+        if deck != nil {
+            voteOnMonth = false
+            openDayView(day, from: from)
+            return
+        }
         if let vote = waitingVote(on: day) {
             openVote(vote, from: from)
             return
@@ -213,7 +251,7 @@ struct HomeScreen: View {
         let day = toolbarDay && shownDay != nil
         let month = shownDay.map { capitalize(monthName($0, lang)) } ?? ""
         return HStack(alignment: .top) {
-            Button(action: day ? (deck != nil ? { closeVote(away: false) } : closeDay) : { model.onAction?("calendars", nil) }) {
+            Button(action: day ? (deck != nil ? voteToMonth : closeDay) : { model.onAction?("calendars", nil) }) {
                 // Both words always laid out, one faded in (0.18 s, the web's
                 // crossfade); the capsule's width morphs from one to the other.
                 ZStack(alignment: .leading) {
@@ -352,6 +390,10 @@ struct HomeScreen: View {
             )
             // Down to the screen's edge, so the month doesn't show under it.
             .background(Theme.background.color.ignoresSafeArea(edges: .bottom))
+            // A finger on the week row or the hours folds a vote's card away.
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0).onChanged { _ in foldVote() },
+                including: deck != nil && !voteFolded ? .all : .subviews)
             .mask(alignment: .topLeading) {
                 // Open, nothing is clipped, the hours under the home indicator
                 // included; in the circle, a square as wide as the page with
@@ -371,6 +413,65 @@ struct HomeScreen: View {
             .animation(
                 dayOpen ? .linear(duration: 0.38 * 0.3) : .linear(duration: 0.32 * 0.3).delay(0.32 * 0.7)
             ) { $0.opacity(dayOpen ? 1 : 0) }
+        }
+    }
+
+    // MARK: An agreed date
+
+    /// Nothing over the month: no vote, no open day, nothing of the page's, no flight.
+    private var idle: Bool {
+        settled && deck == nil && shownDay == nil && !model.page.covered && flight == nil && agreed == nil
+            && pendingLanding == nil
+    }
+
+    private func sayAgreed() {
+        // Only once the events are known: on a first visit, what is decided by then counts as seen.
+        guard idle, let events = EventsModel.shared.events, let next = AgreedSeen.next(events) else { return }
+        if let date = next.currentDate {
+            model.landing = (instantOrZero(date.start), instantOrZero(date.end))
+        }
+        withAnimation(.easeOut(duration: 0.25)) { agreed = next }
+    }
+
+    /// The card closed: the month glides to the day, and the date flies there.
+    private func flyIn(_ event: SuggestedEvent, from: CGRect) {
+        // On its way from now: nothing else is said until it has landed.
+        pendingLanding = event.id
+        withAnimation(.easeOut(duration: 0.25)) { agreed = nil }
+        guard let date = event.currentDate else { return }
+        let day = startOfDay(instantOrZero(date.start), appTimeZone)
+        withAnimation(.easeInOut(duration: 0.5)) { position = startOfMonth(day, appTimeZone) }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(650))
+            guard let cell = HomeFrames.shared.cell(of: day), !UIAccessibility.isReduceMotionEnabled else {
+                pendingLanding = nil
+                land(event.id)
+                return
+            }
+            flight = DateFlight(label: CasyStrings.eventTitle(event.title), from: from, cell: cell)
+        }
+    }
+
+    @State private var pendingLanding: String?
+
+    private func landed() {
+        if let id = pendingLanding { land(id) }
+        pendingLanding = nil
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(700))
+            flight = nil
+        }
+    }
+
+    /// It has landed: the month's own chip takes over, confetti, and a
+    /// moment to see it settle before the next is said.
+    private func land(_ id: String) {
+        AgreedSeen.mark(id)
+        model.landing = nil
+        celebrations += 1
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(1500))
+            sayAgreed()
         }
     }
 
@@ -402,12 +503,42 @@ struct HomeScreen: View {
         }
     }
 
+    private func foldVote() {
+        guard deck != nil, !voteFolded else { return }
+        withAnimation(.easeInOut(duration: 0.3)) { voteFolded = true }
+    }
+
+    /// Unfolded, back to the day view on the date being answered, from the
+    /// month or another day looked at meanwhile.
+    private func unfoldVote() {
+        withAnimation(.easeInOut(duration: 0.3)) { voteFolded = false }
+        voteOnMonth = false
+        guard let current = model.voting?.current else { return }
+        let day = startOfDay(current.start, appTimeZone)
+        if shownDay == nil {
+            openDayView(day, from: HomeFrames.shared.cell(of: day))
+        } else if shownDay != day {
+            withAnimation(Self.travel(from: shownDay ?? day, to: day)) { shownDay = day }
+        }
+    }
+
+    /// "‹ Oktober" while answering: the vote out onto the month, its card folded.
+    private func voteToMonth() {
+        withAnimation(.easeInOut(duration: 0.3)) { voteFolded = true }
+        voteOnMonth = true
+        closeDay()
+    }
+
     /// The card says which date is up: the day view glides there (the web's
-    /// travel: off quickly, then a long soft stop).
+    /// travel: off quickly, then a long soft stop); on the month, the month does.
     private func showVote(_ view: VoteView?) {
         guard var view else { return }
         view.clear = voteClear
         model.voting = view
+        if voteOnMonth, let current = view.current {
+            withAnimation(.easeInOut(duration: 0.45)) { position = startOfMonth(current.start, appTimeZone) }
+            return
+        }
         guard let current = view.current, let shown = shownDay else { return }
         let day = startOfDay(current.start, appTimeZone)
         let inView = (0..<span).contains { addDays(shown, $0, appTimeZone) == day }
@@ -423,6 +554,8 @@ struct HomeScreen: View {
     /// Færdig, or every date answered: back to the month, gliding to today.
     private func closeVote(away: Bool) {
         if away { votesAway = true }
+        voteFolded = false
+        voteOnMonth = false
         withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.32)) { deck = nil }
         model.voting = nil
         closeDay()
@@ -508,7 +641,7 @@ struct HomeScreen: View {
     /// a 16 chevron, 8 between.
     private func bottom(safe: CGFloat) -> some View {
         VStack(spacing: 12) {
-            if let pill = model.page.pill, !votesAway, let first = waiting.first {
+            if let pill = model.page.pill, !votesAway, deck == nil, let first = waiting.first {
                 Button { openVote(first, from: nil) } label: {
                     HStack(spacing: 8) {
                         LucideIcon("vote", size: 20)
@@ -551,6 +684,10 @@ struct HomeScreen: View {
         .padding(.horizontal, 16)
         // The safe area is under it already; a phone without one keeps 12.
         .padding(.bottom, max(0, 12 - safe))
+        // Gone while a vote is answered, its card where they were (HomeBar's `hidden`).
+        .opacity(deck == nil ? 1 : 0)
+        .allowsHitTesting(deck == nil)
+        .animation(.easeOut(duration: 0.2), value: deck == nil)
     }
 
     private func round(

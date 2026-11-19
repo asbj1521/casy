@@ -54,7 +54,9 @@ final class ParityUITests: XCTestCase {
     /// (no native screens), never a Swift one. Native, the element must be
     /// visible. Visible means on top, where a tap would reach it (`isHittable`):
     /// an element merely present can be covered by something else.
-    private func shoot(_ app: XCUIApplication, _ name: String, when words: String, native: String) {
+    private func shoot(
+        _ app: XCUIApplication, _ name: String, when words: String, native: String, tappable: Bool = true
+    ) {
         let containing = NSPredicate(format: "label CONTAINS[c] %@", words)
         let swift = app.descendants(matching: .any)[native]
         let shown: XCUIElement
@@ -63,7 +65,7 @@ final class ParityUITests: XCTestCase {
         } else {
             shown = swift
         }
-        if !visible(shown) {
+        if !(tappable || mode == "web" ? visible(shown) : shown.waitForExistence(timeout: 30)) {
             // What was on screen instead, to look at: `<name>-<mode>-failed.png`.
             shot("\(name)-\(mode)-failed")
             XCTFail(
@@ -73,7 +75,9 @@ final class ParityUITests: XCTestCase {
         }
         if mode == "web" { XCTAssertFalse(swift.exists, "a native screen (\(native)) is in the web reference") }
         _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
-        XCTAssertTrue(shown.isHittable, "\(mode == "web" ? words : native) was covered while settling")
+        if tappable || mode == "web" {
+            XCTAssertTrue(shown.isHittable, "\(mode == "web" ? words : native) was covered while settling")
+        }
         if mode == "web" { XCTAssertFalse(swift.exists, "a native screen (\(native)) came up while settling") }
         shot("\(name)-\(mode)")
     }
@@ -633,6 +637,62 @@ final class ParityUITests: XCTestCase {
     func testHomeVoteAnsweredLight() async throws { try await shootHomeVoteAnswered(theme: "light") }
 
     func testHomeVoteAnsweredDark() async throws { try await shootHomeVoteAnswered(theme: "dark") }
+
+    /// A finger on the day folds the card down to itself, Senere over it.
+    private func shootHomeVoteFolded(theme: String) async throws {
+        let app = try await openHomeVote(theme: theme)
+        let card = NSPredicate(format: "label CONTAINS[c] %@", "Dato 1 af 3")
+        XCTAssertTrue(app.descendants(matching: .any).matching(card).firstMatch.waitForExistence(timeout: 30))
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.3)).tap()
+        shoot(app, "homevote-folded-\(theme)", when: "Senere", native: "vote.later")
+    }
+
+    func testHomeVoteFoldedLight() async throws { try await shootHomeVoteFolded(theme: "light") }
+
+    func testHomeVoteFoldedDark() async throws { try await shootHomeVoteFolded(theme: "dark") }
+
+    /// "‹ Oktober" while answering: the vote out onto the month, folded.
+    private func shootHomeVoteMonth(theme: String) async throws {
+        let app = try await openHomeVote(theme: theme)
+        let card = NSPredicate(format: "label CONTAINS[c] %@", "Dato 1 af 3")
+        XCTAssertTrue(app.descendants(matching: .any).matching(card).firstMatch.waitForExistence(timeout: 30))
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
+        pressShown(app, "Vis Oktober")
+        _ = XCTWaiter.wait(for: [expectation(description: "month")], timeout: 2)
+        shoot(app, "homevote-month-\(theme)", when: "Senere", native: "vote.later")
+    }
+
+    func testHomeVoteMonthLight() async throws { try await shootHomeVoteMonth(theme: "light") }
+
+    func testHomeVoteMonthDark() async throws { try await shootHomeVoteMonth(theme: "dark") }
+
+    /// Løbetur, agreed since this phone last looked: said over the month.
+    private func shootAgreed(theme: String) async throws {
+        let app = try await launch("/?agreed=ev-run", theme: theme, extra: ["-casyAgreed", "ev-run"])
+        shoot(app, "agreed-\(theme)", when: "Alle har svaret", native: "agreed.show",
+            // Over the page's web view in this mode, its hit test lands on the page (HomeUITests taps it).
+            tappable: false)
+    }
+
+    func testAgreedLight() async throws { try await shootAgreed(theme: "light") }
+
+    func testAgreedDark() async throws { try await shootAgreed(theme: "dark") }
+
+    /// The agreed date closing and flying into its day with its confetti,
+    /// animations on, for filming both modes (PARITY_VIDEO=1). Takes no shot.
+    func testAgreedFlight() async throws {
+        let app = try await launch(
+            "/?agreed=ev-run", theme: "light", extra: ["-casyAgreed", "ev-run", "-casyMotion", "YES"])
+        let show =
+            mode == "web"
+            ? app.webViews.buttons.matching(NSPredicate(format: "label == %@", "Se den i kalenderen")).firstMatch
+            : app.buttons["agreed.show"]
+        XCTAssertTrue(show.waitForExistence(timeout: 30), "the agreed card never showed")
+        _ = XCTWaiter.wait(for: [expectation(description: "still")], timeout: 2)
+        show.tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "flight")], timeout: 5)
+    }
 
     // MARK: Tilføj til kalender (#281)
 

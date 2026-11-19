@@ -628,6 +628,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "primaryCalendar.badge": (t) => t.primaryCalendar.badge,
   "primaryCalendar.introShort": (t) => t.primaryCalendar.introShort,
   "primaryCalendar.autoAddShort": (t) => t.primaryCalendar.autoAddShort,
+  "primaryCalendar.autoAddHelp": (t) => t.primaryCalendar.autoAddHelp,
   "primaryCalendar.noWritable": (t) => t.primaryCalendar.noWritable,
   "primaryCalendar.waitingForSync": (t) => t.primaryCalendar.waitingForSync,
   "primaryCalendar.selectLabel": (t) => t.primaryCalendar.selectLabel,
