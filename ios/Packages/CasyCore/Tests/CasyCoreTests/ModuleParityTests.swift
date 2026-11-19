@@ -665,3 +665,31 @@ private struct DateRange: Decodable {
         }
     }
 }
+
+@Test func aiPlanGivesTheTypeScriptAnswers() throws {
+    let zone = "Europe/Copenhagen"
+    try check("aiPlan", atLeast: 200) { fn, a in
+        switch fn {
+        case "apply":
+            let applied = applyPlan(try a["settings"].decoded(), try a["plan"].decoded(), zone)
+            return .object(["applied": try json(applied), "back": try json(toPlanSettings(applied, zone))])
+        case "plan":
+            let plan: AiPlan = try a["plan"].decoded()
+            let names = mentionedNames(plan)
+            let matches = matchNames(names, try a["members"].decoded())
+            let resolved = Dictionary(
+                matches.filter { $0.candidates.count == 1 }.map { ($0.written, $0.candidates[0]) },
+                uniquingKeysWith: { a, _ in a })
+            return .object([
+                "names": try json(names),
+                "matches": try json(matches),
+                "people": try json(applyPeople(try a["choice"].decoded(), plan, resolved: resolved)),
+                "guessedFirst": try json(guessedFields(plan, first: true)),
+                "guessedLater": try json(guessedFields(plan, first: false)),
+                "stated": try json(statedFields(plan.settings, assumed: plan.assumed)),
+            ])
+        default:
+            return unknown(fn)
+        }
+    }
+}
