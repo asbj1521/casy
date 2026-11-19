@@ -55,6 +55,7 @@ export const ICONS = {
   sun: [2],
   trash: [2],
   user: [2],
+  "user-plus": [2],
   users: [2],
   vote: [2],
 };

@@ -239,6 +239,30 @@ final class ParityUITests: XCTestCase {
     }
 
     /// Fredagsbar (four members: Tid til hinanden shows), pushed from Grupper.
+    /// Venner, with Tilde from a group since gone, so Fjern shows too.
+    private func openFriends(theme: String) async throws -> XCUIApplication {
+        var reset = URLRequest(url: URL(string: "\(Self.backend)/reset")!)
+        reset.httpMethod = "POST"
+        reset.httpBody = Data(#"{"friends":[{"profileId":"p-past","name":"Tilde"}]}"#.utf8)
+        _ = try await URLSession.shared.data(for: reset)
+        if mode == "web" { return try await launch("/?profile=friends", theme: theme) }
+        let app = try await launch("/?profile", theme: theme)
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Venner")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "the Venner row never showed")
+        row.tap()
+        return app
+    }
+
+    func testFriendsLight() async throws {
+        let app = try await openFriends(theme: "light")
+        shoot(app, "friends-light", when: "Tilføj en ven", native: "friends.list")
+    }
+
+    func testFriendsDark() async throws {
+        let app = try await openFriends(theme: "dark")
+        shoot(app, "friends-dark", when: "Tilføj en ven", native: "friends.list")
+    }
+
     private func openGroup(theme: String) async throws -> XCUIApplication {
         if mode == "web" { return try await launch("/?profile=groups/g-friday", theme: theme) }
         let app = try await openGroups(theme: theme)

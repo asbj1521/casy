@@ -18,41 +18,56 @@ struct FriendsScreen: View {
     /// Everyone you know: your groups' members and your friends.
     private var people: [KnownPerson] { model.people() }
 
+    /// The web's FriendsContent (#281): one CardList, Tilføj en ven first
+    /// (user-plus, orange), then each person led by their 40 point picture,
+    /// where from under the name, and Fjern (13 medium muted) at the end for
+    /// someone from a group since gone; the footnote under it.
     var body: some View {
         let everyone = people
-        List {
-            Section {
-                Button {
-                    adding = true
-                } label: {
-                    ListRow(CasyStrings.friendLinkAdd, systemImage: "person.badge.plus", tone: .primary)
-                        .contentShape(Rectangle())
-                }
-                ForEach(Array(everyone.enumerated()), id: \.element.id) { i, person in
-                    ListAvatarRow(
-                        person.name,
-                        detail: person.groupNames.isEmpty
-                            ? CasyStrings.inviteFromPast
-                            : CasyStrings.inviteFrom(person.groupNames.joined(separator: ", ")),
-                        index: i, url: person.avatarUrl.flatMap(URL.init(string:))
-                    ) {
-                        // Only a friend from a group since gone: anyone else would come back.
-                        if person.groupNames.isEmpty {
-                            Button(CasyStrings.friendsRemove) { removing = person }
-                                .buttonStyle(.borderless)
-                                .font(.footnote.weight(.medium))
-                                .foregroundStyle(Theme.mutedForeground.color)
-                                .frame(minHeight: 44)
-                                .accessibilityLabel("\(CasyStrings.friendsRemove) \(person.name)")
+        ScrollView {
+            VStack(spacing: 0) {
+                CardList(footnote: everyone.isEmpty ? CasyStrings.friendsEmpty : CasyStrings.friendsNote) {
+                    Button {
+                        adding = true
+                    } label: {
+                        CardRow(CasyStrings.friendLinkAdd, icon: "user-plus", tone: .primary)
+                    }
+                    .buttonStyle(.cardRow)
+                    ForEach(Array(everyone.enumerated()), id: \.element.id) { i, person in
+                        CardRow(
+                            person.name,
+                            detail: person.groupNames.isEmpty
+                                ? CasyStrings.inviteFromPast
+                                : CasyStrings.inviteFrom(person.groupNames.joined(separator: ", "))
+                        ) {
+                            Avatar(
+                                name: person.name, index: i, size: .row,
+                                url: person.avatarUrl.flatMap(URL.init(string:)))
+                        } trailing: {
+                            // Only a friend from a group since gone: anyone else would come back.
+                            if person.groupNames.isEmpty {
+                                Button(CasyStrings.friendsRemove) { removing = person }
+                                    .buttonStyle(.plain)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(Theme.mutedForeground.color)
+                                    .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
+                                    .contentShape(Rectangle())
+                                    .accessibilityLabel("\(CasyStrings.friendsRemove) \(person.name)")
+                            }
                         }
                     }
                 }
-                if let failure { Notice(failure, tone: .error, bare: true) }
-            } footer: {
-                Text(everyone.isEmpty ? CasyStrings.friendsEmpty : CasyStrings.friendsNote)
+                if let failure {
+                    Notice(failure, tone: .error, bare: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 12)
+                }
             }
             .disabled(working)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("friends.list")
         .casyPushedBar(CasyStrings.profileFriends, close: CasyStrings.done, action: closeSheet)
         .task {
             async let groups: Void = model.load()
