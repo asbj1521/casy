@@ -130,10 +130,12 @@ struct EventsSheet: View {
     }
 }
 
-/// Aftaler (#199), as the web's EventsSheet on a phone: what needs you now,
-/// what is to come, and what is over, each row its date as a tile, its name
-/// and its group. A vote to answer goes to answering it on the home page; an
-/// event's own screen is still the page's.
+/// Aftaler (#199), as the web's EventsSheet on a phone, drawn as the web
+/// draws it (#281): what needs you now, what is to come, and what is over,
+/// as CasyUI's CardLists (the first 16 below the bar), each row its date as
+/// a tile, its name and its group. A vote to answer goes to answering it on
+/// the home page; a row to come slides left (the web's SwipeReveal) to
+/// cancel your own event, asked first, or leave anyone else's.
 struct EventsScreen: View {
     let leave: (LeavingProfile) -> Void
 
@@ -141,46 +143,66 @@ struct EventsScreen: View {
     @Environment(\.closeSheet) private var closeSheet
     @State private var cancelling: SuggestedEvent?
     @State private var failure: String?
+    /// The row swiped open: one at a time, as on the web.
+    @State private var swiped: String?
 
     var body: some View {
-        List {
-            if viewerElsewhere {
-                Label(CasyStrings.timeZoneNote, systemImage: "globe")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.mutedForeground.color)
-                    .listRowBackground(Color.clear)
-            }
-            if let failure { Notice(failure, tone: .error, bare: true) }
-            if let groups = model.groups {
-                if groups.answer.isEmpty && groups.coming.isEmpty && groups.past.isEmpty {
-                    empty
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if viewerElsewhere {
+                    Notice(CasyStrings.timeZoneNote, tone: .info, bare: true).padding(.bottom, 4)
+                }
+                if let failure { Notice(failure, tone: .error, bare: true).padding(.top, 16) }
+                if let groups = model.groups {
+                    if groups.answer.isEmpty && groups.coming.isEmpty && groups.past.isEmpty {
+                        empty
+                    } else {
+                        if !groups.answer.isEmpty {
+                            CardList(CasyStrings.eventsGroupAnswer, spaced: false) {
+                                rows(groups.answer, answering: true)
+                            }
+                            .padding(.top, 16)
+                        }
+                        if !groups.coming.isEmpty {
+                            CardList(CasyStrings.eventsGroupComing, spaced: !groups.answer.isEmpty) {
+                                rows(groups.coming)
+                            }
+                            .padding(.top, groups.answer.isEmpty ? 16 : 0)
+                        }
+                        if !groups.past.isEmpty {
+                            CardList(CasyStrings.eventsGroupPast) {
+                                ForEach(groups.past, id: \.event.id) { s in
+                                    row(s, past: true)
+                                }
+                            }
+                        }
+                    }
+                } else if let failure = model.failure {
+                    Notice(failure, tone: .error, bare: true).padding(.top, 16)
                 } else {
-                    section(CasyStrings.eventsGroupAnswer, groups.answer, answering: true)
-                    section(CasyStrings.eventsGroupComing, groups.coming)
-                    section(CasyStrings.eventsGroupPast, groups.past, past: true)
-                }
-            } else if let failure = model.failure {
-                Notice(failure, tone: .error, bare: true)
-            } else {
-                HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
-                    Text(CasyStrings.eventsLoading)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.mutedForeground.color)
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text(CasyStrings.eventsLoading)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.mutedForeground.color)
+                    }
+                    .padding(.top, 16)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("events.list")
         .casySheetBar(CasyStrings.eventsTitle, close: CasyStrings.done, action: closeSheet)
         .task { await model.load() }
         .refreshable { await model.load() }
-        .casyConfirm(
-            CasyStrings.eventsCancelConfirm,
-            isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }), presenting: cancelling
-        ) { event in
-            Button(CasyStrings.eventsCancelEvent, role: .destructive) {
-                run { try await model.cancel(event.id) }
+        .sheet(item: $cancelling) { event in
+            ConfirmAsk(message: CasyStrings.eventsCancelConfirm, confirmLabel: CasyStrings.eventsCancelEvent) {
+                try await model.cancel(event.id)
             }
-            Button(CasyStrings.cancel, role: .cancel) {}
+            .nativeSheetLook(NativePreferences.shared)
+            .onDisappear { swiped = nil }
         }
     }
 
@@ -190,48 +212,67 @@ struct EventsScreen: View {
         return !sameClock(TimeZone.current.identifier, appTimeZone, year)
     }
 
-    @ViewBuilder private func section(
-        _ title: String, _ staged: [StagedEvent], past: Bool = false, answering: Bool = false
-    ) -> some View {
-        if !staged.isEmpty {
-            Section(title) {
-                ForEach(staged, id: \.event.id) { s in
-                    if past {
-                        EventRow(staged: s, past: true)
-                    } else {
-                        Group {
-                            if s.stage == .scheduled {
-                                NavigationLink {
-                                    DatedScreen(eventId: s.event.id, leave: leave)
-                                } label: {
-                                    EventRow(staged: s, cue: nil, chevron: false)
-                                }
-                            } else if s.stage == .voting {
-                                NavigationLink {
-                                    VoteScreen(eventId: s.event.id, leave: leave)
-                                } label: {
-                                    EventRow(staged: s, cue: cue(s, answering: answering), chevron: false)
-                                }
-                            } else {
-                                Button {
-                                    open(s)
-                                } label: {
-                                    EventRow(staged: s, cue: cue(s, answering: answering))
-                                        .contentShape(Rectangle())
-                                }
-                            }
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            let mine = s.event.createdBy.isYou
-                            Button(mine ? CasyStrings.eventsSwipeCancel : CasyStrings.eventsSwipeLeave) {
-                                if mine { cancelling = s.event } else { run { try await model.leave(s.event.id) } }
-                            }
-                            .tint(Theme.red600.color)
-                        }
+    /// Rows to come or to answer: each opens its screen, and slides left to
+    /// cancel (yours, asked first) or leave (anyone else's, at the press).
+    private func rows(_ staged: [StagedEvent], answering: Bool = false) -> some View {
+        ForEach(staged, id: \.event.id) { s in
+            let mine = s.event.createdBy.isYou
+            SwipeReveal(
+                mine ? CasyStrings.eventsSwipeCancel : CasyStrings.eventsSwipeLeave,
+                isOpen: Binding(
+                    get: { swiped == s.event.id },
+                    set: { open in swiped = open ? s.event.id : (swiped == s.event.id ? nil : swiped) }),
+                onPress: {
+                    if mine { cancelling = s.event } else { run { try await model.leave(s.event.id) } }
+                }
+            ) {
+                if s.stage == .scheduled {
+                    NavigationLink {
+                        DatedScreen(eventId: s.event.id, leave: leave)
+                    } label: {
+                        row(s, cue: nil)
                     }
+                    .buttonStyle(.cardRow)
+                } else if s.stage == .voting {
+                    NavigationLink {
+                        VoteScreen(eventId: s.event.id, leave: leave)
+                    } label: {
+                        row(s, cue: cue(s, answering: answering))
+                    }
+                    .buttonStyle(.cardRow)
+                } else {
+                    Button {
+                        open(s)
+                    } label: {
+                        row(s, cue: cue(s, answering: answering))
+                    }
+                    .buttonStyle(.cardRow)
                 }
             }
         }
+    }
+
+    /// One event as the web's EventRow: the date tile, the name (15 medium,
+    /// muted once over) and the group; at the end what a press does ("Svar",
+    /// 15 semibold orange with its chevron) or the muted chevron, nothing
+    /// for what is over.
+    private func row(_ s: StagedEvent, cue: String? = nil, past: Bool = false) -> some View {
+        CardRow(CasyStrings.eventTitle(s.event.title), detail: s.event.group.name, tone: past ? .muted : .standard) {
+            EventRowTile(staged: s, past: past)
+        } trailing: {
+            if let cue {
+                HStack(spacing: 0) {
+                    Text(cue).font(.system(size: 15, weight: .semibold))
+                    LucideIcon("chevron-right", size: 16)
+                }
+                .foregroundStyle(Theme.primary.color)
+            } else if !past {
+                LucideIcon("chevron-right", size: 16)
+                    .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     /// What a press does, in Svar nu: answer, or (a vote in Svar nu that isn't
@@ -246,27 +287,33 @@ struct EventsScreen: View {
         leave(.webScreen("/?vote=\(s.event.id)"))
     }
 
-    /// Nothing yet: what it is, one line, and the way to plan.
+    /// Nothing yet, as the web's NoEvents on a phone: the icon (40), what it
+    /// is (17 semibold), one line (15 muted), and the way to plan in glass.
     private var empty: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "calendar.badge.checkmark")
-                .font(.system(size: 40))
-                .foregroundStyle(Theme.primary.color)
-            Text(CasyStrings.eventsEmptyTitle).font(.headline)
+        VStack(spacing: 0) {
+            LucideIcon("calendar-check", size: 40).foregroundStyle(Theme.primary.color)
+            Text(CasyStrings.eventsEmptyTitle)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.foreground.color)
+                .padding(.top, 12)
             Text(CasyStrings.eventsEmptyBody)
-                .font(.subheadline)
+                .font(.system(size: 15))
                 .foregroundStyle(Theme.mutedForeground.color)
                 .multilineTextAlignment(.center)
-            GlassButton(systemImage: "calendar.badge.magnifyingglass") {
+                .frame(maxWidth: 320)
+                .padding(.top, 4)
+            GlassButton {
                 leave(.webScreen("/?plan"))
             } label: {
-                Text(CasyStrings.eventsPlan)
+                HStack(spacing: 8) {
+                    LucideIcon("calendar-search", size: 20)
+                    Text(CasyStrings.eventsPlan)
+                }
             }
-            .padding(.top, 12)
+            .padding(.top, 20)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 48)
-        .listRowBackground(Color.clear)
+        .padding(.top, 64)
     }
 
     private func run(_ action: @escaping () async throws -> Void) {
@@ -277,59 +324,20 @@ struct EventsScreen: View {
     }
 }
 
-/// One event: its date as a tile, its name and its group; where it stands is
-/// the tile and the group, not a sentence. `cue` is what a press does ("Svar").
-struct EventRow: View {
+/// A row's date tile: an agreed event's day, a vote's first date to come with
+/// its other dates stacked behind it.
+struct EventRowTile: View {
     let staged: StagedEvent
-    var cue: String?
     var past = false
-    /// Its own chevron; off inside a NavigationLink, which draws one.
-    var chevron = true
-
-    private var start: Int64? {
-        let event = staged.event
-        if staged.stage == .voting || staged.stage == .toSwipe {
-            let now = Native.now
-            return upcomingDates(event, now: now).first.flatMap { parseInstant($0.start) }
-        }
-        return event.currentDate.flatMap { parseInstant($0.start) }
-    }
-
-    private var more: Int {
-        guard staged.stage == .voting || staged.stage == .toSwipe else { return 0 }
-        let now = Native.now
-        return max(0, upcomingDates(staged.event, now: now).count - 1)
-    }
 
     var body: some View {
-        HStack(spacing: 12) {
-            DateTile(start: start, more: more, past: past)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(CasyStrings.eventTitle(staged.event.title))
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(past ? Theme.mutedForeground.color : Theme.foreground.color)
-                    .lineLimit(1)
-                Text(staged.event.group.name)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.mutedForeground.color)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 8)
-            if let cue {
-                HStack(spacing: 2) {
-                    Text(cue).font(.subheadline.weight(.semibold))
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold))
-                }
-                .foregroundStyle(Theme.primary.color)
-            } else if !past && chevron {
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))
-                    .accessibilityHidden(true)
-            }
-        }
-        .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
+        let voting = staged.stage == .voting || staged.stage == .toSwipe
+        let dates = voting ? upcomingDates(staged.event, now: Native.now) : []
+        let start =
+            voting
+            ? dates.first.flatMap { parseInstant($0.start) }
+            : staged.event.currentDate.flatMap { parseInstant($0.start) }
+        DateTile(start: start, more: max(0, dates.count - 1), past: past)
     }
 }
 
@@ -384,3 +392,6 @@ struct DateTile: View {
         }
     }
 }
+
+/// For the "Er du sikker?" sheet before cancelling one.
+extension SuggestedEvent: @retroactive Identifiable {}

@@ -6,11 +6,13 @@
 import SwiftUI
 
 public enum RowTone: Sendable {
-    case standard, danger, primary
+    /// `muted`: a row of something over (an event in Tidligere).
+    case standard, danger, primary, muted
 
     var color: Color {
         switch self {
         case .standard: Theme.foreground.color
+        case .muted: Theme.mutedForeground.color
         case .danger: Theme.red600.color
         case .primary: Theme.primary.color
         }

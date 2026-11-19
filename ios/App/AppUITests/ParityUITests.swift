@@ -423,6 +423,20 @@ final class ParityUITests: XCTestCase {
         try await shootHelp("/privacy", row: "Privatliv", name: "privacy", words: "Privatliv", theme: "light")
     }
 
+    // MARK: Aftaler (#281)
+
+    private func shootEvents(theme: String) async throws {
+        let app = try await launch("/?events", theme: theme)
+        shoot(app, "events-\(theme)", when: "Kommende", native: "events.list")
+        for _ in 0..<12 { app.swipeUp(velocity: .fast) }
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        shot("events-end-\(theme)-\(mode)")
+    }
+
+    func testEventsLight() async throws { try await shootEvents(theme: "light") }
+
+    func testEventsDark() async throws { try await shootEvents(theme: "dark") }
+
     private func openGroup(theme: String) async throws -> XCUIApplication {
         if mode == "web" { return try await launch("/?profile=groups/g-friday", theme: theme) }
         let app = try await openGroups(theme: theme)
