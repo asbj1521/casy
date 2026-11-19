@@ -103,7 +103,7 @@ private func fileByDay(_ busy: [BusyInterval], _ timeZone: String) -> [Int64: [C
     var byDay: [Int64: [ComfortBlock]] = [:]
     for b in busy {
         if b.holiday == true || b.priority == .skip { continue }
-        guard let start = parseInstant(b.start), let end = parseInstant(b.end), end > start else { continue }
+        guard let start = cachedInstant(b.start), let end = cachedInstant(b.end), end > start else { continue }
         let block = ComfortBlock(
             start: start, end: end, weight: b.priority == .never ? neverWeight : 1,
             work: b.category == .work || b.category == .school, never: b.priority == .never)

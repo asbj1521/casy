@@ -12,6 +12,7 @@
 // zone each search is given; days are stepped with Zone.swift.
 
 import Foundation
+import Synchronization
 
 private let msPerMinute: Int64 = 60_000
 private let msPerHour: Int64 = 3_600_000
@@ -103,9 +104,26 @@ private func parseRange(_ startIso: String, _ endIso: String) -> Interval? {
     return Interval(start: start, end: end)
 }
 
+/// Parsed instants, remembered: the same blocks are tested thousands of times
+/// by one plan's searches (the web keeps them in a WeakMap for the same
+/// reason), and reading an ISO string is far slower than a lookup. Cleared
+/// whole when it grows past a year of several busy calendars.
+private let instants = Mutex([String: Int64?]())
+private let instantsKept = 200_000
+
+func cachedInstant(_ text: String) -> Int64? {
+    if let known = instants.withLock({ $0[text] }) { return known }
+    let parsed = parseInstant(text)
+    instants.withLock { cache in
+        if cache.count >= instantsKept { cache.removeAll(keepingCapacity: true) }
+        cache[text] = parsed
+    }
+    return parsed
+}
+
 /// A busy block's bounds, or nil if malformed or empty.
 public func blockRange(_ block: BusyInterval) -> Interval? {
-    guard let start = parseInstant(block.start), let end = parseInstant(block.end), end > start else {
+    guard let start = cachedInstant(block.start), let end = cachedInstant(block.end), end > start else {
         return nil
     }
     return Interval(start: start, end: end)

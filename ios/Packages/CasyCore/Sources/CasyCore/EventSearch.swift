@@ -226,6 +226,12 @@ public struct FoundDate: Codable, Sendable, Equatable {
     public var slot: TimeSlot
     public var conflicts: [SpanConflict]
     public var absent: [AbsentPerson]?
+
+    public init(slot: TimeSlot, conflicts: [SpanConflict], absent: [AbsentPerson]? = nil) {
+        self.slot = slot
+        self.conflicts = conflicts
+        self.absent = absent
+    }
 }
 
 /// Up to `count` dates after `afterStart`, each the next one found a day after the last.

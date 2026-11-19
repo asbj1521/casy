@@ -574,3 +574,25 @@ private struct DateRange: Decodable {
         }
     }
 }
+
+@Test func candidatesGiveTheTypeScriptAnswers() throws {
+    let zone = "Europe/Copenhagen"
+    let now = parseInstant("2026-12-07T08:00:00.000Z")!
+    try check("candidates", atLeast: 100) { fn, a in
+        guard fn == "candidates" else { return unknown(fn) }
+        let participants: [Participant] = try a["participants"].decoded()
+        let searches: [EventSettings] = try a["searches"].decoded()
+        let options = CandidateOptions(
+            first: try a["first"].decoded(), end: try text(a, "end"), count: try #require(a["count"].int),
+            scores: try a["scores"].decoded(), profile: try? a["profile"].decoded(), now: now,
+            priority: try text(a, "priority"), everyTime: a["everyTime"] == .bool(true))
+        let pool = findPoolAcross(participants, searches, options, zone)
+        let ranked = rankFromPool(pool, participants, searches[0], options, zone)
+        return .object([
+            "pool": .array(ranked.pool.map { .string($0.slot.start) }),
+            "chosen": .array(ranked.chosen.map { .string($0.slot.start) }),
+            "byPick": .array(ranked.byPick.map { .string($0.slot.start) }),
+            "costs": .array(ranked.comfort.map { .number($0.cost) }),
+        ])
+    }
+}
