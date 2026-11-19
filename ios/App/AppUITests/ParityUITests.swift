@@ -263,6 +263,30 @@ final class ParityUITests: XCTestCase {
         shoot(app, "friends-dark", when: "Tilføj en ven", native: "friends.list")
     }
 
+    /// Dine data: its top, then its end, the screen pushed as far as it
+    /// goes so both modes line up along the bottom.
+    private func openData(theme: String) async throws -> XCUIApplication {
+        if mode == "web" { return try await launch("/?profile=data", theme: theme) }
+        let app = try await launch("/?profile", theme: theme)
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Dine data")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "the Dine data row never showed")
+        app.screenList.swipeUp()
+        row.tap()
+        return app
+    }
+
+    private func shootData(theme: String) async throws {
+        let app = try await openData(theme: theme)
+        shoot(app, "data-\(theme)", when: "Din konto", native: "mydata.list")
+        for _ in 0..<12 { app.swipeUp(velocity: .fast) }
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        shot("data-end-\(theme)-\(mode)")
+    }
+
+    func testDataLight() async throws { try await shootData(theme: "light") }
+
+    func testDataDark() async throws { try await shootData(theme: "dark") }
+
     private func openGroup(theme: String) async throws -> XCUIApplication {
         if mode == "web" { return try await launch("/?profile=groups/g-friday", theme: theme) }
         let app = try await openGroups(theme: theme)

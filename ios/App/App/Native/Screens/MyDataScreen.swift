@@ -139,6 +139,10 @@ final class MyDataModel {
 /// everything we hold about you, in the order and words of the privacy
 /// policy's "What we store", and a copy to save. The AI switch is at the top
 /// while it is off, in the AI list once on; turning it off asks first.
+///
+/// Drawn as the web draws it (#281): the intro, then CasyUI's CardLists;
+/// a fact's value 14 muted at the end, one line, at most 224 wide (the web's
+/// max-w-[14rem] truncate); a list of 5 rows or more folded behind one row.
 struct MyDataScreen: View {
     let leave: (LeavingProfile) -> Void
 
@@ -156,51 +160,53 @@ struct MyDataScreen: View {
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
     var body: some View {
-        List {
-            if let data = model.data {
-                Section {
-                } footer: {
-                    linked(
-                        CasyStrings.myDataIntro(CasyStrings.myDataPrivacyLink), CasyStrings.myDataPrivacyLink,
-                        to: "/privacy")
-                }
-                if !model.consented { consentSection(data) }
-                account(data)
-                calendars(data)
-                busy(data)
-                groups(data)
-                events(data)
-                credentials(data)
-                blocked
-                Section {
-                    Button {
-                        Task {
-                            if let file = await model.export() { exported = ExportFile(url: file) }
-                        }
-                    } label: {
-                        HStack {
-                            ListRow(
-                                model.exporting ? CasyStrings.myDataDownloading : CasyStrings.myDataDownload,
-                                systemImage: "square.and.arrow.down",
-                                detail: CasyStrings.myDataDownloadDetail, tone: .primary)
-                            if model.exporting { ProgressView().controlSize(.small) }
-                        }
-                        .contentShape(Rectangle())
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                // The web's intro: 14 muted, the policy's name medium and underlined.
+                linked(
+                    CasyStrings.myDataIntro(CasyStrings.myDataPrivacyLink), CasyStrings.myDataPrivacyLink,
+                    to: "/privacy", strong: true
+                )
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.mutedForeground.color)
+                .tint(Theme.foreground.color)  // a link's colour
+                .cssLineHeight(20, size: 14)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 4)
+                if let data = model.data {
+                    if !model.consented { consentList(data) }
+                    account(data)
+                    calendars(data)
+                    busy(data)
+                    groups(data)
+                    events(data)
+                    credentials(data)
+                    blocked
+                    download
+                } else if model.loadFailed {
+                    Notice(CasyStrings.myDataLoadFailed, tone: .error)
+                        .padding(.top, 24)
+                } else {
+                    // 14 muted with a 16 point spinner, 8 between (mt-6).
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text(CasyStrings.myDataLoading)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.mutedForeground.color)
                     }
-                    .disabled(model.exporting)
+                    .padding(.top, 24)
                 }
-            } else if model.loadFailed {
-                Notice(CasyStrings.myDataLoadFailed, tone: .error, bare: true)
-            } else {
-                HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
-                    Text(CasyStrings.myDataLoading)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.mutedForeground.color)
+                if let failure = model.failure {
+                    Notice(failure, tone: .error, bare: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 8)
                 }
             }
-            if let failure = model.failure { Notice(failure, tone: .error, bare: true) }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
+        .accessibilityIdentifier("mydata.list")
         .casyPushedBar(CasyStrings.myDataTitle, close: CasyStrings.done, action: closeSheet)
         .pageLinks(leave: leave)
         .task { await model.load() }
@@ -218,19 +224,19 @@ struct MyDataScreen: View {
         }
     }
 
-    // MARK: The sections
+    // MARK: The lists
 
-    /// The AI switch: at the top while off (with what it means), a row of the AI list once on.
-    @ViewBuilder private func consentSection(_ data: MyData) -> some View {
-        Section {
+    /// The AI switch at the top while off, with what it means and the policy's link.
+    private func consentList(_ data: MyData) -> some View {
+        CardList(
+            CasyStrings.myDataAi,
+            footnoteText: linked(
+                CasyStrings.aiConsentFootnote(CasyStrings.aiConsentPrivacyLink),
+                CasyStrings.aiConsentPrivacyLink, to: "/privacy#ai")
+        ) {
             consentRow(data)
-        } header: {
-            Text(CasyStrings.myDataAi)
-        } footer: {
-            linked(
-                CasyStrings.aiConsentFootnote(CasyStrings.aiConsentPrivacyLink), CasyStrings.aiConsentPrivacyLink,
-                to: "/privacy#ai")
         }
+        .tint(Theme.mutedForeground.color)  // the footnote's link, as its words
     }
 
     private func consentRow(_ data: MyData) -> some View {
@@ -242,22 +248,20 @@ struct MyDataScreen: View {
         } else {
             detail = data.ai.consent != nil ? CasyStrings.myDataAiConsentAgain : CasyStrings.aiConsentRowOff
         }
-        return ListSwitchRow(
-            CasyStrings.aiConsentRow,
+        return switchRow(
+            CasyStrings.aiConsentRow, detail: detail,
             isOn: Binding(
                 get: { model.consented },
                 set: { on in
                     // Turning it off deletes things, so it asks first; on is at once.
                     if on { Task { await model.setConsent(true) } } else { askingOff = true }
                 }),
-            detail: detail
-        )
-        .disabled(model.consentSaving)
+            saving: model.consentSaving)
     }
 
     private func account(_ data: MyData) -> some View {
         let a = data.account
-        return Section(CasyStrings.myDataAccount) {
+        return CardList(CasyStrings.myDataAccount) {
             fact(CasyStrings.myDataEmail, a.email ?? "-")
             fact(
                 CasyStrings.myDataName, a.name ?? CasyStrings.myDataNameNotYet,
@@ -288,16 +292,18 @@ struct MyDataScreen: View {
         }
     }
 
+    /// Every account and every calendar is a row: from 5 together they fold
+    /// behind one. Each account is a list of its own, 12 apart.
     @ViewBuilder private func calendars(_ data: MyData) -> some View {
         if data.calendars.isEmpty {
-            Section(CasyStrings.myDataCalendars) {
-                Text(CasyStrings.myDataNoCalendars).font(.subheadline)
+            CardList(CasyStrings.myDataCalendars) {
+                CardRow(CasyStrings.myDataNoCalendars)
             }
         } else {
             let count = data.calendars.reduce(0) { $0 + $1.calendars.count }
             let folded = data.calendars.count + count >= Self.foldFrom
             if folded {
-                Section(CasyStrings.myDataCalendars) {
+                CardList(CasyStrings.myDataCalendars) {
                     foldRow(
                         "\(CasyStrings.myDataAccountsCount(data.calendars.count)), \(CasyStrings.calendarsCount(count))",
                         open: $calendarsOpen)
@@ -305,27 +311,30 @@ struct MyDataScreen: View {
             }
             if !folded || calendarsOpen {
                 ForEach(Array(data.calendars.enumerated()), id: \.offset) { i, account in
-                    Section {
-                        ListRow(
+                    CardList(!folded && i == 0 ? CasyStrings.myDataCalendars : nil, spaced: false) {
+                        CardRow(
                             account.label ?? CasyStrings.named("provider", account.provider),
-                            systemImage: "calendar",
                             detail: "\(CasyStrings.named("provider", account.provider)) · \(CasyStrings.myDataConnectedOn(formatDayMonthYear(account.connectedAt, lang)))"
-                        )
+                        ) {
+                            ProviderBadge(provider: account.provider)
+                        }
                         ForEach(Array(account.calendars.enumerated()), id: \.offset) { _, c in
-                            ListRow(
+                            CardRow(
                                 c.customName.map { "\($0) (\(c.name ?? ""))" } ?? (c.name ?? "-"),
                                 detail: calendarDetail(c),
                                 value: CasyStrings.busyBlocks(c.busyCount))
                         }
-                    } header: {
-                        if !folded && i == 0 { Text(CasyStrings.myDataCalendars) }
                     }
+                    .padding(.top, 12)
                 }
             }
-            Section {
+            CardList(spaced: false) {
                 fact(CasyStrings.myDataPrimary, data.primary?.calendar ?? CasyStrings.myDataPrimaryNone)
-                fact(CasyStrings.myDataAutoAdd, data.primary?.autoAdd == true ? CasyStrings.myDataOn : CasyStrings.myDataOff)
+                fact(
+                    CasyStrings.myDataAutoAdd,
+                    data.primary?.autoAdd == true ? CasyStrings.myDataOn : CasyStrings.myDataOff)
             }
+            .padding(.top, 12)
         }
     }
 
@@ -341,22 +350,19 @@ struct MyDataScreen: View {
     }
 
     @ViewBuilder private func busy(_ data: MyData) -> some View {
-        Section(CasyStrings.myDataBusy) {
+        CardList(CasyStrings.myDataBusy) {
             fact(CasyStrings.myDataBusyCount, "\(data.busy.count)")
             fact(CasyStrings.myDataToldCasy, "\(data.toldCasy.count)")
             if let first = data.busy.first { fact(CasyStrings.myDataBusyFrom, formatDayMonthYear(first, lang)) }
             if let last = data.busy.last { fact(CasyStrings.myDataBusyTo, formatDayMonthYear(last, lang)) }
         }
         if !data.busy.next.isEmpty {
-            Section {
+            CardList(CasyStrings.myDataBusyNext, footnote: CasyStrings.myDataBusyNote, spaced: false) {
                 ForEach(Array(data.busy.next.enumerated()), id: \.offset) { _, span in
-                    Text(storedSpan(span)).font(.subheadline)
+                    CardRow(storedSpan(span))
                 }
-            } header: {
-                Text(CasyStrings.myDataBusyNext)
-            } footer: {
-                Text(CasyStrings.myDataBusyNote)
             }
+            .padding(.top, 12)
         }
     }
 
@@ -371,18 +377,19 @@ struct MyDataScreen: View {
     }
 
     private func groups(_ data: MyData) -> some View {
-        Section(CasyStrings.myDataGroups) {
-            if data.groups.isEmpty { Text(CasyStrings.myDataNoGroups).font(.subheadline) }
+        CardList(CasyStrings.myDataGroups) {
+            if data.groups.isEmpty { CardRow(CasyStrings.myDataNoGroups) }
             let folded = data.groups.count >= Self.foldFrom
             if folded { foldRow(CasyStrings.myDataGroupsCount(data.groups.count), open: $groupsOpen) }
             if !folded || groupsOpen {
                 ForEach(Array(data.groups.enumerated()), id: \.offset) { _, g in
                     let members = CasyStrings.members(g.members)
+                    // The web's lines under the name, each its own line.
                     let lines = [
                         g.createdByYou ? CasyStrings.myDataGroupDetailYours(members) : members,
                         g.description, g.primeDates == false ? CasyStrings.primeOff : nil,
                     ].compactMap { $0 }.filter { !$0.isEmpty }
-                    ListRow(g.name, detail: lines.joined(separator: "\n"))
+                    CardRow(g.name, detail: lines.joined(separator: "\n"), wrap: lines.count > 1)
                 }
             }
             fact(
@@ -395,7 +402,9 @@ struct MyDataScreen: View {
             fact(CasyStrings.myDataInvitationsSent, "\(data.invitations.sent)")
             fact(CasyStrings.myDataEmailLookups, "\(data.emailLookups)", detail: CasyStrings.myDataEmailLookupsDetail)
             if let links = data.friendLinks, links.made > 0 {
-                fact(CasyStrings.friendsLinksInData, CasyStrings.myDataInviteLinksValue(made: links.made, active: links.active))
+                fact(
+                    CasyStrings.friendsLinksInData,
+                    CasyStrings.myDataInviteLinksValue(made: links.made, active: links.active))
             }
             if let friends = data.friends, friends.count > 0 {
                 fact(CasyStrings.friendsInData, "\(friends.count)")
@@ -407,7 +416,7 @@ struct MyDataScreen: View {
     }
 
     @ViewBuilder private func events(_ data: MyData) -> some View {
-        Section(CasyStrings.myDataEvents) {
+        CardList(CasyStrings.myDataEvents) {
             fact(CasyStrings.myDataInvitedTo, "\(data.events.invitedTo)")
             fact(CasyStrings.myDataSuggested, "\(data.events.suggested)")
             fact(CasyStrings.myDataAnswers, "\(data.events.answers)")
@@ -416,58 +425,51 @@ struct MyDataScreen: View {
             fact(CasyStrings.myDataShortcutPictures, "\(data.shortcuts.pictures ?? 0)")
             fact(CasyStrings.myDataGroupPictures, "\(data.groupPictures?.count ?? 0)")
         }
-        Section(CasyStrings.myDataEntries) {
+        CardList(CasyStrings.myDataEntries) {
             fact(CasyStrings.myDataEntriesAdded, "\(data.calendarEntries.added)")
             fact(CasyStrings.myDataEntriesDeleted, "\(data.calendarEntries.deletedByYou)")
         }
-        Section {
+        CardList(CasyStrings.myDataAi, footnote: "\(CasyStrings.myDataAiNote) \(CasyStrings.myDataLabelsNote)") {
             if model.consented {
                 consentRow(data)
-                ListSwitchRow(
+                switchRow(
                     CasyStrings.myDataShareCorrections,
+                    detail: data.ai.corrections.sharing ? CasyStrings.myDataShareOn : CasyStrings.myDataShareOff,
                     isOn: Binding(
                         get: { data.ai.corrections.sharing },
                         set: { on in Task { await model.setShare(on) } }),
-                    detail: data.ai.corrections.sharing ? CasyStrings.myDataShareOn : CasyStrings.myDataShareOff
-                )
-                .disabled(model.shareSaving)
+                    saving: model.shareSaving)
                 fact(CasyStrings.myDataCorrectionsKept, "\(data.ai.corrections.kept)")
                 if data.ai.corrections.kept > 0 {
                     Button {
                         Task { await model.deleteCorrections() }
                     } label: {
-                        ListRow(CasyStrings.myDataCorrectionsDelete, systemImage: "trash", tone: .danger)
-                            .contentShape(Rectangle())
+                        CardRow(CasyStrings.myDataCorrectionsDelete, tone: .danger) {
+                            busyIcon("trash", busy: model.removingCorrections, color: Theme.red600.color)
+                        }
                     }
+                    .buttonStyle(.cardRow)
                     .disabled(model.removingCorrections)
                 }
             }
             fact(CasyStrings.myDataLabels, model.labels.map { "\($0)" } ?? "-")
             fact(CasyStrings.myDataAiCalls, "\(data.ai.calls)")
-        } header: {
-            Text(CasyStrings.myDataAi)
-        } footer: {
-            Text("\(CasyStrings.myDataAiNote) \(CasyStrings.myDataLabelsNote)")
         }
     }
 
     @ViewBuilder private func credentials(_ data: MyData) -> some View {
         if !data.calendars.isEmpty {
-            Section {
+            CardList(CasyStrings.myDataCredentials, footnote: CasyStrings.myDataCredentialsNote) {
                 let folded = data.calendars.count >= Self.foldFrom
                 if folded { foldRow(CasyStrings.myDataAccountsCount(data.calendars.count), open: $credentialsOpen) }
                 if !folded || credentialsOpen {
                     ForEach(Array(data.calendars.enumerated()), id: \.offset) { _, account in
-                        ListRow(
+                        CardRow(
                             account.label ?? CasyStrings.named("provider", account.provider),
                             detail: account.credential.map { CasyStrings.named("myData.credentialKinds", $0) }
                                 ?? CasyStrings.myDataCredentialNone)
                     }
                 }
-            } header: {
-                Text(CasyStrings.myDataCredentials)
-            } footer: {
-                Text(CasyStrings.myDataCredentialsNote)
             }
         }
     }
@@ -475,79 +477,109 @@ struct MyDataScreen: View {
     /// Nothing at all until someone is blocked, so the screen stays short.
     @ViewBuilder private var blocked: some View {
         if !model.blocked.isEmpty {
-            Section {
+            CardList(CasyStrings.blockedTitle, footnote: CasyStrings.blockedFootnote) {
                 ForEach(model.blocked) { person in
-                    HStack {
-                        ListRow(
-                            person.name ?? CasyStrings.blockedUnknownName, systemImage: "person.slash",
-                            detail: CasyStrings.blockedSince(formatDayLongMonthYear(person.blockedAt, lang)))
+                    CardRow(
+                        person.name ?? CasyStrings.blockedUnknownName, icon: "user-x",
+                        detail: CasyStrings.blockedSince(formatDayLongMonthYear(person.blockedAt, lang))
+                    ) {
                         if model.unblocking == person.profileId {
                             ProgressView().controlSize(.small)
                         } else {
                             Button(CasyStrings.blockedUnblock) {
                                 Task { await model.unblock(person.profileId) }
                             }
-                            .buttonStyle(.borderless)
-                            .font(.subheadline.weight(.medium))
+                            .buttonStyle(.plain)
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(Theme.primary.color)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                         }
                     }
                 }
-            } header: {
-                Text(CasyStrings.blockedTitle)
-            } footer: {
-                Text(CasyStrings.blockedFootnote)
             }
+        }
+    }
+
+    /// Hent en kopi: everything above as a file, to share or save.
+    private var download: some View {
+        CardList {
+            Button {
+                Task {
+                    if let file = await model.export() { exported = ExportFile(url: file) }
+                }
+            } label: {
+                CardRow(
+                    model.exporting ? CasyStrings.myDataDownloading : CasyStrings.myDataDownload,
+                    detail: CasyStrings.myDataDownloadDetail, tone: .primary
+                ) {
+                    busyIcon("download", busy: model.exporting, color: Theme.primary.color)
+                }
+            }
+            .buttonStyle(.cardRow)
+            .disabled(model.exporting)
         }
     }
 
     // MARK: Pieces
 
-    /// A fact: what it is, and its value at the end, which wraps if long (an email).
+    /// A fact: what it is, and its value at the end, cut with "..." if long (an email).
     private func fact(_ label: String, _ value: String, detail: String? = nil) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Theme.foreground.color)
-                if let detail {
-                    Text(detail)
-                        .font(.footnote)
-                        .foregroundStyle(Theme.mutedForeground.color)
-                }
-            }
-            Spacer(minLength: 8)
+        CardRow(label, detail: detail) {
+            EmptyView()
+        } trailing: {
             Text(value)
-                .font(.subheadline)
+                .font(.system(size: 14))
                 .foregroundStyle(Theme.mutedForeground.color)
-                .multilineTextAlignment(.trailing)
+                .lineLimit(1)
+                // Its own width, at most 224 (cut there), never squeezed by the label.
+                .frame(maxWidth: 224, alignment: .trailing)
+                .fixedSize()
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// A row with a switch at its end (the web's Switch, size lg).
+    private func switchRow(_ label: String, detail: String, isOn: Binding<Bool>, saving: Bool) -> some View {
+        CardRow(label, detail: detail) {
+            EmptyView()
+        } trailing: {
+            Toggle(label, isOn: isOn)
+                .labelsHidden()
+                .tint(Theme.primary.color)
+                .disabled(saving)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    /// A row's 20 point icon, or the spinner while it works.
+    @ViewBuilder private func busyIcon(_ name: String, busy: Bool, color: Color) -> some View {
+        if busy {
+            ProgressView().controlSize(.small).tint(color).frame(width: 20, height: 20)
+        } else {
+            LucideIcon(name, size: 20).foregroundStyle(color)
+        }
     }
 
     private func foldRow(_ label: String, open: Binding<Bool>) -> some View {
         Button {
             open.wrappedValue.toggle()
         } label: {
-            HStack {
-                ListRow(label)
-                Image(systemName: "chevron.down")
-                    .rotationEffect(.degrees(open.wrappedValue ? 180 : 0))
-                    .foregroundStyle(Theme.mutedForeground.color)
-                    .accessibilityHidden(true)
-            }
-            .contentShape(Rectangle())
+            CardRow(label, expanded: open.wrappedValue)
         }
+        .buttonStyle(.cardRow)
         .accessibilityValue(open.wrappedValue ? "open" : "")
     }
 
-    /// Words with the privacy policy linked inside, opened in Swift by `pageLinks`.
-    private func linked(_ words: String, _ linkWords: String, to address: String) -> some View {
+    /// Words with a link inside, opened in Swift by `pageLinks`; `strong`:
+    /// the link medium in the text's own colour (the intro's), else only underlined.
+    private func linked(_ words: String, _ linkWords: String, to address: String, strong: Bool = false) -> Text {
         var text = AttributedString(words)
         // The last mention is the link: the words may name the policy earlier too.
         if let range = text.range(of: linkWords, options: .backwards) {
             text[range].link = URL(string: address)
             text[range].underlineStyle = .single
+            if strong { text[range].font = .system(size: 14, weight: .medium) }
         }
         return Text(text)
     }

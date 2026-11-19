@@ -21,7 +21,7 @@ import SwiftUI
 /// Rows in one rounded card, as the web's `ListGroup`.
 public struct CardList<Content: View>: View {
     private let title: String?
-    private let footnote: String?
+    private let footnote: Text?
     private let spaced: Bool
     private let accessory: AnyView?
     private let content: Content
@@ -34,8 +34,19 @@ public struct CardList<Content: View>: View {
         accessory: AnyView? = nil,
         @ViewBuilder content: () -> Content
     ) {
+        self.init(
+            title, footnoteText: footnote.map { Text(verbatim: $0) }, spaced: spaced, accessory: accessory,
+            content: content)
+    }
+
+    /// A footnote with more in it than words: a link, an error under it.
+    public init(
+        _ title: String? = nil, footnoteText: Text?, spaced: Bool = true,
+        accessory: AnyView? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
         self.title = title
-        self.footnote = footnote
+        self.footnote = footnoteText
         self.spaced = spaced
         self.accessory = accessory
         self.content = content()
@@ -83,7 +94,7 @@ public struct CardList<Content: View>: View {
                     .strokeBorder(Theme.border.color, lineWidth: 1)
             }
             if let footnote {
-                Text(footnote)
+                footnote
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.mutedForeground.color)
                     .cssLineHeight(16, size: 12)
@@ -111,6 +122,7 @@ public struct CardRow<Leading: View, Trailing: View>: View {
     private let value: String?
     private let tone: RowTone
     private let chevron: Bool
+    private let expanded: Bool?
     private let wrap: Bool
     private let leading: Leading
     private let trailing: Trailing
@@ -123,6 +135,7 @@ public struct CardRow<Leading: View, Trailing: View>: View {
         value: String? = nil,
         tone: RowTone = .standard,
         chevron: Bool = false,
+        expanded: Bool? = nil,
         wrap: Bool = false,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing = { EmptyView() }
@@ -132,6 +145,7 @@ public struct CardRow<Leading: View, Trailing: View>: View {
         self.value = value
         self.tone = tone
         self.chevron = chevron
+        self.expanded = expanded
         self.wrap = wrap
         self.leading = leading()
         self.trailing = trailing()
@@ -166,9 +180,13 @@ public struct CardRow<Leading: View, Trailing: View>: View {
                         .fixedSize()
                 }
                 trailing
-                if chevron {
+                // `expanded`: a row that opens rows under it, its chevron
+                // turned down while open (the web's rotate-90).
+                if chevron || expanded != nil {
                     LucideIcon("chevron-right", size: 16)
                         .foregroundStyle(Theme.mutedForeground.color.opacity(0.6))
+                        .rotationEffect(.degrees(expanded == true ? 90 : 0))
+                        .animation(.easeOut(duration: 0.15), value: expanded)
                 }
             }
             .padding(.vertical, 10)
@@ -182,6 +200,24 @@ public struct CardRow<Leading: View, Trailing: View>: View {
         }
         .padding(.leading, 16)
         .contentShape(Rectangle())
+    }
+}
+
+extension CardRow where Leading == EmptyView, Trailing == EmptyView {
+    /// A row with nothing in front or after: a fact, a fold. No closure, so
+    /// `CardRow(name) { Avatar(...) }` still means the avatar in front.
+    public init(
+        _ label: String,
+        detail: String? = nil,
+        value: String? = nil,
+        tone: RowTone = .standard,
+        chevron: Bool = false,
+        expanded: Bool? = nil,
+        wrap: Bool = false
+    ) {
+        self.init(
+            label, detail: detail, value: value, tone: tone, chevron: chevron, expanded: expanded,
+            wrap: wrap, leading: { EmptyView() }, trailing: { EmptyView() })
     }
 }
 

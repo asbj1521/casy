@@ -34,6 +34,7 @@ export const ICONS = {
   clock: [2],
   contact: [2],
   database: [2],
+  download: [2],
   "file-text": [2],
   flag: [2],
   "key-round": [2],
@@ -56,6 +57,7 @@ export const ICONS = {
   trash: [2],
   user: [2],
   "user-plus": [2],
+  "user-x": [2],
   users: [2],
   vote: [2],
 };
