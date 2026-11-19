@@ -138,26 +138,27 @@ struct VoteScreen: View {
         .disabled(working != nil)
         .casyPushedBar(event.group.name, close: CasyStrings.done, action: closeSheet)
         .refreshable { await model.load() }
-        .casyConfirm(
-            asking == .settle
-                ? CasyStrings.voteDeadlineSettleAsk
-                : mine ? CasyStrings.eventsCancelConfirm : CasyStrings.eventsLeaveConfirm,
-            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }), presenting: asking
+        .askFirst(
+            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }), presenting: asking,
+            words: { asked in
+                asked == .settle
+                    ? AskWords(
+                        message: CasyStrings.voteDeadlineSettleAsk, confirm: CasyStrings.voteDeadlineSettleNow,
+                        danger: false)
+                    : AskWords(
+                        message: mine ? CasyStrings.eventsCancelConfirm : CasyStrings.eventsLeaveConfirm,
+                        confirm: mine ? CasyStrings.eventsCancelEvent : CasyStrings.eventsLeaveEvent,
+                        cancel: mine ? CasyStrings.eventsKeepIt : CasyStrings.eventsStayIn)
+            }
         ) { asked in
             if asked == .settle {
-                Button(CasyStrings.voteDeadlineSettleNow) {
-                    run("settle") {
-                        try await model.change(CasyStrings.eventsSettleFailed) {
-                            try await $0.settleVote(event.id, errorMessage: CasyStrings.eventsSettleFailed)
-                        }
+                run("settle") {
+                    try await model.change(CasyStrings.eventsSettleFailed) {
+                        try await $0.settleVote(event.id, errorMessage: CasyStrings.eventsSettleFailed)
                     }
                 }
-                Button(CasyStrings.cancel, role: .cancel) {}
             } else {
-                Button(mine ? CasyStrings.eventsCancelEvent : CasyStrings.eventsLeaveEvent, role: .destructive) {
-                    run("exit") { try await mine ? model.cancel(event.id) : model.leave(event.id) }
-                }
-                Button(mine ? CasyStrings.eventsKeepIt : CasyStrings.eventsStayIn, role: .cancel) {}
+                run("exit") { try await mine ? model.cancel(event.id) : model.leave(event.id) }
             }
         }
         .sheet(isPresented: $reporting) {

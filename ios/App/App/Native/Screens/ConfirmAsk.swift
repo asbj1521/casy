@@ -9,11 +9,12 @@ import SwiftUI
 struct ConfirmAsk: View {
     let message: String
     let confirmLabel: String
+    /// The top bar's way out: Annuller, or the web's own word (Behold den).
+    var cancelLabel = CasyStrings.cancel
     var danger = true
     /// A name or word to type before the button works, and the line above the field.
     var typeToConfirm: (prompt: String, expected: String)?
     let action: () async throws -> Void
-
     @Environment(\.dismiss) private var dismiss
     @State private var typed = ""
     @State private var busy = false
@@ -57,7 +58,11 @@ struct ConfirmAsk: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("confirm.screen")
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                contentHeight = $0
+            }
             .padding(.horizontal, 20)
             .frame(maxHeight: .infinity, alignment: .top)
             .safeAreaInset(edge: .bottom) {
@@ -67,10 +72,11 @@ struct ConfirmAsk: View {
                     Text(confirmLabel)
                 }
                 .disabled(!typedRight || busy)
+                .accessibilityIdentifier("confirm.yes")
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
             }
-            .casySheetBar(CasyStrings.areYouSure, close: CasyStrings.cancel, disabled: busy) { dismiss() }
+            .casySheetBar(CasyStrings.areYouSure, close: cancelLabel, disabled: busy) { dismiss() }
         }
         // As tall as it needs: the bar, the words, the button.
         .presentationDetents([.height(contentHeight + 150)])
@@ -89,6 +95,74 @@ struct ConfirmAsk: View {
                 failure = error.localizedDescription
             }
         }
+    }
+}
+
+/// What an "Er du sikker?" says: the question, its button, the way out.
+struct AskWords {
+    let message: String
+    let confirm: String
+    var cancel = CasyStrings.cancel
+    /// Red when something is lost for good, as the web's `tone="danger"`.
+    var danger = true
+}
+
+extension View {
+    /// The web's ConfirmPanel on a phone, about one thing (`presenting`):
+    /// while `isPresented`, ConfirmAsk asks what `words` says and runs `action`
+    /// on yes.
+    func askFirst<T>(
+        isPresented: Binding<Bool>, presenting: T?, words: @escaping (T) -> AskWords,
+        action: @escaping (T) async throws -> Void
+    ) -> some View {
+        modifier(
+            AskFirst(isPresented: isPresented, presenting: presenting) { value in
+                let said = words(value)
+                return ConfirmAsk(
+                    message: said.message, confirmLabel: said.confirm, cancelLabel: said.cancel,
+                    danger: said.danger, action: { try await action(value) })
+            })
+    }
+
+    /// The same about nothing in particular.
+    func askFirst(
+        _ words: AskWords, isPresented: Binding<Bool>, action: @escaping () async throws -> Void
+    ) -> some View {
+        askFirst(isPresented: isPresented, presenting: (), words: { _ in words }, action: { _ in try await action() })
+    }
+
+    /// A ConfirmAsk of its own (a name to type first) while `item` is set.
+    func askFirst<Item>(item: Binding<Item?>, ask: @escaping (Item) -> ConfirmAsk) -> some View {
+        modifier(
+            AskFirst(
+                isPresented: Binding(get: { item.wrappedValue != nil }, set: { if !$0 { item.wrappedValue = nil } }),
+                presenting: item.wrappedValue, build: ask))
+    }
+}
+
+private struct AskFirst<T>: ViewModifier {
+    @Binding var isPresented: Bool
+    let presenting: T?
+    let build: (T) -> ConfirmAsk
+
+    private struct Held: Identifiable {
+        let id = UUID()
+        let value: T
+    }
+
+    /// What it is about, held for the sheet, so it reads the same while it
+    /// slides away after the screen has let go of it.
+    @State private var held: Held?
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: isPresented, initial: true) { _, on in
+                if on, held == nil, let presenting { held = Held(value: presenting) }
+                if !on { held = nil }
+            }
+            .sheet(item: $held, onDismiss: { isPresented = false }) { held in
+                build(held.value).nativeSheetLook(NativePreferences.shared)
+            }
     }
 }
 

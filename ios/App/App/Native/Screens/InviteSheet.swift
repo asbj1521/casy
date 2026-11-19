@@ -150,7 +150,8 @@ final class InviteModel {
     /// "Det virker i 7 dage."
     var linkHelp: String? {
         guard let link, let expires = parseInstant(link.expiresAt) else { return nil }
-        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        // The app's clock: a UI test's fixed moment, as the backend's link was made at.
+        let now = Native.now
         let left: String
         switch linkLife(expiresAt: expires, now: now) {
         case .expired: left = CasyStrings.inviteExpired
@@ -177,13 +178,19 @@ struct InviteSheet: View {
     }
 }
 
-/// What an invite sheet holds, most used first (`InviteBody` on a phone): the
-/// ways that need no list (contacts, email, a link, its QR code), then the
-/// people from your groups, folded past a few. Its main button sends the picks.
+/// What an invite sheet holds, the web's InviteBody on a phone (#227, #281):
+/// one list of the ways that need no list (the contacts, email and the
+/// addresses added, the link, copying and sharing it, its QR code), the email
+/// field under it once opened, the link's lifetime, the QR code, then the
+/// people from your groups to tick, folded past four. Its main button sends
+/// the picks. Adding a friend (#226) is the contacts and the link alone. As
+/// tall as what is in it, in iOS's glass.
 struct InviteContent: View {
     let model: InviteModel
     /// Once the picks are sent, for a sheet that ends there (a new group, #227).
     let onSent: (() -> Void)?
+    /// Over the rest: a new group's picture that didn't come along.
+    var note: String?
 
     /// Folded (#227): this many show, with the rest behind Vis alle.
     private static let foldedTo = 4
@@ -194,93 +201,47 @@ struct InviteContent: View {
     @State private var showAll = false
     @State private var filter = ""
     @State private var copied = false
-    @FocusState private var emailFocused: Bool
+    @State private var contentHeight: CGFloat = 300
 
     var body: some View {
         @Bindable var model = model
-        List {
-            if let note = model.sentNote { Notice(note, tone: .success, bare: true) }
-            if let error = model.sendError { Notice(error, tone: .error, bare: true) }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if let note { Notice(note, tone: .error, bare: true).padding(.bottom, 12) }
+                if let sent = model.sentNote { Notice(sent, tone: .success).padding(.bottom, 16) }
+                if let error = model.sendError { Notice(error, tone: .error).padding(.bottom, 16) }
 
-            Section {
-                Button {
-                    Task { await model.inviteFromContacts() }
-                } label: {
-                    HStack {
-                        ListRow(CasyStrings.inviteFromContacts, systemImage: "person.crop.circle", tone: .primary)
-                        if model.contactsBusy { ProgressView().controlSize(.small) }
+                CardList(spaced: false) {
+                    contactsRow
+                    if !model.isFriend { emailRows }
+                    linkRows
+                }
+                if let contacts = model.contactsNote {
+                    Notice(contacts.text, tone: contacts.ok ? .success : .error).padding(.top, 8)
+                }
+                if model.emailOpen { emailField }
+                if let help = model.linkHelp { footnote(help).padding(.horizontal, 16).padding(.top, 6) }
+                if model.showQr, let link = model.link {
+                    VStack(spacing: 8) {
+                        QrCode(text: link.url, label: model.qrLabel)
+                        Text(model.qrHelp)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.mutedForeground.color)
+                            .cssLineHeight(16, size: 12)
+                            .multilineTextAlignment(.center)
                     }
-                    .contentShape(Rectangle())
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 12)
                 }
-                .disabled(model.contactsBusy)
-                if !model.isFriend {
-                    Button {
-                        model.emailOpen.toggle()
-                        emailFocused = model.emailOpen
-                    } label: {
-                        ListRow(CasyStrings.inviteEmail, systemImage: "envelope").contentShape(Rectangle())
-                    }
-                }
-                ForEach(model.emails, id: \.self) { address in
-                    HStack {
-                        ListRow(address, systemImage: "envelope")
-                        Button {
-                            model.removeEmail(address)
-                        } label: {
-                            Image(systemName: "xmark")
-                                .foregroundStyle(Theme.mutedForeground.color)
-                                .frame(minWidth: 44, minHeight: 44)
-                        }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel(CasyStrings.inviteRemoveEmail(address))
-                    }
-                }
-                linkRows
-                if let note = model.contactsNote {
-                    Notice(note.text, tone: note.ok ? .success : .error, bare: true)
-                }
-                if let error = model.linkError { Notice(error, tone: .error, bare: true) }
-            } footer: {
-                if let help = model.linkHelp { Text(help) }
+                if let error = model.linkError { Notice(error, tone: .error, bare: true).padding(.top, 8) }
+                if !model.isFriend { people }
             }
-
-            if model.emailOpen {
-                Section {
-                    HStack(spacing: 8) {
-                        TextField(CasyStrings.inviteEmailPlaceholder, text: $model.draft)
-                            .keyboardType(.emailAddress)
-                            .textContentType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .focused($emailFocused)
-                            .submitLabel(.done)
-                            .onSubmit { model.addEmail() }
-                            .accessibilityLabel(CasyStrings.inviteEmail)
-                        Button(CasyStrings.inviteAddEmail) { model.addEmail() }
-                            .buttonStyle(.borderless)
-                            .foregroundStyle(Theme.primary.color)
-                            .disabled(model.draft.trimmingCharacters(in: .whitespaces).isEmpty)
-                    }
-                } footer: {
-                    if let error = model.emailError {
-                        Text(error).foregroundStyle(Theme.red600.color)
-                    } else {
-                        Text(CasyStrings.inviteEmailHelp)
-                    }
-                }
-            }
-
-            if model.showQr, let link = model.link {
-                Section {
-                    QrCode(text: link.url, label: model.qrLabel)
-                } footer: {
-                    Text(model.qrHelp).frame(maxWidth: .infinity)
-                }
-                .listRowBackground(Color.clear)
-            }
-
-            if !model.isFriend { people }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
         }
+        .scrollBounceBehavior(.basedOnSize)
+        .accessibilityIdentifier(model.isFriend ? "addFriend.screen" : "invite.screen")
         .casySheetBar(model.title, close: CasyStrings.done) { dismiss() }
         .safeAreaInset(edge: .bottom) {
             if model.count > 0 {
@@ -295,10 +256,92 @@ struct InviteContent: View {
                 .padding(.bottom, 8)
             }
         }
+        // Without its button, the bar alone over the words.
+        .sheetFits(contentHeight, chrome: model.count > 0 ? 150 : 90)
         .task { await GroupsModel.shared.loadFriends() }
     }
 
-    /// Making a link, copying and sharing it, and its QR code.
+    private func footnote(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 12))
+            .foregroundStyle(Theme.mutedForeground.color)
+            .cssLineHeight(16, size: 12)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// The contacts, then Messages with the link (the share sheet on a phone that can't text).
+    private var contactsRow: some View {
+        Button {
+            Task { await model.inviteFromContacts() }
+        } label: {
+            CardRow(CasyStrings.inviteFromContacts, icon: "book-user", tone: .primary) {
+                if model.contactsBusy { ProgressView().controlSize(.small) }
+            }
+        }
+        .buttonStyle(.cardRow)
+        .disabled(model.contactsBusy)
+    }
+
+    /// Med e-mail, opening its field, and each address added with its x.
+    @ViewBuilder private var emailRows: some View {
+        Button {
+            model.emailOpen.toggle()
+        } label: {
+            CardRow(CasyStrings.inviteEmail, expanded: model.emailOpen) { CardRowIcon("mail") }
+        }
+        .buttonStyle(.cardRow)
+        ForEach(model.emails, id: \.self) { address in
+            CardRow(address, icon: "mail") {
+                Button {
+                    model.removeEmail(address)
+                } label: {
+                    LucideIcon("x", size: 16)
+                        .foregroundStyle(Theme.mutedForeground.color)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, -8)
+                .accessibilityLabel(CasyStrings.inviteRemoveEmail(address))
+            }
+        }
+    }
+
+    /// EmailField: the field and Tilføj side by side, 12 under the list, the
+    /// error and the help under them.
+    @ViewBuilder private var emailField: some View {
+        @Bindable var model = model
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                CasyField(
+                    nil, text: $model.draft, placeholder: CasyStrings.inviteEmailPlaceholder,
+                    accessibilityLabel: CasyStrings.inviteEmail, autofocus: true
+                )
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.done)
+                .onSubmit { model.addEmail() }
+                GlassButton(icon: "plus", size: .small) {
+                    model.addEmail()
+                } label: {
+                    Text(CasyStrings.inviteAddEmail)
+                }
+                .disabled(model.draft.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            if let error = model.emailError {
+                Text(error)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.red700.color)
+                    .padding(.horizontal, 4)
+            }
+            footnote(CasyStrings.inviteEmailHelp).padding(.horizontal, 16)
+        }
+        .padding(.top, 12)
+    }
+
+    /// LinkRows: making a link, then copying it and sharing it, and its QR code.
     @ViewBuilder private var linkRows: some View {
         if let link = model.link {
             Button {
@@ -310,47 +353,36 @@ struct InviteContent: View {
                     copied = false
                 }
             } label: {
-                // The address gives way; Kopiér always shows in full.
-                HStack(spacing: 12) {
-                    Image(systemName: "link")
-                        .foregroundStyle(Theme.mutedForeground.color)
-                        .frame(width: 24)
-                        .accessibilityHidden(true)
-                    Text(link.url)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Theme.foreground.color)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer(minLength: 8)
+                CardRow(link.url, icon: "link-2") {
                     HStack(spacing: 4) {
-                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                        LucideIcon(copied ? "check" : "copy", size: 16)
                         Text(copied ? CasyStrings.copied : CasyStrings.copy)
+                            .font(.system(size: 14))
                     }
-                    .font(.subheadline)
                     .foregroundStyle(Theme.primary.color)
-                    .layoutPriority(1)
+                    .fixedSize()
                 }
-                .contentShape(Rectangle())
             }
+            .buttonStyle(.cardRow)
             if let url = URL(string: link.url) {
                 ShareLink(item: url, subject: Text(model.shareTitle), message: Text(model.message)) {
-                    ListRow(CasyStrings.inviteShareLink, systemImage: "square.and.arrow.up")
-                        .contentShape(Rectangle())
+                    CardRow(CasyStrings.inviteShareLink, icon: "share")
                 }
+                .buttonStyle(.cardRow)
                 .simultaneousGesture(TapGesture().onEnded { model.linkUsed() })
             }
         } else {
             Button {
                 Task { await model.makeLink() }
             } label: {
-                HStack {
-                    ListRow(
-                        model.makingLink ? CasyStrings.inviteMakingLink : CasyStrings.inviteMakeLink,
-                        systemImage: "link")
+                CardRow(
+                    model.makingLink ? CasyStrings.inviteMakingLink : CasyStrings.inviteMakeLink,
+                    icon: "link-2"
+                ) {
                     if model.makingLink { ProgressView().controlSize(.small) }
                 }
-                .contentShape(Rectangle())
             }
+            .buttonStyle(.cardRow)
             .disabled(model.makingLink)
         }
         Button {
@@ -360,24 +392,23 @@ struct InviteContent: View {
                 Task { await model.makeLink() }
             }
         } label: {
-            ListRow(
-                model.showQr ? CasyStrings.inviteHideQr : CasyStrings.inviteShowQr,
-                systemImage: "qrcode"
-            )
-            .contentShape(Rectangle())
+            CardRow(
+                model.showQr ? CasyStrings.inviteHideQr : CasyStrings.inviteShowQr, expanded: model.showQr
+            ) { CardRowIcon("qr-code") }
         }
+        .buttonStyle(.cardRow)
     }
 
-    /// The people to tick: the first few and anyone picked, until asked for all.
+    /// PeopleList, folded: the first few and anyone picked, until asked for all.
     @ViewBuilder private var people: some View {
         let everyone = model.people
         if everyone.isEmpty {
-            Section {
-            } footer: {
-                Text(
-                    (GroupsModel.shared.groups?.count ?? 0) > 1
-                        ? CasyStrings.inviteAllIn : CasyStrings.invitePeopleEmpty)
-            }
+            footnote(
+                (GroupsModel.shared.groups?.count ?? 0) > 1
+                    ? CasyStrings.inviteAllIn : CasyStrings.invitePeopleEmpty
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 24)
         } else {
             let canFold = everyone.count > Self.foldedTo
             let shut = canFold && !showAll
@@ -388,66 +419,48 @@ struct InviteContent: View {
                 ? matching.enumerated().filter { $0.offset < Self.foldedTo || model.picked.contains($0.element.profileId) }
                     .map(\.element)
                 : matching
+            let searchable = everyone.count > Self.filterFrom && !shut
             let invited = model.invited
-            Section {
-                if everyone.count > Self.filterFrom && !shut {
-                    TextField(CasyStrings.inviteFilter, text: $filter)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                }
+            if searchable {
+                CasyField(nil, text: $filter, placeholder: CasyStrings.inviteFilter)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .padding(.top, 24)
+            }
+            CardList(
+                CasyStrings.invitePeople, footnote: model.count > 0 ? CasyStrings.inviteConsent : nil,
+                spaced: false
+            ) {
                 ForEach(Array(shown.enumerated()), id: \.element.id) { i, person in
-                    personRow(person, index: i, already: invited.contains(person.profileId))
+                    PickRow(
+                        label: person.name,
+                        detail: person.groupNames.isEmpty
+                            ? CasyStrings.inviteFromPast
+                            : CasyStrings.inviteFrom(person.groupNames.joined(separator: ", ")),
+                        picked: model.picked.contains(person.profileId),
+                        value: invited.contains(person.profileId) ? CasyStrings.inviteInvited : nil,
+                        action: { model.toggle(person.profileId) }
+                    ) {
+                        Avatar(
+                            name: person.name, index: i, size: .row,
+                            url: person.avatarUrl.flatMap(URL.init(string:)))
+                    }
                 }
-                if shown.isEmpty { Text(CasyStrings.inviteNoMatch).foregroundStyle(Theme.mutedForeground.color) }
+                if shown.isEmpty { CardRow(CasyStrings.inviteNoMatch) }
                 if canFold {
                     Button {
                         showAll.toggle()
                         filter = ""
                     } label: {
-                        ListRow(
+                        CardRow(
                             showAll ? CasyStrings.inviteShowFewer : CasyStrings.inviteShowAll(everyone.count),
-                            tone: .primary
-                        )
-                        .contentShape(Rectangle())
+                            tone: .primary, expanded: showAll)
                     }
-                }
-            } header: {
-                Text(CasyStrings.invitePeople)
-            } footer: {
-                if model.count > 0 { Text(CasyStrings.inviteConsent) }
-            }
-        }
-    }
-
-    private func personRow(_ person: KnownPerson, index: Int, already: Bool) -> some View {
-        let picked = model.picked.contains(person.profileId)
-        return Button {
-            model.toggle(person.profileId)
-        } label: {
-            ListAvatarRow(
-                person.name,
-                detail: person.groupNames.isEmpty
-                    ? CasyStrings.inviteFromPast
-                    : CasyStrings.inviteFrom(person.groupNames.joined(separator: ", ")),
-                index: index, url: person.avatarUrl.flatMap(URL.init(string:))
-            ) {
-                if already {
-                    Text(CasyStrings.inviteInvited)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.mutedForeground.color)
-                } else {
-                    Image(systemName: "checkmark")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Theme.primary.color)
-                        .opacity(picked ? 1 : 0)
-                        .accessibilityHidden(true)
+                    .buttonStyle(.cardRow)
                 }
             }
-            .contentShape(Rectangle())
+            .padding(.top, searchable ? 12 : 24)
         }
-        .buttonStyle(.plain)
-        .disabled(already)
-        .accessibilityAddTraits(picked ? .isSelected : [])
     }
 }
 
@@ -459,13 +472,18 @@ private struct QrCode: View {
     var body: some View {
         Group {
             if let image = Self.image(for: text) {
+                // The web's QrCode: 224 (h-56), rounded-xl, black on white with
+                // the standard four modules of white around; Core Image draws
+                // one, so three more of the same size go around it.
+                let modules = image.size.width + 6
                 Image(uiImage: image)
                     .interpolation(.none)
                     .resizable()
                     .scaledToFit()
-                    .padding(12)
-                    .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+                    .padding(224 * 3 / modules)
                     .frame(width: 224, height: 224)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .accessibilityLabel(label)
             }
         }
@@ -506,19 +524,16 @@ struct NewGroupSheet: View {
     @State private var failure: String?
     @State private var invite: InviteModel?
     @State private var pictureLost = false
+    @State private var contentHeight: CGFloat = 380
 
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var body: some View {
         NavigationStack {
             if let invite {
-                InviteContent(model: invite, onSent: { dismiss() })
-                    .safeAreaInset(edge: .top) {
-                        if pictureLost {
-                            Notice(CasyStrings.newGroupPictureLost, tone: .error, bare: true)
-                                .padding(.horizontal, 16)
-                        }
-                    }
+                InviteContent(
+                    model: invite, onSent: { dismiss() },
+                    note: pictureLost ? CasyStrings.newGroupPictureLost : nil)
             } else {
                 nameStep
             }
@@ -526,36 +541,61 @@ struct NewGroupSheet: View {
         .interactiveDismissDisabled(creating)
     }
 
+    /// The web's name step on a phone: the picture (112, the name's letter
+    /// on bg-secondary, 40 point, the camera badge) 20 above the fields, Fjern
+    /// billede under it once there is one; Gruppenavn (semibold) and what the
+    /// group is for, 16 apart; Næste along the bottom.
     private var nameStep: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                PictureMenu(
-                    hasPicture: picture != nil,
-                    addLabel: CasyStrings.groupPictureAdd,
-                    changeLabel: CasyStrings.groupPictureChange,
-                    onPicked: { jpeg in
-                        failure = nil
-                        picture = jpeg
-                    },
-                    onRemove: { picture = nil },
-                    onUnreadable: { failure = CasyStrings.picturesUnreadable }
-                ) {
-                    if let picture, let data = Data(base64Encoded: picture), let image = UIImage(data: data) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: AvatarSize.hero.rawValue, height: AvatarSize.hero.rawValue)
-                            .clipShape(Circle())
-                    } else {
-                        Avatar(name: trimmedName, index: 0, size: .hero)
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(spacing: 0) {
+                    PictureMenu(
+                        hasPicture: picture != nil,
+                        addLabel: CasyStrings.groupPictureAdd,
+                        changeLabel: CasyStrings.groupPictureChange,
+                        onPicked: { jpeg in
+                            failure = nil
+                            picture = jpeg
+                        },
+                        onRemove: { picture = nil },
+                        onUnreadable: { failure = CasyStrings.picturesUnreadable }
+                    ) {
+                        Group {
+                            if let picture, let data = Data(base64Encoded: picture), let image = UIImage(data: data) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                            } else {
+                                ZStack {
+                                    Circle().fill(Theme.secondary.color)
+                                    Text(avatarLetter(trimmedName))
+                                        .font(.system(size: 40, weight: .semibold))
+                                        .foregroundStyle(Theme.foreground.color)
+                                }
+                            }
+                        }
+                        .frame(width: AvatarSize.hero.rawValue, height: AvatarSize.hero.rawValue)
+                        .clipShape(Circle())
+                        .cameraBadge()
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(picture == nil ? CasyStrings.groupPictureAdd : CasyStrings.groupPictureChange)
+                    if picture != nil {
+                        Button(CasyStrings.picturesRemove) { picture = nil }
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Theme.primary.color)
+                            .frame(minHeight: 44)
                     }
                 }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(picture == nil ? CasyStrings.groupPictureAdd : CasyStrings.groupPictureChange)
-                CasyField(CasyStrings.groupNameLabel, text: $name, placeholder: CasyStrings.newGroupPlaceholder)
-                    .onChange(of: name) { _, now in
-                        if now.count > Self.maxName { name = String(now.prefix(Self.maxName)) }
-                    }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 20)
+                CasyField(
+                    CasyStrings.groupNameLabel, text: $name, placeholder: CasyStrings.newGroupPlaceholder,
+                    weight: .semibold
+                )
+                .onChange(of: name) { _, now in
+                    if now.count > Self.maxName { name = String(now.prefix(Self.maxName)) }
+                }
                 CasyField(
                     CasyStrings.groupDescriptionLabel, text: $description,
                     placeholder: CasyStrings.groupDescriptionPlaceholder
@@ -563,12 +603,15 @@ struct NewGroupSheet: View {
                 .onChange(of: description) { _, now in
                     if now.count > Self.maxDescription { description = String(now.prefix(Self.maxDescription)) }
                 }
-                if let failure { Notice(failure, tone: .error) }
+                .padding(.top, 16)
+                if let failure { Notice(failure, tone: .error).padding(.top, 12) }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 24)
+            .padding(.bottom, 16)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
         }
-        .background(Theme.background.color)
+        .scrollBounceBehavior(.basedOnSize)
+        .accessibilityIdentifier("newGroup.screen")
         .casySheetBar(CasyStrings.newGroupTitle, close: CasyStrings.cancel, disabled: creating) {
             dismiss()
         }
@@ -580,6 +623,7 @@ struct NewGroupSheet: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
         }
+        .sheetFits(contentHeight)
     }
 
     private func create() {

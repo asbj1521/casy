@@ -211,14 +211,11 @@ struct MyDataScreen: View {
         .pageLinks(leave: leave)
         .task { await model.load() }
         .refreshable { await model.load() }
-        .casyConfirm(
-            CasyStrings.aiConsentTurnOffMessage, isPresented: $askingOff
-        ) {
-            Button(CasyStrings.aiConsentTurnOff, role: .destructive) {
-                Task { await model.setConsent(false) }
-            }
-            Button(CasyStrings.cancel, role: .cancel) {}
-        }
+        .askFirst(
+            AskWords(
+                message: CasyStrings.aiConsentTurnOffMessage, confirm: CasyStrings.aiConsentTurnOff, danger: false),
+            isPresented: $askingOff
+        ) { await model.setConsent(false) }
         .sheet(item: $exported) { file in
             ShareSheet(url: file.url)
         }

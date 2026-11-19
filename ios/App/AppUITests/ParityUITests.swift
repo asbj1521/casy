@@ -457,6 +457,62 @@ final class ParityUITests: XCTestCase {
         try await shootCalendars("/?calendars=tour", name: "tour", words: "Familie", theme: "light")
     }
 
+    // MARK: Ny kategori, Tilføj en ven, Ny gruppe (#281)
+
+    /// A button in either mode by its words: the page's on the web, the Swift one natively.
+    private func press(_ app: XCUIApplication, _ words: String) {
+        let button =
+            (mode == "web" ? app.webViews.buttons : app.buttons)
+            .matching(NSPredicate(format: "label BEGINSWITH %@", words)).firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: 30), "no \(words)")
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 1)
+        button.tap()
+    }
+
+    /// Ny kategori, from the calendar tour's dashed button.
+    private func shootCategory(theme: String) async throws {
+        let app = try await launch("/?calendars=tour", theme: theme)
+        press(app, "Ny kategori")
+        shoot(app, "category-\(theme)", when: "Må en tur ligge oven i det?", native: "category.screen")
+    }
+
+    func testCategoryLight() async throws { try await shootCategory(theme: "light") }
+
+    func testCategoryDark() async throws { try await shootCategory(theme: "dark") }
+
+    /// Tilføj en ven, from Venner; then with its link made and the QR code shown.
+    private func shootAddFriend(theme: String) async throws {
+        let app = try await openFriends(theme: theme)
+        press(app, "Tilføj en ven")
+        shoot(app, "friend-\(theme)", when: "Lav et link", native: "addFriend.screen")
+        press(app, "Vis QR-kode")
+        _ = XCTWaiter.wait(for: [expectation(description: "the link")], timeout: 3)
+        shot("friend-qr-\(theme)-\(mode)")
+    }
+
+    func testAddFriendLight() async throws { try await shootAddFriend(theme: "light") }
+
+    func testAddFriendDark() async throws { try await shootAddFriend(theme: "dark") }
+
+    /// Ny gruppe from Grupper: its name step, then, named and made, its invite.
+    private func shootNewGroup(theme: String) async throws {
+        let app = try await openGroups(theme: theme)
+        press(app, "Lav en gruppe")
+        shoot(app, "newgroup-\(theme)", when: "Gruppenavn", native: "newGroup.screen")
+        let field = (mode == "web" ? app.webViews.textFields : app.textFields).firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        // Return sends the web's form (its keyboard covers Næste); natively it
+        // only puts the keyboard away, and Næste makes the group.
+        field.typeText("Klatring\n")
+        if mode == "native" { press(app, "Næste") }
+        shoot(app, "invite-\(theme)", when: "Invitér fra kontakter", native: "invite.screen")
+    }
+
+    func testNewGroupLight() async throws { try await shootNewGroup(theme: "light") }
+
+    func testNewGroupDark() async throws { try await shootNewGroup(theme: "dark") }
+
     // MARK: Tilføj til kalender (#281)
 
     /// The plus at the top of the month, in both modes: the web has no address for it.
@@ -588,6 +644,30 @@ final class ParityUITests: XCTestCase {
     func testUpdateLight() async throws { try await shootUpdate(theme: "light") }
 
     func testUpdateDark() async throws { try await shootUpdate(theme: "dark") }
+
+    /// "Er du sikker?": cancelling your own Julefrokost from its screen, in both modes.
+    private func shootConfirm(theme: String) async throws {
+        let app: XCUIApplication
+        if mode == "web" {
+            app = try await launch("/?events=ev-party", theme: theme)
+        } else {
+            app = try await launch("/?events", theme: theme)
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Julefrokost")).firstMatch
+            XCTAssertTrue(link.waitForExistence(timeout: 30), "the Julefrokost row never showed")
+            link.tap()
+        }
+        let exit = mode == "web"
+            ? app.webViews.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Aflys aftale")).firstMatch
+            : app.buttons["dated.exit"]
+        XCTAssertTrue(exit.waitForExistence(timeout: 30), "no way to cancel it")
+        for _ in 0..<6 where !exit.isHittable { app.swipeUp() }
+        exit.tap()
+        shoot(app, "confirm-\(theme)", when: "Aflys aftalen for alle?", native: "confirm.screen")
+    }
+
+    func testConfirmLight() async throws { try await shootConfirm(theme: "light") }
+
+    func testConfirmDark() async throws { try await shootConfirm(theme: "dark") }
 
     // MARK: Aftaler (#281)
 

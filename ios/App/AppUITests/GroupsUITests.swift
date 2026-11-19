@@ -180,7 +180,7 @@ final class GroupsUITests: XCTestCase {
         let leave = row(app, "Forlad gruppe")
         XCTAssertTrue(leave.waitForExistence(timeout: 10))
         leave.tap()
-        let confirm = app.alerts.buttons["Forlad gruppe"]
+        let confirm = app.buttons["confirm.yes"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10))
         confirm.tap()
         XCTAssertTrue(app.navigationBars["Grupper"].waitForExistence(timeout: 10))
@@ -235,8 +235,9 @@ final class GroupsUITests: XCTestCase {
         app.buttons["Tilføj"].tap()
         XCTAssertTrue(app.staticTexts["Det ligner ikke en e-mailadresse."].waitForExistence(timeout: 10))
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 4))
-        field.typeText("ny@eksempel.dk")
-        app.buttons["Tilføj"].tap()
+        // The keyboard's own ✓: the iPhone 17e simulator's keyboard swallows
+        // the first tap after typing (TellUITests), and Return adds it too.
+        field.typeText("ny@eksempel.dk\n")
         XCTAssertTrue(app.buttons["Fjern ny@eksempel.dk"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Send invitation"].exists)
     }

@@ -149,18 +149,16 @@ struct GroupScreen: View {
         }
         .accessibilityIdentifier("group.screen")
         .casyPushedBar(group.name, close: CasyStrings.done, action: closeSheet)
-        .casyConfirm(
-            question(group, sole: sole), isPresented: isAsking,
-            presenting: asking
-        ) { asked in
-            // `asked`, not `asking`: the dialog clears `asking` before its button runs.
-            Button(
-                asked == .delete || sole ? CasyStrings.groupDeleteGroup : CasyStrings.groupLeave,
-                role: .destructive
-            ) {
-                remove(group, forAll: asked == .delete)
+        .askFirst(
+            isPresented: isAsking, presenting: asking,
+            words: { asked in
+                AskWords(
+                    message: question(group, sole: sole),
+                    confirm: asked == .delete || sole ? CasyStrings.groupDeleteGroup : CasyStrings.groupLeave)
             }
-            Button(CasyStrings.cancel, role: .cancel) {}
+        ) { asked in
+            // `asked`, not `asking`: the sheet lets go of `asking` before it runs.
+            remove(group, forAll: asked == .delete)
         }
         .sheet(isPresented: $editing) {
             EditGroupSheet(group: group, index: index)

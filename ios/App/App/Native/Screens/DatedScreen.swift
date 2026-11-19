@@ -99,23 +99,23 @@ struct DatedScreen: View {
         // Its one main action, pinned along the bottom.
         .safeAreaInset(edge: .bottom) { AddToCalendar(event: event) }
         .refreshable { await model.load() }
-        .casyConfirm(
-            asking == .backOut
-                ? CasyStrings.eventsMoveConfirm
-                : mine ? CasyStrings.eventsCancelConfirm : CasyStrings.eventsLeaveConfirm,
-            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }), presenting: asking
+        .askFirst(
+            isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }), presenting: asking,
+            words: { asked in
+                asked == .backOut
+                    ? AskWords(
+                        message: CasyStrings.eventsMoveConfirm, confirm: CasyStrings.eventsMoveYes,
+                        cancel: CasyStrings.eventsMoveKeep)
+                    : AskWords(
+                        message: mine ? CasyStrings.eventsCancelConfirm : CasyStrings.eventsLeaveConfirm,
+                        confirm: mine ? CasyStrings.eventsCancelEvent : CasyStrings.eventsLeaveEvent,
+                        cancel: mine ? CasyStrings.eventsKeepIt : CasyStrings.eventsStayIn)
+            }
         ) { asked in
-            // `asked`, not `asking`: the dialog clears `asking` before its button runs.
             if asked == .backOut {
-                Button(CasyStrings.eventsMoveYes, role: .destructive) {
-                    run { try await model.answer(event.id, dateId: date.id, .declined) }
-                }
-                Button(CasyStrings.eventsMoveKeep, role: .cancel) {}
+                run { try await model.answer(event.id, dateId: date.id, .declined) }
             } else {
-                Button(mine ? CasyStrings.eventsCancelEvent : CasyStrings.eventsLeaveEvent, role: .destructive) {
-                    run { try await mine ? model.cancel(event.id) : model.leave(event.id) }
-                }
-                Button(mine ? CasyStrings.eventsKeepIt : CasyStrings.eventsStayIn, role: .cancel) {}
+                run { try await mine ? model.cancel(event.id) : model.leave(event.id) }
             }
         }
         .sheet(isPresented: $reporting) {

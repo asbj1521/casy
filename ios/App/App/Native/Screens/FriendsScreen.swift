@@ -75,13 +75,10 @@ struct FriendsScreen: View {
             _ = await (groups, friends)
         }
         .refreshable { await model.loadFriends() }
-        .casyConfirm(
-            removing.map { CasyStrings.friendsRemoveAsk($0.name) } ?? "",
-            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing
-        ) { person in
-            Button(CasyStrings.friendsRemove, role: .destructive) { remove(person) }
-            Button(CasyStrings.cancel, role: .cancel) {}
-        }
+        .askFirst(
+            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing,
+            words: { AskWords(message: CasyStrings.friendsRemoveAsk($0.name), confirm: CasyStrings.friendsRemove) }
+        ) { remove($0) }
         .sheet(isPresented: $adding) {
             AddFriendSheet()
                 .nativeSheetLook(NativePreferences.shared)

@@ -332,14 +332,15 @@ struct GroupsScreen: View {
             NewGroupSheet()
                 .nativeSheetLook(NativePreferences.shared)
         }
-        .casyConfirm(
-            asking.map { CasyStrings.groupsDeleteConfirm($0.name, members: $0.members.count) } ?? "",
+        .askFirst(
             isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil; swiped = nil } }),
-            presenting: asking
-        ) { group in
-            Button(CasyStrings.groupsDelete, role: .destructive) { model.leaveOrDelete(group) }
-            Button(CasyStrings.cancel, role: .cancel) {}
-        }
+            presenting: asking,
+            words: {
+                AskWords(
+                    message: CasyStrings.groupsDeleteConfirm($0.name, members: $0.members.count),
+                    confirm: CasyStrings.groupsDelete)
+            }
+        ) { model.leaveOrDelete($0) }
     }
 
     /// GroupList: loading and failing as a line of their own (mt-6), else
@@ -498,13 +499,12 @@ struct InvitationScreen: View {
                 blocking = true
             }
         }
-        .casyConfirm(
-            invitation.invitedBy.map(CasyStrings.invitationsBlockConfirm) ?? "",
+        .askFirst(
+            AskWords(
+                message: invitation.invitedBy.map(CasyStrings.invitationsBlockConfirm) ?? "",
+                confirm: CasyStrings.invitationsBlock),
             isPresented: $blocking
-        ) {
-            Button(CasyStrings.invitationsBlock, role: .destructive) { answer(.block) }
-            Button(CasyStrings.cancel, role: .cancel) {}
-        }
+        ) { answer(.block) }
     }
 
     /// What joining shares, behind the ?, and blocking the sender under it.

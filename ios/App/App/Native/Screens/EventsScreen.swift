@@ -197,13 +197,14 @@ struct EventsScreen: View {
         .casySheetBar(CasyStrings.eventsTitle, close: CasyStrings.done, action: closeSheet)
         .task { await model.load() }
         .refreshable { await model.load() }
-        .sheet(item: $cancelling) { event in
-            ConfirmAsk(message: CasyStrings.eventsCancelConfirm, confirmLabel: CasyStrings.eventsCancelEvent) {
-                try await model.cancel(event.id)
+        .askFirst(
+            isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil; swiped = nil } }),
+            presenting: cancelling,
+            words: { _ in
+                // The web's list says Annuller here, its event screen Behold den.
+                AskWords(message: CasyStrings.eventsCancelConfirm, confirm: CasyStrings.eventsCancelEvent)
             }
-            .nativeSheetLook(NativePreferences.shared)
-            .onDisappear { swiped = nil }
-        }
+        ) { try await model.cancel($0.id) }
     }
 
     /// Whether this phone's clock isn't Danish time, so every time needs saying so.

@@ -3,64 +3,95 @@
 
 import SwiftUI
 
-/// A text field as the Planlæg sheet has it: tall, 17 point, rounded, with a
-/// small uppercase label above. `lines` over 1 makes it grow; `secure` hides
-/// what is typed (a password).
+/// A text field as the web's `FIELD` (src/components/ui/field.ts): 48 tall,
+/// 17 point, rounded-xl (12), 1 border on the card's colour, 14 points in,
+/// orange border and a 2 point orange ring at 20 % while typing; its label
+/// above as `FIELD_LABEL`: 12 medium capitals, tracked, muted, 4 in, 6 above
+/// the field. `label: nil` for a field on its own (an email to add); `weight`
+/// for a group's name (semibold). `lines` over 1 makes it grow; `secure`
+/// hides what is typed (a password).
 public struct CasyField: View {
-    private let label: String
+    private let label: String?
     private let placeholder: String
     private let lines: Int
     private let secure: Bool
+    private let weight: Font.Weight
+    private let accessibility: String
+    private let autofocus: Bool
     @Binding private var text: String
     @FocusState private var focused: Bool
     @ScaledMetric(relativeTo: .body) private var height: CGFloat = 48
+    @ScaledMetric(relativeTo: .body) private var textSize: CGFloat = 17
 
     public init(
-        _ label: String,
+        _ label: String?,
         text: Binding<String>,
         placeholder: String = "",
         lines: Int = 1,
-        secure: Bool = false
+        secure: Bool = false,
+        weight: Font.Weight = .regular,
+        accessibilityLabel: String? = nil,
+        autofocus: Bool = false
     ) {
+        self.autofocus = autofocus
         self.label = label
         self._text = text
         self.placeholder = placeholder
         self.lines = lines
         self.secure = secure
+        self.weight = weight
+        self.accessibility = accessibilityLabel ?? label ?? placeholder
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.caption.weight(.medium))
-                .textCase(.uppercase)
-                .foregroundStyle(Theme.mutedForeground.color)
-                .padding(.horizontal, 4)
-                .accessibilityHidden(true)
+            if let label {
+                Text(label)
+                    .textCase(.uppercase)
+                    .font(.system(size: 12, weight: .medium))
+                    .tracking(0.3)
+                    .foregroundStyle(Theme.mutedForeground.color)
+                    .cssLineHeight(16, size: 12)
+                    .padding(.horizontal, 4)
+                    .accessibilityHidden(true)
+            }
             field
-                .font(.body)
+                .font(.system(size: textSize, weight: weight))
                 .foregroundStyle(Theme.foreground.color)
                 .textFieldStyle(.plain)
                 .focused($focused)
                 .padding(.horizontal, 14)
                 .padding(.vertical, lines > 1 ? 10 : 0)
                 .frame(minHeight: height)
-                .background(Theme.card.color, in: RoundedRectangle(cornerRadius: 12))
+                .background(Theme.card.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(
-                            focused ? Theme.primary.color : Theme.border.color,
-                            lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(focused ? Theme.primary.color : Theme.border.color, lineWidth: 1)
                 }
-                .accessibilityLabel(label)
+                .background {
+                    // focus:ring-2 ring-primary/20, outside the border.
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Theme.primary.color.opacity(focused ? 0.2 : 0))
+                        .padding(-2)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { focused = true }
+                .accessibilityLabel(accessibility)
+                // The web's autoFocus: the keyboard up once it is on screen.
+                .task {
+                    guard autofocus else { return }
+                    try? await Task.sleep(for: .milliseconds(150))
+                    focused = true
+                }
         }
     }
 
     @ViewBuilder private var field: some View {
+        let prompt = Text(placeholder).foregroundStyle(Theme.mutedForeground.color)
         if secure {
-            SecureField(placeholder, text: $text)
+            SecureField("", text: $text, prompt: prompt)
         } else {
-            TextField(placeholder, text: $text, axis: lines > 1 ? .vertical : .horizontal)
+            TextField("", text: $text, prompt: prompt, axis: lines > 1 ? .vertical : .horizontal)
                 .lineLimit(lines > 1 ? lines...(lines * 3) : 1...1)
         }
     }
@@ -97,7 +128,7 @@ extension AvatarSize {
 }
 
 /// The letter shown without a picture: a name's first, in capitals.
-func avatarLetter(_ name: String) -> String {
+public func avatarLetter(_ name: String) -> String {
     let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
     return trimmed.prefix(1).uppercased()
 }
@@ -268,62 +299,3 @@ public struct Notice: View {
     }
 }
 
-/// The second step before anything that needs a yes: the system's own
-/// question, red when something is lost for good.
-public struct ConfirmButton<Label: View>: View {
-    private let message: String
-    private let confirmLabel: String
-    private let destructive: Bool
-    private let action: () -> Void
-    private let label: Label
-    @State private var asking = false
-
-    public init(
-        message: String,
-        confirmLabel: String,
-        destructive: Bool = true,
-        action: @escaping () -> Void,
-        @ViewBuilder label: () -> Label
-    ) {
-        self.message = message
-        self.confirmLabel = confirmLabel
-        self.destructive = destructive
-        self.action = action
-        self.label = label()
-    }
-
-    public var body: some View {
-        Button {
-            asking = true
-        } label: {
-            label
-        }
-        .casyConfirm(message, isPresented: $asking) {
-            Button(confirmLabel, role: destructive ? .destructive : nil, action: action)
-            Button(CasyStrings.cancel, role: .cancel) {}
-        }
-    }
-}
-
-// MARK: - Asking first
-
-extension View {
-    /// "Are you sure?" as a centred alert with the question as its text: wide
-    /// enough to read in a few lines, where iOS 26's confirmation dialog is a
-    /// narrow bubble by the row that was tapped.
-    public func casyConfirm<A: View>(
-        _ message: String, isPresented: Binding<Bool>, @ViewBuilder actions: @escaping () -> A
-    ) -> some View {
-        alert(Text(verbatim: ""), isPresented: isPresented, actions: actions, message: { Text(message) })
-    }
-
-    /// The same, about one thing (`presenting`).
-    public func casyConfirm<T, A: View>(
-        _ message: String, isPresented: Binding<Bool>, presenting data: T?,
-        @ViewBuilder actions: @escaping (T) -> A
-    ) -> some View {
-        alert(
-            Text(verbatim: ""), isPresented: isPresented, presenting: data, actions: actions,
-            message: { _ in Text(message) })
-    }
-}

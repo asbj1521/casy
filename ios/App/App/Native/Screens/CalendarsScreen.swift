@@ -630,13 +630,17 @@ private struct PriorityMenu: View {
 }
 
 /// A category of the person's own (#220): a name, and whether a trip may lie
-/// on top of it (the kind scheduling reads), shown only to its owner.
+/// on top of it (the kind scheduling reads), shown only to its owner. The
+/// web's NewCategorySheet (#281): the name field, then the question as a
+/// list 16 under it with the two answers ticked, Gem kategori along the
+/// bottom; as tall as that, in iOS's glass.
 struct NewCategorySheet: View {
     let save: (OwnCategory) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var soft = false
+    @State private var contentHeight: CGFloat = 220
 
     /// Matches the check on calendar_sources.category_name.
     private static let maxName = 30
@@ -645,22 +649,26 @@ struct NewCategorySheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
                     CasyField(
                         CasyStrings.calendarsNewCategoryName, text: $name,
-                        placeholder: CasyStrings.calendarsNewCategoryPlaceholder)
+                        placeholder: CasyStrings.calendarsNewCategoryPlaceholder, autofocus: true)
                         .onChange(of: name) { _, typed in
                             if typed.count > Self.maxName { name = String(typed.prefix(Self.maxName)) }
                         }
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
+                    CardList(CasyStrings.calendarsNewCategoryAsk, spaced: false) {
+                        PickRow(CasyStrings.calendarsNewCategoryYes, picked: soft) { soft = true }
+                        PickRow(CasyStrings.calendarsNewCategoryNo, picked: !soft) { soft = false }
+                    }
+                    .padding(.top, 16)
                 }
-                Section(CasyStrings.calendarsNewCategoryAsk) {
-                    ListPickRow(CasyStrings.calendarsNewCategoryYes, isSelected: soft) { soft = true }
-                    ListPickRow(CasyStrings.calendarsNewCategoryNo, isSelected: !soft) { soft = false }
-                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
             }
+            .scrollBounceBehavior(.basedOnSize)
+            .accessibilityIdentifier("category.screen")
             .casySheetBar(CasyStrings.calendarsNewCategory, close: CasyStrings.cancel) { dismiss() }
             .safeAreaInset(edge: .bottom) {
                 FlowButton(action: {
@@ -674,6 +682,6 @@ struct NewCategorySheet: View {
                 .padding(.bottom, 8)
             }
         }
-        .presentationDetents([.medium, .large])
+        .sheetFits(contentHeight)
     }
 }

@@ -212,9 +212,7 @@ struct AdminScreen: View {
             async let reviews: Void = AdminReviewsModel.shared.load()
             _ = await (overview, reviews)
         }
-        .sheet(item: $asking) { ask in
-            confirm(ask).nativeSheetLook(NativePreferences.shared)
-        }
+        .askFirst(item: $asking) { confirm($0) }
     }
 
     // MARK: The top
@@ -762,10 +760,10 @@ struct AdminScreen: View {
 
     // MARK: The yes
 
-    @ViewBuilder private func confirm(_ ask: AdminAsk) -> some View {
+    private func confirm(_ ask: AdminAsk) -> ConfirmAsk {
         switch ask {
         case .deleteGroup(let g):
-            ConfirmAsk(
+            return ConfirmAsk(
                 message: CasyStrings.adminDeleteGroupConfirm(g.name, members: g.members.count),
                 confirmLabel: CasyStrings.adminDeleteGroup
             ) {
@@ -773,7 +771,7 @@ struct AdminScreen: View {
             }
         case .removeMember(let g, let m):
             let last = g.members.count <= 1
-            ConfirmAsk(
+            return ConfirmAsk(
                 message: CasyStrings.adminRemoveMember(m.name, from: g.name, last: last),
                 confirmLabel: last ? CasyStrings.adminRemoveAndDelete : CasyStrings.adminRemove
             ) {
@@ -784,7 +782,7 @@ struct AdminScreen: View {
         case .deleteUser(let u):
             let overview = model.overview
             let theirs = overview?.groups.filter { $0.members.contains { $0.profileId == u.id } } ?? []
-            ConfirmAsk(
+            return ConfirmAsk(
                 message: CasyStrings.adminDeleteUserConfirm(
                     u.name, accounts: overview?.connections.filter { $0.ownerId == u.id }.count ?? 0,
                     groups: theirs.count, soleGroups: theirs.filter { $0.members.count == 1 }.count),
@@ -794,7 +792,7 @@ struct AdminScreen: View {
                 try await model.deleteUser(u)
             }
         case .deleteReportGroup(let r):
-            ConfirmAsk(
+            return ConfirmAsk(
                 message: CasyStrings.adminReportDeleteGroupConfirm(r.content.groupName),
                 confirmLabel: CasyStrings.adminReportDeleteGroup
             ) {

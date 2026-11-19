@@ -89,10 +89,12 @@ import SwiftUI
                 .minimumScaleFactor(0.8)
                 .multilineTextAlignment(.leading)
                 .accessibilityAddTraits(.isHeader)
-                // The bar sizes an item by its own width: a fixed one, with
-                // the close button's room left over on the smallest iPhone
-                // (and the whole of the smallest iPhone's bar without one).
-                .frame(width: alone ? 320 : 230, alignment: .leading)
+                // The bar sizes an item by its own width: the words' own, at
+                // most what leaves the close button's room on the smallest
+                // iPhone (the whole of its bar without one), so a short title
+                // leaves room for a longer button (Behold den) on a floating
+                // sheet.
+                .frame(maxWidth: alone ? 320 : 230, alignment: .leading)
                 .fixedSize()
         }
     }
