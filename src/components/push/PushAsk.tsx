@@ -6,6 +6,7 @@ import Notice from "@/components/ui/Notice";
 import { useNativeScreen } from "@/hooks/useNativeScreen";
 import { useNativeSheet } from "@/hooks/useNativeSheet";
 import { useLang, useT } from "@/i18n/lang";
+import { APP_BUILD } from "@/lib/feedback";
 import { enablePush, pushPermission } from "@/lib/push";
 import {
   type AskReason,
@@ -23,6 +24,16 @@ import {
 const SHOW_AFTER_MS = 1200;
 
 /**
+ * The parity build (#281) asks from its address (`?pushAsk=sent`), so a test
+ * opens it on the web and natively alike, whatever iOS has been asked.
+ */
+function parityAsk(): AskReason | null {
+  if (APP_BUILD !== "parity") return null;
+  const asked = new URLSearchParams(location.search).get("pushAsk");
+  return asked === "sent" || asked === "answered" || asked === "joined" ? asked : null;
+}
+
+/**
  * What Casy says before iOS's question (#139): shown where people are waiting
  * on others, never more often than pushAsk.ts allows. Its one button, "Fortsæt",
  * leads straight to iOS's prompt, where the person answers, so the sheet can only
@@ -32,10 +43,10 @@ const SHOW_AFTER_MS = 1200;
 export default function PushAsk() {
   const t = useT();
   const { lang } = useLang();
-  const [reason, setReason] = useState<AskReason | null>(null);
+  const [reason, setReason] = useState<AskReason | null>(parityAsk);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const showing = useRef(false);
+  const showing = useRef(reason !== null);
 
   useEffect(
     () =>

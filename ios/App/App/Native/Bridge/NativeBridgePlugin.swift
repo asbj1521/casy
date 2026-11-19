@@ -293,7 +293,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             ? AnyView(
                 PushAskSheet(
                     preferences: NativePreferences.shared, reason: state["reason"] as? String ?? "sent",
-                    enablePush: enablePush, onDone: onDone))
+                    enablePush: enablePush, onDone: onDone
+                )
+                .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
             : screen == "update"
             ? AnyView(
                 UpdateRequiredScreen(
@@ -353,17 +355,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
         // A trip's sheet, as the web's BottomSheet: as tall as what is in it,
         // in iOS's glass, never whole (where iOS would draw it solid).
-        if ["trip", "prime", "aiConsent"].contains(screen) {
+        if ["trip", "prime", "aiConsent", "push"].contains(screen) {
             host.view.backgroundColor = .clear
             host.sheetPresentationController?.detents = [
                 .custom(identifier: .init("casy.fit")) { context in
                     min(context.maximumDetentValue - 1, fit.height)
                 }
             ]
-        }
-        // The push ask says one sentence: only as tall as that and its button.
-        if screen == "push" {
-            host.sheetPresentationController?.detents = [.custom { _ in 300 }, .large()]
         }
         // A swipe down closes it too: tell the web either way.
         host.presentationController?.delegate = self

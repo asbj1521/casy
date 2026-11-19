@@ -17,26 +17,40 @@ struct PushAskSheet: View {
     @State private var busy = false
     @State private var failed = false
 
+    @Environment(\.fitSheet) private var fitSheet
+    @State private var bar: CGFloat = 0
+    @State private var content: CGFloat = 0
+
+    /// The web's PushAsk (#281): the sentence (12 muted), a failure under it,
+    /// Fortsæt as the FlowButton; the sheet as tall as that, in iOS's glass.
     var body: some View {
         NavigationStack {
-            List {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(CasyStrings.pushAskNote)
-                    .font(.footnote)
+                    .font(.system(size: 12))
                     .foregroundStyle(Theme.mutedForeground.color)
-                    .listRowBackground(Color.clear)
-                if failed { Notice(CasyStrings.pushFailed, tone: .error) }
+                    .cssLineHeight(16, size: 12)
+                    .fixedSize(horizontal: false, vertical: true)
+                if failed { Notice(CasyStrings.pushFailed, tone: .error).padding(.top, 12) }
+                FlowButton(busy: busy, action: enable) { Text(CasyStrings.pushAskEnable) }
+                    .accessibilityIdentifier("push.enable")
+                    .padding(.top, 16)
             }
-            .solidHalfSheet()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { content = $0 }
+            .frame(maxHeight: .infinity, alignment: .top)
+            .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { bar = $0 }
+            .onChange(of: bar + content, initial: true) { _, height in
+                if bar > 0, content > 0 { fitSheet(height) }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("push.screen")
             .casySheetBar(
                 CasyStrings.pushAskTitle(reason),
                 // Only after a failure is there anything to put away.
                 close: failed ? CasyStrings.pushAskLater : "", disabled: !failed || busy, action: onDone)
-            .safeAreaInset(edge: .bottom) {
-                FlowButton(busy: busy, action: enable) { Text(CasyStrings.pushAskEnable) }
-                    .accessibilityIdentifier("push.enable")
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-            }
         }
         .interactiveDismissDisabled(!failed)
         .nativeSheetLook(preferences)

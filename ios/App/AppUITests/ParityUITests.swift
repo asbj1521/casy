@@ -559,6 +559,19 @@ final class ParityUITests: XCTestCase {
 
     func testConsentDark() async throws { try await shootConsent(theme: "dark") }
 
+    // MARK: The push ask (#281)
+
+    /// What we say before iOS's question, after something was sent: the
+    /// parity build asks from its address in both modes.
+    private func shootPush(theme: String) async throws {
+        let app = try await launch("/?pushAsk=sent", theme: theme)
+        shoot(app, "push-\(theme)", when: "Fortsæt", native: "push.screen")
+    }
+
+    func testPushLight() async throws { try await shootPush(theme: "light") }
+
+    func testPushDark() async throws { try await shootPush(theme: "dark") }
+
     // MARK: Aftaler (#281)
 
     private func shootEvents(theme: String) async throws {

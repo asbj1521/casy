@@ -48,12 +48,12 @@ import SwiftUI
                 .toolbar {
                     if #available(iOS 26, *) {
                         ToolbarItem(placement: .topBarLeading) {
-                            SheetTitle(title)
+                            SheetTitle(title, alone: close.isEmpty)
                         }
                         .sharedBackgroundVisibility(.hidden)
                     } else {
                         ToolbarItem(placement: .topBarLeading) {
-                            SheetTitle(title)
+                            SheetTitle(title, alone: close.isEmpty)
                         }
                     }
                     // Empty: nothing to close yet (the push ask until iOS's question failed).
@@ -70,8 +70,13 @@ import SwiftUI
     /// The title as words, not a button: no glass behind it on iOS 26.
     private struct SheetTitle: View {
         let title: String
+        /// No button beside it: the bar's whole width.
+        let alone: Bool
 
-        init(_ title: String) { self.title = title }
+        init(_ title: String, alone: Bool) {
+            self.title = title
+            self.alone = alone
+        }
 
         var body: some View {
             Text(title)
@@ -85,8 +90,9 @@ import SwiftUI
                 .multilineTextAlignment(.leading)
                 .accessibilityAddTraits(.isHeader)
                 // The bar sizes an item by its own width: a fixed one, with
-                // the close button's room left over on the smallest iPhone.
-                .frame(width: 230, alignment: .leading)
+                // the close button's room left over on the smallest iPhone
+                // (and the whole of the smallest iPhone's bar without one).
+                .frame(width: alone ? 320 : 230, alignment: .leading)
                 .fixedSize()
         }
     }
