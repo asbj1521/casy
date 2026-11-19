@@ -126,7 +126,7 @@ final class ParityUITests: XCTestCase {
         XCTAssertTrue(cell.waitForExistence(timeout: 30), "the 8 October cell never showed")
         _ = XCTWaiter.wait(for: [expectation(description: "still")], timeout: 2)
         cell.tap()
-        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 4)
         let back =
             mode == "web"
             ? app.buttons.matching(NSPredicate(format: "label ==[c] %@", "vis oktober")).firstMatch
@@ -144,7 +144,7 @@ final class ParityUITests: XCTestCase {
         let cell = app.buttons["day.2026-10-08"]
         XCTAssertTrue(cell.waitForExistence(timeout: 30), "the 8 October cell never showed")
         cell.tap()
-        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 4)
         app.buttons["week.2026-10-06"].tap()
         _ = XCTWaiter.wait(for: [expectation(description: "lens")], timeout: 2)
         app.buttons["week.2026-10-10"].tap()
@@ -286,6 +286,29 @@ final class ParityUITests: XCTestCase {
     func testDataLight() async throws { try await shootData(theme: "light") }
 
     func testDataDark() async throws { try await shootData(theme: "dark") }
+
+    /// Slet konto: the card, then its "Er du sikker?" sheet with the word to type.
+    private func openAccount(theme: String) async throws -> XCUIApplication {
+        if mode == "web" { return try await launch("/?profile=account", theme: theme) }
+        let app = try await launch("/?profile", theme: theme)
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Slet konto")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "the Slet konto row never showed")
+        for _ in 0..<4 where !row.isHittable { app.screenList.swipeUp() }
+        row.tap()
+        return app
+    }
+
+    private func shootAccount(theme: String) async throws {
+        let app = try await openAccount(theme: theme)
+        shoot(app, "account-\(theme)", when: "Slet min konto", native: "account.screen")
+        app.buttons["Slet min konto"].firstMatch.tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 4)
+        shot("account-ask-\(theme)-\(mode)")
+    }
+
+    func testAccountLight() async throws { try await shootAccount(theme: "light") }
+
+    func testAccountDark() async throws { try await shootAccount(theme: "dark") }
 
     private func openGroup(theme: String) async throws -> XCUIApplication {
         if mode == "web" { return try await launch("/?profile=groups/g-friday", theme: theme) }

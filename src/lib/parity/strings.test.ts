@@ -777,6 +777,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "deleteAccount.intro": (t) => t.deleteAccount.intro,
   "deleteAccount.word": (t) => t.deleteAccount.word,
   "deleteAccount.prompt": (t) => t.deleteAccount.prompt("%@"),
+  "deleteAccount.button": (t) => t.deleteAccount.button,
   "deleteAccount.confirm": (t) => t.deleteAccount.confirmButton,
   "deleteAccount.deleting": (t) => t.deleteAccount.deleting,
   "deleteAccount.failed": (t) => t.api.deleteAccount,

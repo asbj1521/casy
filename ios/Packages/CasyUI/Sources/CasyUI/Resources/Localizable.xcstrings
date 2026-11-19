@@ -3129,6 +3129,23 @@
         }
       }
     },
+    "deleteAccount.button": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet min konto"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete my account"
+          }
+        }
+      }
+    },
     "deleteAccount.confirm": {
       "extractionState": "manual",
       "localizations": {

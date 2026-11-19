@@ -228,6 +228,7 @@ public enum CasyStrings {
     public static var deleteAccountIntro: String { text("deleteAccount.intro") }
     public static var deleteAccountWord: String { text("deleteAccount.word") }
     public static func deleteAccountPrompt(_ value: String) -> String { String(format: text("deleteAccount.prompt"), value) }
+    public static var deleteAccountButton: String { text("deleteAccount.button") }
     public static var deleteAccountConfirm: String { text("deleteAccount.confirm") }
     public static var deleteAccountDeleting: String { text("deleteAccount.deleting") }
     public static var deleteAccountFailed: String { text("deleteAccount.failed") }
