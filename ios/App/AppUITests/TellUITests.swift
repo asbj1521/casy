@@ -30,6 +30,10 @@ final class TellUITests: XCTestCase {
         XCTAssertTrue(box.waitForExistence(timeout: 10))
         box.tap()
         box.typeText(text)
+        // The iPhone 17e simulator's on-screen keyboard swallows the first tap
+        // after typing (a second always works; a real phone sends on the first,
+        // checked 19 Nov 2026): the title takes it, where a tap does nothing.
+        app.navigationBars["Tilføj til kalender"].staticTexts.firstMatch.tap()
         app.buttons["tell.send"].tap()
     }
 
