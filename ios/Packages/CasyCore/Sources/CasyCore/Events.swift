@@ -31,6 +31,11 @@ public struct PeopleSettings: Codable, Sendable, Equatable {
 public struct StartWindow: Codable, Sendable, Equatable {
     public var from: Double
     public var to: Double
+
+    public init(from: Double, to: Double) {
+        self.from = from
+        self.to = to
+    }
 }
 
 /// A trip's shape: the weekday it starts, the days it touches, its first and last hour.
@@ -39,6 +44,13 @@ public struct WeeklySpanShape: Codable, Sendable, Equatable {
     public var spanDays: Int
     public var startHour: Double
     public var endHour: Double
+
+    public init(anchorDow: Int, spanDays: Int, startHour: Double, endHour: Double) {
+        self.anchorDow = anchorDow
+        self.spanDays = spanDays
+        self.startHour = startHour
+        self.endHour = endHour
+    }
 }
 
 /// An event's settings (`EventSettings` in eventSearch.ts): a meeting's

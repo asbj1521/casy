@@ -78,22 +78,6 @@ public struct MultiDayResult: Codable, Sendable, Equatable {
     static var none: MultiDayResult { MultiDayResult(slot: nil, conflicts: []) }
 }
 
-/// The recurring shape of a weekly span: Friday 17:00 to Sunday 21:00 is
-/// anchorDow 5, spanDays 3, startHour 17, endHour 21.
-public struct WeeklySpan: Codable, Sendable, Equatable {
-    public var anchorDow: Int
-    public var spanDays: Int
-    public var startHour: Double
-    public var endHour: Double
-
-    public init(anchorDow: Int, spanDays: Int, startHour: Double, endHour: Double) {
-        self.anchorDow = anchorDow
-        self.spanDays = spanDays
-        self.startHour = startHour
-        self.endHour = endHour
-    }
-}
-
 /// A shorter stay that works, when the asked-for holiday length doesn't.
 public struct VacationSuggestion: Codable, Sendable, Equatable {
     public var kind: String
@@ -550,7 +534,7 @@ public func findBestDaySpan(
 
 /// The best occurrence of a weekly span ("a weekend"), scored as findBestDaySpan.
 public func findWeeklySpan(
-    _ participants: [Participant], _ shape: WeeklySpan, _ searchStart: String, _ searchEnd: String,
+    _ participants: [Participant], _ shape: WeeklySpanShape, _ searchStart: String, _ searchEnd: String,
     _ timeZone: String
 ) -> MultiDayResult {
     guard let range = parseRange(searchStart, searchEnd), shape.spanDays > 0 else { return .none }

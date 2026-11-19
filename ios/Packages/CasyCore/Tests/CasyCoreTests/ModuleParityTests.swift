@@ -454,3 +454,76 @@ private struct SpanAnswer: Encodable {
         }
     }
 }
+
+private func dayList(_ label: DayListLabel) -> JSONValue {
+    switch label {
+    case .all: .object(["kind": .string("all")])
+    case .weekdays: .object(["kind": .string("weekdays")])
+    case .weekends: .object(["kind": .string("weekends")])
+    case .list(let dows): .object(["kind": .string("list"), "dows": .array(dows.map { .number(Double($0)) })])
+    }
+}
+
+@Test func eventSearchGivesTheTypeScriptAnswers() throws {
+    let zone = "Europe/Copenhagen"
+    try check("eventSearch", atLeast: 400) { fn, a in
+        switch fn {
+        case "findEventSlot":
+            let people: [Participant] = try a["participants"].decoded()
+            let search: EventSettings = try a["search"].decoded()
+            let end = try text(a, "searchEnd")
+            let found = findEventSlot(people, search, try text(a, "searchStart"), end, zone)
+            let chosen = peopleForSearch(people, search.people)
+            let count = try #require(a["count"].int)
+            return .object([
+                "found": try json(found),
+                "people": .object([
+                    "searched": try json(chosen.searched),
+                    "quorum": chosen.quorum.map { .number(Double($0)) } ?? .null,
+                ]),
+                "title": .string(fallbackTitleId(search)),
+                "later": try json(
+                    found.slot.map {
+                        laterSlots(people, search, afterStart: $0.start, count: count, searchEnd: end, zone)
+                    } ?? []),
+                "review": try json(
+                    reviewAnswer(found, search, you: a["you"].string, acceptedStart: a["accepted"].string)),
+            ])
+        case "peopleFromChoice":
+            return try json(
+                peopleFromChoice(try a["members"].decoded(), try a["choice"].decoded(), meeting: a["meeting"] == .bool(true)))
+        case "settings":
+            let s: SchedulerSettings = try a["settings"].decoded()
+            return .object([
+                "search": try json(settingsToSearch(s)),
+                "flex": flexOf(s).map { .number(Double($0)) } ?? .null,
+                "days": dayList(describeDays(s.dows)),
+            ])
+        case "period":
+            let p: Period? = try? a["period"].decoded()
+            let window = periodWindow(p, today: "2026-10-07T08:00:00.000Z", limitEnd: monthIso(12), zone)
+            return .object([
+                "picked": try json(pickPeriodMonth(p, try text(a, "month"), zone)),
+                "window": .object(["start": .string(window.start), "end": .string(window.end)]),
+                "bounds": p.map { b in
+                    let bounds = periodBounds(b, zone)
+                    return .object(["from": .number(Double(bounds.from)), "to": .number(Double(bounds.to))])
+                } ?? .null,
+            ])
+        case "flex":
+            let around = flexAround(try a["window"].decoded())
+            return .object([
+                "around": .object(["startHour": .number(around.startHour), "startWindow": try json(around.startWindow)]),
+                "own": try json(flexWindow(Double(try #require(a["hour"].int)), try #require(a["flex"].int))),
+            ])
+        case "daysUntil":
+            return .number(Double(daysUntil(try text(a, "day"), try text(a, "today"))))
+        default:
+            return unknown(fn)
+        }
+    }
+}
+
+private func monthIso(_ n: Int) -> String {
+    isoString(startOfMonth(parseInstant("2026-10-07T08:00:00.000Z")!, "Europe/Copenhagen", n))
+}
