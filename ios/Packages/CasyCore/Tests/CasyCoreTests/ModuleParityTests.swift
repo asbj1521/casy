@@ -621,3 +621,14 @@ private struct DateRange: Decodable {
         }
     }
 }
+
+@Test func monthAvailabilityGivesTheTypeScriptAnswers() throws {
+    try check("monthAvailability", atLeast: 60) { fn, a in
+        guard fn == "month" else { return unknown(fn) }
+        return try json(
+            monthAvailability(
+                try a["participants"].decoded(), try a["search"].decoded(), year: try #require(a["year"].int),
+                month: try #require(a["month"].int), timeZone: "Europe/Copenhagen",
+                todayMs: parseInstant("2026-10-07T08:00:00.000Z")!, windowEndMs: try milliseconds(a, "windowEndMs")))
+    }
+}
