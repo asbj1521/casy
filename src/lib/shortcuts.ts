@@ -89,6 +89,9 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 const num = (v: unknown, min: number, max: number, fallback: number) =>
   typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? v : fallback;
+/** A count (days, dates): a whole number in range, else the fallback. */
+const whole = (v: unknown, min: number, max: number, fallback: number) =>
+  Number.isInteger(v) ? num(v, min, max, fallback) : fallback;
 
 function readWindow(raw: unknown): SchedulerSettings["startWindow"] {
   return isObject(raw) &&
@@ -107,7 +110,7 @@ function readTime(raw: unknown, base: ShortcutTime): ShortcutTime | null {
     startHour: num(raw.startHour, 0, 23.75, base.startHour),
     startWindow: readWindow(raw.startWindow),
     anyTime: typeof raw.anyTime === "boolean" ? raw.anyTime : base.anyTime,
-    durationMinutes: num(raw.durationMinutes, 15, 24 * 60, base.durationMinutes),
+    durationMinutes: whole(raw.durationMinutes, 15, 24 * 60, base.durationMinutes),
   };
 }
 
@@ -126,8 +129,8 @@ export function readShortcutPlan(raw: unknown, base: SchedulerSettings): Shortcu
     multiDay: typeof s.multiDay === "boolean" ? s.multiDay : base.multiDay,
     ...first,
     dows: dows.length > 0 ? [...new Set(dows)] : base.dows,
-    days: num(s.days, 1, 30, base.days),
-    startDow: s.startDow === null ? null : num(s.startDow, 0, 6, base.startDow ?? 5),
+    days: whole(s.days, 1, 30, base.days),
+    startDow: s.startDow === null ? null : whole(s.startDow, 0, 6, base.startDow ?? 5),
   };
   const more = Array.isArray(raw.times)
     ? raw.times.slice(1, MAX_TIMES).flatMap((t) => readTime(t, first) ?? [])
@@ -145,7 +148,7 @@ export function readShortcutPlan(raw: unknown, base: SchedulerSettings): Shortcu
       answerDays <= 7
         ? answerDays
         : null,
-    dateCount: num(e.dateCount, 2, 5, DEFAULT_EXTRAS.dateCount),
+    dateCount: whole(e.dateCount, 2, 5, DEFAULT_EXTRAS.dateCount),
     priority: e.priority === "soon" ? "soon" : DEFAULT_EXTRAS.priority,
   };
   return { v: 1, settings, times: [first, ...more], extras };

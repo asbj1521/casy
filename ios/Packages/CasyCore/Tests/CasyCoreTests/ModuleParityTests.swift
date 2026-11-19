@@ -632,3 +632,36 @@ private struct DateRange: Decodable {
                 todayMs: parseInstant("2026-10-07T08:00:00.000Z")!, windowEndMs: try milliseconds(a, "windowEndMs")))
     }
 }
+
+@Test func shortcutsGiveTheTypeScriptAnswers() throws {
+    try check("shortcuts", atLeast: 150) { fn, a in
+        switch fn {
+        case "shortcut":
+            let settings: SchedulerSettings = try a["settings"].decoded()
+            let times: [ShortcutTime] = try a["times"].decoded()
+            let extras = EventExtras(place: "Hos Jonas", answerDays: a["answerDays"].int)
+            let raw = try JSONEncoder().encode(a["raw"])
+            return .object([
+                "read": try json(readShortcutPlan(raw, base: try a["base"].decoded())),
+                "labels": .array(times.map { .string(shortcutTimeLabel($0, allDay: "Hele dagen")) }),
+                "plan": try json(shortcutPlan(settings, extras, times: times)),
+            ])
+        case "steps":
+            var s = AnswerSteps.restart(a["start"].string)
+            let moves: [String] = try a["moves"].decoded()
+            for move in moves {
+                let parts = move.split(separator: " ").map(String.init)
+                switch parts[0] {
+                case "jump": s = s.jump(parts[1])
+                case "day": s = s.jump(parts[1], day: true)
+                case "forward": s = s.forward(parts[1])
+                case "back": s = s.back()
+                default: s = s.accept(parts[1])
+                }
+            }
+            return .object(["state": try json(s), "current": try json(s.current)])
+        default:
+            return unknown(fn)
+        }
+    }
+}
