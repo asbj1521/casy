@@ -301,7 +301,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             ? AnyView(
                 PrimeDateSheet(
                     preferences: NativePreferences.shared, prime: Self.decode(PrimeDate.self, state["prime"]) ?? Self.testPrime,
-                    onDone: onDone, leave: leave))
+                    onDone: onDone, leave: leave
+                )
+                .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
             : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "profile"
@@ -330,7 +332,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         if screen == "push" { host.isModalInPresentation = true }
         // The small asks, as the web's: half the screen, larger if the text needs it.
         // The plus, too, as the web's small box: whole once Casy has answered.
-        if ["aiConsent", "prime"].contains(screen) {
+        if screen == "aiConsent" {
             host.sheetPresentationController?.detents = [.medium(), .large()]
         }
         // Profil, as the web's stacked BottomSheet (h-[85dvh], #169): 85 % of the
@@ -352,7 +354,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
         // A trip's sheet, as the web's BottomSheet: as tall as what is in it,
         // in iOS's glass, never whole (where iOS would draw it solid).
-        if screen == "trip" {
+        if screen == "trip" || screen == "prime" {
             host.view.backgroundColor = .clear
             host.sheetPresentationController?.detents = [
                 .custom(identifier: .init("casy.fit")) { context in

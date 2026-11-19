@@ -40,34 +40,21 @@ final class PrimeDateUITests: XCTestCase {
         shot("prime")
     }
 
-    /// The same in light.
-    func testTheHalfSheetLooksLikeTheWholeInLight() {
-        let app = launch(["-casy.appearance", "light"])
-        XCTAssertTrue(app.navigationBars["Tid til hinanden"].waitForExistence(timeout: 10))
+    /// As the web's sheet, only as tall as what is in it (#281): well short of
+    /// the whole screen, so iOS keeps its glass, Planlæg near its bottom.
+    func fitsItsContent(_ theme: String) {
+        let app = launch(["-casy.appearance", theme])
+        XCTAssertTrue(any(app, "Fredagsbar").waitForExistence(timeout: 10))
         sleep(1)
-        shot("prime-half-light")
-        let half = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
-        app.navigationBars["Tid til hinanden"].swipeUp()
-        sleep(1)
-        let full = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
-        XCTAssertEqual(half, full)
-        XCTAssertEqual(full, [242, 242, 247])
+        shot("prime-\(theme)")
+        let screen = app.windows.firstMatch.frame.height
+        XCTAssertGreaterThan(app.navigationBars["Tid til hinanden"].frame.minY, screen * 0.3, "a short sheet")
+        XCTAssertGreaterThan(app.buttons["prime.plan"].frame.maxY, screen * 0.8, "Planlæg at its bottom")
     }
 
-    /// At half height the sheet and its rows are the colours they have pulled all the way up.
-    func testTheHalfSheetLooksLikeTheWhole() {
-        // Dark as a phone set to dark, Casy following it.
-        let app = launch(["-casy.appearance", "dark"])
-        XCTAssertTrue(any(app, "Fredagsbar").waitForExistence(timeout: 10))
-        shot("prime-half")
-        let half = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
-        app.navigationBars["Tid til hinanden"].swipeUp()
-        sleep(1)
-        shot("prime-full")
-        let full = colour(XCUIScreen.main.screenshot(), x: 0.04, y: 0.9)
-        XCTAssertEqual(half, full)
-        XCTAssertEqual(full, [28, 28, 30])
-    }
+    func testTheSheetFitsItsContentInLight() { fitsItsContent("light") }
+
+    func testTheSheetFitsItsContent() { fitsItsContent("dark") }
 
     /// Planlæg hands over to the page's own, which opens with the group and the day.
     func testPlanHandsOver() {

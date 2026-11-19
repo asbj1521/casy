@@ -13,7 +13,18 @@ import {
   type PrimeDate,
   type PrimeGroup,
 } from "@/lib/primeDates";
-import { APP_TIME_ZONE } from "@/lib/zone";
+import { APP_BUILD } from "@/lib/feedback";
+import { APP_TIME_ZONE, wallTime } from "@/lib/zone";
+
+/** Fredagsbar, free on Friday 23 October 2026 from 18:00 to 22:00 (clear of the parity trips). */
+const PARITY_PRIME: PrimeDate = {
+  groupId: "g-friday",
+  kind: "hours",
+  day: wallTime(2026, 9, 23, 0, APP_TIME_ZONE),
+  start: wallTime(2026, 9, 23, 18, APP_TIME_ZONE),
+  end: wallTime(2026, 9, 23, 22, APP_TIME_ZONE),
+  value: 1,
+};
 
 /**
  * How long a group's busy times and scores are good for here: stars are
@@ -110,10 +121,13 @@ export function usePrimeDates(enabled: boolean): PrimeDate[] {
 
   const allSettled = scores.every((s) => s.settled);
   return useMemo(() => {
+    // The parity build's starred day (#281): its Fredagsbar is voting, which
+    // has no stars, so one of its own, as the app's tests have (`-casyPrime`).
+    if (APP_BUILD === "parity") return enabled ? [PARITY_PRIME] : [];
     if (!allSettled) return [];
     const byGroup = new Map(
       scores.flatMap((s, i) => (s.data && groups?.[i] ? [[groups[i].id, s.data] as const] : [])),
     );
     return pickPrimeDates(candidates, byGroup);
-  }, [allSettled, scores, groups, candidates]);
+  }, [enabled, allSettled, scores, groups, candidates]);
 }

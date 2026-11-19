@@ -515,6 +515,26 @@ final class ParityUITests: XCTestCase {
         try await shootTrip(27, name: "trip-return", when: "Berlin", theme: "light")
     }
 
+    // MARK: Tid til hinanden (#281)
+
+    /// The first starred day of the parity world's month, tapped in both modes:
+    /// its label ends ", Tid til hinanden" on the web and in Swift alike.
+    private func shootPrime(theme: String) async throws {
+        let app = try await launch("/", theme: theme)
+        let starred = NSPredicate(format: "label ENDSWITH %@", ", Tid til hinanden")
+        let day =
+            mode == "web"
+            ? app.webViews.buttons.matching(starred).firstMatch : app.buttons.matching(starred).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 30), "a starred day")
+        _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
+        day.tap()
+        shoot(app, "prime-\(theme)", when: "er fri", native: "prime.screen")
+    }
+
+    func testPrimeLight() async throws { try await shootPrime(theme: "light") }
+
+    func testPrimeDark() async throws { try await shootPrime(theme: "dark") }
+
     // MARK: Aftaler (#281)
 
     private func shootEvents(theme: String) async throws {
