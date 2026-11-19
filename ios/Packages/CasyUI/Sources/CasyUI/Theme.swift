@@ -93,6 +93,9 @@ public enum Theme {
     public static let violet100 = CasyColor([237, 233, 254], [76, 29, 149])
     public static let violet700 = CasyColor([109, 40, 217], [196, 181, 253])
     public static let rose100 = CasyColor([255, 228, 230], [136, 19, 55])
+    public static let rose200 = CasyColor([254, 205, 211], [159, 18, 57])
+    public static let rose400 = CasyColor([251, 113, 133], [225, 29, 72])
+    public static let rose800 = CasyColor([159, 18, 57], [254, 205, 211])
     public static let rose500 = CasyColor([244, 63, 94], [244, 63, 94])
     public static let rose600 = CasyColor([225, 29, 72], [251, 113, 133])
     public static let rose700 = CasyColor([190, 18, 60], [253, 164, 175])
@@ -147,6 +150,9 @@ public enum Theme {
         "violet100": violet100,
         "violet700": violet700,
         "rose100": rose100,
+        "rose200": rose200,
+        "rose400": rose400,
+        "rose800": rose800,
         "rose500": rose500,
         "rose600": rose600,
         "rose700": rose700,

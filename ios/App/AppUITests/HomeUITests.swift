@@ -3,7 +3,7 @@ import XCTest
 /// The native home page (#201) on Mia's calendar from the fake backend, the
 /// page's part played by the test launch (`-casyNativeHome`): a vote's
 /// pencilled date on Wednesday 14 October, a starred Friday the 16th, and the
-/// vote pill. Each press is handed to the page; here it is written down
+/// vote pill. A vote is answered here (#282); every other press is handed to the page, written down
 /// (`home.lastAction`) for the test to read.
 final class HomeUITests: XCTestCase {
     override func setUp() async throws {
@@ -54,16 +54,64 @@ final class HomeUITests: XCTestCase {
         shot("home-dark")
     }
 
-    /// A day with something of the page's on it is the page's: a vote's date, a starred day.
+    /// A starred day is the page's; a vote's date is answered here (#282).
     func testADayOfThePagesIsHandedToIt() {
         let app = launch()
-        let vote = app.buttons["day.2026-10-14"]
-        XCTAssertTrue(vote.waitForExistence(timeout: 10))
-        vote.tap()
-        XCTAssertEqual(pressed(app), "day 2026-10-14")
-        app.buttons["day.2026-10-16"].tap()
+        let starred = app.buttons["day.2026-10-16"]
+        XCTAssertTrue(starred.waitForExistence(timeout: 10))
+        starred.tap()
         XCTAssertEqual(pressed(app), "day 2026-10-16")
         XCTAssertFalse(app.buttons["day.back"].exists)
+        app.buttons["day.2026-10-14"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["vote.panel"].waitForExistence(timeout: 5))
+        XCTAssertEqual(pressed(app), "day 2026-10-16", "the vote's date isn't handed to the page")
+    }
+
+    /// The pill answers the soonest vote over the day view: a date answered
+    /// goes on to the next, back steps to it again, Færdig puts the vote away
+    /// and the pill with it.
+    func testThePillAnswersTheVoteHere() {
+        let app = launch()
+        let pill = app.buttons["home.pill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 10))
+        pill.tap()
+        let card = app.descendants(matching: .any)["vote.card"]
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        XCTAssertTrue(card.label.contains("Dato 1 af 3"), card.label)
+        XCTAssertTrue(app.buttons["week.2026-10-14"].isSelected)
+        app.buttons["vote.accepted"].tap()
+        let second = NSPredicate(format: "label CONTAINS %@", "Dato 2 af 3")
+        expectation(for: second, evaluatedWith: app.descendants(matching: .any)["vote.card"])
+        waitForExpectations(timeout: 5)
+        XCTAssertTrue(app.buttons["week.2026-10-17"].waitForExistence(timeout: 5))
+        expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: app.buttons["week.2026-10-17"])
+        waitForExpectations(timeout: 5)
+        XCTAssertTrue(app.descendants(matching: .any)["vote.date.d-bg-2"].exists, "the date up, lit in its day")
+        app.buttons["vote.back"].tap()
+        let first = NSPredicate(format: "label CONTAINS %@", "Du svarede: Kan")
+        expectation(for: first, evaluatedWith: app.descendants(matching: .any)["vote.card"])
+        waitForExpectations(timeout: 5)
+        app.buttons["vote.done"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["vote.panel"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(title(app).waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["home.pill"].exists, "put away until the app is opened again")
+    }
+
+    /// Every date answered: thanks, then back to the month by itself.
+    func testTheLastAnswerSaysThanksAndGoesBack() {
+        let app = launch()
+        let pill = app.buttons["home.pill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 10))
+        pill.tap()
+        for n in 1...3 {
+            let card = app.descendants(matching: .any)["vote.card"]
+            expectation(for: NSPredicate(format: "label CONTAINS %@", "Dato \(n) af 3"), evaluatedWith: card)
+            waitForExpectations(timeout: 5)
+            app.buttons[n == 2 ? "vote.maybe" : "vote.declined"].tap()
+        }
+        XCTAssertTrue(app.descendants(matching: .any)["vote.thanks"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["vote.panel"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(title(app).waitForExistence(timeout: 5))
     }
 
     /// Any other day zooms into the day view: its hours, its events, and back.
@@ -147,7 +195,7 @@ final class HomeUITests: XCTestCase {
         let app = launch()
         for (button, action) in [
             ("home.events", "events"), ("home.plan", "plan"), ("home.profile", "profile"),
-            ("home.calendars", "calendars"), ("home.tell", "tell"), ("home.pill", "pill"),
+            ("home.calendars", "calendars"), ("home.tell", "tell"),
         ] {
             let b = app.buttons[button]
             XCTAssertTrue(b.waitForExistence(timeout: 5), button)

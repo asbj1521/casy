@@ -72,10 +72,14 @@ final class EventsModel {
     }
 
     /// Your answer on one date; for an agreed vote, a no moves it for everyone (#74).
-    func answer(_ id: String, dateId: String, _ response: EventResponse) async throws {
+    /// Answers the outcome: "scheduled" when it settled the vote, "moved" when it moved the date.
+    @discardableResult
+    func answer(_ id: String, dateId: String, _ response: EventResponse) async throws -> String {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.eventsAnswerFailed) }
-        show(try await api.answerDate(id, dateId: dateId, response: response, errorMessage: CasyStrings.eventsAnswerFailed).events)
+        let answer = try await api.answerDate(id, dateId: dateId, response: response, errorMessage: CasyStrings.eventsAnswerFailed)
+        show(answer.events)
         ProfileModel.shared.onChange?()
+        return answer.outcome
     }
 
     /// Into your primary calendar; one on this phone is written by the page

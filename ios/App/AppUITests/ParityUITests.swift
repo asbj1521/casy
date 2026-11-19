@@ -592,6 +592,48 @@ final class ParityUITests: XCTestCase {
 
     func testEventSheetDark() async throws { try await shootEventSheet(theme: "dark") }
 
+    // MARK: Votes on the home page (#282)
+
+    /// Brætspilsaften's three dates answered over the day view: from the
+    /// pill natively, from its address on the web (the same press there).
+    private func openHomeVote(theme: String) async throws -> XCUIApplication {
+        if mode == "web" { return try await launch("/?vote=ev-boardgames", theme: theme) }
+        let app = try await launch("/", theme: theme)
+        let pill = app.buttons["home.pill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 30))
+        pill.tap()
+        return app
+    }
+
+    private func shootHomeVote(theme: String) async throws {
+        let app = try await openHomeVote(theme: theme)
+        shoot(app, "homevote-\(theme)", when: "Dato 1 af 3", native: "vote.panel")
+    }
+
+    func testHomeVoteLight() async throws { try await shootHomeVote(theme: "light") }
+
+    func testHomeVoteDark() async throws { try await shootHomeVote(theme: "dark") }
+
+    /// The first date answered Kan: stamped on its date, the second up.
+    private func shootHomeVoteAnswered(theme: String) async throws {
+        let app = try await openHomeVote(theme: theme)
+        let card = NSPredicate(format: "label CONTAINS[c] %@", "Dato 1 af 3")
+        XCTAssertTrue(app.descendants(matching: .any).matching(card).firstMatch.waitForExistence(timeout: 30))
+        _ = XCTWaiter.wait(for: [expectation(description: "open")], timeout: 2)
+        // Every answer begins "Jeg kan": the yes by its exact words.
+        let yes =
+            mode == "web"
+            ? app.webViews.buttons.matching(NSPredicate(format: "label == %@", "Jeg kan")).firstMatch
+            : app.buttons["vote.accepted"]
+        XCTAssertTrue(yes.waitForExistence(timeout: 10))
+        yes.tap()
+        shoot(app, "homevote-answered-\(theme)", when: "Dato 2 af 3", native: "vote.panel")
+    }
+
+    func testHomeVoteAnsweredLight() async throws { try await shootHomeVoteAnswered(theme: "light") }
+
+    func testHomeVoteAnsweredDark() async throws { try await shootHomeVoteAnswered(theme: "dark") }
+
     // MARK: Tilføj til kalender (#281)
 
     /// The plus at the top of the month, in both modes: the web has no address for it.

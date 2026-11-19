@@ -235,15 +235,18 @@ private struct WeekStrip: View {
         // The settled date's circle, hidden while it is glass.
         let center = d == settled && !lensOn
         let isToday = d == today
+        // A vote's date on it (the web's `marked`): bold and orange.
+        let marked = HomeModel.shared.votesOn(d)
         return Button {
             withAnimation(Self.slide) { day = d }
         } label: {
             Text(verbatim: "\(localDate(d, appTimeZone).day)")
-                .font(.system(size: 19, weight: center || isToday ? .semibold : .regular))
+                .font(.system(size: 19, weight: center || isToday ? .semibold : marked ? .bold : .regular))
                 .foregroundStyle(
                     center
                         ? (isToday ? .white : Theme.background.color)
-                        : isToday ? Theme.primary.color : weekend ? Theme.mutedForeground.color : Theme.foreground.color
+                        : isToday || marked
+                            ? Theme.primary.color : weekend ? Theme.mutedForeground.color : Theme.foreground.color
                 )
                 .frame(width: 36, height: 36)
                 .background {
@@ -515,6 +518,8 @@ struct DayHours: View {
                         }
                     }
                     .frame(height: Self.hourHeight * 24, alignment: .topLeading)
+                    // Room under the day for a vote's card, so its late dates can come up above it.
+                    .padding(.bottom, HomeModel.shared.voting?.clear ?? 0)
                 }
                 .scrollPosition($vertical)
                 .accessibilityIdentifier("day.hours")
@@ -542,6 +547,13 @@ struct DayHours: View {
                     open(height: box.size.height)
                 }
                 .onChange(of: span) { _, _ in pages = pages(from: day) }
+                // The vote's next date, or its card growing: brought into view above it.
+                .onChange(of: HomeModel.shared.voting?.current) { _, _ in
+                    withAnimation(.timingCurve(0.6, 0, 0.1, 1, duration: 0.45)) { open(height: box.size.height) }
+                }
+                .onChange(of: HomeModel.shared.voting?.clear) { old, new in
+                    if (new ?? 0) > (old ?? 0) { withAnimation(.easeOut(duration: 0.3)) { open(height: box.size.height) } }
+                }
         }
         // Down to the screen's edge, under the home indicator, as the web's.
         .ignoresSafeArea(.container, edges: .bottom)
@@ -569,14 +581,20 @@ struct DayHours: View {
         let shown = (0..<span).map { addDays(day, $0, appTimeZone) }
         let day = CGFloat(Self.dayPoints)
         let y: CGFloat
-        if shown.contains(today) {
+        if let aim = HomeModel.shared.voting?.current, shown.contains(startOfDay(aim.start, appTimeZone)) {
+            // A vote's date being answered: centred above its card (the web's `aim`, `clear`).
+            let span = placeSpan(aim.start, aim.end, midnight: startOfDay(aim.start, appTimeZone), appTimeZone)
+            y = (span.top + span.height / 2) * day - (height - (HomeModel.shared.voting?.clear ?? 0)) / 2
+        } else if shown.contains(today) {
             y = placeSpan(Native.now, Native.now + 1, midnight: today, appTimeZone).top * day - height / 2
         } else if let first = shown.flatMap({ HomeModel.shared.placed($0).map(\.top) }).min() {
             y = max(0, first - 1.0 / 24) * day
         } else {
             y = 8.0 / 24 * day
         }
-        vertical.scrollTo(y: min(max(0, y), max(0, day - height)))
+        // Room under the day for a vote's card, so its late dates can come up above it.
+        let below = HomeModel.shared.voting?.clear ?? 0
+        vertical.scrollTo(y: min(max(0, y), max(0, day + below - height)))
     }
 }
 
@@ -640,7 +658,12 @@ private struct DayColumn: View {
                     .offset(x: width * p.left + 2, y: p.top * day + 1)
                     .accessibilityLabel("\(calendar.label(p.segment)), \(range(p.segment))")
                 }
-                ForEach(Array(shown.extras.enumerated()), id: \.offset) { _, item in
+                let voting = HomeModel.shared.voting
+                // A trip waiting for an answer is the month's alone: the web's day view leaves it out.
+                ForEach(
+                    Array(shown.extras.filter { !Self.isVoting($0, voting) && $0.pulse != true }.enumerated()),
+                    id: \.offset
+                ) { _, item in
                     let span = placeSpan(max(item.start, midnight), item.end, midnight: midnight, appTimeZone)
                     let height = max(span.height * day, CGFloat(DayHours.linePoints))
                     // A vote's date or a trip waiting for an answer opens the page's
@@ -654,6 +677,18 @@ private struct DayColumn: View {
                         .frame(width: max(0, width - 4), height: height)
                         .offset(x: 2, y: span.top * day)
                         .accessibilityLabel(item.label)
+                }
+                // The vote being answered: its dates as its card has them, the
+                // one on screen lit, your answers stamped in their corner.
+                if let voting {
+                    ForEach(voting.dates.filter { $0.end > midnight && $0.start < addDays(midnight, 1, appTimeZone) }, id: \.id) { slot in
+                        let span = placeSpan(max(slot.start, midnight), slot.end, midnight: midnight, appTimeZone)
+                        let height = max(span.height * day, CGFloat(DayHours.linePoints))
+                        answering(slot, voting: voting, height: height)
+                            .frame(width: max(0, width - 4), height: height)
+                            .offset(x: 2, y: span.top * day)
+                            .allowsHitTesting(false)
+                    }
                 }
                 if startOfDay(now, appTimeZone) == midnight {
                     let y = placeSpan(now, now + 1, midnight: midnight, appTimeZone).top * day
@@ -702,6 +737,53 @@ private struct DayColumn: View {
             }
             .clipShape(shape)
             .background(RoundedRectangle(cornerRadius: 6).fill(Theme.card.color).padding(-1))
+    }
+
+    /// The page's pencilled date of the vote being answered: drawn by `answering` instead.
+    static func isVoting(_ item: MonthItem, _ voting: VoteView?) -> Bool {
+        guard let voting, item.pencil == true else { return false }
+        return voting.dates.contains { $0.start == item.start && $0.end == item.end }
+    }
+
+    /// A date of the vote being answered (the web's Pencil with `lit` and
+    /// `stamp`): dashed while it waits, a solid 2 point orange ring on the
+    /// orange at 20 % while it is the one on screen; your answer a 20 point
+    /// badge 4 in from its top right corner, stamped in as it is given.
+    private func answering(_ slot: VoteView.Slot, voting: VoteView, height: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 5)
+        let lit = voting.current?.id == slot.id
+        return shape.fill(Theme.primary.color.opacity(lit ? 0.2 : 0.1))
+            .overlay(
+                shape.strokeBorder(
+                    Theme.primary.color, style: StrokeStyle(lineWidth: 2, dash: lit ? [] : [6, 4])))
+            .overlay(alignment: .topLeading) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(verbatim: voting.label)
+                        .font(.system(size: 13, weight: .bold))
+                        .lineLimit(1)
+                        .frame(height: 18)
+                    if height >= DayHours.twoLines {
+                        Text(verbatim: "\(formatTime(isoString(slot.start)))-\(formatTime(isoString(slot.end)))")
+                            .font(.system(size: 12).monospacedDigit())
+                    }
+                }
+                .foregroundStyle(Theme.primary.color)
+                .padding(.horizontal, 6)
+                .padding(.top, 2)
+            }
+            .overlay(alignment: .topTrailing) {
+                if let stamp = voting.answers[slot.id] {
+                    AnswerBadge(answer: stamp, size: 20, ring: false)
+                        .padding(4)
+                        .id(stamp)
+                        .transition(.scale(scale: 1.6).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(duration: 0.3, bounce: 0.4), value: voting.answers[slot.id])
+            .clipShape(shape)
+            .accessibilityElement()
+            .accessibilityLabel(voting.label)
+            .accessibilityIdentifier("vote.date.\(slot.id)")
     }
 
     /// The page's own: a vote's date pencilled in (the web's pencil: a 2 point

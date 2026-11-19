@@ -228,7 +228,7 @@ public struct SuggestedEvent: Codable, Sendable, Equatable {
 }
 
 /// An instant as epoch ms. What arrives from the server is always one.
-func instantOrZero(_ iso: String) -> Int64 {
+public func instantOrZero(_ iso: String) -> Int64 {
     parseInstant(iso) ?? 0
 }
 

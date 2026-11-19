@@ -241,6 +241,36 @@ final class HomeModel {
         return day
     }
 
+    /// The vote being answered over the day view (#282), as its card has it.
+    var voting: VoteView?
+
+    /// The first thing in your own calendar a date runs into, and how many
+    /// more (the web's clashesOn): for a meeting anything during it, for a
+    /// trip or holiday anything on its days. Holidays aren't counted.
+    func clash(start: Int64, end: Int64) -> (what: String, more: Int)? {
+        var hits: [(DaySegment, DayOfCalendar)] = []
+        var day = startOfDay(start, appTimeZone)
+        while day < end {
+            let shown = laidOut(day)
+            for s in byDay[dayKey(day, appTimeZone)] ?? [] where s.start < end && s.end > start {
+                hits.append((s, shown.calendar))
+            }
+            day = addDays(day, 1, appTimeZone)
+        }
+        guard let (first, calendar) = hits.first else { return nil }
+        let when = formatSegmentRange(first, appTimeZone, allDay: "")
+        let what = when.isEmpty ? calendar.label(first) : "\(calendar.label(first)) \(when)"
+        return (what, hits.count - 1)
+    }
+
+    /// A day with a vote's date to answer on it: a waiting vote's pencilled
+    /// date, or one of the vote being answered.
+    func votesOn(_ midnight: Int64) -> Bool {
+        let next = addDays(midnight, 1, appTimeZone)
+        if voting?.dates.contains(where: { $0.start >= midnight && $0.start < next }) == true { return true }
+        return page.extras.contains { $0.pencil == true && $0.pulse != true && $0.start >= midnight && $0.start < next }
+    }
+
     func dayIsThePages(_ midnight: Int64) -> Bool {
         if page.starred.contains(midnight) { return true }
         let next = addDays(midnight, 1, appTimeZone)

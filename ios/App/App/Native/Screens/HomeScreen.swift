@@ -35,6 +35,15 @@ struct HomeScreen: View {
     @State private var spanWidth: CGFloat = 0
     @State private var pinnedWidth: CGFloat = 0
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// The vote being answered over the day view (#282), and how much of the
+    /// screen its card covers.
+    @State private var deck: VoteDeck?
+    @State private var voteClear: CGFloat = 0
+    /// Færdig on a vote (#241): the pill stays away until the app is opened
+    /// again, or back after half an hour away (the web's voteLater.ts).
+    @State private var votesAway = false
+    @State private var awaySince: Date?
+    @Environment(\.scenePhase) private var scenePhase
 
     /// The toolbar's row (HomeToolbar's stand-in): 8 under the safe area, 40
     /// tall; the day view leaves its bottom and 8 (PhoneCalendar's dayFrame.room).
@@ -62,9 +71,29 @@ struct HomeScreen: View {
                     .zIndex(1)
                 }
                 toolbar.zIndex(2)
+                if let deck {
+                    HomeVotePanel(
+                        deck: deck, close: { closeVote(away: false) }, later: { closeVote(away: true) },
+                        onClear: { voteClear = $0 }
+                    )
+                    .id(deck.eventId)
+                    .transition(.move(edge: .bottom))
+                    .zIndex(3)
+                }
             }
         }
         .background(Theme.background.color.ignoresSafeArea())
+        .task { if EventsModel.shared.events == nil { await EventsModel.shared.load() } }
+        .onChange(of: model.page.dataAt) { _, _ in Task { await EventsModel.shared.load() } }
+        .onChange(of: deck?.view) { _, view in showVote(view) }
+        .onChange(of: voteClear) { _, clear in model.voting?.clear = clear }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { awaySince = Date() }
+            if phase == .active, let since = awaySince {
+                if Date().timeIntervalSince(since) >= 30 * 60 { votesAway = false }
+                awaySince = nil
+            }
+        }
         .overlay {
             if model.loading { ProgressView() }
         }
@@ -117,10 +146,19 @@ struct HomeScreen: View {
     /// A tap on a day: the page's when it has something there (a trip
     /// waiting, a vote's date, a starred day), else its day view, zoomed out of its cell.
     private func pick(_ day: Int64, _ from: CGRect?) {
+        if let vote = waitingVote(on: day) {
+            openVote(vote, from: from)
+            return
+        }
         if model.dayIsThePages(day) {
             model.onAction?("day", day)
             return
         }
+        openDayView(day, from: from)
+    }
+
+    /// Its day view, zoomed out of its cell.
+    private func openDayView(_ day: Int64, from: CGRect?) {
         cell = from
         dayOpen = false
         shownDay = day
@@ -175,7 +213,7 @@ struct HomeScreen: View {
         let day = toolbarDay && shownDay != nil
         let month = shownDay.map { capitalize(monthName($0, lang)) } ?? ""
         return HStack(alignment: .top) {
-            Button(action: day ? closeDay : { model.onAction?("calendars", nil) }) {
+            Button(action: day ? (deck != nil ? { closeVote(away: false) } : closeDay) : { model.onAction?("calendars", nil) }) {
                 // Both words always laid out, one faded in (0.18 s, the web's
                 // crossfade); the capsule's width morphs from one to the other.
                 ZStack(alignment: .leading) {
@@ -307,7 +345,10 @@ struct HomeScreen: View {
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { dayFrame = $0 }
             HomeDayView(
                 day: Binding(get: { shownDay ?? day }, set: { shownDay = $0 }), span: span,
-                pageTap: { model.onAction?("day", $0) }
+                pageTap: { day in
+                    if deck != nil { return }
+                    if let vote = waitingVote(on: day) { openVote(vote, from: nil) } else { model.onAction?("day", day) }
+                }
             )
             // Down to the screen's edge, so the month doesn't show under it.
             .background(Theme.background.color.ignoresSafeArea(edges: .bottom))
@@ -330,6 +371,64 @@ struct HomeScreen: View {
             .animation(
                 dayOpen ? .linear(duration: 0.38 * 0.3) : .linear(duration: 0.32 * 0.3).delay(0.32 * 0.7)
             ) { $0.opacity(dayOpen ? 1 : 0) }
+        }
+    }
+
+    // MARK: Votes
+
+    /// The votes waiting for your answer, soonest first (My events' toSwipe).
+    private var waiting: [SuggestedEvent] {
+        sectionEvents(EventsModel.shared.events ?? [], now: Native.now).toSwipe
+    }
+
+    /// A waiting vote with a date on that day: a tap there starts answering it.
+    private func waitingVote(on day: Int64) -> SuggestedEvent? {
+        waiting.first { v in v.candidates.contains { startOfDay(instantOrZero($0.start), appTimeZone) == day } }
+    }
+
+    /// Answering a vote over the day view (#176): the day view opens on the
+    /// date being answered, zoomed out of its cell, the card along the bottom.
+    private func openVote(_ event: SuggestedEvent, from: CGRect?) {
+        let opened = VoteDeck(event)
+        let first = opened.current ?? opened.dates.first
+        let day = first.map { startOfDay(instantOrZero($0.start), appTimeZone) } ?? startOfDay(Native.now, appTimeZone)
+        model.voting = opened.view
+        model.voting?.clear = voteClear
+        withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.38)) { deck = opened }
+        if shownDay == nil {
+            openDayView(day, from: from ?? HomeFrames.shared.cell(of: day))
+        } else {
+            withAnimation(Self.travel(from: shownDay ?? day, to: day)) { shownDay = day }
+        }
+    }
+
+    /// The card says which date is up: the day view glides there (the web's
+    /// travel: off quickly, then a long soft stop).
+    private func showVote(_ view: VoteView?) {
+        guard var view else { return }
+        view.clear = voteClear
+        model.voting = view
+        guard let current = view.current, let shown = shownDay else { return }
+        let day = startOfDay(current.start, appTimeZone)
+        let inView = (0..<span).contains { addDays(shown, $0, appTimeZone) == day }
+        if !inView { withAnimation(Self.travel(from: shown, to: day)) { shownDay = day } }
+    }
+
+    /// dayTravel.ts: 350 ms and 40 more a day, at most 0.9 s, on (0.6, 0, 0.1, 1).
+    static func travel(from: Int64, to: Int64) -> Animation {
+        let days = abs(Double(to - from) / 86_400_000).rounded()
+        return .timingCurve(0.6, 0, 0.1, 1, duration: min(0.35 + 0.04 * days, 0.9))
+    }
+
+    /// Færdig, or every date answered: back to the month, gliding to today.
+    private func closeVote(away: Bool) {
+        if away { votesAway = true }
+        withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.32)) { deck = nil }
+        model.voting = nil
+        closeDay()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            goToday()
         }
     }
 
@@ -409,8 +508,8 @@ struct HomeScreen: View {
     /// a 16 chevron, 8 between.
     private func bottom(safe: CGFloat) -> some View {
         VStack(spacing: 12) {
-            if let pill = model.page.pill {
-                Button { model.onAction?("pill", nil) } label: {
+            if let pill = model.page.pill, !votesAway, let first = waiting.first {
+                Button { openVote(first, from: nil) } label: {
                     HStack(spacing: 8) {
                         LucideIcon("vote", size: 20)
                         Text(pill).lineLimit(1)

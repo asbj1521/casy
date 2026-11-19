@@ -658,6 +658,40 @@ public enum CasyStrings {
     public static var homeStarred: String { text("prime.dayMark") }
     public static func homeVoteAnswer(_ title: String) -> String { format("homeVote.answer", title) }
     public static func homeVotesWaiting(_ n: Int) -> String { format("homeVote.waiting.many", n) }
+
+    // Answering a vote over the day view (#282): the web's HomeVote, CardFace, SwipeCard.
+    public static func voteDateOf(_ n: Int, _ total: Int) -> String { format("swipe.dateOf", n, total) }
+    public static func voteMatchScore(_ n: Int) -> String { format("swipe.matchScore", n) }
+    public static var voteCan: String { text("swipe.can") }
+    public static var voteCant: String { text("swipe.cant") }
+    public static var voteRather: String { text("swipe.rather") }
+    /// "Jeg kan": an answer button's label, read aloud.
+    public static func voteAnswerLong(_ answer: String) -> String { text("swipe.answerLong.\(answer)") }
+    /// "Kan": the answer in "Du svarede: Kan".
+    public static func voteAnswerWord(_ answer: String) -> String { text("swipe.answerWord.\(answer)") }
+    public static func voteYouAnswered(_ word: String) -> String { format("swipe.youAnswered", word) }
+    /// "Du har Arbejde 08:30-16:00 og 1 mere": what the date runs into in your calendar.
+    public static func voteClash(_ what: String, more: Int) -> String {
+        more > 0 ? format("swipe.clashMore", what, more) : format("swipe.clash", what)
+    }
+    public static var votePrevious: String { text("swipe.previous") }
+    public static var voteHint: String { text("swipe.hintShort") }
+    public static var voteDoneTitle: String { text("swipe.doneTitle") }
+    public static func voteWaitingFor(_ names: String) -> String { format("swipe.waitingFor", names) }
+    public static var voteLater: String { text("swipe.later") }
+    public static var voteDone: String { text("swipe.done") }
+    public static var voteMoveConfirm: String { text("swipe.moveConfirm") }
+    public static var voteMoveYes: String { text("swipe.moveYes") }
+    public static var voteMoveKeep: String { text("swipe.moveKeep") }
+    /// "i dag", "i morgen", "om 7 dage".
+    public static func inDays(_ n: Int) -> String {
+        n <= 0 ? text("scheduler.inDays.today") : n == 1 ? text("scheduler.inDays.tomorrow") : format("scheduler.inDays.many", n)
+    }
+    public static var agreedEveryone: String { text("homeVote.everyone") }
+    /// "19:00 til 22:00" and a trip's "Afgang 08:00, hjem 20:00", under a date.
+    public static func timeRange(_ start: String, _ end: String) -> String { format("scheduler.timeRange", start, end) }
+    public static func tripTimes(_ start: String, _ end: String) -> String { format("scheduler.tripTimes", start, end) }
+    public static var agreedShow: String { text("homeVote.show") }
     public static var dayAllDay: String { text("calendarView.allDay") }
     public static var dayHourUnit: String { text("calendarView.hourUnit") }
     public static var dayCalendarFallback: String { text("calendarView.calendarFallback") }

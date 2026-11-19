@@ -526,22 +526,31 @@ private struct DeadlineSheet: View {
 struct PlaceNoteView: View {
     let event: SuggestedEvent
 
+    /// The web's PlaceNote, read only: 4 apart, 14 point text, each line led
+    /// by a 16 point icon 2 down and 6 before it, the place's pin in orange,
+    /// the note (a sticky note) muted.
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             if let place = event.place {
-                Label {
-                    Text(place)
-                } icon: {
-                    Image(systemName: "mappin").foregroundStyle(Theme.primary.color)
-                }
-                .accessibilityLabel("\(CasyStrings.eventPlace): \(place)")
+                line("map-pin", place, tint: Theme.primary.color, text: Theme.foreground.color)
+                    .accessibilityLabel("\(CasyStrings.eventPlace): \(place)")
             }
             if let note = event.note {
-                Label(note, systemImage: "note.text")
-                    .foregroundStyle(Theme.mutedForeground.color)
+                line("sticky-note", note, tint: Theme.mutedForeground.color, text: Theme.mutedForeground.color)
                     .accessibilityLabel("\(CasyStrings.eventNote): \(note)")
             }
         }
-        .font(.subheadline)
+    }
+
+    private func line(_ icon: String, _ words: String, tint: Color, text: Color) -> some View {
+        HStack(alignment: .top, spacing: 6) {
+            LucideIcon(icon, size: 16).foregroundStyle(tint).padding(.top, 2)
+            Text(verbatim: words)
+                .font(.system(size: 14))
+                .foregroundStyle(text)
+                .cssLineHeight(20, size: 14)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .ignore)
     }
 }
