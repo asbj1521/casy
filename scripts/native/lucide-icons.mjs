@@ -196,7 +196,26 @@ export async function catalogFiles() {
     files[`${name}.imageset/${name}.svg`] = brandSvg(brand);
     files[`${name}.imageset/Contents.json`] = contents(name);
   }
+  // The logo (#269), LogoMark.tsx's Danish letters as shapes: the welcome's intro (#282).
+  files["brand.logo.imageset/brand.logo.svg"] = logoSvg();
+  files["brand.logo.imageset/Contents.json"] = contents("brand.logo");
   return files;
+}
+
+/** LogoMark's two paths, as they stand in src/components/ui/LogoMark.tsx, drawn black. */
+export function logoSvg() {
+  const tsx = readFileSync(
+    new URL("../../src/components/ui/LogoMark.tsx", import.meta.url),
+    "utf8",
+  );
+  const paths = [...tsx.matchAll(/<path\s+d="([^"]+)"\s+transform="([^"]+)"/g)]
+    .map(([, d, t]) => `<path fill="#000" d="${d}" transform="${t}"/>`)
+    .join("");
+  return (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="102.4 97.28 819.2 829.44" width="819.2" height="829.44">' +
+    paths +
+    "</svg>\n"
+  );
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

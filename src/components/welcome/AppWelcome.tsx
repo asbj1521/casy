@@ -6,7 +6,7 @@ import { SiApple } from "react-icons/si";
 
 import LanguageToggle from "@/components/LanguageToggle";
 import GlassButton from "@/components/ui/GlassButton";
-import NativeSignIn from "@/components/welcome/NativeSignIn";
+import NativeSignIn, { NativeWelcome } from "@/components/welcome/NativeSignIn";
 import WelcomeIntro from "@/components/welcome/WelcomeIntro";
 import WelcomeStage from "@/components/welcome/WelcomeStage";
 import { rectOfCard, type MorphRect } from "@/components/welcome/phone/morph";
@@ -95,6 +95,28 @@ export default function AppWelcome({
     if (new URLSearchParams(search).has("next")) void navigate(-1);
     else void navigate("/");
   };
+
+  // The whole welcome the app's own (#282): the page only holds the paste sheet.
+  const nativeWelcome = useNativeScreen("welcome") && !website;
+  if (nativeWelcome) {
+    return (
+      <main className="min-h-dvh bg-background">
+        <NativeWelcome
+          open={!pasting}
+          signIn={signIn ? (signupAsked ? "signup" : "signin") : null}
+          onPaste={() => {
+            setPasteWanted(true);
+            setPasting(true);
+          }}
+        />
+        {pasteWanted && (
+          <Suspense fallback={null}>
+            <InvitePasteSheet open={pasting} onClose={() => setPasting(false)} />
+          </Suspense>
+        )}
+      </main>
+    );
+  }
 
   const appear = openedOnSignIn || still ? false : { opacity: 0 };
   const appearing = { delay: 0.48, duration: 0.25 };

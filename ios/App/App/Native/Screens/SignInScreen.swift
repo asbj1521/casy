@@ -73,6 +73,8 @@ struct SignInScreen: View {
     let signedIn: () -> Void
     let onChoose: (_ lang: String, _ theme: String) -> Void
     let leave: (LeavingProfile) -> Void
+    /// Its own colour behind it; off over the welcome, whose colour spreads out behind it.
+    var colour = true
 
     private enum Mode { case password, link }
     private enum Tab { case signIn, signUp }
@@ -97,8 +99,10 @@ struct SignInScreen: View {
 
     init(
         preferences: NativePreferences, signup: Bool, onClose: @escaping () -> Void, signedIn: @escaping () -> Void,
-        onChoose: @escaping (_ lang: String, _ theme: String) -> Void, leave: @escaping (LeavingProfile) -> Void
+        onChoose: @escaping (_ lang: String, _ theme: String) -> Void, leave: @escaping (LeavingProfile) -> Void,
+        colour: Bool = true
     ) {
+        self.colour = colour
         self.preferences = preferences
         self.signup = signup
         self.onClose = onClose
@@ -110,7 +114,7 @@ struct SignInScreen: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            WelcomeColour().ignoresSafeArea()
+            if colour { WelcomeColour().ignoresSafeArea() }
             ScrollView {
                 VStack(spacing: 0) {
                     if told { Notice(CasyStrings.signIn("useOldWay"), tone: .info).padding(.bottom, 16) }
@@ -652,20 +656,8 @@ struct WelcomeColour: View {
             let boxW = w * 1.6
             let boxH = boxW * 0.9
             ZStack(alignment: .topLeading) {
-                ShapeColours()
-                ZStack(alignment: .topLeading) {
-                    ShapeColours()
-                        .clipShape(RoundedRectangle(cornerRadius: min(boxW, boxH) * 0.46, style: .circular))
-                    // inset-x -6 %, top 52 %, 70 % tall, rounded 50 %.
-                    CSSGradients(
-                        radials: [(Color(hex: 0xFBBF24), UnitPoint(x: 0.2, y: 0.2), 0.6)],
-                        linear: (Color(hex: 0xF97316), Color(hex: 0xEC4899), 120)
-                    )
-                    .clipShape(Ellipse())
-                    .frame(width: boxW * 1.12, height: boxH * 0.7)
-                    .offset(x: -boxW * 0.06, y: boxH * 0.52)
-                }
-                .frame(width: boxW, height: boxH, alignment: .topLeading)
+                WelcomeShapeColours()
+                WelcomeShapeBox(width: boxW, height: boxH)
                 .scaleEffect(1.7)
                 .rotationEffect(.degrees(-8))
                 // Its middle where SHAPE_FILL's x -15 % and y -6 % leave it.
@@ -677,9 +669,32 @@ struct WelcomeColour: View {
     }
 }
 
+/// The colour shape (the web's shape div): a box rounded 46 %, SHAPE_COLORS
+/// inside it, and a second, oval blob of orange into pink across its lower half.
+struct WelcomeShapeBox: View {
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            WelcomeShapeColours()
+                .clipShape(RoundedRectangle(cornerRadius: min(width, height) * 0.46, style: .circular))
+            // inset-x -6 %, top 52 %, 70 % tall, rounded 50 %.
+            CSSGradients(
+                radials: [(Color(hex: 0xFBBF24), UnitPoint(x: 0.2, y: 0.2), 0.6)],
+                linear: (Color(hex: 0xF97316), Color(hex: 0xEC4899), 120)
+            )
+            .clipShape(Ellipse())
+            .frame(width: width * 1.12, height: height * 0.7)
+            .offset(x: -width * 0.06, y: height * 0.52)
+        }
+        .frame(width: width, height: height, alignment: .topLeading)
+    }
+}
+
 /// SHAPE_COLORS: a yellow glow up on the right and a pink one low down, over
 /// orange into rose at 135 degrees.
-private struct ShapeColours: View {
+struct WelcomeShapeColours: View {
     var body: some View {
         CSSGradients(
             radials: [

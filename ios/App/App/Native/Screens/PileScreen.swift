@@ -1115,7 +1115,7 @@ private struct ThrownLayer<Content: View>: View {
 
 /// A month as the home page draws it, as a picture: the weeks, each day's
 /// number (green for a day free for everyone), and the bars under them.
-private struct PileMonth: View {
+struct PileMonth: View {
     let month: Int64
     let items: [MonthItem]
     let color: (String) -> String
@@ -1162,7 +1162,7 @@ private struct PileMonth: View {
     }
 }
 
-private struct WeekPicture: View {
+struct WeekPicture: View {
     let week: HomeWeek
     let column: CGFloat
     let color: (String) -> String

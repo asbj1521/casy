@@ -35,6 +35,20 @@ public struct LucideIcon: View {
     }
 }
 
+/// The logo's Danish letters (LogoMark, #269), as shapes, tinted by the
+/// foreground style, as tall as it is given.
+public struct LogoLetters: View {
+    public init() {}
+
+    public var body: some View {
+        Image("brand.logo", bundle: .module)
+            .renderingMode(.template)
+            .resizable()
+            .aspectRatio(819.2 / 829.44, contentMode: .fit)
+            .accessibilityHidden(true)
+    }
+}
+
 /// The web's count on a button (HomeBar's and HomeToolbar's badges): a 20 point
 /// orange capsule, at least round, 4 points of padding, 11 point semibold white,
 /// set 4 points outside the button's top right corner by its caller

@@ -54,7 +54,8 @@
         /// screen its data as in real use. Nil without a session handed over.
         static var webScript: String? {
             guard isActive, defaults.string(forKey: "casyWebSession") != nil else { return nil }
-            var lines = ["window.__casySkipIntro = true;", seededRandom]
+            // `-casyKeepIntro YES`: the welcome's intro plays, as for a real first visit.
+            var lines = (defaults.bool(forKey: "casyKeepIntro") ? [] : ["window.__casySkipIntro = true;"]) + [seededRandom]
             if let now {
                 // Date() and Date.now() say `now`; timers and animations still run.
                 lines.append(

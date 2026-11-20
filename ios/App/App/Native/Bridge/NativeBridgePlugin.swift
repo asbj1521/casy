@@ -42,7 +42,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if TestLaunch.isActive, TestLaunch.webOnly { return [] }
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
-                "home", "plan", "signIn",
+                "home", "plan", "signIn", "welcome",
             ]
         #else
             return []
@@ -300,6 +300,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     enablePush: enablePush, onDone: onDone
                 )
                 .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
+            : screen == "welcome"
+            ? AnyView(
+                WelcomeScreen(
+                    preferences: NativePreferences.shared, startOn: state["signIn"] as? String,
+                    signedIn: { [weak self] in self?.dismissOpenScreen(["signedIn": true]) },
+                    paste: { [weak self] in self?.dismissOpenScreen(["paste": true]) }, onChoose: onChoose,
+                    leave: leave))
             : screen == "signIn"
             ? AnyView(
                 SignInScreen(
@@ -351,6 +358,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         if screen == "update" {
             // Over everything, with no way out but the App Store.
             host.modalPresentationStyle = .fullScreen
+            host.isModalInPresentation = true
+        } else if screen == "welcome" {
+            // The way in: nothing to swipe away, the page under it has nothing to show.
+            host.modalPresentationStyle = .fullScreen
+            host.modalTransitionStyle = .crossDissolve
             host.isModalInPresentation = true
         } else if screen == "signIn" {
             // The welcome's colour fills the screen, as on the web; Tilbage closes it.

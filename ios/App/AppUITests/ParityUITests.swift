@@ -788,14 +788,15 @@ final class ParityUITests: XCTestCase {
         shoot(app, "signin-\(theme)", when: "Fortsæt med Apple", native: "signin.screen")
     }
 
-    /// The whole way in, natively: the welcome's "Log ind" opens the app's
-    /// sign-in, the page signs in with what is typed there, and the home page
-    /// follows. Native only: the web's own way in has its browser tests.
+    /// The whole way in, natively: the welcome's "Log ind" spreads its colour
+    /// out under the sign-in card, the page signs in with what is typed there,
+    /// the welcome closes and the home page follows. Native only: the web's own way in has its browser tests.
     func testSignInFromTheWelcome() async throws {
         try XCTSkipIf(mode == "web", "the page's own sign-in is tested in the browser")
         let app = try await launch("/", theme: "light", extra: ["-casyPageAuth", "YES"], signedOut: true)
-        let logIn = app.webViews.links["Log ind"].firstMatch
-        XCTAssertTrue(logIn.waitForExistence(timeout: 30), "the welcome's Log ind")
+        // The welcome is the app's own too (#282): its intro, then Log ind under the animation.
+        let logIn = app.buttons["welcome.signIn"]
+        XCTAssertTrue(logIn.waitForExistence(timeout: 45), "the welcome's Log ind")
         logIn.tap()
         let email = app.textFields["signin.email"]
         XCTAssertTrue(email.waitForExistence(timeout: 15), "the app's own sign-in")
@@ -834,6 +835,17 @@ final class ParityUITests: XCTestCase {
             let back = app.buttons[button]
             let ready = expectation(for: NSPredicate(format: "isHittable == true"), evaluatedWith: back)
             wait(for: [ready], timeout: 10)
+        }
+    }
+
+    /// The welcome screen, signed out, its intro and one whole round, for the film
+    /// (`PARITY_VIDEO=1`) and shots along the way: `welcome-<second>-<mode>`.
+    func testWelcomeFilm() async throws {
+        let app = try await launch("/", theme: "light", extra: ["-casyKeepIntro", "YES"], signedOut: true)
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20))
+        for second in stride(from: 2, through: 60, by: 2) {
+            _ = XCTWaiter.wait(for: [expectation(description: "on")], timeout: 2)
+            shot("welcome-\(second)-\(mode)")
         }
     }
 

@@ -33,7 +33,8 @@ export type NativeScreen =
   | "update"
   | "home"
   | "plan"
-  | "signIn";
+  | "signIn"
+  | "welcome";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {
@@ -100,6 +101,8 @@ export interface NativeClosed {
   added?: string;
   /** The app's sign-in screen (#282) closed because the page is now signed in. */
   signedIn?: boolean;
+  /** The app's welcome (#282) wants an invite pasted: the page's own sheet for it. */
+  paste?: boolean;
   /** Tid til hinanden's Planlæg was pressed (#200): the page's own, with the group and the day. */
   plan?: boolean;
   /** Planlæg sent its dates (#282): the events changed, and the others are asked now. */

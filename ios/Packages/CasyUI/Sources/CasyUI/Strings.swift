@@ -816,6 +816,14 @@ public enum CasyStrings {
     public static var passwordChecking: String { text("passwordForm.checking") }
     public static func passwordLeaked(_ times: String) -> String { String(format: text("passwordForm.leaked"), times) }
     public static var welcomeBack: String { text("welcome.back") }
+    /// A word of the welcome screen by its key under "welcome." ("headline", "start").
+    public static func welcome(_ key: String) -> String { text("welcome.\(key)") }
+    public static var groupsShort: String { text("nav.groupsShort") }
+    public static func groupMembers(_ n: Int) -> String {
+        n == 1 ? text("groupPanel.members.one") : String(format: text("groupPanel.members.many"), n)
+    }
+    public static var invitePasteAsk: String { text("invitePaste.ask") }
+    public static var invitePastePaste: String { text("invitePaste.paste") }
     public static var authUserExists: String { text("authErrors.userExists") }
     public static var pileChange: String { text("pile.change") }
     public static var pileClose: String { text("pile.close") }

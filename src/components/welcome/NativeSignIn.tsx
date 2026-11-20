@@ -27,3 +27,30 @@ export default function NativeSignIn({
   );
   return null;
 }
+
+/**
+ * The welcome screen when the app draws it (#282): the intro, the animation
+ * and the ways in, the sign-in over it, all native; opened at once on sign-in
+ * (`signIn`) from an invite's way in. "Indsæt link" comes back here
+ * (`onPaste`), to the page's own sheet for it.
+ */
+export function NativeWelcome({
+  open,
+  signIn,
+  onPaste,
+}: {
+  open: boolean;
+  signIn: "signin" | "signup" | null;
+  onPaste: () => void;
+}) {
+  useNativeSheet(
+    "welcome",
+    open,
+    ({ paste }) => {
+      if (paste) onPaste();
+    },
+    () => {},
+    () => (signIn ? { signIn } : {}),
+  );
+  return null;
+}
