@@ -485,77 +485,78 @@ private struct ThrownPaper<Content: View>: View {
 
 // MARK: - The glass wave
 
-/// The calendars made one giving way to the real month (asked for on
-/// 21 Nov 2026, natively only): a drop of Apple's clear glass lands in the
-/// middle of the sheet with a little bounce, then spreads out as a ring, a
-/// wave of glass bending what is under its edge. Inside the ring the paper
-/// is gone and the month shows; the ring thins and fades as it reaches the
-/// corners. Over `D.dissolveFor` from `waving`.
+/// The calendars made one washed away into the real month (asked for on
+/// 21 Nov 2026, natively only): a drop of Apple's clear glass falls from
+/// above the screen like a drop into a cup of water, speeding up and
+/// stretching; it hits the middle, squashes flat and opens into one broad,
+/// smooth wave of glass that rolls out to the corners, pushing the paper
+/// ahead of it and leaving the month behind. On a clock of its own from
+/// `waving`, done before the month's dip.
 struct GlassWaveReveal<Paper: View>: View {
     let waving: Bool
     @ViewBuilder let paper: () -> Paper
 
-    /// When the drop landed: a clock of its own, read each frame.
+    /// When the drop let go.
     @State private var started: Date?
 
     var body: some View {
         TimelineView(.animation(paused: started == nil)) { context in
             let elapsed = started.map { context.date.timeIntervalSince($0) } ?? 0
-            GlassWave(progress: CGFloat(min(elapsed / D.dissolveFor, 1)), paper: paper())
+            GlassWave(time: elapsed, running: started != nil, paper: paper())
         }
         .onAppear { if waving { started = Date() } }
         .onChange(of: waving) { _, now in if now && started == nil { started = Date() } }
     }
 }
 
-/// The wave at one moment, worked out each frame from `progress` (0 to 1).
+/// The drop and the wave at one moment, `time` seconds after it let go.
 private struct GlassWave<Paper: View>: View {
-    let progress: CGFloat
+    let time: Double
+    let running: Bool
     let paper: Paper
 
-    /// The share of the time the drop takes to land.
-    private static var landing: CGFloat { 0.28 }
-    private static var drop: CGFloat { 32 }
+    /// Falling from above the screen to its middle.
+    static var fall: Double { 0.34 }
+    /// The wave out to the corners.
+    static var wave: Double { 0.86 }
 
     private var center: CGPoint { CGPoint(x: D.screen.width / 2, y: D.screen.height / 2) }
 
-    /// The ring's outer and inner radius, the paper's hole, how much it shows.
-    private var wave: (outer: CGFloat, inner: CGFloat, hole: CGFloat, opacity: Double) {
-        let p = min(max(progress, 0), 1)
-        if p == 0 { return (0, 0, 0, 0) }
-        if p < Self.landing {
-            // Landing: it grows past its size and settles back (an ease out with overshoot).
-            let q = p / Self.landing - 1
-            let s = 1 + 2.70158 * q * q * q + 1.70158 * q * q
-            return (Self.drop * s, 0, 0, 1)
-        }
-        let q = (p - Self.landing) / (1 - Self.landing)
-        // Out at an even pace, slowing only toward the corners, so it can be followed.
-        let e = 1 - pow(1 - q, 1.5)
-        let far = hypot(center.x, center.y) + 60
-        let outer = Self.drop + e * (far - Self.drop)
-        let width = Self.drop + 36 * e
-        let inner = max(0, outer - width)
-        let fade = q < 0.7 ? 1 : 1 - Double((q - 0.7) / 0.3)
-        return (outer, inner, max(0, outer - width / 2), fade)
-    }
-
     var body: some View {
-        let w = wave
+        let far = hypot(center.x, center.y) + 90
+        let falling = running && time < Self.fall
+        // Falling: from above the top, faster and faster, stretched by its speed.
+        let u = min(max(time / Self.fall, 0), 1)
+        let dropY = -50 + (center.y + 50) * CGFloat(u * u)
+        let drop = CGSize(width: 64 - 8 * u, height: 64 + 30 * u)
+        // The wave: from a flattened drop to one broad swell rolling outward.
+        let q = running ? min(max((time - Self.fall) / Self.wave, 0), 1) : 0
+        let e = CGFloat(1 - pow(1 - q, 1.7))
+        let outer = 40 + e * (far - 40)
+        let width = min(outer, 40 + 90 * e)
+        let inner = max(0, outer - width)
+        let hole = max(0, outer - width * 0.55)
+        let fade = q < 0.72 ? 1 : 1 - (q - 0.72) / 0.28
         ZStack {
-            paper.mask {
-                Hole(center: center, radius: w.hole).fill(style: FillStyle(eoFill: true))
-            }
-            if w.outer > 0.5 {
+            paper
+                // Pushed away ahead of the wave, as water would.
+                .scaleEffect(1 + 0.14 * e)
+                .mask { Hole(center: center, radius: running && !falling ? hole : 0).fill(style: FillStyle(eoFill: true)) }
+            if falling {
+                Color.clear
+                    .frame(width: drop.width, height: drop.height)
+                    .casyGlass(in: Ellipse(), clear: true)
+                    .position(x: center.x, y: dropY)
+            } else if running && q < 1 {
                 Color.clear
                     .frame(width: D.screen.width, height: D.screen.height)
-                    .casyGlass(in: Ring(center: center, inner: w.inner, outer: w.outer), clear: true)
-                    .opacity(w.opacity)
-                    .allowsHitTesting(false)
+                    .casyGlass(in: Ring(center: center, inner: inner, outer: outer), clear: true)
+                    // A little of what is under it shows through: glass, not a white band.
+                    .opacity(0.85 * fade)
             }
         }
         .frame(width: D.screen.width, height: D.screen.height)
-        .clipShape(RoundedRectangle(cornerRadius: D.screenRadius, style: .continuous))
+        .allowsHitTesting(false)
     }
 }
 

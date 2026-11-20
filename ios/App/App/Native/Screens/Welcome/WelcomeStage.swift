@@ -238,6 +238,15 @@ struct WelcomeStage: View {
                     }
                 }
                 .id(onScreen)
+                // The pile, squared, one sheet with everyone's pen on it, on the screen
+                // itself, so the glass falling on it sees the month under it too. Natively
+                // a drop of glass falls onto it and washes it away in one wave (the web
+                // dissolves it week by week).
+                if n >= at.merged && n < at.press + 0.5 && !still {
+                    GlassWaveReveal(waving: n >= at.digital) {
+                        PaperCalendar(month: month, items: everyone, title: D.groupName, rounded: true)
+                    }
+                }
                 if listing && !still {
                     WelcomeDates(event: vote, days: plan.free, month: month, taken: taken, sent: n >= at.sent)
                 }
@@ -253,17 +262,10 @@ struct WelcomeStage: View {
         } over: {
             if !still {
                 ZStack {
-                    if thrown > 0 && n < at.digital {
+                    // Squared, the pile fades into the one sheet under it, on the screen.
+                    if thrown > 0 && n < at.merged {
                         PaperStack(thrown: thrown, landed: landed, squared: n >= at.squared, month: month, items: everyone)
-                    }
-                    // The pile, squared, one sheet with everyone's pen on it.
-                    if n >= at.merged && n < at.press + 0.5 {
-                        // Natively a drop of glass lands in its middle and spreads out as a
-                        // wave, the real month inside it (the web dissolves it week by week).
-                        GlassWaveReveal(waving: n >= at.dissolve) {
-                            PaperCalendar(month: month, items: everyone, title: D.groupName, rounded: true)
-                        }
-                        .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+                            .transition(.opacity.animation(.easeInOut(duration: 0.2)))
                     }
                 }
             }
