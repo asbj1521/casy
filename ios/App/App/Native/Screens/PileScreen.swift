@@ -1124,6 +1124,9 @@ struct PileMonth: View {
     let dark: Bool
     var pressed = false
     var numbers = true
+    /// How much the lit days show: drawn in the same rows as the numbers, so
+    /// they can never drift from their days while the month moves.
+    var shineOpacity: Double = 1
 
     private var column: CGFloat { width / 7 }
 
@@ -1134,8 +1137,8 @@ struct PileMonth: View {
                 let middle = Double(weeks.count - 1) / 2
                 let away = abs(Double(w) - middle)
                 WeekPicture(
-                    week: week, column: column, color: color, shine: shine, dark: dark, numbers: numbers)
-                    .offset(y: pressed ? 0 : 0)
+                    week: week, column: column, color: color, shine: shine, dark: dark, numbers: numbers,
+                    shineOpacity: shineOpacity)
                     .keyframeAnimator(initialValue: 0.0, trigger: pressed) { view, y in
                         view.offset(y: y)
                     } keyframes: { _ in
@@ -1169,6 +1172,7 @@ struct WeekPicture: View {
     let shine: Set<Int64>
     let dark: Bool
     let numbers: Bool
+    var shineOpacity: Double = 1
 
     private var first: Int { week.days.firstIndex(where: \.inMonth) ?? 0 }
     private var last: Int { week.days.lastIndex(where: \.inMonth) ?? 6 }
@@ -1180,20 +1184,24 @@ struct WeekPicture: View {
                 ForEach(Array(week.days.enumerated()), id: \.offset) { c, day in
                     ZStack {
                         if day.inMonth {
-                            let lit = shine.contains(day.date)
-                            if lit || numbers {
+                            if numbers {
                                 Text(verbatim: "\(day.dayOfMonth)")
-                                    .font(.system(size: 18, weight: lit ? .semibold : .regular))
-                                    .foregroundStyle(
-                                        lit ? Color.white : c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
+                                    .frame(width: 32, height: 32)
+                            }
+                            if shine.contains(day.date) {
+                                Text(verbatim: "\(day.dayOfMonth)")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(Color.white)
                                     .frame(width: 32, height: 32)
                                     .background {
-                                        if lit {
-                                            Circle()
-                                                .fill(Theme.emerald500.color)
-                                                .shadow(color: Theme.emerald500.color.opacity(0.7), radius: 7)
-                                        }
+                                        Circle()
+                                            .fill(Theme.emerald500.color)
+                                            .shadow(color: Theme.emerald500.color.opacity(0.7), radius: 7)
                                     }
+                                    .opacity(shineOpacity)
+                                    .animation(.easeOut(duration: 0.6), value: shineOpacity)
                             }
                         }
                     }

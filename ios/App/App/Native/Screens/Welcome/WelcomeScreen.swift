@@ -34,7 +34,11 @@ struct WelcomeScreen: View {
         self.paste = paste
         self.onChoose = onChoose
         self.leave = leave
-        _intro = State(initialValue: startOn == nil)
+        #if DEBUG
+            _intro = State(initialValue: startOn == nil && !TestLaunch.skipIntro)
+        #else
+            _intro = State(initialValue: startOn == nil)
+        #endif
         _signIn = State(initialValue: startOn)
         _cardShown = State(initialValue: startOn != nil)
     }

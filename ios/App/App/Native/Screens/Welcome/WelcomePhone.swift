@@ -202,10 +202,9 @@ struct WelcomeGroupScreen: View {
             row(0, CasyStrings.welcome("you"), D.people[0].color)
             ForEach(Array(D.friends.enumerated()), id: \.offset) { i, f in
                 if i < joined {
+                    // The face lands and stays: the row is there as it arrives.
                     row(i + 1, f.name, f.color)
-                        .transition(
-                            .scale(scale: 0.94).combined(with: .opacity)
-                                .animation(.interpolatingSpring(stiffness: 420, damping: 26)))
+                        .transition(.identity)
                 }
             }
             HStack(spacing: 12) {
@@ -379,6 +378,8 @@ struct PaperStack: View {
                     ThrownPaper(k: k, landed: landed, squared: squared) {
                         PaperCalendar(month: month, items: items, who: f.id, title: f.name, color: f.color)
                     }
+                    // Only there from its throw, outside the stage: never faded in.
+                    .transition(.identity)
                 }
             }
         }
@@ -426,29 +427,32 @@ private struct ThrownPaper<Content: View>: View {
                 let total = fly + D.hit
                 let a = fly
                 let b = (total - fly) * 0.5
+                // FLIGHT_EASE: slow off the hand, fast through the air, slow into the
+                // landing; then a little past its spot and back.
+                let fling = UnitCurve.bezier(startControlPoint: UnitPoint(x: 0.55, y: 0), endControlPoint: UnitPoint(x: 0.15, y: 1))
                 KeyframeTrack(\.x) {
                     LinearKeyframe(from, duration: 0)
-                    CubicKeyframe(tilt.x - side * 12, duration: a)
-                    CubicKeyframe(tilt.x + side * 3, duration: b)
-                    CubicKeyframe(tilt.x, duration: b)
+                    LinearKeyframe(tilt.x - side * 12, duration: a, timingCurve: fling)
+                    LinearKeyframe(tilt.x + side * 3, duration: b, timingCurve: .easeOut)
+                    LinearKeyframe(tilt.x, duration: b, timingCurve: .easeInOut)
                 }
                 KeyframeTrack(\.y) {
                     LinearKeyframe(-90, duration: 0)
-                    CubicKeyframe(tilt.y + 7, duration: a)
-                    CubicKeyframe(tilt.y - 4, duration: b)
-                    CubicKeyframe(tilt.y, duration: b)
+                    LinearKeyframe(tilt.y + 7, duration: a, timingCurve: fling)
+                    LinearKeyframe(tilt.y - 4, duration: b, timingCurve: .easeOut)
+                    LinearKeyframe(tilt.y, duration: b, timingCurve: .easeInOut)
                 }
                 KeyframeTrack(\.rotate) {
                     LinearKeyframe(side * 16, duration: 0)
-                    CubicKeyframe(tilt.rotate - side * 2, duration: a)
-                    CubicKeyframe(tilt.rotate + side * 0.5, duration: b)
-                    CubicKeyframe(tilt.rotate, duration: b)
+                    LinearKeyframe(tilt.rotate - side * 2, duration: a, timingCurve: fling)
+                    LinearKeyframe(tilt.rotate + side * 0.5, duration: b, timingCurve: .easeOut)
+                    LinearKeyframe(tilt.rotate, duration: b, timingCurve: .easeInOut)
                 }
                 KeyframeTrack(\.scale) {
                     LinearKeyframe(1.24, duration: 0)
-                    CubicKeyframe(0.98, duration: a)
-                    CubicKeyframe(1.008, duration: b)
-                    CubicKeyframe(1, duration: b)
+                    LinearKeyframe(0.98, duration: a, timingCurve: fling)
+                    LinearKeyframe(1.008, duration: b, timingCurve: .easeOut)
+                    LinearKeyframe(1, duration: b, timingCurve: .easeInOut)
                 }
             }
             .animation(.interpolatingSpring(stiffness: 240, damping: 28), value: squared)

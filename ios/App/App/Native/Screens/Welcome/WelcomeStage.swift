@@ -1,6 +1,7 @@
 import CasyCore
 import CasyUI
 import SwiftUI
+import UIKit
 
 // The welcome animation (#228, #282), the web's WelcomeStage and the phone's
 // screens on it (PhoneHome, PhoneDates, PhoneVote, TravelBox, Friends): your
@@ -103,6 +104,7 @@ struct WelcomeStage: View {
                             .lineSpacing(-3)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(Theme.foreground.color)
+                            .frame(width: balancedWidth(headline, in: w - 32))
                             .frame(width: w - 32)
                             .offset(x: 16, y: 12)
                             .transition(
@@ -155,7 +157,7 @@ struct WelcomeStage: View {
                         WelcomeFriends(
                             size: CGSize(width: w, height: h), top: room, scale: scale, framed: framed,
                             cell: D.dayCell(agreedDay, month: month), day: agreedDay, states: friendStates(n),
-                            sent: at.sends.map { n >= $0 }, tiles: at.arrived.map { n >= $0 && n < at.finaleOut })
+                            sent: at.sends.indices.map { n >= at.sends[$0] && n < at.arrived[$0] }, tiles: at.arrived.map { n >= $0 && n < at.finaleOut })
                     }
                 }
                 .opacity(leaving ? 0 : 1)
@@ -205,20 +207,25 @@ struct WelcomeStage: View {
                 Group {
                     switch onScreen {
                     case "group":
+                        // The web's exit by where it goes: to the month, it shrinks away.
                         WelcomeGroupScreen(joined: count(at.joined), leaving: n >= at.leave, arriving: round > 0)
-                            .transition(.opacity.animation(screenMove))
+                            .transition(
+                                .asymmetric(
+                                    insertion: .opacity,
+                                    removal: .scale(scale: 0.6, anchor: anchor).combined(with: .opacity)
+                                ).animation(screenMove))
                     case "vote":
                         WelcomeVoteScreen(event: vote, answered: answered)
                             .transition(
                                 .asymmetric(
                                     insertion: .scale(scale: 0.6, anchor: anchor).combined(with: .opacity),
-                                    removal: .scale(scale: 1.5, anchor: anchor).combined(with: .opacity)
+                                    removal: .scale(scale: 0.6, anchor: anchor).combined(with: .opacity)
                                 ).animation(screenMove))
                     default:
                         WelcomeHomeScreen(
                             month: month, items: n >= at.digital ? everyone : plan.items[0],
                             pressed: !still && ((n >= at.press && n < at.list) || n >= at.landing),
-                            shine: n >= at.shine && n < at.vote ? lit : nil,
+                            lit: lit, shining: n >= at.shine && n < at.vote,
                             scroll: listing && n < at.back && scrolled > 0 ? scrolls[scrolled - 1] : 0,
                             dim: (listing && n < at.back) || n >= at.landing, badge: n >= at.badge && n < at.vote
                         )
@@ -301,13 +308,36 @@ struct WelcomeStage: View {
                 try? await Task.sleep(for: .milliseconds(200))
                 if Task.isCancelled { return }
             }
-            withAnimation(.easeInOut(duration: 0.3)) { now = moment }
+            // As the web's setReached: each piece moves in its own way, nothing else eases.
+            now = moment
         }
         let left = at.end - Date().timeIntervalSince(start)
         if left > 0 { try? await Task.sleep(for: .milliseconds(Int(left * 1000))) }
         if Task.isCancelled { return }
         round += 1
     }
+}
+
+/// The narrowest width that keeps a headline on as few lines as the whole
+/// width does: its lines come out even, as the web's `text-balance`.
+private func balancedWidth(_ text: String, in width: CGFloat) -> CGFloat {
+    let font = UIFont.systemFont(ofSize: 32, weight: .bold)
+    let attributed = NSAttributedString(string: text, attributes: [.font: font, .kern: -0.8])
+    func lines(_ w: CGFloat) -> Int {
+        let height = attributed.boundingRect(
+            with: CGSize(width: w, height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin], context: nil
+        ).height
+        return Int((height / font.lineHeight).rounded())
+    }
+    let wanted = lines(width)
+    guard wanted > 1 else { return width }
+    var low: CGFloat = width / CGFloat(wanted)
+    var high = width
+    while high - low > 1 {
+        let mid = (low + high) / 2
+        if lines(mid) > wanted { low = mid } else { high = mid }
+    }
+    return ceil(high) + 2
 }
 
 /// The colour shape behind the phone (SHAPE_COLORS in its rounded box, with
@@ -357,7 +387,9 @@ private struct WelcomeHomeScreen: View {
     let month: Int64
     let items: [MonthItem]
     let pressed: Bool
-    let shine: Set<Int64>?
+    /// The free days not yet lifted out, and whether they are lit.
+    let lit: Set<Int64>
+    let shining: Bool
     let scroll: CGFloat
     let dim: Bool
     let badge: Bool
@@ -387,22 +419,16 @@ private struct WelcomeHomeScreen: View {
                     .padding(.bottom, 4)
                 }
                 .frame(height: D.headerHeight)
-                ZStack(alignment: .top) {
-                    PileMonth(
-                        month: month, items: items, color: D.colorOf, shine: [], width: D.screen.width,
-                        dark: scheme == .dark, pressed: pressed)
-                    PileMonth(
-                        month: month, items: [], color: D.colorOf, shine: shine ?? [], width: D.screen.width,
-                        dark: scheme == .dark, numbers: false
-                    )
-                    .opacity(shine == nil ? 0 : 1)
-                    .animation(.easeOut(duration: 0.6), value: shine == nil)
-                }
+                // The free days lit in the month's own rows, fading up (the web's layer over it).
+                PileMonth(
+                    month: month, items: items, color: D.colorOf, shine: lit, width: D.screen.width,
+                    dark: scheme == .dark, pressed: pressed, shineOpacity: shining ? 1 : 0)
                 PileMonth(
                     month: startOfMonth(month, appTimeZone, 1), items: [], color: D.colorOf, shine: [],
                     width: D.screen.width, dark: scheme == .dark)
             }
-            .offset(y: -scroll)
+            // Moved frame by frame as one: the lit days' glow can't trail behind their numbers.
+            .modifier(Shift(y: -scroll))
             .opacity(dim ? 0.3 : 1)
             .animation(.easeInOut(duration: 0.45), value: scroll)
             .animation(.easeInOut(duration: 0.45), value: dim)
@@ -594,8 +620,10 @@ private struct WelcomeVoteScreen: View {
             ZStack {
                 day(date, lang: lang)
                     .id(date.id)
-                    .transition(.asymmetric(insertion: .offset(x: D.screen.width), removal: .offset(x: -D.screen.width)).animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.5)))
+                    .transition(.asymmetric(insertion: .offset(x: D.screen.width), removal: .offset(x: -D.screen.width)))
             }
+            // GLIDE: the day gliding on to the next date as each is answered.
+            .animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.5), value: date.id)
             .frame(width: D.screen.width, height: D.screen.height - Self.dayTop - 316 + 28, alignment: .top)
             .clipped()
             .offset(y: Self.dayTop)
@@ -628,7 +656,11 @@ private struct WelcomeVoteScreen: View {
     private func day(_ date: CandidateDate, lang: Lang) -> some View {
         let at = instantOrZero(date.start)
         let column = (localDate(at, appTimeZone).dow + 6) % 7
-        let label = formatLongDate(date.start, lang)
+        // "Fredag 13. nov." / "Friday 13 Nov", as the web's toLocaleDateString.
+        let d = localDate(at, appTimeZone)
+        let named = weekdayName(at, lang)
+        let short = lang == .da ? "\(named) \(d.day). \(monthShortName(at, lang))" : "\(named) \(d.day) \(monthShortName(at, lang))"
+        let label = short.prefix(1).uppercased() + short.dropFirst()
         return VStack(spacing: 0) {
             HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { i in
@@ -645,7 +677,7 @@ private struct WelcomeVoteScreen: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            Text(verbatim: label.prefix(1).uppercased() + label.dropFirst())
+            Text(verbatim: label)
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(Theme.primary.color)
                 .frame(maxWidth: .infinity)
@@ -870,11 +902,12 @@ struct WelcomeTravelBox: View {
                     CubicKeyframe(1, duration: 0.12)
                 }
             }
+            // The flight: one curve to the day, slow off and quickening into the landing,
+            // shrinking about the ball's own centre (before it is moved to its place).
+            .modifier(FlightAlong(progress: flying ? flight : 0, to: cell, from: Self.ballFrom, ballSize: Self.ball, day: Self.dayCircle))
             .offset(x: rect.minX, y: rect.minY)
             .animation(.interpolatingSpring(stiffness: 170, damping: 24), value: stage)
             .animation(.easeOut(duration: 0.15), value: pressed)
-            // The flight: one curve to the day, slow off and quickening into the landing.
-            .modifier(FlightAlong(progress: flying ? flight : 0, to: cell, from: Self.ballFrom, ballSize: Self.ball, day: Self.dayCircle))
             if landed { landing(at: cell) }
         }
         .frame(width: D.screen.width, height: D.screen.height, alignment: .topLeading)
@@ -907,6 +940,16 @@ struct WelcomeTravelBox: View {
     }
 }
 
+/// A move worked out each frame, so everything under it moves as one.
+private struct Shift: ViewModifier, Animatable {
+    var y: CGFloat
+    var animatableData: CGFloat {
+        get { y }
+        set { y = newValue }
+    }
+    func body(content: Content) -> some View { content.offset(y: y) }
+}
+
 /// The ball's way to the day along a curve bending to one side (curveTo).
 private struct FlightAlong: ViewModifier, Animatable {
     var progress: Double
@@ -933,7 +976,7 @@ private struct FlightAlong: ViewModifier, Animatable {
         let x = a * from.x + b * control.x + c * to.x - from.x
         let y = a * from.y + b * control.y + c * to.y - from.y
         return content
-            .scaleEffect(1 + (day / ballSize - 1) * t, anchor: UnitPoint(x: from.x / D.screen.width, y: from.y / D.screen.height))
+            .scaleEffect(1 + (day / ballSize - 1) * t)
             .offset(x: x, y: y)
     }
 }
@@ -1057,14 +1100,17 @@ struct WelcomeFriends: View {
                                 .offset(x: 20, y: -7)
                         }
                     }
+                    // As the web's: flying into its row everything eases together; back
+                    // around, it is put in its place at once, unseen, and only grows.
                     .scaleEffect(state == .gone ? 0 : state == .row ? D.rows.face * scale / Self.face : 1)
-                    .opacity(state == .gone ? 0 : 1)
-                    .position(at)
                     .animation(
                         state == .row
                             ? .timingCurve(0.5, 0, 0.3, 1, duration: D.flyFor)
                             : state == .around ? .interpolatingSpring(stiffness: 340, damping: 17) : nil,
                         value: state)
+                    .opacity(state == .gone ? 0 : 1)
+                    .position(at)
+                    .animation(state == .row ? .timingCurve(0.5, 0, 0.3, 1, duration: D.flyFor) : nil, value: state)
             }
         }
         .frame(width: w, height: h, alignment: .topLeading)

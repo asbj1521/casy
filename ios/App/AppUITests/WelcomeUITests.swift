@@ -15,6 +15,7 @@ final class WelcomeUITests: XCTestCase {
             "-casyOpenScreen", "welcome",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",
+            "-casyKeepIntro", "YES",
         ]
         app.launch()
         return app

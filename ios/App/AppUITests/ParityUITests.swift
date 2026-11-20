@@ -849,6 +849,14 @@ final class ParityUITests: XCTestCase {
         }
     }
 
+    /// The welcome's animation without the intro, two rounds and the loop
+    /// between them, filmed in both for a side by side (PARITY_VIDEO=1).
+    func testWelcomeLoopFilm() async throws {
+        let app = try await launch("/", theme: "light", signedOut: true)
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20))
+        _ = XCTWaiter.wait(for: [expectation(description: "rounds")], timeout: 58)
+    }
+
     func testSignInLight() async throws { try await shootSignIn(theme: "light") }
 
     func testSignInDark() async throws { try await shootSignIn(theme: "dark") }

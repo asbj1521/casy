@@ -729,7 +729,8 @@ export default function WelcomeStage({
             cell={zoomOn}
             day={agreedDay}
             states={friends}
-            sent={AT.sends.map((at) => now >= at)}
+            // Only on its way: as the tiles go at the end, no date is sent a second time.
+            sent={AT.sends.map((at, i) => now >= at && now < AT.arrived[i])}
             tiles={AT.arrived.map((at) => now >= at && now < AT.finaleOut)}
           />
         )}

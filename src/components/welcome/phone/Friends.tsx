@@ -63,7 +63,7 @@ export default function Friends({
   /** The agreed date's midnight. */
   day: number;
   states: FriendState[];
-  /** Whose date has left for them. */
+  /** Whose date is on its way to them. */
   sent: boolean[];
   /** Whose date is in their calendar: the tile and the tick are showing. */
   tiles: boolean[];

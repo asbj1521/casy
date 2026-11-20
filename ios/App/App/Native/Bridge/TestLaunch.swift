@@ -22,6 +22,9 @@
             defaults.string(forKey: "casyBackend").flatMap(URL.init(string:))
         }
         static var isActive: Bool { backend != nil }
+        /// The welcome opens on its animation, as the page does with
+        /// `__casySkipIntro`, unless `-casyKeepIntro YES` asks for the intro.
+        static var skipIntro: Bool { isActive && !defaults.bool(forKey: "casyKeepIntro") }
         static var screen: String? { defaults.string(forKey: "casyOpenScreen") }
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
         /// `-casyPushAnswer <granted|denied|failed>`: how turning notifications on goes, without the page.
