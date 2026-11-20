@@ -36,7 +36,7 @@ export const ICONS = {
   "calendar-x": [2],
   bus: [2],
   camera: [2],
-  check: [2, 2.5, 3],
+  check: [2, 2.5, 3, 3.5],
   "chevron-down": [2],
   "chevron-left": [2],
   "chevron-right": [2],

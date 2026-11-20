@@ -1214,6 +1214,16 @@ struct WeekPicture: View {
             .frame(width: column * 7, height: CGFloat(monthLanes) * monthLanePoints + monthMorePoints, alignment: .topLeading)
             .clipped()
         }
+        // The week's number in its corner, as the web's MonthLayer.
+        .overlay(alignment: .topLeading) {
+            if numbers {
+                Text(verbatim: "\(week.number)")
+                    .font(.system(size: 10).monospacedDigit())
+                    .foregroundStyle(Theme.mutedForeground.color)
+                    .padding(.leading, 4)
+                    .padding(.top, 3)
+            }
+        }
     }
 
     @ViewBuilder private func bar(_ p: PlacedItem) -> some View {

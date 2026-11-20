@@ -32,6 +32,22 @@ final class SignInUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", words)).firstMatch
     }
 
+    /// The tabs switch both ways, their capsule gliding over as glass
+    /// (filmed when looked at; the selection follows the tap).
+    func testTheTabsSwitch() {
+        let app = launch()
+        let signUp = app.buttons["signin.tab.signUp"]
+        let signIn = app.buttons["signin.tab.signIn"]
+        for _ in 0..<2 {
+            signUp.tap()
+            XCTAssertTrue(signUp.isSelected)
+            _ = XCTWaiter.wait(for: [expectation(description: "glide")], timeout: 1.2)
+            signIn.tap()
+            XCTAssertTrue(signIn.isSelected)
+            _ = XCTWaiter.wait(for: [expectation(description: "glide")], timeout: 1.2)
+        }
+    }
+
     /// A wrong password says so in the page's words; a right one closes the screen.
     func testAPasswordSignsIn() {
         let app = launch()

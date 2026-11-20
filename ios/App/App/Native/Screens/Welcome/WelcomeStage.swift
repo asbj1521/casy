@@ -141,7 +141,7 @@ struct WelcomeStage: View {
                                     .allowsHitTesting(false)
                             }
                         }
-                        .rotation3DEffect(.degrees(-11 * phone.turn), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                        .rotation3DEffect(.degrees(11 * phone.turn), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
                         .rotationEffect(.degrees(2 * phone.turn))
                         .scaleEffect(unGrown ? (icon?.scale ?? phone.scale) : phone.scale)
                         .frame(width: D.device.width * scale, height: D.device.height * scale)
@@ -347,6 +347,10 @@ private struct ColourShape: View {
     let stageHeight: CGFloat
     let leaving: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var still
+    /// Risen into place: it starts under the stage and comes up with the phone.
+    @State private var risen = false
+
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
@@ -357,8 +361,9 @@ private struct ColourShape: View {
                 WelcomeShapeBox(width: boxW, height: boxH)
                     .scaleEffect(pose.scale)
                     .rotationEffect(.degrees(pose.rotate))
-                    .position(x: -w * 0.3 + boxW / 2 + boxW * pose.x, y: boxH / 2 + boxH * pose.y)
+                    .position(x: -w * 0.3 + boxW / 2 + boxW * pose.x, y: boxH / 2 + boxH * (risen || still ? pose.y : 0.9))
                     .animation(poseSpring, value: pose)
+                    .animation(poseSpring, value: risen)
                 // Fading out at the bottom, under the headline and buttons.
                 LinearGradient(
                     stops: [
@@ -374,6 +379,7 @@ private struct ColourShape: View {
             }
             .frame(width: w, height: leaving ? geo.size.height + 400 : stageHeight + 40, alignment: .topLeading)
             .clipped()
+            .onAppear { risen = true }
         }
         .ignoresSafeArea()
     }
@@ -423,8 +429,19 @@ private struct WelcomeHomeScreen: View {
                 PileMonth(
                     month: month, items: items, color: D.colorOf, shine: lit, width: D.screen.width,
                     dark: scheme == .dark, pressed: pressed, shineOpacity: shining ? 1 : 0)
+                // The next month, under its short name over its first day (MONTH_LABEL_PX).
+                let next = startOfMonth(month, appTimeZone, 1)
+                let firstColumn = CGFloat((localDate(next, appTimeZone).dow + 6) % 7)
+                let short = monthShortName(next, lang).replacingOccurrences(of: ".", with: "")
+                Text(verbatim: short.prefix(1).uppercased() + short.dropFirst())
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Theme.foreground.color)
+                    .lineLimit(1)
+                    .frame(width: D.screen.width / 7)
+                    .offset(x: firstColumn * D.screen.width / 7)
+                    .frame(width: D.screen.width, height: 28, alignment: .topLeading)
                 PileMonth(
-                    month: startOfMonth(month, appTimeZone, 1), items: [], color: D.colorOf, shine: [],
+                    month: next, items: [], color: D.colorOf, shine: [],
                     width: D.screen.width, dark: scheme == .dark)
             }
             // Moved frame by frame as one: the lit days' glow can't trail behind their numbers.
@@ -474,7 +491,7 @@ private struct WelcomeHomeScreen: View {
                     Text(CasyStrings.homePlan).fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity, minHeight: 48)
-                .glassless(Capsule())
+                .phoneGlass(Capsule(), clear: false)
                 round("user")
             }
             .font(.system(size: 17))
@@ -489,18 +506,26 @@ private struct WelcomeHomeScreen: View {
     }
 
     private func pill<C: View>(@ViewBuilder _ content: () -> C) -> some View {
-        content().frame(height: 40).glassless(Capsule())
+        content().frame(height: 40).phoneGlass(Capsule(), clear: true)
     }
 
     private func round(_ icon: String) -> some View {
-        LucideIcon(icon, size: 24).frame(width: 48, height: 48).glassless(Circle())
+        LucideIcon(icon, size: 24).frame(width: 48, height: 48).phoneGlass(Circle(), clear: false)
     }
 }
 
 extension View {
-    /// The glass capsule with nothing behind the glass to blur (the web's
-    /// NO_BLUR): a soft face and a bright rim.
-    fileprivate func glassless<S: Shape>(_ shape: S) -> some View {
+    /// The drawn phone's capsules in the real app's glass (Liquid Glass): the
+    /// web fakes it (NO_BLUR), natively the month bends under it as it
+    /// scrolls. Clear on top, as the home page's capsules; regular along the
+    /// bottom, as its three buttons.
+    fileprivate func phoneGlass<S: Shape>(_ shape: S, clear: Bool) -> some View {
+        casyGlass(in: shape, clear: clear)
+    }
+
+    /// The web's drawn capsule (NO_BLUR), a soft face and a bright rim: on the
+    /// vote, where the phone is turned in 3D and real glass breaks up.
+    fileprivate func drawnGlass<S: Shape>(_ shape: S) -> some View {
         background(Theme.card.color.opacity(0.72), in: shape)
             .overlay { shape.stroke(.white.opacity(0.6), lineWidth: 1) }
             .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
@@ -634,7 +659,7 @@ private struct WelcomeVoteScreen: View {
                 }
                 .padding(.leading, 8).padding(.trailing, 16)
                 .frame(height: 40)
-                .glassless(Capsule())
+                .drawnGlass(Capsule())
                 Spacer()
                 HStack(spacing: 12) {
                     LucideIcon("plus", size: 20)
@@ -643,7 +668,7 @@ private struct WelcomeVoteScreen: View {
                 }
                 .padding(.horizontal, 16)
                 .frame(height: 40)
-                .glassless(Capsule())
+                .drawnGlass(Capsule())
             }
             .font(.system(size: 17))
             .foregroundStyle(Theme.primary.color)
@@ -864,12 +889,17 @@ struct WelcomeTravelBox: View {
                 Theme.cta.color.opacity(isBall ? 1 : 0).animation(.easeInOut(duration: 0.25), value: isBall)
                 face(stage == .card) {
                     VStack(alignment: .leading, spacing: 4) {
+                        // Each line as tall as the web's (1.5 times its size; 1.1 for the date).
                         Text(CasyStrings.agreedEveryone).textCase(.uppercase)
                             .font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.primary.color)
+                            .frame(height: 18)
                         Text(event.title).font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.foreground.color)
+                            .frame(height: 25.5)
                         Text(verbatim: headline.lines.joined(separator: " "))
                             .font(.system(size: 28, weight: .heavy)).tracking(-0.7).foregroundStyle(Theme.foreground.color)
+                            .frame(height: 30.8)
                         Text(verbatim: headline.time).font(.system(size: 17)).foregroundStyle(Theme.foreground.color)
+                            .frame(height: 25.5)
                         HStack(spacing: -8) {
                             ForEach(Array(event.invitees.enumerated()), id: \.offset) { i, p in
                                 Avatar(name: p.name, index: i, size: .medium)
@@ -880,6 +910,7 @@ struct WelcomeTravelBox: View {
                     }
                     .padding(20)
                     .frame(width: Self.card.width, alignment: .leading)
+                    .lineLimit(1)
                 }
                 if landed {
                     Text(verbatim: "\(localDate(day, appTimeZone).day)")
@@ -891,6 +922,8 @@ struct WelcomeTravelBox: View {
             }
             .frame(width: rect.width, height: rect.height, alignment: .topLeading)
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            // A card throughout, as the web's: the phone turns in 3D as the pill
+            // grows into the panel, and real glass breaks up under that.
             .overlay { RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(Theme.border.color) }
             .shadow(color: .black.opacity(0.38), radius: 20, y: 14)
             .scaleEffect(pressed ? 0.94 : 1)
@@ -1076,7 +1109,8 @@ struct WelcomeFriends: View {
                     .shadow(color: .black.opacity(0.25), radius: 12, y: 8)
                     .overlay(alignment: .bottomTrailing) {
                         VStack(spacing: 1) {
-                            Text(verbatim: weekdayShortName(day, lang)).textCase(.uppercase)
+                            // "FRE", as the web's weekdaysShort: no full stop.
+                            Text(verbatim: weekdayShortName(day, lang).replacingOccurrences(of: ".", with: "")).textCase(.uppercase)
                                 .font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.primary.color)
                             Text(verbatim: "\(localDate(day, appTimeZone).day)")
                                 .font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.foreground.color)
@@ -1097,7 +1131,9 @@ struct WelcomeFriends: View {
                                 .overlay { Circle().strokeBorder(Theme.card.color, lineWidth: 1.5) }
                                 .scaleEffect(tiles[i] ? 1 : 0)
                                 .animation(tiles[i] ? .interpolatingSpring(stiffness: 520, damping: 16).delay(0.2) : .easeIn(duration: 0.16), value: tiles[i])
-                                .offset(x: 20, y: -7)
+                                // On the tile's top corner, as the web's (right -20, bottom 14 of the face):
+                                // placed from where the tile stood before its own move.
+                                .offset(x: 20, y: 6)
                         }
                     }
                     // As the web's: flying into its row everything eases together; back

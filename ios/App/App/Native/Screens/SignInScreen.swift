@@ -346,6 +346,8 @@ struct SignInScreen: View {
             tabButton(.signIn, CasyStrings.signIn("tabSignIn"))
             tabButton(.signUp, CasyStrings.signIn("tabSignUp"))
         }
+        .background { TabGlide(at: tab == .signUp ? 1 : 0, gap: 4, glass: false) }
+        .overlay { TabGlide(at: tab == .signUp ? 1 : 0, gap: 4, glass: true) }
         .padding(4)
         .background(Theme.secondary.color, in: Capsule())
     }
@@ -358,11 +360,6 @@ struct SignInScreen: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(tab == value ? Theme.foreground.color : Theme.mutedForeground.color)
                 .frame(maxWidth: .infinity, minHeight: 32)
-                .background {
-                    if tab == value {
-                        Capsule().fill(Theme.background.color).shadow(color: .black.opacity(0.08), radius: 1, y: 1)
-                    }
-                }
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -606,6 +603,71 @@ struct SignInScreen: View {
 }
 
 /// The DA | EN switch of the page's header, for someone signed out (LanguageToggle).
+/// The chosen tab's capsule, as the week strip's day (#282, Liquid Glass):
+/// solid at rest; on a change it turns to Apple's clear glass where it
+/// stands, swells, glides over to the other tab on an even curve and turns
+/// back into the solid capsule there. Drawn twice, the solid one under the
+/// words (`glass: false`) and the glass over them, so they show through it
+/// bent, and laid over the tab row as wide as one tab.
+private struct TabGlide: View {
+    /// 0 for the first tab, 1 for the second.
+    let at: CGFloat
+    let gap: CGFloat
+    let glass: Bool
+
+    @State private var place: CGFloat
+    @State private var moving = false
+    @State private var swollen = false
+    @State private var run = 0
+
+    init(at: CGFloat, gap: CGFloat, glass: Bool) {
+        self.at = at
+        self.gap = gap
+        self.glass = glass
+        _place = State(initialValue: at)
+    }
+
+    var body: some View {
+        GeometryReader { box in
+            let width = (box.size.width - gap) / 2
+            Group {
+                if glass {
+                    Color.clear
+                        .casyGlass(in: Capsule(), clear: true)
+                        .opacity(moving ? 1 : 0)
+                } else {
+                    Capsule()
+                        .fill(Theme.background.color)
+                        .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
+                        .opacity(moving ? 0 : 1)
+                }
+            }
+            .frame(width: width, height: box.size.height)
+            .scaleEffect(swollen ? 1.18 : 1)
+            .offset(x: place * (width + gap))
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onChange(of: at) { _, new in glide(to: new) }
+    }
+
+    private func glide(to new: CGFloat) {
+        run += 1
+        let mine = run
+        withAnimation(.easeOut(duration: 0.12)) { moving = true }
+        withAnimation(.spring(duration: 0.16, bounce: 0.3)) { swollen = true }
+        withAnimation(.timingCurve(0.35, 0, 0.25, 1, duration: 0.34)) {
+            place = new
+        } completion: {
+            guard mine == run else { return }
+            withAnimation(.easeOut(duration: 0.2)) {
+                swollen = false
+                moving = false
+            }
+        }
+    }
+}
+
 private struct LanguageSwitch: View {
     let lang: String
     let choose: (String) -> Void

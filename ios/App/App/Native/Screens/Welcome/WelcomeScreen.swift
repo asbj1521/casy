@@ -117,11 +117,15 @@ struct WelcomeScreen: View {
                 .accessibilityIdentifier("welcome.paste")
             }
             .font(.system(size: 15))
+            // The touch area stays 32 tall; the lines sit as close as the web's (mt-1).
+            .padding(.top, -5)
         }
         .multilineTextAlignment(.center)
         .padding(.horizontal, 24)
         .padding(.top, 16)
-        .padding(.bottom, 8)
+        // On the home indicator's line, as the web's max(1rem, safe area); the
+        // link's own touch area is the rest.
+        .padding(.bottom, -6)
     }
 
     private func open(_ which: String) {

@@ -34,7 +34,8 @@ struct WelcomeDevice<Screen: View, Over: View>: View {
                 .overlay {
                     RoundedRectangle(cornerRadius: D.deviceRadius, style: .continuous).fill(.black.opacity(0.3))
                 }
-                .offset(x: 14 * turned)
+                // The web's rotateY(-11deg) brings the left edge nearer: its side shows there.
+                .offset(x: -14 * turned)
                 .opacity(turned)
             ForEach(Array([(184.0, 48.0), (262, 86), (366, 86)].enumerated()), id: \.offset) { _, b in
                 sideButton(top: b.0, height: b.1, left: true)
@@ -85,6 +86,31 @@ struct WelcomeDevice<Screen: View, Over: View>: View {
     }
 }
 
+/// The members' card between its own place and the whole screen, worked out
+/// each frame (`progress` 0 to 1).
+private struct Growing: ViewModifier, Animatable {
+    var progress: CGFloat
+    let from: CGRect
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let p = progress
+        let x = from.minX * (1 - p)
+        let y = from.minY * (1 - p)
+        let width = from.width + (D.screen.width - from.width) * p
+        let height = from.height + (D.screen.height - from.height) * p
+        let radius = 16 + (D.screenRadius - 16) * p
+        content
+            .frame(width: width, height: height, alignment: .topLeading)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .offset(x: x, y: y)
+    }
+}
+
 /// A person's round face in their own colour (Face).
 struct WelcomeFace: View {
     let name: String
@@ -128,15 +154,12 @@ struct WelcomeGroupScreen: View {
     private var shown: Bool { !leaving && !(arriving && grown) }
 
     var body: some View {
-        let rect = grown ? CGRect(origin: .zero, size: D.screen) : card
         ZStack(alignment: .topLeading) {
             Theme.background.color
             topBar
             heading
-            members
-                .frame(width: rect.width, height: rect.height, alignment: .topLeading)
-                .clipShape(RoundedRectangle(cornerRadius: grown ? D.screenRadius : 16, style: .continuous))
-                .offset(x: rect.minX, y: rect.minY)
+            // Grown frame by frame, so the names and faces in it move as one.
+            members.modifier(Growing(progress: grown ? 1 : 0, from: card))
         }
         .frame(width: D.screen.width, height: D.screen.height, alignment: .topLeading)
         .animation(.easeInOut(duration: 0.22).delay(!leaving && arriving ? 0.3 : 0), value: shown)
