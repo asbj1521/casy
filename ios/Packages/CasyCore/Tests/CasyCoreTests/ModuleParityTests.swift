@@ -628,6 +628,13 @@ private struct DateRange: Decodable {
                 "lowest": .number(Double(lowestCount(try #require(a["of"].int), a["atLeast"].int))),
                 "sooner": .number(Double(daysSooner(try text(a, "first"), than: try text(a, "than"), zone))),
             ])
+        case "planFromVote":
+            return try json(
+                planFromVote(
+                    try a["settings"].decoded(), invited: try a["invited"].decoded(), group: try a["group"].decoded(),
+                    onto: try a["base"].decoded()))
+        case "withAnswers":
+            return try json(withAnswers(try a["participants"].decoded(), try a["dates"].decoded()))
         default:
             return unknown(fn)
         }

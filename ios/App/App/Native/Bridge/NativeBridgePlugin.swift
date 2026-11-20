@@ -269,6 +269,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self?.dismissOpenScreen(["added": start])
             case .plan:
                 self?.dismissOpenScreen(["plan": true])
+            case .findDates:
+                self?.showPile()
             }
         }
         // A sheet as tall as what is in it (the trip's, #281), told by the screen.
@@ -311,10 +313,16 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             : screen == "plan"
             ? AnyView(
                 Self.planSheet(
-                    Self.decode(PrimeDate.self, state["prime"]) ?? Self.testPrime, onDone: onDone, leave: leave,
-                    onFind: { [weak self] in self?.showPile() }))
+                    Self.decode(PrimeDate.self, state["prime"]) ?? Self.testPrime, keep: state["keep"] as? Bool == true,
+                    onDone: { [weak self] in
+                        // A vote searched again goes back to the vote (#240).
+                        if PlanModel.shared.again != nil { self?.backToVote() } else { onDone() }
+                    },
+                    leave: leave, onFind: { [weak self] in self?.showPile() }))
             : screen == "events"
-            ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
+            ? AnyView(
+                EventsSheet(
+                    preferences: NativePreferences.shared, onDone: onDone, leave: leave, vote: state["vote"] as? String))
             : screen == "profile"
             ? AnyView(
                 ProfileScreen(
@@ -410,11 +418,17 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// Planlæg, begun from a starred day when the page sends one (#171),
     /// else the plan as it was left.
+    /// `keep`: back from the pile (Ret planen), the plan as it was there.
     @MainActor private static func planSheet(
-        _ prime: PrimeDate?, onDone: @escaping () -> Void, leave: @escaping (LeavingProfile) -> Void,
+        _ prime: PrimeDate?, keep: Bool, onDone: @escaping () -> Void, leave: @escaping (LeavingProfile) -> Void,
         onFind: @escaping () -> Void
     ) -> PlanSheet {
-        if let prime { PlanModel.shared.begin(prime: prime) } else { PlanModel.shared.forgetPrime() }
+        if keep {
+        } else if let prime {
+            PlanModel.shared.begin(prime: prime)
+        } else {
+            PlanModel.shared.forgetStart()
+        }
         return PlanSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave, onFind: onFind)
     }
 
@@ -713,16 +727,27 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// plan as it was; closing or sending ends Planlæg, which the page hears.
     private func showPile() {
         guard let presenter = bridge?.viewController else { return }
-        presenter.presentedViewController?.dismiss(animated: true) { [weak self] in
+        // Everything over the page goes (a vote's own plan sits on Aftaler, #240).
+        presenter.dismiss(animated: true) { [weak self] in
             guard let self else { return }
             let pile = PileScreen(
                 onChange: { [weak self] in
                     presenter.presentedViewController?.dismiss(animated: false) {
-                        self?.present("plan", on: presenter)
+                        self?.present("plan", on: presenter, state: ["keep": true])
                     }
                 },
-                onClose: { [weak self] in self?.dismissOpenScreen() },
-                onSent: { [weak self] in self?.dismissOpenScreen(["sent": true]) }
+                onClose: { [weak self] in
+                    if PlanModel.shared.again != nil { self?.backToVote() } else { self?.dismissOpenScreen() }
+                },
+                onSent: { [weak self] in
+                    if PlanModel.shared.again != nil {
+                        // The vote has its new dates: the page's lists are fetched again.
+                        self?.notifyListeners("dataChanged", data: [:])
+                        self?.backToVote()
+                    } else {
+                        self?.dismissOpenScreen(["sent": true])
+                    }
+                }
             )
             .nativeSheetLook(NativePreferences.shared)
             let host = UIHostingController(rootView: AnyView(pile))
@@ -736,6 +761,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
+    /// Done searching a vote again (#240): Planlæg closes back onto the vote,
+    /// in Aftaler as it was, and the plan is as it was before.
+    private func backToVote() {
+        guard let presenter = bridge?.viewController, let id = PlanModel.shared.again?.eventId else { return }
+        PlanModel.shared.endAgain()
+        let reopen = { [weak self] in self?.present("events", on: presenter, state: ["vote": id]) }
+        if presenter.presentedViewController != nil {
+            presenter.dismiss(animated: true) { reopen() }
+        } else {
+            reopen()
+        }
+    }
+
     private func dismissOpenScreen(_ then: [String: Any] = [:]) {
         bridge?.viewController?.presentedViewController?.dismiss(animated: true) { [weak self] in
             self?.closed(then)
@@ -745,6 +783,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     public func presentationControllerDidDismiss(
         _ presentationController: UIPresentationController
     ) {
+        // A vote searched again, its plan swiped away: back onto the vote.
+        if openScreen == "plan", PlanModel.shared.again != nil {
+            backToVote()
+            return
+        }
         closed()
     }
 

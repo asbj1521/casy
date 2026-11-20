@@ -124,11 +124,16 @@ struct EventsSheet: View {
     let preferences: NativePreferences
     let onDone: () -> Void
     let leave: (LeavingProfile) -> Void
+    /// Opened on this vote (back from searching it again, #240).
+    var vote: String?
+    @State private var path: [String] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             EventsScreen(leave: leave)
+                .navigationDestination(for: String.self) { id in VoteScreen(eventId: id, leave: leave) }
         }
+        .onAppear { if let vote, path.isEmpty { path = [vote] } }
         .environment(\.closeSheet, onDone)
         .nativeSheetLook(preferences)
     }

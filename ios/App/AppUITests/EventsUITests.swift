@@ -161,9 +161,37 @@ final class EventsUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Svarfrist")).firstMatch.exists)
         XCTAssertTrue(app.buttons["vote.settle"].exists)
         XCTAssertFalse(app.buttons["Rapportér aftalen"].exists)
-        // Søg igen is the page's: the sheet closes for it.
-        app.buttons["Søg igen"].tap()
-        XCTAssertTrue(app.navigationBars["Løbeklubben"].waitForNonExistence(timeout: 10))
+    }
+
+    /// Søg igen (#240, #264): the vote's own plan in a sheet (its name, no
+    /// group or kind), Find dato lays the pile, the new dates are sent after
+    /// the warning that everyone votes anew, and it closes back onto the vote.
+    func testSearchingAVoteAgainSendsItNewDates() {
+        let app = launch()
+        openEvent(app, "Biograf", group: "Løbeklubben")
+        let again = app.buttons["vote.searchAgain"]
+        XCTAssertTrue(again.waitForExistence(timeout: 10))
+        XCTAssertTrue(again.isEnabled)
+        again.tap()
+        XCTAssertTrue(app.navigationBars["Søg igen"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["plan.againName"].exists)
+        XCTAssertFalse(app.buttons["plan.kind.trip"].exists)
+        XCTAssertFalse(app.buttons["plan.group"].exists)
+        let find = app.buttons["plan.find"]
+        XCTAssertTrue(find.waitForExistence(timeout: 10))
+        find.tap()
+        let send = app.buttons["pile.send"]
+        XCTAssertTrue(send.waitForExistence(timeout: 30), "the pile's dates")
+        XCTAssertTrue(send.label.contains("nye"), send.label)
+        // Pressable once the list has settled.
+        let ready = expectation(for: NSPredicate(format: "isEnabled == true AND isHittable == true"), evaluatedWith: send)
+        wait(for: [ready], timeout: 15)
+        send.tap()
+        let yes = app.buttons["confirm.yes"]
+        XCTAssertTrue(yes.waitForExistence(timeout: 10), "everyone votes anew, said first")
+        yes.tap()
+        XCTAssertTrue(app.navigationBars["Løbeklubben"].waitForExistence(timeout: 20), "back on the vote")
+        XCTAssertTrue(app.buttons["vote.searchAgain"].waitForExistence(timeout: 10))
     }
 
     /// A tap on the cross changes your answer for that date.

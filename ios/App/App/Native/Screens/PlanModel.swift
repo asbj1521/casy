@@ -34,6 +34,11 @@ final class PlanModel {
     /// The starred day Planlæg was begun from (#171, #243), said at the top
     /// while its day is still the one planned (`shownPrime`).
     private(set) var prime: PrimeDate?
+    /// A vote searched again (#240), for as long as this plan is open: its
+    /// answers count in the search, and sending gives it the dates.
+    private(set) var again: AgainStart?
+    /// The plan as it was before a vote was searched again, put back after.
+    private var beforeAgain: (snapshot: Snapshot, group: String?, people: [String: PeopleChoice])?
 
     // MARK: What it is planned from
 
@@ -60,6 +65,8 @@ final class PlanModel {
 
     func reset() {
         prime = nil
+        again = nil
+        beforeAgain = nil
         name = ""
         extras = .defaults
         settings = Self.randomSettings()
@@ -91,8 +98,54 @@ final class PlanModel {
         closedAt = nil
     }
 
-    /// Opened from the pill: no starred day said, the plan as it was left.
-    func forgetPrime() { prime = nil }
+    /// Opened from the pill: no starred day said, the plan as it was left
+    /// (a vote searched again leaves it as it was before).
+    func forgetStart() {
+        prime = nil
+        endAgain()
+    }
+
+    /// A vote searched again (#240, the web's useSearchAgain `planFor`): its
+    /// own plan, every month from today, for those it was for and the members
+    /// `add`ed, its answers counted. The plan as it was is put back after.
+    func begin(again event: SuggestedEvent, add: [String], group: CasyAPI.Group) {
+        if again == nil { beforeAgain = (snapshot, selectedGroupId, peopleChoices) }
+        fillTask?.cancel()
+        fill = nil
+        questions = []
+        aiFailure = nil
+        let invited = event.invitees.map(\.profileId)
+        let everyone = Array(Set(invited + add))
+        let plan = planFromVote(
+            event.settings, invited: everyone, group: group.members.map(\.profileId), onto: Self.randomSettings())
+        name = event.title
+        settings = plan.sched
+        extras = .defaults
+        extras.place = event.place ?? ""
+        extras.note = event.note ?? ""
+        extras.dateCount = min(5, max(2, event.candidates.count))
+        extraTimes = []
+        peopleChoices = [group.id: plan.people]
+        selectedGroupId = group.id
+        if !(groups?.contains { $0.id == group.id } ?? false) { groups = (groups ?? []) + [group] }
+        prime = nil
+        again = AgainStart(eventId: event.id, add: add, before: invited, dates: event.candidates)
+        steps = .restart()
+        closedAt = nil
+    }
+
+    /// Done searching a vote again: the plan as it was before.
+    func endAgain() {
+        guard again != nil else { return }
+        again = nil
+        if let before = beforeAgain {
+            restore(before.snapshot)
+            selectedGroupId = before.group
+            peopleChoices = before.people
+        }
+        beforeAgain = nil
+        restart()
+    }
 
     /// The starred day, while it is the day being planned.
     var shownPrime: PrimeDate? {
@@ -191,7 +244,10 @@ final class PlanModel {
     /// Every searched member, with Christmas and New Year blocked: nil while the calendars load.
     var people: GroupPeople? {
         guard let group = activeGroup, let busy else { return nil }
-        return participantsFromGroup(group, busy, markYou: { $0 }, now: Native.now, zone)
+        var people = participantsFromGroup(group, busy, markYou: { $0 }, now: Native.now, zone)
+        // Searched again (#240): everyone's answers to the vote's dates count.
+        if let again { people.participants = withAnswers(people.participants, again.dates) }
+        return people
     }
 
     // MARK: Changing it
@@ -526,4 +582,15 @@ final class PlanModel {
             multiDay: false, startHour: preset.0, durationMinutes: preset.1, dows: allDows, anyTime: false,
             startWindow: nil, days: 3, startDow: 5, period: nil)
     }
+}
+
+/// What Planlæg opens with to search a vote again (#240, searchAgain.ts's AgainStart).
+struct AgainStart: Equatable {
+    let eventId: String
+    /// The members it left out, added now: their calendars are thrown on the pile.
+    let add: [String]
+    /// Everyone it was for: their calendars lie on the pile already.
+    let before: [String]
+    /// Its dates and everyone's answers to them.
+    let dates: [CandidateDate]
 }

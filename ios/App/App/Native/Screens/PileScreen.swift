@@ -27,6 +27,9 @@ struct PileFriend: Identifiable, Equatable {
     let name: String
     let color: String
     let items: [MonthItem]
+    /// Searched before (a vote searched again, #240): on the pile already,
+    /// under the ones thrown now.
+    var placed = false
 }
 
 /// What the pile shows: the month (the first date's), the months the list
@@ -150,8 +153,8 @@ final class PileModel {
         guard let slot = found.slot else {
             widen = await plan.widenings()
             ready = true
-            layers = Self.layers(participants, search, window, [], you: plan.you, zone)
-            timeline = pileTimeline(layers?.friends.count ?? 0, start: PileTiming.inPlace)
+            layers = Self.layers(participants, search, window, [], you: plan.you, before: plan.again?.before, zone)
+            timeline = pileTimeline(thrownCount, start: PileTiming.inPlace)
             return
         }
         let first = FoundDate(slot: slot, conflicts: found.conflicts, absent: found.absent)
@@ -167,8 +170,9 @@ final class PileModel {
             first, pool, participants, search, window: window, extras: extras, scores: [:], counted: 0, profile: profile,
             you: plan.you, waitingFor: !(plan.people?.waitingFor.isEmpty ?? true), now: now,
             everyTime: !extraSearches.isEmpty)
-        layers = Self.layers(participants, search, window, preliminary.map(\.date.slot.start), you: plan.you, zone)
-        timeline = pileTimeline(layers?.friends.count ?? 0, start: PileTiming.inPlace)
+        layers = Self.layers(
+            participants, search, window, preliminary.map(\.date.slot.start), you: plan.you, before: plan.again?.before, zone)
+        timeline = pileTimeline(thrownCount, start: PileTiming.inPlace)
         // How well each date suits the group (#119), asked while the calendars are thrown.
         Task {
             await score(first)
@@ -216,6 +220,13 @@ final class PileModel {
     }
 
     /// The calendars thrown one after another, the thud as each lands; pressed; revealed.
+    /// The calendars on the pile already (a vote searched again, #240).
+    var placedCount: Int { layers?.friends.filter(\.placed).count ?? 0 }
+    /// Those thrown now.
+    private var thrownCount: Int { (layers?.friends.count ?? 0) - placedCount }
+    /// Every calendar down so far, those already there first.
+    var landedNow: Int { placedCount + landed }
+
     private func throwThem() async {
         let t0 = Date()
         func until(_ seconds: Double) async {
@@ -334,12 +345,20 @@ final class PileModel {
                 guard let api = await Native.api() else {
                     throw APIError.failed(status: 401, message: CasyStrings.pileSuggestFailed)
                 }
-                let answer = try await api.suggestEvent(
-                    groupId: group.id, title: plan.sentTitle, settings: plan.search,
-                    dates: chosen.map { SentDate(start: $0.date.slot.start, end: $0.date.slot.end) },
-                    place: plan.extras.place, note: plan.extras.note, answerDays: plan.extras.answerDays, impact: profile,
-                    errorMessage: CasyStrings.pileSuggestFailed)
-                EventsModel.shared.show(answer.events)
+                let sent = chosen.map { SentDate(start: $0.date.slot.start, end: $0.date.slot.end) }
+                if let again = plan.again {
+                    // Searched again (#240): the vote gets the dates, everyone answering anew.
+                    EventsModel.shared.show(
+                        try await api.searchVoteAgain(
+                            again.eventId, add: again.add, settings: plan.search, dates: sent,
+                            errorMessage: CasyStrings.searchAgainFailed))
+                } else {
+                    let answer = try await api.suggestEvent(
+                        groupId: group.id, title: plan.sentTitle, settings: plan.search, dates: sent,
+                        place: plan.extras.place, note: plan.extras.note, answerDays: plan.extras.answerDays,
+                        impact: profile, errorMessage: CasyStrings.pileSuggestFailed)
+                    EventsModel.shared.show(answer.events)
+                }
                 await flight.value
                 sending = false
                 onSent()
@@ -453,7 +472,7 @@ final class PileModel {
     /// friend's busy time over them as bars.
     nonisolated static func layers(
         _ participants: [Participant], _ search: EventSettings, _ window: (start: String, end: String),
-        _ starts: [String], you: String?, _ zone: String
+        _ starts: [String], you: String?, before: [String]? = nil, _ zone: String
     ) -> PileLayers {
         let today = Native.now
         let windowEnd = parseInstant(CasyCore.searchWindow(now: today, zone).end) ?? 0
@@ -484,9 +503,13 @@ final class PileModel {
                 .map { MonthItem(calendarId: id, start: parseInstant($0.start) ?? 0, end: parseInstant($0.end) ?? 0, label: "") }
                 .filter { $0.end > from && $0.start < to }
         }
-        let friends = sheets.filter { !$0.isYou }.enumerated().map { k, s in
-            PileFriend(profileId: s.profileId, name: s.name, color: friendColors[k % friendColors.count], items: items(s.profileId))
+        var friends = sheets.filter { !$0.isYou }.enumerated().map { k, s in
+            PileFriend(
+                profileId: s.profileId, name: s.name, color: friendColors[k % friendColors.count], items: items(s.profileId),
+                placed: before?.contains(s.profileId) ?? false)
         }
+        // Those on the pile already first, so the ones thrown now land on top.
+        friends = friends.filter(\.placed) + friends.filter { !$0.placed }
         return PileLayers(
             month: first, months: months, shine: shine, friends: friends, yours: you.map { items($0) } ?? [])
     }
@@ -503,6 +526,8 @@ struct PileScreen: View {
     @Environment(\.colorScheme) private var scheme
     @State private var open: String?
     @State private var priorityOpen = false
+    /// A vote searched again: everyone votes anew, said before sending (#240).
+    @State private var warning = false
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
     private var listing: Bool { model.phase >= .lifted }
@@ -585,7 +610,8 @@ struct PileScreen: View {
         HStack {
             Spacer()
             if model.phase == .done, let dates = model.dates, !dates.isEmpty {
-                Text(CasyStrings.pileRanked(dates.filter(\.chosen).count))
+                let n = dates.filter(\.chosen).count
+                Text(PlanModel.shared.again == nil ? CasyStrings.pileRanked(n) : CasyStrings.pileRankedNew(n))
                     .font(.system(size: 18, weight: .heavy))
                     .tracking(-0.4)
                     .foregroundStyle(Theme.foreground.color)
@@ -593,7 +619,8 @@ struct PileScreen: View {
             } else if model.phase < .done {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.mini).tint(Theme.primary.color)
-                    Text(CasyStrings.pileReviewing).font(.system(size: 13, weight: .medium))
+                    Text(PlanModel.shared.again == nil ? CasyStrings.pileReviewing : CasyStrings.pileReviewingNew)
+                        .font(.system(size: 13, weight: .medium))
                 }
                 .foregroundStyle(Theme.foreground.color)
                 .padding(.horizontal, 12)
@@ -757,8 +784,12 @@ struct PileScreen: View {
             if model.alone {
                 FlowButton(action: onChange) { Text(CasyStrings.pileInviteFriends) }
             } else if !model.chosen.isEmpty {
-                FlowButton(busy: model.sending, action: { model.send(onSent: onSent) }) {
-                    Text(CasyStrings.pileSuggest(model.chosen.count))
+                // A vote searched again (#240) asks first: everyone votes anew.
+                FlowButton(
+                    busy: model.sending,
+                    action: { if again { warning = true } else { model.send(onSent: onSent) } }
+                ) {
+                    Text(again ? CasyStrings.pileSendNew(model.chosen.count) : CasyStrings.pileSuggest(model.chosen.count))
                 }
                 .disabled(!model.canSend)
                 .accessibilityIdentifier("pile.send")
@@ -778,7 +809,15 @@ struct PileScreen: View {
         .padding(.bottom, 12)
         .opacity(model.flying ? 0 : 1)
         .transition(.move(edge: .bottom).combined(with: .opacity))
+        .askFirst(
+            AskWords(
+                message: "\(CasyStrings.searchAgainWarning): \(CasyStrings.searchAgainWarningText)",
+                confirm: CasyStrings.pileSendNew(model.chosen.count), danger: false),
+            isPresented: $warning
+        ) { model.send(onSent: onSent) }
     }
+
+    private var again: Bool { PlanModel.shared.again != nil }
 }
 
 /// One date in the list: its place, the day and time, its mark, and once the
@@ -936,9 +975,14 @@ private struct PileTable: View {
                     month: layers.month, items: layers.yours, color: { _ in yoursColor }, shine: [], width: width,
                     dark: scheme == .dark)
                 ForEach(Array(layers.friends.enumerated()), id: \.element.id) { k, friend in
+                    let t = k - model.placedCount
                     ThrownLayer(
-                        k: k, land: model.timeline.lands.indices.contains(k) ? model.timeline.lands[k] : PileLand(at: 0, duration: 0.3),
-                        landed: model.landed, pressed: model.phase >= .pressed, revealed: model.phase >= .revealed,
+                        k: k,
+                        land: friend.placed
+                            ? PileLand(at: 0, duration: 0)
+                            : model.timeline.lands.indices.contains(t) ? model.timeline.lands[t] : PileLand(at: 0, duration: 0.3),
+                        placed: friend.placed,
+                        landed: model.landedNow, pressed: model.phase >= .pressed, revealed: model.phase >= .revealed,
                         alpha: layerAlpha(layers.friends.count), name: friend.name, color: friend.color, width: width
                     ) {
                         PileMonth(
@@ -969,6 +1013,8 @@ private struct PileTable: View {
 private struct ThrownLayer<Content: View>: View {
     let k: Int
     let land: PileLand
+    /// On the pile already (#240): lying as it landed, never thrown.
+    var placed = false
     let landed: Int
     let pressed: Bool
     let revealed: Bool
@@ -1027,32 +1073,34 @@ private struct ThrownLayer<Content: View>: View {
             let a = total * hit
             let b = total * (1 - hit) * 0.4
             let c = total * (1 - hit) * 0.6
+            // On the pile already (#240): every key its resting pose, so it never moves.
+            let at = { (moving: Double, rest: Double) in placed ? rest : moving }
             KeyframeTrack(\.x) {
-                LinearKeyframe(from, duration: 0)
-                CubicKeyframe(tilt.x - side * 7, duration: a)
-                CubicKeyframe(tilt.x + side * 2, duration: b)
+                LinearKeyframe(at(from, tilt.x), duration: 0)
+                CubicKeyframe(at(tilt.x - side * 7, tilt.x), duration: a)
+                CubicKeyframe(at(tilt.x + side * 2, tilt.x), duration: b)
                 CubicKeyframe(tilt.x, duration: c)
             }
             KeyframeTrack(\.y) {
-                LinearKeyframe(-150, duration: 0)
-                CubicKeyframe(tilt.y + 3, duration: a)
-                CubicKeyframe(tilt.y - 8, duration: b)
+                LinearKeyframe(at(-150, tilt.y), duration: 0)
+                CubicKeyframe(at(tilt.y + 3, tilt.y), duration: a)
+                CubicKeyframe(at(tilt.y - 8, tilt.y), duration: b)
                 CubicKeyframe(tilt.y, duration: c)
             }
             KeyframeTrack(\.rotate) {
-                LinearKeyframe(side * -14, duration: 0)
-                CubicKeyframe(tilt.rotate - side * 1.5, duration: a)
-                CubicKeyframe(tilt.rotate + side * 0.6, duration: b)
+                LinearKeyframe(at(side * -14, tilt.rotate), duration: 0)
+                CubicKeyframe(at(tilt.rotate - side * 1.5, tilt.rotate), duration: a)
+                CubicKeyframe(at(tilt.rotate + side * 0.6, tilt.rotate), duration: b)
                 CubicKeyframe(tilt.rotate, duration: c)
             }
             KeyframeTrack(\.scale) {
-                LinearKeyframe(1.6, duration: 0)
-                CubicKeyframe(0.975, duration: a)
-                CubicKeyframe(1.012, duration: b)
+                LinearKeyframe(at(1.6, 1), duration: 0)
+                CubicKeyframe(at(0.975, 1), duration: a)
+                CubicKeyframe(at(1.012, 1), duration: b)
                 CubicKeyframe(1, duration: c)
             }
             KeyframeTrack(\.opacity) {
-                LinearKeyframe(0, duration: 0)
+                LinearKeyframe(at(0, 1), duration: 0)
                 LinearKeyframe(1, duration: a * 0.12)
                 LinearKeyframe(1, duration: total - a * 0.12)
             }

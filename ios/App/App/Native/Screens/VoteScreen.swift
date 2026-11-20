@@ -10,8 +10,9 @@ import SwiftUI
 /// at each row's end, changed with a tap. Only when no date can win does the
 /// suggester choose, with "Vælg" on each. Then the time left, the
 /// suggester's deadline and "Afgør nu", the place and note, and reporting,
-/// cancelling or leaving last. Søg igen hands over to the page's own vote
-/// screen, where it lives with Planlæg.
+/// cancelling or leaving last. Søg igen (#240, #264) loosens the vote's own
+/// plan in a sheet, with any of the group it left out, and Find dato lays the
+/// paper pile; it closes back onto the vote.
 struct VoteScreen: View {
     let eventId: String
     let leave: (LeavingProfile) -> Void
@@ -26,6 +27,15 @@ struct VoteScreen: View {
     @State private var working: String?
     @State private var reminded = false
     @State private var failure: String?
+    /// Its group, for searching it again with those it left out.
+    @State private var group: CasyAPI.Group?
+    @State private var pickingMissing = false
+    @State private var picked: Set<String> = []
+    /// The vote's plan, loosened before it is searched again (#264).
+    @State private var loosening = false
+    /// On to the pile: the plan stays the vote's.
+    @State private var finding = false
+    @State private var planPath: [PlanPage] = []
 
     private enum Asking: Hashable { case exit, settle }
 
@@ -103,13 +113,26 @@ struct VoteScreen: View {
                     PlaceNoteView(event: event).padding(.top, 24)
                 }
                 CardList(spaced: false) {
-                    // Searching again is Planlæg's, still the page's: its own vote screen there.
+                    // Searching again (#240): any of the group it leaves out, or the same people.
+                    let left = leftOut(event)
+                    if !left.isEmpty {
+                        Button {
+                            picked = Set(left.map(\.profileId))
+                            pickingMissing = true
+                        } label: {
+                            CardRow(CasyStrings.searchAgainMissing(left.count), icon: "user-plus", chevron: true)
+                        }
+                        .buttonStyle(.cardRow)
+                        .accessibilityIdentifier("vote.missing")
+                    }
                     Button {
-                        leave(.webScreen("/?events=\(event.id)"))
+                        loosen(event, add: [])
                     } label: {
                         CardRow(CasyStrings.searchAgain, icon: "refresh-cw")
                     }
                     .buttonStyle(.cardRow)
+                    .disabled(group == nil)
+                    .accessibilityIdentifier("vote.searchAgain")
                     if !mine {
                         Button {
                             reporting = true
@@ -161,6 +184,22 @@ struct VoteScreen: View {
                 run("exit") { try await mine ? model.cancel(event.id) : model.leave(event.id) }
             }
         }
+        .task { await loadGroup(event) }
+        .sheet(isPresented: $pickingMissing) {
+            missingSheet(event).nativeSheetLook(NativePreferences.shared)
+        }
+        .sheet(isPresented: $loosening, onDismiss: { if !finding { PlanModel.shared.endAgain() } }) {
+            NavigationStack(path: $planPath) {
+                PlanScreen(
+                    leave: leave,
+                    onFind: {
+                        finding = true
+                        leave(.findDates)
+                    }, path: $planPath)
+            }
+            .environment(\.closeSheet) { loosening = false }
+            .nativeSheetLook(NativePreferences.shared)
+        }
         .sheet(isPresented: $reporting) {
             ReportSheet(event: event).nativeSheetLook(NativePreferences.shared)
         }
@@ -176,6 +215,68 @@ struct VoteScreen: View {
             .nativeSheetLook(NativePreferences.shared)
             .presentationDetents([.medium])
         }
+    }
+
+    // MARK: Searching it again (#240)
+
+    /// The members of its group it leaves out.
+    private func leftOut(_ event: SuggestedEvent) -> [GroupMember] {
+        let invited = Set(event.invitees.map(\.profileId))
+        return group?.members.filter { !invited.contains($0.profileId) } ?? []
+    }
+
+    private func loadGroup(_ event: SuggestedEvent) async {
+        guard group == nil, let api = await Native.api() else { return }
+        group = try? await api.groups(errorMessage: CasyStrings.groupsLoadFailed).first { $0.id == event.group.id }
+    }
+
+    /// The vote's plan, with those `add`ed, in a sheet to loosen before the pile.
+    private func loosen(_ event: SuggestedEvent, add: [String]) {
+        guard let group else { return }
+        pickingMissing = false
+        finding = false
+        planPath = []
+        PlanModel.shared.begin(again: event, add: add, group: group)
+        loosening = true
+    }
+
+    /// "Tilføj til afstemningen": those it left out, all ticked, then Søg igen.
+    private func missingSheet(_ event: SuggestedEvent) -> some View {
+        let left = leftOut(event)
+        return NavigationStack {
+            ScrollView {
+                CardList(spaced: false) {
+                    ForEach(Array(left.enumerated()), id: \.element.profileId) { i, m in
+                        PickRow(
+                            label: m.name, picked: picked.contains(m.profileId),
+                            action: {
+                                if picked.contains(m.profileId) { picked.remove(m.profileId) } else { picked.insert(m.profileId) }
+                            }
+                        ) {
+                            Avatar(name: m.name, index: i, size: .row, url: m.avatarUrl.flatMap(URL.init(string:)))
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+            .casySheetBar(CasyStrings.searchAgainPickTitle, close: CasyStrings.cancel) { pickingMissing = false }
+            .safeAreaInset(edge: .bottom) {
+                FlowButton(action: {
+                    let add = left.map(\.profileId).filter { picked.contains($0) }
+                    pickingMissing = false
+                    // The picker goes before the plan's sheet comes.
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(450))
+                        loosen(event, add: add)
+                    }
+                }) { Text(CasyStrings.searchAgain) }
+                .disabled(picked.isEmpty)
+                .accessibilityIdentifier("vote.addAndSearch")
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 
     struct RankedDate {

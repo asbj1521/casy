@@ -413,6 +413,15 @@ public struct SentDate: Codable, Sendable, Equatable {
     }
 }
 
+/// A vote searched again (#240): its new dates, the members added.
+private struct SearchVoteAgain: Encodable, Sendable {
+    let action = "search-again"
+    let proposalId: String
+    let add: [String]
+    let settings: EventSettings
+    let dates: [SentDate]
+}
+
 private struct SuggestEvent: Encodable, Sendable {
     let action = "suggest"
     let groupId: String
@@ -866,6 +875,17 @@ extension EdgeFunctions {
                 groupId: groupId, title: title, settings: settings, dates: dates, place: place, note: note,
                 answerDays: answerDays, impact: impact),
             errorMessage: errorMessage)
+    }
+
+    /// An open vote given new dates (#240), the members `add`ed among those it
+    /// is for; everyone answers anew. The events as they are now.
+    public func searchVoteAgain(
+        _ id: String, add: [String], settings: EventSettings, dates: [SentDate], errorMessage: String? = nil
+    ) async throws -> [SuggestedEvent] {
+        let answer: EventsAnswer = try await call(
+            "events", body: SearchVoteAgain(proposalId: id, add: add, settings: settings, dates: dates),
+            errorMessage: errorMessage)
+        return answer.events
     }
 
     /// What the event being planned is likely to cause (#113); nothing is stored.

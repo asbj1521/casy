@@ -1,5 +1,7 @@
 /** widen.ts, for Widen.swift (#282). */
 import { ALL_DOWS, type MemberState, type Period, type SchedulerSettings } from "@/lib/scheduler";
+import type { EventSettings } from "@/lib/eventSearch";
+import { planFromVote, withAnswers } from "@/lib/searchAgain";
 import { flexWindow } from "@/lib/startFlex";
 import { daysSooner, firstDateByCount, lowestCount, widenOptions } from "@/lib/widen";
 import { startOfDay, startOfMonth } from "@/lib/zone";
@@ -84,6 +86,74 @@ export function widenCases(): ParityCase[] {
       { of, atLeast, first, than },
       { lowest: lowestCount(of, atLeast), sooner: daysSooner(first, than, TZ) },
     );
+  }
+  // searchAgain.ts (#240): the vote's plan as Planlæg's, and its answers counted.
+  const ANSWERS = ["accepted", "maybe", "declined"] as const;
+  for (let i = 0; i < 40; i++) {
+    const group = Array.from({ length: int(2, 6) }, (_, n) => `m${n}`);
+    const invited = group.filter((_, n) => n === 0 || flag(0.7));
+    const people = flag(0.6)
+      ? {
+          members: invited,
+          optional: invited.filter(() => flag(0.3)),
+          ...(flag(0.4) ? { atLeast: int(2, Math.max(2, invited.length)) } : {}),
+        }
+      : undefined;
+    const kind = pick(["single", "trip", "vacation"] as const);
+    const window = flag(0.3) ? flexWindow(int(9, 19), pick([30, 60])) : null;
+    const settings: EventSettings =
+      kind === "single"
+        ? {
+            kind,
+            startHour: int(8, 20),
+            durationMinutes: pick([60, 120, 180]),
+            ...(flag(0.3) ? { anyTime: true } : {}),
+            ...(window ? { startWindow: window } : {}),
+            ...(flag(0.5) ? { allowedDays: ALL_DOWS.filter(() => flag(0.6)) } : {}),
+            ...(people ? { people } : {}),
+          }
+        : kind === "trip"
+          ? {
+              kind,
+              shape: { anchorDow: int(0, 6), spanDays: int(2, 5), startHour: 0, endHour: 24 },
+              ...(people ? { people } : {}),
+            }
+          : { kind, days: int(2, 9), ...(people ? { people } : {}) };
+    const base: SchedulerSettings = {
+      multiDay: false,
+      startHour: 17,
+      durationMinutes: 120,
+      dows: [...ALL_DOWS],
+      anyTime: false,
+      startWindow: null,
+      days: 3,
+      startDow: 5,
+      period: { from: month(1), to: month(2) },
+    };
+    const plan = planFromVote(settings, invited, group);
+    add(
+      "planFromVote",
+      { settings, invited, group, base },
+      { sched: { ...base, ...plan.sched }, people: plan.people },
+    );
+
+    const participants: Participant[] = invited.map((id) => ({
+      profileId: id,
+      name: id,
+      busy: Array.from({ length: int(0, 3) }, block),
+    }));
+    const dates = Array.from({ length: int(1, 4) }, (_, k) => {
+      const start = NOW + int(1, 60) * 24 * HOUR;
+      return {
+        id: `d${k}`,
+        start: iso(start),
+        end: iso(start + 2 * HOUR),
+        answers: Object.fromEntries(
+          invited.filter(() => flag(0.7)).map((id) => [id, pick(ANSWERS)]),
+        ),
+      };
+    });
+    add("withAnswers", { participants, dates }, withAnswers(participants, dates));
   }
   return cases;
 }

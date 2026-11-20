@@ -742,6 +742,10 @@ public enum CasyStrings {
     // The paper pile (#126, #282).
     public static func pileRanked(_ n: Int) -> String { n == 1 ? text("pile.ranked.one") : String(format: text("pile.ranked.many"), n) }
     public static var pileReviewing: String { text("pile.reviewing") }
+    public static func pileRankedNew(_ n: Int) -> String {
+        n == 1 ? text("pile.rankedNew.one") : String(format: text("pile.rankedNew.many"), n)
+    }
+    public static var pileReviewingNew: String { text("pile.reviewingNew") }
     public static func pileAllCan(_ n: Int) -> String { n == 1 ? text("pile.allCan.one") : String(format: text("pile.allCan.many"), n) }
     public static func pileAllCanWithCalendar(_ n: Int) -> String { String(format: text("pile.allCanWithCalendar"), n) }
     public static func pileCant(_ names: String) -> String { String(format: text("pile.cant"), names) }
@@ -755,6 +759,14 @@ public enum CasyStrings {
         who.isEmpty ? text("pile.comfort.\(rule)") : String(format: text("pile.comfort.\(rule)"), who)
     }
     public static func pileSuggest(_ n: Int) -> String { n == 1 ? text("pile.suggest.one") : String(format: text("pile.suggest.many"), n) }
+    public static func pileSendNew(_ n: Int) -> String { n == 1 ? text("pile.sendNew.one") : String(format: text("pile.sendNew.many"), n) }
+    public static func searchAgainMissing(_ n: Int) -> String {
+        n == 1 ? text("searchAgain.missing.one") : String(format: text("searchAgain.missing.many"), n)
+    }
+    public static var searchAgainPickTitle: String { text("searchAgain.pickTitle") }
+    public static var searchAgainWarning: String { text("searchAgain.warning") }
+    public static var searchAgainWarningText: String { text("searchAgain.warningText") }
+    public static var searchAgainFailed: String { text("api.searchAgain") }
     public static var pileChange: String { text("pile.change") }
     public static var pileClose: String { text("pile.close") }
     public static func pileDetails(_ date: String) -> String { String(format: text("pile.details"), date) }

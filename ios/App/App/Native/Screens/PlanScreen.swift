@@ -66,8 +66,18 @@ struct PlanScreen: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("plan.prime")
                 }
-                PlanGroupRow(shortcuts: { path.append(.shortcuts) })
-                PlanNameField(onAsk: askAi).padding(.top, 16)
+                if model.again != nil {
+                    // A vote searched again (#264): its group and name are the
+                    // vote's, so only what may find an earlier date is here.
+                    Text(model.name)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.foreground.color)
+                        .padding(.horizontal, 4)
+                        .accessibilityIdentifier("plan.againName")
+                } else {
+                    PlanGroupRow(shortcuts: { path.append(.shortcuts) })
+                    PlanNameField(onAsk: askAi).padding(.top, 16)
+                }
                 Group {
                     PlanTimeRows()
                     PlanMonths()
@@ -91,8 +101,9 @@ struct PlanScreen: View {
         .scrollDismissesKeyboard(.interactively)
         .accessibilityIdentifier("plan.screen")
         .casySheetBar(
-            CasyStrings.planTitle, close: CasyStrings.cancel,
-            icon: SheetIconAction(icon: "rotate-ccw", label: CasyStrings.planReset) { model.startOver() },
+            model.again == nil ? CasyStrings.planTitle : CasyStrings.searchAgain, close: CasyStrings.cancel,
+            icon: model.again == nil
+                ? SheetIconAction(icon: "rotate-ccw", label: CasyStrings.planReset) { model.startOver() } : nil,
             action: closeSheet
         )
         .safeAreaInset(edge: .bottom) {
@@ -250,9 +261,12 @@ struct PlanTimeRows: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            KindChoice(multiDay: settings.multiDay) { value in model.update { $0.multiDay = value } }
-                .litRing(model.lit == .kind, radius: 12)
-                .padding(.bottom, 12)
+            // A vote searched again (#264) stays the kind it is.
+            if model.again == nil {
+                KindChoice(multiDay: settings.multiDay) { value in model.update { $0.multiDay = value } }
+                    .litRing(model.lit == .kind, radius: 12)
+                    .padding(.bottom, 12)
+            }
             if settings.multiDay {
                 CardList(spaced: false) {
                     CardRow(CasyStrings.planTripDays, icon: "calendar-days") {
