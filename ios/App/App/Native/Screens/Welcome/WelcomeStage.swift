@@ -258,9 +258,11 @@ struct WelcomeStage: View {
                     }
                     // The pile, squared, one sheet with everyone's pen on it.
                     if n >= at.merged && n < at.press + 0.5 {
-                        PaperCalendar(
-                            month: month, items: everyone, title: D.groupName, dissolve: n >= at.dissolve, rounded: true
-                        )
+                        // Natively a drop of glass lands in its middle and spreads out as a
+                        // wave, the real month inside it (the web dissolves it week by week).
+                        GlassWaveReveal(waving: n >= at.dissolve) {
+                            PaperCalendar(month: month, items: everyone, title: D.groupName, rounded: true)
+                        }
                         .transition(.opacity.animation(.easeInOut(duration: 0.2)))
                     }
                 }

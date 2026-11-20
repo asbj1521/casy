@@ -482,3 +482,112 @@ private struct ThrownPaper<Content: View>: View {
             .onAppear { thrown = true }
     }
 }
+
+// MARK: - The glass wave
+
+/// The calendars made one giving way to the real month (asked for on
+/// 21 Nov 2026, natively only): a drop of Apple's clear glass lands in the
+/// middle of the sheet with a little bounce, then spreads out as a ring, a
+/// wave of glass bending what is under its edge. Inside the ring the paper
+/// is gone and the month shows; the ring thins and fades as it reaches the
+/// corners. Over `D.dissolveFor` from `waving`.
+struct GlassWaveReveal<Paper: View>: View {
+    let waving: Bool
+    @ViewBuilder let paper: () -> Paper
+
+    /// When the drop landed: a clock of its own, read each frame.
+    @State private var started: Date?
+
+    var body: some View {
+        TimelineView(.animation(paused: started == nil)) { context in
+            let elapsed = started.map { context.date.timeIntervalSince($0) } ?? 0
+            GlassWave(progress: CGFloat(min(elapsed / D.dissolveFor, 1)), paper: paper())
+        }
+        .onAppear { if waving { started = Date() } }
+        .onChange(of: waving) { _, now in if now && started == nil { started = Date() } }
+    }
+}
+
+/// The wave at one moment, worked out each frame from `progress` (0 to 1).
+private struct GlassWave<Paper: View>: View {
+    let progress: CGFloat
+    let paper: Paper
+
+    /// The share of the time the drop takes to land.
+    private static var landing: CGFloat { 0.28 }
+    private static var drop: CGFloat { 32 }
+
+    private var center: CGPoint { CGPoint(x: D.screen.width / 2, y: D.screen.height / 2) }
+
+    /// The ring's outer and inner radius, the paper's hole, how much it shows.
+    private var wave: (outer: CGFloat, inner: CGFloat, hole: CGFloat, opacity: Double) {
+        let p = min(max(progress, 0), 1)
+        if p == 0 { return (0, 0, 0, 0) }
+        if p < Self.landing {
+            // Landing: it grows past its size and settles back (an ease out with overshoot).
+            let q = p / Self.landing - 1
+            let s = 1 + 2.70158 * q * q * q + 1.70158 * q * q
+            return (Self.drop * s, 0, 0, 1)
+        }
+        let q = (p - Self.landing) / (1 - Self.landing)
+        // Out at an even pace, slowing only toward the corners, so it can be followed.
+        let e = 1 - pow(1 - q, 1.5)
+        let far = hypot(center.x, center.y) + 60
+        let outer = Self.drop + e * (far - Self.drop)
+        let width = Self.drop + 36 * e
+        let inner = max(0, outer - width)
+        let fade = q < 0.7 ? 1 : 1 - Double((q - 0.7) / 0.3)
+        return (outer, inner, max(0, outer - width / 2), fade)
+    }
+
+    var body: some View {
+        let w = wave
+        ZStack {
+            paper.mask {
+                Hole(center: center, radius: w.hole).fill(style: FillStyle(eoFill: true))
+            }
+            if w.outer > 0.5 {
+                Color.clear
+                    .frame(width: D.screen.width, height: D.screen.height)
+                    .casyGlass(in: Ring(center: center, inner: w.inner, outer: w.outer), clear: true)
+                    .opacity(w.opacity)
+                    .allowsHitTesting(false)
+            }
+        }
+        .frame(width: D.screen.width, height: D.screen.height)
+        .clipShape(RoundedRectangle(cornerRadius: D.screenRadius, style: .continuous))
+    }
+}
+
+/// The whole sheet with a round hole in it.
+private struct Hole: Shape {
+    let center: CGPoint
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path(rect)
+        if radius > 0 {
+            p.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+        }
+        return p
+    }
+}
+
+/// A ring: the outer circle one way round, the inner the other, so the middle is open.
+private struct Ring: Shape {
+    let center: CGPoint
+    let inner: CGFloat
+    let outer: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.addArc(center: center, radius: outer, startAngle: .zero, endAngle: .degrees(360), clockwise: false)
+        p.closeSubpath()
+        if inner > 0.5 {
+            p.move(to: CGPoint(x: center.x + inner, y: center.y))
+            p.addArc(center: center, radius: inner, startAngle: .zero, endAngle: .degrees(-360), clockwise: true)
+            p.closeSubpath()
+        }
+        return p
+    }
+}
