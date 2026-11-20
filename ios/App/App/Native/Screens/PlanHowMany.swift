@@ -54,8 +54,9 @@ struct PlanHowMany: View {
     }
 }
 
-/// The slider itself: the knob follows the finger, a tick is felt at each step,
-/// and let go it springs onto the nearest. The count is picked as the finger lifts.
+/// The slider itself: the knob follows the finger as glass, a tick is felt at
+/// each step, and let go it springs onto the nearest and turns solid again.
+/// The count is picked as the finger lifts.
 private struct HowManySlider: View {
     let options: [CountOption]
     let loading: Bool
@@ -63,6 +64,10 @@ private struct HowManySlider: View {
     let onPick: (Int) -> Void
 
     @State private var drag: Double?
+    /// The knob is glass: from the touch until it has settled on its step.
+    @State private var glass = false
+    @State private var touchRun = 0
+    private static let knob = CGSize(width: 38, height: 24)
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
     private var steps: [CountOption] { options.reversed() }
@@ -90,6 +95,9 @@ private struct HowManySlider: View {
             }()
             GeometryReader { geo in
                 let width = geo.size.width
+                // The knob's middle travels between half a knob in from each
+                // end, so the pill (and its swollen glass) stays in the card.
+                let travel = max(width - Self.knob.width, 1)
                 VStack(spacing: 0) {
                     // What the step buys rides over the knob, kept inside the card at the ends.
                     ZStack(alignment: .bottomLeading) {
@@ -104,12 +112,12 @@ private struct HowManySlider: View {
                             .background(Theme.background.color, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                             .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.border.color, lineWidth: 1) }
                             .shadow(color: .black.opacity(0.05), radius: 1, y: 1)
-                            .offset(x: min(max(CGFloat(pct) * width, 60), max(width - 60, 60)) - 60, y: -8)
+                            .offset(x: min(max(Self.knob.width / 2 + CGFloat(pct) * travel, 60), max(width - 60, 60)) - 60, y: -8)
                     }
                     .frame(width: width, height: 52)
                     .animation(drag == nil ? .spring(response: 0.3, dampingFraction: 0.65) : nil, value: pct)
-                    track(pos: pos, pct: pct, width: width)
-                    labels(step: step, width: width)
+                    track(pos: pos, pct: pct, width: width, travel: travel)
+                    labels(step: step, width: width, travel: travel)
                 }
             }
             .frame(height: 116)
@@ -129,23 +137,36 @@ private struct HowManySlider: View {
         }
     }
 
-    private func track(pos: Double, pct: Double, width: CGFloat) -> some View {
+    private func track(pos: Double, pct: Double, width: CGFloat, travel: CGFloat) -> some View {
+        let inset = Self.knob.width / 2
+        return
         ZStack(alignment: .leading) {
             Capsule().fill(Theme.secondary.color).frame(height: 6)
-            Capsule().fill(Theme.cta.color).frame(width: CGFloat(pct) * width, height: 6)
+            Capsule().fill(Theme.cta.color).frame(width: inset + CGFloat(pct) * travel, height: 6)
             ForEach(0...last, id: \.self) { i in
                 Circle()
                     .fill(Double(i) <= pos ? Theme.cta.color : Theme.mutedForeground.color.opacity(0.3))
                     .frame(width: 10, height: 10)
-                    .offset(x: CGFloat(i) / CGFloat(last) * width - 5)
+                    .offset(x: inset + CGFloat(i) / CGFloat(last) * travel - 5)
             }
-            Circle()
-                .fill(Color.white)
-                .overlay { Circle().strokeBorder(Color.black.opacity(0.05), lineWidth: 1) }
-                .shadow(color: .black.opacity(0.18), radius: 3, y: 2)
-                .frame(width: 28, height: 28)
-                .scaleEffect(drag == nil ? 1 : 1.1)
-                .offset(x: CGFloat(pct) * width - 14)
+            // The knob, as the weather app's slider the owner showed (20 Nov 2026):
+            // a solid orange pill at rest; touched, it turns to Apple's clear
+            // glass where it stands and swells, the steps showing through it
+            // bent, and let go it springs onto the nearest step and turns
+            // back to the pill there.
+            ZStack {
+                Capsule()
+                    .fill(Theme.cta.color)
+                    .opacity(glass ? 0 : 1)
+                Color.clear
+                    .casyGlass(in: Capsule(), clear: true)
+                    .opacity(glass ? 1 : 0)
+            }
+            .frame(width: Self.knob.width, height: Self.knob.height)
+            .scaleEffect(glass ? 1.3 : 1)
+            .offset(x: CGFloat(pct) * travel)
+            .zIndex(1)
+            .allowsHitTesting(false)
         }
         .frame(height: 44)
         .contentShape(Rectangle())
@@ -153,7 +174,11 @@ private struct HowManySlider: View {
         .gesture(
             DragGesture(minimumDistance: 0, coordinateSpace: .local)
                 .onChanged { value in
-                    let next = Double(min(max(value.location.x, 0), width) / max(width, 1)) * Double(last)
+                    if drag == nil {
+                        touchRun += 1
+                        withAnimation(.spring(duration: 0.18, bounce: 0.3)) { glass = true }
+                    }
+                    let next = Double(min(max(value.location.x - inset, 0), travel) / travel) * Double(last)
                     if Int(next.rounded()) != Int((drag ?? Double(picked)).rounded()) {
                         UISelectionFeedbackGenerator().selectionChanged()
                     }
@@ -164,12 +189,18 @@ private struct HowManySlider: View {
                     let to = min(max(Int(drag.rounded()), 0), last)
                     self.drag = nil
                     if steps[to].count != count { onPick(steps[to].count) }
+                    // Glass until the spring has carried it onto the step.
+                    let run = touchRun
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
+                        guard run == touchRun else { return }
+                        withAnimation(.easeOut(duration: 0.2)) { glass = false }
+                    }
                 }
         )
     }
 
     /// The counts under their steps; with many, only the ends.
-    private func labels(step: Int, width: CGFloat) -> some View {
+    private func labels(step: Int, width: CGFloat, travel: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
             ForEach(Array(steps.enumerated()), id: \.offset) { i, option in
                 if steps.count <= Self.maxLabels || i == 0 || i == last {
@@ -177,11 +208,15 @@ private struct HowManySlider: View {
                         .font(.system(size: 12, weight: i == step ? .bold : .medium))
                         .foregroundStyle(i == step ? Theme.foreground.color : Theme.mutedForeground.color)
                         .fixedSize()
-                        .modifier(LabelAt(x: CGFloat(i) / CGFloat(last) * width, anchor: i == 0 ? 0 : i == last ? 1 : 0.5))
+                        .modifier(
+                            LabelAt(
+                                x: i == 0 ? 0 : i == last ? width : Self.knob.width / 2 + CGFloat(i) / CGFloat(last) * travel,
+                                anchor: i == 0 ? 0 : i == last ? 1 : 0.5))
                 }
             }
         }
-        .frame(height: 20, alignment: .topLeading)
+        // As wide as the track, so each label's offset is from its start.
+        .frame(width: width, height: 20, alignment: .topLeading)
         .accessibilityHidden(true)
     }
 }

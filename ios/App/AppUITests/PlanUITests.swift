@@ -72,7 +72,19 @@ final class PlanUITests: XCTestCase {
     /// Everyone is four of four: the slider says what the step buys.
     func testHowManyMustComeSliderShowsTheCounts() {
         let app = launch()
-        XCTAssertTrue(app.otherElements["plan.howMany"].waitForExistence(timeout: 15))
+        let slider = app.otherElements["plan.howMany"]
+        XCTAssertTrue(slider.waitForExistence(timeout: 15))
+        let before = slider.value as? String ?? ""
+        // It sits under the sheet's fold, behind "Find dato".
+        app.buttons["plan.row.days"].swipeUp()
+        // Held and dragged a step down: the knob is glass on the way (filmed),
+        // and let go the count is the one under it.
+        let knob = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.6))
+        let left = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.6))
+        knob.press(forDuration: 0.4, thenDragTo: left, withVelocity: .slow, thenHoldForDuration: 1)
+        XCTAssertNotEqual(slider.value as? String ?? "", before, "a step down from everyone")
+        // Settled back to the solid pill on its step (seen on film).
+        _ = app.staticTexts["plan.never"].waitForExistence(timeout: 1)
     }
 
     /// Written and sent with return: the AI's plan fills the sheet in, its title the name.
