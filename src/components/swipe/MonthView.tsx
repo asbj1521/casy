@@ -17,7 +17,7 @@ import type { MyCalendarDays } from "@/hooks/useMyCalendarDays";
 import { LOCALE, useLang, useT } from "@/i18n/lang";
 import { buildMonthLayout } from "@/lib/calendarOverview";
 import { SEARCH_MONTHS, SEARCH_WINDOW } from "@/lib/eventSearch";
-import { glideScroll } from "@/lib/glideScroll";
+import { glideScroll, stopGlide } from "@/lib/glideScroll";
 import { capitalize, dayLabel, monthName, monthShortName } from "@/lib/format";
 import { LANE_PX, layoutWeek, MORE_PX, sameItemsInMonth, type GridItem } from "@/lib/monthGrid";
 import { MONTH_LABEL_PX, monthScrollTop } from "@/lib/monthScroll";
@@ -48,6 +48,12 @@ export interface MonthViewHandle {
    * pixels covered at the bottom (#172: the vote's card over the month).
    */
   glideToDay: (day: number, clear?: number) => void;
+  /**
+   * Whether a day's cell is in view, and if not, straight there with no glide
+   * (#282: a real iPhone can drop a glide, and an agreed date then flew off
+   * screen). True when it was already in view.
+   */
+  showDay: (day: number) => boolean;
 }
 
 /**
@@ -230,6 +236,17 @@ export default function MonthView({
   }, [pad]);
 
   useImperativeHandle(handle, () => {
+    /** Where the scroller puts a day's week: in the middle of what is left above `clear`. */
+    const dayTop = (day: number, clear: number): number | null => {
+      const box = scroller.current;
+      const cell = box?.querySelector<HTMLElement>(`[data-day="${day}"]`);
+      const week = cell?.parentElement?.parentElement;
+      if (!box || !week) return null;
+      const top = padNow.current ?? 0;
+      const room = box.clientHeight - top - clear;
+      const at = box.scrollTop + week.getBoundingClientRect().top - box.getBoundingClientRect().top;
+      return Math.max(0, at - top - Math.max(0, (room - week.offsetHeight) / 2));
+    };
     const glide = (top: () => number | null) => {
       const box = scroller.current;
       const to = top();
@@ -245,18 +262,20 @@ export default function MonthView({
           return el && scroller.current ? monthScrollTop(scroller.current, el) : null;
         }),
       glideToTop: () => glide(() => 0),
-      glideToDay: (day, clear = 0) =>
-        glide(() => {
-          const box = scroller.current;
-          const cell = box?.querySelector<HTMLElement>(`[data-day="${day}"]`);
-          const week = cell?.parentElement?.parentElement;
-          if (!box || !week) return null;
-          const top = padNow.current ?? 0;
-          const room = box.clientHeight - top - clear;
-          const at =
-            box.scrollTop + week.getBoundingClientRect().top - box.getBoundingClientRect().top;
-          return Math.max(0, at - top - Math.max(0, (room - week.offsetHeight) / 2));
-        }),
+      glideToDay: (day, clear = 0) => glide(() => dayTop(day, clear)),
+      showDay: (day) => {
+        const box = scroller.current;
+        const cell = box?.querySelector<HTMLElement>(`[data-day="${day}"]`);
+        if (!box || !cell) return true;
+        const view = box.getBoundingClientRect();
+        const r = cell.getBoundingClientRect();
+        if (r.top >= view.top + (padNow.current ?? 0) && r.bottom <= view.bottom) return true;
+        const to = dayTop(day, 0);
+        stopGlide(box);
+        settleUntil.current = 0;
+        if (to !== null) box.scrollTop = to;
+        return false;
+      },
     };
   }, []);
 

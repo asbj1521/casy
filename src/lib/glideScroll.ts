@@ -16,6 +16,11 @@ const GLIDE_MS = 350;
 /** The glide running on each scroller, so a new one replaces it. */
 const running = new WeakMap<HTMLElement, () => void>();
 
+/** Stops a glide still running on `box`, its overflow put back. */
+export function stopGlide(box: HTMLElement): void {
+  running.get(box)?.();
+}
+
 /** Glide `box` (a scrolling element, or the page's) to `top`. */
 export function glideScroll(box: HTMLElement, top: number): void {
   running.get(box)?.();

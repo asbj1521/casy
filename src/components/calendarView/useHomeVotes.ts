@@ -140,6 +140,13 @@ export function useHomeVotes({
     setFlying(true);
     months.current?.glideToDay(day, 0);
     window.setTimeout(() => {
+      // A real iPhone can drop the glide (#282): then straight to the day,
+      // measured a frame later, rather than a flight to a day off screen.
+      if (months.current?.showDay(day) === false) {
+        requestAnimationFrame(() => requestAnimationFrame(fly));
+      } else fly();
+    }, GLIDE_FIRST_MS);
+    function fly() {
       flyIntoDay({
         from,
         day,
@@ -155,7 +162,7 @@ export function useHomeVotes({
           window.setTimeout(() => setFlying(false), SETTLE_MS);
         },
       });
-    }, GLIDE_FIRST_MS);
+    }
   }
 
   /** Casy's events on a day, for its list. */
