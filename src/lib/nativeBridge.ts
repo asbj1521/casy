@@ -9,6 +9,7 @@
  * module goes through promises, never the plugin (it answers to `then` too).
  */
 import type { LabelledEvent } from "@/lib/eventWarnings";
+import type { NativeAuthAnswer, NativeAuthAsk } from "@/lib/nativeAuth";
 import type { GridItem } from "@/lib/monthGrid";
 import type { PluginListenerHandle } from "@capacitor/core";
 
@@ -31,7 +32,8 @@ export type NativeScreen =
   | "push"
   | "update"
   | "home"
-  | "plan";
+  | "plan"
+  | "signIn";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {
@@ -96,6 +98,8 @@ export interface NativeClosed {
   accountDeleted?: boolean;
   /** Tilføj til kalender kept something (#200): where the first of it starts, to glide to. */
   added?: string;
+  /** The app's sign-in screen (#282) closed because the page is now signed in. */
+  signedIn?: boolean;
   /** Tid til hinanden's Planlæg was pressed (#200): the page's own, with the group and the day. */
   plan?: boolean;
   /** Planlæg sent its dates (#282): the events changed, and the others are asked now. */
@@ -125,6 +129,7 @@ interface NativeBridgePlugin {
   phoneFacts(options: { labels: number }): Promise<void>;
   phoneWritten(options: { id: number }): Promise<void>;
   phoneSynced(options: { id: number; outcome: NativePhoneSync }): Promise<void>;
+  authAnswered(options: { id: number; answer: NativeAuthAnswer }): Promise<void>;
   setTrip(options: { mark: TripMark | null; addedTo?: string; error?: string }): Promise<void>;
   setHome(options: NativeHomeState): Promise<void>;
   addListener(
@@ -164,6 +169,10 @@ interface NativeBridgePlugin {
   addListener(
     event: "homeAction",
     listener: (action: NativeHomeAction) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    event: "authAsk",
+    listener: (ask: NativeAuthAsk) => void,
   ): Promise<PluginListenerHandle>;
   addListener(
     event: "inviteSent",
@@ -251,6 +260,22 @@ export async function onNeedPhoneSync(
   return plugin.addListener("needPhoneSync", ({ id, create }) => {
     void sync(create)
       .then((outcome) => plugin.phoneSynced({ id, outcome }))
+      // The app stops waiting by itself.
+      .catch(() => {});
+  });
+}
+
+/**
+ * Answers the app's sign-in screen (#282): each step is done by the page,
+ * which keeps the session (`answer`, nativeAuth.ts), and how it went is sent back.
+ */
+export async function onNativeAuthAsk(
+  answer: (ask: NativeAuthAsk) => Promise<NativeAuthAnswer>,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("authAsk", (ask) => {
+    void answer(ask)
+      .then((said) => plugin.authAnswered({ id: ask.id, answer: said }))
       // The app stops waiting by itself.
       .catch(() => {});
   });

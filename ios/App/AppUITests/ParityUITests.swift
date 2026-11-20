@@ -25,8 +25,14 @@ final class ParityUITests: XCTestCase {
     }
 
     /// The app on `path` (`/`, `/?day=2026-10-15`), in `theme`, in this run's mode.
-    private func launch(_ path: String, theme: String, extra: [String] = []) async throws -> XCUIApplication {
-        let (session, _) = try await URLSession.shared.data(from: URL(string: "\(Self.backend)/parity/session")!)
+    private func launch(
+        _ path: String, theme: String, extra: [String] = [], signedOut: Bool = false
+    ) async throws -> XCUIApplication {
+        // Signed out (#282's welcome and sign-in): the page's storage empty.
+        let session =
+            signedOut
+            ? Data("{}".utf8)
+            : try await URLSession.shared.data(from: URL(string: "\(Self.backend)/parity/session")!).0
         let app = XCUIApplication()
         app.launchArguments = [
             "-casyBackend", Self.backend,
@@ -767,6 +773,46 @@ final class ParityUITests: XCTestCase {
         day.tap()
         shoot(app, "prime-\(theme)", when: "er fri", native: "prime.screen")
     }
+
+    // MARK: Signed out (#282)
+
+    /// Log ind, opened from the welcome screen's "Log ind": the web's card over
+    /// the welcome's colour, the app's own screen.
+    private func shootSignIn(theme: String) async throws {
+        let app: XCUIApplication
+        if mode == "web" {
+            app = try await launch("/sign-in", theme: theme, signedOut: true)
+        } else {
+            app = try await launch("/", theme: theme, extra: ["-casyOpenScreen", "signIn"], signedOut: true)
+        }
+        shoot(app, "signin-\(theme)", when: "Fortsæt med Apple", native: "signin.screen")
+    }
+
+    /// The whole way in, natively: the welcome's "Log ind" opens the app's
+    /// sign-in, the page signs in with what is typed there, and the home page
+    /// follows. Native only: the web's own way in has its browser tests.
+    func testSignInFromTheWelcome() async throws {
+        try XCTSkipIf(mode == "web", "the page's own sign-in is tested in the browser")
+        let app = try await launch("/", theme: "light", extra: ["-casyPageAuth", "YES"], signedOut: true)
+        let logIn = app.webViews.links["Log ind"].firstMatch
+        XCTAssertTrue(logIn.waitForExistence(timeout: 30), "the welcome's Log ind")
+        logIn.tap()
+        let email = app.textFields["signin.email"]
+        XCTAssertTrue(email.waitForExistence(timeout: 15), "the app's own sign-in")
+        email.tap()
+        email.typeText("mia@eksempel.dk")
+        let password = app.secureTextFields["signin.password"]
+        password.tap()
+        password.typeText("hemmelig1")
+        app.buttons["signin.submit"].tap()
+        XCTAssertTrue(app.buttons["signin.apple"].waitForNonExistence(timeout: 20), "signed in, it closes")
+        XCTAssertTrue(
+            app.descendants(matching: .any)["home.title"].waitForExistence(timeout: 30), "the home page follows")
+    }
+
+    func testSignInLight() async throws { try await shootSignIn(theme: "light") }
+
+    func testSignInDark() async throws { try await shootSignIn(theme: "dark") }
 
     func testPrimeLight() async throws { try await shootPrime(theme: "light") }
 

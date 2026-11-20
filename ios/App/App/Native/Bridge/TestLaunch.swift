@@ -40,6 +40,8 @@
         /// one itself, as before the rewrite: the reference a parity shot
         /// compares the native screen with (docs/native-visual-parity.md).
         static var webOnly: Bool { defaults.bool(forKey: "casyWebOnly") }
+        /// `-casyPageAuth YES`: sign-in's steps go to the page, signed out, as in real use (#282).
+        static var pageAuth: Bool { defaults.bool(forKey: "casyPageAuth") }
 
         /// What a parity launch (#280) puts in the page before its first line
         /// runs, as e2e/fixtures.ts does in Playwright: the page's storage
@@ -115,6 +117,22 @@
         private static func literal(_ text: String) -> String {
             let data = (try? JSONSerialization.data(withJSONObject: [text])) ?? Data("[\"\"]".utf8)
             return String(String(decoding: data, as: UTF8.self).dropFirst().dropLast())
+        }
+
+        /// What the page would answer a sign-in step (#282): "forkert1" is a
+        /// wrong password, "password1" a leaked one, a new account waits for
+        /// its email, and Apple signs in.
+        static func authAnswer(_ action: String, email: String, password: String) -> AuthAnswer {
+            switch action {
+            case "password":
+                return password == "forkert1"
+                    ? .failed("Forkert e-mail eller adgangskode.") : AuthAnswer(outcome: "in")
+            case "signUp": return AuthAnswer(outcome: "confirm")
+            case "leaked": return AuthAnswer(outcome: "done", count: password == "password1" ? 52_256 : 0)
+            case "apple": return AuthAnswer(outcome: "in")
+            case "link", "reset", "resend": return AuthAnswer(outcome: "sent")
+            default: return AuthAnswer(outcome: "done")
+            }
         }
 
         @MainActor static var homePage: HomeFromPage {

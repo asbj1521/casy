@@ -797,6 +797,26 @@ public enum CasyStrings {
     public static var clashConfirm: String { text("clash.confirm") }
     public static var clashConfirmYes: String { text("clash.confirmYes") }
     public static var clashConfirmNo: String { text("clash.confirmNo") }
+
+    // Signing in, natively (#282): the web's SignIn and PasswordForm.
+    /// A word of the sign-in card by its key under "signIn." ("tabSignUp", "forgot").
+    public static func signIn(_ key: String) -> String { text("signIn.\(key)") }
+    public static func signInAcceptTerms(_ terms: String, _ privacy: String) -> String {
+        String(format: text("signIn.acceptTerms"), terms, privacy)
+    }
+    public static func signInLinkSent(_ email: String) -> String { String(format: text("signIn.linkSent"), email) }
+    public static func signInConfirmSent(_ email: String) -> String { String(format: text("signIn.confirmSent"), email) }
+    public static func signInResetSent(_ email: String) -> String { String(format: text("signIn.resetSent"), email) }
+    public static var passwordShow: String { text("passwordForm.show") }
+    public static var passwordHide: String { text("passwordForm.hide") }
+    public static func passwordRuleLength(_ n: Int) -> String { String(format: text("passwordForm.ruleLength"), n) }
+    public static var passwordRuleLettersDigits: String { text("passwordForm.ruleLettersDigits") }
+    public static var passwordRuleNotPersonal: String { text("passwordForm.ruleNotPersonal") }
+    public static var passwordRulesNotMet: String { text("passwordForm.rulesNotMet") }
+    public static var passwordChecking: String { text("passwordForm.checking") }
+    public static func passwordLeaked(_ times: String) -> String { String(format: text("passwordForm.leaked"), times) }
+    public static var welcomeBack: String { text("welcome.back") }
+    public static var authUserExists: String { text("authErrors.userExists") }
     public static var pileChange: String { text("pile.change") }
     public static var pileClose: String { text("pile.close") }
     public static func pileDetails(_ date: String) -> String { String(format: text("pile.details"), date) }

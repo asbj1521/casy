@@ -21,6 +21,7 @@ import {
   weekdayName,
   weekdayShortName,
 } from "@/lib/format";
+import { breachCount, checkPassword, personalWords } from "@/lib/passwordRules";
 import { addDays, APP_TIME_ZONE, startOfDay } from "@/lib/zone";
 
 import { caseBook, type ParityCase } from "./cases";
@@ -123,5 +124,39 @@ export function formatCases(): ParityCase[] {
       add("nameList", { names, lang }, nameList(names, lang));
     }
   }
+  // passwordRules.ts (#282): the rules a new password is ticked off against.
+  const PEOPLE = [
+    ["mia.jensen@eksempel.dk", "Mia Jensen"],
+    ["bo@x.dk", "Bo"],
+    ["anna-sofie_holm+casy@mail.com", "Anna Sofie Holm"],
+    ["søren.ærø@post.dk", "Søren Ærø"],
+    ["", ""],
+  ];
+  const PASSWORDS = [
+    "",
+    "kort1",
+    "abcdefgh",
+    "12345678",
+    "abcd1234",
+    "MiaJensen2026",
+    "Ærø-sommer-99",
+    "holm1234sofie",
+    "Søren1990!",
+    "langt kodeord 7",
+    "BO123456",
+    "x9",
+  ];
+  for (const [email, name] of PEOPLE) {
+    const personal = personalWords([email, name]);
+    add("personalWords", { values: [email, name] }, personal);
+    for (const password of PASSWORDS) {
+      add("checkPassword", { password, personal }, checkPassword(password, personal));
+    }
+  }
+  add(
+    "breachCount",
+    { answer: "0018A45C4D1DEF81644B54AB7F969B88D65:1\r\nABCDE:12\r\nFFFF:0", suffix: "ABCDE" },
+    breachCount("0018A45C4D1DEF81644B54AB7F969B88D65:1\r\nABCDE:12\r\nFFFF:0", "ABCDE"),
+  );
   return cases;
 }

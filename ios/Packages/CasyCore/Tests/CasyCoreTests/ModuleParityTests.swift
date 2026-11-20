@@ -135,6 +135,10 @@ private let headlineWords = HeadlineWords(
     try check("format", atLeast: 1500) { fn, a in
         switch fn {
         case "dayLabel": return try json(dayLabel(try milliseconds(a), try lang(a)))
+        case "personalWords": return try json(personalWords(try a["values"].decoded()))
+        case "checkPassword":
+            return try json(checkPassword(try text(a, "password"), try a["personal"].decoded()))
+        case "breachCount": return try json(breachCount(try text(a, "answer"), suffix: try text(a, "suffix")))
         case "monthName": return try json(monthName(try milliseconds(a), try lang(a)))
         case "monthShortName": return try json(monthShortName(try milliseconds(a), try lang(a)))
         case "weekdayName": return try json(weekdayName(try milliseconds(a), try lang(a)))

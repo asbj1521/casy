@@ -19,9 +19,11 @@ import {
   onNeedPhoneFacts,
   onNeedPhoneSync,
   onNeedPhoneWrite,
+  onNativeAuthAsk,
   onNeedSession,
   sharePreferences,
 } from "@/lib/nativeBridge";
+import { answerNativeAuth } from "@/lib/nativeAuth";
 import { afterAiConsent } from "@/hooks/useAiConsentSetting";
 import { labelBookQuery } from "@/hooks/useEventLabels";
 import { syncPhone } from "@/hooks/usePhoneCalendarSync";
@@ -45,6 +47,22 @@ export default function NativeBridgeSync() {
   const [theme, setTheme] = useState(storedTheme);
 
   useEffect(() => onThemeChange(() => setTheme(storedTheme())), []);
+
+  // The app's own sign-in screen (#282): each step is done here, where the session is.
+  useEffect(() => {
+    let handle: { remove: () => Promise<void> } | undefined;
+    let gone = false;
+    onNativeAuthAsk(answerNativeAuth)
+      .then((h) => {
+        if (gone) void h.remove();
+        else handle = h;
+      })
+      .catch(() => {});
+    return () => {
+      gone = true;
+      void handle?.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const lent = session

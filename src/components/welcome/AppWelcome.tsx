@@ -6,9 +6,11 @@ import { SiApple } from "react-icons/si";
 
 import LanguageToggle from "@/components/LanguageToggle";
 import GlassButton from "@/components/ui/GlassButton";
+import NativeSignIn from "@/components/welcome/NativeSignIn";
 import WelcomeIntro from "@/components/welcome/WelcomeIntro";
 import WelcomeStage from "@/components/welcome/WelcomeStage";
 import { rectOfCard, type MorphRect } from "@/components/welcome/phone/morph";
+import { useNativeScreen } from "@/hooks/useNativeScreen";
 import { useT } from "@/i18n/lang";
 import { APP_STORE_URL } from "@/lib/appStore";
 import { onIPhoneBrowser } from "@/lib/iphoneBrowser";
@@ -74,6 +76,13 @@ export default function AppWelcome({
     return () => root.classList.remove("glass-top");
   }, [signIn, intro]);
 
+  // The app's own sign-in (#282), when it has one: opened over the welcome
+  // instead of the page's card, and at /sign-in (an invite's way in) at once.
+  const nativeSignIn = useNativeScreen("signIn") && !website;
+  const [nativeOpen, setNativeOpen] = useState<"signin" | "signup" | null>(null);
+  const signupAsked = new URLSearchParams(search).has("signup");
+  const nativeShown = nativeSignIn && (nativeOpen !== null || signIn);
+
   // Fetched ahead, so the card is there to morph into the moment it is pressed.
   useEffect(() => {
     void loadPage.signIn();
@@ -130,13 +139,26 @@ export default function AppWelcome({
           <>
             <Link
               to="/sign-in?signup=1"
+              onClick={(e) => {
+                if (!nativeSignIn) return;
+                e.preventDefault();
+                setNativeOpen("signup");
+              }}
               className="mt-5 flex h-14 items-center justify-center rounded-full bg-cta text-[1.0625rem] font-bold text-white transition active:scale-[0.98]"
             >
               {t.welcome.start}
             </Link>
             <p className="mt-4 text-[0.9375rem] text-muted-foreground">
               {t.welcome.haveAccount}{" "}
-              <Link to="/sign-in" className="hit font-semibold text-foreground">
+              <Link
+                to="/sign-in"
+                onClick={(e) => {
+                  if (!nativeSignIn) return;
+                  e.preventDefault();
+                  setNativeOpen("signin");
+                }}
+                className="hit font-semibold text-foreground"
+              >
                 {t.nav.signIn}
               </Link>
             </p>
@@ -183,6 +205,17 @@ export default function AppWelcome({
           </motion.div>
         )}
       </AnimatePresence>
+      {nativeSignIn && (
+        <NativeSignIn
+          open={nativeShown}
+          signup={nativeOpen === "signup" || (nativeOpen === null && signupAsked)}
+          onClose={() => {
+            setNativeOpen(null);
+            // Opened at /sign-in: back to where it came from.
+            if (signIn) back();
+          }}
+        />
+      )}
       {pasteWanted && (
         <Suspense fallback={null}>
           <InvitePasteSheet open={pasting} onClose={() => setPasting(false)} />

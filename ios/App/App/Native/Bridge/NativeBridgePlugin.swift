@@ -29,6 +29,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "phoneFacts", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "phoneWritten", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "phoneSynced", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "authAnswered", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
     ]
@@ -41,7 +42,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if TestLaunch.isActive, TestLaunch.webOnly { return [] }
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
-                "home", "plan",
+                "home", "plan", "signIn",
             ]
         #else
             return []
@@ -106,6 +107,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 #endif
                 self?.notifyListeners("tripAction", data: Self.tripAction(action))
             }
+            PageAuth.shared.send = { [weak self] ask in self?.notifyListeners("authAsk", data: ask) }
             HomeModel.shared.onAction = { [weak self] action, day in
                 var data: [String: Any] = ["action": action]
                 if let day { data["day"] = Double(day) }
@@ -298,6 +300,14 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     enablePush: enablePush, onDone: onDone
                 )
                 .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
+            : screen == "signIn"
+            ? AnyView(
+                SignInScreen(
+                    preferences: NativePreferences.shared, signup: state["signup"] as? Bool == true, onClose: onDone,
+                    signedIn: { [weak self] in self?.dismissOpenScreen(["signedIn": true]) }, onChoose: onChoose,
+                    leave: leave
+                )
+                .nativeSheetLook(NativePreferences.shared))
             : screen == "update"
             ? AnyView(
                 UpdateRequiredScreen(
@@ -332,7 +342,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 SettingsScreen(
                     preferences: NativePreferences.shared, onChoose: onChoose, onDone: onDone,
                     enablePush: enablePush))
-        let host = UIHostingController(rootView: root)
+        // Sign-in's colour is light in either theme: the clock over it stays dark, as on the web.
+        let host = screen == "signIn" ? DarkStatusHost(rootView: root) : UIHostingController(rootView: root)
         // The sheet's frame and its glass at half height are iOS's, outside
         // SwiftUI: tell it Casy's own light or dark, not only the phone's.
         let theme = NativePreferences.shared.theme
@@ -341,6 +352,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             // Over everything, with no way out but the App Store.
             host.modalPresentationStyle = .fullScreen
             host.isModalInPresentation = true
+        } else if screen == "signIn" {
+            // The welcome's colour fills the screen, as on the web; Tilbage closes it.
+            host.modalPresentationStyle = .fullScreen
+            host.modalTransitionStyle = .crossDissolve
         } else {
             host.modalPresentationStyle = .pageSheet
             host.sheetPresentationController?.prefersGrabberVisible = true
@@ -557,6 +572,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }
 
     /// `{ id, outcome }`: how the page's send of the phone's calendars went.
+    /// The page's answer to a sign-in step (#282, nativeAuth.ts).
+    @objc func authAnswered(_ call: CAPPluginCall) {
+        let id = call.getInt("id") ?? 0
+        let said = call.getObject("answer") ?? [:]
+        let answer = AuthAnswer(
+            outcome: said["outcome"] as? String ?? "failed", error: said["error"] as? String,
+            unconfirmed: said["unconfirmed"] as? Bool ?? false, count: said["count"] as? Int)
+        DispatchQueue.main.async {
+            PageAuth.shared.answered(id, answer)
+            call.resolve()
+        }
+    }
+
     @objc func phoneSynced(_ call: CAPPluginCall) {
         let id = call.getInt("id")
         let outcome = call.getObject("outcome") ?? [:]
@@ -805,4 +833,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 /// How tall a sheet that fits its content wants to be, as its screen measured it.
 final class SheetFit {
     var height: CGFloat = 420
+}
+
+/// A screen whose top is light in either theme (sign-in's colour): the
+/// clock and battery over it drawn dark.
+final class DarkStatusHost: UIHostingController<AnyView> {
+    override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
 }
