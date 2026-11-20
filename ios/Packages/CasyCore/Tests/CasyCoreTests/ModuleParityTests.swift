@@ -738,3 +738,59 @@ private struct DateRange: Decodable {
 private func localDay(_ iso: String) -> Int {
     Calendar(identifier: .gregorian).dateComponents(in: TimeZone(identifier: "UTC")!, from: Date(timeIntervalSince1970: Double(parseInstant(iso) ?? 0) / 1000)).day ?? 0
 }
+
+@Test func paperPileGivesTheTypeScriptAnswers() throws {
+    let zone = "Europe/Copenhagen"
+    let now = parseInstant("2026-10-07T08:00:00.000Z")!
+    let words = ComfortWords(
+        you: "Du", tightBefore: { "\($0) før" }, tightAfter: { "\($0) efter" }, squeezed: { "\($0) klemt" },
+        earlyAfterLate: { "\($0) tidligt" }, schoolNight: "skole", afterDark: "mørke", familyDay: "familie",
+        longWeekend: "lang weekend", soon: "snart", farAhead: "langt ude")
+    try check("paperPile", atLeast: 300) { fn, a in
+        switch fn {
+        case "pile":
+            let window: DateRange = try a["window"].decoded()
+            return try json(
+                buildPile(
+                    try a["participants"].decoded(), try a["search"].decoded(), you: a["you"].string,
+                    year: try #require(a["year"].int), month: try #require(a["month"].int), timeZone: zone,
+                    todayMs: now, windowEndMs: parseInstant(window.end)!, window: (window.start, window.end)))
+        case "month":
+            let m = candidateMonth(try a["starts"].decoded(), fallback: try text(a, "fallback"), zone)
+            return .object(["year": .number(Double(m.year)), "month": .number(Double(m.month))])
+        case "timeline":
+            return try json(
+                pileTimeline(
+                    try #require(a["others"].int), dates: try #require(a["dates"].int),
+                    start: try a["start"].decoded()))
+        case "checks":
+            return try json(checkTimes(try #require(a["dates"].int)))
+        case "layer":
+            let others = try #require(a["others"].int)
+            let tilt = sheetTilt(others)
+            let landed: [Int] = try a["landed"].decoded()
+            return .object([
+                "alpha": .number(layerAlpha(others)),
+                "tilt": .object(["rotate": .number(tilt.rotate), "x": .number(tilt.x), "y": .number(tilt.y)]),
+                "jostle": .array(
+                    landed.enumerated().map { k, n in
+                        let j = jostle(k, n)
+                        return .object(["x": .number(j.x), "rotate": .number(j.rotate)])
+                    }),
+            ])
+        case "rank":
+            let facts: [RankedFacts] = try a["facts"].decoded()
+            let ranked = rankOrder(facts, priority: try text(a, "priority"))
+            let live = liveOrder(ranked, checked: try #require(a["checked"].int), offered: facts.map { $0.pickedAt != nil })
+            return .object(["ranked": try json(ranked), "live": try json(live)])
+        case "comfortNotes":
+            let warnings: [EdgeWarning]? = try? a["warnings"].decoded()
+            return try json(
+                comfortNotes(
+                    try a["penalties"].decoded(), nameOf: { "Navn \($0)" }, you: a["youId"].string, .da, words,
+                    warnings: warnings))
+        default:
+            return unknown(fn)
+        }
+    }
+}
