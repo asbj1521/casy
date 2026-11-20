@@ -714,6 +714,58 @@ public enum CasyStrings {
     public static var planQuestionsDone: String { text("plan.questionsDone") }
     public static var planAiFailed: String { text("api.planAi") }
 
+    // The paper pile (#126, #282).
+    public static func pileRanked(_ n: Int) -> String { n == 1 ? text("pile.ranked.one") : String(format: text("pile.ranked.many"), n) }
+    public static var pileReviewing: String { text("pile.reviewing") }
+    public static func pileAllCan(_ n: Int) -> String { n == 1 ? text("pile.allCan.one") : String(format: text("pile.allCan.many"), n) }
+    public static func pileAllCanWithCalendar(_ n: Int) -> String { String(format: text("pile.allCanWithCalendar"), n) }
+    public static func pileCant(_ names: String) -> String { String(format: text("pile.cant"), names) }
+    public static var pileEdgesClear: String { text("pile.edgesClear") }
+    public static var pileNoSkips: String { text("pile.noSkips") }
+    public static func pileMatchScore(_ n: Int) -> String { String(format: text("pile.matchScore"), n) }
+    public static var pilePicked: String { text("pile.picked") }
+    public static var pileNotPicked: String { text("pile.notPicked") }
+    public static var pileComfortYou: String { text("pile.comfort.you") }
+    public static func pileComfort(_ rule: String, _ who: String = "") -> String {
+        who.isEmpty ? text("pile.comfort.\(rule)") : String(format: text("pile.comfort.\(rule)"), who)
+    }
+    public static func pileSuggest(_ n: Int) -> String { n == 1 ? text("pile.suggest.one") : String(format: text("pile.suggest.many"), n) }
+    public static var pileChange: String { text("pile.change") }
+    public static var pileClose: String { text("pile.close") }
+    public static func pileDetails(_ date: String) -> String { String(format: text("pile.details"), date) }
+    public static var pileNoneThrough: String { text("pile.noneThrough") }
+    public static var pileInviteFriends: String { text("pile.inviteFriends") }
+    public static var pileOnlyYou: String { text("pile.onlyYou") }
+    public static var pilePriorityLabel: String { text("pile.priority.label") }
+    public static func pilePriority(_ value: String) -> String { text("pile.priority.\(value)") }
+    public static func pileNeedSkip(_ names: String) -> String { String(format: text("pile.needSkip"), names) }
+    public static func pileNeedTimeOff(_ names: String) -> String { String(format: text("pile.needTimeOff"), names) }
+    public static var pileChecking: String { text("pile.checking") }
+    public static var pileHintAccept: String { text("pile.hintAccept") }
+    public static var pileAccept: String { text("pile.accept") }
+    public static var pileChangedBeforeSending: String { text("pile.changedBeforeSending") }
+    public static var pileBusyLoading: String { text("pile.busyLoading") }
+    public static var pileBusyFailed: String { text("pile.busyFailed") }
+    public static var pileNoCalendars: String { text("pile.noCalendars") }
+    public static var pileSuggestFailed: String { text("pile.suggestFailed") }
+    public static var widenTitle: String { text("pile.widen.title") }
+    public static func widenTime(_ part: String) -> String { text("pile.widen.time.\(part)") }
+    public static var widenDays: String { text("pile.widen.days") }
+    public static var widenStartDay: String { text("pile.widen.startDay") }
+    public static func widenShorter(_ length: String) -> String { String(format: text("pile.widen.shorter"), length) }
+    public static func widenMonths(_ period: String) -> String { String(format: text("pile.widen.months"), period) }
+    public static func widenPeople(_ n: Int, _ of: Int) -> String { String(format: text("pile.widen.people"), n, of) }
+    public static func widenWithout(_ names: String) -> String { String(format: text("pile.widen.without"), names) }
+    public static var edgeEarlyYou: String { text("edge.earlyMorning.you") }
+    public static func edgeEarlyOneYou(_ time: String) -> String { String(format: text("edge.earlyMorning.oneYou"), time) }
+    public static func edgeEarlyOne(_ who: String, _ time: String) -> String { String(format: text("edge.earlyMorning.one"), who, time) }
+    public static func edgeEarlyMany(_ list: String) -> String { String(format: text("edge.earlyMorning.many"), list) }
+    public static var edgeNewYearsDay: String { text("edge.newYearsDay") }
+    public static var edgeBackYou: String { text("edge.backToBack.you") }
+    public static var edgeBackOneYou: String { text("edge.backToBack.oneYou") }
+    public static func edgeBackOne(_ who: String) -> String { String(format: text("edge.backToBack.one"), who) }
+    public static func edgeBackMany(_ list: String) -> String { String(format: text("edge.backToBack.many"), list) }
+
     // MARK: The home page (#201)
 
     public static var homeToday: String { text("calendarView.today") }

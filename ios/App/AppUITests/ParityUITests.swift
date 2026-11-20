@@ -882,6 +882,25 @@ final class ParityUITests: XCTestCase {
         shoot(app, "plan-ai-light", when: "Hverdage", native: "plan.screen")
     }
 
+    /// Find dato: the calendars thrown, pressed, the dates lifted and checked,
+    /// filmed with PARITY_VIDEO=1; the list as it ends, shot.
+    func testPlanPile() async throws {
+        let motion = ["-casyMotion", "YES"]
+        let app =
+            mode == "web"
+            ? try await launch("/?plan", theme: "light", extra: motion)
+            : try await launch("/", theme: "light", extra: ["-casyOpenScreen", "plan"] + motion)
+        let find =
+            mode == "web"
+            ? app.webViews.buttons.matching(NSPredicate(format: "label == %@", "Find dato")).firstMatch
+            : app.buttons["plan.find"]
+        XCTAssertTrue(find.waitForExistence(timeout: 30), "Find dato never showed")
+        _ = XCTWaiter.wait(for: [expectation(description: "still")], timeout: 3)
+        find.tap()
+        _ = XCTWaiter.wait(for: [expectation(description: "pile")], timeout: 16)
+        shoot(app, "plan-pile-light", when: "bedste", native: "pile.screen")
+    }
+
     func testPlanLight() async throws { try await shootPlan(theme: "light") }
 
     func testPlanDark() async throws { try await shootPlan(theme: "dark") }

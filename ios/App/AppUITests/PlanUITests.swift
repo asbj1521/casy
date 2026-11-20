@@ -95,4 +95,28 @@ final class PlanUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Hvornår?"].waitForNonExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["21:00 - 23:00"].waitForExistence(timeout: 20))
     }
+
+    /// Find dato: the pile, the dates checked, and sending them closes Planlæg.
+    func testFindDateSendsTheVote() {
+        let app = launch()
+        let find = app.buttons["plan.find"]
+        XCTAssertTrue(find.waitForExistence(timeout: 15))
+        find.tap()
+        let send = app.buttons["pile.send"]
+        XCTAssertTrue(send.waitForExistence(timeout: 40), "the list never finished")
+        XCTAssertTrue(app.staticTexts["De 5 bedste datoer"].exists)
+        send.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["pile.screen"].waitForNonExistence(timeout: 15))
+    }
+
+    /// Ret planen goes back to the sheet, the plan as it was.
+    func testChangeThePlanFromThePile() {
+        let app = launch()
+        app.buttons["plan.kind.trip"].tap()
+        app.buttons["plan.find"].tap()
+        let change = app.buttons["pile.change"]
+        XCTAssertTrue(change.waitForExistence(timeout: 40))
+        change.tap()
+        XCTAssertTrue(app.staticTexts["Antal dage"].waitForExistence(timeout: 10), "the trip is kept")
+    }
 }

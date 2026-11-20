@@ -271,6 +271,118 @@ public struct PlanAnswer: Decodable, Sendable {
     public var left: Int
 }
 
+/// The event as sent to be profiled (#113): what was typed, and its planned timing.
+public struct EventToProfile: Codable, Sendable, Equatable {
+    public var title: String
+    public var place: String
+    public var note: String
+    /// "meeting", "trip" or "holiday".
+    public var kind: String
+    public var startMinute: Int
+    public var minutes: Int
+    public var days: Int
+
+    /// The web's profileInput.
+    public init(_ settings: EventSettings, title: String, place: String, note: String) {
+        self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.place = place.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if settings.kind == .single {
+            kind = "meeting"
+            startMinute =
+                settings.startWindow.map { Int($0.from) }
+                ?? (settings.anyTime == true ? -1 : Int(((settings.startHour ?? 0) * 60).rounded()))
+            minutes = settings.durationMinutes ?? 0
+            days = 1
+        } else {
+            kind = settings.kind == .trip ? "trip" : "holiday"
+            startMinute = -1
+            minutes = 0
+            days = settings.kind == .trip ? (settings.shape?.spanDays ?? 0) : (settings.days ?? 0)
+        }
+    }
+}
+
+private struct ProfileEvent: Encodable, Sendable {
+    let event: EventToProfile
+}
+
+private struct ProfileAnswer: Decodable, Sendable {
+    let profile: EventImpact
+}
+
+/// A date sent in a vote, with the suggester's own answer (#101).
+public struct SentDate: Codable, Sendable, Equatable {
+    public var start: String
+    public var end: String
+    public var answer: String?
+
+    public init(start: String, end: String, answer: String? = "accepted") {
+        self.start = start
+        self.end = end
+        self.answer = answer
+    }
+}
+
+private struct SuggestEvent: Encodable, Sendable {
+    let action = "suggest"
+    let groupId: String
+    let title: String
+    let settings: EventSettings
+    let dates: [SentDate]
+    let place: String
+    let note: String
+    let answerDays: Int?
+    let impact: EventImpact?
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(impact, forKey: .impact)
+        try c.encode(action, forKey: .action)
+        try c.encode(groupId, forKey: .groupId)
+        try c.encode(title, forKey: .title)
+        try c.encode(settings, forKey: .settings)
+        try c.encode(dates, forKey: .dates)
+        try c.encode(place, forKey: .place)
+        try c.encode(note, forKey: .note)
+        // No deadline is said as null (#179).
+        try c.encode(answerDays, forKey: .answerDays)
+    }
+
+    enum CodingKeys: String, CodingKey { case action, groupId, title, settings, dates, place, note, answerDays, impact }
+}
+
+/// The events after a vote is sent, and the new one's id.
+public struct SuggestAnswer: Decodable, Sendable {
+    public var events: [SuggestedEvent]
+    public var createdId: String
+}
+
+private struct RankDates: Encodable, Sendable {
+    let action = "rank-dates"
+    let groupId: String
+    let settings: EventSettings
+    let profile: EventImpact?
+    let dates: [SentDate]
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(action, forKey: .action)
+        try c.encode(groupId, forKey: .groupId)
+        try c.encode(settings, forKey: .settings)
+        try c.encode(profile, forKey: .profile)
+        try c.encode(dates, forKey: .dates)
+    }
+
+    enum CodingKeys: String, CodingKey { case action, groupId, settings, profile, dates }
+}
+
+/// How well each date suits the group (#119), in the order asked, and how many members shared anything.
+public struct DateScores: Decodable, Sendable {
+    public var scores: [Double]
+    public var counted: Int
+}
+
 private struct ProposeEntries: Encodable, Sendable {
     let text: String
     let earlier: [String]
@@ -628,6 +740,36 @@ extension EdgeFunctions {
         let answer: AdminTesterAnswer = try await call(
             "admin", body: AdminTester(profileId: profileId, allowed: allowed), errorMessage: errorMessage)
         return answer.tester
+    }
+
+    /// Dates sent to a group to vote on (#74), each with the suggester's answer.
+    public func suggestEvent(
+        groupId: String, title: String, settings: EventSettings, dates: [SentDate], place: String = "",
+        note: String = "", answerDays: Int?, impact: EventImpact? = nil, errorMessage: String? = nil
+    ) async throws -> SuggestAnswer {
+        try await call(
+            "events",
+            body: SuggestEvent(
+                groupId: groupId, title: title, settings: settings, dates: dates, place: place, note: note,
+                answerDays: answerDays, impact: impact),
+            errorMessage: errorMessage)
+    }
+
+    /// What the event being planned is likely to cause (#113); nothing is stored.
+    public func profileEvent(_ event: EventToProfile, errorMessage: String? = nil) async throws -> EventImpact {
+        let answer: ProfileAnswer = try await call(
+            "event-profile", body: ProfileEvent(event: event), errorMessage: errorMessage)
+        return answer.profile
+    }
+
+    /// How well each date suits the group by everyone's important events (#119).
+    public func rankDates(
+        groupId: String, settings: EventSettings, profile: EventImpact?, dates: [SentDate],
+        errorMessage: String? = nil
+    ) async throws -> DateScores {
+        try await call(
+            "events", body: RankDates(groupId: groupId, settings: settings, profile: profile, dates: dates),
+            errorMessage: errorMessage)
     }
 
     /// Every event you were asked about.

@@ -123,6 +123,11 @@ public func checkTimes(_ dates: Int) -> [Double] {
 public struct PileLand: Codable, Sendable, Equatable {
     public var at: Double
     public var duration: Double
+
+    public init(at: Double, duration: Double) {
+        self.at = at
+        self.duration = duration
+    }
 }
 
 public struct PileTimeline: Codable, Sendable, Equatable {

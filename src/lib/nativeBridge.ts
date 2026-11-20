@@ -29,7 +29,8 @@ export type NativeScreen =
   | "aiConsent"
   | "push"
   | "update"
-  | "home";
+  | "home"
+  | "plan";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {
@@ -85,6 +86,8 @@ export interface NativeClosed {
   added?: string;
   /** Tid til hinanden's Planlæg was pressed (#200): the page's own, with the group and the day. */
   plan?: boolean;
+  /** Planlæg sent its dates (#282): the events changed, and the others are asked now. */
+  sent?: boolean;
 }
 
 interface Preferences {

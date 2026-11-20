@@ -180,6 +180,49 @@ final class PlanModel {
         research()
     }
 
+    /// Your sign-off on the time off the date on screen costs you.
+    func acceptOwnTimeOff() {
+        guard let start = found?.slot?.start else { return }
+        steps = steps.accept(start)
+    }
+
+    /// The answer once the search under way has finished.
+    func waitForSearch() async -> MultiDayResult? {
+        await searchTask?.value
+        return found
+    }
+
+    /// A way to widen the search picked (#135): only what it changes.
+    func apply(_ option: WidenOption) {
+        if let people = option.people {
+            updatePeople(people)
+        } else {
+            update { $0 = option.settings }
+        }
+    }
+
+    /// The ways to widen a search that found nothing, each with its first date.
+    func widenings() async -> [WidenOption] {
+        guard let people, !people.participants.isEmpty else { return [] }
+        let input = WidenInput(
+            participants: people.participants, settings: settings, members: members, choice: peopleChoice,
+            today: isoString(startOfDay(Native.now, zone)), limitEnd: searchWindowFrom(Native.now).end,
+            timeZone: zone, now: Native.now)
+        return await Task.detached(priority: .userInitiated) { widenOptions(input) }.value
+    }
+
+    /// What the event is called when sent: the name, or the matching type's English name.
+    var sentTitle: String {
+        let typed = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.maxName))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !typed.isEmpty { return typed }
+        let stored = [
+            "evening": "Evening", "lunch": "Lunch", "dinner": "Dinner", "gaming": "Gaming", "nightout": "Night out",
+            "weekend": "Weekend trip", "vacation": "Vacation", "meeting": "Hangout",
+        ]
+        return stored[fallbackTitleId(search)] ?? "Hangout"
+    }
+
     func stepBack() {
         steps = steps.back()
         research()

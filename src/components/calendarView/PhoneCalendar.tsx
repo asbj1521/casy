@@ -1,6 +1,7 @@
 import NativeCalendars from "@/components/calendarView/NativeCalendars";
 import NativePrimeDate from "@/components/calendarView/NativePrimeDate";
 import NativeEvents from "@/components/myEvents/phone/NativeEvents";
+import NativePlan from "@/components/planFromCalendar/NativePlan";
 import NativeTell from "@/components/tellCasy/NativeTell";
 import NativeTrip from "@/components/trips/NativeTrip";
 import NativeProfile from "@/components/profile/NativeProfile";
@@ -285,6 +286,9 @@ export default function PhoneCalendar() {
   const nativeProfile = useNativeScreen("profile");
   // And Aftaler's list (#199); an event's screen is still the sheet's, at `?events=<id>`.
   const nativeEvents = useNativeScreen("events");
+  // And Planlæg (#282), from the pill; a starred day's or a vote searched
+  // again still opens the page's own, which begins with their group and dates.
+  const nativePlan = useNativeScreen("plan");
   const openProfile = () => navigate({ search: "?profile" }, { state: { fromMonth: true } });
   // What pickDay (stable, below) needs to know of the votes (#172), set further down.
   const waitingNow = useRef<VoteEvent[]>([]);
@@ -782,25 +786,31 @@ export default function PhoneCalendar() {
           </Suspense>
         )
       )}
-      {(plan.shown || planTouched) && (
-        <Suspense fallback={null}>
-          <PlanFromCalendar
-            key={plan.key}
-            open={planOpen}
-            onClose={closeOverlay}
-            onClosed={planClosed}
-            origin={planButton}
-            start={
-              // A vote searched again (#240) hands its plan over in the address's state.
-              (location.state as { planStart?: PlanStart } | null)?.planStart ??
-              (planStart && {
-                groupId: planStart.groupId,
-                settings: primeDatePlan(planStart, APP_TIME_ZONE),
-                prime: planStart,
-              })
-            }
-          />
-        </Suspense>
+      {nativePlan &&
+      !planStart &&
+      !(location.state as { planStart?: PlanStart } | null)?.planStart ? (
+        <NativePlan open={planOpen} onClose={closeOverlay} />
+      ) : (
+        (plan.shown || planTouched) && (
+          <Suspense fallback={null}>
+            <PlanFromCalendar
+              key={plan.key}
+              open={planOpen}
+              onClose={closeOverlay}
+              onClosed={planClosed}
+              origin={planButton}
+              start={
+                // A vote searched again (#240) hands its plan over in the address's state.
+                (location.state as { planStart?: PlanStart } | null)?.planStart ??
+                (planStart && {
+                  groupId: planStart.groupId,
+                  settings: primeDatePlan(planStart, APP_TIME_ZONE),
+                  prime: planStart,
+                })
+              }
+            />
+          </Suspense>
+        )
       )}
 
       {/* Asked once, before Casy's AI reads anything from a calendar (#120). */}

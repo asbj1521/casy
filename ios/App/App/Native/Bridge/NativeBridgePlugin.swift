@@ -309,7 +309,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 )
                 .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
             : screen == "plan"
-            ? AnyView(PlanSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
+            ? AnyView(
+                PlanSheet(
+                    preferences: NativePreferences.shared, onDone: onDone, leave: leave,
+                    onFind: { [weak self] in self?.showPile() }))
             : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "profile"
@@ -693,6 +696,34 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             sheet.detents.contains { $0.identifier == Self.stacked } ? Self.stacked : .large
         guard sheet.selectedDetentIdentifier != tallest else { return }
         sheet.animateChanges { sheet.selectedDetentIdentifier = tallest }
+    }
+
+    /// Planlæg's Find dato (#282): the sheet goes, and the paper pile takes the
+    /// whole screen over the home page. Ret planen brings the sheet back, the
+    /// plan as it was; closing or sending ends Planlæg, which the page hears.
+    private func showPile() {
+        guard let presenter = bridge?.viewController else { return }
+        presenter.presentedViewController?.dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            let pile = PileScreen(
+                onChange: { [weak self] in
+                    presenter.presentedViewController?.dismiss(animated: false) {
+                        self?.present("plan", on: presenter)
+                    }
+                },
+                onClose: { [weak self] in self?.dismissOpenScreen() },
+                onSent: { [weak self] in self?.dismissOpenScreen(["sent": true]) }
+            )
+            .nativeSheetLook(NativePreferences.shared)
+            let host = UIHostingController(rootView: AnyView(pile))
+            let theme = NativePreferences.shared.theme
+            host.overrideUserInterfaceStyle = theme == "dark" ? .dark : theme == "light" ? .light : .unspecified
+            host.modalPresentationStyle = .overFullScreen
+            host.modalTransitionStyle = .crossDissolve
+            // The home page under it shows until the pile has been worked out.
+            host.view.backgroundColor = .clear
+            presenter.present(host, animated: true)
+        }
     }
 
     private func dismissOpenScreen(_ then: [String: Any] = [:]) {

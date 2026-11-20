@@ -8,10 +8,12 @@ struct PlanSheet: View {
     let preferences: NativePreferences
     let onDone: () -> Void
     let leave: (LeavingProfile) -> Void
+    /// Find dato: on to the paper pile.
+    var onFind: () -> Void = {}
 
     var body: some View {
         NavigationStack {
-            PlanScreen(leave: leave)
+            PlanScreen(leave: leave, onFind: onFind)
         }
         .environment(\.closeSheet, onDone)
         .nativeSheetLook(preferences)

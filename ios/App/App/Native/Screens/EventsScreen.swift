@@ -38,7 +38,7 @@ final class EventsModel {
         }
     }
 
-    private func show(_ events: [SuggestedEvent]) {
+    func show(_ events: [SuggestedEvent]) {
         self.events = events
         askWhileDeciding()
     }

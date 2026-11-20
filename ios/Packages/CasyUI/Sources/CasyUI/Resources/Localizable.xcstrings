@@ -15964,6 +15964,1111 @@
         }
       }
     },
+    "pile.ranked.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den bedste dato"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The best date"
+          }
+        }
+      }
+    },
+    "pile.ranked.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De %d bedste datoer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The %d best dates"
+          }
+        }
+      }
+    },
+    "pile.reviewing": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gennemgår kalenderne"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Going through the calendars"
+          }
+        }
+      }
+    },
+    "pile.allCan.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can make it"
+          }
+        }
+      }
+    },
+    "pile.allCan.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle %d kan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All %d can make it"
+          }
+        }
+      }
+    },
+    "pile.allCanWithCalendar": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle %d med kalender kan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All %d with a calendar can make it"
+          }
+        }
+      }
+    },
+    "pile.cant": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kan ikke"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ can't make it"
+          }
+        }
+      }
+    },
+    "pile.edgesClear": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intet lige før eller tidligt morgenen efter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing right before or early the next morning"
+          }
+        }
+      }
+    },
+    "pile.noSkips": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen skal give noget op"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody has to give anything up"
+          }
+        }
+      }
+    },
+    "pile.matchScore": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passer %d%% for gruppen, ud fra de vigtige aftaler, der er delt med os"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d%% match for the group, from the important events shared with us"
+          }
+        }
+      }
+    },
+    "pile.picked": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Med i forslaget"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the suggestion"
+          }
+        }
+      }
+    },
+    "pile.notPicked": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ikke med: vi vælger de bedste datoer og spreder dem, så de ikke ligger tæt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left out: we pick the best dates and spreads them so they aren't close together"
+          }
+        }
+      }
+    },
+    "pile.comfort.you": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "you"
+          }
+        }
+      }
+    },
+    "pile.comfort.tightBefore": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ har ikke meget tid før"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Little time before for %@"
+          }
+        }
+      }
+    },
+    "pile.comfort.tightAfter": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ har ikke meget tid efter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Little time after for %@"
+          }
+        }
+      }
+    },
+    "pile.comfort.squeezed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ har noget både lige før og lige efter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something right before and right after for %@"
+          }
+        }
+      }
+    },
+    "pile.comfort.earlyAfterLate": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ skal tidligt op efter en sen aften"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An early start after a late evening for %@"
+          }
+        }
+      }
+    },
+    "pile.comfort.schoolNight": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En hverdagsaften, og det bliver sent"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A weeknight, and it runs late"
+          }
+        }
+      }
+    },
+    "pile.comfort.afterDark": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slutter efter solnedgang"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends after sunset"
+          }
+        }
+      }
+    },
+    "pile.comfort.familyDay": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En dag, mange holder fri til familien"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A day many keep free for family"
+          }
+        }
+      }
+    },
+    "pile.comfort.longWeekend": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En lang weekend, så færre feriedage"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A long weekend, so fewer days off"
+          }
+        }
+      }
+    },
+    "pile.comfort.soon": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kort varsel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Short notice"
+          }
+        }
+      }
+    },
+    "pile.comfort.farAhead": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langt ude i fremtiden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Far in the future"
+          }
+        }
+      }
+    },
+    "pile.suggest.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foreslå datoen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggest the date"
+          }
+        }
+      }
+    },
+    "pile.suggest.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foreslå top %d datoer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggest the top %d dates"
+          }
+        }
+      }
+    },
+    "pile.change": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ret planen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the plan"
+          }
+        }
+      }
+    },
+    "pile.close": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luk"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "pile.details": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaljer om %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details for %@"
+          }
+        }
+      }
+    },
+    "pile.noneThrough": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen dag i perioden passer alle. Prøv at ændre planen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No day in the period works for everyone. Try changing the plan."
+          }
+        }
+      }
+    },
+    "pile.inviteFriends": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inviter venner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite friends"
+          }
+        }
+      }
+    },
+    "pile.onlyYou": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der er kun dig i gruppen endnu. Datoerne kan sendes, når nogen er med."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's only you in the group so far. The dates can go out once someone has joined."
+          }
+        }
+      }
+    },
+    "pile.priority.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prioritér"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prioritise"
+          }
+        }
+      }
+    },
+    "pile.priority.hassle": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mindst besvær"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Least hassle"
+          }
+        }
+      }
+    },
+    "pile.priority.soon": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snarest"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soonest"
+          }
+        }
+      }
+    },
+    "pile.needSkip": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ springer noget over"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ would skip something"
+          }
+        }
+      }
+    },
+    "pile.needTimeOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ skal have fri"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ would need time off"
+          }
+        }
+      }
+    },
+    "pile.checking": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tjekker kalendere…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking calendars…"
+          }
+        }
+      }
+    },
+    "pile.hintAccept": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Godkend først, at du skal have fri."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First accept taking the time off."
+          }
+        }
+      }
+    },
+    "pile.accept": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Godkend"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept"
+          }
+        }
+      }
+    },
+    "pile.changedBeforeSending": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nogens kalender er ændret, så datoen er opdateret. Se den igen, og foreslå den, hvis den passer."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone's calendar changed, so the date was updated. Have a look, and suggest it if it works."
+          }
+        }
+      }
+    },
+    "pile.busyLoading": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henter alles kalendere…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading everyone's calendars…"
+          }
+        }
+      }
+    },
+    "pile.busyFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke hente gruppens kalendere, så tiderne er ufuldstændige."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load this group's calendars, so these times are incomplete."
+          }
+        }
+      }
+    },
+    "pile.noCalendars": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen i gruppen har forbundet en kalender endnu, så der er ikke noget at søge i."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody in the group has linked a calendar yet, so there is nothing to search."
+          }
+        }
+      }
+    },
+    "pile.suggestFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunne ikke foreslå aftalen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't suggest the event"
+          }
+        }
+      }
+    },
+    "pile.widen.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen dato passer. Det her ville virke:"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date works. These would:"
+          }
+        }
+      }
+    },
+    "pile.widen.time.morning": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Om formiddagen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the morning"
+          }
+        }
+      }
+    },
+    "pile.widen.time.lunch": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Til frokost"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For lunch"
+          }
+        }
+      }
+    },
+    "pile.widen.time.afternoon": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Om eftermiddagen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the afternoon"
+          }
+        }
+      }
+    },
+    "pile.widen.time.evening": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Om aftenen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the evening"
+          }
+        }
+      }
+    },
+    "pile.widen.time.any": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Når som helst på dagen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any time of day"
+          }
+        }
+      }
+    },
+    "pile.widen.days": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle ugedage"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every day of the week"
+          }
+        }
+      }
+    },
+    "pile.widen.startDay": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start en anden dag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start on another day"
+          }
+        }
+      }
+    },
+    "pile.widen.shorter": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kortere, %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shorter, %@"
+          }
+        }
+      }
+    },
+    "pile.widen.months": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Længere periode, %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A longer period, %@"
+          }
+        }
+      }
+    },
+    "pile.widen.people": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mindst %1$d af %2$d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least %1$d of %2$d"
+          }
+        }
+      }
+    },
+    "pile.widen.without": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "uden %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "without %@"
+          }
+        }
+      }
+    },
+    "edge.earlyMorning.you": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You"
+          }
+        }
+      }
+    },
+    "edge.earlyMorning.oneYou": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bemærk: Du har noget kl. %@ næste morgen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heads up: you have something at %@ the next morning."
+          }
+        }
+      }
+    },
+    "edge.earlyMorning.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bemærk: %1$@ har noget kl. %2$@ næste morgen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heads up: %1$@ has something at %2$@ the next morning."
+          }
+        }
+      }
+    },
+    "edge.earlyMorning.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bemærk: %@ har noget tidligt næste morgen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heads up: %@ have something early the next morning."
+          }
+        }
+      }
+    },
+    "edge.newYearsDay": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bemærk: Det er dagen efter nytårsaften."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heads up: it's the day after New Year's Eve."
+          }
+        }
+      }
+    },
+    "edge.backToBack.you": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You"
+          }
+        }
+      }
+    },
+    "edge.backToBack.oneYou": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bemærk: Du har noget, der slutter lige når aftalen starter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heads up: you have something that ends just as this starts."
+          }
+        }
+      }
+    },
+    "edge.backToBack.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bemærk: %@ har noget, der slutter lige når aftalen starter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heads up: %@ has something that ends just as this starts."
+          }
+        }
+      }
+    },
+    "edge.backToBack.many": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bemærk: %@ har noget, der slutter lige når aftalen starter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heads up: %@ have something that ends just as this starts."
+          }
+        }
+      }
+    },
     "homeVote.answer": {
       "extractionState": "manual",
       "localizations": {
