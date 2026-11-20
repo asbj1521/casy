@@ -140,6 +140,7 @@ final class PileModel {
     /// The pool, the scores, the list and the layers, worked out off the main thread.
     private func prepare(_ found: MultiDayResult, _ participants: [Participant]) async {
         let search = plan.search
+        let extraSearches = plan.extraSearches
         let window = plan.searchWindow
         let extras = plan.extras
         let now = Native.now
@@ -156,13 +157,16 @@ final class PileModel {
         let first = FoundDate(slot: slot, conflicts: found.conflicts, absent: found.absent)
         pool = await Task.detached(priority: .userInitiated) {
             findPoolAcross(
-                participants, [search],
-                CandidateOptions(first: first, end: window.end, count: extras.dateCount, profile: profile, now: now), zone)
+                participants, [search] + extraSearches,
+                CandidateOptions(
+                    first: first, end: window.end, count: extras.dateCount, profile: profile, now: now,
+                    everyTime: !extraSearches.isEmpty), zone)
         }.value
         // The layers from the dates' starts alone, so they are thrown at once.
         let preliminary = Self.checked(
             first, pool, participants, search, window: window, extras: extras, scores: [:], counted: 0, profile: profile,
-            you: plan.you, waitingFor: !(plan.people?.waitingFor.isEmpty ?? true), now: now)
+            you: plan.you, waitingFor: !(plan.people?.waitingFor.isEmpty ?? true), now: now,
+            everyTime: !extraSearches.isEmpty)
         layers = Self.layers(participants, search, window, preliminary.map(\.date.slot.start), you: plan.you, zone)
         timeline = pileTimeline(layers?.friends.count ?? 0, start: PileTiming.inPlace)
         // How well each date suits the group (#119), asked while the calendars are thrown.
@@ -170,7 +174,8 @@ final class PileModel {
             await score(first)
             dates = Self.checked(
                 first, pool, participants, search, window: window, extras: extras, scores: scores, counted: counted, profile: profile,
-                you: plan.you, waitingFor: !(plan.people?.waitingFor.isEmpty ?? true), now: now)
+                you: plan.you, waitingFor: !(plan.people?.waitingFor.isEmpty ?? true), now: now,
+            everyTime: !extraSearches.isEmpty)
             ready = true
         }
     }
@@ -277,7 +282,7 @@ final class PileModel {
             dates = Self.checked(
                 first, pool, people.participants, plan.search, window: plan.searchWindow, extras: plan.extras,
                 scores: scores, counted: counted, profile: profile, you: plan.you, waitingFor: !people.waitingFor.isEmpty,
-                now: Native.now)
+                now: Native.now, everyTime: !plan.extraSearches.isEmpty)
             arrived = Set(dates?.map(\.id) ?? [])
             checked = dates?.count ?? 0
         }
@@ -356,7 +361,7 @@ final class PileModel {
     nonisolated static func checked(
         _ first: FoundDate, _ pool: [FoundDate], _ participants: [Participant], _ search: EventSettings,
         window: (start: String, end: String), extras: EventExtras, scores: [String: Double], counted: Int,
-        profile: EventImpact?, you: String?, waitingFor: Bool, now: Int64
+        profile: EventImpact?, you: String?, waitingFor: Bool, now: Int64, everyTime: Bool = false
     ) -> [CheckedDate] {
         let zone = appTimeZone
         let lang: Lang = CasyStrings.language == "en" ? .en : .da
@@ -365,7 +370,7 @@ final class PileModel {
                 pool, participants, search,
                 CandidateOptions(
                     first: first, end: window.end, count: extras.dateCount, scores: scores, profile: profile, now: now,
-                    priority: priority),
+                    priority: priority, everyTime: everyTime),
                 zone)
         }
         let ranked = rank(extras.priority)

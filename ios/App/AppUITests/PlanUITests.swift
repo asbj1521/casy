@@ -4,6 +4,13 @@ import XCTest
 /// as rows with their pickers, the months and how many must come. The fake
 /// world's group Fredagsbar has four members.
 final class PlanUITests: XCTestCase {
+    /// A fresh world each test: a genvej one test saves is no other test's.
+    override func setUp() async throws {
+        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        reset.httpMethod = "POST"
+        _ = try await URLSession.shared.data(for: reset)
+    }
+
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -118,5 +125,43 @@ final class PlanUITests: XCTestCase {
         XCTAssertTrue(change.waitForExistence(timeout: 40))
         change.tap()
         XCTAssertTrue(app.staticTexts["Antal dage"].waitForExistence(timeout: 10), "the trip is kept")
+    }
+
+    /// Genveje: a new one saved from the plan, run from its square, and deleted again.
+    func testAGenvejIsSavedRunAndDeleted() {
+        let app = launch()
+        let shortcuts = app.buttons["plan.shortcuts"]
+        XCTAssertTrue(shortcuts.waitForExistence(timeout: 15))
+        shortcuts.tap()
+        XCTAssertTrue(app.staticTexts["Gem en plan, du bruger tit, og find en dato med ét tryk."].waitForExistence(timeout: 15))
+        let add = app.buttons.matching(NSPredicate(format: "label == %@", "Ny genvej")).firstMatch
+        if !add.waitForExistence(timeout: 5) { print(app.debugDescription) }
+        add.tap()
+        let name = app.textFields.firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 10))
+        name.tap()
+        name.typeText("Padel\n")
+        app.buttons["editor.save"].tap()
+        let square = app.buttons["shortcut.Padel"]
+        XCTAssertTrue(square.waitForExistence(timeout: 15), "the new genvej's square")
+        square.tap()
+        let find = app.buttons["shortcuts.find"]
+        XCTAssertTrue(find.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Snarest"].exists, "Hvornår under it")
+        find.tap()
+        XCTAssertTrue(app.buttons["pile.change"].waitForExistence(timeout: 40), "the pile ran")
+        app.buttons["pile.change"].tap()
+        XCTAssertTrue(app.buttons["plan.shortcuts"].waitForExistence(timeout: 10))
+        app.buttons["plan.shortcuts"].tap()
+        let edit = app.buttons["Ret Padel"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 15))
+        edit.tap()
+        let remove = app.buttons["editor.remove"]
+        if !remove.waitForExistence(timeout: 10) { print(app.debugDescription) }
+        remove.tap()
+        let confirm = app.buttons["confirm.yes"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertTrue(app.buttons["shortcut.Padel"].waitForNonExistence(timeout: 15))
     }
 }

@@ -2,6 +2,7 @@
 // web's src/api makes. `errorMessage` is the screen's own fallback.
 
 import CasyCore
+import Foundation
 
 private struct Action: Encodable, Sendable {
     let action: String
@@ -309,6 +310,94 @@ private struct ProfileEvent: Encodable, Sendable {
 
 private struct ProfileAnswer: Decodable, Sendable {
     let profile: EventImpact
+}
+
+/// Any JSON, as Foundation reads it: for a plan read strictly by readShortcutPlan.
+struct AnyJSON: Decodable, @unchecked Sendable {
+    let value: Any
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if c.decodeNil() {
+            value = NSNull()
+        } else if let v = try? c.decode(Bool.self) {
+            value = v
+        } else if let v = try? c.decode(Double.self) {
+            value = v
+        } else if let v = try? c.decode(String.self) {
+            value = v
+        } else if let v = try? c.decode([AnyJSON].self) {
+            value = v.map(\.value)
+        } else {
+            value = try c.decode([String: AnyJSON].self).mapValues(\.value)
+        }
+    }
+}
+
+/// A saved plan (#175): its name, its plan, and its picture.
+public struct Shortcut: Sendable, Equatable, Identifiable {
+    public var id: String
+    public var name: String
+    public var plan: ShortcutPlan
+    public var pictureUrl: String?
+
+    public init(id: String, name: String, plan: ShortcutPlan, pictureUrl: String?) {
+        self.id = id
+        self.name = name
+        self.plan = plan
+        self.pictureUrl = pictureUrl
+    }
+}
+
+private struct StoredShortcut: Decodable, Sendable {
+    let id: String
+    let name: String
+    let plan: AnyJSON
+    let pictureUrl: String?
+}
+
+private struct PresetsAnswer: Decodable, Sendable {
+    let presets: [StoredShortcut]?
+    let savedId: String?
+}
+
+/// Missing settings take the first meeting time of the defaults, the same every time.
+private let shortcutBase = SchedulerSettings(
+    multiDay: false, startHour: 18, durationMinutes: 180, dows: allDows, anyTime: false, startWindow: nil, days: 3,
+    startDow: 5, period: nil)
+
+private func readAll(_ stored: [StoredShortcut]?) -> [Shortcut] {
+    (stored ?? []).compactMap { s in
+        readShortcutPlan(s.plan.value, base: shortcutBase).map {
+            Shortcut(id: s.id, name: s.name, plan: $0, pictureUrl: s.pictureUrl)
+        }
+    }
+}
+
+private struct PresetAction: Encodable, Sendable {
+    let action: String
+    let id: String?
+}
+
+private struct SavePreset: Encodable, Sendable {
+    let id: String?
+    let name: String
+    let plan: ShortcutPlan
+    /// A JPEG (base64), "" to take it off, nil to keep the one it has.
+    let picture: String?
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode("save", forKey: .action)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(plan, forKey: .plan)
+        if let picture {
+            if picture.isEmpty { try c.encodeNil(forKey: .picture) } else { try c.encode(picture, forKey: .picture) }
+        }
+    }
+
+    enum CodingKeys: String, CodingKey { case action, id, name, plan, picture }
 }
 
 /// A date sent in a vote, with the suggester's own answer (#101).
@@ -740,6 +829,30 @@ extension EdgeFunctions {
         let answer: AdminTesterAnswer = try await call(
             "admin", body: AdminTester(profileId: profileId, allowed: allowed), errorMessage: errorMessage)
         return answer.tester
+    }
+
+    /// Your genveje, oldest first (#175).
+    public func shortcuts(errorMessage: String? = nil) async throws -> [Shortcut] {
+        let answer: PresetsAnswer = try await call(
+            "plan-presets", body: PresetAction(action: "list", id: nil), errorMessage: errorMessage)
+        return readAll(answer.presets)
+    }
+
+    /// A new genvej (no id) or a changed one; all of them after, and the one saved.
+    /// `picture`: a JPEG (base64), "" to take it off, nil to keep it.
+    public func saveShortcut(
+        id: String?, name: String, plan: ShortcutPlan, picture: String?, errorMessage: String? = nil
+    ) async throws -> (shortcuts: [Shortcut], savedId: String) {
+        let answer: PresetsAnswer = try await call(
+            "plan-presets", body: SavePreset(id: id, name: name, plan: plan, picture: picture),
+            errorMessage: errorMessage)
+        return (readAll(answer.presets), answer.savedId ?? "")
+    }
+
+    public func deleteShortcut(_ id: String, errorMessage: String? = nil) async throws -> [Shortcut] {
+        let answer: PresetsAnswer = try await call(
+            "plan-presets", body: PresetAction(action: "delete", id: id), errorMessage: errorMessage)
+        return readAll(answer.presets)
     }
 
     /// Dates sent to a group to vote on (#74), each with the suggester's answer.

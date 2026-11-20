@@ -901,6 +901,22 @@ final class ParityUITests: XCTestCase {
         shoot(app, "plan-pile-light", when: "bedste", native: "pile.screen")
     }
 
+    /// Genveje beside the group: the empty grid of plus squares.
+    func testPlanShortcuts() async throws {
+        let app =
+            mode == "web"
+            ? try await launch("/?plan", theme: "light")
+            : try await launch("/", theme: "light", extra: ["-casyOpenScreen", "plan"])
+        let button =
+            mode == "web"
+            ? app.webViews.buttons.matching(NSPredicate(format: "label == %@", "Genveje")).firstMatch
+            : app.buttons["plan.shortcuts"]
+        XCTAssertTrue(button.waitForExistence(timeout: 30))
+        _ = XCTWaiter.wait(for: [expectation(description: "still")], timeout: 2)
+        button.tap()
+        shoot(app, "plan-shortcuts-light", when: "Gem en plan", native: "shortcuts.screen")
+    }
+
     func testPlanLight() async throws { try await shootPlan(theme: "light") }
 
     func testPlanDark() async throws { try await shootPlan(theme: "dark") }

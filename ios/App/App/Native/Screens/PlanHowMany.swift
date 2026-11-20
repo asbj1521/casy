@@ -8,6 +8,8 @@ import UIKit
 /// of those coming to everyone, each with the first date it finds (never the
 /// date itself, which the pile reveals). Meetings only, with three or more.
 struct PlanHowMany: View {
+    /// The room above it: 16 in the sheet, 12 under a genvej about to run.
+    var top: CGFloat = 16
     @Bindable private var model = PlanModel.shared
 
     private var of: Int { requiredCount(model.members, model.peopleChoice) }
@@ -47,7 +49,7 @@ struct PlanHowMany: View {
                         .padding(.top, 6)
                 }
             }
-            .padding(.top, 16)
+            .padding(.top, top)
         }
     }
 }

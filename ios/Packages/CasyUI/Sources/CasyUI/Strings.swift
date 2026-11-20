@@ -714,6 +714,31 @@ public enum CasyStrings {
     public static var planQuestionsDone: String { text("plan.questionsDone") }
     public static var planAiFailed: String { text("api.planAi") }
 
+    // Genveje (#175, #282).
+    public static var shortcutsAdd: String { text("shortcuts.add") }
+    public static func shortcutsEdit(_ name: String) -> String { String(format: text("shortcuts.edit"), name) }
+    public static func shortcutsRun(_ name: String) -> String { String(format: text("shortcuts.run"), name) }
+    public static func shortcutsBack(_ name: String) -> String { String(format: text("shortcuts.back"), name) }
+    public static var shortcutsSave: String { text("shortcuts.save") }
+    public static var shortcutsNameFirst: String { text("shortcuts.nameFirst") }
+    public static var shortcutsRemove: String { text("shortcuts.remove") }
+    public static func shortcutsRemoveAsk(_ name: String) -> String { String(format: text("shortcuts.removeAsk"), name) }
+    public static var shortcutsPicture: String { text("shortcuts.picture") }
+    public static var shortcutsPictureAdd: String { text("shortcuts.pictureAdd") }
+    public static var shortcutsNotSaved: String { text("shortcuts.notSaved") }
+    public static var shortcutsEmptyNote: String { text("shortcuts.emptyNote") }
+    public static var shortcutsNameLabel: String { text("shortcuts.nameLabel") }
+    public static var shortcutsNamePlaceholder: String { text("shortcuts.namePlaceholder") }
+    public static func shortcutsTime(_ n: Int) -> String { String(format: text("shortcuts.time"), n) }
+    public static var shortcutsAddTime: String { text("shortcuts.addTime") }
+    public static func shortcutsRemoveTime(_ n: Int) -> String { String(format: text("shortcuts.removeTime"), n) }
+    public static var shortcutsAnyTime: String { text("shortcuts.anyTime") }
+    public static var shortcutsLoadFailed: String { text("shortcuts.loadFailed") }
+    public static var shortcutsSaveFailed: String { text("shortcuts.saveFailed") }
+    public static var shortcutsDeleteFailed: String { text("shortcuts.deleteFailed") }
+    public static var planWhenLabel: String { text("plan.when.label") }
+    public static var planWhenSoonest: String { text("plan.when.soonest") }
+
     // The paper pile (#126, #282).
     public static func pileRanked(_ n: Int) -> String { n == 1 ? text("pile.ranked.one") : String(format: text("pile.ranked.many"), n) }
     public static var pileReviewing: String { text("pile.reviewing") }

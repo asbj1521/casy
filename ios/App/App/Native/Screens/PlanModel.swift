@@ -79,6 +79,7 @@ final class PlanModel {
         extras = .defaults
         settings = Self.randomSettings()
         peopleChoices = [:]
+        extraTimes = []
         restart()
     }
 
@@ -164,9 +165,69 @@ final class PlanModel {
 
     // MARK: Changing it
 
-    /// A setting changed, by hand or by the AI: back to the first date.
+    /// A setting changed, by hand or by the AI: back to the first date. A
+    /// genvej's other times go once the time is changed by hand.
     func update(_ change: (inout SchedulerSettings) -> Void) {
+        let before = timeOf(settings)
         change(&settings)
+        if timeOf(settings) != before { extraTimes = [] }
+        restart()
+    }
+
+    // MARK: Genveje (#175)
+
+    /// A genvej's other times, searched beside the plan's own until a time is changed by hand.
+    private(set) var extraTimes: [ShortcutTime] = []
+
+    /// Those times as searches; none for a trip, whose days are whole.
+    var extraSearches: [EventSettings] {
+        guard !settings.multiDay else { return [] }
+        return extraTimes.map { time in
+            var s = settings
+            s.startHour = time.startHour
+            s.startWindow = time.startWindow
+            s.anyTime = time.anyTime
+            s.durationMinutes = time.durationMinutes
+            return settingsToSearch(s, people: peopleFromChoice(members, peopleChoice, meeting: true))
+        }
+    }
+
+    /// A genvej as the plan: its name, settings (no months: it runs from today), extras and times.
+    func load(_ shortcut: Shortcut) {
+        let s = shortcut.plan.settings
+        name = shortcut.name
+        settings = SchedulerSettings(
+            multiDay: s.multiDay, startHour: s.startHour, durationMinutes: s.durationMinutes, dows: s.dows,
+            anyTime: s.anyTime, startWindow: s.startWindow, days: s.days, startDow: s.startDow, period: nil)
+        extras = shortcut.plan.extras
+        extraTimes = Array(shortcut.plan.times.dropFirst())
+        restart()
+    }
+
+    /// One of the editor's times as the plan's own, the others kept as they are.
+    func showTime(_ time: ShortcutTime) {
+        settings.startHour = time.startHour
+        settings.startWindow = time.startWindow
+        settings.anyTime = time.anyTime
+        settings.durationMinutes = time.durationMinutes
+        restart()
+    }
+
+    /// The plan as it stands, to put back if a genvej looked at isn't run.
+    struct Snapshot {
+        let name: String
+        let settings: SchedulerSettings
+        let extras: EventExtras
+        let extraTimes: [ShortcutTime]
+    }
+
+    var snapshot: Snapshot { Snapshot(name: name, settings: settings, extras: extras, extraTimes: extraTimes) }
+
+    func restore(_ s: Snapshot) {
+        name = s.name
+        settings = s.settings
+        extras = s.extras
+        extraTimes = s.extraTimes
         restart()
     }
 

@@ -10,10 +10,17 @@ struct PlanSheet: View {
     let leave: (LeavingProfile) -> Void
     /// Find dato: on to the paper pile.
     var onFind: () -> Void = {}
+    @State private var path: [PlanPage] = []
 
     var body: some View {
-        NavigationStack {
-            PlanScreen(leave: leave, onFind: onFind)
+        NavigationStack(path: $path) {
+            PlanScreen(leave: leave, onFind: onFind, path: $path)
+                .navigationDestination(for: PlanPage.self) { page in
+                    switch page {
+                    case .shortcuts: ShortcutsScreen(onFind: onFind, path: $path)
+                    case .editor(let id): ShortcutEditor(id: id, path: $path)
+                    }
+                }
         }
         .environment(\.closeSheet, onDone)
         .nativeSheetLook(preferences)
@@ -30,6 +37,7 @@ struct PlanScreen: View {
     @Bindable private var model = PlanModel.shared
     @Environment(\.closeSheet) private var closeSheet
     var onFind: () -> Void = {}
+    @Binding var path: [PlanPage]
     /// The AI's yes asked first (useAiConsentGate).
     @State private var consent: (() -> Void)?
     /// The AI's questions open, the sheet held as it was until they are answered.
@@ -41,7 +49,7 @@ struct PlanScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                PlanGroupRow()
+                PlanGroupRow(shortcuts: { path.append(.shortcuts) })
                 PlanNameField(onAsk: askAi).padding(.top, 16)
                 Group {
                     PlanTimeRows()
@@ -122,7 +130,9 @@ struct PlanScreen: View {
 
 /// The plan's group as one row (#173, #185): its members as bubbles and its
 /// name big, the groups unfolding from the row to pick another; Genveje beside it.
-private struct PlanGroupRow: View {
+struct PlanGroupRow: View {
+    /// Genveje beside the group; none under a genvej about to run.
+    var shortcuts: (() -> Void)?
     private let model = PlanModel.shared
     @State private var picking = false
 
@@ -147,8 +157,8 @@ private struct PlanGroupRow: View {
                 GroupChoices(done: { picking = false })
                     .presentationCompactAdaptation(.popover)
             }
-            Button {
-            } label: {
+            if let shortcuts {
+            Button(action: shortcuts) {
                 Text(CasyStrings.shortcutsTitle)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.primary.color)
@@ -162,6 +172,7 @@ private struct PlanGroupRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("plan.shortcuts")
+            }
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -209,7 +220,7 @@ private let dayMinutes = 24 * 60
 /// picker of its own (#173): a meeting is "17:00 - 19:00" (start and end
 /// wheels), give or take (Kan rykkes, stepped by half hours in its row), on
 /// some weekdays; a trip is its days and the weekday it starts on.
-private struct PlanTimeRows: View {
+struct PlanTimeRows: View {
     @Bindable private var model = PlanModel.shared
     @State private var open: Open?
 
@@ -606,12 +617,20 @@ private struct PlanStepper: View {
 /// When, in the Planlæg sheet (#173): the twelve months searched, all in view
 /// as two rows of six. A tap picks a month, a tap on another stretches the
 /// period to it, a tap on either end takes that month off.
-private struct PlanMonths: View {
+struct PlanMonths: View {
+    /// The months for something else than the plan (a genvej's Hvornår, #259).
+    var value: Binding<Period?>?
     @Bindable private var model = PlanModel.shared
     @State private var now = Native.now
 
+    init(value: Binding<Period?>? = nil) { self.value = value }
+
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
-    private var period: Period? { model.shownSettings.period }
+    private var period: Period? { value?.wrappedValue ?? (value == nil ? model.shownSettings.period : nil) }
+
+    private func set(_ change: (Period?) -> Period?) {
+        if let value { value.wrappedValue = change(value.wrappedValue) } else { model.update { $0.period = change($0.period) } }
+    }
     private var months: [String] {
         let first = startOfMonth(now, appTimeZone)
         return (0..<12).map { isoString(startOfMonth(first, appTimeZone, $0)) }
@@ -627,7 +646,7 @@ private struct PlanMonths: View {
                     .foregroundStyle(Theme.mutedForeground.color)
                     .padding(.horizontal, 4)
                 Spacer()
-                Button { model.update { $0.period = nil } } label: {
+                Button { set { _ in nil } } label: {
                     Text(CasyStrings.planAllMonths)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(period == nil ? Theme.primary.color : Theme.mutedForeground.color)
@@ -646,7 +665,7 @@ private struct PlanMonths: View {
             .padding(6)
             .background(Theme.card.color, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.border.color, lineWidth: 1) }
-            .litRing(model.lit == .months, radius: 16)
+            .litRing(value == nil && model.lit == .months, radius: 16)
             .accessibilityElement(children: .contain)
             .accessibilityLabel(CasyStrings.planMonths)
             if let period {
@@ -663,7 +682,7 @@ private struct PlanMonths: View {
                 .padding(.top, 6)
             }
         }
-        .padding(.top, 16)
+        .padding(.top, value == nil ? 16 : 0)
     }
 
     private static let words = PeriodWords(
@@ -690,7 +709,7 @@ private struct PlanMonths: View {
         let local = localDate(ms, appTimeZone)
         let name = capitalized(monthShortName(ms, lang).replacingOccurrences(of: ".", with: ""))
         return Button {
-            model.update { $0.period = pickPeriodMonth($0.period, month, appTimeZone) }
+            set { pickPeriodMonth($0, month, appTimeZone) }
         } label: {
             VStack(spacing: 0) {
                 Text(name).font(.system(size: 15, weight: .semibold))
