@@ -97,6 +97,42 @@ final class HomeUITests: XCTestCase {
         XCTAssertFalse(app.buttons["home.pill"].exists, "put away until the app is opened again")
     }
 
+    /// A date the day before a critical exam of yours (#114): said on the
+    /// card, and a yes is asked first.
+    func testADateBeforeYourExamIsWarnedAndAskedFirst() {
+        let app = launch(["-casyImportant", "YES"])
+        let pill = app.buttons["home.pill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 10))
+        pill.tap()
+        let card = app.descendants(matching: .any)["vote.card"]
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        XCTAssertTrue(card.label.contains("Det ligner, at du har en eksamen dagen efter"), card.label)
+        app.buttons["vote.accepted"].tap()
+        let yes = app.buttons["confirm.yes"]
+        XCTAssertTrue(yes.waitForExistence(timeout: 5), "a yes asked first")
+        XCTAssertTrue(card.label.contains("Dato 1 af 3"), "not answered yet")
+        yes.tap()
+        expectation(for: NSPredicate(format: "label CONTAINS %@", "Dato 2 af 3"), evaluatedWith: card)
+        waitForExpectations(timeout: 5)
+    }
+
+    /// The last date answered here: the page is told, for its notifications ask (#139).
+    func testTheLastAnswerTellsThePage() {
+        let app = launch()
+        let pill = app.buttons["home.pill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 10))
+        pill.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["vote.card"].waitForExistence(timeout: 5))
+        for _ in 0..<3 {
+            let no = app.buttons["vote.declined"]
+            XCTAssertTrue(no.waitForExistence(timeout: 5))
+            no.tap()
+        }
+        let last = app.staticTexts["home.lastAction"]
+        expectation(for: NSPredicate(format: "label == %@", "answered"), evaluatedWith: last)
+        waitForExpectations(timeout: 10)
+    }
+
     /// Every date answered: thanks, then back to the month by itself.
     func testTheLastAnswerSaysThanksAndGoesBack() {
         let app = launch()

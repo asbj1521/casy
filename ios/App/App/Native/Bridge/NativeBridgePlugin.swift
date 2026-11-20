@@ -493,6 +493,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         let tell = call.getBool("tell") ?? false
         let holidaysHidden = call.getBool("holidaysHidden") ?? false
         let dataAt = call.getDouble("dataAt") ?? 0
+        let importantRaw: Any? = call.getArray("important")
+        let important: [LabelledEvent] = Self.decode([LabelledEvent].self, importantRaw) ?? []
         let badgesRaw: [String: Any] = call.getObject("badges") ?? [:]
         let badges = HomeBadges(
             calendars: badgesRaw["calendars"] as? Int ?? 0, events: badgesRaw["events"] as? Int ?? 0,
@@ -508,6 +510,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             fresh.tell = tell
             fresh.holidaysHidden = holidaysHidden
             fresh.badges = badges
+            fresh.important = important
             fresh.dataAt = dataAt
             HomeModel.shared.update(fresh)
             self.placeHome()

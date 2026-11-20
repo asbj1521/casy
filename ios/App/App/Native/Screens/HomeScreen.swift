@@ -469,6 +469,9 @@ struct HomeScreen: View {
         AgreedSeen.mark(id)
         model.landing = nil
         celebrations += 1
+        // A date agreed, landed in the calendar: the moment the page may ask
+        // for a rating (#256).
+        model.onAction?("landed", nil)
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(1500))
             sayAgreed()

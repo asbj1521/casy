@@ -42,7 +42,8 @@ enum CardExit: Equatable {
 /// answer is saved as it is given, and the next date doesn't wait for it; a
 /// failed save takes it back and says so (`error`). Back steps to a date
 /// before, to change an answer. A no to the date already decided moves it for
-/// everyone, so it is asked first (`confirmMove`).
+/// everyone, so it is asked first (`confirmMove`), as is a yes to a date that
+/// runs into something critical of yours (`confirmClash`, #114).
 @MainActor @Observable
 final class VoteDeck {
     let eventId: String
@@ -57,6 +58,11 @@ final class VoteDeck {
     private(set) var exit: CardExit = .answer(.accepted)
     private(set) var error: String?
     var confirmMove = false
+    /// A yes (or maybe) to a date that runs into something critical of yours,
+    /// waiting for its "Ja alligevel".
+    var confirmClash: EventResponse?
+    /// The warning whose event is said ("Vis mig"), by its key.
+    var shownClash: String?
     /// How to swipe is said until this phone's first answer, then never again (#161).
     let hintSeen: Bool
     /// Opened on a vote already answered (Aftaler's row, a push): from its
@@ -110,8 +116,23 @@ final class VoteDeck {
         event.candidates.first { $0.id == date.id } ?? date
     }
 
+    /// What the date runs into among your important events (#114): the
+    /// event's profile on that date against the page's labelled events.
+    func clashes(_ date: CandidateDate) -> [ImportantClash] {
+        let mine = HomeModel.shared.page.important
+        guard !mine.isEmpty else { return [] }
+        let impact = impactOn(event.impact, start: date.start, end: date.end, event.settings, appTimeZone)
+        return importantClashes(impact, mine, appTimeZone)
+    }
+
     func answer(_ response: EventResponse, confirmed: Bool = false) {
         guard let current else { return }
+        let risky = response != .declined && clashes(current).contains { $0.severity == "critical" }
+        if risky && !confirmed {
+            confirmClash = response
+            return
+        }
+        confirmClash = nil
         UserDefaults.standard.set(true, forKey: Self.hintKey)
         let movesDate =
             event.status == .scheduled && event.currentDate?.id == current.id && response == .declined
@@ -120,6 +141,7 @@ final class VoteDeck {
             return
         }
         confirmMove = false
+        shownClash = nil
         error = nil
         exit = .answer(response)
         given[current.id] = response
@@ -132,6 +154,8 @@ final class VoteDeck {
         let to = to ?? index - 1
         guard to >= 0 else { return }
         confirmMove = false
+        confirmClash = nil
+        shownClash = nil
         exit = .back
         index = to
     }
@@ -225,6 +249,9 @@ struct HomeVotePanel: View {
         .task(id: deck.done) {
             // All answered: a moment of thanks, then the plain month.
             guard deck.done, !deck.startedDone else { return }
+            // The last date answered just now: the moment to offer
+            // notifications about the outcome (#139), which the page decides.
+            HomeModel.shared.onAction?("answered", nil)
             try? await Task.sleep(for: Self.thanks)
             if !Task.isCancelled { close() }
         }
@@ -232,10 +259,14 @@ struct HomeVotePanel: View {
             AskWords(message: CasyStrings.voteMoveConfirm, confirm: CasyStrings.voteMoveYes, cancel: CasyStrings.voteMoveKeep),
             isPresented: Binding(get: { deck.confirmMove }, set: { deck.confirmMove = $0 })
         ) { deck.answer(.declined, confirmed: true) }
+        .askFirst(
+            AskWords(message: CasyStrings.clashConfirm, confirm: CasyStrings.clashConfirmYes, cancel: CasyStrings.clashConfirmNo),
+            isPresented: Binding(get: { deck.confirmClash != nil }, set: { if !$0 { deck.confirmClash = nil } })
+        ) { if let response = deck.confirmClash { deck.answer(response, confirmed: true) } }
     }
 
     /// Folded only while there is a card to swipe and nothing to ask.
-    private var isFolded: Bool { folded && !deck.done && !deck.confirmMove }
+    private var isFolded: Bool { folded && !deck.done && !deck.confirmMove && deck.confirmClash == nil }
 
     @ViewBuilder private func panel(cardHeight: CGFloat, short: Bool) -> some View {
         VStack(spacing: 0) {
@@ -418,9 +449,11 @@ struct HomeVotePanel: View {
     }
 
     private func face(_ date: CandidateDate, position: Int) -> some View {
-        VoteCardFace(
+        let current = date.id == deck.current?.id
+        return VoteCardFace(
             event: deck.event, date: deck.latest(date), position: position, total: deck.dates.count,
-            yours: deck.answerOf(date))
+            yours: deck.answerOf(date), clashes: deck.clashes(date), shownClash: current ? deck.shownClash : nil,
+            onShowClash: current ? { deck.shownClash = $0 } : nil)
     }
 }
 
@@ -651,6 +684,12 @@ struct VoteCardFace: View {
     let position: Int
     let total: Int
     let yours: EventResponse?
+    /// What the date runs into among your important events (#114).
+    var clashes: [ImportantClash] = []
+    /// The warning whose event is said, by its key.
+    var shownClash: String?
+    /// "Vis mig" on the card in front only.
+    var onShowClash: ((String?) -> Void)?
 
     /// How many faces fit their one line, before "+n".
     private static let faces = 7
@@ -705,6 +744,8 @@ struct VoteCardFace: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 8)
                 }
+                ImportantClashLines(clashes: clashes, shown: shownClash, onShow: onShowClash)
+                    .padding(.top, clashes.isEmpty ? 0 : 8)
                 if event.place != nil || event.note != nil {
                     PlaceNoteView(event: event).padding(.top, 8)
                 }
@@ -804,5 +845,77 @@ struct AnswerBadge: View {
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+/// What a date runs into among your important events (#114, the web's
+/// ImportantClashes): said vaguely ("Det ligner, at du har en eksamen dagen
+/// efter: ..."), critical in red, the rest in amber, the strongest two. "Vis
+/// mig" says which event and when. Your own event, read on this phone;
+/// nothing anyone else sees.
+struct ImportantClashLines: View {
+    let clashes: [ImportantClash]
+    var shown: String?
+    var onShow: ((String?) -> Void)?
+
+    private static let most = 2
+    private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
+
+    var body: some View {
+        if !clashes.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                // While one is said, it is the only one: a card has little room.
+                ForEach(clashes.prefix(Self.most).filter { shown == nil || $0.key == shown }, id: \.key) { c in
+                    line(c)
+                }
+            }
+            .accessibilityIdentifier("vote.clashes")
+        }
+    }
+
+    private func line(_ c: ImportantClash) -> some View {
+        let open = shown == c.key
+        let color = c.severity == "critical" ? Theme.red700.color : Theme.amber800.color
+        var text = AttributedString(sentence(c))
+        if onShow != nil {
+            var link = AttributedString(open ? CasyStrings.clashHide : CasyStrings.clashShow)
+            link.font = .system(size: 14, weight: .semibold)
+            link.underlineStyle = .single
+            text += AttributedString(" ") + link
+        }
+        let time = c.event.allDay ? nil : formatTime(isoString(c.event.start))
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .top, spacing: 6) {
+                LucideIcon("triangle-alert", size: 16).padding(.top, 2)
+                Text(text)
+                    .font(.system(size: 14, weight: .medium))
+                    .cssLineHeight(20, size: 14)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(color)
+            .contentShape(Rectangle())
+            .onTapGesture { onShow?(open ? nil : c.key) }
+            .accessibilityAction(named: open ? CasyStrings.clashHide : CasyStrings.clashShow) {
+                onShow?(open ? nil : c.key)
+            }
+            if open {
+                Text(CasyStrings.clashDetail(c.event.title, day: dayLabel(c.event.start, lang), time: time))
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.foreground.color)
+                    .padding(.leading, 22)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: open)
+    }
+
+    /// The web's clashSentence.
+    private func sentence(_ c: ImportantClash) -> String {
+        let avoid = c.avoid.map(CasyStrings.clashAvoid)
+        let list =
+            avoid.count <= 1
+            ? (avoid.first ?? "") : "\(avoid.dropLast().joined(separator: ", ")) \(CasyStrings.clashAnd) \(avoid.last!)"
+        return CasyStrings.clashSentence(
+            c.kind, what: CasyStrings.clashKind(c.event.label.kind), when: CasyStrings.clashWhen(c.daysAfter), avoid: list)
     }
 }

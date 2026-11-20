@@ -128,6 +128,16 @@
             page.colors = ["vote:v1": "234, 88, 12"]
             page.starred = [startOfDay(day(16, 12), appTimeZone)]
             page.pill = CasyStrings.homeVoteAnswer("Fredagsbar")
+            // `-casyImportant YES`: a critical exam the morning after the vote's first date (#114).
+            if defaults.bool(forKey: "casyImportant") {
+                page.important = [
+                    LabelledEvent(
+                        title: "Eksamen i statistik", start: day(15, 9), end: day(15, 13), allDay: false,
+                        label: EventLabel(
+                            kind: "exam", importance: "critical", prepDays: 2, avoidBefore: ["alcohol", "lateNight"],
+                            recoveryDays: 0, strain: "heavy", confidence: "high", reason: ""))
+                ]
+            }
             return page
         }
 

@@ -767,6 +767,36 @@ public enum CasyStrings {
     public static var searchAgainWarning: String { text("searchAgain.warning") }
     public static var searchAgainWarningText: String { text("searchAgain.warningText") }
     public static var searchAgainFailed: String { text("api.searchAgain") }
+
+    // What a vote's date runs into among your important events (#114), the web's importantClash.
+    /// "samme dag", "dagen efter", "3 dage efter".
+    public static func clashWhen(_ daysAfter: Int) -> String {
+        daysAfter <= 0
+            ? text("clash.when.same") : daysAfter == 1 ? text("clash.when.next") : String(format: text("clash.when.days"), daysAfter)
+    }
+    /// The warning's sentence by its kind ("nightBefore", "prepDayBefore", "prep", "recovery").
+    public static func clashSentence(_ kind: String, what: String, when: String, avoid: String) -> String {
+        kind == "nightBefore"
+            ? String(format: text("clash.nightBefore"), what, when, avoid)
+            : String(format: text("clash.\(kind)"), what, when)
+    }
+    /// What kind of event it is, said vaguely ("en eksamen").
+    public static func clashKind(_ kind: String) -> String {
+        let key = "clash.kind.\(kind)"
+        let said = text(key)
+        return said == key ? text("clash.kind.other") : said
+    }
+    public static func clashAvoid(_ effect: String) -> String { text("clash.avoid.\(effect)") }
+    public static var clashAnd: String { text("clash.and") }
+    public static var clashShow: String { text("clash.show") }
+    public static var clashHide: String { text("clash.hide") }
+    /// "Corporate Finance eksamen, tirsdag 19. januar kl. 09:00".
+    public static func clashDetail(_ title: String, day: String, time: String?) -> String {
+        time.map { String(format: text("clash.detailAt"), title, day, $0) } ?? String(format: text("clash.detail"), title, day)
+    }
+    public static var clashConfirm: String { text("clash.confirm") }
+    public static var clashConfirmYes: String { text("clash.confirmYes") }
+    public static var clashConfirmNo: String { text("clash.confirmNo") }
     public static var pileChange: String { text("pile.change") }
     public static var pileClose: String { text("pile.close") }
     public static func pileDetails(_ date: String) -> String { String(format: text("pile.details"), date) }

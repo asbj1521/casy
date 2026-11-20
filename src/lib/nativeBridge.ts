@@ -8,6 +8,7 @@
  * As in phoneCalendar.ts, @capacitor/core loads on first use and only the
  * module goes through promises, never the plugin (it answers to `then` too).
  */
+import type { LabelledEvent } from "@/lib/eventWarnings";
 import type { GridItem } from "@/lib/monthGrid";
 import type { PluginListenerHandle } from "@capacitor/core";
 
@@ -55,13 +56,24 @@ export interface NativeHomeState {
    * invitations on Profil. 0 draws none.
    */
   badges: { calendars: number; events: number; profile: number };
+  /**
+   * Your events that matter (high or critical, #114), with the AI's labels
+   * kept on this phone: what a vote's date is warned against (#282).
+   */
+  important: LabelledEvent[];
   /** Changes when the page fetched your calendars again: the app reads them again too. */
   dataAt: number;
 }
 
 /** A press on the native home page, done by the page as from its own buttons. */
 export interface NativeHomeAction {
-  action: "day" | "calendars" | "tell" | "events" | "plan" | "profile" | "pill";
+  /**
+   * The app's buttons pressed, or a moment worth an ask (#282): the last date
+   * of a vote answered ("answered", the push ask) or an agreed date landed in
+   * the month ("landed", the rating ask).
+   */
+  action:
+    "day" | "calendars" | "tell" | "events" | "plan" | "profile" | "pill" | "answered" | "landed";
   day?: number;
 }
 

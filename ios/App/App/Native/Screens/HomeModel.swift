@@ -43,6 +43,9 @@ struct HomeFromPage: Equatable {
     var holidaysHidden = false
     /// The counts on the buttons, as the page draws them (#281).
     var badges = HomeBadges()
+    /// Your events that matter, with the AI's labels kept by the page (#114):
+    /// what a vote's date is warned against.
+    var important: [LabelledEvent] = []
     /// When the page last fetched your calendars: a new one means read again.
     var dataAt: Double = 0
 }

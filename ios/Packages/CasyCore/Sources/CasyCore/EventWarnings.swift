@@ -25,6 +25,20 @@ public struct EventLabel: Codable, Sendable, Equatable {
     public var strain: String
     public var confidence: String
     public var reason: String
+
+    public init(
+        kind: String, importance: String, prepDays: Int, avoidBefore: [String], recoveryDays: Int, strain: String,
+        confidence: String, reason: String
+    ) {
+        self.kind = kind
+        self.importance = importance
+        self.prepDays = prepDays
+        self.avoidBefore = avoidBefore
+        self.recoveryDays = recoveryDays
+        self.strain = strain
+        self.confidence = confidence
+        self.reason = reason
+    }
 }
 
 /// One of your events with its label.
@@ -34,6 +48,14 @@ public struct LabelledEvent: Codable, Sendable, Equatable {
     public var end: Int64
     public var allDay: Bool
     public var label: EventLabel
+
+    public init(title: String, start: Int64, end: Int64, allDay: Bool, label: EventLabel) {
+        self.title = title
+        self.start = start
+        self.end = end
+        self.allDay = allDay
+        self.label = label
+    }
 }
 
 public struct ImportantClash: Codable, Sendable, Equatable {

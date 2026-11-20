@@ -53,6 +53,7 @@ import { useGlassTop } from "@/hooks/useGlassTop";
 import { useMyCalendarView } from "@/hooks/useMyCalendarView";
 import { useStatusTap } from "@/hooks/useStatusTap";
 import { askForReview } from "@/lib/appReview";
+import { useLabelledEvents } from "@/hooks/useEventLabels";
 import { usePhoneImport } from "@/hooks/usePhoneImport";
 import { usePrimeDates } from "@/hooks/usePrimeDates";
 import { tripReveal, useGuessStep, useTrips } from "@/hooks/useTrips";
@@ -65,7 +66,7 @@ import { useHomeBarFlight } from "@/lib/homeBar";
 import { APP_CALENDAR_MONTHS } from "@/lib/eventSearch";
 import type { PlanStart } from "@/hooks/usePlanning";
 import { isNativeApp } from "@/lib/nativeApp";
-import { onPushAskOpenChange, pushAskOpen } from "@/lib/pushAsk";
+import { askForPush, onPushAskOpenChange, pushAskOpen } from "@/lib/pushAsk";
 import { onVotesAwayChange, votesAway } from "@/lib/voteLater";
 import {
   isPending,
@@ -117,6 +118,8 @@ const SHEETS_AFTER_MS = 1500;
 /** "Not now" on the import card (#132), kept until the app is opened again. */
 /** How long after a date flies into the calendar the App Store's rating is asked for (#256). */
 const REVIEW_AFTER_MS = 1600;
+/** The same after the app's own flight has landed: a moment for the confetti. */
+const LANDED_REVIEW_MS = 600;
 
 const phoneImportPutAway = { done: false };
 /**
@@ -589,6 +592,13 @@ export default function PhoneCalendar() {
   const eventsBadge = useEventsBadge();
   const { data: invitations } = useQuery(invitationsQuery(userId));
   const firstWaiting = homeVotes.waiting[0];
+  // Your events that matter (#114), for the app's vote cards to warn against (#282).
+  const labelled = useLabelledEvents();
+  const importantEvents = useMemo(
+    () =>
+      labelled.filter((e) => e.label.importance === "high" || e.label.importance === "critical"),
+    [labelled],
+  );
   useNativeHome(
     {
       covered:
@@ -612,6 +622,7 @@ export default function PhoneCalendar() {
       tell: aiAllowed,
       holidaysHidden: !calendars.find((c) => c.id === HOLIDAY_CALENDAR_ID)?.included,
       badges: { calendars: toSort, events: eventsBadge ?? 0, profile: invitations?.length ?? 0 },
+      important: importantEvents,
     },
     calendar.items,
     ({ action, day }) => {
@@ -622,6 +633,9 @@ export default function PhoneCalendar() {
       else if (action === "plan") openPlan();
       else if (action === "profile") openProfile();
       else if (action === "pill" && firstWaiting) openVote(firstWaiting.id);
+      // The moments the app's home page says, asked about as the page's own (#282).
+      else if (action === "answered") askForPush("answered");
+      else if (action === "landed") window.setTimeout(() => void askForReview(), LANDED_REVIEW_MS);
     },
   );
 
