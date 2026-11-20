@@ -46,6 +46,9 @@ final class PlanModel {
     /// group's calendars load or when nothing fits.
     private(set) var found: MultiDayResult?
     private var searchTask: Task<Void, Never>?
+    /// Each "at least N" with its first date (#259), nil until the calendars are read.
+    private(set) var counts: [CountOption]?
+    private var countsTask: Task<Void, Never>?
     /// The group the person last planned for, kept on the phone as the web does (lastGroupKey).
     private static let lastGroupKey = "casy-last-group"
 
@@ -63,6 +66,15 @@ final class PlanModel {
         busy = nil
         busyFor = nil
         found = nil
+    }
+
+    /// "Nulstil planen": a fresh plan for the same group (the web's reset, #189).
+    func startOver() {
+        name = ""
+        extras = .defaults
+        settings = Self.randomSettings()
+        peopleChoices = [:]
+        restart()
     }
 
     /// Opened: a plan left long ago starts over; groups and calendars are read again.
@@ -202,8 +214,10 @@ final class PlanModel {
     /// The first date for the step on screen, searched off the main thread.
     func research() {
         searchTask?.cancel()
+        countsTask?.cancel()
         guard let people = people, !people.participants.isEmpty else {
             found = nil
+            counts = nil
             return
         }
         let participants = people.participants
@@ -218,7 +232,27 @@ final class PlanModel {
                     participants, search, from: step.from, day: step.day == true, windowStart: window.start,
                     windowEnd: window.end, now: now, zone)
             }.value
-            if !Task.isCancelled { found = result }
+            if !Task.isCancelled {
+                found = result
+                recount()
+            }
+        }
+    }
+
+    /// "Hvor mange skal kunne": the first date for each count, searched off the main thread.
+    private func recount() {
+        countsTask?.cancel()
+        guard let people, !settings.multiDay else {
+            counts = nil
+            return
+        }
+        let input = WidenInput(
+            participants: people.participants, settings: settings, members: members,
+            choice: peopleChoice, today: isoString(startOfDay(Native.now, zone)), limitEnd: searchWindowFrom(Native.now).end,
+            timeZone: zone, now: Native.now)
+        countsTask = Task {
+            let result = await Task.detached(priority: .utility) { firstDateByCount(input) }.value
+            if !Task.isCancelled { counts = result }
         }
     }
 
@@ -227,7 +261,11 @@ final class PlanModel {
     /// A fresh plan's settings: one of the meetings people plan most (the web's randomDefaultSettings).
     static func randomSettings() -> SchedulerSettings {
         let presets: [(Double, Int)] = [(18, 180), (19, 120), (12, 60), (10, 120), (14, 180), (17, 120)]
-        let preset = presets.randomElement() ?? (18, 180)
+        var preset = presets.randomElement() ?? (18, 180)
+        #if DEBUG
+            // The web's seeded draw in the parity build (the browser tests' generator).
+            if TestLaunch.isActive { preset = presets[5] }
+        #endif
         return SchedulerSettings(
             multiDay: false, startHour: preset.0, durationMinutes: preset.1, dows: allDows, anyTime: false,
             startWindow: nil, days: 3, startDow: 5, period: nil)

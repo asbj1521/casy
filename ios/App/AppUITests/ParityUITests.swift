@@ -850,6 +850,24 @@ final class ParityUITests: XCTestCase {
 
     func testConfirmDark() async throws { try await shootConfirm(theme: "dark") }
 
+    // MARK: Planlæg (#282)
+
+    /// The plan sheet: the web opens it from its address, the native build opens
+    /// its own sheet over the home page at launch.
+    private func shootPlan(theme: String) async throws {
+        let app: XCUIApplication
+        if mode == "web" {
+            app = try await launch("/?plan", theme: theme)
+        } else {
+            app = try await launch("/", theme: theme, extra: ["-casyOpenScreen", "plan"])
+        }
+        shoot(app, "plan-\(theme)", when: "Find dato", native: "plan.screen")
+    }
+
+    func testPlanLight() async throws { try await shootPlan(theme: "light") }
+
+    func testPlanDark() async throws { try await shootPlan(theme: "dark") }
+
     // MARK: Aftaler (#281)
 
     private func shootEvents(theme: String) async throws {

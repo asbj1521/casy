@@ -41,7 +41,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if TestLaunch.isActive, TestLaunch.webOnly { return [] }
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
-                "home",
+                "home", "plan",
             ]
         #else
             return []
@@ -308,6 +308,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     onDone: onDone, leave: leave
                 )
                 .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
+            : screen == "plan"
+            ? AnyView(PlanSheet(preferences: NativePreferences.shared, onDone: onDone))
             : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "profile"
@@ -344,7 +346,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // Tilføj til kalender in the same glass (#281): half height, then the
         // 85 % once there is an answer (`growOpenSheet`), never whole, where
         // iOS would draw the sheet solid.
-        if ["profile", "events", "calendars", "tell"].contains(screen) {
+        if ["profile", "events", "calendars", "tell", "plan"].contains(screen) {
             // Nothing painted over the glass: the hosting view's own white hid it.
             host.view.backgroundColor = .clear
             let height = presenter.view.window?.bounds.height ?? presenter.view.bounds.height

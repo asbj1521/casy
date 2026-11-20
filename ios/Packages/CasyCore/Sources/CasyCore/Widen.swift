@@ -211,6 +211,12 @@ public struct CountOption: Codable, Sendable, Equatable {
     public var count: Int
     public var of: Int
     public var first: FoundDate?
+
+    public init(count: Int, of: Int, first: FoundDate?) {
+        self.count = count
+        self.of = of
+        self.first = first
+    }
 }
 
 /// For each "at least N" from everyone down: its first date, among the

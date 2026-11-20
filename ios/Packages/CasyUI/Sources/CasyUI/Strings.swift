@@ -641,6 +641,74 @@ public enum CasyStrings {
     }
     public static var calendarsTitle: String { text("calendarView.calendarsButton") }
 
+    // MARK: Planlæg's sheet (#282)
+
+    public static var planTitle: String { text("planFromCalendar.button") }
+    public static var planFindDate: String { text("plan.findDate") }
+    public static var planReset: String { text("plan.reset") }
+    public static var planGroup: String { text("plan.group") }
+    public static var planName: String { text("plan.name") }
+    public static var planNamePlaceholder: String { text("plan.namePlaceholder") }
+    public static var planKind: String { text("plan.kind") }
+    public static var planMeeting: String { text("plan.meeting") }
+    public static var planTrip: String { text("plan.trip") }
+    public static var planTime: String { text("plan.time") }
+    public static var planFrom: String { text("plan.from") }
+    public static var planTo: String { text("plan.to") }
+    public static func planFromTo(_ from: String, _ to: String) -> String { String(format: text("plan.fromTo"), from, to) }
+    public static var planFlex: String { text("plan.flex") }
+    public static var planFlexNone: String { text("plan.flexNone") }
+    public static var planFlexLess: String { text("plan.flexLess") }
+    public static var planFlexMore: String { text("plan.flexMore") }
+    public static var planFriSat: String { text("plan.friSat") }
+    public static var planMonths: String { text("plan.months") }
+    public static var planAllMonths: String { text("plan.allMonths") }
+    public static var planAnyTime: String { text("plan.anyTime") }
+    public static func planStartWindow(_ from: String, _ to: String) -> String {
+        String(format: text("plan.startWindow"), from, to)
+    }
+    public static var planDuration: String { text("plan.duration") }
+    public static var planDayLabel: String { text("plan.dayLabel") }
+    public static var planTripDays: String { text("plan.tripDays") }
+    public static var planTripStarts: String { text("plan.tripStarts") }
+    public static var planAnyDay: String { text("plan.anyDay") }
+    public static var planFewerDays: String { text("plan.fewerDays") }
+    public static var planMoreDays: String { text("plan.moreDays") }
+    /// "alle dage", "hverdage", "weekender".
+    public static func planDayList(_ kind: String) -> String { text("plan.dayList.\(kind)") }
+    /// Søn ... Lør, by weekday (0 is Sunday).
+    public static func planWeekdayShort(_ dow: Int) -> String { text("plan.weekdayShort.\(dow)") }
+    /// 30 -> "30 min", 90 -> "1½ t", 180 -> "3 t".
+    public static func planLength(_ minutes: Int) -> String {
+        let h = minutes / 60
+        let m = minutes % 60
+        if h == 0 { return String(format: text("plan.duration.min"), m) }
+        if m == 0 { return String(format: text("plan.duration.hours"), h) }
+        if m == 30 { return String(format: text("plan.duration.half"), h) }
+        return String(format: text("plan.duration.hours"), h) + " " + String(format: text("plan.duration.min"), m)
+    }
+    public static var planHowManyLabel: String { text("plan.howMany.label") }
+    public static func planHowManyAll(_ n: Int) -> String { String(format: text("plan.howMany.all"), n) }
+    public static func planHowManySome(_ n: Int, _ of: Int) -> String { String(format: text("plan.howMany.some"), n, of) }
+    public static var planHowManyNone: String { text("plan.howMany.none") }
+    public static var planHowManyFootnote: String { text("plan.howMany.footnote") }
+    public static func planHowManySooner(_ days: Int) -> String {
+        days == 1
+            ? text("plan.howMany.sooner.one")
+            : days < 14
+                ? String(format: text("plan.howMany.sooner.days"), days)
+                : String(format: text("plan.howMany.sooner.weeks"), Int((Double(days) / 7).rounded()))
+    }
+    public static var planNewGroup: String { text("plan.newGroup") }
+    public static var planNewGroupDetail: String { text("plan.newGroupDetail") }
+    public static var planExamples: String { text("plan.examples") }
+    public static var planHintExample: String { text("plan.hintExample") }
+    public static var planHintSignIn: String { text("plan.hintSignIn") }
+    public static var planPeriodHint: String { text("plan.periodHint") }
+    public static func planPeriodDaysHint(_ period: String) -> String { String(format: text("plan.periodDaysHint"), period) }
+    public static var planTimeNote: String { text("plan.timeNote") }
+    public static var shortcutsTitle: String { text("myData.shortcuts") }
+
     // MARK: The home page (#201)
 
     public static var homeToday: String { text("calendarView.today") }

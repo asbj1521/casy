@@ -8,14 +8,28 @@
 import SwiftUI
 
 #if os(iOS)
+    /// A small icon button left of the sheet's text button (the web's BottomSheet
+    /// `action`, Planlæg's reset, #189): a lucide icon, named for VoiceOver.
+    public struct SheetIconAction {
+        let icon: String
+        let label: String
+        let run: () -> Void
+
+        public init(icon: String, label: String, run: @escaping () -> Void) {
+            self.icon = icon
+            self.label = label
+            self.run = run
+        }
+    }
+
     extension View {
         /// The top bar of a sheet's first screen: `title` on the left, `close`
         /// on the right. `disabled` while something it would interrupt runs.
         public func casySheetBar(
-            _ title: String, close: String, disabled: Bool = false,
+            _ title: String, close: String, disabled: Bool = false, icon: SheetIconAction? = nil,
             action: @escaping () -> Void
         ) -> some View {
-            modifier(SheetBar(title: title, close: close, disabled: disabled, action: action))
+            modifier(SheetBar(title: title, close: close, disabled: disabled, icon: icon, action: action))
         }
 
         /// The top bar of a screen pushed inside a sheet: the back arrow on the
@@ -37,6 +51,7 @@ import SwiftUI
         let title: String
         let close: String
         let disabled: Bool
+        let icon: SheetIconAction?
         let action: () -> Void
 
         func body(content: Content) -> some View {
@@ -54,6 +69,12 @@ import SwiftUI
                     } else {
                         ToolbarItem(placement: .topBarLeading) {
                             SheetTitle(title, alone: close.isEmpty)
+                        }
+                    }
+                    if let icon {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(action: icon.run) { LucideIcon(icon.icon, size: 18) }
+                                .accessibilityLabel(icon.label)
                         }
                     }
                     // Empty: nothing to close yet (the push ask until iOS's question failed).
