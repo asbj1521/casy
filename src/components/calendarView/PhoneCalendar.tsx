@@ -604,7 +604,9 @@ export default function PhoneCalendar() {
       covered:
         dayShown !== null ||
         voteOpen ||
-        plan.shown ||
+        // The app's own Planlæg is over it only while open: the page's stays
+        // shown until it has shrunk away (planClosed), which the app's never calls.
+        (nativePlan ? planOpen : plan.shown) ||
         !!params.get("events") ||
         !!params.get("profile") ||
         importCardOpen ||

@@ -810,6 +810,33 @@ final class ParityUITests: XCTestCase {
             app.descendants(matching: .any)["home.title"].waitForExistence(timeout: 30), "the home page follows")
     }
 
+    /// The home page's buttons after a native sheet has come and gone (20 Nov
+    /// 2026: Planlæg once closed, the native home page never came back, and
+    /// its buttons were gone). Native only, with the real page behind it.
+    func testTheHomeButtonsComeBackAfterEachSheet() async throws {
+        try XCTSkipIf(mode == "web", "the native home page's own")
+        let app = try await launch("/", theme: "light")
+        let plan = app.buttons["home.plan"]
+        XCTAssertTrue(plan.waitForExistence(timeout: 30))
+        for (button, screen, close) in [
+            ("home.plan", "plan.screen", "Annuller"), ("home.events", "events.list", "Færdig"),
+            ("home.profile", "profile.list", "Færdig"),
+        ] {
+            let open = app.buttons[button]
+            XCTAssertTrue(open.waitForExistence(timeout: 15) && open.isHittable, "\(button) there before")
+            open.tap()
+            XCTAssertTrue(
+                app.descendants(matching: .any)[screen].waitForExistence(timeout: 15), "\(screen) opened")
+            _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 1)
+            app.navigationBars.buttons[close].firstMatch.tap()
+            XCTAssertTrue(
+                app.descendants(matching: .any)[screen].waitForNonExistence(timeout: 15), "\(screen) closed")
+            let back = app.buttons[button]
+            let ready = expectation(for: NSPredicate(format: "isHittable == true"), evaluatedWith: back)
+            wait(for: [ready], timeout: 10)
+        }
+    }
+
     func testSignInLight() async throws { try await shootSignIn(theme: "light") }
 
     func testSignInDark() async throws { try await shootSignIn(theme: "dark") }
