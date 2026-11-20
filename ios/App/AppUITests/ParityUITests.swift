@@ -864,6 +864,24 @@ final class ParityUITests: XCTestCase {
         shoot(app, "plan-\(theme)", when: "Find dato", native: "plan.screen")
     }
 
+    /// The AI filling the sheet in from a description, filmed with PARITY_VIDEO=1;
+    /// the sheet as it ends up, shot.
+    func testPlanAiFill() async throws {
+        let motion = ["-casyMotion", "YES"]
+        let app =
+            mode == "web"
+            ? try await launch("/?plan", theme: "light", extra: motion)
+            : try await launch("/", theme: "light", extra: ["-casyOpenScreen", "plan"] + motion)
+        let field =
+            mode == "web" ? app.webViews.textFields.firstMatch : app.textFields["plan.name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 30), "the name field never showed")
+        _ = XCTWaiter.wait(for: [expectation(description: "still")], timeout: 2)
+        field.tap()
+        field.typeText("møde om formiddagen på hverdage i oktober\n")
+        _ = XCTWaiter.wait(for: [expectation(description: "fill")], timeout: 9)
+        shoot(app, "plan-ai-light", when: "Hverdage", native: "plan.screen")
+    }
+
     func testPlanLight() async throws { try await shootPlan(theme: "light") }
 
     func testPlanDark() async throws { try await shootPlan(theme: "dark") }

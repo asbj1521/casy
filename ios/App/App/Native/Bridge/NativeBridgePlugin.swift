@@ -309,7 +309,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 )
                 .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
             : screen == "plan"
-            ? AnyView(PlanSheet(preferences: NativePreferences.shared, onDone: onDone))
+            ? AnyView(PlanSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
             : screen == "profile"

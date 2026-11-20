@@ -475,7 +475,7 @@ private struct PressScale: ButtonStyle {
 
 /// The web's SoundWave: five 3 point bars, 3 apart, 24 high, peaking in the
 /// middle, each breathing slowly at rest and fast and tall while listening.
-private struct SoundWave: View {
+struct SoundWave: View {
     let listening: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

@@ -7,10 +7,11 @@ import SwiftUI
 struct PlanSheet: View {
     let preferences: NativePreferences
     let onDone: () -> Void
+    let leave: (LeavingProfile) -> Void
 
     var body: some View {
         NavigationStack {
-            PlanScreen()
+            PlanScreen(leave: leave)
         }
         .environment(\.closeSheet, onDone)
         .nativeSheetLook(preferences)
@@ -23,9 +24,15 @@ struct PlanSheet: View {
 /// grows out of it), the months, and how many must be able to come. "Find
 /// dato" is the one main action, pinned along the bottom.
 struct PlanScreen: View {
+    let leave: (LeavingProfile) -> Void
     @Bindable private var model = PlanModel.shared
     @Environment(\.closeSheet) private var closeSheet
     var onFind: () -> Void = {}
+    /// The AI's yes asked first (useAiConsentGate).
+    @State private var consent: (() -> Void)?
+    /// The AI's questions open, the sheet held as it was until they are answered.
+    @State private var asking = false
+    @State private var before: PlanState?
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
@@ -33,17 +40,13 @@ struct PlanScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 PlanGroupRow()
-                CasyField(
-                    CasyStrings.planName, text: $model.name, placeholder: CasyStrings.planNamePlaceholder,
-                    accessibilityLabel: CasyStrings.planName
-                )
-                .padding(.top, 16)
-                .onChange(of: model.name) { _, name in
-                    if name.count > PlanModel.maxName { model.name = String(name.prefix(PlanModel.maxName)) }
+                PlanNameField(onAsk: askAi).padding(.top, 16)
+                Group {
+                    PlanTimeRows()
+                    PlanMonths()
+                    PlanHowMany()
                 }
-                PlanTimeRows()
-                PlanMonths()
-                PlanHowMany()
+                .allowsHitTesting(!model.filling)
                 if viewerElsewhere {
                     HStack(spacing: 6) {
                         LucideIcon("globe", size: 16)
@@ -72,8 +75,38 @@ struct PlanScreen: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
         }
-        .task { await model.open() }
+        .task {
+            await model.open()
+            await model.loadAi()
+        }
         .onDisappear { model.closed() }
+        .aiConsentGate($consent, leave: leave)
+        .sheet(isPresented: $asking, onDismiss: questionsDone) {
+            PlanQuestionsSheet(done: { asking = false })
+                .nativeSheetLook(NativePreferences.shared)
+        }
+    }
+
+    /// What is written goes to the AI; its questions (if any) are asked, then
+    /// the sheet fills itself in before your eyes.
+    private func askAi() {
+        consent = {
+            let from = model.state
+            model.describe(model.name) { hasQuestions in
+                before = from
+                if hasQuestions {
+                    model.holdFill(from: from)
+                    asking = true
+                } else {
+                    model.startFill(from: from)
+                }
+            }
+        }
+    }
+
+    private func questionsDone() {
+        if let before { model.startFill(from: before) }
+        before = nil
     }
 
     /// Whether this phone's clock isn't Danish time, so every time needs saying so.
@@ -181,23 +214,26 @@ private struct PlanTimeRows: View {
     private enum Open { case time, days, startDay }
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
-    private var settings: SchedulerSettings { model.settings }
+    private var settings: SchedulerSettings { model.shownSettings }
     private var flex: Int? { flexOf(settings) }
     private var fixedStart: Bool { !settings.anyTime && flex != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             KindChoice(multiDay: settings.multiDay) { value in model.update { $0.multiDay = value } }
+                .litRing(model.lit == .kind, radius: 12)
                 .padding(.bottom, 12)
             if settings.multiDay {
                 CardList(spaced: false) {
                     CardRow(CasyStrings.planTripDays, icon: "calendar-days") {
                         PlanStepper(
+                            pressed: model.fillPress == .tripLess ? -1 : model.fillPress == .tripMore ? 1 : 0,
                             value: settings.days, values: Array(1...(settings.startDow == nil ? maxSpanDays : maxWeeklyTripDays)),
                             format: { CasyStrings.days($0) }, less: CasyStrings.planFewerDays,
                             more: CasyStrings.planMoreDays
                         ) { days in model.update { $0.days = days } }
                     }
+                    .litRow(model.lit == .tripDays)
                     pickerRow(
                         CasyStrings.planTripStarts, icon: "flag", id: .startDay,
                         value: settings.startDow.map { weekdayLong($0) } ?? CasyStrings.planAnyDay)
@@ -208,6 +244,7 @@ private struct PlanTimeRows: View {
                     if fixedStart {
                         CardRow(CasyStrings.planFlex, icon: "diff") {
                             PlanStepper(
+                                pressed: model.fillPress == .flexLess ? -1 : model.fillPress == .flexMore ? 1 : 0,
                                 value: flex ?? 0, values: flexMinutes,
                                 format: { $0 == 0 ? CasyStrings.planFlexNone : "± \(CasyStrings.planLength($0))" },
                                 less: CasyStrings.planFlexLess, more: CasyStrings.planFlexMore
@@ -215,13 +252,14 @@ private struct PlanTimeRows: View {
                                 model.update { $0.startWindow = flexWindow($0.startHour, f) }
                             }
                         }
+                        .litRow(model.lit == .flex)
                     }
                     pickerRow(CasyStrings.planDayLabel, icon: "calendar-days", id: .days, value: daysLabel)
                 }
             }
         }
         .padding(.top, 16)
-        .onChange(of: settings, initial: true) { _, _ in
+        .onChange(of: model.settings, initial: true) { _, settings in
             // The phone's rows know a start as an hour give or take: a window the
             // AI (or a widened search) chose is put in that shape.
             if !settings.multiDay, !settings.anyTime, let window = settings.startWindow, flexOf(settings) == nil {
@@ -234,14 +272,25 @@ private struct PlanTimeRows: View {
         }
     }
 
+    /// The picker open: the AI's while it fills the sheet in, else the person's.
+    private var shownOpen: Open? {
+        switch model.fillSheet {
+        case .time: .time
+        case .days: .days
+        case .startDay: .startDay
+        case nil: model.fill == nil ? open : nil
+        }
+    }
+
     private func pickerRow(_ label: String, icon: String, id: Open, value: String) -> some View {
         Button { open = id } label: {
             CardRow(label, icon: icon, value: value, chevron: true)
+                .litRow(model.lit == litKey(id))
         }
         .buttonStyle(.cardRow)
         .accessibilityIdentifier("plan.row.\(id)")
         .popover(
-            isPresented: Binding(get: { open == id }, set: { if !$0, open == id { open = nil } }),
+            isPresented: Binding(get: { shownOpen == id }, set: { if !$0, open == id { open = nil } }),
             attachmentAnchor: .rect(.bounds), arrowEdge: .top
         ) {
             Group {
@@ -252,6 +301,14 @@ private struct PlanTimeRows: View {
                 }
             }
             .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    private func litKey(_ id: Open) -> FillKey {
+        switch id {
+        case .time: .time
+        case .days: .days
+        case .startDay: .startDay
         }
     }
 
@@ -312,7 +369,7 @@ private func startValue(_ settings: SchedulerSettings) -> Int {
 private struct TimePicker: View {
     @Bindable private var model = PlanModel.shared
 
-    private var settings: SchedulerSettings { model.settings }
+    private var settings: SchedulerSettings { model.shownSettings }
     private var flex: Int? { flexOf(settings) }
     private var fixedStart: Bool { !settings.anyTime && flex != nil }
     /// A window made by Kan rykkes is the hour itself on the wheel.
@@ -377,7 +434,7 @@ private struct TimePicker: View {
 private struct DaysPicker: View {
     @Bindable private var model = PlanModel.shared
 
-    private var days: DayListLabel { describeDays(model.settings.dows) }
+    private var days: DayListLabel { describeDays(model.shownSettings.dows) }
     private var presets: [(label: String, dows: [Int], on: Bool)] {
         let friSat: Bool = { if case .list(let d) = days { return d == [5, 6] } else { return false } }()
         return [
@@ -399,7 +456,7 @@ private struct DaysPicker: View {
             }
             HStack(spacing: 4) {
                 ForEach(allDows, id: \.self) { d in
-                    let on = model.settings.dows.contains(d)
+                    let on = model.shownSettings.dows.contains(d)
                     Button { toggle(d) } label: {
                         Text(CasyStrings.planWeekdayShort(d))
                             .font(.system(size: 12, weight: on ? .semibold : .medium))
@@ -442,9 +499,9 @@ private struct StartDayPicker: View {
 
     var body: some View {
         CardList(spaced: false) {
-            PickRow(CasyStrings.planAnyDay, picked: model.settings.startDow == nil) { choose(nil) }
+            PickRow(CasyStrings.planAnyDay, picked: model.shownSettings.startDow == nil) { choose(nil) }
             ForEach(allDows, id: \.self) { d in
-                PickRow(weekdayLong(d), picked: model.settings.startDow == d) { choose(d) }
+                PickRow(weekdayLong(d), picked: model.shownSettings.startDow == d) { choose(d) }
             }
         }
         .padding(8)
@@ -498,6 +555,8 @@ private struct KindChoice: View {
 /// A value stepped with minus and plus at the end of a row: orange buttons
 /// and the value muted between them (`Stepper inRow`).
 private struct PlanStepper: View {
+    /// A button the AI is pressing as it fills the sheet in: -1 minus, 1 plus.
+    var pressed = 0
     let value: Int
     let values: [Int]
     let format: (Int) -> String
@@ -509,25 +568,28 @@ private struct PlanStepper: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            button("minus", less, enabled: (index ?? 0) > 0, step: -1)
+            button("minus", less, enabled: (index ?? 0) > 0, step: -1, pressed: pressed == -1)
             Text(format(value))
                 .font(.system(size: 14))
                 .foregroundStyle(Theme.mutedForeground.color)
                 .frame(minWidth: 48)
                 .lineLimit(1)
                 .fixedSize()
-            button("plus", more, enabled: index.map { $0 < values.count - 1 } ?? false, step: 1)
+            button("plus", more, enabled: index.map { $0 < values.count - 1 } ?? false, step: 1, pressed: pressed == 1)
         }
         .frame(height: 36)
     }
 
-    private func button(_ icon: String, _ label: String, enabled: Bool, step: Int) -> some View {
+    private func button(_ icon: String, _ label: String, enabled: Bool, step: Int, pressed: Bool) -> some View {
         Button {
             if let index, values.indices.contains(index + step) { onChange(values[index + step]) }
         } label: {
             LucideIcon(icon, size: 16)
                 .foregroundStyle(Theme.primary.color)
                 .frame(width: 40, height: 36)
+                .background(Theme.primary.color.opacity(pressed ? 0.15 : 0), in: Capsule())
+                .scaleEffect(pressed ? 1.1 : 1)
+                .animation(.easeOut(duration: 0.15), value: pressed)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -547,7 +609,7 @@ private struct PlanMonths: View {
     @State private var now = Native.now
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
-    private var period: Period? { model.settings.period }
+    private var period: Period? { model.shownSettings.period }
     private var months: [String] {
         let first = startOfMonth(now, appTimeZone)
         return (0..<12).map { isoString(startOfMonth(first, appTimeZone, $0)) }
@@ -582,6 +644,7 @@ private struct PlanMonths: View {
             .padding(6)
             .background(Theme.card.color, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.border.color, lineWidth: 1) }
+            .litRing(model.lit == .months, radius: 16)
             .accessibilityElement(children: .contain)
             .accessibilityLabel(CasyStrings.planMonths)
             if let period {
@@ -645,5 +708,201 @@ private struct PlanMonths: View {
         .accessibilityLabel("\(capitalized(monthName(ms, lang))) \(local.year)")
         .accessibilityAddTraits(on ? .isSelected : [])
         .accessibilityIdentifier("plan.month.\(index)")
+    }
+}
+
+// MARK: - The name, and the AI
+
+/// The name field (#173), which is also where the AI is asked: for someone
+/// the AI is on for, its right end holds a microphone while it is empty and
+/// ✨ once something is written or said; ✨ (or return) sends it as it stands.
+/// Without the AI it is the plain name field, as long as a title may be.
+private struct PlanNameField: View {
+    let onAsk: () -> Void
+    @Bindable private var model = PlanModel.shared
+    @State private var speech = SpeechInput()
+    /// What was typed before the microphone went on; speech is added after it.
+    @State private var before = ""
+    @FocusState private var focused: Bool
+    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 48
+    @ScaledMetric(relativeTo: .body) private var textSize: CGFloat = 17
+
+    private var written: Bool { !model.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var lit: Bool { focused || speech.listening || model.lit == .name }
+    private var limit: Int { model.aiOn ? PlanModel.maxDescription : PlanModel.maxName }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(CasyStrings.planName)
+                .textCase(.uppercase)
+                .font(.system(size: 12, weight: .medium))
+                .tracking(0.3)
+                .foregroundStyle(Theme.mutedForeground.color)
+                .padding(.horizontal, 4)
+                .accessibilityHidden(true)
+            HStack(spacing: 0) {
+                TextField(
+                    "",
+                    text: Binding(get: { model.shownName }, set: { model.name = String($0.prefix(limit)) }),
+                    prompt: Text(speech.listening ? CasyStrings.listening : CasyStrings.planNamePlaceholder)
+                        .foregroundStyle(Theme.mutedForeground.color)
+                )
+                .font(.system(size: textSize))
+                .foregroundStyle(Theme.foreground.color)
+                .textFieldStyle(.plain)
+                .focused($focused)
+                .submitLabel(model.aiOn ? .go : .done)
+                .onSubmit { if model.aiOn { ask() } }
+                .disabled(model.filling)
+                .accessibilityLabel(CasyStrings.planName)
+                .accessibilityIdentifier("plan.name")
+                if model.aiOn { aiButton.padding(.trailing, 6) }
+            }
+            .padding(.leading, 14)
+            .padding(.trailing, model.aiOn ? 0 : 14)
+            .frame(minHeight: height)
+            .background(Theme.card.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(lit ? Theme.primary.color : Theme.border.color, lineWidth: 1)
+            }
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Theme.primary.color.opacity(lit ? 0.2 : 0))
+                    .padding(-2)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { focused = true }
+            if let failure = speech.failure {
+                Text(failure).font(.system(size: 12)).foregroundStyle(Theme.red700.color).padding(.horizontal, 4)
+            }
+            if let failure = model.aiFailure {
+                Text(failure).font(.system(size: 12)).foregroundStyle(Theme.red700.color).padding(.horizontal, 4)
+            }
+        }
+        .onAppear {
+            speech.onHeard = { heard in
+                model.name = String((before.isEmpty ? heard : "\(before) \(heard)").prefix(limit))
+            }
+        }
+        .onDisappear { Task { await speech.stop() } }
+    }
+
+    /// A spinner while the AI thinks, ✨ once something is written, else the microphone.
+    @ViewBuilder private var aiButton: some View {
+        Group {
+            if model.aiPending {
+                ProgressView()
+                    .tint(Theme.primary.color)
+                    .frame(width: 36, height: 36)
+                    .background(Theme.primary.color.opacity(0.1), in: Circle())
+                    .accessibilityLabel(CasyStrings.aiThinking)
+            } else if written {
+                Button(action: ask) {
+                    LucideIcon("sparkles", size: 20)
+                        .foregroundStyle(Theme.primary.color)
+                        .frame(width: 36, height: 36)
+                        .background(Theme.primary.color.opacity(0.1), in: Circle())
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(CasyStrings.aiStart)
+                .accessibilityIdentifier("plan.ai")
+            } else {
+                Button {
+                    Task {
+                        if !speech.listening { before = model.name.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        await speech.toggle()
+                    }
+                } label: {
+                    Group {
+                        if speech.listening {
+                            SoundWave(listening: true).scaleEffect(0.75).foregroundStyle(Color.white)
+                        } else {
+                            LucideIcon("mic", size: 20).foregroundStyle(Theme.primary.color)
+                        }
+                    }
+                    .frame(width: 36, height: 36)
+                    .background(speech.listening ? Theme.red600.color : Color.clear, in: Circle())
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(speech.listening ? CasyStrings.stopSpeaking : CasyStrings.speak)
+                .accessibilityIdentifier("plan.mic")
+            }
+        }
+        .transition(.scale(scale: 0.4).combined(with: .opacity))
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: written)
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: model.aiPending)
+    }
+
+    private func ask() {
+        Task { await speech.stop() }
+        focused = false
+        if written, !model.aiPending { onAsk() }
+    }
+}
+
+/// What the AI needs to know before it fills in the sheet (#173): its
+/// questions as one short sheet of tap answers. Answering the last one closes
+/// it, and Færdig does too, the rest left as the AI guessed.
+private struct PlanQuestionsSheet: View {
+    let done: () -> Void
+    private let model = PlanModel.shared
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Array(model.questions.enumerated()), id: \.offset) { qi, entry in
+                        CardList(entry.question.question, spaced: qi > 0) {
+                            ForEach(Array(entry.question.options.enumerated()), id: \.offset) { oi, option in
+                                PickRow(option.label, picked: entry.picked == oi) { pick(qi, oi) }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
+            .accessibilityIdentifier("plan.questions")
+            .casySheetBar(CasyStrings.aiQuickQuestion, close: CasyStrings.planQuestionsDone, action: done)
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    /// The last one answered: a moment to see its tick, then on to the filling in.
+    private func pick(_ question: Int, _ option: Int) {
+        let wasOpen = model.questions[question].picked == nil
+        let open = model.questions.filter { $0.picked == nil }.count
+        model.answer(question, option)
+        if wasOpen, open == 1 {
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
+                done()
+            }
+        }
+    }
+}
+
+extension View {
+    /// A row's light while the AI fills it in (#173): soft orange while it is
+    /// the one, fading out as the next one takes over.
+    fileprivate func litRow(_ on: Bool) -> some View {
+        background(Theme.primary.color.opacity(on ? 0.15 : 0))
+            .animation(.easeOut(duration: on ? 0.15 : 0.7), value: on)
+    }
+
+    /// The same light as a ring, for a box with a background of its own.
+    fileprivate func litRing(_ on: Bool, radius: CGFloat) -> some View {
+        overlay {
+            RoundedRectangle(cornerRadius: radius + 2, style: .continuous)
+                .strokeBorder(Theme.primary.color.opacity(on ? 0.5 : 0), lineWidth: 2)
+                .padding(-2)
+                .allowsHitTesting(false)
+        }
+        .animation(.easeOut(duration: on ? 0.15 : 0.7), value: on)
     }
 }

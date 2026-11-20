@@ -67,4 +67,32 @@ final class PlanUITests: XCTestCase {
         let app = launch()
         XCTAssertTrue(app.otherElements["plan.howMany"].waitForExistence(timeout: 15))
     }
+
+    /// Written and sent with return: the AI's plan fills the sheet in, its title the name.
+    func testTheAiFillsTheSheetIn() {
+        let app = launch()
+        let field = app.textFields["plan.name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["plan.mic"].waitForExistence(timeout: 10), "the microphone while it is empty")
+        field.tap()
+        field.typeText("møde om formiddagen på hverdage i oktober\n")
+        XCTAssertTrue(app.staticTexts["10:00 - 12:00"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Hverdage"].waitForExistence(timeout: 10))
+        XCTAssertEqual(field.value as? String, "Møde")
+    }
+
+    /// The AI's questions come first; answering the last closes them, and its answer is filled in.
+    func testTheAiAsksItsQuestionsFirst() {
+        let app = launch()
+        let field = app.textFields["plan.name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("mange spørgsmål\n")
+        XCTAssertTrue(app.staticTexts["Hvornår?"].waitForExistence(timeout: 20))
+        app.buttons.matching(identifier: "Om aftenen").element(boundBy: 0).tap()
+        app.buttons.matching(identifier: "Om aftenen").element(boundBy: 1).tap()
+        app.buttons.matching(identifier: "Sent om aftenen").element(boundBy: 2).tap()
+        XCTAssertTrue(app.staticTexts["Hvornår?"].waitForNonExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["21:00 - 23:00"].waitForExistence(timeout: 20))
+    }
 }

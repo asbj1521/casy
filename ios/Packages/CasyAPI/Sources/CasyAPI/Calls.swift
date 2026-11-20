@@ -249,6 +249,28 @@ private struct Disconnect: Encodable, Sendable {
 
 private struct Empty: Encodable, Sendable {}
 
+private struct PlanWithAi: Encodable, Sendable {
+    let text: String
+    let earlier: [String]
+    let current: PlanSettings?
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(text, forKey: .text)
+        try c.encode(earlier, forKey: .earlier)
+        // A first description sends null: there are no settings so far.
+        try c.encode(current, forKey: .current)
+    }
+
+    enum CodingKeys: String, CodingKey { case text, earlier, current }
+}
+
+/// plan-ai's answer: the plan, and the AI answers left today.
+public struct PlanAnswer: Decodable, Sendable {
+    public var plan: AiPlan
+    public var left: Int
+}
+
 private struct ProposeEntries: Encodable, Sendable {
     let text: String
     let earlier: [String]
@@ -698,6 +720,14 @@ extension EdgeFunctions {
     public func syncCalendars(errorMessage: String? = nil) async throws -> [SyncResult] {
         let answer: SyncAnswer = try await call("calendar-sync", body: Empty(), errorMessage: errorMessage)
         return answer.results
+    }
+
+    /// A plan from a description (`current` nil) or more details on the settings so far (`plan-ai`).
+    public func planWithAi(
+        text: String, earlier: [String], current: PlanSettings?, errorMessage: String? = nil
+    ) async throws -> PlanAnswer {
+        try await call(
+            "plan-ai", body: PlanWithAi(text: text, earlier: earlier, current: current), errorMessage: errorMessage)
     }
 
     /// What was said or written about time in no calendar, as entries (`entries-ai`):

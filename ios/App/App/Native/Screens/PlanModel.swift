@@ -2,6 +2,7 @@ import CasyAPI
 import CasyCore
 import CasyUI
 import Foundation
+import UIKit
 
 /// Planning an event for a group, natively (#282): the web's usePlanning for
 /// what the Planlæg sheet needs: which group, what it is called, what and
@@ -70,6 +71,10 @@ final class PlanModel {
 
     /// "Nulstil planen": a fresh plan for the same group (the web's reset, #189).
     func startOver() {
+        fillTask?.cancel()
+        fill = nil
+        questions = []
+        aiFailure = nil
         name = ""
         extras = .defaults
         settings = Self.randomSettings()
@@ -253,6 +258,122 @@ final class PlanModel {
         countsTask = Task {
             let result = await Task.detached(priority: .utility) { firstDateByCount(input) }.value
             if !Task.isCancelled { counts = result }
+        }
+    }
+
+    // MARK: Asking the AI (#173)
+
+    /// Whether the name field also asks the AI (the web's useAiAllowed).
+    private(set) var aiOn = false
+    private(set) var aiPending = false
+    private(set) var aiFailure: String?
+    /// The AI's questions, each with the option picked (nil while unanswered).
+    private(set) var questions: [(question: PlanQuestion, picked: Int?)] = []
+    /// AI answers left today.
+    private(set) var aiLeft: Int?
+
+    func loadAi() async {
+        let profile = ProfileModel.shared
+        if profile.whoAmI == nil { await profile.load() }
+        aiOn = profile.whoAmI?.aiAllowed == true
+    }
+
+    /// The plan as it stands, for the fill to play back from.
+    var state: PlanState { PlanState(name: name, settings: settings) }
+
+    /// What is written, sent as a fresh plan (the phone's sheet always starts
+    /// over): settings, title and how many from the answer; no places, notes or
+    /// people by name, which the phone has no rows for (#260). `onAnswer` hears
+    /// whether there are questions to ask first.
+    func describe(_ text: String, onAnswer: @escaping (_ hasQuestions: Bool) -> Void) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !aiPending else { return }
+        aiPending = true
+        aiFailure = nil
+        Task {
+            defer { aiPending = false }
+            do {
+                guard let api = await Native.api() else {
+                    throw APIError.failed(status: 401, message: CasyStrings.planAiFailed)
+                }
+                let answer = try await api.planWithAi(
+                    text: trimmed, earlier: [], current: nil, errorMessage: CasyStrings.planAiFailed)
+                let plan = answer.plan
+                settings = applyPlan(aiBaseSettings, plan.settings, zone)
+                name = String((plan.title ?? "").prefix(Self.maxName))
+                extras = .defaults
+                if let id = activeGroup?.id {
+                    peopleChoices[id] = applyPeople(PeopleChoice(), plan, resolved: [:])
+                }
+                questions = plan.questions.map { ($0, nil) }
+                aiLeft = answer.left
+                restart()
+                onAnswer(!plan.questions.isEmpty)
+            } catch {
+                aiFailure = error.localizedDescription
+            }
+        }
+    }
+
+    /// One of a question's options: its settings applied as they are, no call.
+    func answer(_ question: Int, _ option: Int) {
+        guard questions.indices.contains(question),
+            questions[question].question.options.indices.contains(option)
+        else { return }
+        settings = applyPlan(settings, questions[question].question.options[option].patch, zone)
+        questions[question].picked = option
+        restart()
+    }
+
+    // MARK: The AI filling the sheet in (useAiFill)
+
+    /// The fill playing: the sheet as it was, played forward a move at a time.
+    private(set) var fill: PlanFill?
+    private var fillTask: Task<Void, Never>?
+
+    /// What the rows show: the fill's frame while it plays, else the plan.
+    var shownSettings: SchedulerSettings { fill?.frame?.settings ?? settings }
+    var shownName: String { fill?.frame?.name ?? name }
+    var lit: FillKey? { fill?.frame?.lit }
+    var fillSheet: FillSheet? { fill?.frame?.sheet }
+    var fillPress: FillPress? { fill?.frame?.press }
+    /// Nothing to press while the AI answers or fills the sheet in.
+    var filling: Bool { fill != nil || aiPending }
+
+    /// The sheet as it was while the AI's questions are open.
+    func holdFill(from: PlanState) {
+        fillTask?.cancel()
+        fill = PlanFill(frames: [Frame(name: from.name, settings: from.settings, ms: 0)], tick: 0)
+    }
+
+    /// Play the answer back from the sheet as it was before it was asked;
+    /// under reduced motion it is simply there.
+    func startFill(from: PlanState) {
+        fillTask?.cancel()
+        if UIAccessibility.isReduceMotionEnabled {
+            fill = nil
+            return
+        }
+        let frames = fillScript(from: from, to: state)
+        fill = PlanFill(frames: frames, tick: 0)
+        fillTask = Task {
+            for i in frames.indices {
+                guard !Task.isCancelled else { return }
+                fill?.tick = i
+                let frame = frames[i]
+                if frame.lit != .name {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                } else if frame.ms == FillTiming.type {
+                    UISelectionFeedbackGenerator().selectionChanged()
+                }
+                try? await Task.sleep(for: .milliseconds(frame.ms))
+            }
+            guard !Task.isCancelled else { return }
+            // The last light fades before the sheet is the plan's own again.
+            fill?.tick = frames.count
+            try? await Task.sleep(for: .milliseconds(FillTiming.sheet))
+            guard !Task.isCancelled else { return }
+            fill = nil
         }
     }
 

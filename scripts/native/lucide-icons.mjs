@@ -72,6 +72,7 @@ export const ICONS = {
   "log-out": [2],
   "message-square": [2],
   "message-square-plus": [2],
+  mic: [2],
   minus: [2, 3],
   monitor: [2],
   moon: [2],

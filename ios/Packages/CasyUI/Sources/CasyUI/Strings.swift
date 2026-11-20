@@ -708,6 +708,11 @@ public enum CasyStrings {
     public static func planPeriodDaysHint(_ period: String) -> String { String(format: text("plan.periodDaysHint"), period) }
     public static var planTimeNote: String { text("plan.timeNote") }
     public static var shortcutsTitle: String { text("myData.shortcuts") }
+    public static var aiStart: String { text("aiPlan.start") }
+    public static var aiThinking: String { text("aiPlan.thinking") }
+    public static var aiQuickQuestion: String { text("aiPlan.quickQuestion") }
+    public static var planQuestionsDone: String { text("plan.questionsDone") }
+    public static var planAiFailed: String { text("api.planAi") }
 
     // MARK: The home page (#201)
 

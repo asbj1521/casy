@@ -1003,6 +1003,11 @@ const WEB: Record<string, (t: Messages) => string> = {
   "plan.periodHint": (t) => t.scheduler.period.hint,
   "plan.periodDaysHint": (t) => t.scheduler.period.daysHint("%@"),
   "plan.timeNote": (t) => t.timeZone.note,
+  "aiPlan.start": (t) => t.aiPlan.start,
+  "aiPlan.thinking": (t) => t.aiPlan.thinking,
+  "aiPlan.quickQuestion": (t) => t.aiPlan.quickQuestion,
+  "plan.questionsDone": (t) => t.schedulerFlow.done,
+  "api.planAi": (t) => t.api.planAi,
 };
 
 /**
