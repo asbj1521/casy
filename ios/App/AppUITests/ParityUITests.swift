@@ -26,7 +26,7 @@ final class ParityUITests: XCTestCase {
 
     /// The app on `path` (`/`, `/?day=2026-10-15`), in `theme`, in this run's mode.
     private func launch(
-        _ path: String, theme: String, extra: [String] = [], signedOut: Bool = false
+        _ path: String, theme: String, extra: [String] = [], signedOut: Bool = false, now: String? = nil
     ) async throws -> XCUIApplication {
         // Signed out (#282's welcome and sign-in): the page's storage empty.
         let session =
@@ -37,7 +37,7 @@ final class ParityUITests: XCTestCase {
         app.launchArguments = [
             "-casyBackend", Self.backend,
             "-casyLang", "da",
-            "-casyNow", Self.now,
+            "-casyNow", now ?? Self.now,
             "-casyTheme", theme,
             "-casy.appearance", theme,
             // Base64: iOS reads a launch argument starting with "{" as a dictionary.
@@ -855,6 +855,14 @@ final class ParityUITests: XCTestCase {
         let app = try await launch("/", theme: "light", signedOut: true)
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20))
         _ = XCTWaiter.wait(for: [expectation(description: "rounds")], timeout: 58)
+    }
+
+    /// One round in dark mode, filmed the same way, in a month of five weeks
+    /// (December 2026), whose middle week dips with no delay.
+    func testWelcomeLoopFilmDark() async throws {
+        let app = try await launch("/", theme: "dark", signedOut: true, now: "2026-11-21T10:00:00.000Z")
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20))
+        _ = XCTWaiter.wait(for: [expectation(description: "round")], timeout: 34)
     }
 
     func testSignInLight() async throws { try await shootSignIn(theme: "light") }

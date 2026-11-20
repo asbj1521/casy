@@ -238,13 +238,12 @@ struct WelcomeStage: View {
                     }
                 }
                 .id(onScreen)
-                // The pile, squared, one sheet with everyone's pen on it, on the screen
-                // itself, so the glass falling on it sees the month under it too. Natively
-                // a drop of glass falls onto it and washes it away in one wave (the web
-                // dissolves it week by week).
-                if n >= at.merged && n < at.press + 0.5 && !still {
+                // The pile's top sheet, on the screen itself, so the glass falling on it
+                // sees the month under it too. Natively a drop of glass falls onto it and
+                // its ripples wash it away (the web merges the pile and dissolves it).
+                if n >= at.merged && n < at.press + 0.9 && !still, let top = D.friends.last {
                     GlassWaveReveal(waving: n >= at.digital) {
-                        PaperCalendar(month: month, items: everyone, title: D.groupName, rounded: true)
+                        PaperCalendar(month: month, items: everyone, who: top.id, title: top.name, color: top.color, rounded: true)
                     }
                 }
                 if listing && !still {
@@ -262,10 +261,11 @@ struct WelcomeStage: View {
         } over: {
             if !still {
                 ZStack {
-                    // Squared, the pile fades into the one sheet under it, on the screen.
+                    // Squared, the pile hands over to its top sheet on the screen itself, the
+                    // same picture in the same place: no group name (asked for on 21 Nov 2026).
                     if thrown > 0 && n < at.merged {
                         PaperStack(thrown: thrown, landed: landed, squared: n >= at.squared, month: month, items: everyone)
-                            .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+                            .transition(.identity)
                     }
                 }
             }

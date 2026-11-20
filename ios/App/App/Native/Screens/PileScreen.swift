@@ -1143,7 +1143,7 @@ struct PileMonth: View {
                         view.offset(y: y)
                     } keyframes: { _ in
                         KeyframeTrack {
-                            LinearKeyframe(0, duration: away * 0.08)
+                            LinearKeyframe(0, duration: max(away * 0.08, 0.01))
                             CubicKeyframe(pressed ? 5 * (1 - away / (middle + 1)) : 0, duration: 0.27)
                             CubicKeyframe(0, duration: 0.28)
                         }

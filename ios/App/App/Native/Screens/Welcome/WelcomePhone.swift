@@ -485,13 +485,14 @@ private struct ThrownPaper<Content: View>: View {
 
 // MARK: - The glass wave
 
-/// The calendars made one washed away into the real month (asked for on
-/// 21 Nov 2026, natively only): a drop of Apple's clear glass falls from
-/// above the screen like a drop into a cup of water, speeding up and
-/// stretching; it hits the middle, squashes flat and opens into one broad,
-/// smooth wave of glass that rolls out to the corners, pushing the paper
-/// ahead of it and leaving the month behind. On a clock of its own from
-/// `waving`, done before the month's dip.
+/// The pile washed away into the real month (asked for on 21 Nov 2026,
+/// after photos of a drop falling into water; natively only): a drop of
+/// Apple's clear glass falls from above the screen, speeding up and
+/// stretching; where it hits, the surface dips and a small droplet jumps
+/// back up and falls again, while rings of glass ripple out from the middle,
+/// each fainter than the last. The first ripple washes the paper away as it
+/// passes; the rest roll on over the month and fade. On a clock of its own
+/// from `waving`.
 struct GlassWaveReveal<Paper: View>: View {
     let waving: Bool
     @ViewBuilder let paper: () -> Paper
@@ -509,7 +510,7 @@ struct GlassWaveReveal<Paper: View>: View {
     }
 }
 
-/// The drop and the wave at one moment, `time` seconds after it let go.
+/// The drop and its ripples at one moment, `time` seconds after it let go.
 private struct GlassWave<Paper: View>: View {
     let time: Double
     let running: Bool
@@ -517,46 +518,67 @@ private struct GlassWave<Paper: View>: View {
 
     /// Falling from above the screen to its middle.
     static var fall: Double { 0.34 }
-    /// The wave out to the corners.
-    static var wave: Double { 0.86 }
+    /// How fast the ripples run, points a second, and how far apart they leave.
+    static var speed: Double { 520 }
+    static var gap: Double { 0.13 }
+    /// Each ripple's width, the first the widest.
+    static var widths: [CGFloat] { [28, 22, 17, 13] }
 
     private var center: CGPoint { CGPoint(x: D.screen.width / 2, y: D.screen.height / 2) }
 
     var body: some View {
-        let far = hypot(center.x, center.y) + 90
+        let far = hypot(center.x, center.y) + 40
         let falling = running && time < Self.fall
         // Falling: from above the top, faster and faster, stretched by its speed.
         let u = min(max(time / Self.fall, 0), 1)
-        let dropY = -50 + (center.y + 50) * CGFloat(u * u)
-        let drop = CGSize(width: 64 - 8 * u, height: 64 + 30 * u)
-        // The wave: from a flattened drop to one broad swell rolling outward.
-        let q = running ? min(max((time - Self.fall) / Self.wave, 0), 1) : 0
-        let e = CGFloat(1 - pow(1 - q, 1.7))
-        let outer = 40 + e * (far - 40)
-        let width = min(outer, 40 + 90 * e)
-        let inner = max(0, outer - width)
-        let hole = max(0, outer - width * 0.55)
-        let fade = q < 0.72 ? 1 : 1 - (q - 0.72) / 0.28
+        let dropY = -60 + (center.y + 60) * CGFloat(u * u)
+        let drop = CGSize(width: 60 - 8 * u, height: 60 + 28 * u)
+        // After the hit.
+        let since = running ? max(time - Self.fall, 0) : 0
+        let rings: [(outer: CGFloat, inner: CGFloat, strength: Double)] = Self.widths.enumerated().map { i, w in
+            let r = CGFloat((since - Double(i) * Self.gap) * Self.speed) + 24
+            let reach = Double(r / far)
+            let strength = (1 - 0.2 * Double(i)) * (reach < 0.7 ? 1 : max(0, 1 - (reach - 0.7) / 0.3))
+            return (r, max(0, r - w), r > 24 ? strength : 0)
+        }
+        // The first ripple carries the paper away; ahead of it the paper lifts a little.
+        let hole = running && !falling ? max(0, rings[0].outer - Self.widths[0] / 2) : 0
+        let lift = 1 + 0.05 * min(hole / far, 1)
+        // The dip where it hit, and the droplet jumping back out of it.
+        let dip = since < 0.4 ? sin(.pi * since / 0.4) : 0
+        let jump = since > 0.1 && since < 0.62 ? sin(.pi * (since - 0.1) / 0.52) : -1
         ZStack {
             paper
-                // Pushed away ahead of the wave, as water would.
-                .scaleEffect(1 + 0.14 * e)
-                .mask { Hole(center: center, radius: running && !falling ? hole : 0).fill(style: FillStyle(eoFill: true)) }
+                .scaleEffect(lift)
+                .mask { Hole(center: center, radius: hole).fill(style: FillStyle(eoFill: true)) }
             if falling {
-                Color.clear
-                    .frame(width: drop.width, height: drop.height)
-                    .casyGlass(in: Ellipse(), clear: true)
-                    .position(x: center.x, y: dropY)
-            } else if running && q < 1 {
-                Color.clear
-                    .frame(width: D.screen.width, height: D.screen.height)
-                    .casyGlass(in: Ring(center: center, inner: inner, outer: outer), clear: true)
-                    // A little of what is under it shows through: glass, not a white band.
-                    .opacity(0.85 * fade)
+                glass(Ellipse(), size: drop).position(x: center.x, y: dropY)
+            } else if running {
+                ForEach(0..<rings.count, id: \.self) { i in
+                    let ring = rings[i]
+                    if ring.strength > 0 {
+                        Color.clear
+                            .frame(width: D.screen.width, height: D.screen.height)
+                            .casyGlass(in: Ring(center: center, inner: ring.inner, outer: ring.outer), clear: true)
+                            .opacity(ring.strength)
+                    }
+                }
+                if dip > 0 {
+                    glass(Circle(), size: CGSize(width: 70 * dip, height: 70 * dip)).position(center)
+                }
+                if jump >= 0 {
+                    let size = 26 + 6 * (1 - jump)
+                    glass(Ellipse(), size: CGSize(width: size, height: size * 1.15))
+                        .position(x: center.x, y: center.y - 78 * CGFloat(jump))
+                }
             }
         }
         .frame(width: D.screen.width, height: D.screen.height)
         .allowsHitTesting(false)
+    }
+
+    private func glass<S: Shape>(_ shape: S, size: CGSize) -> some View {
+        Color.clear.frame(width: size.width, height: size.height).casyGlass(in: shape, clear: true)
     }
 }
 
