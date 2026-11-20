@@ -49,6 +49,23 @@ struct PlanScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                // Planning a starred day (#243): which, and when everyone is free, said first.
+                if let prime = model.shownPrime {
+                    HStack(spacing: 8) {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.primary.color)
+                            .frame(width: 16, height: 16)
+                        (Text(CasyStrings.primeTitle).fontWeight(.semibold)
+                            + Text(verbatim: " · \(capitalized(dayLabel(prime.day, lang))), \(primeWhen(prime))"))
+                            .font(.system(size: 15))
+                            .foregroundStyle(Theme.foreground.color)
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.bottom, 12)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("plan.prime")
+                }
                 PlanGroupRow(shortcuts: { path.append(.shortcuts) })
                 PlanNameField(onAsk: askAi).padding(.top, 16)
                 Group {
@@ -332,7 +349,9 @@ struct PlanTimeRows: View {
             let start = Int(settings.startHour * 60)
             return CasyStrings.planFromTo(clock(start), clock(start + settings.durationMinutes))
         }
-        let start = settings.anyTime ? CasyStrings.planAnyTime : startOptions(settings).first { $0.value == startValue(settings) }?.label ?? ""
+        // A starred day's free hours stand for "any time" (#243).
+        let anyTime = PlanModel.shared.shownPrime.map { capitalized(primeWhen($0)) } ?? CasyStrings.planAnyTime
+        let start = settings.anyTime ? anyTime : startOptions(settings).first { $0.value == startValue(settings) }?.label ?? ""
         return "\(start), \(CasyStrings.planLength(settings.durationMinutes))"
     }
 

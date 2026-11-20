@@ -31,6 +31,9 @@ final class PlanModel {
     private(set) var peopleChoices: [String: PeopleChoice] = [:]
     private(set) var steps = AnswerSteps.restart()
     private(set) var selectedGroupId: String?
+    /// The starred day Planlæg was begun from (#171, #243), said at the top
+    /// while its day is still the one planned (`shownPrime`).
+    private(set) var prime: PrimeDate?
 
     // MARK: What it is planned from
 
@@ -56,6 +59,7 @@ final class PlanModel {
     // MARK: Groups
 
     func reset() {
+        prime = nil
         name = ""
         extras = .defaults
         settings = Self.randomSettings()
@@ -67,6 +71,33 @@ final class PlanModel {
         busy = nil
         busyFor = nil
         found = nil
+    }
+
+    /// Begun from a starred day (the web's PlanStart with `prime`): its group,
+    /// a fresh plan with the day's settings over it.
+    func begin(prime: PrimeDate) {
+        fillTask?.cancel()
+        fill = nil
+        questions = []
+        aiFailure = nil
+        name = ""
+        extras = .defaults
+        settings = primeDatePlan(prime, zone, onto: Self.randomSettings())
+        peopleChoices = [:]
+        extraTimes = []
+        steps = .restart()
+        selectedGroupId = prime.groupId
+        self.prime = prime
+        closedAt = nil
+    }
+
+    /// Opened from the pill: no starred day said, the plan as it was left.
+    func forgetPrime() { prime = nil }
+
+    /// The starred day, while it is the day being planned.
+    var shownPrime: PrimeDate? {
+        guard let prime, let from = settings.period?.from, parseInstant(from) == prime.day else { return nil }
+        return prime
     }
 
     /// "Nulstil planen": a fresh plan for the same group (the web's reset, #189).

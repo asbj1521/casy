@@ -11,9 +11,9 @@ final class PlanUITests: XCTestCase {
         _ = try await URLSession.shared.data(for: reset)
     }
 
-    private func launch() -> XCUIApplication {
+    private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [
+        app.launchArguments = extra + [
             "-casyBackend", "http://localhost:4318",
             "-casyOpenScreen", "plan",
             "-casyLang", "da",
@@ -22,6 +22,21 @@ final class PlanUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.navigationBars["Planlæg"].waitForExistence(timeout: 20))
         return app
+    }
+
+    /// Begun from a starred day (#171): said at the top, its group picked, and
+    /// the time any time in its free hours ("Fra 18:00"), for three hours, that day only.
+    func testAStarredDayBeginsThePlan() {
+        let app = launch(["-casyPrime", "g-friday"])
+        XCTAssertTrue(
+            app.descendants(matching: .any)["plan.prime"].waitForExistence(timeout: 10), "the starred day said first")
+        XCTAssertTrue(
+            app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Fredag 16. oktober"))
+                .firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["Fredagsbar"].waitForExistence(timeout: 10))
+        let time = app.buttons["plan.row.time"]
+        XCTAssertTrue(time.waitForExistence(timeout: 5))
+        XCTAssertTrue(time.label.contains("Fra 18:00, 3 t"), time.label)
     }
 
     /// The first meeting's time is the preset the test launch draws: 17:00 to 19:00.

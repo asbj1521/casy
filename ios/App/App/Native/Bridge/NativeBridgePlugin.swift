@@ -310,8 +310,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
             : screen == "plan"
             ? AnyView(
-                PlanSheet(
-                    preferences: NativePreferences.shared, onDone: onDone, leave: leave,
+                Self.planSheet(
+                    Self.decode(PrimeDate.self, state["prime"]) ?? Self.testPrime, onDone: onDone, leave: leave,
                     onFind: { [weak self] in self?.showPile() }))
             : screen == "events"
             ? AnyView(EventsSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave))
@@ -407,6 +407,16 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }
 
     private static func decodeMark(_ object: Any?) -> TripMark? { decode(TripMark.self, object) }
+
+    /// Planlæg, begun from a starred day when the page sends one (#171),
+    /// else the plan as it was left.
+    @MainActor private static func planSheet(
+        _ prime: PrimeDate?, onDone: @escaping () -> Void, leave: @escaping (LeavingProfile) -> Void,
+        onFind: @escaping () -> Void
+    ) -> PlanSheet {
+        if let prime { PlanModel.shared.begin(prime: prime) } else { PlanModel.shared.forgetPrime() }
+        return PlanSheet(preferences: NativePreferences.shared, onDone: onDone, leave: leave, onFind: onFind)
+    }
 
     private static var testPrime: PrimeDate? {
         #if DEBUG

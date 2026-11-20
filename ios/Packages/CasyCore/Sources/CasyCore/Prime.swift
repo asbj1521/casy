@@ -42,3 +42,30 @@ public func everyone(_ names: [String], _ lang: Lang) -> String {
     if names.count == 1 { return last }
     return "\(names.dropLast().joined(separator: ", ")) \(lang == .da ? "og" : "and") \(last)"
 }
+
+/// How long a plan for a stretch starts out (PLAN_MINUTES): an ordinary get-together.
+private let primePlanMinutes = 3 * 60
+
+/// Planlæg begun from a starred day (#171, primeDatePlan): that day only, any
+/// time in it for three hours, the stretch's first whole hour kept for a time
+/// picked by hand; a weekend is Saturday and Sunday away together. Laid over
+/// `base`, the plan as it was.
+public func primeDatePlan(_ prime: PrimeDate, _ timeZone: String, onto base: SchedulerSettings) -> SchedulerSettings {
+    var s = base
+    let day = isoString(prime.day)
+    if prime.kind == "weekend" {
+        s.multiDay = true
+        s.days = 2
+        s.startDow = 6
+        s.period = Period(from: day, to: isoString(addDays(prime.day, 1, timeZone)), days: true)
+        return s
+    }
+    s.multiDay = false
+    s.anyTime = true
+    s.startWindow = nil
+    s.startHour = (Double(prime.start - startOfDay(prime.start, timeZone)) / 3_600_000).rounded(.up)
+    s.durationMinutes = primePlanMinutes
+    s.dows = [1, 2, 3, 4, 5, 6, 0]
+    s.period = Period(from: day, to: day, days: true)
+    return s
+}

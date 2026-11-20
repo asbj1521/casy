@@ -286,8 +286,8 @@ export default function PhoneCalendar() {
   const nativeProfile = useNativeScreen("profile");
   // And Aftaler's list (#199); an event's screen is still the sheet's, at `?events=<id>`.
   const nativeEvents = useNativeScreen("events");
-  // And Planlæg (#282), from the pill; a starred day's or a vote searched
-  // again still opens the page's own, which begins with their group and dates.
+  // And Planlæg (#282), from the pill or a starred day; a vote searched
+  // again still opens the page's own, which begins with its group and dates.
   const nativePlan = useNativeScreen("plan");
   const openProfile = () => navigate({ search: "?profile" }, { state: { fromMonth: true } });
   // What pickDay (stable, below) needs to know of the votes (#172), set further down.
@@ -786,10 +786,8 @@ export default function PhoneCalendar() {
           </Suspense>
         )
       )}
-      {nativePlan &&
-      !planStart &&
-      !(location.state as { planStart?: PlanStart } | null)?.planStart ? (
-        <NativePlan open={planOpen} onClose={closeOverlay} />
+      {nativePlan && !(location.state as { planStart?: PlanStart } | null)?.planStart ? (
+        <NativePlan open={planOpen} prime={planStart} onClose={closeOverlay} />
       ) : (
         (plan.shown || planTouched) && (
           <Suspense fallback={null}>

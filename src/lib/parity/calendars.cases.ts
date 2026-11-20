@@ -9,7 +9,8 @@ import {
   type Transcript,
 } from "@/lib/speechTranscript";
 import { LOCALE } from "@/i18n/locale";
-import { stretchShape, type PrimeDate } from "@/lib/primeDates";
+import { primeDatePlan, stretchShape, type PrimeDate } from "@/lib/primeDates";
+import type { SchedulerSettings } from "@/lib/scheduler";
 import { dayOptions, type Leg } from "@/lib/trips";
 import { cityName } from "@/lib/tripView";
 import { addDays, startOfDay } from "@/lib/zone";
@@ -263,6 +264,19 @@ export function calendarsCases(): ParityCase[] {
       value: 1,
     };
     add("stretchShape", { prime }, stretchShape(prime, TZ));
+    // Planlæg begun from it (#171): the plan as it was, the day's settings over it.
+    const base: SchedulerSettings = {
+      multiDay: flag(0.3),
+      startHour: int(8, 20),
+      durationMinutes: pick([60, 120, 180]),
+      dows: [1, 2, 3],
+      anyTime: false,
+      startWindow: null,
+      days: int(2, 5),
+      startDow: flag(0.5) ? null : 5,
+      period: null,
+    };
+    add("primeDatePlan", { prime, base }, { ...base, ...primeDatePlan(prime, TZ) });
   }
   const PEOPLE = ["Ana", "Bo", "Cille", "Dan", "dig"];
   for (let n = 0; n <= PEOPLE.length; n++) {

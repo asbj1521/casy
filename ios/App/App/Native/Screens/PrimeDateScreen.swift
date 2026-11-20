@@ -5,7 +5,7 @@ import SwiftUI
 
 /// A starred day on the home page, opened (#171, #200): which group is free,
 /// when, that everyone is, and one way on, Planlæg with the group and the day
-/// set, which is still the page's (`LeavingProfile.plan`). The footnote is the
+/// set (`LeavingProfile.plan`: the page opens Planlæg with it). The footnote is the
 /// promise: nobody hears of it until something is sent.
 struct PrimeDateSheet: View {
     let preferences: NativePreferences
@@ -36,7 +36,7 @@ struct PrimeDateSheet: View {
                                 GroupBubbles(members: group.members, picture: group.pictureUrl.flatMap(URL.init(string:)))
                             }
                             CardRow(
-                                formatLongDate(isoString(prime.day), lang), icon: "calendar-heart", value: when(prime))
+                                formatLongDate(isoString(prime.day), lang), icon: "calendar-heart", value: primeWhen(prime))
                             CardRow(
                                 CasyStrings.primeAllFree(group.members.count), icon: "users",
                                 detail: everyone(
@@ -68,17 +68,6 @@ struct PrimeDateSheet: View {
             .task { await load() }
         }
         .nativeSheetLook(preferences)
-    }
-
-    /// The free time in words: "18:00 til 22:00", "Hele dagen", "Hele weekenden".
-    private func when(_ prime: PrimeDate) -> String {
-        let time = { (ms: Int64) in formatTime(isoString(ms)) }
-        switch stretchShape(prime, appTimeZone) {
-        case "weekend": return CasyStrings.primeWeekend
-        case "allDay": return CasyStrings.primeAllDay
-        case "from": return CasyStrings.primeFrom(time(prime.start))
-        default: return CasyStrings.primeUntil(time(prime.start), time(prime.end))
-        }
     }
 
     private func load() async {
@@ -133,5 +122,17 @@ struct GroupBubbles: View {
             }
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// A starred day's free time in words (usePrimeWhen): "18:00 til 22:00",
+/// "Hele dagen", "Hele weekenden". Its sheet and Planlæg begun from it say it.
+func primeWhen(_ prime: PrimeDate) -> String {
+    let time = { (ms: Int64) in formatTime(isoString(ms)) }
+    switch stretchShape(prime, appTimeZone) {
+    case "weekend": return CasyStrings.primeWeekend
+    case "allDay": return CasyStrings.primeAllDay
+    case "from": return CasyStrings.primeFrom(time(prime.start))
+    default: return CasyStrings.primeUntil(time(prime.start), time(prime.end))
     }
 }
