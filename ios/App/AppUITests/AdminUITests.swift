@@ -25,7 +25,11 @@ final class AdminUITests: XCTestCase {
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Admin")).firstMatch
         for _ in 0..<6 where !(row.exists && row.isHittable) { app.screenList.swipeUp(velocity: .slow) }
         row.tap()
-        XCTAssertTrue(app.navigationBars["Admin-tilstand"].waitForExistence(timeout: 10))
+        // Under load a tap can land while the list still coasts from the swipe,
+        // and only stops it (21 Nov 2026): once more if Admin hasn't opened.
+        let bar = app.navigationBars["Admin-tilstand"]
+        if !bar.waitForExistence(timeout: 5), row.exists, row.isHittable { row.tap() }
+        XCTAssertTrue(bar.waitForExistence(timeout: 10))
         return app
     }
 

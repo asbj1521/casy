@@ -16,6 +16,11 @@ test fails at once; every failed test is then run once more, alone, and one that
 the second time is reported as flaky rather than failed. Before a merge, UI_TESTS_STRICT=1
 runs nothing twice: any failure fails the run, as one after another always did.
 
+The app is built first and the simulators are then started one at a time, each fully up
+before the next: right after a restart, four cold starts at once on top of the build
+took the Mac's load past 900 and filled its swap (21 Nov 2026). A guard stops the whole
+run, simulators and all, if the Mac still chokes (memory critical, or frozen).
+
 On an M2 Pro with 16 GB: about 50 min one after another, 19 min on 2, 10 min on 4.
 
   scripts/native/ui-tests.sh                       # every class, UI_TEST_WORKERS simulators (default 4)
@@ -25,6 +30,7 @@ On an M2 Pro with 16 GB: about 50 min one after another, 19 min on 2, 10 min on 
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -144,6 +150,27 @@ def watch(path, udid, proc, stalls):
                     subprocess.run(["xcrun", "simctl", "terminate", udid, APP_ID], capture_output=True)
 
 
+def guard(runners, choked):
+    """Stops the run when the Mac chokes: macOS calls memory critical three readings running,
+    or the guard's own 15 s check comes back over a minute late (the Mac froze). Not the
+    load average: on macOS 27 it stayed in the hundreds with the CPU 90 % idle."""
+    critical, last = 0, time.time()
+    while True:
+        time.sleep(15)
+        level = int(run("sysctl", "-n", "kern.memorystatus_vm_pressure_level"))
+        # The whole gap since the last reading, the reading itself included.
+        late, last = time.time() - last - 15, time.time()
+        critical = critical + 1 if level >= 4 else 0
+        why = "memory critical" if critical == 3 else f"froze for {late:.0f} s" if late > 60 else None
+        if why:
+            choked.append(why)
+            print(f"ui-tests: the Mac is choking ({why}): stopping the run", flush=True)
+            for p, _ in runners:
+                p.terminate()
+            os.kill(os.getpid(), signal.SIGTERM)
+            return
+
+
 def xctest(udid, port, only, result, log):
     env = dict(os.environ, TEST_RUNNER_CASY_BACKEND=f"http://localhost:{port}",
                TEST_RUNNER_CASY_SHOTS=os.environ.get("CASY_SHOTS_DIR", ""))
@@ -166,8 +193,11 @@ def main():
         print(f"ui-tests: shutting down {PERSONAL} for the run")
         subprocess.run(["xcrun", "simctl", "shutdown", personal["udid"]], capture_output=True)
 
-    servers, runners, stalls, retried = [], [], [], {}
+    servers, runners, stalls, retried, choked = [], [], [], {}, []
     started = time.time()
+    # Stopped from outside (or by the guard), the finally below still tidies up.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+    threading.Thread(target=guard, args=(runners, choked), daemon=True).start()
     try:
         bundle = work / "fake-backend.mjs"
         run("npx", "esbuild", "scripts/native/fake-backend.ts", "--bundle", "--platform=node", "--format=esm",
@@ -176,14 +206,16 @@ def main():
             env = dict(os.environ, PORT=str(FIRST_PORT + i), SLOW_ACTIONS="push-set")
             servers.append(subprocess.Popen(["node", str(bundle)], env=env, stdout=subprocess.DEVNULL,
                                             stderr=subprocess.DEVNULL))
-        for udid in sims:
-            if not booted(udid):
-                subprocess.run(["xcrun", "simctl", "boot", udid], capture_output=True)
-
         print("ui-tests: building once")
         subprocess.run(["xcodebuild", "build-for-testing", "-project", "ios/App/App.xcodeproj", "-scheme", "App",
                         "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={sims[0]}",
                         "CODE_SIGNING_ALLOWED=NO", "-quiet"], cwd=ROOT, check=True)
+
+        # One at a time, each fully started (bootstatus -b boots and waits) before the next.
+        for n, udid in enumerate(sims):
+            if not booted(udid):
+                print(f"ui-tests: starting simulator {n + 1}")
+                subprocess.run(["xcrun", "simctl", "bootstatus", udid, "-b"], capture_output=True)
 
         for i, (group, udid) in enumerate(zip(groups, sims)):
             path = work / f"worker{i + 1}.log"
@@ -213,6 +245,14 @@ def main():
     finally:
         for s in servers:
             s.terminate()
+        stopped = sys.exc_info()[0] is not None
+        for p, _ in runners:
+            if p.poll() is None:
+                p.terminate()
+        if stopped:
+            print("ui-tests: stopped; shutting the test simulators down")
+            for udid in sims:
+                subprocess.run(["xcrun", "simctl", "shutdown", udid], capture_output=True)
         if personal_was_on:
             print(f"ui-tests: starting {PERSONAL} again")
             subprocess.run(["xcrun", "simctl", "boot", personal["udid"]], capture_output=True)

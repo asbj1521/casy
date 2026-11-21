@@ -9,7 +9,7 @@ cd "$(git rev-parse --show-toplevel)"
 # The whole suite on several simulators at once (ui-tests-parallel.py), unless
 # one class or test is asked for, or UI_TEST_WORKERS=1 asks for one after another.
 if [ -z "${UI_TESTS:-}" ] && [ -z "${UI_TEST_DEVICE:-}" ] && [ "${UI_TEST_WORKERS:-4}" != 1 ]; then
-  exec python3 -I scripts/native/ui-tests-parallel.py
+  exec python3 -u -I scripts/native/ui-tests-parallel.py
 fi
 
 # iPhone 17e by default, the parity shots' simulator: never the one a person

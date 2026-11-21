@@ -46,18 +46,34 @@ final class TellUITests: XCTestCase {
     func neverWhole(_ theme: String) {
         let app = launch(["-casy.appearance", theme])
         let bar = app.navigationBars["Tilføj til kalender"]
-        sleep(1)
+        let half = settled(bar)
         shot("tell-half-\(theme)")
-        let half = bar.frame.minY
-        // A swipe while the sheet is still settling can be lost: again, a few times.
-        for _ in 0..<3 where bar.frame.minY >= half {
-            bar.swipeUp()
-            sleep(2)
-        }
-        shot("tell-full-\(theme)")
         let screen = app.windows.firstMatch.frame.height
+        // Under load a quick flick can be lost on the way in (the sheet never
+        // moves): a slow press-and-drag from the bar towards the top instead,
+        // again a few times, each time once the sheet has stopped moving.
+        for _ in 0..<4 where settled(bar) >= half {
+            let from = bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let to = from.withOffset(CGVector(dx: 0, dy: -(half - screen * 0.05)))
+            from.press(forDuration: 0.2, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+        _ = settled(bar)
+        shot("tell-full-\(theme)")
         XCTAssertLessThan(bar.frame.minY, half, "it grows")
         XCTAssertGreaterThan(bar.frame.minY, screen * 0.12, "and stops short of the whole screen")
+    }
+
+    /// Where the element's top rests once it holds still for half a second (max 8 s).
+    func settled(_ element: XCUIElement) -> CGFloat {
+        var last = element.frame.minY
+        let end = Date().addingTimeInterval(8)
+        while Date() < end {
+            usleep(500_000)
+            let now = element.frame.minY
+            if abs(now - last) < 0.5 { return now }
+            last = now
+        }
+        return last
     }
 
     func testTheSheetStaysGlassInLight() { neverWhole("light") }
