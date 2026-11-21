@@ -517,12 +517,7 @@ private struct GlassWave<Paper: View>: View {
     let paper: Paper
 
     /// Falling from above the screen to its middle.
-    static var fall: Double { 0.34 }
-    /// How fast the ripples run, points a second, and how far apart they leave.
-    static var speed: Double { 520 }
-    static var gap: Double { 0.13 }
-    /// Each ripple's width, the first the widest.
-    static var widths: [CGFloat] { [28, 22, 17, 13] }
+    static var fall: Double { D.dropFall }
 
     private var center: CGPoint { CGPoint(x: D.screen.width / 2, y: D.screen.height / 2) }
 
@@ -535,14 +530,11 @@ private struct GlassWave<Paper: View>: View {
         let drop = CGSize(width: 60 - 8 * u, height: 60 + 28 * u)
         // After the hit.
         let since = running ? max(time - Self.fall, 0) : 0
-        let rings: [(outer: CGFloat, inner: CGFloat, strength: Double)] = Self.widths.enumerated().map { i, w in
-            let r = CGFloat((since - Double(i) * Self.gap) * Self.speed) + 24
-            let reach = Double(r / far)
-            let strength = (1 - 0.2 * Double(i)) * (reach < 0.7 ? 1 : max(0, 1 - (reach - 0.7) / 0.3))
-            return (r, max(0, r - w), r > 24 ? strength : 0)
-        }
-        // The first ripple carries the paper away; ahead of it the paper lifts a little.
-        let hole = running && !falling ? max(0, rings[0].outer - Self.widths[0] / 2) : 0
+        // The wave's front carries the paper away (the wave itself is the stage's
+        // shader, bending all of the screen); the paper lifts a little ahead of it.
+        let front = CGFloat(since * D.ripple.speed)
+        // A whole crest runs over the paper, bending it, before it washes away behind.
+        let hole = running && !falling ? max(0, front - CGFloat(D.ripple.wavelength) * 1.1) : 0
         let lift = 1 + 0.05 * min(hole / far, 1)
         // The dip where it hit, and the droplet jumping back out of it.
         let dip = since < 0.4 ? sin(.pi * since / 0.4) : 0
@@ -550,19 +542,26 @@ private struct GlassWave<Paper: View>: View {
         ZStack {
             paper
                 .scaleEffect(lift)
-                .mask { Hole(center: center, radius: hole).fill(style: FillStyle(eoFill: true)) }
+                // Washed off over a soft band, not cut along a line.
+                .mask {
+                    if hole <= 0 {
+                        Color.black
+                    } else {
+                        // Measured out to past the band, so its stops never run beyond the end.
+                        let soft: CGFloat = 70
+                        let reach = hole + soft
+                        RadialGradient(
+                            stops: [
+                                .init(color: .clear, location: hole / reach),
+                                .init(color: .black, location: 1),
+                            ], center: .center, startRadius: 0, endRadius: reach)
+                    }
+                }
+                // Gone once the band has passed the corners.
+                .opacity(hole > far ? 0 : 1)
             if falling {
                 glass(Ellipse(), size: drop).position(x: center.x, y: dropY)
             } else if running {
-                ForEach(0..<rings.count, id: \.self) { i in
-                    let ring = rings[i]
-                    if ring.strength > 0 {
-                        Color.clear
-                            .frame(width: D.screen.width, height: D.screen.height)
-                            .casyGlass(in: Ring(center: center, inner: ring.inner, outer: ring.outer), clear: true)
-                            .opacity(ring.strength)
-                    }
-                }
                 if dip > 0 {
                     glass(Circle(), size: CGSize(width: 70 * dip, height: 70 * dip)).position(center)
                 }
@@ -579,38 +578,5 @@ private struct GlassWave<Paper: View>: View {
 
     private func glass<S: Shape>(_ shape: S, size: CGSize) -> some View {
         Color.clear.frame(width: size.width, height: size.height).casyGlass(in: shape, clear: true)
-    }
-}
-
-/// The whole sheet with a round hole in it.
-private struct Hole: Shape {
-    let center: CGPoint
-    let radius: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        var p = Path(rect)
-        if radius > 0 {
-            p.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
-        }
-        return p
-    }
-}
-
-/// A ring: the outer circle one way round, the inner the other, so the middle is open.
-private struct Ring: Shape {
-    let center: CGPoint
-    let inner: CGFloat
-    let outer: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        p.addArc(center: center, radius: outer, startAngle: .zero, endAngle: .degrees(360), clockwise: false)
-        p.closeSubpath()
-        if inner > 0.5 {
-            p.move(to: CGPoint(x: center.x + inner, y: center.y))
-            p.addArc(center: center, radius: inner, startAngle: .zero, endAngle: .degrees(-360), clockwise: true)
-            p.closeSubpath()
-        }
-        return p
     }
 }

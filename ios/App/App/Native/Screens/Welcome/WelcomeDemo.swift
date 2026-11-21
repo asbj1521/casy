@@ -151,6 +151,10 @@ enum WelcomeDemo {
     static let flightFor = 0.95
     static let dissolveFor = 1.15
     static let finaleHold = 2.0
+    /// The glass drop's fall onto the calendars, from `digital` to the hit.
+    static let dropFall = 0.34
+    /// The wave it makes: how high, how long from crest to crest, how fast, and for how long.
+    static let ripple = (amplitude: 22.0, wavelength: 160.0, speed: 430.0, lasts: 1.8)
     static let popAt = (0..<5).map { 0.3 + Double($0) * 0.13 }
     static let flyAt = (0..<5).map { 1.35 + Double($0) * 0.13 }
 

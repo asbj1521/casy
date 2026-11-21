@@ -47,6 +47,8 @@ struct WelcomeStage: View {
     @State private var headlineHeight: CGFloat = 70
     @State private var grown = false
     @State private var introCover = true
+    /// Seconds since the glass drop hit the calendars, for the wave.
+    @State private var rippleTime = 0.0
 
     private let month = D.month(Native.now)
     private let plan: (free: [Int64], items: [[MonthItem]])
@@ -169,6 +171,21 @@ struct WelcomeStage: View {
         .accessibilityHidden(true)
         .allowsHitTesting(false)
         .task(id: round) { await play() }
+        // The wave's shader ready before it is needed: compiled on first use, it held
+        // the screen still for most of a second just as the drop hit.
+        .task {
+            let r = D.ripple
+            try? await ShaderLibrary.casyRipple(
+                .float2(0, 0), .float(0), .float(r.amplitude), .float(r.wavelength), .float(r.speed)
+            ).compile(as: .layerEffect)
+        }
+        .onChange(of: now >= at.digital) { _, hit in
+            var still = Transaction()
+            still.disablesAnimations = true
+            withTransaction(still) { rippleTime = 0 }
+            guard hit, !self.still else { return }
+            withAnimation(.linear(duration: D.ripple.lasts).delay(D.dropFall)) { rippleTime = D.ripple.lasts }
+        }
         // While sign-in is open it starts over unseen, ready for back.
         .onChange(of: leaving) { _, now in
             guard now else { return }
@@ -258,6 +275,8 @@ struct WelcomeStage: View {
                 }
             }
             .frame(width: D.screen.width, height: D.screen.height, alignment: .topLeading)
+            // The drop's wave bending everything on the screen (WelcomeRipple.metal).
+            .modifier(Rippling(time: rippleTime))
         } over: {
             if !still {
                 ZStack {
@@ -974,6 +993,25 @@ struct WelcomeTravelBox: View {
             Burst()
         }
         .position(cell)
+    }
+}
+
+/// The drop's wave over the screen, `time` seconds after the hit; off before and after.
+private struct Rippling: ViewModifier, Animatable {
+    var time: Double
+    var animatableData: Double {
+        get { time }
+        set { time = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let r = D.ripple
+        content.layerEffect(
+            ShaderLibrary.casyRipple(
+                .float2(D.screen.width / 2, D.screen.height / 2), .float(time), .float(r.amplitude),
+                .float(r.wavelength), .float(r.speed)),
+            maxSampleOffset: CGSize(width: r.amplitude, height: r.amplitude),
+            isEnabled: time > 0.001 && time < r.lasts - 0.001)
     }
 }
 
