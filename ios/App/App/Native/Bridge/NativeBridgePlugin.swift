@@ -42,7 +42,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if TestLaunch.isActive, TestLaunch.webOnly { return [] }
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
-                "home", "plan", "signIn", "welcome",
+                "home", "plan", "signIn", "welcome", "invitePaste", "join",
             ]
         #else
             return []
@@ -50,6 +50,16 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }()
 
     private var openScreen: String?
+
+    /// Whether a screen opened by a test launch, not by the page, is signed in:
+    /// a test's made-up login is, unless the page signs in by itself.
+    private static var testSignedIn: Bool {
+        #if DEBUG
+            return TestLaunch.isActive && !TestLaunch.pageAuth
+        #else
+            return false
+        #endif
+    }
     /// A native screen waiting for the web view to turn notifications on.
     private var pushAnswer: CheckedContinuation<String, Never>?
     /// Native Dine data waiting for the page to count what it keeps on the phone.
@@ -171,6 +181,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if TestLaunch.isActive { return call.resolve() }
         #endif
         var next: SessionBox.Connection?
+        if let url = call.getString("projectUrl").flatMap(URL.init(string:)), let apiKey = call.getString("apiKey") {
+            Task { await SessionBox.shared.setEndpoint(url, apiKey: apiKey) }
+        }
         if let session = call.getObject("session"),
             let url = call.getString("projectUrl").flatMap(URL.init(string:)),
             let apiKey = call.getString("apiKey"),
@@ -307,12 +320,34 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     enablePush: enablePush, onDone: onDone
                 )
                 .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
+            : screen == "invitePaste"
+            ? AnyView(
+                InvitePasteSheet(
+                    preferences: NativePreferences.shared, found: state["found"] as? Bool == true,
+                    open: { [weak self] path in self?.dismissOpenScreen(["next": path]) }, onCancel: onDone
+                )
+                .environment(\.fitSheet) { [weak self] height in self?.fitOpenSheet(height, fit) })
+            : screen == "join"
+            ? AnyView(
+                JoinScreen(
+                    // "join:<token>" in a test launch: a test's made-up login is signed in.
+                    preferences: NativePreferences.shared, token: state["token"] as? String ?? state["start"] as? String ?? "",
+                    signedIn: state["signedIn"] as? Bool ?? Self.testSignedIn, autoJoin: state["autoJoin"] as? Bool == true,
+                    onChoose: onChoose,
+                    finish: { [weak self] outcome in
+                        switch outcome {
+                        case .joined: self?.dismissOpenScreen(["joined": true])
+                        case .group(let id): self?.dismissOpenScreen(["group": id])
+                        case .signUp: self?.dismissOpenScreen(["signUp": true])
+                        case .home: self?.dismissOpenScreen(["next": "/"])
+                        }
+                    }))
             : screen == "welcome"
             ? AnyView(
                 WelcomeScreen(
                     preferences: NativePreferences.shared, startOn: state["signIn"] as? String,
                     signedIn: { [weak self] in self?.dismissOpenScreen(["signedIn": true]) },
-                    paste: { [weak self] in self?.dismissOpenScreen(["paste": true]) }, onChoose: onChoose,
+                    openInvite: { [weak self] path in self?.dismissOpenScreen(["next": path]) }, onChoose: onChoose,
                     leave: leave))
             : screen == "signIn"
             ? AnyView(
@@ -366,6 +401,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             // Over everything, with no way out but the App Store.
             host.modalPresentationStyle = .fullScreen
             host.isModalInPresentation = true
+        } else if screen == "join" {
+            // A page of its own, as the web's: what the link leads to, and the one answer.
+            host.modalPresentationStyle = .fullScreen
+            host.modalTransitionStyle = .crossDissolve
         } else if screen == "welcome" {
             // The way in: nothing to swipe away, the page under it has nothing to show.
             host.modalPresentationStyle = .fullScreen
@@ -402,7 +441,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
         // A trip's sheet, as the web's BottomSheet: as tall as what is in it,
         // in iOS's glass, never whole (where iOS would draw it solid).
-        if ["trip", "prime", "aiConsent", "push"].contains(screen) {
+        if ["trip", "prime", "aiConsent", "push", "invitePaste"].contains(screen) {
             host.view.backgroundColor = .clear
             host.sheetPresentationController?.detents = [
                 .custom(identifier: .init("casy.fit")) { context in

@@ -42,6 +42,11 @@ private struct GroupAction: Encodable, Sendable {
     let groupId: String
 }
 
+private struct TokenAction: Encodable, Sendable {
+    let action: String
+    let token: String
+}
+
 private struct RenameGroup: Encodable, Sendable {
     let action = "rename"
     let groupId: String
@@ -614,6 +619,16 @@ extension EdgeFunctions {
         let answer: InvitationsAnswer = try await call(
             "groups", body: Action(action: "invitations"), errorMessage: errorMessage)
         return answer.invitations ?? []
+    }
+
+    /// What an invite link leads to: the group's name, picture, maker and size (src/api/groups.ts `previewInvite`).
+    public func previewInvite(_ token: String, errorMessage: String? = nil) async throws -> InvitePreview {
+        try await call("groups", body: TokenAction(action: "preview", token: token), errorMessage: errorMessage)
+    }
+
+    /// Joins the group an invite link leads to (`joinGroup`): your groups, and the one joined.
+    public func joinByLink(_ token: String, errorMessage: String? = nil) async throws -> JoinedByLink {
+        try await call("groups", body: TokenAction(action: "join", token: token), errorMessage: errorMessage)
     }
 
     /// Yes to an invitation: answers your groups and the invitations left.

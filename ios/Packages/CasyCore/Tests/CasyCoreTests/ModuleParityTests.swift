@@ -820,3 +820,13 @@ private func localDay(_ iso: String) -> Int {
         }
     }
 }
+
+@Test func appLinksGiveTheTypeScriptAnswers() throws {
+    try check("appLinks", atLeast: 40) { fn, a in
+        switch fn {
+        case "path": return try json(appLinkPath(try text(a, "url")))
+        case "text": return try json(inviteInText(try text(a, "text")))
+        default: return unknown(fn)
+        }
+    }
+}

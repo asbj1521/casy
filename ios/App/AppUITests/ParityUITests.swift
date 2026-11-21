@@ -897,6 +897,44 @@ final class ParityUITests: XCTestCase {
 
     func testConsentDark() async throws { try await shootConsent(theme: "dark") }
 
+    // MARK: An invite's page and Indsæt link (#282)
+
+    /// The page an invite link opens: signed in (Bliv medlem), signed out (what
+    /// we are, then Bliv medlem), and a link that no longer works.
+    private func shootJoin(_ state: String, theme: String) async throws {
+        let token = state == "broken" ? "expired-token" : "abc123"
+        let app = try await launch("/join/\(token)", theme: theme, signedOut: state == "out")
+        shoot(
+            app, "join-\(state)-\(theme)", when: state == "broken" ? "Invitationen virker ikke" : "Sommerhuset",
+            native: "join.screen")
+    }
+
+    func testJoinLight() async throws { try await shootJoin("in", theme: "light") }
+
+    func testJoinDark() async throws { try await shootJoin("in", theme: "dark") }
+
+    func testJoinSignedOutLight() async throws { try await shootJoin("out", theme: "light") }
+
+    func testJoinSignedOutDark() async throws { try await shootJoin("out", theme: "dark") }
+
+    func testJoinBrokenLight() async throws { try await shootJoin("broken", theme: "light") }
+
+    /// Indsæt link over the welcome, signed out.
+    private func shootPaste(theme: String) async throws {
+        let app = try await launch("/", theme: theme, signedOut: true)
+        let paste =
+            mode == "web"
+            ? app.webViews.buttons["Indsæt link"].firstMatch
+            : app.buttons["welcome.paste"]
+        XCTAssertTrue(paste.waitForExistence(timeout: 45), "the welcome's Indsæt link")
+        paste.tap()
+        shoot(app, "paste-\(theme)", when: "Invitationslink", native: "invitePaste.screen")
+    }
+
+    func testPasteLight() async throws { try await shootPaste(theme: "light") }
+
+    func testPasteDark() async throws { try await shootPaste(theme: "dark") }
+
     // MARK: The push ask (#281)
 
     /// What we say before iOS's question, after something was sent: the

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { FIELD, FIELD_LABEL } from "@/components/ui/field";
 import FlowButton from "@/components/ui/FlowButton";
 import Sheet from "@/components/ui/Sheet";
+import { useNativeScreenKnown } from "@/hooks/useNativeScreen";
+import { useNativeSheet } from "@/hooks/useNativeSheet";
 import { useT } from "@/i18n/lang";
 import { inviteInText } from "@/lib/appLinks";
 
@@ -34,6 +36,53 @@ export default function InvitePasteSheet({
    * (CopiedInvite, #277): it asks, and the invite is joined at once.
    */
   found?: boolean;
+}) {
+  // The app's own sheet (#282), when it has one: nothing of the page's shows meanwhile.
+  const native = useNativeScreenKnown("invitePaste");
+  if (native !== false) {
+    return native ? <NativeInvitePaste open={open} onClose={onClose} found={found} /> : null;
+  }
+  return <PagePasteSheet open={open} onClose={onClose} origin={origin} found={found} />;
+}
+
+/**
+ * The paste sheet when the app draws it (#282): it hands back the invite's
+ * address (`next`), opened here as the page's own sheet opens it.
+ */
+function NativeInvitePaste({
+  open,
+  onClose,
+  found,
+}: {
+  open: boolean;
+  onClose: () => void;
+  found: boolean;
+}) {
+  const navigate = useNavigate();
+  useNativeSheet(
+    "invitePaste",
+    open,
+    ({ next }) => {
+      onClose();
+      // Asked for by name ("Fik du en invitation?"): straight into the group.
+      if (next) void navigate(found ? `${next}?join=1` : next);
+    },
+    onClose,
+    () => ({ found }),
+  );
+  return null;
+}
+
+function PagePasteSheet({
+  open,
+  onClose,
+  origin,
+  found,
+}: {
+  open: boolean;
+  onClose: () => void;
+  origin?: RefObject<HTMLElement | null>;
+  found: boolean;
 }) {
   const t = useT();
   const words = t.invitePaste;

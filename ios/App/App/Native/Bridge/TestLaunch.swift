@@ -45,6 +45,9 @@
         static var webOnly: Bool { defaults.bool(forKey: "casyWebOnly") }
         /// `-casyPageAuth YES`: sign-in's steps go to the page, signed out, as in real use (#282).
         static var pageAuth: Bool { defaults.bool(forKey: "casyPageAuth") }
+        /// `-casyCopied <text>`: what "Indsæt link" reads as copied (#282), so a test
+        /// never touches the simulator's pasteboard or iOS's question about it.
+        static var copied: String? { defaults.string(forKey: "casyCopied") }
 
         /// What a parity launch (#280) puts in the page before its first line
         /// runs, as e2e/fixtures.ts does in Playwright: the page's storage

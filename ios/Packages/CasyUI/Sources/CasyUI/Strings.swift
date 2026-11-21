@@ -824,6 +824,23 @@ public enum CasyStrings {
     }
     public static var invitePasteAsk: String { text("invitePaste.ask") }
     public static var invitePastePaste: String { text("invitePaste.paste") }
+    public static var invitePasteTitle: String { text("invitePaste.title") }
+    public static var invitePasteLabel: String { text("invitePaste.label") }
+    public static var invitePasteOpen: String { text("invitePaste.open") }
+    public static var invitePasteNone: String { text("invitePaste.none") }
+    public static var invitePasteWaiting: String { text("invitePaste.waiting") }
+    public static var invitePasteToGroup: String { text("invitePaste.toGroup") }
+    public static var invitePasteGone: String { text("invitePaste.gone") }
+    public static var joinOpening: String { text("join.opening") }
+    public static var joinHome: String { text("join.home") }
+    public static var joinBroken: String { text("join.broken") }
+    public static func joinBrokenBody(_ reason: String) -> String { String(format: text("join.brokenBody"), reason) }
+    public static var joinGoToCasy: String { text("join.goToCasy") }
+    public static var joinAlreadyIn: String { text("join.alreadyIn") }
+    public static var joinToGroup: String { text("join.toGroup") }
+    public static var joinWhatIsCasy: String { text("join.whatIsCasy") }
+    public static var joinPreviewFailed: String { text("join.previewFailed") }
+    public static var joinJoinFailed: String { text("join.joinFailed") }
     public static var authUserExists: String { text("authErrors.userExists") }
     public static var pileChange: String { text("pile.change") }
     public static var pileClose: String { text("pile.close") }

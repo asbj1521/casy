@@ -34,7 +34,9 @@ export type NativeScreen =
   | "home"
   | "plan"
   | "signIn"
-  | "welcome";
+  | "welcome"
+  | "invitePaste"
+  | "join";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {
@@ -101,10 +103,12 @@ export interface NativeClosed {
   added?: string;
   /** The app's sign-in screen (#282) closed because the page is now signed in. */
   signedIn?: boolean;
-  /** The app's welcome (#282) wants an invite pasted: the page's own sheet for it. */
-  paste?: boolean;
   /** Tid til hinanden's Planlæg was pressed (#200): the page's own, with the group and the day. */
   plan?: boolean;
+  /** An invite's page (#282): already a member, into this group. */
+  group?: string;
+  /** An invite's page, signed out (#282): Bliv medlem, so an account first. */
+  signUp?: boolean;
   /** Planlæg sent its dates (#282): the events changed, and the others are asked now. */
   sent?: boolean;
 }

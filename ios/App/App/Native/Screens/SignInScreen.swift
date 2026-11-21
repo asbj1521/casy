@@ -668,7 +668,7 @@ private struct TabGlide: View {
     }
 }
 
-private struct LanguageSwitch: View {
+struct LanguageSwitch: View {
     let lang: String
     let choose: (String) -> Void
 

@@ -26,6 +26,9 @@ actor SessionBox: SessionProviding {
     private static let waitForRefresh: Duration = .seconds(5)
 
     private var connection: Connection?
+    /// Where the Edge Functions are, kept signed out too (#282): an invite is
+    /// previewed before signing in, with the publishable key alone.
+    private var endpoint: (url: URL, apiKey: String)?
     private var askWeb: (@Sendable () -> Void)?
 
     func setAskWeb(_ ask: @escaping @Sendable () -> Void) {
@@ -38,6 +41,15 @@ actor SessionBox: SessionProviding {
 
     func current() -> Connection? {
         connection
+    }
+
+    func setEndpoint(_ url: URL, apiKey: String) {
+        endpoint = (url, apiKey)
+    }
+
+    /// Where the functions are: the login's, or what the page said signed out.
+    func currentEndpoint() -> (url: URL, apiKey: String)? {
+        connection.map { ($0.projectURL, $0.apiKey) } ?? endpoint
     }
 
     private var isFresh: Bool {

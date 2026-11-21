@@ -28,6 +28,7 @@ import periodFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Pa
 import pictureCropFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/pictureCrop.json?raw";
 import phoneBusyFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/phoneBusy.json?raw";
 import paperPileFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/paperPile.json?raw";
+import appLinksFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/appLinks.json?raw";
 import zoneFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/zone.json?raw";
 
 import { availabilityCases } from "./availability.cases";
@@ -51,6 +52,7 @@ import { pictureCropCases } from "./pictureCrop.cases";
 import { phoneBusyCases } from "./phoneBusy.cases";
 import { zoneCases } from "./zone.cases";
 import { paperPileCases } from "./paperPile.cases";
+import { appLinksCases } from "./appLinks.cases";
 
 const FIXTURES = "ios/Packages/CasyCore/Tests/CasyCoreTests/Parity";
 
@@ -80,6 +82,7 @@ describe.each([
   ["aiPlan", aiPlanCases(), aiPlanFixture],
   ["earlyMorning", earlyMorningCases(), earlyMorningFixture],
   ["paperPile", paperPileCases(), paperPileFixture],
+  ["appLinks", appLinksCases(), appLinksFixture],
 ] as const)("%s", (module, cases, fixture) => {
   it.runIf(import.meta.env.UPDATE_PARITY)("writes the fixtures", async () => {
     // Named through a variable so the type check doesn't look for Node's types.

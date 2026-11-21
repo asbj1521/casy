@@ -13,7 +13,8 @@ struct WelcomeScreen: View {
     /// Opened straight on sign-in (an invite's way in): "signin" or "signup".
     let startOn: String?
     let signedIn: () -> Void
-    let paste: () -> Void
+    /// An invite found by "Indsæt link" (#237): its in-app path, for the page to open.
+    let openInvite: (String) -> Void
     let onChoose: (_ lang: String, _ theme: String) -> Void
     let leave: (LeavingProfile) -> Void
 
@@ -23,15 +24,19 @@ struct WelcomeScreen: View {
     /// Sign-in open: the colour spread out, the card over it.
     @State private var signIn: String?
     @State private var cardShown: Bool
+    /// "Indsæt link" open (#282): the app's own sheet over the welcome, as the web's.
+    @State private var pasting = false
+    @State private var pasteHeight: CGFloat = 240
 
     init(
-        preferences: NativePreferences, startOn: String?, signedIn: @escaping () -> Void, paste: @escaping () -> Void,
+        preferences: NativePreferences, startOn: String?, signedIn: @escaping () -> Void,
+        openInvite: @escaping (String) -> Void,
         onChoose: @escaping (_ lang: String, _ theme: String) -> Void, leave: @escaping (LeavingProfile) -> Void
     ) {
         self.preferences = preferences
         self.startOn = startOn
         self.signedIn = signedIn
-        self.paste = paste
+        self.openInvite = openInvite
         self.onChoose = onChoose
         self.leave = leave
         #if DEBUG
@@ -74,6 +79,19 @@ struct WelcomeScreen: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("welcome.screen")
         .nativeSheetLook(preferences)
+        // The web's paste sheet over the welcome: as tall as what is in it, in iOS's glass.
+        .sheet(isPresented: $pasting) {
+            InvitePasteSheet(
+                preferences: preferences, found: false,
+                open: { path in
+                    pasting = false
+                    openInvite(path)
+                },
+                onCancel: { pasting = false }
+            )
+            .environment(\.fitSheet) { height in pasteHeight = height }
+            .presentationDetents([.height(pasteHeight)])
+        }
     }
 
     /// One line, "Find en dag", and the two smaller ways on.
@@ -109,7 +127,7 @@ struct WelcomeScreen: View {
             .padding(.top, 10)
             HStack(spacing: 4) {
                 Text(CasyStrings.invitePasteAsk).foregroundStyle(Theme.mutedForeground.color)
-                Button(action: paste) {
+                Button { pasting = true } label: {
                     Text(CasyStrings.invitePastePaste).fontWeight(.semibold).foregroundStyle(Theme.foreground.color)
                         .frame(minHeight: 32).contentShape(Rectangle())
                 }

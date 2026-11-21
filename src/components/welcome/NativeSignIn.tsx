@@ -31,23 +31,24 @@ export default function NativeSignIn({
 /**
  * The welcome screen when the app draws it (#282): the intro, the animation
  * and the ways in, the sign-in over it, all native; opened at once on sign-in
- * (`signIn`) from an invite's way in. "Indsæt link" comes back here
- * (`onPaste`), to the page's own sheet for it.
+ * (`signIn`) from an invite's way in. "Indsæt link" is the app's own sheet
+ * over it; the invite it finds comes back here (`onInvite`) to be opened.
  */
 export function NativeWelcome({
   open,
   signIn,
-  onPaste,
+  onInvite,
 }: {
   open: boolean;
   signIn: "signin" | "signup" | null;
-  onPaste: () => void;
+  /** The invite's in-app path, "/join/…". */
+  onInvite: (path: string) => void;
 }) {
   useNativeSheet(
     "welcome",
     open,
-    ({ paste }) => {
-      if (paste) onPaste();
+    ({ next }) => {
+      if (next) onInvite(next);
     },
     () => {},
     () => (signIn ? { signIn } : {}),

@@ -119,6 +119,28 @@ public struct Invitation: Codable, Sendable, Equatable, Identifiable {
     public var id: String { groupId }
 }
 
+/// What an invite link leads to (#211, #224), shown before joining: only to whoever holds the link.
+public struct InvitePreview: Codable, Sendable, Equatable {
+    public var group: InvitedGroup
+
+    public struct InvitedGroup: Codable, Sendable, Equatable {
+        public var id: String
+        public var name: String
+        public var description: String?
+        public var memberCount: Int
+        /// Who made the link; nil once their account is gone.
+        public var invitedBy: String?
+        /// The group's picture, else the maker's; none shows the group's first letter.
+        public var pictureUrl: String?
+    }
+}
+
+/// Joined by a link: your groups now, and which one was joined.
+public struct JoinedByLink: Codable, Sendable, Equatable {
+    public var groups: [Group]?
+    public var joinedId: String?
+}
+
 public struct GroupsAnswer: Codable, Sendable, Equatable {
     public var groups: [Group]?
 }

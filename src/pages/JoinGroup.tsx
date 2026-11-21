@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CalendarCheck, Loader2, Users, XCircle } from "lucide-react";
 
 import {
@@ -13,7 +14,12 @@ import {
 } from "@/components/invite/InviteScreen";
 import PhoneSubHeader from "@/components/PhoneSubHeader";
 import Notice from "@/components/ui/Notice";
+import { groupsQueryKey } from "@/api/groups";
+import { useAuth } from "@/context/auth";
 import { useLinkInvite } from "@/hooks/useLinkInvite";
+import { useNativeScreenKnown } from "@/hooks/useNativeScreen";
+import { useNativeSheet } from "@/hooks/useNativeSheet";
+import { askForPush } from "@/lib/pushAsk";
 import { usePhoneLayout } from "@/hooks/usePhoneLayout";
 import { useT } from "@/i18n/lang";
 import { fromDoorUrl, inviteLinkUrl } from "@/lib/appLinks";
@@ -39,7 +45,45 @@ import TopNav from "@/components/TopNav";
 export default function JoinGroup() {
   const { token = "" } = useParams();
   const phone = usePhoneLayout();
+  // The app's own page (#282), when it has one: nothing of the page's shows meanwhile.
+  const native = useNativeScreenKnown("join");
+  const [nativeFailed, setNativeFailed] = useState(false);
+  if (native && !nativeFailed)
+    return <NativeJoin token={token} onFailed={() => setNativeFailed(true)} />;
+  if (native === null) return <main className="min-h-dvh bg-background" />;
   return phone ? <PhoneJoin token={token} /> : <ComputerJoin token={token} />;
+}
+
+/**
+ * The invite's page when the app draws it (#282): it previews and joins by
+ * itself, and hands back where to go next, which the page follows as its own
+ * buttons would.
+ */
+function NativeJoin({ token, onFailed }: { token: string; onFailed: () => void }) {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [params] = useSearchParams();
+  const here = `/join/${encodeURIComponent(token)}`;
+  useNativeSheet(
+    "join",
+    !loading,
+    ({ joined, group, signUp, next }) => {
+      if (joined) {
+        // The groups changed: asked again, then home, and the moment to offer notifications (#139).
+        if (user) void queryClient.invalidateQueries({ queryKey: groupsQueryKey(user.id) });
+        void navigate("/", { replace: true });
+        askForPush("joined");
+      } else if (group) void navigate(sheetAddress(`groups/${group}`));
+      else if (signUp)
+        void navigate(`/sign-in?signup=1&next=${encodeURIComponent(`${here}?join=1`)}`);
+      else void navigate(next ?? "/");
+    },
+    onFailed,
+    // Back from making an account, having said yes before (`?join=1`): joined at once.
+    () => ({ token, signedIn: !!user, autoJoin: params.has("join") }),
+  );
+  return <main className="min-h-dvh bg-background" />;
 }
 
 /** A link on the one invite page (#224). */

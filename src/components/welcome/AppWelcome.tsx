@@ -96,24 +96,17 @@ export default function AppWelcome({
     else void navigate("/");
   };
 
-  // The whole welcome the app's own (#282): the page only holds the paste sheet.
+  // The whole welcome the app's own (#282), "Indsæt link" included: the page
+  // only opens the invite it finds.
   const nativeWelcome = useNativeScreen("welcome") && !website;
   if (nativeWelcome) {
     return (
       <main className="min-h-dvh bg-background">
         <NativeWelcome
-          open={!pasting}
+          open
           signIn={signIn ? (signupAsked ? "signup" : "signin") : null}
-          onPaste={() => {
-            setPasteWanted(true);
-            setPasting(true);
-          }}
+          onInvite={(path) => void navigate(path)}
         />
-        {pasteWanted && (
-          <Suspense fallback={null}>
-            <InvitePasteSheet open={pasting} onClose={() => setPasting(false)} />
-          </Suspense>
-        )}
       </main>
     );
   }
