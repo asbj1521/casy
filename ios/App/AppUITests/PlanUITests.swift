@@ -6,7 +6,7 @@ import XCTest
 final class PlanUITests: XCTestCase {
     /// A fresh world each test: a genvej one test saves is no other test's.
     override func setUp() async throws {
-        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
         reset.httpMethod = "POST"
         _ = try await URLSession.shared.data(for: reset)
     }
@@ -14,7 +14,7 @@ final class PlanUITests: XCTestCase {
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = extra + [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "plan",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",

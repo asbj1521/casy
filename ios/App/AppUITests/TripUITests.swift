@@ -8,7 +8,7 @@ final class TripUITests: XCTestCase {
     private func launch(_ trip: String, title: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "trip",
             "-casyTrip", trip,
             "-casyLang", "da",

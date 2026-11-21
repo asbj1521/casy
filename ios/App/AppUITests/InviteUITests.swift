@@ -7,7 +7,7 @@ import XCTest
 final class InviteUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
-        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
         reset.httpMethod = "POST"
         _ = try await URLSession.shared.data(for: reset)
     }
@@ -16,7 +16,7 @@ final class InviteUITests: XCTestCase {
     private func launch(copied: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyPageAuth", "YES",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",
@@ -77,7 +77,7 @@ final class InviteUITests: XCTestCase {
     func testJoiningFromTheInvitesPage() {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "join:abc123",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",
@@ -96,7 +96,7 @@ final class InviteUITests: XCTestCase {
     func testABrokenLinkSaysWhy() {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "join:expired-token",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",

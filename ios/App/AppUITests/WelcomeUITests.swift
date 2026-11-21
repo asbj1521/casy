@@ -11,7 +11,7 @@ final class WelcomeUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "welcome",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",
@@ -28,7 +28,7 @@ final class WelcomeUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 30), "the ways in, after the intro")
         XCTAssertTrue(app.buttons["welcome.signIn"].exists)
         XCTAssertTrue(app.buttons["welcome.paste"].exists)
-        _ = XCTWaiter.wait(for: [expectation(description: "the animation runs")], timeout: 6)
+        _ = XCTWaiter.wait(for: [expectation(description: "the animation runs")], timeout: 3)
         start.tap()
         XCTAssertTrue(app.buttons["signin.apple"].waitForExistence(timeout: 5), "sign-in over the colour")
         XCTAssertTrue(app.buttons["signin.tab.signUp"].isSelected, "on Opret konto")

@@ -6,7 +6,7 @@ import XCTest
 final class AdminUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
-        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
         reset.httpMethod = "POST"
         reset.httpBody = Data(#"{"admin":true,"reviews":true}"#.utf8)
         _ = try await URLSession.shared.data(for: reset)
@@ -15,7 +15,7 @@ final class AdminUITests: XCTestCase {
     private func openAdmin() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "profile",
             "-casyPushPermission", "granted",
             "-casyLang", "da",

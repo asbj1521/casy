@@ -5,7 +5,7 @@ final class DeleteAccountUITests: XCTestCase {
     func testTheWordMustBeTypedBeforeTheAccountGoes() {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "profile",
             "-casyPushPermission", "granted",
             "-casyLang", "da",

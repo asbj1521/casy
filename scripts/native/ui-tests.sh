@@ -6,6 +6,12 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
+# The whole suite on several simulators at once (ui-tests-parallel.py), unless
+# one class or test is asked for, or UI_TEST_WORKERS=1 asks for one after another.
+if [ -z "${UI_TESTS:-}" ] && [ -z "${UI_TEST_DEVICE:-}" ] && [ "${UI_TEST_WORKERS:-3}" != 1 ]; then
+  exec python3 -I scripts/native/ui-tests-parallel.py
+fi
+
 # iPhone 17e by default, the parity shots' simulator: never the one a person
 # uses with the real app (iPhone 17 here), where the page is signed in for real
 # and draws its own home page under the native sheets (a trip test found two

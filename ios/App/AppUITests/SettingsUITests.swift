@@ -4,7 +4,7 @@ import XCTest
 final class SettingsUITests: XCTestCase {
     /// Each test finds the world as it was: one saves a notification switch.
     override func setUp() async throws {
-        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
         reset.httpMethod = "POST"
         _ = try await URLSession.shared.data(for: reset)
     }
@@ -12,7 +12,7 @@ final class SettingsUITests: XCTestCase {
     private func launch(push: String = "granted", lang: String = "da") -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "settings",
             "-casyPushPermission", push,
             "-casyLang", lang,

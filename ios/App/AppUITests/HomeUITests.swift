@@ -8,7 +8,7 @@ import XCTest
 final class HomeUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
-        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
         reset.httpMethod = "POST"
         _ = try await URLSession.shared.data(for: reset)
     }
@@ -17,7 +17,7 @@ final class HomeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments =
             [
-                "-casyBackend", "http://localhost:4318",
+                "-casyBackend", testBackend,
                 "-casyNativeHome", "YES",
                 "-casyLang", "da",
                 "-casyNow", "2026-10-07T08:00:00.000Z",

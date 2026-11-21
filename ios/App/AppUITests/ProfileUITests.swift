@@ -6,7 +6,7 @@ final class ProfileUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             "-casyTestPicture", "YES",
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "profile",
             "-casyPushPermission", "granted",
             "-casyLang", "da",

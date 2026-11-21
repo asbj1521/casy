@@ -5,7 +5,7 @@ import XCTest
 final class AsksUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
-        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
         reset.httpMethod = "POST"
         reset.httpBody = Data(#"{"aiConsent":false}"#.utf8)
         _ = try await URLSession.shared.data(for: reset)
@@ -15,7 +15,7 @@ final class AsksUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments =
             [
-                "-casyBackend", "http://localhost:4318",
+                "-casyBackend", testBackend,
                 "-casyOpenScreen", screen,
                 "-casyLang", "da",
             ] + extra

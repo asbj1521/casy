@@ -29,7 +29,7 @@ final class CalendarsUITests: XCTestCase {
     }
 
     private func reset(_ body: String = "") async throws {
-        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
         reset.httpMethod = "POST"
         reset.httpBody = Data(body.utf8)
         _ = try await URLSession.shared.data(for: reset)
@@ -40,7 +40,7 @@ final class CalendarsUITests: XCTestCase {
     {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", screen,
             "-casyPushPermission", "granted",
             "-casyLang", "da",
@@ -294,7 +294,7 @@ final class CalendarsUITests: XCTestCase {
 final class CalendarsImportUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
-        var reset = URLRequest(url: URL(string: "http://localhost:4318/reset")!)
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
         reset.httpMethod = "POST"
         reset.httpBody = Data(#"{"calendars":"none"}"#.utf8)
         _ = try await URLSession.shared.data(for: reset)
@@ -303,7 +303,7 @@ final class CalendarsImportUITests: XCTestCase {
     private func launch(phone: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "calendars:accounts",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",

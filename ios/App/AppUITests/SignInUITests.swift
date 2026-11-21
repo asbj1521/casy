@@ -11,7 +11,7 @@ final class SignInUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
-            "-casyBackend", "http://localhost:4318",
+            "-casyBackend", testBackend,
             "-casyOpenScreen", "signIn",
             "-casyLang", "da",
             "-casyNow", "2026-10-07T08:00:00.000Z",
