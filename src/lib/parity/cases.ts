@@ -22,3 +22,18 @@ export function caseBook(seed: number) {
   };
   return { cases, add, int, pick, random };
 }
+
+/**
+ * Every number in `value` to 9 decimals, halves away from zero as Swift's
+ * `rounded()`: for answers built with `**`, whose last digit differs between
+ * JavaScript engines (Node 22 on CI and Node 25 here wrote the paper pile's
+ * timings 1 apart in the 17th digit). Swift rounds its answers the same way.
+ */
+export function roundedDeep(value: unknown): unknown {
+  if (typeof value === "number")
+    return (Math.sign(value) * Math.round(Math.abs(value) * 1e9)) / 1e9 || 0;
+  if (Array.isArray(value)) return value.map(roundedDeep);
+  if (value && typeof value === "object")
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, roundedDeep(v)]));
+  return value;
+}

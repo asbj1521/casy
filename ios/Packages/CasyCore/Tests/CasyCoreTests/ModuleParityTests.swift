@@ -44,6 +44,17 @@ enum JSONValue: Codable, Equatable {
         }
     }
 
+    /// Every number to 9 decimals, as the TypeScript's `roundedDeep` writes
+    /// answers built with powers, whose last digit differs between engines.
+    var rounded: JSONValue {
+        switch self {
+        case .number(let v): .number((v * 1e9).rounded() / 1e9 + 0)
+        case .array(let v): .array(v.map(\.rounded))
+        case .object(let v): .object(v.mapValues(\.rounded))
+        default: self
+        }
+    }
+
     var withoutNulls: JSONValue {
         switch self {
         case .array(let v): .array(v.map(\.withoutNulls))
@@ -94,6 +105,7 @@ private struct Item: Decodable {
 private func check(
     _ module: String,
     atLeast minimum: Int,
+    rounded: Bool = false,
     _ run: (String, JSONValue) throws -> JSONValue
 ) throws {
     let url = try #require(
@@ -101,7 +113,8 @@ private func check(
     let items = try JSONDecoder().decode([Item].self, from: Data(contentsOf: url))
     #expect(items.count >= minimum)
     for item in items {
-        let answer = try run(item.input.fn, item.input.args)
+        let raw = try run(item.input.fn, item.input.args)
+        let answer = rounded ? raw.rounded : raw
         #expect(answer.withoutNulls == item.output.withoutNulls, "\(item.name)")
         // PARITY_DIFF=1 prints what differs, to read beside the fixture.
         if answer.withoutNulls != item.output.withoutNulls, ProcessInfo.processInfo.environment["PARITY_DIFF"] != nil {
@@ -759,7 +772,7 @@ private func localDay(_ iso: String) -> Int {
         you: "Du", tightBefore: { "\($0) før" }, tightAfter: { "\($0) efter" }, squeezed: { "\($0) klemt" },
         earlyAfterLate: { "\($0) tidligt" }, schoolNight: "skole", afterDark: "mørke", familyDay: "familie",
         longWeekend: "lang weekend", soon: "snart", farAhead: "langt ude")
-    try check("paperPile", atLeast: 300) { fn, a in
+    try check("paperPile", atLeast: 300, rounded: true) { fn, a in
         switch fn {
         case "pile":
             let window: DateRange = try a["window"].decoded()

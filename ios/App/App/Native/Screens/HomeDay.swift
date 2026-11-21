@@ -579,22 +579,22 @@ struct DayHours: View {
     private func open(height: CGFloat) {
         let today = startOfDay(Native.now, appTimeZone)
         let shown = (0..<span).map { addDays(day, $0, appTimeZone) }
-        let day = CGFloat(Self.dayPoints)
+        let dayHeight = CGFloat(Self.dayPoints)
         let y: CGFloat
         if let aim = HomeModel.shared.voting?.current, shown.contains(startOfDay(aim.start, appTimeZone)) {
             // A vote's date being answered: centred above its card (the web's `aim`, `clear`).
             let span = placeSpan(aim.start, aim.end, midnight: startOfDay(aim.start, appTimeZone), appTimeZone)
-            y = (span.top + span.height / 2) * day - (height - (HomeModel.shared.voting?.clear ?? 0)) / 2
+            y = (span.top + span.height / 2) * dayHeight - (height - (HomeModel.shared.voting?.clear ?? 0)) / 2
         } else if shown.contains(today) {
-            y = placeSpan(Native.now, Native.now + 1, midnight: today, appTimeZone).top * day - height / 2
+            y = placeSpan(Native.now, Native.now + 1, midnight: today, appTimeZone).top * dayHeight - height / 2
         } else if let first = shown.flatMap({ HomeModel.shared.placed($0).map(\.top) }).min() {
-            y = max(0, first - 1.0 / 24) * day
+            y = max(0, first - 1.0 / 24) * dayHeight
         } else {
-            y = 8.0 / 24 * day
+            y = 8.0 / 24 * dayHeight
         }
         // Room under the day for a vote's card, so its late dates can come up above it.
         let below = HomeModel.shared.voting?.clear ?? 0
-        vertical.scrollTo(y: min(max(0, y), max(0, day + below - height)))
+        vertical.scrollTo(y: min(max(0, y), max(0, dayHeight + below - height)))
     }
 }
 

@@ -18,7 +18,7 @@ import {
 import { startOfMonth } from "@/lib/zone";
 import type { BusyInterval, Participant } from "@/types";
 
-import { caseBook, type ParityCase } from "./cases";
+import { caseBook, roundedDeep, type ParityCase } from "./cases";
 
 const NOW = Date.UTC(2026, 9, 7, 8);
 const HOUR = 3_600_000;
@@ -183,5 +183,6 @@ export function paperPileCases(): ParityCase[] {
       }),
     );
   }
-  return cases;
+  // The timings and layers are built with `**`: rounded, so every engine writes the same.
+  return cases.map((c) => ({ ...c, output: roundedDeep(c.output) }));
 }
