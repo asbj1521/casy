@@ -143,7 +143,7 @@ struct WelcomeStage: View {
                                     .allowsHitTesting(false)
                             }
                         }
-                        .rotation3DEffect(.degrees(11 * phone.turn), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                        .rotation3DEffect(.degrees(-11 * phone.turn), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
                         .rotationEffect(.degrees(2 * phone.turn))
                         .scaleEffect(unGrown ? (icon?.scale ?? phone.scale) : phone.scale)
                         .frame(width: D.device.width * scale, height: D.device.height * scale)
@@ -217,20 +217,19 @@ struct WelcomeStage: View {
         let scrolled = count(at.scrolls)
         let answered = count(at.answers)
         let lit = Set(plan.free.dropFirst(taken))
-        let onScreen = n < at.home ? "group" : voting ? "vote" : "home"
+        // The calendars are thrown onto the group itself; the month takes its place
+        // unseen under the squared pile, first shown as the drop washes it away
+        // (asked for on 21 Nov 2026; the web goes to the month first).
+        let onScreen = n < at.merged ? "group" : voting ? "vote" : "home"
         let scrolls = D.listScrolls(plan.free, month: month)
         WelcomeDevice(turned: voting ? 1 : 0) {
             ZStack(alignment: .topLeading) {
                 Group {
                     switch onScreen {
                     case "group":
-                        // The web's exit by where it goes: to the month, it shrinks away.
-                        WelcomeGroupScreen(joined: count(at.joined), leaving: n >= at.leave, arriving: round > 0)
-                            .transition(
-                                .asymmetric(
-                                    insertion: .opacity,
-                                    removal: .scale(scale: 0.6, anchor: anchor).combined(with: .opacity)
-                                ).animation(screenMove))
+                        // Gone unseen under the squared pile.
+                        WelcomeGroupScreen(joined: count(at.joined), leaving: false, arriving: round > 0)
+                            .transition(.asymmetric(insertion: .opacity.animation(screenMove), removal: .identity))
                     case "vote":
                         WelcomeVoteScreen(event: vote, answered: answered)
                             .transition(
@@ -249,7 +248,7 @@ struct WelcomeStage: View {
                         .transition(
                             .asymmetric(
                                 insertion: n >= at.agreed
-                                    ? .scale(scale: 1.5, anchor: anchor).combined(with: .opacity) : .opacity,
+                                    ? .scale(scale: 1.5, anchor: anchor).combined(with: .opacity) : .identity,
                                 removal: .scale(scale: 1.5, anchor: anchor).combined(with: .opacity)
                             ).animation(screenMove))
                     }

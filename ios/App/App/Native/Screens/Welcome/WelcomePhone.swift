@@ -34,8 +34,8 @@ struct WelcomeDevice<Screen: View, Over: View>: View {
                 .overlay {
                     RoundedRectangle(cornerRadius: D.deviceRadius, style: .continuous).fill(.black.opacity(0.3))
                 }
-                // The web's rotateY(-11deg) brings the left edge nearer: its side shows there.
-                .offset(x: -14 * turned)
+                // Turned so the screen faces left, as in a right hand: its right side shows.
+                .offset(x: 14 * turned)
                 .opacity(turned)
             ForEach(Array([(184.0, 48.0), (262, 86), (366, 86)].enumerated()), id: \.offset) { _, b in
                 sideButton(top: b.0, height: b.1, left: true)
@@ -158,8 +158,13 @@ struct WelcomeGroupScreen: View {
             Theme.background.color
             topBar
             heading
-            // Grown frame by frame, so the names and faces in it move as one.
+            // The card grown frame by frame; its rows stay in their place, so as the
+            // group comes back at the loop, "Dig" is already there.
             members.modifier(Growing(progress: grown ? 1 : 0, from: card))
+            memberRows
+                .frame(width: card.width, height: card.height, alignment: .topLeading)
+                .offset(x: card.minX, y: card.minY)
+                .opacity(leaving ? 0 : 1)
         }
         .frame(width: D.screen.width, height: D.screen.height, alignment: .topLeading)
         .animation(.easeInOut(duration: 0.22).delay(!leaving && arriving ? 0.3 : 0), value: shown)
@@ -213,9 +218,6 @@ struct WelcomeGroupScreen: View {
     private var members: some View {
         ZStack(alignment: .topLeading) {
             Theme.card.color
-            memberRows
-                .frame(width: card.width, height: card.height, alignment: .topLeading)
-                .opacity(shown ? 1 : 0)
             Theme.background.color.opacity(grown ? 1 : 0)
         }
     }
