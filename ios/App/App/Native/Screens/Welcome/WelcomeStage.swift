@@ -222,7 +222,10 @@ struct WelcomeStage: View {
         // (asked for on 21 Nov 2026; the web goes to the month first).
         let onScreen = n < at.merged ? "group" : voting ? "vote" : "home"
         let scrolls = D.listScrolls(plan.free, month: month)
-        WelcomeDevice(turned: voting ? 1 : 0) {
+        // The island back over the pile as it squares into the screen; gone unseen
+        // once the sheet is on the screen under the real one.
+        let islandOver = !still && n >= at.squared && n < at.dissolve
+        WelcomeDevice(turned: voting ? 1 : 0, islandOver: islandOver ? 1 : 0) {
             ZStack(alignment: .topLeading) {
                 Group {
                     switch onScreen {
@@ -281,9 +284,13 @@ struct WelcomeStage: View {
                 ZStack {
                     // Squared, the pile hands over to its top sheet on the screen itself, the
                     // same picture in the same place: no group name (asked for on 21 Nov 2026).
-                    if thrown > 0 && n < at.merged {
+                    // Handed over only once its squaring spring has settled, as the drop lets go.
+                    if thrown > 0 && n < at.digital {
                         PaperStack(thrown: thrown, landed: landed, squared: n >= at.squared, month: month, items: everyone)
-                            .transition(.identity)
+                            // Into the same sheet under it, faded as one picture (not sheet by
+                            // sheet, which let the others show through).
+                            .compositingGroup()
+                            .transition(.opacity.animation(.easeOut(duration: 0.15)))
                     }
                 }
             }

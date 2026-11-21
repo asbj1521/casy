@@ -23,6 +23,8 @@ private let metal = LinearGradient(
 /// corners; `over` lies over the whole screen, uncut, for the paper.
 struct WelcomeDevice<Screen: View, Over: View>: View {
     var turned: Double = 0
+    /// The Dynamic Island drawn again over `over`, as the squared pile becomes the screen.
+    var islandOver: Double = 0
     @ViewBuilder let screen: () -> Screen
     @ViewBuilder let over: () -> Over
 
@@ -53,24 +55,33 @@ struct WelcomeDevice<Screen: View, Over: View>: View {
             ZStack(alignment: .top) {
                 Theme.background.color
                 screen()
-                Capsule().fill(.black).frame(width: 122, height: 35)
-                    .overlay(alignment: .trailing) {
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [Color(hex: 0x27335F), Color(hex: 0x0B0E1F), Color(hex: 0x05060C)],
-                                    center: UnitPoint(x: 0.4, y: 0.4), startRadius: 0, endRadius: 8)
-                            )
-                            .frame(width: 13, height: 13)
-                            .padding(.trailing, 10)
-                    }
-                    .padding(.top, 11)
+                island
             }
             .frame(width: D.screen.width, height: D.screen.height)
             .clipShape(RoundedRectangle(cornerRadius: D.screenRadius, style: .continuous))
             over().frame(width: D.screen.width, height: D.screen.height)
+            island
+                .frame(width: D.screen.width, height: D.screen.height, alignment: .top)
+                .opacity(islandOver)
+                // Fading in over the paper; going is unseen, so at once.
+                .animation(islandOver > 0 ? .easeInOut(duration: 0.3) : nil, value: islandOver)
         }
         .frame(width: D.device.width, height: D.device.height)
+    }
+
+    private var island: some View {
+        Capsule().fill(.black).frame(width: 122, height: 35)
+            .overlay(alignment: .trailing) {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color(hex: 0x27335F), Color(hex: 0x0B0E1F), Color(hex: 0x05060C)],
+                            center: UnitPoint(x: 0.4, y: 0.4), startRadius: 0, endRadius: 8)
+                    )
+                    .frame(width: 13, height: 13)
+                    .padding(.trailing, 10)
+            }
+            .padding(.top, 11)
     }
 
     private func sideButton(top: Double, height: Double, left: Bool) -> some View {
@@ -421,67 +432,97 @@ private struct ThrownPaper<Content: View>: View {
     let squared: Bool
     @ViewBuilder let content: () -> Content
 
-    @State private var thrown = false
+    /// Its throw, 0 to 1 over the flight and the landing, and its squaring up,
+    /// 0 to 1: both worked out each frame (a keyframe animation stopped
+    /// listening once its flight ended, so the pile never squared and snapped).
+    @State private var flight = 0.0
+    @State private var settle = 0.0
 
-    private struct Pose {
-        var x: Double = 0
-        var y: Double = -90
-        var rotate: Double = 0
-        var scale: Double = 1.24
-    }
+    /// Quick and without a bounce: square well before it hands over to the screen.
+    private static var squaring: Animation { .spring(duration: 0.3, bounce: 0) }
 
     var body: some View {
-        let side: Double = k % 2 == 0 ? 1 : -1
-        let fly = D.throwsAt[k].fly
-        let lie = sheetTilt(k + 1)
-        let tilt = (rotate: lie.rotate * 0.8, x: lie.x * 1.6, y: lie.y)
-        let from = side * Double(D.screen.width) * 1.75
         let knock = jostle(k, landed)
         content()
-            .clipShape(RoundedRectangle(cornerRadius: squared ? D.screenRadius : 10, style: .continuous))
-            .shadow(color: .black.opacity(0.42), radius: 20, y: 18)
+            // Squaring up, its corners ease into the screen's and its shadow goes, so
+            // it hands over to the sheet on the screen with nothing changing.
+            .modifier(PaperEdge(settle: settle))
             .rotationEffect(.degrees(squared ? 0 : knock.rotate))
             .offset(x: squared ? 0 : knock.x)
             .animation(.interpolatingSpring(stiffness: 300, damping: 20), value: landed)
-            .keyframeAnimator(initialValue: Pose(x: from, rotate: side * 16), trigger: thrown) { view, pose in
-                view
-                    .scaleEffect(squared ? 1 : pose.scale)
-                    .rotationEffect(.degrees(squared ? 0 : pose.rotate))
-                    .offset(x: squared ? 0 : pose.x, y: squared ? 0 : pose.y)
-            } keyframes: { _ in
-                let total = fly + D.hit
-                let a = fly
-                let b = (total - fly) * 0.5
-                // FLIGHT_EASE: slow off the hand, fast through the air, slow into the
-                // landing; then a little past its spot and back.
-                let fling = UnitCurve.bezier(startControlPoint: UnitPoint(x: 0.55, y: 0), endControlPoint: UnitPoint(x: 0.15, y: 1))
-                KeyframeTrack(\.x) {
-                    LinearKeyframe(from, duration: 0)
-                    LinearKeyframe(tilt.x - side * 12, duration: a, timingCurve: fling)
-                    LinearKeyframe(tilt.x + side * 3, duration: b, timingCurve: .easeOut)
-                    LinearKeyframe(tilt.x, duration: b, timingCurve: .easeInOut)
-                }
-                KeyframeTrack(\.y) {
-                    LinearKeyframe(-90, duration: 0)
-                    LinearKeyframe(tilt.y + 7, duration: a, timingCurve: fling)
-                    LinearKeyframe(tilt.y - 4, duration: b, timingCurve: .easeOut)
-                    LinearKeyframe(tilt.y, duration: b, timingCurve: .easeInOut)
-                }
-                KeyframeTrack(\.rotate) {
-                    LinearKeyframe(side * 16, duration: 0)
-                    LinearKeyframe(tilt.rotate - side * 2, duration: a, timingCurve: fling)
-                    LinearKeyframe(tilt.rotate + side * 0.5, duration: b, timingCurve: .easeOut)
-                    LinearKeyframe(tilt.rotate, duration: b, timingCurve: .easeInOut)
-                }
-                KeyframeTrack(\.scale) {
-                    LinearKeyframe(1.24, duration: 0)
-                    LinearKeyframe(0.98, duration: a, timingCurve: fling)
-                    LinearKeyframe(1.008, duration: b, timingCurve: .easeOut)
-                    LinearKeyframe(1, duration: b, timingCurve: .easeInOut)
-                }
+            .animation(Self.squaring, value: squared)
+            .modifier(ThrowPose(k: k, flight: flight, settle: settle))
+            .onAppear {
+                withAnimation(.linear(duration: D.throwsAt[k].fly + D.hit)) { flight = 1 }
+                if squared { settle = 1 }
             }
-            .animation(.interpolatingSpring(stiffness: 240, damping: 28), value: squared)
-            .onAppear { thrown = true }
+            .onChange(of: squared) { _, now in
+                withAnimation(now ? Self.squaring : nil) { settle = now ? 1 : 0 }
+            }
+    }
+}
+
+/// The paper's corners and shadow, from a thrown sheet's to the screen's.
+private struct PaperEdge: ViewModifier, Animatable {
+    var settle: Double
+    var animatableData: Double {
+        get { settle }
+        set { settle = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let s = min(max(settle, 0), 1)
+        content
+            .clipShape(RoundedRectangle(cornerRadius: 10 + (D.screenRadius - 10) * s, style: .continuous))
+            .shadow(color: .black.opacity(0.42 * (1 - s)), radius: 20, y: 18)
+    }
+}
+
+/// Where a thrown sheet is: along its flight (the web's FLIGHT_EASE, past its
+/// spot and back), then from its crooked rest to square over the screen.
+private struct ThrowPose: ViewModifier, Animatable {
+    let k: Int
+    var flight: Double
+    var settle: Double
+
+    var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(flight, settle) }
+        set {
+            flight = newValue.first
+            settle = newValue.second
+        }
+    }
+
+    private struct Pose {
+        var x, y, rotate, scale: Double
+        func to(_ o: Pose, _ t: Double) -> Pose {
+            Pose(x: x + (o.x - x) * t, y: y + (o.y - y) * t, rotate: rotate + (o.rotate - rotate) * t, scale: scale + (o.scale - scale) * t)
+        }
+    }
+
+    func body(content: Content) -> some View {
+        let side: Double = k % 2 == 0 ? 1 : -1
+        let lie = sheetTilt(k + 1)
+        let tilt = Pose(x: lie.x * 1.6, y: lie.y, rotate: lie.rotate * 0.8, scale: 1)
+        let fly = D.throwsAt[k].fly
+        let total = fly + D.hit
+        let t = min(max(flight, 0), 1) * total
+        let start = Pose(x: side * Double(D.screen.width) * 1.75, y: -90, rotate: side * 16, scale: 1.24)
+        let past = Pose(x: tilt.x - side * 12, y: tilt.y + 7, rotate: tilt.rotate - side * 2, scale: 0.98)
+        let back = Pose(x: tilt.x + side * 3, y: tilt.y - 4, rotate: tilt.rotate + side * 0.5, scale: 1.008)
+        let half = D.hit / 2
+        let fling = UnitCurve.bezier(startControlPoint: UnitPoint(x: 0.55, y: 0), endControlPoint: UnitPoint(x: 0.15, y: 1))
+        let pose: Pose =
+            t < fly
+            ? start.to(past, fling.value(at: t / fly))
+            : t < fly + half
+                ? past.to(back, UnitCurve.easeOut.value(at: (t - fly) / half))
+                : back.to(tilt, UnitCurve.easeInOut.value(at: min((t - fly - half) / half, 1)))
+        let p = pose.to(Pose(x: 0, y: 0, rotate: 0, scale: 1), min(max(settle, 0), 1.05))
+        content
+            .scaleEffect(p.scale)
+            .rotationEffect(.degrees(p.rotate))
+            .offset(x: p.x, y: p.y)
     }
 }
 
