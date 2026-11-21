@@ -231,6 +231,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             call.reject("No native screen \(screen)")
             return
         }
+        #if DEBUG
+            // Under a home test the test plays a signed-in page, as in `setHome`; the
+            // real page under it is signed out and would cover the home with the welcome.
+            if TestLaunch.isActive && TestLaunch.nativeHome && (screen == "welcome" || screen == "signIn") {
+                return call.resolve()
+            }
+        #endif
         DispatchQueue.main.async {
             guard let presenter = self.bridge?.viewController, self.openScreen == nil else {
                 call.reject("Nothing to show the screen on")
