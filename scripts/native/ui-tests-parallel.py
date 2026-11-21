@@ -13,11 +13,13 @@ Now and then the app never tells the test runner its animations are done, and XC
 then waits 60 s before every step: one test once took 17 minutes, and still passed.
 A watch on each runner's log closes the app when that happens twice in one test, so the
 test fails at once; every failed test is then run once more, alone, and one that passes
-the second time is reported as flaky rather than failed.
+the second time is reported as flaky rather than failed. Before a merge, UI_TESTS_STRICT=1
+runs nothing twice: any failure fails the run, as one after another always did.
 
 On an M2 Pro with 16 GB: about 50 min one after another, 19 min on 2, 10 min on 4.
 
   scripts/native/ui-tests.sh                       # every class, UI_TEST_WORKERS simulators (default 4)
+  UI_TESTS_STRICT=1 scripts/native/ui-tests.sh    # before a merge: no second tries
   UI_TEST_WORKERS=1 scripts/native/ui-tests.sh     # one after another, as before
 """
 import json
@@ -198,7 +200,10 @@ def main():
         first_failed = [f"{c}.{t}" for i in range(len(groups))
                         for c, t, o, _ in CASE.findall((work / f"worker{i + 1}.log").read_text(errors="replace"))
                         if o == "failed"]
-        for n, name in enumerate(first_failed):
+        strict = os.environ.get("UI_TESTS_STRICT") == "1"
+        if strict and first_failed:
+            print("ui-tests: strict (UI_TESTS_STRICT=1): no second tries")
+        for n, name in enumerate([] if strict else first_failed):
             print(f"ui-tests: {name} failed; running it once more")
             path = work / f"retry{n + 1}.log"
             with open(path, "w") as log:

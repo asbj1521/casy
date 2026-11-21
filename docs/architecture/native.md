@@ -100,8 +100,12 @@ CI's `native.yml` tests all three packages on a Mac (CasyUI through `xcodebuild`
 The app's UI tests (`ios/App/AppUITests`, a synchronized folder) open native screens signed in, against the browser tests' fake backend over HTTP (`scripts/native/fake-backend.ts`; a test that changes its world calls `POST /reset` first), locally: for each step only the screens it touched (`-only-testing:AppUITests/<Class>`), the whole suite every three or four steps and always before a merge; and on CI (`ios.yml`) on `main` only, after the merge, so a merge doesn't wait the 9 minutes they take on GitHub's Mac:
 
 ```bash
-scripts/native/ui-tests.sh             # UI_TEST_DEVICE picks the simulator (iPhone 17e by default: never the one used with the real app)
+scripts/native/ui-tests.sh             # the whole suite on 4 simulators at once, about 10 min (UI_TEST_WORKERS; 1 = one after another, about 50)
+UI_TESTS_STRICT=1 scripts/native/ui-tests.sh   # before a merge: a failed test fails the run, never retried
+UI_TEST_DEVICE=<name> scripts/native/ui-tests.sh   # one simulator, one after another (CI); never the iPhone 17 used with the real app
 ```
+
+Run whole, the suite is dealt out over iPhone 17e and "Casy Test 2" to "Casy Test 4" (`ui-tests-parallel.py`, made once), each with its own fake backend (`TestBackend.swift` reads its address), the classes split by the middle of their last three times. A test the app stalls (XCTest waiting 60 s for animations before every step) is cut short, and a failed test runs once more alone: passing then, it is listed as flaky and the run stays green, except under `UI_TESTS_STRICT=1`, which the run before a merge always uses.
 
 A Debug build reads the launch arguments that make this possible (`TestLaunch.swift`: `-casyBackend`, `-casyOpenScreen`, `-casyPushPermission`, `-casyLang`), and then ignores what the web view sends. A Release build has none of it. Each new screen gets its tests here: both bugs found by hand in Notifikationer (the section never loading, a switch waiting for the server) are the kind they catch. `Info.plist` allows local networking so the app can reach the fake backend; it opens nothing else.
 
