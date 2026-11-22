@@ -37,8 +37,11 @@ private let screenMove = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.48)
 struct WelcomeStage: View {
     /// Sign-in open over it: the phone gives way and the colour fills the screen.
     let leaving: Bool
-    /// Grown out of the intro's icon (#275): the phone appears there first.
+    /// Grown out of the intro's icon (#275): the phone waits in its place, unseen,
+    /// and comes in under the icon growing into it (IconIntoPhone, the web's link morph).
     let fromIntro: CGRect?
+    /// Where the phone stands at the start, on the screen: what the icon grows into.
+    var onPhoneRect: (CGRect) -> Void = { _ in }
 
     @Environment(\.accessibilityReduceMotion) private var still
     @State private var now = 0.0
@@ -46,7 +49,8 @@ struct WelcomeStage: View {
     @State private var size = CGSize.zero
     @State private var headlineHeight: CGFloat = 70
     @State private var grown = false
-    @State private var introCover = true
+    /// Out of the intro: unseen until the growing icon has nearly become it.
+    @State private var shown: Bool
     /// Seconds since the glass drop hit the calendars, for the wave.
     @State private var rippleTime = 0.0
 
@@ -54,9 +58,12 @@ struct WelcomeStage: View {
     private let plan: (free: [Int64], items: [[MonthItem]])
     private let vote: SuggestedEvent
 
-    init(leaving: Bool, fromIntro: CGRect?) {
+    init(leaving: Bool, fromIntro: CGRect?, onPhoneRect: @escaping (CGRect) -> Void = { _ in }) {
         self.leaving = leaving
         self.fromIntro = fromIntro
+        self.onPhoneRect = onPhoneRect
+        _grown = State(initialValue: fromIntro != nil)
+        _shown = State(initialValue: fromIntro == nil)
         let p = D.plan(month)
         plan = p
         vote = D.vote(p.free, title: CasyStrings.welcome("event"))
@@ -125,32 +132,15 @@ struct WelcomeStage: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .hidden()
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headlineHeight = $0 }
-                    let stageTop = geo.frame(in: .global).minY
-                    // Before it has grown: the intro's icon, where it stood, as big as it was.
-                    let icon = fromIntro.map {
-                        (center: CGPoint(x: $0.midX, y: $0.midY - stageTop), scale: $0.width / D.device.width)
-                    }
+                    // Not in yet: below the stage, to rise into its place.
                     let unGrown = !grown && !still
                     device(n: n, count: count, listing: listing, voting: voting)
-                        .overlay {
-                            // The icon's orange and logo, giving way to the phone as it grows.
-                            if fromIntro != nil {
-                                RoundedRectangle(cornerRadius: D.screenRadius, style: .continuous)
-                                    .fill(WelcomeIntro.orange)
-                                    .overlay { WelcomeLogo().foregroundStyle(.white).frame(width: D.device.width * 0.62) }
-                                    .padding(D.edge)
-                                    .opacity(introCover ? 1 : 0)
-                                    .allowsHitTesting(false)
-                            }
-                        }
+                        .opacity(shown ? 1 : 0)
                         .rotation3DEffect(.degrees(-11 * phone.turn), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
                         .rotationEffect(.degrees(2 * phone.turn))
-                        .scaleEffect(unGrown ? (icon?.scale ?? phone.scale) : phone.scale)
+                        .scaleEffect(phone.scale)
                         .frame(width: D.device.width * scale, height: D.device.height * scale)
-                        .position(
-                            unGrown
-                                ? (icon?.center ?? CGPoint(x: w / 2, y: h / 2 + h * 1.05))
-                                : CGPoint(x: w / 2, y: h / 2 + phone.y))
+                        .position(unGrown ? CGPoint(x: w / 2, y: h / 2 + h * 1.05) : CGPoint(x: w / 2, y: h / 2 + phone.y))
                         .animation(still ? nil : poseSpring, value: phone.y)
                         .animation(still ? nil : poseSpring, value: phone.scale)
                         .animation(still ? nil : poseSpring, value: phone.turn)
@@ -166,7 +156,13 @@ struct WelcomeStage: View {
                 .animation(leaving ? .easeOut(duration: 0.18) : .easeIn(duration: 0.22).delay(0.42), value: leaving)
             }
             .frame(width: w, height: h, alignment: .topLeading)
-            .onAppear { size = geo.size }
+            .onAppear {
+                size = geo.size
+                // At rest at the start: flat, in the middle, at the stage's own scale.
+                let at = geo.frame(in: .global)
+                let phone = CGSize(width: D.device.width * scale, height: D.device.height * scale)
+                onPhoneRect(CGRect(x: at.midX - phone.width / 2, y: at.midY - phone.height / 2, width: phone.width, height: phone.height))
+            }
         }
         .accessibilityHidden(true)
         .allowsHitTesting(false)
@@ -195,13 +191,12 @@ struct WelcomeStage: View {
             }
         }
         .task {
-            // Out of the intro's icon (#275): one calm sweep into the phone, the
-            // icon's orange and logo fading away into its screen.
-            if fromIntro != nil && !still {
-                try? await Task.sleep(for: .milliseconds(30))
-                withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.75)) { grown = true }
-                try? await Task.sleep(for: .milliseconds(590))
-                withAnimation(.easeOut(duration: 0.36)) { introCover = false }
+            // Out of the intro's icon (#275): already in its place, it comes in
+            // under the icon growing into it, as the web's (MORPH_S * 0.4, 0.3 s).
+            if fromIntro != nil {
+                if still { shown = true; return }
+                try? await Task.sleep(for: .milliseconds(380))
+                withAnimation(.easeOut(duration: 0.3)) { shown = true }
             } else {
                 withAnimation(poseSpring) { grown = true }
             }
@@ -272,7 +267,7 @@ struct WelcomeStage: View {
                     WelcomeTravelBox(
                         event: vote, day: agreedDay, month: month, stage: stage,
                         pressed: (n >= at.pressed && n < at.sent) || (n >= at.pillPressed && n < at.vote),
-                        answered: answered)
+                        answered: count(at.answers), held: count(at.grabs) > count(at.answers))
                         .transition(.opacity.animation(.easeInOut(duration: 0.28)))
                 }
             }
@@ -772,6 +767,8 @@ private struct WelcomeVoteScreen: View {
 private struct WelcomeVotePanel: View {
     let event: SuggestedEvent
     let answered: Int
+    /// A thumb on the top card: lifted, leaning its way, its stamp showing.
+    let held: Bool
 
     private static let answers: [EventResponse] = [.accepted, .declined, .accepted]
 
@@ -814,17 +811,23 @@ private struct WelcomeVotePanel: View {
                         .transition(.opacity.animation(.easeInOut(duration: 0.2).delay(0.15)))
                 }
                 if answered < dates.count {
+                    // Swiped as by a right thumb (asked for on 22 Nov 2026; tapped before):
+                    // taken hold of, it lifts and leans its way with its stamp coming
+                    // up, then is flung off along the thumb's arc, turning in depth.
+                    let side: Double = Self.answers[index] == .accepted ? 1 : -1
                     VoteCardFace(event: event, date: dates[index], position: index + 1, total: dates.count, yours: nil)
                         .overlay(alignment: Self.answers[index] == .accepted ? .topLeading : .topTrailing) {
-                            stamp(Self.answers[index]).opacity(0)
+                            stamp(Self.answers[index]).opacity(held ? 1 : 0)
                         }
+                        .modifier(Swipe(side: side, held: held ? 1 : 0, flung: 0))
+                        .animation(.easeInOut(duration: 0.4), value: held)
                         .id(dates[index].id)
                         .transition(
                             .asymmetric(
                                 insertion: .scale(scale: 0.96).combined(with: .offset(y: 8)),
-                                removal: .offset(x: Self.answers[max(0, answered - 1)] == .accepted ? 640 : -640)
-                                    .combined(with: .opacity)
-                            ).animation(.timingCurve(0.3, 0, 0.8, 0.6, duration: 0.42)))
+                                removal: .modifier(
+                                    active: Swipe(side: side, held: 1, flung: 1), identity: Swipe(side: side, held: 1, flung: 0))
+                            ).animation(.timingCurve(0.4, 0, 0.9, 0.55, duration: 0.38)))
                 }
             }
             .frame(height: 212)
@@ -834,6 +837,22 @@ private struct WelcomeVotePanel: View {
         .padding(.top, 12)
         .padding(.bottom, 20)
         .frame(width: D.screen.width)
+    }
+
+    /// The thumb's swipe: lifted (`held`), then flung (`flung`) along an arc around
+    /// a point far under the card, as a thumb pivots on its base, turning away in depth.
+    private struct Swipe: ViewModifier {
+        let side: Double
+        var held: Double
+        var flung: Double
+
+        func body(content: Content) -> some View {
+            content
+                .scaleEffect(1 + 0.03 * held)
+                .rotation3DEffect(.degrees(side * (6 * held + 26 * flung)), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
+                .rotationEffect(.degrees(side * (6 * held + 40 * flung)), anchor: UnitPoint(x: 0.5, y: 3.2))
+                .shadow(color: .black.opacity(0.12 * held), radius: 16, y: 10)
+        }
     }
 
     private func stamp(_ answer: EventResponse) -> some View {
@@ -863,6 +882,8 @@ struct WelcomeTravelBox: View {
     let stage: Stage
     let pressed: Bool
     let answered: Int
+    /// The card on top held by a thumb, about to be swiped.
+    var held = false
 
     private static let card = CGRect(x: 20, y: 360, width: D.screen.width - 40, height: 222)
     private static let ball: CGFloat = 60
@@ -913,7 +934,7 @@ struct WelcomeTravelBox: View {
                     .frame(width: rect.width, height: rect.height)
                 }
                 if [.pill, .panel, .card].contains(stage) {
-                    face(stage == .panel) { WelcomeVotePanel(event: event, answered: answered) }
+                    face(stage == .panel) { WelcomeVotePanel(event: event, answered: answered, held: held) }
                 }
                 Theme.cta.color.opacity(isBall ? 1 : 0).animation(.easeInOut(duration: 0.25), value: isBall)
                 face(stage == .card) {

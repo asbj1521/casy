@@ -166,6 +166,8 @@ enum WelcomeDemo {
         let scrolls, taken: [Double]
         let button, pressed, sent, back, badge, pillPressed, vote: Double
         let answers: [Double]
+        /// A thumb taking hold of each card, a moment before it is swiped away.
+        let grabs: [Double]
         let agreed, collapsed, flying, landing, thudDone, finale: Double
         let sends, arrived: [Double]
         let finaleOut, end: Double
@@ -174,7 +176,7 @@ enum WelcomeDemo {
         var moments: [Double] {
             (popAt + flyAt + joined + [leave, home] + thrown + landed
                 + [squared, merged, digital, dissolve, press, shine, list] + scrolls + taken
-                + [button, pressed, sent, back, badge, pillPressed, vote] + answers
+                + [button, pressed, sent, back, badge, pillPressed, vote] + grabs + answers
                 + [agreed, collapsed, flying, landing, thudDone, finale] + sends + arrived + [finaleOut]).sorted()
         }
     }
@@ -203,6 +205,7 @@ enum WelcomeDemo {
         let pillPressed = badge + 0.55
         let vote = pillPressed + 0.22
         let answers = [vote + 1.35, vote + 2.3, vote + 3.15]
+        let grabs = answers.map { $0 - 0.45 }
         let agreed = answers[2] + 0.7
         let collapsed = agreed + 1.5
         let flying = collapsed + 0.45
@@ -216,7 +219,7 @@ enum WelcomeDemo {
             joined: joined, leave: leave, home: home, throwsStart: throwsStart, thrown: thrown, landed: landed,
             squared: squared, merged: merged, digital: digital, dissolve: dissolve, press: press, shine: shine,
             list: list, scrolls: scrolls, taken: taken, button: button, pressed: pressed, sent: sent, back: back,
-            badge: badge, pillPressed: pillPressed, vote: vote, answers: answers, agreed: agreed,
+            badge: badge, pillPressed: pillPressed, vote: vote, answers: answers, grabs: grabs, agreed: agreed,
             collapsed: collapsed, flying: flying, landing: landing, thudDone: thudDone, finale: finale,
             sends: sends, arrived: arrived, finaleOut: finaleOut, end: finaleOut + 0.28)
     }()

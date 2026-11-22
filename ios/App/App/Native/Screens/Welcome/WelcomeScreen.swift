@@ -21,6 +21,12 @@ struct WelcomeScreen: View {
     @Environment(\.accessibilityReduceMotion) private var still
     @State private var intro: Bool
     @State private var introIcon: CGRect?
+    /// The icon growing into the phone (the web's link morph), over everything.
+    @State private var growing: (from: CGRect, to: CGRect)?
+    @State private var grow = 0.0
+    @State private var growFade = 1.0
+    /// The line and the ways in, after the intro (the web's delay 0.3, 0.25 s).
+    @State private var bottomShown: Bool
     /// Sign-in open: the colour spread out, the card over it.
     @State private var signIn: String?
     @State private var cardShown: Bool
@@ -40,11 +46,14 @@ struct WelcomeScreen: View {
         self.onChoose = onChoose
         self.leave = leave
         #if DEBUG
-            _intro = State(initialValue: startOn == nil && !TestLaunch.skipIntro)
+            let intro = startOn == nil && !TestLaunch.skipIntro
         #else
-            _intro = State(initialValue: startOn == nil)
+            let intro = startOn == nil
         #endif
+        _intro = State(initialValue: intro)
         _signIn = State(initialValue: startOn)
+        // Without the intro they are simply there.
+        _bottomShown = State(initialValue: !intro)
         _cardShown = State(initialValue: startOn != nil)
     }
 
@@ -53,12 +62,19 @@ struct WelcomeScreen: View {
             Theme.background.color.ignoresSafeArea()
             if !intro {
                 VStack(spacing: 0) {
-                    WelcomeStage(leaving: signIn != nil, fromIntro: introIcon)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    WelcomeStage(leaving: signIn != nil, fromIntro: introIcon) { phone in
+                        guard let icon = introIcon, growing == nil, !still else { return }
+                        growUp(from: icon, to: phone)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     bottom
-                        .opacity(signIn != nil ? 0 : 1)
+                        .opacity(signIn != nil || !bottomShown ? 0 : 1)
                         .animation(signIn != nil ? .easeOut(duration: 0.18) : .easeIn(duration: 0.25).delay(0.3), value: signIn)
                 }
+                // Simply there under the intro as it fades, as the web's: fading in
+                // too, both half-seen let the page's background through.
+                .transition(.identity)
+                .zIndex(0)
             }
             if cardShown, let signIn {
                 SignInScreen(
@@ -67,13 +83,25 @@ struct WelcomeScreen: View {
                 )
                 .id(signIn)
                 .transition(.opacity.animation(.easeInOut(duration: 0.25)))
+                .zIndex(1)
             }
             if intro {
                 WelcomeIntro { icon in
                     introIcon = icon
                     withAnimation(.easeOut(duration: 0.6)) { intro = false }
+                    withAnimation(.easeIn(duration: 0.25).delay(0.3)) { bottomShown = true }
                 }
+                // Over the welcome while it fades: without a zIndex a ZStack puts a
+                // view on its way out behind the one coming in, and it was simply gone.
                 .transition(.opacity)
+                .zIndex(2)
+            }
+            if let growing {
+                IconIntoPhone(from: growing.from, to: growing.to, progress: grow)
+                    .opacity(growFade)
+                    .allowsHitTesting(false)
+                    .ignoresSafeArea()
+                    .zIndex(3)
             }
         }
         .accessibilityElement(children: .contain)
@@ -146,6 +174,20 @@ struct WelcomeScreen: View {
         .padding(.bottom, -6)
     }
 
+    /// The web's link morph (#275): the icon grows into the phone's shape over
+    /// 0.75 s, held until 62 % of 0.95 s, then fades onto the real phone below.
+    private func growUp(from icon: CGRect, to phone: CGRect) {
+        growing = (icon, phone)
+        Task {
+            try? await Task.sleep(for: .milliseconds(16))
+            withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.75)) { grow = 1 }
+            try? await Task.sleep(for: .milliseconds(590))
+            withAnimation(.easeOut(duration: 0.36)) { growFade = 0 }
+            try? await Task.sleep(for: .milliseconds(380))
+            growing = nil
+        }
+    }
+
     private func open(_ which: String) {
         withAnimation { signIn = which }
         Task {
@@ -157,5 +199,47 @@ struct WelcomeScreen: View {
     private func back() {
         withAnimation(.easeInOut(duration: 0.18)) { cardShown = false }
         withAnimation { signIn = nil }
+    }
+}
+
+/// The intro's icon opening into the phone like an app launching (#275, the
+/// web's link morph): from the icon's square to the phone's shape, its white
+/// rim turning into the phone's silver band and the black bezel coming in
+/// inside it, the logo staying in the middle as it grows. In screen points.
+private struct IconIntoPhone: View, Animatable {
+    let from: CGRect
+    let to: CGRect
+    var progress: Double
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        let p = CGFloat(progress)
+        func mix(_ a: CGFloat, _ b: CGFloat) -> CGFloat { a + (b - a) * p }
+        let k = to.width / WelcomeDemo.device.width
+        let rect = CGRect(
+            x: mix(from.minX, to.minX), y: mix(from.minY, to.minY),
+            width: mix(from.width, to.width), height: mix(from.height, to.height))
+        let radius = mix(from.width * 0.22, WelcomeDemo.deviceRadius * k)
+        let rim = mix(3, WelcomeDemo.band * k)
+        let bezel = (WelcomeDemo.edge - WelcomeDemo.band) * k * p
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        return shape
+            .fill(WelcomeIntro.orange)
+            .overlay { WelcomeLogo().foregroundStyle(.white).frame(height: rect.width * 0.68) }
+            .overlay {
+                RoundedRectangle(cornerRadius: max(0, radius - rim), style: .continuous)
+                    .strokeBorder(.black, lineWidth: bezel)
+                    .padding(rim)
+            }
+            .overlay { shape.strokeBorder(.white.opacity(1 - p), lineWidth: rim) }
+            .overlay { shape.strokeBorder(Color(hex: 0xC4C6C9).opacity(p), lineWidth: rim) }
+            .frame(width: rect.width, height: rect.height)
+            .shadow(color: .black.opacity(0.25), radius: 25, y: 20)
+            .position(x: rect.midX, y: rect.midY)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }

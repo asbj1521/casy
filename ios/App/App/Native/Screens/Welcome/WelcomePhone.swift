@@ -140,7 +140,7 @@ struct WelcomeFace: View {
 /// A group on the phone (PhoneGroup): its name, how many are in it, the
 /// members as rows, friends coming in as they join. `leaving`, the members'
 /// card grows to the whole screen, the page the month appears on;
-/// `arriving` (every round after the first), it comes out of it the same way.
+/// `arriving` (every round after the first), it comes back whole, in one fade.
 struct WelcomeGroupScreen: View {
     let joined: Int
     let leaving: Bool
@@ -152,7 +152,7 @@ struct WelcomeGroupScreen: View {
         self.joined = joined
         self.leaving = leaving
         self.arriving = arriving
-        _grown = State(initialValue: arriving)
+        _grown = State(initialValue: false)
     }
 
     private static let grow = Animation.interpolatingSpring(stiffness: 170, damping: 26)
@@ -162,7 +162,11 @@ struct WelcomeGroupScreen: View {
             x: D.rows.left, y: D.rows.top, width: D.screen.width - D.rows.left * 2,
             height: D.rows.height * CGFloat(D.people.count + 1))
     }
-    private var shown: Bool { !leaving && !(arriving && grown) }
+    /// Back at the loop (`arriving`), the whole screen comes in as one, in the
+    /// screen's own fade: the heading, the bar, the card and "Dig" in its row
+    /// together. Each on its own clock, they popped in half a second apart
+    /// (asked for on 22 Nov 2026: a perfect loop; the web staggers them).
+    private var shown: Bool { !leaving }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -178,10 +182,7 @@ struct WelcomeGroupScreen: View {
                 .opacity(leaving ? 0 : 1)
         }
         .frame(width: D.screen.width, height: D.screen.height, alignment: .topLeading)
-        .animation(.easeInOut(duration: 0.22).delay(!leaving && arriving ? 0.3 : 0), value: shown)
-        .onAppear {
-            if arriving { withAnimation(Self.grow) { grown = false } }
-        }
+        .animation(.easeInOut(duration: 0.22), value: shown)
         .onChange(of: leaving) { _, now in
             if now { withAnimation(Self.grow) { grown = true } }
         }
