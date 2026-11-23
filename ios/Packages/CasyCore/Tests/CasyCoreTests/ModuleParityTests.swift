@@ -830,3 +830,44 @@ private func localDay(_ iso: String) -> Int {
         }
     }
 }
+
+@Test func eventLabelsGiveTheTypeScriptAnswers() throws {
+    try check("eventLabels", atLeast: 400) { fn, a in
+        switch fn {
+        case "hash": return try json(labelHash(try text(a, "text")))
+        case "normalise": return try json(normaliseTitle(try text(a, "title")))
+        case "labelKey": return try json(labelKey(try text(a, "calendarId"), try text(a, "title")))
+        case "clockMinute": return try json(clockMinute(try milliseconds(a, "ms")))
+        case "labelCandidates":
+            return try json(
+                labelCandidates(try a["events"].decoded(), try a["names"].decoded(), now: try milliseconds(a, "now")))
+        case "batchesToLabel":
+            return try json(
+                batchesToLabel(try a["candidates"].decoded(), try a["book"].decoded(), asked: Set(try a["asked"].decoded() as [String])))
+        case "presentKeys":
+            return try json(presentKeys(try a["events"].decoded()).sorted())
+        case "tidyBook":
+            let tidied = tidyBook(try a["book"].decoded(), present: Set(try a["present"].decoded() as [String]), try a["candidates"].decoded())
+            return try tidied.map { try json($0) } ?? .string("same")
+        case "updateBook":
+            let added: [AddedLabel] = try a["added"].decoded()
+            let present: [String]? = try a["present"].decoded()
+            return try json(updateBook(try a["book"].decoded(), added.map { ($0.key, $0.label) }, present: present.map(Set.init)))
+        case "markCalendarStale":
+            let marked = markCalendarStale(try a["book"].decoded(), try text(a, "calendarId"))
+            return .object(["book": try json(marked.book), "keys": try json(marked.keys.sorted())])
+        case "labelledEvents":
+            return try json(labelledEvents(try a["events"].decoded(), try a["book"].decoded()))
+        case "addCorrection":
+            return try json(addCorrection(try a["corrections"].decoded(), try a["correction"].decoded()))
+        case "correctionsToSend":
+            return try json(correctionsToSend(try a["corrections"].decoded()))
+        default: return unknown(fn)
+        }
+    }
+}
+
+private struct AddedLabel: Decodable {
+    var key: String
+    var label: StoredLabel
+}
