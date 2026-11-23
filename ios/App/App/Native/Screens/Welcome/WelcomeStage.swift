@@ -267,7 +267,7 @@ struct WelcomeStage: View {
                     WelcomeTravelBox(
                         event: vote, day: agreedDay, month: month, stage: stage,
                         pressed: (n >= at.pressed && n < at.sent) || (n >= at.pillPressed && n < at.vote),
-                        answered: count(at.answers), held: count(at.grabs) > count(at.answers))
+                        answered: answered)
                         .transition(.opacity.animation(.easeInOut(duration: 0.28)))
                 }
             }
@@ -767,8 +767,6 @@ private struct WelcomeVoteScreen: View {
 private struct WelcomeVotePanel: View {
     let event: SuggestedEvent
     let answered: Int
-    /// A thumb on the top card: lifted, leaning its way, its stamp showing.
-    let held: Bool
 
     private static let answers: [EventResponse] = [.accepted, .declined, .accepted]
 
@@ -811,23 +809,20 @@ private struct WelcomeVotePanel: View {
                         .transition(.opacity.animation(.easeInOut(duration: 0.2).delay(0.15)))
                 }
                 if answered < dates.count {
-                    // Swiped as by a right thumb (asked for on 22 Nov 2026; tapped before):
-                    // taken hold of, it lifts and leans its way with its stamp coming
-                    // up, then is flung off along the thumb's arc, turning in depth.
-                    let side: Double = Self.answers[index] == .accepted ? 1 : -1
+                    // The card lying there is swiped off the phone in one go, as by a
+                    // right thumb (asked for on 22 Nov 2026; it slid flat before): along
+                    // the thumb's arc, turning in depth, its stamp coming up as it goes.
+                    let answer = Self.answers[index]
                     VoteCardFace(event: event, date: dates[index], position: index + 1, total: dates.count, yours: nil)
-                        .overlay(alignment: Self.answers[index] == .accepted ? .topLeading : .topTrailing) {
-                            stamp(Self.answers[index]).opacity(held ? 1 : 0)
-                        }
-                        .modifier(Swipe(side: side, held: held ? 1 : 0, flung: 0))
-                        .animation(.easeInOut(duration: 0.4), value: held)
                         .id(dates[index].id)
+                        // On its way out it stays over the next card: without a zIndex a
+                        // ZStack puts a view leaving behind the one coming in.
+                        .zIndex(Double(10 + dates.count - index))
                         .transition(
                             .asymmetric(
                                 insertion: .scale(scale: 0.96).combined(with: .offset(y: 8)),
-                                removal: .modifier(
-                                    active: Swipe(side: side, held: 1, flung: 1), identity: Swipe(side: side, held: 1, flung: 0))
-                            ).animation(.timingCurve(0.4, 0, 0.9, 0.55, duration: 0.38)))
+                                removal: .modifier(active: Swipe(answer: answer, gone: 1), identity: Swipe(answer: answer, gone: 0))
+                            ).animation(.timingCurve(0.45, 0.05, 0.8, 0.6, duration: 0.5)))
                 }
             }
             .frame(height: 212)
@@ -839,23 +834,25 @@ private struct WelcomeVotePanel: View {
         .frame(width: D.screen.width)
     }
 
-    /// The thumb's swipe: lifted (`held`), then flung (`flung`) along an arc around
-    /// a point far under the card, as a thumb pivots on its base, turning away in depth.
+    /// The swipe, `gone` 0 to 1: around a point far under the card, as a thumb
+    /// pivots on its base, out past the phone's edge, turning away in depth, the
+    /// stamp (the app's KAN / KAN IKKE) showing within the first third.
     private struct Swipe: ViewModifier {
-        let side: Double
-        var held: Double
-        var flung: Double
+        let answer: EventResponse
+        var gone: Double
 
         func body(content: Content) -> some View {
+            let side: Double = answer == .accepted ? 1 : -1
             content
-                .scaleEffect(1 + 0.03 * held)
-                .rotation3DEffect(.degrees(side * (6 * held + 26 * flung)), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
-                .rotationEffect(.degrees(side * (6 * held + 40 * flung)), anchor: UnitPoint(x: 0.5, y: 3.2))
-                .shadow(color: .black.opacity(0.12 * held), radius: 16, y: 10)
+                .overlay(alignment: answer == .accepted ? .topLeading : .topTrailing) {
+                    WelcomeVotePanel.stamp(answer).opacity(min(1, gone * 3))
+                }
+                .rotation3DEffect(.degrees(side * 24 * gone), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
+                .rotationEffect(.degrees(side * 42 * gone), anchor: UnitPoint(x: 0.5, y: 3.2))
         }
     }
 
-    private func stamp(_ answer: EventResponse) -> some View {
+    static func stamp(_ answer: EventResponse) -> some View {
         let yes = answer == .accepted
         return Text(yes ? CasyStrings.voteCan : CasyStrings.voteCant)
             .font(.system(size: 24, weight: .heavy))
@@ -882,8 +879,6 @@ struct WelcomeTravelBox: View {
     let stage: Stage
     let pressed: Bool
     let answered: Int
-    /// The card on top held by a thumb, about to be swiped.
-    var held = false
 
     private static let card = CGRect(x: 20, y: 360, width: D.screen.width - 40, height: 222)
     private static let ball: CGFloat = 60
@@ -934,7 +929,7 @@ struct WelcomeTravelBox: View {
                     .frame(width: rect.width, height: rect.height)
                 }
                 if [.pill, .panel, .card].contains(stage) {
-                    face(stage == .panel) { WelcomeVotePanel(event: event, answered: answered, held: held) }
+                    face(stage == .panel) { WelcomeVotePanel(event: event, answered: answered) }
                 }
                 Theme.cta.color.opacity(isBall ? 1 : 0).animation(.easeInOut(duration: 0.25), value: isBall)
                 face(stage == .card) {
