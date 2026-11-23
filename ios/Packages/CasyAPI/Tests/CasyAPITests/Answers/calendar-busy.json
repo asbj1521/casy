@@ -14,7 +14,8 @@
       "total": 87,
       "provider": "apple",
       "account": "mia@icloud.com",
-      "connectionId": "conn-apple"
+      "connectionId": "conn-apple",
+      "externalId": null
     },
     {
       "id": "cal-private",
@@ -30,7 +31,8 @@
       "total": 26,
       "provider": "apple",
       "account": "mia@icloud.com",
-      "connectionId": "conn-apple"
+      "connectionId": "conn-apple",
+      "externalId": null
     },
     {
       "id": "cal-family",
@@ -46,7 +48,8 @@
       "total": 9,
       "provider": "apple",
       "account": "mia@icloud.com",
-      "connectionId": "conn-apple"
+      "connectionId": "conn-apple",
+      "externalId": null
     },
     {
       "id": "cal-google",
@@ -62,7 +65,8 @@
       "total": 18,
       "provider": "google",
       "account": "mia@example.com",
-      "connectionId": "conn-google"
+      "connectionId": "conn-google",
+      "externalId": null
     },
     {
       "id": "cal-football",
@@ -78,7 +82,8 @@
       "total": 17,
       "provider": "ics",
       "account": "Fodbold",
-      "connectionId": "conn-ics"
+      "connectionId": "conn-ics",
+      "externalId": null
     }
   ],
   "blocks": [
