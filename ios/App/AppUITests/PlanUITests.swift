@@ -11,6 +11,10 @@ final class PlanUITests: XCTestCase {
         _ = try await URLSession.shared.data(for: reset)
     }
 
+    override func tearDown() {
+        AnimationWait.ignore(false)
+    }
+
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = extra + [
@@ -166,6 +170,9 @@ final class PlanUITests: XCTestCase {
         add.tap()
         let name = app.textFields.firstMatch
         XCTAssertTrue(name.waitForExistence(timeout: 10))
+        // From the keyboard on, iOS may leave the sheet's glass with endless
+        // animations: each step waits for the app to be idle, not for those.
+        AnimationWait.ignore(true)
         name.tap()
         name.typeText("Padel\n")
         app.buttons["editor.save"].tap()
