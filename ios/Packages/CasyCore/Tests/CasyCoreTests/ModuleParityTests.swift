@@ -858,6 +858,8 @@ private func localDay(_ iso: String) -> Int {
             return .object(["book": try json(marked.book), "keys": try json(marked.keys.sorted())])
         case "labelledEvents":
             return try json(labelledEvents(try a["events"].decoded(), try a["book"].decoded()))
+        case "dayFacts":
+            return try json(dayFactsOf(try a["events"].decoded(), now: try milliseconds(a, "now")))
         case "addCorrection":
             return try json(addCorrection(try a["corrections"].decoded(), try a["correction"].decoded()))
         case "correctionsToSend":

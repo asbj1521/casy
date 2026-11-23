@@ -1,4 +1,4 @@
-/** eventLabels.ts and eventWarnings.ts's labelledEvents, for EventLabels.swift (#282: labels made natively). */
+/** eventLabels.ts, eventWarnings.ts's labelledEvents and dayFacts.ts, for EventLabels.swift (#282: labels made natively). */
 import { TRIP_NOTES } from "@/lib/casyTripEntry";
 import {
   addCorrection,
@@ -17,6 +17,7 @@ import {
   type LabelCorrection,
   type StoredLabel,
 } from "@/lib/eventLabels";
+import { dayFactsOf } from "@/lib/dayFacts";
 import { labelledEvents } from "@/lib/eventWarnings";
 import type { PhoneEventWithDetails } from "@/lib/phoneEvents";
 
@@ -169,6 +170,11 @@ export function eventLabelsCases(): ParityCase[] {
     );
     // The label as the native screens read it (EventLabel): the book's own fields
     // (count, corrected, calendarId, stale) ride along on the web and aren't read.
+    add(
+      "dayFacts",
+      { events: labelledEvents(events, known), now },
+      dayFactsOf(labelledEvents(events, known), now),
+    );
     add(
       "labelledEvents",
       { events, book: known },

@@ -322,3 +322,35 @@ public func labelledEvents(_ events: [PhoneEventWithDetails], _ book: LabelBook)
     }
     return mine.sorted { $0.1.start != $1.1.start ? $0.1.start < $1.1.start : $0.0 < $1.0 }.map(\.1)
 }
+
+// MARK: - Day facts (#119, dayFacts.ts)
+
+/// What this phone tells Casy about an important event, for ranking a vote's
+/// dates: when it starts, how important, what to keep clear of the night
+/// before and the days it needs to prepare. Never the title, kind or reason.
+public struct DayFact: Codable, Sendable, Equatable {
+    /// When it starts, epoch ms, to the minute.
+    public var start: Int64
+    /// "high" or "critical".
+    public var level: String
+    public var avoid: [String]
+    public var prepDays: Int
+}
+
+/// The most the server takes at once.
+public let maxDayFacts = 400
+
+/// The facts of this phone's important events still to come, soonest first.
+public func dayFactsOf(_ events: [LabelledEvent], now: Int64) -> [DayFact] {
+    let important = events.enumerated()
+        .filter { $0.element.start > now && ($0.element.label.importance == "high" || $0.element.label.importance == "critical") }
+        .sorted { $0.element.start != $1.element.start ? $0.element.start < $1.element.start : $0.offset < $1.offset }
+        .prefix(maxDayFacts)
+    return important.map { item in
+        let e = item.element
+        return DayFact(
+            start: Int64((Double(e.start) / 60_000 + 0.5).rounded(.down)) * 60_000,
+            level: e.label.importance == "critical" ? "critical" : "high",
+            avoid: e.label.avoidBefore, prepDays: e.label.prepDays)
+    }
+}

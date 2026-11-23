@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { pushDayFacts } from "@/api/dayFacts";
 import { useAuth } from "@/context/auth";
 import { useLabelledEventsState } from "@/hooks/useEventLabels";
+import { useNativeScreenKnown } from "@/hooks/useNativeScreen";
 import { dayFactsOf } from "@/lib/dayFacts";
 
 /** How long the facts rest before they are sent: labels arrive in batches. */
@@ -16,10 +17,14 @@ const SETTLE_MS = 3_000;
  * yes to the AI using their calendar (useLabelledEventsState is empty
  * otherwise). Waits for the labels to be read, so an empty list is a real
  * one and never clears what is stored while the app is still loading.
+ *
+ * Where the app shares them itself (#282, "dayFacts" among its screens), the
+ * page sends none: not before the app has said, so never both.
  */
 export function useDayFactsSync() {
   const { user } = useAuth();
-  const userId = user?.id ?? "";
+  const app = useNativeScreenKnown("dayFacts");
+  const userId = app === false ? (user?.id ?? "") : "";
   const { ready, events } = useLabelledEventsState();
   // What the server holds from this launch, so an unchanged list isn't sent again.
   const sent = useRef<string | null>(null);

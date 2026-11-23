@@ -20,6 +20,11 @@ import UIKit
 /// admin or AI tester, and only with this phone connected (`thisPhone`, from
 /// the page until the phone's sync is native). What a failing call left is
 /// tried on the next run: the app coming back, the phone's calendars changing.
+///
+/// Each run also shares the day facts (#119, the web's useDayFactsSync): per
+/// important event to come only its start, level, what to avoid the night
+/// before and its days of preparation, for ranking a vote's dates; sent when
+/// they changed since the last send this launch.
 @MainActor @Observable
 final class LabelsWork {
     static let shared = LabelsWork()
@@ -53,6 +58,8 @@ final class LabelsWork {
     private var running = false
     private var again = false
     private var lastRun = "none yet"
+    /// The day facts the server holds from this launch, so the same aren't sent again.
+    private var factsSent: [DayFact]?
     private var watching: [NSObjectProtocol] = []
 
     private init() {
@@ -74,6 +81,7 @@ final class LabelsWork {
         guard userId != self.userId else { return kick() }
         self.userId = userId
         asked = []
+        factsSent = nil
         let kept = userId.map(Self.read) ?? Kept()
         book = kept.labels
         corrections = kept.corrections
@@ -180,6 +188,7 @@ final class LabelsWork {
         if let tidy = tidyBook(book, present: presentKeys(events), candidates) { save(tidy) }
         refreshImportant(events: events)
         let batches = batchesToLabel(candidates, book, asked: asked)
+        defer { Task { await shareFacts(api, events: events) } }
         guard !batches.isEmpty else {
             status =
                 "idle: phone calendars=\(names.count) events=\(events.count) titles=\(candidates.count) "
@@ -205,6 +214,18 @@ final class LabelsWork {
         } catch {
             lastRun = "FAILED: \(error.localizedDescription)"
             status = lastRun
+        }
+    }
+
+    /// The day facts from the labels as they are, when they changed (`dayFactsOf`).
+    private func shareFacts(_ api: EdgeFunctions, events: [PhoneEventWithDetails]) async {
+        let facts = dayFactsOf(labelledEvents(events, book), now: Native.now)
+        guard facts != factsSent else { return }
+        do {
+            try await api.pushDayFacts(facts)
+            factsSent = facts
+        } catch {
+            NSLog("casy labels: sharing the day facts failed: %@", error.localizedDescription)
         }
     }
 

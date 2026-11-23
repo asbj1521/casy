@@ -1189,3 +1189,17 @@ extension EdgeFunctions {
         return label
     }
 }
+
+// MARK: - Day facts (#119, day-facts; src/api/dayFacts.ts)
+
+private struct DayFactsAsk: Encodable, Sendable {
+    let facts: [DayFact]
+}
+
+extension EdgeFunctions {
+    /// This phone's important events for ranking a vote's dates: replaces the
+    /// person's facts as a whole (an empty list clears them).
+    public func pushDayFacts(_ facts: [DayFact], errorMessage: String? = nil) async throws {
+        let _: Ignored = try await call("day-facts", body: DayFactsAsk(facts: facts), errorMessage: errorMessage)
+    }
+}

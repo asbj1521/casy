@@ -42,7 +42,9 @@ export type NativeScreen =
    * Background work the app does itself (#282), named among the screens so the
    * page leaves it: the event labels (useAutoLabel only keeps a copy then).
    */
-  | "labels";
+  | "labels"
+  /** The day facts (#119), shared by the app from its own labels. */
+  | "dayFacts";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {

@@ -46,14 +46,15 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ] + (nativeLabels ? ["labels"] : [])
+            ] + (nativeLabels ? ["labels", "dayFacts"] : [])
         #else
             return []
         #endif
     }()
 
     /// The background work this build does natively, named in `screens` too so
-    /// the page leaves it: the event labels (#282, LabelsWork). Not in a UI
+    /// the page leaves it: the event labels and the day facts made of them
+    /// (#282, LabelsWork). Not in a UI
     /// test, whose made-up login has no phone calendars to label.
     static let nativeLabels: Bool = {
         #if DEBUG
