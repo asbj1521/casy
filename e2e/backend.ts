@@ -209,9 +209,10 @@ export class FakeBackend {
       case "calendar-label": {
         // Only the iPhone app labels events, which the browser tests can't
         // be; answered as the real one would, every event an ordinary one.
-        const events = Array.isArray(body.events) ? body.events : [];
-        const labels = events.map(() => ({
-          kind: "other",
+        const events = (Array.isArray(body.events) ? body.events : []) as { title?: string }[];
+        // A title that starts with "Fly" is a flight, so the app's trip reading has one (#282).
+        const labels = events.map((e) => ({
+          kind: /^fly\b/i.test(e.title ?? "") ? "flight" : "other",
           importance: "normal",
           prepDays: 0,
           avoidBefore: [],
@@ -221,6 +222,17 @@ export class FakeBackend {
           reason: "",
         }));
         return ok({ labels, left: 19 });
+      }
+      case "trip-legs": {
+        // Only the iPhone app reads trips: every event a flight from home to Oslo.
+        const events = Array.isArray(body.events) ? body.events : [];
+        const legs = events.map(() => ({
+          mode: "flight",
+          from: "HOME",
+          to: "Oslo",
+          confidence: "high",
+        }));
+        return ok({ legs, left: 19 });
       }
       case "app-version":
         return ok({

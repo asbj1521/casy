@@ -9,7 +9,7 @@
     @MainActor
     enum TestPhone {
         static let connection = "conn-phone"
-        static let titles = ["Eksamen i fysik", "Padel", "Tandlæge"]
+        static let titles = ["Eksamen i fysik", "Padel", "Tandlæge", "Fly til Oslo"]
 
         static func seed() async -> Bool {
             guard (try? await EKEventStore().requestFullAccessToEvents()) == true else { return false }

@@ -10,6 +10,8 @@ import { labelBookQuery } from "@/hooks/useEventLabels";
 import { SEARCH_WINDOW } from "@/lib/eventSearch";
 import { setTripStatus } from "@/lib/labelStatus";
 import { isNativeApp } from "@/lib/nativeApp";
+import { handLegsToApp, onAppLegs } from "@/lib/nativeBridge";
+import { useNativeScreenKnown } from "@/hooks/useNativeScreen";
 import { addTripToPhone, phoneConnectionId, phoneEventDetailsQuery } from "@/lib/phoneCalendar";
 import {
   legBatches,
@@ -100,10 +102,43 @@ function useCountedPhoneCalendars(on: boolean, userId: string, phone: string | n
  * (which way, between which cities), each distinct title and place once, and
  * the legs are kept on the phone. Runs again as new labels arrive. Only in
  * the iPhone app, for those who said yes to the AI using their calendar.
+ *
+ * Where the app reads them itself (#282, "tripLegs" among its screens), the
+ * page reads none: it hands over the legs it kept, once a launch, and keeps
+ * the app's copy, which useTrips pairs into trips as before.
  */
 export function useAutoTripLegs() {
-  const { userId, phone, on } = useTripsOn();
+  const { userId, phone, on: allowed } = useTripsOn();
   const queryClient = useQueryClient();
+  // Not before the app has said whether it reads them: never both at once.
+  const appLegs = useNativeScreenKnown("tripLegs");
+  const on = allowed && appLegs === false;
+
+  useEffect(() => {
+    if (appLegs !== true || !userId) return;
+    const legs = readLegBook(userId);
+    if (Object.keys(legs).length > 0) {
+      handLegsToApp(userId, legs).catch((err) =>
+        console.warn("handing the legs to the app failed", err),
+      );
+    }
+    let live = true;
+    let stop: (() => void) | null = null;
+    onAppLegs(({ userId: who, legs: book }) => {
+      if (who !== userId) return;
+      writeLegBook(who, book);
+      queryClient.setQueryData(legBookQuery(who).queryKey, book);
+    })
+      .then((handle) => {
+        if (live) stop = () => void handle.remove();
+        else void handle.remove();
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+      stop?.();
+    };
+  }, [appLegs, userId, queryClient]);
   const names = useCountedPhoneCalendars(on, userId, phone);
   const { data: events } = useQuery({
     ...phoneEventDetailsQuery(userId, SEARCH_WINDOW),

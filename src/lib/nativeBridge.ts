@@ -10,6 +10,7 @@
  */
 import type { LabelBook, LabelCorrection } from "@/lib/eventLabels";
 import type { LabelledEvent } from "@/lib/eventWarnings";
+import type { LegBook } from "@/lib/tripLegBook";
 import type { NativeAuthAnswer, NativeAuthAsk } from "@/lib/nativeAuth";
 import type { GridItem } from "@/lib/monthGrid";
 import type { PluginListenerHandle } from "@capacitor/core";
@@ -46,7 +47,9 @@ export type NativeScreen =
   /** The day facts (#119), shared by the app from its own labels. */
   | "dayFacts"
   /** The calendars sorted by AI (#118), with the phone's own titles. */
-  | "categorize";
+  | "categorize"
+  /** The trips' legs read from the labelled journeys (#115); the page still pairs them into trips. */
+  | "tripLegs";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {
@@ -156,6 +159,11 @@ interface NativeBridgePlugin {
     labels: LabelBook;
     corrections: LabelCorrection[];
   }): Promise<void>;
+  legsFromPage(options: { userId: string; legs: LegBook }): Promise<void>;
+  addListener(
+    event: "legs",
+    listener: (book: { userId: string; legs: LegBook }) => void,
+  ): Promise<PluginListenerHandle>;
   labelCorrected(options: {
     userId: string;
     correction: LabelCorrection;
@@ -389,6 +397,20 @@ export async function handLabelsToApp(
 ): Promise<void> {
   const { plugin } = await bridgePlugin();
   await plugin.labelsFromPage({ userId, labels, corrections });
+}
+
+/** The trips' legs the page kept, handed to the app once it reads them itself (#282). */
+export async function handLegsToApp(userId: string, legs: LegBook): Promise<void> {
+  const { plugin } = await bridgePlugin();
+  await plugin.legsFromPage({ userId, legs });
+}
+
+/** Calls `onLegs` with the app's trip legs whenever they change (#282). */
+export async function onAppLegs(
+  onLegs: (book: { userId: string; legs: LegBook }) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("legs", onLegs);
 }
 
 /** A label corrected on the page ("Forkert?"), for the app's book (#282). */

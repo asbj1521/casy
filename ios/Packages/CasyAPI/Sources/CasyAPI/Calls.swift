@@ -1233,3 +1233,22 @@ extension EdgeFunctions {
         return answer.categorized
     }
 }
+
+// MARK: - Trip legs (#115, trip-legs; src/api/tripLegs.ts)
+
+private struct TripLegsAsk: Encodable, Sendable {
+    let events: [EventToRead]
+}
+
+private struct TripLegsAnswer: Codable, Sendable {
+    var legs: [TripLeg?]
+}
+
+extension EdgeFunctions {
+    /// This phone's travel events read as legs: which way, between which cities.
+    /// One per event sent, in order; nil where none was read. The server keeps nothing.
+    public func readTripLegs(_ events: [EventToRead], errorMessage: String? = nil) async throws -> [TripLeg?] {
+        let answer: TripLegsAnswer = try await call("trip-legs", body: TripLegsAsk(events: events), errorMessage: errorMessage)
+        return answer.legs
+    }
+}

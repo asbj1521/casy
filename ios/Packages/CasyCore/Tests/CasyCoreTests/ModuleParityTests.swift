@@ -900,3 +900,26 @@ private struct CalendarKind: Decodable {
     var id: String
     var accountKind: String
 }
+
+@Test func tripLegBookGivesTheTypeScriptAnswers() throws {
+    try check("tripLegBook", atLeast: 150) { fn, a in
+        switch fn {
+        case "legKey":
+            return try json(legKey(try text(a, "calendarId"), try text(a, "title"), try text(a, "location")))
+        case "travelCandidates":
+            return try json(
+                travelCandidates(
+                    try a["events"].decoded(), try a["labels"].decoded(), try a["names"].decoded(),
+                    now: try milliseconds(a, "now")))
+        case "legBatches":
+            return try json(
+                legBatches(try a["candidates"].decoded(), try a["book"].decoded(), asked: Set(try a["asked"].decoded() as [String])))
+        case "presentLegKeys":
+            return try json(presentLegKeys(try a["events"].decoded(), try a["labels"].decoded()).sorted())
+        case "tidyLegBook":
+            let tidy = tidyLegBook(try a["book"].decoded(), present: Set(try a["present"].decoded() as [String]))
+            return try tidy.map { try json($0) } ?? .string("same")
+        default: return unknown(fn)
+        }
+    }
+}

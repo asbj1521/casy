@@ -33,6 +33,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "labelsFromPage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "legsFromPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "labelCorrected", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearPhoneAi", returnType: CAPPluginReturnPromise),
     ]
@@ -46,7 +47,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ] + (nativeLabels ? ["labels", "dayFacts", "categorize"] : [])
+            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs"] : [])
         #else
             return []
         #endif
@@ -54,7 +55,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// The background work this build does natively, named in `screens` too so
     /// the page leaves it: the event labels and the day facts made of them
-    /// (#282, LabelsWork), and the calendars sorted by AI (CategorizeWork). Not in a UI
+    /// (#282, LabelsWork), the calendars sorted by AI (CategorizeWork) and the
+    /// trips' legs read from the labelled journeys (TripsWork). Not in a UI
     /// test, whose made-up login has no phone calendars to label.
     static let nativeLabels: Bool = {
         #if DEBUG
@@ -110,6 +112,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             // Sorted calendars: the page's cached ones read again, as when a screen changed them.
             CategorizeWork.shared.changed = { [weak self] in
                 self?.notifyListeners("calendarsChanged", data: [:])
+            }
+            TripsWork.shared.mirror = { [weak self] userId, legs in
+                guard let data = try? JSONEncoder().encode(legs),
+                    let object = try? JSONSerialization.jsonObject(with: data)
+                else { return }
+                self?.notifyListeners("legs", data: ["userId": userId, "legs": object])
             }
             LabelsWork.shared.mirror = { [weak self] userId, book in
                 guard let data = try? JSONEncoder().encode(book),
@@ -738,6 +746,16 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         let corrections: [PhoneLabelCorrection] = Self.decode([PhoneLabelCorrection].self, call.getArray("corrections")) ?? []
         DispatchQueue.main.async {
             LabelsWork.shared.adopt(userId, labels: labels, corrections: corrections)
+            call.resolve()
+        }
+    }
+
+    /// `{ userId, legs }`: the trips' legs the page kept before the app read them (#282).
+    @objc func legsFromPage(_ call: CAPPluginCall) {
+        guard let userId = call.getString("userId") else { return call.resolve() }
+        let legs: LegBook = Self.decode(LegBook.self, call.getObject("legs")) ?? [:]
+        DispatchQueue.main.async {
+            TripsWork.shared.adopt(userId, legs: legs)
             call.resolve()
         }
     }

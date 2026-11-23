@@ -3,8 +3,8 @@ import XCTest
 /// The event labels made by the app itself (#282, LabelsWork): with
 /// `-casySeedPhone` the app fills a "Casy test" calendar on this simulator and
 /// the fake backend lists it as this phone's, so the app's labeller reads its
-/// three titles, asks the fake calendar-label for them and keeps the labels:
-/// Dine data then counts three on this phone.
+/// four titles, asks the fake calendar-label for them and keeps the labels:
+/// Dine data then counts four on this phone.
 final class LabelsUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
@@ -26,7 +26,7 @@ final class LabelsUITests: XCTestCase {
         allowCalendarAccess()
         XCTAssertTrue(app.navigationBars["Profil"].waitForExistence(timeout: 20))
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Dine data")).firstMatch
-        // The row reads as one: "Mærkater på denne telefon, 3".
+        // The row reads as one: "Mærkater på denne telefon, 4".
         let labels = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label BEGINSWITH %@", "Mærkater på denne telefon")).firstMatch
         var seen = ""
@@ -37,11 +37,11 @@ final class LabelsUITests: XCTestCase {
             XCTAssertTrue(app.navigationBars["Dine data"].waitForExistence(timeout: 10))
             for _ in 0..<12 where !(labels.exists && labels.isHittable) { app.screenList.swipeUp(velocity: .slow) }
             seen = labels.exists ? labels.label : "no row"
-            if seen.hasSuffix(" 3") { return }
+            if seen.hasSuffix(" 4") { return }
             app.navigationBars["Dine data"].buttons.firstMatch.tap()
             sleep(2)
         }
-        XCTFail("Dine data never counted the three labels: \(seen)")
+        XCTFail("Dine data never counted the four labels: \(seen)")
     }
 
     /// iOS's question about the calendars, the first time on this simulator: full access.

@@ -82,6 +82,7 @@ final class LabelsWork {
         self.userId = userId
         asked = []
         factsSent = nil
+        TripsWork.shared.signedIn(userId)
         let kept = userId.map(Self.read) ?? Kept()
         book = kept.labels
         corrections = kept.corrections
@@ -125,6 +126,8 @@ final class LabelsWork {
     /// everything the AI made of this phone's calendar goes.
     func clear(_ userId: String?) {
         Self.remove(userId)
+        // The trips' legs go with the labels they were read from.
+        TripsWork.shared.clear(userId)
         if userId == nil || userId == self.userId {
             book = [:]
             corrections = []
@@ -188,7 +191,13 @@ final class LabelsWork {
         if let tidy = tidyBook(book, present: presentKeys(events), candidates) { save(tidy) }
         refreshImportant(events: events)
         let batches = batchesToLabel(candidates, book, asked: asked)
-        defer { Task { await shareFacts(api, events: events) } }
+        defer {
+            Task {
+                await shareFacts(api, events: events)
+                // The labels as they are now: new ones may call more events journeys.
+                await TripsWork.shared.run(api: api, events: events, names: names, labels: book)
+            }
+        }
         guard !batches.isEmpty else {
             status =
                 "idle: phone calendars=\(names.count) events=\(events.count) titles=\(candidates.count) "
