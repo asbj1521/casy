@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { calendarsChanged, calendarStatusQuery, categorizeCalendars } from "@/api/calendars";
 import { useAuth } from "@/context/auth";
 import { useAiContent } from "@/hooks/useAiAllowed";
+import { useNativeScreenKnown } from "@/hooks/useNativeScreen";
 import { accountKindsFor, phoneSourceIds, sampleTitles, uncategorised } from "@/lib/autoCategorize";
 import { isNativeApp } from "@/lib/nativeApp";
 
@@ -23,10 +24,14 @@ const TITLES_AHEAD_MS = 120 * 86_400_000;
  * calendar's name goes to the AI, so this waits for the person's yes to the AI
  * using their calendar (#120); in the app, a few event titles per calendar go
  * along too.
+ *
+ * In an app that sorts them itself (#282, "categorize" among its screens) the
+ * page asks about none, and not before the app has said; the website always does.
  */
 export function useAutoCategorize() {
   const { user } = useAuth();
-  const userId = user?.id ?? "";
+  const app = useNativeScreenKnown("categorize");
+  const userId = app === false ? (user?.id ?? "") : "";
   const queryClient = useQueryClient();
   const { data: connections } = useQuery({
     ...calendarStatusQuery(userId),

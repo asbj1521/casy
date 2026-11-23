@@ -30,6 +30,7 @@ import phoneBusyFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests
 import paperPileFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/paperPile.json?raw";
 import appLinksFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/appLinks.json?raw";
 import eventLabelsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/eventLabels.json?raw";
+import autoCategorizeFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/autoCategorize.json?raw";
 import zoneFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/zone.json?raw";
 
 import { availabilityCases } from "./availability.cases";
@@ -55,6 +56,7 @@ import { zoneCases } from "./zone.cases";
 import { paperPileCases } from "./paperPile.cases";
 import { appLinksCases } from "./appLinks.cases";
 import { eventLabelsCases } from "./eventLabels.cases";
+import { autoCategorizeCases } from "./autoCategorize.cases";
 
 const FIXTURES = "ios/Packages/CasyCore/Tests/CasyCoreTests/Parity";
 
@@ -86,6 +88,7 @@ describe.each([
   ["paperPile", paperPileCases(), paperPileFixture],
   ["appLinks", appLinksCases(), appLinksFixture],
   ["eventLabels", eventLabelsCases(), eventLabelsFixture],
+  ["autoCategorize", autoCategorizeCases(), autoCategorizeFixture],
 ] as const)("%s", (module, cases, fixture) => {
   it.runIf(import.meta.env.UPDATE_PARITY)("writes the fixtures", async () => {
     // Named through a variable so the type check doesn't look for Node's types.

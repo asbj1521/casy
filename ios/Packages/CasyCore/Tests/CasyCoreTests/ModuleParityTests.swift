@@ -873,3 +873,30 @@ private struct AddedLabel: Decodable {
     var key: String
     var label: StoredLabel
 }
+
+@Test func autoCategorizeGivesTheTypeScriptAnswers() throws {
+    try check("autoCategorize", atLeast: 150) { fn, a in
+        switch fn {
+        case "uncategorised": return try json(uncategorised(try a["connections"].decoded()))
+        case "phoneSourceIds":
+            return try json(phoneSourceIds(try a["connections"].decoded(), try text(a, "connectionId")))
+        case "sampleTitles":
+            return try json(
+                sampleTitles(
+                    try a["events"].decoded(), try a["serverIdOf"].decoded(),
+                    wanted: Set(try a["wanted"].decoded() as [String]), now: try milliseconds(a, "now")))
+        case "accountKindsFor":
+            let info: [CalendarKind] = try a["info"].decoded()
+            return try json(
+                accountKindsFor(
+                    info.map { ($0.id, $0.accountKind) }, try a["serverIdOf"].decoded(),
+                    pending: Set(try a["pending"].decoded() as [String])))
+        default: return unknown(fn)
+        }
+    }
+}
+
+private struct CalendarKind: Decodable {
+    var id: String
+    var accountKind: String
+}

@@ -44,7 +44,9 @@ export type NativeScreen =
    */
   | "labels"
   /** The day facts (#119), shared by the app from its own labels. */
-  | "dayFacts";
+  | "dayFacts"
+  /** The calendars sorted by AI (#118), with the phone's own titles. */
+  | "categorize";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {

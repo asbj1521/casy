@@ -46,7 +46,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ] + (nativeLabels ? ["labels", "dayFacts"] : [])
+            ] + (nativeLabels ? ["labels", "dayFacts", "categorize"] : [])
         #else
             return []
         #endif
@@ -54,7 +54,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// The background work this build does natively, named in `screens` too so
     /// the page leaves it: the event labels and the day facts made of them
-    /// (#282, LabelsWork). Not in a UI
+    /// (#282, LabelsWork), and the calendars sorted by AI (CategorizeWork). Not in a UI
     /// test, whose made-up login has no phone calendars to label.
     static let nativeLabels: Bool = {
         #if DEBUG
@@ -106,6 +106,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             MyDataModel.shared.askLabels = { [weak self] in
                 if LabelsWork.on { return LabelsWork.shared.count }
                 return await self?.askLabels() ?? 0
+            }
+            // Sorted calendars: the page's cached ones read again, as when a screen changed them.
+            CategorizeWork.shared.changed = { [weak self] in
+                self?.notifyListeners("calendarsChanged", data: [:])
             }
             LabelsWork.shared.mirror = { [weak self] userId, book in
                 guard let data = try? JSONEncoder().encode(book),
@@ -180,6 +184,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                         guard await TestPhone.seed() else { return }
                         LabelsWork.shared.thisPhone = TestPhone.connection
                         LabelsWork.shared.signedIn(connection.userId)
+                        CategorizeWork.shared.signedIn(connection.userId)
                     }
                 }
                 if let lang = TestLaunch.lang { NativePreferences.shared.lang = lang }
@@ -234,6 +239,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             await MainActor.run {
                 LabelsWork.shared.thisPhone = phone
                 LabelsWork.shared.signedIn(next?.userId)
+                CategorizeWork.shared.signedIn(next?.userId)
             }
             // Someone else on this phone must never see the last person's choices.
             if before != next?.userId {

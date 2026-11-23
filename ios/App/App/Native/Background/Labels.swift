@@ -247,21 +247,24 @@ final class LabelsWork {
         important = labelledEvents(all, book).filter { $0.label.importance == "high" || $0.label.importance == "critical" }
     }
 
+    /// One of the phone's events as CasyCore reads it.
+    nonisolated static func withDetails(_ d: PhoneEventDetails) -> PhoneEventWithDetails {
+        let t = d.timing
+        return PhoneEventWithDetails(
+            event: PhoneEvent(
+                calendarId: t.calendarId, allDay: t.allDay, free: t.free, cancelled: t.cancelled,
+                declined: t.declined, start: t.start.map { Int64($0) }, end: t.end.map { Int64($0) },
+                startDay: t.startDay, endDay: t.endDay),
+            title: d.title, location: d.location, notes: d.notes)
+    }
+
     /// This phone's events with their titles, as the page reads them (readDetails).
     /// A store of its own each time: one made before the calendars were allowed
     /// goes on seeing none of them.
     private static func readEvents(from: String, to: String) -> [PhoneEventWithDetails] {
         guard let start = parseInstant(from), let end = parseInstant(to) else { return [] }
         let store = EKEventStore()
-        return PhoneCalendarReader.readDetails(store: store, from: Double(start), to: Double(end)).map { d in
-            let t = d.timing
-            return PhoneEventWithDetails(
-                event: PhoneEvent(
-                    calendarId: t.calendarId, allDay: t.allDay, free: t.free, cancelled: t.cancelled,
-                    declined: t.declined, start: t.start.map { Int64($0) }, end: t.end.map { Int64($0) },
-                    startDay: t.startDay, endDay: t.endDay),
-                title: d.title, location: d.location, notes: d.notes)
-        }
+        return PhoneCalendarReader.readDetails(store: store, from: Double(start), to: Double(end)).map(withDetails)
     }
 
     // MARK: Kept on the phone, per account

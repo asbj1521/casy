@@ -231,6 +231,8 @@ final class CalendarsModel {
         thisPhone = outcome.connectionId
         // The labels follow this phone's connection (#282).
         LabelsWork.shared.thisPhone = outcome.connectionId
+        // A new calendar on the phone may want sorting (#118).
+        CategorizeWork.shared.kick()
         await settled()
         return outcome
     }

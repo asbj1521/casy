@@ -76,6 +76,9 @@ createServer((request, response) => {
               id: "cal-phone",
               display_name: seed.phoneCalendar.name,
               external_id: seed.phoneCalendar.externalId,
+              // New on the phone: nobody has sorted it, so the app's AI sorting asks (#118).
+              purpose: null,
+              purpose_source: null,
             },
           ],
         });

@@ -1203,3 +1203,33 @@ extension EdgeFunctions {
         let _: Ignored = try await call("day-facts", body: DayFactsAsk(facts: facts), errorMessage: errorMessage)
     }
 }
+
+// MARK: - Calendars sorted by AI (#118, calendar-categorize)
+
+private struct CategorizeAsk: Encodable, Sendable {
+    let titles: [String: [String]]?
+    let accountKinds: [String: String]?
+}
+
+/// A calendar the AI sorted, and what it became (nil: it couldn't tell).
+public struct Categorized: Codable, Sendable, Equatable {
+    public var calendarId: String
+    public var purpose: String?
+}
+
+private struct CategorizeAnswer: Codable, Sendable {
+    var categorized: [Categorized]
+}
+
+extension EdgeFunctions {
+    /// The calendars nobody has given a category sorted by AI; the server only
+    /// fills untouched ones. A few of this phone's titles and its account kinds help.
+    public func categorizeCalendars(
+        titles: [String: [String]]?, accountKinds: [String: String]?, errorMessage: String? = nil
+    ) async throws -> [Categorized] {
+        let answer: CategorizeAnswer = try await call(
+            "calendar-categorize", body: CategorizeAsk(titles: titles, accountKinds: accountKinds),
+            errorMessage: errorMessage)
+        return answer.categorized
+    }
+}
