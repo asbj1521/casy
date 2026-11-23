@@ -8,6 +8,7 @@ import { useAiConsent } from "@/hooks/useAiAllowed";
 import { forgetAskedTitles, labelBookQuery } from "@/hooks/useEventLabels";
 import { forgetAskedTrips, legBookQuery, tripAnswersQuery } from "@/hooks/useTrips";
 import { clearLabelsFor } from "@/lib/eventLabels";
+import { isNativeApp } from "@/lib/nativeApp";
 import { NO_ANSWERS } from "@/lib/trips";
 
 /**
@@ -65,6 +66,8 @@ export function afterAiConsent(queryClient: QueryClient, userId: string, on: boo
   if (on) void queryClient.invalidateQueries({ queryKey: whoAmIQueryKey(userId) });
   if (!on) {
     clearLabelsFor(userId);
+    // The app's own labels too, once it labels itself (#282).
+    if (isNativeApp) void import("@/lib/nativeBridge").then((m) => m.clearAppPhoneAi(userId));
     forgetAskedTitles();
     forgetAskedTrips();
     queryClient.setQueryData(labelBookQuery(userId).queryKey, {});

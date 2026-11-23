@@ -10,7 +10,8 @@
  * and AI corrections waiting for her (e2e/adminReviews.ts), and
  * `{ calendars: "none" }` with nothing connected and `{ aiConsent: false }`
  * without the yes to the AI (#200), and `{ outdated: true }` with every
- * app too old, so the page asks it to update (#281).
+ * app too old, so the page asks it to update (#281), and `{ phoneCalendar:
+ * { externalId, name } }` with that calendar on this phone (the app's labels, #282).
  *
  * It also stands in for Supabase Auth (#280): the web build the parity shots
  * compare against (`npm run ios:parity`) talks to this server from the app's
@@ -51,6 +52,7 @@ createServer((request, response) => {
         calendars?: "none";
         aiConsent?: boolean;
         outdated?: boolean;
+        phoneCalendar?: { externalId: string; name: string };
       };
       backend = new FakeBackend(
         makeWorld(seed.calendars ? { ...DEFAULT_WORLD, calendars: seed.calendars } : DEFAULT_WORLD),
@@ -60,6 +62,24 @@ createServer((request, response) => {
       if (seed.reviews) addReviews(backend.world);
       if (seed.aiConsent === false) backend.world.aiConsent = false;
       if (seed.outdated) backend.world.minAppVersion = "999.0.0";
+      // The app's own labels test (#282, TestPhone.swift): a calendar it made on the
+      // simulator, listed as this phone's under its EventKit id.
+      if (seed.phoneCalendar) {
+        backend.world.connections.push({
+          ...backend.world.connections[0],
+          id: "conn-phone",
+          provider: "device",
+          account_label: "iPhone",
+          calendar_sources: [
+            {
+              ...backend.world.connections[0].calendar_sources[0],
+              id: "cal-phone",
+              display_name: seed.phoneCalendar.name,
+              external_id: seed.phoneCalendar.externalId,
+            },
+          ],
+        });
+      }
       return send(200, {});
     }
     // What a parity test (#280) hands the app (-casyWebSession) to put in the

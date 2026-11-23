@@ -6,40 +6,10 @@
 
 import Foundation
 
-/// One of the phone's events with what it is (readDetails): `PhoneEventWithDetails`.
-public struct PhoneEventDetails: Codable, Sendable, Equatable {
-    public var event: PhoneEvent
-    public var title: String?
-    public var location: String?
-    public var notes: String?
+// The phone's events with what they are: `PhoneEventWithDetails` (CalendarDay.swift).
 
-    public init(event: PhoneEvent, title: String? = nil, location: String? = nil, notes: String? = nil) {
-        self.event = event
-        self.title = title
-        self.location = location
-        self.notes = notes
-    }
-
-    public var calendarId: String { event.calendarId }
-
-    // Flat, as the web's `PhoneEvent & Partial<EventDetails>`.
-    private enum Details: String, CodingKey { case title, location, notes }
-
-    public init(from decoder: Decoder) throws {
-        event = try PhoneEvent(from: decoder)
-        let c = try decoder.container(keyedBy: Details.self)
-        title = try c.decodeIfPresent(String.self, forKey: .title)
-        location = try c.decodeIfPresent(String.self, forKey: .location)
-        notes = try c.decodeIfPresent(String.self, forKey: .notes)
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        try event.encode(to: encoder)
-        var c = encoder.container(keyedBy: Details.self)
-        try c.encodeIfPresent(title, forKey: .title)
-        try c.encodeIfPresent(location, forKey: .location)
-        try c.encodeIfPresent(notes, forKey: .notes)
-    }
+extension PhoneEventWithDetails {
+    var calendarId: String { event.calendarId }
 }
 
 /// A title in a calendar as sent to calendar-label (`EventToLabel`).
@@ -111,8 +81,8 @@ public struct StoredLabel: Codable, Sendable, Equatable {
 
 public typealias LabelBook = [String: StoredLabel]
 
-/// One of the person's corrections, kept to send with later calls (`LabelCorrection`).
-public struct LabelCorrection: Codable, Sendable, Equatable {
+/// One of the person's corrections, kept to send with later calls (`PhoneLabelCorrection`).
+public struct PhoneLabelCorrection: Codable, Sendable, Equatable {
     public var key: String
     public var calendarId: String
     public var title: String
@@ -221,14 +191,14 @@ public let casyTripNotes: Set<String> = [
 ]
 
 /// Whether this phone event is a trip Casy wrote into the calendar itself.
-public func isCasyTripEntry(_ e: PhoneEventDetails) -> Bool {
+public func isCasyTripEntry(_ e: PhoneEventWithDetails) -> Bool {
     casyTripNotes.contains((e.notes ?? "").trimmingCharacters(in: jsWhitespace))
 }
 
 /// The distinct titles among this phone's events, one per title and calendar,
 /// soonest first; only what counts as busy in the calendars given, not ended
 /// over a week ago, and not Casy's own trip entries.
-public func labelCandidates(_ events: [PhoneEventDetails], _ calendarNames: [String: String], now: Int64) -> [LabelCandidate] {
+public func labelCandidates(_ events: [PhoneEventWithDetails], _ calendarNames: [String: String], now: Int64) -> [LabelCandidate] {
     var byKey: [String: LabelCandidate] = [:]
     var order: [String] = []
     for e in events {
@@ -324,7 +294,7 @@ public func markCalendarStale(_ book: LabelBook, _ calendarId: String) -> (book:
 }
 
 /// Every key among the phone's events (labelled or not): what may be kept.
-public func presentKeys(_ events: [PhoneEventDetails]) -> Set<String> {
+public func presentKeys(_ events: [PhoneEventWithDetails]) -> Set<String> {
     Set(events.compactMap { e in
         guard let title = e.title?.trimmingCharacters(in: jsWhitespace), !title.isEmpty else { return nil }
         return labelKey(e.calendarId, title)
@@ -332,17 +302,17 @@ public func presentKeys(_ events: [PhoneEventDetails]) -> Set<String> {
 }
 
 /// The corrections with a new one first, replacing an earlier one for the same event.
-public func addCorrection(_ corrections: [LabelCorrection], _ correction: LabelCorrection) -> [LabelCorrection] {
+public func addCorrection(_ corrections: [PhoneLabelCorrection], _ correction: PhoneLabelCorrection) -> [PhoneLabelCorrection] {
     Array(([correction] + corrections.filter { $0.key != correction.key }).prefix(maxLabelCorrections))
 }
 
 /// The corrections as the server takes them.
-public func correctionsToSend(_ corrections: [LabelCorrection]) -> [SentCorrection] {
+public func correctionsToSend(_ corrections: [PhoneLabelCorrection]) -> [SentCorrection] {
     corrections.map { SentCorrection(title: $0.title, calendar: $0.calendar, note: $0.note, label: $0.label) }
 }
 
 /// Your own events with their labels, soonest first (`labelledEvents`, eventWarnings.ts).
-public func labelledEvents(_ events: [PhoneEventDetails], _ book: LabelBook) -> [LabelledEvent] {
+public func labelledEvents(_ events: [PhoneEventWithDetails], _ book: LabelBook) -> [LabelledEvent] {
     var mine: [(Int, LabelledEvent)] = []
     for (i, e) in events.enumerated() {
         guard let title = e.title?.trimmingCharacters(in: jsWhitespace), !title.isEmpty,

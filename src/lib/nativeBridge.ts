@@ -8,6 +8,7 @@
  * As in phoneCalendar.ts, @capacitor/core loads on first use and only the
  * module goes through promises, never the plugin (it answers to `then` too).
  */
+import type { LabelBook, LabelCorrection } from "@/lib/eventLabels";
 import type { LabelledEvent } from "@/lib/eventWarnings";
 import type { NativeAuthAnswer, NativeAuthAsk } from "@/lib/nativeAuth";
 import type { GridItem } from "@/lib/monthGrid";
@@ -36,7 +37,12 @@ export type NativeScreen =
   | "signIn"
   | "welcome"
   | "invitePaste"
-  | "join";
+  | "join"
+  /**
+   * Background work the app does itself (#282), named among the screens so the
+   * page leaves it: the event labels (useAutoLabel only keeps a copy then).
+   */
+  | "labels";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {
@@ -124,6 +130,8 @@ interface NativeBridgePlugin {
     projectUrl: string;
     apiKey: string;
     session: LentSession | null;
+    /** This phone's connection for the signed-in person, for the app's labels. */
+    phoneConnection: string | null;
   }): Promise<void>;
   setPreferences(options: Preferences): Promise<void>;
   open(options: {
@@ -139,6 +147,21 @@ interface NativeBridgePlugin {
   authAnswered(options: { id: number; answer: NativeAuthAnswer }): Promise<void>;
   setTrip(options: { mark: TripMark | null; addedTo?: string; error?: string }): Promise<void>;
   setHome(options: NativeHomeState): Promise<void>;
+  labelsFromPage(options: {
+    userId: string;
+    labels: LabelBook;
+    corrections: LabelCorrection[];
+  }): Promise<void>;
+  labelCorrected(options: {
+    userId: string;
+    correction: LabelCorrection;
+    count: number;
+  }): Promise<void>;
+  clearPhoneAi(options: { userId?: string }): Promise<void>;
+  addListener(
+    event: "labels",
+    listener: (book: { userId: string; labels: LabelBook }) => void,
+  ): Promise<PluginListenerHandle>;
   addListener(
     event: "preferences",
     listener: (choice: Preferences) => void,
@@ -338,13 +361,58 @@ export async function onNativePhoneForgotten(onForget: () => void): Promise<Plug
  * Lend the app the login (null when signed out). Only the access token goes:
  * the page keeps refreshing it and sends each new one.
  */
-export async function lendSession(session: LentSession | null): Promise<void> {
+export async function lendSession(
+  session: LentSession | null,
+  phoneConnection: string | null,
+): Promise<void> {
   const { plugin } = await bridgePlugin();
   await plugin.setSession({
     projectUrl: import.meta.env.VITE_SUPABASE_URL,
     apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
     session,
+    phoneConnection,
   });
+}
+
+/**
+ * The label book and corrections the page kept, handed to the app once it
+ * labels itself (#282), so nothing is labelled twice.
+ */
+export async function handLabelsToApp(
+  userId: string,
+  labels: LabelBook,
+  corrections: LabelCorrection[],
+): Promise<void> {
+  const { plugin } = await bridgePlugin();
+  await plugin.labelsFromPage({ userId, labels, corrections });
+}
+
+/** A label corrected on the page ("Forkert?"), for the app's book (#282). */
+export async function tellAppCorrected(
+  userId: string,
+  correction: LabelCorrection,
+  count: number,
+): Promise<void> {
+  const { plugin } = await bridgePlugin();
+  await plugin.labelCorrected({ userId, correction, count });
+}
+
+/**
+ * What the AI made of this phone's calendar gone in the app too: one person's
+ * (the AI's consent withdrawn) or everyone's (signed out). Nothing without the app.
+ */
+export async function clearAppPhoneAi(userId: string | null): Promise<void> {
+  if (!isNativeApp || !(await nativeScreens()).has("labels")) return;
+  const { plugin } = await bridgePlugin();
+  await plugin.clearPhoneAi(userId ? { userId } : {});
+}
+
+/** Calls `onBook` with the app's label book whenever it changes (#282). */
+export async function onAppLabels(
+  onBook: (book: { userId: string; labels: LabelBook }) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("labels", onBook);
 }
 
 /** Tell the app the language and theme the page uses now. */

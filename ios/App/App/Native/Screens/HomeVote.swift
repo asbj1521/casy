@@ -119,7 +119,7 @@ final class VoteDeck {
     /// What the date runs into among your important events (#114): the
     /// event's profile on that date against the page's labelled events.
     func clashes(_ date: CandidateDate) -> [ImportantClash] {
-        let mine = HomeModel.shared.page.important
+        let mine = HomeModel.shared.important
         guard !mine.isEmpty else { return [] }
         let impact = impactOn(event.impact, start: date.start, end: date.end, event.settings, appTimeZone)
         return importantClashes(impact, mine, appTimeZone)

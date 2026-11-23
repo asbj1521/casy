@@ -17,6 +17,9 @@ fi
 # and draws its own home page under the native sheets (a trip test found two
 # "lørdag 17. oktober", 18 Nov 2026), and where the run replaces their app.
 DEVICE="${UI_TEST_DEVICE:-iPhone 17e}"
+# The phone's calendars allowed for the app, as after a yes (the labels test, #282).
+UDID="$(xcrun simctl list devices available | grep -m1 -F "    $DEVICE (" | grep -oE '[0-9A-F-]{36}' || true)"
+[ -n "$UDID" ] && xcrun simctl privacy "$UDID" grant calendar app.casy 2>/dev/null || true
 BUNDLE="$(mktemp -d)/fake-backend.mjs"
 
 npx esbuild scripts/native/fake-backend.ts --bundle --platform=node --format=esm \

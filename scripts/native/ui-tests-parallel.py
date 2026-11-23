@@ -150,6 +150,12 @@ def watch(path, udid, proc, stalls):
                     subprocess.run(["xcrun", "simctl", "terminate", udid, APP_ID], capture_output=True)
 
 
+def grant_calendars(udid):
+    """The phone's calendars allowed for the app, as after someone said yes: the app's own
+    labels test (#282) fills one, and iOS's question can't be relied on in a test."""
+    subprocess.run(["xcrun", "simctl", "privacy", udid, "grant", "calendar", APP_ID], capture_output=True)
+
+
 def guard(runners, choked):
     """Stops the run when the Mac chokes: macOS calls memory critical three readings running,
     or the guard's own 15 s check comes back over a minute late (the Mac froze). Not the
@@ -216,6 +222,7 @@ def main():
             if not booted(udid):
                 print(f"ui-tests: starting simulator {n + 1}")
                 subprocess.run(["xcrun", "simctl", "bootstatus", udid, "-b"], capture_output=True)
+            grant_calendars(udid)
 
         for i, (group, udid) in enumerate(zip(groups, sims)):
             path = work / f"worker{i + 1}.log"

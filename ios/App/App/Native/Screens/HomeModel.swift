@@ -99,6 +99,10 @@ final class HomeModel {
     @ObservationIgnored private var holidayYears: [Int: [Holiday]] = [:]
     private var layoutTask: Task<Void, Never>?
 
+    /// Your events that matter (#114): the app's own labels when it labels
+    /// (LabelsWork), else what the page sent.
+    var important: [LabelledEvent] { LabelsWork.on ? LabelsWork.shared.important : page.important }
+
     func color(_ calendarId: String) -> String {
         page.colors[calendarId] ?? colors[calendarId] ?? "113, 113, 122"
     }

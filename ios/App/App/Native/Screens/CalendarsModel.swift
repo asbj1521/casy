@@ -229,6 +229,8 @@ final class CalendarsModel {
             await syncPhone?(create)
             ?? PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed, connectionId: thisPhone)
         thisPhone = outcome.connectionId
+        // The labels follow this phone's connection (#282).
+        LabelsWork.shared.thisPhone = outcome.connectionId
         await settled()
         return outcome
     }
@@ -252,6 +254,7 @@ final class CalendarsModel {
         // Removing this phone's own connection also stops it sending.
         if account.id == thisPhone {
             thisPhone = nil
+            LabelsWork.shared.thisPhone = nil
             onPhoneForgotten?()
         }
         await settled()

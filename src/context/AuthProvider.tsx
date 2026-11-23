@@ -38,6 +38,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         clearPersistedQueries();
         // Loaded only now: the labels code isn't part of the first download (#157).
         void import("@/lib/eventLabels").then((m) => m.clearLabelBooks());
+        // And the app's own, once it labels itself (#282).
+        if (isNativeApp) void import("@/lib/nativeBridge").then((m) => m.clearAppPhoneAi(null));
       }
     });
     return () => data.subscription.unsubscribe();

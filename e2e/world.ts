@@ -282,6 +282,7 @@ function overviewCalendars(conns: CalendarConnectionStatus[]): OverviewCalendar[
       provider: c.provider,
       account: c.account_label,
       connectionId: c.id,
+      externalId: (s as { external_id?: string | null }).external_id ?? null,
     })),
   );
 }

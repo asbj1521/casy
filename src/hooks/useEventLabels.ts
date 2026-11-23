@@ -29,6 +29,8 @@ import { labelledEvents, type LabelledEvent } from "@/lib/eventWarnings";
 import { setLabelStatus } from "@/lib/labelStatus";
 import { busySpan } from "@/lib/phoneBusy";
 import { isNativeApp } from "@/lib/nativeApp";
+import { handLabelsToApp, onAppLabels, tellAppCorrected } from "@/lib/nativeBridge";
+import { useNativeScreen, useNativeScreenKnown } from "@/hooks/useNativeScreen";
 import { phoneConnectionId, phoneEventDetailsQuery } from "@/lib/phoneCalendar";
 
 /** The labels kept on this phone, read once and then kept up to date in the cache. */
@@ -66,6 +68,10 @@ export function forgetAskedTitles(): void {
  * who said yes to the AI using their calendar (#120), and admins and AI
  * testers while it is tested (useAiContent). What a failing call left is
  * tried on the next launch, or when the phone's calendars change.
+ *
+ * Where the app labels itself (#282, the native screens' builds), the page
+ * labels nothing: it hands over the book it kept, once a launch, and keeps
+ * the app's copy for what it still draws (the day facts, the web's day rows).
  */
 export function useAutoLabel() {
   const { user } = useAuth();
@@ -73,7 +79,36 @@ export function useAutoLabel() {
   const queryClient = useQueryClient();
   const phone = isNativeApp && userId ? phoneConnectionId(userId) : null;
   const labelsAllowed = useAiContent();
-  const on = !!phone && labelsAllowed;
+  // Not before the app has said whether it labels: never both at once.
+  const appLabels = useNativeScreenKnown("labels");
+  const on = !!phone && labelsAllowed && appLabels === false;
+
+  useEffect(() => {
+    if (appLabels !== true || !userId) return;
+    const labels = readLabelBook(userId);
+    const corrections = readCorrections(userId);
+    if (Object.keys(labels).length > 0 || corrections.length > 0) {
+      handLabelsToApp(userId, labels, corrections).catch((err) =>
+        console.warn("handing the labels to the app failed", err),
+      );
+    }
+    let live = true;
+    let stop: (() => void) | null = null;
+    onAppLabels(({ userId: who, labels: book }) => {
+      if (who !== userId) return;
+      writeLabelBook(who, book);
+      queryClient.setQueryData(labelBookQuery(who).queryKey, book);
+    })
+      .then((handle) => {
+        if (live) stop = () => void handle.remove();
+        else void handle.remove();
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+      stop?.();
+    };
+  }, [appLabels, userId, queryClient]);
   const { data: busy } = useQuery({
     ...calendarBusyQuery(userId, SEARCH_WINDOW.start, SEARCH_WINDOW.end),
     enabled: on,
@@ -213,6 +248,7 @@ export function useRelabel(calendarExternalId: string, event: EventToLabel) {
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
   const shares = useAiShare();
+  const appLabels = useNativeScreen("labels");
   return useMutation({
     mutationFn: ({ previous, note }: { previous: EventLabel; note: string }) =>
       relabelEvent(event, previous, note, correctionsToSend(readCorrections(userId))),
@@ -229,18 +265,22 @@ export function useRelabel(calendarExternalId: string, event: EventToLabel) {
         }).catch((err) => console.warn("sending the correction failed", err));
       }
       const key = labelKey(calendarExternalId, event.title);
-      writeCorrections(
-        userId,
-        addCorrection(readCorrections(userId), {
-          key,
-          calendarId: calendarExternalId,
-          title: event.title,
-          calendar: event.calendar,
-          note,
-          label,
-          at: Date.now(),
-        }),
-      );
+      const correction = {
+        key,
+        calendarId: calendarExternalId,
+        title: event.title,
+        calendar: event.calendar,
+        note,
+        label,
+        at: Date.now(),
+      };
+      writeCorrections(userId, addCorrection(readCorrections(userId), correction));
+      // The app's book too, where the app labels (#282): it relabels the calendar.
+      if (appLabels) {
+        tellAppCorrected(userId, correction, event.count).catch((err) =>
+          console.warn("telling the app the correction failed", err),
+        );
+      }
       const corrected = updateBook(readLabelBook(userId), [
         {
           key,

@@ -73,7 +73,10 @@ export default function NativeBridgeSync() {
           email: session.user.email,
         }
       : null;
-    lendSession(lent).catch((err) => console.warn("lending the app the login failed", err));
+    // This phone's connection too, for the app's own labels (#282); a new one
+    // after this reaches the app from the phone's sync.
+    const phone = session ? phoneConnectionId(session.user.id) : null;
+    lendSession(lent, phone).catch((err) => console.warn("lending the app the login failed", err));
   }, [session]);
 
   useEffect(() => {

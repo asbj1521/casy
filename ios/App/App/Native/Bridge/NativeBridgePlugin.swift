@@ -32,6 +32,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "authAnswered", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "labelsFromPage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "labelCorrected", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clearPhoneAi", returnType: CAPPluginReturnPromise),
     ]
 
     /// The screens drawn natively in this build. None in a Release build: the
@@ -43,9 +46,20 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ]
+            ] + (nativeLabels ? ["labels"] : [])
         #else
             return []
+        #endif
+    }()
+
+    /// The background work this build does natively, named in `screens` too so
+    /// the page leaves it: the event labels (#282, LabelsWork). Not in a UI
+    /// test, whose made-up login has no phone calendars to label.
+    static let nativeLabels: Bool = {
+        #if DEBUG
+            return !TestLaunch.isActive || TestLaunch.seedPhone
+        #else
+            return false
         #endif
     }()
 
@@ -89,7 +103,14 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self?.notifyListeners("aiConsent", data: ["on": on])
             }
             MyDataModel.shared.askLabels = { [weak self] in
-                await self?.askLabels() ?? 0
+                if LabelsWork.on { return LabelsWork.shared.count }
+                return await self?.askLabels() ?? 0
+            }
+            LabelsWork.shared.mirror = { [weak self] userId, book in
+                guard let data = try? JSONEncoder().encode(book),
+                    let labels = try? JSONSerialization.jsonObject(with: data)
+                else { return }
+                self?.notifyListeners("labels", data: ["userId": userId, "labels": labels])
             }
             EventsModel.shared.writeOnPhone = { [weak self] in
                 await self?.writeOnPhone()
@@ -151,6 +172,15 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if !UserDefaults.standard.bool(forKey: "casyMotion") { UIView.setAnimationsEnabled(false) }
             Task { @MainActor in
                 await SessionBox.shared.set(connection)
+                if TestLaunch.seedPhone {
+                    // Every run from an empty book: what a run before kept proves nothing.
+                    LabelsWork.shared.clear(nil)
+                    Task { @MainActor in
+                        guard await TestPhone.seed() else { return }
+                        LabelsWork.shared.thisPhone = TestPhone.connection
+                        LabelsWork.shared.signedIn(connection.userId)
+                    }
+                }
                 if let lang = TestLaunch.lang { NativePreferences.shared.lang = lang }
                 if let theme = TestLaunch.theme { NativePreferences.shared.theme = theme }
                 if TestLaunch.nativeHome {
@@ -196,9 +226,14 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 expiresAt: Date(timeIntervalSince1970: expiresAt), userId: userId,
                 email: session["email"] as? String)
         }
+        let phone = call.getString("phoneConnection")
         Task {
             let before = await SessionBox.shared.current()?.userId
             await SessionBox.shared.set(next)
+            await MainActor.run {
+                LabelsWork.shared.thisPhone = phone
+                LabelsWork.shared.signedIn(next?.userId)
+            }
             // Someone else on this phone must never see the last person's choices.
             if before != next?.userId {
                 await MainActor.run {
@@ -685,6 +720,40 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     returning: PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed))
                 self.syncAnswer = nil
             }
+        }
+    }
+
+    /// `{ userId, labels, corrections }`: the label book the page kept before the
+    /// app labelled, handed over once (#282).
+    @objc func labelsFromPage(_ call: CAPPluginCall) {
+        guard let userId = call.getString("userId") else { return call.resolve() }
+        let labels: LabelBook = Self.decode(LabelBook.self, call.getObject("labels")) ?? [:]
+        let corrections: [PhoneLabelCorrection] = Self.decode([PhoneLabelCorrection].self, call.getArray("corrections")) ?? []
+        DispatchQueue.main.async {
+            LabelsWork.shared.adopt(userId, labels: labels, corrections: corrections)
+            call.resolve()
+        }
+    }
+
+    /// `{ userId, correction, count }`: a label corrected on the page ("Forkert?").
+    @objc func labelCorrected(_ call: CAPPluginCall) {
+        guard let userId = call.getString("userId"),
+            let correction = Self.decode(PhoneLabelCorrection.self, call.getObject("correction"))
+        else { return call.resolve() }
+        let count = call.getInt("count") ?? 1
+        DispatchQueue.main.async {
+            LabelsWork.shared.corrected(userId, correction: correction, count: count)
+            call.resolve()
+        }
+    }
+
+    /// `{ userId? }`: what the AI made of this phone's calendar goes, for one
+    /// person (the AI's consent withdrawn) or everyone (signed out).
+    @objc func clearPhoneAi(_ call: CAPPluginCall) {
+        let userId = call.getString("userId")
+        DispatchQueue.main.async {
+            LabelsWork.shared.clear(userId)
+            call.resolve()
         }
     }
 

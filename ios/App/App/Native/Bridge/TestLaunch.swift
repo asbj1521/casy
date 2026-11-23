@@ -35,6 +35,10 @@
         /// `-casyTheme <light|dark>`: Casy's own light or dark, for screenshots.
         static var theme: String? { defaults.string(forKey: "casyTheme") }
         static var phoneSync: String { defaults.string(forKey: "casyPhoneSync") ?? "synced" }
+        /// `-casySeedPhone YES`: the app labels natively (#282), on a "Casy test"
+        /// calendar it fills on this simulator, which the fake backend is told is
+        /// this phone's (connection `conn-phone`).
+        static var seedPhone: Bool { defaults.bool(forKey: "casySeedPhone") }
         /// `-casyNativeHome YES`: the native home page, the page's part played
         /// here (a vote's pencilled date, a starred day, the vote pill), and
         /// each press written where the test can read it (`home.lastAction`).

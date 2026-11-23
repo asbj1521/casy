@@ -1142,3 +1142,50 @@ extension EdgeFunctions {
             errorMessage: errorMessage)
     }
 }
+
+// MARK: - Event labels (#112, calendar-label; src/api/eventLabels.ts)
+
+private struct LabelAsk: Encodable, Sendable {
+    let events: [EventToLabel]
+    let corrections: [SentCorrection]
+}
+
+private struct RelabelAsk: Encodable, Sendable {
+    struct Correction: Encodable, Sendable {
+        let note: String
+        let previous: EventLabel
+    }
+    let events: [EventToLabel]
+    let correction: Correction
+    let corrections: [SentCorrection]
+}
+
+/// A label per event sent, in order; nil where the AI gave none.
+public struct LabelAnswer: Codable, Sendable, Equatable {
+    public var labels: [EventLabel?]
+}
+
+extension EdgeFunctions {
+    /// This phone's titles labelled by AI, with the person's corrections in hand.
+    /// The server keeps nothing; the labels are kept on the phone.
+    public func labelEvents(
+        _ events: [EventToLabel], corrections: [SentCorrection], errorMessage: String? = nil
+    ) async throws -> [EventLabel?] {
+        let answer: LabelAnswer = try await call(
+            "calendar-label", body: LabelAsk(events: events, corrections: corrections), errorMessage: errorMessage)
+        return answer.labels
+    }
+
+    /// One event labelled again from the person's note on what was wrong ("Forkert?").
+    public func relabelEvent(
+        _ event: EventToLabel, previous: EventLabel, note: String, corrections: [SentCorrection],
+        errorMessage: String
+    ) async throws -> EventLabel {
+        let answer: LabelAnswer = try await call(
+            "calendar-label",
+            body: RelabelAsk(events: [event], correction: .init(note: note, previous: previous), corrections: corrections),
+            errorMessage: errorMessage)
+        guard let label = answer.labels.first ?? nil else { throw APIError.unreadable(errorMessage) }
+        return label
+    }
+}
