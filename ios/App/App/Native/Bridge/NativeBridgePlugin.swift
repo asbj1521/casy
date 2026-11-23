@@ -47,7 +47,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs"] : [])
+            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync"] : [])
         #else
             return []
         #endif
@@ -56,7 +56,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// The background work this build does natively, named in `screens` too so
     /// the page leaves it: the event labels and the day facts made of them
     /// (#282, LabelsWork), the calendars sorted by AI (CategorizeWork) and the
-    /// trips' legs read from the labelled journeys (TripsWork). Not in a UI
+    /// trips' legs read from the labelled journeys (TripsWork), and the phone's
+    /// calendars sent with the calendar work after (PhoneSyncWork). Not in a UI
     /// test, whose made-up login has no phone calendars to label.
     static let nativeLabels: Bool = {
         #if DEBUG
@@ -139,11 +140,22 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self?.notifyListeners("calendarsChanged", data: [:])
             }
             calendars.syncPhone = { [weak self] create in
-                await self?.syncPhone(create: create)
+                // The app sends the phone's calendars itself where it does (#282).
+                if PhoneSyncWork.on { return await PhoneSyncWork.shared.sync(create: create) }
+                return await self?.syncPhone(create: create)
                     ?? PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed)
             }
             calendars.onPhoneForgotten = { [weak self] in
+                if PhoneSyncWork.on { PhoneSyncWork.shared.forget() }
                 self?.notifyListeners("phoneForgotten", data: [:])
+            }
+            PhoneSyncWork.shared.connection = { [weak self] userId, connectionId in
+                var data: [String: Any] = ["userId": userId]
+                if let connectionId { data["connectionId"] = connectionId }
+                self?.notifyListeners("phoneConnection", data: data)
+            }
+            PhoneSyncWork.shared.changed = { [weak self] in
+                self?.notifyListeners("calendarsChanged", data: [:])
             }
             TripModel.shared.onAction = { [weak self] action in
                 #if DEBUG
@@ -190,7 +202,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     LabelsWork.shared.clear(nil)
                     Task { @MainActor in
                         guard await TestPhone.seed() else { return }
-                        LabelsWork.shared.thisPhone = TestPhone.connection
+                        // As the page's setSession would: the phone sends, and the rest follows.
+                        PhoneSyncWork.shared.signedIn(
+                            connection.userId, pageDevice: nil, pageConnection: TestPhone.connection)
                         LabelsWork.shared.signedIn(connection.userId)
                         CategorizeWork.shared.signedIn(connection.userId)
                     }
@@ -241,11 +255,17 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 email: session["email"] as? String)
         }
         let phone = call.getString("phoneConnection")
+        let device = call.getString("deviceId")
         Task {
             let before = await SessionBox.shared.current()?.userId
             await SessionBox.shared.set(next)
             await MainActor.run {
-                LabelsWork.shared.thisPhone = phone
+                if PhoneSyncWork.on {
+                    // The app keeps the phone's id and connection, the page's taken over once.
+                    PhoneSyncWork.shared.signedIn(next?.userId, pageDevice: device, pageConnection: phone)
+                } else {
+                    LabelsWork.shared.thisPhone = phone
+                }
                 LabelsWork.shared.signedIn(next?.userId)
                 CategorizeWork.shared.signedIn(next?.userId)
             }

@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/context/auth";
 import { currentMessages } from "@/i18n/current";
 import { isNativeApp } from "@/lib/nativeApp";
+import { useNativeScreenKnown } from "@/hooks/useNativeScreen";
 import { phoneBusy, phoneWindow } from "@/lib/phoneBusy";
 import {
   applyPhoneWrites,
@@ -164,11 +165,16 @@ async function writePhoneCalendar(queryClient: QueryClient): Promise<void> {
  * is connected for the account signed in; nothing at all on the website.
  * Between opens, the app's native side sends them in the background when iOS
  * allows (PhoneCalendarBackground.swift); signing out stops that.
+ *
+ * Where the app sends them itself (#282, "phoneSync" among its screens) the
+ * page sends nothing, and not before the app has said; signing out still
+ * stops the background refresh from here.
  */
 export function usePhoneCalendarSync() {
   const { user, loading } = useAuth();
   const userId = user?.id ?? null;
   const queryClient = useQueryClient();
+  const app = useNativeScreenKnown("phoneSync");
 
   // Signed out: the device token belongs to the account that was signed in.
   useEffect(() => {
@@ -179,7 +185,7 @@ export function usePhoneCalendarSync() {
   }, [loading, userId]);
 
   useEffect(() => {
-    if (!isNativeApp || !userId) return;
+    if (!isNativeApp || !userId || app !== false) return;
     let last = 0;
     let settle: ReturnType<typeof setTimeout> | undefined;
     let stopListening: (() => void) | null = null;
@@ -216,5 +222,5 @@ export function usePhoneCalendarSync() {
       clearTimeout(settle);
       stopListening?.();
     };
-  }, [userId, queryClient]);
+  }, [userId, queryClient, app]);
 }

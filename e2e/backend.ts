@@ -249,13 +249,22 @@ export class FakeBackend {
           w.primary = null;
         this.changed();
         return ok({});
-      case "calendar-phone":
+      case "calendar-phone": {
         // Only the iPhone app sends the phone's calendars. A plain update is
-        // answered as for a phone whose connection was removed; connecting
-        // (the app, a test faking it) makes one.
+        // answered as for a phone whose connection was removed, unless the app's
+        // own test connected one (conn-phone, #282); connecting makes one.
+        const phone = w.connections.some((c) => c.id === "conn-phone");
+        if (action === "writes") return ok(phone ? { tasks: [], check: [] } : { gone: true });
+        if (action === "written") return ok({});
+        const sent = Array.isArray(body.calendars)
+          ? (body.calendars as { blocks?: unknown[] }[])
+          : [];
+        const busyBlocks = sent.reduce((n, c) => n + (c.blocks?.length ?? 0), 0);
+        if (phone) return ok({ connectionId: "conn-phone", calendars: sent.length, busyBlocks });
         return body.create === true
           ? ok({ connectionId: "c-phone", calendars: 1, busyBlocks: 0 })
           : ok({ gone: true });
+      }
       case "day-facts":
         return ok({ saved: true });
       case "oauth-google-start":

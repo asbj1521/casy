@@ -1252,3 +1252,72 @@ extension EdgeFunctions {
         return answer.legs
     }
 }
+
+// MARK: - This phone's calendars (calendar-phone; src/api/calendars.ts)
+
+private struct PhonePushAsk: Encodable, Sendable {
+    let deviceId: String
+    let label: String
+    let create: Bool
+    let issueToken: Bool
+    let calendars: [PhoneCalendarPush]
+}
+
+/// How a send went (`PhonePushResult`): `gone` when the connection was removed since.
+public struct PhonePush: Codable, Sendable, Equatable {
+    public var gone: Bool?
+    public var connectionId: String?
+    public var calendars: Int?
+    public var busyBlocks: Int?
+    /// Asked for with `issueToken`: the phone's own token for the background refresh.
+    public var deviceToken: String?
+}
+
+private struct PhoneWritesAsk: Encodable, Sendable {
+    let action = "writes"
+    let deviceId: String
+}
+
+private struct PhoneWrittenAsk: Encodable, Sendable {
+    let action = "written"
+    let deviceId: String
+    let reports: JSONValue
+}
+
+/// The calendar work the server has for this phone (`PhoneWork`), carried out as-is.
+public struct PhoneWork: Codable, Sendable, Equatable {
+    public var gone: Bool?
+    public var tasks: [JSONValue]
+    public var check: [JSONValue]
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        gone = try c.decodeIfPresent(Bool.self, forKey: .gone)
+        tasks = try c.decodeIfPresent([JSONValue].self, forKey: .tasks) ?? []
+        check = try c.decodeIfPresent([JSONValue].self, forKey: .check) ?? []
+    }
+}
+
+extension EdgeFunctions {
+    /// The phone's calendars and busy blocks sent; `create` makes the connection if there is none.
+    public func pushPhoneCalendars(
+        deviceId: String, label: String, create: Bool, issueToken: Bool, calendars: [PhoneCalendarPush],
+        errorMessage: String? = nil
+    ) async throws -> PhonePush {
+        try await call(
+            "calendar-phone",
+            body: PhonePushAsk(deviceId: deviceId, label: label, create: create, issueToken: issueToken, calendars: calendars),
+            errorMessage: errorMessage)
+    }
+
+    /// The agreed events this phone should put in, change in or take out of its calendars (#105).
+    public func phoneWritesToDo(deviceId: String, errorMessage: String? = nil) async throws -> PhoneWork {
+        try await call("calendar-phone", body: PhoneWritesAsk(deviceId: deviceId), errorMessage: errorMessage)
+    }
+
+    /// What was done with them, as the calendar writer reported it.
+    public func reportPhoneWrites(deviceId: String, reports: JSONValue, errorMessage: String? = nil) async throws {
+        let _: Ignored = try await call(
+            "calendar-phone", body: PhoneWrittenAsk(deviceId: deviceId, reports: reports), errorMessage: errorMessage)
+    }
+}

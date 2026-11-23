@@ -16,6 +16,7 @@ import {
   onNativeCalendarsChanged,
   onNativeInviteSent,
   onNativePhoneForgotten,
+  onAppPhoneConnection,
   onNeedPhoneFacts,
   onNeedPhoneSync,
   onNeedPhoneWrite,
@@ -29,7 +30,12 @@ import { labelBookQuery } from "@/hooks/useEventLabels";
 import { syncPhone } from "@/hooks/usePhoneCalendarSync";
 import { rememberInviteSent } from "@/lib/groupNudge";
 import { calendarsChanged } from "@/api/calendars";
-import { forgetPhone, phoneConnectionId } from "@/lib/phoneCalendar";
+import {
+  deviceId,
+  forgetPhone,
+  phoneConnectionId,
+  rememberPhoneConnection,
+} from "@/lib/phoneCalendar";
 import { enablePush } from "@/lib/push";
 import { supabaseAuth } from "@/lib/supabase";
 import { chooseTheme, onThemeChange, storedTheme } from "@/lib/theme";
@@ -75,8 +81,10 @@ export default function NativeBridgeSync() {
       : null;
     // This phone's connection too, for the app's own labels (#282); a new one
     // after this reaches the app from the phone's sync.
-    const phone = session ? phoneConnectionId(session.user.id) : null;
-    lendSession(lent, phone).catch((err) => console.warn("lending the app the login failed", err));
+    const connection = session ? phoneConnectionId(session.user.id) : null;
+    lendSession(lent, { connection, deviceId: deviceId() }).catch((err) =>
+      console.warn("lending the app the login failed", err),
+    );
   }, [session]);
 
   useEffect(() => {
@@ -201,6 +209,11 @@ export default function NativeBridgeSync() {
     })
       .then(keep)
       .catch((err) => console.warn("listening for the app's phone sync failed", err));
+    onAppPhoneConnection(({ userId, connectionId }) => {
+      if (userId === youId) rememberPhoneConnection(userId, connectionId);
+    })
+      .then(keep)
+      .catch((err) => console.warn("listening for the app's phone connection failed", err));
     onNativePhoneForgotten(() => forgetPhone(youId))
       .then(keep)
       .catch((err) => console.warn("listening for the app's phone removal failed", err));

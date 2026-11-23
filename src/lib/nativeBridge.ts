@@ -49,7 +49,12 @@ export type NativeScreen =
   /** The calendars sorted by AI (#118), with the phone's own titles. */
   | "categorize"
   /** The trips' legs read from the labelled journeys (#115); the page still pairs them into trips. */
-  | "tripLegs";
+  | "tripLegs"
+  /**
+   * The phone's calendars sent, and the calendar work after (#282): the app
+   * keeps this phone's id and connection, and tells the page of a change.
+   */
+  | "phoneSync";
 
 /** What the page tells the native home page (#201), and what it adds to the month. */
 export interface NativeHomeState {
@@ -139,6 +144,8 @@ interface NativeBridgePlugin {
     session: LentSession | null;
     /** This phone's connection for the signed-in person, for the app's labels. */
     phoneConnection: string | null;
+    /** This phone's own random id (which phone a connection is), taken over by the app. */
+    deviceId: string;
   }): Promise<void>;
   setPreferences(options: Preferences): Promise<void>;
   open(options: {
@@ -160,6 +167,10 @@ interface NativeBridgePlugin {
     corrections: LabelCorrection[];
   }): Promise<void>;
   legsFromPage(options: { userId: string; legs: LegBook }): Promise<void>;
+  addListener(
+    event: "phoneConnection",
+    listener: (connection: { userId: string; connectionId?: string }) => void,
+  ): Promise<PluginListenerHandle>;
   addListener(
     event: "legs",
     listener: (book: { userId: string; legs: LegBook }) => void,
@@ -375,15 +386,26 @@ export async function onNativePhoneForgotten(onForget: () => void): Promise<Plug
  */
 export async function lendSession(
   session: LentSession | null,
-  phoneConnection: string | null,
+  phone: { connection: string | null; deviceId: string },
 ): Promise<void> {
   const { plugin } = await bridgePlugin();
   await plugin.setSession({
     projectUrl: import.meta.env.VITE_SUPABASE_URL,
     apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
     session,
-    phoneConnection,
+    phoneConnection: phone.connection,
+    deviceId: phone.deviceId,
   });
+}
+
+/** Calls `onConnection` when the app's send made or lost this phone's connection (#282). */
+export async function onAppPhoneConnection(
+  onConnection: (connection: { userId: string; connectionId: string | null }) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("phoneConnection", ({ userId, connectionId }) =>
+    onConnection({ userId, connectionId: connectionId ?? null }),
+  );
 }
 
 /**
