@@ -45,6 +45,10 @@ struct PileLayers: Equatable {
     /// Your month and an empty one, laid out once, as each friend's is.
     var yourWeeks: [HomeWeek] = []
     var emptyWeeks: [HomeWeek] = []
+    /// The month as My calendar draws it (HomeModel): your events in their calendars'
+    /// colours with their names, the vote's dates, today. The web throws the
+    /// calendars onto the home page's own month; nil when it isn't there to borrow.
+    var homeWeeks: [HomeWeek]?
 }
 
 /// Apple Calendar's colours, a friend each, in the group's order.
@@ -176,7 +180,9 @@ final class PileModel {
         guard let slot = found.slot else {
             widen = await plan.widenings()
             ready = true
-            layers = Self.layers(participants, search, window, [], you: plan.you, before: plan.again?.before, zone)
+            var laid = Self.layers(participants, search, window, [], you: plan.you, before: plan.again?.before, zone)
+            laid.homeWeeks = await Self.homeMonth(laid.month)
+            layers = laid
             timeline = pileTimeline(thrownCount, start: PileTiming.inPlace)
             return
         }
@@ -200,7 +206,9 @@ final class PileModel {
             return (pool, layers)
         }.value
         pool = worked.0
-        layers = worked.1
+        var laid = worked.1
+        laid.homeWeeks = await Self.homeMonth(laid.month)
+        layers = laid
         timeline = pileTimeline(thrownCount, start: PileTiming.inPlace)
         // How well each date suits the group (#119), asked while the calendars are thrown,
         // once the profile is in (it says what the event does to the night before).
@@ -218,6 +226,24 @@ final class PileModel {
             }.value
             ready = true
         }
+    }
+
+    /// My calendar's own month, laid out: read first if the home page hasn't yet (Planlæg
+    /// opened straight away), never waited for long; nil if it can't be had.
+    private static func homeMonth(_ month: Int64) async -> [HomeWeek]? {
+        let home = HomeModel.shared
+        if home.months.isEmpty {
+            let read = Task { await home.load() }
+            let timeout = Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                read.cancel()
+            }
+            await read.value
+            timeout.cancel()
+            // Laid out off the main thread just after it is read.
+            for _ in 0..<20 where home.months.isEmpty { try? await Task.sleep(for: .milliseconds(25)) }
+        }
+        return home.months.first { $0.id == month }?.weeks
     }
 
     /// The event's profile, only for someone who said yes to the AI; never waited for long.
@@ -1026,9 +1052,16 @@ private struct PileTable: View {
             }
             .padding(.bottom, 4)
             ZStack(alignment: .top) {
-                PileMonth(
-                    weeks: layers.yourWeeks, color: { _ in yoursColor }, shine: [], width: width,
-                    dark: scheme == .dark)
+                if let home = layers.homeWeeks {
+                    // My calendar's own month, as the web throws onto it.
+                    PileMonth(
+                        weeks: home, color: HomeModel.shared.color, shine: [], width: width, dark: scheme == .dark,
+                        home: true)
+                } else {
+                    PileMonth(
+                        weeks: layers.yourWeeks, color: { _ in yoursColor }, shine: [], width: width,
+                        dark: scheme == .dark)
+                }
                 ForEach(Array(layers.friends.enumerated()), id: \.element.id) { k, friend in
                     let t = k - model.placedCount
                     ThrownLayer(
@@ -1293,12 +1326,14 @@ struct PileMonth: View {
     /// How much the lit days show: drawn in the same rows as the numbers, so
     /// they can never drift from their days while the month moves.
     var shineOpacity: Double = 1
+    /// Drawn as My calendar draws it: the items as named chips, today in orange.
+    var home = false
 
     private var column: CGFloat { width / 7 }
 
     init(
         weeks: [HomeWeek], color: @escaping (String) -> String, shine: Set<Int64>, width: CGFloat, dark: Bool,
-        pressed: Bool = false, numbers: Bool = true, shineOpacity: Double = 1
+        pressed: Bool = false, numbers: Bool = true, shineOpacity: Double = 1, home: Bool = false
     ) {
         self.weeks = weeks
         self.color = color
@@ -1308,6 +1343,7 @@ struct PileMonth: View {
         self.pressed = pressed
         self.numbers = numbers
         self.shineOpacity = shineOpacity
+        self.home = home
     }
 
     /// A month laid out as it is made (the welcome's few): the pile lays its own out once.
@@ -1327,7 +1363,7 @@ struct PileMonth: View {
                 let away = abs(Double(w) - middle)
                 WeekPicture(
                     week: week, column: column, color: color, shine: shine, dark: dark, numbers: numbers,
-                    shineOpacity: shineOpacity)
+                    shineOpacity: shineOpacity, home: home)
                     .keyframeAnimator(initialValue: 0.0, trigger: pressed) { view, y in
                         view.offset(y: y)
                     } keyframes: { _ in
@@ -1362,6 +1398,8 @@ struct WeekPicture: View {
     let dark: Bool
     let numbers: Bool
     var shineOpacity: Double = 1
+    /// As My calendar's WeekRow: named chips, the "+2" of what doesn't fit, today in orange.
+    var home = false
 
     private var first: Int { week.days.firstIndex(where: \.inMonth) ?? 0 }
     private var last: Int { week.days.lastIndex(where: \.inMonth) ?? 6 }
@@ -1374,10 +1412,13 @@ struct WeekPicture: View {
                     ZStack {
                         if day.inMonth {
                             if numbers {
+                                let today = home && day.date == startOfDay(Native.now, appTimeZone)
                                 Text(verbatim: "\(day.dayOfMonth)")
-                                    .font(.system(size: 18))
-                                    .foregroundStyle(c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
+                                    .font(.system(size: 18, weight: today ? .semibold : .regular))
+                                    .foregroundStyle(
+                                        today ? .white : c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
                                     .frame(width: 32, height: 32)
+                                    .background(today ? Theme.cta.color : .clear, in: Circle())
                             }
                             if shine.contains(day.date) {
                                 Text(verbatim: "\(day.dayOfMonth)")
@@ -1398,7 +1439,20 @@ struct WeekPicture: View {
                 }
             }
             ZStack(alignment: .topLeading) {
-                ForEach(Array(week.layout.placed.enumerated()), id: \.offset) { _, p in bar(p) }
+                ForEach(Array(week.layout.placed.enumerated()), id: \.offset) { _, p in
+                    if home { chip(p) } else { bar(p) }
+                }
+                if home {
+                    ForEach(0..<7, id: \.self) { c in
+                        if week.layout.hidden[c] > 0 && week.days[c].inMonth {
+                            Text(verbatim: "+\(week.layout.hidden[c])")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Theme.mutedForeground.color)
+                                .frame(width: column)
+                                .offset(x: column * CGFloat(c), y: CGFloat(monthLanes) * monthLanePoints)
+                        }
+                    }
+                }
             }
             .frame(width: column * 7, height: CGFloat(monthLanes) * monthLanePoints + monthMorePoints, alignment: .topLeading)
             .clipped()
@@ -1412,6 +1466,40 @@ struct WeekPicture: View {
                     .padding(.leading, 4)
                     .padding(.top, 3)
             }
+        }
+    }
+
+    /// An item as My calendar's chip (HomeScreen's WeekRow): its name on its calendar's tint.
+    @ViewBuilder private func chip(_ p: PlacedItem) -> some View {
+        let from = max(p.from, first)
+        let to = min(p.to, last)
+        if from <= to {
+            let before = p.continuesBefore || from > p.from
+            let after = p.continuesAfter || to < p.to
+            let left = column * CGFloat(from) + (before ? 0 : 2)
+            let width = column * CGFloat(to - from + 1) - (before ? 0 : 2) - (after ? 0 : 2)
+            let shape = UnevenRoundedRectangle(
+                topLeadingRadius: before ? 0 : 4, bottomLeadingRadius: before ? 0 : 4,
+                bottomTrailingRadius: after ? 0 : 4, topTrailingRadius: after ? 0 : 4)
+            let pencil = p.item.pencil == true
+            let rgb = color(p.item.calendarId)
+            Text(verbatim: p.item.label)
+                .font(.system(size: 11, weight: .semibold))
+                .lineLimit(1)
+                .frame(height: 16)
+                .padding(.horizontal, pencil ? 5 : 4)
+                .padding(.top, pencil ? 1 : 0)
+                .frame(width: max(0, width), height: monthLanePoints - 3, alignment: .topLeading)
+                .foregroundStyle(pencil ? Theme.primary.color : Color(rgb: CasyCore.shade(rgb, dark: dark)))
+                .background {
+                    if pencil {
+                        shape.fill(Theme.primary.color.opacity(0.1))
+                            .overlay(shape.strokeBorder(Theme.primary.color, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+                    } else {
+                        shape.fill(Color(rgb: CasyCore.tint(rgb, dark: dark)))
+                    }
+                }
+                .offset(x: left, y: CGFloat(p.lane) * monthLanePoints)
         }
     }
 
