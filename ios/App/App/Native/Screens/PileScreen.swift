@@ -14,9 +14,13 @@ struct CheckedDate: Identifiable, Equatable {
     /// What was checked and found, in order; `notable` when it counts against the date.
     let checks: [(found: String, notable: Bool)]
     let facts: RankedFacts
+    /// What it runs into among your own important events (#114), the strongest: under
+    /// the date once it is checked. Yours, read on this phone; nobody else sees it.
+    var yours: String? = nil
 
     static func == (a: CheckedDate, b: CheckedDate) -> Bool {
         a.id == b.id && a.chosen == b.chosen && a.facts == b.facts && a.checks.map(\.found) == b.checks.map(\.found)
+            && a.yours == b.yours
     }
 }
 
@@ -235,6 +239,8 @@ final class PileModel {
         let you = plan.you
         let before = plan.again?.before
         let waitingFor = !(plan.people?.waitingFor.isEmpty ?? true)
+        // Your important events, labelled on this phone (#114).
+        let mine = HomeModel.shared.important
         // The pool, and the layers from the dates' starts alone, worked out off the main
         // thread (a third of a second that froze the screen), so they are thrown at once.
         let worked = await Task.detached(priority: .userInitiated) {
@@ -268,7 +274,8 @@ final class PileModel {
             dates = await Task.detached(priority: .userInitiated) {
                 Self.checked(
                     first, pool, participants, search, window: window, extras: extras, scores: scores, counted: counted,
-                    profile: profile, you: you, waitingFor: waitingFor, now: now, everyTime: !extraSearches.isEmpty)
+                    profile: profile, you: you, waitingFor: waitingFor, now: now, everyTime: !extraSearches.isEmpty,
+                    mine: mine)
             }.value
             ready = true
         }
@@ -483,7 +490,7 @@ final class PileModel {
             dates = Self.checked(
                 first, pool, people.participants, plan.search, window: plan.searchWindow, extras: plan.extras,
                 scores: scores, counted: counted, profile: profile, you: plan.you, waitingFor: !people.waitingFor.isEmpty,
-                now: Native.now, everyTime: !plan.extraSearches.isEmpty)
+                now: Native.now, everyTime: !plan.extraSearches.isEmpty, mine: HomeModel.shared.important)
             arrived = Set(dates?.map(\.id) ?? [])
             checked = dates?.count ?? 0
         }
@@ -572,7 +579,8 @@ final class PileModel {
     nonisolated static func checked(
         _ first: FoundDate, _ pool: [FoundDate], _ participants: [Participant], _ search: EventSettings,
         window: (start: String, end: String), extras: EventExtras, scores: [String: Double], counted: Int,
-        profile: EventImpact?, you: String?, waitingFor: Bool, now: Int64, everyTime: Bool = false
+        profile: EventImpact?, you: String?, waitingFor: Bool, now: Int64, everyTime: Bool = false,
+        mine: [LabelledEvent] = []
     ) -> [CheckedDate] {
         let zone = appTimeZone
         let lang: Lang = CasyStrings.language == "en" ? .en : .da
@@ -642,6 +650,10 @@ final class PileModel {
                         ? (CasyStrings.pileEdgesClear, false) : (warnings.map(\.text).joined(separator: " "), true))
             }
             checks += notes.map { ($0.text, $0.notable) }
+            let clashes = mine.isEmpty
+                ? [] : Array(importantClashes(impactOn(profile, start: start, end: date.slot.end, search, zone), mine, zone).prefix(2))
+            let yours = clashes.map(importantClashSentence)
+            checks += yours.map { ($0, true) }
             checks.append(
                 date.conflicts.isEmpty
                     ? (CasyStrings.pileNoSkips, false)
@@ -655,7 +667,8 @@ final class PileModel {
                 checks: checks.map { (found: $0.0, notable: $0.1) },
                 facts: RankedFacts(
                     pickedAt: pickedAt, conflicts: date.conflicts.count + absent.count, cost: comfort?.cost ?? 0,
-                    warnings: warnings?.count ?? 0, start: parseInstant(start) ?? 0))
+                    warnings: warnings?.count ?? 0, start: parseInstant(start) ?? 0),
+                yours: yours.first)
         }
     }
 
@@ -1126,6 +1139,17 @@ private struct DateRow: View {
                                 .foregroundStyle(Theme.mutedForeground.color)
                                 .cssLineHeight(19.5, size: 13)
                         }
+                        // Your own important event, found as the date is checked.
+                        if let yours = item.yours, at < checked {
+                            HStack(alignment: .top, spacing: 4) {
+                                LucideIcon("triangle-alert", size: 14).padding(.top, 1)
+                                Text(yours).lineLimit(2)
+                            }
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Theme.amber800.color)
+                            .padding(.top, 2)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     mark.frame(width: 28, height: 28)
@@ -1143,7 +1167,8 @@ private struct DateRow: View {
             .opacity(arrived || flight == nil ? 1 : 0)
             .animation(.easeOut(duration: 0.25).delay(arrived && flight?.circle == true ? 0.3 : 0), value: arrived)
             .disabled(!done)
-            .accessibilityLabel(CasyStrings.pileDetails(label))
+            .accessibilityLabel(
+                [CasyStrings.pileDetails(label), at < checked ? item.yours : nil].compactMap { $0 }.joined(separator: ", "))
             .accessibilityIdentifier("pile.date")
             if open {
                 VStack(alignment: .leading, spacing: 6) {

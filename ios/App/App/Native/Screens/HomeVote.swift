@@ -909,13 +909,16 @@ struct ImportantClashLines: View {
         .animation(.easeOut(duration: 0.2), value: open)
     }
 
-    /// The web's clashSentence.
-    private func sentence(_ c: ImportantClash) -> String {
-        let avoid = c.avoid.map(CasyStrings.clashAvoid)
-        let list =
-            avoid.count <= 1
-            ? (avoid.first ?? "") : "\(avoid.dropLast().joined(separator: ", ")) \(CasyStrings.clashAnd) \(avoid.last!)"
-        return CasyStrings.clashSentence(
-            c.kind, what: CasyStrings.clashKind(c.event.label.kind), when: CasyStrings.clashWhen(c.daysAfter), avoid: list)
-    }
+    private func sentence(_ c: ImportantClash) -> String { importantClashSentence(c) }
+}
+
+/// The web's clashSentence: what a date runs into among your important events, said
+/// vaguely (the vote's cards and the pile's list).
+func importantClashSentence(_ c: ImportantClash) -> String {
+    let avoid = c.avoid.map(CasyStrings.clashAvoid)
+    let list =
+        avoid.count <= 1
+        ? (avoid.first ?? "") : "\(avoid.dropLast().joined(separator: ", ")) \(CasyStrings.clashAnd) \(avoid.last!)"
+    return CasyStrings.clashSentence(
+        c.kind, what: CasyStrings.clashKind(c.event.label.kind), when: CasyStrings.clashWhen(c.daysAfter), avoid: list)
 }

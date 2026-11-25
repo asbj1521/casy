@@ -147,6 +147,19 @@ final class PlanUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["pile.screen"].waitForNonExistence(timeout: 15))
     }
 
+    /// A date the evening before a critical exam of yours (#114, the home test's made-up
+    /// exam on the morning of 15 October): warned under it in the pile's list.
+    func testThePileWarnsOfYourImportantEvent() {
+        let app = launch(["-casyNativeHome", "YES", "-casyImportant", "YES"])
+        app.buttons["plan.find"].tap()
+        XCTAssertTrue(app.buttons["pile.change"].waitForExistence(timeout: 40))
+        let warned = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "Det ligner, at du har en eksamen dagen efter")
+        ).firstMatch
+        XCTAssertTrue(warned.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(warned.label.contains("14. oktober"), warned.label)
+    }
+
     /// Ret planen goes back to the sheet, the plan as it was.
     func testChangeThePlanFromThePile() {
         let app = launch()
