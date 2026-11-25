@@ -164,6 +164,11 @@ struct HomeScreen: View {
                 // Opened on this month's first week, once the months are there.
                 if position == nil, let first { position = first }
             }
+            .onChange(of: model.focus) { _, month in
+                guard let month else { return }
+                withAnimation(.easeInOut(duration: 0.45)) { position = month }
+                model.focus = nil
+            }
             .refreshable { await model.load() }
             .accessibilityIdentifier("home.months")
             .casyTopBar { header }

@@ -81,6 +81,9 @@ final class PileModel {
     private(set) var phase: Phase = .landing
     private(set) var landed = 0
     private(set) var layers: PileLayers?
+    /// Where My calendar's month is on the screen, the calendars thrown onto it there (as
+    /// the web's): the home page scrolled to it first. Nil: the pile draws its own month.
+    private(set) var onHome: CGRect?
     private(set) var timeline = pileTimeline(0, start: PileTiming.inPlace)
     /// The throw's clock running: only once the pile has been drawn (`drawn`). Its first
     /// drawing took half a second, and a throw already timed was over by then.
@@ -117,6 +120,7 @@ final class PileModel {
         phase = .landing
         landed = 0
         layers = nil
+        onHome = nil
         throwing = false
         dates = nil
         ready = false
@@ -188,6 +192,7 @@ final class PileModel {
             ready = true
             var laid = Self.layers(participants, search, window, [], you: plan.you, before: plan.again?.before, zone)
             laid.homeWeeks = await Self.homeMonth(laid.month)
+            onHome = await Self.scrollHome(to: laid.month)
             layers = laid
             timeline = pileTimeline(thrownCount, start: PileTiming.inPlace)
             return
@@ -214,6 +219,7 @@ final class PileModel {
         pool = worked.0
         var laid = worked.1
         laid.homeWeeks = await Self.homeMonth(laid.month)
+        onHome = await Self.scrollHome(to: laid.month)
         layers = laid
         timeline = pileTimeline(thrownCount, start: PileTiming.inPlace)
         // How well each date suits the group (#119), asked while the calendars are thrown,
@@ -250,6 +256,33 @@ final class PileModel {
             for _ in 0..<20 where home.months.isEmpty { try? await Task.sleep(for: .milliseconds(25)) }
         }
         return home.months.first { $0.id == month }?.weeks
+    }
+
+    /// The native home page under the pile scrolled to the month, and where that month's
+    /// weeks then are on the screen; nil if it isn't the home page under it, or the weeks
+    /// can't all be found (the pile then draws its own month).
+    private static func scrollHome(to month: Int64) async -> CGRect? {
+        let home = HomeModel.shared
+        guard NativeHome.on, home.page.shown, let weeks = home.months.first(where: { $0.id == month })?.weeks
+        else { return nil }
+        home.focus = month
+        func measured() -> CGRect? {
+            var all: CGRect?
+            for week in weeks {
+                guard let row = HomeFrames.shared.rows[HomeFrames.key(month, week.id)] else { return nil }
+                all = all.map { $0.union(row.frame) } ?? row.frame
+            }
+            return all
+        }
+        // Until the scroll has settled: the same place twice in a row.
+        var last: CGRect?
+        for _ in 0..<30 {
+            try? await Task.sleep(for: .milliseconds(50))
+            let now = measured()
+            if let now, let last, abs(now.minY - last.minY) < 0.5, home.focus == nil { return now }
+            last = now
+        }
+        return last
     }
 
     /// The event's profile, only for someone who said yes to the AI; never waited for long.
@@ -605,14 +638,34 @@ struct PileScreen: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .top) {
-                // The home page shows through until the pile is worked out (a moment).
+                // The home page shows through until the pile is worked out (a moment); thrown
+                // onto My calendar's own month, it stays, buttons and all, as on the web.
                 Theme.background.color.ignoresSafeArea()
-                    .opacity(model.layers == nil && model.waiting == nil ? 0 : 1)
+                    .opacity((model.layers == nil || model.onHome != nil) && model.waiting == nil ? 0 : 1)
                     .animation(.easeOut(duration: 0.25), value: model.layers == nil)
                 if let layers = model.layers {
-                    PileTable(layers: layers, width: geo.size.width)
-                        .padding(.top, 8)
-                        .transition(.opacity)
+                    if let month = model.onHome {
+                        let origin = geo.frame(in: .global).origin
+                        PileTable(layers: layers, width: month.width, onHome: true)
+                            .offset(x: month.minX - origin.x, y: month.minY - origin.y)
+                            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                    } else {
+                        PileTable(layers: layers, width: geo.size.width)
+                            .padding(.top, 8)
+                            .transition(.opacity)
+                    }
+                }
+                if let month = model.onHome {
+                    // Over the home page's header as the dates lift (the web's top band),
+                    // over everything once they are ranked.
+                    let origin = geo.frame(in: .global).origin
+                    Theme.background.color.opacity(0.5)
+                        .frame(height: max(0, month.minY - origin.y) + geo.safeAreaInsets.top)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                        .ignoresSafeArea()
+                        .opacity(listing && model.phase < .ranking ? 1 : 0)
+                        .animation(.easeOut(duration: 0.4), value: listing)
+                        .allowsHitTesting(false)
                 }
                 // Behind the list once the dates are ranked, the pile softened (the web's
                 // bg-background/50): a plain layer over it. Blurring the pile itself was
@@ -623,7 +676,14 @@ struct PileScreen: View {
                     .animation(.easeOut(duration: 0.4), value: model.phase >= .ranking)
                     .allowsHitTesting(false)
                 if listing { list }
-                closeButton
+                if let month = model.onHome {
+                    // In the month title's row, clear of the home page's buttons.
+                    let origin = geo.frame(in: .global).origin
+                    closeButton
+                        .offset(y: max(0, month.minY - origin.y - 30 - 46 + 5 - 4))
+                } else {
+                    closeButton
+                }
             }
         }
         .accessibilityElement(children: .contain)
@@ -706,6 +766,8 @@ struct PileScreen: View {
         }
         .frame(minHeight: 36)
         .padding(.horizontal, 4)
+        // On the home page the close button is in this row: the words end before it.
+        .padding(.trailing, model.onHome != nil ? 40 : 0)
     }
 
     private var priorityRow: some View {
@@ -1034,6 +1096,9 @@ private struct DateRow: View {
 private struct PileTable: View {
     let layers: PileLayers
     let width: CGFloat
+    /// Thrown onto My calendar's month under it: only the sheets and the lit days, laid
+    /// over the home page's own weeks (its title, weekdays and month are the page's).
+    var onHome = false
 
     private let model = PileModel.shared
     @Environment(\.colorScheme) private var scheme
@@ -1041,6 +1106,16 @@ private struct PileTable: View {
     private var column: CGFloat { width / 7 }
 
     var body: some View {
+        if onHome {
+            stack(base: false)
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
+        } else {
+            own
+        }
+    }
+
+    private var own: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(capitalize(monthName(layers.month, lang)))
                 .font(.system(size: 30, weight: .bold))
@@ -1057,8 +1132,19 @@ private struct PileTable: View {
                 }
             }
             .padding(.bottom, 4)
+            stack(base: true)
+        }
+        .padding(.top, 44)
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
+    }
+
+    /// The month under the pile (`base`), each calendar thrown onto it, and the lit days.
+    private func stack(base: Bool) -> some View {
             ZStack(alignment: .top) {
-                if let home = layers.homeWeeks {
+                if !base {
+                    Color.clear.frame(width: width, height: 1)
+                } else if let home = layers.homeWeeks {
                     // My calendar's own month, as the web throws onto it.
                     PileMonth(
                         weeks: home, color: HomeModel.shared.color, shine: [], width: width, dark: scheme == .dark,
@@ -1094,10 +1180,6 @@ private struct PileTable: View {
                 .scaleEffect(model.phase >= .revealed ? 1 : 0.98)
                 .animation(.easeOut(duration: 0.5), value: model.phase >= .revealed)
             }
-        }
-        .padding(.top, 44)
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
     }
 }
 

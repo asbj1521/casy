@@ -68,6 +68,9 @@ final class HomeModel {
 
     /// The months, from this one, laid out.
     private(set) var months: [HomeMonth] = []
+    /// A month to scroll to (the paper pile's, #282: the web scrolls My calendar to the
+    /// dates' month and throws the calendars onto it); the home page clears it once there.
+    var focus: Int64?
     private(set) var colors: [String: String] = [:]
     private(set) var failure: String?
     private(set) var loading = false
