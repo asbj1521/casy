@@ -14,6 +14,9 @@ struct HomeScreen: View {
 
     private let model = HomeModel.shared
     @State private var position: Int64?
+    /// The months whose weeks have reached the header (their short names gone under it),
+    /// of those drawn: the last is the big title's.
+    @State private var reached: Set<Int64> = []
     /// How far the header reaches into the months (their scroll view's top inset).
     @State private var headerHeight: CGFloat = 0
     @Environment(\.colorScheme) private var scheme
@@ -152,7 +155,10 @@ struct HomeScreen: View {
                 MonthList(
                     months: model.months, column: column, today: startOfDay(Native.now, appTimeZone),
                     starred: model.page.starred, lang: lang, dark: scheme == .dark, color: model.color,
-                    headerHeight: headerHeight, pick: pick
+                    headerHeight: headerHeight, pick: pick,
+                    reach: { month, now in
+                        if now { reached.insert(month) } else { reached.remove(month) }
+                    }
                 )
                 .equatable()
             }
@@ -578,12 +584,10 @@ struct HomeScreen: View {
     /// The month on screen, as the web's `track`: the last whose first week has
     /// reached the header. A month's name row at the top (id -month) means its
     /// weeks haven't yet, so the title still names the month before.
+    /// The last month whose weeks have reached the header: the moment its short name
+    /// (MonthLabel, just above them) goes under it, by the same measure.
     private var titleMonth: Int64 {
-        let first = model.months.first?.id ?? startOfMonth(Native.now, appTimeZone)
-        guard let position else { return first }
-        if position >= 0 { return position }
-        let month = -position
-        return month <= first ? first : startOfMonth(addDays(month, -1, appTimeZone), appTimeZone)
+        reached.max() ?? model.months.first?.id ?? startOfMonth(Native.now, appTimeZone)
     }
 
     /// MonthView's floating header with HomeToolbar on its stand-in row: the row
@@ -728,6 +732,8 @@ private struct MonthList: View, Equatable {
     let color: (String) -> String
     let headerHeight: CGFloat
     let pick: (Int64, CGRect?) -> Void
+    /// A month's weeks reaching the header (true) or leaving it, or no longer drawn (false).
+    let reach: (Int64, Bool) -> Void
 
     static func == (a: MonthList, b: MonthList) -> Bool {
         a.months == b.months && a.column == b.column && a.today == b.today && a.starred == b.starred
@@ -747,6 +753,14 @@ private struct MonthList: View, Equatable {
                         color: color, pick: pick
                     )
                     .equatable()
+                    // Its weeks at or past the header's bottom edge: the title's month (MonthLabel
+                    // goes by the same edge). Only a crossing calls back, however fast it scrolls.
+                    .onGeometryChange(for: Bool.self) { [headerHeight] proxy in
+                        proxy.frame(in: .scrollView).minY - headerHeight <= 0.5
+                    } action: { now in
+                        reach(row.month.id, now)
+                    }
+                    .onDisappear { reach(row.month.id, false) }
                 }
             }
         }
@@ -762,10 +776,11 @@ private struct MonthRow: Identifiable {
 }
 
 /// A month's short name ("Nov"), 17 bold, over the column of its first day,
-/// in a 28 point row (MONTH_LABEL_PX). It fades as it slides under the header
-/// and is gone once tucked there (a month opened, I dag): the web's header
-/// blurs it away (22 point blur), iOS 26's soft scroll edge only softens it,
-/// and it showed through the weekdays (18 Nov 2026).
+/// in a 28 point row (MONTH_LABEL_PX). It is there until it goes under the
+/// header, and gone the instant it does, as the big title takes its month (the
+/// same edge as MonthList's, where its weeks start): iOS 26's soft scroll edge only
+/// softens what is under the header, and it showed through the weekdays (18 Nov
+/// 2026); faded out by its own measure, it disagreed with the title (25 Nov).
 private struct MonthLabel: View {
     let month: Int64
     let firstColumn: Int
@@ -783,9 +798,10 @@ private struct MonthLabel: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 28, alignment: .top)
             .visualEffect { [headerHeight] content, proxy in
-                // 1 with the whole row below the header, 0 with it under it.
+                // There while its bottom is below the header, gone the instant it goes under
+                // and the big title takes its month (MonthList, by the same edge), never fading.
                 let below = proxy.frame(in: .scrollView).minY - headerHeight + 28
-                return content.opacity(min(1, max(0, below / 28)))
+                return content.opacity(below > 0.5 ? 1 : 0)
             }
             .accessibilityHidden(true)
     }

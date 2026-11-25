@@ -72,6 +72,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         didSet {
             guard openScreen != oldValue else { return }
             if oldValue == "plan" { holdHome() }
+            if openScreen == "plan" { planPending = false }
             DispatchQueue.main.async { self.placeHome() }
         }
     }
@@ -172,6 +173,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
             PageAuth.shared.send = { [weak self] ask in self?.notifyListeners("authAsk", data: ask) }
             HomeModel.shared.onAction = { [weak self] action, day in
+                // Planlæg pressed: the page counts it as over the month before it asks for
+                // the app's own sheet, and its own home page (on this month) flickered in.
+                if action == "plan" { self?.planComing() }
                 var data: [String: Any] = ["action": action]
                 if let day { data["day"] = Double(day) }
                 self?.notifyListeners("homeAction", data: data)
@@ -689,6 +693,18 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     private var homeHeld = false
     private var holdEnds: DispatchWorkItem?
 
+    /// Planlæg on its way: the native home page stays until its sheet is up (or 2 s).
+    private var planPending = false
+
+    private func planComing() {
+        planPending = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            guard let self, self.planPending else { return }
+            self.planPending = false
+            self.placeHome()
+        }
+    }
+
     private func holdHome() {
         homeHeld = true
         holdEnds?.cancel()
@@ -705,7 +721,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // The page counts its Planlæg as over the month; the app's own Planlæg sheet and pile
         // are over the native home page, which stays: else the page's own home page showed
         // under them, its buttons and rows a little off.
-        let wanted = NativeHome.on && page.shown && (!page.covered || pileUp || homeHeld || openScreen == "plan")
+        let wanted = NativeHome.on && page.shown && (!page.covered || pileUp || homeHeld || planPending || openScreen == "plan")
         guard let main = bridge?.viewController else { return }
         if wanted && homeHost == nil {
             let host = UIHostingController(rootView: HomeScreen(preferences: NativePreferences.shared))
