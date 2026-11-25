@@ -100,6 +100,9 @@ final class PileModel {
     /// Where My calendar's month is on the screen, the calendars thrown onto it there (as
     /// the web's): the home page scrolled to it first. Nil: the pile draws its own month.
     private(set) var onHome: CGRect?
+    /// The native home page is under the pile (known at once, before its month is found):
+    /// the close button goes in its month title's row from the first frame.
+    private(set) var overHome = false
     private(set) var timeline = pileTimeline(0, start: PileTiming.inPlace)
     /// The throw's clock running: only once the pile has been drawn (`drawn`). Its first
     /// drawing took half a second, and a throw already timed was over by then.
@@ -146,6 +149,7 @@ final class PileModel {
         landed = 0
         layers = nil
         onHome = nil
+        overHome = NativeHome.on && HomeModel.shared.page.shown
         scroll = 0
         flights = [:]
         weeksFrame = nil
@@ -749,10 +753,13 @@ struct PileScreen: View {
                     .animation(.easeOut(duration: 0.3), value: listing)
                     if listing, let weeks = model.weeksFrame {
                         let origin = geo.frame(in: .global).origin
-                        SharedCalendar(layers: layers, weeks: weeks, scroll: model.scroll, taken: model.taken)
-                            .offset(x: weeks.minX - origin.x, y: weeks.minY - origin.y - pileBandHeight)
-                            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
-                            .transition(.opacity.animation(.easeOut(duration: 0.3)))
+                        SharedCalendar(
+                            layers: layers, weeks: weeks, scroll: model.scroll, taken: model.taken,
+                            room: geo.size.height + geo.safeAreaInsets.bottom - (weeks.minY - origin.y - pileBandHeight)
+                        )
+                        .offset(x: weeks.minX - origin.x, y: weeks.minY - origin.y - pileBandHeight)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                        .transition(.opacity.animation(.easeOut(duration: 0.25)))
                     }
                 }
                 if let month = model.onHome {
@@ -776,11 +783,10 @@ struct PileScreen: View {
                     .animation(.easeOut(duration: 0.4), value: model.phase >= .ranking)
                     .allowsHitTesting(false)
                 if listing { list }
-                if let month = model.onHome {
-                    // In the month title's row, clear of the home page's buttons.
-                    let origin = geo.frame(in: .global).origin
-                    closeButton
-                        .offset(y: max(0, month.minY - origin.y - 30 - 46 + 5 - 4))
+                if model.overHome {
+                    // In the month title's row, clear of the home page's buttons: under its
+                    // toolbar's row (8 + 40 + 4), in the middle of the title's 45.5.
+                    closeButton.offset(y: 52 + 45.5 / 2 - 18 - 4)
                 } else {
                     closeButton
                 }
@@ -867,7 +873,7 @@ struct PileScreen: View {
         .frame(minHeight: 36)
         .padding(.horizontal, 4)
         // On the home page the close button is in this row: the words end before it.
-        .padding(.trailing, model.onHome != nil ? 40 : 0)
+        .padding(.trailing, model.overHome ? 40 : 0)
     }
 
     private var priorityRow: some View {
@@ -1299,17 +1305,46 @@ private struct PileTable: View {
 /// The pile once pressed, as one calendar (the web's SharedCalendar): everyone's busy
 /// time together over every month the listed dates are in, the free days lit, on the
 /// sheets' glass. Moved by `scroll` alone (never by hand): the list scrolls it to lift
-/// each date out. Its band names the month at the top of the view, over My calendar's
-/// own name, which may be another month by then.
+/// each date out. It grows out of the pile it takes over from: at first exactly the
+/// pressed sheets' card, then its top rises into a band naming the month in view (over
+/// My calendar's own name, which may be another month by then) and its bottom reaches
+/// down the screen.
 private struct SharedCalendar: View {
     let layers: PileLayers
     let weeks: CGRect
     let scroll: CGFloat
     let taken: Set<Int64>
+    /// From its band's top to the screen's bottom edge.
+    let room: CGFloat
+
+    @State private var grown = 0.0
+
+    var body: some View {
+        SharedCard(layers: layers, weeks: weeks, scroll: scroll, taken: taken, room: room, grown: grown)
+            .onAppear {
+                withAnimation(.timingCurve(0.3, 0.9, 0.3, 1, duration: 0.6).delay(0.1)) { grown = 1 }
+            }
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
+    }
+}
+
+/// The shared calendar at `grown` (0: the pile's card, 1: band and all, to the bottom).
+private struct SharedCard: View, Animatable {
+    let layers: PileLayers
+    let weeks: CGRect
+    let scroll: CGFloat
+    let taken: Set<Int64>
+    let room: CGFloat
+    var grown: Double
+
+    var animatableData: Double {
+        get { grown }
+        set { grown = newValue }
+    }
 
     @Environment(\.colorScheme) private var scheme
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
-    private var colors: [String: String] { Dictionary(layers.friends.map { ($0.profileId, $0.color) }, uniquingKeysWith: { a, _ in a }) }
 
     /// The month whose first week has come up under the band.
     private var named: Int64 {
@@ -1323,37 +1358,23 @@ private struct SharedCalendar: View {
     }
 
     var body: some View {
-        let colors = colors
+        let g = CGFloat(min(max(grown, 0), 1))
+        let colors = Dictionary(layers.friends.map { ($0.profileId, $0.color) }, uniquingKeysWith: { a, _ in a })
         let shine = layers.shine.subtracting(taken)
-        let shape = UnevenRoundedRectangle(topLeadingRadius: 28, topTrailingRadius: 28, style: .continuous)
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(capitalize(monthName(named, lang)))
-                    .font(.system(size: 30, weight: .bold))
-                    .tracking(-0.75)
-                    .foregroundStyle(Theme.foreground.color)
-                    .lineLimit(1)
-                    // Ending before the list's own line and the close button, in the same row.
-                    .minimumScaleFactor(0.6)
-                    .frame(maxWidth: max(0, weeks.width - 250), alignment: .leading)
-                    .frame(height: 37.5)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .contentTransition(.numericText())
-                    .animation(.easeOut(duration: 0.2), value: named)
-                HStack(spacing: 0) {
-                    ForEach(0..<7, id: \.self) { c in
-                        let day = wallTime(2026, 0, 5 + c, 12, appTimeZone)
-                        Text(verbatim: String(weekdayShortName(day, lang).prefix(1)).uppercased())
-                            .frame(maxWidth: .infinity)
-                            .foregroundStyle(c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
-                    }
-                }
-                .font(.system(size: 12, weight: .medium))
-                .frame(height: 24)
-                .padding(.bottom, 6)
-            }
-            .frame(width: weeks.width, height: pileBandHeight, alignment: .bottomLeading)
+        // The card: the sheets' own (their corners, edge and glass), growing.
+        let top = pileBandHeight * (1 - g)
+        let bottom = pileBandHeight + weeks.height + max(0, room - pileBandHeight - weeks.height) * g
+        let corner = 28 * (1 - g)
+        let shape = UnevenRoundedRectangle(
+            topLeadingRadius: 28, bottomLeadingRadius: corner, bottomTrailingRadius: corner, topTrailingRadius: 28,
+            style: .continuous)
+        ZStack(alignment: .topLeading) {
+            shape
+                .fill(Theme.card.color.opacity(pileOpacity))
+                .overlay { shape.strokeBorder(Color.white.opacity(0.5), lineWidth: 1) }
+                .frame(width: weeks.width, height: bottom - top)
+                .offset(y: top)
+            // The weeks, where the pile's lay, scrolled within the card.
             VStack(spacing: 0) {
                 ForEach(Array(layers.months.enumerated()), id: \.element) { m, _ in
                     if m < layers.sharedWeeks.count {
@@ -1364,17 +1385,41 @@ private struct SharedCalendar: View {
                 }
             }
             .offset(y: -scroll)
-            .frame(width: weeks.width, alignment: .top)
-            .frame(maxHeight: .infinity, alignment: .top)
-            .clipped()
+            .frame(width: weeks.width, height: max(0, bottom - pileBandHeight), alignment: .top)
+            .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: corner, bottomTrailingRadius: corner))
+            .offset(y: pileBandHeight)
+            band.opacity(Double(g)).frame(width: weeks.width, height: pileBandHeight, alignment: .bottomLeading)
         }
-        .frame(width: weeks.width)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(Theme.card.color.opacity(pileOpacity), in: shape)
-        .overlay { shape.strokeBorder(Color.white.opacity(scheme == .dark ? 0.16 : 0.5), lineWidth: 1) }
-        .ignoresSafeArea(edges: .bottom)
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
+        .frame(width: weeks.width, alignment: .topLeading)
+    }
+
+    private var band: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(capitalize(monthName(named, lang)))
+                .font(.system(size: 30, weight: .bold))
+                .tracking(-0.75)
+                .foregroundStyle(Theme.foreground.color)
+                .lineLimit(1)
+                // Ending before the list's own line and the close button, in the same row.
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: max(0, weeks.width - 250), alignment: .leading)
+                .frame(height: 37.5)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .contentTransition(.numericText())
+                .animation(.easeOut(duration: 0.2), value: named)
+            HStack(spacing: 0) {
+                ForEach(0..<7, id: \.self) { c in
+                    let day = wallTime(2026, 0, 5 + c, 12, appTimeZone)
+                    Text(verbatim: String(weekdayShortName(day, lang).prefix(1)).uppercased())
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
+                }
+            }
+            .font(.system(size: 12, weight: .medium))
+            .frame(height: 24)
+            .padding(.bottom, 6)
+        }
     }
 }
 
@@ -1453,8 +1498,9 @@ private struct ThrownLayer<Content: View>: View {
                     flight = 1
                     return
                 }
-                try? await Task.sleep(for: .milliseconds(Int(land.at * 1000)))
-                withAnimation(.linear(duration: land.duration + PileTiming.impact)) { flight = 1 }
+                // Started late by the animation clock itself, not a timer: a busy moment can't
+                // bunch the first throws together and flatten their quickening.
+                withAnimation(.linear(duration: land.duration + PileTiming.impact).delay(land.at)) { flight = 1 }
             }
             .onChange(of: pressed) { _, now in
                 withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { press = now ? 1 : 0 }

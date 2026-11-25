@@ -71,6 +71,11 @@ final class HomeModel {
     /// A month to scroll to (the paper pile's, #282: the web scrolls My calendar to the
     /// dates' month and throws the calendars onto it); the home page clears it once there.
     var focus: Int64?
+
+    /// Back on this month once the pile is gone, as the home page opens (#282).
+    func backToToday() {
+        focus = months.first?.id
+    }
     private(set) var colors: [String: String] = [:]
     private(set) var failure: String?
     private(set) var loading = false

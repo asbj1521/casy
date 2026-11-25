@@ -67,7 +67,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         #endif
     }()
 
-    private var openScreen: String?
+    private var openScreen: String? {
+        // Planlæg's own sheet over the native home page keeps it shown (placeHome).
+        didSet { if openScreen != oldValue { DispatchQueue.main.async { self.placeHome() } } }
+    }
 
     /// Whether a screen opened by a test launch, not by the page, is signed in:
     /// a test's made-up login is, unless the page signs in by itself.
@@ -672,7 +675,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     @MainActor private func placeHome() {
         let page = HomeModel.shared.page
-        let wanted = NativeHome.on && page.shown && (!page.covered || pileUp)
+        // The page counts its Planlæg as over the month; the app's own Planlæg sheet and pile
+        // are over the native home page, which stays: else the page's own home page showed
+        // under them, its buttons and rows a little off.
+        let wanted = NativeHome.on && page.shown && (!page.covered || pileUp || openScreen == "plan")
         guard let main = bridge?.viewController else { return }
         if wanted && homeHost == nil {
             let host = UIHostingController(rootView: HomeScreen(preferences: NativePreferences.shared))
@@ -944,16 +950,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             let pile = PileScreen(
                 onChange: { [weak self] in
                     self?.pileUp = false
+                    HomeModel.shared.backToToday()
                     presenter.presentedViewController?.dismiss(animated: false) {
                         self?.present("plan", on: presenter, state: ["keep": true])
                     }
                 },
                 onClose: { [weak self] in
                     self?.pileUp = false
+                    HomeModel.shared.backToToday()
                     if PlanModel.shared.again != nil { self?.backToVote() } else { self?.dismissOpenScreen() }
                 },
                 onSent: { [weak self] in
                     self?.pileUp = false
+                    HomeModel.shared.backToToday()
                     if PlanModel.shared.again != nil {
                         // The vote has its new dates: the page's lists are fetched again.
                         self?.notifyListeners("dataChanged", data: [:])
