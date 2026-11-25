@@ -114,6 +114,7 @@ struct PlanScreen: View {
                 .padding(.bottom, 8)
         }
         .task {
+            ShortcutsModel.shared.loadAhead()
             await model.open()
             await model.loadAi()
         }

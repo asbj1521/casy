@@ -664,10 +664,15 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// The native home over the web view, while the switch is on, the page is
     /// on its home page and nothing only the page draws is over the month.
     private var homeHost: UIHostingController<HomeScreen>?
+    /// The paper pile is up: it is thrown onto the native home page (#282), so that stays
+    /// shown though the page still counts its Planlæg as over the month (`covered`).
+    @MainActor private var pileUp = false {
+        didSet { if pileUp != oldValue { placeHome() } }
+    }
 
     @MainActor private func placeHome() {
         let page = HomeModel.shared.page
-        let wanted = NativeHome.on && page.shown && !page.covered
+        let wanted = NativeHome.on && page.shown && (!page.covered || pileUp)
         guard let main = bridge?.viewController else { return }
         if wanted && homeHost == nil {
             let host = UIHostingController(rootView: HomeScreen(preferences: NativePreferences.shared))
@@ -935,16 +940,20 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             guard let self else { return }
             // Cleared first: its first frame would otherwise be the last pile.
             PileModel.shared.reset()
+            self.pileUp = true
             let pile = PileScreen(
                 onChange: { [weak self] in
+                    self?.pileUp = false
                     presenter.presentedViewController?.dismiss(animated: false) {
                         self?.present("plan", on: presenter, state: ["keep": true])
                     }
                 },
                 onClose: { [weak self] in
+                    self?.pileUp = false
                     if PlanModel.shared.again != nil { self?.backToVote() } else { self?.dismissOpenScreen() }
                 },
                 onSent: { [weak self] in
+                    self?.pileUp = false
                     if PlanModel.shared.again != nil {
                         // The vote has its new dates: the page's lists are fetched again.
                         self?.notifyListeners("dataChanged", data: [:])

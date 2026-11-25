@@ -16,11 +16,17 @@ final class ShortcutsModel {
     /// One that didn't make it: a tap tries again.
     private(set) var failed: (name: String, retry: () -> Void)?
 
+    /// Read as Planlæg opens, so Genveje is there with its pictures when it is pressed.
+    func loadAhead() {
+        if list == nil { Task { await load() } }
+    }
+
     func load() async {
         guard let api = await Native.api() else { return }
         do {
             list = try await api.shortcuts(errorMessage: CasyStrings.shortcutsLoadFailed)
             failure = nil
+            PictureMemory.fetch(list?.compactMap { $0.pictureUrl.flatMap(URL.init(string:)) } ?? [])
         } catch {
             failure = error.localizedDescription
         }
@@ -312,11 +318,10 @@ struct ShortcutFace: View {
     var body: some View {
         if let url = shortcut.pictureUrl.flatMap(URL.init(string:)) {
             ZStack(alignment: .bottom) {
-                AsyncImage(url: url) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    Theme.secondary.color
-                }
+                // Kept between visits (PictureMemory): AsyncImage fetched it again each
+                // time, a dark square flashing first.
+                RemoteImage(url: url) { Theme.secondary.color }
+                    .scaledToFill()
                 LinearGradient(colors: [.clear, .black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
                     .frame(height: 64)
                 Text(shortcut.name)
@@ -579,7 +584,7 @@ struct ShortcutEditor: View {
                         shown.resizable().scaledToFill().frame(width: 32, height: 32)
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     } else if let url = editing?.pictureUrl.flatMap(URL.init(string:)), picture == nil {
-                        AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Theme.secondary.color }
+                        RemoteImage(url: url) { Theme.secondary.color }.scaledToFill()
                             .frame(width: 32, height: 32)
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     } else {
