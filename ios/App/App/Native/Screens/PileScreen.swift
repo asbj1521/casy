@@ -580,10 +580,16 @@ struct PileScreen: View {
                 if let layers = model.layers {
                     PileTable(layers: layers, width: geo.size.width)
                         .padding(.top, 8)
-                        .blur(radius: model.phase >= .ranking ? 3 : 0)
-                        .opacity(model.phase >= .ranking ? 0.6 : 1)
                         .transition(.opacity)
                 }
+                // Behind the list once the dates are ranked, the pile softened (the web's
+                // bg-background/50): a plain layer over it. Blurring the pile itself was
+                // worked out afresh on every frame the rows moved, and they stuttered.
+                Theme.background.color.opacity(0.5)
+                    .ignoresSafeArea()
+                    .opacity(model.phase >= .ranking ? 1 : 0)
+                    .animation(.easeOut(duration: 0.4), value: model.phase >= .ranking)
+                    .allowsHitTesting(false)
                 if listing { list }
                 closeButton
             }
@@ -874,6 +880,9 @@ private struct DateRow: View {
     let lang: Lang
     let toggle: () -> Void
 
+    @Environment(\.colorScheme) private var scheme
+    private var dark: Bool { scheme == .dark }
+
     private var status: String {
         at < checked ? (item.chosen ? "yes" : "no") : ranking && at == checked ? "checking" : "waiting"
     }
@@ -959,7 +968,11 @@ private struct DateRow: View {
                 .opacity(arrived ? 0 : 1)
                 .animation(.easeOut(duration: 0.35).delay(0.25), value: arrived)
         }
-        .pileGlass(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        // Frosted but still while the rows fly in and change places, Apple's glass once the
+        // list is done (the web's glass-moving): eight live glass rows on the move over
+        // the pile were redrawn every frame, and the ranking stuttered.
+        .background { PileFrost(shape: RoundedRectangle(cornerRadius: 22, style: .continuous), dark: dark).opacity(done ? 0 : 1) }
+        .pileGlass(RoundedRectangle(cornerRadius: 22, style: .continuous), on: done)
         .opacity(arrived ? 1 : 0)
         .scaleEffect(arrived ? 1 : 0.35, anchor: .center)
         .offset(y: arrived ? 0 : 40)
@@ -1078,6 +1091,8 @@ private struct ThrownLayer<Content: View>: View {
     /// The throw, 0 to 1 over the fall and the hit; and pressed straight, 0 to 1.
     @State private var flight = 0.0
     @State private var press = 0.0
+    @Environment(\.colorScheme) private var scheme
+    private var dark: Bool { scheme == .dark }
 
     private var hit: Double { land.duration / (land.duration + PileTiming.impact) }
 
@@ -1086,46 +1101,48 @@ private struct ThrownLayer<Content: View>: View {
         let side = throwSide(k)
         let from = side * Double(width) * 0.55
         let knock = jostle(k, landed)
-        ZStack {
-            // The shadow on the table, faint and wide while the sheet is high.
-            PileShadow()
-                .modifier(
-                    TossPose(
-                        from: .init(x: from * 0.4, y: 50, rotate: side * -6, scale: 1.3, opacity: 0),
-                        past: .init(x: tilt.x - side * 7, y: tilt.y + 12, rotate: tilt.rotate, scale: 0.99, opacity: 0.38),
-                        back: .init(x: tilt.x + side * 2, y: tilt.y + 14, rotate: tilt.rotate, scale: 1.01, opacity: 0.3),
-                        rest: .init(x: tilt.x, y: tilt.y + 12, rotate: tilt.rotate, scale: 1, opacity: 0.28),
-                        straight: .init(x: 0, y: 12, rotate: 0, scale: 1, opacity: 0.28),
-                        hit: hit, flight: flight, press: press, anchor: .center)
-                )
-                .opacity(revealed ? 0 : 1)
-                .animation(.easeOut(duration: 0.3), value: revealed)
-            sheet
-                .offset(x: pressed ? 0 : knock.x)
-                .rotationEffect(.degrees(pressed ? 0 : knock.rotate))
-                .animation(.spring(response: 0.25, dampingFraction: pressed ? 0.9 : 0.4), value: landed)
-                .modifier(
-                    TossPose(
-                        from: .init(x: from, y: -150, rotate: side * -14, scale: 1.6, opacity: 0),
-                        past: .init(x: tilt.x - side * 7, y: tilt.y + 3, rotate: tilt.rotate - side * 1.5, scale: 0.975, opacity: 1),
-                        back: .init(x: tilt.x + side * 2, y: tilt.y - 8, rotate: tilt.rotate + side * 0.6, scale: 1.012, opacity: 1),
-                        rest: .init(x: tilt.x, y: tilt.y, rotate: tilt.rotate, scale: 1, opacity: 1),
-                        straight: .init(x: 0, y: 0, rotate: 0, scale: 1, opacity: 1),
-                        hit: hit, flight: flight, press: press, anchor: UnitPoint(x: 0.5, y: 0.35))
-                )
-        }
-        .task(id: go) {
-            guard go else { return }
-            if placed {
-                flight = 1
-                return
+        sheet
+            .offset(x: pressed ? 0 : knock.x)
+            .rotationEffect(.degrees(pressed ? 0 : knock.rotate))
+            .animation(.spring(response: 0.25, dampingFraction: pressed ? 0.9 : 0.4), value: landed)
+            .modifier(
+                TossPose(
+                    from: .init(x: from, y: -150, rotate: side * -14, scale: 1.6, opacity: 0),
+                    past: .init(x: tilt.x - side * 7, y: tilt.y + 3, rotate: tilt.rotate - side * 1.5, scale: 0.975, opacity: 1),
+                    back: .init(x: tilt.x + side * 2, y: tilt.y - 8, rotate: tilt.rotate + side * 0.6, scale: 1.012, opacity: 1),
+                    rest: .init(x: tilt.x, y: tilt.y, rotate: tilt.rotate, scale: 1, opacity: 1),
+                    straight: .init(x: 0, y: 0, rotate: 0, scale: 1, opacity: 1),
+                    hit: hit, flight: flight, press: press, anchor: UnitPoint(x: 0.5, y: 0.35))
+            )
+            // The shadow on the table, faint and wide while the sheet is high. Behind the
+            // sheet and exactly its size: side by side in a stack, the stretchable shadow
+            // took all the room under the month, and the sheet sat in its middle, a week low.
+            .background {
+                PileShadow()
+                    .modifier(
+                        TossPose(
+                            from: .init(x: from * 0.4, y: 50, rotate: side * -6, scale: 1.3, opacity: 0),
+                            past: .init(x: tilt.x - side * 7, y: tilt.y + 12, rotate: tilt.rotate, scale: 0.99, opacity: 0.38),
+                            back: .init(x: tilt.x + side * 2, y: tilt.y + 14, rotate: tilt.rotate, scale: 1.01, opacity: 0.3),
+                            rest: .init(x: tilt.x, y: tilt.y + 12, rotate: tilt.rotate, scale: 1, opacity: 0.28),
+                            straight: .init(x: 0, y: 12, rotate: 0, scale: 1, opacity: 0.28),
+                            hit: hit, flight: flight, press: press, anchor: .center)
+                    )
+                    .opacity(revealed ? 0 : 1)
+                    .animation(.easeOut(duration: 0.3), value: revealed)
             }
-            try? await Task.sleep(for: .milliseconds(Int(land.at * 1000)))
-            withAnimation(.linear(duration: land.duration + PileTiming.impact)) { flight = 1 }
-        }
-        .onChange(of: pressed) { _, now in
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { press = now ? 1 : 0 }
-        }
+            .task(id: go) {
+                guard go else { return }
+                if placed {
+                    flight = 1
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(Int(land.at * 1000)))
+                withAnimation(.linear(duration: land.duration + PileTiming.impact)) { flight = 1 }
+            }
+            .onChange(of: pressed) { _, now in
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { press = now ? 1 : 0 }
+            }
     }
 
     private var sheet: some View {
@@ -1137,7 +1154,7 @@ private struct ThrownLayer<Content: View>: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
-            .pileGlass(Capsule())
+            .background { PileFrost(shape: Capsule(), dark: dark) }
             .padding(.trailing, 12)
             .padding(.top, 16)
             .opacity(revealed ? 0 : 1)
@@ -1147,6 +1164,27 @@ private struct ThrownLayer<Content: View>: View {
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(Color.white.opacity(0.5), lineWidth: 1)
         }
+    }
+}
+
+/// The web's `glass` drawn still: its tint, its sheen from the top left corner and its
+/// bright edge, for what moves. Apple's live glass on the name of a sheet that is
+/// scaled, turned and faded as it flies swelled into a bubble far bigger than the
+/// name; on the list's rows changing places it was redrawn every frame.
+private struct PileFrost<S: InsettableShape>: View {
+    let shape: S
+    let dark: Bool
+
+    var body: some View {
+        shape
+            .fill(dark ? Color(red: 32 / 255, green: 32 / 255, blue: 36 / 255).opacity(0.9) : Color.white.opacity(0.82))
+            .overlay {
+                shape.fill(
+                    LinearGradient(
+                        stops: [.init(color: .white.opacity(dark ? 0.08 : 0.5), location: 0), .init(color: .clear, location: 0.45)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+            }
+            .overlay { shape.strokeBorder(Color.white.opacity(dark ? 0.16 : 0.85), lineWidth: 1) }
     }
 }
 
@@ -1396,12 +1434,12 @@ struct WeekPicture: View {
 }
 
 extension View {
-    /// The pile's glass: Apple's own on iOS 26, not taking taps itself.
-    @ViewBuilder func pileGlass<S: Shape>(_ shape: S) -> some View {
+    /// The pile's glass: Apple's own on iOS 26, not taking taps itself; `on` false: none (yet).
+    @ViewBuilder func pileGlass<S: Shape>(_ shape: S, on: Bool = true) -> some View {
         if #available(iOS 26, *) {
-            glassEffect(.regular, in: shape)
+            glassEffect(on ? .regular : .identity, in: shape)
         } else {
-            background(.regularMaterial, in: shape)
+            background(.regularMaterial.opacity(on ? 1 : 0), in: shape)
         }
     }
 }
