@@ -30,6 +30,8 @@ struct PileFriend: Identifiable, Equatable {
     /// Searched before (a vote searched again, #240): on the pile already,
     /// under the ones thrown now.
     var placed = false
+    /// The month laid out with these items, once (PileMonth.weeks): not again on every redraw.
+    var weeks: [HomeWeek] = []
 }
 
 /// What the pile shows: the month (the first date's), the months the list
@@ -40,6 +42,9 @@ struct PileLayers: Equatable {
     let shine: Set<Int64>
     let friends: [PileFriend]
     let yours: [MonthItem]
+    /// Your month and an empty one, laid out once, as each friend's is.
+    var yourWeeks: [HomeWeek] = []
+    var emptyWeeks: [HomeWeek] = []
 }
 
 /// Apple Calendar's colours, a friend each, in the group's order.
@@ -73,6 +78,9 @@ final class PileModel {
     private(set) var landed = 0
     private(set) var layers: PileLayers?
     private(set) var timeline = pileTimeline(0, start: PileTiming.inPlace)
+    /// The throw's clock running: only once the pile has been drawn (`drawn`). Its first
+    /// drawing took half a second, and a throw already timed was over by then.
+    private(set) var throwing = false
     /// The dates in the list; nil until worked out, or when there is none.
     private(set) var dates: [CheckedDate]?
     /// The dates have been worked out (there may be none).
@@ -104,6 +112,7 @@ final class PileModel {
         phase = .landing
         landed = 0
         layers = nil
+        throwing = false
         dates = nil
         ready = false
         arrived = []
@@ -132,6 +141,8 @@ final class PileModel {
                 phase = .done
                 return
             }
+            await Self.drawn()
+            throwing = true
             await throwThem()
             guard !Task.isCancelled else { return }
             await lift()
@@ -139,6 +150,16 @@ final class PileModel {
     }
 
     func stop() { run?.cancel() }
+
+    /// Two frames on the screen from now: a display tick only comes once the main
+    /// thread is free to draw, so by then whatever was just put on screen is drawn.
+    static func drawn(_ frames: Int = 2) async {
+        for _ in 0..<frames {
+            await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
+                FrameTick.once { done.resume() }
+            }
+        }
+    }
 
     /// The pool, the scores, the list and the layers, worked out off the main thread.
     private func prepare(_ found: MultiDayResult, _ participants: [Participant]) async {
@@ -148,8 +169,10 @@ final class PileModel {
         let extras = plan.extras
         let now = Native.now
         let zone = zone
-        profile = await fetchProfile()
-        let profile = profile
+        // The event's profile (#113) is asked for alongside, never waited for here:
+        // it only ranks the dates, so the calendars are thrown at once, as the web's
+        // (waiting first held the pile back for up to 2.5 s before anything moved).
+        let profileAsked = Task { await fetchProfile() }
         guard let slot = found.slot else {
             widen = await plan.widenings()
             ready = true
@@ -158,28 +181,41 @@ final class PileModel {
             return
         }
         let first = FoundDate(slot: slot, conflicts: found.conflicts, absent: found.absent)
-        pool = await Task.detached(priority: .userInitiated) {
-            findPoolAcross(
+        let you = plan.you
+        let before = plan.again?.before
+        let waitingFor = !(plan.people?.waitingFor.isEmpty ?? true)
+        // The pool, and the layers from the dates' starts alone, worked out off the main
+        // thread (a third of a second that froze the screen), so they are thrown at once.
+        let worked = await Task.detached(priority: .userInitiated) {
+            let pool = findPoolAcross(
                 participants, [search] + extraSearches,
                 CandidateOptions(
-                    first: first, end: window.end, count: extras.dateCount, profile: profile, now: now,
+                    first: first, end: window.end, count: extras.dateCount, now: now,
                     everyTime: !extraSearches.isEmpty), zone)
+            let preliminary = Self.checked(
+                first, pool, participants, search, window: window, extras: extras, scores: [:], counted: 0, profile: nil,
+                you: you, waitingFor: waitingFor, now: now, everyTime: !extraSearches.isEmpty)
+            let layers = Self.layers(
+                participants, search, window, preliminary.map(\.date.slot.start), you: you, before: before, zone)
+            return (pool, layers)
         }.value
-        // The layers from the dates' starts alone, so they are thrown at once.
-        let preliminary = Self.checked(
-            first, pool, participants, search, window: window, extras: extras, scores: [:], counted: 0, profile: profile,
-            you: plan.you, waitingFor: !(plan.people?.waitingFor.isEmpty ?? true), now: now,
-            everyTime: !extraSearches.isEmpty)
-        layers = Self.layers(
-            participants, search, window, preliminary.map(\.date.slot.start), you: plan.you, before: plan.again?.before, zone)
+        pool = worked.0
+        layers = worked.1
         timeline = pileTimeline(thrownCount, start: PileTiming.inPlace)
-        // How well each date suits the group (#119), asked while the calendars are thrown.
+        // How well each date suits the group (#119), asked while the calendars are thrown,
+        // once the profile is in (it says what the event does to the night before).
         Task {
+            profile = await profileAsked.value
+            let profile = profile
             await score(first)
-            dates = Self.checked(
-                first, pool, participants, search, window: window, extras: extras, scores: scores, counted: counted, profile: profile,
-                you: plan.you, waitingFor: !(plan.people?.waitingFor.isEmpty ?? true), now: now,
-            everyTime: !extraSearches.isEmpty)
+            let pool = pool
+            let scores = scores
+            let counted = counted
+            dates = await Task.detached(priority: .userInitiated) {
+                Self.checked(
+                    first, pool, participants, search, window: window, extras: extras, scores: scores, counted: counted,
+                    profile: profile, you: you, waitingFor: waitingFor, now: now, everyTime: !extraSearches.isEmpty)
+            }.value
             ready = true
         }
     }
@@ -506,12 +542,14 @@ final class PileModel {
         var friends = sheets.filter { !$0.isYou }.enumerated().map { k, s in
             PileFriend(
                 profileId: s.profileId, name: s.name, color: friendColors[k % friendColors.count], items: items(s.profileId),
-                placed: before?.contains(s.profileId) ?? false)
+                placed: before?.contains(s.profileId) ?? false, weeks: PileMonth.weeks(first, items(s.profileId)))
         }
         // Those on the pile already first, so the ones thrown now land on top.
         friends = friends.filter(\.placed) + friends.filter { !$0.placed }
+        let yours = you.map { items($0) } ?? []
         return PileLayers(
-            month: first, months: months, shine: shine, friends: friends, yours: you.map { items($0) } ?? [])
+            month: first, months: months, shine: shine, friends: friends, yours: yours,
+            yourWeeks: PileMonth.weeks(first, yours), emptyWeeks: PileMonth.weeks(first, []))
     }
 }
 
@@ -907,9 +945,13 @@ private struct DateRow: View {
                 .padding(.top, 10)
                 .padding(.bottom, 12)
                 .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.3)).frame(height: 1) }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                // Uncovered where it lies as the row grows (the web's Collapse), never slid
+                // down through the date above it; it fades in under the growing edge.
+                .transition(.opacity)
             }
         }
+        // The row's own shape: the details show only inside it as it opens.
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         // The green of the circle it came out of, fading into glass.
         .background {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -972,7 +1014,7 @@ private struct PileTable: View {
             .padding(.bottom, 4)
             ZStack(alignment: .top) {
                 PileMonth(
-                    month: layers.month, items: layers.yours, color: { _ in yoursColor }, shine: [], width: width,
+                    weeks: layers.yourWeeks, color: { _ in yoursColor }, shine: [], width: width,
                     dark: scheme == .dark)
                 ForEach(Array(layers.friends.enumerated()), id: \.element.id) { k, friend in
                     let t = k - model.placedCount
@@ -982,17 +1024,18 @@ private struct PileTable: View {
                             ? PileLand(at: 0, duration: 0)
                             : model.timeline.lands.indices.contains(t) ? model.timeline.lands[t] : PileLand(at: 0, duration: 0.3),
                         placed: friend.placed,
+                        go: model.throwing,
                         landed: model.landedNow, pressed: model.phase >= .pressed, revealed: model.phase >= .revealed,
                         alpha: layerAlpha(layers.friends.count), name: friend.name, color: friend.color, width: width
                     ) {
                         PileMonth(
-                            month: layers.month, items: friend.items, color: { _ in friend.color }, shine: [],
+                            weeks: friend.weeks, color: { _ in friend.color }, shine: [],
                             width: width, dark: scheme == .dark, pressed: model.phase >= .pressed)
                     }
                 }
                 // What shines through: the days free for everyone.
                 PileMonth(
-                    month: layers.month, items: [], color: { _ in "" },
+                    weeks: layers.emptyWeeks, color: { _ in "" },
                     shine: layers.shine.subtracting(model.taken), width: width, dark: scheme == .dark, numbers: false
                 )
                 .opacity(model.phase >= .revealed ? 1 : 0)
@@ -1009,12 +1052,20 @@ private struct PileTable: View {
 /// One friend's calendar, tossed onto the pile (the web's ThrownLayer): from
 /// high above to the side, falling faster into the hit, a skid, a hop, and
 /// settling crooked; knocked a little by each one landing after it; pressed
-/// straight; its name gone once the free days light up.
+/// straight; its name gone once the free days light up. Its shadow on the
+/// table (the web's) closes in and darkens as it comes down.
+///
+/// Moved as the welcome's thrown paper is: one number, 0 to 1 over the flight
+/// and the hit, animated straight, and the pose worked out from it each frame
+/// (`TossPose`). With keyframe animations the fall was never drawn: each sheet
+/// appeared already lying where it landed.
 private struct ThrownLayer<Content: View>: View {
     let k: Int
     let land: PileLand
     /// On the pile already (#240): lying as it landed, never thrown.
     var placed = false
+    /// The throw's clock started (PileModel.throwing): drawn, so ready to move.
+    let go: Bool
     let landed: Int
     let pressed: Bool
     let revealed: Bool
@@ -1024,23 +1075,60 @@ private struct ThrownLayer<Content: View>: View {
     let width: CGFloat
     @ViewBuilder let content: () -> Content
 
-    @State private var thrown = false
+    /// The throw, 0 to 1 over the fall and the hit; and pressed straight, 0 to 1.
+    @State private var flight = 0.0
+    @State private var press = 0.0
 
-    private struct Pose {
-        var x: Double = 0
-        var y: Double = 0
-        var rotate: Double = 0
-        var scale: Double = 1
-        var opacity: Double = 0
-    }
+    private var hit: Double { land.duration / (land.duration + PileTiming.impact) }
 
     var body: some View {
         let tilt = sheetTilt(k + 1)
         let side = throwSide(k)
         let from = side * Double(width) * 0.55
-        let total = land.duration + PileTiming.impact
-        let hit = land.duration / total
         let knock = jostle(k, landed)
+        ZStack {
+            // The shadow on the table, faint and wide while the sheet is high.
+            PileShadow()
+                .modifier(
+                    TossPose(
+                        from: .init(x: from * 0.4, y: 50, rotate: side * -6, scale: 1.3, opacity: 0),
+                        past: .init(x: tilt.x - side * 7, y: tilt.y + 12, rotate: tilt.rotate, scale: 0.99, opacity: 0.38),
+                        back: .init(x: tilt.x + side * 2, y: tilt.y + 14, rotate: tilt.rotate, scale: 1.01, opacity: 0.3),
+                        rest: .init(x: tilt.x, y: tilt.y + 12, rotate: tilt.rotate, scale: 1, opacity: 0.28),
+                        straight: .init(x: 0, y: 12, rotate: 0, scale: 1, opacity: 0.28),
+                        hit: hit, flight: flight, press: press, anchor: .center)
+                )
+                .opacity(revealed ? 0 : 1)
+                .animation(.easeOut(duration: 0.3), value: revealed)
+            sheet
+                .offset(x: pressed ? 0 : knock.x)
+                .rotationEffect(.degrees(pressed ? 0 : knock.rotate))
+                .animation(.spring(response: 0.25, dampingFraction: pressed ? 0.9 : 0.4), value: landed)
+                .modifier(
+                    TossPose(
+                        from: .init(x: from, y: -150, rotate: side * -14, scale: 1.6, opacity: 0),
+                        past: .init(x: tilt.x - side * 7, y: tilt.y + 3, rotate: tilt.rotate - side * 1.5, scale: 0.975, opacity: 1),
+                        back: .init(x: tilt.x + side * 2, y: tilt.y - 8, rotate: tilt.rotate + side * 0.6, scale: 1.012, opacity: 1),
+                        rest: .init(x: tilt.x, y: tilt.y, rotate: tilt.rotate, scale: 1, opacity: 1),
+                        straight: .init(x: 0, y: 0, rotate: 0, scale: 1, opacity: 1),
+                        hit: hit, flight: flight, press: press, anchor: UnitPoint(x: 0.5, y: 0.35))
+                )
+        }
+        .task(id: go) {
+            guard go else { return }
+            if placed {
+                flight = 1
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(Int(land.at * 1000)))
+            withAnimation(.linear(duration: land.duration + PileTiming.impact)) { flight = 1 }
+        }
+        .onChange(of: pressed) { _, now in
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { press = now ? 1 : 0 }
+        }
+    }
+
+    private var sheet: some View {
         ZStack(alignment: .topTrailing) {
             content()
             HStack(spacing: 6) {
@@ -1059,65 +1147,105 @@ private struct ThrownLayer<Content: View>: View {
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(Color.white.opacity(0.5), lineWidth: 1)
         }
-        .shadow(color: .black.opacity(revealed ? 0 : 0.18), radius: 16, y: 10)
-        .offset(x: pressed ? 0 : knock.x)
-        .rotationEffect(.degrees(pressed ? 0 : knock.rotate))
-        .animation(.spring(response: 0.25, dampingFraction: pressed ? 0.9 : 0.4), value: landed)
-        .keyframeAnimator(initialValue: Pose(), trigger: thrown) { view, pose in
-            view
-                .offset(x: pressed ? 0 : pose.x, y: pressed ? 0 : pose.y)
-                .rotationEffect(.degrees(pressed ? 0 : pose.rotate), anchor: UnitPoint(x: 0.5, y: 0.35))
-                .scaleEffect(pressed ? 1 : pose.scale)
-                .opacity(thrown ? pose.opacity : 0)
-        } keyframes: { _ in
-            let a = total * hit
-            let b = total * (1 - hit) * 0.4
-            let c = total * (1 - hit) * 0.6
-            // On the pile already (#240): every key its resting pose, so it never moves.
-            let at = { (moving: Double, rest: Double) in placed ? rest : moving }
-            KeyframeTrack(\.x) {
-                LinearKeyframe(at(from, tilt.x), duration: 0)
-                CubicKeyframe(at(tilt.x - side * 7, tilt.x), duration: a)
-                CubicKeyframe(at(tilt.x + side * 2, tilt.x), duration: b)
-                CubicKeyframe(tilt.x, duration: c)
-            }
-            KeyframeTrack(\.y) {
-                LinearKeyframe(at(-150, tilt.y), duration: 0)
-                CubicKeyframe(at(tilt.y + 3, tilt.y), duration: a)
-                CubicKeyframe(at(tilt.y - 8, tilt.y), duration: b)
-                CubicKeyframe(tilt.y, duration: c)
-            }
-            KeyframeTrack(\.rotate) {
-                LinearKeyframe(at(side * -14, tilt.rotate), duration: 0)
-                CubicKeyframe(at(tilt.rotate - side * 1.5, tilt.rotate), duration: a)
-                CubicKeyframe(at(tilt.rotate + side * 0.6, tilt.rotate), duration: b)
-                CubicKeyframe(tilt.rotate, duration: c)
-            }
-            KeyframeTrack(\.scale) {
-                LinearKeyframe(at(1.6, 1), duration: 0)
-                CubicKeyframe(at(0.975, 1), duration: a)
-                CubicKeyframe(at(1.012, 1), duration: b)
-                CubicKeyframe(1, duration: c)
-            }
-            KeyframeTrack(\.opacity) {
-                LinearKeyframe(at(0, 1), duration: 0)
-                LinearKeyframe(1, duration: a * 0.12)
-                LinearKeyframe(1, duration: total - a * 0.12)
-            }
+    }
+}
+
+/// A sheet's soft shadow on the table: blurred once into a picture, then only moved
+/// and stretched (its edges kept, so the corners stay round). Blurred afresh each
+/// frame, it held the whole fall still.
+private struct PileShadow: View {
+    /// How far the blur reaches past the sheet's edge, in points.
+    static let reach: CGFloat = 50
+
+    /// Drawn with Core Graphics' own shadow, at once: SwiftUI's ImageRenderer with a
+    /// blur took seconds the first time, and the screen stayed blank meanwhile. A
+    /// black rounded square drawn far outside the picture, its shadow cast into it.
+    @MainActor private static let picture: UIImage? = {
+        let scale: CGFloat = 2
+        let side = (160 + 2 * reach) * scale
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let drawn = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format).image { context in
+            let away: CGFloat = 10_000
+            let square = CGRect(x: reach * scale, y: reach * scale - away, width: 160 * scale, height: 160 * scale)
+            // The shadow's offset ignores the drawing's scale: in pixels, as everything here.
+            context.cgContext.setShadow(offset: CGSize(width: 0, height: away), blur: 40 * scale, color: UIColor.black.cgColor)
+            UIColor.black.setFill()
+            UIBezierPath(roundedRect: square, cornerRadius: 28 * scale).fill()
         }
-        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: pressed)
-        .task {
-            try? await Task.sleep(for: .milliseconds(Int(land.at * 1000)))
-            thrown = true
+        return drawn.cgImage.map { UIImage(cgImage: $0, scale: scale, orientation: .up) }
+    }()
+
+    var body: some View {
+        if let picture = Self.picture {
+            // The corners and the blur around them stay as drawn; the middle stretches.
+            let edge = Self.reach + 30
+            Image(uiImage: picture)
+                .resizable(capInsets: EdgeInsets(top: edge, leading: edge, bottom: edge, trailing: edge), resizingMode: .stretch)
+                .padding(-Self.reach)
         }
+    }
+}
+
+/// Where a thrown sheet (or its shadow) is: falling faster and faster into the hit
+/// (the web's [0.55, 0, 1, 0.45]), the skid past its spot easing out, the hop back
+/// easing in and out (PILE_TIMING's times: the hit, then 40 % and 60 % of the rest);
+/// then from its crooked rest to straight as `press` goes to 1.
+private struct TossPose: ViewModifier, Animatable {
+    struct Pose {
+        var x, y, rotate, scale, opacity: Double
+
+        func to(_ o: Pose, _ t: Double) -> Pose {
+            Pose(
+                x: x + (o.x - x) * t, y: y + (o.y - y) * t, rotate: rotate + (o.rotate - rotate) * t,
+                scale: scale + (o.scale - scale) * t, opacity: opacity + (o.opacity - opacity) * t)
+        }
+    }
+
+    let from: Pose
+    let past: Pose
+    let back: Pose
+    let rest: Pose
+    let straight: Pose
+    let hit: Double
+    var flight: Double
+    var press: Double
+    let anchor: UnitPoint
+
+    var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(flight, press) }
+        set {
+            flight = newValue.first
+            press = newValue.second
+        }
+    }
+
+    private static let fall = UnitCurve.bezier(startControlPoint: UnitPoint(x: 0.55, y: 0), endControlPoint: UnitPoint(x: 1, y: 0.45))
+
+    func body(content: Content) -> some View {
+        let t = min(max(flight, 0), 1)
+        let skid = hit + (1 - hit) * 0.4
+        let pose: Pose =
+            t < hit
+            ? from.to(past, Self.fall.value(at: t / max(hit, 0.0001)))
+            : t < skid
+                ? past.to(back, UnitCurve.easeOut.value(at: (t - hit) / max(skid - hit, 0.0001)))
+                : back.to(rest, UnitCurve.easeInOut.value(at: (t - skid) / max(1 - skid, 0.0001)))
+        let p = pose.to(straight, min(max(press, 0), 1))
+        // Never quite 0 before its throw: drawn ahead, unseen, so the throw only moves it.
+        content
+            .scaleEffect(p.scale, anchor: anchor)
+            .rotationEffect(.degrees(p.rotate), anchor: anchor)
+            .offset(x: p.x, y: p.y)
+            .opacity(t == 0 ? 0.002 : p.opacity)
     }
 }
 
 /// A month as the home page draws it, as a picture: the weeks, each day's
 /// number (green for a day free for everyone), and the bars under them.
 struct PileMonth: View {
-    let month: Int64
-    let items: [MonthItem]
+    /// The month laid out (`PileMonth.weeks`), worked out once by whoever holds it.
+    let weeks: [HomeWeek]
     let color: (String) -> String
     let shine: Set<Int64>
     let width: CGFloat
@@ -1130,8 +1258,31 @@ struct PileMonth: View {
 
     private var column: CGFloat { width / 7 }
 
+    init(
+        weeks: [HomeWeek], color: @escaping (String) -> String, shine: Set<Int64>, width: CGFloat, dark: Bool,
+        pressed: Bool = false, numbers: Bool = true, shineOpacity: Double = 1
+    ) {
+        self.weeks = weeks
+        self.color = color
+        self.shine = shine
+        self.width = width
+        self.dark = dark
+        self.pressed = pressed
+        self.numbers = numbers
+        self.shineOpacity = shineOpacity
+    }
+
+    /// A month laid out as it is made (the welcome's few): the pile lays its own out once.
+    init(
+        month: Int64, items: [MonthItem], color: @escaping (String) -> String, shine: Set<Int64>, width: CGFloat,
+        dark: Bool, pressed: Bool = false, numbers: Bool = true, shineOpacity: Double = 1
+    ) {
+        self.init(
+            weeks: Self.weeks(month, items), color: color, shine: shine, width: width, dark: dark, pressed: pressed,
+            numbers: numbers, shineOpacity: shineOpacity)
+    }
+
     var body: some View {
-        let weeks = Self.weeks(month, items)
         VStack(spacing: 0) {
             ForEach(Array(weeks.enumerated()), id: \.offset) { w, week in
                 let middle = Double(weeks.count - 1) / 2
@@ -1252,5 +1403,30 @@ extension View {
         } else {
             background(.regularMaterial, in: shape)
         }
+    }
+}
+
+/// One display frame, then `action` (`PileModel.drawn`).
+@MainActor
+private final class FrameTick: NSObject {
+    private var link: CADisplayLink?
+    private let action: () -> Void
+    private static var live: Set<FrameTick> = []
+
+    private init(_ action: @escaping () -> Void) { self.action = action }
+
+    static func once(_ action: @escaping () -> Void) {
+        let tick = FrameTick(action)
+        live.insert(tick)
+        let link = CADisplayLink(target: tick, selector: #selector(fire))
+        tick.link = link
+        link.add(to: .main, forMode: .common)
+    }
+
+    @objc private func fire() {
+        link?.invalidate()
+        link = nil
+        Self.live.remove(self)
+        action()
     }
 }
