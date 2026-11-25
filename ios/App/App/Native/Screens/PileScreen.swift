@@ -169,7 +169,8 @@ final class PileModel {
 
     /// From the top: the calendars thrown, pressed, the dates lifted and checked.
     func start() {
-        reset()
+        // Played again under Ret planen's sheet: the list and the calendar fade away first.
+        withAnimation(.easeOut(duration: 0.25)) { reset() }
         let still = UIAccessibility.isReduceMotionEnabled
         run = Task {
             guard let found = await plan.waitForSearch(), let people = plan.people, !people.participants.isEmpty
@@ -782,7 +783,7 @@ struct PileScreen: View {
                     .opacity(model.phase >= .ranking ? 1 : 0)
                     .animation(.easeOut(duration: 0.4), value: model.phase >= .ranking)
                     .allowsHitTesting(false)
-                if listing { list }
+                if listing { list.transition(.opacity) }
                 if model.overHome {
                     // In the month title's row, clear of the home page's buttons: under its
                     // toolbar's row (8 + 40 + 4), in the middle of the title's 45.5.
@@ -1371,7 +1372,16 @@ private struct SharedCard: View, Animatable {
         ZStack(alignment: .topLeading) {
             shape
                 .fill(Theme.card.color.opacity(pileOpacity))
-                .overlay { shape.strokeBorder(Color.white.opacity(0.5), lineWidth: 1) }
+                .overlay {
+                    // Its sides fade out before the screen's round corners, which they ran into.
+                    let fade = min(1, 140 / max(1, bottom - top)) * g
+                    shape.strokeBorder(Color.white.opacity(0.5), lineWidth: 1)
+                        .mask(
+                            LinearGradient(
+                                stops: [.init(color: .black, location: 0), .init(color: .black, location: 1 - fade),
+                                        .init(color: .clear, location: 1)],
+                                startPoint: .top, endPoint: .bottom))
+                }
                 .frame(width: weeks.width, height: bottom - top)
                 .offset(y: top)
             // The weeks, where the pile's lay, scrolled within the card.

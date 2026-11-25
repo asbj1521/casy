@@ -94,12 +94,12 @@ private func inWindow(_ day: DayCell, _ window: (start: String, end: String)) ->
 public enum PileTiming {
     public static let yours = 0.6
     public static let inPlace = 0.12
-    public static let firstLand = 0.42
+    public static let firstLand = 0.32
     public static let speedUp = 0.85
     public static let fastestLand = 0.16
     public static let gap = 0.18
     public static let impact = 0.4
-    public static let settle = 0.4
+    public static let settle = 0.2
     public static let press = 1.0
     public static let reveal = 1.0
     public static let fly = 0.9

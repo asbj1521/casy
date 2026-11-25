@@ -162,7 +162,7 @@ export const PILE_TIMING = {
    */
   inPlace: 0.12,
   /** The first friend's calendar in the air: a quick toss, not a glide. */
-  firstLand: 0.42,
+  firstLand: 0.32,
   /** Each throw after takes this share of the one before... */
   speedUp: 0.85,
   /** ...but never less than this. */
@@ -172,7 +172,7 @@ export const PILE_TIMING = {
   /** The hit after a throw: a small skid, a hop, settling. Overlaps the next throw. */
   impact: 0.4,
   /** The pile lying still before the press. */
-  settle: 0.4,
+  settle: 0.2,
   /** The press, from the middle out, the layers settling into line. */
   press: 1.0,
   /** The days free for everyone lighting up. */

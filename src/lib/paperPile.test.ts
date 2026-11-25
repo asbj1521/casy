@@ -163,10 +163,10 @@ describe("pileTimeline", () => {
     expect(lands[1].at).toBeCloseTo(lands[0].at + lands[0].duration + PILE_TIMING.gap);
   });
 
-  it("takes about 7 to 14 seconds with a list to check, from a group of two to the largest", () => {
+  it("takes about 6.5 to 14 seconds with a list to check, from a group of two to the largest", () => {
     for (const others of [1, 3, 8, 19]) {
       const { doneAt } = pileTimeline(others, 6);
-      expect(doneAt).toBeGreaterThanOrEqual(7);
+      expect(doneAt).toBeGreaterThanOrEqual(6.5);
       expect(doneAt).toBeLessThanOrEqual(14);
     }
   });

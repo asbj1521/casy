@@ -69,7 +69,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     private var openScreen: String? {
         // Planlæg's own sheet over the native home page keeps it shown (placeHome).
-        didSet { if openScreen != oldValue { DispatchQueue.main.async { self.placeHome() } } }
+        didSet {
+            guard openScreen != oldValue else { return }
+            if oldValue == "plan" { holdHome() }
+            DispatchQueue.main.async { self.placeHome() }
+        }
     }
 
     /// Whether a screen opened by a test launch, not by the page, is signed in:
@@ -659,6 +663,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             fresh.important = important
             fresh.dataAt = dataAt
             HomeModel.shared.update(fresh)
+            // The page has caught up: nothing of its own is over the month any more.
+            if !covered { self.homeHeld = false }
             self.placeHome()
             call.resolve()
         }
@@ -670,7 +676,28 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// The paper pile is up: it is thrown onto the native home page (#282), so that stays
     /// shown though the page still counts its Planlæg as over the month (`covered`).
     @MainActor private var pileUp = false {
-        didSet { if pileUp != oldValue { placeHome() } }
+        didSet {
+            guard pileUp != oldValue else { return }
+            if oldValue { holdHome() }
+            placeHome()
+        }
+    }
+    /// The pile on the screen now, for Ret planen to put Planlæg's sheet over.
+    private weak var pileHost: UIViewController?
+    /// Planlæg or the pile just gone: the native home page stays until the page says its
+    /// Planlæg is no longer over it, else the page's own home page flickered between.
+    private var homeHeld = false
+    private var holdEnds: DispatchWorkItem?
+
+    private func holdHome() {
+        homeHeld = true
+        holdEnds?.cancel()
+        let ends = DispatchWorkItem { [weak self] in
+            self?.homeHeld = false
+            self?.placeHome()
+        }
+        holdEnds = ends
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: ends)
     }
 
     @MainActor private func placeHome() {
@@ -678,7 +705,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // The page counts its Planlæg as over the month; the app's own Planlæg sheet and pile
         // are over the native home page, which stays: else the page's own home page showed
         // under them, its buttons and rows a little off.
-        let wanted = NativeHome.on && page.shown && (!page.covered || pileUp || openScreen == "plan")
+        let wanted = NativeHome.on && page.shown && (!page.covered || pileUp || homeHeld || openScreen == "plan")
         guard let main = bridge?.viewController else { return }
         if wanted && homeHost == nil {
             let host = UIHostingController(rootView: HomeScreen(preferences: NativePreferences.shared))
@@ -941,6 +968,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// plan as it was; closing or sending ends Planlæg, which the page hears.
     private func showPile() {
         guard let presenter = bridge?.viewController else { return }
+        // Ret planen's sheet over the pile: it goes, and the pile plays again where it is,
+        // from the month it was on (scrolled on only if the dates' month changed).
+        if let pile = pileHost, pile.presentingViewController != nil, pile.presentedViewController != nil {
+            pile.dismiss(animated: true) { PileModel.shared.start() }
+            return
+        }
         // Everything over the page goes (a vote's own plan sits on Aftaler, #240).
         presenter.dismiss(animated: true) { [weak self] in
             guard let self else { return }
@@ -949,11 +982,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             self.pileUp = true
             let pile = PileScreen(
                 onChange: { [weak self] in
-                    self?.pileUp = false
-                    HomeModel.shared.backToToday()
-                    presenter.presentedViewController?.dismiss(animated: false) {
-                        self?.present("plan", on: presenter, state: ["keep": true])
-                    }
+                    // Planlæg's sheet up over the ranked list, the plan as it was.
+                    guard let self, let pile = self.pileHost else { return }
+                    self.present("plan", on: pile, state: ["keep": true])
                 },
                 onClose: { [weak self] in
                     self?.pileUp = false
@@ -980,6 +1011,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             host.modalTransitionStyle = .crossDissolve
             // The home page under it shows until the pile has been worked out.
             host.view.backgroundColor = .clear
+            self.pileHost = host
             presenter.present(host, animated: true)
         }
     }
@@ -998,6 +1030,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }
 
     private func dismissOpenScreen(_ then: [String: Any] = [:]) {
+        // Planlæg cancelled over the pile: the pile goes with it, the home page back to today.
+        if pileUp {
+            pileUp = false
+            HomeModel.shared.backToToday()
+        }
         bridge?.viewController?.presentedViewController?.dismiss(animated: true) { [weak self] in
             self?.closed(then)
         }
@@ -1006,6 +1043,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     public func presentationControllerDidDismiss(
         _ presentationController: UIPresentationController
     ) {
+        // Ret planen's sheet swiped away over the pile: back to the ranked list.
+        if openScreen == "plan", pileUp, pileHost?.presentingViewController != nil {
+            return
+        }
         // A vote searched again, its plan swiped away: back onto the vote.
         if openScreen == "plan", PlanModel.shared.again != nil {
             backToVote()
