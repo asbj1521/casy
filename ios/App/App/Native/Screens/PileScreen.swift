@@ -49,7 +49,23 @@ struct PileLayers: Equatable {
     /// colours with their names, the vote's dates, today. The web throws the
     /// calendars onto the home page's own month; nil when it isn't there to borrow.
     var homeWeeks: [HomeWeek]?
+    /// Every month the list reaches into, with everyone's busy time together (the web's
+    /// SharedCalendar): what the pile becomes as the dates are lifted out of it.
+    var sharedWeeks: [[HomeWeek]] = []
 }
+
+/// Where a row comes from as it is lifted out: its date's green circle, as a move and a
+/// squeeze of the row (the web's Flight); `circle` false: from a little below, faded.
+struct RowFlight: Equatable {
+    var dx: CGFloat, dy: CGFloat, sx: CGFloat, sy: CGFloat
+    var circle: Bool
+}
+
+/// A week as the pile draws it: its line, its numbers, its lanes (WeekPicture).
+let pileWeekHeight: CGFloat = 1 + 40 + CGFloat(monthLanes) * monthLanePoints + monthMorePoints
+/// The shared calendar's band over its weeks: the month's name and the weekdays, as
+/// tall as My calendar's header holds them (its title 45.5, its weekdays 30).
+let pileBandHeight: CGFloat = 75.5
 
 /// Apple Calendar's colours, a friend each, in the group's order.
 private let friendColors = [
@@ -93,6 +109,15 @@ final class PileModel {
     /// The dates have been worked out (there may be none).
     private(set) var ready = false
     private(set) var arrived: Set<String> = []
+    /// How far the shared calendar has scrolled, lifting each date out (the web's `scroll`).
+    private(set) var scroll: CGFloat = 0
+    /// Where each row came from, set the moment its date is lifted out.
+    private(set) var flights: [String: RowFlight] = [:]
+    /// The pile's weeks on the screen (its first week's top, its width): where the shared
+    /// calendar lies and its green circles are.
+    var weeksFrame: CGRect?
+    /// Each row's place on the screen, read as it is laid out (not drawn from: no redraw).
+    @ObservationIgnored var rowFrames: [String: CGRect] = [:]
     private(set) var taken: Set<Int64> = []
     private(set) var checked = 0
     private(set) var widen: [WidenOption] = []
@@ -121,6 +146,10 @@ final class PileModel {
         landed = 0
         layers = nil
         onHome = nil
+        scroll = 0
+        flights = [:]
+        weeksFrame = nil
+        rowFrames = [:]
         throwing = false
         dates = nil
         ready = false
@@ -360,9 +389,37 @@ final class PileModel {
             return
         }
         try? await Task.sleep(for: .milliseconds(250))
+        // The dates in their order: the shared calendar scrolls up until the next one's
+        // green circle is level with its empty row, stops, and the circle turns into the
+        // row (the web's DateList). One already level or past turns at once; one with no
+        // circle (someone gives something up for it) rises from below.
         for item in dates {
             guard !Task.isCancelled else { return }
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            let row = rowFrames[item.id]
+            var circle = circle(of: item.day)
+            if let row, let c = circle {
+                let gap = c.midY - row.midY
+                if gap > 1 {
+                    let seconds = min(1.1, max(0.25, Double(gap) / 900))
+                    withAnimation(.easeInOut(duration: seconds)) { scroll += gap }
+                    let ticks = Task { await tick(over: gap, seconds: seconds) }
+                    try? await Task.sleep(for: .milliseconds(Int(seconds * 1000)))
+                    ticks.cancel()
+                    guard !Task.isCancelled else { return }
+                    circle = self.circle(of: item.day)
+                }
+            }
+            flights[item.id] =
+                if let row, let c = circle {
+                    RowFlight(
+                        dx: c.minX - row.minX, dy: c.minY - row.minY, sx: c.width / row.width,
+                        sy: c.height / row.height, circle: true)
+                } else {
+                    RowFlight(dx: 0, dy: 24, sx: 1, sy: 1, circle: false)
+                }
+            // Drawn at its circle first, then it grows into its row.
+            await Self.drawn(1)
+            withAnimation(.timingCurve(0.3, 0.9, 0.3, 1, duration: 0.55)) {
                 arrived.insert(item.id)
                 taken.insert(item.day)
             }
@@ -383,6 +440,33 @@ final class PileModel {
         guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.3)) { phase = .done }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
+
+    /// A date's green circle on the screen, in the shared calendar as scrolled now; nil if
+    /// it has none (not lit) or the pile isn't laid out.
+    private func circle(of day: Int64) -> CGRect? {
+        guard let frame = weeksFrame, let layers, layers.shine.contains(day),
+            let m = layers.months.firstIndex(of: startOfMonth(day, zone)), m < layers.sharedWeeks.count,
+            let w = layers.sharedWeeks[m].firstIndex(where: { $0.days.contains { $0.date == day && $0.inMonth } }),
+            let c = layers.sharedWeeks[m][w].days.firstIndex(where: { $0.date == day })
+        else { return nil }
+        let before = layers.sharedWeeks[..<m].reduce(0) { $0 + $1.count }
+        let column = frame.width / 7
+        // The number's 32 point circle sits in the middle of its 40 point row, under the week's line.
+        let top = frame.minY + CGFloat(before + w) * pileWeekHeight - scroll + 1 + 4
+        return CGRect(x: frame.minX + column * CGFloat(c) + (column - 32) / 2, y: top, width: 32, height: 32)
+    }
+
+    /// A light tick for every 70 points the calendar scrolls, like a wheel's detents.
+    private func tick(over distance: CGFloat, seconds: Double) async {
+        let count = Int(distance / 70)
+        guard count > 0 else { return }
+        let ticker = UISelectionFeedbackGenerator()
+        for _ in 0..<count {
+            try? await Task.sleep(for: .milliseconds(Int(seconds * 1000) / (count + 1)))
+            if Task.isCancelled { return }
+            ticker.selectionChanged()
+        }
     }
 
     /// The other choice of ranking (#234): the list re-ranks where it stands.
@@ -409,6 +493,8 @@ final class PileModel {
             widen = []
             arrived = []
             taken = []
+            flights = [:]
+            scroll = 0
             checked = 0
             dates = nil
             ready = false
@@ -612,9 +698,11 @@ final class PileModel {
         // Those on the pile already first, so the ones thrown now land on top.
         friends = friends.filter(\.placed) + friends.filter { !$0.placed }
         let yours = you.map { items($0) } ?? []
+        let everyone = friends.flatMap(\.items)
         return PileLayers(
             month: first, months: months, shine: shine, friends: friends, yours: yours,
-            yourWeeks: PileMonth.weeks(first, yours), emptyWeeks: PileMonth.weeks(first, []))
+            yourWeeks: PileMonth.weeks(first, yours), emptyWeeks: PileMonth.weeks(first, []),
+            sharedWeeks: months.map { PileMonth.weeks($0, everyone) })
     }
 }
 
@@ -644,15 +732,27 @@ struct PileScreen: View {
                     .opacity((model.layers == nil || model.onHome != nil) && model.waiting == nil ? 0 : 1)
                     .animation(.easeOut(duration: 0.25), value: model.layers == nil)
                 if let layers = model.layers {
-                    if let month = model.onHome {
+                    Group {
+                        if let month = model.onHome {
+                            let origin = geo.frame(in: .global).origin
+                            PileTable(layers: layers, width: month.width, onHome: true)
+                                .offset(x: month.minX - origin.x, y: month.minY - origin.y)
+                                .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                        } else {
+                            PileTable(layers: layers, width: geo.size.width)
+                                .padding(.top, 8)
+                                .transition(.opacity)
+                        }
+                    }
+                    // Once the dates lift, the pile is one calendar (the shared one, below).
+                    .opacity(listing ? 0 : 1)
+                    .animation(.easeOut(duration: 0.3), value: listing)
+                    if listing, let weeks = model.weeksFrame {
                         let origin = geo.frame(in: .global).origin
-                        PileTable(layers: layers, width: month.width, onHome: true)
-                            .offset(x: month.minX - origin.x, y: month.minY - origin.y)
+                        SharedCalendar(layers: layers, weeks: weeks, scroll: model.scroll, taken: model.taken)
+                            .offset(x: weeks.minX - origin.x, y: weeks.minY - origin.y - pileBandHeight)
                             .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
-                    } else {
-                        PileTable(layers: layers, width: geo.size.width)
-                            .padding(.top, 8)
-                            .transition(.opacity)
+                            .transition(.opacity.animation(.easeOut(duration: 0.3)))
                     }
                 }
                 if let month = model.onHome {
@@ -660,7 +760,7 @@ struct PileScreen: View {
                     // over everything once they are ranked.
                     let origin = geo.frame(in: .global).origin
                     Theme.background.color.opacity(0.5)
-                        .frame(height: max(0, month.minY - origin.y) + geo.safeAreaInsets.top)
+                        .frame(height: max(0, month.minY - origin.y - pileBandHeight) + geo.safeAreaInsets.top)
                         .frame(maxHeight: .infinity, alignment: .top)
                         .ignoresSafeArea()
                         .opacity(listing && model.phase < .ranking ? 1 : 0)
@@ -813,10 +913,13 @@ struct PileScreen: View {
                 item: item, rank: (order.firstIndex(of: at) ?? 0) + 1, at: at, checked: model.checked,
                 ranking: model.phase == .ranking, done: model.phase == .done,
                 meeting: PlanModel.shared.search.kind == .single, kind: PlanModel.shared.search.kind,
-                arrived: model.arrived.contains(item.id), open: open == item.id, lang: lang
+                arrived: model.arrived.contains(item.id), flight: model.flights[item.id], open: open == item.id,
+                lang: lang
             ) {
                 withAnimation(.easeInOut(duration: 0.25)) { open = open == item.id ? nil : item.id }
             }
+            // Where it is laid out (outside its own flight), for its date to scroll level with.
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { model.rowFrames[item.id] = $0 }
             // Sent: the ones not sent swipe off to the right, the ones sent fly down into Aftaler.
             .offset(
                 x: model.flying ? (item.chosen ? -120 : 500) : 0,
@@ -970,6 +1073,8 @@ private struct DateRow: View {
     let meeting: Bool
     let kind: EventKind
     let arrived: Bool
+    /// Where it comes from as it is lifted out (its date's circle); nil: just there.
+    let flight: RowFlight?
     let open: Bool
     let lang: Lang
     let toggle: () -> Void
@@ -1027,6 +1132,9 @@ private struct DateRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            // Its words come once it has grown out of its circle.
+            .opacity(arrived || flight == nil ? 1 : 0)
+            .animation(.easeOut(duration: 0.25).delay(arrived && flight?.circle == true ? 0.3 : 0), value: arrived)
             .disabled(!done)
             .accessibilityLabel(CasyStrings.pileDetails(label))
             .accessibilityIdentifier("pile.date")
@@ -1067,9 +1175,10 @@ private struct DateRow: View {
         // the pile were redrawn every frame, and the ranking stuttered.
         .background { PileFrost(shape: RoundedRectangle(cornerRadius: 22, style: .continuous), dark: dark).opacity(done ? 0 : 1) }
         .pileGlass(RoundedRectangle(cornerRadius: 22, style: .continuous), on: done)
-        .opacity(arrived ? 1 : 0)
-        .scaleEffect(arrived ? 1 : 0.35, anchor: .center)
-        .offset(y: arrived ? 0 : 40)
+        // Out of its green circle and stretched into the row (the web's FLIP); unseen until then.
+        .scaleEffect(x: arrived ? 1 : flight?.sx ?? 1, y: arrived ? 1 : flight?.sy ?? 1, anchor: .topLeading)
+        .offset(x: arrived ? 0 : flight?.dx ?? 0, y: arrived ? 0 : flight?.dy ?? 24)
+        .opacity(arrived || flight?.circle == true ? 1 : 0)
         .zIndex(ranking && at == checked - 1 ? 10 : 0)
     }
 
@@ -1180,6 +1289,92 @@ private struct PileTable: View {
                 .scaleEffect(model.phase >= .revealed ? 1 : 0.98)
                 .animation(.easeOut(duration: 0.5), value: model.phase >= .revealed)
             }
+            // Where its weeks are on the screen, for the shared calendar to take their place.
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                if model.weeksFrame != frame { model.weeksFrame = frame }
+            }
+    }
+}
+
+/// The pile once pressed, as one calendar (the web's SharedCalendar): everyone's busy
+/// time together over every month the listed dates are in, the free days lit, on the
+/// sheets' glass. Moved by `scroll` alone (never by hand): the list scrolls it to lift
+/// each date out. Its band names the month at the top of the view, over My calendar's
+/// own name, which may be another month by then.
+private struct SharedCalendar: View {
+    let layers: PileLayers
+    let weeks: CGRect
+    let scroll: CGFloat
+    let taken: Set<Int64>
+
+    @Environment(\.colorScheme) private var scheme
+    private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
+    private var colors: [String: String] { Dictionary(layers.friends.map { ($0.profileId, $0.color) }, uniquingKeysWith: { a, _ in a }) }
+
+    /// The month whose first week has come up under the band.
+    private var named: Int64 {
+        var top = 0.0
+        var current = layers.months.first ?? layers.month
+        for (m, month) in layers.months.enumerated() where m < layers.sharedWeeks.count {
+            if top <= Double(scroll) + 2 { current = month }
+            top += Double(CGFloat(layers.sharedWeeks[m].count) * pileWeekHeight)
+        }
+        return current
+    }
+
+    var body: some View {
+        let colors = colors
+        let shine = layers.shine.subtracting(taken)
+        let shape = UnevenRoundedRectangle(topLeadingRadius: 28, topTrailingRadius: 28, style: .continuous)
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(capitalize(monthName(named, lang)))
+                    .font(.system(size: 30, weight: .bold))
+                    .tracking(-0.75)
+                    .foregroundStyle(Theme.foreground.color)
+                    .lineLimit(1)
+                    // Ending before the list's own line and the close button, in the same row.
+                    .minimumScaleFactor(0.6)
+                    .frame(maxWidth: max(0, weeks.width - 250), alignment: .leading)
+                    .frame(height: 37.5)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.2), value: named)
+                HStack(spacing: 0) {
+                    ForEach(0..<7, id: \.self) { c in
+                        let day = wallTime(2026, 0, 5 + c, 12, appTimeZone)
+                        Text(verbatim: String(weekdayShortName(day, lang).prefix(1)).uppercased())
+                            .frame(maxWidth: .infinity)
+                            .foregroundStyle(c >= 5 ? Theme.mutedForeground.color : Theme.foreground.color)
+                    }
+                }
+                .font(.system(size: 12, weight: .medium))
+                .frame(height: 24)
+                .padding(.bottom, 6)
+            }
+            .frame(width: weeks.width, height: pileBandHeight, alignment: .bottomLeading)
+            VStack(spacing: 0) {
+                ForEach(Array(layers.months.enumerated()), id: \.element) { m, _ in
+                    if m < layers.sharedWeeks.count {
+                        PileMonth(
+                            weeks: layers.sharedWeeks[m], color: { colors[$0] ?? "" }, shine: shine, width: weeks.width,
+                            dark: scheme == .dark)
+                    }
+                }
+            }
+            .offset(y: -scroll)
+            .frame(width: weeks.width, alignment: .top)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .clipped()
+        }
+        .frame(width: weeks.width)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(Theme.card.color.opacity(pileOpacity), in: shape)
+        .overlay { shape.strokeBorder(Color.white.opacity(scheme == .dark ? 0.16 : 0.5), lineWidth: 1) }
+        .ignoresSafeArea(edges: .bottom)
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
     }
 }
 
