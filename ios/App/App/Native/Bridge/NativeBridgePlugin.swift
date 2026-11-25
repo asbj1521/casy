@@ -933,6 +933,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // Everything over the page goes (a vote's own plan sits on Aftaler, #240).
         presenter.dismiss(animated: true) { [weak self] in
             guard let self else { return }
+            // Cleared first: its first frame would otherwise be the last pile.
+            PileModel.shared.reset()
             let pile = PileScreen(
                 onChange: { [weak self] in
                     presenter.presentedViewController?.dismiss(animated: false) {

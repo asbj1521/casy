@@ -110,8 +110,9 @@ final class PileModel {
 
     var priority: String { plan.extras.priority }
 
-    /// From the top: the calendars thrown, pressed, the dates lifted and checked.
-    func start() {
+    /// Nothing on it: called before the pile is shown again, so its first frame is never
+    /// the last pile (already lying there, over a dark screen) until `start` clears it.
+    func reset() {
         run?.cancel()
         phase = .landing
         landed = 0
@@ -127,6 +128,11 @@ final class PileModel {
         sending = false
         flying = false
         failure = nil
+    }
+
+    /// From the top: the calendars thrown, pressed, the dates lifted and checked.
+    func start() {
+        reset()
         let still = UIAccessibility.isReduceMotionEnabled
         run = Task {
             guard let found = await plan.waitForSearch(), let people = plan.people, !people.participants.isEmpty
