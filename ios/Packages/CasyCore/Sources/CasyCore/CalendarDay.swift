@@ -85,7 +85,8 @@ public let holidayCalendarId = "builtin:dk-holidays"
 public let casyCalendarId = "builtin:casy-entries"
 
 private let holidayRGB = "220, 38, 38"
-private let casyRGB = "234, 88, 12"
+/// Casy's orange, as the month's calendar colours are written (homeVotes.ts's CASY_RGB too).
+public let casyRGB = "234, 88, 12"
 private let categoryRGB = [
     "work": "59, 130, 246",
     "school": "168, 85, 247",

@@ -286,6 +286,17 @@ private func idOrNull(_ date: CandidateDate?) -> JSONValue { date.map { .string(
                         ])
                     }),
             ])
+        case "homeVotes":
+            let events: [SuggestedEvent] = try a["events"].decoded()
+            let titleOf = { (e: SuggestedEvent) in "\(e.title) \(e.id)" }
+            let waiting = waitingVotes(events, now: now)
+            return .object([
+                "waiting": ids(waiting),
+                "pencils": try json(pencilItems(waiting, titleOf: titleOf, now: now)),
+                "scheduled": try json(
+                    scheduledItems(events, calendarItems: try a["calendarItems"].decoded(), titleOf: titleOf, now: now)),
+                "newlyDecided": ids(newlyDecided(events, seen: Set(try a["seen"].decoded([String].self)), now: now)),
+            ])
         case "lists":
             let events: [SuggestedEvent] = try a["events"].decoded()
             let sections = sectionEvents(events, now: now)

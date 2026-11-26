@@ -1,6 +1,7 @@
 /** vote.ts and myEvents.ts, for Events.swift. */
 import { type EventResponse, needsYourAnswer, type SuggestedEvent } from "@/api/events";
 import { phoneEventGroups, sectionEvents, type StagedEvent } from "@/lib/myEvents";
+import { newlyDecided, pencilItems, scheduledItems, waitingVotes } from "@/lib/homeVotes";
 import {
   allAnswered,
   bestPick,
@@ -122,6 +123,40 @@ export function eventsCases(): ParityCase[] {
         answer: staged(groups.answer),
         coming: staged(groups.coming),
         past: staged(groups.past),
+      },
+    );
+  }
+
+  // homeVotes.ts (#202): the waiting votes' dates pencilled in, the decided ones as
+  // chips (one already in your calendar left out, one you said no to as well), and
+  // those decided since this device last looked.
+  const titleOf = (e: SuggestedEvent) => `${e.title} ${e.id}`;
+  for (let i = 0; i < 40; i++) {
+    const events = Array.from({ length: int(0, 12) }, event).map((e) => {
+      // Decided on one of its own dates now and then, so a no to it counts.
+      const chosen = e.candidates.length > 0 && flag(0.5) ? pick(e.candidates) : null;
+      return chosen
+        ? { ...e, currentDate: { id: chosen.id, start: chosen.start, end: chosen.end } }
+        : e;
+    });
+    const now = NOW;
+    const calendarItems = events
+      .filter((e) => e.currentDate && flag(0.3))
+      .map((e) => ({
+        calendarId: "cal",
+        start: Date.parse(e.currentDate!.start),
+        end: Date.parse(e.currentDate!.end),
+        label: "Copy",
+      }));
+    const seen = events.filter(() => flag(0.5)).map((e) => e.id);
+    add(
+      "homeVotes",
+      { events, now, calendarItems, seen },
+      {
+        waiting: ids(waitingVotes(events, now)),
+        pencils: pencilItems(waitingVotes(events, now), titleOf, now),
+        scheduled: scheduledItems(events, calendarItems, titleOf, now),
+        newlyDecided: ids(newlyDecided(events, new Set(seen), now)),
       },
     );
   }
