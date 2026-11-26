@@ -15,6 +15,8 @@ public enum AppRoute: Equatable, Sendable {
     case vote(String)
     /// An invite link (`/join/<token>`).
     case join(String)
+    /// Indstillinger (`/profile/settings`, the admin's test notification).
+    case settings
 }
 
 /// The app's screen for an in-app path, or nil when the page still has it
@@ -28,6 +30,7 @@ public func appRoute(_ path: String) -> AppRoute? {
     case 1 where parts[0] == "events": return .events(nil)
     case 2 where parts[0] == "events": return .events(parts[1])
     case 2 where parts[0] == "join": return .join(parts[1])
+    case 2 where parts == ["profile", "settings"]: return .settings
     case 3 where parts[0] == "events" && parts[2] == "dates": return .vote(parts[1])
     default: return nil
     }

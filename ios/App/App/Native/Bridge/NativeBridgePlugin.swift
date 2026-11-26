@@ -192,6 +192,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self.openedHere = true
                 self.present("events", on: presenter, state: ["vote": id])
             }
+            // Settled: the sheets made ready, so the first press is as quick as any.
+            HomeModel.shared.onSettled = { [weak self] in self?.makeSheetsReady() }
             // The home page's buttons open the app's own sheets (#202): the page isn't asked.
             HomeModel.shared.route = { [weak self] action, day in
                 self?.route(action, day) ?? false
@@ -1169,6 +1171,44 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return sheet("events", ["vote": id])
         case .join(let token):
             return sheet("join", ["token": token, "signedIn": true])
+        case .settings:
+            return sheet("settings", [:])
+        }
+    }
+
+    /// The home page's sheets made ready once it has settled (#202): what each loads
+    /// as it opens fetched now, and each screen laid out once off screen, so the
+    /// first press opens it as quickly as every later one.
+    private var sheetsReady = false
+    private func makeSheetsReady() {
+        guard !sheetsReady, NativeHome.on else { return }
+        sheetsReady = true
+        Task { @MainActor in
+            async let profile: Void = ProfileModel.shared.load()
+            async let calendars: Void = CalendarsModel.shared.data == nil ? CalendarsModel.shared.load() : ()
+            async let groups: Void = PlanModel.shared.groups == nil ? PlanModel.shared.loadGroups() : ()
+            ShortcutsModel.shared.loadAhead()
+            _ = await (profile, calendars, groups)
+        }
+        let none: (LeavingProfile) -> Void = { _ in }
+        let prefs = NativePreferences.shared
+        let screens: [AnyView] = [
+            AnyView(EventsSheet(preferences: prefs, onDone: {}, leave: none)),
+            AnyView(
+                ProfileScreen(
+                    preferences: prefs, build: pageBuild, userAgent: pageUserAgent, onChoose: { _, _ in }, onDone: {},
+                    enablePush: { "failed" }, leave: none)),
+            AnyView(CalendarsSheet(preferences: prefs, start: nil, connect: nil, onDone: {}, leave: none)),
+            AnyView(TellSheet(preferences: prefs, onDone: {}, leave: none)),
+            AnyView(PlanSheet(preferences: prefs, onDone: {}, leave: none)),
+        ]
+        // One at a time, a frame or so apart, so the home page never stutters for it.
+        Task { @MainActor in
+            for view in screens {
+                try? await Task.sleep(for: .milliseconds(250))
+                let host = UIHostingController(rootView: view)
+                _ = host.sizeThatFits(in: UIScreen.main.bounds.size)
+            }
         }
     }
 

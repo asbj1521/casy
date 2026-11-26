@@ -86,6 +86,8 @@ final class HomeModel {
 
     /// The bridge's: what a tap asks of the page.
     var onAction: ((_ action: String, _ day: Int64?) -> Void)?
+    /// The home page has settled (the bridge's: its sheets are made ready then).
+    @ObservationIgnored var onSettled: (() -> Void)?
     /// A vote to answer over the month, from a notification's tap (#202): the home page opens it.
     var voteToOpen: String?
     /// The bridge's: a press the app answers itself with its own sheet (#202), true when it did.

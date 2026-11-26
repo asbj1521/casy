@@ -115,6 +115,7 @@ struct HomeScreen: View {
             // As the web's SHEETS_AFTER_MS: the home page settles before anything is said over it.
             try? await Task.sleep(for: .milliseconds(1200))
             settled = true
+            model.onSettled?()
             // Tid til hinanden's stars, once the home page has settled (the page's usePrimeDates).
             if HomeStars.on { HomeStars.shared.refresh() }
             // Your AI setting and invitations, for Tilføj til kalender and Profil's count.

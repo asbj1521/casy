@@ -8,6 +8,7 @@ import Testing
     #expect(appRoute("/events/ev-1/dates") == .vote("ev-1"))
     #expect(appRoute("/join/abc123") == .join("abc123"))
     #expect(appRoute("/events?x=1") == .events(nil))
+    #expect(appRoute("/profile/settings") == .settings)
     // Still the page's.
     #expect(appRoute("/groups") == nil)
     #expect(appRoute("/invited/g-1") == nil)
