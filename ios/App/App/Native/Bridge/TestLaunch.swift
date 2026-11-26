@@ -28,6 +28,8 @@
         static var screen: String? { defaults.string(forKey: "casyOpenScreen") }
         /// `-casyOpenPath /events`: an address arriving as a notification's tap would (#202).
         static var path: String? { defaults.string(forKey: "casyOpenPath") }
+        /// `-casyAsks YES`: the app decides when to ask for notifications and a rating (#202).
+        static var asks: Bool { defaults.bool(forKey: "casyAsks") }
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
         /// `-casyPushAnswer <granted|denied|failed>`: how turning notifications on goes, without the page.
         static var pushAnswer: String? { defaults.string(forKey: "casyPushAnswer") }

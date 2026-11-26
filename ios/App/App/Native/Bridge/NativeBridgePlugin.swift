@@ -32,6 +32,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "authAnswered", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openPath", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "askPush", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "asksFromPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "labelsFromPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "legsFromPage", returnType: CAPPluginReturnPromise),
@@ -48,7 +50,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips"] : [])
+            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips", "asks"] : [])
         #else
             return []
         #endif
@@ -192,6 +194,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self.openedHere = true
                 self.present("events", on: presenter, state: ["vote": id])
             }
+            // The notifications' sheet when the app decides it is time (#202).
+            Asks.shared.showPushAsk = { [weak self] reason in
+                guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil else { return false }
+                self.openedHere = true
+                self.present("push", on: presenter, state: ["reason": reason])
+                return true
+            }
             // Settled: the sheets made ready, so the first press is as quick as any.
             HomeModel.shared.onSettled = { [weak self] in self?.makeSheetsReady() }
             // The home page's buttons open the app's own sheets (#202): the page isn't asked.
@@ -235,6 +244,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             // Every test starts on one day: the 1/2 day choice is kept on the phone,
             // and a test that left it on two would turn the next test's days by two.
             UserDefaults.standard.removeObject(forKey: "casy.daySpan")
+            // Nor did an earlier test's ask count against this one's.
+            Asks.shared.forget()
             // No animations under test: a sheet or a push is there at once, and
             // the suite runs in a fraction of the time. A test launch only.
             // `-casyMotion YES` keeps them, for filming a moving part (#281).
@@ -1212,8 +1223,38 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
+    /// `{ reason }`: a moment the page saw that is worth asking for notifications at (#202):
+    /// the app decides whether it is time and shows its sheet.
+    @objc func askPush(_ call: CAPPluginCall) {
+        let reason = call.getString("reason") ?? "sent"
+        DispatchQueue.main.async {
+            Asks.shared.push(reason)
+            call.resolve()
+        }
+    }
+
+    /// `{ pushAsked, pushLast?, reviewAsked? }`: what the page counted before the app asked itself.
+    @objc func asksFromPage(_ call: CAPPluginCall) {
+        let asked = call.getInt("pushAsked") ?? 0
+        let last = call.getDouble("pushLast")
+        let review = call.getDouble("reviewAsked")
+        DispatchQueue.main.async {
+            Asks.shared.adopt(pushAsked: asked, pushLast: last, reviewAsked: review)
+            call.resolve()
+        }
+    }
+
     /// A home page press the app answers with its own sheet; false leaves it to the page.
     private func route(_ action: String, _ day: Int64?) -> Bool {
+        // The moments the app asks at (#202): a vote's last answer, an agreed date landed.
+        if Asks.on && action == "answered" {
+            Asks.shared.push("answered")
+            return true
+        }
+        if Asks.on && action == "landed" {
+            Asks.shared.review(in: bridge?.viewController?.view.window?.windowScene)
+            return true
+        }
         guard Self.nativeScreens.contains(action), let presenter = bridge?.viewController, openScreen == nil else {
             return false
         }

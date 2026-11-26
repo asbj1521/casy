@@ -257,6 +257,22 @@ final class HomeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["day.back"].waitForNonExistence(timeout: 5))
     }
 
+    /// Answering a vote's last date is a moment worth asking for notifications
+    /// at (#202): the app asks itself, iOS not asked yet.
+    func testTheAppAsksForNotificationsAfterTheLastAnswer() {
+        let app = launch(["-casyAsks", "YES", "-casyPushPermission", "prompt"])
+        let pill = app.buttons["home.pill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 10))
+        pill.tap()
+        for _ in 0..<3 {
+            let no = app.buttons["vote.declined"]
+            XCTAssertTrue(no.waitForExistence(timeout: 5))
+            no.tap()
+        }
+        XCTAssertTrue(app.staticTexts["Få besked, når datoen er fundet"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["push.enable"].exists)
+    }
+
     /// A notification's or a link's address opens the app's own screen (#202); one it
     /// doesn't have yet stays the page's.
     func testAnAddressOpensTheAppsOwnScreen() {

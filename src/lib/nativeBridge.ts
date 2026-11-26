@@ -54,6 +54,8 @@ export type NativeScreen =
   | "votes"
   /** The trips Casy found, paired, asked and drawn by the app (#202). */
   | "trips"
+  /** When to ask for notifications and a rating, decided by the app (#202). */
+  | "asks"
   /** The calendars sorted by AI (#118), with the phone's own titles. */
   | "categorize"
   /** The trips' legs read from the labelled journeys (#115); the page still pairs them into trips. */
@@ -214,6 +216,12 @@ interface NativeBridgePlugin {
     listener: (choice: Preferences) => void,
   ): Promise<PluginListenerHandle>;
   openPath(options: { path: string }): Promise<{ opened: boolean }>;
+  askPush(options: { reason: string }): Promise<void>;
+  asksFromPage(options: {
+    pushAsked: number;
+    pushLast?: number;
+    reviewAsked?: number;
+  }): Promise<void>;
   addListener(
     event: "leave",
     listener: (closed: NativeClosed) => void,
@@ -521,6 +529,22 @@ export async function openInApp(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** A moment worth asking for notifications at, for the app to decide on (#202, "asks"). */
+export async function askPushInApp(reason: string): Promise<void> {
+  const { plugin } = await bridgePlugin();
+  await plugin.askPush({ reason });
+}
+
+/** What the page counted of its asks, handed to the app once it asks itself (#202). */
+export async function handAsksToApp(asks: {
+  pushAsked: number;
+  pushLast?: number;
+  reviewAsked?: number;
+}): Promise<void> {
+  const { plugin } = await bridgePlugin();
+  await plugin.asksFromPage(asks);
 }
 
 /**

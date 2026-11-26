@@ -33,6 +33,12 @@ async function reviewPlugin(): Promise<{ plugin: ReviewPlugin }> {
   return { plugin };
 }
 
+/** When this page last asked (epoch ms), handed to the app once it asks itself (#202). */
+export function reviewAskedAt(): number | null {
+  const at = Date.parse(readStored(ASKED_KEY) ?? "");
+  return Number.isNaN(at) ? null : at;
+}
+
 /** Whether it is time to ask again, by when it was last asked (`now` for tests). */
 export function reviewDue(lastAsked: string | null, now: number): boolean {
   if (!lastAsked) return true;

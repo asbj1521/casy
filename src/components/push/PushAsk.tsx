@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import BottomSheet from "@/components/ui/BottomSheet";
 import FlowButton from "@/components/ui/FlowButton";
 import Notice from "@/components/ui/Notice";
-import { useNativeScreen } from "@/hooks/useNativeScreen";
+import { useNativeScreen, useNativeScreenKnown } from "@/hooks/useNativeScreen";
 import { useNativeSheet } from "@/hooks/useNativeSheet";
 import { useLang, useT } from "@/i18n/lang";
+import { reviewAskedAt } from "@/lib/appReview";
 import { APP_BUILD } from "@/lib/feedback";
+import { askPushInApp, handAsksToApp } from "@/lib/nativeBridge";
 import { enablePush, pushPermission } from "@/lib/push";
 import {
   type AskReason,
@@ -47,10 +49,28 @@ export default function PushAsk() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const showing = useRef(reason !== null);
+  // Where the app decides when to ask (#202), each moment goes to it; what this
+  // page counted before is handed over once.
+  const appAsks = useNativeScreenKnown("asks");
+  const appAsksNow = useRef(appAsks);
+  useEffect(() => {
+    appAsksNow.current = appAsks;
+    if (!appAsks) return;
+    const { asked, last } = readAskState();
+    handAsksToApp({
+      pushAsked: asked,
+      pushLast: last ?? undefined,
+      reviewAsked: reviewAskedAt() ?? undefined,
+    }).catch(() => {});
+  }, [appAsks]);
 
   useEffect(
     () =>
       onAskForPush((next) => {
+        if (appAsksNow.current) {
+          askPushInApp(next).catch(() => {});
+          return;
+        }
         if (showing.current) return;
         showing.current = true;
         void (async () => {
