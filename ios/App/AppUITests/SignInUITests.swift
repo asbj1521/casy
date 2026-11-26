@@ -34,6 +34,19 @@ final class SignInUITests: XCTestCase {
 
     /// The tabs switch both ways, their capsule gliding over as glass
     /// (filmed when looked at; the selection follows the tap).
+    /// The terms line's links open the app's own Vilkår and Privatliv (#202), over the sign-in.
+    func testTheTermsOpenInTheApp() {
+        let app = launch()
+        let terms = app.links["vilkår"].firstMatch
+        XCTAssertTrue(terms.waitForExistence(timeout: 10))
+        terms.tap()
+        let bar = app.navigationBars["Vilkår for brug"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 10))
+        bar.buttons["Færdig"].tap()
+        XCTAssertTrue(bar.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["signin.apple"].exists)
+    }
+
     func testTheTabsSwitch() {
         let app = launch()
         let signUp = app.buttons["signin.tab.signUp"]

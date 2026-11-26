@@ -193,6 +193,13 @@ struct HomeScreen: View {
                 model.voteToOpen = nil
                 if let vote = waiting.first(where: { $0.id == id }) { openVote(vote, from: nil) }
             }
+            // A day from Aftaler: the month there, then its day view.
+            .onChange(of: model.dayToOpen) { _, day in
+                guard let day else { return }
+                model.dayToOpen = nil
+                position = startOfMonth(day, appTimeZone)
+                openDayView(day, from: HomeFrames.shared.cell(of: day))
+            }
             .onChange(of: model.focus) { _, month in
                 guard let month else { return }
                 withAnimation(.easeInOut(duration: 0.45)) { position = month }

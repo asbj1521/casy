@@ -1296,6 +1296,29 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             present("plan", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: prime.map { ["prime": $0] } ?? [:])
             return
         }
+        // Aftaler's ways on (#202): a vote answered over the month, Planlæg, a day's view.
+        if let next = then["next"] as? String {
+            let query = next.hasPrefix("/?") ? String(next.dropFirst(2)) : ""
+            let parts = query.split(separator: "=", maxSplits: 1).map(String.init)
+            switch parts.first {
+            case "vote" where parts.count == 2:
+                HomeModel.shared.voteToOpen = parts[1]
+                return
+            case "plan" where parts.count == 1:
+                if let presenter = bridge?.viewController {
+                    openedHere = true
+                    present("plan", on: presenter, build: pageBuild, userAgent: pageUserAgent)
+                    return
+                }
+            case "day" where parts.count == 2:
+                let ymd = parts[1].split(separator: "-").compactMap { Int($0) }
+                if ymd.count == 3 {
+                    HomeModel.shared.dayToOpen = wallTime(ymd[0], ymd[1] - 1, ymd[2], 0, appTimeZone)
+                    return
+                }
+            default: break
+            }
+        }
         if then.isEmpty { return }
         notifyListeners("leave", data: then.merging(["screen": screen]) { $1 })
     }

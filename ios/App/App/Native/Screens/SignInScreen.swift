@@ -290,6 +290,8 @@ struct SignInScreen: View {
     }
 
     @State private var checking = false
+    /// Vilkår or Privatliv, opened from the terms line.
+    @State private var legal: PageLink?
 
     private var emailField: some View {
         CasyField(CasyStrings.signIn("email"), text: $email, placeholder: CasyStrings.signIn("emailPlaceholder"))
@@ -416,7 +418,7 @@ struct SignInScreen: View {
         }
     }
 
-    /// Signing in is accepting the terms, its two links the page's own screens.
+    /// Signing in is accepting the terms, its two links the app's own pages.
     private var terms: some View {
         let termsWord = CasyStrings.signIn("termsLink")
         let privacyWord = CasyStrings.signIn("privacyLink")
@@ -436,9 +438,19 @@ struct SignInScreen: View {
             .environment(
                 \.openURL,
                 OpenURLAction { url in
-                    leave(.webScreen("/\(url.absoluteString.replacingOccurrences(of: "casy-signin:", with: ""))"))
+                    // The app's own pages (#202), in a sheet over the sign-in.
+                    legal = url.absoluteString.hasSuffix("privacy") ? .privacy(section: nil) : .terms
                     return .handled
                 })
+            .sheet(isPresented: Binding(get: { legal != nil }, set: { if !$0 { legal = nil } })) {
+                if let legal {
+                    NavigationStack {
+                        PageScreen(page: legal, leave: { _ in self.legal = nil })
+                    }
+                    .environment(\.closeSheet) { self.legal = nil }
+                    .nativeSheetLook(NativePreferences.shared)
+                }
+            }
     }
 
     // MARK: The new Apple account's question (#245)

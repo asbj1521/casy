@@ -90,6 +90,8 @@ final class HomeModel {
     @ObservationIgnored var onSettled: (() -> Void)?
     /// A vote to answer over the month, from a notification's tap (#202): the home page opens it.
     var voteToOpen: String?
+    /// A day to show in the day view (an agreed event's day, from Aftaler, #202).
+    var dayToOpen: Int64?
     /// The bridge's: a press the app answers itself with its own sheet (#202), true when it did.
     @ObservationIgnored var route: ((_ action: String, _ day: Int64?) -> Bool)?
 
