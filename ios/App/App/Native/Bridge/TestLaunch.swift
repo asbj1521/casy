@@ -152,7 +152,9 @@
             page.tell = true
             page.dataAt = 1
             page.extras = [
-                MonthItem(calendarId: "vote:v1", start: day(14, 17), end: day(14, 19), label: "Fredagsbar", pencil: true)
+                MonthItem(calendarId: "vote:v1", start: day(14, 17), end: day(14, 19), label: "Fredagsbar", pencil: true),
+                // An accepted trip, away from a flight on the 11th to one home on the 13th.
+                MonthItem(calendarId: casyCalendarId, start: day(11, 12), end: day(13, 13), label: "Rejse til Oslo"),
             ]
             page.colors = ["vote:v1": "234, 88, 12"]
             page.starred = [startOfDay(day(16, 12), appTimeZone)]

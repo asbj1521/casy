@@ -193,6 +193,22 @@ final class HomeUITests: XCTestCase {
         XCTAssertEqual(pressed(app), "")
     }
 
+    /// A trip is whole days away: in the day's all-day row, never over its hours,
+    /// and a tap on it is the trip's (the page's here, as it finds them under test).
+    func testATripIsInTheAllDayRow() {
+        let app = launch()
+        app.buttons["day.2026-10-12"].tap()
+        XCTAssertTrue(app.buttons["day.back"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.otherElements["column.2026-10-12"].buttons["Rejse til Oslo"].exists)
+        XCTAssertTrue(app.buttons["Rejse til Oslo"].firstMatch.waitForExistence(timeout: 5))
+        // The days either side are drawn too: the one on screen.
+        let trip = app.buttons.matching(NSPredicate(format: "label == %@", "Rejse til Oslo"))
+            .allElementsBoundByIndex.first { $0.frame.minX >= 0 && $0.frame.maxX <= app.frame.maxX }
+        XCTAssertNotNil(trip)
+        trip?.tap()
+        XCTAssertEqual(pressed(app), "day 2026-10-12")
+    }
+
     /// A swipe turns the day, the week row a week; two days side by side; I dag.
     func testMovingThroughTheDays() {
         let app = launch()

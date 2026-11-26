@@ -23,7 +23,7 @@ struct HomeDayView: View {
             WeekStrip(day: $day, span: span)
             Rectangle().fill(Theme.border.color).frame(height: 1)
             DayNames(pager: pager, span: span, day: day)
-            AllDayRows(pager: pager, span: span, day: day, open: { event = $0 })
+            AllDayRows(pager: pager, span: span, day: day, open: { event = $0 }, pageTap: pageTap)
             DayHours(day: $day, span: span, pager: pager, pageTap: pageTap, open: { event = $0 })
         }
         .sheet(item: $event) { EventSheet(event: $0) }
@@ -333,13 +333,20 @@ private struct AllDayRows: View {
     let span: Int
     let day: Int64
     let open: (ShownEvent) -> Void
+    let pageTap: (Int64) -> Void
 
     private static let rows = 3
     @Environment(\.colorScheme) private var scheme
 
+    /// Casy's trips on a day: whole days away, so up here rather than over every hour.
+    static func trips(_ midnight: Int64) -> [MonthItem] {
+        HomeModel.shared.day(midnight).extras.filter { $0.calendarId == casyCalendarId }
+    }
+
     var body: some View {
         let inView = (0..<span).map { addDays(day, $0, appTimeZone) }
-        let most = inView.map { HomeModel.shared.day($0).calendar.segments.filter(\.allDay).count }.max() ?? 0
+        let most =
+            inView.map { Self.trips($0).count + HomeModel.shared.day($0).calendar.segments.filter(\.allDay).count }.max() ?? 0
         if most > 0 {
             HStack(spacing: 0) {
                 Color.clear.frame(width: DayHours.gutter)
@@ -358,11 +365,44 @@ private struct AllDayRows: View {
 
     private func column(_ midnight: Int64) -> some View {
         let calendar = HomeModel.shared.day(midnight).calendar
+        let trips = Self.trips(midnight)
         let list = calendar.segments.filter(\.allDay)
-        let full = list.count > Self.rows
-        let shown = Array(list.prefix(full ? Self.rows - 1 : Self.rows))
+        let full = trips.count + list.count > Self.rows
+        let room = max(0, (full ? Self.rows - 1 : Self.rows) - trips.count)
+        let shown = Array(list.prefix(room))
         let dark = scheme == .dark
         return VStack(alignment: .leading, spacing: 4) {
+            // A trip opens its sheet: to answer it, or put it in your calendar or delete it.
+            ForEach(Array(trips.prefix(Self.rows).enumerated()), id: \.offset) { _, item in
+                let rgb = HomeModel.shared.color(item.calendarId)
+                Button {
+                    if HomeTrips.on, let mark = markOn(HomeTrips.shared.marks, day: midnight) {
+                        HomeModel.shared.openTrip?(mark)
+                    } else {
+                        pageTap(midnight)
+                    }
+                } label: {
+                    Text(verbatim: item.label)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color(rgb: CasyCore.shade(rgb, dark: dark)))
+                        .lineLimit(1)
+                        .padding(.leading, 7)
+                        .padding(.trailing, 4)
+                        .frame(maxWidth: .infinity, minHeight: 20, maxHeight: 20, alignment: .leading)
+                        .background(Color(rgb: CasyCore.tint(rgb, dark: dark)))
+                        .overlay(alignment: .leading) { Rectangle().fill(Color(rgb: rgb)).frame(width: 3) }
+                        .overlay {
+                            // Waiting for an answer: pencilled in, as on the month.
+                            if item.pencil == true {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .strokeBorder(Color(rgb: rgb), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.label)
+            }
             ForEach(Array(shown.enumerated()), id: \.offset) { _, s in
                 let rgb = calendar.color(s.calendarId)
                 Button { open(ShownEvent(segment: s, calendar: calendar)) } label: {
@@ -380,7 +420,7 @@ private struct AllDayRows: View {
                 .buttonStyle(.plain)
             }
             if full {
-                Text(verbatim: "+\(list.count - shown.count)")
+                Text(verbatim: "+\(trips.count + list.count - shown.count - min(trips.count, Self.rows))")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.mutedForeground.color)
                     .padding(.horizontal, 4)
@@ -658,9 +698,9 @@ private struct DayColumn: View {
                     .accessibilityLabel("\(calendar.label(p.segment)), \(range(p.segment))")
                 }
                 let voting = HomeModel.shared.voting
-                // A trip waiting for an answer is the month's alone: the web's day view leaves it out.
+                // Casy's trips are whole days away: in the all-day row (AllDayRows), never over the hours.
                 ForEach(
-                    Array(shown.extras.filter { !Self.isVoting($0, voting) && $0.pulse != true }.enumerated()),
+                    Array(shown.extras.filter { !Self.isVoting($0, voting) && $0.calendarId != casyCalendarId }.enumerated()),
                     id: \.offset
                 ) { _, item in
                     let span = placeSpan(max(item.start, midnight), item.end, midnight: midnight, appTimeZone)
