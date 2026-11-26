@@ -26,6 +26,8 @@
         /// `__casySkipIntro`, unless `-casyKeepIntro YES` asks for the intro.
         static var skipIntro: Bool { isActive && !defaults.bool(forKey: "casyKeepIntro") }
         static var screen: String? { defaults.string(forKey: "casyOpenScreen") }
+        /// `-casyOpenPath /events`: an address arriving as a notification's tap would (#202).
+        static var path: String? { defaults.string(forKey: "casyOpenPath") }
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
         /// `-casyPushAnswer <granted|denied|failed>`: how turning notifications on goes, without the page.
         static var pushAnswer: String? { defaults.string(forKey: "casyPushAnswer") }

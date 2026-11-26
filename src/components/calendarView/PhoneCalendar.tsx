@@ -8,6 +8,7 @@ import NativeProfile from "@/components/profile/NativeProfile";
 import { useNativeScreen, useNativeScreenKnown } from "@/hooks/useNativeScreen";
 import { CASY_CALENDAR } from "@/lib/homeVotes";
 import { useNativeHome } from "@/components/calendarView/useNativeHome";
+import { useAppLeaves } from "@/components/calendarView/useAppLeaves";
 import {
   lazy,
   Suspense,
@@ -442,6 +443,8 @@ export default function PhoneCalendar() {
   const bare = settled && !overMonth && dayShown === null;
   // The app's own home page says an agreed date itself (#282).
   const nativeHome = useNativeScreen("home");
+  // Its buttons open the app's own sheets (#202): what those leave to the page.
+  useAppLeaves(nativeHome);
   const homeVotes = useHomeVotes({
     calendar,
     months,

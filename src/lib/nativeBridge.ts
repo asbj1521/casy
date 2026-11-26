@@ -213,6 +213,11 @@ interface NativeBridgePlugin {
     event: "preferences",
     listener: (choice: Preferences) => void,
   ): Promise<PluginListenerHandle>;
+  openPath(options: { path: string }): Promise<{ opened: boolean }>;
+  addListener(
+    event: "leave",
+    listener: (closed: NativeClosed) => void,
+  ): Promise<PluginListenerHandle>;
   addListener(
     event: "closed",
     listener: (closed: NativeClosed) => void,
@@ -503,6 +508,31 @@ export async function onNativeChoice(
 ): Promise<PluginListenerHandle> {
   const { plugin } = await bridgePlugin();
   return plugin.addListener("preferences", onChoose);
+}
+
+/**
+ * A notification's or a link's address, opened by the app itself where it has
+ * the screen (#202, while its home page is shown); false: the page goes there.
+ */
+export async function openInApp(path: string): Promise<boolean> {
+  try {
+    const { plugin } = await bridgePlugin();
+    return (await plugin.openPath({ path })).opened;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Calls `onLeave` when a sheet the app opened itself (#202, a press on its home
+ * page) has closed with something only the page can do yet: sign out, a page it
+ * draws, the notifications' ask.
+ */
+export async function onAppLeave(
+  onLeave: (closed: NativeClosed) => void,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("leave", onLeave);
 }
 
 /** Calls `onClose` when a native screen has closed. */

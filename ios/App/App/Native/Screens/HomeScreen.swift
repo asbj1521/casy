@@ -186,6 +186,12 @@ struct HomeScreen: View {
             .onChange(of: HomeTrips.shared.marks, initial: true) { _, _ in
                 if let day = HomeTrips.shared.reveal() { model.focus = startOfMonth(day, appTimeZone) }
             }
+            // A notification's vote: answered over the month, as from the pill.
+            .onChange(of: model.voteToOpen, initial: true) { _, id in
+                guard let id else { return }
+                model.voteToOpen = nil
+                if let vote = waiting.first(where: { $0.id == id }) { openVote(vote, from: nil) }
+            }
             .onChange(of: model.focus) { _, month in
                 guard let month else { return }
                 withAnimation(.easeInOut(duration: 0.45)) { position = month }
@@ -225,11 +231,11 @@ struct HomeScreen: View {
         }
         // A star of the app's own: Tid til hinanden's sheet, which the page opens.
         if HomeStars.on, HomeStars.shared.star(on: day) != nil {
-            model.onAction?("prime", day)
+            model.press("prime", day)
             return
         }
         if model.dayIsThePages(day) {
-            model.onAction?("day", day)
+            model.press("day", day)
             return
         }
         openDayView(day, from: from)
@@ -291,7 +297,7 @@ struct HomeScreen: View {
         let day = toolbarDay && shownDay != nil
         let month = shownDay.map { capitalize(monthName($0, lang)) } ?? ""
         return HStack(alignment: .top) {
-            Button(action: day ? (deck != nil ? voteToMonth : closeDay) : { model.onAction?("calendars", nil) }) {
+            Button(action: day ? (deck != nil ? voteToMonth : closeDay) : { model.press("calendars", nil) }) {
                 // Both words always laid out, one faded in (0.18 s, the web's
                 // crossfade); the capsule's width morphs from one to the other.
                 ZStack(alignment: .leading) {
@@ -354,7 +360,7 @@ struct HomeScreen: View {
                 .accessibilityHidden(!day)
                 HStack(spacing: 0) {
                     if model.tell {
-                        Button { model.onAction?("tell", nil) } label: {
+                        Button { model.press("tell", nil) } label: {
                             LucideIcon("plus", size: 24, stroke: 2.25)
                                 .frame(width: 44, height: 40)
                                 .contentShape(Rectangle())
@@ -430,7 +436,7 @@ struct HomeScreen: View {
                     } else if let vote = waitingVote(on: day) {
                         openVote(vote, from: nil)
                     } else {
-                        model.onAction?("day", day)
+                        model.press("day", day)
                     }
                 }
             )
@@ -517,7 +523,7 @@ struct HomeScreen: View {
         celebrations += 1
         // A date agreed, landed in the calendar: the moment the page may ask
         // for a rating (#256).
-        model.onAction?("landed", nil)
+        model.press("landed", nil)
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(1500))
             sayAgreed()
@@ -708,9 +714,9 @@ struct HomeScreen: View {
             }
             HStack(spacing: 12) {
                 round("calendar-check", label: CasyStrings.homeEvents, badge: model.badges.events, id: "home.events") {
-                    model.onAction?("events", nil)
+                    model.press("events", nil)
                 }
-                Button { model.onAction?("plan", nil) } label: {
+                Button { model.press("plan", nil) } label: {
                     HStack(spacing: 8) {
                         LucideIcon("calendar-search", size: 20)
                         Text(CasyStrings.homePlan).lineLimit(1)
@@ -725,7 +731,7 @@ struct HomeScreen: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("home.plan")
                 round("user", label: CasyStrings.homeProfile, badge: model.badges.profile, id: "home.profile") {
-                    model.onAction?("profile", nil)
+                    model.press("profile", nil)
                 }
             }
         }

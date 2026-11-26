@@ -86,6 +86,19 @@ final class HomeModel {
 
     /// The bridge's: what a tap asks of the page.
     var onAction: ((_ action: String, _ day: Int64?) -> Void)?
+    /// A vote to answer over the month, from a notification's tap (#202): the home page opens it.
+    var voteToOpen: String?
+    /// The bridge's: a press the app answers itself with its own sheet (#202), true when it did.
+    @ObservationIgnored var route: ((_ action: String, _ day: Int64?) -> Bool)?
+
+    /// A press on the home page: the app's own sheet where it has one, else the page's.
+    func press(_ action: String, _ day: Int64? = nil) {
+        #if DEBUG
+            if TestLaunch.isActive { testAction = action + (day.map { " " + dayKey($0, appTimeZone) } ?? "") }
+        #endif
+        if route?(action, day) == true { return }
+        onAction?(action, day)
+    }
 
     /// The window searched, as the web's SEARCH_WINDOW: this month and eleven more.
     static let monthCount = 12

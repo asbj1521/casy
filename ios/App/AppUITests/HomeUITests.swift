@@ -257,17 +257,37 @@ final class HomeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["day.back"].waitForNonExistence(timeout: 5))
     }
 
-    /// Each button along the top and the bottom asks the page for its sheet.
-    func testEveryButtonAsksThePage() {
+    /// A notification's or a link's address opens the app's own screen (#202); one it
+    /// doesn't have yet stays the page's.
+    func testAnAddressOpensTheAppsOwnScreen() {
+        var app = launch(["-casyOpenPath", "/events"])
+        XCTAssertTrue(app.navigationBars["Mine aftaler"].waitForExistence(timeout: 10))
+        XCTAssertEqual(pressed(app), "path /events: opened")
+        app.terminate()
+        app = launch(["-casyOpenPath", "/groups"])
+        XCTAssertTrue(app.staticTexts["home.lastAction"].waitForExistence(timeout: 10))
+        let label = app.staticTexts["home.lastAction"]
+        expectation(for: NSPredicate(format: "label == %@", "path /groups: the page's"), evaluatedWith: label)
+        waitForExpectations(timeout: 10)
+    }
+
+    /// Each button along the top and the bottom opens its sheet in the app itself.
+    func testEveryButtonOpensItsSheetHere() {
         let app = launch()
-        for (button, action) in [
-            ("home.events", "events"), ("home.plan", "plan"), ("home.profile", "profile"),
-            ("home.calendars", "calendars"), ("home.tell", "tell"),
+        // Each the app's own sheet (#202): the page isn't asked; closed again from its bar.
+        for (button, action, title) in [
+            ("home.events", "events", "Mine aftaler"), ("home.plan", "plan", "Planlæg"),
+            ("home.profile", "profile", "Profil"), ("home.calendars", "calendars", "Kalendere"),
+            ("home.tell", "tell", "Tilføj til kalender"),
         ] {
             let b = app.buttons[button]
             XCTAssertTrue(b.waitForExistence(timeout: 5), button)
             b.tap()
             XCTAssertEqual(pressed(app), action, button)
+            let bar = app.navigationBars[title]
+            XCTAssertTrue(bar.waitForExistence(timeout: 10), title)
+            bar.buttons.matching(NSPredicate(format: "label IN %@", ["Færdig", "Annuller", "Luk"])).firstMatch.tap()
+            XCTAssertTrue(bar.waitForNonExistence(timeout: 10), "\(title) closed")
         }
         XCTAssertTrue(app.buttons["home.pill"].label.contains("Svar på Fredagsbar"))
     }

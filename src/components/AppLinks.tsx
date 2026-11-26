@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { onAppLink } from "@/lib/appLinksNative";
+import { openInApp } from "@/lib/nativeBridge";
 
 /**
  * Links that open the iPhone app (#140): an invite link tapped on a phone
@@ -21,7 +22,12 @@ export default function AppLinks() {
     let stop = () => {};
     let gone = false;
     // An app build without the plugin simply has no links to open.
-    onAppLink((path) => open.current(path)).then(
+    onAppLink(
+      (path) =>
+        void openInApp(path).then((opened) => {
+          if (!opened) open.current(path);
+        }),
+    ).then(
       (remove) => {
         if (gone) remove();
         else stop = remove;

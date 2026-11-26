@@ -5,6 +5,7 @@ import PushAsk from "@/components/push/PushAsk";
 import { useAuth } from "@/context/auth";
 import { useLang } from "@/i18n/lang";
 import { onNotificationTap, refreshPush } from "@/lib/push";
+import { openInApp } from "@/lib/nativeBridge";
 
 /**
  * Push notifications' part of the page (#139), in the app only (App.tsx loads
@@ -30,7 +31,12 @@ export default function PushLinks() {
     let stop = () => {};
     let gone = false;
     // An app build without the push plugin simply has no taps to open.
-    onNotificationTap((path) => open.current(path)).then(
+    onNotificationTap(
+      (path) =>
+        void openInApp(path).then((opened) => {
+          if (!opened) open.current(path);
+        }),
+    ).then(
       (remove) => {
         if (gone) remove();
         else stop = remove;

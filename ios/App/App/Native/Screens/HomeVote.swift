@@ -251,7 +251,7 @@ struct HomeVotePanel: View {
             guard deck.done, !deck.startedDone else { return }
             // The last date answered just now: the moment to offer
             // notifications about the outcome (#139), which the page decides.
-            HomeModel.shared.onAction?("answered", nil)
+            HomeModel.shared.press("answered")
             try? await Task.sleep(for: Self.thanks)
             if !Task.isCancelled { close() }
         }

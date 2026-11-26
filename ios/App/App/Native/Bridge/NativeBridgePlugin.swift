@@ -31,6 +31,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "phoneSynced", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "authAnswered", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openPath", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "labelsFromPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "legsFromPage", returnType: CAPPluginReturnPromise),
@@ -182,12 +183,18 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil,
                     let data = try? JSONEncoder().encode(mark), let object = try? JSONSerialization.jsonObject(with: data)
                 else { return }
+                self.openedHere = true
                 self.present("trip", on: presenter, state: ["mark": object])
             }
             // An agreed date's chip in the day view: Aftaler, opened on its event.
             HomeModel.shared.openEvent = { [weak self] id in
                 guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil else { return }
+                self.openedHere = true
                 self.present("events", on: presenter, state: ["vote": id])
+            }
+            // The home page's buttons open the app's own sheets (#202): the page isn't asked.
+            HomeModel.shared.route = { [weak self] action, day in
+                self?.route(action, day) ?? false
             }
             HomeModel.shared.onAction = { [weak self] action, day in
                 // Planlæg pressed: the page counts it as over the month before it asks for
@@ -248,14 +255,17 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 if let theme = TestLaunch.theme { NativePreferences.shared.theme = theme }
                 if TestLaunch.nativeHome {
                     let model = HomeModel.shared
-                    model.onAction = { action, day in
-                        model.testAction = action + (day.map { " " + dayKey($0, appTimeZone) } ?? "")
-                    }
+                    // The test plays the page: a press the app doesn't answer itself goes nowhere.
+                    model.onAction = { _, _ in }
                     while bridge?.viewController?.view.window == nil {
                         try? await Task.sleep(for: .milliseconds(100))
                     }
                     model.update(TestLaunch.homePage)
                     placeHome()
+                    if let path = TestLaunch.path {
+                        try? await Task.sleep(for: .milliseconds(500))
+                        model.testAction = "path \(path): \(open(path: path) ? "opened" : "the page's")"
+                    }
                 }
                 // Web only (#280): the page opens its own screen (`-casyWebPath`).
                 guard !TestLaunch.webOnly, let screen = TestLaunch.screen else { return }
@@ -362,6 +372,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 call.reject("Nothing to show the screen on")
                 return
             }
+            self.pageBuild = build
+            self.pageUserAgent = userAgent
             self.present(screen, on: presenter, build: build, userAgent: userAgent, state: state)
             call.resolve()
         }
@@ -1104,7 +1116,107 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         finishPush("failed")
         guard let screen = openScreen else { return }
         openScreen = nil
-        notifyListeners("closed", data: then.merging(["screen": screen]) { $1 })
+        let here = openedHere
+        openedHere = false
+        if here {
+            closedHere(screen, then)
+        } else {
+            notifyListeners("closed", data: then.merging(["screen": screen]) { $1 })
+        }
+    }
+
+    // MARK: The app's own routing (#202)
+
+    /// A sheet the app opened itself, not the page: its closing isn't the page's to hear.
+    private var openedHere = false
+    /// What the page last said about itself, for Profil's build line and feedback mail.
+    private var pageBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "dev"
+    private var pageUserAgent = ""
+    /// The star a Tid til hinanden sheet opened here is about: its Planlæg begins from it.
+    private var openedPrime: Any?
+
+    /// `{ path }`: a push notification's or a link's address (#202). `{ opened }`: the app
+    /// showed its own screen for it; otherwise the page goes there itself, as before. Only
+    /// while the app's home page is shown and nothing is over it.
+    @objc func openPath(_ call: CAPPluginCall) {
+        let path = call.getString("path") ?? ""
+        DispatchQueue.main.async {
+            call.resolve(["opened": self.open(path: path)])
+        }
+    }
+
+    private func open(path: String) -> Bool {
+        guard let route = appRoute(path), let presenter = bridge?.viewController, openScreen == nil,
+            NativeHome.on, HomeModel.shared.page.shown
+        else { return false }
+        func sheet(_ screen: String, _ state: [String: Any]) -> Bool {
+            guard Self.nativeScreens.contains(screen) else { return false }
+            openedHere = true
+            present(screen, on: presenter, build: pageBuild, userAgent: pageUserAgent, state: state)
+            return true
+        }
+        switch route {
+        case .home:
+            return true
+        case .events(let id):
+            return sheet("events", id.map { ["vote": $0] } ?? [:])
+        case .vote(let id):
+            // Still waiting for your answer: answered over the month; else its screen in Aftaler.
+            if HomeModel.ownData, waitingVotes(EventsModel.shared.events ?? [], now: Native.now).contains(where: { $0.id == id }) {
+                HomeModel.shared.voteToOpen = id
+                return true
+            }
+            return sheet("events", ["vote": id])
+        case .join(let token):
+            return sheet("join", ["token": token, "signedIn": true])
+        }
+    }
+
+    /// A home page press the app answers with its own sheet; false leaves it to the page.
+    private func route(_ action: String, _ day: Int64?) -> Bool {
+        guard Self.nativeScreens.contains(action), let presenter = bridge?.viewController, openScreen == nil else {
+            return false
+        }
+        var state: [String: Any] = [:]
+        switch action {
+        case "events", "plan", "profile", "tell":
+            break
+        case "calendars":
+            let home = HomeModel.shared
+            state["holidaysHidden"] = home.holidaysHidden
+            state["tourSeen"] = Array(home.tourSeen)
+            if let phone = LabelsWork.shared.thisPhone { state["thisPhone"] = phone }
+        case "prime":
+            guard let day, let star = HomeStars.shared.star(on: day), let data = try? JSONEncoder().encode(star),
+                let object = try? JSONSerialization.jsonObject(with: data)
+            else { return false }
+            state["prime"] = object
+            openedPrime = object
+        default:
+            return false
+        }
+        openedHere = true
+        present(action, on: presenter, build: pageBuild, userAgent: pageUserAgent, state: state)
+        return true
+    }
+
+    /// A sheet the app opened has closed: what it asks for next, done here where the app
+    /// can (the month to what was added, Planlæg from a star); the rest is still the
+    /// page's (signing out, a page it draws, the notifications' ask), told with `leave`.
+    private func closedHere(_ screen: String, _ then: [String: Any]) {
+        let prime = openedPrime
+        openedPrime = nil
+        if let added = then["added"] as? String, let start = parseInstant(added) {
+            HomeModel.shared.focus = startOfMonth(start, appTimeZone)
+            return
+        }
+        if then["plan"] as? Bool == true, let presenter = bridge?.viewController {
+            openedHere = true
+            present("plan", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: prime.map { ["prime": $0] } ?? [:])
+            return
+        }
+        if then.isEmpty { return }
+        notifyListeners("leave", data: then.merging(["screen": screen]) { $1 })
     }
 }
 
