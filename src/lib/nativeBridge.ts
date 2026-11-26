@@ -12,6 +12,7 @@ import type { PrimeDate } from "@/lib/primeDates";
 import type { LabelBook, LabelCorrection } from "@/lib/eventLabels";
 import type { LabelledEvent } from "@/lib/eventWarnings";
 import type { LegBook } from "@/lib/tripLegBook";
+import type { TripAnswers } from "@/lib/trips";
 import type { NativeAuthAnswer, NativeAuthAsk } from "@/lib/nativeAuth";
 import type { GridItem } from "@/lib/monthGrid";
 import type { PluginListenerHandle } from "@capacitor/core";
@@ -51,6 +52,8 @@ export type NativeScreen =
   | "stars"
   /** Casy's own events on the home page's month (#172, #202), drawn by the app from its own events. */
   | "votes"
+  /** The trips Casy found, paired, asked and drawn by the app (#202). */
+  | "trips"
   /** The calendars sorted by AI (#118), with the phone's own titles. */
   | "categorize"
   /** The trips' legs read from the labelled journeys (#115); the page still pairs them into trips. */
@@ -187,7 +190,7 @@ interface NativeBridgePlugin {
     labels: LabelBook;
     corrections: LabelCorrection[];
   }): Promise<void>;
-  legsFromPage(options: { userId: string; legs: LegBook }): Promise<void>;
+  legsFromPage(options: { userId: string; legs: LegBook; answers?: TripAnswers }): Promise<void>;
   addListener(
     event: "phoneConnection",
     listener: (connection: { userId: string; connectionId?: string }) => void,
@@ -443,9 +446,13 @@ export async function handLabelsToApp(
 }
 
 /** The trips' legs the page kept, handed to the app once it reads them itself (#282). */
-export async function handLegsToApp(userId: string, legs: LegBook): Promise<void> {
+export async function handLegsToApp(
+  userId: string,
+  legs: LegBook,
+  answers?: TripAnswers,
+): Promise<void> {
   const { plugin } = await bridgePlugin();
-  await plugin.legsFromPage({ userId, legs });
+  await plugin.legsFromPage({ userId, legs, answers });
 }
 
 /** Calls `onLegs` with the app's trip legs whenever they change (#282). */

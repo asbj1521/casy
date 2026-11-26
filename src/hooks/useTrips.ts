@@ -68,13 +68,18 @@ export function forgetAskedTrips(): void {
   askedThisLaunch.clear();
 }
 
-/** Whether trip detection runs here: the iPhone app, with a phone connected and the AI's yes. */
+/**
+ * Whether trip detection runs here: the iPhone app, with a phone connected and
+ * the AI's yes. Not where the app finds the trips itself (#202, "trips" among
+ * its screens), nor before it has said whether it does: never both at once.
+ */
 function useTripsOn(): { userId: string; phone: string | null; on: boolean } {
   const { user } = useAuth();
   const userId = user?.id ?? "";
   const phone = isNativeApp && userId ? phoneConnectionId(userId) : null;
   const allowed = useAiContent();
-  return { userId, phone, on: !!phone && allowed };
+  const appTrips = useNativeScreenKnown("trips");
+  return { userId, phone, on: !!phone && allowed && appTrips === false };
 }
 
 /** This phone's calendars that count, by EventKit id, with their names. */
@@ -112,13 +117,16 @@ export function useAutoTripLegs() {
   const queryClient = useQueryClient();
   // Not before the app has said whether it reads them: never both at once.
   const appLegs = useNativeScreenKnown("tripLegs");
+  const appTrips = useNativeScreenKnown("trips");
   const on = allowed && appLegs === false;
 
   useEffect(() => {
-    if (appLegs !== true || !userId) return;
+    if (appLegs !== true || appTrips === null || !userId) return;
     const legs = readLegBook(userId);
-    if (Object.keys(legs).length > 0) {
-      handLegsToApp(userId, legs).catch((err) =>
+    // Where the app finds the trips too, what was answered about them goes with the legs.
+    const answers = appTrips ? readTripAnswers(userId) : undefined;
+    if (Object.keys(legs).length > 0 || answers) {
+      handLegsToApp(userId, legs, answers).catch((err) =>
         console.warn("handing the legs to the app failed", err),
       );
     }
@@ -138,7 +146,7 @@ export function useAutoTripLegs() {
       live = false;
       stop?.();
     };
-  }, [appLegs, userId, queryClient]);
+  }, [appLegs, appTrips, userId, queryClient]);
   const names = useCountedPhoneCalendars(on, userId, phone);
   const { data: events } = useQuery({
     ...phoneEventDetailsQuery(userId, SEARCH_WINDOW),

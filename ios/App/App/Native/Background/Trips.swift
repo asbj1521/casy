@@ -8,8 +8,8 @@ import Foundation
 /// and place once, and the legs are kept on the phone. Runs after each label
 /// run (LabelsWork), as new labels arrive.
 ///
-/// Pairing the legs into trips stays the page's until the home page is native:
-/// it hands over the book it kept (`adopt`) and keeps the app's copy (`mirror`).
+/// The page hands over the book it kept (`adopt`) and keeps the app's copy
+/// (`mirror`); HomeTrips pairs the legs into trips (#202).
 @MainActor
 final class TripsWork {
     static let shared = TripsWork()
@@ -18,6 +18,10 @@ final class TripsWork {
 
     private(set) var book: LegBook = [:]
     private(set) var status = "not started"
+    /// What the last run was given, for HomeTrips: the phone's events, its counted calendars, the labels.
+    private(set) var events: [PhoneEventWithDetails] = []
+    private(set) var names: [String: String] = [:]
+    private(set) var labels: LabelBook = [:]
     /// Tells the page the legs changed (its copy, which it pairs into trips).
     var mirror: (_ userId: String, _ book: LegBook) -> Void = { _, _ in }
 
@@ -32,6 +36,10 @@ final class TripsWork {
         self.userId = userId
         asked = []
         book = userId.map { Self.read($0) } ?? [:]
+        events = []
+        names = [:]
+        labels = [:]
+        HomeTrips.shared.signedIn(userId)
     }
 
     /// The legs the page kept before the app read them, handed over once: the app's win.
@@ -44,6 +52,7 @@ final class TripsWork {
         if userId == self.userId {
             book = kept
             mirror(userId, book)
+            HomeTrips.shared.refresh()
         }
     }
 
@@ -54,6 +63,7 @@ final class TripsWork {
             book = [:]
             asked = []
         }
+        HomeTrips.shared.forget(userId)
     }
 
     /// After a label run: the phone's events, its counted calendars and the labels as they are.
@@ -61,6 +71,10 @@ final class TripsWork {
         guard Self.on, !running, let userId else { return }
         running = true
         defer { running = false }
+        self.events = events
+        self.names = names
+        self.labels = labels
+        HomeTrips.shared.refresh()
         // Tidied against the travel events on the phone, never the calendars the
         // server lists (#132); not before any label is read.
         if !labels.isEmpty, let tidy = tidyLegBook(book, present: presentLegKeys(events, labels)) { save(tidy) }
@@ -97,6 +111,7 @@ final class TripsWork {
         book = next
         Self.write(userId, book)
         mirror(userId, book)
+        HomeTrips.shared.refresh()
     }
 
     // MARK: Kept on the phone, per account (the web's `{ v: 1, legs }`)

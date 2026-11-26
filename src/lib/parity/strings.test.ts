@@ -598,6 +598,10 @@ const WEB: Record<string, (t: Messages) => string> = {
   "homeVote.waiting.many": (t) => t.homeVote.waiting(7).replace("7", "%d"),
   "tellCasy.title": (t) => t.tellCasy.title,
   "trips.title": (t) => t.trips.title("%@"),
+  "trips.barPending": (t) => t.trips.barPending("%@"),
+  "trips.barReturn": (t) => t.trips.barReturn("%@"),
+  "trips.barOutbound": (t) => t.trips.barOutbound("%@"),
+  "trips.calendarNote": (t) => t.trips.calendarNote,
   "prime.title": (t) => t.prime.title,
   "push.askTitle.sent": (t) => t.push.askTitle.sent,
   "push.askTitle.answered": (t) => t.push.askTitle.answered,
@@ -1244,6 +1248,10 @@ const WEB: Record<string, (t: Messages) => string> = {
 const NATIVE_ONLY: Record<string, { da: string; en: string }> = {
   "pictures.library": { da: "Fotobibliotek", en: "Photo Library" },
   "pictures.camera": { da: "Tag billede", en: "Take Photo" },
+  "trips.addFailed": {
+    da: "Vi kunne ikke lægge rejsen i din kalender.",
+    en: "We couldn't put the trip in your calendar.",
+  },
   "admin.nativeHome": { da: "Native forside", en: "Native home page" },
   "admin.nativeHomeDetail": {
     da: "Forsiden tegnet i Swift, kun på denne telefon",

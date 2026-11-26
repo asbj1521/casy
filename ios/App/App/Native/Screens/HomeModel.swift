@@ -203,6 +203,7 @@ final class HomeModel {
             dayCache = [:]
             colors = palette
             failure = nil
+            if HomeTrips.on { HomeTrips.shared.calendarChanged() }
             layOut()
         } catch {
             if months.isEmpty { failure = error.localizedDescription }
@@ -239,8 +240,19 @@ final class HomeModel {
     }
 
     /// What goes on the month besides your calendar: Casy's events (the app's own, or the
-    /// page's) and the trips' bars (the page's).
-    private var extras: [MonthItem] { Self.ownData ? voteItems + page.extras : page.extras }
+    /// page's) and the trips' bars (the app's own where it finds them, else the page's).
+    private var extras: [MonthItem] {
+        (Self.ownData ? voteItems : []) + (HomeTrips.on ? HomeTrips.shared.bars : []) + page.extras
+    }
+
+    /// Your own calendar's items, for the trips: one put in it is shown once, as that event.
+    var ownItems: [MonthItem] { own }
+
+    /// The trips' bars changed (an answer, a pulse's guess): the month drawn again with them.
+    func tripsChanged() {
+        dayCache = [:]
+        layOut()
+    }
 
     /// Your calendar on the month: without the copies of Casy's chips when the app draws them.
     private func calendarShown(_ extras: [MonthItem]) -> [MonthItem] {
@@ -266,6 +278,8 @@ final class HomeModel {
 
     /// Aftaler opened on an event (the bridge's).
     @ObservationIgnored var openEvent: ((String) -> Void)?
+    /// The trip sheet opened on a trip Casy found (the bridge's).
+    @ObservationIgnored var openTrip: ((TripMark) -> Void)?
 
     /// The votes changed (or one landed): the month drawn again with them.
     func votesChanged() {

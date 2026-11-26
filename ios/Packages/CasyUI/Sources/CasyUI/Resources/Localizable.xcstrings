@@ -13431,6 +13431,91 @@
         }
       }
     },
+    "trips.barPending": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejse til %@?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trip to %@?"
+          }
+        }
+      }
+    },
+    "trips.barReturn": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hjem fra %@?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home from %@?"
+          }
+        }
+      }
+    },
+    "trips.barOutbound": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afrejse til %@?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leaving for %@?"
+          }
+        }
+      }
+    },
+    "trips.calendarNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lagt ind af Vi finder lige en dag."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added by We'll find a day."
+          }
+        }
+      }
+    },
+    "trips.addFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi kunne ikke lægge rejsen i din kalender."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't put the trip in your calendar."
+          }
+        }
+      }
+    },
     "trips.title": {
       "extractionState": "manual",
       "localizations": {

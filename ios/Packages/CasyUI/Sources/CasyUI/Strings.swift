@@ -1182,6 +1182,13 @@ public enum CasyStrings {
     // A trip found in the calendar (#115, #200).
     public static func tripTitle(_ city: String) -> String { format("trips.title", city) }
     public static var tripFound: String { text("trips.found") }
+    /// The bars on the home month (#202): a trip or question waiting for an answer.
+    public static func tripBarPending(_ city: String) -> String { format("trips.barPending", city) }
+    public static func tripBarReturn(_ city: String) -> String { format("trips.barReturn", city) }
+    public static func tripBarOutbound(_ city: String) -> String { format("trips.barOutbound", city) }
+    /// The note on a trip put in the phone's calendar: how it is known again (TRIP_NOTES).
+    public static var tripCalendarNote: String { text("trips.calendarNote") }
+    public static var tripAddFailed: String { text("trips.addFailed") }
     public static func tripAway(from: String, to: String) -> String { format("trips.away", from, to) }
     public static var tripAcceptNote: String { text("trips.acceptNote") }
     public static var tripAccept: String { text("trips.accept") }

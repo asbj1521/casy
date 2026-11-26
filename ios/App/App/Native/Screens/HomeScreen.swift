@@ -182,6 +182,10 @@ struct HomeScreen: View {
                 // Opened on this month's first week, once the months are there.
                 if position == nil, let first { position = first }
             }
+            // The first time it opens with a trip waiting for an answer, it glides there.
+            .onChange(of: HomeTrips.shared.marks, initial: true) { _, _ in
+                if let day = HomeTrips.shared.reveal() { model.focus = startOfMonth(day, appTimeZone) }
+            }
             .onChange(of: model.focus) { _, month in
                 guard let month else { return }
                 withAnimation(.easeInOut(duration: 0.45)) { position = month }
@@ -208,6 +212,11 @@ struct HomeScreen: View {
         if deck != nil {
             voteOnMonth = false
             openDayView(day, from: from)
+            return
+        }
+        // A day of a trip waiting for an answer opens the trip, not the day.
+        if let trip = HomeTrips.shared.waiting(on: day) {
+            model.openTrip?(trip)
             return
         }
         if let vote = waitingVote(on: day) {
@@ -416,7 +425,13 @@ struct HomeScreen: View {
                 day: Binding(get: { shownDay ?? day }, set: { shownDay = $0 }), span: span,
                 pageTap: { day in
                     if deck != nil { return }
-                    if let vote = waitingVote(on: day) { openVote(vote, from: nil) } else { model.onAction?("day", day) }
+                    if let trip = HomeTrips.shared.waiting(on: day) {
+                        model.openTrip?(trip)
+                    } else if let vote = waitingVote(on: day) {
+                        openVote(vote, from: nil)
+                    } else {
+                        model.onAction?("day", day)
+                    }
                 }
             )
             // Down to the screen's edge, so the month doesn't show under it.
@@ -661,6 +676,7 @@ struct HomeScreen: View {
     }
 
     private func goToday() {
+        HomeTrips.shared.noReveal()
         withAnimation(.easeInOut(duration: 0.35)) { position = model.months.first?.id }
     }
 

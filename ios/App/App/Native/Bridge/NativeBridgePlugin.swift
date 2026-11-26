@@ -47,7 +47,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes"] : [])
+            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips"] : [])
         #else
             return []
         #endif
@@ -170,11 +170,20 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
             TripModel.shared.onAction = { [weak self] action in
                 #if DEBUG
-                    if TestLaunch.isActive { return TestLaunch.answer(action) }
+                    if TestLaunch.isActive && !HomeTrips.on { return TestLaunch.answer(action) }
                 #endif
+                // Found by the app itself (#202): answered here; else the page's.
+                if HomeTrips.on { return HomeTrips.shared.act(action) }
                 self?.notifyListeners("tripAction", data: Self.tripAction(action))
             }
             PageAuth.shared.send = { [weak self] ask in self?.notifyListeners("authAsk", data: ask) }
+            // A trip waiting for an answer, tapped on the home month: its sheet.
+            HomeModel.shared.openTrip = { [weak self] mark in
+                guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil,
+                    let data = try? JSONEncoder().encode(mark), let object = try? JSONSerialization.jsonObject(with: data)
+                else { return }
+                self.present("trip", on: presenter, state: ["mark": object])
+            }
             // An agreed date's chip in the day view: Aftaler, opened on its event.
             HomeModel.shared.openEvent = { [weak self] id in
                 guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil else { return }
@@ -846,8 +855,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     @objc func legsFromPage(_ call: CAPPluginCall) {
         guard let userId = call.getString("userId") else { return call.resolve() }
         let legs: LegBook = Self.decode(LegBook.self, call.getObject("legs")) ?? [:]
+        let answers = Self.decode(TripAnswers.self, call.getObject("answers"))
         DispatchQueue.main.async {
             TripsWork.shared.adopt(userId, legs: legs)
+            if let answers { HomeTrips.shared.adopt(userId, answers: answers) }
             call.resolve()
         }
     }

@@ -32,7 +32,16 @@ export function tripsCases(): ParityCase[] {
   const flag = (odds: number) => random() < odds;
   const at = (day: number, hour: number) => wallTime(2026, 9, day, hour, APP_TIME_ZONE);
 
-  for (const name of ["København", " Kobenhavn ", "MÜNCHEN", "New  York", "Århus", "Ærø", "Zürich", "oslo"])
+  for (const name of [
+    "København",
+    " Kobenhavn ",
+    "MÜNCHEN",
+    "New  York",
+    "Århus",
+    "Ærø",
+    "Zürich",
+    "oslo",
+  ])
     add("cityKey", { name }, cityKey(name));
 
   for (let i = 0; i < 120; i++) {
@@ -80,7 +89,9 @@ export function tripsCases(): ParityCase[] {
       ),
     };
     const now = at(int(1, 40), 12);
-    const inCalendar = flag(0.2) ? [{ start: at(int(1, 30), 9), end: at(int(1, 30), 9) + 72 * HOUR }] : [];
+    const inCalendar = flag(0.2)
+      ? [{ start: at(int(1, 30), 9), end: at(int(1, 30), 9) + 72 * HOUR }]
+      : [];
     add("homeOf", { legs, answers }, homeOf(legs, answers));
     const detected = detectTrips(legs, answers, now, inCalendar);
     add("detectTrips", { legs, answers, now, inCalendar }, detected);
@@ -91,7 +102,11 @@ export function tripsCases(): ParityCase[] {
     add("tripBars", { marks, step }, tripBars(marks, WORDS, step));
     const items = marks
       .filter(() => flag(0.4))
-      .map((m) => ({ calendarId: pick(["CAL-1", "builtin:casy-entries"]), start: m.start, end: m.end }));
+      .map((m) => ({
+        calendarId: pick(["CAL-1", "builtin:casy-entries"]),
+        start: m.start,
+        end: m.end,
+      }));
     add("withoutTripsInCalendar", { marks, items }, withoutTripsInCalendar(marks, items));
     const tapped = at(int(1, 40), 0);
     add("markOn", { marks, day: tapped }, markOn(marks, tapped)?.id ?? null);
