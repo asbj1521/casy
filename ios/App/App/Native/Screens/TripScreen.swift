@@ -69,6 +69,8 @@ struct TripScreen: View {
     @Environment(\.closeSheet) private var closeSheet
     @Environment(\.fitSheet) private var fitSheet
     @State private var picked: Int64?
+    /// Slet rejsen pressed: asked first, as deleting always is (it is never suggested again).
+    @State private var removing: TripMark?
     /// Which days to offer: fixed while the sheet is open.
     @State private var now = Native.now
     @State private var bar: CGFloat = 0
@@ -112,6 +114,10 @@ struct TripScreen: View {
         .accessibilityIdentifier("trip.screen")
         .casySheetBar(title(mark), close: CasyStrings.done, action: closeSheet)
         .onChange(of: mark?.id) { picked = nil }
+        .askFirst(
+            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing,
+            words: { _ in AskWords(message: CasyStrings.tripRemoveAsk, confirm: CasyStrings.tripRemove) },
+            action: { mark in decline(mark) })
         .sheet(isPresented: Binding(get: { model.choices != nil }, set: { if !$0 { model.choices = nil } })) {
             ChooseCalendarSheet(options: model.choices ?? []) { calendarId in
                 model.choices = nil
@@ -178,7 +184,7 @@ struct TripScreen: View {
                     Text(model.adding ? CasyStrings.tripAdding : CasyStrings.tripAddToCalendar)
                 }
             }
-            secondary(CasyStrings.tripRemove) { decline(mark) }
+            secondary(CasyStrings.tripRemove) { removing = mark }
         } else {
             FlowButton(action: { model.act(.accept(mark.id)) }) { Text(CasyStrings.tripAccept) }
                 .accessibilityIdentifier("trip.accept")

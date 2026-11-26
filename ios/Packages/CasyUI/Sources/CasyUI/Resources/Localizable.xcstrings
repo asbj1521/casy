@@ -13516,6 +13516,23 @@
         }
       }
     },
+    "trips.removeAsk": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slet rejsen? Vi foreslår den ikke igen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the trip? We won't suggest it again."
+          }
+        }
+      }
+    },
     "trips.title": {
       "extractionState": "manual",
       "localizations": {

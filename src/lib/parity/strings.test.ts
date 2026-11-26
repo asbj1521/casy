@@ -1248,6 +1248,10 @@ const WEB: Record<string, (t: Messages) => string> = {
 const NATIVE_ONLY: Record<string, { da: string; en: string }> = {
   "pictures.library": { da: "Fotobibliotek", en: "Photo Library" },
   "pictures.camera": { da: "Tag billede", en: "Take Photo" },
+  "trips.removeAsk": {
+    da: "Slet rejsen? Vi foreslår den ikke igen.",
+    en: "Delete the trip? We won't suggest it again.",
+  },
   "trips.addFailed": {
     da: "Vi kunne ikke lægge rejsen i din kalender.",
     en: "We couldn't put the trip in your calendar.",

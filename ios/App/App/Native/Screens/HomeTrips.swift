@@ -159,6 +159,9 @@ final class HomeTrips {
     // MARK: Answered on the trip sheet
 
     func act(_ action: TripAction) {
+        #if DEBUG
+            NSLog("casy trips: answered %@", String(describing: action))
+        #endif
         switch action {
         case .accept(let id):
             change { a in

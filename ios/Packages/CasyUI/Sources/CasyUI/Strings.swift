@@ -1195,6 +1195,8 @@ public enum CasyStrings {
     public static var tripDecline: String { text("trips.decline") }
     public static var tripAcceptedNote: String { text("trips.acceptedNote") }
     public static var tripRemove: String { text("trips.remove") }
+    /// Slet rejsen's question: deleting it means it is never suggested again.
+    public static var tripRemoveAsk: String { text("trips.removeAsk") }
     public static var tripAddToCalendar: String { text("trips.addToCalendar") }
     public static var tripAdding: String { text("trips.adding") }
     public static var tripInCalendar: String { text("trips.inCalendar") }
