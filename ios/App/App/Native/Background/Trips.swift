@@ -56,6 +56,17 @@ final class TripsWork {
         }
     }
 
+    /// For testing (Dine data's "reset trips"): the journeys forgotten and read again at once.
+    func readAgain() {
+        guard let userId else { return }
+        asked = []
+        book = [:]
+        Self.write(userId, book)
+        mirror(userId, book)
+        HomeTrips.shared.refresh()
+        LabelsWork.shared.kick()
+    }
+
     /// The AI's consent withdrawn for `userId`, or signed out (nil): the legs go.
     func clear(_ userId: String?) {
         Self.remove(userId)

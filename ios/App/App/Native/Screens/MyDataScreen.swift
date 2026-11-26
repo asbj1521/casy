@@ -450,8 +450,18 @@ struct MyDataScreen: View {
                 }
             }
             fact(CasyStrings.myDataLabels, model.labels.map { "\($0)" } ?? "-")
+            if HomeTrips.on && Self.testing { TripsTesting() }
             fact(CasyStrings.myDataAiCalls, "\(data.ai.calls)")
         }
+    }
+
+    /// Testers and admins, and any build of the app on a developer's Mac (the web's `tester || DEV`).
+    private static var testing: Bool {
+        #if DEBUG
+            true
+        #else
+            ProfileModel.shared.whoAmI?.aiTester == true
+        #endif
     }
 
     @ViewBuilder private func credentials(_ data: MyData) -> some View {
@@ -602,4 +612,38 @@ private struct ShareSheet: UIViewControllerRepresentable {
 extension String {
     /// Nil for an empty string, so `?? "-"` reads as the web's `|| "-"`.
     fileprivate var nonEmpty: String? { isEmpty ? nil : self }
+}
+
+/// Trip detection (#115, #202), for testing, as the web's: what it found, a way
+/// to be asked about every trip again, and how reading the journeys went.
+private struct TripsTesting: View {
+    @State private var reset = false
+
+    var body: some View {
+        let detected = HomeTrips.shared.detected
+        HStack(spacing: 12) {
+            Text(
+                verbatim: "trips: \(detected.trips.count) found (\(detected.trips.filter(\.accepted).count) accepted), "
+                    + "\(detected.questions.count) questions")
+            Spacer(minLength: 0)
+            Button(reset ? "reset, reading again" : "reset trips") {
+                HomeTrips.shared.resetAnswers()
+                TripsWork.shared.readAgain()
+                reset = true
+            }
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(Theme.primary.color)
+            .accessibilityIdentifier("myData.resetTrips")
+        }
+        .font(.system(size: 12))
+        .foregroundStyle(Theme.mutedForeground.color)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        Text(verbatim: "trip reading: \(TripsWork.shared.status)")
+            .font(.system(size: 12))
+            .foregroundStyle(Theme.mutedForeground.color)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+    }
 }
