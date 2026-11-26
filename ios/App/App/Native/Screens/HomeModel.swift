@@ -112,7 +112,8 @@ final class HomeModel {
     var important: [LabelledEvent] { LabelsWork.on ? LabelsWork.shared.important : page.important }
 
     func color(_ calendarId: String) -> String {
-        page.colors[calendarId] ?? colors[calendarId] ?? "113, 113, 122"
+        if Self.ownData && calendarId == casyVoteCalendar { return casyRGB }
+        return page.colors[calendarId] ?? colors[calendarId] ?? "113, 113, 122"
     }
 
     /// What the page sent; a newer fetch of your calendars reads them again.
@@ -186,8 +187,36 @@ final class HomeModel {
     }
 
     /// Every month laid out again, off the main thread; the newest wins.
+    /// Casy's own events on the month (#172), worked out here (#202): the waiting votes'
+    /// dates pencilled in, the decided ones as chips; one decided since this device last
+    /// looked waits to fly into its day (AgreedSeen) before its chip shows.
+    private var voteItems: [MonthItem] {
+        let events = EventsModel.shared.events ?? []
+        let now = Native.now
+        let titleOf = { (e: SuggestedEvent) in CasyStrings.eventTitle(e.title) }
+        let flying = Set(AgreedSeen.read().map { newlyDecided(events, seen: $0, now: now).map(\.id) } ?? [])
+        return pencilItems(waitingVotes(events, now: now), titleOf: titleOf, now: now)
+            + scheduledItems(events.filter { !flying.contains($0.id) }, calendarItems: own, titleOf: titleOf, now: now)
+    }
+
+    /// What goes on the month besides your calendar: Casy's events (the app's own, or the
+    /// page's) and the trips' bars (the page's).
+    private var extras: [MonthItem] { Self.ownData ? voteItems + page.extras : page.extras }
+
+    /// The vote pill's words, when votes are waiting.
+    var pill: String? {
+        guard Self.ownData else { return page.pill }
+        let waiting = waitingVotes(EventsModel.shared.events ?? [], now: Native.now)
+        guard let first = waiting.first else { return nil }
+        return waiting.count > 1 ? CasyStrings.homeVotesWaiting(waiting.count) : CasyStrings.homeVoteAnswer(CasyStrings.eventTitle(first.title))
+    }
+
+    /// The votes changed (or one landed): the month drawn again with them.
+    func votesChanged() { if Self.ownData { dayCache = [:]; layOut() } }
+
     private func layOut() {
-        let shown = landing.map { l in page.extras.filter { !($0.start == l.start && $0.end == l.end && $0.pencil != true) } } ?? page.extras
+        let extras = extras
+        let shown = landing.map { l in extras.filter { !($0.start == l.start && $0.end == l.end && $0.pencil != true) } } ?? extras
         let items =
             shown + (holidaysHidden ? own.filter { $0.calendarId != holidayCalendarId } : own)
         let first = startOfMonth(Native.now, appTimeZone)

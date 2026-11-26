@@ -49,6 +49,8 @@ export type NativeScreen =
   | "dayFacts"
   /** Tid til hinanden's stars on the home page (#171, #202), found by the app. */
   | "stars"
+  /** Casy's own events on the home page's month (#172, #202), drawn by the app from its own events. */
+  | "votes"
   /** The calendars sorted by AI (#118), with the phone's own titles. */
   | "categorize"
   /** The trips' legs read from the labelled journeys (#115); the page still pairs them into trips. */

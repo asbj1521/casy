@@ -121,7 +121,10 @@ struct HomeScreen: View {
             if HomeModel.ownData { await ProfileModel.shared.load() }
             sayAgreed()
         }
-        .onChange(of: EventsModel.shared.events) { _, _ in sayAgreed() }
+        .onChange(of: EventsModel.shared.events) { _, _ in
+            model.votesChanged()
+            sayAgreed()
+        }
         .onChange(of: idle) { _, _ in sayAgreed() }
         .onChange(of: model.page.dataAt) { _, _ in
             Task {
@@ -670,7 +673,7 @@ struct HomeScreen: View {
     /// a 16 chevron, 8 between.
     private func bottom(safe: CGFloat) -> some View {
         VStack(spacing: 12) {
-            if let pill = model.page.pill, !votesAway, deck == nil, let first = waiting.first {
+            if let pill = model.pill, !votesAway, deck == nil, let first = waiting.first {
                 Button { openVote(first, from: nil) } label: {
                     HStack(spacing: 8) {
                         LucideIcon("vote", size: 20)

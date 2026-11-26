@@ -6,6 +6,7 @@ import NativeTell from "@/components/tellCasy/NativeTell";
 import NativeTrip from "@/components/trips/NativeTrip";
 import NativeProfile from "@/components/profile/NativeProfile";
 import { useNativeScreen, useNativeScreenKnown } from "@/hooks/useNativeScreen";
+import { CASY_CALENDAR } from "@/lib/homeVotes";
 import { useNativeHome } from "@/components/calendarView/useNativeHome";
 import {
   lazy,
@@ -581,9 +582,14 @@ export default function PhoneCalendar() {
   // to the month, and anything only the page draws over it, for it to step aside.
   const importCardOpen =
     phoneImport.on && importAskDue && !importLater && monthClear && !inviteAsking;
+  // Casy's own events the app draws itself when it can (#202): only the trips' bars then.
+  const nativeVotes = useNativeScreen("votes");
   const homeExtras = useMemo(
-    () => month.items.slice(0, month.items.length - calendar.items.length),
-    [month.items, calendar.items],
+    () =>
+      month.items
+        .slice(0, month.items.length - calendar.items.length)
+        .filter((i) => !nativeVotes || i.calendarId !== CASY_CALENDAR),
+    [month.items, calendar.items, nativeVotes],
   );
   const homeColors = useMemo(
     () => Object.fromEntries(homeExtras.map((i) => [i.calendarId, month.colorOf(i.calendarId)])),
