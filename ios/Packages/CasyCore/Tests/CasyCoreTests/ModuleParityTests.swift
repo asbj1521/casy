@@ -923,3 +923,17 @@ private struct CalendarKind: Decodable {
         }
     }
 }
+
+@Test func primeDatesGiveTheTypeScriptAnswers() throws {
+    try check("primeDates", atLeast: 90) { fn, a in
+        switch fn {
+        case "primeCandidates":
+            return try json(primeCandidates(try a["group"].decoded(), now: try milliseconds(a, "now"), "Europe/Copenhagen")).rounded
+        case "pickPrimeDates":
+            let raw: [String: [String: Double]] = try a["scores"].decoded()
+            let scores = raw.mapValues { Dictionary(uniqueKeysWithValues: $0.map { (Int64($0.key)!, $0.value) }) }
+            return try json(pickPrimeDates(try a["candidates"].decoded(), scores: scores)).rounded
+        default: return unknown(fn)
+        }
+    }
+}
