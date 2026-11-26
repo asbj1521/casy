@@ -160,8 +160,20 @@ final class HomeModel {
                             details: EventDetails(title: $0.label, location: "", notes: ""))
                     }
                 let names = Dictionary(data.calendars.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
+                // A holiday by its own name ("Juledag"), not its calendar's ("Helligdage i Danmark").
+                let years = localDate(from, appTimeZone).year...localDate(to, appTimeZone).year
+                let holidayNames = Dictionary(
+                    years.flatMap { danishHolidays($0, appTimeZone) }.map { ($0.date, lang == .da ? $0.name : $0.englishName) },
+                    uniquingKeysWith: { a, b in "\(a), \(b)" })
+                let items = calendarItems(counted, names: names, from: from, to: to, appTimeZone, lang).map { item in
+                    guard item.calendarId == holidayCalendarId, let name = holidayNames[startOfDay(item.start, appTimeZone)]
+                    else { return item }
+                    var named = item
+                    named.label = name
+                    return named
+                }
                 return (
-                    calendarItems(counted, names: names, from: from, to: to, appTimeZone, lang),
+                    items,
                     calendarColors(data.calendars, own: phoneColors),
                     counted,
                     segmentByDay(counted, from: from, to: to, appTimeZone)
@@ -195,13 +207,30 @@ final class HomeModel {
         let now = Native.now
         let titleOf = { (e: SuggestedEvent) in CasyStrings.eventTitle(e.title) }
         let flying = Set(AgreedSeen.read().map { newlyDecided(events, seen: $0, now: now).map(\.id) } ?? [])
+        // Every agreed date as Casy's own chip, in Casy's orange, also one Casy wrote into
+        // your calendar: its copy there is left out instead (`casyCopies`), so a date you
+        // planned here always reads as one (the web draws the copy in its calendar's colour).
         return pencilItems(waitingVotes(events, now: now), titleOf: titleOf, now: now)
-            + scheduledItems(events.filter { !flying.contains($0.id) }, calendarItems: own, titleOf: titleOf, now: now)
+            + scheduledItems(events.filter { !flying.contains($0.id) }, calendarItems: [], titleOf: titleOf, now: now)
+    }
+
+    /// Your calendar's own copies of Casy's agreed dates (the same start and end): left out
+    /// for Casy's chip.
+    private func withoutCasyCopies(_ items: [MonthItem], _ votes: [MonthItem]) -> [MonthItem] {
+        let chips = Set(votes.filter { $0.pencil != true }.map { "\($0.start)/\($0.end)" })
+        guard !chips.isEmpty else { return items }
+        return items.filter { !chips.contains("\($0.start)/\($0.end)") }
     }
 
     /// What goes on the month besides your calendar: Casy's events (the app's own, or the
     /// page's) and the trips' bars (the page's).
     private var extras: [MonthItem] { Self.ownData ? voteItems + page.extras : page.extras }
+
+    /// Your calendar on the month: without the copies of Casy's chips when the app draws them.
+    private func calendarShown(_ extras: [MonthItem]) -> [MonthItem] {
+        let mine = holidaysHidden ? own.filter { $0.calendarId != holidayCalendarId } : own
+        return Self.ownData ? withoutCasyCopies(mine, extras) : mine
+    }
 
     /// The vote pill's words, when votes are waiting.
     var pill: String? {
@@ -217,8 +246,7 @@ final class HomeModel {
     private func layOut() {
         let extras = extras
         let shown = landing.map { l in extras.filter { !($0.start == l.start && $0.end == l.end && $0.pencil != true) } } ?? extras
-        let items =
-            shown + (holidaysHidden ? own.filter { $0.calendarId != holidayCalendarId } : own)
+        let items = shown + calendarShown(extras)
         let first = startOfMonth(Native.now, appTimeZone)
         layoutTask?.cancel()
         layoutTask = Task {

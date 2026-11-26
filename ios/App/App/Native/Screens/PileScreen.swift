@@ -58,6 +58,77 @@ struct PileLayers: Equatable {
     var sharedWeeks: [[HomeWeek]] = []
 }
 
+/// The send flight (the web's sendFlight.ts, FLIGHT_TIMING): the dates not sent swipe
+/// off to the right, one after another from the bottom row up, then the ones sent fly
+/// down into the home page's Aftaler button, the bottom one first.
+enum SendFlight {
+    static let away = 0.38
+    static let awayStagger = 0.08
+    static let awaySpan = 0.7
+    static let overlap = 0.15
+    static let fly = 0.62
+    static let flyStagger = 0.12
+    static let after = 0.25
+
+    struct Step {
+        let away: Bool
+        let delay: Double
+        let duration: Double
+    }
+
+    /// Each row's step, by id, from the rows in the order they are shown; and how long it all takes.
+    static func plan(_ shown: [CheckedDate]) -> (steps: [String: Step], total: Double) {
+        let aways = shown.filter { !$0.chosen }.reversed()
+        let flies = shown.filter(\.chosen).reversed()
+        let stagger = aways.count > 1 ? min(awayStagger, awaySpan / Double(aways.count - 1)) : 0
+        var steps: [String: Step] = [:]
+        for (i, row) in aways.enumerated() {
+            steps[row.id] = Step(away: true, delay: Double(i) * stagger, duration: away)
+        }
+        let awaysEnd = aways.isEmpty ? 0 : Double(aways.count - 1) * stagger + away
+        let start = max(0, awaysEnd - overlap)
+        for (j, row) in flies.enumerated() {
+            steps[row.id] = Step(away: false, delay: start + Double(j) * flyStagger, duration: fly)
+        }
+        let total = flies.isEmpty ? awaysEnd : start + Double(flies.count - 1) * flyStagger + fly
+        return (steps, total + after)
+    }
+
+    /// The Aftaler button's middle on the screen (HomeBar: max(safe area, 12) from the
+    /// bottom, 16 from the left, 48 round).
+    @MainActor static var aftaler: CGPoint {
+        let screen = UIScreen.main.bounds
+        let window = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+        let bottom = max(window?.safeAreaInsets.bottom ?? 0, 12)
+        return CGPoint(x: 16 + 24, y: screen.height - bottom - 24)
+    }
+}
+
+/// A row's part in the send flight: off to the right, or down into the Aftaler button.
+private struct SendMove: ViewModifier {
+    let step: SendFlight.Step?
+    let frame: CGRect?
+    let flying: Bool
+
+    func body(content: Content) -> some View {
+        let gone = flying && step != nil
+        let target = SendFlight.aftaler
+        let away = step?.away ?? true
+        let dx = away ? 500 : (frame.map { target.x - $0.midX } ?? -120)
+        let dy = away ? 0 : (frame.map { target.y - $0.midY } ?? 900)
+        let scale = away ? 1 : (frame.map { 48 / max($0.width, 1) } ?? 0.3)
+        let delay = step?.delay ?? 0
+        let duration = step?.duration ?? 0.4
+        content
+            .scaleEffect(gone ? scale : 1)
+            .offset(x: gone ? dx : 0, y: gone ? dy : 0)
+            .animation(.timingCurve(0.5, 0, 0.75, 0.4, duration: duration).delay(delay), value: flying)
+            // Gone at the end of its move, into the button.
+            .opacity(gone ? 0 : 1)
+            .animation(.easeIn(duration: duration * (away ? 0.3 : 0.12)).delay(delay + duration * (away ? 0.7 : 0.88)), value: flying)
+    }
+}
+
 /// Where a row comes from as it is lifted out: its date's green circle, as a move and a
 /// squeeze of the row (the web's Flight); `circle` false: from a little below, faded.
 struct RowFlight: Equatable {
@@ -525,6 +596,13 @@ final class PileModel {
     // MARK: Sending
 
     var chosen: [CheckedDate] { dates?.filter(\.chosen) ?? [] }
+
+    /// The rows in the order they are shown now (ranked as they are checked).
+    var shownDates: [CheckedDate] {
+        guard let dates else { return [] }
+        let order = rankOrder(dates.map(\.facts), priority: priority)
+        return liveOrder(order, checked: checked, offered: dates.map(\.chosen)).map { dates[$0] }
+    }
     var alone: Bool { (plan.activeGroup?.members.count ?? 0) <= 1 }
     var review: AnswerReview {
         reviewAnswer(plan.found, plan.search, you: plan.you, acceptedStart: plan.steps.accepted)
@@ -537,9 +615,19 @@ final class PileModel {
         sending = true
         failure = nil
         let still = UIAccessibility.isReduceMotionEnabled
-        if !still { withAnimation(.easeIn(duration: 0.5)) { flying = true } }
+        let route = SendFlight.plan(shownDates)
+        // Flown (the rows animate themselves from `flying`), each sent date landing with a tap.
+        if !still {
+            flying = true
+            for step in route.steps.values where !step.away {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(Int((step.delay + step.duration) * 1000)))
+                    if flying { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+                }
+            }
+        }
         Task {
-            let flight = Task { if !still { try? await Task.sleep(for: .milliseconds(900)) } }
+            let flight = Task { if !still { try? await Task.sleep(for: .milliseconds(Int(route.total * 1000))) } }
             do {
                 guard let api = await Native.api() else {
                     throw APIError.failed(status: 401, message: CasyStrings.pileSuggestFailed)
@@ -773,6 +861,9 @@ struct PileScreen: View {
                         )
                         .offset(x: weeks.minX - origin.x, y: weeks.minY - origin.y - pileBandHeight)
                         .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                        // Gone as the dates are sent: the home page's Aftaler button shows for them to fly into.
+                        .opacity(model.flying ? 0 : 1)
+                        .animation(.easeOut(duration: 0.35), value: model.flying)
                         .transition(.opacity.animation(.easeOut(duration: 0.25)))
                     }
                 }
@@ -793,8 +884,8 @@ struct PileScreen: View {
                 // worked out afresh on every frame the rows moved, and they stuttered.
                 Theme.background.color.opacity(0.5)
                     .ignoresSafeArea()
-                    .opacity(model.phase >= .ranking ? 1 : 0)
-                    .animation(.easeOut(duration: 0.4), value: model.phase >= .ranking)
+                    .opacity(model.phase >= .ranking && !model.flying ? 1 : 0)
+                    .animation(.easeOut(duration: 0.4), value: model.phase >= .ranking && !model.flying)
                     .allowsHitTesting(false)
                 if listing { list.transition(.opacity) }
                 if model.overHome {
@@ -836,8 +927,12 @@ struct PileScreen: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
-                    header
-                    if model.phase == .done, model.dates?.isEmpty == false { priorityRow }
+                    Group {
+                        header
+                        if model.phase == .done, model.dates?.isEmpty == false { priorityRow }
+                    }
+                    .opacity(model.flying ? 0 : 1)
+                    .animation(.easeOut(duration: 0.3), value: model.flying)
                     if let waiting = model.waiting {
                         Text(waiting)
                             .font(.system(size: 15))
@@ -927,7 +1022,8 @@ struct PileScreen: View {
     private func rows(_ dates: [CheckedDate]) -> some View {
         let order = rankOrder(dates.map(\.facts), priority: model.priority)
         let shown = liveOrder(order, checked: model.checked, offered: dates.map(\.chosen)).map { dates[$0] }
-        return ForEach(Array(shown.enumerated()), id: \.element.id) { place, item in
+        let flight = SendFlight.plan(shown)
+        return ForEach(shown) { item in
             let at = dates.firstIndex(of: item) ?? 0
             DateRow(
                 item: item, rank: (order.firstIndex(of: at) ?? 0) + 1, at: at, checked: model.checked,
@@ -940,14 +1036,9 @@ struct PileScreen: View {
             }
             // Where it is laid out (outside its own flight), for its date to scroll level with.
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { model.rowFrames[item.id] = $0 }
-            // Sent: the ones not sent swipe off to the right, the ones sent fly down into Aftaler.
-            .offset(
-                x: model.flying ? (item.chosen ? -120 : 500) : 0,
-                y: model.flying && item.chosen ? 900 : 0
-            )
-            .scaleEffect(model.flying && item.chosen ? 0.3 : 1, anchor: .bottomLeading)
-            .opacity(model.flying ? 0 : 1)
-            .animation(.easeIn(duration: 0.55).delay(Double(place) * 0.05), value: model.flying)
+            // Sent (SendFlight): the ones not sent swipe off to the right, then the ones sent
+            // fly down into the Aftaler button, shrinking into it.
+            .modifier(SendMove(step: flight.steps[item.id], frame: model.rowFrames[item.id], flying: model.flying))
         }
     }
 
