@@ -32,10 +32,12 @@ final class PageAuth {
     /// Apple's own sheet is in it, so a person may take a while.
     private static let patience: Duration = .seconds(180)
 
-    func ask(_ action: String, email: String = "", password: String = "", name: String = "") async -> AuthAnswer {
+    func ask(
+        _ action: String, email: String = "", password: String = "", name: String = "", code: String = ""
+    ) async -> AuthAnswer {
         #if DEBUG
             if TestLaunch.isActive && !TestLaunch.pageAuth {
-                return TestLaunch.authAnswer(action, email: email, password: password)
+                return TestLaunch.authAnswer(action, email: email, password: password, code: code)
             }
         #endif
         guard let send else { return .failed(CasyStrings.signIn("appleFailed")) }
@@ -43,7 +45,7 @@ final class PageAuth {
         let id = asked
         return await withCheckedContinuation { continuation in
             waiting[id] = continuation
-            send(["id": id, "action": action, "email": email, "password": password, "name": name])
+            send(["id": id, "action": action, "email": email, "password": password, "name": name, "code": code])
             Task { @MainActor [weak self] in
                 try? await Task.sleep(for: Self.patience)
                 self?.answered(id, AuthAnswer.failed(CasyStrings.groupsLoadFailed))

@@ -129,8 +129,55 @@ final class ProfileUITests: XCTestCase {
     /// A screen that is still the page's closes the native sheet.
     func testARowStillOnThePageClosesTheSheet() { leavesForThePage("Grupper") }
 
-    /// Log ind og sikkerhed is still the page's too, inside the app, never Safari.
-    func testLogInAndSecurityClosesTheSheet() { leavesForThePage("Log ind og sikkerhed") }
+    /// Log ind og sikkerhed is the app's own (#202): a new password with its
+    /// rules, the code emailed first, then Log ind med Apple added.
+    func testLogInAndSecurity() {
+        let app = openSecurity()
+        typePasswords(app, "Solskin2026x", "Solskin2026x")
+        app.buttons["security.save"].tap()
+        let code = app.textFields["security.code"]
+        XCTAssertTrue(code.waitForExistence(timeout: 10), "the code step")
+        code.tap()
+        code.typeText("123456")
+        app.buttons["Gem adgangskode"].tap()
+        XCTAssertTrue(
+            app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Adgangskoden er gemt")).firstMatch
+                .waitForExistence(timeout: 10))
+        let apple = app.buttons["security.apple"]
+        XCTAssertTrue(apple.waitForExistence(timeout: 5))
+        apple.tap()
+        XCTAssertTrue(app.staticTexts["Tilføjet"].waitForExistence(timeout: 10))
+    }
+
+    /// Two passwords that differ are said so before anything is sent. (It ends
+    /// there: after it, iOS's password tools keep a test from ever idling.)
+    func testLogInAndSecurityPasswordsMustMatch() {
+        let app = openSecurity()
+        typePasswords(app, "Solskin2026x", "Solskin2026y")
+        app.buttons["security.save"].tap()
+        XCTAssertTrue(app.staticTexts["Adgangskoderne er ikke ens."].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.textFields["security.code"].exists)
+    }
+
+    private func openSecurity() -> XCUIApplication {
+        let app = launch()
+        let target = row(app, "Log ind og sikkerhed")
+        XCTAssertTrue(target.waitForExistence(timeout: 10))
+        target.tap()
+        XCTAssertTrue(app.navigationBars["Log ind og sikkerhed"].waitForExistence(timeout: 10))
+        app.buttons["security.setPassword"].tap()
+        return app
+    }
+
+    private func typePasswords(_ app: XCUIApplication, _ password: String, _ again: String) {
+        let field = app.secureTextFields["security.newPassword"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(password)
+        let confirm = app.secureTextFields["security.confirm"]
+        confirm.tap()
+        confirm.typeText(again)
+    }
 
     private func leavesForThePage(_ label: String) {
         let app = launch()

@@ -178,7 +178,10 @@ struct ProfileScreen: View {
                         }
                     }
                     CardList {
-                        handOver(CasyStrings.profileSecurity, "key-round", "password")
+                        link(SecurityScreen(email: model.email ?? "", name: name, signedOutEverywhere: onDone)) {
+                            CardRow(CasyStrings.profileSecurity, icon: "key-round", chevron: true)
+                        }
+                        .accessibilityIdentifier("profile.security")
                         if model.isAdmin {
                             link(AdminScreen(enablePush: enablePush)) {
                                 CardRow(CasyStrings.profileAdmin, icon: "shield-check", chevron: true)
@@ -376,17 +379,6 @@ struct ProfileScreen: View {
         self.link(PageScreen(page: link, leave: leave)) {
             CardRow(label, icon: icon, chevron: true)
         }
-    }
-
-    /// A row whose screen is one of the Profil sheet's, still the page's,
-    /// inside the app: the app never leaves for Safari.
-    private func handOver(_ label: String, _ icon: String, _ screen: String) -> some View {
-        Button {
-            leave(.webScreen("/?profile=\(screen)"))
-        } label: {
-            CardRow(label, icon: icon, chevron: true)
-        }
-        .buttonStyle(.cardRow)
     }
 
     /// An email with the build and device at the bottom, as the web's.

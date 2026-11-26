@@ -46,6 +46,26 @@ public enum CasyStrings {
     public static var profileGroups: String { text("profile.groups") }
     public static var profileFriends: String { text("profile.friends") }
     public static var profileSecurity: String { text("profile.security") }
+    // Log ind og sikkerhed (#202), the web's PasswordSection and AppleSignInRow.
+    public static var passwordNew: String { text("passwordForm.newPassword") }
+    public static var passwordConfirm: String { text("passwordForm.confirm") }
+    public static var passwordMismatch: String { text("passwordForm.mismatch") }
+    public static var securitySetPassword: String { text("profile.setPassword") }
+    public static var securitySavePassword: String { text("profile.savePassword") }
+    public static var securitySaving: String { text("profile.saving") }
+    public static var securityPasswordSaved: String { text("profile.passwordSaved") }
+    public static func securityCodeSent(_ email: String) -> String { format("profile.codeSent", email) }
+    public static var securityCodeLabel: String { text("profile.codeLabel") }
+    public static var securityCodeResend: String { text("profile.codeResend") }
+    public static var securityCodeResent: String { text("profile.codeResent") }
+    public static var securitySignOutEverywhere: String { text("profile.signOutEverywhere") }
+    public static var securitySigningOutEverywhere: String { text("profile.signingOutEverywhere") }
+    public static var securitySignOutEverywhereHelp: String { text("profile.signOutEverywhereHelp") }
+    public static var securityCouldntSignOutEverywhere: String { text("profile.couldntSignOutEverywhere") }
+    public static var appleLinkLabel: String { text("appleLink.label") }
+    public static var appleLinkAdd: String { text("appleLink.add") }
+    public static var appleLinkAdded: String { text("appleLink.added") }
+    public static var appleLinkFootnote: String { text("appleLink.footnote") }
     public static var profileAdmin: String { text("profile.admin") }
     public static var profileFeedback: String { text("profile.feedback") }
     public static var profileFeedbackSubject: String { text("profile.feedbackSubject") }

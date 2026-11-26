@@ -11,11 +11,16 @@ import { isAuthError } from "@supabase/auth-js";
 import { deleteMyAccount } from "@/api/account";
 import { authErrorMessage } from "@/i18n/authError";
 import { currentLang, currentMessages } from "@/i18n/current";
-import { answerAppleQuestion, signInWithApple } from "@/lib/appleSignIn";
+import {
+  answerAppleQuestion,
+  hasAppleSignIn,
+  linkAppleSignIn,
+  signInWithApple,
+} from "@/lib/appleSignIn";
 import { SITE_URL } from "@/lib/nativeApp";
 import { timesLeaked } from "@/lib/passwordRules";
 import { supabaseAuth } from "@/lib/supabase";
-import { flagWeakPassword } from "@/lib/weakPassword";
+import { clearWeakPassword, flagWeakPassword } from "@/lib/weakPassword";
 
 /** What the app's sign-in screen asks the page to do. */
 export interface NativeAuthAsk {
@@ -29,10 +34,17 @@ export interface NativeAuthAsk {
     | "apple"
     | "appleNew"
     | "appleLeave"
-    | "leaked";
+    | "leaked"
+    | "setPassword"
+    | "resendCode"
+    | "signOutEverywhere"
+    | "linkApple"
+    | "appleLinked";
   email?: string;
   password?: string;
   name?: string;
+  /** The code emailed before a new password is saved (`setPassword`). */
+  code?: string;
 }
 
 /**
@@ -43,7 +55,7 @@ export interface NativeAuthAsk {
  * how often a password is in known leaks (null when that can't be said).
  */
 export interface NativeAuthAnswer {
-  outcome: "in" | "sent" | "confirm" | "new-account" | "cancelled" | "done" | "failed";
+  outcome: "in" | "sent" | "confirm" | "new-account" | "cancelled" | "done" | "code" | "failed";
   error?: string;
   unconfirmed?: boolean;
   count?: number | null;
@@ -141,5 +153,48 @@ export async function answerNativeAuth(ask: NativeAuthAsk): Promise<NativeAuthAn
     }
     case "leaked":
       return { outcome: "done", count: await timesLeaked(ask.password ?? "") };
+    // Log ind og sikkerhed in the app (#202), as PasswordSection and AppleSignInRow do it.
+    case "setPassword": {
+      const password = ask.password ?? "";
+      const { error } = await supabaseAuth.updateUser(
+        ask.code ? { password, nonce: ask.code } : { password },
+      );
+      // Signed in over a day ago: Supabase emails a code first ("code").
+      if (error?.code === "reauthentication_needed") {
+        const { error: sendErr } = await supabaseAuth.reauthenticate();
+        return sendErr ? failed(sendErr) : { outcome: "code" };
+      }
+      if (error) return failed(error);
+      // Whoever else might be signed in as you is signed out; this device stays.
+      await supabaseAuth.signOut({ scope: "others" });
+      clearWeakPassword();
+      return { outcome: "done" };
+    }
+    case "resendCode": {
+      const { error } = await supabaseAuth.reauthenticate();
+      return error ? failed(error) : { outcome: "sent" };
+    }
+    case "signOutEverywhere": {
+      // As the page's own signOut: this phone's notifications go first (#139).
+      await import("@/lib/push").then((m) => m.forgetPush()).catch(() => {});
+      const { error } = await supabaseAuth.signOut({ scope: "global" });
+      return error
+        ? { outcome: "failed", error: t.profile.couldntSignOutEverywhere }
+        : { outcome: "done" };
+    }
+    case "linkApple": {
+      try {
+        return { outcome: (await linkAppleSignIn()) === "linked" ? "done" : "cancelled" };
+      } catch (err) {
+        return {
+          outcome: "failed",
+          error: isAuthError(err) ? authErrorMessage(err, t) : t.signIn.appleFailed,
+        };
+      }
+    }
+    case "appleLinked": {
+      const { data } = await supabaseAuth.getUser();
+      return { outcome: "done", count: data.user && hasAppleSignIn(data.user) ? 1 : 0 };
+    }
   }
 }

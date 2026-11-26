@@ -137,7 +137,7 @@
         /// What the page would answer a sign-in step (#282): "forkert1" is a
         /// wrong password, "password1" a leaked one, a new account waits for
         /// its email, and Apple signs in.
-        static func authAnswer(_ action: String, email: String, password: String) -> AuthAnswer {
+        static func authAnswer(_ action: String, email: String, password: String, code: String = "") -> AuthAnswer {
             switch action {
             case "password":
                 return password == "forkert1"
@@ -145,7 +145,10 @@
             case "signUp": return AuthAnswer(outcome: "confirm")
             case "leaked": return AuthAnswer(outcome: "done", count: password == "password1" ? 52_256 : 0)
             case "apple": return AuthAnswer(outcome: "in")
-            case "link", "reset", "resend": return AuthAnswer(outcome: "sent")
+            case "link", "reset", "resend", "resendCode": return AuthAnswer(outcome: "sent")
+            // Log ind og sikkerhed (#202): a new password wants the emailed code first.
+            case "setPassword": return code.isEmpty ? AuthAnswer(outcome: "code") : AuthAnswer(outcome: "done")
+            case "appleLinked": return AuthAnswer(outcome: "done", count: 0)
             default: return AuthAnswer(outcome: "done")
             }
         }
