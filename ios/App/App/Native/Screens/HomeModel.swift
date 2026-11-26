@@ -292,13 +292,17 @@ final class HomeModel {
         return page.extras.contains { $0.pencil == true && $0.pulse != true && $0.start >= midnight && $0.start < next }
     }
 
+    /// Tid til hinanden's starred days: the app's own (HomeStars) when it finds them, else the page's.
+    var starred: Set<Int64> { HomeStars.on ? Set(HomeStars.shared.stars.map(\.day)) : page.starred }
+
     func dayIsThePages(_ midnight: Int64) -> Bool {
-        if page.starred.contains(midnight) { return true }
+        if !HomeStars.on && page.starred.contains(midnight) { return true }
         let next = addDays(midnight, 1, appTimeZone)
         return page.extras.contains { ($0.pencil == true || $0.pulse == true) && $0.end > midnight && $0.start < next }
     }
 
     func reset() {
+        HomeStars.shared.reset()
         months = []
         own = []
         counted = []

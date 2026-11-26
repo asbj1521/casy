@@ -1,3 +1,4 @@
+import type { PrimeDate } from "@/lib/primeDates";
 /**
  * The bridge to the iPhone app's native screens (NativeBridgePlugin in ios/,
  * #192, #198). Until the home page is native, the page keeps the login, the
@@ -46,6 +47,8 @@ export type NativeScreen =
   | "labels"
   /** The day facts (#119), shared by the app from its own labels. */
   | "dayFacts"
+  /** Tid til hinanden's stars on the home page (#171, #202), found by the app. */
+  | "stars"
   /** The calendars sorted by AI (#118), with the phone's own titles. */
   | "categorize"
   /** The trips' legs read from the labelled journeys (#115); the page still pairs them into trips. */
@@ -96,8 +99,19 @@ export interface NativeHomeAction {
    * the month ("landed", the rating ask).
    */
   action:
-    "day" | "calendars" | "tell" | "events" | "plan" | "profile" | "pill" | "answered" | "landed";
+    | "day"
+    | "calendars"
+    | "tell"
+    | "events"
+    | "plan"
+    | "profile"
+    | "pill"
+    | "answered"
+    | "landed"
+    | "prime";
   day?: number;
+  /** A star tapped ("prime"): the stretch the app found, for its sheet. */
+  prime?: PrimeDate;
 }
 
 interface LentSession {

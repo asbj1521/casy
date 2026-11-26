@@ -115,6 +115,8 @@ struct HomeScreen: View {
             // As the web's SHEETS_AFTER_MS: the home page settles before anything is said over it.
             try? await Task.sleep(for: .milliseconds(1200))
             settled = true
+            // Tid til hinanden's stars, once the home page has settled (the page's usePrimeDates).
+            if HomeStars.on { HomeStars.shared.refresh() }
             sayAgreed()
         }
         .onChange(of: EventsModel.shared.events) { _, _ in sayAgreed() }
@@ -154,7 +156,7 @@ struct HomeScreen: View {
                 // under it, part of the 18 Nov 2026 freeze).
                 MonthList(
                     months: model.months, column: column, today: startOfDay(Native.now, appTimeZone),
-                    starred: model.page.starred, lang: lang, dark: scheme == .dark, color: model.color,
+                    starred: model.starred, lang: lang, dark: scheme == .dark, color: model.color,
                     headerHeight: headerHeight, pick: pick,
                     reach: { month, now in
                         if now { reached.insert(month) } else { reached.remove(month) }
@@ -175,7 +177,10 @@ struct HomeScreen: View {
                 withAnimation(.easeInOut(duration: 0.45)) { position = month }
                 model.focus = nil
             }
-            .refreshable { await model.load() }
+            .refreshable {
+                await model.load()
+                if HomeStars.on { HomeStars.shared.refresh(force: true) }
+            }
             .accessibilityIdentifier("home.months")
             .casyTopBar { header }
             .safeAreaInset(edge: .bottom, spacing: 0) { bottom(safe: bottomSafe) }
@@ -197,6 +202,11 @@ struct HomeScreen: View {
         }
         if let vote = waitingVote(on: day) {
             openVote(vote, from: from)
+            return
+        }
+        // A star of the app's own: Tid til hinanden's sheet, which the page opens.
+        if HomeStars.on, HomeStars.shared.star(on: day) != nil {
+            model.onAction?("prime", day)
             return
         }
         if model.dayIsThePages(day) {

@@ -5,7 +5,7 @@ import NativePlan from "@/components/planFromCalendar/NativePlan";
 import NativeTell from "@/components/tellCasy/NativeTell";
 import NativeTrip from "@/components/trips/NativeTrip";
 import NativeProfile from "@/components/profile/NativeProfile";
-import { useNativeScreen } from "@/hooks/useNativeScreen";
+import { useNativeScreen, useNativeScreenKnown } from "@/hooks/useNativeScreen";
 import { useNativeHome } from "@/components/calendarView/useNativeHome";
 import {
   lazy,
@@ -447,7 +447,9 @@ export default function PhoneCalendar() {
     idle: bare && !importShown && !aiAsking && !nativeHome,
   });
   // Times a whole group is free (#171), once the page has settled.
-  const primeDates = usePrimeDates(settled);
+  // Found by the app itself when it can (#202): the page leaves them then.
+  const nativeStars = useNativeScreenKnown("stars");
+  const primeDates = usePrimeDates(settled && nativeStars === false);
   const starred = useMemo(() => new Set(primeDates.map((p) => p.day)), [primeDates]);
   useEffect(() => {
     primeNow.current = primeDates;
@@ -627,8 +629,10 @@ export default function PhoneCalendar() {
       important: importantEvents,
     },
     calendar.items,
-    ({ action, day }) => {
+    ({ action, day, prime: star }) => {
       if (action === "day" && day !== undefined) pickDay(day);
+      // A star the app found (#202): its sheet, as a starred day of the page's.
+      else if (action === "prime" && star) setPrime({ date: star, open: true });
       else if (action === "calendars") openList();
       else if (action === "tell") setTellOpen(true);
       else if (action === "events") openEvents();

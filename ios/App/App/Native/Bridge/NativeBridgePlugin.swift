@@ -47,7 +47,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync"] : [])
+            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars"] : [])
         #else
             return []
         #endif
@@ -178,6 +178,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 if action == "plan" { self?.planComing() }
                 var data: [String: Any] = ["action": action]
                 if let day { data["day"] = Double(day) }
+                // A star the app found: the stretch goes with it, for its sheet (the page's to open).
+                if action == "prime", let day, let star = HomeStars.shared.star(on: day),
+                    let encoded = try? JSONEncoder().encode(star),
+                    let object = try? JSONSerialization.jsonObject(with: encoded)
+                {
+                    data["prime"] = object
+                }
                 self?.notifyListeners("homeAction", data: data)
             }
             NotificationCenter.default.addObserver(
