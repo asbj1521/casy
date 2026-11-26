@@ -1011,6 +1011,9 @@ private struct WeekRow: View {
                     if p.item.pulse == true { Pulse(shape: shape) }
                 }
                 .offset(x: left, y: CGFloat(p.lane) * monthLanePoints)
+                // A guess Casy is making glides to its next length (the web's 700 ms ease-out).
+                .animation(p.item.grow == true ? .easeOut(duration: 0.7) : nil, value: width)
+                .animation(p.item.grow == true ? .easeOut(duration: 0.7) : nil, value: left)
         }
     }
 }

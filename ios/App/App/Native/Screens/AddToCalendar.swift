@@ -170,10 +170,11 @@ struct AddToCalendar: View {
 }
 
 /// Which calendar agreed events go into: the choice becomes the primary calendar.
-private struct ChooseCalendarSheet: View {
+/// Without `download` (a trip, #202), no calendar file is offered instead.
+struct ChooseCalendarSheet: View {
     let options: [CalendarChoices]
     let choose: (String) -> Void
-    let download: () -> Void
+    var download: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var chosen: String?
@@ -200,8 +201,10 @@ private struct ChooseCalendarSheet: View {
                         Text(CasyStrings.addToCalendarUseAndAdd)
                     }
                     .disabled(chosen == nil)
-                    FlowButton(kind: .quiet, action: download) {
-                        Text(CasyStrings.addToCalendarDownloadInstead)
+                    if let download {
+                        FlowButton(kind: .quiet, action: download) {
+                            Text(CasyStrings.addToCalendarDownloadInstead)
+                        }
                     }
                 }
                 .padding(.horizontal, 16)

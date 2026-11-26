@@ -206,15 +206,49 @@ final class HomeTrips {
         refresh()
     }
 
+    /// Læg i min kalender, into the calendar just chosen: it becomes the primary calendar.
+    func add(_ id: String, into calendarId: String) {
+        guard let mark = marks.first(where: { $0.id == id }) ?? TripModel.shared.mark else { return }
+        TripModel.shared.adding = true
+        Task { await addToCalendar(mark, choosing: calendarId) }
+    }
+
     /// An accepted trip written into the phone's own calendar: Casy's primary when it is
-    /// on this phone, else iOS's default for new events. The trip remembers the event.
-    private func addToCalendar(_ mark: TripMark) async {
-        var target: String?
-        if let api = await Native.api(), let primary = try? await api.primaryCalendar() {
-            let calendar = HomeModel.shared.calendars.first { $0.id == primary.calendarId }
-            if let calendar, calendar.connectionId == LabelsWork.shared.thisPhone { target = calendar.externalId }
-        }
+    /// on this phone; with no primary yet, the one of this phone's calendars the person
+    /// picks, which becomes the primary (as an agreed event's Tilføj til min kalender);
+    /// else iOS's default for new events. The trip remembers the event.
+    private func addToCalendar(_ mark: TripMark, choosing: String? = nil) async {
         let model = TripModel.shared
+        var target: String?
+        if let api = await Native.api() {
+            let phone = ((try? await api.calendarConnections()) ?? []).filter { $0.id == LabelsWork.shared.thisPhone }
+            let sources = phone.flatMap(\.calendar_sources)
+            if let choosing {
+                do {
+                    _ = try await api.setPrimaryCalendar(choosing)
+                } catch {
+                    model.adding = false
+                    model.failure = error.localizedDescription
+                    return
+                }
+                target = sources.first { $0.id == choosing }?.external_id
+            } else {
+                do {
+                    if let primary = try await api.primaryCalendar() {
+                        target = sources.first { $0.id == primary.calendarId }?.external_id
+                    } else {
+                        let options = calendarChoices(phone, primaryId: nil)
+                        if !options.isEmpty {
+                            model.adding = false
+                            model.choices = options
+                            return
+                        }
+                    }
+                } catch {
+                    // Unknown whether one was chosen: never ask over it; iOS's default.
+                }
+            }
+        }
         let access = EKEventStore.authorizationStatus(for: .event)
         let store = EKEventStore()
         guard access == .fullAccess || access == .authorized,

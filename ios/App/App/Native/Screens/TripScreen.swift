@@ -28,6 +28,8 @@ final class TripModel {
     var addedTo: String?
     var adding = false
     var failure: String?
+    /// No primary calendar yet: this phone's calendars to choose from for Læg i min kalender.
+    var choices: [CalendarChoices]?
     @ObservationIgnored var onAction: ((TripAction) -> Void)?
 
     func show(_ mark: TripMark?) {
@@ -110,6 +112,13 @@ struct TripScreen: View {
         .accessibilityIdentifier("trip.screen")
         .casySheetBar(title(mark), close: CasyStrings.done, action: closeSheet)
         .onChange(of: mark?.id) { picked = nil }
+        .sheet(isPresented: Binding(get: { model.choices != nil }, set: { if !$0 { model.choices = nil } })) {
+            ChooseCalendarSheet(options: model.choices ?? []) { calendarId in
+                model.choices = nil
+                if let mark { HomeTrips.shared.add(mark.id, into: calendarId) }
+            }
+            .nativeSheetLook(NativePreferences.shared)
+        }
     }
 
     private func title(_ mark: TripMark?) -> String {
