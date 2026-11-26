@@ -165,12 +165,28 @@ final class HomeModel {
                 let holidayNames = Dictionary(
                     years.flatMap { danishHolidays($0, appTimeZone) }.map { ($0.date, lang == .da ? $0.name : $0.englishName) },
                     uniquingKeysWith: { a, b in "\(a), \(b)" })
-                let items = calendarItems(counted, names: names, from: from, to: to, appTimeZone, lang).map { item in
-                    guard item.calendarId == holidayCalendarId, let name = holidayNames[startOfDay(item.start, appTimeZone)]
-                    else { return item }
-                    var named = item
-                    named.label = name
-                    return named
+                // A holiday calendar of your own (the iPhone's "Helligdage i Danmark") whose
+                // titles didn't come (read off the server, not the phone): named by the day too,
+                // and left out where Casy's own holidays already name the day.
+                let oursShown = data.calendars.first { $0.id == holidayCalendarId }?.included == true
+                let holidayish = Set(
+                    data.calendars.filter {
+                        let n = $0.name.lowercased()
+                        return $0.id != holidayCalendarId && (n.contains("helligdag") || n.contains("holiday"))
+                    }.map(\.id))
+                let items = calendarItems(counted, names: names, from: from, to: to, appTimeZone, lang).compactMap { item -> MonthItem? in
+                    let named = holidayNames[startOfDay(item.start, appTimeZone)]
+                    if item.calendarId == holidayCalendarId, let named {
+                        var item = item
+                        item.label = named
+                        return item
+                    }
+                    guard holidayish.contains(item.calendarId), let named else { return item }
+                    if oursShown { return nil }
+                    guard item.label == names[item.calendarId] else { return item }
+                    var item = item
+                    item.label = named
+                    return item
                 }
                 return (
                     items,
@@ -240,8 +256,24 @@ final class HomeModel {
         return waiting.count > 1 ? CasyStrings.homeVotesWaiting(waiting.count) : CasyStrings.homeVoteAnswer(CasyStrings.eventTitle(first.title))
     }
 
+    /// An agreed event of Casy's at an item's time: what its chip opens.
+    func agreedEvent(_ item: MonthItem) -> SuggestedEvent? {
+        guard item.calendarId == casyVoteCalendar, item.pencil != true else { return nil }
+        return sectionEvents(EventsModel.shared.events ?? [], now: Native.now).scheduled.first {
+            $0.currentDate.map { instantOrZero($0.start) == item.start && instantOrZero($0.end) == item.end } ?? false
+        }
+    }
+
+    /// Aftaler opened on an event (the bridge's).
+    @ObservationIgnored var openEvent: ((String) -> Void)?
+
     /// The votes changed (or one landed): the month drawn again with them.
-    func votesChanged() { if Self.ownData { dayCache = [:]; layOut() } }
+    func votesChanged() {
+        if Self.ownData {
+            dayCache = [:]
+            layOut()
+        }
+    }
 
     private func layOut() {
         let extras = extras
@@ -295,6 +327,12 @@ final class HomeModel {
         if let kept = dayCache[midnight] { return kept }
         let next = addDays(midnight, 1, appTimeZone)
         var segments = byDay[dayKey(midnight, appTimeZone)] ?? []
+        let dayExtras = extras.filter { $0.end > midnight && $0.start < next }
+        // Casy's agreed date drawn as its own; your calendar's copy of it left out.
+        if Self.ownData {
+            let chips = Set(dayExtras.filter { $0.calendarId == casyVoteCalendar && $0.pencil != true }.map { "\($0.start)/\($0.end)" })
+            if !chips.isEmpty { segments = segments.filter { !chips.contains("\($0.start)/\($0.end)") } }
+        }
         let lang = CasyStrings.language == "en" ? Lang.en : Lang.da
         var holidayNames: [String: String] = [:]
         if !holidaysHidden {
@@ -313,7 +351,7 @@ final class HomeModel {
             segments: segments, colors: colors, names: names, holidays: holidayNames, none: calendars.isEmpty)
         let day = HomeDay(
             calendar: calendar,
-            extras: page.extras.filter { $0.end > midnight && $0.start < next },
+            extras: dayExtras,
             placed: placeBlocks(segments.filter { !$0.allDay }, midnight: midnight, appTimeZone, minHeight: DayHours.linePoints / DayHours.dayPoints))
         dayCache[midnight] = day
         return day
@@ -346,7 +384,7 @@ final class HomeModel {
     func votesOn(_ midnight: Int64) -> Bool {
         let next = addDays(midnight, 1, appTimeZone)
         if voting?.dates.contains(where: { $0.start >= midnight && $0.start < next }) == true { return true }
-        return page.extras.contains { $0.pencil == true && $0.pulse != true && $0.start >= midnight && $0.start < next }
+        return extras.contains { $0.pencil == true && $0.pulse != true && $0.start >= midnight && $0.start < next }
     }
 
     // MARK: What the app works out itself (#202), else as the page sends it

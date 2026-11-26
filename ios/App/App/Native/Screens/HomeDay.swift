@@ -302,8 +302,7 @@ private struct DayNames: View {
 
     private func name(_ midnight: Int64) -> some View {
         let today = startOfDay(Native.now, appTimeZone)
-        let next = addDays(midnight, 1, appTimeZone)
-        let pencilled = HomeModel.shared.page.extras.contains { $0.pencil == true && $0.start < next && $0.end > midnight }
+        let pencilled = HomeModel.shared.votesOn(midnight)
         return Text(verbatim: text(midnight))
             .font(.system(size: 15, weight: .semibold))
             .foregroundStyle(
@@ -671,9 +670,13 @@ private struct DayColumn: View {
                     // already answered) is only shown: handed over, the page would
                     // open its day view over this one.
                     let asks = item.pencil == true || item.pulse == true
-                    Button { pageTap(midnight) } label: { extra(item, height: height) }
+                    // An agreed date of Casy's opens its event in Aftaler.
+                    let agreed = HomeModel.shared.agreedEvent(item)
+                    Button {
+                        if let agreed { HomeModel.shared.openEvent?(agreed.id) } else { pageTap(midnight) }
+                    } label: { extra(item, height: height) }
                         .buttonStyle(.plain)
-                        .disabled(!asks)
+                        .disabled(!asks && agreed == nil)
                         .frame(width: max(0, width - 4), height: height)
                         .offset(x: 2, y: span.top * day)
                         .accessibilityLabel(item.label)

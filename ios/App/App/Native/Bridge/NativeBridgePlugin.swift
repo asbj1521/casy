@@ -175,6 +175,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self?.notifyListeners("tripAction", data: Self.tripAction(action))
             }
             PageAuth.shared.send = { [weak self] ask in self?.notifyListeners("authAsk", data: ask) }
+            // An agreed date's chip in the day view: Aftaler, opened on its event.
+            HomeModel.shared.openEvent = { [weak self] id in
+                guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil else { return }
+                self.present("events", on: presenter, state: ["vote": id])
+            }
             HomeModel.shared.onAction = { [weak self] action, day in
                 // Planlæg pressed: the page counts it as over the month before it asks for
                 // the app's own sheet, and its own home page (on this month) flickered in.
