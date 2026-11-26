@@ -32,7 +32,8 @@ export function useNativeHome(
   if (seen.items !== items) setSeen({ items, dataAt: seen.dataAt + 1 });
   const dataAt = seen.dataAt;
 
-  const { covered, extras, colors, starred, pill, tell, holidaysHidden, important } = state;
+  const { covered, extras, colors, starred, pill, tell, holidaysHidden, important, tourSeen } =
+    state;
   // By value: a new object with the same counts sends nothing.
   const { calendars, events, profile } = state.badges;
   useEffect(() => {
@@ -48,10 +49,12 @@ export function useNativeHome(
       holidaysHidden,
       badges: { calendars, events, profile },
       important,
+      tourSeen,
       dataAt,
     });
   }, [
     important,
+    tourSeen,
     native,
     covered,
     extras,

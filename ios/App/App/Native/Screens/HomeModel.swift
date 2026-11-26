@@ -189,7 +189,7 @@ final class HomeModel {
     private func layOut() {
         let shown = landing.map { l in page.extras.filter { !($0.start == l.start && $0.end == l.end && $0.pencil != true) } } ?? page.extras
         let items =
-            shown + (page.holidaysHidden ? own.filter { $0.calendarId != holidayCalendarId } : own)
+            shown + (holidaysHidden ? own.filter { $0.calendarId != holidayCalendarId } : own)
         let first = startOfMonth(Native.now, appTimeZone)
         layoutTask?.cancel()
         layoutTask = Task {
@@ -240,7 +240,7 @@ final class HomeModel {
         var segments = byDay[dayKey(midnight, appTimeZone)] ?? []
         let lang = CasyStrings.language == "en" ? Lang.en : Lang.da
         var holidayNames: [String: String] = [:]
-        if !page.holidaysHidden {
+        if !holidaysHidden {
             let year = localDate(midnight, appTimeZone).year
             if holidayYears[year] == nil { holidayYears[year] = danishHolidays(year, appTimeZone) }
             let holidays = (holidayYears[year] ?? []).filter { $0.date == midnight }
@@ -290,6 +290,52 @@ final class HomeModel {
         let next = addDays(midnight, 1, appTimeZone)
         if voting?.dates.contains(where: { $0.start >= midnight && $0.start < next }) == true { return true }
         return page.extras.contains { $0.pencil == true && $0.pulse != true && $0.start >= midnight && $0.start < next }
+    }
+
+    // MARK: What the app works out itself (#202), else as the page sends it
+
+    /// The home page's data found here rather than told by the page: as its stars.
+    static var ownData: Bool { HomeStars.on }
+
+    /// The counts on Kalendere (calendars still wanting a look in the tour), Aftaler
+    /// (votes waiting for your answer) and Profil (invitations).
+    var badges: HomeBadges {
+        guard Self.ownData else { return page.badges }
+        let now = Native.now
+        return HomeBadges(
+            calendars: calendars.isEmpty ? page.badges.calendars : unsortedCalendars(calendars, seen: tourSeen).count,
+            events: EventsModel.shared.events.map { $0.filter { needsYourAnswer($0, now: now) }.count } ?? page.badges.events,
+            profile: ProfileModel.shared.whoAmI == nil ? page.badges.profile : ProfileModel.shared.invitations)
+    }
+
+    /// Tilføj til kalender offered: the AI is on for you.
+    var tell: Bool {
+        guard Self.ownData, let who = ProfileModel.shared.whoAmI else { return page.tell }
+        return who.aiAllowed == true
+    }
+
+    /// The holidays calendar switched off (the web's `!holidays?.included`).
+    var holidaysHidden: Bool {
+        guard Self.ownData, !calendars.isEmpty else { return page.holidaysHidden }
+        return calendars.first { $0.id == holidayCalendarId }?.included != true
+    }
+
+    /// The calendars gone through in the tour, kept here per person; the page's handed over.
+    private(set) var tourSeen: Set<String> = []
+    @ObservationIgnored private var userId: String?
+    private static func tourKey(_ userId: String) -> String { "casy.calendarTourSeen.\(userId)" }
+
+    func signedIn(_ userId: String?) {
+        self.userId = userId
+        tourSeen = userId.flatMap { UserDefaults.standard.stringArray(forKey: Self.tourKey($0)) }.map(Set.init) ?? []
+    }
+
+    /// The tour's calendars seen, from the page or the app's own tour: kept, and counted again.
+    func rememberTourSeen(_ ids: [String]) {
+        let seen = Set(ids)
+        guard seen != tourSeen else { return }
+        tourSeen = seen
+        if let userId { UserDefaults.standard.set(Array(seen), forKey: Self.tourKey(userId)) }
     }
 
     /// Tid til hinanden's starred days: the app's own (HomeStars) when it finds them, else the page's.

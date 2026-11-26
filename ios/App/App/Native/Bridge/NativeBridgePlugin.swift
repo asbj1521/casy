@@ -141,7 +141,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             calendars.onPrefs = { [weak self] hidden, seen in
                 var data: [String: Any] = [:]
                 if let hidden { data["holidaysHidden"] = hidden }
-                if let seen { data["tourSeen"] = seen }
+                if let seen {
+                    data["tourSeen"] = seen
+                    HomeModel.shared.rememberTourSeen(seen)
+                }
                 self?.notifyListeners("calendarPrefs", data: data)
             }
             calendars.onChanged = { [weak self] in
@@ -278,6 +281,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             let before = await SessionBox.shared.current()?.userId
             await SessionBox.shared.set(next)
             await MainActor.run {
+                HomeModel.shared.signedIn(next?.userId)
                 if PhoneSyncWork.on {
                     // The app keeps the phone's id and connection, the page's taken over once.
                     PhoneSyncWork.shared.signedIn(next?.userId, pageDevice: device, pageConnection: phone)
@@ -653,6 +657,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         let pill = call.getString("pill")
         let tell = call.getBool("tell") ?? false
         let holidaysHidden = call.getBool("holidaysHidden") ?? false
+        let tourSeen = call.getArray("tourSeen")?.compactMap { $0 as? String }
         let dataAt = call.getDouble("dataAt") ?? 0
         let importantRaw: Any? = call.getArray("important")
         let important: [LabelledEvent] = Self.decode([LabelledEvent].self, importantRaw) ?? []
@@ -674,6 +679,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             fresh.important = important
             fresh.dataAt = dataAt
             HomeModel.shared.update(fresh)
+            if let tourSeen { HomeModel.shared.rememberTourSeen(tourSeen) }
             // The page has caught up: nothing of its own is over the month any more.
             if !covered { self.homeHeld = false }
             self.placeHome()

@@ -117,11 +117,18 @@ struct HomeScreen: View {
             settled = true
             // Tid til hinanden's stars, once the home page has settled (the page's usePrimeDates).
             if HomeStars.on { HomeStars.shared.refresh() }
+            // Your AI setting and invitations, for Tilføj til kalender and Profil's count.
+            if HomeModel.ownData { await ProfileModel.shared.load() }
             sayAgreed()
         }
         .onChange(of: EventsModel.shared.events) { _, _ in sayAgreed() }
         .onChange(of: idle) { _, _ in sayAgreed() }
-        .onChange(of: model.page.dataAt) { _, _ in Task { await EventsModel.shared.load() } }
+        .onChange(of: model.page.dataAt) { _, _ in
+            Task {
+                await EventsModel.shared.load()
+                if HomeModel.ownData { await ProfileModel.shared.load() }
+            }
+        }
         .onChange(of: deck?.view) { _, view in showVote(view) }
         .onChange(of: voteClear) { _, clear in model.voting?.clear = clear }
         .onChange(of: scenePhase) { _, phase in
@@ -303,10 +310,10 @@ struct HomeScreen: View {
                 .contentShape(Capsule())
                 .casyGlass(clear: true)
             }
-            .overlay(alignment: .topTrailing) { if !day { badge(model.page.badges.calendars) } }
+            .overlay(alignment: .topTrailing) { if !day { badge(model.badges.calendars) } }
             .accessibilityLabel(day ? CasyStrings.dayShowMonth(month) : CasyStrings.calendarsTitle)
             .accessibilityValue(
-                !day && model.page.badges.calendars > 0 ? CasyStrings.homeToSort(model.page.badges.calendars) : "")
+                !day && model.badges.calendars > 0 ? CasyStrings.homeToSort(model.badges.calendars) : "")
             .accessibilityIdentifier(day ? "day.back" : "home.calendars")
             Spacer()
             // The plus and I dag never move: pinned to the capsule's right edge,
@@ -334,7 +341,7 @@ struct HomeScreen: View {
                 .allowsHitTesting(day)
                 .accessibilityHidden(!day)
                 HStack(spacing: 0) {
-                    if model.page.tell {
+                    if model.tell {
                         Button { model.onAction?("tell", nil) } label: {
                             LucideIcon("plus", size: 24, stroke: 2.25)
                                 .frame(width: 44, height: 40)
@@ -681,7 +688,7 @@ struct HomeScreen: View {
                 .accessibilityIdentifier("home.pill")
             }
             HStack(spacing: 12) {
-                round("calendar-check", label: CasyStrings.homeEvents, badge: model.page.badges.events, id: "home.events") {
+                round("calendar-check", label: CasyStrings.homeEvents, badge: model.badges.events, id: "home.events") {
                     model.onAction?("events", nil)
                 }
                 Button { model.onAction?("plan", nil) } label: {
@@ -698,7 +705,7 @@ struct HomeScreen: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("home.plan")
-                round("user", label: CasyStrings.homeProfile, badge: model.page.badges.profile, id: "home.profile") {
+                round("user", label: CasyStrings.homeProfile, badge: model.badges.profile, id: "home.profile") {
                     model.onAction?("profile", nil)
                 }
             }

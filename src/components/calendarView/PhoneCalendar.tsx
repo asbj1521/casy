@@ -590,6 +590,7 @@ export default function PhoneCalendar() {
     [homeExtras, month],
   );
   const starredDays = useMemo(() => [...starred], [starred]);
+  const tourSeenList = useMemo(() => [...tourSeen], [tourSeen]);
   // HomeBar's counts, the same queries, for the native home page's buttons.
   const eventsBadge = useEventsBadge();
   const { data: invitations } = useQuery(invitationsQuery(userId));
@@ -627,6 +628,7 @@ export default function PhoneCalendar() {
       holidaysHidden: !calendars.find((c) => c.id === HOLIDAY_CALENDAR_ID)?.included,
       badges: { calendars: toSort, events: eventsBadge ?? 0, profile: invitations?.length ?? 0 },
       important: importantEvents,
+      tourSeen: tourSeenList,
     },
     calendar.items,
     ({ action, day, prime: star }) => {

@@ -87,6 +87,11 @@ export interface NativeHomeState {
    * kept on this phone: what a vote's date is warned against (#282).
    */
   important: LabelledEvent[];
+  /**
+   * The calendars gone through in the tour, kept on this phone (#202): handed
+   * over for the app's own count on Kalendere (left out on leaving: kept as it is).
+   */
+  tourSeen?: string[];
   /** Changes when the page fetched your calendars again: the app reads them again too. */
   dataAt: number;
 }
